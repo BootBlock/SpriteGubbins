@@ -168,9 +168,10 @@ initial build. They are not stylistic preferences.
 - **Separation of concerns is directory-enforced.** Domain and compiler logic in `src/utils/`;
   state in `src/stores/`; persistence in `src/db/`; browser-effect and shared-interaction hooks in
   `src/hooks/`; constants in `src/constants/`; types in `src/types/`; UI primitives in
-  `src/components/common/`; studio panels in `src/components/studio/`; modals in
-  `src/components/modals/`; tab views in `src/components/tabs/`; chrome in
-  `src/components/layout/`. A file in the wrong directory is a design error, not a filing error.
+  `src/components/common/`; studio panels in `src/components/studio/`; the quantiser's image panels
+  in `src/components/quantise/`; modals in `src/components/modals/`; tab views in
+  `src/components/tabs/`; chrome in `src/components/layout/`. A file in the wrong directory is a
+  design error, not a filing error.
 - **`src/hooks/` exists because `src/utils/` must stay pure.** The clipboard, file downloads and
   the combo box's keyboard state machine are all impure — they touch `navigator`, the DOM, or a
   store — so they cannot live in `src/utils/`, and they are not components. A hook belongs there

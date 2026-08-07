@@ -51,10 +51,13 @@ export type Projection = (typeof PROJECTIONS)[number];
  * Which facings the sheet covers. v1 hardcoded three even though the directional mode implied they
  * varied, so an eight-direction set — what a top-down cut-out rig needs — could not be requested.
  *
- * The specification also lists a `CUSTOM` free list. It is **not** here: a free list needs a field
- * to hold it, the scope guard admits no control that no preset exercises, and a direction set that
- * resolves to nothing would emit an empty "Directions required" line. That is the same reasoning
- * that deleted `FULL_DIRECTIONAL_POSE_LIBRARY` — a value whose only outcome is a wrong sheet.
+ * These four are the whole set. A `CUSTOM` free list was specified and then **deleted from the
+ * specification** rather than built: it needs a field to hold it, no shipped preset exercises it,
+ * and a set resolving to nothing would emit an empty "Directions required" line. It would also
+ * break {@link Direction} open, and with it the exhaustiveness that makes `DEPTH_ORDER_TEXT` able to
+ * answer for every facing a set can produce — a free list yields arbitrary strings with no depth
+ * order at all. Same reasoning that deleted `FULL_DIRECTIONAL_POSE_LIBRARY`: a value whose only
+ * outcome is a wrong sheet.
  */
 export const DIRECTION_SETS = ['SINGLE_FRONT', 'THREE_CLASSIC', 'FOUR_CARDINAL', 'EIGHT_COMPASS'] as const;
 export type DirectionSet = (typeof DIRECTION_SETS)[number];
@@ -66,9 +69,11 @@ export type DirectionSet = (typeof DIRECTION_SETS)[number];
  * the facing, so `DEPTH_ORDER_TEXT` must have an answer for every direction a set can resolve to, and
  * a `Record` over this union is what makes the compiler insist on that.
  *
- * A bare union rather than the `as const` array its sibling unions use — nothing enumerates the
- * facings at runtime. They are reached through `DIRECTION_LISTS`, and no `OutputConfig` field holds
- * one, so no parser validates against the set either.
+ * A bare union rather than the `as const` array its sibling unions use, because the facings are
+ * never enumerated as a flat set: they are reached through `DIRECTION_LISTS`, and the only field
+ * holding one — `OutputConfig.primaryDirection` — is validated against *its own direction set*
+ * rather than against every facing that exists. A stored `north` is not merely a `Direction`
+ * question; it is wrong on a `THREE_CLASSIC` sheet, which never turns that way.
  */
 export type Direction =
   | 'front'

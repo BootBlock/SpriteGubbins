@@ -4,7 +4,10 @@ import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
 import { useDownload } from '../../hooks/useDownload.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { useUIStore } from '../../stores/useUIStore.ts';
 import { countWords, estimateTokens, generatePrompt } from '../../utils/promptCompiler.ts';
+import { DIRECTION_LISTS } from '../../constants/promptText/index.ts';
+import { splitsIntoRuns } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
 
 /** A filename from the subject's own name, so a folder of downloads stays readable. */
@@ -33,6 +36,8 @@ export function PromptPreview() {
   const category = useSubjectStore((state) => state.category);
   const subject = useSubjectStore((state) => state.subject);
   const output = useOutputStore((state) => state.output);
+
+  const toggleSplitModal = useUIStore((state) => state.toggleSplitModal);
 
   const copyText = useClipboard();
   const copyPrompt = useCopyPrompt();
@@ -97,6 +102,19 @@ export function PromptPreview() {
           <span aria-hidden="true">💾</span>
           Download .md
         </button>
+
+        {/* Offered only when the configuration genuinely is more than one sheet — a mode covering
+            one facing at a time, over a set naming more than one. */}
+        {splitsIntoRuns(output) && (
+          <button
+            type="button"
+            onClick={toggleSplitModal}
+            className="flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+          >
+            <span aria-hidden="true">🧩</span>
+            Split into {DIRECTION_LISTS[output.directions].length} sheets
+          </button>
+        )}
 
         <button
           type="button"

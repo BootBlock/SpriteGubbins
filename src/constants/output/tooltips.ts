@@ -24,6 +24,8 @@ export const OUTPUT_TOOLTIPS = {
     'The key light angle and shadow treatment baked into the sprite. FLAT_NEUTRAL_ALBEDO is what a game engine wants, because the engine lights the sprite itself and a baked highlight would fight its own. Choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view.',
   aspectRatio:
     'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it. WIDE_16_9 fits the usual wide grid; TALL_9_16 suits one tall figure with its variants stacked; SQUARE_1_1 is the safest choice on targets that quietly re-frame anything else.',
+  componentBudget:
+    'The most components you want one generation asked for. Around forty is what current models deliver before they start merging or dropping pieces. Exceeding it is reported in the studio and never changes the prompt — the sheet is not trimmed behind your back. Set 0 for no cap.',
   targetModel:
     'Which generator the prompt is written for. This changes the shape of the output, not just its wording: a reasoning contract, command-line flags, a separate negative-prompt block or a directive prefix are added or dropped to match what the target actually reads. Set it before copying — the same configuration compiles differently for each one.',
 
@@ -35,6 +37,8 @@ export const OUTPUT_TOOLTIPS = {
     'Degrees above the horizon, from 0 at eye level to 90 directly overhead. It defaults to whatever the chosen projection implies, so override it only when the game has a specific ground read to match — raising it shows more of the floor plane and foreshortens the figure’s height.',
   directions:
     'Which facings the sheet covers. For a cut-out rig this is the run list rather than the sheet contents: generate one sheet per direction and tie them together with an identity lock. THREE_CLASSIC is the cheapest set that still reads as fully turnable, because the right side mirrors for the left.',
+  primaryDirection:
+    'Which facing of that run list this sheet is for. It sets the assembly direction and the depth order — which arm renders in front of the torso changes with the way the subject turns. Split the sheet to work through every facing in one pass.',
   backgroundKey:
     'What the components sit on, so they can be cut out afterwards. Magenta is the default because white bleeds into light-coloured edges and leaves alpha keying ambiguous — white armour on a white field has no recoverable boundary. Pick TRANSPARENT only if the target genuinely returns alpha; most return a flat matte whatever you ask for.',
   spriteTargetSize:

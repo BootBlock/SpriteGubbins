@@ -38,7 +38,7 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '7. Atlas and grid calculator',
-    body: 'Given the component count the chosen directional mode requires, the calculator lays those components into a grid biased to the sheet aspect ratio, works out the cell size and the sprite bounds left after the bleed gutter, checks the texture stays a power of two, and exports the result as JSON an importer for Godot, Unity or PixiJS can read.',
+    body: 'Given the component count the sheet asks for — the chosen directional mode plus any additional anatomy the subject names — the calculator lays those components into a grid biased to the sheet aspect ratio, works out the cell size and the sprite bounds left after the bleed gutter, checks the texture stays a power of two, and exports the result as JSON an importer for Godot, Unity or PixiJS can read.',
   },
   {
     heading: '8. Offline first',

@@ -4,11 +4,12 @@
  */
 
 /**
- * The three top-level views. The studio is the app; presets and the architecture spec are
- * reference material reached from the same header.
+ * The four top-level views. The studio is the app and the quantiser is what happens to what comes
+ * back from it; presets and the architecture spec are reference material reached from the same
+ * header.
  *
  * A bare union rather than the `as const` array the closed sets in `types/output.ts` use, because
  * nothing needs to enumerate these at runtime: the tab is never persisted, so no parser validates
  * it against the set, and the header renders a table of labels rather than raw identifiers.
  */
-export type AppTab = 'studio' | 'presets' | 'spec';
+export type AppTab = 'studio' | 'presets' | 'spec' | 'quantise';

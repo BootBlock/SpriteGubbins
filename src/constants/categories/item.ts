@@ -1,3 +1,4 @@
+import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -225,14 +226,14 @@ export const ITEM: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Attached Attachments',
       tooltip:
-        'Extra detachable parts — scopes, ribbons, power cells — isolated into their own sprite slots so they can be swapped or animated. Leave this as NONE for a single-piece item.',
+        'Extra detachable parts — scopes, ribbons, power cells — each isolated into its own sprite slot so it can be swapped or animated. Comma-separated, with ×N for how many of each: “Scope ×1, Charm Ribbon ×2” adds three components to the inventory and to the sheet’s stated count.',
       options: [
-        'NONE',
-        'Attachable Scope & Laser',
-        'Elemental Effect Aura',
-        'Tassel & Charm Ribbons',
-        'Bayonet Blade Tip',
-        'Secondary Energy Cell',
+        NO_ADDITIONAL_ANATOMY,
+        'Attachable Scope ×1, Laser Sight ×1',
+        'Elemental Effect Aura ×1',
+        'Tassel ×2, Charm Ribbon ×2',
+        'Bayonet Blade Tip ×1',
+        'Secondary Energy Cell ×1',
       ],
     },
   ],

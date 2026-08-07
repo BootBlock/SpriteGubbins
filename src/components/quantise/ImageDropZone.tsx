@@ -1,0 +1,48 @@
+import { useFileDropTarget } from '../../hooks/useFileDropTarget.ts';
+import { FilePickerField } from '../common/FilePickerField.tsx';
+
+interface ImageDropZoneProps {
+  readonly acceptFile: (file: File | null | undefined) => void;
+  /** The image currently loaded, or `null` before anything has been brought in. */
+  readonly currentName: string | null;
+}
+
+/**
+ * The three ways an image gets into this tab: dropped, pasted, or chosen.
+ *
+ * Rendered whether or not an image is already loaded, because replacing one is the common case — a
+ * split rig is eight sheets, worked through one after another, and hiding the way in behind an empty
+ * state would make the second sheet harder to load than the first.
+ *
+ * The paste route has no visible control here by design: it is registered on the window by
+ * `useImagePaste`, which the tab adds, so a pasted sheet lands wherever the caret is. It is named in
+ * the copy, which is the only way anyone would know it exists.
+ */
+export function ImageDropZone({ acceptFile, currentName }: ImageDropZoneProps) {
+  const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
+
+  return (
+    <section
+      {...dropHandlers}
+      className={`rounded-2xl border-2 border-dashed p-6 text-center transition-colors ${
+        isDraggedOver ? 'border-accent bg-accent/10' : 'border-foundry-600 bg-foundry-800/60'
+      }`}
+    >
+      <p className="text-sm font-bold text-ink">
+        {currentName === null ? 'Drop the sheet your model returned' : 'Drop another sheet to replace it'}
+      </p>
+      <p className="mx-auto mt-1 max-w-xl text-xs leading-relaxed text-ink-muted">
+        Paste one from the clipboard, or choose a file. Nothing is uploaded — the image is decoded in this
+        tab, transformed here, and never leaves it.
+      </p>
+
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <FilePickerField label="Choose an image" acceptFile={acceptFile} tone="faint" />
+      </div>
+
+      {currentName !== null && (
+        <p className="mt-3 font-mono text-[10px] text-ink-faint">Loaded: {currentName}</p>
+      )}
+    </section>
+  );
+}

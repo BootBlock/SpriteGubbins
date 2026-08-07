@@ -5,7 +5,9 @@ import { Header } from './components/layout/Header.tsx';
 import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
 import { AtlasCalculatorModal } from './components/modals/AtlasCalculatorModal.tsx';
 import { HistoryModal } from './components/modals/HistoryModal.tsx';
+import { SheetSplitModal } from './components/modals/SheetSplitModal.tsx';
 import { PresetsTab } from './components/tabs/PresetsTab.tsx';
+import { QuantiseTab } from './components/tabs/QuantiseTab.tsx';
 import { SpecTab } from './components/tabs/SpecTab.tsx';
 import { StudioTab } from './components/tabs/StudioTab.tsx';
 import { usePresetStore } from './stores/usePresetStore.ts';
@@ -16,12 +18,13 @@ import type { AppTab } from './types/ui.ts';
 /**
  * Which component each view is.
  *
- * A record rather than three conditionals, so `satisfies Record<AppTab, …>` makes the mapping
+ * A record rather than a chain of conditionals, so `satisfies Record<AppTab, …>` makes the mapping
  * exhaustive: adding a view to `AppTab` without a component here is a compile error, rather than a
  * tab that navigates to nothing.
  */
 const VIEWS = {
   studio: StudioTab,
+  quantise: QuantiseTab,
   presets: PresetsTab,
   spec: SpecTab,
 } satisfies Record<AppTab, ComponentType>;
@@ -38,6 +41,7 @@ export function App() {
   const activeTab = useUIStore((state) => state.activeTab);
   const isAtlasModalOpen = useUIStore((state) => state.isAtlasModalOpen);
   const isHistoryModalOpen = useUIStore((state) => state.isHistoryModalOpen);
+  const isSplitModalOpen = useUIStore((state) => state.isSplitModalOpen);
   const setInstallPrompt = useUIStore((state) => state.setInstallPrompt);
   const fetchCustomPresets = usePresetStore((state) => state.fetchCustomPresets);
 
@@ -91,14 +95,15 @@ export function App() {
 
       {isAtlasModalOpen && <AtlasCalculatorModal />}
       {isHistoryModalOpen && <HistoryModal />}
+      {isSplitModalOpen && <SheetSplitModal />}
 
       {/*
         Exactly one toast is ever mounted. While an overlay is open it belongs inside the dialog —
         see `Modal` — because a modal dialog paints above the whole document and makes the rest of
         it inert, so a toast out here would be neither visible nor announced. The store guarantees
-        the two overlays are never open at once, so these three cases are mutually exclusive.
+        the overlays are never open at once, so these cases are mutually exclusive.
       */}
-      {!isAtlasModalOpen && !isHistoryModalOpen && <Toast />}
+      {!isAtlasModalOpen && !isHistoryModalOpen && !isSplitModalOpen && <Toast />}
     </div>
   );
 }

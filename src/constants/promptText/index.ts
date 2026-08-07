@@ -14,7 +14,7 @@
  * direction set according to the sheet's mode, so the line has to describe what was actually asked
  * for rather than what the user selected. {@link describeDirections} builds it.
  */
-export { COMPONENT_BREAKDOWNS, COMPONENT_COUNTS, DIRECTION_COVERAGE } from './inventory.ts';
+export { COMPONENT_COUNTS, DIRECTION_COVERAGE, PRACTICAL_COMPONENT_CEILING } from './inventory.ts';
 export {
   MIN_FEATURE_SIZE,
   RENDER_STYLE_TEXT,
@@ -29,5 +29,6 @@ export {
   describeDirections,
   PROJECTION_TEXT,
 } from './camera.ts';
+export { FACING_TEXT, LANDMARK_TEXT, OBJECT_YAW } from './rotation.ts';
 export { ASPECT_TEXT, ASSEMBLY_POSES, BACKGROUND_KEY_TEXT } from './sheet.ts';
 export { JOINT_CAP_TEXT, OVERLAP_MARGIN_TEXT } from './rigging.ts';

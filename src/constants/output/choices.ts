@@ -1,7 +1,5 @@
-import { COMPONENT_COUNTS } from '../promptText/inventory.ts';
 import type {
   AspectRatio,
-  DirectionalMode,
   LightingModel,
   OutlineStyle,
   PaletteLimit,
@@ -22,31 +20,6 @@ export interface OutputChoice<T extends string> {
   readonly value: T;
   readonly label: string;
 }
-
-/**
- * Component counts are interpolated from {@link COMPONENT_COUNTS} rather than written into the
- * label. They are stated in four places — here, the prompt's contract, the prompt's self-audit and
- * the atlas grid — and a label that disagrees with the prompt is how a user comes to expect the
- * wrong number of components.
- */
-export const DIRECTIONAL_MODE_CHOICES: readonly OutputChoice<DirectionalMode>[] = [
-  {
-    value: 'CORE_DIRECTIONAL_VARIANTS',
-    label: `CORE_DIRECTIONAL_VARIANTS (${COMPONENT_COUNTS.CORE_DIRECTIONAL_VARIANTS} components — recommended)`,
-  },
-  {
-    value: 'SINGLE_DIRECTION_POSE_LIBRARY',
-    label: `SINGLE_DIRECTION_POSE_LIBRARY (${COMPONENT_COUNTS.SINGLE_DIRECTION_POSE_LIBRARY} components)`,
-  },
-  {
-    value: 'CUTOUT_RIG_SINGLE_DIRECTION',
-    label: `CUTOUT_RIG_SINGLE_DIRECTION (${COMPONENT_COUNTS.CUTOUT_RIG_SINGLE_DIRECTION} components)`,
-  },
-  {
-    value: 'TILESET_MODULAR',
-    label: `TILESET_MODULAR (${COMPONENT_COUNTS.TILESET_MODULAR} tiles)`,
-  },
-];
 
 export const RENDER_STYLE_CHOICES: readonly OutputChoice<RenderStyle>[] = [
   { value: 'PIXEL_ART', label: 'PIXEL_ART (modern high-resolution pixel art)' },

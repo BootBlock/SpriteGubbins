@@ -6,6 +6,13 @@
 >
 > - **§2.4 / Task 1.3.4 — SQLite cannot run on the main thread.** The SAH-pool VFS needs `FileSystemFileHandle.prototype.createSyncAccessHandle`, which browsers expose only inside a worker, so the database lives in `src/db/sqliteWorker.ts` behind a message bridge rather than being opened in the page.
 > - **§2.4 — `prompt_history` carries two more columns than the DDL here lists** (`subject_json`, `output_json`). Without them the drawer's "one-click restore" in §4.4 cannot exist: the compiled prompt is a one-way rendering of the studio state, so the state has to be stored alongside it. Rows written before those columns restore to their category's defaults.
+>
+> The app has since grown past this blueprint, and the three places it has are recorded here so a reader is not left comparing the tree against a document that predates them. All three follow [baseline-prompt-new.md](baseline-prompt-new.md) §10 rather than the phases above, and its list is now closed:
+>
+> - **A fourth view, `quantise`**, alongside the studio, presets and architecture tabs this document describes — grid alignment and palette reduction applied to the image a model returned, in `src/components/quantise/` and `src/utils/`. Plan: [done/post-generation-quantisation.md](done/post-generation-quantisation.md).
+> - **The app reads images**, which §2 of this document never contemplated: `src/hooks/useImageFile.ts` decodes a dropped, chosen or pasted file to `ImageData` in the tab. Nothing is uploaded, and the no-outbound-request rule is unchanged. Besides the quantiser, `IdentityPaletteCapture` in the studio uses it to read an accepted sheet's palette into the identity lock.
+> - **A sheet splitter** (`SheetSplitModal`), turning one N-direction rig request into N single-direction runs sharing an identity lock — a third overlay beside the atlas calculator and history drawer.
+> - **A component budget** on `OutputConfig`, reported in the studio when a sheet outgrows it and deliberately absent from the compiled prompt.
 
 ## **Project: Sprite Gubbins — Vite \+ React \+ TypeScript \+ PWA \+ SQLite**
 
@@ -353,8 +360,9 @@ are not.
 - **[baseline-prompt-new.md](baseline-prompt-new.md)** — the v2 template, the reasoning for each
   change, and the three Unsung Saviour presets. Kept as reference.
 - **[done/prompt-template-v2-integration.md](done/prompt-template-v2-integration.md)** — the change
-  that landed it, and the record of the two places the implementation knowingly departs from the
-  template document.
+  that landed it. Its status log records the two places the implementation once departed from the
+  template document, and entry (5) records how both were closed: the tile count and the removal of
+  the `CUSTOM` direction set. Implementation and template document now agree.
 
 **Where this document and v2 disagree about the prompt, v2 is what ships.** In particular v2
 deliberately reverses the `|| 'DEFINED'` fallback described here — a cleared field now omits its line

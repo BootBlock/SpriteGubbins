@@ -1,3 +1,4 @@
+import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Humanoid characters — the default category, and the one the component-count model was built around. */
@@ -272,15 +273,15 @@ export const CHARACTER: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Additional Genuine Anatomy',
       tooltip:
-        'Extra anatomy — a tail, a wing pair, auxiliary arms — requested as its own dedicated sprite slots so it can be animated separately from the body. Leave this as NONE unless the part genuinely needs to move on its own.',
+        'Extra anatomy — a tail, a wing pair, auxiliary arms — each requested as its own sprite slot so it can be animated separately from the body. Comma-separated, with ×N for how many of each: “Demon Horn ×2, Tail ×1” adds three components to the inventory and to the sheet’s stated count.',
       options: [
-        'NONE',
-        'Prehensile Cyber Tail',
-        'Mechanical Wing Pair',
-        'Dual Auxiliary Arms',
-        'Serpentine Tail',
-        'Feathered Archangel Wings',
-        'Demon Horn Pair & Tail',
+        NO_ADDITIONAL_ANATOMY,
+        'Prehensile Cyber Tail ×1',
+        'Mechanical Wing ×2',
+        'Auxiliary Arm ×2',
+        'Serpentine Tail ×1',
+        'Feathered Archangel Wing ×2',
+        'Demon Horn ×2, Tail ×1',
       ],
     },
   ],

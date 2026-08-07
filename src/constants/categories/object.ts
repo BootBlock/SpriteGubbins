@@ -1,3 +1,4 @@
+import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -234,14 +235,14 @@ export const OBJECT: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Deployable Modules',
       tooltip:
-        'Extra moving parts — dishes, clamps, vents, barrels — isolated into their own sprite slots so they can animate against a static body. Leave this as NONE for a prop with no deployable state.',
+        'Extra moving parts — dishes, clamps, vents, barrels — each isolated into its own sprite slot so it can animate against a static body. Comma-separated, with ×N for how many of each: “Vent Flap ×2, Clamp ×1” adds three components to the inventory and to the sheet’s stated count.',
       options: [
-        'NONE',
-        'Deployable Sensor Dish',
-        'Articulated Arm Clamp',
-        'Coolant Vent Flaps',
-        'Deployable Turret Barrel',
-        'Holographic Emitter Wings',
+        NO_ADDITIONAL_ANATOMY,
+        'Deployable Sensor Dish ×1',
+        'Articulated Arm Clamp ×1',
+        'Coolant Vent Flap ×2',
+        'Deployable Turret Barrel ×1',
+        'Holographic Emitter Wing ×2',
       ],
     },
   ],

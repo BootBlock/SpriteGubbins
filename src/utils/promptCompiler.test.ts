@@ -1,21 +1,23 @@
 import { describe, expect, it } from 'vitest';
+import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
-import { DIRECTIONAL_MODE_CHOICES } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
-import { COMPONENT_BREAKDOWNS, COMPONENT_COUNTS } from '../constants/promptText/index.ts';
-import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
-import { DIRECTIONAL_MODES, RENDER_STYLES, RIG_MODES } from '../types/output.ts';
+import { RENDER_STYLES, RIG_MODES } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
-import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
 import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts';
 
 /**
  * The compiler is the app. Everything else is a way of choosing its arguments, so these tests assert
  * on what the generated prompt actually *says* — a check that it is merely a non-empty string would
  * pass for every way this can go wrong.
+ *
+ * Two responsibilities have their own files rather than living here, because this one had grown into
+ * all three: `componentSet.test.ts` holds the component-count arithmetic and the five readers that
+ * must agree on it, and `constants/promptTemplate.test.ts` holds the template document's own
+ * integrity. What is left is what the compiler *says* for a given studio state.
  */
 
 const SUBJECT = DEFAULT_PRESET.subject;
@@ -24,9 +26,6 @@ const OUTPUT = DEFAULT_PRESET.output;
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...OUTPUT, ...overrides };
 }
-
-/** Tokens the compiler computes rather than looking up. See the test that pins each one. */
-const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION']);
 
 /** Every field cleared — the case v1 filled with `DEFINED` tokens. */
 const EMPTY_SUBJECT: SubjectDefinition = Object.fromEntries(
@@ -37,6 +36,9 @@ describe('generatePrompt — the subject', () => {
   it('writes every stated subject field into the prompt', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, OUTPUT);
     for (const value of Object.values(SUBJECT)) {
+      // `NONE` is the one value that deliberately does not reach the prompt: it states that there is
+      // no additional anatomy, and the way to state that is to say nothing. See the block below.
+      if (value === NO_ADDITIONAL_ANATOMY) continue;
       expect(prompt, `subject value "${value}" is missing from the prompt`).toContain(value);
     }
   });
@@ -178,40 +180,105 @@ describe('generatePrompt — conditional blocks', () => {
   });
 });
 
-describe('component counts', () => {
-  it.each(DIRECTIONAL_MODES)(
-    '%s states one count consistently across the prompt, the inventory, the selector and the atlas',
-    (mode) => {
-      const count = COMPONENT_COUNTS[mode];
-      expect(Number.isInteger(count) && count > 0).toBe(true);
+describe('generatePrompt — the facing the sheet is for', () => {
+  it('carries the pinned facing into the assembly direction and the depth order', () => {
+    // `sheetDirections.test.ts` covers the resolution itself; this is the seam — that the resolved
+    // facing reaches *both* places the prompt states it. Depth order is a property of facing, so a
+    // pinned run that moved one and not the other would render its near arm behind the torso.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        rigMode: 'CUTOUT_RIG',
+        directions: 'EIGHT_COMPASS',
+        primaryDirection: 'north-west',
+      }),
+    );
 
-      // The prompt states it twice — once as the contract, once as the self-audit — and both must
-      // be the same number the inventory below them lists.
-      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ directionalMode: mode }));
-      expect(prompt).toContain(`Exactly ${count} components`);
-      expect(prompt).toContain(`Component count is exactly ${count}.`);
-      expect(COMPONENT_BREAKDOWNS[mode]).toContain(`— ${count} in total`);
+    expect(prompt).toContain('- Primary assembly direction: north-west');
+    expect(prompt).toContain('- Directions required: North-west');
+    expect(prompt).toContain(promptText.DEPTH_ORDER_TEXT['north-west']);
+  });
+});
 
-      // The selector must promise the same number the prompt will ask for.
-      const choice = DIRECTIONAL_MODE_CHOICES.find((candidate) => candidate.value === mode);
-      expect(choice?.label).toContain(String(count));
+describe('generatePrompt — camera azimuth versus object yaw', () => {
+  /**
+   * The defect: a sheet asking for a front-three-quarter, a right-side and a back-three-quarter head
+   * came back with three heads at effectively the same angle. Section 3 said "one camera … azimuth …
+   * identical across all of them", which reads as *every component faces the same way*, and a
+   * generator resolving that against its own preference for three-quarter views resolves it wrongly.
+   */
+  const CORE = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'THREE_CLASSIC' });
 
-      // And the atlas has to lay out a grid that actually holds them.
-      const metrics = calculateAtlasMetrics({
-        canvasSize: 2048,
-        padding: 4,
-        componentCount: count,
-        widthBias: widthBiasFor('WIDE_16_9'),
-      });
-      expect(metrics.columns * metrics.rows).toBeGreaterThanOrEqual(count);
-    },
-  );
+  it('fixes the camera and turns the component, and says which is which', () => {
+    const prompt = generatePrompt('CREATURE', SUBJECT, CORE);
 
-  it('has no mode asking for more than a model can deliver', () => {
-    // 111 components in one image was deleted for this reason; the ceiling is roughly 40.
-    for (const mode of DIRECTIONAL_MODES) {
-      expect(COMPONENT_COUNTS[mode], `${mode} exceeds the practical ceiling`).toBeLessThanOrEqual(43);
-    }
+    // Matched across the template's own line wrapping, so re-flowing a paragraph does not fail a
+    // test about what the paragraph says.
+    expect(prompt).toMatch(/\*\*Camera azimuth is fixed; object yaw\s+is what varies\.\*\*/);
+    expect(prompt).toContain('**A direction is never produced by moving the camera.**');
+    // The old wording, which is what a generator was reading as "keep every component facing the
+    // same way". It must not survive anywhere in the prompt.
+    expect(prompt).not.toMatch(/A component drawn at a different\s+angle from its neighbours is a defect/);
+  });
+
+  it('states each required facing as an object yaw with its own occlusions', () => {
+    const prompt = generatePrompt('CREATURE', SUBJECT, CORE);
+
+    expect(prompt).toContain('**Front-three-quarter — object yaw 45°.**');
+    expect(prompt).toContain('**Right side — object yaw 90°.**');
+    expect(prompt).toContain('**Back-three-quarter — object yaw 135°.**');
+  });
+
+  it('names the front and rear landmarks of the category being drawn', () => {
+    // Rotation can only be checked against something that points forward, and "front" is a different
+    // landmark for a creature, a building and a pistol.
+    expect(generatePrompt('CREATURE', SUBJECT, CORE)).toContain('the jaws, beak, muzzle or mandibles');
+    expect(generatePrompt('BUILDING', SUBJECT, CORE)).toContain('the entrance façade');
+    expect(generatePrompt('ITEM', SUBJECT, CORE)).toContain('the blade, the muzzle, the face of the dial');
+  });
+
+  it('forbids the substitutions that pass for a rotation', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
+
+    expect(prompt).toContain('**A mirrored copy is not a rotation.**');
+    expect(prompt).toContain('**Rotation never swaps anatomical left and right.**');
+    expect(prompt).toContain('a "side" view that is the three-quarter view with');
+    expect(prompt).toContain('### Directional audit');
+  });
+
+  it('stops the primary assembly direction overriding a stated one', () => {
+    // "Primary assembly direction: front-three-quarter" is the instruction that biased every
+    // component back towards the one view the model already preferred.
+    expect(generatePrompt('CHARACTER', SUBJECT, CORE)).toMatch(
+      /\*\*Wherever section 4\s+names a direction for a component, that direction wins outright\*\*/,
+    );
+  });
+
+  it('drops the comparison rules from a sheet that carries one facing', () => {
+    // Forty lines about views disagreeing, on a sheet with a single view, is instruction the
+    // generator cannot act on — it has nothing to compare. The yaw itself still gets stated.
+    const rig = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', directions: 'FOUR_CARDINAL' }),
+    );
+
+    expect(rig).toContain('**South — object yaw 0°.**');
+    expect(rig).toContain('never this sheet mirrored');
+    expect(rig).not.toContain('### Directional audit');
+    expect(rig).not.toContain('### Rotation, not redesign');
+  });
+
+  it('makes the inventory demand one geometry rather than three designs', () => {
+    expect(generatePrompt('CREATURE', SUBJECT, CORE)).toMatch(
+      /the same piece of geometry drawn\s+at each object yaw section 3 lists/,
+    );
+  });
+
+  it('orders the rules so aesthetics cannot outrank a stated direction', () => {
+    expect(generatePrompt('CHARACTER', SUBJECT, CORE)).toContain('Nothing later overrides anything earlier');
   });
 });
 
@@ -283,42 +350,6 @@ describe('every category', () => {
     const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${category}`);
     expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]/);
-  });
-});
-
-describe('the template itself', () => {
-  it('fills every _DESCRIPTION token from a matching _TEXT map', () => {
-    // The naming convention is the contract between the template and `constants/promptText/`: a
-    // `[DEFINE:FOO_DESCRIPTION]` is filled from `FOO_TEXT`. Walking it here is what stops a token
-    // being added without its map — which would otherwise reach a model as literal template text.
-    const tokens = [...PROMPT_TEMPLATE.matchAll(/\[DEFINE:([A-Z0-9_]+_DESCRIPTION)\]/g)].map(
-      (match) => match[1] ?? '',
-    );
-    expect(new Set(tokens).size).toBeGreaterThan(0);
-
-    const exported = new Set(Object.keys(promptText));
-    for (const token of new Set(tokens)) {
-      if (COMPUTED_DESCRIPTIONS.has(token)) continue;
-      const mapName = token.replace(/_DESCRIPTION$/, '_TEXT');
-      expect(exported, `[DEFINE:${token}] has no ${mapName} to fill it from`).toContain(mapName);
-    }
-  });
-
-  it('computes the descriptions that no fixed map could hold', () => {
-    // The one documented exception to the convention, asserted rather than merely allowed: the
-    // directions line describes the set the compiler *narrowed to*, which is a function of the mode
-    // as well as the chosen set, so a lookup keyed on the set alone would state the wrong thing.
-    expect(typeof promptText.describeDirections).toBe('function');
-    expect(promptText.describeDirections(['south', 'west'])).toBe('South, west');
-  });
-
-  it('opens with the output contract rather than burying it', () => {
-    // Attention weighting favours early tokens, and background, pixel density and "no text" are the
-    // constraints that fail most often. v1 had them in sections 8 and 9.
-    const contractAt = PROMPT_TEMPLATE.indexOf('## 0. NON-NEGOTIABLE OUTPUT CONTRACT');
-    const subjectAt = PROMPT_TEMPLATE.indexOf('## 1. SUBJECT DEFINITION');
-    expect(contractAt).toBeGreaterThan(-1);
-    expect(contractAt).toBeLessThan(subjectAt);
   });
 });
 

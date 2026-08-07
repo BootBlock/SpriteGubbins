@@ -15,6 +15,7 @@ export interface UIState {
   readonly toastMessage: string | null;
   readonly isAtlasModalOpen: boolean;
   readonly isHistoryModalOpen: boolean;
+  readonly isSplitModalOpen: boolean;
   /** The deferred `beforeinstallprompt` event, or `null` when the app can't offer an install. */
   readonly deferredPWAInstallPrompt: BeforeInstallPromptEvent | null;
 
@@ -22,12 +23,27 @@ export interface UIState {
   /** Show a message, replacing any current one, and dismiss it after {@link TOAST_DURATION_MS}. */
   showToast(message: string): void;
   dismissToast(): void;
-  /** Open or close the atlas calculator. Closes the history drawer if it was open. */
+  /** Open or close the atlas calculator. Closes whichever other overlay was open. */
   toggleAtlasModal(): void;
-  /** Open or close the history drawer. Closes the atlas calculator if it was open. */
+  /** Open or close the history drawer. Closes whichever other overlay was open. */
   toggleHistoryModal(): void;
+  /** Open or close the sheet splitter. Closes whichever other overlay was open. */
+  toggleSplitModal(): void;
   setInstallPrompt(prompt: BeforeInstallPromptEvent | null): void;
 }
+
+/**
+ * Every overlay shut.
+ *
+ * Spread ahead of the one being toggled, so opening any of them closes the rest by construction —
+ * adding a fourth overlay needs this object updated once rather than a line added to three toggles,
+ * and the invariant below cannot be half-applied.
+ */
+const ALL_OVERLAYS_CLOSED = {
+  isAtlasModalOpen: false,
+  isHistoryModalOpen: false,
+  isSplitModalOpen: false,
+} as const;
 
 /**
  * The pending auto-dismiss.
@@ -48,8 +64,7 @@ function cancelDismiss(): void {
 export const useUIStore = create<UIState>((set) => ({
   activeTab: 'studio',
   toastMessage: null,
-  isAtlasModalOpen: false,
-  isHistoryModalOpen: false,
+  ...ALL_OVERLAYS_CLOSED,
   deferredPWAInstallPrompt: null,
 
   setActiveTab: (activeTab) => {
@@ -70,15 +85,19 @@ export const useUIStore = create<UIState>((set) => ({
     set({ toastMessage: null });
   },
 
-  // Opening one overlay closes the other. Both are `<dialog showModal()>`, and stacking two of them
-  // puts the second in front of the first with the first still open behind it — two modal contexts
-  // at once, which is not a state either of them is written for.
+  // Opening one overlay closes the others. Every one of them is a `<dialog showModal()>`, and
+  // stacking two puts the second in front of the first with the first still open behind it — two
+  // modal contexts at once, which is not a state any of them is written for.
   toggleAtlasModal: () => {
-    set((state) => ({ isAtlasModalOpen: !state.isAtlasModalOpen, isHistoryModalOpen: false }));
+    set((state) => ({ ...ALL_OVERLAYS_CLOSED, isAtlasModalOpen: !state.isAtlasModalOpen }));
   },
 
   toggleHistoryModal: () => {
-    set((state) => ({ isHistoryModalOpen: !state.isHistoryModalOpen, isAtlasModalOpen: false }));
+    set((state) => ({ ...ALL_OVERLAYS_CLOSED, isHistoryModalOpen: !state.isHistoryModalOpen }));
+  },
+
+  toggleSplitModal: () => {
+    set((state) => ({ ...ALL_OVERLAYS_CLOSED, isSplitModalOpen: !state.isSplitModalOpen }));
   },
 
   setInstallPrompt: (deferredPWAInstallPrompt) => {

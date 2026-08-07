@@ -1,5 +1,7 @@
 import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { COMPONENT_BUDGET_RANGE } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
 import {
   ASPECT_RATIOS,
   BACKGROUND_KEYS,
@@ -18,9 +20,10 @@ import {
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
 import type { OutputConfig, TargetModelId } from '../types/output.ts';
+import type { Direction, DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { isRecord, pick, pickBoolean, pickNumber } from './readers.ts';
+import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
 /**
  * Turning a stored subject or output configuration back into a domain object.
@@ -66,6 +69,23 @@ export function parseSubject(value: unknown, category: SubjectCategory): Subject
 const ELEVATION_RANGE = { min: 0, max: 90 } as const;
 
 /**
+ * Read the stored primary facing, accepting it only if the stored *direction set* actually contains
+ * it.
+ *
+ * The one field whose validity depends on another field's value, so it cannot go through `pick`
+ * against a flat union. `north` is a perfectly good `Direction` and still wrong on a `THREE_CLASSIC`
+ * sheet, which never turns that way — accepting it would put a facing in the prompt's assembly
+ * direction and depth order that the sheet's own "directions required" line does not list.
+ *
+ * `null` is both the rejection and the ordinary "unset", and they mean the same thing downstream:
+ * the set's first facing.
+ */
+function pickPrimaryDirection(source: Record<string, unknown>, directions: DirectionSet): Direction | null {
+  const stored = source['primaryDirection'];
+  return DIRECTION_LISTS[directions].find((facing) => facing === stored) ?? null;
+}
+
+/**
  * Parse a stored output config, falling back per field rather than wholesale.
  *
  * One bad value costs that field its default instead of discarding the entire configuration — which
@@ -73,6 +93,9 @@ const ELEVATION_RANGE = { min: 0, max: 90 } as const;
  */
 export function parseOutputConfig(value: unknown): OutputConfig {
   if (!isRecord(value)) return DEFAULT_OUTPUT_CONFIG;
+
+  // Read before the object literal, because the primary facing is only valid against *this* set.
+  const directions = pick(value, 'directions', DEFAULT_OUTPUT_CONFIG.directions, DIRECTION_SETS);
 
   return {
     directionalMode: pick(value, 'directionalMode', DEFAULT_OUTPUT_CONFIG.directionalMode, DIRECTIONAL_MODES),
@@ -88,6 +111,16 @@ export function parseOutputConfig(value: unknown): OutputConfig {
     lightingModel: pick(value, 'lightingModel', DEFAULT_OUTPUT_CONFIG.lightingModel, LIGHTING_MODELS),
     aspectRatio: pick(value, 'aspectRatio', DEFAULT_OUTPUT_CONFIG.aspectRatio, ASPECT_RATIOS),
     targetModel: pick(value, 'targetModel', DEFAULT_OUTPUT_CONFIG.targetModel, TARGET_MODEL_IDS),
+    // Whole components, because the number is read straight back into prose — a fractional budget
+    // would report `48 components against a budget of 42.7`. Rejected rather than rounded: this
+    // layer drops what it cannot vouch for, and rounding `0.5` to `0` would turn a corrupt budget
+    // into no budget at all.
+    componentBudget: pickWholeNumber(
+      value,
+      'componentBudget',
+      DEFAULT_OUTPUT_CONFIG.componentBudget,
+      COMPONENT_BUDGET_RANGE,
+    ),
 
     renderStyle: pick(value, 'renderStyle', DEFAULT_OUTPUT_CONFIG.renderStyle, RENDER_STYLES),
     projection: pick(value, 'projection', DEFAULT_OUTPUT_CONFIG.projection, PROJECTIONS),
@@ -97,7 +130,8 @@ export function parseOutputConfig(value: unknown): OutputConfig {
       DEFAULT_OUTPUT_CONFIG.cameraElevation,
       ELEVATION_RANGE,
     ),
-    directions: pick(value, 'directions', DEFAULT_OUTPUT_CONFIG.directions, DIRECTION_SETS),
+    directions,
+    primaryDirection: pickPrimaryDirection(value, directions),
     backgroundKey: pick(value, 'backgroundKey', DEFAULT_OUTPUT_CONFIG.backgroundKey, BACKGROUND_KEYS),
     spriteTargetSize: typeof value['spriteTargetSize'] === 'string' ? value['spriteTargetSize'] : '',
 

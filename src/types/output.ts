@@ -1,4 +1,4 @@
-import type { BackgroundKey, DirectionSet, Projection, RenderStyle } from './rendering.ts';
+import type { BackgroundKey, Direction, DirectionSet, Projection, RenderStyle } from './rendering.ts';
 import type { JointCapStyle, OverlapMargin, RigMode } from './rigging.ts';
 
 /**
@@ -116,12 +116,33 @@ export interface OutputConfig {
   readonly lightingModel: LightingModel;
   readonly aspectRatio: AspectRatio;
   readonly targetModel: TargetModelId;
+  /**
+   * The most components one generation may be asked for, or `NO_COMPONENT_BUDGET` for no cap.
+   *
+   * Caps the *request*, never the contract: nothing in the compiled prompt reads it. Exceeding it
+   * is reported in the studio before the prompt is copied, because a sheet quietly trimmed to fit
+   * would state a count its own inventory contradicts.
+   */
+  readonly componentBudget: number;
 
   readonly renderStyle: RenderStyle;
   readonly projection: Projection;
   /** Degrees above the horizon. Defaults per projection, and overridable. */
   readonly cameraElevation: number;
   readonly directions: DirectionSet;
+  /**
+   * Which facing of `directions` this sheet is for, or `null` for the set's first.
+   *
+   * Only a mode covering one facing at a time reads it — for those, `directions` is a *run list*
+   * rather than a description of one sheet, and this says which run. Without it the studio could
+   * only ever express run one, so the eight sheets of an eight-direction rig were not individually
+   * requestable and a split run could not be restored from history as itself.
+   *
+   * Nullable rather than always a `Direction` because "the set's first" has to survive the set
+   * changing under it: pinning a facing at every write would leave a stale one behind the moment the
+   * user switched sets, which is a facing the sheet does not cover.
+   */
+  readonly primaryDirection: Direction | null;
   readonly backgroundKey: BackgroundKey;
   /** Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely. */
   readonly spriteTargetSize: string;
