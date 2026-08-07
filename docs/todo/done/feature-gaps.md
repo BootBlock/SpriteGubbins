@@ -1,10 +1,11 @@
 # Feature gaps — audit and plan
 
-> **Status:** 🟢 ACTIVE — Phases 1 (the two persistence defects) and 2 (history delete and export)
-> shipped. Phase 3 remains: G5 and G6 are a hand-off and a decision, not a build.
+> **Status:** ✅ COMPLETE — Phases 1 (G1, G4) and 2 (G2, G3) shipped. Phase 3 was a hand-off rather
+> than a build, and is discharged below: **G5 and G6 are still open**, deliberately, and the
+> [Outcome](#outcome) section says who holds each.
 
 An audit of what this application promises against what it does, run after
-[baseline-prompt-new.md](baseline-prompt-new.md) §10 closed and the five spec phases shipped.
+[baseline-prompt-new.md](../baseline-prompt-new.md) §10 closed and the five spec phases shipped.
 
 **The written plans are genuinely complete.** Every item in the spec's Phase 4 component list exists
 and works — history search, the atlas engine-spec JSON, preset import/export, the randomise action,
@@ -35,7 +36,7 @@ Phase 2 works in `HistoryModal.tsx` and `HistoryEntry.tsx`, which belong to neit
 
 ## G1 — The fallback cannot report a failed write, so its error path is unreachable
 
-`LocalStorageBackend.write` ([src/db/localStorageBackend.ts](../../src/db/localStorageBackend.ts))
+`LocalStorageBackend.write` ([src/db/localStorageBackend.ts](../../../src/db/localStorageBackend.ts))
 carries this comment:
 
 > *Write one collection back. **Returns false when storage refused it (quota, private mode).***
@@ -44,7 +45,7 @@ All **five** call sites discard that boolean, and every mutating method returns
 `Promise.resolve()` regardless. A refusal is therefore indistinguishable from success.
 
 What makes this precise rather than theoretical is that **the error path already exists and is
-already written**. `addLog` in [src/stores/useHistoryStore.ts](../../src/stores/useHistoryStore.ts)
+already written**. `addLog` in [src/stores/useHistoryStore.ts](../../../src/stores/useHistoryStore.ts)
 wraps the call and raises *"Could not save this prompt to history"* on rejection;
 `usePresetStore` does the same for presets. On the SQLite path those toasts fire. On the fallback
 they cannot fire at all, because nothing there ever rejects. The user sees the entry appear in the
@@ -72,7 +73,7 @@ the worker protocol, `deleteLog(id)` on the store, and a delete control on `Hist
 ## G3 — The one irreplaceable collection is the one with no export
 
 Custom presets can be exported to JSON and imported back
-([src/components/tabs/PresetsTab.tsx](../../src/components/tabs/PresetsTab.tsx)). Prompt history
+([src/components/tabs/PresetsTab.tsx](../../../src/components/tabs/PresetsTab.tsx)). Prompt history
 cannot: `HistoryModal.tsx` and `HistoryEntry.tsx` offer copy-one, restore-one and delete-everything,
 and nothing else.
 
@@ -87,8 +88,8 @@ nothing in the workflow asks for that.
 
 ## G4 — `MIGRATIONS` is dead machinery, and contradicts stated policy
 
-[src/db/schema.ts](../../src/db/schema.ts) exports two `ALTER TABLE … ADD COLUMN` statements, run on
-every boot by [src/db/sqliteWorker.ts](../../src/db/sqliteWorker.ts) with their errors swallowed.
+[src/db/schema.ts](../../../src/db/schema.ts) exports two `ALTER TABLE … ADD COLUMN` statements, run on
+every boot by [src/db/sqliteWorker.ts](../../../src/db/sqliteWorker.ts) with their errors swallowed.
 
 Both columns they add — `subject_json` and `output_json` — are already declared in
 `CREATE_TABLES_SQL`. On any database this application is capable of creating, `CREATE TABLE` makes
@@ -104,7 +105,7 @@ It also contradicts the project's standing policy, which is unambiguous:
 
 ## G5 — Saving a custom preset always creates a new one *(identified, not scheduled)*
 
-`saveCustomPreset` in [src/stores/usePresetStore.ts](../../src/stores/usePresetStore.ts) mints
+`saveCustomPreset` in [src/stores/usePresetStore.ts](../../../src/stores/usePresetStore.ts) mints
 `custom-${crypto.randomUUID()}` on every call. Load a preset, adjust a field, save it under the same
 name, and you have two presets with that name — distinguishable only by which sorts newer. There is
 no rename and no update path.
@@ -113,7 +114,7 @@ no rename and no update path.
 
 ## G6 — Imagen has no condensed variant *(decision, not a task)*
 
-[baseline-prompt-new.md](baseline-prompt-new.md) §7 says of `GOOGLE_IMAGEN`:
+[baseline-prompt-new.md](../baseline-prompt-new.md) §7 says of `GOOGLE_IMAGEN`:
 
 > Imagen handles descriptive natural language well and long rule lists poorly, so consider emitting
 > a **condensed** variant for this target.
@@ -158,7 +159,7 @@ Both live in `src/db/`, touch the same files, and need no UI.
    the reason, so the message is available if a caller ever wants it — but note the stores
    deliberately catch and show their own copy, so nothing needs to read it today.
 
-**Tests.** [src/db/localStorageBackend.test.ts](../../src/db/localStorageBackend.test.ts) already
+**Tests.** [src/db/localStorageBackend.test.ts](../../../src/db/localStorageBackend.test.ts) already
 drives the backend through an injected `WebStorageLike` (its constructor takes one), so G1's test is
 a storage double whose `setItem` throws, asserting each mutating method rejects. Add a store-level
 test that the toast now fires on the fallback — that is the behaviour the user actually gets, and
@@ -171,7 +172,7 @@ asserts a rejection is exactly the kind that passes for the wrong reason.
 
 1. `DELETE_HISTORY_SQL` in `schema.ts`, modelled on `DELETE_PRESET_SQL`.
 2. `deleteHistoryLog(id)` on the `PersistenceBackend` interface
-   ([src/db/backend.ts](../../src/db/backend.ts)), both implementations, and the `WorkerCall` union
+   ([src/db/backend.ts](../../../src/db/backend.ts)), both implementations, and the `WorkerCall` union
    in `workerProtocol.ts`. The name follows the interface's existing `addHistoryLog` /
    `clearHistoryLogs` / `deletePreset` convention.
 3. `deleteLog(id)` on `useHistoryStore`.
@@ -204,3 +205,41 @@ reported count is the sum of two checkouts whenever one is present. The honest f
 one on its own.
 
 Then `/auto-review high` over the diff, and fix every confirmed finding.
+
+---
+
+## Outcome
+
+What this plan actually did, recorded because the two items it *didn't* build are the reason
+anyone would read it again.
+
+**Shipped.**
+
+- **G1** — `LocalStorageBackend.write` returns a promise and rejects when storage refuses, carrying
+  the original `DOMException` as `cause`; all five mutating methods return it. The stores' existing
+  toasts are reachable on the fallback for the first time.
+- **G4** — `MIGRATIONS`, its loop and its import are gone.
+- **G2** — `deleteHistoryLog(id)` runs from `DELETE_HISTORY_SQL` through `PersistenceBackend`, both
+  implementations and the worker protocol to `deleteLog(id)` on the store and a two-press-confirm
+  control on `HistoryEntry.tsx`.
+- **G3** — `exportHistoryJSON()` and an **Export history (JSON)** action. The drawer's footer moved
+  to `HistoryFooter.tsx`; adding the action put `HistoryModal.tsx` at the 150-line mark.
+
+Driven in Edge against the real app in **both** persistence modes — SQLite over OPFS, and the
+localStorage fallback with the database worker blocked — with identical results. Every control was
+located by accessible name alone, and the delete was driven by keyboard. 376 → 399 tests across 38
+files.
+
+**Still open — neither was built, and that was the plan.**
+
+- **G5 (saving a custom preset always creates a new one).** Unchanged and still real:
+  `saveCustomPreset` mints `custom-${crypto.randomUUID()}` on every call, so saving under an
+  existing name yields two presets with that name and no rename or update path. It belongs to
+  `worktree-quantise-presets-ui`, which owns `usePresetStore`'s UI surface. **Nothing here touched
+  it.**
+- **G6 (a condensed Imagen variant).** Still needs a decision nobody has made. The guidance in
+  [baseline-prompt-new.md](../baseline-prompt-new.md) §7 is the single word "consider", with no
+  statement of what to cut; a condensed template is a *second* template to keep true to the first,
+  which is the duplication §10.1's token validation exists to prevent. Building it on a guess would
+  be worse than leaving it. **This is a question for the maintainer, not a task waiting for an
+  implementer.**
