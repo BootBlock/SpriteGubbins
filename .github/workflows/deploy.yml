@@ -2,7 +2,10 @@ name: Deploy to GitHub Pages
 
 # Manual-only: this never runs on push, on a pull request, or on a schedule. Publish by opening
 # the repository's "Actions" tab, selecting this workflow, and clicking "Run workflow". It builds
-# the chosen branch (default: main) and deploys it to https://bootblock.github.io/SpriteGubbins/.
+# the chosen ref (default: main) and deploys it to https://bootblock.github.io/SpriteGubbins/.
+#
+# Any ref can be dispatched and will be gated and built, but only `main` and a `v*` release tag
+# can actually *reach* production — see the note on the `deploy` job below.
 #
 # `workflow_dispatch` lets the operator pick any ref — including an unmerged branch nothing has
 # ever checked — and this is the app's only publish path, so the three gate jobs below run the
@@ -192,6 +195,12 @@ jobs:
         with:
           path: dist
 
+  # The `github-pages` environment carries a deployment branch policy, so it — not this file — has
+  # the final say on which refs may publish. GitHub creates that environment restricted to the
+  # default branch alone, which would have made the rollback story above a fiction: a `v*` tag is
+  # not a branch, so re-dispatching against one would pass every gate, spend a full build, and
+  # then be refused here. The policy is therefore set to `main` + tag `v*` — deliberately narrow,
+  # so a dispatch of some unmerged branch still cannot reach users, while a rollback can.
   deploy:
     name: Deploy
     needs: build
