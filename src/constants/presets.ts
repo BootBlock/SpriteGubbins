@@ -1,49 +1,60 @@
 import type { PresetArchetype } from '../types/preset.ts';
 
 /**
- * Built-in archetypes, spanning all five categories so each one has a worked example.
+ * The archetype the studio opens on — the app boots into the Cyberpunk Katana Specialist rather
+ * than an empty form, so the prompt preview has something real in it from the first paint.
  *
- * `PRESETS[0]` is also the studio's opening state — the app boots into the Cyberpunk Katana
- * Specialist rather than an empty form, so the prompt preview has something real in it from the
- * first paint.
+ * Bound to a name as well as being `PRESETS[0]` so the subject store can state what it starts from
+ * without indexing the array: under `noUncheckedIndexedAccess` an index read is
+ * `PresetArchetype | undefined`, and the store would need a fallback for a case that cannot happen.
+ * The technical half of the boot state has its own constant already — `DEFAULT_OUTPUT_CONFIG` in
+ * `constants/output.ts`, which holds these same values.
+ */
+const CYBERPUNK_KATANA: PresetArchetype = {
+  id: 'cyberpunk-katana',
+  name: 'Cyberpunk Katana Specialist',
+  category: 'CHARACTER',
+  subject: {
+    species: 'Cybernetic Cyborg',
+    gender: 'Feminine',
+    age: 'Young Adult (20s)',
+    role: 'Katana Specialist',
+    setting: 'Cyberpunk Dystopia',
+    build: 'Athletic & Slender',
+    silhouette: 'Dynamic Sharp Edges',
+    face_head: 'Neon Visor & Undercut',
+    anatomy: 'STANDARD HUMANOID',
+    clothing: 'Tactical Kevlar & Plates',
+    worn_details: 'Holstered Sidearm & Pouch',
+    primary_colours: 'Matte Charcoal Black & Gunmetal',
+    accent_colours: 'Cyan Neon #06B6D4',
+    materials: 'Reinforced Composites & Alloy',
+    exclusions: 'No weapons, no floor shadows',
+    additional_anatomy: 'NONE',
+  },
+  output: {
+    directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+    surfaceDetail: 'CLEAN_PRODUCTION',
+    resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+    paletteLimit: 'RESTRAINED_64_COLOR',
+    outlineStyle: 'DARK_LOCAL_CONTOUR',
+    lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+    aspectRatio: 'WIDE_16_9',
+    targetModel: 'CHATGPT_5_6_SOL',
+  },
+};
+
+/** The studio's opening state. See {@link CYBERPUNK_KATANA}. */
+export const DEFAULT_PRESET = CYBERPUNK_KATANA;
+
+/**
+ * Built-in archetypes, spanning all five categories so each one has a worked example.
  *
  * These are complete subjects: every one of the sixteen fields is set, because a preset that
  * left gaps would compile a prompt containing `DEFINED` placeholders.
  */
 export const PRESETS: readonly PresetArchetype[] = [
-  {
-    id: 'cyberpunk-katana',
-    name: 'Cyberpunk Katana Specialist',
-    category: 'CHARACTER',
-    subject: {
-      species: 'Cybernetic Cyborg',
-      gender: 'Feminine',
-      age: 'Young Adult (20s)',
-      role: 'Katana Specialist',
-      setting: 'Cyberpunk Dystopia',
-      build: 'Athletic & Slender',
-      silhouette: 'Dynamic Sharp Edges',
-      face_head: 'Neon Visor & Undercut',
-      anatomy: 'STANDARD HUMANOID',
-      clothing: 'Tactical Kevlar & Plates',
-      worn_details: 'Holstered Sidearm & Pouch',
-      primary_colours: 'Matte Charcoal Black & Gunmetal',
-      accent_colours: 'Cyan Neon #06B6D4',
-      materials: 'Reinforced Composites & Alloy',
-      exclusions: 'No weapons, no floor shadows',
-      additional_anatomy: 'NONE',
-    },
-    output: {
-      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
-      surfaceDetail: 'CLEAN_PRODUCTION',
-      resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
-      paletteLimit: 'RESTRAINED_64_COLOR',
-      outlineStyle: 'DARK_LOCAL_CONTOUR',
-      lightingModel: 'FLAT_NEUTRAL_ALBEDO',
-      aspectRatio: 'WIDE_16_9',
-      targetModel: 'CHATGPT_5_6_SOL',
-    },
-  },
+  CYBERPUNK_KATANA,
   {
     id: 'scifi-marine',
     name: 'Sci-Fi Void Marine',

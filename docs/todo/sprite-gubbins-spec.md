@@ -1,6 +1,6 @@
 # **👾 MASTER IMPLEMENTATION SPECIFICATION**
 
-> **Status:** 🟢 ACTIVE — Phases 1–2 shipped (build system, PWA shell, design tokens; domain types, option pools, prompt compiler, SQLite/localStorage persistence). Phase 3 (Zustand stores) next, then Phases 4–5.
+> **Status:** 🟢 ACTIVE — Phases 1–3 shipped (build system, PWA shell, design tokens; domain types, option pools, prompt compiler, SQLite/localStorage persistence; the five Zustand stores). Phase 4 (UI components and app assembly) next, then Phase 5.
 
 ## **Project: Sprite Gubbins — Vite \+ React \+ TypeScript \+ PWA \+ SQLite**
 

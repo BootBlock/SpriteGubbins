@@ -18,3 +18,14 @@ export interface PromptHistoryLog {
   readonly wordCount: number;
   readonly modelUsed: TargetModelId;
 }
+
+/**
+ * A log entry as its *caller* knows it — everything except the two fields that describe the row
+ * rather than the prompt.
+ *
+ * `id` and `createdAt` are minted by `useHistoryStore.addLog`, not supplied: identity and
+ * insertion time are properties of the record, and a component that had to invent them could get
+ * them wrong (a colliding id, a timestamp taken well before the write) in a way nothing would
+ * catch.
+ */
+export type NewPromptHistoryLog = Omit<PromptHistoryLog, 'id' | 'createdAt'>;
