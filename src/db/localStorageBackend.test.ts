@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LocalStorageBackend } from './localStorageBackend.ts';
 import { createMemoryStorage, type WebStorageLike } from './webStorage.ts';
+import { createRefusingStorage } from '../test/storageDoubles.ts';
 import { HISTORY_LIMIT } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
@@ -223,5 +224,62 @@ describe('LocalStorageBackend — hostile storage', () => {
       ]),
     );
     expect(await backend.listPresets()).toEqual([]);
+  });
+});
+
+/**
+ * A refused write is an ordinary condition on this backend — an exhausted quota, or Safari's
+ * private mode, where `setItem` throws outright. It has to reach the caller: the stores above
+ * already raise a toast on a failed write, and a backend that resolved anyway made every one of
+ * those handlers unreachable, so the user watched an entry appear and found it gone on reload.
+ *
+ * Each case holds the promise in a variable before awaiting it. That is the point of the shape,
+ * not a stylistic tic: a method that threw *synchronously* would satisfy a bare
+ * `expect(...).rejects` written inline, and would break any caller attaching `.catch()` to the
+ * `Promise` the interface promises.
+ */
+describe('LocalStorageBackend — a refused write', () => {
+  beforeEach(() => {
+    backend = new LocalStorageBackend(createRefusingStorage());
+  });
+
+  it('rejects when a history log cannot be stored', async () => {
+    const promise = backend.addHistoryLog(log());
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
+  it('rejects when the history cannot be cleared', async () => {
+    const promise = backend.clearHistoryLogs();
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
+  it('rejects when a preset cannot be saved', async () => {
+    const promise = backend.savePreset(customPreset());
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
+  it('rejects when a preset cannot be deleted', async () => {
+    const promise = backend.deletePreset('custom-1');
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
+  it('rejects when an imported pack cannot replace the collection', async () => {
+    const promise = backend.replacePresets([customPreset()]);
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
+  it('carries the storage error as the cause, rather than discarding why it failed', async () => {
+    const error: unknown = await backend.addHistoryLog(log()).catch((reason: unknown) => reason);
+
+    // Narrowed rather than cast: `as Error` would assert the very thing under test.
+    if (!(error instanceof Error)) throw new Error('the write should have rejected with an Error.');
+    expect(error.cause).toBeInstanceOf(DOMException);
+  });
+
+  it('still reads, because it is the write that was refused', async () => {
+    // Reading has its own contract — it never throws — and a backend that had quietly broken it
+    // would pass every case above for the wrong reason.
+    await expect(backend.listHistoryLogs()).resolves.toEqual([]);
+    await expect(backend.listPresets()).resolves.toEqual([]);
   });
 });

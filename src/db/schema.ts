@@ -19,8 +19,11 @@ export const CUSTOM_PRESETS_TABLE = 'custom_presets';
 
 /**
  * `IF NOT EXISTS` throughout: this runs on every boot, against a database that usually already
- * exists. Migrations live in {@link MIGRATIONS} below, beside the DDL rather than scattered through
- * the backend.
+ * exists.
+ *
+ * There is no migration machinery beside it, and deliberately so — the project's standing policy is
+ * that stored local data has no claim on the design, so a schema change is made here and an
+ * incompatible database is discarded rather than translated.
  */
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS ${PROMPT_HISTORY_TABLE} (
@@ -57,19 +60,6 @@ export const STORAGE_KEYS = {
   customPresets: 'sprite_gubbins_custom_presets',
   promptHistory: 'sprite_gubbins_prompt_history',
 } as const;
-
-/**
- * Columns added after the first schema shipped.
- *
- * SQLite has no `ADD COLUMN IF NOT EXISTS`, so each of these is run and its "duplicate column name"
- * error ignored — which is the whole check, and cheaper than reading `PRAGMA table_info` to ask a
- * question whose only answer is whether to swallow that one error. Both carry a default, because
- * `ADD COLUMN` on a `NOT NULL` column has to say what the existing rows hold.
- */
-export const MIGRATIONS: readonly string[] = [
-  `ALTER TABLE ${PROMPT_HISTORY_TABLE} ADD COLUMN subject_json TEXT NOT NULL DEFAULT '{}'`,
-  `ALTER TABLE ${PROMPT_HISTORY_TABLE} ADD COLUMN output_json TEXT NOT NULL DEFAULT '{}'`,
-];
 
 /** Newest first — the order the history drawer lists entries in. */
 export const SELECT_HISTORY_SQL = `

@@ -6,6 +6,7 @@ import { createMemoryStorage } from '../db/webStorage.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
+import { createRefusingStorage } from '../test/storageDoubles.ts';
 import type { NewPromptHistoryLog } from '../types/history.ts';
 import { useHistoryStore } from './useHistoryStore.ts';
 import { useOutputStore } from './useOutputStore.ts';
@@ -153,6 +154,35 @@ describe('restoreLog', () => {
     const [stored] = await backend.listHistoryLogs();
     expect(stored?.subject).toEqual(creature);
     expect(stored?.output).toEqual(DEFAULT_PRESET.output);
+  });
+});
+
+/**
+ * The same failure, on the backend the user is actually running.
+ *
+ * The cases above reach the error paths through `createFailingBackend`, which proves the store
+ * handles a rejection — but not that the fallback can produce one, which is the half that was
+ * broken. These run a **real** `LocalStorageBackend` over storage that refuses writes, so what is
+ * under test is the whole path: a full quota, through the backend, to the toast.
+ */
+describe('on a fallback whose storage refuses writes', () => {
+  beforeEach(() => {
+    backend = new LocalStorageBackend(createRefusingStorage());
+  });
+
+  it('reports a prompt it could not record, and does not show it as recorded', async () => {
+    await useHistoryStore.getState().addLog(entry());
+
+    expect(useHistoryStore.getState().historyLogs).toHaveLength(0);
+    expect(useUIStore.getState().toastMessage).toBe('Could not save this prompt to history');
+  });
+
+  it('reports a history it could not clear, and keeps showing what is still stored', async () => {
+    useHistoryStore.setState({ historyLogs: [{ ...entry(), id: 'kept', createdAt: 1 }] });
+    await useHistoryStore.getState().clearHistory();
+
+    expect(useHistoryStore.getState().historyLogs).toHaveLength(1);
+    expect(useUIStore.getState().toastMessage).toBe('Could not clear prompt history');
   });
 });
 

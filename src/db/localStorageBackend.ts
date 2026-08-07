@@ -48,13 +48,26 @@ export class LocalStorageBackend implements PersistenceBackend {
     }
   }
 
-  /** Write one collection back. Returns false when storage refused it (quota, private mode). */
-  private write(key: string, value: unknown): boolean {
+  /**
+   * Write one collection back, rejecting when storage refused it.
+   *
+   * A refusal is ordinary here — Safari's private mode throws on the write itself, and the roughly
+   * 5 MB quota is not far away when a compiled prompt runs to a couple of thousand words. The
+   * refusal has to travel: the stores above already catch a failed write and raise a toast, so
+   * swallowing it here made their error paths unreachable on this backend and left the user looking
+   * at an entry that was on screen and never in storage.
+   *
+   * Rejects rather than throwing synchronously, because the interface promises a `Promise` and a
+   * caller attaching `.catch()` to one is entitled to have it run. The original error travels as
+   * `cause` — nothing reads it today, since the stores show their own copy, but discarding *why*
+   * storage refused is not something to do on the way past.
+   */
+  private write(key: string, value: unknown): Promise<void> {
     try {
       this.storage.setItem(key, JSON.stringify(value));
-      return true;
-    } catch {
-      return false;
+      return Promise.resolve();
+    } catch (error) {
+      return Promise.reject(new Error(`Storage refused the write to "${key}".`, { cause: error }));
     }
   }
 
@@ -80,8 +93,7 @@ export class LocalStorageBackend implements PersistenceBackend {
   addHistoryLog(log: PromptHistoryLog): Promise<void> {
     const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
     const next = [log, ...existing.filter((entry) => entry.id !== log.id)].slice(0, HISTORY_LIMIT);
-    this.write(STORAGE_KEYS.promptHistory, next.map(LocalStorageBackend.toRow));
-    return Promise.resolve();
+    return this.write(STORAGE_KEYS.promptHistory, next.map(LocalStorageBackend.toRow));
   }
 
   listHistoryLogs(): Promise<PromptHistoryLog[]> {
@@ -90,15 +102,13 @@ export class LocalStorageBackend implements PersistenceBackend {
   }
 
   clearHistoryLogs(): Promise<void> {
-    this.write(STORAGE_KEYS.promptHistory, []);
-    return Promise.resolve();
+    return this.write(STORAGE_KEYS.promptHistory, []);
   }
 
   savePreset(preset: PresetArchetype): Promise<void> {
     const existing = this.read(STORAGE_KEYS.customPresets, parseImportedPreset);
     const next = [...existing.filter((entry) => entry.id !== preset.id), preset];
-    this.write(STORAGE_KEYS.customPresets, next);
-    return Promise.resolve();
+    return this.write(STORAGE_KEYS.customPresets, next);
   }
 
   listPresets(): Promise<PresetArchetype[]> {
@@ -107,15 +117,13 @@ export class LocalStorageBackend implements PersistenceBackend {
 
   deletePreset(id: string): Promise<void> {
     const existing = this.read(STORAGE_KEYS.customPresets, parseImportedPreset);
-    this.write(
+    return this.write(
       STORAGE_KEYS.customPresets,
       existing.filter((entry) => entry.id !== id),
     );
-    return Promise.resolve();
   }
 
   replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
-    this.write(STORAGE_KEYS.customPresets, [...presets]);
-    return Promise.resolve();
+    return this.write(STORAGE_KEYS.customPresets, [...presets]);
   }
 }
