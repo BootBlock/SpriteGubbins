@@ -2,7 +2,9 @@
 
 > **Status:** 📘 REFERENCE — shipped. This is the template the compiler now emits, kept for the reasoning behind each rule rather than as open work; the change that landed it is [done/prompt-template-v2-integration.md](done/prompt-template-v2-integration.md).
 >
-> Two places the implementation departs from the text below, both deliberate and both noted in that document's status log: `TILESET_MODULAR` asks for **14** components, matching the tile list §6 enumerates rather than the "sixteen" its prose states; and `DIRECTIONS` ships without `CUSTOM`, because a free list needs a field to hold it and no shipped preset uses one.
+> Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 is half shipped — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed rather than built because describing what a sheet depicts needs an outbound vision-model call this app does not make. Each item records its outcome in place.
+>
+> §3 has since been revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment. The revision is the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives. It also rewords §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
 
 A replacement for the template compiled by `src/utils/promptCompiler.ts`. Same job, same
 customisation surface, with the defects in §8 fixed and three capabilities added: **multi-style
@@ -75,6 +77,16 @@ Everything the application exposes today is retained. **NEW** marks additions.
 The sixteen `SUBJECT_FIELD_KEYS` across all five categories, plus `CATEGORY`. All become
 `[OPTIONAL:…]`.
 
+`ADDITIONAL_ANATOMY` is the one that is more than a line of text. §1 of the template declares such
+anatomy to be *separate pieces*, while §0 demands exactly N components and §4 lists exactly N — so
+a subject naming a tail asked for more pieces than it counted. **The field is therefore counted:**
+each named piece becomes its own entry at the end of §4's inventory, and the total §0 states rises
+to match. That only works if the field is countable, so it carries an explicit multiplier —
+`Demon Horn ×2, Tail ×1` is two entries, three components — and `NONE` states that there are none,
+emitting no line at all rather than putting a content-shaped token in the highest-weighted section
+(§8.1). Guessing plurality from the wording was the alternative, and a mis-read "wing pair" is
+exactly the silently-wrong sheet the count exists to catch.
+
 ### Output — existing
 
 | Parameter | Values |
@@ -118,7 +130,7 @@ Was hardcoded, and hardcoded *contradictorily* — see §8.2.
 
 | Value | Description emitted | Typical elevation |
 | --- | --- | --- |
-| `THREE_QUARTER_TOPDOWN` | Angled overhead. Both the top and the front of forms are visible; the vertical screen axis carries both height and depth | 30–45° |
+| `THREE_QUARTER_TOPDOWN` | Angled overhead. Both the top and the camera-facing vertical surfaces of forms are visible; the vertical screen axis carries both height and depth | 30–45° |
 | `PURE_TOPDOWN` | Directly overhead. Only the top of forms is visible | 90° |
 | `TRUE_ISOMETRIC` | 2:1 diamond isometric, equal foreshortening on both ground axes | 30° |
 | `DIMETRIC_2_1` | Two-axis dimetric with unequal foreshortening | 26.57° |
@@ -139,7 +151,13 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 | `THREE_CLASSIC` | Front-three-quarter, right side, back-three-quarter *(the current hardcoded set)* |
 | `FOUR_CARDINAL` | South, west, north, east |
 | `EIGHT_COMPASS` | S, SW, W, NW, N, NE, E, SE |
-| `CUSTOM` | Free list |
+
+> A `CUSTOM` free list was specified here and has been **removed** rather than built. It needs a
+> field to hold it, no shipped preset exercises it, and a set resolving to nothing emits an empty
+> "Directions required" line. It would also break the closed `Direction` union open, and with it the
+> exhaustiveness that lets `DEPTH_ORDER_TEXT` answer for every facing a set can produce — an
+> arbitrary string has no depth-order answer at all, which is the same "only outcome is a wrong
+> sheet" reasoning that deleted `FULL_DIRECTIONAL_POSE_LIBRARY` in §8.4.
 
 ### Rigging — **NEW**, see §4
 
@@ -193,6 +211,12 @@ Satisfy this section before any aesthetic consideration.
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
 
+**Where two instructions in this specification pull against each other**, satisfy them in this
+order: the component count and inventory · each component's identity and grid position · the object
+orientation each component is asked for · the fixed camera, one scale and pivot compatibility ·
+subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
+so a general aesthetic preference never overrules a component's stated direction.
+
 ---
 
 ## 1. SUBJECT DEFINITION
@@ -222,8 +246,9 @@ not an omission to be filled dramatically.
 [OPTIONAL:ADDITIONAL_ANATOMY  | - Additional genuine anatomy: [DEFINE:ADDITIONAL_ANATOMY]]
 
 Clothing, armour, footwear, augmetics and worn details are **painted onto** the anatomical
-component they sit on — never separate pieces unless listed under additional anatomy. Do not infer
-props, weapons or equipment from the role: if it is not listed above, it does not exist.
+component they sit on, never drawn as separate pieces. Additional genuine anatomy is the single
+exception: section 4 lists each named piece separately and counts it there. Do not infer props,
+weapons or equipment from the role: if it is not listed above, it does not exist.
 
 Material descriptions define **visual identity, not rendering complexity**. Translate every
 material into the simplified shapes and controlled value bands of the selected render style.
@@ -270,16 +295,76 @@ Where this conflicts with anything above, the identity lock wins.
 
 ---
 
-## 3. PROJECTION AND CAMERA
+## 3. PROJECTION, CAMERA AND OBJECT ORIENTATION
 
 - Projection: [DEFINE:PROJECTION_DESCRIPTION]
 - Camera elevation: [DEFINE:CAMERA_ELEVATION]° above the horizon
 - Directions required: [DEFINE:DIRECTIONS_DESCRIPTION]
 - Primary assembly direction: [DEFINE:PRIMARY_DIRECTION]
 
-**One camera, unchanged for every component on the sheet.** Elevation, azimuth, projection type,
-scale and lighting direction are identical across all of them. A component drawn at a different
-angle from its neighbours is a defect, not variety.
+### One fixed camera, and components that turn beneath it
+
+**The camera never moves.** Camera position, camera elevation, **camera azimuth**, projection type,
+focal characteristics, sprite scale, pixel density and lighting direction are identical for every
+component on the sheet. A component drawn through a *different camera* — another elevation,
+projection, scale or key-light direction — is a defect.
+
+**A direction is never produced by moving the camera.** It is produced by rotating the *component*
+about its own local vertical axis beneath that fixed camera. **Camera azimuth is fixed; object yaw
+is what varies.** Those are two different quantities: "one camera" constrains the first and says
+nothing about the second, so it never means that every component faces the same way.
+
+### The object yaws this sheet requires
+
+[DEFINE:DIRECTIONAL_ROTATION]
+[IF:MULTI_DIRECTION]
+
+### Rotation, not redesign
+
+Each directional set is **one** physical component, turned — not several designs of it. Hold
+constant across its views: overall dimensions and proportions · joint, socket and attachment
+geometry · colour blocking and material regions · plate, panel and armour arrangement · identifying
+markings · the number and placement of every distinctive feature. Only what the rotation reveals or
+hides may change. A feature on the component's left rear stays on its left rear: it lands somewhere
+else on screen after the turn, and it must never migrate, multiply, vanish or be redrawn to make two
+views look different. The variety comes from rotation, not mutation.
+
+### Landmarks are the evidence that it rotated
+
+Every directional component has a **front axis** and a **rear axis** — the ends that would lead and
+trail if it moved forward. For this subject: [DEFINE:LANDMARK_DESCRIPTION]
+
+Those landmarks turn with the component. **If a component's front axis still points roughly the same
+way on screen in two of its views, that pair has failed** and must be redrawn.
+
+### Silhouette and occlusion carry the direction
+
+- Reduced to flat black silhouettes, the views would still be individually identifiable. Direction
+  comes from rotated geometry, never from different highlights, markings, glow or rearranged small
+  details.
+- Rotation changes what is visible. A side view occludes the far side's features and foreshortens
+  what is left of the front. A rear view hides most of what a front view presented and gives the
+  rear surfaces the room they lose there. **A rear view showing as much of the front as the front
+  view does is a failed rotation**, not a stylistic choice.
+- **A mirrored copy is not a rotation.** Mirroring flips handedness in the image without exposing a
+  single surface that turning the component would reveal, so it may never stand in for a turned view.
+- **Rotation never swaps anatomical left and right.** A right-side view is this same subject turned
+  until its right side faces the camera; asymmetric features stay on the side of the subject they
+  belong to at every yaw.
+
+Each of these is the easy way out of the rules above, and each is a defect: two views of one
+component facing effectively the same way · a "side" view that is the three-quarter view with
+altered details · a rear view still presenting its face or front · a view produced by mirroring
+another · a view produced by moving the camera · direction signalled by changing details while the
+orientation stays put.
+
+### What "primary assembly direction" means
+
+It is the direction for every component the inventory does **not** give a direction of its own, and
+the direction the assembled pose faces. It is not a house style for the sheet. **Wherever section 4
+names a direction for a component, that direction wins outright** — never pull a directional
+component back towards the primary assembly direction because the rest of the sheet uses it.
+[/IF]
 
 ---
 
@@ -287,9 +372,9 @@ angle from its neighbours is a defect, not variety.
 
 [DEFINE:COMPONENT_BREAKDOWN]
 
-Each entry produces **exactly one** visible component. Do not merge entries, substitute duplicates,
-add filler, or omit entries. Do not draw an assembled figure anywhere on the sheet, including as a
-reference or key.
+Draw every entry in full, and one separate visible component for each item it names — an entry
+marked **×N** names N of them. Do not merge entries, substitute duplicates, add filler, or omit
+entries. Do not draw an assembled figure anywhere on the sheet, including as a reference or key.
 
 ### Placement is the only identity map
 
@@ -330,7 +415,9 @@ were the only one present.
 ### Mirroring
 Left and right versions are mirrored in silhouette but redrawn for their own side. Asymmetric
 details stay on the correct side rather than flipping with the mirror — a holstered sidearm does
-not swap hips between the left and right leg sets.
+not swap hips between the left and right leg sets. **This is the only mirroring the sheet permits:**
+a left piece and a right piece are two different parts, whereas a direction is a rotation, and
+section 3 forbids producing one by mirroring another.
 
 [IF:SOCKETS]
 ### Attachment sockets
@@ -363,6 +450,10 @@ Every component belongs to the **same single subject**. Hold constant across all
 silhouette language and proportion · joint and attachment geometry · clothing and structural
 regions · primary colour blocking · large identifying accents · material treatment.
 
+Where a component appears at more than one object yaw, it is one persistent three-dimensional form
+seen after a turn — every feature stays attached to the same physical region of it, as section 3
+requires.
+
 ---
 
 ## 8. EXCLUSIONS
@@ -391,12 +482,29 @@ Before delivering, verify:
 2. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 3. No text or labels anywhere.
 4. Components appear in the exact order the inventory lists them.
-5. One camera and one scale across every component.
+5. One camera, one scale and one light direction across every component — nothing on the sheet was
+   drawn through a camera that moved.
 [IF:RIG_MODE=CUTOUT_RIG]
 6. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 7. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[/IF]
+[IF:MULTI_DIRECTION]
+
+### Directional audit
+
+Then, for every component the inventory asks for in more than one direction, trace its front axis in
+each of its views and confirm:
+
+- The front axis points a visibly different way in each view.
+- The side view reads as a side, not as a second three-quarter view.
+- The rear view hides most of what the front view presented, and shows rear surfaces in its place.
+- Every view is the same geometry at the same scale through the same unmoved camera, differing by
+  rotation rather than by redesign.
+
+If two views of one component still face effectively the same way, **the sheet has failed**. Redraw
+that component at the object yaw section 3 gives it rather than delivering the sheet.
 [/IF]
 
 [IF:EMIT_MANIFEST]
@@ -552,11 +660,16 @@ distinct tiles, and it is the face that produces the angle:
 Floor ×4 (one base, three low-frequency variants)
 Wall top ×1 · Wall face ×1
 Wall top corner: outer-left, outer-right, inner-left, inner-right
-Wall face corner: left, right
+Wall face corner: outer-left, outer-right, inner-left, inner-right
 Floor edge trim ×2
 ```
 
 Sixteen tiles — comfortably inside one generation.
+
+The face corners were originally listed as **left, right** only, which summed to fourteen against
+this section's own "sixteen" and, worse, left a concave wall junction with no tile to draw it. The
+face turns the same corners the top does, so it needs the same four cases; an inner corner is
+neither a mirror nor a rotation of an outer one, so nothing else in the set stands in for it.
 
 **Tiles must be seamless.** Not a rigging concern, so state it in `EXCLUSIONS` or `MATERIALS`:
 opposite edges match so tiles butt without a visible seam, and no tile carries a feature that
@@ -700,6 +813,37 @@ pivots share. §4.
 
 **8.14 No rig support at all** — the template produced pose libraries only. §4.
 
+### Found after shipping, in v2 itself
+
+**R1. "One camera, unchanged for every component … elevation, azimuth … identical across all of
+them" was read as *every component faces the same way*.** A `CORE_DIRECTIONAL_VARIANTS` sheet came
+back with its front-three-quarter, right-side and back-three-quarter heads all at roughly the same
+three-quarter angle, differing only in detail — and torsos and pelvises with them. The sentence
+intends a fixed *camera*; a generator can just as well read it as a fixed *subject orientation*, and
+it will, because three-quarter views are the ones that show a face. "Primary assembly direction:
+front-three-quarter" then reinforces exactly the wrong reading.
+
+The fix is to make the transformation mechanical rather than nominal: **camera azimuth is fixed;
+object yaw varies**, the two are named as different quantities, and each required facing is stated
+as a numbered object yaw with what that yaw hides — occlusion being the half a flattering
+three-quarter view cannot fake. `constants/promptText/rotation.ts` holds the yaw and the presented
+surfaces per facing, `utils/directionalRotation.ts` composes section 3's list from whichever facings
+the sheet actually covers, and the comparison rules — landmarks, silhouette, no mirroring, no
+left/right swap, the directional audit — are emitted only where one sheet carries more than one
+facing.
+
+**The three-quarter facings are `45°` and `135°`, not `0°` and `180°`.** `front-three-quarter` is a
+turned pose, which is why `DEPTH_ORDER_TEXT` distinguishes a near arm from a far one for it and does
+not for `front`. Taking the trio as front/side/back and numbering it `0/90/180` would have asked for
+a rotation the set does not describe.
+
+**R2. The two southern diagonals named the wrong near arm.** Facing north your right hand points
+east, so facing south-west it points north-west — away from a camera sitting south of the subject,
+making the *left* arm the near one. `DEPTH_ORDER_TEXT` had it the other way for `south-west` and
+`south-east` (and the other way again for the two northern diagonals, which were right). Harmless
+while nothing else stated which side a facing presents; a contradiction inside one prompt the moment
+R1's rotation list did.
+
 ---
 
 ## 9. Kept deliberately
@@ -721,14 +865,59 @@ Already right in the current template; the rewrite must not lose them:
 
 ## 10. Follow-ups beyond the template
 
+**This list is closed.** Four of the five shipped; the fifth was removed rather than built, for a
+reason that is architectural rather than a matter of effort. Each entry keeps its original text and
+its original number — later documents cite these by number — with what actually happened recorded
+underneath it.
+
 1. **Validate that every `[DEFINE:*]` is consumed** at build time; a missed substitution currently
    reaches the model as literal template text.
+
+   *Shipped.* Substitution in `src/utils/templateEngine.ts` throws on a token it has no value for,
+   so a missed one cannot reach a model at all, and
+   [`src/constants/promptTemplate.test.ts`](../../src/constants/promptTemplate.test.ts) walks the
+   template's `_DESCRIPTION` tokens and fails when one has no `_TEXT` map to fill it from.
+
 2. **Cap or split on `COMPONENT_BUDGET`** rather than emitting an unachievable count (§8.4).
+
+   *Shipped, resolved as "report, never cap".* `componentBudget` is a field on `OutputConfig` and
+   `ComponentBudgetNotice` says so before the prompt is copied, but nothing in the compiled prompt
+   reads it: a sheet quietly trimmed to fit would state a count its own inventory contradicts, which
+   is the self-contradiction v2 exists to remove. The *split* half of this item is item 5.
+
 3. **Capture `IDENTITY_LOCK` from an accepted sheet** rather than asking the user to write it — a
    vision model can produce the digest from the approved image.
+
+   *Half shipped; the other half removed rather than built.* §5's digest has two kinds of line, and
+   only one of them needs a model.
+
+   The **palette** does not — the colours are simply *in* the pixels. `IdentityPaletteCapture` sits
+   under the identity lock in the studio: drop an accepted sheet on it, and its dominant colours are
+   read out, ordered by how much of the subject they cover, with the background key excluded, and
+   written into the lock as a `Palette:` segment. It replaces an earlier palette rather than
+   accumulating, so re-reading sheet two of eight cannot leave two disagreeing lists in a field that
+   says *reproduce exactly*. The image is decoded in the tab and never leaves it.
+
+   > The **prose** half is **removed rather than built.** "Cyan visor across upper face" and "three
+   > amber chest lights in a vertical row" need eyes on the image, which means the outbound
+   > vision-model call this application deliberately never makes: it composes prompt *text* for the
+   > user to paste elsewhere, handles no API key, and has no server to proxy one through. That is an
+   > architectural property, not a gap, so it is deleted with the reason stated rather than left on
+   > the list implying it is merely unstarted. Writing those lines by hand from the first accepted
+   > sheet, as §5 describes, remains the workflow.
+
 4. **A post-generation quantisation step for pixel-art targets.** Independent of the prompt: models
    return smooth artwork downscaled far more often than true pixel art, however the request is
    phrased. Palette reduction plus grid alignment on the *returned image* is the only reliable
    guarantee. No prompt wording fixes this.
+
+   *Shipped* as the Quantise tab — grid detection, modal-colour alignment, exact downscale and
+   median-cut palette reduction, entirely in the tab and with nothing uploaded. The plan is
+   [done/post-generation-quantisation.md](done/post-generation-quantisation.md).
+
 5. **A sheet-splitter** that takes an N-direction rig request and queues N single-direction runs
    with a shared identity lock, since that is now the expected workflow for anything rigged.
+
+   *Shipped.* `primaryDirection` on `OutputConfig`, the pure `src/utils/sheetRuns.ts`, and a
+   `SheetSplitModal` that derives the runs rather than storing them and reads which are done from
+   the history, so a batch survives closing the drawer to set the identity lock mid-way.

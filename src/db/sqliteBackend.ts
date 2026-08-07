@@ -95,8 +95,13 @@ export class SqliteBackend implements PersistenceBackend {
  *
  * Resolves to `null` — rather than throwing — for every failure, because none of them is an error
  * the app should surface: OPFS is legitimately unavailable in a private window, in a browser without
- * it, and on a first page load that is not yet cross-origin isolated. The answer is always the same,
- * and it is `database.ts`'s to give: use localStorage instead.
+ * it, and where the storage quota is exhausted. The answer is always the same, and it is
+ * `database.ts`'s to give: use localStorage instead.
+ *
+ * Cross-origin isolation is **not** on that list, though it once was. The SAH-pool VFS needs a
+ * worker rather than `SharedArrayBuffer`, so it succeeds on a first, un-isolated load like any
+ * other — which makes the fallback a narrower path than "before the first reload", and one worth
+ * exercising deliberately rather than assuming every visitor passes through it.
  */
 export function openSqliteBackend(): Promise<SqliteBackend | null> {
   let worker: Worker;

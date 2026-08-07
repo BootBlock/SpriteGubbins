@@ -1,3 +1,4 @@
+import { ComponentBudgetNotice } from '../studio/ComponentBudgetNotice.tsx';
 import { OutputConfig } from '../studio/OutputConfig.tsx';
 import { PromptPreview } from '../studio/PromptPreview.tsx';
 import { SubjectForm } from '../studio/SubjectForm.tsx';
@@ -23,6 +24,8 @@ export function StudioTab() {
 
       <div className="space-y-4 lg:sticky lg:top-24 lg:col-span-7">
         <TargetModelSelector />
+        {/* Above the preview, so a sheet that has outgrown its budget is read before it is copied. */}
+        <ComponentBudgetNotice />
         <PromptPreview />
       </div>
     </div>

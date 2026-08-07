@@ -1,3 +1,4 @@
+import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -29,7 +30,7 @@ const CYBERPUNK_KATANA: PresetArchetype = {
     accent_colours: 'Cyan Neon #06B6D4',
     materials: 'Reinforced Composites & Alloy',
     exclusions: 'No weapons, no floor shadows',
-    additional_anatomy: 'NONE',
+    additional_anatomy: NO_ADDITIONAL_ANATOMY,
   },
   output: {
     ...DEFAULT_OUTPUT_CONFIG,
@@ -75,7 +76,7 @@ export const BUILT_IN_ARCHETYPES: readonly PresetArchetype[] = [
       accent_colours: 'Safety Crimson #EF4444',
       materials: 'Burnished Steel & Leather',
       exclusions: 'No cape, no facial features',
-      additional_anatomy: 'NONE',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
       ...DEFAULT_OUTPUT_CONFIG,
@@ -109,7 +110,7 @@ export const BUILT_IN_ARCHETYPES: readonly PresetArchetype[] = [
       accent_colours: 'Polished Gold #F59E0B',
       materials: 'Burnished Steel & Leather',
       exclusions: 'No floor shadows',
-      additional_anatomy: 'NONE',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
       ...DEFAULT_OUTPUT_CONFIG,
@@ -143,11 +144,15 @@ export const BUILT_IN_ARCHETYPES: readonly PresetArchetype[] = [
       accent_colours: 'Plasma Cyan #22D3EE',
       materials: 'Rusting Scrap & Wiring',
       exclusions: 'No human clothing, no weapons',
-      additional_anatomy: 'Double Pair Wings',
+      additional_anatomy: 'Insectoid Wing ×4',
     },
     output: {
       ...DEFAULT_OUTPUT_CONFIG,
-      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      // The single-direction inventory rather than the three-facing one, because the wings above are
+      // counted into the sheet: 43 + 4 is past the ~40 components a single generation reliably
+      // delivers, while 37 + 4 is not. A winged creature is the case additional anatomy exists for,
+      // so the mode gives way rather than the wings.
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       surfaceDetail: 'CLEAN_PRODUCTION',
       resolutionProfile: 'HIGH_RESOLUTION',
       paletteLimit: 'RESTRAINED_64_COLOR',
@@ -177,7 +182,7 @@ export const BUILT_IN_ARCHETYPES: readonly PresetArchetype[] = [
       accent_colours: 'Alert Orange LEDs #F97316',
       materials: 'Carbon Composite & Glass',
       exclusions: 'No living character, no shadows',
-      additional_anatomy: 'Deployable Sensor Dish',
+      additional_anatomy: 'Deployable Sensor Dish ×1',
     },
     output: {
       ...DEFAULT_OUTPUT_CONFIG,
@@ -211,7 +216,7 @@ export const BUILT_IN_ARCHETYPES: readonly PresetArchetype[] = [
       accent_colours: 'Neon Pink Sign Glow #F43F5E',
       materials: 'Cedar Wood, Clay Tiles & Paper',
       exclusions: 'No ground terrain tiles, no characters',
-      additional_anatomy: 'External Chimney & Smoke Pipe',
+      additional_anatomy: 'External Chimney ×1, Smoke Pipe ×1',
     },
     output: {
       ...DEFAULT_OUTPUT_CONFIG,

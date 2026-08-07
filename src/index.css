@@ -1,6 +1,30 @@
 @import 'tailwindcss';
 
 /*
+ * Keep documentation out of Tailwind's content scan.
+ *
+ * Automatic content detection reads every non-ignored file in the project as a potential template
+ * and emits a utility for each class name it finds. Two kinds of file here are full of class names
+ * that are not this app's markup:
+ *
+ * - `docs/todo/sprite-gubbins.html`, the single-file application this one was migrated from, kept
+ *   as a reference. On its own it emitted **43** stock-palette rules nothing in `src/` references.
+ * - The Markdown, above all `CLAUDE.md`, whose design-token table lists the stock-palette classes
+ *   (`bg-slate-…`, `text-cyan-…`, `text-amber-…`) in a column headed *"Not"*. The document
+ *   forbidding those classes was shipping working versions of all ten of them.
+ *
+ * Worse than the wasted bytes: they are exactly the ad-hoc palette classes the design-token rule
+ * bans, so a component reaching for a stock slate instead of `bg-foundry-800` would have *worked*,
+ * and the thing that normally catches the mistake — an unknown utility emitting no CSS at all —
+ * would not have fired. Excluding both makes the token vocabulary the only vocabulary that renders.
+ *
+ * Note the elided suffixes above. A full class name written *anywhere* the scanner reads — this
+ * comment included — is a candidate, and would emit the very rule it is describing.
+ */
+@source not "../docs/todo/sprite-gubbins.html";
+@source not "../**/*.md";
+
+/*
  * Sprite Gubbins design system (spec Phase 1, Task 1.4).
  *
  * A dark-only "foundry" aesthetic: near-black indigo surfaces lit by an indigo primary and a

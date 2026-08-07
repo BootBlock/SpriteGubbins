@@ -44,6 +44,24 @@ export function pickNumber(
   return value;
 }
 
+/**
+ * Read a whole number within `[min, max]`. A fractional value is **rejected, never rounded**.
+ *
+ * Rounding would be a translation, which this layer's contract forbids — and for a count it is
+ * actively unsafe: a stored `0.5` floored to `0` becomes `NO_COMPONENT_BUDGET`, silently switching
+ * a cap off rather than falling back to it.
+ */
+export function pickWholeNumber(
+  source: Record<string, unknown>,
+  key: string,
+  fallback: number,
+  range: { readonly min: number; readonly max: number },
+): number {
+  const value = readNumber(source, key);
+  if (value === null || !Number.isInteger(value)) return fallback;
+  return pickNumber(source, key, fallback, range);
+}
+
 /** Read a boolean. Anything that is not one — including `'true'` — falls back. */
 export function pickBoolean(source: Record<string, unknown>, key: string, fallback: boolean): boolean {
   const value = source[key];

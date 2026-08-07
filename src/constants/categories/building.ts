@@ -1,3 +1,4 @@
+import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -209,14 +210,14 @@ export const BUILDING: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Structural Appendages',
       tooltip:
-        'Requests extra attached structures — chimneys, antennae, annexes — isolated into their own sprite slots.',
+        'Extra attached structures — chimneys, antennae, annexes — isolated into their own sprite slots. Comma-separated, with ×N for how many of each — "Chimney ×2, Antenna Rig ×1" adds three components to the inventory and to the sheet’s stated count.',
       options: [
-        'NONE',
-        'External Chimney & Smoke Pipe',
-        'Rooftop Antenna Rig',
-        'Side Storage Shed Module',
-        'Defensive Turret Mount',
-        'Rooftop Heli-Pad',
+        NO_ADDITIONAL_ANATOMY,
+        'External Chimney ×1, Smoke Pipe ×1',
+        'Rooftop Antenna Rig ×1',
+        'Side Storage Shed Module ×1',
+        'Defensive Turret Mount ×1',
+        'Rooftop Heli-Pad ×1',
       ],
     },
   ],

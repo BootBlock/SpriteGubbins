@@ -19,9 +19,15 @@ export interface AppTabChoice {
   readonly icon: string;
 }
 
-/** The three views, in the order the switcher shows them. */
+/**
+ * The four views, in the order the switcher shows them.
+ *
+ * Quantise sits beside the studio rather than at the end, because it is the second half of the same
+ * job: compose the prompt here, and bring what the model returned back to the tab next door.
+ */
 export const APP_TAB_CHOICES: readonly AppTabChoice[] = [
   { id: 'studio', label: 'Studio', icon: '🛠️' },
+  { id: 'quantise', label: 'Quantise', icon: '🔲' },
   { id: 'presets', label: 'Presets', icon: '⚡' },
   { id: 'spec', label: 'Architecture', icon: '📜' },
 ];

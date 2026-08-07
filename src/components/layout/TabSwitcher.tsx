@@ -4,7 +4,7 @@ import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 
 /**
- * Moving between the three views.
+ * Moving between the four views.
  *
  * A `<nav>` of buttons marked with `aria-current`, not an ARIA tablist. These swap the whole main
  * region rather than revealing panels that all exist at once, so navigation is what they actually

@@ -17,10 +17,17 @@ const BASE = '/SpriteGubbins/';
 /**
  * Cross-origin isolation headers (spec Phase 1, Task 1.3.3).
  *
- * SQLite's high-performance OPFS VFS coordinates synchronous blocking between its worker and
- * the file system through `SharedArrayBuffer`, which browsers expose only to
- * cross-origin-isolated contexts. Without both of these headers the database silently degrades
- * to the localStorage fallback in `src/db`.
+ * **These are not what makes the database work**, though they were originally added believing they
+ * were. The SAH-pool VFS this app installs needs `createSyncAccessHandle`, which browsers expose
+ * only *inside a worker* — so the database lives in `src/db/sqliteWorker.ts`, and it neither needs
+ * nor waits on `SharedArrayBuffer`. That requirement belongs to the plain `opfs` VFS, which this app
+ * does not use; CLAUDE.md records the check that established the difference.
+ *
+ * What isolation actually buys is the COEP `require-corp` posture: a cross-origin subresource cannot
+ * load unless it opts in. That is the only thing *enforcing* this app's no-third-party-request rule
+ * — it is why the fonts fall back to system faces rather than fetching a webfont — so the headers
+ * are kept for that, and removing them would be a decision about the subresource policy rather than
+ * about persistence.
  *
  * They are set here for dev and preview. **Production cannot use this path** — GitHub Pages
  * sends no custom headers — so there the service worker (`src/sw.ts`) injects them instead, and

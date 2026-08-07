@@ -1,3 +1,4 @@
+import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Monsters and beasts — non-humanoid limb layouts, biological rather than worn detail. */
@@ -219,14 +220,15 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'additional_anatomy',
       label: 'Extra Appendages',
-      tooltip: 'Requests separate tail, stingers, or blade-arms for modular animation.',
+      tooltip:
+        'Separate tails, stingers or blade-arms for modular animation. Comma-separated, with ×N for how many of each — "Blade Arm ×2, Sting Tail ×1" adds three components to the inventory and to the sheet’s stated count.',
       options: [
-        'NONE',
-        'Scorpion Sting Tail',
-        'Chitinous Blade Arms',
-        'Double Pair Wings',
-        'Prehensile Tentacle Pair',
-        'Spike Tail Club',
+        NO_ADDITIONAL_ANATOMY,
+        'Scorpion Sting Tail ×1',
+        'Chitinous Blade Arm ×2',
+        'Insectoid Wing ×4',
+        'Prehensile Tentacle ×2',
+        'Spike Tail Club ×1',
       ],
     },
   ],

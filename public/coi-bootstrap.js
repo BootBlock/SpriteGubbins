@@ -1,10 +1,13 @@
 /*
  * Cross-origin isolation bootstrap.
  *
- * In production on a static host, the COOP/COEP headers the SQLite OPFS backend needs are
- * supplied by the service worker (src/sw.ts). On the very first visit no worker controls the
- * page yet, so it is not isolated; once one takes control we reload exactly once and
- * `SharedArrayBuffer` becomes available.
+ * In production on a static host, the COOP/COEP headers are supplied by the service worker
+ * (src/sw.ts). On the very first visit no worker controls the page yet, so it is not isolated;
+ * once one takes control we reload exactly once and it comes back isolated.
+ *
+ * **The database is not waiting on this.** SQLite's SAH-pool VFS needs a dedicated worker, not
+ * `SharedArrayBuffer`, so it works from the very first load. What the reload restores is the COEP
+ * `require-corp` posture that blocks cross-origin subresources — see the note in CLAUDE.md.
  *
  * The dev and preview servers set the headers directly, so this is a no-op locally — the
  * `crossOriginIsolated` check below returns immediately.

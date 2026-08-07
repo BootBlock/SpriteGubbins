@@ -3,6 +3,7 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { supportsManifest } from '../../utils/modelWrappers.ts';
 import { CheckboxField } from '../common/CheckboxField.tsx';
 import { TextField } from '../common/TextField.tsx';
+import { IdentityPaletteCapture } from './IdentityPaletteCapture.tsx';
 
 /**
  * The two settings that only matter across *several* sheets.
@@ -28,6 +29,8 @@ export function ContinuityFields() {
           setOutputField('identityLock', value);
         }}
       />
+
+      <IdentityPaletteCapture />
 
       <CheckboxField
         label="Request a companion JSON manifest"

@@ -19,6 +19,13 @@ dist-ssr
 .vite
 *.tsbuildinfo
 
+# Agent worktrees. `.claude/skills/` is tracked — it is project tooling CLAUDE.md refers to —
+# but a linked git worktree under here is a second checkout of this same repository, and
+# committing one would add a duplicate copy of the tree. It also makes the test suite lie:
+# vitest walks the whole project directory, so a worktree's tests are collected alongside the
+# real ones and the reported count is the sum of two checkouts.
+.claude/worktrees/
+
 # Test / coverage
 coverage
 .nyc_output

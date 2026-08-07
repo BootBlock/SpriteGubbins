@@ -37,6 +37,12 @@ Satisfy this section before any aesthetic consideration.
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
 
+**Where two instructions in this specification pull against each other**, satisfy them in this
+order: the component count and inventory · each component's identity and grid position · the object
+orientation each component is asked for · the fixed camera, one scale and pivot compatibility ·
+subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
+so a general aesthetic preference never overrules a component's stated direction.
+
 ---
 
 ## 1. SUBJECT DEFINITION
@@ -66,8 +72,9 @@ not an omission to be filled dramatically.
 [OPTIONAL:ADDITIONAL_ANATOMY  | - Additional genuine anatomy: [DEFINE:ADDITIONAL_ANATOMY]]
 
 Clothing, armour, footwear, augmetics and worn details are **painted onto** the anatomical
-component they sit on — never separate pieces unless listed under additional anatomy. Do not infer
-props, weapons or equipment from the role: if it is not listed above, it does not exist.
+component they sit on, never drawn as separate pieces. Additional genuine anatomy is the single
+exception: section 4 lists each named piece separately and counts it there. Do not infer props,
+weapons or equipment from the role: if it is not listed above, it does not exist.
 
 Material descriptions define **visual identity, not rendering complexity**. Translate every
 material into the simplified shapes and controlled value bands of the selected render style.
@@ -115,16 +122,76 @@ Where this conflicts with anything above, the identity lock wins.
 
 ---
 
-## 3. PROJECTION AND CAMERA
+## 3. PROJECTION, CAMERA AND OBJECT ORIENTATION
 
 - Projection: [DEFINE:PROJECTION_DESCRIPTION]
 - Camera elevation: [DEFINE:CAMERA_ELEVATION]° above the horizon
 - Directions required: [DEFINE:DIRECTIONS_DESCRIPTION]
 - Primary assembly direction: [DEFINE:PRIMARY_DIRECTION]
 
-**One camera, unchanged for every component on the sheet.** Elevation, azimuth, projection type,
-scale and lighting direction are identical across all of them. A component drawn at a different
-angle from its neighbours is a defect, not variety.
+### One fixed camera, and components that turn beneath it
+
+**The camera never moves.** Camera position, camera elevation, **camera azimuth**, projection type,
+focal characteristics, sprite scale, pixel density and lighting direction are identical for every
+component on the sheet. A component drawn through a *different camera* — another elevation,
+projection, scale or key-light direction — is a defect.
+
+**A direction is never produced by moving the camera.** It is produced by rotating the *component*
+about its own local vertical axis beneath that fixed camera. **Camera azimuth is fixed; object yaw
+is what varies.** Those are two different quantities: "one camera" constrains the first and says
+nothing about the second, so it never means that every component faces the same way.
+
+### The object yaws this sheet requires
+
+[DEFINE:DIRECTIONAL_ROTATION]
+[IF:MULTI_DIRECTION]
+
+### Rotation, not redesign
+
+Each directional set is **one** physical component, turned — not several designs of it. Hold
+constant across its views: overall dimensions and proportions · joint, socket and attachment
+geometry · colour blocking and material regions · plate, panel and armour arrangement · identifying
+markings · the number and placement of every distinctive feature. Only what the rotation reveals or
+hides may change. A feature on the component's left rear stays on its left rear: it lands somewhere
+else on screen after the turn, and it must never migrate, multiply, vanish or be redrawn to make two
+views look different. The variety comes from rotation, not mutation.
+
+### Landmarks are the evidence that it rotated
+
+Every directional component has a **front axis** and a **rear axis** — the ends that would lead and
+trail if it moved forward. For this subject: [DEFINE:LANDMARK_DESCRIPTION]
+
+Those landmarks turn with the component. **If a component's front axis still points roughly the same
+way on screen in two of its views, that pair has failed** and must be redrawn.
+
+### Silhouette and occlusion carry the direction
+
+- Reduced to flat black silhouettes, the views would still be individually identifiable. Direction
+  comes from rotated geometry, never from different highlights, markings, glow or rearranged small
+  details.
+- Rotation changes what is visible. A side view occludes the far side's features and foreshortens
+  what is left of the front. A rear view hides most of what a front view presented and gives the
+  rear surfaces the room they lose there. **A rear view showing as much of the front as the front
+  view does is a failed rotation**, not a stylistic choice.
+- **A mirrored copy is not a rotation.** Mirroring flips handedness in the image without exposing a
+  single surface that turning the component would reveal, so it may never stand in for a turned view.
+- **Rotation never swaps anatomical left and right.** A right-side view is this same subject turned
+  until its right side faces the camera; asymmetric features stay on the side of the subject they
+  belong to at every yaw.
+
+Each of these is the easy way out of the rules above, and each is a defect: two views of one
+component facing effectively the same way · a "side" view that is the three-quarter view with
+altered details · a rear view still presenting its face or front · a view produced by mirroring
+another · a view produced by moving the camera · direction signalled by changing details while the
+orientation stays put.
+
+### What "primary assembly direction" means
+
+It is the direction for every component the inventory does **not** give a direction of its own, and
+the direction the assembled pose faces. It is not a house style for the sheet. **Wherever section 4
+names a direction for a component, that direction wins outright** — never pull a directional
+component back towards the primary assembly direction because the rest of the sheet uses it.
+[/IF]
 
 ---
 
@@ -132,9 +199,9 @@ angle from its neighbours is a defect, not variety.
 
 [DEFINE:COMPONENT_BREAKDOWN]
 
-Each entry produces **exactly one** visible component. Do not merge entries, substitute duplicates,
-add filler, or omit entries. Do not draw an assembled figure anywhere on the sheet, including as a
-reference or key.
+Draw every entry in full, and one separate visible component for each item it names — an entry
+marked **×N** names N of them. Do not merge entries, substitute duplicates, add filler, or omit
+entries. Do not draw an assembled figure anywhere on the sheet, including as a reference or key.
 
 ### Placement is the only identity map
 
@@ -175,7 +242,9 @@ were the only one present.
 ### Mirroring
 Left and right versions are mirrored in silhouette but redrawn for their own side. Asymmetric
 details stay on the correct side rather than flipping with the mirror — a holstered sidearm does
-not swap hips between the left and right leg sets.
+not swap hips between the left and right leg sets. **This is the only mirroring the sheet permits:**
+a left piece and a right piece are two different parts, whereas a direction is a rotation, and
+section 3 forbids producing one by mirroring another.
 [/IF]
 [IF:SOCKETS]
 
@@ -213,6 +282,10 @@ Every component belongs to the **same single subject**. Hold constant across all
 silhouette language and proportion · joint and attachment geometry · clothing and structural
 regions · primary colour blocking · large identifying accents · material treatment.
 
+Where a component appears at more than one object yaw, it is one persistent three-dimensional form
+seen after a turn — every feature stays attached to the same physical region of it, as section 3
+requires.
+
 ---
 
 ## 8. EXCLUSIONS
@@ -241,12 +314,29 @@ Before delivering, verify:
 2. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 3. No text or labels anywhere.
 4. Components appear in the exact order the inventory lists them.
-5. One camera and one scale across every component.
+5. One camera, one scale and one light direction across every component — nothing on the sheet was
+   drawn through a camera that moved.
 [IF:RIG_MODE=CUTOUT_RIG]
 6. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 7. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[/IF]
+[IF:MULTI_DIRECTION]
+
+### Directional audit
+
+Then, for every component the inventory asks for in more than one direction, trace its front axis in
+each of its views and confirm:
+
+- The front axis points a visibly different way in each view.
+- The side view reads as a side, not as a second three-quarter view.
+- The rear view hides most of what the front view presented, and shows rear surfaces in its place.
+- Every view is the same geometry at the same scale through the same unmoved camera, differing by
+  rotation rather than by redesign.
+
+If two views of one component still face effectively the same way, **the sheet has failed**. Redraw
+that component at the object yaw section 3 gives it rather than delivering the sheet.
 [/IF]
 [IF:EMIT_MANIFEST]
 

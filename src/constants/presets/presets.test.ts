@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { componentCountFor } from '../../utils/componentSet.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
-import { COMPONENT_COUNTS, LIGHTING_TEXT } from '../promptText/index.ts';
+import { COMPONENT_COUNTS, LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
 
 /**
@@ -20,6 +22,18 @@ describe('every shipped preset', () => {
     expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]/);
     expect(prompt).not.toContain('DEFINED');
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${preset.category}`);
+  });
+
+  it.each(PRESETS)('$name stays inside what one generation delivers', (preset) => {
+    // The mode counts alone are checked in `promptCompiler.test.ts`; this checks the number a
+    // preset *actually* asks for, which its additional anatomy adds to. A mode already at the
+    // ceiling has no headroom, and 111 components was deleted outright for exactly this reason —
+    // a request past the ceiling comes back as a plausible subset with the rest merged or dropped.
+    const anatomy = parseAdditionalAnatomy(preset.subject.additional_anatomy);
+    expect(
+      componentCountFor(preset.output.directionalMode, anatomy),
+      `${preset.name} exceeds the practical ceiling`,
+    ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
   });
 });
 

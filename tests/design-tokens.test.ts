@@ -83,6 +83,23 @@ describe('design tokens', () => {
     expect(stylesheet).toContain('color-scheme: dark');
   });
 
+  it('keeps documentation out of the content scan', () => {
+    // Tailwind reads every non-ignored file as a potential template. The preserved original
+    // application and CLAUDE.md's own design-token table — whose *"Not"* column names the stock
+    // palette classes (`bg-slate-…`, `text-cyan-…`) — between them emitted 43 stock-palette
+    // utilities no component references.
+    //
+    // The bytes are the small half. The real cost is that a component reaching for a stock slate
+    // instead of `bg-foundry-800` would have rendered correctly, which defeats the one mechanism
+    // that normally catches a non-token class: an unknown utility emits no CSS at all. Losing
+    // either directive brings that back silently.
+    //
+    // The suffixes above are elided on purpose: a full class name written in this comment is
+    // itself a candidate, and this file is scanned.
+    expect(stylesheet).toContain('@source not "../docs/todo/sprite-gubbins.html"');
+    expect(stylesheet).toContain('@source not "../**/*.md"');
+  });
+
   it('neutralises motion for users who asked their OS for less of it', () => {
     // The single catch-all in index.css is what makes every future animation reduced-motion
     // safe without each call site remembering. Losing it is silent for most users and

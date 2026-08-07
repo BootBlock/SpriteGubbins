@@ -15,6 +15,8 @@ export const OUTPUT_TOOLTIPS = {
   lightingModel:
     'Key light angle and shadow treatment. Flat neutral albedo is what a game engine wants, because it lights the sprite itself.',
   aspectRatio: 'The sheet canvas shape, passed to the generator so it does not crop the layout.',
+  componentBudget:
+    'The most components you want one generation asked for. Around forty is what current models deliver before they start merging or dropping pieces. Exceeding it is reported in the studio and never changes the prompt — the sheet is not trimmed behind your back. Set 0 for no cap.',
   targetModel:
     'Which generator the prompt is written for. This changes the shape of the output, not just its wording — a reasoning contract, command flags, a negative-prompt block, or a directive prefix.',
 
@@ -26,6 +28,8 @@ export const OUTPUT_TOOLTIPS = {
     'Degrees above the horizon. Defaults to what the projection implies; override it when the game has a specific ground read.',
   directions:
     'Which facings the sheet covers. For a cut-out rig this is the run list — generate one sheet per direction and tie them together with an identity lock.',
+  primaryDirection:
+    'Which facing of that run list this sheet is for. It sets the assembly direction and the depth order — which arm renders in front of the torso changes with the way the subject turns. Split the sheet to work through every facing in one pass.',
   backgroundKey:
     'What the components sit on. Magenta is the default because white bleeds into light-coloured edges and leaves alpha keying ambiguous — white armour on a white field has no recoverable boundary.',
   spriteTargetSize:

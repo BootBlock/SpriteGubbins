@@ -2,13 +2,10 @@ import {
   ASPECT_TEXT,
   ASSEMBLY_POSES,
   BACKGROUND_KEY_TEXT,
-  COMPONENT_BREAKDOWNS,
-  COMPONENT_COUNTS,
   DEPTH_ORDER_TEXT,
-  DIRECTION_COVERAGE,
-  DIRECTION_LISTS,
   describeDirections,
   JOINT_CAP_TEXT,
+  LANDMARK_TEXT,
   LIGHTING_TEXT,
   MIN_FEATURE_SIZE,
   OUTLINE_TEXT,
@@ -21,10 +18,13 @@ import {
 } from '../constants/promptText/index.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import type { OutputConfig } from '../types/output.ts';
-import type { Direction } from '../types/rendering.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { componentBreakdownFor, componentCountFor } from './componentSet.ts';
+import { directionalRotation } from './directionalRotation.ts';
 import { supportsManifest, wrapForModel } from './modelWrappers.ts';
+import { sheetDirections } from './sheetDirections.ts';
 import { applyConditionals, applyOptionals, assertBlocksResolved, substitute } from './templateEngine.ts';
 
 /**
@@ -46,16 +46,10 @@ export function generatePrompt(
   subject: SubjectDefinition,
   output: OutputConfig,
 ): string {
-  const [primaryDirection] = DIRECTION_LISTS[output.directions];
-
-  // The facings the *sheet* covers, which is not simply the set the user chose: each mode's inventory
-  // and component count are written for a particular number of directions. A single-direction mode
-  // takes the chosen set's first facing — the set is its run list, one sheet per direction — so a
-  // fifteen-piece cut-out sheet cannot also demand all eight compass points.
-  const coverage = DIRECTION_COVERAGE[output.directionalMode];
-  const coveredDirections: readonly [Direction, ...Direction[]] =
-    coverage === 'primary' ? [primaryDirection] : DIRECTION_LISTS[coverage];
-  const [assemblyDirection] = coveredDirections;
+  // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
+  // because the splitter labels its runs from the same answer, and two implementations of it would
+  // eventually disagree about the prompt one of them is describing.
+  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(output);
 
   // Sockets belong to a cut-out rig. The template's `[IF:SOCKETS]` block is a *sibling* of the rig
   // section rather than nested inside it — the engine's blocks are flat by contract — so the gate
@@ -67,10 +61,15 @@ export function generatePrompt(
   // endpoint for one just spends tokens on an instruction it will drop.
   const emitManifest = output.emitManifest && supportsManifest(output.targetModel);
 
+  // Additional anatomy is separate pieces by section 1's own rule, so it is counted and listed
+  // rather than folded into a neighbouring component — otherwise the sheet asks for more pieces than
+  // the contract says it has, which is the one arithmetic the whole template rests on.
+  const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
+
   const values: Record<string, string> = {
     CATEGORY: category,
-    COMPONENT_COUNT: String(COMPONENT_COUNTS[output.directionalMode]),
-    COMPONENT_BREAKDOWN: COMPONENT_BREAKDOWNS[output.directionalMode],
+    COMPONENT_COUNT: String(componentCountFor(output.directionalMode, anatomy)),
+    COMPONENT_BREAKDOWN: componentBreakdownFor(output.directionalMode, anatomy),
     ASSEMBLY_POSES: ASSEMBLY_POSES[output.directionalMode],
 
     RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
@@ -85,6 +84,11 @@ export function generatePrompt(
     PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
     CAMERA_ELEVATION: String(output.cameraElevation),
     DIRECTIONS_DESCRIPTION: describeDirections(coveredDirections),
+    // The fix for the defect that made a front-three-quarter, a right-side and a back-three-quarter
+    // head come back at the same angle: the facings are stated as object *yaws* beneath a camera the
+    // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
+    DIRECTIONAL_ROTATION: directionalRotation(coveredDirections),
+    LANDMARK_DESCRIPTION: LANDMARK_TEXT[category],
     PRIMARY_DIRECTION: assemblyDirection,
     DEPTH_ORDER_DESCRIPTION: DEPTH_ORDER_TEXT[assemblyDirection],
 
@@ -100,9 +104,19 @@ export function generatePrompt(
   // out again — a field added to `SUBJECT_FIELD_KEYS` reaches the template without a second edit.
   for (const key of SUBJECT_FIELD_KEYS) values[key.toUpperCase()] = subject[key];
 
+  // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
+  // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
+  // another in the inventory. It also empties for `NONE`, which drops the line entirely rather than
+  // putting a bare sentinel in the highest-weighted section.
+  values.ADDITIONAL_ANATOMY = anatomy.map(formatAnatomyComponent).join(', ');
+
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
     RIG_MODE: output.rigMode,
+    // The rules about views *disagreeing* — landmarks, occlusion, no mirroring, the directional
+    // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
+    // would be forty lines of instruction about a comparison the generator cannot make.
+    MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
     IDENTITY_LOCK: output.identityLock,
     SOCKETS: sockets,
     EMIT_MANIFEST: emitManifest ? 'yes' : '',

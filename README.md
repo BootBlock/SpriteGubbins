@@ -24,6 +24,42 @@ implementation blueprint is [docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-
 
 Requires Node 24 or newer (see [.nvmrc](.nvmrc)).
 
+**Quick start (Windows):** double-click **`Run.bat`**, or run **`.\Run.ps1`** in PowerShell.
+Either installs dependencies on first use, starts the app, and opens a browser at
+`http://127.0.0.1:5173/SpriteGubbins/` — but only once the server genuinely answers, so it never
+lands on a not-yet-ready page. Pass `preview` (`Run.bat preview` / `.\Run.ps1 preview`) to build
+the production bundle and serve *that* — real service worker, real offline behaviour — at
+`http://127.0.0.1:4173/SpriteGubbins/` instead.
+
+Stop the server with Ctrl+C in that window rather than the [X] button: [X] orphans the
+node/vite process tree and leaves it squatting on the port.
+
+**Launcher options:** `Run.bat` and `Run.ps1` take the same parameters — `Run.bat` just forwards
+to `Run.ps1`, which holds the actual logic. Pass them straight through (e.g. `Run.bat -Port 8080`,
+or `.\Run.ps1 -BindHost localhost`):
+
+| Option | Default | What it does |
+| --- | --- | --- |
+| `preview` | — | Build the production bundle and serve *that* (real service worker + offline) instead of the hot-reload dev server. |
+| `-BindHost <host>` | `127.0.0.1` | Host to bind and open. Use `localhost` to keep the `localhost` origin — Vite is then bound dual-stack for reliability, at the cost of a one-time Windows Firewall prompt and the dev server being visible on the LAN. `$env:SPRITE_GUBBINS_DEV_HOST` overrides the default. |
+| `-Port <n>` | `5173` dev / `4173` preview | Pin a specific port. It is used exactly as given — if something else holds it the launcher stops rather than quietly moving you elsewhere. Only the *default* port falls back to the next free one. |
+| `-Browser <exe\|path\|none>` | OS default | Open the app in a specific browser, or `none` to suppress the auto-open. Overrides the legacy `$env:BROWSER`. |
+| `-NoOpen` | off | Start the server without opening a browser — just print the URL (handy for headless boxes, scripting, or an already-open tab). |
+
+> **Why `127.0.0.1` and not `localhost`?** On Windows `localhost` resolves to both `::1` (IPv6)
+> and `127.0.0.1` (IPv4), but Vite binds only one of them; if the browser then tries the other
+> first it gets a connection-refused "unable to connect" page and you have to reload. Binding
+> *and* opening the same concrete address removes that race.
+
+> **Sharing port 5173 with the sibling Gubbins app?** The launcher recognises a running server by
+> *this* app's base path and page title, not merely by "something is listening" — so it will
+> never open Gubbins believing it to be Sprite Gubbins, and takes the next free port instead.
+> Browser storage is per-origin, and a different host or port is a different origin: a shuffled
+> port starts with an empty database. Pass `-Port` to pin one and keep coming back to the same
+> local data.
+
+Or use npm directly:
+
 ```bash
 npm install
 npm run dev        # http://localhost:5173/SpriteGubbins/

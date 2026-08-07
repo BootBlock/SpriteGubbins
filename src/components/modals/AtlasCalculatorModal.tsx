@@ -6,10 +6,12 @@ import {
   DEFAULT_ATLAS_CANVAS_SIZE,
   DEFAULT_ATLAS_PADDING,
 } from '../../constants/atlas.ts';
-import { COMPONENT_COUNTS } from '../../constants/promptText/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { componentCountFor } from '../../utils/componentSet.ts';
 import {
   buildEngineMetadata,
   calculateAtlasMetrics,
@@ -25,17 +27,20 @@ import { AtlasMetric } from './AtlasMetric.tsx';
 /**
  * Planning the texture the finished components will be packed into.
  *
- * Answers an engine question rather than a prompt question: given the component count the current
- * directional mode requires, how big can each cell be on a texture of this size, and does that
- * texture stay GPU-friendly? All of the arithmetic is in `utils/atlasCalculator.ts` — this component
- * chooses the inputs and displays the answers.
+ * Answers an engine question rather than a prompt question: given the component count the sheet asks
+ * for, how big can each cell be on a texture of this size, and does that texture stay GPU-friendly?
+ * All of the arithmetic is in `utils/atlasCalculator.ts` — this component chooses the inputs and
+ * displays the answers.
  *
  * The component count and the grid's width bias come from the studio's own configuration, so the
- * atlas being planned is always the atlas the prompt would produce.
+ * atlas being planned is always the atlas the prompt would produce — which is why the subject's
+ * additional anatomy is read here too. Those pieces are components like any other, and a grid short
+ * of a cell for each of them would not hold the sheet the prompt asks for.
  */
 export function AtlasCalculatorModal() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
+  const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const copyText = useClipboard();
 
@@ -45,7 +50,7 @@ export function AtlasCalculatorModal() {
   const config = {
     canvasSize,
     padding,
-    componentCount: COMPONENT_COUNTS[directionalMode],
+    componentCount: componentCountFor(directionalMode, parseAdditionalAnatomy(additionalAnatomy)),
     widthBias: widthBiasFor(aspectRatio),
   };
   const metrics = calculateAtlasMetrics(config);

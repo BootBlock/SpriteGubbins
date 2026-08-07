@@ -13,7 +13,6 @@ export {
   ASPECT_RATIO_CHOICES,
   BACKGROUND_KEY_CHOICES,
   DIRECTION_SET_CHOICES,
-  DIRECTIONAL_MODE_CHOICES,
   JOINT_CAP_STYLE_CHOICES,
   LIGHTING_MODEL_CHOICES,
   OUTLINE_STYLE_CHOICES,
@@ -25,5 +24,6 @@ export {
   RIG_MODE_CHOICES,
   SURFACE_DETAIL_CHOICES,
 } from './choices.ts';
+export { directionalModeChoices } from './directionalModeChoices.ts';
 export { OUTPUT_TOOLTIPS } from './tooltips.ts';
 export { DEFAULT_OUTPUT_CONFIG } from './defaults.ts';

@@ -325,3 +325,41 @@ declares worn details are painted on "unless listed under additional anatomy", w
 anatomy separate pieces, while §0 demands *exactly* N components and §4 lists exactly N. The
 template as written was implemented unchanged rather than inventing a resolution, so a subject with
 additional anatomy asks for more pieces than it counts.
+
+**(5) 2026-08-07 — All three open points closed by the maintainer; `baseline-prompt-new.md`
+corrected to match.** The two departures in (4) are no longer departures, and the additional-anatomy
+gap has a resolution:
+
+- **`TILESET_MODULAR` is 16.** The two missing tiles are named: the wall face gains **inner-left**
+  and **inner-right** corners, so its corner list matches the wall top's outer/inner pairing. This
+  was chosen over padding the count with two more floor edge trims because it closes a real hole —
+  with only left/right face corners a concave wall junction had no tile, and an inner corner is
+  neither a mirror nor a rotation of an outer one, so nothing in the set stood in for it. Floor
+  trims, being rotatable in-engine, would have been padding. §6 of `baseline-prompt-new.md` now
+  enumerates sixteen and its prose is finally true.
+- **`DIRECTIONS.CUSTOM` is deleted from the specification** rather than built, so the document and
+  the code agree. Beyond the reasons already recorded, a free list breaks the closed `Direction`
+  union open and with it `DEPTH_ORDER_TEXT`'s exhaustiveness — an arbitrary facing has no
+  depth-order answer.
+- **Additional anatomy extends the inventory.** Named anatomy becomes real entries at the end of §4
+  and real additions to the count, rather than being folded into a neighbouring component (which
+  would have resolved the contradiction by deleting the capability — a tail that cannot be its own
+  rigid segment is useless to a cut-out rig) or split onto a follow-up sheet (which cannot share
+  pivot registration with the body). Counting it required the field to *be* countable, so the
+  option pools now carry explicit `×N` multipliers and `NONE` is a sentinel that emits no line at
+  all. Section 4's heading moved out of the static per-mode breakdowns into `componentSet.ts` for
+  the same reason the count exists: a heading reading "15 in total" above a section 0 demanding 18
+  is exactly the disagreement a model resolves arbitrarily.
+
+One shipped archetype changed as a consequence, and it is worth recording rather than leaving to a
+diff. **Cybernetic Attack Drone moves from `CORE_DIRECTIONAL_VARIANTS` to
+`SINGLE_DIRECTION_POSE_LIBRARY`.** Its `Double Pair Wings` used to be prose that cost nothing;
+counted, it is four components, and 43 + 4 is past the ceiling §8.4 established while 37 + 4 is not.
+The mode gave way rather than the wings, because a winged creature is the case additional anatomy
+exists to serve — and it is the only CREATURE archetype, so dropping the wings would have left the
+capability with no worked example in that category. The ceiling is now enforced against every
+shipped preset rather than against the mode counts alone.
+
+Cross-origin isolation was reviewed in the same pass and **kept**. It is not what makes SQLite work
+— that is the worker — but COEP `require-corp` is the only thing actually enforcing the
+"no cross-origin subresource" rule, and the cost is one reload on a first visit. No code changed.
