@@ -7,7 +7,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'species',
       label: 'Creature Class',
-      tooltip: 'Defines monster classification and limb layout (quadruped, insectoid, void entity).',
+      tooltip:
+        'The monster classification, which fixes the limb layout everything else hangs off: a quadruped, an insectoid and a void entity break down into completely different component sets. Set this before the anatomy base, which it constrains.',
       options: [
         'Beast / Quadruped',
         'Mechanical Automaton',
@@ -24,7 +25,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'gender',
       label: 'Form Variant',
-      tooltip: 'Specifies biological hierarchy or rank (alpha leader, worker minion, hive queen).',
+      tooltip:
+        'Where this specimen sits in its own hierarchy. Rank reads as scale and ornament — a hive queen carries more mass, more silhouette and more distinguishing marks than a drone of the same species without becoming a different creature.',
       options: [
         'Apex Alpha',
         'Drone / Minion',
@@ -39,7 +41,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'age',
       label: 'Vitality State',
-      tooltip: 'Controls battle wear, corruption, or elemental intensity.',
+      tooltip:
+        'The creature’s condition — battle wear, corruption, or how hard its elemental core is running. It shifts surface damage and emissive intensity across every component at once, which is what makes freshly-spawned and ancient variants of one design read as a set.',
       options: [
         'Prime Ferocity',
         'Ancient Weathered',
@@ -53,7 +56,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'role',
       label: 'Combat Behaviour',
-      tooltip: 'Informs creature stance, mandible open state, and aggressive pose capability.',
+      tooltip:
+        'What the creature does in a fight. It informs the rest stance the components are drawn in — mandibles open or closed, weight forward or coiled — and therefore how much of the pose is already baked into the pieces before you animate them.',
       options: [
         'Ambusher Pouncer',
         'Frontline Tank Swarmer',
@@ -68,7 +72,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'setting',
       label: 'Habitat / Theme',
-      tooltip: 'Establishes environment context for biological camouflage and shell textures.',
+      tooltip:
+        'Where the creature lives. Habitat drives camouflage colouring and shell texture more strongly than any single colour field does, because it tells the generator what the animal evolved against.',
       options: [
         'Alien Hive Core',
         'Volcanic Caverns',
@@ -83,7 +88,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'build',
       label: 'Mass & Frame',
-      tooltip: 'Defines carapace thickness, spine arrangement, and physical weight distribution.',
+      tooltip:
+        'The frame the mass is carried on: carapace thickness, spine arrangement, weight distribution. It sets each component’s footprint, and a low-slung quadruped packs into an atlas very differently from a towering winged fiend.',
       options: [
         'Low-Slung Quadruped',
         'Huge Heavy Carapace',
@@ -97,7 +103,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'silhouette',
       label: 'Spines & Silhouette',
-      tooltip: 'Focuses outward spikes, shell plates, and distinctive creature outline.',
+      tooltip:
+        'The outward profile — spikes, shell plates, membranes. This is the read at gameplay distance, and on a creature it is usually the only cue separating a dangerous variant from a harmless one before it attacks.',
       options: [
         'Jagged Dorsal Spines',
         'Segmented Shell Plates',
@@ -111,7 +118,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'face_head',
       label: 'Mandibles & Sensory',
-      tooltip: 'Configures eyes, fangs, mouth parts, and sensory feelers.',
+      tooltip:
+        'Eyes, fangs, mouth parts and sensory organs. On a monster the head carries the threat signal, so it pays to be specific — compound insect eyes and eyeless sensing slits produce entirely different silhouettes at the same size.',
       options: [
         'Triple Jaw Mandibles',
         'Compound Insect Eyes',
@@ -125,7 +133,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'anatomy',
       label: 'Anatomy Base',
-      tooltip: 'Controls how monster body parts are broken down into isolated components.',
+      tooltip:
+        'The body plan the component breakdown follows. It decides how many legs, segments or tentacles get their own sprite slots, so match it to the creature class above — a mismatched plan fights the design and produces parts that cannot be assembled.',
       options: [
         'QUADRUPED BEAST',
         'HEXAPOD INSECT',
@@ -138,7 +147,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'clothing',
       label: 'Harness / Augments',
-      tooltip: 'Adds mounted weaponry, saddle straps, or cybernetic implants to the creature.',
+      tooltip:
+        'Mounted weaponry, restraint chains, saddles or cybernetics fitted to the creature. Everything offered here reads as imposed on the animal rather than grown by it, so choose NONE for a purely biological beast.',
       options: [
         'NONE',
         'Mounted Energy Cannons',
@@ -151,7 +161,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'worn_details',
       label: 'Biological Marks',
-      tooltip: 'Specifies bioluminescence patterns, acid drips, or scar tissue.',
+      tooltip:
+        'Bioluminescence, acid drips, scarring, shell cracks — the marks the creature carries. They are what sell the surface as living tissue rather than a painted shell, and also the first details to be lost once the sprite is scaled down.',
       options: [
         'Bioluminescent Veins',
         'Battle Scars & Missing Scales',
@@ -165,7 +176,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'primary_colours',
       label: 'Primary Colours',
-      tooltip: 'Main body/hide base colors.',
+      tooltip:
+        'The base hide, shell or carapace colours carried across the whole creature. Two colours with a clear value gap survive downscaling; a single flat hide colour tends to collapse into a silhouette once the sprite is small.',
       options: [
         'Obsidian Black & Deep Purple',
         'Toxic Hive Yellow #EAB308 & Brown',
@@ -179,7 +191,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'accent_colours',
       label: 'Accent Colours',
-      tooltip: 'High-visibility bio-luminescent or warning accent colors.',
+      tooltip:
+        'The bioluminescent or warning colours — the parts meant to be seen and understood instantly. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
       options: [
         'Acidic Lime Green #84CC16',
         'Magma Orange Glow #F97316',
@@ -193,7 +206,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'materials',
       label: 'Surface Shell',
-      tooltip: 'Defines hide texture (wet chitin, rocky scales, translucent slime).',
+      tooltip:
+        'The hide texture and how light behaves on it: wet chitin catches a hard highlight, rocky scale scatters it, translucent jelly needs light passing through. This is often the only thing separating two creatures that share a silhouette.',
       options: [
         'Hard Chitin Shell & Wet Membranes',
         'Molten Rock & Obsidian',
@@ -207,7 +221,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'exclusions',
       label: 'Explicit Exclusions',
-      tooltip: 'Prevents unwanted human features or props from appearing on monster sheets.',
+      tooltip:
+        'Negative rules keeping human features, gear and scene dressing off a monster sheet. Riders and floor shadows are worth excluding by name — each attaches something to the creature that cannot be cut away once it is drawn.',
       options: [
         'No human clothing, no weapons',
         'No wings, no extra eyes',
@@ -219,7 +234,8 @@ export const CREATURE: CategoryDefinition = {
     {
       key: 'additional_anatomy',
       label: 'Extra Appendages',
-      tooltip: 'Requests separate tail, stingers, or blade-arms for modular animation.',
+      tooltip:
+        'Extra appendages — a sting tail, blade arms, a second wing pair — requested as their own sprite slots so they can be animated independently of the body. Leave this as NONE unless the part has motion of its own.',
       options: [
         'NONE',
         'Scorpion Sting Tail',

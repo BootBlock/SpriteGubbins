@@ -34,9 +34,11 @@ export function PresetsTab() {
 
   return (
     <div className="animate-fade-in space-y-6">
-      <section className="flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-foundry-700 bg-foundry-800/80 p-6 shadow-xl">
+      <section className="glass-panel flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-foundry-700 p-6 shadow-xl">
         <div>
-          <h2 className="text-lg font-bold text-ink">Preset Archetype Library</h2>
+          <h2 className="bg-gradient-to-r from-ink to-accent-soft bg-clip-text text-lg font-bold text-transparent">
+            Preset Archetype Library
+          </h2>
           <p className="text-xs text-ink-muted">
             Templates spanning characters, creatures, objects, items and buildings.
           </p>

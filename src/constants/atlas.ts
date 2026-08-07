@@ -42,7 +42,7 @@ export const DEFAULT_ATLAS_PADDING: AtlasPadding = 4;
 
 export const ATLAS_TOOLTIPS = {
   canvasSize:
-    'Target texture atlas dimensions. 2048px suits high-definition mobile and desktop engines; larger textures cost VRAM on every platform that loads them.',
+    'The dimensions of the finished texture every component gets packed into. Each cell size below is derived from it, so raising this buys resolution per component and costs VRAM on every platform that loads the texture — 2048 px is the usual ceiling for mobile, 4096 px for desktop. The power-of-two check below flags sizes some GPUs still sample faster.',
   padding:
-    'Inner padding around each sprite cell, which stops neighbouring cells bleeding into one another when the texture is filtered or mipmapped by the engine.',
+    'The gutter left around each cell, in pixels. It stops neighbouring cells bleeding into one another when the engine filters or mipmaps the texture — the symptom is a faint edge of the sprite next door appearing as the camera pulls back. 4 px survives a full mip chain; 0 px is only safe with point filtering and no mipmaps.',
 } as const;

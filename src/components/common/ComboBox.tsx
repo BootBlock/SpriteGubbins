@@ -66,7 +66,7 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
           }}
           onFocus={combo.open}
           onKeyDown={combo.handleKeyDown}
-          className="w-full rounded-xl border border-foundry-600 bg-foundry-950 py-2 pr-9 pl-3 font-sans text-xs text-ink shadow-inner transition-colors focus:border-accent"
+          className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-3 font-sans text-xs text-ink shadow-inner transition-colors duration-200 hover:border-accent/40 focus:border-accent"
         />
 
         <button
@@ -95,7 +95,7 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
           ref={listboxRef}
           role="listbox"
           aria-label={`${label} suggestions`}
-          className="animate-fade-in absolute z-50 mt-1.5 flex max-h-56 w-full flex-col gap-0.5 overflow-y-auto rounded-xl border border-accent/60 bg-foundry-950 p-1.5 shadow-2xl"
+          className="glass-float animate-fade-in absolute z-50 mt-1.5 flex max-h-56 w-full flex-col gap-0.5 overflow-y-auto rounded-xl p-1.5"
         >
           {options.map((option, index) => (
             <ComboBoxOption

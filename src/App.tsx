@@ -64,6 +64,12 @@ export function App() {
 
   return (
     <div className="relative flex min-h-dvh flex-col bg-foundry-900 text-ink">
+      {/*
+        Four decorative layers, painted back to front: the aurora wash that gives the page depth,
+        the technical dot grid over it, and the two orbs drifting on top out of phase. All fixed,
+        all `pointer-events-none`, all hidden from assistive technology — none of it is content.
+      */}
+      <div aria-hidden="true" className="animate-aurora pointer-events-none fixed inset-0 bg-aurora" />
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-40" />
       <div
         aria-hidden="true"

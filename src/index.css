@@ -76,12 +76,20 @@
    * drifts the two background glows (the second runs slower and in reverse so they never
    * synchronise), `shimmer` fills a loading placeholder. The reduced-motion block at the
    * bottom of this file neutralises all of them in one place.
+   *
+   * The last three are the dynamic layer: `tooltip-in` materialises the glass guidance card,
+   * `aurora` breathes the ambient wash behind the page, and `scan-beam` runs a cyan sweep along
+   * the prompt panel's top edge — cyan because that edge is claiming the compiler is live, which
+   * is the one thing cyan is reserved for.
    */
   --animate-fade-in: fade-in 300ms var(--ease-emphasized) forwards;
   --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
   --animate-float-orb: float-orb 10s ease-in-out infinite;
   --animate-float-orb-slow: float-orb 14s ease-in-out infinite reverse;
   --animate-shimmer: shimmer 3s linear infinite;
+  --animate-tooltip-in: tooltip-in 180ms var(--ease-emphasized) forwards;
+  --animate-aurora: aurora 24s ease-in-out infinite;
+  --animate-scan-beam: scan-beam 4s linear infinite;
 
   /* The signature easing — a decelerating curve used for anything that enters or expands. */
   --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
@@ -124,6 +132,48 @@
     }
     to {
       background-position: 200% 0;
+    }
+  }
+
+  /*
+   * The glass card resolving out of its own blur. `filter` rather than a slide, because the card
+   * is translucent: fading a blurred pane into focus reads as glass settling, where a translation
+   * would just look like a panel arriving. Nothing here touches `transform` — the tooltip is
+   * centred with a translate utility, and an animated `transform` would overwrite it.
+   */
+  @keyframes tooltip-in {
+    from {
+      opacity: 0;
+      scale: 0.94;
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      scale: 1;
+      filter: blur(0);
+    }
+  }
+
+  /* The ambient wash, breathing. Slow and low-contrast enough to register only peripherally. */
+  @keyframes aurora {
+    0%,
+    100% {
+      opacity: 0.5;
+      transform: translate3d(0, 0, 0) scale(1);
+    }
+    50% {
+      opacity: 0.85;
+      transform: translate3d(0, -2%, 0) scale(1.08);
+    }
+  }
+
+  /* A highlight travelling the width of its (overflow-hidden) rail, once every cycle. */
+  @keyframes scan-beam {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
     }
   }
 }
@@ -197,6 +247,81 @@
     transparent 1px
   );
   background-size: 28px 28px;
+}
+
+@utility bg-aurora {
+  /*
+   * The ambient wash the two drifting orbs sit inside: three wide, low-opacity pools of the
+   * palette's own accents, positioned rather than tiled. Indigo dominates and cyan is a thin
+   * cool edge — the same hierarchy the accents carry everywhere else, at a fraction of the
+   * strength, so it reads as depth behind the page rather than as a coloured background.
+   */
+  background-image:
+    radial-gradient(
+      60% 50% at 12% -5%,
+      color-mix(in oklab, var(--color-accent) 26%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 45% at 88% 8%,
+      color-mix(in oklab, var(--color-neon-deep) 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      55% 45% at 50% 108%,
+      color-mix(in oklab, var(--color-accent-soft) 16%, transparent),
+      transparent 70%
+    );
+}
+
+@utility glass-panel {
+  /*
+   * The shared glass recipe: a translucent foundry surface that blurs and slightly saturates
+   * whatever passes behind it, lit by a hairline of light along its top edge.
+   *
+   * One definition rather than `bg-foundry-800/80 backdrop-blur-lg` repeated at a dozen call
+   * sites, because the three properties have to move together — raise the opacity and the blur
+   * stops reading, drop it and the text loses its ground. Call sites still bring their own
+   * `border` and `shadow`; this owns only the surface.
+   *
+   * `-webkit-backdrop-filter` is not redundant: Safari still ships the prefixed property only,
+   * and without it the panel is simply flat there rather than broken, which is the kind of
+   * regression nobody notices.
+   */
+  background-color: color-mix(in oklab, var(--color-foundry-800) 72%, transparent);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklab, white 6%, transparent) 0%,
+    transparent 40%
+  );
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+@utility glass-float {
+  /*
+   * The heavier glass, for the two surfaces that float *above* a panel rather than resting on the
+   * page: the tooltip's guidance card and the combo box's suggestion list. Both sit over dense
+   * form controls, so this blurs harder than `glass-panel` and carries its own indigo bloom to
+   * lift it off the panel beneath.
+   *
+   * The outline is the first `box-shadow` ring rather than a `border` property, so a floating
+   * surface can be inset-lit and outlined without a second element — which also means nothing here
+   * fights a `shadow-*` utility, because neither call site uses one.
+   */
+  background-color: color-mix(in oklab, var(--color-foundry-900) 78%, transparent);
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--color-accent) 18%, transparent) 0%,
+    transparent 55%
+  );
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-accent) 40%, transparent),
+    0 20px 45px -12px color-mix(in oklab, var(--color-foundry-950) 95%, transparent),
+    0 0 28px -6px color-mix(in oklab, var(--color-accent) 35%, transparent),
+    inset 0 1px 0 color-mix(in oklab, white 14%, transparent);
 }
 
 @utility shimmer-surface {

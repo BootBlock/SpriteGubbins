@@ -22,7 +22,7 @@ export function Toast() {
       className="pointer-events-none fixed inset-x-4 bottom-6 z-50 flex justify-end sm:inset-x-auto sm:right-6"
     >
       {message !== null && (
-        <div className="animate-fade-in pointer-events-auto flex items-center gap-3 rounded-2xl border border-accent-soft/30 bg-accent-strong px-5 py-3 shadow-2xl">
+        <div className="animate-fade-in pointer-events-auto flex items-center gap-3 rounded-2xl border border-accent-soft/40 bg-gradient-to-r from-accent-strong to-accent px-5 py-3 shadow-2xl backdrop-blur-xl">
           <span className="text-xs font-semibold text-ink">{message}</span>
           <button
             type="button"

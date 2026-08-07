@@ -18,7 +18,7 @@ export function TargetModelSelector() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
 
   return (
-    <section className="animate-fade-in rounded-2xl border border-foundry-700 bg-foundry-800/80 p-4 shadow-xl backdrop-blur-lg">
+    <section className="animate-fade-in glass-panel rounded-2xl border border-foundry-700 p-4 shadow-xl transition-colors duration-300 hover:border-accent/40">
       <SelectField
         label="3. Target AI Generator"
         tooltip={OUTPUT_TOOLTIPS.targetModel}

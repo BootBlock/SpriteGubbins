@@ -59,7 +59,7 @@ export function AtlasCalculatorModal() {
       title="Sprite Atlas & Grid Calculator"
       icon="📊"
       onClose={toggleAtlasModal}
-      panelClassName="max-h-full w-full max-w-xl overflow-y-auto rounded-2xl border border-foundry-700 bg-foundry-800 shadow-2xl"
+      panelClassName="glass-panel max-h-full w-full max-w-xl overflow-y-auto rounded-2xl border border-foundry-700 shadow-2xl"
     >
       <div className="space-y-4 p-6 text-xs">
         <div className="grid gap-3 sm:grid-cols-2">

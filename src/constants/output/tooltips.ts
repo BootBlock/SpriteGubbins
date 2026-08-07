@@ -1,47 +1,56 @@
-/** Guidance shown against each control, keyed to the control it explains. */
+/**
+ * Guidance shown against each control, keyed to the control it explains.
+ *
+ * Each entry says three things in order: what the setting *is*, what it changes about the compiled
+ * prompt, and how to choose — naming real options rather than describing them in the abstract. The
+ * identifiers quoted here are the ones `constants/output/choices.ts` offers, so a reader can match
+ * the advice to the list in front of them.
+ */
 export const OUTPUT_TOOLTIPS = {
   category:
-    'The kind of thing being described. Changes the whole field vocabulary and the option pools behind it, so switching resets the subject.',
+    'The kind of thing being described. It swaps the entire field vocabulary and the option pools behind it — the first field is “Species / Archetype” for a character and “Structure Type” for a building — so switching resets the subject to that category’s defaults. Choose it before filling anything else in.',
 
   directionalMode:
-    'What the sheet delivers, and therefore how many components it asks for. A cut-out rig is one direction per sheet — eight directions is 120 pieces, far past what any model produces in one generation.',
+    'What the sheet has to deliver, and therefore how many components the prompt asks for. CORE_DIRECTIONAL_VARIANTS is the recommended default; CUTOUT_RIG_SINGLE_DIRECTION covers one facing per sheet, so eight directions means eight runs rather than one 120-piece sheet no generator will return in a single pass. The count beside each option is the same number the prompt’s contract and self-audit state.',
   surfaceDetail:
-    'How much internal seam and fold complexity to draw, while still respecting the palette limit.',
+    'How much internal seam, panel and fold complexity to draw on each component, while still respecting the palette limit. MINIMAL keeps base colours and essential joints, which is what a small sprite needs before detail turns to noise; CLEAN_PRODUCTION is the usual choice; TEXTURED is for large pieces that will be seen close up.',
   resolutionProfile:
-    'The scale a full figure is drawn at. Independent of render style — a painted sheet and a pixel sheet can share a resolution.',
+    'The scale a full figure is drawn at, given as a share of the sheet height rather than in pixels, so it holds whatever canvas the generator returns. Independent of render style — a painted sheet and a pixel sheet can share a resolution. Pick CUSTOM when you have an exact component size in mind, and state it in Sprite Target Size.',
   paletteLimit:
-    'The total colour budget across the whole sheet. Painted and rendered styles usually want no budget at all.',
-  outlineStyle: 'How component boundaries are drawn: a darker local contour, crisp black, or no outline.',
+    'The total colour budget across the whole sheet, which is what keeps every component looking like it came from one set. STRICT_32_COLOR and RESTRAINED_64_COLOR suit pixel work; painted, cel-shaded and 3D styles usually want UNRESTRICTED, because a hard colour count fights the blending they depend on.',
+  outlineStyle:
+    'How a component’s boundary is drawn where it meets the background. DARK_LOCAL_CONTOUR — a 1px darker shade of each local colour — keeps parts separable without flattening them; PURE_BLACK_OUTLINE gives the harder retro read; OUTLINE_LESS_ALBEDO leans on value and hue contrast alone, which needs a busy scene to sit against.',
   lightingModel:
-    'Key light angle and shadow treatment. Flat neutral albedo is what a game engine wants, because it lights the sprite itself.',
-  aspectRatio: 'The sheet canvas shape, passed to the generator so it does not crop the layout.',
+    'The key light angle and shadow treatment baked into the sprite. FLAT_NEUTRAL_ALBEDO is what a game engine wants, because the engine lights the sprite itself and a baked highlight would fight its own. Choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view.',
+  aspectRatio:
+    'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it. WIDE_16_9 fits the usual wide grid; TALL_9_16 suits one tall figure with its variants stacked; SQUARE_1_1 is the safest choice on targets that quietly re-frame anything else.',
   targetModel:
-    'Which generator the prompt is written for. This changes the shape of the output, not just its wording — a reasoning contract, command flags, a negative-prompt block, or a directive prefix.',
+    'Which generator the prompt is written for. This changes the shape of the output, not just its wording: a reasoning contract, command-line flags, a separate negative-prompt block or a directive prefix are added or dropped to match what the target actually reads. Set it before copying — the same configuration compiles differently for each one.',
 
   renderStyle:
-    'The drawing technique. The pixel-discipline rules — deliberate clusters, no anti-aliasing, no microtexture — apply only to the two pixel styles; everything else gets surface-consistency rules instead.',
+    'The drawing technique the whole sheet is executed in. The pixel-discipline rules — deliberate clusters, no anti-aliasing, no microtexture — are emitted only for PIXEL_ART and RETRO_PIXEL_ART; every other style gets surface-consistency rules instead. CLAY_RENDER and SILHOUETTE_ONLY are validation passes: run one to check volume or readability before committing to a finished style.',
   projection:
-    'How the camera projects the subject. One named projection, because asking for "3/4 top-down dimetric/isometric" names three mutually exclusive things and a model resolves the ambiguity differently every run.',
+    'How the camera projects the subject. Exactly one named projection is emitted, because asking for “3/4 top-down dimetric/isometric” names three mutually exclusive things and a model resolves the ambiguity differently every run. Match the engine: TRUE_ISOMETRIC for a 2:1 diamond grid, ORTHOGRAPHIC_SIDE for a platformer, THREE_QUARTER_TOPDOWN for the usual action-RPG read.',
   cameraElevation:
-    'Degrees above the horizon. Defaults to what the projection implies; override it when the game has a specific ground read.',
+    'Degrees above the horizon, from 0 at eye level to 90 directly overhead. It defaults to whatever the chosen projection implies, so override it only when the game has a specific ground read to match — raising it shows more of the floor plane and foreshortens the figure’s height.',
   directions:
-    'Which facings the sheet covers. For a cut-out rig this is the run list — generate one sheet per direction and tie them together with an identity lock.',
+    'Which facings the sheet covers. For a cut-out rig this is the run list rather than the sheet contents: generate one sheet per direction and tie them together with an identity lock. THREE_CLASSIC is the cheapest set that still reads as fully turnable, because the right side mirrors for the left.',
   backgroundKey:
-    'What the components sit on. Magenta is the default because white bleeds into light-coloured edges and leaves alpha keying ambiguous — white armour on a white field has no recoverable boundary.',
+    'What the components sit on, so they can be cut out afterwards. Magenta is the default because white bleeds into light-coloured edges and leaves alpha keying ambiguous — white armour on a white field has no recoverable boundary. Pick TRANSPARENT only if the target genuinely returns alpha; most return a flat matte whatever you ask for.',
   spriteTargetSize:
-    'An explicit pixel target, e.g. "48 × 96 px". The resolution profile only says roughly; this says exactly. Leave empty to omit the line.',
+    'An explicit pixel target for a single component, e.g. “48 × 96 px”. The resolution profile only says roughly how large a figure is; this says exactly, and is what the CUSTOM profile expects to find. Leave it empty and the line is omitted from the prompt entirely rather than sent blank.',
 
   rigMode:
-    'What the components are for. A cut-out rig adds rest-orientation, pivot-registration, overlap and depth-order rules that a hand-assembled pose library does not need.',
+    'What the components are for once they leave the sheet. CUTOUT_RIG adds rest-orientation, pivot-registration, overlap and depth-order rules, because those pieces get bound to bones and rotated at runtime; POSE_LIBRARY assumes you assemble poses by hand and needs none of them; NONE suits tilesets and props that never articulate.',
   jointCapStyle:
-    'The shape of the cap at each joint end — and therefore where the pivot is, since the pivot is the centre of that cap.',
+    'The shape drawn at each joint end — and therefore where the pivot is, since the pivot is the centre of that cap. ROUNDED rotates cleanly through any angle; SQUARED reads better on mechanical parts but shows its corners past roughly 30°; TAPERED suits organic limbs that narrow towards the joint.',
   overlapMargin:
-    'How far each piece extends past its pivot centre. Pieces that butt together exactly show a gap the instant the joint rotates.',
+    'How far each piece extends past its pivot centre into its neighbour. Pieces that butt together exactly show a gap the instant the joint rotates, so HALF_CAP is the safe default; FULL_CAP hides deeper rotation at the cost of a visibly thicker joint.',
   sockets:
-    'Regions to keep clear of fine detail so equipment can be overlaid later, e.g. "head, chest, back, hand_left, hand_right". Leave empty for none.',
+    'Regions to keep clear of fine detail so equipment can be overlaid later, e.g. “head, chest, back, hand_left, hand_right”. The prompt asks for those areas to stay flat and unbusy — it does not ask for anything to be drawn there. Leave empty for none.',
 
   identityLock:
-    'A short digest of an accepted sheet, carried into the next one so it depicts the same individual. Concrete countable attributes reproduce — "three amber lights in a vertical row" survives, "high-tech detailing" does not.',
+    'A short digest of an already-accepted sheet, carried into the next one so it depicts the same individual. Concrete countable attributes reproduce — “three amber lights in a vertical row” survives a regeneration, “high-tech detailing” does not. This is what holds a per-direction run series together.',
   emitManifest:
-    'Ask for a JSON manifest of grid positions, part names and pivots alongside the image. Only the conversational targets can return text with an image, so it is unavailable for the rest.',
+    'Ask for a JSON manifest of grid positions, part names and pivots alongside the image, so the sheet can be sliced without measuring it by hand. Only the conversational targets can return text and an image together; on the rest the option is unavailable and says so.',
 } as const;

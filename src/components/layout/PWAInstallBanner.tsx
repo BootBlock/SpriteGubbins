@@ -21,7 +21,7 @@ export function PWAInstallBanner() {
   if (installPrompt === null) return null;
 
   return (
-    <div className="animate-fade-in flex flex-wrap items-center justify-between gap-3 border-b border-accent/30 bg-accent/10 px-6 py-3">
+    <div className="animate-fade-in flex flex-wrap items-center justify-between gap-3 border-b border-accent/30 bg-accent/10 px-6 py-3 backdrop-blur-md">
       <p className="text-xs text-ink-muted">
         <span aria-hidden="true">📲</span> Install Sprite Gubbins to use it offline, with your prompt history
         kept on this device.

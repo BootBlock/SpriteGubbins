@@ -15,7 +15,10 @@ interface FieldGroupProps {
 function FieldGroup({ heading, children }: FieldGroupProps) {
   return (
     <fieldset className="space-y-3.5">
-      <legend className="mb-2 text-[10px] font-bold tracking-wide text-ink-faint uppercase">{heading}</legend>
+      <legend className="mb-2 flex items-center gap-2 text-[10px] font-bold tracking-wide text-ink-faint uppercase">
+        <span aria-hidden="true" className="h-px w-3 rounded-full bg-accent/60" />
+        {heading}
+      </legend>
       {children}
     </fieldset>
   );
@@ -35,13 +38,17 @@ function FieldGroup({ heading, children }: FieldGroupProps) {
  */
 export function OutputConfig() {
   return (
-    <section className="animate-fade-in space-y-6 rounded-2xl border border-foundry-700 bg-foundry-800/80 p-5 shadow-2xl backdrop-blur-lg">
+    <section className="animate-fade-in glass-panel space-y-6 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-accent/40">
       <div className="flex items-center justify-between gap-3 border-b border-foundry-700 pb-3">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-ink">
-          <span aria-hidden="true" className="text-accent-soft">
+        <h2 className="flex items-center gap-2.5 text-sm font-bold text-ink">
+          <span
+            aria-hidden="true"
+            className="flex size-7 items-center justify-center rounded-lg bg-accent/15 text-sm ring-1 ring-accent/30"
+          >
             ⚙️
           </span>
-          2. Output Configuration
+          <span className="font-mono text-accent-soft">2.</span>
+          Output Configuration
         </h2>
         <Badge>Technical Directives</Badge>
       </div>

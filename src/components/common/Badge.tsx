@@ -11,10 +11,12 @@ export type BadgeTone = 'accent' | 'live' | 'attention' | 'valid' | 'neutral';
 
 const TONE_CLASSES: Readonly<Record<BadgeTone, string>> = {
   accent: 'border-accent/30 bg-accent/15 text-accent-soft',
-  live: 'border-neon/30 bg-neon/10 text-neon',
+  // The only tone that pulses. `live` marks something recomputing, so the chip keeps moving for
+  // as long as that is true — the other four are statements of fact and hold still.
+  live: 'animate-pulse-glow border-neon/40 bg-neon/10 text-neon',
   attention: 'border-gold/30 bg-gold/10 text-gold',
   valid: 'border-emerald/30 bg-emerald/10 text-emerald',
-  neutral: 'border-foundry-600 bg-foundry-700 text-ink-faint',
+  neutral: 'border-foundry-600 bg-foundry-700/70 text-ink-faint',
 };
 
 interface BadgeProps {
@@ -26,7 +28,7 @@ interface BadgeProps {
 export function Badge({ children, tone = 'neutral' }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold whitespace-nowrap ${TONE_CLASSES[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold whitespace-nowrap backdrop-blur-sm ${TONE_CLASSES[tone]}`}
     >
       {children}
     </span>

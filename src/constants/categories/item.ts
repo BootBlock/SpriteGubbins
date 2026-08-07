@@ -13,7 +13,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'species',
       label: 'Item Type',
-      tooltip: 'Defines weapon, potion, armor, or artifact item type.',
+      tooltip:
+        'What the item actually is: weapon, potion, armour, artefact. It decides the whole shape language and the component split — a rifle with a detachable magazine breaks down very differently from a single-piece potion.',
       options: [
         'Melee Weapon (Sword/Axe)',
         'Ranged Weapon (Rifle/Bow)',
@@ -27,7 +28,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'gender',
       label: 'Rarity / Tier',
-      tooltip: 'Guides visual prestige (gold trim, rune glows, artifact energy).',
+      tooltip:
+        'The prestige tier, expressed visually rather than as a label. Gold trim, rune glow and artefact energy are what let a player rank a drop at a glance, before reading a word of its description.',
       options: [
         'Legendary / Artifact',
         'Epic Enchanted',
@@ -41,7 +43,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'age',
       label: 'Condition State',
-      tooltip: 'Sets surface wear, scratches, or power overcharge state.',
+      tooltip:
+        'Surface wear, scratching or overcharge. It is what separates a battlefield pickup from a shop item built to the same design, and it is worth varying across a set that shares one silhouette.',
       options: [
         'Pristine Forge Condition',
         'Battle-Scarred Veteran',
@@ -54,7 +57,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'role',
       label: 'Item Purpose',
-      tooltip: 'Defines functional combat or utility role in game design.',
+      tooltip:
+        'The functional role the item plays in the game. It steers proportion and affordance — a duelling blade and a siege weapon obey different rules about grip length and blade mass, however similar the art style is.',
       options: [
         'Primary Offensive Weapon',
         'Defensive Barrier Shield',
@@ -67,7 +71,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'setting',
       label: 'Art Style Theme',
-      tooltip: 'Aligns item style with world theme (magic fantasy vs sci-fi plasma).',
+      tooltip:
+        'The world vocabulary the item is drawn in. It aligns the whole inventory set: fantasy filigree and sci-fi plasma housing rarely coexist in one loot list without looking like an accident.',
       options: [
         'High Fantasy Magic',
         'Cyberpunk Plasma Tech',
@@ -81,7 +86,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'build',
       label: 'Weight & Size',
-      tooltip: 'Establishes item scale within inventory grid slots.',
+      tooltip:
+        'The item’s scale inside an inventory grid. Stating it explicitly is what stops a dagger and a greatsword being drawn at the same size — the most common failure in a generated icon set.',
       options: [
         'Heavy Two-Handed',
         'Compact One-Handed',
@@ -94,7 +100,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'silhouette',
       label: 'Blade / Shape Profile',
-      tooltip: 'Focuses sharp blade contours, shield silhouettes, or potion shapes.',
+      tooltip:
+        'The outline the item is recognised by. An inventory icon is often seen at 32 px or smaller, where the profile is all that survives and interior engraving does not.',
       options: [
         'Aggressive Serrated Edge',
         'Symmetrical Elegant Blade',
@@ -107,7 +114,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'face_head',
       label: 'Grip & Pommel',
-      tooltip: 'Defines hilt, grip texture, or crystal core pommel.',
+      tooltip:
+        'The hilt, grip texture and pommel — the end a character actually holds. It sets where the item meets a hand socket, so it matters even when the icon itself is never rigged.',
       options: [
         'Leather Wrapped Hilt & Gem Pommel',
         'Ergonomic Synthetic Grip',
@@ -119,7 +127,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'anatomy',
       label: 'Item Assembly Base',
-      tooltip: 'Controls component isolation (e.g., weapon + detachable magazine).',
+      tooltip:
+        'How the item splits into components. Choose by what has to detach or animate — a magazine, a blade, a lid — rather than by how detailed the item looks; a rigid icon needs no split at all.',
       options: [
         'SINGLE WEAPON ITEM',
         'WEAPON WITH DETACHABLE MAG',
@@ -131,7 +140,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'clothing',
       label: 'Scabbard / Holster',
-      tooltip: 'Optionally includes matching sheath or holster component.',
+      tooltip:
+        'An optional matching sheath or holster, emitted as its own component. Worth asking for when the item has to appear worn on a character as well as sitting in an inventory slot.',
       options: [
         'Matched Scabbard / Sheath',
         'Magnetic Back Sling',
@@ -144,7 +154,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'worn_details',
       label: 'Runes & Engravings',
-      tooltip: 'Adds etched runes, serial numbers, or energy conduits.',
+      tooltip:
+        'Etched runes, serial numbers or energy conduits across the item’s surface. They read as provenance and power, and at inventory scale one bold motif carries much further than a fine repeated pattern.',
       options: [
         'Etched Luminous Runes',
         'Serial Numbers & Barcode',
@@ -157,7 +168,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'primary_colours',
       label: 'Primary Colours',
-      tooltip: 'Dominant body and blade colors that establish the item at a glance in a loot list.',
+      tooltip:
+        'The dominant body and blade colours — how the item is identified at a glance in a loot list. A clear value gap between the two keeps the icon readable against any inventory background.',
       options: [
         'Damascus Steel & Obsidian',
         'Polished Silver & Gold #F59E0B',
@@ -170,7 +182,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'accent_colours',
       label: 'Accent Colours',
-      tooltip: 'High-contrast enchantment glow and energy colors that signal the item is magical or powered.',
+      tooltip:
+        'The enchantment glow and energy colours that signal an item is magical or powered. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
       options: [
         'Ethereal Arcane Purple #8B5CF6',
         'Plasma Blue Glow #22D3EE',
@@ -184,7 +197,8 @@ export const ITEM: CategoryDefinition = {
     {
       key: 'materials',
       label: 'Core Material',
-      tooltip: 'Defines what the item is forged from and how light reads off it (metal, crystal, polymer).',
+      tooltip:
+        'What the item is forged from, and how light reads off it: polished metal takes a hard specular, crystal transmits, polymer stays flat. It is the strongest cue for how heavy the item is meant to feel.',
       options: [
         'Mithril & Dragon Scale',
         'Plasma Conduit & Polymer',
@@ -198,7 +212,7 @@ export const ITEM: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Strict negative rules keeping hands, stands, and effect flourishes out of an isolated inventory icon.',
+        'Negative rules keeping hands, stands and effect flourishes out of an isolated inventory icon. Drop shadows and glow trails are worth naming explicitly: both extend past the item’s own bounds and break grid alignment.',
       options: [
         'No holding hand or character',
         'No pedestal or stand',
@@ -211,7 +225,7 @@ export const ITEM: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Attached Attachments',
       tooltip:
-        'Requests extra detachable parts — scopes, ribbons, cells — isolated into their own sprite slots.',
+        'Extra detachable parts — scopes, ribbons, power cells — isolated into their own sprite slots so they can be swapped or animated. Leave this as NONE for a single-piece item.',
       options: [
         'NONE',
         'Attachable Scope & Laser',

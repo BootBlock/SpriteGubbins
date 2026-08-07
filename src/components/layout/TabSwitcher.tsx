@@ -20,7 +20,7 @@ export function TabSwitcher() {
   return (
     <nav
       aria-label="Views"
-      className="flex items-center gap-1 rounded-xl border border-foundry-700 bg-foundry-800 p-1 shadow-inner"
+      className="flex items-center gap-1 rounded-xl border border-foundry-700 bg-foundry-950/60 p-1 shadow-inner backdrop-blur-md"
     >
       {APP_TAB_CHOICES.map((tab) => {
         const isActive = tab.id === activeTab;
@@ -32,9 +32,9 @@ export function TabSwitcher() {
             onClick={() => {
               setActiveTab(tab.id);
             }}
-            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-colors ${
+            className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
               isActive
-                ? 'bg-accent-strong text-ink shadow-lg'
+                ? 'bg-gradient-to-b from-accent to-accent-strong text-ink shadow-lg ring-1 ring-accent-soft/50'
                 : 'text-ink-faint hover:bg-foundry-700 hover:text-ink'
             }`}
           >

@@ -13,7 +13,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'species',
       label: 'Object Category',
-      tooltip: 'Defines functional object classification (terminal, loot chest, turret).',
+      tooltip:
+        'What the prop fundamentally is. It decides the component breakdown as much as the look — a hinged chest, a turret and a wall panel share no parts at all — so set it before the structure base below.',
       options: [
         'Interactive Terminal',
         'Loot Chest / Container',
@@ -29,7 +30,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'gender',
       label: 'Operational Status',
-      tooltip: 'Defines active state, power level, or destruction level.',
+      tooltip:
+        'Whether the object is working, damaged, sealed or overloading. It reads mostly as emissive state and damage — a powered-down console loses its glow entirely — which is what makes a paired on/off variant of one prop worth generating.',
       options: [
         'Fully Functional',
         'Damaged / Repaired',
@@ -43,7 +45,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'age',
       label: 'Tech Era',
-      tooltip: 'Establishes mechanical design language and era aesthetic.',
+      tooltip:
+        'The design language the object is built in. It governs panel shapes, fastener style and material vocabulary across every component at once, which is what keeps a prop consistent with the world it is dropped into.',
       options: [
         'Futuristic Sci-Fi',
         'Ancient Magitech',
@@ -57,7 +60,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'role',
       label: 'Game Function',
-      tooltip: 'Guides visual indicators (healing green lights, explosive red danger decals).',
+      tooltip:
+        'What the object does for the player. It drives the indicators that make that legible without a label — healing greens, hazard reds, objective markers — so the prop’s purpose reads before anyone interacts with it.',
       options: [
         'Save Station / Healer',
         'High-Tier Loot Source',
@@ -71,7 +75,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'setting',
       label: 'Environment Context',
-      tooltip: 'Sets surrounding biome aesthetics reflected on object housing.',
+      tooltip:
+        'The space the object is installed in. Its surroundings show up on the housing as grime, frost or neon spill, and that is what makes a prop look like it belongs somewhere rather than like it was dropped in.',
       options: [
         'Command Bridge',
         'Dungeon Chamber',
@@ -85,7 +90,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'build',
       label: 'Form Factor',
-      tooltip: 'Defines physical geometry volume (pillar, tabletop, wall panel).',
+      tooltip:
+        'The physical geometry and volume — a pillar, a tabletop unit, a wall panel. It fixes how the object occupies space, and therefore its cell proportions in the atlas and whether it can sit on a floor tile at all.',
       options: [
         'Heavy Heavy Pillar',
         'Compact Tabletop Device',
@@ -99,7 +105,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'silhouette',
       label: 'Hard Surfaces',
-      tooltip: 'Specifies hard-surface edge profile (chamfered, gothic arch, sleek pod).',
+      tooltip:
+        'The edge profile of the casing — chamfered, gothic, sleek pod. Hard-surface props live or die on this: interior detail vanishes at sprite scale, while a distinctive corner treatment is still readable.',
       options: [
         'Chamfered Rectangular Box',
         'Pyramidal Conduit',
@@ -113,7 +120,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'face_head',
       label: 'Interface Screen',
-      tooltip: 'Defines main focal display (hologram, dials, rune core, keypads).',
+      tooltip:
+        'The focal display — the part the eye goes to first. One bright interface reads better at sprite scale than several small ones, and it is usually the only component that needs an emissive colour at all.',
       options: [
         'Holographic Display Screen',
         'Analog Dials & Gauge Panels',
@@ -126,7 +134,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'anatomy',
       label: 'Structure Base',
-      tooltip: 'Controls how mechanical parts are broken down into isolated components.',
+      tooltip:
+        'How the object is broken into isolated components. SINGLE RIGID OBJECT emits one piece; the multi-segment and hinged plans split out the parts that actually move, so choose by what has to animate rather than by how complex the prop looks.',
       options: [
         'SINGLE RIGID OBJECT',
         'MULTI-SEGMENT TURRET',
@@ -138,7 +147,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'clothing',
       label: 'Mounting / Framework',
-      tooltip: 'Defines base floor mounts, cages, or mounting brackets.',
+      tooltip:
+        'How the object is fixed in place — bolted, caged, suspended, freestanding. The mount is drawn as part of the prop, so it also decides where the prop can legally be placed once it is in a level.',
       options: [
         'Floor Bolted Frame',
         'Reinforced Steel Cage',
@@ -151,7 +161,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'worn_details',
       label: 'Utility Markings',
-      tooltip: 'Adds warning stencils, hazard stripes, or exposed cabling details.',
+      tooltip:
+        'Hazard stripes, stencils, engravings, exposed cabling and wear. These are what make an industrial prop believable, but each costs palette budget — a few well-placed marks read better than full coverage.',
       options: [
         'Hazard Stripes & Decals',
         'Warning Stencils & LEDs',
@@ -165,7 +176,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'primary_colours',
       label: 'Primary Colours',
-      tooltip: 'Main structural casing colors.',
+      tooltip:
+        'The structural casing colours — what a prop is recognised by in a busy scene. Two colours with a clear value gap keep the object separable from whatever it is standing against.',
       options: [
         'Industrial Yellow #EAB308 & Charcoal',
         'Matte White & Dark Slate',
@@ -179,7 +191,8 @@ export const OBJECT: CategoryDefinition = {
     {
       key: 'accent_colours',
       label: 'Accent Colours',
-      tooltip: 'Emissive status LED and wiring accent colors.',
+      tooltip:
+        'The status LEDs, wiring and screen light — the parts that read as emitting rather than reflecting. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
       options: [
         'Alert Orange LEDs #F97316',
         'Laser Green Glow #10B981',
@@ -194,7 +207,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'materials',
       label: 'Material Plating',
       tooltip:
-        'Defines the casing surface and how light reads off it (painted metal vs polished brass vs cut stone).',
+        'What the casing is made of, and how light reads off it: painted metal takes a soft sheen, polished brass a hard one, cut stone none at all. Under flat neutral lighting this is what still separates one surface from the next.',
       options: [
         'Painted Sheet Metal & Acrylic',
         'Polished Brass & Oak',
@@ -208,7 +221,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Strict negative rules preventing operators, ground fixtures, or scene dressing from appearing beside the prop.',
+        'Negative rules keeping operators, ground fixtures and scene dressing out of the sheet. Floor cables and pedestals are the usual offenders — each anchors the prop to a surface it may never actually be placed on.',
       options: [
         'No living character, no shadows',
         'No cables on floor',
@@ -221,7 +234,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Deployable Modules',
       tooltip:
-        'Requests extra moving parts — dishes, clamps, vents — isolated into their own sprite slots for animation.',
+        'Extra moving parts — dishes, clamps, vents, barrels — isolated into their own sprite slots so they can animate against a static body. Leave this as NONE for a prop with no deployable state.',
       options: [
         'NONE',
         'Deployable Sensor Dish',

@@ -114,6 +114,8 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | The page ground | `bg-foundry-900` | `bg-slate-950`, `#060911` |
 | An inset or well *below* the page (prompt box, code panel) | `bg-foundry-950` | `bg-slate-950` |
 | A panel resting on the page | `bg-foundry-800` | `bg-slate-900` |
+| A **glass** panel — header, studio panel, card, modal shell | `glass-panel` | `bg-foundry-800/80` + a hand-rolled `backdrop-blur` |
+| A surface **floating above** a panel — tooltip card, combo-box list | `glass-float` | a bespoke translucent panel with its own border and shadow |
 | A control or row inside a panel | `bg-foundry-700` | `bg-slate-800` |
 | A border, or a hover/pressed state | `border-foundry-600` / `bg-foundry-600` | `border-slate-700` |
 | **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1` |
@@ -124,8 +126,11 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | Body, secondary and faint text | `text-ink` / `text-ink-muted` / `text-ink-faint` | `text-slate-300` |
 | Prompt text, metrics, JSON | `font-mono` | a raw font stack |
 | Panel entrance, live pulse, ambience, loading | `animate-fade-in` / `animate-pulse-glow` / `animate-float-orb` (+ `-slow`) / `animate-shimmer` | inline `@keyframes`, one-off durations |
+| A glass surface materialising | `animate-tooltip-in` | a bespoke fade, or an animated `transform` that fights a translate utility |
+| The ambient wash breathing, and the live-compile beam | `animate-aurora` / `animate-scan-beam` | one-off durations at the call site |
 | Signature easing | `ease-emphasized` | `cubic-bezier(...)` inline |
 | The ambient dot backdrop | `bg-grid-pattern` | a hand-rolled repeating gradient |
+| The ambient colour wash behind the page | `bg-aurora` | a stack of hand-written `radial-gradient()`s |
 | A loading placeholder's sheen | `shimmer-surface` + `animate-shimmer` | a bespoke gradient |
 
 **`accent` and `neon` are not interchangeable.** Indigo is the primary — actions, focus,

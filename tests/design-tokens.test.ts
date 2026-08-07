@@ -56,14 +56,32 @@ const REQUIRED_THEME_TOKENS = [
   '--animate-float-orb',
   '--animate-float-orb-slow',
   '--animate-shimmer',
+  '--animate-tooltip-in',
+  '--animate-aurora',
+  '--animate-scan-beam',
   '--ease-emphasized',
 ];
 
 /** Bespoke utilities components use by name, declared with `@utility` rather than `@theme`. */
-const REQUIRED_UTILITIES = ['bg-grid-pattern', 'shimmer-surface'];
+const REQUIRED_UTILITIES = ['bg-grid-pattern', 'bg-aurora', 'glass-panel', 'glass-float', 'shimmer-surface'];
 
 /** An `--animate-*` token names a keyframe; if that keyframe is missing the animation is a no-op. */
-const ANIMATION_KEYFRAMES = ['fade-in', 'pulse-glow', 'float-orb', 'shimmer'];
+const ANIMATION_KEYFRAMES = [
+  'fade-in',
+  'pulse-glow',
+  'float-orb',
+  'shimmer',
+  'tooltip-in',
+  'aurora',
+  'scan-beam',
+];
+
+/**
+ * The two glass surfaces are glass *because* of `backdrop-filter`. Strip it and both still render
+ * — as flat translucent panels — which is the silent-failure shape this whole suite exists for:
+ * the layout is unchanged, nothing errors, and the design has quietly reverted.
+ */
+const GLASS_UTILITIES = ['glass-panel', 'glass-float'];
 
 describe('design tokens', () => {
   it.each(REQUIRED_THEME_TOKENS)('declares %s', (token) => {
@@ -77,6 +95,18 @@ describe('design tokens', () => {
   it.each(ANIMATION_KEYFRAMES)('defines the @keyframes %s its --animate token references', (name) => {
     expect(stylesheet).toContain(`@keyframes ${name}`);
     expect(stylesheet).toContain(`--animate-${name}: ${name} `);
+  });
+
+  it.each(GLASS_UTILITIES)('blurs what is behind %s, prefixed for Safari as well', (utility) => {
+    const declaration = stylesheet.slice(stylesheet.indexOf(`@utility ${utility} {`));
+    const body = declaration.slice(0, declaration.indexOf('\n}'));
+
+    // Anchored to the start of a line, not a bare `toContain`. `-webkit-backdrop-filter: blur(`
+    // *ends* with the unprefixed spelling, so a substring check for the standard property is
+    // satisfied by the prefixed one alone — and would keep passing after the only declaration
+    // every non-Safari engine reads had been deleted.
+    expect(body).toMatch(/^\s*backdrop-filter: blur\(/m);
+    expect(body).toMatch(/^\s*-webkit-backdrop-filter: blur\(/m);
   });
 
   it('pins the colour scheme to dark, because there is no light palette to fall back to', () => {

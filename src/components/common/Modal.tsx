@@ -62,8 +62,11 @@ export function Modal({ title, icon, onClose, panelClassName, children }: ModalP
     >
       <div className={panelClassName}>
         <div className="flex items-center justify-between border-b border-foundry-700 px-6 py-4">
-          <h2 id={titleId} className="flex items-center gap-2 text-base font-bold text-ink">
-            <span aria-hidden="true" className="text-accent-soft">
+          <h2 id={titleId} className="flex items-center gap-2.5 text-base font-bold text-ink">
+            <span
+              aria-hidden="true"
+              className="flex size-8 items-center justify-center rounded-lg bg-accent/15 text-sm ring-1 ring-accent/30"
+            >
               {icon}
             </span>
             {title}
@@ -72,7 +75,7 @@ export function Modal({ title, icon, onClose, panelClassName, children }: ModalP
             type="button"
             onClick={onClose}
             aria-label={`Close ${title}`}
-            className="text-lg font-bold text-ink-faint transition-colors hover:text-ink"
+            className="flex size-7 items-center justify-center rounded-lg text-sm font-bold text-ink-faint transition-all duration-200 hover:rotate-90 hover:bg-foundry-700 hover:text-ink"
           >
             <span aria-hidden="true">✕</span>
           </button>

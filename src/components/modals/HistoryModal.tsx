@@ -49,7 +49,7 @@ export function HistoryModal() {
       title="Prompt History"
       icon="🕓"
       onClose={toggleHistoryModal}
-      panelClassName="ml-auto flex h-full w-full max-w-md flex-col self-stretch overflow-hidden rounded-2xl border border-foundry-700 bg-foundry-800 shadow-2xl"
+      panelClassName="glass-panel ml-auto flex h-full w-full max-w-md flex-col self-stretch overflow-hidden rounded-2xl border border-foundry-700 shadow-2xl"
     >
       <div className="border-b border-foundry-700 px-6 py-3">
         <label htmlFor={searchId} className="mb-1 block text-xs font-semibold text-ink-muted">

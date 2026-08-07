@@ -21,13 +21,17 @@ export function SubjectForm() {
   const { label: categoryLabel, fields } = CATEGORY_OPTIONS[category];
 
   return (
-    <section className="animate-fade-in space-y-4 rounded-2xl border border-foundry-700 bg-foundry-800/80 p-5 shadow-2xl backdrop-blur-lg">
+    <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-accent/40">
       <div className="flex items-center justify-between gap-3 border-b border-foundry-700 pb-3">
-        <h2 className="flex items-center gap-2 text-sm font-bold text-ink">
-          <span aria-hidden="true" className="text-accent-soft">
+        <h2 className="flex items-center gap-2.5 text-sm font-bold text-ink">
+          <span
+            aria-hidden="true"
+            className="flex size-7 items-center justify-center rounded-lg bg-accent/15 text-sm ring-1 ring-accent/30"
+          >
             👤
           </span>
-          1. Subject Definition
+          <span className="font-mono text-accent-soft">1.</span>
+          Subject Definition
         </h2>
 
         <button
@@ -36,9 +40,14 @@ export function SubjectForm() {
             randomizeSubject();
             showToast(`Randomised ${categoryLabel} properties`);
           }}
-          className="flex items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-xs font-black text-foundry-950 shadow-md transition-transform hover:scale-[1.04] active:scale-[0.96]"
+          className="group flex items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-xs font-black text-foundry-950 shadow-md transition-transform duration-200 hover:scale-[1.04] active:scale-[0.96]"
         >
-          <span aria-hidden="true">🎲</span>
+          <span
+            aria-hidden="true"
+            className="inline-block transition-transform duration-500 group-hover:rotate-180"
+          >
+            🎲
+          </span>
           Randomise
         </button>
       </div>

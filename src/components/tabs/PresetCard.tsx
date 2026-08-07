@@ -19,14 +19,16 @@ export function PresetCard({ preset, onLoad, onDelete }: PresetCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   return (
-    <li className="flex flex-col justify-between gap-4 rounded-2xl border border-foundry-700 bg-foundry-800/80 p-5 shadow-xl transition-colors hover:border-accent/50">
+    <li className="glass-panel group flex flex-col justify-between gap-4 rounded-2xl border border-foundry-700 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:shadow-2xl">
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Badge tone="accent">{preset.category}</Badge>
           <Badge>{preset.isCustom === true ? 'Your preset' : 'Built-in'}</Badge>
         </div>
 
-        <h3 className="text-base font-bold text-ink">{preset.name}</h3>
+        <h3 className="text-base font-bold text-ink transition-colors duration-300 group-hover:text-accent-soft">
+          {preset.name}
+        </h3>
         <p className="line-clamp-2 text-xs text-ink-muted">
           {preset.subject.species} — {preset.subject.setting}
         </p>
@@ -61,7 +63,7 @@ export function PresetCard({ preset, onLoad, onDelete }: PresetCardProps) {
             onClick={() => {
               onLoad(preset);
             }}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-accent-strong py-2 text-xs font-semibold text-ink transition-colors hover:bg-accent"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-strong to-accent py-2 text-xs font-semibold text-ink ring-1 ring-accent-soft/30 transition-all duration-200 hover:ring-accent-soft active:scale-[0.98]"
           >
             <span aria-hidden="true">⚡</span>
             Load preset

@@ -8,7 +8,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'species',
       label: 'Species / Archetype',
       tooltip:
-        'Defines the base organism or entity type. Sets fundamental skeletal structure and proportions for AI image generation.',
+        'The base organism or entity type, and the strongest single driver of the whole sheet: it fixes the skeletal layout and the proportions every other field is drawn on top of. Free text is accepted — the list is a starting point, not a constraint.',
       options: [
         'Human',
         'Cybernetic Cyborg',
@@ -32,7 +32,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'gender',
       label: 'Gender / Presentation',
       tooltip:
-        'Controls biological presentation or body shape features. Guides waist ratio, shoulder width, and torso curvature.',
+        'Body presentation and shape language. It guides shoulder width, waist ratio and torso curvature across every component, and lands hardest on the torso and pelvis pieces, where the silhouette is established.',
       options: [
         'Androgynous / Neutral',
         'Feminine',
@@ -50,7 +50,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'age',
       label: 'Age Presentation',
       tooltip:
-        'Establishes age, posture stiffness, and surface detail complexity. Influences skin texture, stance, and face aging.',
+        'Apparent age, read as posture, surface condition and facial structure. An older presentation brings stance stiffness and wear with it; an ageless synthetic one suppresses both and keeps surfaces clean.',
       options: [
         'Young Adult (20s)',
         'Mature / Veteran (40s)',
@@ -66,7 +66,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'role',
       label: 'Role / Class',
       tooltip:
-        'Defines combat or utility specialization. Influences visual gear focus (e.g., rogue vs heavy paladin).',
+        'The combat or utility specialisation. It decides where visual weight goes — a rogue reads light and close to the body, a paladin heavy and outward — so it shapes the limb components as much as the gear on them.',
       options: [
         'Katana Specialist',
         'Heavy Mech Marine',
@@ -88,7 +88,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'setting',
       label: 'Setting / Theme',
       tooltip:
-        'Establishes environmental context and visual genre aesthetics. Enforces epoch-appropriate design rules.',
+        'The world the subject belongs to. It enforces epoch-appropriate design across every part at once, which is what stops a plate gauntlet turning up on a cyberpunk figure — set it before reaching for the per-part detail fields.',
       options: [
         'Cyberpunk Dystopia',
         'Dark Fantasy',
@@ -108,7 +108,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'build',
       label: 'Build & Proportions',
       tooltip:
-        'Determines weight, muscularity, and physical width scale. Controls bounding-box volume per sprite component.',
+        'Weight, muscularity and width. This sets the bounding-box volume each component occupies, so it decides how many pixels a limb actually gets once the sheet is packed into an atlas cell.',
       options: [
         'Athletic & Slender',
         'Heavy Armoured Tank',
@@ -125,7 +125,8 @@ export const CHARACTER: CategoryDefinition = {
     {
       key: 'silhouette',
       label: 'Overall Silhouette',
-      tooltip: 'Focuses key edge features. Important for readability in 2D platformers and top-down games.',
+      tooltip:
+        'The outline the figure reads as at a glance. It is what decides whether the sprite is recognisable at gameplay distance: a distinctive edge profile survives downscaling long after the interior detail has gone.',
       options: [
         'Dynamic Sharp Edges',
         'Bulky Plated Layers',
@@ -142,7 +143,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'face_head',
       label: 'Face, Hair & Head',
       tooltip:
-        'Specifies facial expression, hair style, helmets, or visors. Shapes the isolated head component variants.',
+        'Expression, hair, helmets and visors — everything shaping the isolated head component and its directional variants. The head is usually the smallest piece and the most looked at, so one strong feature beats fine detail here.',
       options: [
         'Neon Visor & Undercut',
         'Full Enclosed Helmet',
@@ -159,7 +160,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'Configures component breakdown logic. Standard humanoid generates default 9-core + 34-limb components.',
+        'The skeleton the component breakdown is derived from. STANDARD HUMANOID yields the default 9 core and 34 limb components; a winged, tailed or four-armed base adds dedicated slots of its own rather than fusing the extra parts onto existing ones.',
       options: [
         'STANDARD HUMANOID',
         'HUMANOID WITH WINGS',
@@ -174,7 +175,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'clothing',
       label: 'Clothing / Armour',
       tooltip:
-        'Specifies garments and protective plating integrated directly into limb/torso component surfaces.',
+        'Garments and protective plating, drawn into the limb and torso surfaces rather than laid over them as separate pieces. Anything that has to move independently belongs in Additional Genuine Anatomy or a socket instead.',
       options: [
         'Tactical Kevlar & Plates',
         'Gothic Plate Armour',
@@ -191,7 +192,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'worn_details',
       label: 'Integrated Worn Details',
       tooltip:
-        'Adds specific holsters, pouches, cabling, or belts attached cleanly to body parts without loose clutter.',
+        'Holsters, pouches, cabling and belts, attached cleanly to the part each one sits on. “Integrated” is the operative word: loose clutter that spans two components cannot be cut apart without tearing one of them.',
       options: [
         'Holstered Sidearm & Pouch',
         'Shoulder Pauldrons & Cloak',
@@ -207,7 +208,8 @@ export const CHARACTER: CategoryDefinition = {
     {
       key: 'primary_colours',
       label: 'Primary Colours',
-      tooltip: 'Dominant 60% color palette choices. Guides global albedo mapping for sprite shading.',
+      tooltip:
+        'The dominant share of the palette — roughly 60% — applied as global albedo across every component. Naming two colours reads more reliably than one, because it gives the generator a value contrast to hold the sheet together with.',
       options: [
         'Matte Charcoal Black & Gunmetal',
         'Royal Navy & Deep Silver',
@@ -222,7 +224,8 @@ export const CHARACTER: CategoryDefinition = {
     {
       key: 'accent_colours',
       label: 'Accent Colours',
-      tooltip: 'High-contrast secondary colors (20%) for energy lines, eyes, trim, and magic glows.',
+      tooltip:
+        'The high-contrast remainder — roughly 20% — for energy lines, eyes, trim and glows. A hex code pins the colour far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
       options: [
         'Cyan Neon #06B6D4',
         'Polished Gold #F59E0B',
@@ -238,7 +241,8 @@ export const CHARACTER: CategoryDefinition = {
     {
       key: 'materials',
       label: 'Materials & Surfaces',
-      tooltip: 'Defines how light interacts with surfaces (e.g. metallic reflections vs flat matte cloth).',
+      tooltip:
+        'What the surfaces are made of, and therefore how light reads off them: metal takes a hard specular edge, cloth stays matte. It still matters under flat neutral lighting, because the material is what decides the shading steps.',
       options: [
         'Reinforced Composites & Alloy',
         'Burnished Steel & Leather',
@@ -254,7 +258,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Strict negative rules passed to AI generator to prevent unrequested items, floor shadows, or clutter.',
+        'Negative rules compiled into the prompt to keep unrequested things out of the sheet. Floor shadows and stray props are the usual offenders — both fuse a component to its background and leave nothing clean to key out.',
       options: [
         'No weapons, no floor shadows',
         'No oversized pauldrons',
@@ -268,7 +272,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Additional Genuine Anatomy',
       tooltip:
-        'Requests extra distinct anatomical components (e.g., tail, wings) separated into dedicated sprite slots.',
+        'Extra anatomy — a tail, a wing pair, auxiliary arms — requested as its own dedicated sprite slots so it can be animated separately from the body. Leave this as NONE unless the part genuinely needs to move on its own.',
       options: [
         'NONE',
         'Prehensile Cyber Tail',
