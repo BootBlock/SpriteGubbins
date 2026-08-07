@@ -37,10 +37,16 @@ Satisfy this section before any aesthetic consideration.
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
 
-**Where two instructions in this specification pull against each other**, satisfy them in this
-order: the component count and inventory · each component's identity and grid position · the object
-orientation each component is asked for · the fixed camera, one scale and pivot compatibility ·
-subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
+**The subject's category decides what kind of components this sheet may contain; the inventory in
+section 4 then names the exact set within that kind.** These two can never legitimately disagree. If
+the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
+building, floor tiles on a character — this specification is malformed. Say so rather than resolving
+it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
+
+**Where two instructions pull against each other without contradicting the category**, satisfy them
+in this order: the component count and inventory · each component's identity and grid position · the
+object orientation each component is asked for · the fixed camera, one scale and pivot compatibility
+· subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
 so a general aesthetic preference never overrules a component's stated direction.
 
 ---
@@ -197,6 +203,8 @@ component back towards the primary assembly direction because the rest of the sh
 
 ## 4. COMPONENT INVENTORY
 
+[DEFINE:CATEGORY_GUARD]
+
 [DEFINE:COMPONENT_BREAKDOWN]
 
 Draw every entry in full, and one separate visible component for each item it names — an entry
@@ -290,7 +298,7 @@ requires.
 
 Absent from the image entirely:
 
-- Backgrounds, environments, ground planes, floor tiles, terrain, sky, props and scenery.
+- [DEFINE:CATEGORY_EXCLUSIONS]
 - All shadows: cast, contact, drop, and ambient occlusion onto the background.
 - Text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders,
   grid lines, colour swatches and legends.
@@ -320,11 +328,12 @@ Before delivering, verify:
 4. Components appear in the exact order the inventory lists them.
 5. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
+6. [DEFINE:CATEGORY_AUDIT]
 [IF:RIG_MODE=CUTOUT_RIG]
-6. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
+7. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
-7. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+8. One pixel grid and density throughout, with no anti-aliased silhouette edges.
 [/IF]
 [IF:MULTI_DIRECTION]
 

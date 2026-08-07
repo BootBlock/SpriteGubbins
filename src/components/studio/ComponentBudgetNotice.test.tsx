@@ -3,7 +3,7 @@ import { act, render, screen } from '@testing-library/react';
 import { NO_COMPONENT_BUDGET } from '../../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
-import { COMPONENT_COUNTS } from '../../constants/promptText/index.ts';
+import { componentCountFor } from '../../utils/componentSet.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { ComponentBudgetNotice } from './ComponentBudgetNotice.tsx';
@@ -13,7 +13,7 @@ import { ComponentBudgetNotice } from './ComponentBudgetNotice.tsx';
  * component early would train the user to ignore it, and one that fires a component late is not
  * there for the sheet it exists to catch.
  */
-const RIG = COMPONENT_COUNTS.CUTOUT_RIG_SINGLE_DIRECTION;
+const RIG = componentCountFor(DEFAULT_PRESET.category, 'CUTOUT_RIG_SINGLE_DIRECTION', []);
 
 /** Is the warning on screen? Matched on the phrase the notice leads with. */
 function isWarning(): boolean {

@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
+import { useOutputStore } from './useOutputStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
 
 /**
@@ -108,5 +111,48 @@ describe('useSubjectStore', () => {
     const { category, subject } = useSubjectStore.getState();
     expect(category).toBe('CREATURE');
     expect(subject).toEqual(creature);
+  });
+
+  /**
+   * State leakage across a category change — the interactive half of the contamination defect.
+   *
+   * The sheet mode lives in the *output* store and the category in this one, so nothing used to
+   * reconcile them: configure a building tileset, switch to CHARACTER, and the store still held
+   * `TILESET_MODULAR`. The compiler resolves that pairing now, so the prompt was never the risk —
+   * but a preset saved in that state would have persisted a mode its own category cannot produce.
+   */
+  describe('the sheet mode when the category changes', () => {
+    it('drops a mode the new category cannot produce', () => {
+      useOutputStore.setState({
+        output: { ...DEFAULT_OUTPUT_CONFIG, directionalMode: 'TILESET_MODULAR' },
+      });
+      useSubjectStore.getState().setCategory('BUILDING');
+      expect(useOutputStore.getState().output.directionalMode).toBe('TILESET_MODULAR');
+
+      useSubjectStore.getState().setCategory('CHARACTER');
+
+      expect(useOutputStore.getState().output.directionalMode).toBe(DEFAULT_MODE_FOR.CHARACTER);
+      expect(useOutputStore.getState().output.directionalMode).not.toBe('TILESET_MODULAR');
+    });
+
+    it('keeps a mode the new category shares, rather than resetting for its own sake', () => {
+      // CHARACTER → CREATURE should not silently discard a cut-out rig the user chose.
+      useOutputStore.setState({
+        output: { ...DEFAULT_OUTPUT_CONFIG, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' },
+      });
+      useSubjectStore.getState().setCategory('CREATURE');
+
+      expect(useOutputStore.getState().output.directionalMode).toBe('CUTOUT_RIG_SINGLE_DIRECTION');
+    });
+
+    it('drops a humanoid mode when moving to a category with no limbs', () => {
+      // The reverse direction, and the one that was broken by default: ITEM has no cut-out rig.
+      useOutputStore.setState({
+        output: { ...DEFAULT_OUTPUT_CONFIG, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' },
+      });
+      useSubjectStore.getState().setCategory('ITEM');
+
+      expect(useOutputStore.getState().output.directionalMode).toBe(DEFAULT_MODE_FOR.ITEM);
+    });
   });
 });

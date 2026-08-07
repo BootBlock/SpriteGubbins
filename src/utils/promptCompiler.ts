@@ -1,7 +1,9 @@
 import {
   ASPECT_TEXT,
-  ASSEMBLY_POSES,
   BACKGROUND_KEY_TEXT,
+  CATEGORY_AUDIT_TEXT,
+  CATEGORY_EXCLUSION_TEXT,
+  CATEGORY_GUARD_TEXT,
   DEPTH_ORDER_TEXT,
   describeDirections,
   JOINT_CAP_TEXT,
@@ -20,8 +22,9 @@ import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { resolveMode } from '../constants/sheetPlans/index.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
-import { componentBreakdownFor, componentCountFor } from './componentSet.ts';
+import { assemblyFor, componentBreakdownFor, componentCountFor } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, supportsManifest } from './targetCapabilities.ts';
@@ -47,10 +50,20 @@ export function generatePrompt(
   subject: SubjectDefinition,
   output: OutputConfig,
 ): string {
+  // The sheet mode this category can actually produce. Resolved **once**, at the top, and used for
+  // every mode-dependent value below — the inventory, the count, the assembly sentence and the
+  // direction coverage. A stored configuration can name a mode its category has no plan for (a
+  // preset saved before the plans were split by category, or a hand-edited export), and resolving it
+  // per call site is how three of them would agree and the fourth would not.
+  const mode = resolveMode(category, output.directionalMode);
+
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would
   // eventually disagree about the prompt one of them is describing.
-  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(output);
+  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections({
+    ...output,
+    directionalMode: mode,
+  });
 
   // Only a target that returns text alongside the image can honour a manifest; asking a pure image
   // endpoint for one just spends tokens on an instruction it will drop.
@@ -63,9 +76,15 @@ export function generatePrompt(
 
   const values: Record<string, string> = {
     CATEGORY: category,
-    COMPONENT_COUNT: String(componentCountFor(output.directionalMode, anatomy)),
-    COMPONENT_BREAKDOWN: componentBreakdownFor(output.directionalMode, anatomy),
-    ASSEMBLY_POSES: ASSEMBLY_POSES[output.directionalMode],
+    COMPONENT_COUNT: String(componentCountFor(category, mode, anatomy)),
+    COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, anatomy),
+    // Every one of these is now a function of the category as well as the mode. That is the whole
+    // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
+    // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
+    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category],
+    ASSEMBLY_POSES: assemblyFor(category, mode),
+    CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
+    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
 
     RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
     SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],

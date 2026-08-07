@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
-import { COMPONENT_COUNTS, LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
+import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
 
 /**
@@ -31,7 +31,7 @@ describe('every shipped preset', () => {
     // a request past the ceiling comes back as a plausible subset with the rest merged or dropped.
     const anatomy = parseAdditionalAnatomy(preset.subject.additional_anatomy);
     expect(
-      componentCountFor(preset.output.directionalMode, anatomy),
+      componentCountFor(preset.category, preset.output.directionalMode, anatomy),
       `${preset.name} exceeds the practical ceiling`,
     ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
   });
@@ -51,7 +51,9 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('flat magenta #FF00FF');
     expect(prompt).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
     expect(prompt).toContain('head, chest, back, hand_left, hand_right');
-    expect(prompt).toContain(`Exactly ${COMPONENT_COUNTS.CUTOUT_RIG_SINGLE_DIRECTION} components`);
+    expect(prompt).toContain(
+      `Exactly ${String(componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', []))} components`,
+    );
   });
 
   it('keeps flat neutral albedo, which the game’s renderer depends on', () => {
@@ -78,7 +80,9 @@ describe('the Unsung Saviour presets', () => {
 
     expect(prompt).toContain('48 × 48 px per tile');
     expect(prompt).toContain('Seamless tiling');
-    expect(prompt).toContain(`Exactly ${COMPONENT_COUNTS.TILESET_MODULAR} components`);
+    expect(prompt).toContain(
+      `Exactly ${String(componentCountFor('BUILDING', 'TILESET_MODULAR', []))} components`,
+    );
     // Not articulated, so neither rig section appears.
     expect(prompt).not.toContain('## 5.');
   });

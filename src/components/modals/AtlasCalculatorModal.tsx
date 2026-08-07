@@ -41,6 +41,7 @@ export function AtlasCalculatorModal() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  const category = useSubjectStore((state) => state.category);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const copyText = useClipboard();
 
@@ -50,7 +51,7 @@ export function AtlasCalculatorModal() {
   const config = {
     canvasSize,
     padding,
-    componentCount: componentCountFor(directionalMode, parseAdditionalAnatomy(additionalAnatomy)),
+    componentCount: componentCountFor(category, directionalMode, parseAdditionalAnatomy(additionalAnatomy)),
     widthBias: widthBiasFor(aspectRatio),
   };
   const metrics = calculateAtlasMetrics(config);

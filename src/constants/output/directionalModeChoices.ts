@@ -1,41 +1,32 @@
+import { modesFor } from '../sheetPlans/index.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { DirectionalMode } from '../../types/output.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import type { OutputChoice } from './choices.ts';
 
 /**
- * The sheet-contents choices, labelled with the count each mode would actually ask for.
+ * How each mode is labelled for a category, with the count that pairing would actually ask for.
  *
- * A function rather than a constant because the count is no longer a property of the mode alone: a
- * subject naming additional anatomy adds to every one of them. The number is stated in five places —
- * here, the prompt's contract, its inventory heading, its self-audit and the atlas grid.
+ * **Scoped to the category**, which is the studio half of the contamination fix: the selector used
+ * to offer all four modes to everything, so `TILESET_MODULAR` was one click away from any character
+ * and the sheet it produced was floors and walls. A mode the category has no plan for is not
+ * rendered, so the mismatch cannot be selected in the first place.
  *
- * It takes the parsed anatomy and calls `componentCountFor` rather than adding a pre-summed number
- * of its own, so this really is the fifth *reader* of that one sum rather than a second
- * implementation of it. A label that disagrees with the prompt is how a user comes to expect the
- * wrong number of components, and two additions that must stay equal is how they come to disagree.
+ * A function rather than a constant because the count is a property of neither axis alone: the
+ * category and mode choose the plan, and a subject naming additional anatomy adds to it. It calls
+ * `componentCountFor` rather than summing anything itself, so this really is another *reader* of the
+ * one total rather than a second implementation — a label that disagrees with the prompt is how a
+ * user comes to expect the wrong number of components.
  */
 export function directionalModeChoices(
+  category: SubjectCategory,
   additional: readonly AnatomyComponent[],
 ): readonly OutputChoice<DirectionalMode>[] {
-  const total = (mode: DirectionalMode) => componentCountFor(mode, additional);
-
-  return [
-    {
-      value: 'CORE_DIRECTIONAL_VARIANTS',
-      label: `CORE_DIRECTIONAL_VARIANTS (${String(total('CORE_DIRECTIONAL_VARIANTS'))} components — recommended)`,
-    },
-    {
-      value: 'SINGLE_DIRECTION_POSE_LIBRARY',
-      label: `SINGLE_DIRECTION_POSE_LIBRARY (${String(total('SINGLE_DIRECTION_POSE_LIBRARY'))} components)`,
-    },
-    {
-      value: 'CUTOUT_RIG_SINGLE_DIRECTION',
-      label: `CUTOUT_RIG_SINGLE_DIRECTION (${String(total('CUTOUT_RIG_SINGLE_DIRECTION'))} components)`,
-    },
-    {
-      value: 'TILESET_MODULAR',
-      label: `TILESET_MODULAR (${String(total('TILESET_MODULAR'))} tiles)`,
-    },
-  ];
+  return modesFor(category).map((mode) => ({
+    value: mode,
+    label: `${mode} (${String(componentCountFor(category, mode, additional))} ${
+      mode === 'TILESET_MODULAR' ? 'tiles' : 'components'
+    })`,
+  }));
 }

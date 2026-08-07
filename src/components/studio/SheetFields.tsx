@@ -5,6 +5,7 @@ import {
   directionalModeChoices,
   OUTPUT_TOOLTIPS,
 } from '../../constants/output/index.ts';
+import { resolveMode } from '../../constants/sheetPlans/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
@@ -26,15 +27,18 @@ export function SheetFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  const category = useSubjectStore((state) => state.category);
 
-  const modeChoices = directionalModeChoices(parseAdditionalAnatomy(additionalAnatomy));
+  // Only the modes this category can actually produce. Offering the others is what put a tileset's
+  // floors and walls one click away from a character.
+  const modeChoices = directionalModeChoices(category, parseAdditionalAnatomy(additionalAnatomy));
 
   return (
     <>
       <SelectField
         label="Sheet Contents"
         tooltip={OUTPUT_TOOLTIPS.directionalMode}
-        value={output.directionalMode}
+        value={resolveMode(category, output.directionalMode)}
         choices={modeChoices}
         onChange={(value) => {
           setOutputField('directionalMode', value);

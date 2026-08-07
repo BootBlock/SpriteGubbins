@@ -26,11 +26,12 @@ export function ComponentBudgetNotice() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const componentBudget = useOutputStore((state) => state.output.componentBudget);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  const category = useSubjectStore((state) => state.category);
 
   // The same sum the prompt, the inventory heading, the mode selector and the atlas grid all state,
   // read through the one function that owns it — a warning computed from a second arithmetic could
   // fire against a number the user is not being shown anywhere.
-  const count = componentCountFor(directionalMode, parseAdditionalAnatomy(additionalAnatomy));
+  const count = componentCountFor(category, directionalMode, parseAdditionalAnatomy(additionalAnatomy));
 
   return (
     <div aria-live="polite" aria-atomic="true">

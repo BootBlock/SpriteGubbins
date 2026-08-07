@@ -35,6 +35,7 @@ export function QuantiseTab() {
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  const category = useSubjectStore((state) => state.category);
   // In a store rather than here, because the workflow crosses tabs: the colour budget and the target
   // size are studio settings, and `App` unmounts this view when the user goes to change one.
   const source = useQuantiseStore((state) => state.source);
@@ -63,9 +64,9 @@ export function QuantiseTab() {
         : targetSizeGrid(
             source.image,
             target,
-            componentCountFor(directionalMode, parseAdditionalAnatomy(additionalAnatomy)),
+            componentCountFor(category, directionalMode, parseAdditionalAnatomy(additionalAnatomy)),
           ),
-    [source, target, directionalMode, additionalAnatomy],
+    [source, target, category, directionalMode, additionalAnatomy],
   );
 
   const result = useMemo(

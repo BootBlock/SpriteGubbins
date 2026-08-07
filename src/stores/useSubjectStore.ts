@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { resolveMode } from '../constants/sheetPlans/index.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
+import { useOutputStore } from './useOutputStore.ts';
 
 /**
  * What is being drawn: the category and the sixteen answers that describe the subject.
@@ -39,6 +41,18 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
 
   setCategory: (category) => {
     set({ category, subject: defaultSubjectFor(category) });
+    // Carry the sheet mode across too, because it does not survive a category change unchanged: the
+    // modes are category-scoped, and a stale one is how a character came to be described by a
+    // tileset's inventory. `resolveMode` keeps the current mode wherever the new category also
+    // supports it — switching CHARACTER → CREATURE should not silently reset a cut-out rig — and
+    // falls back to that category's default only where it genuinely cannot be honoured.
+    //
+    // Reaching into the other store rather than deriving this: the compiler resolves the pairing
+    // again on every compile, so the *prompt* is safe either way, but a store left holding a mode
+    // its own category cannot produce is state that a saved preset would then persist.
+    const output = useOutputStore.getState();
+    const mode = resolveMode(category, output.output.directionalMode);
+    if (mode !== output.output.directionalMode) output.setOutputField('directionalMode', mode);
   },
 
   setField: (key, value) => {

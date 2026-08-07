@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { MAX_ANATOMY_MULTIPLIER, NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { directionalModeChoices } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import { COMPONENT_COUNTS, PRACTICAL_COMPONENT_CEILING } from '../constants/promptText/index.ts';
-import { DIRECTIONAL_MODES } from '../types/output.ts';
+import { PRACTICAL_COMPONENT_CEILING } from '../constants/promptText/index.ts';
+import { modesFor } from '../constants/sheetPlans/index.ts';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { NO_ADDITIONAL_ANATOMY as NONE_ANATOMY } from '../constants/anatomy.ts';
 import type { OutputConfig } from '../types/output.ts';
+import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
@@ -30,18 +33,28 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...DEFAULT_PRESET.output, ...overrides };
 }
 
+/**
+ * Every pairing that actually exists. Iterating the mode union alone would ask a character for a
+ * tileset — the pairing this whole module now makes unreachable — so the pairs come from the plan
+ * table, which is the only place that knows which combinations are real.
+ */
+const PAIRS = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).map((mode) => ({ category, mode })),
+);
+
 describe('component counts', () => {
-  it.each(DIRECTIONAL_MODES)(
-    '%s states one count consistently across the prompt, the inventory, the selector and the atlas',
-    (mode) => {
-      // `SUBJECT` names no additional anatomy, so the mode's own count is the whole count here. The
+  it.each(PAIRS)(
+    '$category / $mode states one count consistently across the prompt, the inventory, the selector and the atlas',
+    ({ category, mode }) => {
+      // A subject naming no additional anatomy, so the plan's own count is the whole count here. The
       // block below covers what happens when a subject adds to it.
-      const count = COMPONENT_COUNTS[mode];
+      const subject = { ...defaultSubjectFor(category), additional_anatomy: NONE_ANATOMY };
+      const count = componentCountFor(category, mode, []);
       expect(Number.isInteger(count) && count > 0).toBe(true);
 
       // The prompt states it twice — once as the contract, once as the self-audit — and both must
       // be the same number the inventory below them lists.
-      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ directionalMode: mode }));
+      const prompt = generatePrompt(category, subject, withOutput({ directionalMode: mode }));
       expect(prompt).toContain(`Exactly ${count} components`);
       expect(prompt).toContain(`Component count is exactly ${count}.`);
       // The inventory's own heading is the fourth statement of the number, and the one that reads
@@ -50,7 +63,7 @@ describe('component counts', () => {
       expect(prompt).toContain(`### Component inventory — ${count} in total`);
 
       // The selector must promise the same number the prompt will ask for.
-      const choice = directionalModeChoices([]).find((candidate) => candidate.value === mode);
+      const choice = directionalModeChoices(category, []).find((candidate) => candidate.value === mode);
       expect(choice?.label).toContain(String(count));
 
       // And the atlas has to lay out a grid that actually holds them.
@@ -64,12 +77,13 @@ describe('component counts', () => {
     },
   );
 
-  it('has no mode asking for more than a model can deliver', () => {
+  it('has no pairing asking for more than a model can deliver', () => {
     // 111 components in one image was deleted for this reason; the ceiling is roughly 40.
-    for (const mode of DIRECTIONAL_MODES) {
-      expect(COMPONENT_COUNTS[mode], `${mode} exceeds the practical ceiling`).toBeLessThanOrEqual(
-        PRACTICAL_COMPONENT_CEILING,
-      );
+    for (const { category, mode } of PAIRS) {
+      expect(
+        componentCountFor(category, mode, []),
+        `${category}/${mode} exceeds the practical ceiling`,
+      ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
     }
   });
 });
@@ -77,7 +91,8 @@ describe('component counts', () => {
 describe('the count once a subject names anatomy of its own', () => {
   /** `CUTOUT_RIG_SINGLE_DIRECTION`: fifteen pieces, and room to add to them. */
   const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' });
-  const BASE = COMPONENT_COUNTS.CUTOUT_RIG_SINGLE_DIRECTION;
+  // Derived, not restated: the plan is the only place the figure lives now.
+  const BASE = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', []);
 
   function withAnatomy(additional_anatomy: string): SubjectDefinition {
     return { ...SUBJECT, additional_anatomy };
@@ -133,10 +148,10 @@ describe('the count once a subject names anatomy of its own', () => {
     // components themselves are wired up in `SheetFields` and `AtlasCalculatorModal`, which are
     // driven in the browser rather than here.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
-    const count = componentCountFor('CUTOUT_RIG_SINGLE_DIRECTION', anatomy);
+    const count = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', anatomy);
     expect(count).toBe(BASE + 3);
 
-    const label = directionalModeChoices(anatomy).find(
+    const label = directionalModeChoices('CHARACTER', anatomy).find(
       (choice) => choice.value === 'CUTOUT_RIG_SINGLE_DIRECTION',
     )?.label;
     expect(label).toContain(String(count));
