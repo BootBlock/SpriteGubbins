@@ -1,5 +1,6 @@
 import { ARCHITECTURE_SECTIONS } from '../../constants/architecture.ts';
 import { Badge } from '../common/Badge.tsx';
+import { StorageStatus } from './StorageStatus.tsx';
 
 /**
  * How the application is built, for anyone deciding whether to trust it with their work.
@@ -7,6 +8,9 @@ import { Badge } from '../common/Badge.tsx';
  * Reads as documentation rather than marketing, and the two things worth knowing before using it —
  * that nothing is sent anywhere, and where the data is actually kept — are the first and fourth
  * sections rather than a footnote.
+ *
+ * The header pairs the general claim with the specific one: the sections below describe the two
+ * storage backends, and `StorageStatus` says which of them this browser is on.
  */
 export function SpecTab() {
   return (
@@ -18,6 +22,7 @@ export function SpecTab() {
           An offline-capable progressive web application that composes model-targeted sprite-sheet prompts,
           and keeps your work in a database inside your own browser.
         </p>
+        <StorageStatus />
       </header>
 
       {ARCHITECTURE_SECTIONS.map((section) => (

@@ -12,7 +12,13 @@ import type { PresetArchetype } from '../types/preset.ts';
  * asynchronous, and a caller that only awaits *sometimes* would be a race waiting to happen.
  */
 export interface PersistenceBackend {
-  /** Which implementation this is. Surfaced in the UI so a user can tell where their data went. */
+  /**
+   * Which implementation this is.
+   *
+   * Read by `components/tabs/StorageStatus.tsx` and shown on the Architecture tab, so a user can
+   * tell where their data actually went — and so a database that silently failed to open stops
+   * looking exactly like one that opened.
+   */
   readonly kind: BackendKind;
 
   addHistoryLog(log: PromptHistoryLog): Promise<void>;
