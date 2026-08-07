@@ -1,6 +1,6 @@
 # **👾 MASTER IMPLEMENTATION SPECIFICATION**
 
-> **Status:** 🟢 ACTIVE — Phases 1–3 shipped (build system, PWA shell, design tokens; domain types, option pools, prompt compiler, SQLite/localStorage persistence; the five Zustand stores). Phase 4 (UI components and app assembly) next, then Phase 5.
+> **Status:** 🟢 ACTIVE — Phases 1–4 shipped (build system, PWA shell, design tokens; domain types, option pools, prompt compiler, SQLite/localStorage persistence; the five Zustand stores; the full component tree and app assembly). Phase 5 (verification and quality audit) next.
 
 ## **Project: Sprite Gubbins — Vite \+ React \+ TypeScript \+ PWA \+ SQLite**
 
@@ -337,6 +337,24 @@ Execute the following verification commands to ensure zero errors:
 ## **🎯 BEGIN EXECUTION**
 
 Read Phase 1 through Phase 5, then start Phase 1\. Build out the files systematically, adhering strictly to all architectural guardrails and anti-pattern bans.
+
+### Open change request against this specification
+
+The prompt template specified here has a **v2** that supersedes it, raised after Phases 1–3
+shipped. It is additive — the compiler architecture, the sixteen subject keys and the five
+categories are unchanged — but it alters the compiled template text, adds parameters, and touches
+`promptCompiler.ts`, `modelWrappers.ts`, `types/output.ts`, `constants/presets.ts` and
+`atlasCalculator.ts`.
+
+- **[baseline-prompt-new.md](baseline-prompt-new.md)** — the v2 template, the reasoning for each
+  change, and three ready-to-use presets.
+- **[prompt-template-v2-integration.md](prompt-template-v2-integration.md)** — the work breakdown
+  against the shipped code, in order, with tests.
+
+**Read the integration spec before working on the compiler, the model wrappers, the atlas
+calculator or the output-config UI.** Two of its changes are not mechanical: renaming
+`RESOLUTION_PROFILE` members is a persistence migration for stored custom presets, and it
+deliberately reverses the documented `|| 'DEFINED'` behaviour in `promptCompiler.ts`.
 
 [image1]: <data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAYCAYAAAAVibZIAAAAV0lEQVR4XmNgGAWjYPiCDHQBaoAyIBZDF6QUKAJxM7ogNQAoCFzQBZEByNZJZODNQHySgYphDAoCkMFUC1tuIF4IpakGAhgIhCc5AORKqgOqheMoGG4AAAd3DuEo/FF3AAAAAElFTkSuQmCC>
 

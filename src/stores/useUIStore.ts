@@ -22,7 +22,9 @@ export interface UIState {
   /** Show a message, replacing any current one, and dismiss it after {@link TOAST_DURATION_MS}. */
   showToast(message: string): void;
   dismissToast(): void;
+  /** Open or close the atlas calculator. Closes the history drawer if it was open. */
   toggleAtlasModal(): void;
+  /** Open or close the history drawer. Closes the atlas calculator if it was open. */
   toggleHistoryModal(): void;
   setInstallPrompt(prompt: BeforeInstallPromptEvent | null): void;
 }
@@ -68,12 +70,15 @@ export const useUIStore = create<UIState>((set) => ({
     set({ toastMessage: null });
   },
 
+  // Opening one overlay closes the other. Both are `<dialog showModal()>`, and stacking two of them
+  // puts the second in front of the first with the first still open behind it — two modal contexts
+  // at once, which is not a state either of them is written for.
   toggleAtlasModal: () => {
-    set((state) => ({ isAtlasModalOpen: !state.isAtlasModalOpen }));
+    set((state) => ({ isAtlasModalOpen: !state.isAtlasModalOpen, isHistoryModalOpen: false }));
   },
 
   toggleHistoryModal: () => {
-    set((state) => ({ isHistoryModalOpen: !state.isHistoryModalOpen }));
+    set((state) => ({ isHistoryModalOpen: !state.isHistoryModalOpen, isAtlasModalOpen: false }));
   },
 
   setInstallPrompt: (deferredPWAInstallPrompt) => {

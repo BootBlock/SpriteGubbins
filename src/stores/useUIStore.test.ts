@@ -69,14 +69,25 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().toastMessage).toBe('Raised without scheduling');
   });
 
-  it('toggles each overlay independently', () => {
+  it('opens and closes an overlay', () => {
+    useUIStore.getState().toggleAtlasModal();
+    expect(useUIStore.getState().isAtlasModalOpen).toBe(true);
+
+    useUIStore.getState().toggleAtlasModal();
+    expect(useUIStore.getState().isAtlasModalOpen).toBe(false);
+  });
+
+  it('never leaves both overlays open at once', () => {
+    // Two stacked modal dialogs would put one in front of the other with both still open, and each
+    // is written as if it were the only one.
+    useUIStore.getState().toggleAtlasModal();
+    useUIStore.getState().toggleHistoryModal();
+
+    expect(useUIStore.getState().isHistoryModalOpen).toBe(true);
+    expect(useUIStore.getState().isAtlasModalOpen).toBe(false);
+
     useUIStore.getState().toggleAtlasModal();
     expect(useUIStore.getState().isAtlasModalOpen).toBe(true);
     expect(useUIStore.getState().isHistoryModalOpen).toBe(false);
-
-    useUIStore.getState().toggleHistoryModal();
-    useUIStore.getState().toggleAtlasModal();
-    expect(useUIStore.getState().isAtlasModalOpen).toBe(false);
-    expect(useUIStore.getState().isHistoryModalOpen).toBe(true);
   });
 });

@@ -1,4 +1,6 @@
-/** Shell-level UI constants — the timings the chrome shares with the stores. */
+import type { AppTab } from '../types/ui.ts';
+
+/** Shell-level UI constants — the timings and labels the chrome shares with the stores. */
 
 /**
  * How long a toast stays on screen before dismissing itself.
@@ -8,3 +10,18 @@
  * rather than something to wait out.
  */
 export const TOAST_DURATION_MS = 3000;
+
+/** One view's entry in the header's switcher. */
+export interface AppTabChoice {
+  readonly id: AppTab;
+  readonly label: string;
+  /** Decorative — the label carries the meaning, so the switcher hides this from assistive tech. */
+  readonly icon: string;
+}
+
+/** The three views, in the order the switcher shows them. */
+export const APP_TAB_CHOICES: readonly AppTabChoice[] = [
+  { id: 'studio', label: 'Studio', icon: '🛠️' },
+  { id: 'presets', label: 'Presets', icon: '⚡' },
+  { id: 'spec', label: 'Architecture', icon: '📜' },
+];

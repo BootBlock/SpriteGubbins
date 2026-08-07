@@ -161,11 +161,16 @@ initial build. They are not stylistic preferences.
 - **One thing per file.** Every component, hook, store, utility and type definition lives in
   its own dedicated file, named for the thing it exports.
 - **Separation of concerns is directory-enforced.** Domain and compiler logic in `src/utils/`;
-  state in `src/stores/`; persistence in `src/db/`; constants in `src/constants/`; types in
-  `src/types/`; UI primitives in `src/components/common/`; studio panels in
-  `src/components/studio/`; modals in `src/components/modals/`; tab views in
-  `src/components/tabs/`; chrome in `src/components/layout/`. A file in the wrong directory is
-  a design error, not a filing error.
+  state in `src/stores/`; persistence in `src/db/`; browser-effect and shared-interaction hooks in
+  `src/hooks/`; constants in `src/constants/`; types in `src/types/`; UI primitives in
+  `src/components/common/`; studio panels in `src/components/studio/`; modals in
+  `src/components/modals/`; tab views in `src/components/tabs/`; chrome in
+  `src/components/layout/`. A file in the wrong directory is a design error, not a filing error.
+- **`src/hooks/` exists because `src/utils/` must stay pure.** The clipboard, file downloads and
+  the combo box's keyboard state machine are all impure — they touch `navigator`, the DOM, or a
+  store — so they cannot live in `src/utils/`, and they are not components. A hook belongs there
+  when it is genuinely shared (two or more call sites) and needs React or store access; a hook that
+  only wraps a single `useState` is the "abstraction soup" the spec bans, wherever it is filed.
 - **Utilities are pure.** Everything in `src/utils/` is a plain function of its arguments — no
   store reads, no DOM, no I/O. That is what makes the prompt compiler and the atlas maths
   testable, and the tests are where their correctness is actually established.

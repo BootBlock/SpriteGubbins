@@ -2,8 +2,9 @@ import type { SubjectCategory } from './subject.ts';
 import type { TargetModelId } from './output.ts';
 
 /**
- * One entry in the prompt history — a record of a prompt the user actually took away (copied or
- * downloaded), not of every keystroke.
+ * One entry in the prompt history — a record of a prompt the user actually copied, not of every
+ * keystroke. Copying only: a download names its own file and lands somewhere the user chose, so it
+ * is already a record; the clipboard keeps nothing once the next thing is copied over it.
  *
  * Stored in the `prompt_history` table. `wordCount` and `modelUsed` are denormalised onto the
  * row rather than recomputed on read: the history drawer lists them for every entry, and the

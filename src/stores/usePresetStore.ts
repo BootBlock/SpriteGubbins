@@ -22,9 +22,9 @@ import { useUIStore } from './useUIStore.ts';
 export interface PresetState {
   readonly customPresets: readonly PresetArchetype[];
   /**
-   * Whether a preset-pack transfer is running, which the Presets tab disables both transfer
-   * controls on. In practice only the import direction can be in flight — `exportPresetsJSON`
-   * serialises synchronously — and this is what stops an export racing a half-replaced collection.
+   * Whether a preset-pack transfer is running — the flag the Presets tab disables both transfer
+   * controls on. Only the import direction can actually be in flight (`exportPresetsJSON` serialises
+   * synchronously), which is what stops an export racing a half-replaced collection.
    */
   readonly isExporting: boolean;
 
@@ -32,14 +32,18 @@ export interface PresetState {
   fetchCustomPresets(): Promise<void>;
   /** Put a preset's configuration into the studio and switch to it. */
   loadPreset(preset: PresetArchetype): void;
-  /** Save the studio's current configuration under `name`. A blank name is ignored. */
-  saveCustomPreset(name: string): Promise<void>;
+  /**
+   * Save the studio's current configuration under `name`. A blank name is ignored.
+   *
+   * @returns whether it was stored, so the caller can keep the name in the box to retry rather than
+   * clearing a field whose contents were never persisted.
+   */
+  saveCustomPreset(name: string): Promise<boolean>;
   deleteCustomPreset(id: string): Promise<void>;
   /**
-   * The preset pack as JSON, built-ins included, for the caller to offer as a download.
-   *
-   * Returns the text rather than performing the download: a store that built an anchor element and
-   * clicked it would be doing the DOM's job, and a string is something a test can assert on.
+   * The preset pack as JSON, built-ins included, for the caller to offer as a download. Returns the
+   * text rather than performing the download: building and clicking an anchor element would be the
+   * DOM's job, and a string is something a test can assert on.
    */
   exportPresetsJSON(): string;
   /** Replace the stored custom presets with the pack in `file`. */
@@ -78,7 +82,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
 
   saveCustomPreset: async (name) => {
     const trimmed = name.trim();
-    if (!trimmed) return;
+    if (!trimmed) return false;
 
     const { category, subject } = useSubjectStore.getState();
     const preset: PresetArchetype = {
@@ -99,8 +103,10 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       // would silently reorder itself on the next reload.
       set({ customPresets: await database.listPresets() });
       useUIStore.getState().showToast(`Saved custom preset "${trimmed}"`);
+      return true;
     } catch {
       useUIStore.getState().showToast('Could not save that preset');
+      return false;
     }
   },
 
