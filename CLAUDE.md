@@ -198,6 +198,35 @@ machine-enforced, the build fails — don't go looking for a way around it.
 `as unknown as T` is banned by the spec but has no rule that catches it — treat it as a review
 finding. The fix is a type guard or a narrower union, never a wider cast.
 
+## Cross-origin isolation is load-bearing
+
+SQLite's OPFS backend coordinates through `SharedArrayBuffer`, which browsers expose only to
+cross-origin-isolated contexts. Isolation therefore decides which database the app actually
+gets, and it is achieved **two different ways**:
+
+- **Dev and preview** — `server.headers` / `preview.headers` in `vite.config.ts` send
+  `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`.
+- **Production** — GitHub Pages sends no custom headers, so [src/sw.ts](src/sw.ts) injects them
+  onto every response instead, and [public/coi-bootstrap.js](public/coi-bootstrap.js) reloads
+  the page once after that worker first takes control. **The first visit is never isolated**;
+  it becomes so on the reload.
+
+Three consequences to hold on to:
+
+- **The localStorage fallback in `src/db` is a specified behaviour, not a safety net.** It is
+  what runs before that first reload, and on any browser or host where isolation fails. Changes
+  to the database layer must work in both modes — the fallback is the path nobody exercises by
+  accident.
+- **The app must not load a cross-origin subresource.** Under COEP `require-corp` anything from
+  another origin that doesn't opt in is blocked outright — which is why the fonts fall back to
+  system faces rather than fetching a webfont, as the original single-file app did.
+- **`sw.ts` is not a generated file.** The build uses vite-plugin-pwa's `injectManifest`
+  strategy precisely so the worker can carry this custom fetch logic; a `generateSW` worker
+  cannot express it. Treat it as app code.
+
+Verify isolation with `globalThis.crossOriginIsolated` in the page, not by reading the config —
+the `verify` skill covers this.
+
 ## Accessibility is not optional
 
 `eslint-plugin-jsx-a11y` runs at error severity, but it only catches the mechanical half.
@@ -236,6 +265,30 @@ skill) over the diff and fix every confirmed finding.
 Tests import `describe` / `it` / `expect` from `vitest` explicitly — Vitest runs without
 `globals`, which is what keeps test files inside the app's TypeScript program so `tsc -b`
 type-checks them too.
+
+## Plan docs carry a status (`docs/todo/`)
+
+The plan and specification documents in [docs/todo](docs/todo) are long-lived and
+world-readable, and a **finished** plan reads exactly like a live one unless it says so. That is
+how stale guidance gets followed.
+
+**The rule:** every `.md` under `docs/todo/` opens with a status banner directly after its
+heading, and finished work is archived:
+
+```markdown
+> **Status:** 🟢 ACTIVE — Phase 1 shipped; Phase 2 next.
+```
+
+- **`🟢 ACTIVE`** / **`📘 REFERENCE`** stay in `docs/todo/`; **`✅ COMPLETE`** /
+  **`⛔ SUPERSEDED`** move to `docs/todo/done/`. Full definitions in
+  [docs/todo/README.md](docs/todo/README.md).
+- **When a phase ships, update the spec's banner in the same change.** It is the one place a
+  reader learns how far the implementation has actually got.
+- **Never rewrite a plan's history to match current practice.** A record of what a phase did is
+  evidence; editing it to name today's command asserts something that never happened.
+- A unit test ([tests/docs-todo-status.test.ts](tests/docs-todo-status.test.ts)) enforces the
+  banner and the placement, so drift fails the build rather than review. It can't judge whether
+  "COMPLETE" is *true* — that's yours.
 
 ### Multi-line text goes through a file, not inline quoting
 

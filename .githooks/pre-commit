@@ -1,0 +1,67 @@
+#!/usr/bin/env sh
+#
+# Sprite Gubbins pre-commit hook. Guards the three things that matter most on a PUBLIC repo,
+# scoped to the STAGED changes so it stays fast:
+#   (a) a credential-shaped scan of the staged diff (no secrets, ever — see CLAUDE.md);
+#   (b) Prettier formatting on staged code files;
+#   (c) ESLint on staged JS/TS/TSX files.
+# Any failure aborts the commit. In a genuine emergency, bypass with `git commit --no-verify`.
+#
+# Auto-wired by the "prepare" npm script (sets core.hooksPath = .githooks) on `npm install`.
+# It is a local first line of defence, not a guarantee — a --no-verify commit, or a clone that
+# never ran `npm install`, skips it entirely. `npm run lint`, `npm run format:check` and
+# `node scripts/secret-scan.mjs --diff <base>` are the authoritative equivalents to run in CI
+# once this repo has one.
+
+set -u
+
+fail=0
+red=''
+reset=''
+if [ -t 2 ]; then
+  red="$(printf '\033[31m')"
+  reset="$(printf '\033[0m')"
+fi
+
+note() { printf '%s\n' "$*" >&2; }
+err() { printf '%spre-commit: %s%s\n' "$red" "$*" "$reset" >&2; }
+
+# Staged files, Added/Copied/Modified only — a deletion can't introduce new content.
+staged="$(git diff --cached --name-only --diff-filter=ACM)"
+
+# --- (a) Secret scan of the staged diff ------------------------------------------------
+# The credential patterns live in one place — `scripts/secret-scan.mjs` — so the hook and any
+# future CI backstop cannot drift apart. The script scans only ADDED lines, drops obvious
+# placeholders, and exits non-zero (printing the suspect lines) if anything looks
+# credential-shaped.
+if ! node scripts/secret-scan.mjs --staged; then
+  note 'In a genuine emergency this check can be skipped with `git commit --no-verify`.'
+  fail=1
+fi
+
+# --- (b) Prettier check on staged code files -------------------------------------------
+# Prettier honours .prettierignore, so pass the staged code files and let it skip the rest.
+prettier_files="$(printf '%s\n' "$staged" | grep -Ei '\.(m?[jt]sx?|cjs|css|json)$' || true)"
+if [ -n "$prettier_files" ]; then
+  if ! printf '%s\n' "$prettier_files" | xargs npx prettier --check; then
+    err 'Prettier found unformatted staged files — run `npm run format` (or `npx prettier --write <files>`).'
+    fail=1
+  fi
+fi
+
+# --- (c) ESLint on staged JS/TS/TSX files ----------------------------------------------
+eslint_files="$(printf '%s\n' "$staged" | grep -Ei '\.([jt]sx?|mjs|cjs)$' || true)"
+if [ -n "$eslint_files" ]; then
+  if ! printf '%s\n' "$eslint_files" | xargs npx eslint; then
+    err 'ESLint failed on staged files — fix the reported problems (or `npm run lint:fix`).'
+    fail=1
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+  note ''
+  err 'commit aborted. Resolve the issues above and re-stage, or bypass with --no-verify.'
+  exit 1
+fi
+
+exit 0

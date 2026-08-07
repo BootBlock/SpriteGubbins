@@ -26,8 +26,11 @@ Requires Node 24 or newer (see [.nvmrc](.nvmrc)).
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173/
+npm run dev        # http://localhost:5173/SpriteGubbins/
 ```
+
+The site is served from `/SpriteGubbins/` — it deploys as a GitHub Pages project site, and dev
+mirrors that so paths behave identically in both.
 
 ### Scripts
 
@@ -45,11 +48,16 @@ npm run dev        # http://localhost:5173/
 ## Cross-origin isolation
 
 SQLite's high-performance OPFS backend coordinates through `SharedArrayBuffer`, which browsers
-expose only to cross-origin-isolated contexts. The dev and preview servers send
-`Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`
-automatically; **a production host must be configured to send them too.** Where they are
-missing the app still works — the database layer falls back to `localStorage` — but the
-SQLite-backed history and preset storage will not be used.
+expose only to cross-origin-isolated contexts.
+
+- **Locally**, the dev and preview servers send `Cross-Origin-Opener-Policy: same-origin` and
+  `Cross-Origin-Embedder-Policy: require-corp` themselves.
+- **In production**, GitHub Pages sends no custom headers, so the app's own service worker adds
+  them to every response and a small bootstrap script reloads the page once after that worker
+  first takes control. The very first visit is therefore not isolated; the reload fixes it.
+
+Where isolation can't be achieved at all the app still works — the database layer falls back to
+`localStorage` — but the SQLite-backed history and preset storage will not be used.
 
 ## Built with
 

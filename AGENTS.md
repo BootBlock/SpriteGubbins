@@ -21,7 +21,9 @@ click away and are **equally binding** — "I only read AGENTS.md" is not a defe
 | Design tokens, not hard-coded colour/motion values | [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists) |
 | The structural laws — <150 lines, one thing per file, SoC by directory, YAGNI, DRY, no stubs | [CLAUDE.md](CLAUDE.md#architecture-the-specs-structural-laws) |
 | The banned patterns, and which ones the build catches | [CLAUDE.md](CLAUDE.md#banned-patterns-and-which-ones-the-build-catches) |
+| Cross-origin isolation is load-bearing — it decides which database the app gets | [CLAUDE.md](CLAUDE.md#cross-origin-isolation-is-load-bearing) |
 | Accessibility wiring — roles, labels, live regions, focus | [CLAUDE.md](CLAUDE.md#accessibility-is-not-optional) |
+| Plan docs under `docs/todo/` carry a status banner | [CLAUDE.md](CLAUDE.md#plan-docs-carry-a-status-docstodo) |
 | How to verify a change before calling it done | [CLAUDE.md](CLAUDE.md#verifying-a-change) |
 
 **Adding a rule to CLAUDE.md? It belongs in that table too.**

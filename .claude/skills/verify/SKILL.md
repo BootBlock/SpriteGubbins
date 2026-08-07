@@ -15,8 +15,11 @@ reached the SQLite backend it thinks it did, and whether a control is reachable 
 ## Handle
 
 ```bash
-npm run dev          # http://localhost:5173/
+npm run dev          # http://localhost:5173/SpriteGubbins/
 ```
+
+**Mind the base path.** The site is served from `/SpriteGubbins/` (GitHub Pages project site),
+in dev as well as in production. `http://localhost:5173/` alone is a 404.
 
 **Pick a port of your own.** The sibling Gubbins project also serves on 5173, and a second
 `npm run dev` silently lands on 5174 — so a script pointed at 5173 can end up driving the
@@ -42,7 +45,7 @@ const browser = await chromium.launch({ channel: 'msedge', headless: true });
 const page = await browser.newPage({ viewport: { width: 1400, height: 950 } });
 page.setDefaultTimeout(8000);
 page.setDefaultNavigationTimeout(30000);
-await page.goto('http://localhost:5199/', { waitUntil: 'domcontentloaded' });
+await page.goto('http://localhost:5199/SpriteGubbins/', { waitUntil: 'domcontentloaded' });
 ```
 
 ## Check cross-origin isolation FIRST
@@ -57,14 +60,18 @@ const isolated = await page.evaluate(() => globalThis.crossOriginIsolated);
 if (!isolated) throw new Error('Not cross-origin isolated — SQLite will use the localStorage fallback');
 ```
 
-`vite.config.ts` sets `Cross-Origin-Opener-Policy: same-origin` and
-`Cross-Origin-Embedder-Policy: require-corp` on **both** the dev and preview servers, so a
-`false` here means the request didn't come from one of those servers (a static file server, a
-proxy, or a different port than you think). Confirm the headers directly if in doubt:
+**Isolation arrives two different ways, and which one you are testing matters.**
 
-```bash
-curl -sI http://localhost:5199/ | grep -i cross-origin
-```
+- **Dev / preview** — `vite.config.ts` sets the headers on the server, so the page is isolated
+  from the very first response. A `false` here means the request didn't come from one of those
+  servers (a plain static server, a proxy, or a different port than you think). Confirm
+  directly: `curl -sI http://localhost:5199/SpriteGubbins/ | grep -i cross-origin`.
+- **Production (GitHub Pages)** — no server headers exist. `src/sw.ts` injects them, and
+  `public/coi-bootstrap.js` reloads once after the worker takes control, so **the first load is
+  legitimately not isolated** and the second is. Testing this path needs a header-less static
+  server over `dist/`, not `npm run preview` (which would supply the headers itself and prove
+  nothing). Wait for `navigator.serviceWorker.controller !== null`, then for
+  `globalThis.crossOriginIsolated === true`.
 
 Any change touching `src/db/` should be verified in **both** modes — isolated, and with the
 fallback — because the fallback path is the one nobody exercises by accident.

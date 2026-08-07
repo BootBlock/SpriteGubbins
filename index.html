@@ -15,9 +15,16 @@
     <meta name="theme-color" content="#060911" />
     <meta name="color-scheme" content="dark" />
 
-    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <!-- Relative, not root-absolute: the site is served from /SpriteGubbins/ on GitHub Pages,
+         and these resolve against the document either way. -->
+    <link rel="icon" href="favicon.ico" sizes="32x32" />
     <!-- iOS ignores manifest icons entirely and needs its own link. -->
-    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="icon-192.png" />
+
+    <!-- Must run before the app: on a static host the service worker supplies the COOP/COEP
+         headers SQLite's OPFS backend needs, and the first visit has to reload once after that
+         worker takes control. A no-op on the dev/preview servers, which send the headers. -->
+    <script src="coi-bootstrap.js"></script>
   </head>
   <body>
     <div id="root"></div>

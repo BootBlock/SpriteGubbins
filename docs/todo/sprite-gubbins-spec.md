@@ -1,5 +1,7 @@
 # **👾 MASTER IMPLEMENTATION SPECIFICATION**
 
+> **Status:** 🟢 ACTIVE — Phase 1 (scaffold, build system, PWA, styling, linting) shipped; Phase 2 (domain types, constants, utilities, SQLite layer) next.
+
 ## **Project: Sprite Gubbins — Vite \+ React \+ TypeScript \+ PWA \+ SQLite**
 
 **Target AI Engine:** Claude Opus 5 / Claude Code / Cursor / Windsurf  
