@@ -50,9 +50,11 @@ if [ -n "$prettier_files" ]; then
 fi
 
 # --- (c) ESLint on staged JS/TS/TSX files ----------------------------------------------
+# `--no-warn-ignored`: staged files under an ignore pattern (public/, dist/) are deliberately
+# not linted, and warning about each one on every commit is pure noise.
 eslint_files="$(printf '%s\n' "$staged" | grep -Ei '\.([jt]sx?|mjs|cjs)$' || true)"
 if [ -n "$eslint_files" ]; then
-  if ! printf '%s\n' "$eslint_files" | xargs npx eslint; then
+  if ! printf '%s\n' "$eslint_files" | xargs npx eslint --no-warn-ignored; then
     err 'ESLint failed on staged files — fix the reported problems (or `npm run lint:fix`).'
     fail=1
   fi
