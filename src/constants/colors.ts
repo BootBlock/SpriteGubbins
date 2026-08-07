@@ -6,20 +6,16 @@
  * place in the app where raw hex literals belong (see CLAUDE.md's design-token rule); nothing
  * here paints any part of the interface.
  *
- * **Order is behaviour.** `parseColorFromText` walks these entries in insertion order and takes
- * the first name *contained anywhere* in the text. Two consequences, both inherited verbatim
- * from the single-file application this migrates and both load-bearing on the swatch a user
- * sees — `utils/colorParser.test.ts` pins them:
+ * **Order here is not significant.** `parseColorFromText` matches whole words and resolves ties
+ * by position in the *text*, so every entry below is reachable and the list can be reordered or
+ * extended freely. That is a change from the single-file application this migrates, which
+ * scanned these entries in insertion order looking for a bare substring, and so had two visible
+ * faults: `cyan` shadowed `plasma cyan` (making that entry dead), and `tan` matched inside
+ * "Ti**tan**ium" and "**Tan**k" — painting a confidently wrong swatch. `utils/colorParser.ts`
+ * documents the replacement rules; its tests pin them.
  *
- * 1. **Earlier entries shadow later ones.** `cyan` precedes `plasma cyan`, so "Plasma Cyan"
- *    previews as `#06b6d4` and the `plasma cyan` entry is unreachable by that name. Likewise
- *    `gold` precedes `obsidian`, so "Deep Obsidian & Gold" previews as gold. (`acid green` does
- *    precede `green`, so that pair resolves the specific way round.)
- * 2. **Matching is substring, not word.** `tan` matches inside "Heavy Armoured **Tan**k" and
- *    "Ti**tan**ium", so those fields show a tan swatch.
- *
- * Reordering or renaming an entry therefore changes which swatch appears for existing option
- * strings. Treat this list as ordered data, not an alphabetised lookup.
+ * Adding an entry is safe. Adding a name that is a common English *word fragment* is not — it
+ * will match wherever that fragment appears as a standalone word.
  */
 export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   cyan: '#06b6d4',

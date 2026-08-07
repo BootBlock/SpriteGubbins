@@ -92,7 +92,11 @@ export default defineConfig({
       manifest: {
         id: BASE,
         name: 'Sprite Gubbins',
-        short_name: 'Gubbins',
+        // The specification says `Gubbins`, which is wrong here: the sibling Gubbins project is
+        // a separate installable PWA using exactly that short name, so two indistinguishable
+        // icons would appear on any device with both. Truncated by a launcher this still reads
+        // as "Sprite Gub…", which is the part that disambiguates.
+        short_name: 'Sprite Gubbins',
         description:
           'Compose precise, model-targeted prompts for generating game sprite sheets and texture atlases.',
         lang: 'en-GB',
