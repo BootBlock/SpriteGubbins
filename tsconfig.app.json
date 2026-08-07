@@ -1,0 +1,43 @@
+{
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    /* `WebWorker` is here for @sqlite.org/sqlite-wasm: its OPFS VFS runs the database in a
+       worker, and its type surface references worker globals. */
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Strictness. The spec mandates the first six; the rest are the same bug-catching flags
+       the sibling Gubbins project runs, and cost nothing to hold to from day one. */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedSideEffectImports": true,
+    "verbatimModuleSyntax": true,
+
+    /* Path alias — resolved relative to this config (no baseUrl; TS 6) */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
+
+    "types": ["vite/client", "vite-plugin-pwa/client"]
+  },
+  /* Tests are deliberately NOT excluded: they are part of the same program, so `tsc -b`
+     type-checks them too. Vitest runs without `globals`, so every test imports `describe` /
+     `it` / `expect` from 'vitest' explicitly and no test-only ambient types leak into app code. */
+  "include": ["src"]
+}

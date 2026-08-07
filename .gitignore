@@ -1,0 +1,66 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+dist
+dist-ssr
+*.local
+
+# Vite / tooling caches
+.vite
+*.tsbuildinfo
+
+# Test / coverage
+coverage
+.nyc_output
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Data artefacts — the app's SQLite database lives in the browser's OPFS, but an exported
+# copy, dump, or backup dropped in the repo root while testing the persistence paths would
+# carry real content into a public repo. The pre-commit scan only reads added *lines*, so it
+# cannot flag a binary .sqlite. Keep them out by rule instead.
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+
+# Keys, certificates, and keystores — never commit a private key or credential store.
+*.pem
+*.key
+*.crt
+*.cer
+*.pfx
+*.p12
+*.keystore
+*.jks
+id_rsa
+id_rsa.*
+id_dsa
+id_ecdsa
+id_ed25519

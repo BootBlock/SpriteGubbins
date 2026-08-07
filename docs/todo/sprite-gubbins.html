@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sprite Gubbins - Modular Sprite Sheet Prompt Generator & Engine</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            foundry: {
+              50: '#f4f6f8',
+              100: '#e5e9ee',
+              200: '#ce96d8',
+              700: '#1e293b',
+              800: '#0f172a',
+              900: '#060911',
+              accent: '#6366f1',
+              neon: '#06b6d4',
+              gold: '#f59e0b',
+              emerald: '#10b981',
+              rose: '#f43f5e'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & ReactDOM UMD -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Babel Standalone for JSX compilation in-browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #060911;
+      color: #f3f4f6;
+    }
+
+    /* Ambient Background Grid & Animated Light Glows */
+    .bg-grid-pattern {
+      background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.25); }
+      50% { box-shadow: 0 0 32px rgba(6, 182, 212, 0.55); }
+    }
+
+    @keyframes floatOrb {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-20px) scale(1.1); }
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .animate-fade-in {
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .glow-box {
+      animation: pulseGlow 4s infinite ease-in-out;
+    }
+
+    .float-orb-1 {
+      animation: floatOrb 10s ease-in-out infinite;
+    }
+
+    .float-orb-2 {
+      animation: floatOrb 14s ease-in-out infinite reverse;
+    }
+
+    .shimmer-bg {
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 3s infinite;
+    }
+    
+    /* Custom Scrollbar Styling */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d18;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 4px;
+      border: 1px solid rgba(99, 102, 241, 0.25);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+</head>
+<body class="bg-foundry-900 bg-grid-pattern text-slate-100 min-h-screen relative overflow-x-hidden selection:bg-indigo-500 selection:text-white">
+  
+  <!-- AMBIENT GLOW ORBS -->
+  <div class="fixed -top-40 -left-40 w-[500px] h-[500px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none float-orb-1"></div>
+  <div class="fixed top-1/2 -right-40 w-[450px] h-[450px] bg-cyan-600/15 rounded-full blur-[120px] pointer-events-none float-orb-2"></div>
+  <div class="fixed -bottom-40 left-1/3 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[140px] pointer-events-none"></div>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // --- COLOR MAPPING HELPER FOR VISUAL SWATCHES ---
+    const COLOR_HEX_MAP = {
+      'cyan': '#06b6d4',
+      'gold': '#f59e0b',
+      'crimson': '#ef4444',
+      'emerald': '#10b981',
+      'violet': '#8b5cf6',
+      'purple': '#a855f7',
+      'acid green': '#84cc16',
+      'plasma cyan': '#22d3ee',
+      'copper': '#b45309',
+      'obsidian': '#1e1e24',
+      'charcoal': '#334155',
+      'gunmetal': '#475569',
+      'navy': '#1e3a8a',
+      'silver': '#cbd5e1',
+      'tan': '#d97706',
+      'indigo': '#6366f1',
+      'rust': '#9a3412',
+      'white': '#ffffff',
+      'chrome': '#f8fafc',
+      'rose': '#f43f5e',
+      'orange': '#f97316',
+      'yellow': '#eab308',
+      'blue': '#3b82f6',
+      'red': '#dc2626',
+      'green': '#16a34a',
+      'bronze': '#d97706',
+      'vermilion': '#ea580c',
+      'teal': '#14b8a6',
+      'amber': '#f59e0b'
+    };
+
+    function parseColorFromText(text) {
+      if (!text) return null;
+      const hexMatch = text.match(/#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})/);
+      if (hexMatch) return hexMatch[0];
+
+      const lower = text.toLowerCase();
+      for (const [name, hex] of Object.entries(COLOR_HEX_MAP)) {
+        if (lower.includes(name)) {
+          return hex;
+        }
+      }
+      return null;
+    }
+
+    function ColorSwatch({ colorText }) {
+      const hex = parseColorFromText(colorText);
+      if (!hex) return null;
+      return (
+        <span
+          className="inline-block w-3.5 h-3.5 rounded-full border border-white/40 shadow-sm flex-shrink-0 ml-1.5 transition-transform hover:scale-125"
+          style={{ backgroundColor: hex }}
+          title={`Color visual preview: ${hex}`}
+        />
+      );
+    }
+
+    // --- ACCESSIBLE FLOATING TOOLTIP COMPONENT ---
+    function Tooltip({ text, hint, direction = 'top' }) {
+      const [visible, setVisible] = useState(false);
+      if (!text) return null;
+
+      return (
+        <div className="relative inline-flex items-center ml-1 group" onMouseEnter={() => setVisible(true)} onMouseLeave={() => setVisible(false)}>
+          <button
+            type="button"
+            className="text-slate-500 hover:text-cyan-400 text-[11px] w-4 h-4 rounded-full border border-slate-700/80 hover:border-cyan-400 flex items-center justify-center font-mono font-bold transition-colors cursor-help"
+            aria-label="More information"
+          >
+            ⓘ
+          </button>
+
+          {visible && (
+            <div className={`absolute z-50 w-64 bg-slate-950 border border-indigo-500/80 rounded-xl p-2.5 shadow-[0_10px_25px_rgba(0,0,0,0.8)] text-[11px] leading-relaxed text-slate-200 pointer-events-none animate-fade-in backdrop-blur-xl ${
+              direction === 'bottom' ? 'top-6 left-0' : 'bottom-6 left-1/2 -translate-x-1/2'
+            }`}>
+              <p className="font-semibold text-cyan-300 mb-0.5">{hint || 'Field Guidance'}</p>
+              <p className="text-slate-300 font-sans">{text}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- CATEGORY-SPECIFIC DEFINITION OPTIONS WITH DETAILED TOOLTIPS ---
+    const CATEGORY_OPTIONS = {
+      CHARACTER: {
+        label: 'Humanoid Character',
+        fields: [
+          { key: 'species', label: 'Species / Archetype', tooltip: 'Defines the base organism or entity type. Sets fundamental skeletal structure and proportions for AI image generation.', options: ['Human', 'Cybernetic Cyborg', 'High Elf', 'Orc Warrior', 'Demonic Fiend', 'Android', 'Steampunk Automaton', 'Celestial Angel', 'Necromancer Lich', 'Void Stalker', 'Draconian Berserker', 'Gnome Tinker', 'Vampire Lord', 'Space Marine', 'Shadow Assassin', 'Mutant Scavenger'] },
+          { key: 'gender', label: 'Gender / Presentation', tooltip: 'Controls biological presentation or body shape features. Guides waist ratio, shoulder width, and torso curvature.', options: ['Androgynous / Neutral', 'Feminine', 'Masculine', 'Non-Binary', 'Agender', 'Demonic Sovereign', 'Synthetic Construct', 'Feminine Arcane', 'Masculine Brute', 'Cyber-Armoured Form'] },
+          { key: 'age', label: 'Age Presentation', tooltip: 'Establishes age, posture stiffness, and surface detail complexity. Influences skin texture, stance, and face aging.', options: ['Young Adult (20s)', 'Mature / Veteran (40s)', 'Ancient / Venerable', 'Ageless Synthetic', 'Teenage Prodigy', 'Centuries-Old Immortal', 'Freshly Awakened', 'Corroded Ancient'] },
+          { key: 'role', label: 'Role / Class', tooltip: 'Defines combat or utility specialization. Influences visual gear focus (e.g., rogue vs heavy paladin).', options: ['Katana Specialist', 'Heavy Mech Marine', 'Arcane Sorceress', 'Rogue Assassin', 'Bounty Hunter', 'Paladin', 'Gunslinger Outlaw', 'Druid Shapeshifter', 'Flame Elementalist', 'Cyber Monk', 'Shield Guardian', 'Alchemist', 'Sniper Ranger', 'Tech-Priest'] },
+          { key: 'setting', label: 'Setting / Theme', tooltip: 'Establishes environmental context and visual genre aesthetics. Enforces epoch-appropriate design rules.', options: ['Cyberpunk Dystopia', 'Dark Fantasy', 'Grimdark Sci-Fi', 'Steampunk Retro', 'Post-Apocalyptic', 'Solar-Punk Utopia', 'Eldritch Cosmic Horror', 'Dieselpunk Trenches', 'Nether Underworld', 'Underwater Hydro-Station', 'Feudal Japan Cyber', 'High Magic High Renaissance'] },
+          { key: 'build', label: 'Build & Proportions', tooltip: 'Determines weight, muscularity, and physical width scale. Controls bounding-box volume per sprite component.', options: ['Athletic & Slender', 'Heavy Armoured Tank', 'Lethal Agile', 'Stocky & Robust', 'Tall & Ethereal', 'Towering Colossus', 'Compact Dwarf', 'Ethereal Floating', 'Heavy Exosuit Frame', 'Skeletal Slender'] },
+          { key: 'silhouette', label: 'Overall Silhouette', tooltip: 'Focuses key edge features. Important for readability in 2D platformers and top-down games.', options: ['Dynamic Sharp Edges', 'Bulky Plated Layers', 'Flowing Robes & Cape', 'Sleek Aerodynamic', 'Spiked Shadow Outline', 'Asymmetrical Pauldrons', 'Broad-Shouldered Fortress', 'Floating Orbs & Ribbon', 'Horned Spiked Silhouette'] },
+          { key: 'face_head', label: 'Face, Hair & Head', tooltip: 'Specifies facial expression, hair style, helmets, or visors. Shapes the isolated head component variants.', options: ['Neon Visor & Undercut', 'Full Enclosed Helmet', 'Hooded Mask & Glowing Eyes', 'Braided Hair & Warpaint', 'Horned Crown & Mask', 'Monocular Cyber Eye', 'Skeletal Skull Face', 'Ornate Crested Visor', 'Cyborg Jawplate & Goggles'] },
+          { key: 'anatomy', label: 'Anatomy Base', tooltip: 'Configures component breakdown logic. Standard humanoid generates default 9-core + 34-limb components.', options: ['STANDARD HUMANOID', 'HUMANOID WITH WINGS', 'TAILED HUMANOID', 'QUADRUPED TAUR', 'CENTAUR LOWER BODY', 'FOUR-ARMED HUMANOID', 'SERPENT LOWER BODY'] },
+          { key: 'clothing', label: 'Clothing / Armour', tooltip: 'Specifies garments and protective plating integrated directly into limb/torso component surfaces.', options: ['Tactical Kevlar & Plates', 'Gothic Plate Armour', 'Enchanted Runed Robes', 'Leather Duster Coat', 'Reinforced Exo-Pads', 'Ceremonial Silk & Gold', 'Nano-Weave Bodysuit', 'Spiked Bone Armor', 'Industrial Hazard Suit'] },
+          { key: 'worn_details', label: 'Integrated Worn Details', tooltip: 'Adds specific holsters, pouches, cabling, or belts attached cleanly to body parts without loose clutter.', options: ['Holstered Sidearm & Pouch', 'Shoulder Pauldrons & Cloak', 'Fibre-Optic Cabling', 'Ammunition Belts', 'Scabbard & Strap Rig', 'Scroll Tubes & Flasks', 'Energy Battery Backpack', 'Tattered Cape & Chain', 'Medic Utility Pack'] },
+          { key: 'primary_colours', label: 'Primary Colours', tooltip: 'Dominant 60% color palette choices. Guides global albedo mapping for sprite shading.', options: ['Matte Charcoal Black & Gunmetal', 'Royal Navy & Deep Silver', 'Crimson Red & Black', 'Emerald Green & Tan', 'Midnight Violet & Indigo', 'Sand Beige & Rust', 'Pearl White & Chrome', 'Deep Obsidian & Gold'] },
+          { key: 'accent_colours', label: 'Accent Colours', tooltip: 'High-contrast secondary colors (20%) for energy lines, eyes, trim, and magic glows.', options: ['Cyan Neon #06B6D4', 'Polished Gold #F59E0B', 'Electric Violet', 'Safety Crimson', 'Toxic Acid Green', 'Plasma Cyan', 'Molten Copper', 'Spectral Rose', 'Laser Yellow #EAB308'] },
+          { key: 'materials', label: 'Materials & Surfaces', tooltip: 'Defines how light interacts with surfaces (e.g. metallic reflections vs flat matte cloth).', options: ['Reinforced Composites & Alloy', 'Burnished Steel & Leather', 'Woven Silk & Runic Crystals', 'Weathered Carbon Fibre', 'Damascus Steel & Dragon Scale', 'Polished Brass & Glass', 'Etched Obsidian Plate', 'Synthetic Polymer'] },
+          { key: 'exclusions', label: 'Explicit Exclusions', tooltip: 'Strict negative rules passed to AI generator to prevent unrequested items, floor shadows, or clutter.', options: ['No weapons, no floor shadows', 'No oversized pauldrons', 'No cape, no facial features', 'No glowing trails', 'No floor terrain, no text labels', 'No background clutter, no pets'] },
+          { key: 'additional_anatomy', label: 'Additional Genuine Anatomy', tooltip: 'Requests extra distinct anatomical components (e.g., tail, wings) separated into dedicated sprite slots.', options: ['NONE', 'Prehensile Cyber Tail', 'Mechanical Wing Pair', 'Dual Auxiliary Arms', 'Serpentine Tail', 'Feathered Archangel Wings', 'Demon Horn Pair & Tail'] }
+        ]
+      },
+      CREATURE: {
+        label: 'Creature / Monster',
+        fields: [
+          { key: 'species', label: 'Creature Class', tooltip: 'Defines monster classification and limb layout (quadruped, insectoid, void entity).', options: ['Beast / Quadruped', 'Mechanical Automaton', 'Chitinous Insectoid', 'Void Abomination', 'Elemental Golem', 'Draconic Drake', 'Hydra Multi-Head', 'Slime / Ooze Form', 'Fungal Spore Monster', 'Arachnid Swarmer'] },
+          { key: 'gender', label: 'Form Variant', tooltip: 'Specifies biological hierarchy or rank (alpha leader, worker minion, hive queen).', options: ['Apex Alpha', 'Drone / Minion', 'Queen / Hive Mother', 'Elder Ancient', 'Lesser Stalker', 'Prime Matriarch', 'Mutated Specimen', 'Overlord Colossus'] },
+          { key: 'age', label: 'Vitality State', tooltip: 'Controls battle wear, corruption, or elemental intensity.', options: ['Prime Ferocity', 'Ancient Weathered', 'Freshly Spawned', 'Corrupted Corpse', 'Enraged Overclocked', 'Slumbering Dormant', 'Mutated Hyper-Growth'] },
+          { key: 'role', label: 'Combat Behaviour', tooltip: 'Informs creature stance, mandible open state, and aggressive pose capability.', options: ['Ambusher Pouncer', 'Frontline Tank Swarmer', 'Ranged Spitter', 'Flying Harasser', 'Burrowing Surprise Attacker', 'Support Aura Emitter', 'Area Denier', 'Apex Predator'] },
+          { key: 'setting', label: 'Habitat / Theme', tooltip: 'Establishes environment context for biological camouflage and shell textures.', options: ['Alien Hive Core', 'Volcanic Caverns', 'Deep Space Derelict', 'Fungal Swamplands', 'Glacial Ice Trench', 'Subterranean Ruins', 'Radioactive Wasteland', 'Toxic Sewers'] },
+          { key: 'build', label: 'Mass & Frame', tooltip: 'Defines carapace thickness, spine arrangement, and physical weight distribution.', options: ['Low-Slung Quadruped', 'Huge Heavy Carapace', 'Slender Serpent-like', 'Multi-Legged Walker', 'Massive Winged Fiend', 'Amorphous Blob Frame', 'Skeletal Centipede'] },
+          { key: 'silhouette', label: 'Spines & Silhouette', tooltip: 'Focuses outward spikes, shell plates, and distinctive creature outline.', options: ['Jagged Dorsal Spines', 'Segmented Shell Plates', 'Tentacled Mass', 'Crystalline Outcrops', 'Spike-Covered Back', 'Humped Carapace', 'Webbed Wing Membrane'] },
+          { key: 'face_head', label: 'Mandibles & Sensory', tooltip: 'Configures eyes, fangs, mouth parts, and sensory feelers.', options: ['Triple Jaw Mandibles', 'Compound Insect Eyes', 'Single Glowing Monocular Sensor', 'Fanged Maw', 'Eyeless Sensing Slits', 'Multi-Horned Skull', 'Acid Siphon Maw'] },
+          { key: 'anatomy', label: 'Anatomy Base', tooltip: 'Controls how monster body parts are broken down into isolated components.', options: ['QUADRUPED BEAST', 'HEXAPOD INSECT', 'SERPENTINE TAILLESS', 'BIPEDAL BEAST', 'OCTOPUS TENTACLED', 'CENTIPEDE MULTI-SEGMENT'] },
+          { key: 'clothing', label: 'Harness / Augments', tooltip: 'Adds mounted weaponry, saddle straps, or cybernetic implants to the creature.', options: ['NONE', 'Mounted Energy Cannons', 'Reinforced Restraint Chains', 'Saddle & Armor Harness', 'Control Mind Spike', 'Cybernetic Leg Armor'] },
+          { key: 'worn_details', label: 'Biological Marks', tooltip: 'Specifies bioluminescence patterns, acid drips, or scar tissue.', options: ['Bioluminescent Veins', 'Battle Scars & Missing Scales', 'Acidic Drip Droplets', 'Chitin Cracks', 'Glow Spore Clusters', 'Molten Core Cracks', 'Frost Crystal Coating'] },
+          { key: 'primary_colours', label: 'Primary Colours', tooltip: 'Main body/hide base colors.', options: ['Obsidian Black & Deep Purple', 'Toxic Hive Yellow #EAB308 & Brown', 'Albino White & Pale Pink', 'Rusty Iron & Moss', 'Crimson Red & Charcoal', 'Deep Sea Cyan #06B6D4 & Navy', 'Bio-Green #10B981 & Slate'] },
+          { key: 'accent_colours', label: 'Accent Colours', tooltip: 'High-visibility bio-luminescent or warning accent colors.', options: ['Acidic Lime Green #84CC16', 'Magma Orange Glow #F97316', 'Plasma Cyan #22D3EE', 'Bio-Violet #8B5CF6', 'Electric Yellow #EAB308', 'Infrared Pink #F43F5E', 'Stasis Blue #3B82F6'] },
+          { key: 'materials', label: 'Surface Shell', tooltip: 'Defines hide texture (wet chitin, rocky scales, translucent slime).', options: ['Hard Chitin Shell & Wet Membranes', 'Molten Rock & Obsidian', 'Rusting Scrap & Wiring', 'Leathery Hide', 'Scaly Dragon Hide', 'Transparent Jelly Shell', 'Frozen Ice Plating'] },
+          { key: 'exclusions', label: 'Explicit Exclusions', tooltip: 'Prevents unwanted human features or props from appearing on monster sheets.', options: ['No human clothing, no weapons', 'No wings, no extra eyes', 'No saddles, no mechanical parts', 'No rider, no floor shadows', 'No background text'] },
+          { key: 'additional_anatomy', label: 'Extra Appendages', tooltip: 'Requests separate tail, stingers, or blade-arms for modular animation.', options: ['NONE', 'Scorpion Sting Tail', 'Chitinous Blade Arms', 'Double Pair Wings', 'Prehensile Tentacle Pair', 'Spike Tail Club'] }
+        ]
+      },
+      OBJECT: {
+        label: 'Interactive Object / Prop',
+        fields: [
+          { key: 'species', label: 'Object Category', tooltip: 'Defines functional object classification (terminal, loot chest, turret).', options: ['Interactive Terminal', 'Loot Chest / Container', 'Power Generator', 'Defense Turret', 'Portal Gate', 'Healing Station', 'Vending Machine', 'Control Console', 'Ancient Relic Shrine'] },
+          { key: 'gender', label: 'Operational Status', tooltip: 'Defines active state, power level, or destruction level.', options: ['Fully Functional', 'Damaged / Repaired', 'Ancient Sealed', 'Overclocked / Active', 'Power Offline', 'Corrupted Glitching', 'Self-Destruct Sequence'] },
+          { key: 'age', label: 'Tech Era', tooltip: 'Establishes mechanical design language and era aesthetic.', options: ['Futuristic Sci-Fi', 'Ancient Magitech', 'Retro 80s Industrial', 'Medieval Wood & Iron', 'Steampunk Brass', 'Alien Crystal Tech', 'Post-Apocalyptic Scraps'] },
+          { key: 'role', label: 'Game Function', tooltip: 'Guides visual indicators (healing green lights, explosive red danger decals).', options: ['Save Station / Healer', 'High-Tier Loot Source', 'Hazard Obstacle', 'Objective Device', 'Resource Converter', 'Security Gateway', 'Ammunition Recharger'] },
+          { key: 'setting', label: 'Environment Context', tooltip: 'Sets surrounding biome aesthetics reflected on object housing.', options: ['Command Bridge', 'Dungeon Chamber', 'Cyber City Alley', 'Abandoned Lab', 'Temple Vault', 'Space Station Engine Room', 'Industrial Factory'] },
+          { key: 'build', label: 'Form Factor', tooltip: 'Defines physical geometry volume (pillar, tabletop, wall panel).', options: ['Heavy Heavy Pillar', 'Compact Tabletop Device', 'Modular Wall Panel', 'Spherical Pod', 'Cylindrical Conduit', 'Pyramidal Structure', 'Wall-Mounted Box'] },
+          { key: 'silhouette', label: 'Hard Surfaces', tooltip: 'Specifies hard-surface edge profile (chamfered, gothic arch, sleek pod).', options: ['Chamfered Rectangular Box', 'Pyramidal Conduit', 'Cylindrical Core', 'Asymmetric Mechanical', 'Ornate Gothic Arches', 'Sleek Oval Pod', 'Hexagonal Tower'] },
+          { key: 'face_head', label: 'Interface Screen', tooltip: 'Defines main focal display (hologram, dials, rune core, keypads).', options: ['Holographic Display Screen', 'Analog Dials & Gauge Panels', 'Runic Crystal Core', 'Keypad & Biometric Scanner', 'Glowing Monitor Array', 'Lever & Valve Array'] },
+          { key: 'anatomy', label: 'Structure Base', tooltip: 'Controls how mechanical parts are broken down into isolated components.', options: ['SINGLE RIGID OBJECT', 'MULTI-SEGMENT TURRET', 'HINGED CHEST CONTAINER', 'MODULAR CONDUIT', 'ROTATING SPHERICAL CORE'] },
+          { key: 'clothing', label: 'Mounting / Framework', tooltip: 'Defines base floor mounts, cages, or mounting brackets.', options: ['Floor Bolted Frame', 'Reinforced Steel Cage', 'Suspended Cable Rig', 'Freestanding Base', 'Wall-Anchored Brackets', 'Hydraulic Lift Feet'] },
+          { key: 'worn_details', label: 'Utility Markings', tooltip: 'Adds warning stencils, hazard stripes, or exposed cabling details.', options: ['Hazard Stripes & Decals', 'Warning Stencils & LEDs', 'Runic Engravings', 'Coolant Pipe Joints', 'Exposed Circuit Wiring', 'Graffiti & Scratches', 'Moss & Vines'] },
+          { key: 'primary_colours', label: 'Primary Colours', tooltip: 'Main structural casing colors.', options: ['Industrial Yellow #EAB308 & Charcoal', 'Matte White & Dark Slate', 'Weathered Bronze & Teak', 'Deep Cobalt Blue #1E3A8A', 'Gunmetal Grey & Orange', 'Rusted Iron & Olive', 'Gilded Gold #F59E0B & Marble'] },
+          { key: 'accent_colours', label: 'Accent Colours', tooltip: 'Emissive status LED and wiring accent colors.', options: ['Alert Orange LEDs #F97316', 'Laser Green Glow #10B981', 'Stasis Blue Core #3B82F6', 'Crimson Warning Strip #EF4444', 'Neon Cyan Cables #06B6D4', 'Arcane Purple Gem #8B5CF6', 'Hot Pink Glitch #F43F5E'] },
+          { key: 'materials', label: 'Material Plating', options: ['Painted Sheet Metal & Acrylic', 'Polished Brass & Oak', 'Carbon Composite & Glass', 'Cast Iron', 'Carved Granite & Crystal', 'Reflective Mirror Alloy'] },
+          { key: 'exclusions', label: 'Explicit Exclusions', options: ['No living character, no shadows', 'No cables on floor', 'No text or letters', 'No pedestal or ground grid', 'No ambient smoke'] },
+          { key: 'additional_anatomy', label: 'Deployable Modules', options: ['NONE', 'Deployable Sensor Dish', 'Articulated Arm Clamp', 'Coolant Vent Flaps', 'Deployable Turret Barrel', 'Holographic Emitter Wings'] }
+        ]
+      },
+      ITEM: {
+        label: 'Loot Item / Equipment',
+        fields: [
+          { key: 'species', label: 'Item Type', tooltip: 'Defines weapon, potion, armor, or artifact item type.', options: ['Melee Weapon (Sword/Axe)', 'Ranged Weapon (Rifle/Bow)', 'Magical Artefact / Orb', 'Consumable Potion/Cell', 'Armor Piece (Helmet/Shield)', 'Keycard / Quest Item', 'Energy Shield Unit'] },
+          { key: 'gender', label: 'Rarity / Tier', tooltip: 'Guides visual prestige (gold trim, rune glows, artifact energy).', options: ['Legendary / Artifact', 'Epic Enchanted', 'Standard Issue / Common', 'Relic of Lost Era', 'Mythic God-Tier', 'Cursed Prototype', 'Crafted Masterwork'] },
+          { key: 'age', label: 'Condition State', tooltip: 'Sets surface wear, scratches, or power overcharge state.', options: ['Pristine Forge Condition', 'Battle-Scarred Veteran', 'Corroded / Ruined', 'Overcharged Energy', 'Ancient Sunken Relic', 'Freshly Synthesized'] },
+          { key: 'role', label: 'Item Purpose', tooltip: 'Defines functional combat or utility role in game design.', options: ['Primary Offensive Weapon', 'Defensive Barrier Shield', 'Resource / Mana Refill', 'Quest Essential Key', 'Buff Emitter Stat Boost', 'Crafting Material'] },
+          { key: 'setting', label: 'Art Style Theme', tooltip: 'Aligns item style with world theme (magic fantasy vs sci-fi plasma).', options: ['High Fantasy Magic', 'Cyberpunk Plasma Tech', 'Steampunk Clockwork', 'Eldritch Void', 'Sci-Fi Energy Weapon', 'Gothic Vampire', 'Post-Apocalyptic'] },
+          { key: 'build', label: 'Weight & Size', tooltip: 'Establishes item scale within inventory grid slots.', options: ['Heavy Two-Handed', 'Compact One-Handed', 'Slender Delicate', 'Over-sized Colossal', 'Pocket-Sized Device', 'Medium Dual-Wield'] },
+          { key: 'silhouette', label: 'Blade / Shape Profile', tooltip: 'Focuses sharp blade contours, shield silhouettes, or potion shapes.', options: ['Aggressive Serrated Edge', 'Symmetrical Elegant Blade', 'Intricate Geometric Core', 'Ornate Crested Shield', 'Double-Headed Axe Blade', 'Curved Katana Edge'] },
+          { key: 'face_head', label: 'Grip & Pommel', tooltip: 'Defines hilt, grip texture, or crystal core pommel.', options: ['Leather Wrapped Hilt & Gem Pommel', 'Ergonomic Synthetic Grip', 'Dragon-Head Crossguard', 'Floating Crystal Core', 'Gold Embossed Trigger Guard'] },
+          { key: 'anatomy', label: 'Item Assembly Base', tooltip: 'Controls component isolation (e.g., weapon + detachable magazine).', options: ['SINGLE WEAPON ITEM', 'WEAPON WITH DETACHABLE MAG', 'SHIELD WITH EMBLEM', 'POTION BOTTLE & CORK', 'ORB WITH FLOATING RINGS'] },
+          { key: 'clothing', label: 'Scabbard / Holster', tooltip: 'Optionally includes matching sheath or holster component.', options: ['Matched Scabbard / Sheath', 'Magnetic Back Sling', 'Velvet Lined Display Case', 'NONE', 'Leather Holster Belt', 'Runic Power Harness'] },
+          { key: 'worn_details', label: 'Runes & Engravings', tooltip: 'Adds etched runes, serial numbers, or energy conduits.', options: ['Etched Luminous Runes', 'Serial Numbers & Barcode', 'Filigree Gold Inlay', 'Energy Conduits', 'Blood Groove & Notch Marks', 'Circuit Traces'] },
+          { key: 'primary_colours', label: 'Primary Colours', options: ['Damascus Steel & Obsidian', 'Polished Silver & Gold #F59E0B', 'Titanium Grey & Black', 'Deep Ruby Glass #EF4444', 'Emerald Crystal #10B981 & Platinum', 'Matte Black & Cyan #06B6D4'] },
+          { key: 'accent_colours', label: 'Accent Colours', options: ['Ethereal Arcane Purple #8B5CF6', 'Plasma Blue Glow #22D3EE', 'Golden Sunburst #F59E0B', 'Toxic Poison Green #84CC16', 'Crimson Fire #EF4444', 'Solar Gold', 'Void Black'] },
+          { key: 'materials', label: 'Core Material', options: ['Mithril & Dragon Scale', 'Plasma Conduit & Polymer', 'Enchanted Crystal & Platinum', 'Valyrian Steel', 'Obsidian Glass & Brass', 'Carbon Fibre & Titanium'] },
+          { key: 'exclusions', label: 'Explicit Exclusions', options: ['No holding hand or character', 'No pedestal or stand', 'No magic smoke trails', 'No floor shadow', 'No text or stats box'] },
+          { key: 'additional_anatomy', label: 'Attached Attachments', options: ['NONE', 'Attachable Scope & Laser', 'Elemental Effect Aura', 'Tassel & Charm Ribbons', 'Bayonet Blade Tip', 'Secondary Energy Cell'] }
+        ]
+      },
+      BUILDING: {
+        label: 'Building / Environment Tile',
+        fields: [
+          { key: 'species', label: 'Structure Type', tooltip: 'Defines architectural structure type (watchtower, kiosk, shop).', options: ['Modular Watchtower', 'Ramen Stand Kiosk', 'Blacksmith Forge', 'Cybernetics Clinic', 'Ancient Temple Gate', 'Defense Bunker', 'Sci-Fi Landing Pad', 'Tavern Inn', 'Alchemist Lab'] },
+          { key: 'gender', label: 'Occupancy / State', tooltip: 'Specifies structure condition (active, ruined, overgrown).', options: ['Active & In-Use', 'Abandoned Ruins', 'Fortified Stronghold', 'Under Construction', 'Severely Damaged', 'Overgrown Nature takeover'] },
+          { key: 'age', label: 'Era & Architecture', tooltip: 'Establishes architecture style (Gothic stone, Neo-Tokyo, timber).', options: ['Neo-Tokyo Cyberpunk', 'Medieval Timber-Frame', 'Gothic Stone Fortress', 'Sci-Fi Outpost Modular', 'Ancient Egyptian Sandstone', 'Steampunk Ironworks'] },
+          { key: 'role', label: 'Game Building Role', tooltip: 'Guides vendor counters, turret mounts, or crafting signs.', options: ['Vendor / Shop Kiosk', 'Defense Tower Structure', 'Player Housing / Base', 'Spawn Point', 'Crafting Facility', 'Resource Processing Plant'] },
+          { key: 'setting', label: 'Environment Biome', tooltip: 'Sets surrounding biome details (snowy, desert, neon street).', options: ['Rain-Slicked Neon Street', 'Snowy Mountain Pass', 'Desert Wasteland', 'Enchanted Forest Clearing', 'Volcanic Cavern Base', 'Deep Space Orbital'] },
+          { key: 'build', label: 'Building Scale', tooltip: 'Defines building dimensions and story count footprint.', options: ['2-Story Compact Footprint', '1-Story Wide Kiosk', 'Tall 3-Tier Tower', 'Fortified Gatehouse', 'Sprawling Low Structure', 'Miniature Outpost Pod'] },
+          { key: 'silhouette', label: 'Roof & Framework', tooltip: 'Focuses roofline silhouette (pitched tiles, solar glass, battlements).', options: ['Pitched Tiled Roof & Lanterns', 'Overhanging Neon Signage & Pipes', 'Battlements & Machicolations', 'Dome Array', 'Spiked Roof Gables', 'Solar Glass Panels'] },
+          { key: 'face_head', label: 'Entrance & Facade', tooltip: 'Defines front entry (open counter, heavy oak door, blast door).', options: ['Open Counter & Bar Stools', 'Heavy Reinforced Oak Door', 'Sliding Automated Glass', 'Runic Archway', 'Steel Blast Door', 'Curtained Archway'] },
+          { key: 'anatomy', label: 'Building Assembly Base', tooltip: 'Controls building tile modular breakdown.', options: ['MODULAR BUILDING TILES', 'SINGLE STRUCTURE MODEL', 'TOWER WITH DETACHABLE ROOF', 'WALL SECTION WITH GATE', 'CORNER TILE PIECE'] },
+          { key: 'clothing', label: 'Awning & Addons', tooltip: 'Adds fabric awnings, scaffolding, or solar panels.', options: ['Striped Fabric Awning', 'Solar Panel Array', 'Gargoyle Corner Statues', 'Wooden Scaffolding', 'Neon Holographic Banner', 'Ivy Trellis Grill'] },
+          { key: 'worn_details', label: 'Facade Details', tooltip: 'Specifies lanterns, signs, air conditioners, or ivy growth.', options: ['Hanging Paper Lanterns & Cables', 'Wall Mounted Torches & Shield', 'Holographic Vending Sign', 'Moss & Ivy Growth', 'Exposed Air Conditioning Units', 'Bullet Scratches'] },
+          { key: 'primary_colours', label: 'Primary Colours', options: ['Dark Stained Wood & Vermilion Red #EA580C', 'Weathered Grey Stone & Oak', 'Concrete Slate & Blue Metal', 'Sandstone & Copper', 'Gothic Slate & Bronze', 'White Polymer & Glass'] },
+          { key: 'accent_colours', label: 'Accent Colours', options: ['Warm Lantern Orange #F97316', 'Neon Pink Sign Glow #F43F5E', 'Torchfire Yellow #EAB308', 'Verdigris Green #10B981', 'Plasma Cyan Stream #06B6D4', 'Golden Runic Glow #F59E0B'] },
+          { key: 'materials', label: 'Construction Materials', options: ['Cedar Wood, Clay Tiles & Paper', 'Cut Granite Blocks & Iron Girders', 'Corrugated Iron & Glass', 'Marble & Gold', 'Reinforced Concrete & Steel'] },
+          { key: 'exclusions', label: 'Explicit Exclusions', options: ['No ground terrain tiles, no characters', 'No surrounding trees or sky', 'No vehicles', 'No floor shadow, no grid overlay'] },
+          { key: 'additional_anatomy', label: 'Structural Appendages', options: ['NONE', 'External Chimney & Smoke Pipe', 'Rooftop Antenna Rig', 'Side Storage Shed Module', 'Defensive Turret Mount', 'Rooftop Heli-Pad'] }
+        ]
+      }
+    };
+
+    // --- TARGET AI GENERATOR MODEL RESEARCH CONFIGURATION ---
+    const TARGET_MODELS = [
+      {
+        id: 'GENERIC',
+        name: 'Generic / Baseline Prompt',
+        tooltip: 'Standard un-wrapped prompt suitable for ChatGPT, Claude 3.5 Sonnet, DeepSeek, or general LLM text-to-image workflows.'
+      },
+      {
+        id: 'CHATGPT_5_6_SOL',
+        name: 'ChatGPT 5.6 Sol (OpenAI)',
+        tooltip: 'Optimized specifically for OpenAI ChatGPT 5.6 Sol. Enforces high-reasoning context parameters, explicit done-conditions, structured output contracts, and zero-hallucination non-ambiguous visual rules.'
+      },
+      {
+        id: 'MIDJOURNEY',
+        name: 'Midjourney v6.1',
+        tooltip: 'Appends Midjourney flags (--ar, --v 6.1, --style raw, --sw 250, --no background text labels shadows) to enforce crisp pixel separation.'
+      },
+      {
+        id: 'STABLE_DIFFUSION',
+        name: 'Stable Diffusion / Flux',
+        tooltip: 'Formats output with clean positive directives and appends a detailed Negative Prompt block targeting deformities, floor shadows, and soft gradients.'
+      },
+      {
+        id: 'GOOGLE_IMAGEN_3',
+        name: 'Google Imagen 3',
+        tooltip: 'Tailors output into a clean natural language visual style description with explicit camera perspective and crisp subject priority.'
+      },
+      {
+        id: 'DALLE_3',
+        name: 'DALL-E 3 (OpenAI)',
+        tooltip: 'Adds a high-priority system directive prefix demanding strict pixel-art fidelity and zero vector smoothing.'
+      }
+    ];
+
+    // --- PRESET ARCHETYPE POOL ---
+    const PRESETS = [
+      {
+        id: 'cyberpunk-katana',
+        name: 'Cyberpunk Katana Specialist',
+        category: 'CHARACTER',
+        subject: {
+          species: 'Cybernetic Cyborg',
+          gender: 'Feminine',
+          age: 'Young Adult (20s)',
+          role: 'Katana Specialist',
+          setting: 'Cyberpunk Dystopia',
+          build: 'Athletic & Slender',
+          silhouette: 'Dynamic Sharp Edges',
+          face_head: 'Neon Visor & Undercut',
+          anatomy: 'STANDARD HUMANOID',
+          clothing: 'Tactical Kevlar & Plates',
+          worn_details: 'Holstered Sidearm & Pouch',
+          primary_colours: 'Matte Charcoal Black & Gunmetal',
+          accent_colours: 'Cyan Neon #06B6D4',
+          materials: 'Reinforced Composites & Alloy',
+          exclusions: 'No weapons, no floor shadows',
+          additional_anatomy: 'NONE'
+        },
+        output: {
+          directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+          surfaceDetail: 'CLEAN_PRODUCTION',
+          resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+          paletteLimit: 'RESTRAINED_64_COLOR',
+          outlineStyle: 'DARK_LOCAL_CONTOUR',
+          lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+          aspectRatio: 'WIDE_16_9',
+          targetModel: 'CHATGPT_5_6_SOL'
+        }
+      },
+      {
+        id: 'scifi-marine',
+        name: 'Sci-Fi Void Marine',
+        category: 'CHARACTER',
+        subject: {
+          species: 'Human',
+          gender: 'Masculine',
+          age: 'Mature / Veteran (40s)',
+          role: 'Heavy Mech Marine',
+          setting: 'Grimdark Sci-Fi',
+          build: 'Heavy Armoured Tank',
+          silhouette: 'Bulky Plated Layers',
+          face_head: 'Full Enclosed Helmet',
+          anatomy: 'STANDARD HUMANOID',
+          clothing: 'Gothic Plate Armour',
+          worn_details: 'Shoulder Pauldrons & Cloak',
+          primary_colours: 'Royal Navy & Deep Silver',
+          accent_colours: 'Safety Crimson #EF4444',
+          materials: 'Burnished Steel & Leather',
+          exclusions: 'No cape, no facial features',
+          additional_anatomy: 'NONE'
+        },
+        output: {
+          directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+          surfaceDetail: 'DETAILED_PRODUCTION',
+          resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+          paletteLimit: 'STRICT_32_COLOR',
+          outlineStyle: 'PURE_BLACK_OUTLINE',
+          lightingModel: 'ISOMETRIC_TOP_LEFT',
+          aspectRatio: 'WIDE_16_9',
+          targetModel: 'GENERIC'
+        }
+      },
+      {
+        id: 'dungeon-knight',
+        name: 'Pixel Dungeon Knight',
+        category: 'CHARACTER',
+        subject: {
+          species: 'Human',
+          gender: 'Masculine',
+          age: 'Young Adult (20s)',
+          role: 'Paladin',
+          setting: 'Dark Fantasy',
+          build: 'Stocky & Robust',
+          silhouette: 'Bulky Plated Layers',
+          face_head: 'Braided Hair & Warpaint',
+          anatomy: 'STANDARD HUMANOID',
+          clothing: 'Gothic Plate Armour',
+          worn_details: 'Shoulder Pauldrons & Cloak',
+          primary_colours: 'Crimson Red & Black',
+          accent_colours: 'Polished Gold #F59E0B',
+          materials: 'Burnished Steel & Leather',
+          exclusions: 'No floor shadows',
+          additional_anatomy: 'NONE'
+        },
+        output: {
+          directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+          surfaceDetail: 'CLEAN_PRODUCTION',
+          resolutionProfile: '16_BIT_RETRO_PIXEL_ART',
+          paletteLimit: 'STRICT_32_COLOR',
+          outlineStyle: 'DARK_LOCAL_CONTOUR',
+          lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+          aspectRatio: 'SQUARE_1_1',
+          targetModel: 'GENERIC'
+        }
+      },
+      {
+        id: 'creature-drone',
+        name: 'Cybernetic Attack Drone',
+        category: 'CREATURE',
+        subject: {
+          species: 'Mechanical Automaton',
+          gender: 'Drone / Minion',
+          age: 'Prime Ferocity',
+          role: 'Flying Harasser',
+          setting: 'Deep Space Derelict',
+          build: 'Low-Slung Quadruped',
+          silhouette: 'Segmented Shell Plates',
+          face_head: 'Single Glowing Monocular Sensor',
+          anatomy: 'QUADRUPED BEAST',
+          clothing: 'Mounted Energy Cannons',
+          worn_details: 'Bioluminescent Veins',
+          primary_colours: 'Obsidian Black & Deep Purple',
+          accent_colours: 'Plasma Cyan #22D3EE',
+          materials: 'Rusting Scrap & Wiring',
+          exclusions: 'No human clothing, no weapons',
+          additional_anatomy: 'Double Pair Wings'
+        },
+        output: {
+          directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+          surfaceDetail: 'CLEAN_PRODUCTION',
+          resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+          paletteLimit: 'RESTRAINED_64_COLOR',
+          outlineStyle: 'DARK_LOCAL_CONTOUR',
+          lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+          aspectRatio: 'WIDE_16_9',
+          targetModel: 'GENERIC'
+        }
+      },
+      {
+        id: 'prop-terminal',
+        name: 'Sci-Fi Control Console',
+        category: 'OBJECT',
+        subject: {
+          species: 'Interactive Terminal',
+          gender: 'Fully Functional',
+          age: 'Futuristic Sci-Fi',
+          role: 'Objective Device',
+          setting: 'Command Bridge',
+          build: 'Compact Tabletop Device',
+          silhouette: 'Chamfered Rectangular Box',
+          face_head: 'Holographic Display Screen',
+          anatomy: 'SINGLE RIGID OBJECT',
+          clothing: 'Floor Bolted Frame',
+          worn_details: 'Warning Stencils & LEDs',
+          primary_colours: 'Matte White & Dark Slate',
+          accent_colours: 'Alert Orange LEDs #F97316',
+          materials: 'Carbon Composite & Glass',
+          exclusions: 'No living character, no shadows',
+          additional_anatomy: 'Deployable Sensor Dish'
+        },
+        output: {
+          directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+          surfaceDetail: 'CLEAN_PRODUCTION',
+          resolutionProfile: 'MID_RESOLUTION_PIXEL_ART',
+          paletteLimit: 'RESTRAINED_64_COLOR',
+          outlineStyle: 'DARK_LOCAL_CONTOUR',
+          lightingModel: 'UNLIT_EMISSIVE_BAKED',
+          aspectRatio: 'SQUARE_1_1',
+          targetModel: 'GENERIC'
+        }
+      },
+      {
+        id: 'building-ramen',
+        name: 'Neo-Tokyo Ramen Kiosk',
+        category: 'BUILDING',
+        subject: {
+          species: 'Ramen Stand Kiosk',
+          gender: 'Active & In-Use',
+          age: 'Neo-Tokyo Cyberpunk',
+          role: 'Vendor / Shop Kiosk',
+          setting: 'Rain-Slicked Neon Street',
+          build: '1-Story Wide Kiosk',
+          silhouette: 'Overhanging Neon Signage & Pipes',
+          face_head: 'Open Counter & Bar Stools',
+          anatomy: 'SINGLE STRUCTURE MODEL',
+          clothing: 'Striped Fabric Awning',
+          worn_details: 'Hanging Paper Lanterns & Cables',
+          primary_colours: 'Dark Stained Wood & Vermilion Red #EA580C',
+          accent_colours: 'Neon Pink Sign Glow #F43F5E',
+          materials: 'Cedar Wood, Clay Tiles & Paper',
+          exclusions: 'No ground terrain tiles, no characters',
+          additional_anatomy: 'External Chimney & Smoke Pipe'
+        },
+        output: {
+          directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+          surfaceDetail: 'DETAILED_PRODUCTION',
+          resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+          paletteLimit: 'EXPANDED_ALBEDO',
+          outlineStyle: 'DARK_LOCAL_CONTOUR',
+          lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+          aspectRatio: 'WIDE_16_9',
+          targetModel: 'GENERIC'
+        }
+      }
+    ];
+
+    // --- PROMPT COMPILER ENGINE WITH CHATGPT 5.6 SOL & MULTI-MODEL OPTIMIZATIONS ---
+    function generatePrompt(category, subject, output) {
+      const mode = output.directionalMode || 'CORE_DIRECTIONAL_VARIANTS';
+      let componentCountText = '43 isolated components';
+      let breakdownText = `### Directional core — 9\n- Heads: front-three-quarter, right-side, back-three-quarter.\n- Torsos: front-three-quarter, right-side, back-three-quarter.\n- Pelvises: front-three-quarter, right-side, back-three-quarter.\n\n### Left arm — 8\n- Upper arms: neutral lowered, forward-diagonal, raised.\n- Lower arms: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible.\n- Hands: relaxed empty, closed/grip-ready empty.\n\n### Right arm — 8\n- Same eight variants as the left arm, redrawn for the right side.\n\n### Left leg — 9\n- Upper legs: neutral vertical, forward, backward.\n- Lower legs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible.\n- Feet: flat planted, forward-step/heel-strike, rear-step/toe-off.\n\n### Right leg — 9\n- Same nine variants as the left leg, redrawn for the right side.`;
+
+      if (mode === 'SINGLE_DIRECTION_POSE_LIBRARY') {
+        componentCountText = '37 isolated components';
+        breakdownText = `### Primary Direction Single Pose Set — 37\n- 1 Primary Head, 1 Torso, 1 Pelvis.\n- 8 Left Arm articulation variants (Upper arm x3, Lower arm x3, Hand x2).\n- 8 Right Arm articulation variants.\n- 9 Left Leg articulation variants (Upper leg x3, Lower leg x3, Foot x3).\n- 9 Right Leg articulation variants.`;
+      } else if (mode === 'FULL_DIRECTIONAL_POSE_LIBRARY') {
+        componentCountText = '111 isolated components';
+        breakdownText = `### Full 3-Direction Coverage Libraries — 111 Total\n- Front 3/4 Complete Set (37 components).\n- Right Side Complete Set (37 components).\n- Back 3/4 Complete Set (37 components).`;
+      }
+
+      if (subject.additional_anatomy && subject.additional_anatomy !== 'NONE') {
+        componentCountText += ` (plus additional isolated segments for: ${subject.additional_anatomy})`;
+      }
+
+      const paletteText = output.paletteLimit === 'STRICT_32_COLOR' 
+        ? 'STRICT_32_COLOR (Enforce 16 to 32 global color palette target)' 
+        : (output.paletteLimit === 'RESTRAINED_64_COLOR' 
+          ? 'RESTRAINED_64_COLOR (Target 32 to 64 controlled global palette target)' 
+          : 'EXPANDED_ALBEDO (Controlled value bands with rich albedo variations)');
+
+      const outlineText = output.outlineStyle === 'PURE_BLACK_OUTLINE'
+        ? 'PURE_BLACK_OUTLINE (Enforce crisp single 1px black outer contour boundary)'
+        : (output.outlineStyle === 'OUTLINE_LESS_ALBEDO'
+          ? 'OUTLINE_LESS_ALBEDO (Soft edge contrast without hard dark outlines)'
+          : 'DARK_LOCAL_CONTOUR (Single native pixel dark local color contour - Standard)');
+
+      const lightingText = output.lightingModel === 'ISOMETRIC_TOP_LEFT'
+        ? 'ISOMETRIC_TOP_LEFT (Fixed 45-degree top-left key lighting with hard shadow bands)'
+        : (output.lightingModel === 'UNLIT_EMISSIVE_BAKED'
+          ? 'UNLIT_EMISSIVE_BAKED (Flat unlit diffuse textures with zero directional cast shadow)'
+          : 'FLAT_NEUTRAL_ALBEDO (Flat, neutral, albedo-style lighting with light top elevation)');
+
+      const aspectText = output.aspectRatio === 'WIDE_16_9' ? 'WIDE 16:9 SHEET' : (output.aspectRatio === 'TALL_9_16' ? 'TALL 9:16 SHEET' : (output.aspectRatio === 'ULTRAWIDE_21_9' ? 'ULTRAWIDE 21:9 SHEET' : 'SQUARE 1:1 SHEET'));
+
+      let prompt = `# MODULAR SPRITE-SHEET PROMPT ARCHITECTURE (${category})
+
+## 1. SUBJECT DEFINITION — EDIT THIS SECTION
+
+This is the sole authority for the subject's design. Do not invent details elsewhere.
+
+- Category / Type: \`${category}\`
+- Species / Archetype: \`${subject.species || 'DEFINED'}\`
+- Gender / Presentation / State: \`${subject.gender || 'DEFINED'}\`
+- Age / Vitality Presentation: \`${subject.age || 'DEFINED'}\`
+- Role / Class / Function: \`${subject.role || 'DEFINED'}\`
+- Setting / Theme: \`${subject.setting || 'DEFINED'}\`
+- Build / Proportions / Scale: \`${subject.build || 'DEFINED'}\`
+- Overall Silhouette & Hard Edges: \`${subject.silhouette || 'DEFINED'}\`
+- Face, Head & Sensory Features: \`${subject.face_head || 'DEFINED'}\`
+- Anatomy Base: \`${subject.anatomy || 'STANDARD'}\`
+- Clothing / Armour / Harness: \`${subject.clothing || 'DEFINED'}\`
+- Integrated Worn Details / Markings: \`${subject.worn_details || 'NONE'}\`
+- Primary Colours: \`${subject.primary_colours || 'DEFINED'}\`
+- Accent Colours: \`${subject.accent_colours || 'NONE'}\`
+- Materials & Surface Identity: \`${subject.materials || 'DEFINED'}\`
+- Explicit Exclusions: \`${subject.exclusions || 'NONE'}\`
+- Additional Genuine Anatomy: \`${subject.additional_anatomy || 'NONE'}\`
+
+Clothing, armour, footwear, cybernetics, and worn details must remain integrated into the appropriate anatomical components unless explicitly defined as separate anatomy. Do not infer props or equipment from the role/class.
+
+Material and surface descriptions define the visual identity, not the permitted rendering complexity. Translate all materials into simplified pixel-art shapes and controlled value bands.
+
+Do not represent materials using microtexture, scratches, etched strokes, fabric weave, pores, grain, crosshatching, repeated reflective streaks, sparkle noise, scattered single-pixel highlights, or painterly brush marks unless explicitly required by the selected rendering profile.
+
+---
+
+## 2. OUTPUT CONFIGURATION — EDIT TECHNICAL VALUES ONLY
+
+### Directional coverage
+- Selected mode: \`${output.directionalMode || 'CORE_DIRECTIONAL_VARIANTS'}\`
+- Required directions: \`FRONT_THREE_QUARTER\`, \`RIGHT_SIDE\`, \`BACK_THREE_QUARTER\`
+- Primary assembly direction: \`FRONT_THREE_QUARTER\`
+
+### Surface-detail intensity
+- Selected profile: \`${output.surfaceDetail || 'CLEAN_PRODUCTION'}\`
+
+### Resolution & Palette
+- Selected profile: \`${output.resolutionProfile || 'HIGH_RESOLUTION_PIXEL_ART'}\`
+- Palette Strategy: \`${paletteText}\`
+- Outline Contour Style: \`${outlineText}\`
+- Lighting Model: \`${lightingText}\`
+- Sheet Aspect Ratio: \`${aspectText}\`
+
+Create every component directly at the generator's actual final output resolution. Do not describe, simulate, or internally target a larger virtual canvas than the delivered image.
+
+Use one square-pixel grid and one consistent pixel density across the sheet. Preserve readable component scale before preserving surface detail.
+
+---
+
+## 3. OBJECTIVE
+
+Generate one image containing an exploded, production-ready modular pose library. Every component must be isolated, reusable, consistently scaled, and compatible with adjoining components.
+
+The active \`${output.directionalMode || 'CORE_DIRECTIONAL_VARIANTS'}\` configuration requires exactly \`${componentCountText}\`:
+
+${breakdownText}
+
+Each inventory entry must produce exactly one visible component. Do not merge entries, substitute duplicates, add filler, or omit components.
+
+---
+
+## 4. DIRECTION, CAMERA, AND PROJECTION
+
+Use one fixed orthographic 3/4 top-down dimetric/isometric camera at approximately \`35°\` elevation.
+Keep camera elevation, azimuth, projection, scale, and lighting unchanged for every component.
+
+Pixel-projection rules:
+- Use clean, deliberate staircase patterns for diagonal silhouettes.
+- Keep equivalent diagonal edges consistent across matching components.
+- Do not use doubled contours, overlapping outline strokes, or irregular edge chatter.
+
+---
+
+## 5. RIGID SEGMENT AND PIVOT RULES
+
+Every limb or articulated part is a separate rigid component. Never draw a connected bent arm or leg.
+Flexion must result only from assembling separately oriented rigid segments around shared pivots.
+
+---
+
+## 6. REQUIRED POSE CAPABILITY
+
+The primary-direction library must assemble cleanly into:
+- Neutral standing pose.
+- Relaxed stance.
+- Forward reach / action pose.
+- Walking stride sequence with opposing limbs.
+- Running stride with elbow and knee flexion.
+- Shallow and deep crouch.
+
+---
+
+## 7. DESIGN CONSISTENCY
+
+All variants must represent the exact same subject identity.
+Preserve across poses and directions:
+1. Silhouette and anatomy.
+2. Joint and attachment geometry.
+3. Major clothing or structural regions.
+4. Primary colour blocking.
+5. Large identifying accents.
+
+---
+
+## 8. CLEAN PIXEL ART, LIGHTING, AND BACKGROUND
+
+- Construct every form from deliberate, contiguous native pixel clusters.
+- Avoid details smaller than approximately \`2×2 native pixels\`.
+- Render using \`${lightingText}\`.
+- Apply outline system: \`${outlineText}\`.
+- Solid pure-white \`#FFFFFF\` background only. No floor shadows, vignettes, or text labels.
+
+---
+
+## 9. SHEET LAYOUT & FINAL AUDIT
+
+Arrange all parts in a clean exploded grid with generous white space in a \`${aspectText}\` format. No components may touch or overlap. Verify component count matches the \`${componentCountText}\` requirement before completion.
+
+---
+
+## EXECUTION
+Generate the complete modular sprite-component sheet now using the Subject Definition and selected Output Configuration exactly as written.`;
+
+      // APPEND MODEL-SPECIFIC DIRECTIVES (INCLUDING GROUNDING RESEARCH ON CHATGPT 5.6 SOL)
+      const arFlag = output.aspectRatio === 'WIDE_16_9' ? '--ar 16:9' : (output.aspectRatio === 'TALL_9_16' ? '--ar 9:16' : (output.aspectRatio === 'ULTRAWIDE_21_9' ? '--ar 21:9' : '--ar 1:1'));
+      const target = output.targetModel || 'GENERIC';
+
+      if (target === 'CHATGPT_5_6_SOL') {
+        const solSystemWrapper = `[SYSTEM DIRECTIVE: CHATGPT 5.6 SOL REASONING & STRUCTURED SPECIFICATION ENFORCEMENT]
+Task Execution Contract:
+1. High Reasoning Effort: Process multi-component bounding box alignment across isolated component grid slots.
+2. Strict Done-Condition: Generate EXACTLY ${componentCountText}. Do not combine limbs or substitute pre-assembled character sprites.
+3. Output Integrity: Solid pure-white background (#FFFFFF) with zero floor shadows, drop shadows, background tiles, or text labels.
+4. Scale & Density Contract: 100% native pixel density across all sprite components. No smooth vector anti-aliasing.
+
+---
+
+${prompt}
+
+---
+[VERIFICATION CONTRACT FOR CHATGPT 5.6 SOL]
+Verify before delivery:
+- Are all ${componentCountText} parts rendered in clean grid layout?
+- Is background pure #FFFFFF with zero shadows or text?
+- Are limb segments drawn as separate rigid pieces around shared pivots?`;
+        return solSystemWrapper;
+      } else if (target === 'MIDJOURNEY') {
+        prompt += `\n\n${arFlag} --v 6.1 --style raw --sw 250 --no background shadows text labels grid frame`;
+      } else if (target === 'STABLE_DIFFUSION') {
+        prompt += `\n\nNegative Prompt: (deformed hands, merged limbs, blurred pixels, background texture, floor shadow, smooth vector art, 3d render, text, watermark, signature:1.4)`;
+      } else if (target === 'GOOGLE_IMAGEN_3') {
+        prompt = `[IMAGEN 3 DESCRIPTIVE VISUAL SPECIFICATION - STRICT SPRITE SHEET LAYOUT]\nClear orthographic 3/4 top-down view, pixel art modular sprite components exploded sheet layout. Solid white background, zero floor shadow. High visual contrast, clean pixel edges.\n\n` + prompt;
+      } else if (target === 'DALLE_3') {
+        prompt = `[DALL-E 3 DIRECTIVE: STRICT PIXEL ART SPRITE SHEET - ZERO SMOOTHING OR VECTOR BLEND]\n\n` + prompt;
+      }
+
+      return prompt;
+    }
+
+    // --- CUSTOM UNFILTERED COMBOBOX WITH DROPDOWN CHEVRON, COLOR SWATCHES & TOOLTIPS ---
+    function ComboBox({ label, value, onChange, options, placeholder, hint, tooltip }) {
+      const [isOpen, setIsOpen] = useState(false);
+      const containerRef = useRef(null);
+
+      useEffect(() => {
+        function handleClickOutside(event) {
+          if (containerRef.current && !containerRef.current.contains(event.target)) {
+            setIsOpen(false);
+          }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+      }, []);
+
+      return (
+        <div className="relative" ref={containerRef}>
+          <label className="block font-semibold text-slate-300 mb-1 flex justify-between items-center text-xs">
+            <span className="flex items-center gap-1">
+              {label}
+              <ColorSwatch colorText={value} />
+              <Tooltip text={tooltip} hint={label} />
+            </span>
+            {hint && <span className="text-[10px] text-slate-500 font-normal">{hint}</span>}
+          </label>
+          
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              value={value || ''}
+              onChange={(e) => {
+                onChange(e.target.value);
+                setIsOpen(true);
+              }}
+              onFocus={() => setIsOpen(true)}
+              placeholder={placeholder || 'Type custom or select option...'}
+              className="w-full bg-slate-950/90 border border-slate-700/80 rounded-xl py-2 pl-3 pr-9 text-white text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all shadow-inner font-sans"
+            />
+
+            <button
+              type="button"
+              onClick={() => setIsOpen(!isOpen)}
+              tabIndex={-1}
+              className="absolute right-2 text-slate-400 hover:text-indigo-400 p-1 transition-colors flex items-center justify-center"
+              title="Show All Preset Options"
+            >
+              <svg className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180 text-indigo-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+
+          {isOpen && (
+            <div className="absolute z-50 mt-1.5 w-full bg-slate-950 border-2 border-indigo-500/80 rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.9)] max-h-56 overflow-y-auto animate-fade-in backdrop-blur-2xl ring-1 ring-indigo-500/30">
+              <div className="p-1.5 space-y-0.5">
+                {options.map((opt, i) => {
+                  const isSelected = value === opt;
+                  return (
+                    <div
+                      key={i}
+                      onClick={() => {
+                        onChange(opt);
+                        setIsOpen(false);
+                      }}
+                      className={`px-3 py-2 text-xs rounded-lg cursor-pointer transition-all flex items-center justify-between ${
+                        isSelected 
+                          ? 'bg-indigo-600/40 text-indigo-200 font-bold border-l-4 border-indigo-400 pl-2' 
+                          : 'text-slate-200 hover:bg-indigo-900/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="truncate flex items-center">
+                        {opt}
+                        <ColorSwatch colorText={opt} />
+                      </span>
+                      {isSelected && <span className="text-indigo-300 text-xs ml-2 font-mono">✓</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // --- ENHANCED GAME DEV SPRITE ATLAS & GRID CALCULATOR MODAL ---
+    function AtlasCalculatorModal({ directionalMode, aspectRatio, onClose }) {
+      const [canvasDim, setCanvasDim] = useState('2048');
+      const [paddingPx, setPaddingPx] = useState(4);
+      const [hoveredIndex, setHoveredIndex] = useState(null);
+      const [copiedMeta, setCopiedMeta] = useState(false);
+
+      const count = directionalMode === 'SINGLE_DIRECTION_POSE_LIBRARY' ? 37 : (directionalMode === 'FULL_DIRECTIONAL_POSE_LIBRARY' ? 111 : 43);
+      const cols = Math.ceil(Math.sqrt(count * (aspectRatio === 'WIDE_16_9' ? 1.5 : (aspectRatio === 'TALL_9_16' ? 0.75 : 1))));
+      const rows = Math.ceil(count / cols);
+      const dimension = parseInt(canvasDim, 10);
+      const cellPx = Math.floor(dimension / cols);
+      const activeCellContentPx = Math.max(0, cellPx - (paddingPx * 2));
+      const estimatedCharPx = Math.floor(activeCellContentPx * 0.75);
+
+      // GPU Power of Two Check
+      const isPowerOfTwo = [512, 1024, 2048, 4096, 8192].includes(dimension);
+
+      // JSON Engine Metadata generator for Godot / Unity / PixiJS
+      const engineMetadata = useMemo(() => {
+        return JSON.stringify({
+          atlas: {
+            texture_size: `${dimension}x${dimension}`,
+            total_components: count,
+            grid: { columns: cols, rows: rows },
+            cell_size: { width: cellPx, height: cellPx },
+            padding: paddingPx,
+            usable_sprite_bounds: { width: activeCellContentPx, height: activeCellContentPx },
+            power_of_two_vram_optimized: isPowerOfTwo
+          }
+        }, null, 2);
+      }, [dimension, count, cols, rows, cellPx, paddingPx, activeCellContentPx, isPowerOfTwo]);
+
+      const handleCopyMetadata = () => {
+        const textArea = document.createElement('textarea');
+        textArea.value = engineMetadata;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          setCopiedMeta(true);
+          setTimeout(() => setCopiedMeta(false), 2500);
+        } catch (err) {}
+        document.body.removeChild(textArea);
+      };
+
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-5">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <span className="text-indigo-400">📊</span> Game Dev Sprite Atlas & Grid Calculator
+              </h3>
+              <button onClick={onClose} className="text-slate-400 hover:text-white text-lg font-bold">✕</button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1 flex items-center">
+                    Atlas Canvas Resolution
+                    <Tooltip text="Select target texture atlas dimensions. 2048px is recommended for high definition mobile/desktop game engines." hint="Canvas Resolution" />
+                  </label>
+                  <select
+                    value={canvasDim}
+                    onChange={(e) => setCanvasDim(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono"
+                  >
+                    <option value="512">512 × 512 px (Low-poly Retro)</option>
+                    <option value="1024">1024 × 1024 px (Standard SD)</option>
+                    <option value="2048">2048 × 2048 px (HD Atlas - Recommended)</option>
+                    <option value="4096">4096 × 4096 px (Ultra HD Master Atlas)</option>
+                    <option value="8192">8192 × 8192 px (Extreme Resolution)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1 flex items-center">
+                    Cell Padding / Bleed Gutter
+                    <Tooltip text="Adds inner padding around each sprite cell to prevent texture bleeding and seam artifacts when rendered in game engines." hint="Cell Bleed Padding" />
+                  </label>
+                  <select
+                    value={paddingPx}
+                    onChange={(e) => setPaddingPx(parseInt(e.target.value, 10))}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-white font-mono"
+                  >
+                    <option value="0">0 px (No Padding)</option>
+                    <option value="2">2 px (Light Gutter)</option>
+                    <option value="4">4 px (Standard Gutter - Recommended)</option>
+                    <option value="8">8 px (Wide Bleed Buffer)</option>
+                    <option value="16">16 px (Maximum Isolation)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* VRAM POWER OF TWO BADGE */}
+              <div className="flex items-center justify-between bg-slate-950 p-2.5 rounded-xl border border-slate-800 font-mono text-[11px]">
+                <span className="text-slate-400">GPU VRAM Optimization Status:</span>
+                {isPowerOfTwo ? (
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    ✓ Power of 2 Compliant ({dimension}px)
+                  </span>
+                ) : (
+                  <span className="text-amber-400 font-bold flex items-center gap-1">
+                    ⚠ Non-PO2 Canvas Resolution
+                  </span>
+                )}
+              </div>
+
+              {/* METRICS GRID */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 font-mono">
+                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">COMPONENTS</span>
+                  <span className="text-amber-400 text-sm font-bold">{count} Parts</span>
+                </div>
+                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">GRID LAYOUT</span>
+                  <span className="text-cyan-400 text-sm font-bold">{cols}×{rows} Grid</span>
+                </div>
+                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">CELL SIZE</span>
+                  <span className="text-indigo-400 text-sm font-bold">{cellPx}×{cellPx} px</span>
+                </div>
+                <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                  <span className="text-slate-400 text-[10px] block">USABLE BOUNDS</span>
+                  <span className="text-emerald-400 text-sm font-bold">{activeCellContentPx} px max</span>
+                </div>
+              </div>
+
+              {/* INTERACTIVE GRID VISUALIZER WITH HOVER DATA */}
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-2">
+                <div className="flex justify-between items-center text-[10px] font-mono text-slate-400">
+                  <span>INTERACTIVE ATLAS LAYOUT ({cols}×{rows})</span>
+                  <span>{hoveredIndex !== null ? `Slot #${hoveredIndex + 1}: Row ${Math.floor(hoveredIndex/cols)+1}, Col ${(hoveredIndex%cols)+1}` : 'Hover grid slot for info'}</span>
+                </div>
+                
+                <div className="grid gap-1 bg-slate-900 p-2 rounded-lg border border-slate-800 aspect-square max-w-[210px] mx-auto" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+                  {Array.from({ length: cols * rows }).map((_, i) => (
+                    <div
+                      key={i}
+                      onMouseEnter={() => setHoveredIndex(i)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                      className={`aspect-square rounded-xs transition-all cursor-pointer ${
+                        i < count 
+                          ? (hoveredIndex === i ? 'bg-cyan-400 scale-125 z-10 shadow-lg' : 'bg-indigo-500/40 border border-indigo-400/50 hover:bg-cyan-400/80') 
+                          : 'bg-slate-800/20 border border-slate-800/40'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleCopyMetadata}
+                className="flex-1 py-2.5 bg-slate-950 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-xs font-bold rounded-xl transition-all shadow-md"
+              >
+                {copiedMeta ? '✓ Copied Atlas JSON!' : '📋 Copy Atlas Engine Spec (JSON)'}
+              </button>
+              <button
+                onClick={onClose}
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // --- MAIN REACT APPLICATION ENGINE ---
+    function App() {
+      const [activeTab, setActiveTab] = useState('studio');
+      const [toastMsg, setToastMsg] = useState('');
+      const [showCalculator, setShowCalculator] = useState(false);
+      
+      const [category, setCategory] = useState('CHARACTER');
+      const [subject, setSubject] = useState(PRESETS[0].subject);
+      const [output, setOutput] = useState(PRESETS[0].output);
+      const [customPresets, setCustomPresets] = useState([]);
+      const [savedPresetName, setSavedPresetName] = useState('');
+
+      useEffect(() => {
+        try {
+          const stored = localStorage.getItem('sprite_gubbins_custom_presets');
+          if (stored) {
+            setCustomPresets(JSON.parse(stored));
+          }
+        } catch (e) {}
+      }, []);
+
+      const generatedPromptText = useMemo(() => {
+        return generatePrompt(category, subject, output);
+      }, [category, subject, output]);
+
+      const tokenEstimate = useMemo(() => Math.round(generatedPromptText.length / 4), [generatedPromptText]);
+      const wordCount = useMemo(() => generatedPromptText.trim().split(/\s+/).length, [generatedPromptText]);
+
+      const showToast = (msg) => {
+        setToastMsg(msg);
+        setTimeout(() => setToastMsg(''), 3000);
+      };
+
+      const handleCopyPrompt = () => {
+        const textArea = document.createElement('textarea');
+        textArea.value = generatedPromptText;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showToast('Prompt copied to clipboard!');
+        } catch (err) {
+          showToast('Failed to copy prompt');
+        }
+        document.body.removeChild(textArea);
+      };
+
+      const handleCopyJSONData = () => {
+        const payload = JSON.stringify({ category, subject, output }, null, 2);
+        const textArea = document.createElement('textarea');
+        textArea.value = payload;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showToast('JSON Spec data copied to clipboard!');
+        } catch (err) {
+          showToast('Failed to copy JSON');
+        }
+        document.body.removeChild(textArea);
+      };
+
+      const handleDownloadPrompt = () => {
+        const element = document.createElement('a');
+        const file = new Blob([generatedPromptText], {type: 'text/markdown'});
+        element.href = URL.createObjectURL(file);
+        element.download = `${(subject.species || 'sprite').toLowerCase().replace(/\s+/g, '-')}-prompt.md`;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        showToast('Downloaded .md prompt file!');
+      };
+
+      const handleExportPresetsJSON = () => {
+        const allPresets = [...PRESETS, ...customPresets];
+        const element = document.createElement('a');
+        const file = new Blob([JSON.stringify(allPresets, null, 2)], {type: 'application/json'});
+        element.href = URL.createObjectURL(file);
+        element.download = `sprite-gubbins-presets.json`;
+        document.body.appendChild(element);
+        element.click();
+        document.body.removeChild(element);
+        showToast('Exported preset pack JSON!');
+      };
+
+      const handleImportPresetsJSON = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const imported = JSON.parse(event.target.result);
+            if (Array.isArray(imported)) {
+              setCustomPresets(imported);
+              localStorage.setItem('sprite_gubbins_custom_presets', JSON.stringify(imported));
+              showToast(`Successfully imported ${imported.length} presets!`);
+            }
+          } catch(err) {
+            showToast('Invalid JSON file format');
+          }
+        };
+        reader.readAsText(file);
+      };
+
+      const handleRandomizeSubject = () => {
+        const fields = CATEGORY_OPTIONS[category].fields;
+        const newSubject = { ...subject };
+        fields.forEach(f => {
+          const opts = f.options;
+          const randomChoice = opts[Math.floor(Math.random() * opts.length)];
+          newSubject[f.key] = randomChoice;
+        });
+        setSubject(newSubject);
+        showToast(`Randomised ${CATEGORY_OPTIONS[category].label} properties!`);
+      };
+
+      const handleCategoryChange = (newCat) => {
+        setCategory(newCat);
+        const fields = CATEGORY_OPTIONS[newCat].fields;
+        const defaultSubject = {};
+        fields.forEach(f => {
+          defaultSubject[f.key] = f.options[0];
+        });
+        setSubject(defaultSubject);
+        showToast(`Switched category to ${CATEGORY_OPTIONS[newCat].label}`);
+      };
+
+      const handleLoadPreset = (preset) => {
+        if (preset.category && CATEGORY_OPTIONS[preset.category]) {
+          setCategory(preset.category);
+        }
+        setSubject({...preset.subject});
+        setOutput({...preset.output});
+        setActiveTab('studio');
+        showToast(`Loaded preset: ${preset.name}`);
+      };
+
+      const handleSaveCustomPreset = () => {
+        if (!savedPresetName.trim()) return;
+        const newPreset = {
+          id: 'custom-' + Date.now(),
+          name: savedPresetName,
+          category,
+          subject: {...subject},
+          output: {...output}
+        };
+        const updated = [...customPresets, newPreset];
+        setCustomPresets(updated);
+        try {
+          localStorage.setItem('sprite_gubbins_custom_presets', JSON.stringify(updated));
+          showToast(`Saved custom preset "${savedPresetName}"!`);
+          setSavedPresetName('');
+        } catch(e) {}
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col bg-foundry-900/90 text-slate-100 backdrop-blur-3xl">
+          
+          {/* HEADER WITH BRANDING & NAVIGATION */}
+          {}
+          <header className="border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl px-6 py-4 flex flex-wrap justify-between items-center gap-4 sticky top-0 z-40 shadow-2xl">
+            <div className="flex items-center space-x-3 group cursor-pointer" onClick={() => setActiveTab('studio')}>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-cyan-500 to-emerald-400 flex items-center justify-center font-extrabold text-slate-950 text-xl shadow-lg group-hover:scale-105 transition-transform duration-300 glow-box">
+                👾
+              </div>
+              <div>
+                <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
+                  <span className="bg-gradient-to-r from-white via-indigo-200 to-cyan-300 bg-clip-text text-transparent">Sprite Gubbins</span>
+                  <span className="text-[10px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-mono font-bold">v3.0 Serverless</span>
+                </h1>
+                <p className="text-[11px] text-slate-400">Modular Sprite-Sheet Prompt Architecture & Specification Engine</p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shadow-inner">
+              <button
+                onClick={() => setActiveTab('studio')}
+                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${activeTab === 'studio' ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+              >
+                🛠️ Studio
+              </button>
+              <button
+                onClick={() => setActiveTab('presets')}
+                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${activeTab === 'presets' ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+              >
+                ⚡ Presets ({PRESETS.length + customPresets.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('spec')}
+                className={`px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200 flex items-center gap-2 ${activeTab === 'spec' ? 'bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-lg' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}`}
+              >
+                📜 Architecture Spec
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowCalculator(true)}
+                className="px-3 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-cyan-400 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 shadow-md hover:border-cyan-500/50"
+                title="Open Game Dev Sprite Atlas & Grid Calculator"
+              >
+                📊 Atlas Calc
+              </button>
+              <button
+                onClick={handleCopyPrompt}
+                className="px-4 py-2 bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-white text-xs font-extrabold rounded-xl shadow-lg hover:shadow-cyan-500/25 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 flex items-center gap-2"
+              >
+                📋 Copy Prompt
+              </button>
+            </div>
+          </header>
+
+          {/* TOAST NOTIFICATION */}
+          {toastMsg && (
+            <div className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-indigo-600 to-cyan-600 text-white px-5 py-3 rounded-2xl shadow-2xl border border-cyan-400/30 flex items-center gap-2 animate-fade-in">
+              <span>✅</span>
+              <span className="font-semibold text-xs">{toastMsg}</span>
+            </div>
+          )}
+
+          {/* ATLAS CALCULATOR MODAL */}
+          {showCalculator && (
+            <AtlasCalculatorModal
+              directionalMode={output.directionalMode}
+              aspectRatio={output.aspectRatio}
+              onClose={() => setShowCalculator(false)}
+            />
+          )}
+
+          {/* WORKSPACE */}
+          <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 animate-fade-in">
+            {activeTab === 'studio' && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                {/* LEFT INPUTS (5 COLS) */}
+                {}
+                <div className="lg:col-span-5 space-y-6">
+                  
+                  {/* CATEGORY SELECTOR & SUBJECT DEFINITION */}
+                  <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-2xl space-y-4 backdrop-blur-lg hover:border-slate-700/80 transition-colors">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                        <span className="text-indigo-400">👤</span> 1. Subject Definition
+                      </h2>
+                      
+                      <button
+                        onClick={handleRandomizeSubject}
+                        className="px-3 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs rounded-xl shadow-md hover:scale-[1.04] active:scale-[0.96] transition-all flex items-center gap-1.5"
+                        title="Randomise fields with smart preset options"
+                      >
+                        🎲 Randomise
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 text-xs flex items-center">
+                        Subject Category
+                        <Tooltip text="Select the category of the subject (Humanoid, Monster, Prop, Item, or Building). Updates available default option pools." hint="Category Selection" />
+                      </label>
+                      <select
+                        value={category}
+                        onChange={(e) => handleCategoryChange(e.target.value)}
+                        className="w-full bg-slate-950 border border-indigo-500/50 rounded-xl p-2.5 text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-inner"
+                      >
+                        {Object.keys(CATEGORY_OPTIONS).map(catKey => (
+                          <option key={catKey} value={catKey}>
+                            {CATEGORY_OPTIONS[catKey].label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-3.5 pt-1">
+                      {CATEGORY_OPTIONS[category].fields.map((f) => (
+                        <ComboBox
+                          key={f.key}
+                          label={f.label}
+                          value={subject[f.key]}
+                          onChange={(val) => setSubject({ ...subject, [f.key]: val })}
+                          options={f.options}
+                          tooltip={f.tooltip}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* EXPANDED OUTPUT CONFIGURATION */}
+                  {}
+                  <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5 shadow-2xl space-y-4 text-xs backdrop-blur-lg">
+                    <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                      <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                        <span className="text-cyan-400">⚙️</span> 2. Output Configuration
+                      </h2>
+                      <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full font-mono">Technical Directives</span>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center">
+                        Directional Coverage Mode
+                        <Tooltip text="Controls total component isolation count: SINGLE (37 parts), CORE 3-WAY (43 parts), or FULL 3-WAY (111 parts)." hint="Directional Coverage" />
+                      </label>
+                      <select
+                        value={output.directionalMode}
+                        onChange={(e) => setOutput({...output, directionalMode: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      >
+                        <option value="SINGLE_DIRECTION_POSE_LIBRARY">SINGLE_DIRECTION_POSE_LIBRARY (37 components)</option>
+                        <option value="CORE_DIRECTIONAL_VARIANTS">CORE_DIRECTIONAL_VARIANTS (43 components - Recommended)</option>
+                        <option value="FULL_DIRECTIONAL_POSE_LIBRARY">FULL_DIRECTIONAL_POSE_LIBRARY (111 components)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center">
+                        Surface Detail Intensity
+                        <Tooltip text="Controls internal seam and fold complexity while strictly respecting global palette limits." hint="Surface Detail" />
+                      </label>
+                      <select
+                        value={output.surfaceDetail}
+                        onChange={(e) => setOutput({...output, surfaceDetail: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      >
+                        <option value="MINIMAL">MINIMAL (Base colors & essential joints only)</option>
+                        <option value="CLEAN_PRODUCTION">CLEAN_PRODUCTION (Major panels & folds - Standard)</option>
+                        <option value="DETAILED_PRODUCTION">DETAILED_PRODUCTION (Detailed seams & material divisions)</option>
+                        <option value="TEXTURED">TEXTURED (Controlled pixel texturing)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center">
+                        Resolution Profile
+                        <Tooltip text="Target height percentage and pixel density constraints for the delivered sprite sheet." hint="Resolution Profile" />
+                      </label>
+                      <select
+                        value={output.resolutionProfile}
+                        onChange={(e) => setOutput({...output, resolutionProfile: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      >
+                        <option value="HIGH_RESOLUTION_PIXEL_ART">HIGH_RESOLUTION_PIXEL_ART (25-35% height)</option>
+                        <option value="MID_RESOLUTION_PIXEL_ART">MID_RESOLUTION_PIXEL_ART (18-25% height)</option>
+                        <option value="16_BIT_RETRO_PIXEL_ART">16_BIT_RETRO_PIXEL_ART (64-96px sprite scale)</option>
+                        <option value="CUSTOM_PIXEL_ART">CUSTOM_PIXEL_ART (Define limits)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center">
+                        Palette Limit Strategy
+                        <Tooltip text="Restricts total global color count across the sprite sheet for classic 16-bit or clean modern pixel art styles." hint="Palette Strategy" />
+                      </label>
+                      <select
+                        value={output.paletteLimit || 'RESTRAINED_64_COLOR'}
+                        onChange={(e) => setOutput({...output, paletteLimit: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      >
+                        <option value="STRICT_32_COLOR">STRICT_32_COLOR (16-32 color retro target)</option>
+                        <option value="RESTRAINED_64_COLOR">RESTRAINED_64_COLOR (32-64 color target - Recommended)</option>
+                        <option value="EXPANDED_ALBEDO">EXPANDED_ALBEDO (Controlled value bands)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center">
+                        Outline System
+                        <Tooltip text="Sets pixel boundary style: dark local color, pure crisp black, or outline-less soft contrast edges." hint="Outline Style" />
+                      </label>
+                      <select
+                        value={output.outlineStyle || 'DARK_LOCAL_CONTOUR'}
+                        onChange={(e) => setOutput({...output, outlineStyle: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      >
+                        <option value="DARK_LOCAL_CONTOUR">DARK_LOCAL_CONTOUR (Local dark color 1px - Standard)</option>
+                        <option value="PURE_BLACK_OUTLINE">PURE_BLACK_OUTLINE (Crisp 1px black outline)</option>
+                        <option value="OUTLINE_LESS_ALBEDO">OUTLINE_LESS_ALBEDO (Soft edge contrast without outlines)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center">
+                        Lighting & Shading Model
+                        <Tooltip text="Controls key lighting angle and shadow intensity. Flat neutral albedo is standard for game engine lighting." hint="Lighting Model" />
+                      </label>
+                      <select
+                        value={output.lightingModel || 'FLAT_NEUTRAL_ALBEDO'}
+                        onChange={(e) => setOutput({...output, lightingModel: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      >
+                        <option value="FLAT_NEUTRAL_ALBEDO">FLAT_NEUTRAL_ALBEDO (Albedo style lighting - Standard)</option>
+                        <option value="ISOMETRIC_TOP_LEFT">ISOMETRIC_TOP_LEFT (Fixed 45° key light + hard shadows)</option>
+                        <option value="UNLIT_EMISSIVE_BAKED">UNLIT_EMISSIVE_BAKED (Flat unlit diffuse textures)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold text-slate-300 mb-1 flex items-center">
+                        Sheet Canvas Aspect Ratio
+                        <Tooltip text="Defines output aspect ratio parameter passed to the AI generator to prevent image cropping." hint="Sheet Format" />
+                      </label>
+                      <select
+                        value={output.aspectRatio || 'WIDE_16_9'}
+                        onChange={(e) => setOutput({...output, aspectRatio: e.target.value})}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white focus:outline-none focus:border-indigo-500 font-mono"
+                      >
+                        <option value="WIDE_16_9">WIDE_16_9 (16:9 Aspect Ratio - Recommended)</option>
+                        <option value="SQUARE_1_1">SQUARE_1_1 (1:1 Aspect Ratio Canvas)</option>
+                        <option value="TALL_9_16">TALL_9_16 (9:16 Vertical Sheet Layout)</option>
+                        <option value="ULTRAWIDE_21_9">ULTRAWIDE_21_9 (21:9 Panorama Sheet Layout)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* RIGHT COLUMN: PROMPT OUTPUT & TARGET AI SELECTOR */}
+                {}
+                <div className="lg:col-span-7 space-y-4 sticky top-24">
+                  
+                  {/* TOP CONTROL BAR WITH TARGET AI AGENT SELECTOR */}
+                  <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-4 shadow-xl flex flex-wrap items-center justify-between gap-3 backdrop-blur-lg">
+                    
+                    {/* TARGET AI SELECTOR DROPDOWN ON TOP RIGHT */}
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                      <label className="text-xs font-bold text-cyan-300 flex items-center whitespace-nowrap">
+                        Target AI Agent:
+                        <Tooltip 
+                          text="Tailors prompt wrapping and formatting for specific AI image generators. Sol enforces reasoning contracts, Midjourney adds flags, SD/Flux adds negative prompts." 
+                          hint="Target AI Generator Selector"
+                          direction="bottom" 
+                        />
+                      </label>
+                      <select
+                        value={output.targetModel || 'GENERIC'}
+                        onChange={(e) => setOutput({...output, targetModel: e.target.value})}
+                        className="bg-slate-950 border border-indigo-500/60 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 transition-all flex-1 sm:w-64"
+                      >
+                        {TARGET_MODELS.map((model) => (
+                          <option key={model.id} value={model.id}>
+                            {model.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleCopyJSONData}
+                        className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700/80 text-cyan-300 text-xs font-semibold rounded-xl transition-all flex items-center gap-1"
+                        title="Copy structured JSON specification"
+                      >
+                        {'{ }'} Copy JSON
+                      </button>
+                      <button
+                        onClick={handleDownloadPrompt}
+                        className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 border border-slate-700/80 text-slate-200 text-xs font-semibold rounded-xl transition-all flex items-center gap-1.5"
+                      >
+                        💾 Download .md
+                      </button>
+                      <button
+                        onClick={handleCopyPrompt}
+                        className="px-4 py-1.5 bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white text-xs font-extrabold rounded-xl shadow-md transition-all flex items-center gap-1.5"
+                      >
+                        📋 Copy Prompt
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* PROMPT BOX - CONSTRAINED MAX-HEIGHT WITH COMPILER BADGE */}
+                  <div className="bg-slate-900/90 border border-slate-800/90 rounded-2xl p-5 shadow-2xl flex flex-col max-h-[560px] backdrop-blur-xl">
+                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+                      
+                      <div className="flex items-center gap-2 text-xs font-mono">
+                        <span className="relative flex h-2.5 w-2.5">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                        </span>
+                        <span className="text-emerald-400 font-semibold tracking-wide">Realtime Compiler Active</span>
+                      </div>
+
+                      <div className="flex items-center gap-3 text-xs font-mono">
+                        <span className="text-slate-400">Words: <strong className="text-cyan-400">{wordCount}</strong></span>
+                        <span className="text-slate-400">Est. Tokens: <strong className="text-indigo-400">~{tokenEstimate}</strong></span>
+                        <span className="text-[10px] bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 px-2 py-0.5 rounded-full">
+                          Auto-Sync
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* CONSTRAINED SCROLLABLE CONTAINER */}
+                    <div className="flex-1 overflow-y-auto max-h-[460px] font-mono text-xs leading-relaxed text-slate-300 whitespace-pre-wrap select-all bg-slate-950 p-4 rounded-xl border border-slate-800/80 shadow-inner">
+                      {generatedPromptText}
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
+            {/* PRESETS TAB */}
+            {}
+            {activeTab === 'presets' && (
+              <div className="space-y-6 animate-fade-in">
+                <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-wrap justify-between items-center gap-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Preset Archetype Library</h2>
+                    <p className="text-xs text-slate-400">Select archetype templates across characters, creatures, objects, items, and buildings.</p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
+                    <input
+                      type="text"
+                      placeholder="Custom Preset Name..."
+                      value={savedPresetName}
+                      onChange={(e) => setSavedPresetName(e.target.value)}
+                      className="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500"
+                    />
+                    <button
+                      onClick={handleSaveCustomPreset}
+                      className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-3.5 py-1.5 rounded-lg font-semibold transition-all"
+                    >
+                      Save Current Setup
+                    </button>
+                    <button
+                      onClick={handleExportPresetsJSON}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all"
+                      title="Export presets as JSON"
+                    >
+                      📤 Export JSON
+                    </button>
+                    <label className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer">
+                      📥 Import JSON
+                      <input type="file" accept=".json" onChange={handleImportPresetsJSON} className="hidden" />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...PRESETS, ...customPresets].map((preset) => (
+                    <div key={preset.id} className="bg-slate-900/80 border border-slate-800 hover:border-indigo-500/50 rounded-2xl p-5 shadow-xl transition-all hover:scale-[1.01] flex flex-col justify-between">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            {preset.category || 'CHARACTER'}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono">
+                            {preset.id.startsWith('custom-') ? 'User Custom' : 'Built-in'}
+                          </span>
+                        </div>
+                        <h3 className="text-base font-bold text-white">{preset.name}</h3>
+                        <p className="text-xs text-slate-300 line-clamp-2">
+                          {preset.subject.species || preset.subject.role || 'Archetype'} — {preset.subject.setting || 'Theme'}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => handleLoadPreset(preset)}
+                        className="mt-4 w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition-all"
+                      >
+                        ⚡ Load Preset
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SPEC DOC TAB */}
+            {}
+            {activeTab === 'spec' && (
+              <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-2xl space-y-8 max-w-5xl mx-auto animate-fade-in backdrop-blur-xl">
+                <div className="border-b border-slate-800 pb-6">
+                  <div className="inline-block bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-3 py-1 rounded-full text-xs font-mono font-semibold mb-3">
+                    TECHNICAL ARCHITECTURE SPECIFICATION DOC v3.0
+                  </div>
+                  <h2 className="text-2xl font-bold text-white">Sprite Gubbins v3.0 SPA — Software Specification</h2>
+                </div>
+
+                <section className="space-y-3 text-xs text-slate-300">
+                  <h3 className="text-base font-bold text-cyan-400">1. Client-Side Serverless Engine</h3>
+                  <p>
+                    Sprite Gubbins runs entirely within the client browser without needing any backend server or API dependencies. Built as a single-page HTML/React bundle, it compiles dynamic markdown prompts in real-time based on state variables and schema definitions.
+                  </p>
+                </section>
+
+                <section className="space-y-3 text-xs text-slate-300">
+                  <h3 className="text-base font-bold text-cyan-400">2. ChatGPT 5.6 Sol & Target Model Optimizations</h3>
+                  <p>
+                    The studio incorporates grounding research for OpenAI ChatGPT 5.6 Sol. Sol prompts enforce task execution contracts, done-condition verification, and strict background isolation rules. Midjourney, Stable Diffusion/Flux, Google Imagen 3, and DALL-E 3 are also fully supported via targeted wrapper strategies.
+                  </p>
+                </section>
+
+                <section className="space-y-3 text-xs text-slate-300">
+                  <h3 className="text-base font-bold text-cyan-400">3. Game Dev Atlas & Grid Calculator</h3>
+                  <p>
+                    Integrates real-time calculations for component counts, power-of-two GPU VRAM compliance checks, bleed padding/gutter controls, interactive cell hover visualizers, and raw JSON atlas metadata export for engines like Godot, Unity, PixiJS, and Unreal.
+                  </p>
+                </section>
+
+                <section className="space-y-3 text-xs text-slate-300">
+                  <h3 className="text-base font-bold text-cyan-400">4. Interactive Tooltips & Visual Swatches</h3>
+                  <p>
+                    Features interactive info tooltips across all controls explaining setting purposes, prompt impacts, and recommended configurations. Color inputs automatically render visual hex/named color swatches.
+                  </p>
+                </section>
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const rootElement = document.getElementById('root');
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(<App />);
+  </script>
+</body>
+</html>

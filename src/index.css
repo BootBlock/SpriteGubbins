@@ -1,0 +1,228 @@
+@import 'tailwindcss';
+
+/*
+ * Sprite Gubbins design system (spec Phase 1, Task 1.4).
+ *
+ * A dark-only "foundry" aesthetic: near-black indigo surfaces lit by an indigo primary and a
+ * cyan live-state accent, with a monospace face for anything the user will paste into a model.
+ * The app has no light mode — it is a tool for looking at sprite work, and a bright field
+ * around a preview misreads the colours the user is judging — so `color-scheme` is pinned to
+ * `dark` and there is no theme-switching variant.
+ *
+ * Every value here is taken from the single-file application being migrated
+ * (docs/todo/sprite-gubbins.html), which expressed most of its palette as stock Tailwind
+ * classes rather than named colours. Naming them here is the point: components reference the
+ * generated utilities (`bg-foundry-800`, `text-accent`, `animate-fade-in`) and never a raw hex,
+ * `rgb()` or an ad-hoc palette class — see CLAUDE.md, "Design tokens are mandatory".
+ */
+@theme {
+  /*
+   * The foundry surface ramp, darkest first. 900 is the page itself; 950 is an inset or well
+   * *below* the page (a prompt box, a code panel); 800 is a panel resting on the page; 700 is
+   * a control or row inside that panel; 600 is a border or a hover/pressed state.
+   *
+   * 900 is the original app's own `foundry-900`; the rest are the slate steps it actually
+   * painted with, named so a component never has to reach for `bg-slate-800` again.
+   */
+  --color-foundry-950: #020617;
+  --color-foundry-900: #060911;
+  --color-foundry-800: #0f172a;
+  --color-foundry-700: #1e293b;
+  --color-foundry-600: #334155;
+
+  /*
+   * Accents.
+   *
+   * `accent` (indigo) is the primary: actions, focus, selection, the ambient glow. `neon`
+   * (cyan) is the *live* accent — auto-sync, active generation, a value updating as you type —
+   * and the two are deliberately not interchangeable; the original app pulses from one to the
+   * other to signal exactly that transition.
+   *
+   * The remaining three are semantic and must not be borrowed for decoration: gold means
+   * "attention", emerald means "valid / power-of-two clean", rose means "problem".
+   */
+  --color-accent: #6366f1;
+  --color-accent-strong: #4f46e5;
+  --color-accent-soft: #818cf8;
+
+  --color-neon: #22d3ee;
+  --color-neon-deep: #06b6d4;
+
+  --color-gold: #fbbf24;
+  --color-emerald: #34d399;
+  --color-rose: #f43f5e;
+
+  /* Text tones, layered on the foundry ramp. */
+  --color-ink: #f1f5f9;
+  --color-ink-muted: #cbd5e1;
+  --color-ink-faint: #94a3b8;
+
+  /*
+   * Fonts. Inter carries the interface; JetBrains Mono carries every piece of generated
+   * prompt text, atlas metric and JSON payload — the things a user reads character by
+   * character or pastes elsewhere. Neither is bundled: both are used if the reader has them
+   * installed and fall back to the platform's own faces otherwise, which keeps the offline PWA
+   * free of the webfont request the original app made to a CDN and could not have satisfied
+   * offline.
+   */
+  --font-sans:
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:
+    'JetBrains Mono', 'Fira Code', ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  /*
+   * Motion, at the original app's timings. Named for what each is for, not how it looks:
+   * `fade-in` mounts a panel, `pulse-glow` marks a live/auto-syncing element, `float-orb`
+   * drifts the two background glows (the second runs slower and in reverse so they never
+   * synchronise), `shimmer` fills a loading placeholder. The reduced-motion block at the
+   * bottom of this file neutralises all of them in one place.
+   */
+  --animate-fade-in: fade-in 300ms var(--ease-emphasized) forwards;
+  --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
+  --animate-float-orb: float-orb 10s ease-in-out infinite;
+  --animate-float-orb-slow: float-orb 14s ease-in-out infinite reverse;
+  --animate-shimmer: shimmer 3s linear infinite;
+
+  /* The signature easing — a decelerating curve used for anything that enters or expands. */
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Indigo at rest, blooming to cyan at the midpoint — the "this is live" signal. */
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 15px color-mix(in oklab, var(--color-accent) 25%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 32px color-mix(in oklab, var(--color-neon-deep) 55%, transparent);
+    }
+  }
+
+  @keyframes float-orb {
+    0%,
+    100% {
+      transform: translateY(0) scale(1);
+    }
+    50% {
+      transform: translateY(-20px) scale(1.1);
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: -200% 0;
+    }
+    to {
+      background-position: 200% 0;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-foundry-900);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background-color: var(--color-accent);
+    color: var(--color-ink);
+  }
+
+  /*
+   * One focus ring for the whole app, so no component has to remember to draw its own.
+   * `:focus-visible` (not `:focus`) keeps it off mouse clicks while guaranteeing every
+   * keyboard user can always see where they are.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-accent-soft);
+    outline-offset: 2px;
+  }
+
+  /* Firefox and the standards-track properties; the WebKit rules below cover Chromium. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-foundry-700) var(--color-foundry-900);
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--color-foundry-900);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-foundry-700);
+    border: 1px solid color-mix(in oklab, var(--color-accent) 25%, transparent);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-foundry-600);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+@utility bg-grid-pattern {
+  /*
+   * The ambient backdrop: a field of faint indigo dots on a 28px pitch, so the page reads as
+   * technical graph paper rather than flat black. Deliberately a dot grid rather than crossed
+   * rules — it stays quiet behind dense forms.
+   */
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--color-accent) 15%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 28px 28px;
+}
+
+@utility shimmer-surface {
+  /* The moving highlight `animate-shimmer` slides across; kept beside the keyframe so the
+     gradient and the animation that drives it can't drift apart. */
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, white 8%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+}
+
+/*
+ * The single reduced-motion catch-all. A user who has asked their OS for less motion gets it
+ * everywhere, including from components written later that never considered it — which is the
+ * point of putting it here rather than at each call site.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
