@@ -392,7 +392,15 @@ describe('generatePrompt — the self-audit, per target', () => {
   ];
 
   it('keeps the audit for the targets that work through the prompt', () => {
-    for (const target of ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const) {
+    // SEEDREAM is here because it is the case that breaks the shorthand: an *image* endpoint that
+    // still reasons over the brief, so "image model" never decides whether the audit is sent.
+    for (const target of [
+      'GENERIC',
+      'CHATGPT_5_6_SOL',
+      'GEMINI_FLASH_IMAGE',
+      'GEMINI_PRO_IMAGE',
+      'SEEDREAM',
+    ] as const) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
       expect(prompt, target).toContain('## 9. LAYOUT AND SELF-AUDIT');
       for (const marker of AUDIT_MARKERS) expect(prompt, `${target}: ${marker}`).toContain(marker);
@@ -400,7 +408,14 @@ describe('generatePrompt — the self-audit, per target', () => {
   });
 
   it('drops the audit for every single-pass image endpoint', () => {
-    for (const target of ['MIDJOURNEY', 'STABLE_DIFFUSION', 'FLUX', 'GPT_IMAGE'] as const) {
+    for (const target of [
+      'QWEN_IMAGE',
+      'MIDJOURNEY',
+      'STABLE_DIFFUSION',
+      'FLUX',
+      'FLUX_API',
+      'GPT_IMAGE',
+    ] as const) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
       for (const marker of AUDIT_MARKERS) {
         expect(prompt, `${target} should not carry "${marker}"`).not.toContain(marker);

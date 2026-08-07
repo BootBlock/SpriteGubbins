@@ -79,17 +79,27 @@ export type AspectRatio = (typeof ASPECT_RATIOS)[number];
  * contract, CLI flags, a negative-prompt block, or a directive prefix — so this changes the shape of
  * the output, not just its wording.
  *
- * `FLUX` is separate from `STABLE_DIFFUSION` because one wrapper cannot serve both: Flux has no
- * negative prompt in normal use, so SD's negative block is silently discarded there.
+ * `FLUX` is separate from `STABLE_DIFFUSION` because one wrapper cannot serve both: Black Forest
+ * Labs state outright that "FLUX.2 does not support negative prompts", so SD's negative block is
+ * silently discarded there.
+ *
+ * **`FLUX` and `FLUX_API` are the same model family split by how much of the prompt reaches it**,
+ * which is the only difference this app can act on: Black Forest Labs' hosted tier reads 32K tokens
+ * while their own open-weight inference code stops tokenising at 512. One entry would have to state
+ * one of those and be wrong for the other half of Flux's users — and the wrong half is the one that
+ * gets told a prompt it can read is seven times over budget.
  */
 export const TARGET_MODEL_IDS = [
   'GENERIC',
   'CHATGPT_5_6_SOL',
   'GEMINI_FLASH_IMAGE',
   'GEMINI_PRO_IMAGE',
+  'SEEDREAM',
+  'QWEN_IMAGE',
   'MIDJOURNEY',
   'STABLE_DIFFUSION',
   'FLUX',
+  'FLUX_API',
   'GPT_IMAGE',
 ] as const;
 export type TargetModelId = (typeof TARGET_MODEL_IDS)[number];

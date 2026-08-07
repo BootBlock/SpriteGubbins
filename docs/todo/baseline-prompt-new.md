@@ -707,6 +707,20 @@ Emit unmodified. Correct for a conversational model, and the only target that ca
   "background" risks losing the key colour.
 - `--style raw` retained — correct, it reduces aesthetic intervention.
 
+> **Corrected after shipping — raw mode is `--raw` on the V8 line.** The flag above was checked for
+> whether it was *the right thing to ask for* and never for whether the syntax was current, and it
+> was not: Midjourney renamed it with V8, so `--style raw` is V7-and-earlier syntax. The wrapper had
+> since been pinned to `--v 8.2`, which put the two in direct contradiction — a version flag naming
+> V8.2 beside the raw syntax belonging to V7 — and the flag left unreliable by that is the one whose
+> whole job is to stop Midjourney restyling a technical layout brief. The wrapper now emits `--raw`
+> ([Raw](https://docs.midjourney.com/hc/en-us/articles/32634113811853-Raw),
+> [Parameter List](https://docs.midjourney.com/hc/en-us/articles/32859204029709-Parameter-List)).
+>
+> The lesson generalises past this flag: a pinned third-party version does not make the *syntax*
+> beside it self-checking. `MIDJOURNEY_VERSION` was introduced so the version had one place to
+> change, and the flags around it silently kept belonging to the version it replaced. Re-checking the
+> pin means re-checking its neighbours.
+
 ### `STABLE_DIFFUSION` (SD 1.5 / SDXL)
 ```
 [template]
@@ -842,6 +856,9 @@ is only ever added with a source beside it.
 | --- | --- | --- |
 | `STABLE_DIFFUSION` | **77 tokens** | CLIP text-encoder context. A base pipeline truncates past it; front-ends that chunk read further, with weaker attention. |
 | `FLUX` | **512 tokens** | T5 text-encoder context on FLUX.1 dev (256 on Schnell). Only the first 77 tokens also reach CLIP. |
+| `FLUX_API` | **32,000 tokens** | Advertised FLUX.2 text input limit on the hosted tier. *(Added later — see the correction below.)* |
+| `QWEN_IMAGE` | **4,500 tokens** | Model input token limit — the tightest ceiling here the whole specification still fits inside. |
+| `SEEDREAM` | none published | Guidance only: ByteDance advise against prompts past ~600 English words, and warn that overloaded briefs drop instructions. |
 | `GPT_IMAGE` | **32,000 characters** | "The maximum length is 32000 characters for the GPT image models" — the Images API's `prompt` parameter. |
 | `GEMINI_PRO_IMAGE` | **65,536 tokens** | Model input token limit. |
 | `GEMINI_FLASH_IMAGE` | **131,072 tokens** | Model input token limit. |
@@ -866,9 +883,72 @@ a specification silently cut to a ceiling would contract for a sheet it no longe
 figures above only Stable Diffusion and Flux are exceeded; the rest have room to spare, which is
 worth knowing rather than assuming.
 
+> **Corrected after shipping — the `CHATGPT_5_6_SOL` row recorded the wrong one of two figures.**
+> 1,050,000 is the *context window*, and the model page states a separate **922,000 maximum input
+> tokens** beside it, the difference being the 128,000 output tokens the window also has to hold.
+> Every other row in this table is an input ceiling, and this column is measured against the prompt
+> alone, so the window was the wrong figure for the question being asked — it was a real number read
+> off the right page under the wrong heading, which is the failure a citation does not catch. The
+> constant is now 922,000 ([model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol)).
+> Nothing about the app's behaviour changes: the specification is ~3,645 estimated tokens either way.
+
 **`MIDJOURNEY_VERSION` went stale exactly as its own comment predicted.** It said `--v 7` while
-Midjourney's default moved to V8.1 on 11 June 2026 and V8.2 on 24 July 2026. It is now `--v 8.2`.
+Midjourney's default moved to V8.1 on 10 June 2026 and V8.2 on 24 July 2026. It is now `--v 8.2`.
 A pinned third-party version is a claim with an expiry date; it wants re-checking, not trusting.
+
+> **Corrected after shipping — the `FLUX` row described a superseded generation.** FLUX.2 replaced
+> FLUX.1 on 25 November 2025, and this row went on naming a T5 encoder and a 77-token CLIP window
+> that FLUX.2 does not have: [dev] encodes with `Mistral3SmallEmbedder`, [klein] with
+> `Qwen3Embedder`, and there is no CLIP stage at all
+> ([text encoders](https://deepwiki.com/black-forest-labs/flux2/3.2-text-encoders)). The **512
+> survived by coincidence** — Black Forest Labs' own FLUX.2 inference code sets `MAX_LENGTH` to 512
+> — which is the worst way for a figure to stay right, because nothing about it was still being
+> checked.
+>
+> The consequential half is that 512 was never true of all of Flux. The hosted tier advertises
+> **32K text input tokens** ([FLUX.2](https://bfl.ai/models/flux-2)), so a FLUX.2 [pro] user was
+> being told a prompt their endpoint reads comfortably was seven times over budget. The target is
+> therefore **split**: `FLUX` for the open weights, `FLUX_API` for pro/max/flex. One entry could
+> only ever have been wrong for one half of Flux's users.
+>
+> A third finding came out of the same check, and it is the one that changed the *prompt* rather
+> than a number. Flux's positive restatement — the sentence that exists precisely because
+> [Black Forest Labs state](https://docs.bfl.ai/guides/prompting_guide_flux2) "FLUX.2 does not
+> support negative prompts" — was **appended**, roughly 3,600 tokens into a prompt the open weights
+> stop reading at 512. It could not reach the model it was written for. It now leads, which is also
+> what BFL's own "word order matters — FLUX.2 pays more attention to what comes first" calls for.
+
+> **Two targets added: `QWEN_IMAGE` and `SEEDREAM`.** Both were checked for currency *first*, which
+> is the habit the Flux and Midjourney findings above earned. That check immediately changed one of
+> them: the obvious Seedream entry was 4.5, and 4.5 is superseded — 5.0 Lite shipped February 2026
+> and **5.0 Pro became the flagship on 8 July 2026**. Adding 4.5 would have reproduced the Flux
+> defect in the same change that fixed it.
+>
+> - **`QWEN_IMAGE`** (Qwen-Image 3.0, 21 July 2026) takes **4.5K tokens** — the tightest ceiling
+>   recorded here that the ~3,600-token specification still fits inside. *(First written as "the
+>   only target it fits inside", which review showed was plainly false: `FLUX_API`, `GPT_IMAGE` and
+>   both Gemini models have far more room. The true and useful claim is the narrow margin, not a
+>   superlative.)* Alibaba document `negative_prompt` as a
+>   parameter, so it earns a negative block; **unweighted**, because SD's `(term:1.3)` is an
+>   Automatic1111/compel convention parsed by those front-ends rather than anything Qwen defines.
+>   Not a thinking model, so no self-audit. Worth recording that 3.0 shipped cloud-only — no
+>   weights, no model card, no benchmarks — unlike 1.0 and 2.0.
+> - **`SEEDREAM`** (Seedream 5.0) is the table's first `deliberates: true, emitsText: false`. It
+>   reasons over the brief and plans its layout before rendering, so the self-audit is actionable;
+>   it returns JPEG or PNG and nothing else, so the manifest is not. `targetCapabilities.test.ts`
+>   had anticipated exactly this split in a comment — "a reasoning model that returns none" — and
+>   the two flags now genuinely disagree somewhere, which a test pins so they cannot silently
+>   re-converge.
+>
+> Its wrapper is the one instruction here that tells a target **what to sacrifice**, and that is
+> specific rather than decorative: ByteDance document that overloaded briefs drop instructions, and
+> a model that drops by *choice* can be told what to drop, where a truncating encoder cuts by
+> position and cannot.
+
+> The V8.1 date above was first recorded here as 11 June 2026; Midjourney's
+> [Version](https://docs.midjourney.com/hc/en-us/articles/32199405667853-Version) page dates the
+> switch to **10 June 2026**, and it is corrected in place because it is an external fact this
+> document got wrong rather than a record of anything the project did.
 
 ---
 

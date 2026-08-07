@@ -58,7 +58,7 @@ describe('PromptPreview', () => {
     });
 
     // Midjourney appends command flags, so the text must have changed shape rather than just wording.
-    expect(promptBox().textContent).toContain('--style raw');
+    expect(promptBox().textContent).toContain('--raw');
     expect(promptBox().textContent).not.toBe(beforeSwitch);
     expect(promptBox().textContent).toBe(expectedPrompt());
   });

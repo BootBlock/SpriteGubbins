@@ -14,9 +14,11 @@ import { promptBudgetFor } from './targetCapabilities.ts';
 describe('readPromptBudget', () => {
   it('returns null where the vendor publishes no ceiling', () => {
     // Null means *unstated*, not unlimited — the preview shows nothing rather than a reassuring
-    // tick. Only two targets earn it: Midjourney documents no prompt limit at all, and Generic
-    // names no particular model, so there is no figure to look up.
+    // tick. Three targets earn it: Midjourney documents no prompt limit at all, Seedream publishes
+    // guidance rather than a ceiling, and Generic names no particular model, so there is no figure
+    // to look up.
     expect(readPromptBudget('anything', 'MIDJOURNEY')).toBeNull();
+    expect(readPromptBudget('anything', 'SEEDREAM')).toBeNull();
     expect(readPromptBudget('anything', 'GENERIC')).toBeNull();
   });
 
@@ -26,8 +28,27 @@ describe('readPromptBudget', () => {
     // and the whole point of `null` is that it makes the difference visible.
     expect(readPromptBudget('x', 'GEMINI_FLASH_IMAGE')?.budget.limit).toBe(131_072);
     expect(readPromptBudget('x', 'GEMINI_PRO_IMAGE')?.budget.limit).toBe(65_536);
-    expect(readPromptBudget('x', 'CHATGPT_5_6_SOL')?.budget.limit).toBe(1_050_000);
+    // Sol's is the *input* ceiling. Its model page states both, and 1,050,000 — the context window,
+    // which the 128,000 output tokens are also drawn from — is the one this reading must not use:
+    // every other row here is an input limit, and what is measured against it is the prompt alone.
+    expect(readPromptBudget('x', 'CHATGPT_5_6_SOL')?.budget.limit).toBe(922_000);
     expect(readPromptBudget('x', 'GPT_IMAGE')?.budget.limit).toBe(32_000);
+    expect(readPromptBudget('x', 'QWEN_IMAGE')?.budget.limit).toBe(4_500);
+  });
+
+  it('separates the two Flux tiers, which is the whole reason there are two', () => {
+    // The open weights stop tokenising at 512 while Black Forest Labs' hosted tier reads 32K. One
+    // entry had to state one of them, and stating 512 told a FLUX.2 [pro] user that a prompt their
+    // endpoint reads comfortably was seven times over budget.
+    expect(readPromptBudget('x', 'FLUX')?.budget.limit).toBe(512);
+    expect(readPromptBudget('x', 'FLUX_API')?.budget.limit).toBe(32_000);
+  });
+
+  it('leaves Seedream unstated, because guidance is not a ceiling', () => {
+    // ByteDance advise against prompts past ~600 English words and warn that overloaded briefs drop
+    // instructions. That is advice about quality, not a documented limit on what is read — the same
+    // distinction that keeps Midjourney null, and the reason null must not drift into meaning zero.
+    expect(readPromptBudget('anything', 'SEEDREAM')).toBeNull();
   });
 
   it('measures a character budget in characters, not in estimated tokens', () => {
@@ -78,7 +99,10 @@ describe('readPromptBudget', () => {
     // A limit with no stated cause is not actionable: 77 tokens is the text encoder's context, not
     // an API refusal, and the two call for different responses from the user.
     expect(readPromptBudget('x', 'STABLE_DIFFUSION')?.budget.note).toMatch(/CLIP text-encoder/i);
-    expect(readPromptBudget('x', 'FLUX')?.budget.note).toMatch(/T5 text-encoder/i);
+    // Not "T5": FLUX.2 encodes with Mistral ([dev]) or Qwen3 ([klein]) and has no CLIP stage, so a
+    // note naming T5 would be describing FLUX.1 — which is how this row went stale the first time.
+    expect(readPromptBudget('x', 'FLUX')?.budget.note).toMatch(/inference code/i);
+    expect(readPromptBudget('x', 'FLUX')?.budget.note).not.toMatch(/T5 text-encoder/i);
   });
 });
 
