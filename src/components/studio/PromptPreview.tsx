@@ -9,6 +9,7 @@ import { countWords, estimateTokens, generatePrompt } from '../../utils/promptCo
 import { DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import { splitsIntoRuns } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
+import { PromptBudgetNotice } from './PromptBudgetNotice.tsx';
 
 /** A filename from the subject's own name, so a folder of downloads stays readable. */
 function promptFileName(species: string): string {
@@ -74,6 +75,8 @@ export function PromptPreview() {
           <Badge tone="live">Auto-Sync</Badge>
         </div>
       </div>
+
+      <PromptBudgetNotice prompt={promptText} />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <button

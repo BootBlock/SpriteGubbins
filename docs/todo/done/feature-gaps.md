@@ -247,9 +247,15 @@ files.
   afterwards**, once that objection turned out to be avoidable: there is no second template. The
   template engine gained nested `[IF:]` blocks, and the one template now drops what a target cannot
   act on — §9's self-audit, gated on a `deliberates` capability declared per model, which is false
-  for all five single-pass image endpoints. What made this buildable rather than a guess is that the
+  for every single-pass image endpoint. What made this buildable rather than a guess is that the
   criterion is structural: it cuts *instruction the endpoint cannot execute*, not descriptions it
-  might benefit from repeating. Imagen's prompt went from 2,467 to 2,246 words. The weaker half —
-  whether Imagen also wants fewer restated descriptions, §8 in particular — is still open, and wants
-  real generations rather than reasoning. The outcome note lives in
+  might benefit from repeating.
+
+  **The target it was named for is gone.** Grounding the work against Google's documentation
+  immediately afterwards showed Imagen 3 shut down in November 2025 and Imagen 4 shutting down on
+  17 August 2026, and Imagen's ceiling to be 480 tokens against the ~3,645 this app emits — so
+  "condense for Imagen" had been the wrong question all along. The capability survives the target: its
+  replacements, the Gemini image models, are *thinking* models that get the full specification and
+  can return the manifest, which is the opposite of what Imagen needed and would have been a
+  coin-flip to guess. The outcome and its sources are in
   [baseline-prompt-new.md](../baseline-prompt-new.md) §7.

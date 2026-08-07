@@ -1,5 +1,5 @@
 import { TARGET_MODELS } from '../constants/models.ts';
-import type { TargetCapabilities, TargetModelId } from '../types/output.ts';
+import type { PromptBudget, TargetCapabilities, TargetModelId } from '../types/output.ts';
 
 /**
  * What each target generator can do with the prompt, looked up by id.
@@ -50,4 +50,15 @@ export function deliberates(target: TargetModelId): boolean {
  */
 export function supportsManifest(target: TargetModelId): boolean {
   return capabilitiesFor(target).emitsText;
+}
+
+/**
+ * The documented ceiling on how much prompt this target will read, or `null` where none is
+ * published.
+ *
+ * `null` means nobody stated a figure — never that the target is unlimited. Treating the two as the
+ * same is how a prompt ends up silently truncated by a text encoder that was documented all along.
+ */
+export function promptBudgetFor(target: TargetModelId): PromptBudget | null {
+  return capabilitiesFor(target).promptBudget;
 }

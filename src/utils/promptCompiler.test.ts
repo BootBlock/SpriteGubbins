@@ -392,7 +392,7 @@ describe('generatePrompt — the self-audit, per target', () => {
   ];
 
   it('keeps the audit for the targets that work through the prompt', () => {
-    for (const target of ['GENERIC', 'CHATGPT_5_6_SOL'] as const) {
+    for (const target of ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
       expect(prompt, target).toContain('## 9. LAYOUT AND SELF-AUDIT');
       for (const marker of AUDIT_MARKERS) expect(prompt, `${target}: ${marker}`).toContain(marker);
@@ -400,7 +400,7 @@ describe('generatePrompt — the self-audit, per target', () => {
   });
 
   it('drops the audit for every single-pass image endpoint', () => {
-    for (const target of ['MIDJOURNEY', 'STABLE_DIFFUSION', 'FLUX', 'GOOGLE_IMAGEN', 'DALLE_3'] as const) {
+    for (const target of ['MIDJOURNEY', 'STABLE_DIFFUSION', 'FLUX', 'GPT_IMAGE'] as const) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
       for (const marker of AUDIT_MARKERS) {
         expect(prompt, `${target} should not carry "${marker}"`).not.toContain(marker);
@@ -411,7 +411,7 @@ describe('generatePrompt — the self-audit, per target', () => {
   it('still lays the sheet out, and titles section 9 for what it actually contains', () => {
     // Dropping the audit must not take the layout instruction with it — that describes the image
     // rather than a step, so every target needs it.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GOOGLE_IMAGEN' }));
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
     expect(prompt).toContain('## 9. LAYOUT');
     expect(prompt).not.toContain('## 9. LAYOUT AND SELF-AUDIT');
     expect(prompt).toContain('Arrange components in a clean exploded grid');
@@ -422,7 +422,7 @@ describe('generatePrompt — the self-audit, per target', () => {
     // The rig, pixel-art and directional checks sit *inside* the audit. Each has its own condition,
     // and a satisfied one must not smuggle its lines out of a block that was dropped wholesale.
     const output = withOutput({
-      targetModel: 'GOOGLE_IMAGEN',
+      targetModel: 'GPT_IMAGE',
       rigMode: 'CUTOUT_RIG',
       renderStyle: 'PIXEL_ART',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
@@ -449,10 +449,10 @@ describe('generatePrompt — the self-audit, per target', () => {
     expect(prompt).toContain('### Directional audit');
   });
 
-  it('leaves the rest of the specification untouched for an image endpoint', () => {
+  it('leaves the rest of the specification untouched for a single-pass endpoint', () => {
     // Only the audit goes. The contract, the subject, the inventory and the exclusions are
     // descriptions of the image, and every target needs them.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GOOGLE_IMAGEN' }));
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
     for (const heading of [
       '## 0. NON-NEGOTIABLE OUTPUT CONTRACT',
       '## 1. SUBJECT DEFINITION',
@@ -463,10 +463,22 @@ describe('generatePrompt — the self-audit, per target', () => {
     }
   });
 
-  it('makes the prompt measurably shorter for an image endpoint', () => {
-    const imagen = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GOOGLE_IMAGEN' }));
+  it('makes the prompt measurably shorter for a single-pass endpoint', () => {
+    const singlePass = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
     const generic = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GENERIC' }));
     // Compared on word count rather than characters, so the wrappers' own prefixes cannot mask it.
-    expect(countWords(imagen)).toBeLessThan(countWords(generic));
+    expect(countWords(singlePass)).toBeLessThan(countWords(generic));
+  });
+
+  it('gives a thinking image model the full specification, not the shortened one', () => {
+    // The distinction the research forced: Gemini's image models are image models that *reason* —
+    // "thinking models that use a reasoning process for complex prompts", which cannot be disabled
+    // — so "is an image generator" and "cannot run a verification pass" are different questions.
+    // Getting this backwards would silently withhold the audit from a target that can act on it.
+    const gemini = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GEMINI_FLASH_IMAGE' }));
+    const generic = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GENERIC' }));
+
+    expect(gemini).toContain('Before delivering, verify:');
+    expect(countWords(gemini)).toBe(countWords(generic));
   });
 });

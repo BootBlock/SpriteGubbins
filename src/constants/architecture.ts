@@ -14,7 +14,7 @@ export interface ArchitectureSection {
 export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   {
     heading: '1. Serverless, and no model API',
-    body: 'Sprite Gubbins runs entirely in the browser. There is no backend, no account, and no outbound request to any image generator — it composes prompt *text* for you to paste into ChatGPT, Midjourney, Stable Diffusion, Imagen or DALL-E yourself. Consequently it never handles an API key, and there is nowhere for your prompts to be sent.',
+    body: 'Sprite Gubbins runs entirely in the browser. There is no backend, no account, and no outbound request to any image generator — it composes prompt *text* for you to paste into ChatGPT, Gemini, Midjourney, Stable Diffusion, Flux or GPT Image yourself. Consequently it never handles an API key, and there is nowhere for your prompts to be sent.',
   },
   {
     heading: '2. Modular front end',
@@ -22,7 +22,7 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '3. The prompt compiler',
-    body: 'The compiled prompt is a pure function of the category, the sixteen subject fields and the twenty output settings: the same state always produces the same text. A field you leave blank omits its line entirely rather than filling it with a placeholder, and the prompt says outright that an absent attribute is the generator’s to choose. Each target then gets its own wrapper — a reasoning directive for ChatGPT 5.6 Sol, command flags for Midjourney, a weighted negative-prompt block for Stable Diffusion, the same constraints restated as prose for Flux (which has no negative prompt), and a short directive for Imagen and DALL-E. The Generic option deliberately adds nothing.',
+    body: 'The compiled prompt is a pure function of the category, the sixteen subject fields and the twenty output settings: the same state always produces the same text. A field you leave blank omits its line entirely rather than filling it with a placeholder, and the prompt says outright that an absent attribute is the generator’s to choose. Each target then gets what its own documentation calls for — a reasoning directive for ChatGPT 5.6 Sol, command flags for Midjourney, a weighted negative-prompt block for Stable Diffusion, the same constraints restated as prose for Flux (which has no negative prompt), and a short directive for GPT Image, whose prompts are rewritten before generation. The Gemini image models and the Generic option add nothing, deliberately: they read the prompt as a specification already. The template itself also adapts — a target with no pass in which to check its own work is not sent the self-audit, and only a target that returns text is asked for a JSON manifest.',
   },
   {
     heading: '4. Render style is a parameter, not an assumption',

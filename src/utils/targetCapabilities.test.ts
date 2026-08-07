@@ -8,11 +8,17 @@ import { deliberates, supportsManifest } from './targetCapabilities.ts';
  * correctly, it just carries a section the endpoint cannot act on, or drops one it could have.
  */
 
-/** The two targets that read the prompt as instructions rather than as one caption. */
-const CONVERSATIONAL = ['GENERIC', 'CHATGPT_5_6_SOL'] as const;
+/**
+ * The targets that read the prompt as instructions to work through rather than as one caption.
+ *
+ * The Gemini image models are in here on Google's own description — "Gemini 3 image models are
+ * thinking models that use a reasoning process ('Thinking') for complex prompts", which cannot be
+ * disabled — so "image model" and "single pass" are not the same question.
+ */
+const DELIBERATING = ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
 
-/** Everything else — single-pass image endpoints. */
-const IMAGE_ENDPOINTS = ['MIDJOURNEY', 'STABLE_DIFFUSION', 'FLUX', 'GOOGLE_IMAGEN', 'DALLE_3'] as const;
+/** Everything else — single-pass endpoints with no channel to answer back through. */
+const SINGLE_PASS = ['MIDJOURNEY', 'STABLE_DIFFUSION', 'FLUX', 'GPT_IMAGE'] as const;
 
 describe('the capability table', () => {
   it('covers every id in the union', () => {
@@ -31,28 +37,28 @@ describe('the capability table', () => {
 
 describe('deliberates', () => {
   it('is true for the targets that work through the prompt as a procedure', () => {
-    for (const target of CONVERSATIONAL) expect(deliberates(target), target).toBe(true);
+    for (const target of DELIBERATING) expect(deliberates(target), target).toBe(true);
   });
 
   it('is false for every single-pass image endpoint', () => {
     // Section 9's self-audit asks the reader to check the sheet and redraw before delivering.
     // These generate in one pass, so that names a step they do not have.
-    for (const target of IMAGE_ENDPOINTS) expect(deliberates(target), target).toBe(false);
+    for (const target of SINGLE_PASS) expect(deliberates(target), target).toBe(false);
   });
 });
 
 describe('supportsManifest', () => {
   it('is true only where there is a text channel to return one through', () => {
-    for (const target of CONVERSATIONAL) expect(supportsManifest(target), target).toBe(true);
-    for (const target of IMAGE_ENDPOINTS) expect(supportsManifest(target), target).toBe(false);
+    for (const target of DELIBERATING) expect(supportsManifest(target), target).toBe(true);
+    for (const target of SINGLE_PASS) expect(supportsManifest(target), target).toBe(false);
   });
 });
 
 describe('the two capabilities are asked separately', () => {
   it('reads each from its own field rather than one standing in for the other', () => {
-    // They coincide across today's seven targets — every conversational one emits text and every
-    // image one does not — which is exactly the condition under which a single flag serving both
-    // would pass every test above while being wrong the moment a target splits them.
+    // They coincide across today's eight targets, which is exactly the condition under which one
+    // flag serving both would pass every test above while being wrong the moment a target splits
+    // them — an image endpoint with a text side-channel, or a reasoning model that returns none.
     for (const model of TARGET_MODELS) {
       expect(deliberates(model.id), model.id).toBe(model.capabilities.deliberates);
       expect(supportsManifest(model.id), model.id).toBe(model.capabilities.emitsText);

@@ -85,11 +85,12 @@ export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 export const TARGET_MODEL_IDS = [
   'GENERIC',
   'CHATGPT_5_6_SOL',
+  'GEMINI_FLASH_IMAGE',
+  'GEMINI_PRO_IMAGE',
   'MIDJOURNEY',
   'STABLE_DIFFUSION',
   'FLUX',
-  'GOOGLE_IMAGEN',
-  'DALLE_3',
+  'GPT_IMAGE',
 ] as const;
 export type TargetModelId = (typeof TARGET_MODEL_IDS)[number];
 
@@ -106,6 +107,24 @@ export type TargetModelId = (typeof TARGET_MODEL_IDS)[number];
  * answers it. Adding a target *id* is not — nothing in the type says that list is exhaustive — so
  * `targetCapabilities.test.ts` pins that half instead.
  */
+/**
+ * A documented ceiling on how much prompt a target will actually read.
+ *
+ * Only recorded where the vendor or the model's own architecture states one. `null` means *nobody
+ * published a figure*, which is not the same as "unlimited" — so the interface says nothing rather
+ * than inventing a number, and the preview shows nothing rather than a reassuring tick.
+ */
+export interface PromptBudget {
+  readonly limit: number;
+  /**
+   * Characters are counted exactly; tokens are compared against the app's ~4-characters-per-token
+   * estimate, because no tokeniser ships with the app and each target uses a different one.
+   */
+  readonly unit: 'characters' | 'tokens';
+  /** What imposes the ceiling, shown to the user — a limit with no stated cause is not actionable. */
+  readonly note: string;
+}
+
 export interface TargetCapabilities {
   /**
    * Works *through* the prompt as a procedure — planning, and checking what it produced against
@@ -117,6 +136,8 @@ export interface TargetCapabilities {
   readonly deliberates: boolean;
   /** Returns text alongside the image, which is what a companion manifest needs. */
   readonly emitsText: boolean;
+  /** The documented ceiling on prompt length, or `null` where none is published. */
+  readonly promptBudget: PromptBudget | null;
 }
 
 /** One target generator's entry in the selector. */

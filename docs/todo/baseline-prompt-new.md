@@ -749,9 +749,55 @@ long rule lists poorly, so consider emitting a **condensed** variant for this ta
 > about one model that nothing here measures. That part stays open, and wants real generations
 > rather than reasoning to settle.
 
+> **Correction — the target itself was the problem, and it is gone.** Checked against Google's
+> documentation immediately afterwards, the guidance above was answering a question that no longer
+> mattered. **Imagen 3 shut down on 10 November 2025**, and **Imagen 4 shuts down on 17 August
+> 2026** — still ten days away as this was written, and already the reason not to build on it. Its
+> documented ceiling is **"Maximum prompt length is 480 tokens"** against the ~3,645 this app emits:
+> **7.6× over**, which no amount of condensing a specification was ever going to close. The 221
+> words saved above are roughly a ninth of that overage. The entry is removed.
+>
+> **Two Google pages disagree about the migration target, and this picks the deprecations table.**
+> [The schedule](https://ai.google.dev/gemini-api/docs/deprecations.md.txt) names
+> `gemini-3.1-flash-image` for all three Imagen 4 variants; [the Imagen
+> guide](https://ai.google.dev/gemini-api/docs/imagen) says "migrate to Nano Banana" and then, in
+> its instructions, "Use `gemini-2.5-flash-image` instead of Imagen model names" — a model that
+> itself shuts down on 2 October 2026. The dated table is the better authority and the one followed.
+>
+> Its replacement inverts the capability, which is why guessing would have got it wrong: **Gemini's
+> image models are thinking models** — "Gemini 3 image models are thinking models that use a
+> reasoning process ('Thinking') for complex prompts. This feature is enabled by default and cannot
+> be disabled in the API" ([image
+> generation](https://ai.google.dev/gemini-api/docs/image-generation)) — and both return text as
+> well as images, per their own model pages
+> ([Flash](https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image),
+> [Pro](https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image); the image-generation guide
+> attributes interleaving to Pro only, so the model pages are what the claim rests on). So
+> `GEMINI_FLASH_IMAGE` (Nano Banana 2) and `GEMINI_PRO_IMAGE` (Nano Banana Pro) receive the **full**
+> specification including the self-audit, and can be asked for the companion manifest. They need no
+> wrapper: they read the prompt as a specification rather than conditioning on it as a caption,
+> which is what the framing sentence above was compensating for.
+
 ### `DALLE_3` / GPT-image
 Prepend a short directive. This family **rewrites prompts before generation**, so terse absolute
 phrasing survives better than elaborate structure — which is part of why section 0 sits at the top.
+
+> **Correction — also retired; the directive stays, for a checked reason.** OpenAI shut down
+> `dall-e-3` (and `dall-e-2`) on **12 May 2026**, naming `gpt-image-2`, `gpt-image-1` or
+> `gpt-image-1-mini` as replacements; `gpt-image-1` itself follows on 23 October 2026. The target is
+> now `GPT_IMAGE`. `gpt-image-2` lists **image as its only output modality**, so it gets no manifest
+> and no self-audit.
+>
+> The directive was very nearly dropped on the grounds that the Images API documents no prompt
+> rewrite for `gpt-image-2`. That is true of the raw endpoint and beside the point: image generation
+> through the Responses API — which is the ChatGPT path this app's users are actually on — documents
+> that "the mainline model … will automatically revise your prompt for improved performance", handed
+> back as `revised_prompt`. So terse absolute phrasing still has something to survive, and the
+> sentence is kept on evidence rather than on family resemblance.
+>
+> Sources: [deprecations](https://developers.openai.com/api/docs/deprecations),
+> [gpt-image-2](https://developers.openai.com/api/docs/models/gpt-image-2),
+> [image generation guide](https://developers.openai.com/api/docs/guides/image-generation).
 
 ### `CHATGPT_5_6_SOL` — keep the target, slim the wrapper
 
@@ -783,7 +829,46 @@ verification questions (section 9). Each was doing real work against v1 and none
 twice.
 
 This target is also the natural home for `EMIT_MANIFEST` (§4) alongside `GENERIC`, since it returns
-text with the image.
+text with the image — as, since the corrections above, are both Gemini image targets.
+
+### Documented prompt ceilings
+
+Each target's `promptBudget` records what the vendor or the architecture publishes about how much
+prompt is actually read. **`null` means nobody stated a figure — never that the target is
+unlimited**, which is why the studio shows nothing rather than a reassuring tick, and why a ceiling
+is only ever added with a source beside it.
+
+| Target | Ceiling | What imposes it |
+| --- | --- | --- |
+| `STABLE_DIFFUSION` | **77 tokens** | CLIP text-encoder context. A base pipeline truncates past it; front-ends that chunk read further, with weaker attention. |
+| `FLUX` | **512 tokens** | T5 text-encoder context on FLUX.1 dev (256 on Schnell). Only the first 77 tokens also reach CLIP. |
+| `GPT_IMAGE` | **32,000 characters** | "The maximum length is 32000 characters for the GPT image models" — the Images API's `prompt` parameter. |
+| `GEMINI_PRO_IMAGE` | **65,536 tokens** | Model input token limit. |
+| `GEMINI_FLASH_IMAGE` | **131,072 tokens** | Model input token limit. |
+| `CHATGPT_5_6_SOL` | **1,050,000 tokens** | Model context window. |
+| `MIDJOURNEY` | none published | Its own guidance runs the other way regardless: "short and simple prompts typically generate the best images", and "avoid making long lists or detailed instructions". |
+| `GENERIC` | none published | It names no particular model, so there is no figure to record. |
+
+Two of these took a second pass to get right, which is the point of writing the source beside each.
+The Gemini and GPT Image rows were first recorded as "none published" on the strength of the pages
+that describe *image generation*; the figures are on the **model** pages and in the **API
+reference**, and "I did not find one" had been written down as "there isn't one" — the exact
+confusion the `null` convention above exists to prevent. Two vendor surfaces also disagree in
+passing: the DeepMind card for Flash says "a token context window of up to 1M" against
+ai.google.dev's 131,072, and OpenAI's `model` enum on the Images reference has not been updated to
+list `gpt-image-2` at all. The lower, dated, API-reference figures are the ones recorded.
+
+This matters more than it looks. The app composes a specification of roughly **3,645 estimated
+tokens**, and until this was recorded it said nothing at all about a target documented to read the
+first seventy-seven of them — a word count is a fact about the prompt, not about whether anything
+will read it. The studio now says so, in gold, beside the copy button, and still refuses to trim:
+a specification silently cut to a ceiling would contract for a sheet it no longer describes. On the
+figures above only Stable Diffusion and Flux are exceeded; the rest have room to spare, which is
+worth knowing rather than assuming.
+
+**`MIDJOURNEY_VERSION` went stale exactly as its own comment predicted.** It said `--v 7` while
+Midjourney's default moved to V8.1 on 11 June 2026 and V8.2 on 24 July 2026. It is now `--v 8.2`.
+A pinned third-party version is a claim with an expiry date; it wants re-checking, not trusting.
 
 ---
 

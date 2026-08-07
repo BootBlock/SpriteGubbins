@@ -4,10 +4,15 @@ import type { AspectRatio, TargetModelId } from '../types/output.ts';
 /**
  * Per-generator wrapping of the compiled prompt.
  *
- * Every model in `TARGET_MODELS` has a branch here, and they differ in kind rather than in wording:
- * Sol gets a reasoning contract, Midjourney CLI flags, Stable Diffusion a negative-prompt block,
- * Flux the same intent restated positively, Imagen and DALL-E a directive prefix, and Generic the
- * prompt untouched.
+ * Every model in `TARGET_MODELS` has a branch here: Sol gets a reasoning contract, Midjourney CLI
+ * flags, Stable Diffusion a negative-prompt block, Flux the same intent restated positively, GPT
+ * Image a directive prefix, and Generic the prompt untouched.
+ *
+ * **Several branches now return the prompt unchanged, and that is the finding rather than a gap.**
+ * A wrapper exists only where a vendor documents something the template cannot say — a flag syntax,
+ * a negative-prompt channel, a rewrite to survive. The Gemini image models need none: they read the
+ * prompt as a specification and think over it, which the *template* adapts to by giving them the
+ * self-audit and the manifest. Adding a sentence here for symmetry would be inventing a behaviour.
  */
 
 /** Midjourney's aspect flag for each sheet format. */
@@ -82,14 +87,22 @@ export function wrapForModel(
     case 'FLUX':
       return wrapForFlux(prompt, options.backgroundKeyDescription);
 
-    // Imagen handles descriptive natural language well and long rule lists poorly, so it gets one
-    // plain framing sentence rather than a second contract.
-    case 'GOOGLE_IMAGEN':
-      return `A flat reference sheet of separated game-asset components, arranged in a grid on a ${options.backgroundKeyDescription} background, with no scene, no shadows and no text.\n\n${prompt}`;
+    // The Gemini image models read the prompt as a specification rather than conditioning on it as
+    // a caption, and they think over it before drawing. That is what the *template* now adapts to —
+    // they receive the self-audit and can be asked for a manifest — so there is nothing left for a
+    // wrapper to say that the specification does not already say better. The retired Imagen entry
+    // needed a framing sentence precisely because it was neither of those things.
+    case 'GEMINI_FLASH_IMAGE':
+    case 'GEMINI_PRO_IMAGE':
+      return prompt;
 
-    // This family rewrites prompts before generation, so terse absolute phrasing survives better
-    // than elaborate structure — which is part of why section 0 sits at the top of the template.
-    case 'DALLE_3':
+    // The directive DALL·E 3 carried, kept — because the behaviour that justified it is still
+    // documented on the path this app's users are on. OpenAI's Images API does not describe a
+    // rewrite for `gpt-image-2`, but image generation through the Responses API does: "the mainline
+    // model … will automatically revise your prompt for improved performance", surfaced back as
+    // `revised_prompt`. Pasting into ChatGPT is that path, so terse absolute phrasing still has
+    // something to survive — which is also part of why section 0 sits at the top of the template.
+    case 'GPT_IMAGE':
       return `[DIRECTIVE: Reproduce the specification below exactly. Do not restyle, simplify or reinterpret it.]\n\n${prompt}`;
 
     case 'GENERIC':
