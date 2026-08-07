@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import { copyFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
@@ -155,5 +155,10 @@ export default defineConfig({
     // them) without leaking test-only ambient types into product code.
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // Vitest's defaults, plus `.claude`. Worktrees live in `.claude/worktrees/`, and a worktree is
+    // a whole second checkout of this repo — so without this, a run from the root collects every
+    // other branch's tests alongside this one's and reports their failures as ours. Spreading the
+    // defaults rather than replacing them keeps `node_modules` and `dist` excluded too.
+    exclude: [...configDefaults.exclude, '.claude/**'],
   },
 });

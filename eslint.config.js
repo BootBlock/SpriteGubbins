@@ -13,8 +13,22 @@ import globals from 'globals';
 
 export default tseslint.config(
   // Never lint build output, deps, or generated service-worker scaffolding.
+  //
+  // `.claude/**` is here because these ignore patterns are anchored to this file's directory, so
+  // `dist/**` only ever meant the *root* `dist`. Worktrees live under `.claude/worktrees/`, and a
+  // worktree is a whole second checkout: once anyone has run a build inside one, a root `eslint .`
+  // walks into its `dist/` and reports thousands of errors from a minified bundle — while also
+  // quietly linting another branch's `src/` as though it were this one's.
   {
-    ignores: ['dist/**', 'dist-ssr/**', 'dev-dist/**', 'coverage/**', 'node_modules/**', 'public/**'],
+    ignores: [
+      'dist/**',
+      'dist-ssr/**',
+      'dev-dist/**',
+      'coverage/**',
+      'node_modules/**',
+      'public/**',
+      '.claude/**',
+    ],
   },
 
   // Base: ESLint core + typescript-eslint (syntactic — fast, no type information needed).
