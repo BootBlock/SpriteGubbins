@@ -1,5 +1,5 @@
 import { fileURLToPath } from 'node:url';
-import { copyFileSync, existsSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { configDefaults, defineConfig } from 'vitest/config';
 import type { Plugin } from 'vite';
@@ -13,6 +13,20 @@ import { VitePWA } from 'vite-plugin-pwa';
  * and everything else derives from it.
  */
 const BASE = '/SpriteGubbins/';
+
+/**
+ * The manifest is read for its `version` alone, which the `define` block below inlines as
+ * `__APP_VERSION__` (see `src/constants/about.ts`).
+ *
+ * Read here rather than imported by the app, so package.json never enters the bundle — and
+ * single-sourced rather than retyped in a constant, because the deploy workflow refuses to publish
+ * new code under an already-tagged version and then tags the release `v<version>`. A hand-copied
+ * number in the UI would drift from the tag naming the very build the user is looking at, and
+ * nothing would notice.
+ */
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
+  version: string;
+};
 
 /**
  * Cross-origin isolation headers (spec Phase 1, Task 1.3.3).
@@ -123,6 +137,11 @@ export default defineConfig({
       devOptions: { enabled: false },
     }),
   ],
+
+  // Build-time constant consumed by `src/constants/about.ts`, which the About section renders.
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
 
   resolve: {
     alias: {

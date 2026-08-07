@@ -1,5 +1,6 @@
 import { ARCHITECTURE_SECTIONS } from '../../constants/architecture.ts';
 import { Badge } from '../common/Badge.tsx';
+import { AboutSection } from './AboutSection.tsx';
 import { StorageStatus } from './StorageStatus.tsx';
 
 /**
@@ -36,6 +37,8 @@ export function SpecTab() {
           <p className="text-xs leading-relaxed text-ink-muted">{section.body}</p>
         </section>
       ))}
+
+      <AboutSection />
     </article>
   );
 }
