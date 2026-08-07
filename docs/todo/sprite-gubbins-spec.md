@@ -343,23 +343,23 @@ Execute the following verification commands to ensure zero errors:
 
 Read Phase 1 through Phase 5, then start Phase 1\. Build out the files systematically, adhering strictly to all architectural guardrails and anti-pattern bans.
 
-### Open change request against this specification
+### The prompt template has been superseded
 
-The prompt template specified here has a **v2** that supersedes it, raised after Phases 1–3
-shipped. It is additive — the compiler architecture, the sixteen subject keys and the five
-categories are unchanged — but it alters the compiled template text, adds parameters, and touches
-`promptCompiler.ts`, `modelWrappers.ts`, `types/output.ts`, `constants/presets.ts` and
-`atlasCalculator.ts`.
+The template specified in Phase 2 of this document is **v1**. It has been replaced, after Phases 1–4
+shipped, by a v2 that the code now emits. The compiler architecture, the sixteen subject keys and the
+five categories are unchanged; the compiled template text, the parameter set and the model wrappers
+are not.
 
 - **[baseline-prompt-new.md](baseline-prompt-new.md)** — the v2 template, the reasoning for each
-  change, and three ready-to-use presets.
-- **[prompt-template-v2-integration.md](prompt-template-v2-integration.md)** — the work breakdown
-  against the shipped code, in order, with tests.
+  change, and the three Unsung Saviour presets. Kept as reference.
+- **[done/prompt-template-v2-integration.md](done/prompt-template-v2-integration.md)** — the change
+  that landed it, and the record of the two places the implementation knowingly departs from the
+  template document.
 
-**Read the integration spec before working on the compiler, the model wrappers, the atlas
-calculator or the output-config UI.** Two of its changes are not mechanical: renaming
-`RESOLUTION_PROFILE` members is a persistence migration for stored custom presets, and it
-deliberately reverses the documented `|| 'DEFINED'` behaviour in `promptCompiler.ts`.
+**Where this document and v2 disagree about the prompt, v2 is what ships.** In particular v2
+deliberately reverses the `|| 'DEFINED'` fallback described here — a cleared field now omits its line
+entirely — and it deletes `FULL_DIRECTIONAL_POSE_LIBRARY`, whose 111 components no model delivers in
+one generation.
 
 [image1]: <data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABUAAAAYCAYAAAAVibZIAAAAV0lEQVR4XmNgGAWjYPiCDHQBaoAyIBZDF6QUKAJxM7ogNQAoCFzQBZEByNZJZODNQHySgYphDAoCkMFUC1tuIF4IpakGAhgIhCc5AORKqgOqheMoGG4AAAd3DuEo/FF3AAAAAElFTkSuQmCC>
 

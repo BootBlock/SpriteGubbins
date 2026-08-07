@@ -1,0 +1,60 @@
+/**
+ * Reading single values out of untrusted data.
+ *
+ * Everything crossing the storage boundary — a SQLite result row, a localStorage string, an imported
+ * JSON file — is `unknown`, and the app's types are strict. These are the narrowing primitives the
+ * parsers are built from: each answers "is this the type I need?" with a real check rather than an
+ * assertion.
+ */
+
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+export function readString(row: Record<string, unknown>, key: string): string | null {
+  const value = row[key];
+  return typeof value === 'string' ? value : null;
+}
+
+export function readNumber(row: Record<string, unknown>, key: string): number | null {
+  const value = row[key];
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/** Read one field, accepting it only if it is one of `allowed`. */
+export function pick<T extends string>(
+  source: Record<string, unknown>,
+  key: string,
+  fallback: T,
+  allowed: readonly T[],
+): T {
+  const value = source[key];
+  return allowed.find((candidate) => candidate === value) ?? fallback;
+}
+
+/** Read a finite number, accepting it only within `[min, max]`. */
+export function pickNumber(
+  source: Record<string, unknown>,
+  key: string,
+  fallback: number,
+  range: { readonly min: number; readonly max: number },
+): number {
+  const value = readNumber(source, key);
+  if (value === null || value < range.min || value > range.max) return fallback;
+  return value;
+}
+
+/** Read a boolean. Anything that is not one — including `'true'` — falls back. */
+export function pickBoolean(source: Record<string, unknown>, key: string, fallback: boolean): boolean {
+  const value = source[key];
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+/** `JSON.parse` that yields `undefined` instead of throwing — stored payloads are untrusted. */
+export function parseJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}

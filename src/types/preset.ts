@@ -5,7 +5,7 @@ import type { SubjectCategory, SubjectDefinition } from './subject.ts';
  * A saved studio configuration — the subject, the output settings, and the category that
  * decides which field labels and option pools apply to them.
  *
- * Built-in archetypes ship in `src/constants/presets.ts`; the user's own are persisted in the
+ * Built-in archetypes ship in `src/constants/presets/`; the user's own are persisted in the
  * `custom_presets` table and carry `isCustom`.
  */
 export interface PresetArchetype {

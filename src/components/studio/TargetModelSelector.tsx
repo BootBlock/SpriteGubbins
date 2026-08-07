@@ -1,5 +1,5 @@
 import { TARGET_MODELS } from '../../constants/models.ts';
-import { OUTPUT_TOOLTIPS } from '../../constants/output.ts';
+import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { SelectField } from '../common/SelectField.tsx';
 

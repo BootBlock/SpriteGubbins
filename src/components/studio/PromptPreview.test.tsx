@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
-import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output.ts';
-import { DEFAULT_PRESET } from '../../constants/presets.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
+import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
@@ -58,7 +58,7 @@ describe('PromptPreview', () => {
     });
 
     // Midjourney appends command flags, so the text must have changed shape rather than just wording.
-    expect(promptBox().textContent).toContain('--v 6.1');
+    expect(promptBox().textContent).toContain('--style raw');
     expect(promptBox().textContent).not.toBe(beforeSwitch);
     expect(promptBox().textContent).toBe(expectedPrompt());
   });
@@ -70,7 +70,7 @@ describe('PromptPreview', () => {
     act(() => {
       // A directional mode change alters the component-count prose in several places, so the count
       // moves by more than one — a stale mirror could not coincidentally still match.
-      useOutputStore.getState().setOutputField('directionalMode', 'FULL_DIRECTIONAL_POSE_LIBRARY');
+      useOutputStore.getState().setOutputField('directionalMode', 'SINGLE_DIRECTION_POSE_LIBRARY');
     });
 
     expect(screen.getByText(String(countWords(expectedPrompt())))).toBeInTheDocument();

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
-import { PRESETS } from '../constants/presets.ts';
+import { PRESETS } from '../constants/presets/index.ts';
 import { getDatabase } from '../db/database.ts';
-import { parseImportedPreset, parseJson } from '../db/rows.ts';
+import { parseJson } from '../db/readers.ts';
+import { parseImportedPreset } from '../db/rows.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
@@ -33,10 +34,9 @@ export interface PresetState {
   /** Put a preset's configuration into the studio and switch to it. */
   loadPreset(preset: PresetArchetype): void;
   /**
-   * Save the studio's current configuration under `name`. A blank name is ignored.
-   *
-   * @returns whether it was stored, so the caller can keep the name in the box to retry rather than
-   * clearing a field whose contents were never persisted.
+   * Save the studio's current configuration under `name`; a blank name is ignored. Returns whether
+   * it was stored, so the caller can keep the name in the box to retry rather than clearing a field
+   * whose contents were never persisted.
    */
   saveCustomPreset(name: string): Promise<boolean>;
   deleteCustomPreset(id: string): Promise<void>;
@@ -97,10 +97,9 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     try {
       const database = await getDatabase();
       await database.savePreset(preset);
-      // Re-read rather than appending in place. The two backends order this collection differently
-      // — SQLite by `updated_at DESC`, the localStorage fallback by insertion — so an optimistic
-      // append would put the new preset where only one of them agrees it belongs, and the list
-      // would silently reorder itself on the next reload.
+      // Re-read rather than appending in place: the two backends order this collection differently
+      // — SQLite by `updated_at DESC`, the fallback by insertion — so an optimistic append would put
+      // the new preset where only one of them agrees it belongs.
       set({ customPresets: await database.listPresets() });
       useUIStore.getState().showToast(`Saved custom preset "${trimmed}"`);
       return true;

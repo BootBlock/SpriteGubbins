@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PRESET, PRESETS } from '../constants/presets.ts';
+import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';

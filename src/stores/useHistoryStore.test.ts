@@ -4,7 +4,7 @@ import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
-import { DEFAULT_PRESET } from '../constants/presets.ts';
+import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
 import type { NewPromptHistoryLog } from '../types/history.ts';
 import { useHistoryStore } from './useHistoryStore.ts';

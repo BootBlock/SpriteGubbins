@@ -6,7 +6,7 @@ import {
   DEFAULT_ATLAS_CANVAS_SIZE,
   DEFAULT_ATLAS_PADDING,
 } from '../../constants/atlas.ts';
-import { COMPONENT_COUNTS } from '../../constants/output.ts';
+import { COMPONENT_COUNTS } from '../../constants/promptText/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';

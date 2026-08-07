@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from 'react';
-import { PRESETS } from '../../constants/presets.ts';
+import { PRESETS } from '../../constants/presets/index.ts';
 import { useDownload } from '../../hooks/useDownload.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { PresetCard } from './PresetCard.tsx';

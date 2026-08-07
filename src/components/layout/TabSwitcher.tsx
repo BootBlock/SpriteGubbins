@@ -1,5 +1,5 @@
 import { APP_TAB_CHOICES } from '../../constants/ui.ts';
-import { PRESETS } from '../../constants/presets.ts';
+import { PRESETS } from '../../constants/presets/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 

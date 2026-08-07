@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
-import { DEFAULT_PRESET } from '../constants/presets.ts';
+import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
 

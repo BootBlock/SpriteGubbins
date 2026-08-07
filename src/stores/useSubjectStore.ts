@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
-import { DEFAULT_PRESET } from '../constants/presets.ts';
+import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 
 /**

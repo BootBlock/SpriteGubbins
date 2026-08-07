@@ -2,7 +2,8 @@ import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
-import { parseHistoryRow, parseImportedPreset, parseJson } from './rows.ts';
+import { parseHistoryRow, parseImportedPreset } from './rows.ts';
+import { parseJson } from './readers.ts';
 import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
 
 /**

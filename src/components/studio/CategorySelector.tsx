@@ -1,5 +1,5 @@
 import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
-import { OUTPUT_TOOLTIPS } from '../../constants/output.ts';
+import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';

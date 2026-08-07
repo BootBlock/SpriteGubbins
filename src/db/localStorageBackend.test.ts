@@ -4,8 +4,8 @@ import { createMemoryStorage, type WebStorageLike } from './webStorage.ts';
 import { HISTORY_LIMIT } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../constants/output.ts';
-import { DEFAULT_PRESET, PRESETS } from '../constants/presets.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 

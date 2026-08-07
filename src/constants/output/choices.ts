@@ -1,0 +1,144 @@
+import { COMPONENT_COUNTS } from '../promptText/inventory.ts';
+import type {
+  AspectRatio,
+  DirectionalMode,
+  LightingModel,
+  OutlineStyle,
+  PaletteLimit,
+  ResolutionProfile,
+  SurfaceDetail,
+} from '../../types/output.ts';
+import type { BackgroundKey, DirectionSet, Projection, RenderStyle } from '../../types/rendering.ts';
+import type { JointCapStyle, OverlapMargin, RigMode } from '../../types/rigging.ts';
+
+/**
+ * The options each output control offers.
+ *
+ * The identifiers are the domain's, declared in `src/types/`; these pair them with the wording the
+ * selector shows. The label keeps the identifier visible on purpose — it is the term the prompt is
+ * written against, so a user comparing two generations can see which setting changed.
+ */
+export interface OutputChoice<T extends string> {
+  readonly value: T;
+  readonly label: string;
+}
+
+/**
+ * Component counts are interpolated from {@link COMPONENT_COUNTS} rather than written into the
+ * label. They are stated in four places — here, the prompt's contract, the prompt's self-audit and
+ * the atlas grid — and a label that disagrees with the prompt is how a user comes to expect the
+ * wrong number of components.
+ */
+export const DIRECTIONAL_MODE_CHOICES: readonly OutputChoice<DirectionalMode>[] = [
+  {
+    value: 'CORE_DIRECTIONAL_VARIANTS',
+    label: `CORE_DIRECTIONAL_VARIANTS (${COMPONENT_COUNTS.CORE_DIRECTIONAL_VARIANTS} components — recommended)`,
+  },
+  {
+    value: 'SINGLE_DIRECTION_POSE_LIBRARY',
+    label: `SINGLE_DIRECTION_POSE_LIBRARY (${COMPONENT_COUNTS.SINGLE_DIRECTION_POSE_LIBRARY} components)`,
+  },
+  {
+    value: 'CUTOUT_RIG_SINGLE_DIRECTION',
+    label: `CUTOUT_RIG_SINGLE_DIRECTION (${COMPONENT_COUNTS.CUTOUT_RIG_SINGLE_DIRECTION} components)`,
+  },
+  {
+    value: 'TILESET_MODULAR',
+    label: `TILESET_MODULAR (${COMPONENT_COUNTS.TILESET_MODULAR} tiles)`,
+  },
+];
+
+export const RENDER_STYLE_CHOICES: readonly OutputChoice<RenderStyle>[] = [
+  { value: 'PIXEL_ART', label: 'PIXEL_ART (modern high-resolution pixel art)' },
+  { value: 'RETRO_PIXEL_ART', label: 'RETRO_PIXEL_ART (8/16-bit, small palette, chunky pixels)' },
+  { value: 'PAINTED_2D', label: 'PAINTED_2D (soft blended forms, visible brush economy)' },
+  { value: 'CEL_SHADED', label: 'CEL_SHADED (flat fills, hard shadow steps, ink contour)' },
+  { value: 'VECTOR_FLAT', label: 'VECTOR_FLAT (flat geometry, no gradients)' },
+  { value: 'HAND_DRAWN_INK', label: 'HAND_DRAWN_INK (inked linework, visible line weight)' },
+  { value: 'RENDERED_3D', label: 'RENDERED_3D (material shading, soft form shadow)' },
+  { value: 'LOW_POLY_3D', label: 'LOW_POLY_3D (faceted, flat per-face shading)' },
+  { value: 'CLAY_RENDER', label: 'CLAY_RENDER (untextured form study — validate volume)' },
+  { value: 'SILHOUETTE_ONLY', label: 'SILHOUETTE_ONLY (readability pass — does the shape read?)' },
+];
+
+export const PROJECTION_CHOICES: readonly OutputChoice<Projection>[] = [
+  { value: 'THREE_QUARTER_TOPDOWN', label: 'THREE_QUARTER_TOPDOWN (angled overhead)' },
+  { value: 'PURE_TOPDOWN', label: 'PURE_TOPDOWN (directly overhead)' },
+  { value: 'TRUE_ISOMETRIC', label: 'TRUE_ISOMETRIC (2:1 diamond, equal foreshortening)' },
+  { value: 'DIMETRIC_2_1', label: 'DIMETRIC_2_1 (unequal foreshortening)' },
+  { value: 'OBLIQUE_45', label: 'OBLIQUE_45 (undistorted front, depth at 45°)' },
+  { value: 'ORTHOGRAPHIC_SIDE', label: 'ORTHOGRAPHIC_SIDE (flat side elevation — platformer)' },
+  { value: 'ORTHOGRAPHIC_FRONT', label: 'ORTHOGRAPHIC_FRONT (flat front elevation)' },
+];
+
+export const DIRECTION_SET_CHOICES: readonly OutputChoice<DirectionSet>[] = [
+  { value: 'THREE_CLASSIC', label: 'THREE_CLASSIC (front-3/4, right side, back-3/4)' },
+  { value: 'SINGLE_FRONT', label: 'SINGLE_FRONT (front only)' },
+  { value: 'FOUR_CARDINAL', label: 'FOUR_CARDINAL (S, W, N, E)' },
+  { value: 'EIGHT_COMPASS', label: 'EIGHT_COMPASS (S, SW, W, NW, N, NE, E, SE)' },
+];
+
+export const BACKGROUND_KEY_CHOICES: readonly OutputChoice<BackgroundKey>[] = [
+  { value: 'MAGENTA_FF00FF', label: 'MAGENTA_FF00FF (#FF00FF — keyable, recommended)' },
+  { value: 'PURE_WHITE', label: 'PURE_WHITE (#FFFFFF — bleeds into light edges)' },
+  { value: 'PURE_BLACK', label: 'PURE_BLACK (#000000)' },
+  { value: 'TRANSPARENT', label: 'TRANSPARENT (alpha, where the target supports it)' },
+];
+
+export const RIG_MODE_CHOICES: readonly OutputChoice<RigMode>[] = [
+  { value: 'POSE_LIBRARY', label: 'POSE_LIBRARY (rigid segments assembled by hand)' },
+  { value: 'CUTOUT_RIG', label: 'CUTOUT_RIG (pieces bound to bones, rotated at runtime)' },
+  { value: 'NONE', label: 'NONE (not articulated — tilesets, props)' },
+];
+
+export const JOINT_CAP_STYLE_CHOICES: readonly OutputChoice<JointCapStyle>[] = [
+  { value: 'ROUNDED', label: 'ROUNDED' },
+  { value: 'SQUARED', label: 'SQUARED' },
+  { value: 'TAPERED', label: 'TAPERED' },
+];
+
+export const OVERLAP_MARGIN_CHOICES: readonly OutputChoice<OverlapMargin>[] = [
+  { value: 'HALF_CAP', label: 'HALF_CAP (half a cap radius — recommended)' },
+  { value: 'FULL_CAP', label: 'FULL_CAP (a full cap radius)' },
+  { value: 'NONE', label: 'NONE (pieces butt exactly — expect gaps on rotation)' },
+];
+
+export const SURFACE_DETAIL_CHOICES: readonly OutputChoice<SurfaceDetail>[] = [
+  { value: 'MINIMAL', label: 'MINIMAL (base colours and essential joints only)' },
+  { value: 'CLEAN_PRODUCTION', label: 'CLEAN_PRODUCTION (major panels and folds — standard)' },
+  { value: 'DETAILED_PRODUCTION', label: 'DETAILED_PRODUCTION (seams and material divisions)' },
+  { value: 'TEXTURED', label: 'TEXTURED (controlled surface texturing)' },
+];
+
+export const RESOLUTION_PROFILE_CHOICES: readonly OutputChoice<ResolutionProfile>[] = [
+  { value: 'HIGH_RESOLUTION', label: 'HIGH_RESOLUTION (25–35% of sheet height)' },
+  { value: 'MID_RESOLUTION', label: 'MID_RESOLUTION (18–25% of sheet height)' },
+  { value: 'RETRO_16_BIT', label: 'RETRO_16_BIT (64–96 px per figure)' },
+  { value: 'CUSTOM', label: 'CUSTOM (work to the target component size)' },
+];
+
+export const PALETTE_LIMIT_CHOICES: readonly OutputChoice<PaletteLimit>[] = [
+  { value: 'RESTRAINED_64_COLOR', label: 'RESTRAINED_64_COLOR (32–64 colours — recommended)' },
+  { value: 'STRICT_32_COLOR', label: 'STRICT_32_COLOR (16–32 colours)' },
+  { value: 'EXPANDED_ALBEDO', label: 'EXPANDED_ALBEDO (controlled value bands)' },
+  { value: 'UNRESTRICTED', label: 'UNRESTRICTED (no colour budget — painted, 3D)' },
+];
+
+export const OUTLINE_STYLE_CHOICES: readonly OutputChoice<OutlineStyle>[] = [
+  { value: 'DARK_LOCAL_CONTOUR', label: 'DARK_LOCAL_CONTOUR (1px darker local colour — standard)' },
+  { value: 'PURE_BLACK_OUTLINE', label: 'PURE_BLACK_OUTLINE (crisp 1px black)' },
+  { value: 'OUTLINE_LESS_ALBEDO', label: 'OUTLINE_LESS_ALBEDO (value and hue contrast only)' },
+];
+
+export const LIGHTING_MODEL_CHOICES: readonly OutputChoice<LightingModel>[] = [
+  { value: 'FLAT_NEUTRAL_ALBEDO', label: 'FLAT_NEUTRAL_ALBEDO (engine lights the sprite — standard)' },
+  { value: 'ISOMETRIC_TOP_LEFT', label: 'ISOMETRIC_TOP_LEFT (fixed 45° key, hard shadows)' },
+  { value: 'UNLIT_EMISSIVE_BAKED', label: 'UNLIT_EMISSIVE_BAKED (flat unlit diffuse)' },
+];
+
+export const ASPECT_RATIO_CHOICES: readonly OutputChoice<AspectRatio>[] = [
+  { value: 'WIDE_16_9', label: 'WIDE_16_9 (recommended)' },
+  { value: 'SQUARE_1_1', label: 'SQUARE_1_1' },
+  { value: 'TALL_9_16', label: 'TALL_9_16' },
+  { value: 'ULTRAWIDE_21_9', label: 'ULTRAWIDE_21_9' },
+];

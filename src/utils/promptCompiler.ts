@@ -1,170 +1,123 @@
-import type { OutputConfig } from '../types/output.ts';
-import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { wrapForModel } from './modelWrappers.ts';
 import {
   ASPECT_TEXT,
+  ASSEMBLY_POSES,
+  BACKGROUND_KEY_TEXT,
   COMPONENT_BREAKDOWNS,
+  COMPONENT_COUNTS,
+  DEPTH_ORDER_TEXT,
+  DIRECTION_COVERAGE,
+  DIRECTION_LISTS,
+  describeDirections,
+  JOINT_CAP_TEXT,
   LIGHTING_TEXT,
+  MIN_FEATURE_SIZE,
   OUTLINE_TEXT,
+  OVERLAP_MARGIN_TEXT,
   PALETTE_TEXT,
-  componentCountText,
-} from './promptSections.ts';
+  PROJECTION_TEXT,
+  RENDER_STYLE_TEXT,
+  RESOLUTION_PROFILE_TEXT,
+  SURFACE_DETAIL_TEXT,
+} from '../constants/promptText/index.ts';
+import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
+import type { OutputConfig } from '../types/output.ts';
+import type { Direction } from '../types/rendering.ts';
+import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
+import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import { supportsManifest, wrapForModel } from './modelWrappers.ts';
+import { applyConditionals, applyOptionals, assertBlocksResolved, substitute } from './templateEngine.ts';
 
 /**
  * Compile the studio's state into the prompt the user copies.
  *
  * A pure function of its three arguments: the same state always produces the same text, which is
- * what lets the preview derive it during render (with `useMemo`) instead of mirroring it into
- * state through an effect — the anti-pattern the specification bans first.
+ * what lets the preview derive it during render (with `useMemo`) instead of mirroring it into state
+ * through an effect — the anti-pattern the specification bans first.
  *
- * `|| 'DEFINED'` on the subject fields is not defensive noise. A field the user has cleared
- * should read as "the generator must decide this", not as an empty backtick pair that looks like
- * an authoring mistake in the middle of a specification.
+ * **A cleared field omits its line entirely.** v1 emitted `` Species / Archetype: `DEFINED` `` on the
+ * reasoning that an empty backtick pair looks like an authoring mistake. That weighed two options
+ * and missed the third: `DEFINED` is a *content-shaped token in the highest-weighted section of the
+ * prompt*, and a generator reading it either ignores the line or treats "DEFINED" as a descriptor to
+ * satisfy. Absence says "you decide" precisely, costs no tokens, and cannot be misread — and the
+ * template states that rule outright, so absence is unambiguous rather than merely silent.
  */
 export function generatePrompt(
   category: SubjectCategory,
   subject: SubjectDefinition,
   output: OutputConfig,
 ): string {
-  const componentCount = componentCountText(output.directionalMode, subject.additional_anatomy);
-  const breakdown = COMPONENT_BREAKDOWNS[output.directionalMode];
-  const paletteText = PALETTE_TEXT[output.paletteLimit];
-  const outlineText = OUTLINE_TEXT[output.outlineStyle];
-  const lightingText = LIGHTING_TEXT[output.lightingModel];
-  const aspectText = ASPECT_TEXT[output.aspectRatio];
+  const [primaryDirection] = DIRECTION_LISTS[output.directions];
 
-  const prompt = `# MODULAR SPRITE-SHEET PROMPT ARCHITECTURE (${category})
+  // The facings the *sheet* covers, which is not simply the set the user chose: each mode's inventory
+  // and component count are written for a particular number of directions. A single-direction mode
+  // takes the chosen set's first facing — the set is its run list, one sheet per direction — so a
+  // fifteen-piece cut-out sheet cannot also demand all eight compass points.
+  const coverage = DIRECTION_COVERAGE[output.directionalMode];
+  const coveredDirections: readonly [Direction, ...Direction[]] =
+    coverage === 'primary' ? [primaryDirection] : DIRECTION_LISTS[coverage];
+  const [assemblyDirection] = coveredDirections;
 
-## 1. SUBJECT DEFINITION — EDIT THIS SECTION
+  // Sockets belong to a cut-out rig. The template's `[IF:SOCKETS]` block is a *sibling* of the rig
+  // section rather than nested inside it — the engine's blocks are flat by contract — so the gate
+  // lives here instead, and a socket list left over from a rig configuration cannot strand an
+  // orphaned heading in a pose-library sheet.
+  const sockets = output.rigMode === 'CUTOUT_RIG' ? output.sockets : '';
 
-This is the sole authority for the subject's design. Do not invent details elsewhere.
+  // Only a target that returns text alongside the image can honour a manifest; asking a pure image
+  // endpoint for one just spends tokens on an instruction it will drop.
+  const emitManifest = output.emitManifest && supportsManifest(output.targetModel);
 
-- Category / Type: \`${category}\`
-- Species / Archetype: \`${subject.species || 'DEFINED'}\`
-- Gender / Presentation / State: \`${subject.gender || 'DEFINED'}\`
-- Age / Vitality Presentation: \`${subject.age || 'DEFINED'}\`
-- Role / Class / Function: \`${subject.role || 'DEFINED'}\`
-- Setting / Theme: \`${subject.setting || 'DEFINED'}\`
-- Build / Proportions / Scale: \`${subject.build || 'DEFINED'}\`
-- Overall Silhouette & Hard Edges: \`${subject.silhouette || 'DEFINED'}\`
-- Face, Head & Sensory Features: \`${subject.face_head || 'DEFINED'}\`
-- Anatomy Base: \`${subject.anatomy || 'STANDARD'}\`
-- Clothing / Armour / Harness: \`${subject.clothing || 'DEFINED'}\`
-- Integrated Worn Details / Markings: \`${subject.worn_details || 'NONE'}\`
-- Primary Colours: \`${subject.primary_colours || 'DEFINED'}\`
-- Accent Colours: \`${subject.accent_colours || 'NONE'}\`
-- Materials & Surface Identity: \`${subject.materials || 'DEFINED'}\`
-- Explicit Exclusions: \`${subject.exclusions || 'NONE'}\`
-- Additional Genuine Anatomy: \`${subject.additional_anatomy || 'NONE'}\`
+  const values: Record<string, string> = {
+    CATEGORY: category,
+    COMPONENT_COUNT: String(COMPONENT_COUNTS[output.directionalMode]),
+    COMPONENT_BREAKDOWN: COMPONENT_BREAKDOWNS[output.directionalMode],
+    ASSEMBLY_POSES: ASSEMBLY_POSES[output.directionalMode],
 
-Clothing, armour, footwear, cybernetics, and worn details must remain integrated into the appropriate anatomical components unless explicitly defined as separate anatomy. Do not infer props or equipment from the role/class.
+    RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
+    SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
+    RESOLUTION_PROFILE_DESCRIPTION: RESOLUTION_PROFILE_TEXT[output.resolutionProfile],
+    MIN_FEATURE_SIZE: MIN_FEATURE_SIZE[output.resolutionProfile],
+    PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
+    OUTLINE_DESCRIPTION: OUTLINE_TEXT[output.outlineStyle],
+    LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
+    SPRITE_TARGET_SIZE: output.spriteTargetSize,
 
-Material and surface descriptions define the visual identity, not the permitted rendering complexity. Translate all materials into simplified pixel-art shapes and controlled value bands.
+    PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
+    CAMERA_ELEVATION: String(output.cameraElevation),
+    DIRECTIONS_DESCRIPTION: describeDirections(coveredDirections),
+    PRIMARY_DIRECTION: assemblyDirection,
+    DEPTH_ORDER_DESCRIPTION: DEPTH_ORDER_TEXT[assemblyDirection],
 
-Do not represent materials using microtexture, scratches, etched strokes, fabric weave, pores, grain, crosshatching, repeated reflective streaks, sparkle noise, scattered single-pixel highlights, or painterly brush marks unless explicitly required by the selected rendering profile.
+    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
+    ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
+    JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
+    OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
+    SOCKETS: sockets,
+    IDENTITY_LOCK: output.identityLock,
+  };
 
----
+  // The sixteen subject fields, keyed by the upper-case form of their own key rather than written
+  // out again — a field added to `SUBJECT_FIELD_KEYS` reaches the template without a second edit.
+  for (const key of SUBJECT_FIELD_KEYS) values[key.toUpperCase()] = subject[key];
 
-## 2. OUTPUT CONFIGURATION — EDIT TECHNICAL VALUES ONLY
+  const config: Record<string, string> = {
+    RENDER_STYLE: output.renderStyle,
+    RIG_MODE: output.rigMode,
+    IDENTITY_LOCK: output.identityLock,
+    SOCKETS: sockets,
+    EMIT_MANIFEST: emitManifest ? 'yes' : '',
+  };
 
-### Directional coverage
-- Selected mode: \`${output.directionalMode}\`
-- Required directions: \`FRONT_THREE_QUARTER\`, \`RIGHT_SIDE\`, \`BACK_THREE_QUARTER\`
-- Primary assembly direction: \`FRONT_THREE_QUARTER\`
-
-### Surface-detail intensity
-- Selected profile: \`${output.surfaceDetail}\`
-
-### Resolution & Palette
-- Selected profile: \`${output.resolutionProfile}\`
-- Palette Strategy: \`${paletteText}\`
-- Outline Contour Style: \`${outlineText}\`
-- Lighting Model: \`${lightingText}\`
-- Sheet Aspect Ratio: \`${aspectText}\`
-
-Create every component directly at the generator's actual final output resolution. Do not describe, simulate, or internally target a larger virtual canvas than the delivered image.
-
-Use one square-pixel grid and one consistent pixel density across the sheet. Preserve readable component scale before preserving surface detail.
-
----
-
-## 3. OBJECTIVE
-
-Generate one image containing an exploded, production-ready modular pose library. Every component must be isolated, reusable, consistently scaled, and compatible with adjoining components.
-
-The active \`${output.directionalMode}\` configuration requires exactly \`${componentCount}\`:
-
-${breakdown}
-
-Each inventory entry must produce exactly one visible component. Do not merge entries, substitute duplicates, add filler, or omit components.
-
----
-
-## 4. DIRECTION, CAMERA, AND PROJECTION
-
-Use one fixed orthographic 3/4 top-down dimetric/isometric camera at approximately \`35°\` elevation.
-Keep camera elevation, azimuth, projection, scale, and lighting unchanged for every component.
-
-Pixel-projection rules:
-- Use clean, deliberate staircase patterns for diagonal silhouettes.
-- Keep equivalent diagonal edges consistent across matching components.
-- Do not use doubled contours, overlapping outline strokes, or irregular edge chatter.
-
----
-
-## 5. RIGID SEGMENT AND PIVOT RULES
-
-Every limb or articulated part is a separate rigid component. Never draw a connected bent arm or leg.
-Flexion must result only from assembling separately oriented rigid segments around shared pivots.
-
----
-
-## 6. REQUIRED POSE CAPABILITY
-
-The primary-direction library must assemble cleanly into:
-- Neutral standing pose.
-- Relaxed stance.
-- Forward reach / action pose.
-- Walking stride sequence with opposing limbs.
-- Running stride with elbow and knee flexion.
-- Shallow and deep crouch.
-
----
-
-## 7. DESIGN CONSISTENCY
-
-All variants must represent the exact same subject identity.
-Preserve across poses and directions:
-1. Silhouette and anatomy.
-2. Joint and attachment geometry.
-3. Major clothing or structural regions.
-4. Primary colour blocking.
-5. Large identifying accents.
-
----
-
-## 8. CLEAN PIXEL ART, LIGHTING, AND BACKGROUND
-
-- Construct every form from deliberate, contiguous native pixel clusters.
-- Avoid details smaller than approximately \`2×2 native pixels\`.
-- Render using \`${lightingText}\`.
-- Apply outline system: \`${outlineText}\`.
-- Solid pure-white \`#FFFFFF\` background only. No floor shadows, vignettes, or text labels.
-
----
-
-## 9. SHEET LAYOUT & FINAL AUDIT
-
-Arrange all parts in a clean exploded grid with generous white space in a \`${aspectText}\` format. No components may touch or overlap. Verify component count matches the \`${componentCount}\` requirement before completion.
-
----
-
-## EXECUTION
-Generate the complete modular sprite-component sheet now using the Subject Definition and selected Output Configuration exactly as written.`;
+  // Blocks first, then optionals, then substitution — see `templateEngine.ts` for why that order. The
+  // marker check sits *before* substitution: afterwards the text carries whatever the user typed, and
+  // a subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
+  const resolved = applyOptionals(applyConditionals(PROMPT_TEMPLATE, config), values);
+  assertBlocksResolved(resolved);
+  const prompt = substitute(resolved, values);
 
   return wrapForModel(prompt, output.targetModel, {
-    componentCount,
     aspectRatio: output.aspectRatio,
+    backgroundKeyDescription: BACKGROUND_KEY_TEXT[output.backgroundKey],
   });
 }
 
@@ -176,9 +129,9 @@ export function countWords(prompt: string): number {
 }
 
 /**
- * A rough token estimate at the usual ~4-characters-per-token heuristic. Deliberately labelled
- * as an estimate in the UI — no tokeniser ships with the app, and the real count depends on
- * which model reads it.
+ * A rough token estimate at the usual ~4-characters-per-token heuristic. Deliberately labelled as an
+ * estimate in the UI — no tokeniser ships with the app, and the real count depends on which model
+ * reads it.
  */
 export function estimateTokens(prompt: string): number {
   return Math.round(prompt.length / 4);

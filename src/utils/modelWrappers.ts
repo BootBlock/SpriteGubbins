@@ -1,12 +1,13 @@
+import { MIDJOURNEY_VERSION } from '../constants/models.ts';
 import type { AspectRatio, TargetModelId } from '../types/output.ts';
 
 /**
  * Per-generator wrapping of the compiled prompt.
  *
- * Every model in `TARGET_MODELS` has a branch here. They differ in kind, not just wording: Sol
- * gets a reasoning contract wrapped *around* the prompt, Midjourney gets CLI flags appended,
- * Stable Diffusion a negative-prompt block, Imagen and DALL-E a directive prefix, and Generic
- * gets the prompt untouched.
+ * Every model in `TARGET_MODELS` has a branch here, and they differ in kind rather than in wording:
+ * Sol gets a reasoning contract, Midjourney CLI flags, Stable Diffusion a negative-prompt block,
+ * Flux the same intent restated positively, Imagen and DALL-E a directive prefix, and Generic the
+ * prompt untouched.
  */
 
 /** Midjourney's aspect flag for each sheet format. */
@@ -22,28 +23,46 @@ export function aspectFlag(aspectRatio: AspectRatio): string {
 }
 
 /**
- * ChatGPT 5.6 Sol: a task-execution contract before the prompt and a verification checklist
- * after it. The component count appears in both halves deliberately — once as the done-condition
- * and once as something the model is asked to check before delivering.
+ * Which targets can return a JSON manifest alongside the image.
+ *
+ * Only the conversational ones. A pure image endpoint has no channel for text, so asking it for a
+ * manifest spends tokens on an instruction it can only drop — which is why the option is gated here
+ * rather than emitted and silently ignored.
  */
-function wrapForSol(prompt: string, componentCount: string): string {
-  return `[SYSTEM DIRECTIVE: CHATGPT 5.6 SOL REASONING & STRUCTURED SPECIFICATION ENFORCEMENT]
-Task Execution Contract:
-1. High Reasoning Effort: Process multi-component bounding box alignment across isolated component grid slots.
-2. Strict Done-Condition: Generate EXACTLY ${componentCount}. Do not combine limbs or substitute pre-assembled character sprites.
-3. Output Integrity: Solid pure-white background (#FFFFFF) with zero floor shadows, drop shadows, background tiles, or text labels.
-4. Scale & Density Contract: 100% native pixel density across all sprite components. No smooth vector anti-aliasing.
+const MANIFEST_CAPABLE: ReadonlySet<TargetModelId> = new Set(['GENERIC', 'CHATGPT_5_6_SOL']);
 
----
+export function supportsManifest(target: TargetModelId): boolean {
+  return MANIFEST_CAPABLE.has(target);
+}
 
-${prompt}
+/**
+ * ChatGPT 5.6 Sol: reasoning effort and a pointer at the template's own contract sections.
+ *
+ * Deliberately thin. The previous wrapper restated the component count, the background rule, the
+ * pixel-density contract and a verification checklist — all written against v1, whose critical
+ * constraints sat at the *bottom* of the prompt. v2 puts them in section 0 and repeats them in
+ * section 9, so carrying the old wrapper would state the same rules three times, which dilutes
+ * instruction-following rather than reinforcing it.
+ */
+function wrapForSol(prompt: string): string {
+  return `[SYSTEM DIRECTIVE — REASONING & OUTPUT CONTRACT]
+High reasoning effort: this is a multi-component spatial layout task. Plan the grid and the
+per-component bounding boxes before drawing.
+Treat section 0 as a hard done-condition and section 9 as a required verification pass before
+delivery.
 
----
-[VERIFICATION CONTRACT FOR CHATGPT 5.6 SOL]
-Verify before delivery:
-- Are all ${componentCount} parts rendered in clean grid layout?
-- Is background pure #FFFFFF with zero shadows or text?
-- Are limb segments drawn as separate rigid pieces around shared pivots?`;
+${prompt}`;
+}
+
+/**
+ * Flux, which is **not** Stable Diffusion for this purpose: it has no negative prompt in normal use,
+ * so SD's negative block would be silently discarded, and it responds better to prose than to
+ * weighted tags. The same two failures are therefore stated positively.
+ */
+function wrapForFlux(prompt: string, backgroundKeyDescription: string): string {
+  return `${prompt}
+
+The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with crisp hard edges, no shadows, no text, and no assembled figure.`;
 }
 
 /**
@@ -55,23 +74,36 @@ Verify before delivery:
 export function wrapForModel(
   prompt: string,
   target: TargetModelId,
-  options: { readonly componentCount: string; readonly aspectRatio: AspectRatio },
+  options: { readonly aspectRatio: AspectRatio; readonly backgroundKeyDescription: string },
 ): string {
   switch (target) {
     case 'CHATGPT_5_6_SOL':
-      return wrapForSol(prompt, options.componentCount);
+      return wrapForSol(prompt);
 
+    // `--sw` is *style-reference* weight and does nothing without a `--sref`; the knob that was
+    // meant is `--s`, and it wants to be low, because high stylisation fights a technical layout
+    // brief. `background` is absent from `--no` on purpose: the sheet needs a *keyable* background,
+    // and excluding "background" risks losing the key colour with it.
     case 'MIDJOURNEY':
-      return `${prompt}\n\n${aspectFlag(options.aspectRatio)} --v 6.1 --style raw --sw 250 --no background shadows text labels grid frame`;
+      return `${prompt}\n\n${aspectFlag(options.aspectRatio)} ${MIDJOURNEY_VERSION} --style raw --s 50 --no text, labels, shadow, gradient, frame, border`;
 
+    // Weighted on the two failures that actually recur: assembling the figure instead of exploding
+    // it, and adding shadows.
     case 'STABLE_DIFFUSION':
-      return `${prompt}\n\nNegative Prompt: (deformed hands, merged limbs, blurred pixels, background texture, floor shadow, smooth vector art, 3d render, text, watermark, signature:1.4)`;
+      return `${prompt}\n\nNegative prompt: (assembled character:1.3), (posed figure:1.3), text, watermark, signature, labels, floor shadow, drop shadow, gradient background, scene background, blurry, anti-aliased edges, smooth gradients, motion blur, jpeg artifacts, extra limbs, merged limbs, cropped`;
 
-    case 'GOOGLE_IMAGEN_3':
-      return `[IMAGEN 3 DESCRIPTIVE VISUAL SPECIFICATION - STRICT SPRITE SHEET LAYOUT]\nClear orthographic 3/4 top-down view, pixel art modular sprite components exploded sheet layout. Solid white background, zero floor shadow. High visual contrast, clean pixel edges.\n\n${prompt}`;
+    case 'FLUX':
+      return wrapForFlux(prompt, options.backgroundKeyDescription);
 
+    // Imagen handles descriptive natural language well and long rule lists poorly, so it gets one
+    // plain framing sentence rather than a second contract.
+    case 'GOOGLE_IMAGEN':
+      return `A flat reference sheet of separated game-asset components, arranged in a grid on a ${options.backgroundKeyDescription} background, with no scene, no shadows and no text.\n\n${prompt}`;
+
+    // This family rewrites prompts before generation, so terse absolute phrasing survives better
+    // than elaborate structure — which is part of why section 0 sits at the top of the template.
     case 'DALLE_3':
-      return `[DALL-E 3 DIRECTIVE: STRICT PIXEL ART SPRITE SHEET - ZERO SMOOTHING OR VECTOR BLEND]\n\n${prompt}`;
+      return `[DIRECTIVE: Reproduce the specification below exactly. Do not restyle, simplify or reinterpret it.]\n\n${prompt}`;
 
     case 'GENERIC':
       return prompt;

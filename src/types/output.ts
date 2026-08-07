@@ -1,21 +1,39 @@
+import type { BackgroundKey, DirectionSet, Projection, RenderStyle } from './rendering.ts';
+import type { JointCapStyle, OverlapMargin, RigMode } from './rigging.ts';
+
 /**
  * The technical half of a prompt: how the sheet should be rendered, as opposed to what is on it
  * (that is `SubjectDefinition` in ./subject.ts).
  *
- * Every one of these unions is a closed set of identifiers that appear *verbatim in the compiled
- * prompt* — the generator is being handed a contract, and `CORE_DIRECTIONAL_VARIANTS` is the
- * term of that contract, not a UI label. Renaming a member changes the prompt.
+ * Every one of these unions is a closed set of identifiers the compiler turns into the prose the
+ * generator reads — the model is being handed a contract. Renaming a member changes the prompt.
+ *
+ * The rendering and rigging vocabularies live in ./rendering.ts and ./rigging.ts to keep this file
+ * from becoming the place every setting is declared, and are re-exported here so `OutputConfig`'s
+ * whole vocabulary stays discoverable from one import.
  */
+export type { BackgroundKey, Direction, DirectionSet, Projection, RenderStyle } from './rendering.ts';
+export { BACKGROUND_KEYS, DIRECTION_SETS, PROJECTIONS, RENDER_STYLES } from './rendering.ts';
+export type { JointCapStyle, OverlapMargin, RigMode } from './rigging.ts';
+export { JOINT_CAP_STYLES, OVERLAP_MARGINS, RIG_MODES } from './rigging.ts';
 
 /**
- * How many directions the component library covers. This is the single biggest lever on the
- * prompt: it sets the required component count (37 / 43 / 111) that the compiler states as a
- * done-condition and the atlas calculator lays out.
+ * What kind of component set the sheet delivers. The single biggest lever on the prompt: it sets
+ * the required component count that the compiler states as a done-condition and the atlas
+ * calculator lays out.
+ *
+ * v1's `FULL_DIRECTIONAL_POSE_LIBRARY` asked for 111 components in one image and is **deleted**, not
+ * deprecated. No current model reliably produces 111 correctly isolated, consistently scaled
+ * components in one generation — it produces a plausible subset and merges or drops the rest — and
+ * "verify the count" cannot save it, because models do not reliably count their own output. A mode
+ * whose only outcome is a silently-wrong sheet is worse than no mode. The replacement is N
+ * single-direction sheets sharing an identity lock.
  */
 export const DIRECTIONAL_MODES = [
   'SINGLE_DIRECTION_POSE_LIBRARY',
   'CORE_DIRECTIONAL_VARIANTS',
-  'FULL_DIRECTIONAL_POSE_LIBRARY',
+  'CUTOUT_RIG_SINGLE_DIRECTION',
+  'TILESET_MODULAR',
 ] as const;
 export type DirectionalMode = (typeof DIRECTIONAL_MODES)[number];
 
@@ -23,17 +41,25 @@ export type DirectionalMode = (typeof DIRECTIONAL_MODES)[number];
 export const SURFACE_DETAILS = ['MINIMAL', 'CLEAN_PRODUCTION', 'DETAILED_PRODUCTION', 'TEXTURED'] as const;
 export type SurfaceDetail = (typeof SURFACE_DETAILS)[number];
 
-/** Target pixel density and sprite scale. */
-export const RESOLUTION_PROFILES = [
-  'HIGH_RESOLUTION_PIXEL_ART',
-  'MID_RESOLUTION_PIXEL_ART',
-  '16_BIT_RETRO_PIXEL_ART',
-  'CUSTOM_PIXEL_ART',
-] as const;
+/**
+ * Target pixel density and sprite scale.
+ *
+ * The `_PIXEL_ART` suffixes are gone: resolution and render style are orthogonal, and welding them
+ * together is what made v1's template pixel-only.
+ */
+export const RESOLUTION_PROFILES = ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT', 'CUSTOM'] as const;
 export type ResolutionProfile = (typeof RESOLUTION_PROFILES)[number];
 
-/** Total global colour budget across the sheet. */
-export const PALETTE_LIMITS = ['STRICT_32_COLOR', 'RESTRAINED_64_COLOR', 'EXPANDED_ALBEDO'] as const;
+/**
+ * Total global colour budget across the sheet. `UNRESTRICTED` exists because a painted or
+ * 3D-rendered sheet has no colour budget to enforce.
+ */
+export const PALETTE_LIMITS = [
+  'STRICT_32_COLOR',
+  'RESTRAINED_64_COLOR',
+  'EXPANDED_ALBEDO',
+  'UNRESTRICTED',
+] as const;
 export type PaletteLimit = (typeof PALETTE_LIMITS)[number];
 
 /** How component boundaries are drawn. */
@@ -49,16 +75,20 @@ export const ASPECT_RATIOS = ['WIDE_16_9', 'SQUARE_1_1', 'TALL_9_16', 'ULTRAWIDE
 export type AspectRatio = (typeof ASPECT_RATIOS)[number];
 
 /**
- * Which generator the prompt is being written for. Each one gets a different wrapper — a
- * reasoning contract, CLI flags, a negative-prompt block, or a directive prefix — so this
- * changes the shape of the output, not just its wording.
+ * Which generator the prompt is being written for. Each one gets a different wrapper — a reasoning
+ * contract, CLI flags, a negative-prompt block, or a directive prefix — so this changes the shape of
+ * the output, not just its wording.
+ *
+ * `FLUX` is separate from `STABLE_DIFFUSION` because one wrapper cannot serve both: Flux has no
+ * negative prompt in normal use, so SD's negative block is silently discarded there.
  */
 export const TARGET_MODEL_IDS = [
   'GENERIC',
   'CHATGPT_5_6_SOL',
   'MIDJOURNEY',
   'STABLE_DIFFUSION',
-  'GOOGLE_IMAGEN_3',
+  'FLUX',
+  'GOOGLE_IMAGEN',
   'DALLE_3',
 ] as const;
 export type TargetModelId = (typeof TARGET_MODEL_IDS)[number];
@@ -70,7 +100,13 @@ export interface TargetModel {
   readonly tooltip: string;
 }
 
-/** The complete technical configuration. Every field is always set — see `useOutputStore`. */
+/**
+ * The complete technical configuration.
+ *
+ * **Every field is always set** — see `useOutputStore`, which gives each one a default. Nothing here
+ * is optional, because an optional field would push `?? fallback` handling into the compiler, and
+ * absence in the *prompt* is expressed by a field being empty rather than by the field not existing.
+ */
 export interface OutputConfig {
   readonly directionalMode: DirectionalMode;
   readonly surfaceDetail: SurfaceDetail;
@@ -80,4 +116,24 @@ export interface OutputConfig {
   readonly lightingModel: LightingModel;
   readonly aspectRatio: AspectRatio;
   readonly targetModel: TargetModelId;
+
+  readonly renderStyle: RenderStyle;
+  readonly projection: Projection;
+  /** Degrees above the horizon. Defaults per projection, and overridable. */
+  readonly cameraElevation: number;
+  readonly directions: DirectionSet;
+  readonly backgroundKey: BackgroundKey;
+  /** Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely. */
+  readonly spriteTargetSize: string;
+
+  readonly rigMode: RigMode;
+  readonly jointCapStyle: JointCapStyle;
+  readonly overlapMargin: OverlapMargin;
+  /** Free list, e.g. `head, chest, back, hand_left, hand_right`. Empty means no sockets. */
+  readonly sockets: string;
+
+  /** Free text carrying an identity digest into follow-up sheets. Empty means no lock. */
+  readonly identityLock: string;
+  /** Ask for a companion JSON manifest. Only conversational targets can honour it. */
+  readonly emitManifest: boolean;
 }

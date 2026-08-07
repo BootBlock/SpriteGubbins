@@ -1,14 +1,13 @@
-import type { PresetArchetype } from '../types/preset.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import type { PresetArchetype } from '../../types/preset.ts';
 
 /**
  * The archetype the studio opens on — the app boots into the Cyberpunk Katana Specialist rather
  * than an empty form, so the prompt preview has something real in it from the first paint.
  *
- * Bound to a name as well as being `PRESETS[0]` so the subject store can state what it starts from
- * without indexing the array: under `noUncheckedIndexedAccess` an index read is
+ * Bound to a name as well as being first in the list so the subject store can state what it starts
+ * from without indexing the array: under `noUncheckedIndexedAccess` an index read is
  * `PresetArchetype | undefined`, and the store would need a fallback for a case that cannot happen.
- * The technical half of the boot state has its own constant already — `DEFAULT_OUTPUT_CONFIG` in
- * `constants/output.ts`, which holds these same values.
  */
 const CYBERPUNK_KATANA: PresetArchetype = {
   id: 'cyberpunk-katana',
@@ -33,9 +32,10 @@ const CYBERPUNK_KATANA: PresetArchetype = {
     additional_anatomy: 'NONE',
   },
   output: {
+    ...DEFAULT_OUTPUT_CONFIG,
     directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
     surfaceDetail: 'CLEAN_PRODUCTION',
-    resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+    resolutionProfile: 'HIGH_RESOLUTION',
     paletteLimit: 'RESTRAINED_64_COLOR',
     outlineStyle: 'DARK_LOCAL_CONTOUR',
     lightingModel: 'FLAT_NEUTRAL_ALBEDO',
@@ -53,7 +53,7 @@ export const DEFAULT_PRESET = CYBERPUNK_KATANA;
  * These are complete subjects: every one of the sixteen fields is set, because a preset that
  * left gaps would compile a prompt containing `DEFINED` placeholders.
  */
-export const PRESETS: readonly PresetArchetype[] = [
+export const BUILT_IN_ARCHETYPES: readonly PresetArchetype[] = [
   CYBERPUNK_KATANA,
   {
     id: 'scifi-marine',
@@ -78,9 +78,10 @@ export const PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'NONE',
     },
     output: {
+      ...DEFAULT_OUTPUT_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       surfaceDetail: 'DETAILED_PRODUCTION',
-      resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+      resolutionProfile: 'HIGH_RESOLUTION',
       paletteLimit: 'STRICT_32_COLOR',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
@@ -111,9 +112,10 @@ export const PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'NONE',
     },
     output: {
+      ...DEFAULT_OUTPUT_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       surfaceDetail: 'CLEAN_PRODUCTION',
-      resolutionProfile: '16_BIT_RETRO_PIXEL_ART',
+      resolutionProfile: 'RETRO_16_BIT',
       paletteLimit: 'STRICT_32_COLOR',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
@@ -144,9 +146,10 @@ export const PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Double Pair Wings',
     },
     output: {
+      ...DEFAULT_OUTPUT_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       surfaceDetail: 'CLEAN_PRODUCTION',
-      resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+      resolutionProfile: 'HIGH_RESOLUTION',
       paletteLimit: 'RESTRAINED_64_COLOR',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
@@ -177,9 +180,10 @@ export const PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Deployable Sensor Dish',
     },
     output: {
+      ...DEFAULT_OUTPUT_CONFIG,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       surfaceDetail: 'CLEAN_PRODUCTION',
-      resolutionProfile: 'MID_RESOLUTION_PIXEL_ART',
+      resolutionProfile: 'MID_RESOLUTION',
       paletteLimit: 'RESTRAINED_64_COLOR',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       lightingModel: 'UNLIT_EMISSIVE_BAKED',
@@ -210,9 +214,10 @@ export const PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'External Chimney & Smoke Pipe',
     },
     output: {
+      ...DEFAULT_OUTPUT_CONFIG,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       surfaceDetail: 'DETAILED_PRODUCTION',
-      resolutionProfile: 'HIGH_RESOLUTION_PIXEL_ART',
+      resolutionProfile: 'HIGH_RESOLUTION',
       paletteLimit: 'EXPANDED_ALBEDO',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',

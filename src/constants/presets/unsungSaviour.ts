@@ -1,0 +1,121 @@
+import { defaultSubjectFor } from '../categories/index.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import type { OutputConfig } from '../../types/output.ts';
+import type { PresetArchetype } from '../../types/preset.ts';
+import { SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
+import type { SubjectCategory, SubjectDefinition } from '../../types/subject.ts';
+
+/**
+ * Presets encoding the Unsung Saviour art contract, so that project's art can be generated without
+ * re-deriving its numbers.
+ *
+ * **Every technical value here comes from that game's own `art-style-three-quarter-view.md`** — if it
+ * changes there, these follow. They are deliberately *technical* presets: they fix the projection,
+ * the scale, the palette discipline and the rig geometry, and leave the subject almost entirely
+ * empty, because who the character is changes per sheet while none of the above does.
+ *
+ * That emptiness is the point of v2's optional lines. A blank field omits its line, and the template
+ * states outright that an absent attribute is the generator's to decide — so these presets ask for
+ * exactly the constraints that matter and nothing else.
+ */
+
+/** What all three share: the projection, scale and lighting discipline the game's renderer needs. */
+const US_SHARED: OutputConfig = {
+  ...DEFAULT_OUTPUT_CONFIG,
+  renderStyle: 'PIXEL_ART',
+  projection: 'THREE_QUARTER_TOPDOWN',
+  cameraElevation: 30,
+  resolutionProfile: 'HIGH_RESOLUTION',
+  paletteLimit: 'RESTRAINED_64_COLOR',
+  outlineStyle: 'DARK_LOCAL_CONTOUR',
+  // Load-bearing. The engine lights actors with `CanvasModulate` and `Light2D` and draws its own
+  // shadows; baked directional lighting would fight both.
+  lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+  backgroundKey: 'MAGENTA_FF00FF',
+  surfaceDetail: 'CLEAN_PRODUCTION',
+  aspectRatio: 'SQUARE_1_1',
+};
+
+/**
+ * A subject with only the named fields set; everything else stays empty and omits its line.
+ *
+ * Built by blanking a real `SubjectDefinition` rather than assembling one from `Object.fromEntries`,
+ * which would need a cast to claim the result is complete. Here the compiler *checks* it: the
+ * starting object is the category's own defaults, so every key is present by construction.
+ */
+function sparseSubject(category: SubjectCategory, stated: Partial<SubjectDefinition>): SubjectDefinition {
+  const blank = defaultSubjectFor(category);
+  for (const key of SUBJECT_FIELD_KEYS) blank[key] = '';
+  return { ...blank, ...stated };
+}
+
+export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
+  {
+    id: 'us-character-rig',
+    name: 'Unsung Saviour — Character rig',
+    category: 'CHARACTER',
+    subject: sparseSubject('CHARACTER', {
+      exclusions:
+        'No baked shadow of any kind, no ground contact shadow, no assembled figure, no equipment in the sockets',
+    }),
+    output: {
+      ...US_SHARED,
+      rigMode: 'CUTOUT_RIG',
+      directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      // Run once per compass direction with a shared identity lock: eight sheets of fifteen pieces
+      // is the 120-piece rig in units a model actually delivers.
+      directions: 'EIGHT_COMPASS',
+      spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
+      jointCapStyle: 'ROUNDED',
+      overlapMargin: 'HALF_CAP',
+      // The slots exist in the art from the start and are kept clear, which is what makes the
+      // game's deferred visible-equipment decision cheap later.
+      sockets: 'head, chest, back, hand_left, hand_right',
+      // A rig sheet is exactly the case a manifest earns its keep on — it turns importing from
+      // "identify fifteen anonymous cells" into "verify fifteen labelled ones".
+      emitManifest: true,
+    },
+  },
+  {
+    id: 'us-creature-rig',
+    name: 'Unsung Saviour — Creature rig',
+    category: 'CREATURE',
+    subject: sparseSubject('CREATURE', {
+      exclusions:
+        'No baked shadow of any kind, no ground contact shadow, no assembled figure, no human clothing',
+    }),
+    output: {
+      ...US_SHARED,
+      rigMode: 'CUTOUT_RIG',
+      // A starting point: match the mode to the creature's anatomy before generating, because a
+      // quadruped's inventory is not a humanoid's.
+      directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      directions: 'EIGHT_COMPASS',
+      spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
+      jointCapStyle: 'ROUNDED',
+      overlapMargin: 'HALF_CAP',
+      // Empty: enemies do not wear player gear.
+      sockets: '',
+      emitManifest: true,
+    },
+  },
+  {
+    id: 'us-tileset-3q',
+    name: 'Unsung Saviour — Three-quarter tileset',
+    category: 'BUILDING',
+    subject: sparseSubject('BUILDING', {
+      anatomy: 'MODULAR BUILDING TILES',
+      materials:
+        'Seamless tiling: opposite edges match so tiles butt without a visible join, and no tile carries a feature that reveals repetition when laid in a field',
+      exclusions: 'No characters, no props, no baked lighting, no shadow',
+    }),
+    output: {
+      ...US_SHARED,
+      rigMode: 'NONE',
+      directionalMode: 'TILESET_MODULAR',
+      // Tiles have one view; the three-quarter read comes from the wall *face* being its own tile.
+      directions: 'SINGLE_FRONT',
+      spriteTargetSize: '48 × 48 px per tile (1 metre)',
+    },
+  },
+];

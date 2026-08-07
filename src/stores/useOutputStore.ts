@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DEFAULT_OUTPUT_CONFIG } from '../constants/output.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 
 /**
