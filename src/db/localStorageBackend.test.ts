@@ -104,6 +104,46 @@ describe('LocalStorageBackend — history', () => {
     expect(logs[0]?.id).toBe(`log-${HISTORY_LIMIT + 24}`);
   });
 
+  it('deletes one entry without touching the others', async () => {
+    await backend.addHistoryLog(log({ id: 'a', createdAt: 300 }));
+    await backend.addHistoryLog(log({ id: 'b', createdAt: 200 }));
+    await backend.addHistoryLog(log({ id: 'c', createdAt: 100 }));
+
+    await backend.deleteHistoryLog('b');
+
+    expect((await backend.listHistoryLogs()).map((entry) => entry.id)).toEqual(['a', 'c']);
+  });
+
+  it('keeps a deleted entry gone once storage is re-read', async () => {
+    // Read through a second backend over the same storage, which is what a reload amounts to: a
+    // delete that only updated an in-memory list would pass the case above and fail here.
+    await backend.addHistoryLog(log({ id: 'doomed' }));
+    await backend.deleteHistoryLog('doomed');
+
+    expect(await new LocalStorageBackend(storage).listHistoryLogs()).toEqual([]);
+  });
+
+  it('survives deleting an id that is not there', async () => {
+    await backend.addHistoryLog(log({ id: 'kept' }));
+    await backend.deleteHistoryLog('never-existed');
+
+    expect((await backend.listHistoryLogs()).map((entry) => entry.id)).toEqual(['kept']);
+  });
+
+  it('preserves the studio state of the entries it keeps', async () => {
+    // The delete rewrites the whole collection, so it goes back through `toRow`. A row that lost
+    // its payload columns on the way would still list, and would restore to the wrong sprite.
+    const subject = { ...DEFAULT_PRESET.subject, species: 'Clockwork Owl' };
+    await backend.addHistoryLog(log({ id: 'keep', subject }));
+    await backend.addHistoryLog(log({ id: 'drop' }));
+
+    await backend.deleteHistoryLog('drop');
+
+    const [kept] = await backend.listHistoryLogs();
+    expect(kept?.subject).toEqual(subject);
+    expect(kept?.output).toEqual(DEFAULT_PRESET.output);
+  });
+
   it('clears the history', async () => {
     await backend.addHistoryLog(log());
     await backend.clearHistoryLogs();
@@ -245,6 +285,11 @@ describe('LocalStorageBackend — a refused write', () => {
 
   it('rejects when a history log cannot be stored', async () => {
     const promise = backend.addHistoryLog(log());
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
+  it('rejects when a history log cannot be deleted', async () => {
+    const promise = backend.deleteHistoryLog('log-1');
     await expect(promise).rejects.toThrow(/refused the write/i);
   });
 

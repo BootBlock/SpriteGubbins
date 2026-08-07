@@ -22,7 +22,22 @@ export interface HistoryState {
   addLog(entry: NewPromptHistoryLog): Promise<void>;
   /** Load the table into the store. Called when the history drawer opens. */
   fetchHistory(): Promise<void>;
+  /** Remove one entry, so a prompt copied by mistake does not have to cost the whole history. */
+  deleteLog(id: string): Promise<void>;
   clearHistory(): Promise<void>;
+  /**
+   * The whole recorded history as JSON, for the caller to offer as a download.
+   *
+   * Export only, and no import: the table is keyed by generated UUIDs, so merging a foreign
+   * history into it is a question about collisions that nothing in the workflow asks. This is
+   * there because the history is the one collection the user cannot rebuild — it is capped at
+   * {@link HISTORY_LIMIT}, and OPFS may be evicted under storage pressure without asking.
+   *
+   * Returns the text rather than performing the download, as `usePresetStore.exportPresetsJSON`
+   * does and for the same reason: the anchor element is the DOM's job, and a string is something
+   * a test can assert on.
+   */
+  exportHistoryJSON(): string;
   /**
    * Put a recorded entry's studio state back into the studio, close the drawer and show it.
    *
@@ -33,7 +48,7 @@ export interface HistoryState {
   restoreLog(log: PromptHistoryLog): void;
 }
 
-export const useHistoryStore = create<HistoryState>((set) => ({
+export const useHistoryStore = create<HistoryState>((set, get) => ({
   historyLogs: [],
   isLoading: false,
 
@@ -67,6 +82,20 @@ export const useHistoryStore = create<HistoryState>((set) => ({
     }
   },
 
+  deleteLog: async (id) => {
+    try {
+      const database = await getDatabase();
+      await database.deleteHistoryLog(id);
+      // Filtered from the state the set call is handed, not from a `historyLogs` captured when
+      // this action started: the drawer's other actions are asynchronous too, and closing over a
+      // stale list would resurrect anything that landed while the delete was in flight.
+      set((state) => ({ historyLogs: state.historyLogs.filter((log) => log.id !== id) }));
+      useUIStore.getState().showToast('Deleted that prompt');
+    } catch {
+      useUIStore.getState().showToast('Could not delete that prompt');
+    }
+  },
+
   clearHistory: async () => {
     try {
       const database = await getDatabase();
@@ -77,6 +106,10 @@ export const useHistoryStore = create<HistoryState>((set) => ({
       useUIStore.getState().showToast('Could not clear prompt history');
     }
   },
+
+  // Every entry, not the drawer's filtered view: the search box is a lens over the history, not a
+  // selection within it, so exporting while a query is typed must not silently drop the rest.
+  exportHistoryJSON: () => JSON.stringify(get().historyLogs, null, 2),
 
   restoreLog: (log) => {
     useSubjectStore.getState().setSubject(log.category, log.subject);

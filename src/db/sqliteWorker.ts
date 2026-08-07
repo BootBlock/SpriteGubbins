@@ -7,6 +7,7 @@ import {
   DATABASE_FILENAME,
   DELETE_ALL_HISTORY_SQL,
   DELETE_ALL_PRESETS_SQL,
+  DELETE_HISTORY_SQL,
   DELETE_PRESET_SQL,
   INSERT_HISTORY_SQL,
   INSERT_PRESET_SQL,
@@ -72,6 +73,10 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
 
     case 'listHistoryLogs':
       return select(database, SELECT_HISTORY_SQL);
+
+    case 'deleteHistoryLog':
+      database.exec(DELETE_HISTORY_SQL, { bind: [request.logId] });
+      return undefined;
 
     case 'clearHistoryLogs':
       database.exec(DELETE_ALL_HISTORY_SQL);

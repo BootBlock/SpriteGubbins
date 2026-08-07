@@ -23,6 +23,8 @@ export interface PersistenceBackend {
 
   addHistoryLog(log: PromptHistoryLog): Promise<void>;
   listHistoryLogs(): Promise<PromptHistoryLog[]>;
+  /** Remove one entry. Deleting an id that is not there is a no-op, not an error. */
+  deleteHistoryLog(id: string): Promise<void>;
   clearHistoryLogs(): Promise<void>;
 
   savePreset(preset: PresetArchetype): Promise<void>;

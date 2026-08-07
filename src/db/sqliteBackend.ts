@@ -68,6 +68,10 @@ export class SqliteBackend implements PersistenceBackend {
     return rows.map(parseHistoryRow).filter((log): log is PromptHistoryLog => log !== null);
   }
 
+  async deleteHistoryLog(id: string): Promise<void> {
+    await this.request({ kind: 'deleteHistoryLog', logId: id });
+  }
+
   async clearHistoryLogs(): Promise<void> {
     await this.request({ kind: 'clearHistoryLogs' });
   }

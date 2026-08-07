@@ -1,7 +1,7 @@
 # Feature gaps — audit and plan
 
-> **Status:** 🟢 ACTIVE — Phase 1 (the two persistence defects) shipped; Phase 2 (history delete and
-> export) is next; Phase 3 is a decision, not a build.
+> **Status:** 🟢 ACTIVE — Phases 1 (the two persistence defects) and 2 (history delete and export)
+> shipped. Phase 3 remains: G5 and G6 are a hand-off and a decision, not a build.
 
 An audit of what this application promises against what it does, run after
 [baseline-prompt-new.md](baseline-prompt-new.md) §10 closed and the five spec phases shipped.

@@ -74,6 +74,10 @@ INSERT OR REPLACE INTO ${PROMPT_HISTORY_TABLE}
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
+/** One entry, by id — what the drawer's per-entry delete runs. */
+export const DELETE_HISTORY_SQL = `DELETE FROM ${PROMPT_HISTORY_TABLE} WHERE id = ?`;
+
+/** Every entry — what "Clear history" runs. Note the `ALL`: this one takes no id and spares none. */
 export const DELETE_ALL_HISTORY_SQL = `DELETE FROM ${PROMPT_HISTORY_TABLE}`;
 
 export const SELECT_PRESETS_SQL = `
