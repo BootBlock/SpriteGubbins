@@ -10,7 +10,6 @@ import {
   DELETE_PRESET_SQL,
   INSERT_HISTORY_SQL,
   INSERT_PRESET_SQL,
-  MIGRATIONS,
   OPFS_POOL_NAME,
   PROMPT_HISTORY_TABLE,
   SELECT_HISTORY_SQL,
@@ -148,14 +147,6 @@ async function open(): Promise<void> {
   const pool = await sqlite3.installOpfsSAHPoolVfs({ name: OPFS_POOL_NAME, initialCapacity: 6 });
   const database = new pool.OpfsSAHPoolDb(DATABASE_FILENAME);
   database.exec(CREATE_TABLES_SQL);
-  for (const migration of MIGRATIONS) {
-    try {
-      database.exec(migration);
-    } catch {
-      // Already applied. SQLite has no `ADD COLUMN IF NOT EXISTS`, so "duplicate column name" is
-      // how it reports that, and it is the expected outcome on every boot after the first.
-    }
-  }
   db = database;
 }
 

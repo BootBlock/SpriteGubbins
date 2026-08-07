@@ -5,6 +5,7 @@ import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
+import { createRefusingStorage } from '../test/storageDoubles.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { usePresetStore } from './usePresetStore.ts';
@@ -100,6 +101,43 @@ describe('saveCustomPreset', () => {
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not save that preset');
+  });
+});
+
+/**
+ * The same failures, produced by a real fallback rather than by a wholly-failing double.
+ *
+ * `createFailingBackend` proves the store handles a rejection; it cannot prove the localStorage
+ * backend is capable of *raising* one, which is the half that was broken. Here the refusal comes
+ * from storage itself, so the whole path is under test — an exhausted quota through to the toast.
+ */
+describe('on a fallback whose storage refuses writes', () => {
+  beforeEach(() => {
+    backend = new LocalStorageBackend(createRefusingStorage());
+  });
+
+  it('reports a preset it could not save', async () => {
+    await expect(usePresetStore.getState().saveCustomPreset('Doomed')).resolves.toBe(false);
+
+    expect(usePresetStore.getState().customPresets).toHaveLength(0);
+    expect(useUIStore.getState().toastMessage).toBe('Could not save that preset');
+  });
+
+  it('reports a preset it could not delete, and keeps showing it', async () => {
+    usePresetStore.setState({ customPresets: [customPreset({ id: 'kept' })] });
+    await usePresetStore.getState().deleteCustomPreset('kept');
+
+    expect(usePresetStore.getState().customPresets).toHaveLength(1);
+    expect(useUIStore.getState().toastMessage).toBe('Could not delete that preset');
+  });
+
+  it('reports a pack it could not import', async () => {
+    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+
+    expect(usePresetStore.getState().customPresets).toHaveLength(0);
+    expect(useUIStore.getState().toastMessage).toBe('Could not import that preset pack');
+    // The flag has to come back down, or both transfer controls stay disabled for the session.
+    expect(usePresetStore.getState().isExporting).toBe(false);
   });
 });
 
