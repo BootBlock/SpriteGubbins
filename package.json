@@ -13,6 +13,7 @@
   "bugs": {
     "url": "https://github.com/BootBlock/SpriteGubbins/issues"
   },
+  "homepage": "https://bootblock.github.io/SpriteGubbins/",
   "engines": {
     "node": ">=24"
   },

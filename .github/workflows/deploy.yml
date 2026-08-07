@@ -1,0 +1,236 @@
+name: Deploy to GitHub Pages
+
+# Manual-only: this never runs on push, on a pull request, or on a schedule. Publish by opening
+# the repository's "Actions" tab, selecting this workflow, and clicking "Run workflow". It builds
+# the chosen branch (default: main) and deploys it to https://bootblock.github.io/SpriteGubbins/.
+#
+# `workflow_dispatch` lets the operator pick any ref — including an unmerged branch nothing has
+# ever checked — and this is the app's only publish path, so the three gate jobs below run the
+# checks CLAUDE.md requires locally (secret scan, types, lint, formatting, unit tests) against
+# exactly the ref being deployed, and `build` needs all of them. That is the only thing stopping
+# a broken or credential-carrying commit reaching every user's device in one click.
+#
+# Ported from the sibling Gubbins repository, where the same gate lives in a reusable Tests
+# workflow that the deploy invokes. Sprite Gubbins has no push/PR workflow to delegate to, so the
+# jobs are inlined here — which also keeps the promise above literally true: nothing in this
+# directory runs unless a human dispatches it.
+on:
+  workflow_dispatch:
+
+# Least-privilege. `pages: write` and `id-token: write` are what the Pages deployment needs; the
+# `tag` job re-grants `contents: write` for itself alone, so nothing else in this run can push.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time. A newer run *queues* behind an in-flight one rather than cancelling
+# it: `actions/deploy-pages` killed mid-flight can leave the Pages deployment in a failed or
+# indeterminate state instead of being cleanly superseded, and this is the only publish path for
+# the app. Letting the first run finish is the safe ordering.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # This repository is PUBLIC, and a deploy is the moment a commit's contents become permanent, so
+  # this scans the WHOLE tree rather than a commit range. `.githooks/pre-commit` scans only the
+  # lines a commit adds — deliberately, so a value that has always lived in a committed fixture is
+  # not re-flagged forever — but it runs on one developer's machine and `git commit --no-verify`
+  # skips it entirely. Diffing against the empty tree makes every tracked line count as "added",
+  # so anything credential-shaped that ever slipped past the hook blocks the publish. Same pattern
+  # set as the hook (`scripts/secret-scan.mjs`), so the two can never drift.
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        # No `cache: npm` — this job installs nothing. The scanner has no dependencies and reads
+        # only git, so it needs neither the lockfile nor a recent Node.
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 25
+
+      - name: Scan the tree for credential-shaped content
+        # `git hash-object -t tree /dev/null` computes this repository's empty-tree id rather than
+        # hard-coding 4b825dc…, which is correct only for a SHA-1 repository. Nothing is written:
+        # without `-w` the id is calculated, not stored.
+        run: node scripts/secret-scan.mjs --diff "$(git hash-object -t tree /dev/null)"
+
+  quality:
+    name: Lint, format & type-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # Node 25, matching `.nvmrc` and the local dev toolchain, so `npm ci` resolves the
+          # lockfile identically to a developer's machine.
+          node-version: 25
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fail fast on types first, then lint, then formatting — cheapest signal last.
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 25
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The pure utilities — the prompt compiler and the atlas maths — are where this app's
+      # correctness actually lives, so publishing past a red suite is never right.
+      - name: Run unit tests
+        run: npm run test:run
+
+  build:
+    name: Build
+    needs: [secret-scan, quality, test]
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Release marker, checked BEFORE the build. With no tags at all, "what is currently
+      # deployed?" is unanswerable and "redeploy the last good build" means picking a SHA out of
+      # `git log` by eye. The `tag` job below marks the commit it publishes as `v<version>` — but
+      # that only stays meaningful if each new deploy carries a new version, so refuse here rather
+      # than after spending a build. Re-deploying the *same* commit is idempotent and allowed;
+      # re-deploying different code under a version already published is not.
+      - name: Check the release version is free
+        id: release
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          tag="v$version"
+          # Resolve to the *commit* the tag names. The tags this workflow pushes are annotated, so
+          # `refs/tags/$tag` is the tag object's own SHA — comparing that to $GITHUB_SHA would
+          # never match, and every re-deploy would be rejected. `^{}` is the peeled ref (the
+          # commit); it exists only for annotated tags, so fall back to the plain ref in case a
+          # lightweight one was pushed by hand.
+          existing="$(git ls-remote origin "refs/tags/$tag^{}" | cut -f1)"
+          if [ -z "$existing" ]; then
+            existing="$(git ls-remote origin "refs/tags/$tag" | cut -f1)"
+          fi
+          if [ -n "$existing" ] && [ "$existing" != "$GITHUB_SHA" ]; then
+            echo "::error title=Release version already published::Tag $tag already points at $existing, but this deploy is $GITHUB_SHA. Bump \"version\" in package.json before deploying new code."
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Deploying $tag from $GITHUB_SHA."
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 25
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `vite.config.ts` pins `base: '/SpriteGubbins/'`, which is what a project site is served
+      # from — so the build needs no environment at all. This app handles no API key by design
+      # (it composes prompt *text* for the user to paste elsewhere and makes no outbound model
+      # calls), so there is deliberately no secret or variable to wire in here.
+      - name: Build
+        run: npm run build
+
+      # Three production-only mechanisms have no unit test that can catch their absence, and all
+      # of them fail silently. `404.html` is the byte copy of the app shell that makes a refresh
+      # or a shared deep link resolve on GitHub Pages. `sw.js` is the `injectManifest` worker that
+      # adds the cross-origin isolation headers Pages itself will never send — without it the app
+      # is neither isolated nor offline-capable. `manifest.webmanifest` is what makes it
+      # installable. A build that emitted none of them would still exit 0, so assert them here
+      # rather than publishing an app whose offline, deep-link and install behaviour only appears
+      # to exist.
+      - name: Verify the build output
+        run: |
+          missing=0
+          for artefact in index.html 404.html sw.js manifest.webmanifest; do
+            if [ ! -s "dist/$artefact" ]; then
+              echo "::error title=Missing build output::dist/$artefact was not emitted, or is empty."
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          echo "dist/ carries the app shell, the SPA 404 fallback, the service worker and the manifest."
+
+      - name: Configure Pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+  # Record what was published. Runs only after the deploy actually succeeded, so a tag means "this
+  # commit reached production", not "someone tried". That gives the rollback story its missing
+  # first half: `git tag` lists every release, `v<version>` names the commit serving right now,
+  # and re-running this workflow against an earlier tag redeploys it.
+  tag:
+    name: Tag the release
+    needs: [build, deploy]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Tag the deployed commit
+        env:
+          TAG: ${{ needs.build.outputs.tag }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          # Idempotent: re-deploying the same commit re-runs this, and the pre-build check has
+          # already guaranteed any existing tag of this name points here.
+          if [ -n "$(git ls-remote --tags origin "refs/tags/$TAG" | cut -f1)" ]; then
+            echo "$TAG already recorded for this commit — nothing to do."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Sprite Gubbins $VERSION — deployed to GitHub Pages by run $GITHUB_RUN_ID."
+          git push origin "refs/tags/$TAG"
+          echo "Recorded release $TAG at $GITHUB_SHA."
