@@ -1,9 +1,8 @@
 import { create } from 'zustand';
-import { PRESETS } from '../constants/presets/index.ts';
 import { getDatabase } from '../db/database.ts';
-import { parseJson } from '../db/readers.ts';
-import { parseImportedPreset } from '../db/rows.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import { findPresetByName } from '../utils/presetNames.ts';
+import { parsePresetPack, serialisePresetPack } from '../utils/presetPack.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
 import { useUIStore } from './useUIStore.ts';
@@ -37,8 +36,17 @@ export interface PresetState {
    * Save the studio's current configuration under `name`; a blank name is ignored. Returns whether
    * it was stored, so the caller can keep the name in the box to retry rather than clearing a field
    * whose contents were never persisted.
+   *
+   * A name already in the library **updates** that preset rather than adding a second one under the
+   * same name. Minting an id unconditionally is what made "load a preset, adjust a field, save it
+   * again" produce two cards the user could tell apart only by which sorted newer.
    */
   saveCustomPreset(name: string): Promise<boolean>;
+  /**
+   * Rename one custom preset. Returns whether it was stored, so the caller can keep its editor open
+   * on a refusal instead of closing over a change that did not happen.
+   */
+  renameCustomPreset(id: string, name: string): Promise<boolean>;
   deleteCustomPreset(id: string): Promise<void>;
   /**
    * The preset pack as JSON, built-ins included, for the caller to offer as a download. Returns the
@@ -49,15 +57,6 @@ export interface PresetState {
   /** Replace the stored custom presets with the pack in `file`. */
   importPresetsJSON(file: File): Promise<void>;
 }
-
-/**
- * The built-in ids, so an import can skip them.
- *
- * An exported pack contains the built-ins, which is what makes it readable on its own; without this
- * filter, importing your own export would store six copies of them as *custom* presets and the
- * Presets tab would show every archetype twice.
- */
-const BUILT_IN_IDS: ReadonlySet<string> = new Set(PRESETS.map((preset) => preset.id));
 
 export const usePresetStore = create<PresetState>((set, get) => ({
   customPresets: [],
@@ -85,8 +84,12 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     if (!trimmed) return false;
 
     const { category, subject } = useSubjectStore.getState();
+    // Reusing the id is the whole mechanism: `savePreset` is an upsert by id on both backends.
+    // Only custom presets are candidates — a built-in is never stored, so nothing can overwrite it.
+    const existing = findPresetByName(get().customPresets, trimmed);
     const preset: PresetArchetype = {
-      id: `custom-${crypto.randomUUID()}`,
+      id: existing?.id ?? `custom-${crypto.randomUUID()}`,
+      // The typed name wins, so re-saving "my knight" as "My Knight" fixes the capitalisation.
       name: trimmed,
       category,
       subject,
@@ -101,10 +104,42 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       // — SQLite by `updated_at DESC`, the fallback by insertion — so an optimistic append would put
       // the new preset where only one of them agrees it belongs.
       set({ customPresets: await database.listPresets() });
-      useUIStore.getState().showToast(`Saved custom preset "${trimmed}"`);
+      useUIStore
+        .getState()
+        .showToast(existing ? `Updated custom preset "${trimmed}"` : `Saved custom preset "${trimmed}"`);
       return true;
     } catch {
       useUIStore.getState().showToast('Could not save that preset');
+      return false;
+    }
+  },
+
+  renameCustomPreset: async (id, name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return false;
+
+    const preset = get().customPresets.find((candidate) => candidate.id === id);
+    if (!preset) return false;
+
+    // Refused rather than merged: folding one preset into another would destroy whichever
+    // configuration the user did not have in mind. A preset matches itself, so fixing your own
+    // capitalisation is not a collision.
+    const clash = findPresetByName(get().customPresets, trimmed);
+    if (clash !== undefined && clash.id !== id) {
+      useUIStore.getState().showToast(`A preset named "${clash.name}" already exists`);
+      return false;
+    }
+
+    try {
+      const database = await getDatabase();
+      // Saved whole, not patched: `savePreset` replaces the row, so sending only the name would
+      // blank the configuration the preset exists to hold.
+      await database.savePreset({ ...preset, name: trimmed });
+      set({ customPresets: await database.listPresets() });
+      useUIStore.getState().showToast(`Renamed to "${trimmed}"`);
+      return true;
+    } catch {
+      useUIStore.getState().showToast('Could not rename that preset');
       return false;
     }
   },
@@ -120,22 +155,17 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     }
   },
 
-  exportPresetsJSON: () => JSON.stringify([...PRESETS, ...get().customPresets], null, 2),
+  exportPresetsJSON: () => serialisePresetPack(get().customPresets),
 
   importPresetsJSON: async (file) => {
     const { showToast } = useUIStore.getState();
     set({ isExporting: true });
     try {
-      const parsed = parseJson(await file.text());
-      if (!Array.isArray(parsed)) {
+      const imported = parsePresetPack(await file.text());
+      if (imported === null) {
         showToast('That file is not a Sprite Gubbins preset pack');
         return;
       }
-
-      const imported = parsed
-        .map(parseImportedPreset)
-        .filter((preset): preset is PresetArchetype => preset !== null)
-        .filter((preset) => !BUILT_IN_IDS.has(preset.id));
 
       // Importing replaces the collection, so an empty result is refused rather than obeyed: a
       // pack of nothing but built-ins would otherwise silently delete every preset the user has.

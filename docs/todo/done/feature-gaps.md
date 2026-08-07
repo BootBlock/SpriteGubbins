@@ -1,8 +1,8 @@
 # Feature gaps — audit and plan
 
 > **Status:** ✅ COMPLETE — Phases 1 (G1, G4) and 2 (G2, G3) shipped. Phase 3 was a hand-off rather
-> than a build, and is discharged below: **G5 and G6 are still open**, deliberately, and the
-> [Outcome](#outcome) section says who holds each.
+> than a build: of the two it raised, **G5 was closed separately afterwards** and **G6 is still
+> open**, awaiting a decision. See [Outcome](#outcome).
 
 An audit of what this application promises against what it does, run after
 [baseline-prompt-new.md](../baseline-prompt-new.md) §10 closed and the five spec phases shipped.
@@ -230,13 +230,16 @@ localStorage fallback with the database worker blocked — with identical result
 located by accessible name alone, and the delete was driven by keyboard. 376 → 399 tests across 38
 files.
 
-**Still open — neither was built, and that was the plan.**
+**Left unbuilt by this plan, and what became of each.**
 
-- **G5 (saving a custom preset always creates a new one).** Unchanged and still real:
-  `saveCustomPreset` mints `custom-${crypto.randomUUID()}` on every call, so saving under an
-  existing name yields two presets with that name and no rename or update path. It belongs to
-  `worktree-quantise-presets-ui`, which owns `usePresetStore`'s UI surface. **Nothing here touched
-  it.**
+- **G5 (saving a custom preset always creates a new one).** Deliberately not built here — it was
+  `worktree-quantise-presets-ui`'s to own. **Closed separately, afterwards**, once that worktree
+  turned out not to be taking it: `saveCustomPreset` now reuses the id of a preset already holding
+  the typed name, so saving over one updates it instead of minting a duplicate, and
+  `renameCustomPreset` supplies the rename path the gap said was missing. The collision rule is one
+  pure function ([presetNames.ts](../../../src/utils/presetNames.ts)) shared by both paths and by
+  the Save button, which reads **Update** when the name is already held — so an overwrite is
+  announced before the press rather than confirmed after it.
 - **G6 (a condensed Imagen variant).** Still needs a decision nobody has made. The guidance in
   [baseline-prompt-new.md](../baseline-prompt-new.md) §7 is the single word "consider", with no
   statement of what to cut; a condensed template is a *second* template to keep true to the first,
