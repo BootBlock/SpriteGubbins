@@ -19,9 +19,8 @@ export const CUSTOM_PRESETS_TABLE = 'custom_presets';
 
 /**
  * `IF NOT EXISTS` throughout: this runs on every boot, against a database that usually already
- * exists. There is no migration machinery because there has not yet been a schema change to
- * migrate — when there is, it belongs here beside the DDL rather than scattered through the
- * backend.
+ * exists. Migrations live in {@link MIGRATIONS} below, beside the DDL rather than scattered through
+ * the backend.
  */
 export const CREATE_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS ${PROMPT_HISTORY_TABLE} (
@@ -30,7 +29,9 @@ CREATE TABLE IF NOT EXISTS ${PROMPT_HISTORY_TABLE} (
   prompt_text TEXT NOT NULL,
   created_at INTEGER NOT NULL,
   word_count INTEGER NOT NULL,
-  model_used TEXT NOT NULL
+  model_used TEXT NOT NULL,
+  subject_json TEXT NOT NULL DEFAULT '{}',
+  output_json TEXT NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE IF NOT EXISTS ${CUSTOM_PRESETS_TABLE} (
@@ -57,17 +58,30 @@ export const STORAGE_KEYS = {
   promptHistory: 'sprite_gubbins_prompt_history',
 } as const;
 
+/**
+ * Columns added after the first schema shipped.
+ *
+ * SQLite has no `ADD COLUMN IF NOT EXISTS`, so each of these is run and its "duplicate column name"
+ * error ignored — which is the whole check, and cheaper than reading `PRAGMA table_info` to ask a
+ * question whose only answer is whether to swallow that one error. Both carry a default, because
+ * `ADD COLUMN` on a `NOT NULL` column has to say what the existing rows hold.
+ */
+export const MIGRATIONS: readonly string[] = [
+  `ALTER TABLE ${PROMPT_HISTORY_TABLE} ADD COLUMN subject_json TEXT NOT NULL DEFAULT '{}'`,
+  `ALTER TABLE ${PROMPT_HISTORY_TABLE} ADD COLUMN output_json TEXT NOT NULL DEFAULT '{}'`,
+];
+
 /** Newest first — the order the history drawer lists entries in. */
 export const SELECT_HISTORY_SQL = `
-SELECT id, category, prompt_text, created_at, word_count, model_used
+SELECT id, category, prompt_text, created_at, word_count, model_used, subject_json, output_json
 FROM ${PROMPT_HISTORY_TABLE}
 ORDER BY created_at DESC
 `;
 
 export const INSERT_HISTORY_SQL = `
 INSERT OR REPLACE INTO ${PROMPT_HISTORY_TABLE}
-  (id, category, prompt_text, created_at, word_count, model_used)
-VALUES (?, ?, ?, ?, ?, ?)
+  (id, category, prompt_text, created_at, word_count, model_used, subject_json, output_json)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 export const DELETE_ALL_HISTORY_SQL = `DELETE FROM ${PROMPT_HISTORY_TABLE}`;

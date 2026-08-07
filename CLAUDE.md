@@ -203,11 +203,9 @@ machine-enforced, the build fails — don't go looking for a way around it.
 `as unknown as T` is banned by the spec but has no rule that catches it — treat it as a review
 finding. The fix is a type guard or a narrower union, never a wider cast.
 
-## Cross-origin isolation is load-bearing
+## Cross-origin isolation, and what actually depends on it
 
-SQLite's OPFS backend coordinates through `SharedArrayBuffer`, which browsers expose only to
-cross-origin-isolated contexts. Isolation therefore decides which database the app actually
-gets, and it is achieved **two different ways**:
+The app makes itself cross-origin isolated, **two different ways**:
 
 - **Dev and preview** — `server.headers` / `preview.headers` in `vite.config.ts` send
   `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`.
@@ -216,12 +214,33 @@ gets, and it is achieved **two different ways**:
   the page once after that worker first takes control. **The first visit is never isolated**;
   it becomes so on the reload.
 
-Three consequences to hold on to:
+That apparatus was built on the understanding that the database needed it. It does not — see the
+first point below — so isolation is a property this app maintains rather than one it currently
+depends on. Removing it would be a decision about the COEP subresource posture, not about
+persistence; leaving it costs one reload on a first visit.
 
-- **The localStorage fallback in `src/db` is a specified behaviour, not a safety net.** It is
-  what runs before that first reload, and on any browser or host where isolation fails. Changes
-  to the database layer must work in both modes — the fallback is the path nobody exercises by
-  accident.
+Four consequences to hold on to:
+
+- **What SQLite actually needs is a worker, not isolation.** The SAH-pool VFS this app installs
+  requires `FileSystemFileHandle.prototype.createSyncAccessHandle`, which browsers expose **only
+  inside a worker** — on the main thread the property is simply absent, so
+  `installOpfsSAHPoolVfs` throws `Missing required OPFS APIs` however isolated the page is. That
+  is why the database lives in [src/db/sqliteWorker.ts](src/db/sqliteWorker.ts) behind the message
+  bridge in `sqliteBackend.ts`, and why moving it back onto the main thread would silently return
+  the whole app to the localStorage fallback — which is exactly what it did before the worker
+  existed.
+
+  It does **not** need `SharedArrayBuffer`, and therefore does not need cross-origin isolation:
+  verified by installing the pool and writing a row from a worker on a host sending no COOP/COEP,
+  with `crossOriginIsolated === false` and `SharedArrayBuffer` undefined. That check belongs to the
+  *plain* `opfs` VFS, which this app does not use. So the isolation apparatus below is not what
+  makes the database work — treat the two as separate concerns, and verify each by running it
+  rather than by reasoning from the other.
+- **The localStorage fallback in `src/db` is a specified behaviour, not a safety net.** It runs
+  wherever OPFS itself is unavailable — a private window, a browser without it, an exhausted
+  quota — which is a narrower set of cases than "before the first reload", now that isolation is
+  not what the database waits for. Changes to the database layer must work in both modes; the
+  fallback is the path nobody exercises by accident, which is why it has its own tests.
 - **The app must not load a cross-origin subresource.** Under COEP `require-corp` anything from
   another origin that doesn't opt in is blocked outright — which is why the fonts fall back to
   system faces rather than fetching a webfont, as the original single-file app did.

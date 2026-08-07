@@ -45,10 +45,17 @@ mirrors that so paths behave identically in both.
 | `npm run format` | Prettier |
 | `npm run icons` | Regenerate the app icon set from the source pixel glyph |
 
+## Where the database runs
+
+SQLite reaches the Origin Private File System through synchronous access handles, and browsers
+expose those **only inside a worker**. The database therefore lives in a dedicated worker
+(`src/db/sqliteWorker.ts`) and the app talks to it by message — which also keeps every query off
+the thread that draws the interface. Where OPFS is unavailable at all (a private window, a browser
+without it, an exhausted quota) the same interface is served from `localStorage` instead.
+
 ## Cross-origin isolation
 
-SQLite's high-performance OPFS backend coordinates through `SharedArrayBuffer`, which browsers
-expose only to cross-origin-isolated contexts.
+The app also makes itself cross-origin isolated:
 
 - **Locally**, the dev and preview servers send `Cross-Origin-Opener-Policy: same-origin` and
   `Cross-Origin-Embedder-Policy: require-corp` themselves.
@@ -56,8 +63,10 @@ expose only to cross-origin-isolated contexts.
   them to every response and a small bootstrap script reloads the page once after that worker
   first takes control. The very first visit is therefore not isolated; the reload fixes it.
 
-Where isolation can't be achieved at all the app still works — the database layer falls back to
-`localStorage` — but the SQLite-backed history and preset storage will not be used.
+This is independent of the database. The SAH-pool VFS the app uses needs neither
+`SharedArrayBuffer` nor isolation — only the worker above — so a not-yet-isolated first visit still
+gets SQLite. Under `require-corp` the app must not load a cross-origin subresource, which is why
+the fonts fall back to system faces rather than fetching a webfont.
 
 ## Built with
 

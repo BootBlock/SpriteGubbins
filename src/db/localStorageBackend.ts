@@ -7,11 +7,11 @@ import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
 
 /**
  * The fallback used when SQLite/OPFS is unavailable — a private browsing session, a browser
- * without OPFS, or a host that cannot deliver cross-origin isolation.
+ * without OPFS, an exhausted quota.
  *
- * This is a **specified behaviour, not a safety net**: on a static host the very first page load
- * is not yet isolated, so this is the backend the app genuinely starts on. It must work, and it
- * must be tested.
+ * This is a **specified behaviour, not a safety net**: those conditions are ordinary, and this is
+ * the backend the app genuinely runs on whenever one of them holds. It must work, and it must be
+ * tested.
  *
  * Storage is read and rewritten whole on every operation. That is fine at this scale — a couple
  * of hundred prompts — and it keeps the fallback simple enough to be obviously correct.
@@ -69,6 +69,10 @@ export class LocalStorageBackend implements PersistenceBackend {
       created_at: log.createdAt,
       word_count: log.wordCount,
       model_used: log.modelUsed,
+      // Serialised, not nested, so the shape matches the SQLite columns exactly and one parser
+      // reads both.
+      subject_json: JSON.stringify(log.subject),
+      output_json: JSON.stringify(log.output),
     };
   }
 

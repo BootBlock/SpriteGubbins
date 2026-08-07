@@ -21,6 +21,7 @@ export function HistoryModal() {
   const isLoading = useHistoryStore((state) => state.isLoading);
   const fetchHistory = useHistoryStore((state) => state.fetchHistory);
   const clearHistory = useHistoryStore((state) => state.clearHistory);
+  const restoreLog = useHistoryStore((state) => state.restoreLog);
   const toggleHistoryModal = useUIStore((state) => state.toggleHistoryModal);
   const copyText = useClipboard();
 
@@ -86,6 +87,7 @@ export function HistoryModal() {
                 onCopy={(entry) => {
                   void copyText(entry.promptText, 'Prompt copied to the clipboard');
                 }}
+                onRestore={restoreLog}
               />
             ))}
           </ul>

@@ -1,6 +1,11 @@
 # **👾 MASTER IMPLEMENTATION SPECIFICATION**
 
-> **Status:** 🟢 ACTIVE — Phases 1–4 shipped (build system, PWA shell, design tokens; domain types, option pools, prompt compiler, SQLite/localStorage persistence; the five Zustand stores; the full component tree and app assembly). Phase 5 (verification and quality audit) next.
+> **Status:** 📘 REFERENCE — all five phases shipped: build system and PWA shell, design tokens, domain types and option pools, the prompt compiler, SQLite-on-OPFS persistence (in a worker — see the note on §2.4 below) with its localStorage fallback, the five Zustand stores, the full component tree and app assembly, and the verification pass. Kept here as the durable blueprint the implementation is held to, not as open work.
+>
+> Two places where the implementation knowingly departs from the text below, both verified in a real browser:
+>
+> - **§2.4 / Task 1.3.4 — SQLite cannot run on the main thread.** The SAH-pool VFS needs `FileSystemFileHandle.prototype.createSyncAccessHandle`, which browsers expose only inside a worker, so the database lives in `src/db/sqliteWorker.ts` behind a message bridge rather than being opened in the page.
+> - **§2.4 — `prompt_history` carries two more columns than the DDL here lists** (`subject_json`, `output_json`). Without them the drawer's "one-click restore" in §4.4 cannot exist: the compiled prompt is a one-way rendering of the studio state, so the state has to be stored alongside it. Rows written before those columns restore to their category's defaults.
 
 ## **Project: Sprite Gubbins — Vite \+ React \+ TypeScript \+ PWA \+ SQLite**
 

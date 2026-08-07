@@ -123,7 +123,14 @@ function pick<T extends string>(
   return allowed.find((candidate) => candidate === value) ?? fallback;
 }
 
-/** Parse a `prompt_history` row. Returns `null` if any required column is missing or wrong. */
+/**
+ * Parse a `prompt_history` row. Returns `null` if any required column is missing or wrong.
+ *
+ * The two payload columns are the exception, and are *repaired* rather than required: they were
+ * added after the first schema shipped, so a row written before then has neither. Defaulting them
+ * costs that entry its one-click restore — it comes back as the category's defaults — while
+ * rejecting the row would lose the prompt as well, which is the part worth keeping.
+ */
 export function parseHistoryRow(row: unknown): PromptHistoryLog | null {
   if (!isRecord(row)) return null;
 
@@ -137,7 +144,19 @@ export function parseHistoryRow(row: unknown): PromptHistoryLog | null {
   if (id === null || promptText === null || createdAt === null || wordCount === null) return null;
   if (!isSubjectCategory(category) || !isTargetModelId(modelUsed)) return null;
 
-  return { id, category, promptText, createdAt, wordCount, modelUsed };
+  const subjectJson = readString(row, 'subject_json');
+  const outputJson = readString(row, 'output_json');
+
+  return {
+    id,
+    category,
+    promptText,
+    createdAt,
+    wordCount,
+    modelUsed,
+    subject: parseSubject(subjectJson === null ? undefined : parseJson(subjectJson), category),
+    output: parseOutputConfig(outputJson === null ? undefined : parseJson(outputJson)),
+  };
 }
 
 /** Parse a `custom_presets` row, including its two JSON payload columns. */

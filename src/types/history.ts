@@ -1,5 +1,5 @@
-import type { SubjectCategory } from './subject.ts';
-import type { TargetModelId } from './output.ts';
+import type { SubjectCategory, SubjectDefinition } from './subject.ts';
+import type { OutputConfig, TargetModelId } from './output.ts';
 
 /**
  * One entry in the prompt history — a record of a prompt the user actually copied, not of every
@@ -18,6 +18,19 @@ export interface PromptHistoryLog {
   readonly createdAt: number;
   readonly wordCount: number;
   readonly modelUsed: TargetModelId;
+  /**
+   * The studio state that produced the prompt, so an entry can be put back into the studio rather
+   * than only back onto the clipboard.
+   *
+   * Stored alongside the compiled text rather than derived from it: the prompt is a one-way
+   * rendering of these two, and no amount of parsing recovers "Cybernetic Cyborg" as the *value of
+   * the species field* from a line of Markdown that happens to contain it.
+   *
+   * An entry written before these columns existed restores to its category's defaults — see
+   * `db/rows.ts`, which repairs rather than rejects.
+   */
+  readonly subject: SubjectDefinition;
+  readonly output: OutputConfig;
 }
 
 /**

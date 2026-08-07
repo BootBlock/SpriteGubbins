@@ -4,18 +4,18 @@
  *
  * One worker, two responsibilities:
  *   1. Offline-first precaching of the app shell.
- *   2. Injecting COOP/COEP (+ CORP) headers on every response, so `SharedArrayBuffer` and the
- *      SQLite OPFS VFS work on a static host that cannot set response headers — GitHub Pages
- *      being the one this app deploys to. This replaces a standalone coi-serviceworker, which
- *      would otherwise fight this worker for control of the scope.
+ *   2. Injecting COOP/COEP (+ CORP) headers on every response, so the page is cross-origin
+ *      isolated on a static host that cannot set response headers — GitHub Pages being the one
+ *      this app deploys to. This replaces a standalone coi-serviceworker, which would otherwise
+ *      fight this worker for control of the scope.
  *
  * `injectManifest` rather than `generateSW` for exactly that second point: header injection
  * needs custom fetch logic, which the generated worker cannot express.
  *
  * The very first visit is *not* isolated — no worker controls the page yet — so
- * `public/coi-bootstrap.js` reloads once after this worker takes control. Until that reload
- * the database layer sees no `SharedArrayBuffer` and uses its localStorage fallback, which is
- * why that fallback is a specified behaviour rather than a safety net.
+ * `public/coi-bootstrap.js` reloads once after this worker takes control. **The database is not
+ * waiting on that.** SQLite's SAH-pool VFS needs a dedicated worker, not `SharedArrayBuffer`, so
+ * it is available from the first load; see the note in CLAUDE.md.
  */
 
 const sw = self as unknown as ServiceWorkerGlobalScope;

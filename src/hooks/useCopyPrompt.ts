@@ -30,11 +30,16 @@ export function useCopyPrompt(): () => Promise<void> {
     const copied = await copyText(promptText, 'Prompt copied to the clipboard');
     if (!copied) return;
 
+    // The subject and output travel with the prompt, not just the text they produced: the compiled
+    // prompt is a one-way rendering of them, so this is the only moment the studio state that made
+    // it can be captured, and without it the entry could never be restored.
     await addLog({
       category,
       promptText,
       wordCount: countWords(promptText),
       modelUsed: output.targetModel,
+      subject,
+      output,
     });
   }, [copyText, addLog]);
 }

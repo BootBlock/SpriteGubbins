@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { HISTORY_LIMIT } from '../db/backend.ts';
 import { getDatabase } from '../db/database.ts';
 import type { NewPromptHistoryLog, PromptHistoryLog } from '../types/history.ts';
+import { useOutputStore } from './useOutputStore.ts';
+import { useSubjectStore } from './useSubjectStore.ts';
 import { useUIStore } from './useUIStore.ts';
 
 /**
@@ -21,6 +23,14 @@ export interface HistoryState {
   /** Load the table into the store. Called when the history drawer opens. */
   fetchHistory(): Promise<void>;
   clearHistory(): Promise<void>;
+  /**
+   * Put a recorded entry's studio state back into the studio, close the drawer and show it.
+   *
+   * Reaches into the subject and output stores, as `usePresetStore.loadPreset` does and for the same
+   * reason: restoring *is* writing all of them, and it goes through their own actions so each keeps
+   * its own invariants.
+   */
+  restoreLog(log: PromptHistoryLog): void;
 }
 
 export const useHistoryStore = create<HistoryState>((set) => ({
@@ -66,5 +76,14 @@ export const useHistoryStore = create<HistoryState>((set) => ({
     } catch {
       useUIStore.getState().showToast('Could not clear prompt history');
     }
+  },
+
+  restoreLog: (log) => {
+    useSubjectStore.getState().setSubject(log.category, log.subject);
+    useOutputStore.getState().setOutputConfig(log.output);
+    const ui = useUIStore.getState();
+    ui.toggleHistoryModal();
+    ui.setActiveTab('studio');
+    ui.showToast('Restored that prompt into the studio');
   },
 }));

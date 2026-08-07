@@ -17,18 +17,18 @@ const TIMESTAMP_FORMAT = new Intl.DateTimeFormat(undefined, {
 interface HistoryEntryProps {
   readonly log: PromptHistoryLog;
   readonly onCopy: (log: PromptHistoryLog) => void;
+  readonly onRestore: (log: PromptHistoryLog) => void;
 }
 
 /**
- * One recorded prompt.
+ * One recorded prompt, with the two things worth doing to it.
  *
- * The action is **copy**, not "load into the studio", and that is a consequence of what a history row
- * holds: the compiled prompt text, its category, its word count and its target model — not the
- * subject and output configuration that produced it. Offering to restore the studio from this would
- * mean reconstructing settings the row never stored. The prompt itself is the artefact worth keeping,
- * so getting it back is getting it onto the clipboard.
+ * **Copy** takes the compiled text; **restore** puts the studio state that produced it back into the
+ * studio, which is possible because the row stores that state alongside the text rather than only
+ * the text. An entry recorded before those columns existed still restores — to its category's
+ * defaults — because `db/rows.ts` repairs a missing payload instead of rejecting the row.
  */
-export function HistoryEntry({ log, onCopy }: HistoryEntryProps) {
+export function HistoryEntry({ log, onCopy, onRestore }: HistoryEntryProps) {
   return (
     <li className="space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 p-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -41,17 +41,29 @@ export function HistoryEntry({ log, onCopy }: HistoryEntryProps) {
 
       <p className="line-clamp-3 font-mono text-[11px] leading-relaxed text-ink-muted">{log.promptText}</p>
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-mono text-[10px] text-ink-faint">{log.wordCount} words</span>
-        <button
-          type="button"
-          onClick={() => {
-            onCopy(log);
-          }}
-          className="rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-[11px] font-semibold text-accent-soft transition-colors hover:bg-foundry-700"
-        >
-          Copy prompt
-        </button>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              onCopy(log);
+            }}
+            className="rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-[11px] font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+          >
+            Copy prompt
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              onRestore(log);
+            }}
+            className="rounded-lg bg-accent-strong px-2.5 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-accent"
+          >
+            Restore
+          </button>
+        </div>
       </div>
     </li>
   );

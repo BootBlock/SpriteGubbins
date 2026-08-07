@@ -3,9 +3,13 @@ import { HISTORY_LIMIT } from '../db/backend.ts';
 import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { DEFAULT_PRESET } from '../constants/presets.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
 import type { NewPromptHistoryLog } from '../types/history.ts';
 import { useHistoryStore } from './useHistoryStore.ts';
+import { useOutputStore } from './useOutputStore.ts';
+import { useSubjectStore } from './useSubjectStore.ts';
 import { useUIStore } from './useUIStore.ts';
 
 /**
@@ -25,6 +29,8 @@ function entry(overrides: Partial<NewPromptHistoryLog> = {}): NewPromptHistoryLo
     promptText: '# MODULAR SPRITE-SHEET PROMPT ARCHITECTURE (CHARACTER)',
     wordCount: 6,
     modelUsed: 'CHATGPT_5_6_SOL',
+    subject: DEFAULT_PRESET.subject,
+    output: DEFAULT_PRESET.output,
     ...overrides,
   };
 }
@@ -114,6 +120,39 @@ describe('fetchHistory', () => {
 
     expect(useHistoryStore.getState().isLoading).toBe(false);
     expect(useUIStore.getState().toastMessage).toBe('Could not load prompt history');
+  });
+});
+
+describe('restoreLog', () => {
+  it('puts the recorded studio state back and shows it', async () => {
+    useSubjectStore.setState({ category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') });
+    useOutputStore.setState({ output: DEFAULT_PRESET.output });
+    useUIStore.setState({ activeTab: 'presets', isHistoryModalOpen: true });
+
+    const creature = { ...defaultSubjectFor('CREATURE'), species: 'Cybernetic Attack Drone' };
+    const output = { ...DEFAULT_PRESET.output, targetModel: 'MIDJOURNEY' } as const;
+    await useHistoryStore.getState().addLog(entry({ category: 'CREATURE', subject: creature, output }));
+
+    const [log] = useHistoryStore.getState().historyLogs;
+    if (!log) throw new Error('the entry should have been recorded.');
+    useHistoryStore.getState().restoreLog(log);
+
+    expect(useSubjectStore.getState().category).toBe('CREATURE');
+    expect(useSubjectStore.getState().subject.species).toBe('Cybernetic Attack Drone');
+    expect(useOutputStore.getState().output.targetModel).toBe('MIDJOURNEY');
+    expect(useUIStore.getState().isHistoryModalOpen).toBe(false);
+    expect(useUIStore.getState().activeTab).toBe('studio');
+  });
+
+  it('restores state that survived a round trip through storage', async () => {
+    const creature = { ...defaultSubjectFor('CREATURE'), species: 'Mechanical Automaton' };
+    await useHistoryStore.getState().addLog(entry({ category: 'CREATURE', subject: creature }));
+
+    // Read back from the backend rather than from the store, so what is asserted is what the row
+    // actually holds — the studio state has to survive being serialised into the payload columns.
+    const [stored] = await backend.listHistoryLogs();
+    expect(stored?.subject).toEqual(creature);
+    expect(stored?.output).toEqual(DEFAULT_PRESET.output);
   });
 });
 

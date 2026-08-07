@@ -1,151 +1,129 @@
-import sqlite3InitModule from '@sqlite.org/sqlite-wasm';
-import type { Database } from '@sqlite.org/sqlite-wasm';
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
-import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
+import type { PersistenceBackend } from './backend.ts';
 import { parseHistoryRow, parsePresetRow } from './rows.ts';
-import {
-  CREATE_TABLES_SQL,
-  DATABASE_FILENAME,
-  DELETE_ALL_HISTORY_SQL,
-  DELETE_ALL_PRESETS_SQL,
-  DELETE_PRESET_SQL,
-  INSERT_HISTORY_SQL,
-  INSERT_PRESET_SQL,
-  OPFS_POOL_NAME,
-  PROMPT_HISTORY_TABLE,
-  SELECT_HISTORY_SQL,
-  SELECT_PRESETS_SQL,
-} from './schema.ts';
+import { isWorkerHandshake, isWorkerReply } from './workerProtocol.ts';
+import type { WorkerCall, WorkerRequest } from './workerProtocol.ts';
 
 /**
- * SQLite (WebAssembly) persisted to the Origin Private File System.
+ * SQLite (WebAssembly) persisted to the Origin Private File System, reached through a worker.
  *
- * Uses the **SAH-pool VFS** rather than the plain `OpfsDb`. That is a deliberate choice: the
- * standard OPFS VFS blocks on `Atomics.wait`, which browsers forbid on the main thread, so it
- * can only run inside a Worker. The SAH pool acquires its synchronous access handles up front
- * and therefore works on the main thread — no worker, no RPC bridge, no message plumbing for a
- * database this app queries a handful of times per session.
+ * The worker is not an optimisation. SQLite's SAH-pool VFS needs
+ * `FileSystemFileHandle.prototype.createSyncAccessHandle`, which browsers expose **only inside a
+ * worker** — on the main thread the property does not exist, so `installOpfsSAHPoolVfs` throws
+ * "Missing required OPFS APIs" no matter how cross-origin-isolated the page is. (The plain OPFS VFS
+ * is no help either: it blocks on `Atomics.wait`, which the main thread forbids.) So the database
+ * lives in `sqliteWorker.ts` and this class is the half of the bridge the app talks to.
  *
- * Construction is via {@link openSqliteBackend}, which resolves to `null` rather than throwing
- * when OPFS is unavailable — a private window, an unsupported browser, an exhausted quota — so
- * `database.ts` can fall back to localStorage.
+ * Rows come back raw and are validated here by `db/rows.ts` — the same parsers the localStorage
+ * fallback uses, so the two backends cannot drift in what they accept.
+ *
+ * Construction is via {@link openSqliteBackend}, which resolves to `null` rather than throwing when
+ * the database cannot be opened, so `database.ts` can fall back.
  */
 export class SqliteBackend implements PersistenceBackend {
   readonly kind = 'sqlite-opfs' as const;
 
-  private readonly db: Database;
+  private readonly worker: Worker;
 
-  constructor(db: Database) {
-    this.db = db;
-  }
+  /** Calls awaiting a reply, by correlation id. Replies can arrive in any order. */
+  private readonly pending = new Map<number, { resolve(value: unknown): void; reject(error: Error): void }>();
 
-  /** Rows from a SELECT, as plain objects for `rows.ts` to validate. */
-  private select(sql: string): unknown[] {
-    return this.db.exec(sql, { rowMode: 'object', returnValue: 'resultRows' });
-  }
+  private nextId = 0;
 
-  addHistoryLog(log: PromptHistoryLog): Promise<void> {
-    this.db.exec(INSERT_HISTORY_SQL, {
-      bind: [log.id, log.category, log.promptText, log.createdAt, log.wordCount, log.modelUsed],
+  constructor(worker: Worker) {
+    this.worker = worker;
+    this.worker.addEventListener('message', (event: MessageEvent<unknown>) => {
+      const reply = event.data;
+      if (!isWorkerReply(reply)) return;
+      const waiting = this.pending.get(reply.id);
+      if (!waiting) return;
+      this.pending.delete(reply.id);
+      if (reply.ok) waiting.resolve(reply.value);
+      else waiting.reject(new Error(reply.error));
     });
-    // Trim in the same call rather than on read, so the table cannot grow without bound across
-    // sessions. `OFFSET` counts from the newest, so this deletes everything past the limit.
-    this.db.exec(
-      `DELETE FROM ${PROMPT_HISTORY_TABLE} WHERE id NOT IN (
-         SELECT id FROM ${PROMPT_HISTORY_TABLE} ORDER BY created_at DESC LIMIT ?
-       )`,
-      { bind: [HISTORY_LIMIT] },
-    );
-    return Promise.resolve();
   }
 
-  listHistoryLogs(): Promise<PromptHistoryLog[]> {
-    const logs = this.select(SELECT_HISTORY_SQL)
-      .map(parseHistoryRow)
-      .filter((log): log is PromptHistoryLog => log !== null);
-    return Promise.resolve(logs);
-  }
-
-  clearHistoryLogs(): Promise<void> {
-    this.db.exec(DELETE_ALL_HISTORY_SQL);
-    return Promise.resolve();
-  }
-
-  savePreset(preset: PresetArchetype): Promise<void> {
-    this.db.exec(INSERT_PRESET_SQL, {
-      bind: [
-        preset.id,
-        preset.name,
-        preset.category,
-        JSON.stringify(preset.subject),
-        JSON.stringify(preset.output),
-        Date.now(),
-      ],
+  private request(request: WorkerRequest): Promise<unknown> {
+    const id = this.nextId++;
+    const call: WorkerCall = { id, request };
+    return new Promise((resolve, reject) => {
+      this.pending.set(id, { resolve, reject });
+      this.worker.postMessage(call);
     });
-    return Promise.resolve();
   }
 
-  listPresets(): Promise<PresetArchetype[]> {
-    const presets = this.select(SELECT_PRESETS_SQL)
-      .map(parsePresetRow)
-      .filter((preset): preset is PresetArchetype => preset !== null);
-    return Promise.resolve(presets);
+  /** A list reply, as rows. Anything that is not an array is treated as no rows rather than trusted. */
+  private async requestRows(request: WorkerRequest): Promise<unknown[]> {
+    const value = await this.request(request);
+    return Array.isArray(value) ? value : [];
   }
 
-  deletePreset(id: string): Promise<void> {
-    this.db.exec(DELETE_PRESET_SQL, { bind: [id] });
-    return Promise.resolve();
+  async addHistoryLog(log: PromptHistoryLog): Promise<void> {
+    await this.request({ kind: 'addHistoryLog', log });
   }
 
-  replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
-    // One transaction: an import that failed halfway would otherwise leave the user with part
-    // of the old collection and part of the new, and no way to tell which.
-    this.db.exec('BEGIN');
-    try {
-      this.db.exec(DELETE_ALL_PRESETS_SQL);
-      const updatedAt = Date.now();
-      for (const preset of presets) {
-        this.db.exec(INSERT_PRESET_SQL, {
-          bind: [
-            preset.id,
-            preset.name,
-            preset.category,
-            JSON.stringify(preset.subject),
-            JSON.stringify(preset.output),
-            updatedAt,
-          ],
-        });
-      }
-      this.db.exec('COMMIT');
-    } catch (error) {
-      this.db.exec('ROLLBACK');
-      throw error;
-    }
-    return Promise.resolve();
+  async listHistoryLogs(): Promise<PromptHistoryLog[]> {
+    const rows = await this.requestRows({ kind: 'listHistoryLogs' });
+    return rows.map(parseHistoryRow).filter((log): log is PromptHistoryLog => log !== null);
+  }
+
+  async clearHistoryLogs(): Promise<void> {
+    await this.request({ kind: 'clearHistoryLogs' });
+  }
+
+  async savePreset(preset: PresetArchetype): Promise<void> {
+    await this.request({ kind: 'savePreset', preset });
+  }
+
+  async listPresets(): Promise<PresetArchetype[]> {
+    const rows = await this.requestRows({ kind: 'listPresets' });
+    return rows.map(parsePresetRow).filter((preset): preset is PresetArchetype => preset !== null);
+  }
+
+  async deletePreset(id: string): Promise<void> {
+    await this.request({ kind: 'deletePreset', presetId: id });
+  }
+
+  async replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
+    await this.request({ kind: 'replacePresets', presets });
   }
 }
 
 /**
- * Bring up SQLite on OPFS, or report that it isn't available.
+ * Start the worker and wait for it to report whether it has a database.
  *
- * Returns `null` — rather than throwing — for every failure mode, because none of them is an
- * error the app should surface: OPFS being blocked is an expected condition on a first,
- * not-yet-isolated page load and in private browsing, and the answer is always the same
- * (use localStorage instead).
+ * Resolves to `null` — rather than throwing — for every failure, because none of them is an error
+ * the app should surface: OPFS is legitimately unavailable in a private window, in a browser without
+ * it, and on a first page load that is not yet cross-origin isolated. The answer is always the same,
+ * and it is `database.ts`'s to give: use localStorage instead.
  */
-export async function openSqliteBackend(): Promise<SqliteBackend | null> {
+export function openSqliteBackend(): Promise<SqliteBackend | null> {
+  let worker: Worker;
   try {
-    const sqlite3 = await sqlite3InitModule();
-    // `initialCapacity` must exceed the number of database files, with room for journals.
-    const pool = await sqlite3.installOpfsSAHPoolVfs({
-      name: OPFS_POOL_NAME,
-      initialCapacity: 6,
-    });
-    const db = new pool.OpfsSAHPoolDb(DATABASE_FILENAME);
-    db.exec(CREATE_TABLES_SQL);
-    return new SqliteBackend(db);
+    worker = new Worker(new URL('./sqliteWorker.ts', import.meta.url), { type: 'module' });
   } catch {
-    return null;
+    return Promise.resolve(null);
   }
+
+  return new Promise((resolve) => {
+    const settle = (backend: SqliteBackend | null) => {
+      worker.removeEventListener('message', onMessage);
+      worker.removeEventListener('error', onError);
+      if (backend === null) worker.terminate();
+      resolve(backend);
+    };
+
+    function onMessage(event: MessageEvent<unknown>) {
+      if (!isWorkerHandshake(event.data)) return;
+      settle(event.data.ready ? new SqliteBackend(worker) : null);
+    }
+
+    function onError() {
+      settle(null);
+    }
+
+    worker.addEventListener('message', onMessage);
+    worker.addEventListener('error', onError);
+  });
 }

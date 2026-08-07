@@ -26,11 +26,11 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '4. Browser-embedded SQLite',
-    body: 'Your prompt history and saved presets are stored in a real SQLite database compiled to WebAssembly, persisted to the Origin Private File System. Where that is unavailable — a private window, a browser without OPFS, or a first page load before cross-origin isolation is in place — the same interface is served from localStorage instead, so nothing is lost either way.',
+    body: 'Your prompt history and saved presets are stored in a real SQLite database compiled to WebAssembly, persisted to the Origin Private File System. Where that is unavailable — a private window, a browser without OPFS, an exhausted quota — the same interface is served from your browser’s local storage instead, so nothing is lost either way.',
   },
   {
-    heading: '5. Cross-origin isolation on a static host',
-    body: "SQLite's OPFS backend coordinates through SharedArrayBuffer, which browsers expose only to cross-origin-isolated pages. A static host sends no custom headers, so the service worker adds the two isolation headers to every response itself and the page reloads once, on first visit, to come back isolated.",
+    heading: '5. The database runs on its own thread',
+    body: 'SQLite reaches the file system through synchronous access handles, which browsers hand out only inside a worker. So the database lives in a dedicated worker and the interface talks to it by message, which also keeps every query off the thread that draws the page. The application additionally serves itself the two cross-origin isolation headers, from the service worker, since a static host will not send them.',
   },
   {
     heading: '6. Atlas and grid calculator',

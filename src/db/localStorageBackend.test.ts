@@ -3,14 +3,16 @@ import { LocalStorageBackend } from './localStorageBackend.ts';
 import { createMemoryStorage, type WebStorageLike } from './webStorage.ts';
 import { HISTORY_LIMIT } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
-import { PRESETS } from '../constants/presets.ts';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output.ts';
+import { DEFAULT_PRESET, PRESETS } from '../constants/presets.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 
 /**
- * The localStorage backend is not a safety net — on a static host it is the backend the app
- * genuinely starts on, before the service worker has made the page cross-origin isolated. It
- * gets the same scrutiny as the SQLite path.
+ * The localStorage backend is not a safety net — it is the backend the app genuinely runs on
+ * wherever OPFS is unavailable, which is an ordinary condition rather than an exotic one. It gets
+ * the same scrutiny as the SQLite path.
  */
 
 function log(overrides: Partial<PromptHistoryLog> = {}): PromptHistoryLog {
@@ -21,7 +23,21 @@ function log(overrides: Partial<PromptHistoryLog> = {}): PromptHistoryLog {
     createdAt: 1_000,
     wordCount: 5,
     modelUsed: 'GENERIC',
+    subject: DEFAULT_PRESET.subject,
+    output: DEFAULT_PRESET.output,
     ...overrides,
+  };
+}
+
+/** A history row as it was stored before the two payload columns existed. */
+function legacyRow(): Record<string, unknown> {
+  return {
+    id: 'legacy-1',
+    category: 'CREATURE',
+    prompt_text: '# MODULAR SPRITE-SHEET PROMPT ARCHITECTURE (CREATURE)',
+    created_at: 500,
+    word_count: 5,
+    model_used: 'GENERIC',
   };
 }
 
@@ -45,6 +61,19 @@ describe('LocalStorageBackend — history', () => {
   it('round-trips a log through storage', async () => {
     await backend.addHistoryLog(log());
     expect(await backend.listHistoryLogs()).toEqual([log()]);
+  });
+
+  it('keeps a row written before the studio-state columns existed', async () => {
+    // Seeded as raw storage, which is exactly what an older build left behind. The prompt is the
+    // part worth keeping, so the row is repaired to its category's defaults rather than discarded —
+    // it simply restores to a default creature instead of the one it described.
+    storage.setItem(STORAGE_KEYS.promptHistory, JSON.stringify([legacyRow()]));
+
+    const [restored] = await backend.listHistoryLogs();
+    expect(restored?.id).toBe('legacy-1');
+    expect(restored?.promptText).toContain('CREATURE');
+    expect(restored?.subject).toEqual(defaultSubjectFor('CREATURE'));
+    expect(restored?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
   it('returns logs newest first, whatever order they went in', async () => {
