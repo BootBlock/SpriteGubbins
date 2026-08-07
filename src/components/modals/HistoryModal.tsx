@@ -4,6 +4,7 @@ import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { Modal } from '../common/Modal.tsx';
 import { HistoryEntry } from './HistoryEntry.tsx';
+import { HistoryFooter } from './HistoryFooter.tsx';
 
 /**
  * Every prompt the user has taken away, newest first.
@@ -20,13 +21,12 @@ export function HistoryModal() {
   const historyLogs = useHistoryStore((state) => state.historyLogs);
   const isLoading = useHistoryStore((state) => state.isLoading);
   const fetchHistory = useHistoryStore((state) => state.fetchHistory);
-  const clearHistory = useHistoryStore((state) => state.clearHistory);
+  const deleteLog = useHistoryStore((state) => state.deleteLog);
   const restoreLog = useHistoryStore((state) => state.restoreLog);
   const toggleHistoryModal = useUIStore((state) => state.toggleHistoryModal);
   const copyText = useClipboard();
 
   const [query, setQuery] = useState('');
-  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
   const searchId = useId();
 
   useEffect(() => {
@@ -88,54 +88,16 @@ export function HistoryModal() {
                   void copyText(entry.promptText, 'Prompt copied to the clipboard');
                 }}
                 onRestore={restoreLog}
+                onDelete={(entry) => {
+                  void deleteLog(entry.id);
+                }}
               />
             ))}
           </ul>
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-t border-foundry-700 px-6 py-4">
-        <span className="font-mono text-[10px] text-ink-faint">
-          {historyLogs.length} recorded{query.trim() && ` · ${matches.length} shown`}
-        </span>
-
-        {/* Two presses to clear. The history is the only thing in this app the user cannot rebuild
-            from what is on screen, so the destructive action asks first. */}
-        {isConfirmingClear ? (
-          <span className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setIsConfirmingClear(false);
-                void clearHistory();
-              }}
-              className="rounded-lg bg-rose px-3 py-1.5 text-[11px] font-bold text-foundry-950 transition-opacity hover:opacity-90"
-            >
-              Delete everything
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsConfirmingClear(false);
-              }}
-              className="rounded-lg border border-foundry-600 px-3 py-1.5 text-[11px] font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-            >
-              Cancel
-            </button>
-          </span>
-        ) : (
-          <button
-            type="button"
-            disabled={historyLogs.length === 0}
-            onClick={() => {
-              setIsConfirmingClear(true);
-            }}
-            className="rounded-lg border border-foundry-600 px-3 py-1.5 text-[11px] font-semibold text-rose transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
-          >
-            Clear history
-          </button>
-        )}
-      </div>
+      <HistoryFooter shownCount={matches.length} isFiltered={query.trim() !== ''} />
     </Modal>
   );
 }

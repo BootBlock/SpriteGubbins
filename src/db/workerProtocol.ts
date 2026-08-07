@@ -14,6 +14,7 @@ import type { PresetArchetype } from '../types/preset.ts';
 export type WorkerRequest =
   | { readonly kind: 'addHistoryLog'; readonly log: PromptHistoryLog }
   | { readonly kind: 'listHistoryLogs' }
+  | { readonly kind: 'deleteHistoryLog'; readonly logId: string }
   | { readonly kind: 'clearHistoryLogs' }
   | { readonly kind: 'savePreset'; readonly preset: PresetArchetype }
   | { readonly kind: 'listPresets' }

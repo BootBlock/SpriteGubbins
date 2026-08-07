@@ -6,7 +6,7 @@ import { useUIStore } from '../stores/useUIStore.ts';
  * helpers live in this directory rather than in `src/utils/`.
  *
  * The app has no server, so a download is the only way anything leaves it as a file: the compiled
- * prompt as Markdown, and the preset pack as JSON.
+ * prompt as Markdown, and the preset pack and the prompt history as JSON.
  */
 export function useDownload(): (filename: string, text: string, mimeType: string) => void {
   const showToast = useUIStore((state) => state.showToast);

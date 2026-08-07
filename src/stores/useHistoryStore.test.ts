@@ -5,7 +5,7 @@ import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import { createFailingBackend } from '../test/backendDoubles.ts';
+import { createFailingBackend, createHeldDeleteBackend } from '../test/backendDoubles.ts';
 import { createRefusingStorage } from '../test/storageDoubles.ts';
 import type { NewPromptHistoryLog } from '../types/history.ts';
 import { useHistoryStore } from './useHistoryStore.ts';
@@ -157,6 +157,77 @@ describe('restoreLog', () => {
   });
 });
 
+describe('deleteLog', () => {
+  it('removes one entry from the store and from storage, leaving the rest', async () => {
+    await useHistoryStore.getState().addLog(entry({ promptText: 'keep me' }));
+    await useHistoryStore.getState().addLog(entry({ promptText: 'delete me' }));
+
+    const doomed = useHistoryStore.getState().historyLogs.find((log) => log.promptText === 'delete me');
+    if (!doomed) throw new Error('the entry should have been recorded.');
+    await useHistoryStore.getState().deleteLog(doomed.id);
+
+    expect(useHistoryStore.getState().historyLogs.map((log) => log.promptText)).toEqual(['keep me']);
+    // Asserted against storage as well as the store: an entry removed from only one of the two is
+    // the exact failure the drawer would show as gone and a reload would bring back.
+    const stored = await backend.listHistoryLogs();
+    expect(stored.map((log) => log.promptText)).toEqual(['keep me']);
+    expect(useUIStore.getState().toastMessage).toBe('Deleted that prompt');
+  });
+
+  it('keeps showing an entry it could not delete', async () => {
+    await useHistoryStore.getState().addLog(entry());
+    const [log] = useHistoryStore.getState().historyLogs;
+    if (!log) throw new Error('the entry should have been recorded.');
+
+    backend = createFailingBackend();
+    await useHistoryStore.getState().deleteLog(log.id);
+
+    expect(useHistoryStore.getState().historyLogs).toHaveLength(1);
+    expect(useUIStore.getState().toastMessage).toBe('Could not delete that prompt');
+  });
+
+  it('does not resurrect an entry recorded while the delete was in flight', async () => {
+    await useHistoryStore.getState().addLog(entry({ promptText: 'doomed' }));
+    const [doomed] = useHistoryStore.getState().historyLogs;
+    if (!doomed) throw new Error('the entry should have been recorded.');
+
+    // The delete is held open so the new prompt is recorded *while it is in flight* and its `set`
+    // lands first. A `deleteLog` that filtered a list captured before the await would then write
+    // that stale list back over the top, taking 'concurrent' with it.
+    const held = createHeldDeleteBackend(backend);
+    backend = held.backend;
+
+    const deletion = useHistoryStore.getState().deleteLog(doomed.id);
+    await useHistoryStore.getState().addLog(entry({ promptText: 'concurrent' }));
+    held.releaseDelete();
+    await deletion;
+
+    expect(useHistoryStore.getState().historyLogs.map((log) => log.promptText)).toEqual(['concurrent']);
+  });
+});
+
+describe('exportHistoryJSON', () => {
+  it('serialises every recorded entry, with the studio state that restores it', async () => {
+    const creature = { ...defaultSubjectFor('CREATURE'), species: 'Brass Leviathan' };
+    await useHistoryStore.getState().addLog(entry({ category: 'CREATURE', subject: creature }));
+
+    const parsed: unknown = JSON.parse(useHistoryStore.getState().exportHistoryJSON());
+
+    expect(parsed).toEqual(useHistoryStore.getState().historyLogs);
+    // Not merely a list of prompt strings: what makes the export worth having is that it carries
+    // everything a row does, so nothing is lost that the app itself keeps.
+    expect(Array.isArray(parsed) && parsed[0]).toMatchObject({
+      category: 'CREATURE',
+      subject: creature,
+    });
+  });
+
+  it('is valid JSON for an empty history rather than an empty string', () => {
+    const parsed: unknown = JSON.parse(useHistoryStore.getState().exportHistoryJSON());
+    expect(parsed).toEqual([]);
+  });
+});
+
 /**
  * The same failure, on the backend the user is actually running.
  *
@@ -175,6 +246,14 @@ describe('on a fallback whose storage refuses writes', () => {
 
     expect(useHistoryStore.getState().historyLogs).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not save this prompt to history');
+  });
+
+  it('reports an entry it could not delete, and keeps showing it', async () => {
+    useHistoryStore.setState({ historyLogs: [{ ...entry(), id: 'kept', createdAt: 1 }] });
+    await useHistoryStore.getState().deleteLog('kept');
+
+    expect(useHistoryStore.getState().historyLogs).toHaveLength(1);
+    expect(useUIStore.getState().toastMessage).toBe('Could not delete that prompt');
   });
 
   it('reports a history it could not clear, and keeps showing what is still stored', async () => {

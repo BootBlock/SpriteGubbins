@@ -101,6 +101,14 @@ export class LocalStorageBackend implements PersistenceBackend {
     return Promise.resolve([...logs].sort((a, b) => b.createdAt - a.createdAt));
   }
 
+  deleteHistoryLog(id: string): Promise<void> {
+    const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
+    return this.write(
+      STORAGE_KEYS.promptHistory,
+      existing.filter((entry) => entry.id !== id).map(LocalStorageBackend.toRow),
+    );
+  }
+
   clearHistoryLogs(): Promise<void> {
     return this.write(STORAGE_KEYS.promptHistory, []);
   }
