@@ -54,13 +54,20 @@ rather than merely silent.
 
 ### `[IF:…] … [/IF]` — conditional block
 
-Three forms, all flat — no nesting:
+Three forms:
 
 | Form | Includes the block when |
 | --- | --- |
 | `[IF:KEY=A,B]` | `KEY` is `A` or `B` |
 | `[IF:KEY!=A,B]` | `KEY` is neither |
-| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_MANIFEST`)* |
+| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_MANIFEST`, `DELIBERATES`)* |
+
+**Blocks nest.** A block inside a dropped block is dropped with it, whatever its own condition says.
+That is what lets a section state its precondition once and its parts state theirs beneath it — §9's
+self-audit applies only to a target that can act on it, and *within* it the rig, pixel-art and
+directional checks apply only to those sheets. Nesting was added with the per-target gating in §7
+below; before that the blocks were flat, and the one relationship that needed nesting (`SOCKETS`
+inside the cut-out rig section) was expressed by the compiler blanking the value instead.
 
 **Use `[IF:KEY]` rather than `[OPTIONAL:…]` whenever the content spans more than one line.**
 `[OPTIONAL:…]` is strictly single-line by contract, so a multi-line optional would silently leave
@@ -472,6 +479,9 @@ Absent from the image entirely:
 
 ## 9. LAYOUT AND SELF-AUDIT
 
+*Titled `## 9. LAYOUT` and ending after the paragraph below on a target that cannot run a
+verification pass — see the outcome note under `GOOGLE_IMAGEN` in §7.*
+
 Arrange components in a clean exploded grid in [DEFINE:ASPECT_DESCRIPTION] format, generously and
 uniformly spaced, in the reading order fixed by section 4. Nothing touches, overlaps, or is cropped
 by the image edge.
@@ -723,6 +733,21 @@ hard edges, no shadows, no text, and no assembled figure.
 ### `GOOGLE_IMAGEN`
 Prepend one plain-language framing sentence. Imagen handles descriptive natural language well and
 long rule lists poorly, so consider emitting a **condensed** variant for this target.
+
+> **Outcome — shipped, and not as a second template.** A condensed *variant* would have meant a
+> second document to keep true to the first, which is the duplication §10.1's token validation
+> exists to prevent. Instead the one template drops what a target cannot act on, gated by a
+> capability declared per model: `deliberates` is false for every single-pass image endpoint, and
+> §9's self-audit — "before delivering, verify… redraw rather than delivering the sheet" — names a
+> pass they do not have. That is ~30 lines, from the *end* of the prompt where attention is
+> weakest and where the most rule-list-shaped block sat. Measured in the browser: 2,467 → 2,246
+> words for Imagen.
+>
+> This is deliberately not a rewrite into prose, and it leaves §8's exclusions in place. Cutting
+> instruction the endpoint cannot execute is a structural argument that holds for all five image
+> targets; judging that Imagen would also do better with *fewer restated descriptions* is a claim
+> about one model that nothing here measures. That part stays open, and wants real generations
+> rather than reasoning to settle.
 
 ### `DALLE_3` / GPT-image
 Prepend a short directive. This family **rewrites prompts before generation**, so terse absolute

@@ -1,8 +1,8 @@
 # Feature gaps — audit and plan
 
-> **Status:** ✅ COMPLETE — Phases 1 (G1, G4) and 2 (G2, G3) shipped. Phase 3 was a hand-off rather
-> than a build: of the two it raised, **G5 was closed separately afterwards** and **G6 is still
-> open**, awaiting a decision. See [Outcome](#outcome).
+> **Status:** ✅ COMPLETE — Phases 1 (G1, G4) and 2 (G2, G3) shipped, and the two items Phase 3
+> raised rather than built, **G5 and G6, were both closed separately afterwards**. See
+> [Outcome](#outcome) for what each turned into.
 
 An audit of what this application promises against what it does, run after
 [baseline-prompt-new.md](../baseline-prompt-new.md) §10 closed and the five spec phases shipped.
@@ -240,9 +240,16 @@ files.
   pure function ([presetNames.ts](../../../src/utils/presetNames.ts)) shared by both paths and by
   the Save button, which reads **Update** when the name is already held — so an overwrite is
   announced before the press rather than confirmed after it.
-- **G6 (a condensed Imagen variant).** Still needs a decision nobody has made. The guidance in
+- **G6 (a condensed Imagen variant).** Deliberately not built here: the guidance in
   [baseline-prompt-new.md](../baseline-prompt-new.md) §7 is the single word "consider", with no
-  statement of what to cut; a condensed template is a *second* template to keep true to the first,
-  which is the duplication §10.1's token validation exists to prevent. Building it on a guess would
-  be worse than leaving it. **This is a question for the maintainer, not a task waiting for an
-  implementer.**
+  statement of what to cut, and a condensed template is a *second* template to keep true to the
+  first — the duplication §10.1's token validation exists to prevent. **Closed separately,
+  afterwards**, once that objection turned out to be avoidable: there is no second template. The
+  template engine gained nested `[IF:]` blocks, and the one template now drops what a target cannot
+  act on — §9's self-audit, gated on a `deliberates` capability declared per model, which is false
+  for all five single-pass image endpoints. What made this buildable rather than a guess is that the
+  criterion is structural: it cuts *instruction the endpoint cannot execute*, not descriptions it
+  might benefit from repeating. Imagen's prompt went from 2,467 to 2,246 words. The weaker half —
+  whether Imagen also wants fewer restated descriptions, §8 in particular — is still open, and wants
+  real generations rather than reasoning. The outcome note lives in
+  [baseline-prompt-new.md](../baseline-prompt-new.md) §7.

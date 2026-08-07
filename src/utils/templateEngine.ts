@@ -44,48 +44,61 @@ function isSet(value: string | undefined): boolean {
   return value !== undefined && value.trim() !== '';
 }
 
+/** Whether one `[IF:…]` marker's own condition holds, ignoring anything enclosing it. */
+function conditionHolds(
+  config: Readonly<Record<string, string>>,
+  key: string,
+  operator: string | undefined,
+  operands: string | undefined,
+): boolean {
+  const value = config[key] ?? '';
+  if (operator === undefined) return isSet(value);
+  const matches = (operands ?? '').split(',').some((operand) => operand.trim() === value);
+  return operator === '=' ? matches : !matches;
+}
+
 /**
  * Keep or drop each `[IF:…] … [/IF]` block.
  *
- * Blocks are **flat by contract** — no nesting — so this needs no stack, and an `[IF:` encountered
- * while already inside one is a template bug rather than a nested block. Unclosed and unopened
- * blocks throw for the same reason: silently emitting the marker would put `[IF:RIG_MODE=CUTOUT_RIG]`
- * in front of the model as though it were an instruction.
+ * **Blocks nest**, hence the stack: a block inside a dropped block is dropped with it whatever its
+ * own condition says. That is what lets a section state its precondition once and its parts state
+ * theirs beneath it — section 9's self-audit applies only to a target that can act on it, and
+ * within it individual checks apply only to a cut-out rig or a pixel-art sheet. Flattening that
+ * would mean naming each conjunction in the compiler, putting the template's logic where the
+ * template cannot be read.
+ *
+ * An unclosed or unopened block throws: silently emitting the marker would put
+ * `[IF:RIG_MODE=CUTOUT_RIG]` in front of the model as though it were an instruction.
  */
 export function applyConditionals(template: string, config: Readonly<Record<string, string>>): string {
   const kept: string[] = [];
-  let openKey: string | null = null;
-  let keepingBlock = false;
+  // One frame per open block: its key, for the unclosed-block error, and whether its *own* condition
+  // held. The conjunction lives in `keepingHere`, which is vacuously true at the top level — the
+  // "no block open, so keep the line" case the flat version handled with a null check.
+  const open: { readonly key: string; readonly keeping: boolean }[] = [];
+  const keepingHere = () => open.every((block) => block.keeping);
 
   for (const line of template.split('\n')) {
     const opening = IF_LINE.exec(line);
     if (opening) {
       const [, key = '', operator, operands] = opening;
-      if (openKey !== null) {
-        throw new Error(`Prompt template: [IF:${key}] opened inside the still-open [IF:${openKey}].`);
-      }
-      openKey = key;
-      const value = config[key] ?? '';
-      if (operator === undefined) {
-        keepingBlock = isSet(value);
-      } else {
-        const matches = (operands ?? '').split(',').some((operand) => operand.trim() === value);
-        keepingBlock = operator === '=' ? matches : !matches;
-      }
+      // Evaluated even inside a dropped block, and then ignored: `keepingHere()` already answers
+      // false, and short-circuiting here would make the result depend on evaluation order.
+      open.push({ key, keeping: conditionHolds(config, key, operator, operands) });
       continue;
     }
 
     if (END_IF_LINE.test(line)) {
-      if (openKey === null) throw new Error('Prompt template: [/IF] with no matching [IF:…].');
-      openKey = null;
-      keepingBlock = false;
+      if (open.length === 0) throw new Error('Prompt template: [/IF] with no matching [IF:…].');
+      open.pop();
       continue;
     }
 
-    if (openKey === null || keepingBlock) kept.push(line);
+    if (keepingHere()) kept.push(line);
   }
 
-  if (openKey !== null) throw new Error(`Prompt template: [IF:${openKey}] was never closed.`);
+  const unclosed = open[0];
+  if (unclosed) throw new Error(`Prompt template: [IF:${unclosed.key}] was never closed.`);
   return kept.join('\n');
 }
 

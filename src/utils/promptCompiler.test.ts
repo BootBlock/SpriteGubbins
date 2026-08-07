@@ -108,9 +108,9 @@ describe('generatePrompt — conditional blocks', () => {
   });
 
   it('drops the socket block when a pose library carries a stale socket list', () => {
-    // Sockets belong to a rig. The template's socket block is a sibling of the rig section rather
-    // than nested in it, so without the compiler's gate a leftover list would strand an orphaned
-    // heading in the middle of a pose-library sheet.
+    // Sockets belong to a rig, and the template says so by nesting the socket block inside the
+    // rig section: a leftover list from an earlier configuration is dropped with the section that
+    // gives it meaning, rather than stranding an orphaned heading mid-sheet.
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
@@ -118,6 +118,18 @@ describe('generatePrompt — conditional blocks', () => {
     );
     expect(prompt).not.toContain('Attachment sockets');
     expect(prompt).not.toContain('head, chest');
+  });
+
+  it('emits that same socket list once the rig section is the one being drawn', () => {
+    // The other half of the nesting: dropping it for a pose library must not mean dropping it
+    // everywhere, which a gate that never lets the block through would also satisfy.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ rigMode: 'CUTOUT_RIG', sockets: 'head, chest' }),
+    );
+    expect(prompt).toContain('Attachment sockets');
+    expect(prompt).toContain('head, chest');
   });
 
   it('includes the identity lock only when one is given', () => {
@@ -363,5 +375,98 @@ describe('countWords and estimateTokens', () => {
   it('estimates tokens at roughly four characters each', () => {
     expect(estimateTokens('abcd')).toBe(1);
     expect(estimateTokens('')).toBe(0);
+  });
+});
+
+/**
+ * The self-audit is instruction addressed to a reader that can act on it — check the sheet against
+ * the specification and redraw before delivering. A single-pass diffusion endpoint has no such step,
+ * so on those targets the block is the most rule-list-shaped section in the template sitting where
+ * attention is weakest. It is dropped for them and kept for the two that can run it.
+ */
+describe('generatePrompt — the self-audit, per target', () => {
+  const AUDIT_MARKERS = [
+    'Before delivering, verify:',
+    'Component count is exactly',
+    'One camera, one scale and one light direction',
+  ];
+
+  it('keeps the audit for the targets that work through the prompt', () => {
+    for (const target of ['GENERIC', 'CHATGPT_5_6_SOL'] as const) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
+      expect(prompt, target).toContain('## 9. LAYOUT AND SELF-AUDIT');
+      for (const marker of AUDIT_MARKERS) expect(prompt, `${target}: ${marker}`).toContain(marker);
+    }
+  });
+
+  it('drops the audit for every single-pass image endpoint', () => {
+    for (const target of ['MIDJOURNEY', 'STABLE_DIFFUSION', 'FLUX', 'GOOGLE_IMAGEN', 'DALLE_3'] as const) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
+      for (const marker of AUDIT_MARKERS) {
+        expect(prompt, `${target} should not carry "${marker}"`).not.toContain(marker);
+      }
+    }
+  });
+
+  it('still lays the sheet out, and titles section 9 for what it actually contains', () => {
+    // Dropping the audit must not take the layout instruction with it — that describes the image
+    // rather than a step, so every target needs it.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GOOGLE_IMAGEN' }));
+    expect(prompt).toContain('## 9. LAYOUT');
+    expect(prompt).not.toContain('## 9. LAYOUT AND SELF-AUDIT');
+    expect(prompt).toContain('Arrange components in a clean exploded grid');
+    expect(prompt).toContain('Nothing touches, overlaps, or is cropped');
+  });
+
+  it('drops the audit’s nested checks with it, not just its opening lines', () => {
+    // The rig, pixel-art and directional checks sit *inside* the audit. Each has its own condition,
+    // and a satisfied one must not smuggle its lines out of a block that was dropped wholesale.
+    const output = withOutput({
+      targetModel: 'GOOGLE_IMAGEN',
+      rigMode: 'CUTOUT_RIG',
+      renderStyle: 'PIXEL_ART',
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+    });
+    const prompt = generatePrompt('CHARACTER', SUBJECT, output);
+
+    expect(prompt).not.toContain('Every limb segment is straight and unposed');
+    expect(prompt).not.toContain('One pixel grid and density throughout');
+    expect(prompt).not.toContain('### Directional audit');
+    expect(prompt).not.toContain('the sheet has failed');
+  });
+
+  it('keeps those same nested checks for a deliberating target', () => {
+    const output = withOutput({
+      targetModel: 'CHATGPT_5_6_SOL',
+      rigMode: 'CUTOUT_RIG',
+      renderStyle: 'PIXEL_ART',
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+    });
+    const prompt = generatePrompt('CHARACTER', SUBJECT, output);
+
+    expect(prompt).toContain('Every limb segment is straight and unposed');
+    expect(prompt).toContain('One pixel grid and density throughout');
+    expect(prompt).toContain('### Directional audit');
+  });
+
+  it('leaves the rest of the specification untouched for an image endpoint', () => {
+    // Only the audit goes. The contract, the subject, the inventory and the exclusions are
+    // descriptions of the image, and every target needs them.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GOOGLE_IMAGEN' }));
+    for (const heading of [
+      '## 0. NON-NEGOTIABLE OUTPUT CONTRACT',
+      '## 1. SUBJECT DEFINITION',
+      '## 4. COMPONENT INVENTORY',
+      '## 8. EXCLUSIONS',
+    ]) {
+      expect(prompt, heading).toContain(heading);
+    }
+  });
+
+  it('makes the prompt measurably shorter for an image endpoint', () => {
+    const imagen = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GOOGLE_IMAGEN' }));
+    const generic = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GENERIC' }));
+    // Compared on word count rather than characters, so the wrappers' own prefixes cannot mask it.
+    expect(countWords(imagen)).toBeLessThan(countWords(generic));
   });
 });

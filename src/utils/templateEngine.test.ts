@@ -46,10 +46,50 @@ describe('applyConditionals', () => {
     expect(() => applyConditionals('body\n[/IF]', {})).toThrow(/no matching/);
   });
 
-  it('throws on nesting, which the format does not allow', () => {
-    expect(() => applyConditionals('[IF:A]\n[IF:B]\nx\n[/IF]\n[/IF]', { A: '1', B: '1' })).toThrow(
-      /opened inside/,
+  /*
+   * Nesting is what lets a section state its own precondition once and its parts state theirs
+   * beneath it — section 9's self-audit applies only to a target that can act on it, and within
+   * that, individual checks apply only to a cut-out rig or a pixel-art sheet.
+   */
+  it('keeps a nested block only when its own condition and every enclosing one hold', () => {
+    const template = 'a\n[IF:OUTER]\nb\n[IF:INNER]\nc\n[/IF]\nd\n[/IF]\ne';
+
+    expect(applyConditionals(template, { OUTER: '1', INNER: '1' })).toBe('a\nb\nc\nd\ne');
+    expect(applyConditionals(template, { OUTER: '1', INNER: '' })).toBe('a\nb\nd\ne');
+    expect(applyConditionals(template, { OUTER: '', INNER: '1' })).toBe('a\ne');
+    expect(applyConditionals(template, { OUTER: '', INNER: '' })).toBe('a\ne');
+  });
+
+  it('drops an inner block whose condition holds when the outer one does not', () => {
+    // The case that matters: a satisfied inner condition must not smuggle its body out of a
+    // section that was dropped wholesale.
+    const rendered = applyConditionals('[IF:AUDIT]\nverify:\n[IF:RIG=CUTOUT]\ncaps match\n[/IF]\n[/IF]', {
+      AUDIT: '',
+      RIG: 'CUTOUT',
+    });
+    expect(rendered).toBe('');
+  });
+
+  it('handles sibling blocks nested inside one parent', () => {
+    const template = '[IF:P]\nhead\n[IF:A]\na\n[/IF]\n[IF:B]\nb\n[/IF]\ntail\n[/IF]';
+    expect(applyConditionals(template, { P: '1', A: '1', B: '' })).toBe('head\na\ntail');
+    expect(applyConditionals(template, { P: '1', A: '', B: '1' })).toBe('head\nb\ntail');
+  });
+
+  it('nests more than two deep', () => {
+    const template = '[IF:A]\n[IF:B]\n[IF:C]\nx\n[/IF]\n[/IF]\n[/IF]';
+    expect(applyConditionals(template, { A: '1', B: '1', C: '1' })).toBe('x');
+    expect(applyConditionals(template, { A: '1', B: '', C: '1' })).toBe('');
+  });
+
+  it('still reports an unclosed block when others around it are balanced', () => {
+    expect(() => applyConditionals('[IF:A]\n[IF:B]\nx\n[/IF]', { A: '1', B: '1' })).toThrow(
+      /\[IF:A\] was never closed/,
     );
+  });
+
+  it('still throws on a close that outnumbers the opens', () => {
+    expect(() => applyConditionals('[IF:A]\nx\n[/IF]\n[/IF]', { A: '1' })).toThrow(/no matching/);
   });
 });
 

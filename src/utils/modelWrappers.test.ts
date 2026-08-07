@@ -4,7 +4,6 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { supportsManifest } from './modelWrappers.ts';
 
 /**
  * The wrappers differ in *kind*, not in wording — a reasoning contract, command flags, a negative
@@ -70,14 +69,6 @@ describe('wrapForModel', () => {
     // section 9 are those now, and stating a rule three times dilutes it.
     expect(prompt).not.toContain('[VERIFICATION CONTRACT');
     expect(prompt).not.toContain('Strict Done-Condition');
-  });
-
-  it('offers a manifest from the conversational targets only', () => {
-    expect(supportsManifest('GENERIC')).toBe(true);
-    expect(supportsManifest('CHATGPT_5_6_SOL')).toBe(true);
-    for (const target of ['MIDJOURNEY', 'STABLE_DIFFUSION', 'FLUX', 'GOOGLE_IMAGEN', 'DALLE_3'] as const) {
-      expect(supportsManifest(target), `${target} cannot return text with an image`).toBe(false);
-    }
   });
 
   it('has a selector entry for every wrapped model, and no more', () => {

@@ -23,7 +23,8 @@ import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { componentBreakdownFor, componentCountFor } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
-import { supportsManifest, wrapForModel } from './modelWrappers.ts';
+import { wrapForModel } from './modelWrappers.ts';
+import { deliberates, supportsManifest } from './targetCapabilities.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import { applyConditionals, applyOptionals, assertBlocksResolved, substitute } from './templateEngine.ts';
 
@@ -50,12 +51,6 @@ export function generatePrompt(
   // because the splitter labels its runs from the same answer, and two implementations of it would
   // eventually disagree about the prompt one of them is describing.
   const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(output);
-
-  // Sockets belong to a cut-out rig. The template's `[IF:SOCKETS]` block is a *sibling* of the rig
-  // section rather than nested inside it — the engine's blocks are flat by contract — so the gate
-  // lives here instead, and a socket list left over from a rig configuration cannot strand an
-  // orphaned heading in a pose-library sheet.
-  const sockets = output.rigMode === 'CUTOUT_RIG' ? output.sockets : '';
 
   // Only a target that returns text alongside the image can honour a manifest; asking a pure image
   // endpoint for one just spends tokens on an instruction it will drop.
@@ -96,7 +91,7 @@ export function generatePrompt(
     ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
     JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
     OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
-    SOCKETS: sockets,
+    SOCKETS: output.sockets,
     IDENTITY_LOCK: output.identityLock,
   };
 
@@ -118,8 +113,13 @@ export function generatePrompt(
     // would be forty lines of instruction about a comparison the generator cannot make.
     MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
     IDENTITY_LOCK: output.identityLock,
-    SOCKETS: sockets,
+    SOCKETS: output.sockets,
     EMIT_MANIFEST: emitManifest ? 'yes' : '',
+    // Section 9's self-audit tells the reader to check the sheet and redraw before delivering. A
+    // single-pass diffusion endpoint has no such step, so on those targets it is the most
+    // rule-list-shaped block in the template sitting where attention is weakest. Same reasoning as
+    // MULTI_DIRECTION above, applied to what the *target* can do rather than what the sheet holds.
+    DELIBERATES: deliberates(output.targetModel) ? 'yes' : '',
   };
 
   // Blocks first, then optionals, then substitution — see `templateEngine.ts` for why that order. The

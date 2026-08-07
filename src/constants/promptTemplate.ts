@@ -245,14 +245,12 @@ details stay on the correct side rather than flipping with the mirror — a hols
 not swap hips between the left and right leg sets. **This is the only mirroring the sheet permits:**
 a left piece and a right piece are two different parts, whereas a direction is a rotation, and
 section 3 forbids producing one by mirroring another.
-[/IF]
 [IF:SOCKETS]
 
 ### Attachment sockets
 Keep these regions clear of fine detail and busy contrast, so equipment can be overlaid later
 without fighting what is underneath: [DEFINE:SOCKETS]
 [/IF]
-[IF:RIG_MODE=CUTOUT_RIG]
 
 ### Depth order for this direction
 [DEFINE:DEPTH_ORDER_DESCRIPTION]
@@ -302,11 +300,17 @@ Absent from the image entirely:
 
 ---
 
+[IF:DELIBERATES]
 ## 9. LAYOUT AND SELF-AUDIT
+[/IF]
+[IF:DELIBERATES!=yes]
+## 9. LAYOUT
+[/IF]
 
 Arrange components in a clean exploded grid in [DEFINE:ASPECT_DESCRIPTION] format, generously and
 uniformly spaced, in the reading order fixed by section 4. Nothing touches, overlaps, or is cropped
 by the image edge.
+[IF:DELIBERATES]
 
 Before delivering, verify:
 
@@ -337,6 +341,7 @@ each of its views and confirm:
 
 If two views of one component still face effectively the same way, **the sheet has failed**. Redraw
 that component at the object yaw section 3 gives it rather than delivering the sheet.
+[/IF]
 [/IF]
 [IF:EMIT_MANIFEST]
 

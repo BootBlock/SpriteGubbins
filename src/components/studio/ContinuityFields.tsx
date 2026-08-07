@@ -1,6 +1,6 @@
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
-import { supportsManifest } from '../../utils/modelWrappers.ts';
+import { supportsManifest } from '../../utils/targetCapabilities.ts';
 import { CheckboxField } from '../common/CheckboxField.tsx';
 import { TextField } from '../common/TextField.tsx';
 import { IdentityPaletteCapture } from './IdentityPaletteCapture.tsx';

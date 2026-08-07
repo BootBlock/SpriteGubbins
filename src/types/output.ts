@@ -93,11 +93,38 @@ export const TARGET_MODEL_IDS = [
 ] as const;
 export type TargetModelId = (typeof TARGET_MODEL_IDS)[number];
 
+/**
+ * What a target generator can actually do with the prompt.
+ *
+ * These are properties of the *endpoint*, not preferences: a pure image model has no channel to
+ * return text through and no pass in which to re-read what it was told. Sections of the template
+ * that ask for either are inert there — they spend tokens on an instruction that cannot be carried
+ * out, in a prompt whose length is itself a cost.
+ *
+ * Declared per model rather than as a set of ids per capability, so that a target is described in
+ * one place. Adding a capability here is a **compile error** until every entry in `TARGET_MODELS`
+ * answers it. Adding a target *id* is not — nothing in the type says that list is exhaustive — so
+ * `targetCapabilities.test.ts` pins that half instead.
+ */
+export interface TargetCapabilities {
+  /**
+   * Works *through* the prompt as a procedure — planning, and checking what it produced against
+   * what it was asked for — rather than conditioning on it as a single description.
+   *
+   * False for every diffusion endpoint. They generate in one pass, so "before delivering, verify…"
+   * and "redraw that component rather than delivering the sheet" name a step they do not have.
+   */
+  readonly deliberates: boolean;
+  /** Returns text alongside the image, which is what a companion manifest needs. */
+  readonly emitsText: boolean;
+}
+
 /** One target generator's entry in the selector. */
 export interface TargetModel {
   readonly id: TargetModelId;
   readonly name: string;
   readonly tooltip: string;
+  readonly capabilities: TargetCapabilities;
 }
 
 /**

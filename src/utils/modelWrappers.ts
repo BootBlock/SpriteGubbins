@@ -23,19 +23,6 @@ export function aspectFlag(aspectRatio: AspectRatio): string {
 }
 
 /**
- * Which targets can return a JSON manifest alongside the image.
- *
- * Only the conversational ones. A pure image endpoint has no channel for text, so asking it for a
- * manifest spends tokens on an instruction it can only drop — which is why the option is gated here
- * rather than emitted and silently ignored.
- */
-const MANIFEST_CAPABLE: ReadonlySet<TargetModelId> = new Set(['GENERIC', 'CHATGPT_5_6_SOL']);
-
-export function supportsManifest(target: TargetModelId): boolean {
-  return MANIFEST_CAPABLE.has(target);
-}
-
-/**
  * ChatGPT 5.6 Sol: reasoning effort and a pointer at the template's own contract sections.
  *
  * Deliberately thin. The previous wrapper restated the component count, the background rule, the
