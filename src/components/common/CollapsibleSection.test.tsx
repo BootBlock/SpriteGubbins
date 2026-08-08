@@ -91,6 +91,61 @@ describe('CollapsibleSection', () => {
     renderSection(true);
     expect(document.querySelector('summary')).not.toHaveAttribute('aria-describedby');
   });
+
+  /**
+   * `section-reveal` animates the close by keeping the content painted past the moment `open` goes,
+   * so for the length of that transition a shut group is still tabbable. When the paint stops, the
+   * user agent has nowhere to put any focus inside it and drops it to `<body>` — the position and
+   * the ring both lost, which is precisely what `SectionToggleAll` moves focus to avoid.
+   *
+   * Simulated rather than driven: happy-dom implements neither `::details-content` nor transitions,
+   * so the browser's own blur cannot happen here. What *is* testable is the component's half of the
+   * contract — that a `focusout` going nowhere, from a group that is already shut, is recovered.
+   */
+  it('recovers focus the collapse throws away, rather than leaving it on the document', () => {
+    renderSection(false);
+    const summary = document.querySelector('summary');
+    const details = document.querySelector('details');
+    expect(summary).not.toBeNull();
+    expect(details?.open).toBe(false);
+
+    // `relatedTarget: null` is the browser saying focus went nowhere, which is what it does when the
+    // element holding it stops being rendered.
+    details?.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+
+    expect(document.activeElement).toBe(summary);
+  });
+
+  it('leaves focus alone while the group is still open — that blur is not a collapse', () => {
+    // Without this guard, any click into empty space would yank focus back to the summary of
+    // whichever group the user happened to be typing in.
+    renderSection(true);
+    const inner = screen.getByLabelText('Inner field');
+    inner.focus();
+
+    document
+      .querySelector('details')
+      ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+
+    expect(document.activeElement).toBe(inner);
+  });
+
+  it('leaves focus alone when it landed somewhere real, even from a shut group', () => {
+    // The other guard: an ordinary Tab out of a group carries a `relatedTarget`, and hijacking that
+    // would drag the user backwards on every one. The stand-in for "somewhere else" is a node
+    // already on the page — one appended here would outlive Testing Library's cleanup and turn up
+    // in the next test's `getByRole` query, which is how this suite first went red.
+    renderSection(false);
+    const details = document.querySelector('details');
+    const summary = document.querySelector('summary');
+    expect(details?.open).toBe(false);
+    expect(summary).not.toBeNull();
+
+    const heading = screen.getByRole('heading', { name: 'Render style' });
+    details?.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: heading }));
+
+    expect(document.activeElement).not.toBe(summary);
+  });
 });
 
 describe('SectionToggleAll', () => {

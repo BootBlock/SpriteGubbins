@@ -96,6 +96,7 @@ const REQUIRED_THEME_TOKENS = [
   '--animate-spectrum-pan',
   '--animate-toast-timer',
   '--ease-emphasized',
+  '--ease-decelerate',
 ];
 
 /** Bespoke utilities components use by name, declared with `@utility` rather than `@theme`. */
@@ -380,19 +381,26 @@ describe('design tokens', () => {
     expect(closed).not.toContain('overflow: hidden');
   });
 
-  it('transitions content-visibility on the open state only, so a shut group is never tabbable', () => {
-    // The asymmetry is load-bearing, and it looks like an oversight — which is exactly why it is
-    // pinned. `content-visibility … allow-discrete` in the *closed* rule is what animates the
-    // collapse, and it does so by keeping `::details-content` painted past the moment `open` goes:
-    // measured in Edge, Enter-then-Tab then lands on a control inside a group that is already shut,
-    // and `<body>` gets the focus 200ms later. `SectionToggleAll` exists to stop that happening.
+  it('holds the content painted through the close, which is the only way it animates', () => {
+    // `content-visibility … allow-discrete` on the *closed* rule is what gives the collapse a box to
+    // shrink: the user agent hides `::details-content` the moment `open` goes, and without the
+    // discrete transition deferring that there is nothing left to transition and the group snaps.
+    // Losing this line is silent — the open still animates, so it reads as working.
     const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
-    const open = /\n {4}&\[open\]::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
 
     expect(closed).not.toBe('');
-    expect(open).not.toBe('');
-    expect(closed).not.toContain('content-visibility');
-    expect(open).toContain('content-visibility 200ms allow-discrete');
+    expect(closed).toContain('content-visibility 300ms allow-discrete');
+    expect(closed).toContain('block-size 300ms var(--ease-decelerate)');
+  });
+
+  it('eases the size change on the curve whose travel is legible, not the entrance curve', () => {
+    // `ease-emphasized` is 83% travelled in its first quarter, which is right for an entrance and
+    // wrong for a height: the panel arrives before the eye catches it and the motion reads as
+    // absent, leaving the caret the only thing that appears to move. That was the reported symptom.
+    const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(closed).toContain('var(--ease-decelerate)');
+    expect(closed).not.toContain('var(--ease-emphasized)');
   });
 
   it.each(TYPE_SCALE)('sizes %s at the rung it names, and gives it a line height', (token, pixels) => {
