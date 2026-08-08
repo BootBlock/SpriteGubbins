@@ -155,4 +155,56 @@ describe('useSubjectStore', () => {
       expect(useOutputStore.getState().output.directionalMode).toBe(DEFAULT_MODE_FOR.ITEM);
     });
   });
+
+  /**
+   * The same leak, one control down — and the one that shipped in the state the app *opens* in.
+   *
+   * `rigMode` was not reconciled at all, so a cut-out rig configured on a character survived a switch
+   * to BUILDING and put section 5's bone axes and joint caps on a sheet of floor tiles. It matters
+   * for the same reason the sheet mode does and no more: the compiler resolves the pairing on every
+   * compile, so the prompt was never the risk — a preset saved in that state was.
+   */
+  describe('the rig when the category changes', () => {
+    it('drops a rig the new category has no joints for', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'CUTOUT_RIG' } });
+      useSubjectStore.getState().setCategory('BUILDING');
+
+      expect(useOutputStore.getState().output.rigMode).toBe('NONE');
+    });
+
+    it('keeps a rig the new category shares, rather than resetting for its own sake', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'CUTOUT_RIG' } });
+      useSubjectStore.getState().setCategory('CREATURE');
+
+      expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
+    });
+
+    it('does not put a rig back when the category could take one', () => {
+      // `NONE` is a choice, not an absence: switching from a tileset to a character must not hand
+      // the user articulation rules they never asked for. The fallback only ever removes.
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'NONE' } });
+      useSubjectStore.getState().setCategory('CHARACTER');
+
+      expect(useOutputStore.getState().output.rigMode).toBe('NONE');
+    });
+
+    it('reconciles the sheet mode and the rig in one write', () => {
+      // Two `setOutputConfig` calls would put a resolved mode beside an unresolved rig into the
+      // compiler between renders, which is the reason the sheet index travels here too.
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+          rigMode: 'CUTOUT_RIG',
+          sheetIndex: 1,
+        },
+      });
+      useSubjectStore.getState().setCategory('INTERFACE');
+
+      const { output } = useOutputStore.getState();
+      expect(output.directionalMode).toBe(DEFAULT_MODE_FOR.INTERFACE);
+      expect(output.rigMode).toBe('NONE');
+      expect(output.sheetIndex).toBe(0);
+    });
+  });
 });

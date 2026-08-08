@@ -225,11 +225,12 @@ describe('projectionDigest', () => {
 
 describe('riggingDigest', () => {
   it('says only the mode when the rig has no geometry to describe', () => {
-    expect(riggingDigest(withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('POSE_LIBRARY');
+    expect(riggingDigest('CHARACTER', withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('POSE_LIBRARY');
   });
 
   it('adds the joint, overlap and socket settings for a cut-out rig', () => {
     const digest = riggingDigest(
+      'CHARACTER',
       withOutput({
         rigMode: 'CUTOUT_RIG',
         jointCapStyle: 'ROUNDED',
@@ -241,7 +242,18 @@ describe('riggingDigest', () => {
   });
 
   it('omits empty sockets rather than trailing a separator', () => {
-    expect(riggingDigest(withOutput({ rigMode: 'CUTOUT_RIG', sockets: '' }))).not.toMatch(/·\s*$/);
+    expect(riggingDigest('CHARACTER', withOutput({ rigMode: 'CUTOUT_RIG', sockets: '' }))).not.toMatch(
+      /·\s*$/,
+    );
+  });
+
+  it('names the rig the sheet actually gets, not the one the configuration was left holding', () => {
+    // The same rule `projectionDigest` is written to: a digest echoing back a value the compiler
+    // discarded is the one place in the app still reporting it. A stored `CUTOUT_RIG` on a category
+    // that turns about nothing emits no section 5, so the header may not claim one — and it may not
+    // list the joint geometry either, since the controls for it are not on screen.
+    expect(riggingDigest('INTERFACE', withOutput({ rigMode: 'CUTOUT_RIG', sockets: 'head' }))).toBe('NONE');
+    expect(riggingDigest('BUILDING', withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('NONE');
   });
 });
 

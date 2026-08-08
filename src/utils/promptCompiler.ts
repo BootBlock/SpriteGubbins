@@ -30,7 +30,7 @@ import { paletteFor } from '../constants/palettes/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { resolveMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { componentBreakdownFor, componentCountFor, sheetCarriesAnatomy } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
@@ -77,6 +77,12 @@ export function generatePrompt(
   // do, so there is no way to reach them with an unresolved mode at all, where handing down a
   // pre-resolved one only works for as long as every call site remembers to.
   const mode = resolveMode(category, output.directionalMode);
+
+  // And the rig this category can actually be asked for, resolved for the same reason: a stored
+  // configuration can name one its category has no joints for, and section 5 is what that decides.
+  // Unresolved, `POSE_LIBRARY` — the default — put "flexion comes from assembling separately
+  // oriented rigid segments around shared pivots" on a tileset, a nine-slice and a flipbook.
+  const rigMode = resolveRigMode(category, output.rigMode);
 
   // Which sheet of that pairing's series this is. Resolved here for the same reason the mode is: a
   // stored index can name a second sheet on a pairing that has one, and `sheetPlanFor` answers with
@@ -218,7 +224,7 @@ export function generatePrompt(
 
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
-    RIG_MODE: output.rigMode,
+    RIG_MODE: rigMode,
     // Read from the resolved profile rather than from the stored id, so a configuration naming a
     // machine this build no longer has emits no heading rather than an empty one — the same
     // reasoning that makes `resolveMode` the single answer about the sheet mode.

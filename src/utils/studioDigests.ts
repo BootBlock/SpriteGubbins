@@ -1,6 +1,6 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
-import { resolveMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { effectiveDirectionSet, primaryFacing } from './sheetDirections.ts';
@@ -164,10 +164,18 @@ export function projectionDigest(category: SubjectCategory, output: OutputConfig
   ]);
 }
 
-/** What the components are for, and the geometry that makes them riggable. */
-export function riggingDigest(output: OutputConfig): string {
-  if (output.rigMode !== 'CUTOUT_RIG') return output.rigMode;
-  return join([output.rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
+/**
+ * What the components are for, and the geometry that makes them riggable.
+ *
+ * The rig is resolved through the category exactly as `sheetDigest` resolves the sheet mode, and for
+ * the reason `projectionDigest` states above: a digest reading the stored field would be the one
+ * place still reporting a value the compiler had discarded. A category that articulates about
+ * nothing says `NONE` here whatever the configuration was left holding.
+ */
+export function riggingDigest(category: SubjectCategory, output: OutputConfig): string {
+  const rigMode = resolveRigMode(category, output.rigMode);
+  if (rigMode !== 'CUTOUT_RIG') return rigMode;
+  return join([rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
 }
 
 /**

@@ -9,6 +9,7 @@ import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
 import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
+import { rigModeChoices } from '../src/constants/output/rigModeChoices.ts';
 import { sheetChoices } from '../src/constants/output/sheetChoices.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
 import { modesFor } from '../src/constants/sheetPlans/index.ts';
@@ -79,6 +80,11 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   PALETTE_CHOICES: PALETTE_CHOICES.map((choice) => choice.label),
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionalModeChoices(category, HEAVY_ANATOMY).map((choice) => choice.label),
+  ),
+  // Scoped to the category like the modes above, so the labels are budgeted per category rather
+  // than once — five of them offer a single rig and never render this control at all.
+  rigChoices: SUBJECT_CATEGORIES.flatMap((category) =>
+    rigModeChoices(category).map((choice) => choice.label),
   ),
   // One list per pairing, so a series that grows a sheet is budgeted the moment it exists. No
   // anatomy: this list distinguishes the sheets of one series from each other, and the subject's

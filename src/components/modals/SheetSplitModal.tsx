@@ -109,6 +109,7 @@ export function SheetSplitModal() {
           <SheetSplitRun
             key={`${run.assembly}::${run.plan.name}`}
             run={run}
+            category={category}
             ordinal={index + 1}
             total={runs.length}
             isCopied={isCopied(run)}

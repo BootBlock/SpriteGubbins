@@ -1,10 +1,18 @@
 import { DEPTH_ORDER_TEXT } from '../../constants/promptText/index.ts';
+import { resolveRigMode } from '../../constants/sheetPlans/index.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 import { countWords } from '../../utils/promptCompiler.ts';
 import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
 
 interface SheetSplitRunProps {
   readonly run: SheetRun;
+  /**
+   * The subject's category, which is what decides whether the rig below is real. A run carries the
+   * configuration it compiles from, and that configuration can name a rig its category has no joints
+   * for — so the row would otherwise describe a depth order the prompt beside it never mentions.
+   */
+  readonly category: SubjectCategory;
   /** Position in the batch, from one — what the user counts off as they work through it. */
   readonly ordinal: number;
   readonly total: number;
@@ -31,13 +39,15 @@ interface SheetSplitRunProps {
  * It appears **only for a cut-out rig**, because that is the only case in which the prompt carries
  * it: the template's depth-order block sits inside `[IF:RIG_MODE=CUTOUT_RIG]`. Showing it for a pose
  * library would describe something the sheet was never asked for — the same reason `RiggingFields`
- * hides the joint and overlap controls rather than leaving them visible and inert.
+ * hides the joint and overlap controls rather than leaving them visible and inert. The rig is read
+ * through `resolveRigMode` rather than off the run, because that is what the compiler did to reach
+ * the prompt in the disclosure below it.
  *
  * The prompt itself sits behind a `<details>` rather than being laid out in full. Eight prompts of
  * a thousand words each is not a list anybody can scan, and the summary is what the user is choosing
  * between; the platform's own disclosure widget is keyboard-operable and announced without help.
  */
-export function SheetSplitRun({ run, ordinal, total, isCopied, onCopy }: SheetSplitRunProps) {
+export function SheetSplitRun({ run, category, ordinal, total, isCopied, onCopy }: SheetSplitRunProps) {
   return (
     <li className="rounded-xl border border-foundry-700 bg-foundry-950 p-4">
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -53,7 +63,7 @@ export function SheetSplitRun({ run, ordinal, total, isCopied, onCopy }: SheetSp
         {isCopied ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
       </div>
 
-      {run.output.rigMode === 'CUTOUT_RIG' && (
+      {resolveRigMode(category, run.output.rigMode) === 'CUTOUT_RIG' && (
         <p className="mb-3 text-xs leading-relaxed text-ink-muted">{DEPTH_ORDER_TEXT[run.assembly]}</p>
       )}
 

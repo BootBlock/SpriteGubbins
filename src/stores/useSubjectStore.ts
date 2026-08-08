@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import { resolveMode } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode } from '../constants/sheetPlans/index.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
 
@@ -56,10 +56,21 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // not have. The compiler resolves such an index rather than trusting it, so this is not what makes
     // the prompt correct — it is what stops a saved preset persisting a sheet nobody can select, since
     // the sheet control is hidden for a single-sheet series and could not put it back.
+    //
+    // The rig travels with it, for the same reason and against the same table: a rig is a claim
+    // about how the subject is built, so it does not survive becoming a different kind of subject.
+    // `resolveRigMode` keeps a cut-out rig across CHARACTER → CREATURE and drops it to `NONE` on the
+    // five categories that articulate about nothing — which is what stops a preset saved after such
+    // a switch persisting a rig its own category has no joints for.
     const output = useOutputStore.getState();
     const mode = resolveMode(category, output.output.directionalMode);
-    if (mode !== output.output.directionalMode || output.output.sheetIndex !== 0) {
-      output.setOutputConfig({ ...output.output, directionalMode: mode, sheetIndex: 0 });
+    const rigMode = resolveRigMode(category, output.output.rigMode);
+    if (
+      mode !== output.output.directionalMode ||
+      rigMode !== output.output.rigMode ||
+      output.output.sheetIndex !== 0
+    ) {
+      output.setOutputConfig({ ...output.output, directionalMode: mode, rigMode, sheetIndex: 0 });
     }
   },
 
