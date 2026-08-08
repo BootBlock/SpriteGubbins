@@ -1,5 +1,6 @@
 import type { SheetPlan, SheetSeries } from '../../types/components.ts';
 import { viewsOf } from './directionalViews.ts';
+import { RIG_PIECES_OUTRO } from './rigPieces.ts';
 
 /**
  * What a CHARACTER sheet asks for, per sheet mode.
@@ -143,8 +144,7 @@ export const CHARACTER_CUTOUT_RIG: SheetPlan = {
         { text: 'Left leg: upper leg, lower leg, foot', count: 3, kind: 'anatomy' },
         { text: 'Right leg: upper leg, lower leg, foot', count: 3, kind: 'anatomy' },
       ],
-      outro: `An eight-direction rig is eight of these sheets, not one sheet of 120 pieces. Run this once per
-direction with the same identity lock.`,
+      outro: RIG_PIECES_OUTRO,
     },
   ],
 };

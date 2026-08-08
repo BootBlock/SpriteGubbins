@@ -2,30 +2,38 @@ import { describe, expect, it } from 'vitest';
 import { MAX_ANATOMY_MULTIPLIER, NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { DEFAULT_OUTPUT_CONFIG, directionalModeChoices } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import { PRACTICAL_COMPONENT_CEILING } from '../constants/promptText/index.ts';
+import { DIRECTION_LISTS, PRACTICAL_COMPONENT_CEILING } from '../constants/promptText/index.ts';
 import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { NO_ADDITIONAL_ANATOMY as NONE_ANATOMY } from '../constants/anatomy.ts';
+import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { OutputConfig } from '../types/output.ts';
+import { DIRECTION_SETS } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
-import { componentCountFor, seriesComponentCount, sheetCountFor } from './componentSet.ts';
+import {
+  batchComponentCount,
+  componentCountFor,
+  seriesComponentCount,
+  sheetCountFor,
+} from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { sheetBatch } from './sheetBatch.ts';
 
 /**
- * One number, five readers.
+ * One number, six readers.
  *
  * The component count is stated by the prompt's contract, its self-audit, its inventory heading, the
- * mode selector and the atlas grid — and `componentSet.ts` exists so all five arrive at it through
- * one sum. A count that disagrees with its own inventory is the silently-wrong sheet v2 was
- * rewritten to prevent, so these assertions are about *agreement* rather than about any one value.
+ * mode selector, the atlas grid and the split drawer — and `componentSet.ts` exists so all six arrive
+ * at it through one sum. A count that disagrees with its own inventory is the silently-wrong sheet v2
+ * was rewritten to prevent, so these assertions are about *agreement* rather than about any one value.
  *
  * Separate from `promptCompiler.test.ts` because it is a separate responsibility: that file is about
- * what the compiler *says*, this one about whether the arithmetic behind it holds together. The two
- * readers that never see the compiled prompt — the selector and the atlas — are the ones that can
- * drift in silence.
+ * what the compiler *says*, this one about whether the arithmetic behind it holds together. The
+ * readers that never see the compiled prompt — the selector, the atlas and the drawer's own total —
+ * are the ones that can drift in silence.
  */
 const SUBJECT = DEFAULT_PRESET.subject;
 
@@ -282,5 +290,76 @@ describe('the count once a subject names anatomy of its own', () => {
     const prompt = generatePrompt('CHARACTER', withAnatomy(odd), RIG);
     expect(prompt).toContain('- [IF:X] Tail [/IF] ×2.');
     expect(prompt).toContain(`Exactly ${String(BASE + 2)} components`);
+  });
+});
+
+describe('what a whole batch asks for', () => {
+  /**
+   * The number the app produced and never stated. A split configuration is already a series — every
+   * facing of a rig is its own generation — and until this was summed the studio reported one sheet's
+   * fifteen while the user was about to generate eight of them.
+   */
+  const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', rigMode: 'CUTOUT_RIG' });
+  const PER_SHEET = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 0, []);
+
+  function batchTotal(output: OutputConfig, additional: readonly AnatomyComponent[]): number {
+    return batchComponentCount('CHARACTER', sheetBatch('CHARACTER', output).sheets, additional);
+  }
+
+  it.each([...DIRECTION_SETS])('prices a rig over %s at one sheet per facing of it', (directions) => {
+    // Every set, because the figure this replaces was written for one of them: "eight of these
+    // sheets, not one sheet of 120 pieces" shipped unchanged into a four-cardinal rig of sixty.
+    const facings = DIRECTION_LISTS[directions].length;
+    expect(batchTotal({ ...RIG, directions }, [])).toBe(PER_SHEET * facings);
+  });
+
+  it('reaches the figure the rig plans used to name as a literal', () => {
+    // The worked case the prose carried: eight facings of fifteen pieces is 120, which now exists
+    // somewhere the app computes it. Sixty comes out of the same sum rather than out of a sentence
+    // that never moved.
+    expect(batchTotal({ ...RIG, directions: 'EIGHT_COMPASS' }, [])).toBe(120);
+    expect(batchTotal({ ...RIG, directions: 'FOUR_CARDINAL' }, [])).toBe(60);
+  });
+
+  it('counts the subject’s own anatomy once per facing, because each facing draws it', () => {
+    // Not once per batch: a facing's sheet contracts for the tail it draws, so eight facings is
+    // genuinely eight tails — one per generation. The `+ 3` sits inside the multiplication, and a
+    // total that put it outside would be a figure no prompt in the batch states.
+    const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
+    const facings = DIRECTION_LISTS.EIGHT_COMPASS.length;
+
+    expect(batchTotal({ ...RIG, directions: 'EIGHT_COMPASS' }, anatomy)).toBe((PER_SHEET + 3) * facings);
+  });
+
+  it('is the pairing’s own series when the direction set buys no runs', () => {
+    // The two axes multiply, so a batch on a single-facing set is exactly the plan's own series.
+    // `seriesComponentCount` is the figure the mode selector states, and these two sums are written
+    // separately — a disagreement is a label promising one job beside a drawer listing another.
+    const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const mode of modesFor(category)) {
+        const output = withOutput({ directionalMode: mode, directions: 'SINGLE_FRONT' });
+        expect(
+          batchComponentCount(category, sheetBatch(category, output).sheets, anatomy),
+          `${category}/${mode}`,
+        ).toBe(seriesComponentCount(category, mode, anatomy));
+      }
+    }
+  });
+
+  it('sums a batch whose sheets do not cost the same', () => {
+    // What a multiplication has no answer for. A character's directional core and its articulation
+    // sheet are two different inventories on one facing, so there is no per-sheet figure to multiply
+    // — and both axes multiply, so an eight-set rig mode is not the shape every batch has.
+    const output = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'EIGHT_COMPASS' });
+    const { sheets } = sheetBatch('CHARACTER', output);
+    const perSheet = sheets.map((sheet) =>
+      componentCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', sheet.output.sheetIndex, []),
+    );
+
+    expect(new Set(perSheet).size).toBe(2);
+    expect(batchComponentCount('CHARACTER', sheets, [])).toBe(
+      perSheet.reduce((total, count) => total + count, 0),
+    );
   });
 });

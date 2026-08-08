@@ -1,9 +1,15 @@
-import { resolveSheetIndex, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import {
+  resolveMode,
+  resolveSheetIndex,
+  sheetPlanFor,
+  sheetSeriesFor,
+} from '../constants/sheetPlans/index.ts';
 import type { ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import { countAnatomyComponents, formatAnatomyComponent } from './additionalAnatomy.ts';
+import type { BatchSheet } from './sheetBatch.ts';
 
 /**
  * The components one sheet actually asks for: its plan's entries, plus whatever anatomy the subject
@@ -14,18 +20,21 @@ import { countAnatomyComponents, formatAnatomyComponent } from './additionalAnat
  * a hand-maintained `Record<DirectionalMode, number>` sat beside a hand-written
  * `Record<DirectionalMode, string>` and nothing checked that 43 was what the bullets added up to.
  *
- * Every reader of the number — the prompt's contract, its inventory heading, its self-audit, the mode
- * selector, the component-budget notice and the atlas grid — sums these entries through one of the
- * two functions below, rather than through six additions that must stay equal.
+ * Every reader of the number — the prompt's contract, its inventory heading, its self-audit, its list
+ * of the batch's other sheets, the mode selector, the component-budget notice, the atlas grid and the
+ * split drawer — sums these entries through one of the functions below, rather than through eight
+ * additions that must stay equal.
  *
- * **There are two functions because there are two honest answers, and which one a reader wants
+ * **There are three totals because there are three honest answers, and which one a reader wants
  * depends on what it is describing.** `componentCountFor` is one sheet, and that is what
  * `PRACTICAL_COMPONENT_CEILING` bounds: it is a statement about a single generation, so a series
  * totalling forty-nine across two images is not over it. The prompt's contract, the inventory
  * heading, the budget notice and the atlas grid all describe one image and take that.
- * `seriesComponentCount` is the whole deliverable, and the mode selector alone takes it — because
- * that label is read while *choosing* a pairing, and a two-generation job reading the same figure as
- * a single sheet is the question the label exists to answer.
+ * `seriesComponentCount` is the pairing, and the mode selector alone takes it — because that label
+ * is read while *choosing* a pairing, and a two-generation job reading the same figure as a single
+ * sheet is the question the label exists to answer. `batchComponentCount` is the whole job, facings
+ * and all, and the split drawer takes it: eight facings of a fifteen-piece rig is one hundred and
+ * twenty components, and until it was summed that figure appeared nowhere the app computed it.
  */
 
 /** What one group contributes, summing its entries rather than trusting a number in its heading. */
@@ -88,6 +97,61 @@ export function seriesComponentCount(
 /** How many sheets the pairing takes. One for most of them; two where a five-view core outgrew one. */
 export function sheetCountFor(category: SubjectCategory, mode: DirectionalMode): number {
   return sheetSeriesFor(category, mode).length;
+}
+
+/**
+ * What one sheet of an enumerated batch costs — the figure that sheet's own prompt contracts for.
+ *
+ * The same sum as {@link componentCountFor}, asked of a sheet `sheetBatch` produced rather than of
+ * the three coordinates a studio configuration holds. It resolves the mode for the same reason every
+ * other reader does: a batch sheet carries the configuration's *stored* mode, which the category may
+ * have no plan for.
+ *
+ * Its existence is what stops section 6's per-sheet list and the batch total below being two
+ * arithmetics over one run list — the drift this module was written to make impossible, arriving one
+ * axis further out.
+ */
+export function sheetComponentCount(
+  category: SubjectCategory,
+  sheet: BatchSheet,
+  additional: readonly AnatomyComponent[],
+): number {
+  return componentCountFor(
+    category,
+    resolveMode(category, sheet.output.directionalMode),
+    sheet.output.sheetIndex,
+    additional,
+  );
+}
+
+/**
+ * What the whole batch asks for: every sheet of it, each counted as its own prompt states it.
+ *
+ * **A split configuration is already a series, and this is the number nothing was saying.** The
+ * drawer listed the runs and each row gave its word count while the studio said "this sheet asks for
+ * 15 components" — true of every one of the eight, and no help at all to someone deciding whether to
+ * start a job of one hundred and twenty.
+ *
+ * **Summed over the enumerated list, never multiplied out.** Sheets × facings is a second arithmetic
+ * for something `sheetBatch` already decided, and the batch is their cross product rather than either
+ * axis: the moment one sheet of a series stops costing what its neighbour costs, a multiplication is
+ * wrong and a sum is still right. That is not hypothetical — the literal "eight of these sheets, not
+ * one sheet of 120 pieces" in the rig plans was exactly such a figure, correct for the one
+ * configuration it was written against and shipped unchanged into the other four direction sets.
+ *
+ * **The subject's own anatomy is counted once per facing, not once per batch.** Each facing's first
+ * sheet draws it and contracts for it, so a tail on an eight-facing rig genuinely is eight drawings
+ * of a tail — one per generation. Any other answer would be a total no prompt in the batch states.
+ *
+ * **Reported, never compared.** `exceedsComponentBudget` stays per-sheet: the budget is what a single
+ * generation may be asked for, and a batch total is not something any one image has to survive.
+ */
+export function batchComponentCount(
+  category: SubjectCategory,
+  sheets: readonly BatchSheet[],
+  additional: readonly AnatomyComponent[],
+): number {
+  return sheets.reduce((total, sheet) => total + sheetComponentCount(category, sheet, additional), 0);
 }
 
 /** One group as the Markdown section 4 carries, with its total written from its own entries. */

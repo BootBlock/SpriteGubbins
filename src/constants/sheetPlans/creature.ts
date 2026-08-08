@@ -1,5 +1,6 @@
 import type { SheetPlan, SheetSeries } from '../../types/components.ts';
 import { viewsOf } from './directionalViews.ts';
+import { RIG_PIECES_OUTRO } from './rigPieces.ts';
 
 /**
  * What a CREATURE sheet asks for, per sheet mode.
@@ -130,8 +131,7 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
         { text: 'Left hindlimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
         { text: 'Right hindlimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
       ],
-      outro: `An eight-direction rig is eight of these sheets, not one sheet of 120 pieces. Run this once per
-direction with the same identity lock.`,
+      outro: RIG_PIECES_OUTRO,
     },
   ],
 };

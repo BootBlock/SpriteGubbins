@@ -3,6 +3,8 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEPTH_ORDER_TEXT, DIRECTION_LISTS } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
+import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { batchComponentCount } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetIdentity, sheetRuns } from './sheetRuns.ts';
 
@@ -33,6 +35,19 @@ const EIGHT_WAY_RIG = withOutput({
 });
 
 const runsCount = DIRECTION_LISTS.EIGHT_COMPASS.length;
+
+/**
+ * What a compiled prompt says its own sheet contracts for — section 0's first line.
+ *
+ * Read back out of the text rather than recomputed, so the batch total below is checked against what
+ * the user will actually be asking for eight times over rather than against a second sum of the same
+ * plans.
+ */
+function statedCount(promptText: string): number {
+  const stated = /Exactly (\d+) components/.exec(promptText)?.[1];
+  if (stated === undefined) throw new Error('every prompt states its own component count.');
+  return Number(stated);
+}
 
 describe('sheetRuns', () => {
   it('turns eight facings into eight distinct prompts', () => {
@@ -174,5 +189,48 @@ describe('sheetRuns', () => {
       );
       expect(run.promptText, run.assembly).toContain('### The sheets in this series');
     }
+  });
+
+  it('prices the batch at the sum of what its own prompts contract for', () => {
+    // The figure the app produced and never stated. It is asserted against the prompts rather than
+    // against an arithmetic of its own, because that is the claim the drawer makes when it shows it:
+    // this is what you are about to ask for, across these runs.
+    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
+    const stated = runs.reduce((total, run) => total + statedCount(run.promptText), 0);
+    const [first] = runs;
+    if (!first) throw new Error('the rig should split into runs.');
+
+    expect(batchComponentCount('CHARACTER', runs, [])).toBe(stated);
+    // And it is emphatically not the per-sheet figure the studio reports beside the prompt, which is
+    // the whole of the gap: "this sheet asks for 15" is true of all eight of them.
+    expect(stated).toBeGreaterThan(statedCount(first.promptText));
+  });
+
+  it('counts a subject’s additional anatomy once per facing, as the prompts do', () => {
+    // Each facing's sheet draws the tail and contracts for it, so the batch total has to carry it
+    // eight times. The prompts are the arbiter: a total the runs do not add up to is a number the
+    // user cannot reconcile with anything they are about to paste.
+    const subject = { ...SUBJECT, additional_anatomy: 'Demon Horn ×2, Tail ×1' };
+    const runs = sheetRuns('CHARACTER', subject, EIGHT_WAY_RIG);
+    const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
+
+    const total = batchComponentCount('CHARACTER', runs, anatomy);
+    expect(total).toBe(runs.reduce((sum, run) => sum + statedCount(run.promptText), 0));
+    expect(total).toBe(batchComponentCount('CHARACTER', runs, []) + 3 * runs.length);
+  });
+
+  it('sums the sheets of a series, which do not cost the same', () => {
+    // The other axis, and the case a multiplication has no answer for: a directional core and an
+    // articulation sheet are two different inventories, so there is no per-sheet figure to multiply.
+    const runs = sheetRuns('CHARACTER', SUBJECT, {
+      ...EIGHT_WAY_RIG,
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+    });
+    const stated = runs.map((run) => statedCount(run.promptText));
+
+    expect(new Set(stated).size).toBe(2);
+    expect(batchComponentCount('CHARACTER', runs, [])).toBe(
+      stated.reduce((total, count) => total + count, 0),
+    );
   });
 });
