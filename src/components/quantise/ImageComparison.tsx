@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
+import { PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
 import type { QuantiseResult } from '../../types/quantiser.ts';
+import { Tooltip } from '../common/Tooltip.tsx';
+import { PanViewport } from './PanViewport.tsx';
 
 interface ImageComparisonProps {
   /** The dropped file's name — what the download is named after. */
@@ -14,13 +16,13 @@ interface ImageComparisonProps {
 /**
  * The sheet as it arrived beside the sheet as it will ship, and the way to take the second one away.
  *
- * Both canvases render `pixelated`. A smoothed preview of a nearest-neighbour result would blur
- * exactly the edges the user is here to judge, and would make a failed transform look like a
- * successful one.
+ * Both canvases render `pixelated`. A smoothed preview of a nearest-neighbour result would blur exactly
+ * the edges the user is here to judge, and would make a failed transform look like a successful one.
  *
- * The zoom is applied as a CSS size over a backing store that stays at the image's own dimensions,
- * so magnifying costs nothing and never resamples: one drawn pixel becomes a square of screen
- * pixels rather than an interpolation of its neighbours.
+ * The zoom is applied as a CSS size over a backing store that stays at the image's own dimensions, so
+ * magnifying costs nothing and never resamples: one drawn pixel becomes a square of screen pixels
+ * rather than an interpolation of its neighbours. Magnified past its box, each preview is then looked
+ * at through a `PanViewport`, which is what makes the part worth judging reachable by dragging it.
  */
 export function ImageComparison({ sourceName, source, result }: ImageComparisonProps) {
   const [zoom, setZoom] = useState<number>(PREVIEW_ZOOMS[0]);
@@ -40,7 +42,14 @@ export function ImageComparison({ sourceName, source, result }: ImageComparisonP
     <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-300 hover:border-accent/40">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5">
-          <span className="mr-1 text-xs font-semibold text-ink-muted">Zoom</span>
+          {/* Grouped and set apart from the levels, so the ⓘ reads as belonging to the label rather
+              than sitting among the zoom levels as though it were one of them. */}
+          <span className="mr-1 flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-ink-muted">Zoom</span>
+            {/* Where the pan gesture is named. A cursor that only appears once the pointer is
+                already over the image teaches nobody working from the keyboard that it is there. */}
+            <Tooltip text={QUANTISE_TOOLTIPS.zoom} hint="Zoom" />
+          </span>
           {PREVIEW_ZOOMS.map((level) => (
             <button
               key={level}
@@ -78,7 +87,11 @@ export function ImageComparison({ sourceName, source, result }: ImageComparisonP
             As it arrived · {source.width} × {source.height}
             {result !== null && ` · ${String(result.colorsBefore)} colours`}
           </figcaption>
-          <div className="max-h-96 overflow-auto rounded-xl border border-foundry-700 bg-foundry-950 p-3">
+          {/* The label names the *control*, not the picture: the canvas already carries the picture's
+              name, and repeating it would have a screen reader say the same words twice while
+              explaining neither the tab stop nor what it is for. It stops at naming — an instruction
+              belongs in the tooltip above, which the sighted keyboard user can actually reach. */}
+          <PanViewport label="Pan the sheet as it arrived">
             <canvas
               ref={sourceCanvas}
               width={source.width}
@@ -91,7 +104,7 @@ export function ImageComparison({ sourceName, source, result }: ImageComparisonP
                 imageRendering: 'pixelated',
               }}
             />
-          </div>
+          </PanViewport>
         </figure>
 
         <figure className="space-y-2">
@@ -102,7 +115,7 @@ export function ImageComparison({ sourceName, source, result }: ImageComparisonP
               `Quantised · ${String(result.image.width)} × ${String(result.image.height)} · ${String(result.colorsAfter)} colours`
             )}
           </figcaption>
-          <div className="max-h-96 overflow-auto rounded-xl border border-foundry-700 bg-foundry-950 p-3">
+          <PanViewport label="Pan the quantised sheet">
             {result === null ? (
               <p className="text-xs leading-relaxed text-ink-muted">
                 Detection found no pixel scale in this image, so there is nothing to align it to yet.
@@ -121,7 +134,7 @@ export function ImageComparison({ sourceName, source, result }: ImageComparisonP
                 }}
               />
             )}
-          </div>
+          </PanViewport>
         </figure>
       </div>
     </section>
