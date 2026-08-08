@@ -149,11 +149,32 @@ export default defineConfig({
     },
   },
 
-  // @sqlite.org/sqlite-wasm ships its own worker and `.wasm` asset and must not be pre-bundled
-  // or transformed by esbuild (official Vite guidance) — doing so breaks the relative lookup
-  // the loader uses to find the binary (spec Task 1.3.4).
   optimizeDeps: {
+    // @sqlite.org/sqlite-wasm ships its own worker and `.wasm` asset and must not be pre-bundled
+    // or transformed by esbuild (official Vite guidance) — doing so breaks the relative lookup
+    // the loader uses to find the binary (spec Task 1.3.4).
     exclude: ['@sqlite.org/sqlite-wasm'],
+
+    // Every runtime dependency the app actually imports, named rather than discovered.
+    //
+    // The dev server rewrites each bare import to `/node_modules/.vite/deps/<dep>.js?v=<hash>`,
+    // and that hash belongs to one optimisation round. Ask for a *previous* round's hash and Vite
+    // answers `504 Outdated Optimize Dep` — a response that carries **no `Content-Type` at all**,
+    // which Firefox reports as `blocked because of a disallowed MIME type ("")` before refusing to
+    // execute the module. React, react-dom/client and the JSX runtime are all static imports of
+    // `main.tsx`, so they fail together and the page stays blank. Vite's recovery is a full reload
+    // pushed over the HMR socket, and on a cold load that socket is still connecting when the
+    // imports fail — the console shows `[vite] connecting…` *after* the failures — so the message
+    // lands on nothing and the blank page is permanent until someone refreshes by hand.
+    //
+    // A re-optimisation mid-session is what makes a hash go stale, and the scanner is what makes
+    // one likely: it crawls the static import graph from `index.html`, which cannot reach
+    // `src/db/sqliteWorker.ts` because that module is loaded through
+    // `new Worker(new URL(…, import.meta.url))` — a runtime construction, not an import. Anything
+    // only that worker pulls in is therefore discovered after the page has already booted, which
+    // is precisely the case Vite's documentation says to answer by naming the dependency here.
+    // Listing the set outright means the first round is the only round.
+    include: ['react', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'zustand'],
   },
 
   worker: {
@@ -162,9 +183,20 @@ export default defineConfig({
 
   server: {
     headers: { ...crossOriginIsolationHeaders },
+    // Fixed and strict, because Vite's default is to take the next free port in silence. Several
+    // agents run dev servers out of `.claude/worktrees/` concurrently, each tree carrying its own
+    // `node_modules/.vite/deps` with its own hashes — so a browser left pointing at the usual
+    // address can be answered by a *different* checkout than the one being edited, serving a
+    // module graph whose dep hashes belong to somebody else's optimisation round. Failing to start
+    // says which tree already holds the port; drifting to the next one hides it. A second server
+    // is meant to be given a port of its own (`npx vite --port <n>`), as the `verify` skill says.
+    port: 5173,
+    strictPort: true,
   },
   preview: {
     headers: { ...crossOriginIsolationHeaders },
+    port: 4173,
+    strictPort: true,
   },
 
   test: {
