@@ -17,12 +17,16 @@ import { ExternalLink } from '../common/ExternalLink.tsx';
  * behind it, and whether you can go and check. The version is the specific claim, which is why it
  * is a chip beside the heading rather than a line of prose: it is what a bug report needs, and the
  * deploy tags each release `v<version>`, so what is shown here names the published build exactly.
+ *
+ * The heading takes the view's colour like every other heading in this tab; the chip does not. A
+ * build number means the same thing wherever it is read — it names the application, not the page it
+ * happens to be on — so it keeps the primary, as the rest of the chips above it do.
  */
 export function AboutSection() {
   return (
     <section className="space-y-3 border-t border-foundry-700 pt-6">
       <div className="flex flex-wrap items-center gap-3">
-        <h3 className="text-base font-bold text-accent-soft">About</h3>
+        <h3 className="text-base font-bold text-tab">About</h3>
         <Badge tone="accent">v{APP_VERSION}</Badge>
       </div>
 
