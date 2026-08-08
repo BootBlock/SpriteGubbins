@@ -25,4 +25,7 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // what has to hold across them is that the *same* effect is drawn at the same scale in every cell.
   EFFECT: 'the first frame and the peak frame are the same effect drawn at the same scale',
   INTERFACE: 'a cursor drawn beside the panel frame it moves over is in proportion to it',
+  // A terrain's tiles are all one size by construction, so the scale that can actually go wrong is
+  // between a tile and the loose features standing on it.
+  TERRAIN: 'a boulder drawn beside the ground tile it stands on is in proportion to it',
 };

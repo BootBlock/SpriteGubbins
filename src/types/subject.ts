@@ -24,6 +24,7 @@ export const SUBJECT_CATEGORIES = [
   'VEHICLE',
   'EFFECT',
   'INTERFACE',
+  'TERRAIN',
 ] as const;
 
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];

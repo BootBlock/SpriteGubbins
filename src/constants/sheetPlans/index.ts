@@ -9,6 +9,7 @@ import { EFFECT_FRAME_SEQUENCE } from './effect.ts';
 import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
 import { ITEM_DIRECTIONAL_VARIANTS, ITEM_PART_LIBRARY } from './item.ts';
 import { OBJECT_CUTOUT_RIG, OBJECT_DIRECTIONAL_VARIANTS, OBJECT_PART_LIBRARY } from './object.ts';
+import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
 import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY } from './vehicle.ts';
 
 /**
@@ -26,6 +27,8 @@ import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY 
  * `Partial` is load-bearing. Not every category supports every mode — an item has no cut-out rig,
  * nothing on an interface turns about a pivot, and only a building and an interface assemble from
  * repeating pieces — so the gaps are the point rather than an omission to fill.
+ * only a building and a terrain are laid as a tile field, and a terrain has no directional core at
+ * all — so the gaps are the point rather than an omission to fill.
  *
  * **Every entry is a series, and most of them have one member.** A pairing outgrows a single sheet
  * when its inventory passes `PRACTICAL_COMPONENT_CEILING`, which is a fact about what a generation
@@ -81,6 +84,14 @@ export const CATEGORY_SHEET_PLANS: Readonly<
     SINGLE_DIRECTION_POSE_LIBRARY: [INTERFACE_STATE_LIBRARY],
     TILESET_MODULAR: [INTERFACE_NINE_SLICE],
   },
+  // No directional mode, and that absence is the answer rather than a gap. A tile is laid flat and
+  // read from above; turning one 90° produces the tile the set already draws at the next edge, so a
+  // five-view core would be five drawings of one component the inventory names once. The landform
+  // pieces could be turned, but they arrive on a sheet whose other half cannot be.
+  TERRAIN: {
+    SINGLE_DIRECTION_POSE_LIBRARY: [TERRAIN_FEATURE_LIBRARY],
+    TILESET_MODULAR: [TERRAIN_BLEND_SET],
+  },
 };
 
 /**
@@ -115,7 +126,10 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   CREATURE: 'CORE_DIRECTIONAL_VARIANTS',
   OBJECT: 'CORE_DIRECTIONAL_VARIANTS',
   ITEM: 'CORE_DIRECTIONAL_VARIANTS',
-  // A building is the one category for which a repeating tile field is the usual deliverable.
+  // BUILDING and TERRAIN are the two whose usual deliverable is a repeating field rather than a
+  // subject — a building's floors and walls, and a terrain's two materials meeting. INTERFACE can
+  // produce a tile field too and does not default to one, which is the distinction: a nine-slice is
+  // one widget's stretching frame, not the whole deliverable.
   BUILDING: 'TILESET_MODULAR',
   VEHICLE: 'CORE_DIRECTIONAL_VARIANTS',
   // The only mode it has, so the fallback and the choice are the same thing here.
@@ -124,6 +138,7 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   // interface has, where a nine-slice is one widget's stretching frame. It is also the only one of
   // the two that carries a cursor, a bar and a toggle, which is most of what a kit is asked for.
   INTERFACE: 'SINGLE_DIRECTION_POSE_LIBRARY',
+  TERRAIN: 'TILESET_MODULAR',
 };
 
 /** Whether this category can produce this kind of sheet at all. */

@@ -5,10 +5,10 @@ import type { PresetArchetype } from '../../types/preset.ts';
 /**
  * Whole structures — the buildings a level is made of one at a time rather than tiled.
  *
- * A building is the one category whose default sheet is a tile field, so these four deliberately take
- * the other two plans: the module library, which delivers a façade as repeatable bays, and the
- * three-facing set, which delivers one structure turned. The tile-field presets live next door in
- * `buildingTilesets.ts`.
+ * A building is one of the two categories whose default sheet is a tile field, so these four
+ * deliberately take the other two plans: the module library, which delivers a façade as repeatable
+ * bays, and the three-facing set, which delivers one structure turned. The tile-field presets live
+ * next door in `buildingTilesets.ts`.
  */
 export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
   {

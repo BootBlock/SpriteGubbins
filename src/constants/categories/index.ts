@@ -13,6 +13,7 @@ import { BUILDING } from './building.ts';
 import { VEHICLE } from './vehicle.ts';
 import { EFFECT } from './effect.ts';
 import { INTERFACE } from './interface.ts';
+import { TERRAIN } from './terrain.ts';
 
 /**
  * The complete option pool for every category.
@@ -30,6 +31,7 @@ export const CATEGORY_OPTIONS: Readonly<Record<SubjectCategory, CategoryDefiniti
   VEHICLE,
   EFFECT,
   INTERFACE,
+  TERRAIN,
 };
 
 /**

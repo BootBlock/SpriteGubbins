@@ -10,8 +10,8 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * of the prompt called a failure.
  *
  * So the environment ban is stated by the categories for which an environment really is scenery, and
- * BUILDING bans the things that are foreign to *it* instead. Same mechanism as the inventory: the
- * category owns its own rules rather than inheriting another's.
+ * BUILDING and TERRAIN ban the things that are foreign to *them* instead. Same mechanism as the
+ * inventory: the category owns its own rules rather than inheriting another's.
  */
 export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> = {
   CHARACTER:
@@ -53,6 +53,13 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // a sprite can only ever be used for that one string, in that one language.
   INTERFACE:
     'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any character, creature or hand reaching for the interface; any gameplay art, portrait or map inside a frame; and any lettering, numeral, caption or legend on a component.',
+  // No environment ban either, and for a sharper version of BUILDING's reason: the ground plane the
+  // other five categories forbid is this one's entire deliverable. What a terrain sheet attracts
+  // instead is a *composed landscape* — asked for terrain, a generator draws a view of it, and a view
+  // cannot be cut into tiles. The landmark clause is scoped to tiles meant to repeat, because the
+  // feature library's focal outcrop is deliberately distinctive and is placed once.
+  TERRAIN:
+    'Characters, creatures, vehicles, buildings and their fittings; sky, horizon and distant landscape; any composed landscape, vista or diorama drawn in place of the component grid; and, on any tile meant to repeat, a landmark distinctive enough to be recognised twice across a laid field.',
 };
 
 /**
@@ -92,6 +99,8 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // conflict by delivering a panel with no edge.
   INTERFACE:
     'Every entry below is a piece of this one interface. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The frames, borders and panel edges it does list are components — the subject of the sheet, not the annotation section 0 forbids.',
+  TERRAIN:
+    'Every entry below is a ground tile or a landform piece. An entry describing anatomy, a wall, a roof, a building module or a vehicle part does not belong to this sheet and is an error in this specification, not an instruction to follow.',
 };
 
 /**
@@ -132,6 +141,15 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // would fail a sheet on the entries section 4 required.
   INTERFACE:
     'Every component is a piece of this one interface — no anatomy, floor or terrain tiles, scenery, or gameplay art inside a frame — and no component carries lettering, a numeral or a caption.',
+  // The second half is this category's own, and it is the check no generic audit can stand in for: a
+  // terrain sheet can pass every count, background and ordering test and still be unusable, because
+  // seamlessness only shows up when the tiles are laid together. It is stated as an agreement about
+  // *edges* rather than as "every tile butts against its own copy", which would be this record's
+  // VEHICLE mistake again — a transition tile carries a boundary, so it cannot meet its own copy
+  // without a seam, and an audit demanding that fails the sheet on the fourteen tiles section 4
+  // requires.
+  TERRAIN:
+    'Every component is a ground tile or a landform piece — no characters, creatures, anatomy, buildings or vehicles, and nothing drawn as a landscape view rather than as a separate piece. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.',
 };
 
 /**
@@ -161,4 +179,7 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // of its frames is the decorative surround this term exists to suppress.
   EFFECT: false,
   INTERFACE: true,
+  // A terrain tile has edges but no *border*: the boundary between two materials is painted across
+  // the tile, never drawn round it, so a frame on one is the decorative surround this term suppresses.
+  TERRAIN: false,
 };

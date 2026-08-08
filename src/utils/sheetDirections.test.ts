@@ -37,9 +37,10 @@ const ARTICULATION = sheetPlanFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 1);
 /**
  * The only sheet an EFFECT has, and the plan a stored `CORE_DIRECTIONAL_VARIANTS` resolves to there.
  *
- * The category that makes the second half of the divergence reachable: it is the first to *lack* the
- * one mode whose coverage is a fixed set, so it is the first on which a resolution can turn a fixed
- * set into a run list rather than the other way about.
+ * The category that made the second half of the divergence reachable: the first to *lack* the one
+ * mode whose coverage is a fixed set, so the first on which a resolution can turn a fixed set into a
+ * run list rather than the other way about. TERRAIN is now a second, and the whole-category loops
+ * below cover it — this stays on EFFECT because it is the case the defect was found against.
  */
 const EFFECT_SEQUENCE = sheetPlanFor('EFFECT', 'CORE_DIRECTIONAL_VARIANTS', 0);
 

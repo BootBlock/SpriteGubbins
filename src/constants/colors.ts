@@ -55,4 +55,9 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   umber: '#6b4423',
   driftwood: '#a89880',
   parchment: '#e8dcb5',
+  // The earth tone the vocabulary was missing. BUILDING already shipped "Dusk Violet & Ochre Rock",
+  // whose swatch was therefore decided by the *other* colour in it; TERRAIN's sun-bleached sand had
+  // no resolvable word at all. Adding it changes nothing that already resolved — `violet` still wins
+  // that option, being earlier in the text.
+  ochre: '#cc7722',
 };

@@ -123,6 +123,10 @@ describe('parseColorFromText', () => {
     expect(parseColorFromText('Smoked Glass & Aged Brass')).toBe(COLOR_HEX_MAP['brass']);
     expect(parseColorFromText('Bark Umber & Deep Moss')).toBe(COLOR_HEX_MAP['umber']);
     expect(parseColorFromText('Salt-Bleached Driftwood & Rope')).toBe(COLOR_HEX_MAP['driftwood']);
+    expect(parseColorFromText('Sun-Bleached Sand & Ochre')).toBe(COLOR_HEX_MAP['ochre']);
+    // And the option that already shipped naming it, whose swatch `ochre` deliberately does not
+    // take: `violet` sits earlier in the text, and ties resolve by position there.
+    expect(parseColorFromText('Dusk Violet & Ochre Rock')).toBe(COLOR_HEX_MAP['violet']);
   });
 
   it('does not let a new short name match inside a longer word', () => {

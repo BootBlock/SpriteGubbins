@@ -74,9 +74,9 @@ export function describeDirections(directions: readonly Direction[]): string {
  * pieces render behind the body the moment the subject turns.
  *
  * **It says "pieces", not "arms".** These lines reach section 5 of every cut-out-rig sheet the app
- * composes, and five of the six categories have no arms, no torso and no pelvis to order — a tank
- * rig was told which of its arms rendered in front of its torso. The geometry is the same for all
- * six and it is the whole content of the line: whatever the subject carries on the side facing the
+ * composes, and only two categories have arms, a torso and a pelvis to order — a tank rig was told
+ * which of its arms rendered in front of its torso. The geometry is the same for every one of them
+ * and it is the whole content of the line: whatever the subject carries on the side facing the
  * camera draws over the body, and whatever it carries on the far side draws under it.
  *
  * **Which diagonal puts which side in front is not a choice.** Facing north your right hand points

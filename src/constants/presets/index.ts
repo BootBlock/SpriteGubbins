@@ -13,6 +13,7 @@ import { ITEM_GEAR_PRESETS } from './itemGear.ts';
 import { ITEM_WEAPON_PRESETS } from './itemWeapons.ts';
 import { OBJECT_MACHINE_PRESETS } from './objectMachines.ts';
 import { OBJECT_WORLD_PRESETS } from './objectWorld.ts';
+import { TERRAIN_FIELD_PRESETS } from './terrainFields.ts';
 import { UNSUNG_SAVIOUR_PRESETS } from './unsungSaviour.ts';
 import { VEHICLE_CORE_PRESETS } from './vehicleCore.ts';
 import { VEHICLE_CRAFT_PRESETS } from './vehicleCraft.ts';
@@ -64,5 +65,6 @@ export const PRESETS: readonly PresetArchetype[] = [
   ...EFFECT_COMBAT_PRESETS,
   ...EFFECT_MAGIC_PRESETS,
   ...INTERFACE_KIT_PRESETS,
+  ...TERRAIN_FIELD_PRESETS,
   ...UNSUNG_SAVIOUR_PRESETS,
 ];
