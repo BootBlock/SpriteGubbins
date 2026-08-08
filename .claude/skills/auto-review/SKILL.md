@@ -209,7 +209,7 @@ it; that requirement is what keeps this lane high-signal rather than a code-qual
   - A store action called from a component that the store never defines (`src/stores/*.ts`).
   - A field key read out of `subject` that no category in `CATEGORY_OPTIONS` defines.
   - A `TargetModelId` or `SubjectCategory` member used that the union in `src/types/` doesn't have.
-  - A `lucide-react` glyph name that isn't exported by the installed version.
+  - An export taken from a third-party package that the installed version doesn't actually provide.
   - A column read in `src/db` that the DDL in `schema.ts` never creates.
 
   *Evidence:* a search for the symbol that returns nothing (having also checked barrels and
