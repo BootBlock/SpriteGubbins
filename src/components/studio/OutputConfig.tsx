@@ -16,7 +16,7 @@ function FieldGroup({ heading, children }: FieldGroupProps) {
   return (
     <fieldset className="space-y-3.5">
       <legend className="mb-2 flex items-center gap-2 text-[10px] font-bold tracking-wide text-ink-faint uppercase">
-        <span aria-hidden="true" className="h-px w-3 rounded-full bg-accent/60" />
+        <span aria-hidden="true" className="h-px w-3 rounded-full bg-tab/60" />
         {heading}
       </legend>
       {children}
@@ -38,16 +38,17 @@ function FieldGroup({ heading, children }: FieldGroupProps) {
  */
 export function OutputConfig() {
   return (
-    <section className="animate-fade-in glass-panel space-y-6 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-accent/40">
+    <section className="animate-fade-in glass-panel group/panel space-y-6 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-tab/40">
       <div className="flex items-center justify-between gap-3 border-b border-foundry-700 pb-3">
         <h2 className="flex items-center gap-2.5 text-sm font-bold text-ink">
+          {/* A gear that turns when the panel it heads is under the pointer. */}
           <span
             aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-lg bg-accent/15 text-sm ring-1 ring-accent/30"
+            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-500 group-hover/panel:rotate-90 group-hover/panel:ring-tab/60"
           >
             ⚙️
           </span>
-          <span className="font-mono text-accent-soft">2.</span>
+          <span className="font-mono text-tab">2.</span>
           Output Configuration
         </h2>
         <Badge>Technical Directives</Badge>

@@ -39,7 +39,7 @@ export function ImageComparison({ sourceName, source, result }: ImageComparisonP
   }, [source, result]);
 
   return (
-    <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-300 hover:border-accent/40">
+    <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-300 hover:border-tab/40">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-1.5">
           {/* Grouped and set apart from the levels, so the ⓘ reads as belonging to the label rather

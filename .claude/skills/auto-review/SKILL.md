@@ -114,6 +114,17 @@ Read the argument (`low` | `medium` | `high`, default `medium`). It scales the r
        registers a listener/timer/worker callback without returning cleanup; unchecked array
        indexing; prop-drilling past 3 levels when a Zustand store exists; a non-atomic store
        selector (`useSubjectStore()` wholesale rather than `useSubjectStore((s) => s.category)`).
+     - **No backwards compatibility before `1.0.0`** — the project is pre-1.0, so a
+       compatibility surface is a rule violation, not caution: an alias or forwarding re-export
+       kept so an old name still resolves, a `@deprecated` wrapper, a second code path that reads
+       a previous shape (`typeof value === 'string'` for a field that is now an object,
+       `oldKey ?? newKey`), schema-migration or row-repair machinery in `src/db`, a fixture or
+       test whose purpose is to prove a retired format still loads, or a `v2` parked beside an
+       undeleted `v1`. The fix is always to delete it and update the call sites. **Not** findings:
+       the type guards in `src/db/configParsers.ts` (they defend against *corrupt* storage, which
+       is a different problem), the localStorage fallback, the cross-origin-isolation apparatus,
+       and the `showPopover` feature detection in `useAnchoredSurface` — those support the
+       browser a user has today, not an older version of this app.
      - **Completeness** — the spec's zero-truncation mandate. `// TODO: add remaining fields`,
        `/* rest of options here */`, an option array that is visibly a subset, or a stubbed
        function body is a direct violation, not a nit.

@@ -58,9 +58,12 @@ export function Modal({ title, icon, onClose, panelClassName, children }: ModalP
         event.preventDefault();
         onClose();
       }}
-      className="animate-fade-in fixed inset-0 m-0 flex h-dvh max-h-none w-full max-w-none items-center justify-center border-0 bg-transparent p-4 text-ink backdrop:bg-foundry-950/80 backdrop:backdrop-blur-md"
+      // The overlay opens in two halves: the ground behind it dims through `::backdrop`, and the
+      // panel below rises into place. The dialog element itself is only the frame holding the two
+      // apart, so it animates nothing — a fade on it would take the backdrop with it.
+      className="fixed inset-0 m-0 flex h-dvh max-h-none w-full max-w-none items-center justify-center border-0 bg-transparent p-4 text-ink backdrop:animate-backdrop-in backdrop:bg-foundry-950/80 backdrop:backdrop-blur-md"
     >
-      <div className={panelClassName}>
+      <div className={`animate-modal-in ${panelClassName}`}>
         <div className="flex items-center justify-between border-b border-foundry-700 px-6 py-4">
           <h2 id={titleId} className="flex items-center gap-2.5 text-base font-bold text-ink">
             <span

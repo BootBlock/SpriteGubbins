@@ -26,6 +26,24 @@ import { describe, expect, it } from 'vitest';
  */
 const stylesheet = readFileSync(resolve(process.cwd(), 'src/index.css'), 'utf8');
 
+/**
+ * The stops of the hue wheel, in the order they turn — **read from the module that names them**,
+ * not restated here.
+ *
+ * The wheel exists twice by necessity: `src/index.css` defines the colours, and
+ * `src/constants/spectrum.ts` names them so the preset library can allocate one per card. A third
+ * copy written into this file would be the thing most likely to drift, and it would drift silently
+ * in the direction that matters least — the test would keep passing while the two real copies
+ * disagreed. Parsing the constant instead means a stop renamed in either place fails here.
+ *
+ * The failure it guards is invisible at runtime: `spectrumStopAt` builds
+ * `var(--color-spectrum-<name>)`, and a name with no matching declaration resolves to nothing, so
+ * `--color-tab` falls back to its registered `transparent` and the card loses its colour entirely.
+ */
+const spectrumModule = readFileSync(resolve(process.cwd(), 'src/constants/spectrum.ts'), 'utf8');
+const spectrumDeclaration = /const SPECTRUM_STOPS = \[([^\]]+)\]/.exec(spectrumModule)?.[1] ?? '';
+const SPECTRUM_STOPS = [...spectrumDeclaration.matchAll(/'([a-z]+)'/g)].map((match) => match[1]);
+
 /** Every token CLAUDE.md's design-token table promises a component can reach for. */
 const REQUIRED_THEME_TOKENS = [
   // The foundry surface ramp.
@@ -43,6 +61,9 @@ const REQUIRED_THEME_TOKENS = [
   '--color-gold',
   '--color-emerald',
   '--color-rose',
+  // The wheel, and the active view's position on it.
+  ...SPECTRUM_STOPS.map((stop) => `--color-spectrum-${stop}`),
+  '--color-tab',
   // Text tones.
   '--color-ink',
   '--color-ink-muted',
@@ -59,11 +80,29 @@ const REQUIRED_THEME_TOKENS = [
   '--animate-tooltip-in',
   '--animate-aurora',
   '--animate-scan-beam',
+  // The entrance layer, one per kind of thing that arrives, plus the two ambient/behavioural ones.
+  '--animate-pop-in',
+  '--animate-toast-in',
+  '--animate-modal-in',
+  '--animate-backdrop-in',
+  '--animate-gradient-pan',
+  '--animate-spectrum-pan',
+  '--animate-toast-timer',
   '--ease-emphasized',
 ];
 
 /** Bespoke utilities components use by name, declared with `@utility` rather than `@theme`. */
-const REQUIRED_UTILITIES = ['bg-grid-pattern', 'bg-aurora', 'glass-panel', 'glass-float', 'shimmer-surface'];
+const REQUIRED_UTILITIES = [
+  'bg-grid-pattern',
+  'bg-aurora',
+  'bg-spectrum',
+  'glass-panel',
+  'glass-float',
+  'shimmer-surface',
+  'heading-gradient',
+  'heading-spectrum',
+  'stagger-children',
+];
 
 /** An `--animate-*` token names a keyframe; if that keyframe is missing the animation is a no-op. */
 const ANIMATION_KEYFRAMES = [
@@ -74,7 +113,23 @@ const ANIMATION_KEYFRAMES = [
   'tooltip-in',
   'aurora',
   'scan-beam',
+  'pop-in',
+  'toast-in',
+  'modal-in',
+  'backdrop-in',
+  'gradient-pan',
+  'spectrum-pan',
+  'toast-timer',
 ];
+
+/**
+ * The three properties the view colour is carried by, all of which must be *registered*.
+ *
+ * An unregistered custom property is an untyped token stream the engine cannot interpolate, so a
+ * missing `@property` here does not break the page — it makes the view change snap instead of
+ * sweeping, which is a regression nobody reports and nobody sees in a diff.
+ */
+const REGISTERED_PROPERTIES = ['--color-tab', '--tab-chord-a', '--tab-chord-b'];
 
 /**
  * The two glass surfaces are glass *because* of `backdrop-filter`. Strip it and both still render
@@ -83,7 +138,22 @@ const ANIMATION_KEYFRAMES = [
  */
 const GLASS_UTILITIES = ['glass-panel', 'glass-float'];
 
+/**
+ * The two utilities that paint their text `transparent` and rely on `background-clip` to fill the
+ * glyphs. Losing the clip does not render a flat heading — it renders **no heading at all**, a
+ * gradient filling the whole box behind invisible text.
+ */
+const CLIPPED_HEADINGS = ['heading-gradient', 'heading-spectrum'];
+
 describe('design tokens', () => {
+  it('parsed the wheel out of the constant it is checking against', () => {
+    // Without this, a `SPECTRUM_STOPS` the regex above failed to find would be an empty array —
+    // and an empty array turns every `it.each` over it into zero cases that all "pass". The whole
+    // spectrum contract would go dark while the suite stayed green.
+    expect(SPECTRUM_STOPS.length).toBeGreaterThanOrEqual(3);
+    expect(SPECTRUM_STOPS).toContain('rose');
+  });
+
   it.each(REQUIRED_THEME_TOKENS)('declares %s', (token) => {
     expect(stylesheet).toContain(`${token}:`);
   });
@@ -109,8 +179,75 @@ describe('design tokens', () => {
     expect(body).toMatch(/^\s*-webkit-backdrop-filter: blur\(/m);
   });
 
+  it.each(CLIPPED_HEADINGS)('clips %s to its glyphs, prefixed for Safari as well', (utility) => {
+    // The same shape as the glass check above, with a worse failure — see CLIPPED_HEADINGS. Both
+    // are checked because the second was added by copying the first, which is exactly the way the
+    // prefixed spelling gets dropped from one of a pair.
+    const declaration = stylesheet.slice(stylesheet.indexOf(`@utility ${utility} {`));
+    const body = declaration.slice(0, declaration.indexOf('\n}'));
+
+    expect(body).toMatch(/^\s*background-clip: text;/m);
+    expect(body).toMatch(/^\s*-webkit-background-clip: text;/m);
+  });
+
   it('pins the colour scheme to dark, because there is no light palette to fall back to', () => {
     expect(stylesheet).toContain('color-scheme: dark');
+  });
+
+  it.each(REGISTERED_PROPERTIES)('registers %s so the view change can be interpolated', (name) => {
+    expect(stylesheet).toMatch(new RegExp(`@property ${name} \\{`));
+  });
+
+  it('declares the wheel in a static block, so no stop can be tree-shaken away', () => {
+    // The stops are referenced only from *declaration values* — `--color-tab: var(--color-spectrum-…)`
+    // — never from a class name. Tailwind emits a theme variable only when a generated utility uses
+    // it, so a plain `@theme` would drop all ten from the output. `--color-tab` is registered as a
+    // `<color>`, so the unresolvable `var()` would then fall back to its `transparent` initial value
+    // and every surface wearing the view's colour would vanish. This is a one-word edit away.
+    const block = stylesheet.slice(
+      stylesheet.indexOf('@theme static {'),
+      stylesheet.indexOf('\n}', stylesheet.indexOf('@theme static {')),
+    );
+
+    expect(stylesheet).toContain('@theme static {');
+    for (const stop of SPECTRUM_STOPS) expect(block).toContain(`--color-spectrum-${stop}:`);
+  });
+
+  it('gives every stop the same lightness, because the wheel is a hue sweep and nothing else', () => {
+    // The palette's whole claim is "one lightness, one role, ten hues" — that is what lets a stop
+    // stand in for any other without re-checking contrast, and what makes the preset library read
+    // as a spectrum rather than as ten unrelated colours. A stop quietly given its own lightness
+    // still renders, so only this notices.
+    const lightnesses = SPECTRUM_STOPS.map((stop) => {
+      const declaration = new RegExp(`--color-spectrum-${stop}: oklch\\(([\\d.]+) `).exec(stylesheet);
+      return declaration?.[1];
+    });
+
+    expect(lightnesses).toHaveLength(SPECTRUM_STOPS.length);
+    expect(new Set(lightnesses)).toStrictEqual(new Set(['0.76']));
+  });
+
+  it('gives every view its own stop, and never the one reserved for the live state', () => {
+    // A view added to `AppTab` without a rule here inherits studio's colour rather than getting its
+    // own, which looks like a design decision instead of an omission. The union is read from disk
+    // for the same reason the stylesheet is — `tests/` is the Node-side program and does not import
+    // application modules.
+    const types = readFileSync(resolve(process.cwd(), 'src/types/ui.ts'), 'utf8');
+    const union = /export type AppTab =([^;]+);/.exec(types)?.[1] ?? '';
+    const tabs = [...union.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]);
+
+    expect(tabs.length).toBeGreaterThan(0);
+
+    const assigned = tabs.map((tab) => {
+      const rule = new RegExp(`\\[data-tab='${tab}'\\] \\{\\s*--color-tab: var\\(--color-spectrum-(\\w+)\\)`);
+      return rule.exec(stylesheet)?.[1];
+    });
+
+    // Every view resolved, all of them different, and none of them cyan — `neon` is the live-state
+    // signal, and a view resting on it would make every panel look like it was recomputing.
+    expect(assigned).not.toContain(undefined);
+    expect(new Set(assigned).size).toBe(tabs.length);
+    expect(assigned).not.toContain('cyan');
   });
 
   it('keeps documentation out of the content scan', () => {

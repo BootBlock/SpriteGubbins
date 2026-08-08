@@ -10,23 +10,75 @@ inventory — is [docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-gubbins-spe
 
 ## Mandatory rules — the complete list
 
-Every rule below is mandatory. The first three are spelled out on this page; the rest are one
+Every rule below is mandatory. The ones marked with an emoji appear on this page; the rest are one
 click away and are **equally binding** — "I only read AGENTS.md" is not a defence.
 
 | Rule | Where |
 | --- | --- |
+| All work happens in a git worktree | 🌿 below |
+| Work is not done until it has landed — commit, merge, remove the tree | 🏁 below |
 | No secrets in the repository | 🔒 below |
 | Public-repository hygiene | 🌐 below |
 | Attribution on GitHub issues and PRs you write | ✍️ below |
+| Do the whole fix, never the cheap one | 🎯 below |
+| Reconcile an issue's labels whenever you touch it | [CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory) |
 | Design tokens, not hard-coded colour/motion values | [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists) |
+| No backwards compatibility, shims or data migrations before `1.0.0` | 🚧 below |
 | The structural laws — <150 lines, one thing per file, SoC by directory, YAGNI, DRY, no stubs | [CLAUDE.md](CLAUDE.md#architecture-the-specs-structural-laws) |
 | The banned patterns, and which ones the build catches | [CLAUDE.md](CLAUDE.md#banned-patterns-and-which-ones-the-build-catches) |
-| Cross-origin isolation is load-bearing — it decides which database the app gets | [CLAUDE.md](CLAUDE.md#cross-origin-isolation-is-load-bearing) |
+| Cross-origin isolation — what it is for, and what actually depends on it | [CLAUDE.md](CLAUDE.md#cross-origin-isolation-and-what-actually-depends-on-it) |
 | Accessibility wiring — roles, labels, live regions, focus | [CLAUDE.md](CLAUDE.md#accessibility-is-not-optional) |
 | Plan docs under `docs/todo/` carry a status banner | [CLAUDE.md](CLAUDE.md#plan-docs-carry-a-status-docstodo) |
 | How to verify a change before calling it done | [CLAUDE.md](CLAUDE.md#verifying-a-change) |
 
 **Adding a rule to CLAUDE.md? It belongs in that table too.**
+
+## 🌿 All work happens in a git worktree (mandatory)
+
+Several agents typically work in this repository **concurrently**, and a checkout has exactly one
+working tree, one index and one `HEAD` — so two agents sharing it overwrite each other's edits,
+stage each other's files into a commit, and disagree about which branch is checked out. None of
+that fails loudly; it surfaces as a diff nobody can account for.
+
+**The rule:** before making any change, add a worktree and do the work there. The primary checkout
+is for reading, reviewing and integrating — never for edits.
+
+```bash
+git worktree add .claude/worktrees/<topic> -b worktree-<topic>
+```
+
+One worktree, one branch, one task. Don't adopt a tree another agent is working in, and never
+switch the primary checkout's branch to do work. `node_modules` isn't shared between trees, so
+`npm install` and run the full gate **inside** the tree you edited. **Never run `git clean -ffdx`**
+— the second `-f` removes git's refusal to descend into a nested repository, and takes every other
+agent's uncommitted work with it. Full detail, including the three separate exclusions that keep
+root-scanning tools out of `.claude/worktrees/`, in
+[CLAUDE.md](CLAUDE.md#all-work-happens-in-a-git-worktree-mandatory).
+
+## 🏁 Work is not done until it has landed (mandatory)
+
+A green gate is not a finished task. A change left sitting in a worktree has shipped nothing —
+`main` doesn't have it, no other agent can build on it, and the tree holds its branch hostage. The
+session ends reporting success and the loss surfaces days later.
+
+**The rule:** the session that does the work also lands it — **before** reporting the task
+complete.
+
+```bash
+git status --short                        # every ?? line is work too; nothing may be left behind
+git add -A && git diff --cached           # then the secrets self-audit on the staged diff
+git commit -F <message-file>              # multi-line messages go through a file
+git merge worktree-<topic>                # from the primary checkout
+git worktree remove .claude/worktrees/<topic>
+git branch -d worktree-<topic>
+```
+
+Untracked files are the commonest way half a change lands. Committing is not landing — an unmerged
+branch is invisible. If `git worktree remove` refuses, the commit step missed something: go and
+look, never `--force`. Land only your own tree; other agents' trees are in use. And if the work
+genuinely can't land, leave the tree and **say so explicitly**, naming the branch and the blocker —
+silence is the banned outcome. Full detail in
+[CLAUDE.md](CLAUDE.md#work-is-not-done-until-it-has-landed-mandatory).
 
 ## 🔒 No secrets in the repository (mandatory)
 
@@ -100,6 +152,33 @@ it. This does **not** apply to git commit messages — those carry a `Co-Authore
 instead. Full detail in
 [CLAUDE.md](CLAUDE.md#agent-attribution-on-github-content-mandatory).
 
+**The same visit owes the issue its labels.** Whenever you open, action, comment substantively on
+or close an issue or PR, reconcile its **whole** label set from the repository's own list
+(`gh label list --limit 200`) — removing what no longer applies as much as adding what now does,
+and never inventing a label. `status:` is the one that goes stale: exactly one, or none once the
+issue closes. Full detail in
+[CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory).
+
+## 🎯 Do the whole fix, never the cheap one (mandatory)
+
+Every fix arrives with a cheap version attached — the narrow patch on the one branch that reported
+the bug, the guard that suppresses the symptom, the special case that satisfies the failing test.
+It is always quicker to write, smaller to review and easier to justify, and it is why the same
+defect gets found again a month later wearing a different symptom.
+
+**The rule:** when you decide *how* to fix something — a review finding, a bug you tripped over, a
+gap you noticed while working elsewhere — take the correct, complete, root-cause fix. Never choose
+an approach because it is quick, easy, or touches fewer files. Fix the cause at the level it lives,
+fix every instance rather than the reported one, update every call site, test and doc the change
+implies, and delete what it supersedes.
+
+This is **not** a licence for scope creep (complete is measured against the defect, not everything
+nearby), **not** a licence for speculative generality (YAGNI still holds — powerful means the cause
+is gone, not that the machinery is bigger), and **not** "fix it badly rather than raise it" (if the
+correct fix is genuinely too large or needs a decision that isn't yours, say so and leave the
+defect documented). What is banned is shipping the narrow version and calling it fixed. Full detail
+in [CLAUDE.md](CLAUDE.md#do-the-whole-fix-never-the-cheap-one-mandatory).
+
 ## ⚠️ Use design tokens, not hard-coded values
 
 Every colour and motion value in the UI must come from a **design token** in the `@theme` block
@@ -107,3 +186,21 @@ of [src/index.css](src/index.css) — never a raw hex, `rgb()`/`oklch()` literal
 Tailwind palette class. Unknown Tailwind utilities **fail silently**, so verify a new one
 actually emits CSS. Full table and the two documented exceptions in
 [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists).
+
+## 🚧 No backwards compatibility before `1.0.0` (mandatory)
+
+The `version` in [package.json](package.json) is **0.x**. Everything below `1.0.0` is explicitly
+unstable — any release may break anything, and users are told to expect that — so **there is no
+backwards-compatibility surface to preserve and none may be built.**
+
+A change *replaces* what it supersedes: rename the symbol and update every call site in the same
+commit, delete the retired option and let a stored value naming it fall through to its default,
+change the DDL and let an incompatible database be discarded. Banned until `1.0.0`: aliases and
+forwarding re-exports, `@deprecated` wrappers, dual code paths that read a previous shape,
+schema migrations, legacy fixtures proving an old format still loads, and a `v2` left beside an
+undeleted `v1`.
+
+Three things are **not** covered by this and stay: guards against *corrupt* storage, support for
+the browser a user has today (the localStorage fallback, cross-origin isolation, popover feature
+detection), and the verification gate. Full detail, including what happens at `1.0.0`, in
+[CLAUDE.md](CLAUDE.md#no-backwards-compatibility-before-100-mandatory).

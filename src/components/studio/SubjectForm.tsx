@@ -20,17 +20,20 @@ export function SubjectForm() {
 
   const { label: categoryLabel, fields } = CATEGORY_OPTIONS[category];
 
+  // The panel is a *named* group. The Randomise button below is a group of its own, and Tailwind's
+  // `group-hover:` matches any `group` ancestor — so an unnamed one out here would roll its dice
+  // from a pointer anywhere in the panel.
   return (
-    <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-accent/40">
+    <section className="animate-fade-in glass-panel group/panel space-y-4 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-tab/40">
       <div className="flex items-center justify-between gap-3 border-b border-foundry-700 pb-3">
         <h2 className="flex items-center gap-2.5 text-sm font-bold text-ink">
           <span
             aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-lg bg-accent/15 text-sm ring-1 ring-accent/30"
+            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-500 group-hover/panel:scale-110 group-hover/panel:ring-tab/60"
           >
             👤
           </span>
-          <span className="font-mono text-accent-soft">1.</span>
+          <span className="font-mono text-tab">1.</span>
           Subject Definition
         </h2>
 

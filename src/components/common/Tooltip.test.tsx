@@ -60,4 +60,16 @@ describe('Tooltip', () => {
 
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
   });
+
+  it('floats the card in the top layer rather than inside the panel it belongs to', async () => {
+    const user = userEvent.setup();
+    const trigger = renderTooltip();
+
+    await user.hover(trigger);
+
+    // Guidance half-covered by the next panel down, or cut off at the edge of the atlas
+    // calculator's scrolling panel, is guidance nobody can read — and neither is a `z-index`
+    // problem. See `src/hooks/useAnchoredSurface.ts`.
+    expect(screen.getByRole('tooltip')).toHaveAttribute('popover', 'manual');
+  });
 });

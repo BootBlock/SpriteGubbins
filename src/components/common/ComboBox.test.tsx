@@ -157,6 +157,20 @@ describe('ComboBox', () => {
     expect(comboBox()).toHaveValue('Only One');
   });
 
+  it('floats the list in the top layer rather than inside the panel it drops from', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.click(comboBox());
+
+    // Every panel in this app is a `glass-panel`, and `backdrop-filter` makes an element a stacking
+    // context — so a `z-index` on this list is only ever compared with its own panel's contents, and
+    // the next panel down the page paints straight over it. `popover` is what takes it out of that
+    // comparison. Losing the attribute doesn't error or change the DOM; it just puts the list back
+    // underneath the Output Configuration panel, looking for all the world like a z-index bug.
+    expect(screen.getByRole('listbox')).toHaveAttribute('popover', 'manual');
+  });
+
   it('marks the current value as the selected option', async () => {
     const user = userEvent.setup();
     render(<Harness initialValue="Human" />);
