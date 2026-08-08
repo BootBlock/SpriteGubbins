@@ -36,7 +36,7 @@ export function TextField({ label, tooltip, value, placeholder, onChange }: Text
         onChange={(event) => {
           onChange(event.target.value);
         }}
-        className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-300 hover:border-accent/40 focus:border-accent"
+        className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent"
       />
     </div>
   );

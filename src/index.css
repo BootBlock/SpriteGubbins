@@ -237,27 +237,33 @@
    * page, and `scan-beam` runs a cyan sweep along the prompt panel's top edge — cyan because that
    * edge is claiming the compiler is live, which is the one thing cyan is reserved for.
    *
-   * **Every duration in this file is deliberately slow, and the figures are one generation apart
-   * from the ones this app shipped with.** The app is a tool for making game art and it is meant to
-   * look like one — motion that is over before it is seen buys none of that, so the whole layer was
-   * taken to 1.5× in one pass: entrances, ambient loops, the view-colour sweep, the disclosure, the
-   * stagger's delays, and every `duration-*` at a call site. The multiplier is what makes it one
-   * decision rather than fifty — a new animation should be written at a speed that would look right
-   * beside these, not at the stock 200ms it would have taken before.
+   * **Every duration in this file is deliberately slow, and the layer moves as one.** The app is a
+   * tool for making game art and it is meant to look like one — motion that is over before it is
+   * seen buys none of that — so the speeds here are not chosen animation by animation. They are the
+   * shipped figures taken through two whole-layer passes: **1.5× first, then a further 1.3×**,
+   * covering the entrances, the ambient loops, the disclosure and every `duration-*` at a call site.
+   * Compounded, all of those run at **1.95×** what the app first shipped with.
    *
-   * **One figure is not 1.5× and says so where it lives:** the tab switcher's pill went from 500ms
-   * to 900ms, because its own comment had always claimed it shared the view-colour sweep's length
-   * and it never had. Matching that sweep is the constraint; the multiplier was only ever the way
-   * the rest of the layer moved together.
+   * Doing it as a multiplier rather than fifty separate decisions is what keeps the figures
+   * *relative*: a new animation should be written at a speed that looks right beside these, not at
+   * the stock 200ms it would have taken before. One value rounded — the shortest call-site
+   * transition lands on 292.5ms and is written 293.
+   *
+   * **A page transition is a second speed, and it took 1.6× where the rest took 1.3×** — so the
+   * view entrances below, the `[data-tab]` colour sweep, the tab pill that travels with it and the
+   * preset grid's stagger are all at **2.4×** the shipped figure rather than 1.95×. That is the one
+   * distinction in this file about *when* an animation runs rather than what it looks like, and the
+   * two sets are not interchangeable: reach for the wrong one and a dropdown takes as long to open
+   * as the whole page takes to change.
    */
-  --animate-fade-in: fade-in 450ms var(--ease-emphasized) forwards;
-  --animate-pulse-glow: pulse-glow 6s ease-in-out infinite;
-  --animate-float-orb: float-orb 15s ease-in-out infinite;
-  --animate-float-orb-slow: float-orb 21s ease-in-out infinite reverse;
-  --animate-shimmer: shimmer 4.5s linear infinite;
-  --animate-tooltip-in: tooltip-in 270ms var(--ease-emphasized) forwards;
-  --animate-aurora: aurora 36s ease-in-out infinite;
-  --animate-scan-beam: scan-beam 6s linear infinite;
+  --animate-fade-in: fade-in 585ms var(--ease-emphasized) forwards;
+  --animate-pulse-glow: pulse-glow 7.8s ease-in-out infinite;
+  --animate-float-orb: float-orb 19.5s ease-in-out infinite;
+  --animate-float-orb-slow: float-orb 27.3s ease-in-out infinite reverse;
+  --animate-shimmer: shimmer 5.85s linear infinite;
+  --animate-tooltip-in: tooltip-in 351ms var(--ease-emphasized) forwards;
+  --animate-aurora: aurora 46.8s ease-in-out infinite;
+  --animate-scan-beam: scan-beam 7.8s linear infinite;
 
   /*
    * The entrance layer: one animation per kind of thing that arrives.
@@ -268,10 +274,34 @@
    * arriving from off the bottom edge, and `modal-in`/`backdrop-in` for the two halves of an
    * overlay opening — the panel rising into place while the ground behind it dims.
    */
-  --animate-pop-in: pop-in 480ms var(--ease-emphasized) backwards;
-  --animate-toast-in: toast-in 480ms var(--ease-emphasized) backwards;
-  --animate-modal-in: modal-in 420ms var(--ease-emphasized) backwards;
-  --animate-backdrop-in: backdrop-in 360ms var(--ease-emphasized) backwards;
+  --animate-pop-in: pop-in 624ms var(--ease-emphasized) backwards;
+  --animate-toast-in: toast-in 624ms var(--ease-emphasized) backwards;
+  --animate-modal-in: modal-in 546ms var(--ease-emphasized) backwards;
+  --animate-backdrop-in: backdrop-in 468ms var(--ease-emphasized) backwards;
+
+  /*
+   * The same two entrances again, at the speed a **page transition** is given.
+   *
+   * Two tokens rather than a number at the call sites, because the distinction they carry is real
+   * and the two above could not carry it: `fade-in` and `pop-in` each land on two different kinds of
+   * moment. A panel fading in is the studio arriving when you navigate to it *and* the budget notice
+   * appearing while you type; a tile popping in is the preset library filling *and* the "Split into
+   * sheets" button turning up as the configuration changes. Navigating is worth dwelling on and is
+   * the slowest motion in the app; a dropdown taking the same time is simply a slow dropdown — which
+   * is exactly what `ComboBox`'s suggestion list would have become, since it wears `fade-in` too.
+   *
+   * So the split is by *when*, not by what it looks like: same keyframes, same easing, one figure
+   * further along. Two numbers rather than one shared between them, because the pair above are
+   * already a step apart — 585ms against 624ms — and collapsing that here would be a new decision
+   * smuggled into an arithmetic one. A tile has further to travel than a panel and has always taken
+   * slightly longer over it, which these keep.
+   *
+   * These belong on a view's own root and on the panels and tiles that mount *with* it, and nowhere
+   * else. The test of whether a surface qualifies is not where it sits but what makes it appear: if
+   * it can turn up while the user is working, it takes the ordinary entrance above.
+   */
+  --animate-view-fade-in: fade-in 720ms var(--ease-emphasized) forwards;
+  --animate-view-pop-in: pop-in 768ms var(--ease-emphasized) backwards;
 
   /*
    * The one exit in the app, and the reason it is spelt out rather than reusing an entrance.
@@ -291,7 +321,7 @@
   --animate-toast-out: toast-out var(--ease-exit) forwards;
 
   /* The slow sheen travelling a `heading-gradient`, so a display heading is lit rather than flat. */
-  --animate-gradient-pan: gradient-pan 21s ease-in-out infinite;
+  --animate-gradient-pan: gradient-pan 27.3s ease-in-out infinite;
 
   /*
    * The wheel itself, turning, under whatever `bg-spectrum` or `heading-spectrum` paints.
@@ -301,11 +331,11 @@
    * arithmetic actually lives). An eased curve would make a rotation with no beginning appear to
    * pause at each turn.
    *
-   * 48s is one full turn, and because both spectrum surfaces size the wheel in percentages of
+   * 62.4s is one full turn, and because both spectrum surfaces size the wheel in percentages of
    * their own box, that rate is the same on each of them whatever its width — the hairline running
    * the width of the page and the wordmark's fourteen characters alike.
    */
-  --animate-spectrum-pan: spectrum-pan 48s linear infinite;
+  --animate-spectrum-pan: spectrum-pan 62.4s linear infinite;
 
   /*
    * The toast's own countdown, draining left to right.
@@ -668,9 +698,9 @@
    */
   [data-tab] {
     transition:
-      --color-tab 900ms var(--ease-emphasized),
-      --tab-chord-a 900ms var(--ease-emphasized),
-      --tab-chord-b 900ms var(--ease-emphasized);
+      --color-tab 1440ms var(--ease-emphasized),
+      --tab-chord-a 1440ms var(--ease-emphasized),
+      --tab-chord-b 1440ms var(--ease-emphasized);
   }
 
   [data-tab='studio'] {
@@ -1138,16 +1168,18 @@
    * three-column layout it reads as a left-to-right sweep; on the narrower ones it becomes a
    * repeating ripple, which is the same idea at a different width.
    *
-   * The two steps are a fraction of `pop-in`'s own duration, not an independent pair of numbers, so
-   * they moved with it when the motion layer went to 1.5×: a delay left at the old figure would have
-   * compressed the sweep into the front of a longer animation and stopped reading as a cascade.
+   * The two steps are a fraction of the entrance's own duration, not an independent pair of numbers,
+   * so they move whenever it does: a delay left at an old figure compresses the sweep into the front
+   * of a longer animation and stops reading as a cascade. They track `view-pop-in` specifically, not
+   * `pop-in` — the only list wearing this is the preset library, which fills when you navigate to
+   * it, so the cascade and the cards it cascades are the same page transition.
    */
   & > *:nth-child(3n + 2) {
-    animation-delay: 105ms;
+    animation-delay: 168ms;
   }
 
   & > *:nth-child(3n + 3) {
-    animation-delay: 210ms;
+    animation-delay: 336ms;
   }
 }
 
@@ -1189,8 +1221,8 @@
    *
    * `ease-decelerate` and not `ease-emphasized`, for the reason that token records: the signature
    * curve is 83% travelled in its first quarter, so a height easing with it lands before the eye
-   * catches it and the group reads as jumping while only the caret turns. 450ms, matched by the
-   * caret's own `duration-450`, so the chevron and the panel are one gesture.
+   * catches it and the group reads as jumping while only the caret turns. 585ms, matched by the
+   * caret's own `duration-585`, so the chevron and the panel are one gesture.
    *
    * **Keeping the content painted past the close is what makes the collapse animate, and it is also
    * what leaves it briefly tabbable.** For the length of the transition the group is shut but its
@@ -1229,8 +1261,8 @@
       overflow-x: visible;
       overflow-y: clip;
       transition:
-        block-size 450ms var(--ease-decelerate),
-        content-visibility 450ms allow-discrete;
+        block-size 585ms var(--ease-decelerate),
+        content-visibility 585ms allow-discrete;
     }
 
     &[open]::details-content {

@@ -13,7 +13,7 @@ import { PresetSavePanel } from './PresetSavePanel.tsx';
  */
 export function PresetsTab() {
   return (
-    <div className="animate-fade-in space-y-6">
+    <div className="animate-view-fade-in space-y-6">
       <PresetSavePanel />
       <PresetLibrary />
     </div>

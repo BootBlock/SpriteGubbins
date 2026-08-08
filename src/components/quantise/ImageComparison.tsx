@@ -66,7 +66,7 @@ export function ImageComparison({ sourceName, source, quantised }: ImageComparis
   }, [source, quantised]);
 
   return (
-    <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-450 hover:border-tab/40">
+    <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
       <ComparisonToolbar
         zoom={zoom}
         onZoomChange={setZoom}
