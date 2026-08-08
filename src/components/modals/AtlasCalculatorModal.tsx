@@ -68,7 +68,16 @@ export function AtlasCalculatorModal() {
       panelClassName="glass-panel max-h-full w-full max-w-xl overflow-y-auto rounded-2xl border border-foundry-700 shadow-2xl"
     >
       <div className="space-y-4 p-6 text-xs">
-        <div className="grid gap-3 sm:grid-cols-2">
+        {/*
+          Stacked, not a two-column grid — which is how every other `SelectField` in the app is laid
+          out, and for the reason this one has to be too. A native `<select>` renders the selected
+          option into a box its container sizes, and the user agent cuts whatever overflows from the
+          *right*; these labels are `2048 × 2048 px (HD atlas — recommended)`, so the part that goes
+          is the recommendation — the half that tells a first-time user which option to take. Half of
+          this 576px modal is a 257px control for options that need 354px, and the full width is
+          526px, so the column is the whole difference between the two.
+        */}
+        <div className="space-y-3">
           <SelectField
             label="Atlas Canvas Resolution"
             tooltip={ATLAS_TOOLTIPS.canvasSize}
