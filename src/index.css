@@ -857,21 +857,29 @@
    * the *card's* colour inside a preset card, which sets the property inline. The chrome's Copy
    * Prompt keeps the indigo gradient — it is the primary, and the primary is fixed in every view.
    *
-   * **The fill is a 30% tint, and 51% is the ceiling above it.** Every stop is L 0.76, so the
-   * composite lightens as the alpha rises and `text-ink` on it darkens by comparison: 30% leaves the
-   * worst stop at 7.74:1, 51% is the last value that still clears WCAG AA at 4.50:1, and 52% fails.
-   * So there is headroom here, and **hover still does not spend it on the fill**. That is now a
-   * choice rather than a constraint, and the reason is below: at this weight the fill is a tint
-   * saying which view you are in, while the border is the whole of the button's edge — so lighting
-   * the border and blooming the shadow changes the thing the eye is actually reading the button by.
+   * **The fill is a 24% tint, and 51% is the ceiling above it.** Every stop is L 0.76, so the
+   * composite lightens as the alpha rises and `text-ink` on it darkens by comparison: 24% leaves the
+   * worst stop at 9.00:1, 51% is the last value that still clears WCAG AA at 4.50:1, and 52% fails.
+   * So there is headroom here, and **hover still does not spend it on the fill**. That is a choice
+   * rather than a constraint, and the reason is below: at this weight the fill is a tint saying which
+   * view you are in, while the border is the whole of the button's edge — so lighting the border and
+   * blooming the shadow changes the thing the eye is actually reading the button by.
    *
-   * The border is not decoration either; at this fill it *is* the button. A 30% fill measures between
-   * 1.68:1 and 1.89:1 against the panel behind it, so **no stop on any panel comes near** the 3:1
-   * WCAG 1.4.11 asks of a control's boundary — the fill says which view the button belongs to and
-   * nothing whatever about where it ends. At 80% the border clears the ratio at every stop on every
-   * panel, 5.36:1 at its worst. Take it away and the control stops being locatable, which is why
-   * `tests/design-tokens.test.ts` recomputes that figure from the tokens and fails below the
-   * threshold — and why the border keeps its own weight when the fill is reduced.
+   * **The border is at its floor, and the floor is not a matter of taste.** At this fill the border
+   * *is* the button: a 24% fill measures between 1.45:1 and 1.63:1 against the panel behind it, so no
+   * stop on any panel comes remotely near the 3:1 WCAG 1.4.11 asks of a control's boundary — the fill
+   * says which view the button belongs to and nothing whatever about where it ends. That leaves the
+   * border carrying the whole requirement alone, and **52.73% is the lowest alpha at which it still
+   * carries it** across all ten stops and all three panels. 54% clears at 3.09:1 on its worst
+   * combination (magenta on `foundry-800`), so what is left is about 1.3 points of headroom — enough
+   * to absorb a rounding, not enough to absorb another reduction.
+   *
+   * What makes that worth writing down is that the ratio **falls away smoothly**: 52% measures
+   * 2.95:1, 50% measures 2.80:1, and none of them looks like anything in particular on screen. There
+   * is no frame at which the button visibly loses its edge, so a trim of a few percent reads as a
+   * taste decision while quietly putting the one boundary this control has under 1.4.11. That is
+   * exactly the kind of change nobody catches in review, which is why `tests/design-tokens.test.ts`
+   * recomputes the figure from the tokens and fails under 3:1 rather than leaving it to the eye.
    *
    * The shadow lives here rather than at the call sites so the bloom can be the view's colour — which
    * a `shadow-*` utility cannot express — and because a utility owning `box-shadow` must own both
@@ -884,8 +892,8 @@
    * `<button>`, and it restores the hover itself — see the comment there, which is where that
    * limitation is worth knowing about.
    */
-  background-color: color-mix(in oklab, var(--color-tab) 30%, transparent);
-  border: 1px solid color-mix(in oklab, var(--color-tab) 80%, transparent);
+  background-color: color-mix(in oklab, var(--color-tab) 24%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-tab) 54%, transparent);
   color: var(--color-ink);
   box-shadow: 0 2px 8px -3px color-mix(in oklab, var(--color-foundry-950) 85%, transparent);
 
