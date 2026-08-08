@@ -1,8 +1,8 @@
-import { ATLAS_CANVAS_SIZES, ATLAS_PADDING_SIZES } from '../types/atlas.ts';
-import type { AtlasCanvasSize, AtlasPadding } from '../types/atlas.ts';
+import { ATLAS_CANVAS_SIZES, ATLAS_PADDING_SIZES, TEXTURE_FORMAT_IDS } from '../types/atlas.ts';
+import type { AtlasCanvasSize, AtlasPadding, TextureFormat, TextureFormatId } from '../types/atlas.ts';
 
 /**
- * Labels and guidance for the atlas calculator's two controls.
+ * Labels and guidance for the atlas calculator.
  *
  * The sizes themselves are in `types/atlas.ts`, because they are the domain's closed sets; what each
  * one is *for* is presentation, and lives here so the modal carries no option list of its own.
@@ -40,9 +40,55 @@ export const ATLAS_PADDING_CHOICES = ATLAS_PADDING_SIZES.map((value) => ({
 export const DEFAULT_ATLAS_CANVAS_SIZE: AtlasCanvasSize = 2048;
 export const DEFAULT_ATLAS_PADDING: AtlasPadding = 4;
 
+/**
+ * The two ways this texture will actually be sitting in graphics memory.
+ *
+ * Two entries rather than a menu of a dozen, because the dozen collapse to these: every
+ * 4 × 4-block format a 2D engine ships an atlas in — BC7, BC3/DXT5, ETC2 RGBA, ASTC 4 × 4 — encodes
+ * a block in 16 bytes, so they cost precisely the same and differ only in which GPU accepts them.
+ * The uncompressed row is what a PNG becomes once decoded and uploaded, which is what most 2D
+ * projects ship whether or not they meant to.
+ *
+ * Both rows are exact arithmetic, not an estimate, which is the only reason they are worth showing:
+ * a figure a developer is meant to budget against has to be one they can check.
+ */
+const FORMAT_ENCODINGS: Readonly<Record<TextureFormatId, Omit<TextureFormat, 'id'>>> = {
+  rgba8: { label: 'RGBA8 uncompressed', blockSize: 1, bytesPerBlock: 4 },
+  // The label names one format and the tooltip names the family, because the whole list sits wider
+  // than the row and pushes its own figure onto a second line — which loses the two-column read that
+  // is the only reason the rows are worth putting side by side.
+  block_compressed: { label: 'Block compressed (BC7 / ASTC 4×4)', blockSize: 4, bytesPerBlock: 16 },
+};
+
+/**
+ * Built from {@link TEXTURE_FORMAT_IDS} rather than written out beside it, as the canvas and padding
+ * choices above are: a hand-written array is a second copy of the id list that the type only checks
+ * one way — every entry must name a member, but nothing requires every member to have an entry, so a
+ * format could be declared and never priced. Mapping the union makes a missing one a compile error.
+ */
+export const TEXTURE_FORMATS: readonly TextureFormat[] = TEXTURE_FORMAT_IDS.map((id) => ({
+  id,
+  ...FORMAT_ENCODINGS[id],
+}));
+
 export const ATLAS_TOOLTIPS = {
   canvasSize:
-    'The dimensions of the finished texture every component gets packed into. Each cell size below is derived from it, so raising this buys resolution per component and costs VRAM on every platform that loads the texture — 2048 px is the usual ceiling for mobile, 4096 px for desktop. The power-of-two check below flags sizes some GPUs still sample faster.',
+    'The dimensions of the finished texture every component gets packed into. Each cell size below is derived from it, so raising this buys resolution per component and costs graphics memory on every platform that loads the texture — 2048 px is the usual ceiling for mobile, 4096 px for desktop. Every size offered is a power of two, which is what keeps mipmapping and the older sampling paths available.',
   padding:
     'The gutter left around each cell, in pixels. It stops neighbouring cells bleeding into one another when the engine filters or mipmaps the texture — the symptom is a faint edge of the sprite next door appearing as the camera pulls back. 4 px survives a full mip chain; 0 px is only safe with point filtering and no mipmaps.',
+  memory:
+    'What this texture occupies in graphics memory once uploaded — the figure to budget against, not the size of the PNG on disk. Uncompressed is width × height × 4 bytes. Every 4 × 4 block format a 2D engine ships an atlas in — BC7, BC3/DXT5, ETC2 RGBA and ASTC 4 × 4 — stores each block of 16 texels in 16 bytes, so they all cost a quarter of that and differ only in which GPU accepts them. A full mip chain adds roughly a third again, and is what filtering needs to stop distant sprites shimmering.',
+  fit: 'Whether the component size the studio asks the generator for actually fits the cell this texture affords, and the largest whole-number scale it fits at. Whole numbers only: artwork placed at a fractional scale is resampled, which is exactly what destroys pixel art — so a component that only fits at 1.6× fits at 1×, and the rest of the cell is headroom.',
+  componentCount:
+    'How many separately-drawn pieces the sheet is being asked for — the category plan for the chosen directional mode, plus any additional anatomy the subject names. It is the same number the prompt states as its done-condition, so the grid below is the grid the prompt would actually produce.',
+  gridLayout:
+    'Columns × rows the components are laid into. The shape follows the sheet aspect ratio, so a 16:9 sheet is biased towards columns and a 9:16 sheet towards rows; the count is always at least the component count, which is where empty slots come from.',
+  cellSize:
+    "The pitch of one grid cell on the texture, before the bleed gutter. Divided by the grid's longer axis, not its width — a grid taller than it is wide has to fit the texture downwards too.",
+  usableBounds:
+    'The square a component actually has to itself, once the bleed gutter is removed from both sides of the cell. This is what a sprite has to fit inside, and it is what the fit check above measures against.',
+  emptySlots:
+    'Cells the grid affords that no component lands in. The grid has to be rectangular, so a component count that is not a neat product leaves a short last row — texture that is uploaded, and paid for, holding nothing.',
+  usableShare:
+    "How much of the texture ends up inside a filled cell's usable bounds. It prices every kind of waste at once: empty slots, the gutter around each cell, and the strip left over where the grid's shorter axis stops short of the texture edge. A low figure with a wide or tall sheet aspect ratio is that last one — a square sheet packs a square texture better.",
 } as const;

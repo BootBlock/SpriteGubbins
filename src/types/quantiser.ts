@@ -45,18 +45,6 @@ export type RgbaChannel = (typeof RGBA_CHANNELS)[number];
  */
 export type PixelGrid = number;
 
-/**
- * A component size in art pixels, read out of the studio's free-text `spriteTargetSize`.
- *
- * The size the *components* were asked for, not the sheet's pixel scale — the two are related only
- * through how many components the sheet carries, which is what `targetSizeGrid` uses to turn one
- * into a candidate for the other.
- */
-export interface TargetSize {
-  readonly width: number;
-  readonly height: number;
-}
-
 /** An image the user has brought in, and the filename anything derived from it is named after. */
 export interface ImportedImage {
   readonly name: string;
