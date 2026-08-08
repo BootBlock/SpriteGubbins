@@ -53,22 +53,39 @@ interface CollapsibleSectionProps extends SectionDefinition {
  * fold survives the tab switch that unmounts the view. `onToggle` rather than an intercepted click:
  * it is the one event that hears about a keyboard toggle, a click, *and* a find-in-page expansion.
  *
- * **Deliberately not animated open**, and the caret's rotation is the whole of the motion. Two
- * things were tried and rejected on measurement. A height transition (`interpolate-size` plus a
- * `block-size` transition on `::details-content`) needs `overflow: hidden` on that pseudo-element,
- * and a new clipping ancestor here would slice the combo box's suggestion list in half on any
- * browser taking `useAnchoredSurface`'s un-lifted fallback path. A fade on the content looked like
- * the free alternative — the reasoning being that a `content-visibility: hidden` subtree resets its
- * animations, so it would replay on each open with no state at all. It does not: measured in Edge
- * and in Chromium, a keyframe animation on a child of a `<details>` fires `animationstart` exactly
- * once and still reports a finished animation while the group is shut, so closing and reopening
- * plays nothing. Rendering state there is preserved, not reset. An animation that runs on first
- * mount and never again is worse than none, so there isn't one.
+ * **It opens on a height transition and shuts at once** — `section-reveal`, defined in `index.css`
+ * as every `@utility` in this app is, and applied here as an ordinary class. The caret's rotation
+ * shares its 200ms, so the chevron and the group are one gesture.
+ *
+ * This carried a "deliberately not animated" note for a while, and the objection it recorded was
+ * real: the height transition needs the content clipped, and a clipping ancestor around these
+ * fields would slice the combo box's suggestion list in half on a browser taking
+ * `useAnchoredSurface`'s un-lifted fallback. What answers it is not a better clip but a gate — the
+ * transition sits behind `@supports … and selector(:popover-open)`, so the clip exists only where
+ * that list is lifted into the top layer and cannot be clipped by anything. A browser without the
+ * lift gets the instant open it always had.
+ *
+ * **The close is instant on purpose**, and `section-reveal` records the measurement: animating it
+ * means keeping `::details-content` painted past the moment `open` goes, which keeps everything
+ * inside tabbable while the group is already shut — Enter then Tab lands on a control inside a
+ * closed group and is dropped to `<body>` when the paint finally stops. That is the failure
+ * `SectionToggleAll` exists to prevent, arriving from another direction.
+ *
+ * The other half of the old note still stands, and is why the motion is a *transition* and not a
+ * keyframe: measured in Edge and in Chromium, a keyframe animation on a child of a `<details>`
+ * fires `animationstart` exactly once and still reports a finished animation while the group is
+ * shut, so closing and reopening plays nothing. Rendering state in a `content-visibility: hidden`
+ * subtree is preserved, not reset. A transition on the pseudo-element has no such memory — it runs
+ * from whatever the current computed value is, every time.
  *
  * `SheetSplitRun`'s bare `<details>` is deliberately **not** converted to this. It folds one run's
  * prompt text inside a modal list: it has no configuration to digest, and its open state is per-run
  * scratch that has no business outliving the modal in a global store. Widening this component to
  * cover it would mean optional ids and optional digests — speculative generality for one call site.
+ * It does not take `section-reveal` either, which is a separate decision now that the motion is a
+ * class rather than part of this component: eight runs each folding a wall of prompt text is a list,
+ * and a list that reflows on every disclosure is harder to read, not more dynamic. The modal's own
+ * entrance is the motion there.
  */
 export function CollapsibleSection({ id, defaultOpen, heading, digest, children }: CollapsibleSectionProps) {
   const isOpen = useSectionStore((state) => state.openSections[id] ?? defaultOpen);
@@ -87,8 +104,12 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
         setSectionsOpen([id], event.currentTarget.open);
       }}
       // The last group's own bottom padding would otherwise stack on the panel's, leaving far more
-      // air under the final field than there is above the panel heading.
-      className="border-t border-foundry-700/70 first:border-t-0 last:[&>fieldset]:pb-0"
+      // air under the final field than there is above the panel heading. Trimmed to `pb-1` rather
+      // than removed: `section-reveal` clips the block axis of `::details-content`, and clipping
+      // happens at the padding edge — so a final control sitting flush against it loses the bottom
+      // stroke of its focus ring, which is drawn 4px outside its box. Those 4px are the clearance,
+      // and they are 12px less air than the `pb-4` this is trimming.
+      className="section-reveal border-t border-foundry-700/70 first:border-t-0 last:[&>fieldset]:pb-1"
     >
       {/*
         A two-column grid, not a row: the caret and the heading share the first row, and the digest

@@ -271,9 +271,9 @@
    * arithmetic actually lives). An eased curve would make a rotation with no beginning appear to
    * pause at each turn.
    *
-   * 32s is one full turn, and because `bg-spectrum` sizes itself in percentages of its own box,
-   * that rate is the same on every surface wearing the wheel whatever its width — the hairline
-   * running the width of the page and the 40px logo tile beside the wordmark alike.
+   * 32s is one full turn, and because both spectrum surfaces size the wheel in percentages of
+   * their own box, that rate is the same on each of them whatever its width — the hairline running
+   * the width of the page and the wordmark's fourteen characters alike.
    */
   --animate-spectrum-pan: spectrum-pan 32s linear infinite;
 
@@ -517,6 +517,38 @@
 @layer base {
   :root {
     color-scheme: dark;
+
+    /*
+     * The wheel as an image, written once and composed twice.
+     *
+     * `bg-spectrum` pours it out neat and `heading-spectrum` puts it behind a veil of ink, and
+     * neither may restate the eleven stops: a second copy is how a wheel ends up with ten colours
+     * in one place and eleven in another, which renders perfectly and is invisible in a diff.
+     * A custom property rather than a `@theme` token because it is an *image*, not a colour —
+     * Tailwind has no image namespace, so a theme entry would generate no utility while inheriting
+     * the tree-shaking hazard the stops above need `static` to escape. Author CSS in the base layer
+     * is emitted unconditionally, which is what an image referenced only from `var()` needs.
+     *
+     * Eleven stops for ten colours — the first repeated at the end — because the image tiles.
+     * `background-repeat` is left at `repeat`, so magenta at the right edge of one tile would butt
+     * straight against rose at the left edge of the next: a hard seam travelling across the page
+     * once per turn. Closing the wheel on the colour it opened with makes every tile boundary
+     * invisible, which is the whole reason `animate-spectrum-pan` can loop at all.
+     */
+    --spectrum-wheel: linear-gradient(
+      90deg,
+      var(--color-spectrum-rose) 0%,
+      var(--color-spectrum-ember) 10%,
+      var(--color-spectrum-gold) 20%,
+      var(--color-spectrum-lime) 30%,
+      var(--color-spectrum-jade) 40%,
+      var(--color-spectrum-cyan) 50%,
+      var(--color-spectrum-azure) 60%,
+      var(--color-spectrum-indigo) 70%,
+      var(--color-spectrum-violet) 80%,
+      var(--color-spectrum-magenta) 90%,
+      var(--color-spectrum-rose) 100%
+    );
   }
 
   /*
@@ -737,35 +769,19 @@
 
 @utility bg-spectrum {
   /*
-   * The whole wheel, left to right, for the surfaces that are *about* the palette rather than
-   * coloured by it — the hairlines that separate the chrome from the page, and the rule under a
-   * section that introduces the spectrum itself.
+   * The wheel neat, for the one surface that is *about* the palette rather than coloured by it:
+   * the hairline separating the chrome from the page. This is the loudest the spectrum gets, and
+   * it is a hairline on purpose — a rainbow is a signature at one pixel and a distraction at forty.
    *
-   * Eleven stops for ten colours — the first is repeated at the end — because the image tiles.
-   * `background-repeat` is left at `repeat`, so magenta at the right edge of one tile would butt
-   * straight against rose at the left edge of the next: a hard seam travelling across the page
-   * once per turn. Closing the wheel on the colour it opened with makes every tile boundary
-   * invisible, which is the whole reason `animate-spectrum-pan` can loop at all.
+   * The gradient itself is `--spectrum-wheel`, declared in the base layer above so that
+   * `heading-spectrum` can compose the same image rather than restate it.
    *
    * `200%` wide, and it has to be wider than the box: `background-position` percentages resolve
    * against *(positioning area − image size)*, so an image the size of its element has a range of
    * zero and the animation would have nowhere to travel. At `200%` that range is one element
    * width, which is what the keyframe's own `200%` end position is measured in.
    */
-  background-image: linear-gradient(
-    90deg,
-    var(--color-spectrum-rose) 0%,
-    var(--color-spectrum-ember) 10%,
-    var(--color-spectrum-gold) 20%,
-    var(--color-spectrum-lime) 30%,
-    var(--color-spectrum-jade) 40%,
-    var(--color-spectrum-cyan) 50%,
-    var(--color-spectrum-azure) 60%,
-    var(--color-spectrum-indigo) 70%,
-    var(--color-spectrum-violet) 80%,
-    var(--color-spectrum-magenta) 90%,
-    var(--color-spectrum-rose) 100%
-  );
+  background-image: var(--spectrum-wheel);
   background-size: 200% 100%;
 }
 
@@ -922,15 +938,35 @@
 
 @utility heading-spectrum {
   /*
-   * The wordmark: the entire wheel poured through the glyphs, so the one piece of type that names
-   * the app carries the palette that defines it. Pair it with `animate-spectrum-pan` to turn the
-   * wheel through the letters.
+   * The wordmark: ink, with the wheel turning behind it.
    *
-   * Same clipping mechanics — and the same Safari prefix requirement — as `heading-gradient`; only
-   * the fill differs, so the wheel comes from `bg-spectrum` via `@apply` rather than being written
-   * out a second time. One gradient, one place to add an eleventh stop.
+   * It used to be the wheel neat, and that was a misreading of what a wordmark is for. Ten
+   * saturated hues at L 0.76, cycling, sitting in the top-left corner where the eye lands first —
+   * it out-shouted every control in the chrome and pulled attention back every few seconds, and a
+   * name is the one piece of type on a page that should never need reading twice. The identity
+   * claim was right and the volume was wrong.
+   *
+   * So the wheel goes behind a veil of `ink` at the alpha below, and what survives is near-white
+   * type with the hue drifting through it — legible at a glance, unmistakably the same mark, and
+   * quiet enough to sit beside the tab switcher without competing. `ink` rather than a `foundry`
+   * tone because the veil has to *lift* the glyphs off a dark ground: mixing toward the page would
+   * dim them into it, which is a different kind of hard to read.
+   *
+   * The veil is a flat gradient rather than a `background-color`, because a background colour is
+   * painted *under* every background image and would sit behind the wheel instead of over it.
+   * Both layers take the same `background-size`, so `animate-spectrum-pan` moves them together —
+   * and a flat layer looks identical wherever it is moved to, which is why it needs no size of
+   * its own.
+   *
+   * Same clipping mechanics — and the same Safari prefix requirement — as `heading-gradient`.
    */
-  @apply bg-spectrum;
+  background-image:
+    linear-gradient(
+      color-mix(in oklab, var(--color-ink) 76%, transparent),
+      color-mix(in oklab, var(--color-ink) 76%, transparent)
+    ),
+    var(--spectrum-wheel);
+  background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -967,6 +1003,74 @@
   background-size: 200% 100%;
 }
 
+@utility section-reveal {
+  /*
+   * A `<details>` that opens on a height transition rather than snapping, and shuts at once.
+   *
+   * `::details-content` is the only handle a native disclosure gives on the part that appears, and
+   * `interpolate-size: allow-keywords` is what makes `block-size: 0 → auto` an interpolable pair at
+   * all. The easing is `ease-emphasized`, whose curve is nearly all in the first third — the panel
+   * leaps open and settles, which is the shape that reads as responsive rather than slow.
+   *
+   * 200ms is the caret's own `duration-200` and not a second number chosen to look like it: the
+   * chevron turning and the group opening are one gesture, so they finish together rather than one
+   * of them arriving to a panel that has already stopped moving.
+   *
+   * **The transition is deliberately one-way, and the asymmetry is the whole design.** Only the
+   * `[open]` rule carries `content-visibility … allow-discrete`, so the content is painted from the
+   * first frame of an *opening* group and the height eases out from under it. Closing gets the
+   * height transition alone, which the user agent resolves instantly — because it hides
+   * `::details-content` the moment `open` goes, and there is then no box left to animate.
+   *
+   * That is not a limitation worked around; it is the safe end of a platform trade-off, measured in
+   * Edge both ways. Adding `content-visibility` to the closed state does animate the collapse — and
+   * keeps every control inside focusable for the full 200ms while the group is already shut. Focus
+   * a summary, press Enter, press Tab, and focus lands on a tooltip trigger inside the closed group;
+   * 200ms later `content-visibility: hidden` finally applies and drops it to `<body>`, losing the
+   * ring and the position. That is precisely the failure `SectionToggleAll` exists to prevent, and
+   * a disclosure must not reintroduce it from a different direction.
+   *
+   * `inert` on the content would fix the focus half and break another: verified with a text-fragment
+   * navigation, which drives the same find-in-page machinery — a match inside a plain `<details>`
+   * auto-expands it, and a match inside an `inert` one never does. This component chose `<details>`
+   * partly *for* that behaviour. So the collapse stays instant, which costs a little polish and
+   * nothing else.
+   *
+   * **The `@supports` gate is a correctness guard, not progressive enhancement.** The height
+   * transition needs the content clipped, and a clipping ancestor around these fields is exactly
+   * what would slice `ComboBox`'s suggestion list in half — the reason this component carried
+   * "deliberately not animated" until now. What makes it safe is that `useAnchoredSurface` lifts
+   * that list into the top layer, where nothing clips it, and it only does so where `showPopover()`
+   * exists. Gating on `selector(:popover-open)` *alongside* the feature this needs ties the clip to
+   * the lift: a browser that would clip the list without lifting it gets no clip, because it gets
+   * no animation. Both halves are named rather than one being assumed from the other.
+   *
+   * `overflow-y: clip` rather than `overflow: hidden`, on both axes for two different reasons.
+   * Vertically, `clip` establishes no scroll container — there is nothing here to scroll, and
+   * `hidden` would quietly make one that `scroll-padding` and scroll anchoring can then act on.
+   * Horizontally it stays `visible` (a legal pairing only with `clip`, never with `hidden`) because
+   * every control in these groups is full-width, and the global focus ring is drawn 4px outside its
+   * box — clipping the inline axis would shave the ring off both edges of every focused field.
+   */
+  @supports (interpolate-size: allow-keywords) and selector(:popover-open) {
+    interpolate-size: allow-keywords;
+
+    &::details-content {
+      block-size: 0;
+      overflow-x: visible;
+      overflow-y: clip;
+      transition: block-size 200ms var(--ease-emphasized);
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+      transition:
+        block-size 200ms var(--ease-emphasized),
+        content-visibility 200ms allow-discrete;
+    }
+  }
+}
+
 /*
  * The single reduced-motion catch-all. A user who has asked their OS for less motion gets it
  * everywhere, including from components written later that never considered it — which is the
@@ -981,6 +1085,12 @@
  * `transition-duration` covers the view-colour sweep as well: the three registered properties are
  * transitioned on `[data-tab]`, which `*` does match, so the page re-lights instantly rather than
  * travelling round the wheel.
+ *
+ * `::details-content` needs naming for the same reason `::backdrop` does — `*` reaches neither —
+ * but it gets a **rule of its own** rather than a fifth line in the list above. An unknown
+ * pseudo-element invalidates the entire selector list it appears in, not just its own compound, so
+ * folding it in would silently take the whole catch-all down on every engine that has not shipped
+ * it yet. That is the one failure this block must never have.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -992,6 +1102,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  *::details-content {
+    transition-duration: 0.01ms !important;
   }
 }
 

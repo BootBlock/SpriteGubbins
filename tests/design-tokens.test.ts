@@ -319,6 +319,63 @@ describe('design tokens', () => {
     expect(stylesheet).toContain('animation-duration: 0.01ms !important');
   });
 
+  it('reaches the two pseudo-elements the universal selector does not', () => {
+    const block = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(stylesheet)?.[1] ?? '';
+
+    // `*` matches neither `::backdrop` (no parent to descend from) nor `::details-content`, so each
+    // has to be named or its motion escapes the catch-all entirely — a modal's backdrop fading and
+    // `section-reveal`'s height transition are the two that would.
+    expect(block).toMatch(/::backdrop/);
+    expect(block).toMatch(/\*::details-content \{[^}]*transition-duration: 0\.01ms !important/);
+  });
+
+  it('keeps ::details-content out of the main catch-all selector list', () => {
+    // An unknown pseudo-element invalidates the whole selector list it appears in, not just its own
+    // compound. Folded into the `*, *::before, *::after, ::backdrop` list, it would take the entire
+    // catch-all down on every engine that has not shipped `::details-content` — turning a
+    // reduced-motion guarantee off for the users it exists to protect, silently.
+    const universalList = /\n {2}\*,\n([\s\S]*?)\{/.exec(stylesheet)?.[0] ?? '';
+
+    expect(universalList).not.toBe('');
+    expect(universalList).not.toContain('details-content');
+  });
+
+  it('gates the section reveal on the lift that keeps its clip safe', () => {
+    // The height transition clips `::details-content`, and a clipping ancestor around the studio's
+    // fields would slice `ComboBox`'s suggestion list in half. That is safe only because
+    // `useAnchoredSurface` lifts the list into the top layer, and only where `showPopover()` exists
+    // — so the clip must not outlive the lift. Both halves are named in the same `@supports`.
+    expect(stylesheet).toMatch(
+      /@supports \(interpolate-size: allow-keywords\) and selector\(:popover-open\)/,
+    );
+    // Scoped to the declaration block, not the whole file: the paragraph above this rule *names*
+    // `overflow-y: clip`, so a global match would be satisfied by the prose that explains the
+    // declaration and would still pass with the declaration itself deleted.
+    const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(closed).not.toBe('');
+    // `hidden` would establish a scroll container; the inline axis stays `visible` so the global
+    // focus ring, drawn 4px outside a full-width control, is not shaved off either edge.
+    expect(closed).toContain('overflow-y: clip');
+    expect(closed).toContain('overflow-x: visible');
+    expect(closed).not.toContain('overflow: hidden');
+  });
+
+  it('transitions content-visibility on the open state only, so a shut group is never tabbable', () => {
+    // The asymmetry is load-bearing, and it looks like an oversight — which is exactly why it is
+    // pinned. `content-visibility … allow-discrete` in the *closed* rule is what animates the
+    // collapse, and it does so by keeping `::details-content` painted past the moment `open` goes:
+    // measured in Edge, Enter-then-Tab then lands on a control inside a group that is already shut,
+    // and `<body>` gets the focus 200ms later. `SectionToggleAll` exists to stop that happening.
+    const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+    const open = /\n {4}&\[open\]::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(closed).not.toBe('');
+    expect(open).not.toBe('');
+    expect(closed).not.toContain('content-visibility');
+    expect(open).toContain('content-visibility 200ms allow-discrete');
+  });
+
   it.each(TYPE_SCALE)('sizes %s at the rung it names, and gives it a line height', (token, pixels) => {
     const size = new RegExp(`${token}: ([\\d.]+)rem;`).exec(stylesheet)?.[1];
 
@@ -392,16 +449,62 @@ function ruleBlock(opener: string, kind: string): string {
 
 describe('the wheel turns without a seam', () => {
   const spectrum = ruleBlock('@utility bg-spectrum {', '@utility ');
+  const wordmark = ruleBlock('@utility heading-spectrum {', '@utility ');
   const keyframe = ruleBlock('@keyframes spectrum-pan {', '@keyframes ');
 
-  /** Every `var(--color-spectrum-…) NN%` in `bg-spectrum`'s gradient, in the order written. */
-  const stops = [...spectrum.matchAll(/var\(--color-spectrum-(\w+)\) ([\d.]+)%/g)].map((stop) => ({
+  /**
+   * The wheel image itself, taken from the one declaration both utilities compose.
+   *
+   * A CSS declaration ends at the first `;` outside brackets, and a gradient carries none, so the
+   * value is everything up to it.
+   */
+  const wheel = /--spectrum-wheel:([^;]+);/.exec(stylesheet)?.[1] ?? '';
+
+  /** Every `var(--color-spectrum-…) NN%` in that gradient, in the order written. */
+  const stops = [...wheel.matchAll(/var\(--color-spectrum-(\w+)\) ([\d.]+)%/g)].map((stop) => ({
     name: stop[1],
     at: Number(stop[2]),
   }));
 
-  /** The width `bg-spectrum` sizes its gradient to, as a percentage of the element. */
+  /** The width `bg-spectrum` sizes the wheel to, as a percentage of the element. */
   const width = Number(/background-size: ([\d.]+)% [\d.]+%;/.exec(spectrum)?.[1]);
+
+  it('is one image both spectrum surfaces reach for, never two copies of the stop list', () => {
+    // `heading-spectrum` used to `@apply bg-spectrum`, which made sharing automatic. It cannot any
+    // more — it composes the wheel under a veil, so it writes its own `background-image` — and the
+    // failure that opens up is a second stop list drifting from the first: ten colours in one
+    // place and eleven in the other renders perfectly and looks like nothing in a diff.
+    expect(wheel).toContain('linear-gradient');
+    expect(spectrum).toContain('background-image: var(--spectrum-wheel);');
+    expect(wordmark).toContain('var(--spectrum-wheel)');
+    expect(wordmark).not.toMatch(/var\(--color-spectrum-\w+\) [\d.]+%/);
+  });
+
+  it('sizes both spectrum surfaces alike, because one keyframe drives them both', () => {
+    // `animate-spectrum-pan` is written once and lands on the hairline and the wordmark alike, and
+    // its end position is only correct for the size it was derived against. Let the two sizes drift
+    // and the seam comes back on whichever surface lost — silently, since both still animate.
+    const wordmarkWidth = Number(/background-size: ([\d.]+)% [\d.]+%;/.exec(wordmark)?.[1]);
+
+    // The floor first, because `toBe` is `Object.is` and `Object.is(NaN, NaN)` is `true`: if both
+    // rules lost their `background-size` the equality alone would call that agreement.
+    expect(wordmarkWidth).toBeGreaterThan(100);
+    expect(wordmarkWidth).toBe(width);
+  });
+
+  it("keeps the wordmark behind a veil, so the app's name is not the loudest thing on a page", () => {
+    // The wheel neat through 20px of bold type put ten saturated hues in the corner the eye lands
+    // on first, cycling. Losing the veil is a one-line edit that renders beautifully and undoes the
+    // whole point, so the layer is asserted rather than left to a comment — and asserted *in
+    // order*, because a background layer listed after the wheel is painted behind it.
+    expect(wordmark).toMatch(
+      /background-image:[\s\S]*color-mix\(in oklab, var\(--color-ink\) \d+%[\s\S]*var\(--spectrum-wheel\)/,
+    );
+
+    // The veil has to be an image layer. `background-color` is painted under every image, so the
+    // same colour written that way would sit behind the wheel and show through nothing.
+    expect(wordmark).not.toMatch(/^\s*background-color:/m);
+  });
 
   it('travels exactly one image width per turn, so the loop closes where it opened', () => {
     // The bug this replaced: a `background-position` percentage resolves against *(positioning
