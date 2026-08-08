@@ -1,6 +1,7 @@
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import {
+  companionDigest,
   continuityDigest,
   projectionDigest,
   renderStyleDigest,
@@ -9,6 +10,7 @@ import {
 } from '../../utils/studioDigests.ts';
 import { CollapsibleSection } from '../common/CollapsibleSection.tsx';
 import { SectionToggleAll } from '../common/SectionToggleAll.tsx';
+import { CompanionOutputFields } from './CompanionOutputFields.tsx';
 import { ContinuityFields } from './ContinuityFields.tsx';
 import { ProjectionFields } from './ProjectionFields.tsx';
 import { RenderStyleFields } from './RenderStyleFields.tsx';
@@ -16,7 +18,7 @@ import { RiggingFields } from './RiggingFields.tsx';
 import { SheetFields } from './SheetFields.tsx';
 
 /**
- * Which of the five groups is unfolded to begin with.
+ * Which of the six groups is unfolded to begin with.
  *
  * The split is Nielsen Norman's progressive-disclosure rule — frequently-needed up front,
  * specialised on request — applied to **what the defaults leave you needing to change**, which is
@@ -37,7 +39,9 @@ import { SheetFields } from './SheetFields.tsx';
  *   outside a cut-out rig.
  * - **Continuity across sheets** — folded. The identity lock is written *after* sheet one is
  *   accepted, so on arrival the group is inert and its digest says so; it is also the tallest of
- *   the five, carrying the palette-capture drop zone and its explanation.
+ *   the six, carrying the palette-capture drop zone and its explanation.
+ * - **Returned alongside the image** — folded. Both its checkboxes are off by default, and each
+ *   adds a second deliverable to the prompt rather than changing the sheet.
  *
  * Nothing is *hidden* by folding: each header carries its group's current values while it is shut,
  * which is what makes the folded panel more readable than the open one rather than less.
@@ -48,6 +52,7 @@ const SECTIONS = {
   projection: { id: 'output:projection', defaultOpen: false },
   rigging: { id: 'output:rigging', defaultOpen: false },
   continuity: { id: 'output:continuity', defaultOpen: false },
+  companion: { id: 'output:companion', defaultOpen: false },
 } as const;
 
 const ALL_SECTIONS = Object.values(SECTIONS);
@@ -79,7 +84,7 @@ export function OutputConfig() {
   return (
     <section className="animate-fade-in glass-panel group/panel rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-tab/40">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-foundry-700 pb-3">
-        <h2 className="flex items-center gap-2.5 text-sm font-bold text-ink">
+        <h2 className="flex items-center gap-2.5 text-base font-bold text-ink">
           {/* A gear that turns when the panel it heads is under the pointer. */}
           <span
             aria-hidden="true"
@@ -130,6 +135,14 @@ export function OutputConfig() {
           digest={continuityDigest(output)}
         >
           <ContinuityFields />
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          {...SECTIONS.companion}
+          heading="Returned alongside the image"
+          digest={companionDigest(output)}
+        >
+          <CompanionOutputFields />
         </CollapsibleSection>
       </div>
     </section>

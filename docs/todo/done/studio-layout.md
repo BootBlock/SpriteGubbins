@@ -23,14 +23,21 @@ Driven in Edge at 1400 × 950, on the state the app opens in (`CHARACTER`,
 
 | Measurement | Before | After |
 | --- | --- | --- |
-| Document height | **3039 px** (3.2 viewport-heights) | **2414 px** (2.5) |
-| `Subject Definition` panel | 1252 × 499 px | 1089 × 604 px |
-| `Output Configuration` panel | 1639 × 499 px | 1177 × 604 px |
-| Form column, total | 2915 px | 2290 px |
-| Sticky column, total | **685 px** — selector 93 + gap 16 + preview 576 | **838 px** — 93 + 16 + 729 |
-| `PromptPreview` | 576 px (its `max-h-[36rem]` cap) | 729 px |
-| Form column with every group folded | *not possible* | **950 px** |
-| Controls on screen | 36 — 16 combo boxes, 14 selects, 2 text, 2 number, 1 checkbox, 1 file | unchanged |
+| Document height | **3039 px** (3.2 viewport-heights) | **2585 px** (2.7) |
+| `Subject Definition` panel | 1252 × 499 px | 1144 × 604 px |
+| `Output Configuration` panel | 1639 × 499 px | 1291 × 604 px |
+| Form column, total | 2915 px | 2459 px |
+| Sticky column, total | **685 px** — selector 93 + gap 16 + preview 576 | **838 px** — 93 + 16 + 726 |
+| `PromptPreview` | 576 px (its `max-h-[36rem]` cap) | 726 px |
+| **Form column with every group folded** | *not possible* | **1084 px**, one click away |
+| Controls on screen | 36 — 16 combo boxes, 14 selects, 2 text, 2 number, 1 checkbox, 1 file | 37 — `main` added one |
+
+The "after" column is measured on the merged result, which is not quite the change in isolation:
+`main` moved while this was in flight, adding a sixth output group (*Returned alongside the image*)
+and raising the body type rung from 12 px to 13 px. Both make the page taller than this change alone
+left it (2414 px), and neither is a cost of it. The row that matters most is the last but one — the
+page has gone from *always* 3039 px to 2585 px unfolded and **1084 px folded**, and it is the folded
+figure that answers the issue: the panels are no longer a fixed-length list.
 
 **The budget notice is not on screen in that state**, and an earlier draft of this table was wrong to
 count it: the default sheet is 43 components against a budget of 43, and `exceedsComponentBudget` is
@@ -315,8 +322,17 @@ app's existing secondary button — the one `PresetRenameForm`, `HistoryFooter` 
 scale candidates already share. A quieter uppercase variant was tried first and read as a disabled
 label, not least because it sat in the slot the non-interactive `Technical Directives` badge vacated.
 
-Collapse-all is also the answer to how short this page can get: every group folded measures **950 px**
-of form column, against 2915 px before the change, and one click restores any of it.
+Collapse-all is also the answer to how short this page can get: every group folded measures
+**1084 px** of form column, against 2915 px before the change, and one click restores any of it.
+
+**Collapsing must not throw the keyboard user out of the document.** Whatever they were focused on
+may be inside a group the click is about to fold, and a shut `<details>` makes its contents
+unfocusable — so focus falls back to `<body>`, losing both the position and the ring. An ordinary
+Chromium mouse click hides that, because the button takes focus first; voice control, assistive-
+technology activation and a plain click in Safari all reach it. Focus therefore moves to the summary
+of the group being closed first: the standard disclosure recovery, and the control that reopens it.
+`aria-expanded` and `aria-controls` carry the other half — five or six regions appearing at once is
+not something a label change alone reliably announces.
 
 ### 3.6 Rebalance the columns, and let the preview fill its height
 
@@ -370,7 +386,8 @@ mount and never again is worse than none, so the fade was removed rather than do
 | `src/stores/useSectionStore.ts` | `openSections: Record<string, boolean>` + `setSectionsOpen(ids, open)`. Session-lived. |
 | `src/components/common/CollapsibleSection.tsx` | The disclosure primitive: `<details>`/`<summary><h3>`, caret, digest-when-collapsed, store-backed. |
 | `src/components/common/CollapsibleSection.test.tsx` | Semantics, digest visibility, toggling, store persistence. |
-| `src/components/common/SectionToggleAll.tsx` | The expand/collapse-all button for a set of section ids. |
+| `src/components/common/SectionToggleAll.tsx` | The expand/collapse-all button for a set of section ids, with the focus recovery §3.5 describes. |
+| `src/utils/sectionElementId.ts` | The DOM id a section's `<details>` carries, derived from its section id — the one thing the disclosure and the toggle-all must agree on without either owning the other. |
 | `src/utils/studioDigests.ts` | The six pure digest functions — one per output group, one over a subject key list. |
 | `src/utils/studioDigests.test.ts` | Both branches of each conditional group; uncapped budget; empty subject fields. |
 | `src/components/studio/SubjectForm.test.tsx` | Every category still renders all sixteen of its fields, each inside its group. |
@@ -551,6 +568,21 @@ of the findings were against **this document**.
    `CategoryDefinition`'s doc still called its field array "display order"; the `Map.get` guard in
    `SubjectForm` was attributed to `noUncheckedIndexedAccess` rather than to `Map`'s own signature;
    and two assertions in `subjectGroups.test.ts` could not fail.
+
+**Four more from the accessibility lane, which reported last.**
+
+9. **`Collapse all` destroyed keyboard focus** — WCAG 2.4.3. §3.5.
+10. **Nothing announced what the toggle did**: no `aria-expanded`, no `aria-controls`, no live-region
+    message, for a control that opens or shuts six regions at once.
+11. **The prompt preview absorbed the whole deficit under zoom.** It was the only `min-h-0` child of
+    the capped sticky column, so at 1024 × 600 — an ordinary 175% zoom on a wide display — the
+    `<pre>` fell to nine lines from a pre-change 576 px. The floor went from 20 rem to 24 rem;
+    measured again at that geometry it is 215 px and the column scrolls.
+12. **The digest was still clipped, and only for sighted users** — the description carried the whole
+    string while `line-clamp-2` cut the visible copy, inverting the component's own contract. With
+    every value bounded at the source the clamp had nothing left to do, so it is gone; and the
+    faint tone went to `ink-muted`, which the same review measured at ≈4.4:1 against the panel's
+    top-edge wash — marginally under AA for the one and only copy of a folded group's settings.
 
 **Three things reviewers raised and this design deliberately did not change.**
 

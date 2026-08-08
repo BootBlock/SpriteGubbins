@@ -99,7 +99,13 @@ export function QuantiseTab() {
             grid={grid}
             onGridChange={setGridOverride}
           />
-          <ImageComparison sourceName={source.name} source={source.image} result={result} />
+          <ImageComparison
+            sourceName={source.name}
+            source={source.image}
+            // The two travel together or not at all: `result` is computed from `grid` above, so it is
+            // non-null exactly when `grid` is, and the pair is what the comparison needs to scale by.
+            quantised={result === null || grid === null ? null : { result, grid }}
+          />
         </>
       )}
     </div>

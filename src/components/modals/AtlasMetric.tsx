@@ -17,7 +17,7 @@ interface AtlasMetricProps {
 export function AtlasMetric({ label, value }: AtlasMetricProps) {
   return (
     <div className="rounded-xl border border-foundry-700 bg-foundry-950 p-2.5">
-      <dt className="text-[10px] tracking-wide text-ink-faint uppercase">{label}</dt>
+      <dt className="text-2xs tracking-wide text-ink-faint uppercase">{label}</dt>
       <dd className="text-sm font-bold text-ink">{value}</dd>
     </div>
   );

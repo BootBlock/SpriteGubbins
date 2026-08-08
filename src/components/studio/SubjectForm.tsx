@@ -46,8 +46,10 @@ export function SubjectForm() {
   // from a pointer anywhere in the panel.
   return (
     <section className="animate-fade-in glass-panel group/panel space-y-4 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-tab/40">
+      {/* `flex-wrap`: the header now carries two controls beside the heading, and at a narrow panel
+          they would otherwise squeeze the title rather than dropping below it. */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-foundry-700 pb-3">
-        <h2 className="flex items-center gap-2.5 text-sm font-bold text-ink">
+        <h2 className="flex items-center gap-2.5 text-base font-bold text-ink">
           <span
             aria-hidden="true"
             className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-500 group-hover/panel:scale-110 group-hover/panel:ring-tab/60"

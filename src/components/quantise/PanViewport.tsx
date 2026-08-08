@@ -1,10 +1,17 @@
-import { useLayoutEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { useDragPan } from '../../hooks/useDragPan.ts';
 
 interface PanViewportProps {
   /** Names the scrolling region for a screen reader, and only once it is one. */
   readonly label: string;
+  /**
+   * The scrollport itself, owned by the caller.
+   *
+   * Handed in rather than kept here because two of these panes are held to the same view of the same
+   * artwork, and the arithmetic that does it needs both elements at once — see `ImageComparison`.
+   */
+  readonly viewportRef: RefObject<HTMLDivElement | null>;
   readonly children: ReactNode;
 }
 
@@ -24,16 +31,19 @@ const NO_OVERFLOW: Overflow = { x: false, y: false };
  * outside Windows, and neither discoverable. Dragging moves the image under the pointer instead,
  * which is the gesture every other image viewer has trained the user to expect.
  *
- * **Touch and pen are driven here too, not left to the browser.** `touch-action` is one declaration
- * governing both, so it is a single decision, and two things settle it: the native fling carries the
- * view hundreds of pixels past where the finger lifted, which is disqualifying on a surface whose
- * whole purpose is judging individual pixels; and the app owns zoom through its own control, so
- * `pinch-zoom` is all the browser needs to keep. The cost is that a finger inside a pane it can pan
- * cannot also scroll the page — the same bargain every embedded map makes — so only the axes that
- * actually overflow are claimed, and a pane that fits one way stays a way through on that axis.
+ * **The drag is the mouse's, and the browser keeps everything else.** No `touch-action` is claimed, so
+ * a finger and a nib pan this box the way they pan any scroll container — with momentum, and chaining
+ * out to the page once it reaches its end. That last part is why: below `lg` these panes are the full
+ * width of the page and 24rem of its height, twice over, so a pane that took the vertical swipe for
+ * itself would leave a finger no way past it. `useDragPan` states the rest of the reasoning.
+ *
+ * **It carries no padding, and must not.** Content starts at scroll offset zero, which is what makes
+ * `src/utils/panGeometry.ts` exact: padding inside a scrolling box displaces the content within the
+ * scroll coordinate space, putting a scale-dependent error into every conversion, and engines
+ * disagree about whether its trailing edge counts towards `scrollWidth`. Anything needing room around
+ * itself brings its own.
  */
-export function PanViewport({ label, children }: PanViewportProps) {
-  const viewport = useRef<HTMLDivElement>(null);
+export function PanViewport({ label, viewportRef, children }: PanViewportProps) {
   const [overflow, setOverflow] = useState<Overflow>(NO_OVERFLOW);
   const isPannable = overflow.x || overflow.y;
   const { isPanning, panHandlers } = useDragPan(isPannable);
@@ -42,23 +52,19 @@ export function PanViewport({ label, children }: PanViewportProps) {
   const [holdsFocus, setHoldsFocus] = useState(false);
   const isReachable = isPannable || holdsFocus;
 
-  // Before the paint, not after it, so the commit that changes the content does not go out with the
-  // previous one's `touch-action` still on it. It cannot help the *first* paint — nothing has been
-  // measured by then, so every mount shows `NO_OVERFLOW` once whichever hook this is.
-  //
   // No dependency array, so the observation is re-established after every commit. `children` is a
   // `ReactNode`, which this component cannot depend on, and the element inside it is *replaced* — not
   // merely resized — when `ImageComparison` swaps its placeholder `<p>` for the `<canvas>` a result
   // brings. Re-establishing covers that: a `ResizeObserver` delivers an entry as soon as it starts
   // observing, so re-observing whatever the children now are is also a re-measure of them.
   useLayoutEffect(() => {
-    const element = viewport.current;
+    const element = viewportRef.current;
     if (element === null) return;
 
     // The browser's own answer to "does this scroll", rather than the content's size modelled against
-    // the box's. Padding, borders and a scrollbar that has appeared are already in it, so there is
-    // nothing left to be wrong about where an engine differs. Both sides are integer-rounded, so an
-    // overflow of less than a pixel reads as none — which is the answer worth having either way.
+    // the box's. Borders and a scrollbar that has appeared are already in it, so there is nothing left
+    // to be wrong about where an engine differs. Both sides are integer-rounded, so an overflow of
+    // less than a pixel reads as none — which is the answer worth having either way.
     const observer = new ResizeObserver(() => {
       const x = element.scrollWidth > element.clientWidth;
       const y = element.scrollHeight > element.clientHeight;
@@ -76,7 +82,7 @@ export function PanViewport({ label, children }: PanViewportProps) {
 
   return (
     <div
-      ref={viewport}
+      ref={viewportRef}
       // A scrolling region is reachable by keyboard only if something makes it focusable, and
       // announced only if something names it — but a box with nothing to scroll is a tab stop that
       // does nothing, so both arrive with the overflow and leave with it (or with the focus).
@@ -90,11 +96,7 @@ export function PanViewport({ label, children }: PanViewportProps) {
         setHoldsFocus(false);
       }}
       {...panHandlers}
-      // Computed from a measurement, one axis at a time, so no static class can express it. Claiming
-      // an axis is what stops the browser panning it out from under the drag — the only thing that
-      // does, since `preventDefault` cannot cancel a compositor gesture.
-      style={{ touchAction: touchActionFor(overflow) }}
-      className={`max-h-96 overflow-auto rounded-xl border bg-foundry-950 p-3 ${
+      className={`max-h-96 overflow-auto rounded-xl border bg-foundry-950 ${
         isPanning
           ? // Cyan, not indigo: this is the palette's live state, and a drag under way is exactly that.
             'cursor-grabbing select-none border-neon'
@@ -104,18 +106,4 @@ export function PanViewport({ label, children }: PanViewportProps) {
       {children}
     </div>
   );
-}
-
-/**
- * What the browser may still do with a finger or a nib here.
- *
- * `pinch-zoom` survives every case: the browser keeps the one gesture it does better than any handler
- * could, and single-finger drags on a claimed axis arrive as pointer events instead of scrolling the
- * pane out from under them.
- */
-function touchActionFor(overflow: Overflow): string | undefined {
-  if (overflow.x && overflow.y) return 'pinch-zoom';
-  if (overflow.x) return 'pan-y pinch-zoom';
-  if (overflow.y) return 'pan-x pinch-zoom';
-  return undefined;
 }

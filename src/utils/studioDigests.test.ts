@@ -4,6 +4,7 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import {
+  companionDigest,
   continuityDigest,
   projectionDigest,
   renderStyleDigest,
@@ -170,27 +171,36 @@ describe('continuityDigest', () => {
     expect(continuityDigest(withOutput({ identityLock: 'Cyan visor' }))).toContain('Cyan visor');
   });
 
-  it('puts the manifest ahead of the lock, so the clipped end is the free text', () => {
-    // The lock is the one unbounded value in any digest — a sentence, and `withPaletteSegment`
-    // appends a palette to it. Behind it, the checkbox's only signal anywhere is what falls off.
-    const digest = continuityDigest(
-      withOutput({
-        emitManifest: true,
-        targetModel: 'CHATGPT_5_6_SOL',
-        identityLock: 'Cyan visor across upper face; three amber chest lights in a vertical row',
-      }),
+  it('says nothing about the manifest, which is not one of its controls', () => {
+    // The checkbox lives in `CompanionOutputFields`. A digest naming a control its group does not
+    // render is the failure this whole module is written to avoid.
+    expect(continuityDigest(withOutput({ emitManifest: true }))).not.toContain('manifest');
+  });
+});
+
+describe('companionDigest', () => {
+  it('says the target returns the image alone when neither box is ticked', () => {
+    expect(companionDigest(withOutput({ emitManifest: false, emitPromptFeedback: false }))).toBe(
+      'image only',
     );
-    expect(digest.indexOf('JSON manifest')).toBeLessThan(digest.indexOf('Cyan visor'));
   });
 
-  it('names the manifest only where the target can return one', () => {
-    // `CHATGPT_5_6_SOL` answers with text; Midjourney returns an image and nothing else, which is
-    // why `ContinuityFields` disables the checkbox there.
-    expect(continuityDigest(withOutput({ emitManifest: true, targetModel: 'CHATGPT_5_6_SOL' }))).toContain(
-      'JSON manifest',
+  it('names each deliverable that was asked for', () => {
+    const digest = companionDigest(
+      withOutput({ emitManifest: true, emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' }),
     );
-    expect(continuityDigest(withOutput({ emitManifest: true, targetModel: 'MIDJOURNEY' }))).not.toContain(
-      'JSON manifest',
-    );
+    expect(digest).toContain('JSON manifest');
+    expect(digest).toContain('adherence report');
+  });
+
+  it('names neither where the target cannot deliver them, however the preference is stored', () => {
+    // Midjourney returns an image and nothing else, so both checkboxes render unticked and
+    // disabled while the stored preference survives — and the digest has to agree with the screen,
+    // not with the store.
+    expect(
+      companionDigest(
+        withOutput({ emitManifest: true, emitPromptFeedback: true, targetModel: 'MIDJOURNEY' }),
+      ),
+    ).toBe('image only');
   });
 });

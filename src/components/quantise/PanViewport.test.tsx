@@ -1,11 +1,14 @@
+import { useRef } from 'react';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { PanViewport } from './PanViewport.tsx';
 
 /**
- * What the viewport promises about itself: a cursor, a tab stop, a name and a `touch-action`, each
- * of which is only honest while there is somewhere to scroll. The drag those affordances advertise
- * is `useDragPan`'s, and is tested beside it.
+ * What the viewport promises about itself: a cursor, a tab stop and a name, each of which is only
+ * honest while there is somewhere to scroll — plus the two things the geometry rests on, that it
+ * claims no gesture from the browser and carries no padding. The drag those affordances advertise is
+ * `useDragPan`'s, and is tested beside it.
  *
  * happy-dom performs no layout, so the two things the component takes from the environment are
  * stubbed: a `ResizeObserver` that reports on demand, and the scroll metrics it reads in response.
@@ -48,6 +51,16 @@ afterEach(() => {
   StubResizeObserver.latest = null;
 });
 
+/** The scrollport is the caller's, so the tests own one too rather than reaching for the DOM parent. */
+function Harness({ children }: { readonly children: ReactNode }) {
+  const viewportRef = useRef<HTMLDivElement>(null);
+  return (
+    <PanViewport label="Pan the sheet as it arrived" viewportRef={viewportRef}>
+      {children}
+    </PanViewport>
+  );
+}
+
 /** Give an element the scroll metrics a laid-out browser would have, since happy-dom reports zeroes. */
 function measureAs(element: Element, content: { x: number; y: number }, box: number): void {
   for (const [property, value] of [
@@ -66,9 +79,9 @@ function measureAs(element: Element, content: { x: number; y: number }, box: num
  */
 function viewport({ content = { x: 400, y: 400 }, box = 100 } = {}): HTMLElement {
   render(
-    <PanViewport label="Pan the sheet as it arrived">
+    <Harness>
       <canvas role="img" aria-label="The sheet as it arrived" />
-    </PanViewport>,
+    </Harness>,
   );
   const element = screen.getByRole('img', { name: 'The sheet as it arrived' }).parentElement;
   if (element === null) throw new Error('the viewport did not render');
@@ -122,27 +135,25 @@ describe('PanViewport', () => {
     expect(element).not.toHaveAttribute('tabindex');
   });
 
-  it('claims both axes from the browser when both overflow, leaving it the pinch', () => {
-    expect(viewport().style.touchAction).toBe('pinch-zoom');
+  it('claims no gesture from the browser, even with both axes overflowing', () => {
+    // The pane is full-width below `lg` and 24rem tall, twice over, so claiming the vertical swipe
+    // would leave a finger no way to scroll the page past it — and the browser's own pan has momentum
+    // and chains out to the page, which no handler here reproduces.
+    expect(viewport().style.touchAction).toBe('');
   });
 
-  it('leaves a finger free to scroll the page down through a pane that only overflows sideways', () => {
-    expect(viewport({ content: { x: 400, y: 100 } }).style.touchAction).toBe('pan-y pinch-zoom');
-  });
-
-  it('leaves a finger free to swipe across a pane that only overflows downwards', () => {
-    expect(viewport({ content: { x: 100, y: 400 } }).style.touchAction).toBe('pan-x pinch-zoom');
-  });
-
-  it('leaves the browser everything where there is nothing to pan', () => {
-    expect(viewport({ content: { x: 100, y: 100 } }).style.touchAction).toBe('');
+  it('carries no padding, which is what puts the content at scroll offset zero', () => {
+    // `src/utils/panGeometry.ts` converts offsets to source pixels with no term for a content origin.
+    // Padding inside a scrolling box displaces the content within the scroll coordinate space, so a
+    // `p-*` here would put a scale-dependent error into every one of those conversions.
+    expect(viewport().className).not.toMatch(/(?:^|\s)p-\d/);
   });
 
   it('watches the content as well as the box, and lets go of both when it unmounts', () => {
     const { unmount } = render(
-      <PanViewport label="Pan the sheet as it arrived">
+      <Harness>
         <canvas role="img" aria-label="The sheet as it arrived" />
-      </PanViewport>,
+      </Harness>,
     );
     const canvas = screen.getByRole('img', { name: 'The sheet as it arrived' });
 
@@ -188,7 +199,8 @@ describe('PanViewport', () => {
       clientX: 200,
       clientY: 200,
     });
-    // A finger has no cursor, so the border is what tells a touch user the drag was registered.
+    // Cyan marks the drag as live, and outlives the cursor: the pointer can leave the box entirely
+    // while the capture holds, and the border is what still says the pane is the one being moved.
     expect(element).toHaveClass('cursor-grabbing', 'select-none', 'border-neon');
 
     fireEvent.pointerUp(element, { pointerId: 1 });

@@ -142,5 +142,6 @@ export function parseOutputConfig(value: unknown): OutputConfig {
 
     identityLock: typeof value['identityLock'] === 'string' ? value['identityLock'] : '',
     emitManifest: pickBoolean(value, 'emitManifest', DEFAULT_OUTPUT_CONFIG.emitManifest),
+    emitPromptFeedback: pickBoolean(value, 'emitPromptFeedback', DEFAULT_OUTPUT_CONFIG.emitPromptFeedback),
   };
 }

@@ -11,7 +11,25 @@
  * text" are the constraints that fail most often. Section 9 repeats them as a self-audit, which is
  * the one place redundancy earns its keep.
  *
- * Taken from `docs/todo/baseline-prompt-new.md` §3.
+ * **The adherence report is a third mention of those checks, and it deliberately does not restate
+ * them.** It points at section 9's list instead, because the two are asking for different things
+ * from the same checks — section 9 audits *before* delivery so the sheet can still be fixed, and the
+ * report audits what was actually delivered so the *template* can be. Writing the list out again
+ * there would be the diluting third copy `utils/modelWrapperText.ts` describes, in the section least
+ * able to afford it.
+ *
+ * The report's own number is written twice — 11 behind the manifest, 10 without it — the same way
+ * section 9's heading already varies by target. Both of the sections it can follow are numbered
+ * fixed; only the last one can be preceded by a section that isn't there. A "## 11." with no 10
+ * above it reads as an authoring error, and a reader who cannot trust the numbering cannot follow a
+ * cross-reference either — which matters here, because the report's whole job is to cite sections
+ * back.
+ *
+ * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
+ * each rule lives. This constant is the one the app emits and therefore the source of the pair, so
+ * a change made here is copied over that fence in the same commit —
+ * `tests/prompt-template-mirror.test.ts` compares the two character for character and fails the
+ * build if they ever disagree.
  */
 export const PROMPT_TEMPLATE = `# MODULAR SPRITE-SHEET SPECIFICATION — [DEFINE:CATEGORY]
 
@@ -42,6 +60,14 @@ section 4 then names the exact set within that kind.** These two can never legit
 the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
 building, floor tiles on a character — this specification is malformed. Say so rather than resolving
 it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
+[IF:MULTI_DIRECTION]
+
+**A component the inventory lists in more than one direction is one component, drawn once per
+direction.** Each of those drawings is that same geometry turned to the object yaw section 3 gives
+it — never one view repeated, never a mirrored copy, never the same view with its details moved.
+Section 3 states how far each turn goes and what it must reveal; this is the contract that the turns
+happen at all, and it is the clause a directional sheet misses most often.
+[/IF]
 
 **Where two instructions pull against each other without contradicting the category**, satisfy them
 in this order: the component count and inventory · each component's identity and grid position · the
@@ -366,5 +392,67 @@ the pivot as a fraction of the component's cell:
 The manifest describes what you actually drew. If a component moved or was omitted, say so there
 rather than describing the ideal.
 [/IF]
+[IF:EMIT_PROMPT_FEEDBACK]
 
-Generate the sheet now.`;
+---
+[IF:EMIT_MANIFEST]
+
+## 11. ADHERENCE REPORT
+[/IF]
+[IF:EMIT_MANIFEST!=yes]
+
+## 10. ADHERENCE REPORT
+[/IF]
+
+After the sheet is delivered, and as text beside it, report on what you actually produced. Nothing
+in this section changes the image — write the report from the delivered pixels, never from the plan
+you drew them to.
+
+### The audit
+
+Section 9 still stands: fix what you can before delivering. This report is about the sheet you did
+deliver, so work section 9's checks — and its directional audit, where the sheet has one — once more
+against the finished image, and state for each whether it holds. Where one does not, say what the
+image contains instead, concretely: "three heads, all at roughly the same yaw" rather than
+"directional coverage could be improved". A check you cannot settle by looking at the image is
+reported as unverified rather than as passed.
+
+### The feedback block
+
+If every check holds, say so, and write nothing further.
+
+If any check is missed, then this specification failed to obtain what it asked for, and its wording
+is what needs to change. Close your reply with one fenced code block — three backticks, then the
+word markdown — holding a brief addressed to a software engineer who maintains the tool that
+composed this specification. Put nothing in that block but the brief, and nothing after it.
+
+**What that tool is, and why it constrains what you write.** This specification was composed by
+Sprite Gubbins, a browser application that assembles sprite-sheet prompts across a large
+configurable range of subjects, categories, render styles, projections, direction sets and rig
+modes. What you received is one rendering of a template shared by all of them. Your brief will be
+used to change that template, so it reaches every prompt the tool composes — and not this sheet,
+which nobody will regenerate from it. Four things follow:
+
+- **Write about the instruction, not the artwork.** "Redraw the rear torso" cannot be acted on
+  there. "Section 3 fixes the yaw but never states that a rear view must hide the face, so a second
+  three-quarter view satisfies it" can.
+- **Write nothing specific to this subject.** The next prompt from this tool may be a building, a
+  pistol or a tileset, and a change that only makes sense for this one cannot be made.
+- **Propose wording, not architecture.** Name the section, quote the sentence that let the miss
+  through, and give the replacement or addition you would make. Keep it proportionate: this
+  specification largely works, and a brief that restructures it cannot be used.
+- **Say when nothing should change.** If a miss was your own lapse against wording that was already
+  unambiguous, write that instead of inventing an improvement — a rule added against an instruction
+  that was already clear makes the template longer and worse.
+
+Close the brief — still inside that same block — with what only you can report: which instructions
+were hard to satisfy, which pulled against each other, and which were buried far enough down the
+specification to lose their force. None of that is visible in the image, and it is the most useful
+part of the brief.
+[/IF]
+
+Generate the sheet now.
+[IF:EMIT_PROMPT_FEEDBACK]
+
+Then write the adherence report — after the image has been delivered, never in place of it.
+[/IF]`;

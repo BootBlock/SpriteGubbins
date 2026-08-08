@@ -24,7 +24,7 @@ export function AtlasGridPreview({ columns, rows, componentCount }: AtlasGridPre
 
   return (
     <div className="space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-[10px] text-ink-faint">
+      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-2xs text-ink-faint">
         <span>
           Interactive atlas layout ({columns}×{rows})
         </span>

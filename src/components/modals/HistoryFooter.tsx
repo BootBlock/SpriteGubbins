@@ -31,7 +31,7 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-foundry-700 px-6 py-4">
-      <span className="font-mono text-[10px] text-ink-faint">
+      <span className="font-mono text-2xs text-ink-faint">
         {historyLogs.length} recorded{isFiltered && ` · ${shownCount} shown`}
       </span>
 
@@ -47,7 +47,7 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
           onClick={() => {
             download(HISTORY_FILENAME, exportHistoryJSON(), 'application/json');
           }}
-          className="rounded-lg border border-foundry-600 px-3 py-1.5 text-[11px] font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
+          className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
         >
           <span aria-hidden="true">📤</span> Export history (JSON)
         </button>
@@ -62,7 +62,7 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
                 setIsConfirmingClear(false);
                 void clearHistory();
               }}
-              className="rounded-lg bg-rose px-3 py-1.5 text-[11px] font-bold text-foundry-950 transition-opacity hover:opacity-90"
+              className="rounded-lg bg-rose px-3 py-1.5 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
             >
               Delete everything
             </button>
@@ -71,7 +71,7 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
               onClick={() => {
                 setIsConfirmingClear(false);
               }}
-              className="rounded-lg border border-foundry-600 px-3 py-1.5 text-[11px] font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+              className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
               Cancel
             </button>
@@ -83,7 +83,7 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
             onClick={() => {
               setIsConfirmingClear(true);
             }}
-            className="rounded-lg border border-foundry-600 px-3 py-1.5 text-[11px] font-semibold text-rose transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
+            className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
           >
             Clear history
           </button>

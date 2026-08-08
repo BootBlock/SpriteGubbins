@@ -4,7 +4,7 @@ import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import { splitsIntoRuns } from './sheetRuns.ts';
-import { supportsManifest } from './targetCapabilities.ts';
+import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
  * What a collapsed studio section says it is set to.
@@ -138,17 +138,29 @@ export function riggingDigest(output: OutputConfig): string {
  * blank — so the blank case is stated rather than left silent. A header with nothing after it reads
  * as a group that failed to describe itself, not as a group with nothing set.
  *
- * **The manifest comes first, and the lock last.** This is the one digest carrying an unbounded
- * value: an identity lock is a sentence, and `withPaletteSegment` appends a whole palette to it. Put
- * the lock first and the checkbox — a bounded, two-state fact with no other signal anywhere — is the
- * part that runs off the end. The rule generalises: within a digest, the shortest categorical values
- * lead and the free text trails, so what gets clipped is the part with the most left to guess from.
+ * `IdentityPaletteCapture` is the group's other child and is deliberately unnamed here: it is an
+ * action, not a setting, and everything it does lands in the lock this digest already carries.
  */
 export function continuityDigest(output: OutputConfig): string {
-  return join([
-    // Matched to the checkbox, which is unchecked and disabled where the target has no text channel
-    // to return a manifest through.
-    output.emitManifest && supportsManifest(output.targetModel) ? 'JSON manifest' : '',
-    output.identityLock.trim() === '' ? 'no identity lock' : output.identityLock,
+  return join([output.identityLock.trim() === '' ? 'no identity lock' : output.identityLock]);
+}
+
+/**
+ * What the target hands back beside the image.
+ *
+ * Both checkboxes are gated on a capability rather than on the preference alone, exactly as
+ * `CompanionOutputFields` renders them: a target with no channel for text cannot return a manifest,
+ * and one that renders in a single pass has no step in which to review what it drew. The stored
+ * preference survives switching to such a target, so reading `emitManifest` alone would put a
+ * deliverable in the digest that the prompt does not ask for.
+ *
+ * "nothing" rather than silence when neither is on — which is the default, and a header trailing off
+ * into nothing reads as a group that failed to describe itself rather than one with nothing set.
+ */
+export function companionDigest(output: OutputConfig): string {
+  const requested = join([
+    output.emitManifest && returnsText(output.targetModel) ? 'JSON manifest' : '',
+    output.emitPromptFeedback && supportsPromptFeedback(output.targetModel) ? 'adherence report' : '',
   ]);
+  return requested === '' ? 'image only' : requested;
 }

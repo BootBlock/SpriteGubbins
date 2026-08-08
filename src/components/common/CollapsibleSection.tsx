@@ -2,6 +2,7 @@ import { useId } from 'react';
 import type { ReactNode } from 'react';
 import { useSectionStore } from '../../stores/useSectionStore.ts';
 import type { SectionDefinition } from '../../types/ui.ts';
+import { sectionElementId } from '../../utils/sectionElementId.ts';
 
 interface CollapsibleSectionProps extends SectionDefinition {
   readonly heading: string;
@@ -38,11 +39,15 @@ interface CollapsibleSectionProps extends SectionDefinition {
  *
  * **The digest is the control's *description*, not part of its name.** Left to name-from-content it
  * would announce as "Render style PIXEL_ART · CLEAN_PRODUCTION · HIGH_RESOLUTION · …, collapsed,
- * button" — six identifiers in front of the state a user is listening for. `aria-hidden` takes it
- * out of the name and `aria-describedby` puts it back as the description, which is the one place
- * `aria-hidden` content is still read: the name computation for a referenced node ignores whether
- * the node is hidden. Sighted and screen-reader users get the same two pieces of information, in the
- * same order.
+ * button" — six identifiers in front of the state a user is listening for. `aria-labelledby` pins
+ * the name to the heading alone, and `aria-describedby` offers the values after it.
+ *
+ * The digest stays **ordinary, navigable text** while doing that: `aria-hidden` would have taken it
+ * out of the name just as well, but a description is announced once at whatever verbosity the
+ * reader is set to and can never be re-read, and a hidden node cannot be reached with a virtual
+ * cursor at all. A hundred characters of technical identifiers is exactly the kind of thing someone
+ * wants to go back over word by word. This way it is both — announced on focus, and still there to
+ * browse.
  *
  * **Controlled from the store**, so the caret, the digest and the element cannot disagree, and so a
  * fold survives the tab switch that unmounts the view. `onToggle` rather than an intercepted click:
@@ -74,6 +79,9 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
 
   return (
     <details
+      // Predictable from the section id, because `SectionToggleAll` has to name this region in
+      // `aria-controls` and recognise it as the one holding the focus it is about to hide.
+      id={sectionElementId(id)}
       open={isOpen}
       onToggle={(event) => {
         setSectionsOpen([id], event.currentTarget.open);
@@ -89,6 +97,7 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
         its own rule, and without it Safari draws a second triangle beside the caret.
       */}
       <summary
+        aria-labelledby={headingId}
         aria-describedby={isOpen ? undefined : digestId}
         className="grid cursor-pointer list-none grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 rounded-lg py-3 transition-colors duration-200 hover:bg-foundry-700/40 [&::-webkit-details-marker]:hidden"
       >
@@ -102,15 +111,32 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
         </svg>
 
+        {/*
+          `text-xs` — the body rung, the same one the field labels below take — because this heading
+          has to outrank them, and at `text-2xs` (the eyebrow rung the old `FieldGroup` legend used)
+          it was *smaller* than the labels it heads while sharing their colour. It carries the rank
+          in the other three dimensions instead: bold against semibold, `ink` against `ink-muted`,
+          and uppercase with tracking against neither.
+        */}
         <h3 id={headingId} className="text-xs font-bold tracking-wide text-ink uppercase">
           {heading}
         </h3>
 
         {!isOpen && (
+          /*
+            No clamp. A clamp would put the sighted reader behind the screen-reader one — the
+            description carries the whole string either way — and "folding must never hide the
+            configuration" is the entire argument for folding. It can wrap because it does not have
+            to fight the heading for room, and because `studioDigests` bounds every value before it
+            gets here, so the worst case is a few lines rather than a pasted paragraph.
+
+            `text-ink-muted`, not `ink-faint`: this is the *only* copy of a folded group's settings,
+            and `glass-panel`'s top-edge wash takes the faint tone marginally under 4.5:1 on the
+            first group of a panel.
+          */
           <span
             id={digestId}
-            aria-hidden="true"
-            className="col-start-2 min-w-0 line-clamp-2 font-mono text-[10px] leading-relaxed text-ink-faint"
+            className="col-start-2 min-w-0 font-mono text-2xs leading-relaxed text-ink-muted"
           >
             {digest}
           </span>
