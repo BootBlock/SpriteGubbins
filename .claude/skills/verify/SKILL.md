@@ -21,9 +21,11 @@ npm run dev          # http://localhost:5173/SpriteGubbins/
 **Mind the base path.** The site is served from `/SpriteGubbins/` (GitHub Pages project site),
 in dev as well as in production. `http://localhost:5173/` alone is a 404.
 
-**Pick a port of your own.** The sibling Gubbins project also serves on 5173, and a second
-`npm run dev` silently lands on 5174 — so a script pointed at 5173 can end up driving the
-*wrong app*. Be explicit:
+**Pick a port of your own.** 5173 is the configured default and `vite.config.ts` pins it with
+`strictPort`, so a second `npm run dev` now **exits** rather than silently landing on 5174 — which
+is the safe direction, because a script pointed at 5173 used to end up driving the *wrong app*. An
+exit is the signal that something already holds the port; don't work around it by taking whatever
+Vite offers next. Be explicit instead:
 
 ```bash
 npx vite --port 5199 --strictPort
