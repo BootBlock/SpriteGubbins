@@ -15,6 +15,8 @@ click away and are **equally binding** — "I only read AGENTS.md" is not a defe
 
 | Rule | Where |
 | --- | --- |
+| All work happens in a git worktree | 🌿 below |
+| Work is not done until it has landed — commit, merge, remove the tree | 🏁 below |
 | No secrets in the repository | 🔒 below |
 | Public-repository hygiene | 🌐 below |
 | Attribution on GitHub issues and PRs you write | ✍️ below |
@@ -29,6 +31,53 @@ click away and are **equally binding** — "I only read AGENTS.md" is not a defe
 | How to verify a change before calling it done | [CLAUDE.md](CLAUDE.md#verifying-a-change) |
 
 **Adding a rule to CLAUDE.md? It belongs in that table too.**
+
+## 🌿 All work happens in a git worktree (mandatory)
+
+Several agents typically work in this repository **concurrently**, and a checkout has exactly one
+working tree, one index and one `HEAD` — so two agents sharing it overwrite each other's edits,
+stage each other's files into a commit, and disagree about which branch is checked out. None of
+that fails loudly; it surfaces as a diff nobody can account for.
+
+**The rule:** before making any change, add a worktree and do the work there. The primary checkout
+is for reading, reviewing and integrating — never for edits.
+
+```bash
+git worktree add .claude/worktrees/<topic> -b worktree-<topic>
+```
+
+One worktree, one branch, one task. Don't adopt a tree another agent is working in, and never
+switch the primary checkout's branch to do work. `node_modules` isn't shared between trees, so
+`npm install` and run the full gate **inside** the tree you edited. **Never run `git clean -ffdx`**
+— the second `-f` removes git's refusal to descend into a nested repository, and takes every other
+agent's uncommitted work with it. Full detail, including the three separate exclusions that keep
+root-scanning tools out of `.claude/worktrees/`, in
+[CLAUDE.md](CLAUDE.md#all-work-happens-in-a-git-worktree-mandatory).
+
+## 🏁 Work is not done until it has landed (mandatory)
+
+A green gate is not a finished task. A change left sitting in a worktree has shipped nothing —
+`main` doesn't have it, no other agent can build on it, and the tree holds its branch hostage. The
+session ends reporting success and the loss surfaces days later.
+
+**The rule:** the session that does the work also lands it — **before** reporting the task
+complete.
+
+```bash
+git status --short                        # every ?? line is work too; nothing may be left behind
+git add -A && git diff --cached           # then the secrets self-audit on the staged diff
+git commit -F <message-file>              # multi-line messages go through a file
+git merge worktree-<topic>                # from the primary checkout
+git worktree remove .claude/worktrees/<topic>
+git branch -d worktree-<topic>
+```
+
+Untracked files are the commonest way half a change lands. Committing is not landing — an unmerged
+branch is invisible. If `git worktree remove` refuses, the commit step missed something: go and
+look, never `--force`. Land only your own tree; other agents' trees are in use. And if the work
+genuinely can't land, leave the tree and **say so explicitly**, naming the branch and the blocker —
+silence is the banned outcome. Full detail in
+[CLAUDE.md](CLAUDE.md#work-is-not-done-until-it-has-landed-mandatory).
 
 ## 🔒 No secrets in the repository (mandatory)
 

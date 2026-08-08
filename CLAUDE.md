@@ -13,6 +13,10 @@
 > time, and a shared checkout gives them one working tree to fight over. Create a worktree on
 > its own branch before you touch a file. Read the section below.
 
+> 🏁 **A GREEN GATE IS NOT A FINISHED TASK.** Work left sitting in a worktree has shipped
+> nothing. Commit everything the change touched, merge the branch into `main`, and remove the
+> worktree — in the session that did the work, before reporting it done. Read the section below.
+
 > 🚧 **NO BACKWARDS COMPATIBILITY BEFORE `1.0.0`.** This project is pre-1.0, so every release
 > may break anything and users are told to expect exactly that. Never add a compatibility shim,
 > alias, dual code path or data migration to keep an older shape working. Read the section below.
@@ -41,8 +45,13 @@ and integrating — never for edits.
 ```bash
 git worktree add .claude/worktrees/<topic> -b worktree-<topic>
 # … install, edit, type-check, lint, test, build and commit inside that tree …
+git merge worktree-<topic>                             # from the primary checkout
 git worktree remove .claude/worktrees/<topic>          # once the work has landed
+git branch -d worktree-<topic>
 ```
+
+Those last three lines are not optional tidying — they are where the work actually ships, and
+they have their own section: [work is not done until it has landed](#work-is-not-done-until-it-has-landed-mandatory).
 
 **The worktrees live inside the repository on purpose**, and that only works because every tool
 walking the project root is kept out of them. Three different mechanisms do that, and they are
@@ -74,10 +83,63 @@ root is ever added, give it the same exclusion in the same change.**
   `-f` removes exactly that protection, and takes every other agent's uncommitted work with it.
 - **Remove the worktree once the work lands.** A stale tree keeps its branch checked out — which
   blocks anyone else from checking that branch out — and leaves `git worktree list` describing
-  work that finished days ago.
+  work that finished days ago. The section below says when and how.
 - **Nothing else in this file relaxes inside a worktree.** The secrets audit, the design tokens,
   the verification gate and the review pass all apply to the commit you make there, because that
   is the commit that reaches the public history.
+
+## Work is not done until it has landed (mandatory)
+
+A green gate is not a finished task. A change that has been type-checked, linted, tested, built,
+driven in the browser and reviewed — and then left sitting in a worktree — has shipped nothing:
+`main` doesn't have it, no other agent can build on it, and the tree it lives in holds its branch
+hostage. Nothing about that fails loudly. The session ends reporting success, and the loss only
+surfaces later, when someone asks why a feature that was "done" isn't in the app.
+
+**The rule:** the session that does the work also lands it. Commit everything the change touched,
+merge the branch into `main`, and remove the worktree and its branch — **before** reporting the
+task complete.
+
+```bash
+# inside .claude/worktrees/<topic>, with the verification gate green
+git status --short                        # every ?? line is work too — nothing may be left behind
+git add -A
+git diff --cached                         # the secrets self-audit, on what will actually be committed
+git commit -F <message-file>              # multi-line messages go through a file, never inline quoting
+
+# then from the primary checkout — the one tree that exists for integrating
+git merge worktree-<topic>
+git worktree remove .claude/worktrees/<topic>
+git branch -d worktree-<topic>
+```
+
+- **Untracked files are the commonest way half a change lands.** A new component, hook or test
+  that was never `git add`ed looks complete in the worktree and arrives on `main` missing the file
+  everything else imports — and the build that proves it was green ran against the tree that still
+  had it. Read `git status --short` before committing, every time; `??` lines are work, not noise.
+- **Committing is not landing.** A branch nobody merged is still invisible: `main` is what the app
+  builds from, what deploys, and what every other worktree branches off. Merging is part of the
+  task.
+- **`main` may have moved while you worked.** Several agents land into it. If the merge isn't a
+  fast-forward, resolve it *on your branch* — merge `main` into the worktree branch, re-run the
+  full gate there, then merge back — so what reaches `main` is a combination that has actually
+  been verified, not one assembled during a conflict resolution.
+- **Remove the tree and delete the branch together.** `git worktree remove` leaves the branch
+  behind, and a pile of merged `worktree-*` branches turns `git branch` into a graveyard where
+  nobody can tell live work from finished work. `git branch -d` (not `-D`) refuses anything
+  unmerged, which is the check you want.
+- **`git worktree remove` refusing is information, not an obstacle.** It fails when the tree still
+  holds uncommitted or untracked changes — which means the commit step missed something. Go and
+  look at what. Never reach for `--force`, which destroys precisely the work the refusal is
+  protecting.
+- **Land only your own tree.** `git worktree list` will show trees other agents are working in
+  right now, and from the outside their in-progress work is indistinguishable from abandoned work.
+  Leave them alone — this is the same rule as never adopting someone else's tree.
+- **If the work genuinely can't land, say so in as many words.** A conflict that isn't yours to
+  resolve, a gate you can't get green, a decision that needs the maintainer — those are real. The
+  answer is to leave the worktree in place and **report the work as unlanded**, naming the branch
+  and what blocks it, so someone can pick it up. What is banned is silence: reporting a task done
+  while its only copy sits in a tree nobody has been told about.
 
 ## No secrets in the repository (mandatory)
 
@@ -507,6 +569,11 @@ before considering a change done.
 `verify` skill covers running the app and the cross-origin-isolation gotcha that decides
 whether SQLite gets OPFS or falls back. **Then run `/auto-review high`** (the `auto-review`
 skill) over the diff and fix every confirmed finding.
+
+**A green gate is the second-to-last step, not the last one.** Once it passes, land the change —
+commit, merge into `main`, remove the worktree and delete its branch — as described in
+[work is not done until it has landed](#work-is-not-done-until-it-has-landed-mandatory). A verified
+change nobody merged is indistinguishable, from `main`, from a change that was never made.
 
 Tests import `describe` / `it` / `expect` from `vitest` explicitly — Vitest runs without
 `globals`, which is what keeps test files inside the app's TypeScript program so `tsc -b`
