@@ -65,6 +65,7 @@ export const MAX_IMAGE_PIXELS = 4096 * 4096;
 export const QUANTISE_TOOLTIPS = {
   grid: 'How many image pixels wide one drawn pixel is. Detected from the image where it can be; type it yourself when the model returned smooth artwork, or when the detected value is wrong. A grid of 1 leaves the size alone and only reduces the palette.',
   // Where panning is named. The grab cursor only appears once a pointer is already over the image,
-  // so it teaches nobody on a touchscreen, and nobody working from the keyboard.
-  zoom: 'How many screen pixels one image pixel is drawn as. Magnifying never resamples — one pixel becomes a square of them. When a preview is larger than its frame, drag it with the left mouse button or a finger to move around it, or give it focus with Tab and use the arrow keys.',
+  // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence
+  // is the other thing nothing on screen says: the panes are linked, and moving one moves both.
+  zoom: 'How many screen pixels one image pixel is drawn as. Magnifying never resamples — one pixel becomes a square of them. Both previews stay on the same part of the sheet at the same magnification, so moving one moves the other. When a preview is larger than its frame, drag it with the left mouse button or a finger to move around it, or give it focus with Tab and use the arrow keys.',
 } as const;

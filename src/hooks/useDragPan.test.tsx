@@ -62,18 +62,14 @@ function drag(element: HTMLElement, x: number, y: number, pointerId = 1) {
   fireEvent.pointerMove(element, { pointerId, buttons: 1, clientX: x, clientY: y });
 }
 
-/**
- * A finger arriving, which is both how a touch drag starts and how a pinch does. The first contact of
- * a gesture is primary and no later one is, until every finger has lifted and the next begins afresh —
- * which is the difference the hook reads to tell a drag from a pinch, so the tests state it too.
- */
-function touch(element: HTMLElement, x: number, y: number, pointerId = 2, isPrimary = true) {
+/** A contact arriving from something that is not a mouse, which the browser pans for itself. */
+function contact(element: HTMLElement, type: 'touch' | 'pen', x: number, y: number, pointerId = 2) {
   fireEvent.pointerDown(element, {
     pointerId,
-    pointerType: 'touch',
+    pointerType: type,
     button: 0,
     buttons: 1,
-    isPrimary,
+    isPrimary: true,
     clientX: x,
     clientY: y,
   });
@@ -258,65 +254,37 @@ describe('useDragPan', () => {
     expect(element.scrollLeft).toBe(0);
   });
 
-  it('pans from a finger as readily as from a mouse', () => {
+  it('leaves a finger to the browser, whose own pan has momentum and chains out to the page', () => {
     const element = box();
 
-    touch(element, 200, 200);
+    contact(element, 'touch', 200, 200);
     drag(element, 140, 160, 2);
 
-    expect(element.scrollLeft).toBe(60);
-    expect(element.scrollTop).toBe(40);
-  });
-
-  it('stands down when a second finger joins the first, so the browser can take the pinch', () => {
-    const element = box();
-
-    touch(element, 200, 200, 2);
-    drag(element, 180, 180, 2);
-    touch(element, 300, 300, 3, false);
-    drag(element, 100, 100, 2);
-
-    // The 20px the first finger had already moved stands; nothing after the second one lands does.
-    expect(element.scrollLeft).toBe(20);
+    // Nothing moves *here*. The pane is still an ordinary scroll container, so the finger pans it
+    // natively — with the momentum and the chaining out to the page that a handler cannot reproduce,
+    // and which a full-width pane below `lg` would otherwise swallow.
+    expect(element.scrollLeft).toBe(0);
     expect(element.dataset['panning']).toBe('false');
   });
 
-  it('stays down for a third finger mid-pinch rather than arming a pan under the gesture', () => {
+  it('leaves a pen to the browser too, which pans for a nib exactly as it does for a finger', () => {
     const element = box();
 
-    touch(element, 200, 200, 2);
-    drag(element, 180, 180, 2);
-    touch(element, 300, 300, 3, false);
-    // A third finger while the other two are still on the glass. Standing down cleared the drag, so
-    // without a latch there is nothing left to say this contact is part of a gesture already running.
-    touch(element, 400, 400, 4, false);
-    drag(element, 100, 100, 4);
+    contact(element, 'pen', 200, 200);
+    drag(element, 140, 160, 2);
 
-    expect(element.scrollLeft).toBe(20);
+    // Handling the nib while the browser also pans for it is the trap: both would move the content
+    // and the drag would run at double speed.
+    expect(element.scrollLeft).toBe(0);
     expect(element.dataset['panning']).toBe('false');
   });
 
-  it('stays down when a finger lifts and lands again with another still on the glass', () => {
-    const element = box();
-
-    touch(element, 200, 200, 2);
-    drag(element, 180, 180, 2);
-    touch(element, 300, 300, 3, false);
-    fireEvent.pointerUp(element, { pointerId: 3 });
-    // The gesture is not over — the first finger never left — so this contact is still not primary.
-    touch(element, 320, 320, 3, false);
-    drag(element, 100, 100, 3);
-
-    expect(element.scrollLeft).toBe(20);
-    expect(element.dataset['panning']).toBe('false');
-  });
-
-  it('survives a palm on the screen mid mouse-drag, which is not a pinch and must not end one', () => {
+  it('survives a palm on the screen mid mouse-drag, which must not end the hand still dragging', () => {
     const element = box();
 
     press(element, 200, 200);
     // A touchscreen laptop, and a hand resting on the glass while the other holds the button.
-    touch(element, 500, 500, 7);
+    contact(element, 'touch', 500, 500, 7);
     fireEvent.pointerUp(element, { pointerId: 7 });
     drag(element, 150, 200);
 
