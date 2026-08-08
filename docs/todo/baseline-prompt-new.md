@@ -1020,6 +1020,40 @@ text with the image — as, since the corrections above, are both Gemini image t
 > this specification's redundancy is what costs it a sheet. That wants real generations rather than
 > reasoning, the same way the Imagen condensation question above did.
 
+> **Closed, and not by generations — by reading the other half of the vendor's own advice.** The
+> maintainer asked what actually renders the image on this target, which sent this back to OpenAI's
+> pages for the *product* rather than the API. Two findings came out of it, and the second answers
+> the paragraph above.
+>
+> **What renders it is `gpt-image-2`**, branded **ChatGPT Images 2.0** in the product. The chain:
+> `gpt-5.6-sol` gives `text` as its only output modality with `image_generation` under *tools*; the
+> tool guide says the renderer is "always a GPT Image model" and that "**the tool handles GPT Image
+> model selection**"; the [ChatGPT release
+> notes](https://help.openai.com/en/articles/6825453-chatgpt-release-notes) for 21 April 2026
+> introduce "**ChatGPT Images 2.0**, our new image generation model in ChatGPT"; `gpt-image-2` ships
+> the same day (`gpt-image-2-2026-04-21`) with `image` as its only output modality; and OpenAI's own
+> [ChatGPT docs](https://learn.chatgpt.com/docs/image-generation) state "Built-in image generation
+> uses `gpt-image-2`". *No single page equates the product name to the model id in those words — that
+> last step is inference, and it is recorded as inference.*
+>
+> **Selecting Sol is not inert, and not for the reason the wrapper assumed.** The same release notes:
+> "images with thinking … is available on all paid ChatGPT plans. **It is available when you select
+> Thinking and Pro models**", and [GPT-5.6 in
+> ChatGPT](https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt) states that "GPT-5.6 Sol
+> now powers the **Medium**, **High**, and **Extra High** reasoning options", with Instant being
+> GPT-5.5 Instant. So choosing Sol puts the user on a thinking tier, which is the documented switch
+> for the image model's own planning pass. Nothing in the prompt can set that — it is the user's
+> pick — which is why it belongs in what the app *tells* them, not in what it emits.
+>
+> **And §8 stays.** OpenAI's guidance for an *image* prompt is "**Repeat any requirement that must
+> stay fixed**" — the exact opposite of the line the paragraph above was weighing, for the exact
+> repetition it was weighing cutting. The two do not contradict: the lean guidance addresses the model
+> **reading** this specification, the repetition guidance the model **rendering** from it, and on this
+> target those are two different models with a tool call between them. The open question was framed as
+> "does this specification's redundancy cost it a sheet", and the answer is that redundancy was never
+> a single question — it depends which side of the hand-off a given restatement is for. Cutting §8 on
+> the strength of the GPT-5.6 guidance would apply a text model's rules to the image model's half.
+
 ### Documented prompt ceilings
 
 Each target's `promptBudget` records what the vendor or the architecture publishes about how much

@@ -112,18 +112,31 @@ describe('wrapForModel', () => {
     expect(prompt).not.toContain('## 10. COMPANION MANIFEST');
   });
 
-  it('tells Sol that what it relays to the image tool is what gets drawn', () => {
+  it('tells Sol that what its tool call carries is what gets drawn', () => {
     // The one fact about this target the template cannot know: `gpt-5.6-sol` outputs text only and
-    // reaches an image through a *tool*, and OpenAI document that the mainline model "will
-    // automatically revise your prompt" on the way. So the rendered sheet comes from Sol's
-    // paraphrase of this specification, not from this specification.
+    // reaches an image through a *tool*, whose far side is "always a GPT Image model". So the
+    // rendered sheet comes from whatever that call carries, not from this specification.
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
 
     expect(prompt.startsWith('[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]')).toBe(true);
     expect(prompt).toContain('You are not the model that draws this sheet');
     // Naming the three parts is the point — a bare "do not summarise" gives it nothing to protect
     // when it does have to shorten something.
-    expect(prompt).toContain('section 0, the object yaws in section 3 and the inventory in section 4');
+    expect(prompt).toContain('section 0, the object\nyaws in section 3 and the inventory in section 4');
+  });
+
+  it('does not tell a ChatGPT user about a rewrite OpenAI documents only for the API', () => {
+    // `revised_prompt` and "the mainline model … will automatically revise your prompt" are stated
+    // for the Responses API. No OpenAI page says ChatGPT's own image surface does the same — and
+    // pasting into ChatGPT is the path this app's users are on, so an earlier draft asserted the
+    // API's documented behaviour to a surface it was not documented for. The hand-off itself is
+    // certain on both paths; the rewrite is not, so the wrapper claims only the hand-off.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const wrapper = prompt.slice(0, prompt.indexOf('# MODULAR SPRITE-SHEET SPECIFICATION'));
+
+    expect(wrapper).not.toMatch(/rewrite|revise|paraphrase|summaris/i);
+    // What replaces it names the mechanism both paths do share.
+    expect(wrapper).toContain('a GPT Image model');
   });
 
   it('states nothing in the Sol wrapper that the template already states', () => {
