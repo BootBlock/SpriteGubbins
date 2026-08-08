@@ -136,7 +136,7 @@ export function OutputConfig() {
           <ProjectionFields />
         </CollapsibleSection>
 
-        <CollapsibleSection {...SECTIONS.rigging} heading="Rigging" digest={riggingDigest(output)}>
+        <CollapsibleSection {...SECTIONS.rigging} heading="Rigging" digest={riggingDigest(category, output)}>
           <RiggingFields />
         </CollapsibleSection>
 

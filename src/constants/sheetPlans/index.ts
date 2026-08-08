@@ -12,6 +12,11 @@ import { OBJECT_CUTOUT_RIG, OBJECT_DIRECTIONAL_VARIANTS, OBJECT_PART_LIBRARY } f
 import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
 import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY } from './vehicle.ts';
 
+// The second category-scoped table, kept in its own file because it answers a different question —
+// which categories articulate, rather than which sheets they produce — and surfaced here because
+// every caller already reaches this directory through its index.
+export { CATEGORY_RIG_MODES, resolveRigMode, supportsRigMode } from './rigModes.ts';
+
 /**
  * Which sheet each category can actually produce, and what it asks for.
  *
@@ -25,10 +30,9 @@ import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY 
  * `resolveMode` below is what stops an absent one ever reaching the compiler.
  *
  * `Partial` is load-bearing. Not every category supports every mode — an item has no cut-out rig,
- * nothing on an interface turns about a pivot, and only a building and an interface assemble from
- * repeating pieces — so the gaps are the point rather than an omission to fill.
- * only a building and a terrain are laid as a tile field, and a terrain has no directional core at
- * all — so the gaps are the point rather than an omission to fill.
+ * nothing on an interface turns about a pivot, only a building, an interface and a terrain assemble
+ * from repeating pieces, and a terrain has no directional core at all — so the gaps are the point
+ * rather than an omission to fill.
  *
  * **Every entry is a series, and most of them have one member.** A pairing outgrows a single sheet
  * when its inventory passes `PRACTICAL_COMPONENT_CEILING`, which is a fact about what a generation

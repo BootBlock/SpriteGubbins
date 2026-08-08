@@ -7,7 +7,7 @@ import type {
   SurfaceDetail,
 } from '../../types/output.ts';
 import type { BackgroundKey, DirectionSet, Projection, RenderStyle } from '../../types/rendering.ts';
-import type { JointCapStyle, OverlapMargin, RigMode } from '../../types/rigging.ts';
+import type { JointCapStyle, OverlapMargin } from '../../types/rigging.ts';
 
 /**
  * The options each output control offers.
@@ -66,12 +66,10 @@ export const BACKGROUND_KEY_CHOICES: readonly OutputChoice<BackgroundKey>[] = [
   { value: 'TRANSPARENT', label: 'TRANSPARENT (alpha, where the target supports it)' },
 ];
 
-export const RIG_MODE_CHOICES: readonly OutputChoice<RigMode>[] = [
-  { value: 'POSE_LIBRARY', label: 'POSE_LIBRARY (rigid segments assembled by hand)' },
-  { value: 'CUTOUT_RIG', label: 'CUTOUT_RIG (bones rotate the pieces at runtime)' },
-  { value: 'NONE', label: 'NONE (not articulated — tilesets, props)' },
-];
-
+// The rig modes are **not** here, and the absence is deliberate: which of them a category can be
+// asked for depends on whether that category articulates at all, so their labels live with the
+// function that scopes them, in `rigModeChoices.ts`. The two below are unconditional because a
+// cut-out rig is the only thing that renders either, whatever the subject is.
 export const JOINT_CAP_STYLE_CHOICES: readonly OutputChoice<JointCapStyle>[] = [
   { value: 'ROUNDED', label: 'ROUNDED' },
   { value: 'SQUARED', label: 'SQUARED' },

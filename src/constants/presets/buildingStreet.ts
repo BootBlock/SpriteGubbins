@@ -41,6 +41,11 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       paletteLimit: 'EXPANDED_ALBEDO',
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       lightingModel: 'FLAT_NEUTRAL_ALBEDO',
+      // The one shipped preset that inherited `DEFAULT_IMAGE_CONFIG`'s `POSE_LIBRARY` on a category
+      // with no joints, which is the reported defect in the built-in library: a kiosk's bays and
+      // awning were being handed section 5's shared pivots. Its three neighbours already said
+      // `NONE`, which is how the omission stayed invisible.
+      rigMode: 'NONE',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GENERIC',
     },
