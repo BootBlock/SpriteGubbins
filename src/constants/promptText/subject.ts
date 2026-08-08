@@ -20,4 +20,9 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
   ITEM: 'a pommel drawn beside the body or shaft it caps is in proportion to it',
   BUILDING: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
   VEHICLE: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
+  // The one category with no "fitting against the body it is mounted on" to name, because its
+  // components are moments rather than pieces — nothing on the sheet is part of anything else on it.
+  // So the pair it draws its example from is the two ends of the *sequence*: the scale that has to
+  // hold is between the first frame and the widest one, which is exactly where a flipbook loses it.
+  EFFECT: 'a first frame drawn beside the peak frame it grows into is in proportion to it',
 };
