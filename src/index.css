@@ -848,17 +848,26 @@
    * flat tone, and the card read as opaque however correct its alpha was. Measured in Edge over a
    * full-strength stop, 14px carries the shape through as a soft bloom and 24px does not.
    *
-   * **The alpha is the legibility budget, not a taste setting.** A tooltip opens over whatever the
-   * user was reading, and the app's brightest surfaces are the wheel stops at L 0.76 — a preset
-   * card, the selected tab pill — with `gold` and `accent-soft` a little above them. Body guidance
-   * measured in Edge over a stop: **4.99:1** at this alpha, against 4.79:1 at the 24px blur it
-   * replaces, so loosening the blur cost nothing and raising the alpha two points paid for it. The
-   * same measurement at 0.6 alpha is 2.91:1 — under the 4.5:1 AA body threshold, on a surface
-   * whose entire purpose is to be read. So this number is the guidance's contrast, and spending it
-   * to make the glass more obvious is the trade to refuse. `tests/design-tokens.test.ts` holds the
-   * floor.
+   * **The alpha is 60% because the glass has to be visible, and what that costs is measured.**
+   * Where this surface actually spends its life, the number barely registers: all twenty-nine
+   * guidance cards on the studio open over the app's own dark panels, and body text there measures
+   * 6.97:1 at this alpha against 7.35:1 at 80% — still 6.31:1 even at 20%, because a dark panel has
+   * almost nothing to send through. Legibility is not what the alpha buys on that view.
+   *
+   * It is what the alpha buys on **one** view. The quantiser's controls sit beside a preview of the
+   * *user's own image*, which can be any brightness at all, and there the two are the same dial:
+   * measured against a full-bleed surface at L 0.76, guidance is 2.91:1 at 60% where 80% gives
+   * 4.99:1 — so over a light sprite sheet this card is below the 4.5:1 AA body threshold, and it
+   * was above it before. That is a chosen trade for a surface that reads as glass, recorded here
+   * rather than discovered later.
+   *
+   * **Darkening the backdrop does not escape it**, which is the first thing to reach for. A
+   * `brightness()` in the filter below buys contrast by removing exactly the luminance that made
+   * the glass visible: 60% alpha at `brightness(0.55)` passes 40% × 0.55 ≈ 22% of the backdrop and
+   * measures 4.93:1 — the same glass and the same contrast as 80% alpha with no filter at all, in
+   * different notation. Measured, not reasoned. There is no setting that is both.
    */
-  background-color: color-mix(in oklab, var(--color-foundry-900) 80%, transparent);
+  background-color: color-mix(in oklab, var(--color-foundry-900) 60%, transparent);
   background-image: linear-gradient(
     to bottom,
     color-mix(in oklab, var(--color-accent) 18%, transparent) 0%,
