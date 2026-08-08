@@ -36,7 +36,7 @@ export const OUTPUT_TOOLTIPS = {
   cameraElevation:
     'Degrees above the horizon, from 0 at eye level to 90 directly overhead. It defaults to whatever the chosen projection implies, so override it only when the game has a specific ground read to match — raising it shows more of the floor plane and foreshortens the figure’s height.',
   directions:
-    'Which facings the sheet covers. For a cut-out rig this is the run list rather than the sheet contents: generate one sheet per direction and tie them together with an identity lock. THREE_CLASSIC is the cheapest set that still reads as fully turnable, because the right side mirrors for the left.',
+    'Which facings the sheet covers, where Sheet Contents leaves the choice open — a cut-out rig and a tileset read this as the run list rather than the sheet contents, so generate one sheet per direction and tie them together with an identity lock. CORE_DIRECTIONAL_VARIANTS ignores it and draws its own three facings regardless. THREE_CLASSIC buys the most facings three drawings can, because each of its views flips at runtime into a different one — but every view in it is a turned pose, so it reaches no facing towards the camera and none directly away, and flipping cannot produce either. FOUR_CARDINAL and EIGHT_COMPASS both carry one.',
   primaryDirection:
     'Which facing of that run list this sheet is for. It sets the assembly direction and the depth order — which arm renders in front of the torso changes with the way the subject turns. Split the sheet to work through every facing in one pass.',
   backgroundKey:
