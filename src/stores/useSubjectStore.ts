@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
+import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { resolveMode } from '../constants/sheetPlans/index.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
@@ -47,8 +48,15 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // supports it — switching CHARACTER → CREATURE should not silently reset a cut-out rig — and
     // falls back to that category's default only where it genuinely cannot be honoured.
     //
-    // Reaching into the other store rather than deriving this: the compiler resolves the pairing
-    // again on every compile, so the *prompt* is safe either way, but a store left holding a mode
+    // The direction set is carried across the same way and for the same reason. It is the second
+    // category-scoped axis and it used to survive untouched: switching to INTERFACE re-resolved the
+    // mode and left `directions` on `THREE_CLASSIC`, so the panel offered "Split into 3 sheets" and
+    // the first of those asked for a button at object yaw 45°. `resolveDirectionSet` keeps the set
+    // wherever the new subject can be turned to it — seven of the nine categories can be turned to
+    // all of them — and falls back only where it genuinely cannot.
+    //
+    // Reaching into the other store rather than deriving this: the compiler resolves both axes again
+    // on every compile, so the *prompt* is safe either way, but a store left holding a mode or a set
     // its own category cannot produce is state that a saved preset would then persist.
     // The sheet of the series goes back to the first whether or not the mode survives, because the
     // series is keyed on the *pairing*: a category the mode still supports can have a shorter series,
@@ -56,10 +64,25 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // not have. The compiler resolves such an index rather than trusting it, so this is not what makes
     // the prompt correct — it is what stops a saved preset persisting a sheet nobody can select, since
     // the sheet control is hidden for a single-sheet series and could not put it back.
-    const output = useOutputStore.getState();
-    const mode = resolveMode(category, output.output.directionalMode);
-    if (mode !== output.output.directionalMode || output.output.sheetIndex !== 0) {
-      output.setOutputConfig({ ...output.output, directionalMode: mode, sheetIndex: 0 });
+    const store = useOutputStore.getState();
+    const { output } = store;
+    const directionalMode = resolveMode(category, output.directionalMode);
+    const directions = resolveDirectionSet(category, output.directions);
+    if (
+      directionalMode !== output.directionalMode ||
+      directions !== output.directions ||
+      output.sheetIndex !== 0
+    ) {
+      store.setOutputConfig({
+        ...output,
+        directionalMode,
+        directions,
+        // Cleared with the set exactly as the control clears it, and only then: a facing pinned
+        // against `THREE_CLASSIC` is one `SINGLE_FRONT` never turns to, and leaving it behind would
+        // let a preset saved from here persist a facing its own set does not contain.
+        primaryDirection: directions === output.directions ? output.primaryDirection : null,
+        sheetIndex: 0,
+      });
     }
   },
 

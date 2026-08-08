@@ -145,7 +145,7 @@ describe('renderStyleDigest', () => {
 
 describe('projectionDigest', () => {
   it('carries the elevation with its unit', () => {
-    expect(projectionDigest(withOutput({ cameraElevation: 30 }))).toContain('30°');
+    expect(projectionDigest('CHARACTER', withOutput({ cameraElevation: 30 }))).toContain('30°');
   });
 
   it('names the primary facing only when the mode splits into runs', () => {
@@ -156,7 +156,7 @@ describe('projectionDigest', () => {
       directions: 'THREE_CLASSIC',
       primaryDirection: 'back-three-quarter',
     });
-    expect(projectionDigest(splitting)).toContain('back-three-quarter');
+    expect(projectionDigest('CHARACTER', splitting)).toContain('back-three-quarter');
 
     // The default mode draws its own five facings whatever the facing said, and the control is
     // hidden — so the digest must not claim one.
@@ -167,7 +167,7 @@ describe('projectionDigest', () => {
     });
     // Naming the *set* is right; naming the facing is not, and an exact match is the only assertion
     // that can tell those two apart — `back-three-quarter` is a member of `FIVE_CLASSIC`.
-    expect(projectionDigest(fixed)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+    expect(projectionDigest('CHARACTER', fixed)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
   });
 
   it('names the set the sheet is drawn to, not the one the mode discarded', () => {
@@ -180,7 +180,7 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest(discarded)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+    expect(projectionDigest('CHARACTER', discarded)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
 
     // The same stored set, on a mode that does defer to it: here it is the honest answer.
     const deferring = withOutput({
@@ -188,7 +188,28 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest(deferring)).toBe('THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west');
+    expect(projectionDigest('CHARACTER', deferring)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west',
+    );
+  });
+
+  it('names the set the category can be turned to, not the one it arrived holding', () => {
+    // The same regression on the other axis, and the reason this digest takes a category at all. An
+    // INTERFACE draws `SINGLE_FRONT` whatever a stored `THREE_CLASSIC` says, so a header reading the
+    // raw field would disagree with both the select above it and the prompt below it — and it would
+    // name a facing, because three classic yaws look like a run list until the category is consulted.
+    const turned = withOutput({
+      directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+      directions: 'THREE_CLASSIC',
+      primaryDirection: 'front-three-quarter',
+    });
+    expect(projectionDigest('INTERFACE', turned)).toBe('THREE_QUARTER_TOPDOWN · 35° · SINGLE_FRONT');
+    // The same configuration under a category whose subject does have a front, where every part of
+    // it is honest — without this pair the assertion above would also pass on a digest that had
+    // simply stopped reporting the set.
+    expect(projectionDigest('CHARACTER', turned)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · THREE_CLASSIC · front-three-quarter',
+    );
   });
 });
 

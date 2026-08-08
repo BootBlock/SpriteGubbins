@@ -36,14 +36,18 @@ const ARTICULATION = sheetPlanFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 1);
 
 describe('sheetDirections', () => {
   it('takes the set’s first facing when none is pinned', () => {
-    const { covered, assembly } = sheetDirections({ ...RIG, primaryDirection: null }, RIG_PLAN);
+    const { covered, assembly } = sheetDirections('CHARACTER', { ...RIG, primaryDirection: null }, RIG_PLAN);
     expect(assembly).toBe('south');
     expect(covered).toEqual(['south']);
   });
 
   it('takes the pinned facing, and covers only that one', () => {
     // This is what makes a split run a *different sheet* rather than a relabelled one.
-    const { covered, assembly } = sheetDirections({ ...RIG, primaryDirection: 'north-west' }, RIG_PLAN);
+    const { covered, assembly } = sheetDirections(
+      'CHARACTER',
+      { ...RIG, primaryDirection: 'north-west' },
+      RIG_PLAN,
+    );
     expect(assembly).toBe('north-west');
     expect(covered).toEqual(['north-west']);
   });
@@ -52,6 +56,7 @@ describe('sheetDirections', () => {
     // A stale `north` left behind by a switch to `THREE_CLASSIC`. Trusting it would name an
     // assembly direction and a depth order that the sheet's own "directions required" line omits.
     const { covered, assembly } = sheetDirections(
+      'CHARACTER',
       { ...RIG, directions: 'THREE_CLASSIC', primaryDirection: 'north' },
       RIG_PLAN,
     );
@@ -63,6 +68,7 @@ describe('sheetDirections', () => {
     // `CORE_DIRECTIONAL_VARIANTS` names its five facings entry by entry, so the sheet is those five
     // whatever the direction controls say.
     const { covered, assembly } = sheetDirections(
+      'CHARACTER',
       { ...RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS', primaryDirection: 'north-west' },
       CORE,
     );
@@ -76,6 +82,7 @@ describe('sheetDirections', () => {
     // of the series assembles towards — and takes it from the *series*, not from `primaryDirection`,
     // which belongs to a set this mode never consults.
     const { covered, assembly } = sheetDirections(
+      'CHARACTER',
       { ...RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS', primaryDirection: 'north-west' },
       ARTICULATION,
     );
@@ -91,7 +98,7 @@ describe('sheetDirections', () => {
       for (const mode of DIRECTIONAL_MODES) {
         const series = sheetSeriesFor(category, mode);
         const output = withOutput({ directionalMode: mode });
-        const assemblies = series.map((plan) => sheetDirections(output, plan).assembly);
+        const assemblies = series.map((plan) => sheetDirections(category, output, plan).assembly);
         expect(new Set(assemblies).size).toBe(1);
       }
     }
@@ -105,7 +112,7 @@ describe('sheetDirections', () => {
           for (const primaryDirection of [null, ...DIRECTION_LISTS.EIGHT_COMPASS]) {
             const output = withOutput({ directionalMode, directions, primaryDirection });
             for (const plan of sheetSeriesFor(category, directionalMode)) {
-              const { covered, assembly } = sheetDirections(output, plan);
+              const { covered, assembly } = sheetDirections(category, output, plan);
               expect(covered).toContain(assembly);
               expect(covered[0]).toBe(assembly);
             }
@@ -127,12 +134,34 @@ describe('sheetDirections', () => {
  */
 describe('the direction set the sheet is actually drawn to', () => {
   it('defers to the chosen set only for the modes that cover one facing at a time', () => {
-    expect(directionSetApplies(withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }))).toBe(true);
-    expect(directionSetApplies(withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' }))).toBe(true);
-    expect(directionSetApplies(withOutput({ directionalMode: 'TILESET_MODULAR' }))).toBe(true);
+    expect(
+      directionSetApplies('CHARACTER', withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' })),
+    ).toBe(true);
+    expect(
+      directionSetApplies('CHARACTER', withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' })),
+    ).toBe(true);
+    // Asked of a category that has the mode. `TILESET_MODULAR` belongs to BUILDING, INTERFACE and
+    // TERRAIN, and asking a CHARACTER about it is the next assertion, not this one.
+    expect(directionSetApplies('BUILDING', withOutput({ directionalMode: 'TILESET_MODULAR' }))).toBe(true);
     // The one that names its own five, and the default the app boots into.
-    expect(directionSetApplies(withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }))).toBe(false);
-    expect(directionSetApplies(DEFAULT_OUTPUT_CONFIG)).toBe(false);
+    expect(
+      directionSetApplies('CHARACTER', withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' })),
+    ).toBe(false);
+    expect(directionSetApplies('CHARACTER', DEFAULT_OUTPUT_CONFIG)).toBe(false);
+  });
+
+  it('answers for the sheet the category produces, not for the mode it was handed', () => {
+    // A CHARACTER cannot produce a tileset, so a stored `TILESET_MODULAR` compiles as
+    // `CORE_DIRECTIONAL_VARIANTS` — which names its own five facings. Reading `DIRECTION_COVERAGE`
+    // off the raw field said the set applied, so the studio showed a live "Directions Covered"
+    // select above a sheet that discards it, and the digest beside it named the discarded value.
+    const stored = withOutput({ directionalMode: 'TILESET_MODULAR', directions: 'EIGHT_COMPASS' });
+    expect(directionSetApplies('CHARACTER', stored)).toBe(false);
+    expect(effectiveDirectionSet('CHARACTER', stored)).toBe('FIVE_CLASSIC');
+    // And the same stored configuration under a category that does have the mode, where the set is
+    // read as the run list it is.
+    expect(directionSetApplies('BUILDING', stored)).toBe(true);
+    expect(effectiveDirectionSet('BUILDING', stored)).toBe('EIGHT_COMPASS');
   });
 
   it('reports the mode’s own set where the chosen one is discarded', () => {
@@ -141,7 +170,7 @@ describe('the direction set the sheet is actually drawn to', () => {
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       directions: 'EIGHT_COMPASS',
     });
-    expect(effectiveDirectionSet(output)).toBe('FIVE_CLASSIC');
+    expect(effectiveDirectionSet('CHARACTER', output)).toBe('FIVE_CLASSIC');
   });
 
   it('reports the chosen set where the mode does defer to it', () => {
@@ -149,7 +178,7 @@ describe('the direction set the sheet is actually drawn to', () => {
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
       directions: 'EIGHT_COMPASS',
     });
-    expect(effectiveDirectionSet(output)).toBe('EIGHT_COMPASS');
+    expect(effectiveDirectionSet('CHARACTER', output)).toBe('EIGHT_COMPASS');
   });
 
   it('never names a set the sheet does not draw, for any mode', () => {
@@ -161,13 +190,13 @@ describe('the direction set the sheet is actually drawn to', () => {
     for (const category of SUBJECT_CATEGORIES) {
       for (const directionalMode of DIRECTIONAL_MODES) {
         const output = withOutput({ directionalMode, directions: 'EIGHT_COMPASS', primaryDirection: null });
-        const set = effectiveDirectionSet(output);
+        const set = effectiveDirectionSet(category, output);
 
         for (const plan of sheetSeriesFor(category, directionalMode)) {
-          const { covered } = sheetDirections(output, plan);
+          const { covered } = sheetDirections(category, output, plan);
           for (const facing of covered) expect(DIRECTION_LISTS[set]).toContain(facing);
         }
-        if (!directionSetApplies(output)) expect(set).not.toBe(output.directions);
+        if (!directionSetApplies(category, output)) expect(set).not.toBe(output.directions);
       }
     }
   });
@@ -177,10 +206,19 @@ describe('primaryFacing', () => {
   it('is the resolved run-list facing, whatever any sheet plan does with it', () => {
     // Its own function because the studio's facing control and the collapsed projection digest both
     // need this answer and neither has a category to resolve a sheet plan from.
-    expect(primaryFacing({ ...RIG, primaryDirection: 'north-west' })).toBe('north-west');
-    expect(primaryFacing({ ...RIG, primaryDirection: null })).toBe('south');
-    expect(primaryFacing({ ...RIG, directions: 'THREE_CLASSIC', primaryDirection: 'north' })).toBe(
-      'front-three-quarter',
-    );
+    expect(primaryFacing('CHARACTER', { ...RIG, primaryDirection: 'north-west' })).toBe('north-west');
+    expect(primaryFacing('CHARACTER', { ...RIG, primaryDirection: null })).toBe('south');
+    expect(
+      primaryFacing('CHARACTER', { ...RIG, directions: 'THREE_CLASSIC', primaryDirection: 'north' }),
+    ).toBe('front-three-quarter');
+  });
+
+  it('resolves the set through the category before resolving the facing through the set', () => {
+    // The two resolutions compose, and the order matters: an INTERFACE draws `SINGLE_FRONT`, so a
+    // `front-three-quarter` that is perfectly valid against the stored `THREE_CLASSIC` is still a
+    // facing this sheet never turns to. Resolving only the facing would have accepted it.
+    const turned = { ...RIG, directions: 'THREE_CLASSIC', primaryDirection: 'front-three-quarter' } as const;
+    expect(primaryFacing('INTERFACE', turned)).toBe('front');
+    expect(primaryFacing('CHARACTER', turned)).toBe('front-three-quarter');
   });
 });

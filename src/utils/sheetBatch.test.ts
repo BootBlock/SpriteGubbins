@@ -17,6 +17,7 @@ import { sheetRuns } from './sheetRuns.ts';
  */
 const SUBJECT = defaultSubjectFor('CHARACTER');
 
+/** The studio's opening configuration, with only the named fields moved. */
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };
 }
@@ -39,13 +40,13 @@ const SINGLE_SHEET = withOutput({
 
 describe('splitsIntoFacingRuns', () => {
   it('is true only for a run list: one facing at a time, over a set naming more than one', () => {
-    expect(splitsIntoFacingRuns(EIGHT_WAY_RIG)).toBe(true);
-    expect(splitsIntoFacingRuns({ ...EIGHT_WAY_RIG, directions: 'SINGLE_FRONT' })).toBe(false);
+    expect(splitsIntoFacingRuns('CHARACTER', EIGHT_WAY_RIG)).toBe(true);
+    expect(splitsIntoFacingRuns('CHARACTER', { ...EIGHT_WAY_RIG, directions: 'SINGLE_FRONT' })).toBe(false);
     // The mode names its own five facings, so the chosen set buys no runs at all — whatever it says.
     // That mode still splits, by the *other* axis: two sheets of one series, counted below.
-    expect(splitsIntoFacingRuns({ ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' })).toBe(
-      false,
-    );
+    expect(
+      splitsIntoFacingRuns('CHARACTER', { ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }),
+    ).toBe(false);
   });
 });
 
@@ -121,5 +122,62 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
     const batch = sheetBatch('CHARACTER', SINGLE_SHEET);
     expect(batch.sheets).toHaveLength(1);
     expect(batch.ordinal).toBe(1);
+  });
+});
+
+/**
+ * The reported failure: three sheets of a button, each turned to a yaw a button does not have.
+ *
+ * Switching the studio's category from a default session re-resolved the sheet mode and left
+ * `directions` on `THREE_CLASSIC`, because nothing related a direction set to a category. The panel
+ * offered "Split into 3 sheets", and the first run compiled `Directions required: Front-three-quarter`
+ * above `object yaw 45°`.
+ *
+ * The two categories here are the ones whose subject has no facing at all. They are also the ones
+ * that cannot honour the app's default *mode*, which is why the degenerate batch was one click away
+ * rather than something to be asked for: `resolveMode` substitutes on the first switch, and before
+ * this the set beside it did not move.
+ */
+describe('a subject with no facing is one sheet, whatever set the configuration arrived with', () => {
+  const TURNED = withOutput({ directions: 'THREE_CLASSIC', primaryDirection: 'front-three-quarter' });
+
+  it.each(['INTERFACE', 'TERRAIN'] as const)('%s is not split into a run per facing', (category) => {
+    expect(splitsIntoFacingRuns(category, TURNED)).toBe(false);
+    expect(sheetRunCount(category, TURNED)).toBe(1);
+    expect(sheetBatch(category, TURNED).ordinal).toBe(1);
+  });
+
+  it.each(['INTERFACE', 'TERRAIN'] as const)('%s draws its one sheet front on', (category) => {
+    const [sheet] = sheetBatch(category, TURNED).sheets;
+    expect(sheet?.covered).toEqual(['front']);
+    expect(sheet?.assembly).toBe('front');
+  });
+
+  it.each(['INTERFACE', 'TERRAIN'] as const)('%s asks for no yaw it does not have', (category) => {
+    const [run, ...rest] = sheetRuns(category, defaultSubjectFor(category), TURNED);
+    expect(rest).toEqual([]);
+
+    const prompt = run?.promptText ?? '';
+    // The two lines the report quotes, and their replacements. `object yaw 0°` is the whole point:
+    // section 3 states the rotation as a figure, so a facing the subject cannot take is not a
+    // wording problem but a number the generator will act on.
+    expect(prompt).toContain('Directions required: Front');
+    expect(prompt).toContain('object yaw 0°');
+    expect(prompt).not.toContain('Front-three-quarter');
+    expect(prompt).not.toContain('object yaw 45°');
+  });
+
+  it('still splits a CHARACTER on the same configuration, which is what makes the fix per category', () => {
+    // The negative that stops this being a rule about direction sets in general: the set is
+    // meaningful wherever the subject has a front, and a rig worked through three facings is the
+    // deliverable the run list exists for.
+    const rig = { ...TURNED, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' } as const;
+    expect(splitsIntoFacingRuns('CHARACTER', rig)).toBe(true);
+    expect(sheetRunCount('CHARACTER', rig)).toBe(DIRECTION_LISTS.THREE_CLASSIC.length);
+    // And an EFFECT, which is the case that decided the table binds two categories and not three:
+    // a directional slash is genuinely one frame sequence per facing.
+    expect(sheetRunCount('EFFECT', { ...TURNED, directions: 'EIGHT_COMPASS' })).toBe(
+      DIRECTION_LISTS.EIGHT_COMPASS.length,
+    );
   });
 });

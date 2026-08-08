@@ -12,7 +12,6 @@ export type { OutputChoice } from './choices.ts';
 export {
   ASPECT_RATIO_CHOICES,
   BACKGROUND_KEY_CHOICES,
-  DIRECTION_SET_CHOICES,
   JOINT_CAP_STYLE_CHOICES,
   LIGHTING_MODEL_CHOICES,
   OUTLINE_STYLE_CHOICES,
@@ -25,6 +24,7 @@ export {
   SURFACE_DETAIL_CHOICES,
 } from './choices.ts';
 export { directionalModeChoices } from './directionalModeChoices.ts';
+export { directionSetChoices } from './directionSetChoices.ts';
 export { sheetChoices } from './sheetChoices.ts';
 export { OUTPUT_TOOLTIPS } from './tooltips.ts';
 export { DEFAULT_IMAGE_CONFIG, DEFAULT_OUTPUT_CONFIG } from './defaults.ts';

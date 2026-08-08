@@ -102,6 +102,12 @@ export function parseImageConfig(value: unknown): ImageOutputConfig {
   const source = isRecord(value) ? value : {};
 
   // Read before the object literal, because the primary facing is only valid against *this* set.
+  //
+  // Checked against the whole union and not against what the *subject* can be turned to, which is a
+  // narrower question `CATEGORY_DIRECTION_SETS` answers — an interface widget has no facing, so
+  // `THREE_CLASSIC` is wrong there while being a perfectly good `DirectionSet`. This is the same
+  // division `sheetIndex` draws and for the same reason: the category is not in this payload, so
+  // `resolveDirectionSet` does that narrowing at the point of use instead.
   const directions = pick(source, 'directions', DEFAULT_OUTPUT_CONFIG.directions, DIRECTION_SETS);
 
   return {

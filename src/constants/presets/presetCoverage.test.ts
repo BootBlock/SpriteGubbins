@@ -20,6 +20,7 @@ import {
 } from '../../types/output.ts';
 import type { ImageOutputConfig } from '../../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import { supportsDirectionSet } from '../categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { DIRECTION_LISTS } from '../promptText/index.ts';
 import { supportsMode } from '../sheetPlans/index.ts';
@@ -113,6 +114,14 @@ describe('no shipped preset contradicts itself', () => {
     // `resolveMode` would silently substitute the category's default, so a mismatch here does not
     // fail — it ships a preset whose card says one thing and whose prompt says another.
     expect(supportsMode(preset.category, preset.output.directionalMode)).toBe(true);
+  });
+
+  it.each(PRESETS)('$name asks for facings its own category can be turned to', (preset) => {
+    // `resolveDirectionSet` would silently substitute, exactly as `resolveMode` does above — so a
+    // mismatch here does not fail, it ships a preset whose card claims a set the prompt never draws.
+    // Every INTERFACE and TERRAIN preset already wrote `SINGLE_FRONT` by hand, which is the
+    // workaround this table replaced; this is what keeps the next one from having to know.
+    expect(supportsDirectionSet(preset.category, preset.output.directions)).toBe(true);
   });
 
   it.each(PRESETS)('$name names a facing its own direction set contains', (preset) => {

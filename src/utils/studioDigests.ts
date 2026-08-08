@@ -140,8 +140,16 @@ export function renderStyleDigest(output: OutputConfig): string {
   ]);
 }
 
-/** Where the camera stands, and which facings the sheet covers. */
-export function projectionDigest(output: OutputConfig): string {
+/**
+ * Where the camera stands, and which facings the sheet covers.
+ *
+ * Takes the category for the same reason `sheetDigest` does: both of the values below are resolved
+ * through it. The mode decides whether the chosen set reaches the sheet at all, and the category
+ * decides whether its subject can be turned to that set — an INTERFACE draws `SINGLE_FRONT` whatever
+ * a stored `THREE_CLASSIC` says, and a digest reading the raw field would disagree with both the
+ * select above it and the prompt below it.
+ */
+export function projectionDigest(category: SubjectCategory, output: OutputConfig): string {
   return join([
     output.projection,
     `${String(output.cameraElevation)}°`,
@@ -150,10 +158,10 @@ export function projectionDigest(output: OutputConfig): string {
     // `CORE_DIRECTIONAL_VARIANTS` sheet covering the classic yaws announced `EIGHT_COMPASS`. The
     // line below already refused to name an inert facing for exactly this reason; the set it sat
     // beside was doing what that comment forbids.
-    effectiveDirectionSet(output),
+    effectiveDirectionSet(category, output),
     // Only when the control is on screen. Anywhere else the facing is inert — the sheet draws its
     // own set whatever this said — so naming it would promise something the prompt does not carry.
-    splitsIntoFacingRuns(output) ? primaryFacing(output) : '',
+    splitsIntoFacingRuns(category, output) ? primaryFacing(category, output) : '',
   ]);
 }
 

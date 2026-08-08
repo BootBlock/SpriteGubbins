@@ -64,7 +64,7 @@ export function sheetIdentity(
 ): string {
   const mode = resolveMode(category, output.directionalMode);
   const plan = sheetPlanFor(category, mode, output.sheetIndex);
-  const { covered } = sheetDirections({ ...output, directionalMode: mode }, plan);
+  const { covered } = sheetDirections(category, output, plan);
   return JSON.stringify([category, subject, mode, plan.name, covered]);
 }
 

@@ -80,11 +80,11 @@ export function generatePrompt(
 
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would
-  // eventually disagree about the prompt one of them is describing.
-  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(
-    { ...output, directionalMode: mode },
-    plan,
-  );
+  // eventually disagree about the prompt one of them is describing. It takes the category rather
+  // than the mode resolved above, because the *direction set* is category-scoped as well: an
+  // INTERFACE or a TERRAIN has no facing to turn to, so a stored `THREE_CLASSIC` degrades there the
+  // same way an unsupported mode does.
+  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(category, output, plan);
 
   // Which sheet of which batch this configuration is. Every prompt before this one described its
   // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and

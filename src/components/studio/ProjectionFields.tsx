@@ -1,6 +1,8 @@
-import { DIRECTION_SET_CHOICES, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../constants/output/index.ts';
+import { resolveDirectionSet } from '../../constants/categoryDirectionSets.ts';
+import { directionSetChoices, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../constants/output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { directionSetApplies, primaryFacing } from '../../utils/sheetDirections.ts';
 import { splitsIntoFacingRuns } from '../../utils/sheetBatch.ts';
 import { NumberField } from '../common/NumberField.tsx';
@@ -28,11 +30,26 @@ const ELEVATION = { min: 0, max: 90, step: 1 } as const;
  * Picking all eight compass points changed the summary line and nothing else. Both controls now hang
  * off the same question, asked at the resolution each needs: does the mode defer to the set at all,
  * and if it does, does the set name more than one facing.
+ *
+ * **The *options* are the category's, which is a third question again.** Whether the sheet reads the
+ * set is the mode's answer; which sets the subject can be turned to is `CATEGORY_DIRECTION_SETS`,
+ * and for an interface widget or a ground tile the answer is `SINGLE_FRONT` alone. The control stays
+ * on screen there with its one option rather than disappearing, exactly as "Sheet Contents" does for
+ * an EFFECT: the value is used — it is the "Directions required" line of the prompt — and a control
+ * that vanishes between categories hides a setting the folded digest still reports.
  */
 export function ProjectionFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
+  const category = useSubjectStore((state) => state.category);
+
+  // Resolved through the category rather than read raw, so a stored set this subject cannot be
+  // turned to shows the one the compiler is actually drawing instead of an empty control — the same
+  // reasoning as `SheetFields`' sheet index, and the same as the facing list below, which must offer
+  // the facings of the set that is really in force.
+  const directions = resolveDirectionSet(category, output.directions);
+  const setChoices = directionSetChoices(category);
 
   return (
     <>
@@ -64,27 +81,27 @@ export function ProjectionFields() {
         }}
       />
 
-      {directionSetApplies(output) && (
+      {directionSetApplies(category, output) && (
         <SelectField
           label="Directions Covered"
           tooltip={OUTPUT_TOOLTIPS.directions}
-          value={output.directions}
-          choices={DIRECTION_SET_CHOICES}
-          onChange={(directions) => {
+          value={directions}
+          choices={setChoices}
+          onChange={(chosen) => {
             // The facing is cleared with the set, in one write. A `north` held over into
             // `THREE_CLASSIC` is a facing that set never turns to, and both values reaching the
             // compiler together is what stops a render seeing the new set beside the old facing.
-            setOutputConfig({ ...output, directions, primaryDirection: null });
+            setOutputConfig({ ...output, directions: chosen, primaryDirection: null });
           }}
         />
       )}
 
-      {splitsIntoFacingRuns(output) && (
+      {splitsIntoFacingRuns(category, output) && (
         <SelectField
           label="Primary Facing"
           tooltip={OUTPUT_TOOLTIPS.primaryDirection}
-          value={primaryFacing(output)}
-          choices={DIRECTION_LISTS[output.directions].map((direction) => ({
+          value={primaryFacing(category, output)}
+          choices={DIRECTION_LISTS[directions].map((direction) => ({
             value: direction,
             label: direction,
           }))}

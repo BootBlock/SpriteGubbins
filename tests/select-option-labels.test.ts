@@ -9,6 +9,7 @@ import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
 import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
+import { directionSetChoices } from '../src/constants/output/directionSetChoices.ts';
 import { sheetChoices } from '../src/constants/output/sheetChoices.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
 import { modesFor } from '../src/constants/sheetPlans/index.ts';
@@ -79,6 +80,11 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   PALETTE_CHOICES: PALETTE_CHOICES.map((choice) => choice.label),
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionalModeChoices(category, HEAVY_ANATOMY).map((choice) => choice.label),
+  ),
+  // One list per category, like the two around it, because a category is offered only the sets its
+  // subject can be turned to — two of the nine are `SINGLE_FRONT` alone.
+  setChoices: SUBJECT_CATEGORIES.flatMap((category) =>
+    directionSetChoices(category).map((choice) => choice.label),
   ),
   // One list per pairing, so a series that grows a sheet is budgeted the moment it exists. No
   // anatomy: this list distinguishes the sheets of one series from each other, and the subject's

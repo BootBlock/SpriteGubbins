@@ -31,6 +31,12 @@ export const DIRECTIONAL_VARIANTS_SET: DirectionSet = 'FIVE_CLASSIC';
  * property of the *kind of sheet*, not of what is drawn on it. The inventory and the component count
  * are the things that were wrongly keyed this way — those now live in `constants/sheetPlans/`, keyed
  * on category **and** mode, because what a sheet contains is very much a property of its subject.
+ *
+ * **`'primary'` defers to a set the category has already narrowed**, which is the one thing to hold
+ * on to when reading the paragraph above. Whether the set reaches the sheet is this table's answer;
+ * *which* sets the subject can be turned to is `CATEGORY_DIRECTION_SETS`, because an interface widget
+ * and a ground tile have no facing at all. The two are separate questions and both are asked — the
+ * second one used never to be, which is how a run list of a button came to exist.
  */
 export const DIRECTION_COVERAGE: Readonly<Record<DirectionalMode, 'primary' | DirectionSet>> = {
   SINGLE_DIRECTION_POSE_LIBRARY: 'primary',
