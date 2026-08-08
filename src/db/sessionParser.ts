@@ -18,6 +18,12 @@ import { isRecord } from './readers.ts';
  *
  * A `null` here means the studio keeps the defaults it booted with, which is also what a first visit
  * gets — the two are the same outcome and neither is an error.
+ *
+ * **The whole `OutputConfig`, not the image half.** `parsePresetRow` takes `parseImageConfig`
+ * because a preset is a description of a *subject* and the companion outputs are a decision about
+ * this run, which the studio's own answers should keep. A session is the opposite claim: it is the
+ * studio as it was left, so the manifest and audit flags are part of what "as it was" means and
+ * restoring without them would silently turn two settings off on every visit.
  */
 export function parseSession(value: unknown): StudioSession | null {
   if (!isRecord(value)) return null;
