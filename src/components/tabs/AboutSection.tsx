@@ -37,8 +37,8 @@ export function AboutSection() {
       </p>
 
       <p className="text-xs leading-relaxed text-ink-faint">
-        These are the only links in the application, and following one is the only time it reaches another
-        site. Nothing you type here is sent anywhere.
+        Following a link — one of these, or the wordmark at the top of the page — is the only time the
+        application reaches another site. Nothing you type here is sent anywhere.
       </p>
     </section>
   );
