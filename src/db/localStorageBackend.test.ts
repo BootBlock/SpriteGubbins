@@ -7,6 +7,7 @@ import { STORAGE_KEYS } from './schema.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
+import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 
@@ -188,6 +189,42 @@ describe('LocalStorageBackend — presets', () => {
   });
 });
 
+describe('LocalStorageBackend — settings', () => {
+  it('answers with the defaults before anything has been stored', async () => {
+    // The ordinary state of an install whose owner has never opened the dialog, and the reason this
+    // read cannot come back empty: "nothing stored" and "the defaults" are the same answer.
+    expect(await backend.loadSettings()).toEqual(DEFAULT_SETTINGS);
+  });
+
+  it('round-trips a changed setting', async () => {
+    const settings = { ...DEFAULT_SETTINGS, accentHue: 'jade' as const, ambientBackdrop: false };
+    await backend.saveSettings(settings);
+
+    // Read through a second backend over the same storage, which is what a reload amounts to.
+    expect(await new LocalStorageBackend(storage).loadSettings()).toEqual(settings);
+  });
+
+  it('falls back field by field rather than discarding the set', async () => {
+    // One hand-edited value costs that preference and no other. Seeded as raw storage, because that
+    // is the only way this state actually arises.
+    storage.setItem(
+      STORAGE_KEYS.appSettings,
+      JSON.stringify({ accentHue: 'not-a-hue', motion: 'reduced', openingView: 'presets' }),
+    );
+
+    expect(await backend.loadSettings()).toEqual({
+      ...DEFAULT_SETTINGS,
+      motion: 'reduced',
+      openingView: 'presets',
+    });
+  });
+
+  it('reads the defaults rather than throwing when storage holds nonsense', async () => {
+    storage.setItem(STORAGE_KEYS.appSettings, 'not json at all');
+    expect(await backend.loadSettings()).toEqual(DEFAULT_SETTINGS);
+  });
+});
+
 describe('LocalStorageBackend — hostile storage', () => {
   it('reads an empty list rather than throwing when storage holds nonsense', async () => {
     storage.setItem(STORAGE_KEYS.promptHistory, 'not json at all');
@@ -313,6 +350,14 @@ describe('LocalStorageBackend — a refused write', () => {
     await expect(promise).rejects.toThrow(/refused the write/i);
   });
 
+  it('rejects when a setting cannot be stored', async () => {
+    // The store above keeps the change applied on this rejection rather than reverting it — a
+    // preference the user can see working is not a lie the way an unsaved preset would be — but it
+    // can only do that, and say so, if the refusal actually reaches it.
+    const promise = backend.saveSettings(DEFAULT_SETTINGS);
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
   it('carries the storage error as the cause, rather than discarding why it failed', async () => {
     const error: unknown = await backend.addHistoryLog(log()).catch((reason: unknown) => reason);
 
@@ -326,5 +371,6 @@ describe('LocalStorageBackend — a refused write', () => {
     // would pass every case above for the wrong reason.
     await expect(backend.listHistoryLogs()).resolves.toEqual([]);
     await expect(backend.listPresets()).resolves.toEqual([]);
+    await expect(backend.loadSettings()).resolves.toEqual(DEFAULT_SETTINGS);
   });
 });

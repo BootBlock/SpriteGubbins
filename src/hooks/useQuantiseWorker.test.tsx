@@ -61,6 +61,9 @@ class FakeWorker {
   }
 }
 
+/** A stable reference, as `colorPlanFor`'s memo gives the hook — see the note on `key`. */
+const REDUCTION = { kind: 'MAX_COLORS', maxColors: 32 } as const;
+
 const FACTS: SheetFacts = { detected: 8, colors: 1024 };
 const NO_SCALE: SheetFacts = { detected: null, colors: 1024 };
 
@@ -79,7 +82,7 @@ interface Props {
 
 function drive(initialProps: Props) {
   const view = renderHook(
-    ({ source, gridOverride }: Props) => useQuantiseWorker(source, gridOverride, null, 32),
+    ({ source, gridOverride }: Props) => useQuantiseWorker(source, gridOverride, null, REDUCTION),
     {
       initialProps,
     },
@@ -157,7 +160,10 @@ describe('useQuantiseWorker', () => {
 
     const asked = worker.of('quantise');
     expect(asked).toHaveLength(1);
-    expect(asked[0]?.request).toEqual({ kind: 'quantise', settings: { grid: 16, key: null, maxColors: 32 } });
+    expect(asked[0]?.request).toEqual({
+      kind: 'quantise',
+      settings: { grid: 16, key: null, reduction: REDUCTION },
+    });
   });
 
   it('stops saying it is working once the answer matches the question', () => {

@@ -12,10 +12,10 @@ import { Wordmark } from './Wordmark.tsx';
  * separate application bolted over the page.
  */
 const CHROME_ACTION =
-  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-800/70 px-3 py-2 text-xs font-bold shadow-md transition-all duration-200 hover:-translate-y-px hover:border-tab/60 hover:bg-foundry-700 hover:shadow-lg active:translate-y-0 active:shadow-md';
+  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-800/70 px-3 py-2 text-xs font-bold shadow-md transition-all duration-390 hover:-translate-y-px hover:border-tab/60 hover:bg-foundry-700 hover:shadow-lg active:translate-y-0 active:shadow-md';
 
 /** …and the matching lift for the glyph inside one, which is why both are `group`s. */
-const CHROME_ACTION_ICON = 'inline-block transition-transform duration-300 group-hover:scale-125';
+const CHROME_ACTION_ICON = 'inline-block transition-transform duration-585 group-hover:scale-125';
 
 /** The wheel along the bar's bottom edge — one string, so the bloom and the hairline cannot drift. */
 const SPECTRUM_EDGE = 'animate-spectrum-pan bg-spectrum pointer-events-none absolute inset-x-0';
@@ -34,6 +34,7 @@ const SPECTRUM_EDGE = 'animate-spectrum-pan bg-spectrum pointer-events-none abso
 export function Header() {
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const toggleHistoryModal = useUIStore((state) => state.toggleHistoryModal);
+  const toggleSettingsModal = useUIStore((state) => state.toggleSettingsModal);
   const copyPrompt = useCopyPrompt();
   const bar = useRef<HTMLElement>(null);
 
@@ -106,15 +107,42 @@ export function Header() {
           onClick={() => {
             void copyPrompt();
           }}
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
+          className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 transition-all duration-390 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
         >
           <span
             aria-hidden="true"
-            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-700 group-hover:translate-x-full"
+            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
           />
           <span className="relative flex items-center gap-2">
             <span aria-hidden="true">📋</span>
             Copy Prompt
+          </span>
+        </button>
+
+        {/*
+          The far right of the bar, past the primary, which is where a settings control has been for
+          long enough that anywhere else costs the user a search. It is the only chrome action with no
+          word beside its glyph — a cog is the one icon in this header that needs none, and giving it
+          a label would put a fourth piece of text in a row that already wraps on a phone. That makes
+          `aria-label` load-bearing rather than decorative, so the glyph is hidden and the button
+          carries the name itself.
+
+          It takes the shared geometry unaltered rather than tightening the padding for its one glyph.
+          Two Tailwind paddings on one element do not resolve by the order they are written in the
+          string — they resolve by the order the utilities land in the generated stylesheet, which is
+          not something a call site can see — so an override here would be a coin toss that renders
+          correctly about half the time. The cog also turns as it grows, which the history clock is the
+          precedent for: a rotation is what these two glyphs mean, where a magnifier or a clipboard
+          would only look restless.
+        */}
+        <button
+          type="button"
+          onClick={toggleSettingsModal}
+          aria-label="Settings"
+          className={`${CHROME_ACTION} text-ink-muted`}
+        >
+          <span aria-hidden="true" className={`${CHROME_ACTION_ICON} group-hover:rotate-90`}>
+            ⚙️
           </span>
         </button>
       </div>

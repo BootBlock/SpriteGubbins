@@ -5,7 +5,7 @@ import { CATEGORY_OPTIONS } from '../categories/index.ts';
 /**
  * How the Presets tab divides the library into the list it puts down its left-hand side.
  *
- * The divisions are the app's own five subject categories plus one for the user's own presets, and
+ * The divisions are the app's own subject categories plus one for the user's own presets, and
  * that is deliberate rather than convenient: a preset's category already decides which field labels
  * and option pools apply to it, so it is the one axis along which two presets in the same group are
  * genuinely comparable. Inventing a second taxonomy — "sci-fi", "technical", "showcase" — would give

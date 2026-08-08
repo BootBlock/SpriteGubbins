@@ -3,8 +3,14 @@ import type { QuantiseSettings } from '../types/quantiser.ts';
 import { sameQuantiseSettings } from './quantiseSettings.ts';
 
 const MAGENTA = { r: 255, g: 0, b: 255, a: 255 };
+const BLACK = { r: 0, g: 0, b: 0, a: 255 };
+const WHITE = { r: 255, g: 255, b: 255, a: 255 };
 
-const BASE: QuantiseSettings = { grid: 8, key: { color: MAGENTA, tolerance: 32 }, maxColors: 32 };
+const BASE: QuantiseSettings = {
+  grid: 8,
+  key: { color: MAGENTA, tolerance: 32 },
+  reduction: { kind: 'MAX_COLORS', maxColors: 32 },
+};
 
 /**
  * What the worker's answers are filed against.
@@ -18,17 +24,23 @@ describe('sameQuantiseSettings', () => {
     // The case reference equality would get wrong. Both sides come from one `useMemo` in one hook and
     // would usually *be* the same object — usually is not a guarantee React makes about a memo.
     expect(
-      sameQuantiseSettings(BASE, { grid: 8, key: { color: { ...MAGENTA }, tolerance: 32 }, maxColors: 32 }),
+      sameQuantiseSettings(BASE, {
+        grid: 8,
+        key: { color: { ...MAGENTA }, tolerance: 32 },
+        reduction: { kind: 'MAX_COLORS', maxColors: 32 },
+      }),
     ).toBe(true);
   });
 
   it('separates every field that changes the sheet', () => {
     expect(sameQuantiseSettings(BASE, { ...BASE, grid: 4 })).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, maxColors: 64 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, key: { color: MAGENTA, tolerance: 64 } })).toBe(false);
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),
     ).toBe(false);
+    expect(sameQuantiseSettings(BASE, { ...BASE, reduction: { kind: 'MAX_COLORS', maxColors: 64 } })).toBe(
+      false,
+    );
   });
 
   it('separates keying that runs from keying that does not', () => {
@@ -38,10 +50,48 @@ describe('sameQuantiseSettings', () => {
     expect(sameQuantiseSettings({ ...BASE, key: null }, { ...BASE, key: null })).toBe(true);
   });
 
-  it('ignores the one thing that is a colour budget rather than a colour', () => {
-    // `maxColors: null` is `UNRESTRICTED` — the palette step not running — and it has to compare equal
-    // to itself rather than falling foul of a nullish check written for the key.
-    expect(sameQuantiseSettings({ ...BASE, maxColors: null }, { ...BASE, maxColors: null })).toBe(true);
-    expect(sameQuantiseSettings({ ...BASE, maxColors: null }, BASE)).toBe(false);
+  it('separates the three kinds of colour reduction from each other and from none', () => {
+    // A budget, a pinned palette and a channel depth are three different instructions, and
+    // `UNRESTRICTED` is the palette step not running at all. None of them is a variant of another, so
+    // moving between any two has to count as a change.
+    const budget: QuantiseSettings = BASE;
+    const pinned: QuantiseSettings = { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] } };
+    const depth: QuantiseSettings = { ...BASE, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 } };
+    const none: QuantiseSettings = { ...BASE, reduction: null };
+
+    for (const [left, right] of [
+      [budget, pinned],
+      [budget, depth],
+      [budget, none],
+      [pinned, depth],
+      [pinned, none],
+      [depth, none],
+    ] as const) {
+      expect(sameQuantiseSettings(left, right)).toBe(false);
+    }
+
+    expect(sameQuantiseSettings(none, { ...BASE, reduction: null })).toBe(true);
+    expect(
+      sameQuantiseSettings(depth, { ...BASE, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 } }),
+    ).toBe(true);
+  });
+
+  it('compares a pinned palette by its colours, in order', () => {
+    // Two palettes of the same length holding the same colours in a different order are not the same
+    // palette: `nearestColor` breaks a tie on the earliest entry, so the order decides the sheet.
+    const pinned: QuantiseSettings = { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] } };
+
+    expect(
+      sameQuantiseSettings(pinned, {
+        ...BASE,
+        reduction: { kind: 'PALETTE', entries: [{ ...BLACK }, WHITE] },
+      }),
+    ).toBe(true);
+    expect(
+      sameQuantiseSettings(pinned, { ...BASE, reduction: { kind: 'PALETTE', entries: [WHITE, BLACK] } }),
+    ).toBe(false);
+    expect(sameQuantiseSettings(pinned, { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK] } })).toBe(
+      false,
+    );
   });
 });

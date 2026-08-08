@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TOAST_DURATION_MS } from '../../constants/ui.ts';
+import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../../constants/ui.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { Toast } from './Toast.tsx';
 
@@ -67,10 +67,37 @@ describe('Toast', () => {
       expect(liveRegion()).toHaveTextContent('Downloaded sprite-prompt.md');
 
       act(() => {
-        vi.advanceTimersByTime(TOAST_DURATION_MS);
+        vi.advanceTimersByTime(TOAST_DURATION_MS + TOAST_EXIT_MS);
       });
 
       expect(liveRegion()).toBeEmptyDOMElement();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('fades off the screen inert, rather than disappearing between two frames', () => {
+    vi.useFakeTimers();
+    try {
+      render(<Toast />);
+      act(() => {
+        useUIStore.getState().showToast('Copied atlas JSON');
+      });
+
+      act(() => {
+        vi.advanceTimersByTime(TOAST_DURATION_MS);
+      });
+
+      // Still mounted, because a surface that has been removed has nothing left to animate — and
+      // the exit's length is read from the constant the store's own timer uses, not written twice.
+      const card = screen.getByText('Copied atlas JSON').parentElement;
+      expect(card).not.toBeNull();
+      expect(card).toHaveStyle({ animationDuration: `${TOAST_EXIT_MS}ms` });
+
+      // Inert for the whole of the fade. A transparent card left interactive would swallow clicks
+      // meant for the page beneath it, which under `prefers-reduced-motion` is the entire window —
+      // the animation collapses to nothing there while this timer still runs its full length.
+      expect(card).toHaveAttribute('inert');
     } finally {
       vi.useRealTimers();
     }

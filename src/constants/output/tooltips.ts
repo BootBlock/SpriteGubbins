@@ -29,6 +29,11 @@ export const OUTPUT_TOOLTIPS = {
   targetModel:
     'Which generator the prompt is written for. This changes the shape of the output, not just its wording: a reasoning contract, command-line flags, a separate negative-prompt block or a directive prefix are added or dropped to match what the target actually reads. Set it before copying — the same configuration compiles differently for each one.',
 
+  hardwareProfile:
+    'The machine the sheet is drawn for. Choosing one is a template: it sets the render style, surface detail, component size, outline, lighting and palette to what artwork for that machine actually looked like, and every one of them stays yours to change afterwards. What the prompt then carries is the machine’s geometry — its display, its tile grid, its sprite sizes and how many it could show — because naming a real machine steers a generator further than any of those figures does alone. Colour is the Palette field’s, not this one’s, which is why the two can be set independently. NONE writes nothing else and leaves your settings alone.',
+  palette:
+    'The exact colours the sheet may use. This is stronger than the colour budget below and supersedes it: a budget can say “32 to 64 colours”, and only a palette can say “these four shades of green” or “each channel is one of eight levels”. Where the list is short it is written into the prompt in full, and the Quantise tab maps a returned sheet onto it rather than choosing colours of its own. FREE leaves colour to the budget, which is what most sheets want.',
+
   renderStyle:
     'The drawing technique the whole sheet is executed in. The pixel-discipline rules — deliberate clusters, no anti-aliasing, no microtexture — are emitted only for PIXEL_ART and RETRO_PIXEL_ART; every other style gets surface-consistency rules instead. CLAY_RENDER and SILHOUETTE_ONLY are validation passes: run one to check volume or readability before committing to a finished style.',
   projection:
@@ -36,7 +41,7 @@ export const OUTPUT_TOOLTIPS = {
   cameraElevation:
     'Degrees above the horizon, from 0 at eye level to 90 directly overhead. It defaults to whatever the chosen projection implies, so override it only when the game has a specific ground read to match — raising it shows more of the floor plane and foreshortens the figure’s height.',
   directions:
-    'Which facings the sheet covers, where Sheet Contents leaves the choice open — a cut-out rig and a tileset read this as the run list rather than the sheet contents, so generate one sheet per direction and tie them together with an identity lock. CORE_DIRECTIONAL_VARIANTS ignores it and draws its own three facings regardless. THREE_CLASSIC buys the most facings three drawings can, because each of its views flips at runtime into a different one — but every view in it is a turned pose, so it reaches no facing towards the camera and none directly away, and flipping cannot produce either. FOUR_CARDINAL and EIGHT_COMPASS both carry one.',
+    'Which facings the sheet covers, where Sheet Contents leaves the choice open — a cut-out rig and a tileset read this as the run list rather than the sheet contents, so generate one sheet per direction and tie them together with an identity lock. THREE_CLASSIC buys the most facings three drawings can, because each of its views flips at runtime into a different one — but every view in it is a turned pose, so it reaches no facing towards the camera and none directly away, and flipping cannot produce either. FOUR_CARDINAL and EIGHT_COMPASS both carry one.',
   primaryDirection:
     'Which facing of that run list this sheet is for. It sets the assembly direction and the depth order — which arm renders in front of the torso changes with the way the subject turns. Split the sheet to work through every facing in one pass.',
   backgroundKey:

@@ -13,7 +13,7 @@
 
 Sprite Gubbins is a browser PWA that composes precise, model-targeted prompts for generating
 game sprite sheets and texture atlases. It is offline-capable, has no server, and persists its
-prompt history and custom presets in browser-embedded SQLite (WASM + OPFS).
+prompt history, custom presets and interface settings in browser-embedded SQLite (WASM + OPFS).
 
 **The specification is [docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-gubbins-spec.md)** —
 the five-phase implementation blueprint, the full field/option/tooltip inventory, and the
@@ -118,6 +118,23 @@ git branch -d worktree-<topic>
   holds uncommitted or untracked changes — which means the commit step missed something. Go and
   look at what. Never reach for `--force`, which destroys precisely the work the refusal is
   protecting.
+- **A *locked file* is a different failure, and it does not look like one.** If anything still holds
+  a handle inside the tree — a dev server left running from the `verify` skill is the usual one, and
+  it holds `node_modules` — the removal fails partway with `failed to delete '…': Invalid argument`
+  rather than a refusal. By then it has already **unregistered** the worktree, so the directory is
+  still on disk while `git worktree list` no longer mentions it and a second `remove` answers
+  `fatal: '…' is not a working tree`. Read the message: the refusal above names uncommitted work,
+  this one names a path. Stop the process, then finish the removal by hand:
+
+  ```bash
+  # after stopping the dev server, from the primary checkout
+  rm -rf .claude/worktrees/<topic>     # the leftover the failed removal could not delete
+  git worktree prune                   # clear the stale administrative entry
+  git branch -d worktree-<topic>
+  ```
+
+  `git branch -d` still refuses anything unmerged, so this recovers the tidy-up without giving up
+  the check that matters. **Stop the dev server before removing the tree** and none of it arises.
 - **Land only your own tree.** `git worktree list` will show trees other agents are working in
   right now, and from the outside their in-progress work is indistinguishable from abandoned work.
   Leave them alone — this is the same rule as never adopting someone else's tree.
@@ -334,7 +351,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A **single control** whose card lands on that image — the quantiser's keying tooltip, at 2.03:1 | set `--glass-float-opacity` on the control, which the card inherits through the top layer | raising the whole view, which spends the glass on the two cards that never needed it |
 | A control or row inside a panel | `bg-foundry-700` | `bg-slate-800` |
 | A border, or a hover/pressed state | `border-foundry-600` / `bg-foundry-600` | `border-slate-700` |
-| **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1` |
+| **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1`, or a hue read off the settings store into a `style` |
 | **Live** state — auto-sync, generating, updating as you type | `neon` / `neon-deep` | `text-cyan-400`, `#22d3ee` |
 | Anything belonging to the **active view** — panel edge, section heading, step chip, hover bloom | `bg-tab` / `text-tab` / `border-tab` / `ring-tab` | `accent`, which pins it to the primary in every view |
 | A **primary action inside a view** — Save, Load preset, Download PNG, the file chooser | `action-tab` | `accent`, which the chrome's Copy Prompt keeps and a panel's own action does not |
@@ -350,17 +367,20 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | An uppercase eyebrow or legend, a badge pill, a mono metadata chip (timestamp, word count, dimensions) | `text-2xs` (11px), the floor | a bracketed size, or `text-xs` for something only ever scanned |
 | The paragraph or value that opens a panel | `text-sm` (15px) | `text-base`, which is the bold-heading rung |
 | Panel entrance, live pulse, ambience, loading | `animate-fade-in` / `animate-pulse-glow` / `animate-float-orb` (+ `-slow`) / `animate-shimmer` | inline `@keyframes`, one-off durations |
-| A **tile in a grid** arriving (a preset card, a button that comes and goes) | `animate-pop-in` | `animate-fade-in`, which is for a full-width panel |
+| A **tile in a grid** arriving (a button that comes and goes) | `animate-pop-in` | `animate-fade-in`, which is for a full-width panel |
+| A **view's own content** arriving on navigation — a tab's root, a studio panel, a preset card | `animate-view-fade-in` / `animate-view-pop-in`, the page-transition speed | the plain entrances, which are for a surface that turns up mid-session |
 | A **cascade** across a grid of those | `stagger-children` on the list | per-child `animation-delay` at the call site |
 | A **notification** arriving from off the bottom edge | `animate-toast-in` | `animate-fade-in` |
 | An **overlay opening** — the panel, and the ground dimming behind it | `animate-modal-in` + `backdrop:animate-backdrop-in` | one fade on the `<dialog>`, which takes the backdrop with it |
 | A glass surface materialising | `animate-tooltip-in` | a bespoke fade, or a keyframe on `filter` that flattens a nested `glass-*` surface |
 | A **timed notification's countdown** | `animate-toast-timer` + the duration from `TOAST_DURATION_MS` | a `3s` written into the token, free to drift from the timer that dismisses it |
+| A **notification leaving** — the only exit in the app | `animate-toast-out` + the duration from `TOAST_EXIT_MS`, and `inert` while it runs | unmounting it, which leaves the surface nothing to animate away with |
 | A **section heading**, and the sheen travelling it | `heading-gradient` (+ `animate-gradient-pan`) | `bg-gradient-to-r … bg-clip-text text-transparent`, restated per heading |
 | A **`<details>` easing open and shut** | `section-reveal` | a keyframe on the content, which a `content-visibility: hidden` subtree plays exactly once |
 | The ambient wash breathing, and the live-compile beam | `animate-aurora` / `animate-scan-beam` | one-off durations at the call site |
 | Signature easing — an entrance, where the travel is not the point | `ease-emphasized` | `cubic-bezier(...)` inline |
 | Something changing **size**, where the travel *is* what is being read | `ease-decelerate` | `ease-emphasized`, 83% travelled in its first quarter, which reads as a jump |
+| Something **leaving** — an exit, which has to hold before it goes | `ease-exit` | either ease-*out* above run backwards, half gone before the eye catches it starting |
 | The ambient dot backdrop | `bg-grid-pattern` | a hand-rolled repeating gradient |
 | The ambient colour wash behind the page | `bg-aurora` | a stack of hand-written `radial-gradient()`s |
 | A loading placeholder's sheen | `shimmer-surface` + `animate-shimmer` | a bespoke gradient |
@@ -383,7 +403,32 @@ recomputing as the user types. The `pulse-glow` animation deliberately blooms fr
 other because that transition is the signal. Using cyan for an ordinary button, or indigo for a
 live badge, quietly destroys that distinction. It is also why **no view owns the cyan stop** —
 `--color-tab` resting there would make every panel in that view look like it was recomputing, and
-a unit test asserts it never does.
+a unit test asserts it never does. **The settings dialog cannot reach it either**: the accent is
+the one role colour a user may repoint, and cyan is missing from the nine hues it offers, for
+exactly this reason.
+
+**The accent is settable, and that changes nothing a component does.** A reader picks one of nine
+hues in the settings dialog; `App` puts it on the shell as `data-accent`, and the `[data-accent]`
+rules in `index.css` repoint the three `--color-accent*` tokens there. So a component still writes
+`bg-accent` and `ring-accent-soft` and knows nothing about it — **reading `accentHue` out of the
+settings store to choose a colour at a call site is the mistake this arrangement exists to prevent**,
+and it would also miss the swatches, which set the attribute on themselves and paint `bg-accent` to
+show the hue they offer.
+
+Two properties make that safe to hand to a user, and both are asserted rather than intended:
+
+- **The accent cannot reach a view's colour.** `--color-tab` is not among the tokens these rules
+  set, so the Studio stays violet and Quantise jade whatever the accent is — which is what keeps the
+  page able to say *where you are* independently of what the primary looks like. A `--color-tab`
+  added to one of those rules would win over the `[data-tab]` rule on the same element, and every
+  view would light up in the accent.
+- **The accent cannot change a contrast ratio.** Every hue is the default's *luminance*, not its
+  lightness: OKLCH lightness is perceptual and its relationship to luminance depends on hue, so nine
+  hues at one lightness would be nine different ratios against `ink` and every panel — `text-ink`
+  sits on `accent-strong` in the app's loudest button. Chroma is then the same fraction of each
+  hue's own gamut maximum as the default is of its, per the wheel's rule. Derive a new hue by
+  bisecting lightness against a gamut search, never by eye: the test that guards this fails on a
+  0.003 nudge.
 
 **The palette is one OKLCH hue wheel: ten stops, 36° apart, all at L 0.76.** Every colour in the
 app is a position on it. That is a structural claim and it has to stay true, so three things follow:
@@ -412,7 +457,10 @@ shell in [src/App.tsx](src/App.tsx), and nowhere else. Custom properties are sub
 computed-value time, so a `--color-tab` declared on `:root` in terms of another variable resolves
 *there* and inherits down already resolved; a descendant re-declaring the input would change
 nothing. That is also the mechanism a preset card uses to claim its own stop: it sets `--color-tab`
-inline, and every `*-tab` utility inside it follows without one of them being told.
+inline, and every `*-tab` utility inside it follows without one of them being told — and the one
+the settings dialog's swatches use, each carrying `data-accent` so it paints in the hue it offers.
+**Three attributes now sit on that shell for the same reason** — `data-tab`, `data-accent` and
+`data-motion` — and a fourth thing decided by a custom property belongs there too, not on `:root`.
 
 **The type scale is three rungs, and a component picks one — it does not name a size.** Tailwind's
 stock ladder bottoms out at 12px, so for a long time anything this app wanted smaller was written at
@@ -448,16 +496,49 @@ guidance. Fixing that is the layout's job, not the copy's.
 - If a token *doesn't* exist for a genuinely new semantic role, **add the token** to the
   `@theme` block in [src/index.css](src/index.css) rather than hard-coding the value at the
   call site. One definition, restyleable in one place. A literal written at the call site also
-  bypasses the reduced-motion catch-all at the bottom of that file.
+  bypasses the two reduced-motion catch-alls at the bottom of that file — the media query for a
+  system preference, and the `[data-motion='reduced']` block for the in-app setting. **Those two
+  carry the same declarations and have to keep carrying the same declarations**: CSS offers no way
+  to write them once, so a test compares the sets rather than trusting that whoever edits one will
+  remember the other.
 - **The colour-swatch surface is the deliberate exception.** `ColorSwatch` renders whatever
-  hex `parseColorFromText` resolved — a *user's* colour, not the app's — so it takes its value
-  as a prop via inline `style`. `COLOR_HEX_MAP` in `src/constants/colors.ts` is likewise the
-  one place raw hex literals belong: it is domain data (the vocabulary the prompt compiler
-  understands), not app styling. Nothing else gets to claim that exemption.
+  hex `parseColorFromText` resolved — a colour that is not the app's, so it takes its value as a
+  prop via inline `style`. **It is the only component that may**, and the way to show any other
+  colour is to hand it this one: `PaletteField`'s swatch strip passes a bare `#0F380F`, which
+  `parseColorFromText` resolves to itself, rather than reaching for a second inline `style`.
+  Two constants files hold raw hex literals for the same reason — they are **domain data**, the
+  vocabulary the prompt compiler understands, not app styling: `COLOR_HEX_MAP` in
+  `src/constants/colors.ts`, which is the colour names a subject field may use, and
+  `src/constants/palettes/`, which is the colours real hardware could display. Nothing else gets
+  to claim either exemption.
 
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,
 verify it actually emits: build and grep the output CSS for the class name before trusting it.
+
+**The motion layer is deliberately slow, and it moves as one.** Every duration in the app — the
+`--animate-*` tokens, `section-reveal`, and every `duration-*` at a call site — has been taken
+through two whole-layer passes, **1.5× and then a further 1.3×**, so it now runs at **1.95×** what
+it first shipped with. This is a tool for making game art, and motion that is over before it is seen
+buys none of that. The figures are therefore *relative* to each other and not independently chosen:
+a new transition written at the stock 200ms would run at roughly twice the speed of everything
+beside it. Pick a duration by finding the nearest thing that already moves and matching it. Two
+pairs have to stay equal — the tab pill and the `[data-tab]` sweep are one event at 1440ms, and the
+disclosure's height and its caret are one gesture at 585ms — and each says so at both ends.
+
+**A page transition is the app's second speed, and it is a `view-*` token rather than a number.**
+Navigating is worth dwelling on, so the second pass gave it 1.6× where everything else took 1.3× —
+putting the view entrances, the `[data-tab]` colour sweep, the tab pill and the preset grid's
+stagger at **2.4×** the shipped figure against the 1.95× above. That distinction is about *when* an
+animation fires, not what it looks like, which is why it could not be carried by `fade-in` and
+`pop-in` themselves. Each of those
+lands on two different kinds of moment: a panel fades in when you navigate to the studio **and**
+when a budget notice appears mid-edit; a tile pops in as the preset library fills **and** as the
+"Split into sheets" button turns up. `animate-view-fade-in` and `animate-view-pop-in` run the same
+keyframes at the slower figure, and the test of which one a surface takes is not where it sits but
+what makes it appear: **anything that can turn up while the user is working takes the ordinary
+entrance.** `ComboBox`'s suggestion list is the case that proves it — it wears `fade-in`, and at the
+page-transition speed it would simply be a slow dropdown.
 
 **A keyframe animates `transform`; a utility sets `translate` / `scale` / `rotate`.** Tailwind v4
 compiles `-translate-y-1`, `scale-105` and `rotate-45` to the **independent** properties of those

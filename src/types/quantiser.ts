@@ -87,19 +87,54 @@ export interface BackgroundKeying {
   readonly tolerance: number;
 }
 
+/**
+ * What the palette step is asked to do, which is one of three different things.
+ *
+ * The studio can constrain a returned sheet's colour two ways, and they are not variations of one
+ * setting: a **budget** says how many colours, leaving the choice of them to the image, while a
+ * **palette** says which colours, leaving the count to fall out. Pinning a palette supersedes the
+ * budget, so exactly one of these ever applies — which is why this is a union rather than three
+ * fields that would have to be checked against each other.
+ *
+ * `CHANNEL_DEPTH` is the palette case for the machines whose colours are a space rather than a list.
+ * It reduces the colour *count* barely at all, and that is not what it is for: it makes every colour
+ * one the machine could actually have shown.
+ */
+export type ColorReduction =
+  | { readonly kind: 'MAX_COLORS'; readonly maxColors: number }
+  | { readonly kind: 'PALETTE'; readonly entries: readonly Rgba[] }
+  | { readonly kind: 'CHANNEL_DEPTH'; readonly bitsPerChannel: number };
+
+/**
+ * The reduction, and what the tab's own panel calls it.
+ *
+ * One value rather than two functions, because the two must always describe the same thing: the
+ * panel sits beside the preview, and a readout naming the colour budget while the pipeline maps to
+ * four greens is two statements on one screen contradicting each other. `colorPlanFor` decides both
+ * in one branch, so they cannot part company.
+ */
+export interface ColorPlan {
+  /** What the palette step will do, or `null` to leave the colours alone. */
+  readonly reduction: ColorReduction | null;
+  /** The stored identifier of whichever studio setting decided it — a palette, or the budget. */
+  readonly setting: string;
+  /** What that does to the image, as a clause following the setting's name. */
+  readonly effect: string;
+}
+
 /** Everything `quantiseImage` needs beyond the image itself. */
 export interface QuantiseSettings {
   readonly grid: PixelGrid;
   /** The background to remove, or `null` to leave every pixel where it is. */
   readonly key: BackgroundKeying | null;
   /**
-   * How many colours the result may use, or `null` to leave the palette alone.
+   * How the result's colours are constrained, or `null` to leave them alone.
    *
-   * `null` rather than a large number, because `UNRESTRICTED` means the palette step does not run at
-   * all — a painted or 3D-rendered sheet has no colour budget to enforce, and reducing it to some
-   * high figure anyway would still be a reduction.
+   * `null` rather than a generous budget, because `UNRESTRICTED` with no palette pinned means the
+   * step does not run at all — a painted or 3D-rendered sheet has no colour budget to enforce, and
+   * reducing it to some high figure anyway would still be a reduction.
    */
-  readonly maxColors: number | null;
+  readonly reduction: ColorReduction | null;
 }
 
 /** What came back: the transformed image, and the numbers that say what it did. */

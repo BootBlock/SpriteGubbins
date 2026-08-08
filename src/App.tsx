@@ -5,12 +5,14 @@ import { Header } from './components/layout/Header.tsx';
 import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
 import { AtlasCalculatorModal } from './components/modals/AtlasCalculatorModal.tsx';
 import { HistoryModal } from './components/modals/HistoryModal.tsx';
+import { SettingsModal } from './components/modals/SettingsModal.tsx';
 import { SheetSplitModal } from './components/modals/SheetSplitModal.tsx';
 import { PresetsTab } from './components/tabs/PresetsTab.tsx';
 import { QuantiseTab } from './components/tabs/QuantiseTab.tsx';
 import { SpecTab } from './components/tabs/SpecTab.tsx';
 import { StudioTab } from './components/tabs/StudioTab.tsx';
 import { usePresetStore } from './stores/usePresetStore.ts';
+import { useSettingsStore } from './stores/useSettingsStore.ts';
 import { useUIStore } from './stores/useUIStore.ts';
 import type { BeforeInstallPromptEvent } from './types/pwa.ts';
 import type { AppTab } from './types/ui.ts';
@@ -42,8 +44,13 @@ export function App() {
   const isAtlasModalOpen = useUIStore((state) => state.isAtlasModalOpen);
   const isHistoryModalOpen = useUIStore((state) => state.isHistoryModalOpen);
   const isSplitModalOpen = useUIStore((state) => state.isSplitModalOpen);
+  const isSettingsModalOpen = useUIStore((state) => state.isSettingsModalOpen);
   const setInstallPrompt = useUIStore((state) => state.setInstallPrompt);
   const fetchCustomPresets = usePresetStore((state) => state.fetchCustomPresets);
+  const accentHue = useSettingsStore((state) => state.settings.accentHue);
+  const motion = useSettingsStore((state) => state.settings.motion);
+  const ambientBackdrop = useSettingsStore((state) => state.settings.ambientBackdrop);
+  const fetchSettings = useSettingsStore((state) => state.fetchSettings);
 
   // Catch the browser's install offer and hold on to it, so the app can make the offer itself at a
   // moment that makes sense rather than letting the mini-infobar interrupt.
@@ -64,17 +71,39 @@ export function App() {
     void fetchCustomPresets();
   }, [fetchCustomPresets]);
 
+  // …and the interface preferences, which also decide which view this lands on. The app is on the
+  // studio until this resolves — opening a database is a worker, a WebAssembly module and an OPFS
+  // pool — so `openInitialTab` inside the store declines to move anyone who has navigated meanwhile.
+  useEffect(() => {
+    void fetchSettings();
+  }, [fetchSettings]);
+
   const ActiveView = VIEWS[activeTab];
 
   return (
     /*
+      Three attributes, all here for the same reason and none of them passed down as a prop: each
+      decides the value of a custom property, and a custom property is substituted at computed-value
+      time — so the assignment has to sit on the element the `var()`s resolve against, and everything
+      the app renders is inside this one.
+
       `data-tab` is what lights the page. Every surface that follows the active view — the wash, the
       dot grid, each panel's top edge, the switcher's pill, every section heading — reads
-      `--color-tab`, and this attribute is the single place it is decided. See the per-view rules in
-      `index.css`: the assignment has to sit on the element the `var()`s resolve against, which is
-      why it is here on the shell rather than passed down as a prop.
+      `--color-tab`, and this attribute is the single place it is decided.
+
+      `data-accent` repoints the three accent tokens to the hue the user chose. It is deliberately
+      *not* the same mechanism as the one above and cannot reach it: the view keeps its own colour
+      whatever the accent is, which is how the app goes on saying which view you are looking at.
+
+      `data-motion` is the in-app half of reduced motion — see the rule at the bottom of `index.css`,
+      which the settings dialog can turn on without touching a system preference.
     */
-    <div data-tab={activeTab} className="relative flex min-h-dvh flex-col bg-foundry-900 text-ink">
+    <div
+      data-tab={activeTab}
+      data-accent={accentHue}
+      data-motion={motion === 'reduced' ? 'reduced' : undefined}
+      className="relative flex min-h-dvh flex-col bg-foundry-900 text-ink"
+    >
       {/*
         Four decorative layers, painted back to front: the aurora wash that gives the page depth,
         the technical dot grid over it, and the two orbs drifting on top out of phase. All fixed,
@@ -83,17 +112,26 @@ export function App() {
         The first orb carries the view's colour and the second stays on the primary, so the pair
         reads as the page being lit from two directions rather than dipped in one — and the moving
         one is what makes a view change visible out at the edges of the layout.
+
+        Switched off as a set rather than dimmed, and unmounted rather than hidden. This is a tool
+        for judging artwork, and the objection it answers is that the wash tints the whole page in
+        the active view's hue — a sprite's colours are being read against it. Half a backdrop would
+        be the same objection with more steps.
       */}
-      <div aria-hidden="true" className="animate-aurora pointer-events-none fixed inset-0 bg-aurora" />
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-40" />
-      <div
-        aria-hidden="true"
-        className="animate-float-orb pointer-events-none fixed -top-40 left-1/4 size-[28rem] rounded-full bg-tab/15 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="animate-float-orb-slow pointer-events-none fixed -bottom-40 right-1/4 size-[24rem] rounded-full bg-accent-soft/10 blur-3xl"
-      />
+      {ambientBackdrop && (
+        <>
+          <div aria-hidden="true" className="animate-aurora pointer-events-none fixed inset-0 bg-aurora" />
+          <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-40" />
+          <div
+            aria-hidden="true"
+            className="animate-float-orb pointer-events-none fixed -top-40 left-1/4 size-[28rem] rounded-full bg-tab/15 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="animate-float-orb-slow pointer-events-none fixed -bottom-40 right-1/4 size-[24rem] rounded-full bg-accent-soft/10 blur-3xl"
+          />
+        </>
+      )}
 
       <div className="relative flex min-h-dvh flex-col">
         <Header />
@@ -107,6 +145,7 @@ export function App() {
       {isAtlasModalOpen && <AtlasCalculatorModal />}
       {isHistoryModalOpen && <HistoryModal />}
       {isSplitModalOpen && <SheetSplitModal />}
+      {isSettingsModalOpen && <SettingsModal />}
 
       {/*
         Exactly one toast is ever mounted. While an overlay is open it belongs inside the dialog —
@@ -114,7 +153,7 @@ export function App() {
         it inert, so a toast out here would be neither visible nor announced. The store guarantees
         the overlays are never open at once, so these cases are mutually exclusive.
       */}
-      {!isAtlasModalOpen && !isHistoryModalOpen && !isSplitModalOpen && <Toast />}
+      {!isAtlasModalOpen && !isHistoryModalOpen && !isSplitModalOpen && !isSettingsModalOpen && <Toast />}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { QUANTISE_DEBOUNCE_MS } from '../constants/quantiser.ts';
 import type {
   BackgroundKeying,
+  ColorReduction,
   ImportedImage,
   PixelGrid,
   Quantised,
@@ -94,7 +95,7 @@ export function useQuantiseWorker(
   source: ImportedImage | null,
   gridOverride: PixelGrid | null,
   key: BackgroundKeying | null,
-  maxColors: number | null,
+  reduction: ColorReduction | null,
 ): QuantiseWork {
   const worker = useRef<Worker | null>(null);
   /** Calls awaiting a reply, by correlation id. */
@@ -222,8 +223,8 @@ export function useQuantiseWorker(
   const grid = gridOverride ?? facts?.detected ?? null;
 
   const settings = useMemo<QuantiseSettings | null>(
-    () => (grid === null ? null : { grid, key, maxColors }),
-    [grid, key, maxColors],
+    () => (grid === null ? null : { grid, key, reduction }),
+    [grid, key, reduction],
   );
 
   useEffect(() => {

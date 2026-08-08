@@ -23,6 +23,7 @@ export {
   SURFACE_DETAIL_TEXT,
 } from './renderStyle.ts';
 export { LIGHTING_TEXT, OUTLINE_TEXT, PALETTE_TEXT } from './palette.ts';
+export { describeHardware, describePalette, perComponentLimit } from './hardware.ts';
 export {
   DEFAULT_CAMERA_ELEVATIONS,
   DEPTH_ORDER_TEXT,

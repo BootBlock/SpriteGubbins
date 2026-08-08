@@ -13,8 +13,9 @@ import { identityPalette } from '../../utils/identityPalette.ts';
  *
  * The palette is the one line of `baseline-prompt-new.md` §5's digest that does not need a pair of
  * eyes on the image — and the one nobody writes accurately by hand, because eyeballing hex codes off
- * a sheet is guesswork. The prose lines stay the user's; this only ever adds or replaces the
- * `Palette:` segment.
+ * a sheet is guesswork. Nothing here touches the prose lines: `IdentitySubjectDigest` beside it
+ * offers a starting point for those from the studio's own fields, and this only ever adds or
+ * replaces the `Palette:` segment.
  *
  * **Nothing is uploaded.** The image is decoded here, measured here, and never leaves the tab. That
  * is what separates this from §10.3's captured digest, which is removed rather than merely unbuilt:

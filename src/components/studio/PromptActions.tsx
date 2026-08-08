@@ -18,10 +18,10 @@ import { splitsIntoRuns } from '../../utils/sheetRuns.ts';
  * lighting up indigo would read as belonging to something else.
  */
 const PROMPT_ACTION =
-  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-200 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 hover:text-ink active:translate-y-0';
+  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 hover:text-ink active:translate-y-0';
 
 /** The glyph inside one of those, lifting with it — which is why each button is a `group`. */
-const PROMPT_ACTION_ICON = 'inline-block transition-transform duration-300 group-hover:scale-125';
+const PROMPT_ACTION_ICON = 'inline-block transition-transform duration-585 group-hover:scale-125';
 
 /** A filename from the subject's own name, so a folder of downloads stays readable. */
 function promptFileName(species: string): string {
@@ -112,13 +112,13 @@ export function PromptActions({ promptText }: PromptActionsProps) {
         }}
         // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
         // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
-        className="action-tab group relative ml-auto overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
+        className="action-tab group relative ml-auto overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-390 hover:scale-[1.03] active:scale-[0.98]"
       >
         {/* The sheen is a child rather than a background layer on the button, so it can be clipped
             to the rounded corners and slid across without disturbing the fill underneath. */}
         <span
           aria-hidden="true"
-          className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-700 group-hover:translate-x-full"
+          className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
         />
         <span className="relative flex items-center gap-1.5">
           <span aria-hidden="true">📋</span>

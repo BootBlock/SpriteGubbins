@@ -50,7 +50,7 @@ export function PromptPreview() {
       would be charged either side of the always-present, usually-empty live region above — see
       `StudioTab` and `ComponentBudgetNotice`.
     */
-    <section className="animate-fade-in glass-panel relative mt-4 flex max-h-[36rem] flex-col overflow-hidden rounded-2xl border border-foundry-700 p-5 shadow-2xl lg:max-h-none lg:min-h-[24rem] lg:flex-1">
+    <section className="animate-view-fade-in glass-panel relative mt-4 flex max-h-[36rem] flex-col overflow-hidden rounded-2xl border border-foundry-700 p-5 shadow-2xl lg:max-h-none lg:min-h-[24rem] lg:flex-1">
       {/*
         The live rail: a cyan highlight travelling the panel's top edge for as long as the compiler
         is watching the studio. Cyan rather than indigo because that is precisely the claim it makes,
@@ -71,10 +71,10 @@ export function PromptPreview() {
           digits would shuffle the chip's width — and the badge beside it — with each one.
         */}
         <div className="flex items-center gap-2 font-mono text-xs tabular-nums text-ink-faint">
-          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-300 hover:border-neon/40">
+          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-585 hover:border-neon/40">
             Words: <strong className="text-neon">{wordCount}</strong>
           </span>
-          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-300 hover:border-accent/40">
+          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-585 hover:border-accent/40">
             Est. tokens: <strong className="text-accent-soft">~{tokenEstimate}</strong>
           </span>
           <Badge tone="live">Auto-Sync</Badge>
@@ -86,7 +86,7 @@ export function PromptPreview() {
       <PromptActions promptText={promptText} />
 
       {/* `select-all` so one click selects the whole prompt for a manual copy. */}
-      <pre className="flex-1 overflow-y-auto rounded-xl border border-foundry-700 bg-foundry-950/80 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-ink-muted shadow-inner transition-colors duration-300 select-all hover:border-neon/30">
+      <pre className="flex-1 overflow-y-auto rounded-xl border border-foundry-700 bg-foundry-950/80 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-ink-muted shadow-inner transition-colors duration-585 select-all hover:border-neon/30">
         {promptText}
       </pre>
     </section>

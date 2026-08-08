@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
-import { PALETTE_COLOR_COUNTS } from '../../constants/quantiser.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseWorker } from '../../hooks/useQuantiseWorker.ts';
@@ -9,6 +8,7 @@ import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { Quantised, SheetFacts } from '../../types/quantiser.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { parseTargetSize, targetSizeGrid } from '../../utils/targetSize.ts';
 import { GridControls } from '../quantise/GridControls.tsx';
@@ -37,6 +37,7 @@ import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
  */
 export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
+  const palette = useOutputStore((state) => state.output.palette);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
@@ -68,11 +69,17 @@ export function QuantiseTab() {
     [keyingEnabled, keyColor, keyTolerance],
   );
 
+  // The studio's two colour settings resolved to one instruction *and* one description of it — a
+  // pinned palette supersedes the budget, and `colorPlanFor` is the single place that rule is
+  // applied. The panel below is handed the same answer the pipeline is, for the same reason
+  // `KeyingControls` is handed the keying: two readings of one setting can disagree, and did.
+  const colorPlan = useMemo(() => colorPlanFor(palette, paletteLimit), [palette, paletteLimit]);
+
   const { facts, grid, quantised, busy, error } = useQuantiseWorker(
     source,
     gridOverride,
     keying,
-    PALETTE_COLOR_COUNTS[paletteLimit],
+    colorPlan.reduction,
   );
 
   // The studio's own target size, read as a second candidate. Deliberately **not** folded into
@@ -92,11 +99,11 @@ export function QuantiseTab() {
   );
 
   return (
-    <div className="animate-fade-in mx-auto max-w-6xl space-y-6">
+    <div className="animate-view-fade-in mx-auto max-w-6xl space-y-6">
       <header className="space-y-1">
         <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Quantise a returned sheet</h2>
         <p className="max-w-3xl text-xs leading-relaxed text-ink-muted">
-          Snap the image back to the pixel scale it was meant to be drawn at, reduce it to the colour budget
+          Snap the image back to the pixel scale it was meant to be drawn at, bring its colours down to what
           the prompt asked for, and turn the background key into transparency.
         </p>
       </header>
@@ -131,6 +138,7 @@ export function QuantiseTab() {
             target={target}
             suggested={suggested}
             grid={grid}
+            colorPlan={colorPlan}
             onGridChange={setGridOverride}
           />
           {/* The panel is handed the same `keying` the pipeline was, rather than working it out again

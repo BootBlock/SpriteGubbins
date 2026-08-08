@@ -16,6 +16,7 @@ import { ProjectionFields } from './ProjectionFields.tsx';
 import { RenderStyleFields } from './RenderStyleFields.tsx';
 import { RiggingFields } from './RiggingFields.tsx';
 import { SheetFields } from './SheetFields.tsx';
+import { SystemProfileField } from './SystemProfileField.tsx';
 
 /**
  * Which of the six groups is unfolded to begin with.
@@ -38,8 +39,8 @@ import { SheetFields } from './SheetFields.tsx';
  *   projection moves the elevation with it, and three of Rigging's four controls do not exist
  *   outside a cut-out rig.
  * - **Continuity across sheets** — folded. The identity lock is written *after* sheet one is
- *   accepted, so on arrival the group is inert and its digest says so; it is also the tallest of
- *   the six, carrying the palette-capture drop zone and its explanation.
+ *   accepted, so on arrival the group is inert and its digest says so; it is also by some way the
+ *   tallest of the six, carrying both of the lock's derivation controls and their explanations.
  * - **Returned alongside the image** — folded. Both its checkboxes are off by default, and each
  *   adds a second deliverable to the prompt rather than changing the sheet.
  *
@@ -82,13 +83,13 @@ export function OutputConfig() {
   const category = useSubjectStore((state) => state.category);
 
   return (
-    <section className="animate-fade-in glass-panel group/panel rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-tab/40">
+    <section className="animate-view-fade-in glass-panel group/panel rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-585 hover:border-tab/40">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-foundry-700 pb-3">
         <h2 className="flex items-center gap-2.5 text-base font-bold text-ink">
           {/* A gear that turns when the panel it heads is under the pointer. */}
           <span
             aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-500 group-hover/panel:rotate-90 group-hover/panel:ring-tab/60"
+            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-975 group-hover/panel:rotate-90 group-hover/panel:ring-tab/60"
           >
             ⚙️
           </span>
@@ -97,6 +98,16 @@ export function OutputConfig() {
         </h2>
 
         <SectionToggleAll sections={ALL_SECTIONS} panelLabel="Output Configuration" />
+      </div>
+
+      {/*
+        Above the groups, because it writes into two of them: choosing a machine sets the render
+        style, surface detail, resolution, component size, outline, lighting and palette at once.
+        Folded away inside one group it would be a control that silently changed another group's
+        header while that group was shut.
+      */}
+      <div className="mb-4 border-b border-foundry-700 pb-4">
+        <SystemProfileField />
       </div>
 
       {/*

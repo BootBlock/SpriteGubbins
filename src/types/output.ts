@@ -1,3 +1,5 @@
+import type { HardwareProfileId } from './hardware.ts';
+import type { PaletteId } from './palette.ts';
 import type { BackgroundKey, Direction, DirectionSet, Projection, RenderStyle } from './rendering.ts';
 import type { JointCapStyle, OverlapMargin, RigMode } from './rigging.ts';
 
@@ -16,6 +18,10 @@ export type { BackgroundKey, Direction, DirectionSet, Projection, RenderStyle } 
 export { BACKGROUND_KEYS, DIRECTION_SETS, PROJECTIONS, RENDER_STYLES } from './rendering.ts';
 export type { JointCapStyle, OverlapMargin, RigMode } from './rigging.ts';
 export { JOINT_CAP_STYLES, OVERLAP_MARGINS, RIG_MODES } from './rigging.ts';
+export type { HardwareProfile, HardwareProfileId, HardwareSettings } from './hardware.ts';
+export { HARDWARE_PROFILE_IDS } from './hardware.ts';
+export type { Palette, PaletteId, PaletteSpace } from './palette.ts';
+export { PALETTE_IDS } from './palette.ts';
 
 /**
  * What kind of component set the sheet delivers. The single biggest lever on the prompt: it sets
@@ -209,6 +215,24 @@ export interface OutputConfig {
    * would state a count its own inventory contradicts.
    */
   readonly componentBudget: number;
+
+  /**
+   * The machine this sheet is drawn for, or `NONE`.
+   *
+   * Choosing one in the studio writes the settings package it implies — see `HardwareProfile` — and
+   * then stays, because the machine's *name* is what the compiled prompt carries. What it emits is
+   * geometry alone: the display, the tile grid, the sprite sizes. Colour is `palette`'s, which is
+   * why the two can be set independently without the prompt contradicting itself.
+   */
+  readonly hardwareProfile: HardwareProfileId;
+  /**
+   * The colours this sheet may use, or `FREE`.
+   *
+   * **Supersedes `paletteLimit` wherever both would apply** — the prompt drops the budget line, the
+   * quantiser ignores the count, and the studio says so under the control. A budget cannot express
+   * "four shades of green", so where a palette is pinned the budget has nothing left to add.
+   */
+  readonly palette: PaletteId;
 
   readonly renderStyle: RenderStyle;
   readonly projection: Projection;

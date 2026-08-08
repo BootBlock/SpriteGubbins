@@ -20,6 +20,16 @@ export interface OutputState {
    * these identifiers is copied verbatim into the compiled prompt.
    */
   setOutputField<K extends keyof OutputConfig>(key: K, value: OutputConfig[K]): void;
+  /**
+   * Change several settings at once, leaving the rest alone.
+   *
+   * What choosing a hardware profile does: a machine writes seven settings and a palette in one
+   * act, and doing that as eight `setOutputField` calls would put eight entries in the store's
+   * history where the user performed one. It merges from the *current* state rather than from a
+   * value the caller read earlier, which `setOutputConfig` cannot do — that one replaces, and a
+   * component composing `{ ...output, ...patch }` would be writing back a snapshot.
+   */
+  applyOutputPatch(patch: Partial<OutputConfig>): void;
   /** Replace the whole configuration — what loading a preset does. */
   setOutputConfig(config: OutputConfig): void;
 }
@@ -32,6 +42,10 @@ export const useOutputStore = create<OutputState>((set) => ({
 
   setOutputField: (key, value) => {
     set((state) => ({ output: { ...state.output, [key]: value } }));
+  },
+
+  applyOutputPatch: (patch) => {
+    set((state) => ({ output: { ...state.output, ...patch } }));
   },
 
   setOutputConfig: (config) => {

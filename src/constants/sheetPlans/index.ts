@@ -7,6 +7,7 @@ import { CHARACTER_CUTOUT_RIG, CHARACTER_DIRECTIONAL_VARIANTS, CHARACTER_POSE_LI
 import { CREATURE_CUTOUT_RIG, CREATURE_DIRECTIONAL_VARIANTS, CREATURE_POSE_LIBRARY } from './creature.ts';
 import { ITEM_DIRECTIONAL_VARIANTS, ITEM_PART_LIBRARY } from './item.ts';
 import { OBJECT_CUTOUT_RIG, OBJECT_DIRECTIONAL_VARIANTS, OBJECT_PART_LIBRARY } from './object.ts';
+import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY } from './vehicle.ts';
 
 /**
  * Which sheet each category can actually produce, and what it asks for.
@@ -50,6 +51,11 @@ export const CATEGORY_SHEET_PLANS: Readonly<
     CORE_DIRECTIONAL_VARIANTS: BUILDING_DIRECTIONAL_VARIANTS,
     TILESET_MODULAR: BUILDING_TILESET,
   },
+  VEHICLE: {
+    SINGLE_DIRECTION_POSE_LIBRARY: VEHICLE_PART_LIBRARY,
+    CORE_DIRECTIONAL_VARIANTS: VEHICLE_DIRECTIONAL_VARIANTS,
+    CUTOUT_RIG_SINGLE_DIRECTION: VEHICLE_CUTOUT_RIG,
+  },
 };
 
 /**
@@ -66,6 +72,7 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   ITEM: 'CORE_DIRECTIONAL_VARIANTS',
   // A building is the one category for which a repeating tile field is the usual deliverable.
   BUILDING: 'TILESET_MODULAR',
+  VEHICLE: 'CORE_DIRECTIONAL_VARIANTS',
 };
 
 /** Whether this category can produce this kind of sheet at all. */

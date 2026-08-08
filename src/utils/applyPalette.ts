@@ -1,16 +1,6 @@
 import { RGBA_CHANNELS } from '../types/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
-import {
-  alphaAt,
-  CHANNELS_PER_PIXEL,
-  copyPixel,
-  createImage,
-  FULLY_TRANSPARENT,
-  packColor,
-  packedColorAt,
-  unpackColor,
-  writePackedColor,
-} from './imageData.ts';
+import { remapColors } from './imageData.ts';
 
 /**
  * Redrawing an image in a fixed palette.
@@ -18,55 +8,54 @@ import {
  * Separate from `buildPalette` in ./medianCut.ts because it is a different algorithm over a
  * different input: median cut *chooses* colours from one image, this maps any image onto any
  * palette. The two are used together and neither needs the other to be correct.
+ *
+ * **Two of them, because a palette can come from two places and they are not the same object.**
+ * Median cut returns entries with an alpha it split the image on, so redrawing in one means taking
+ * that alpha too. A machine's palette is a list of *colours* — the Game Boy had four shades and no
+ * alpha channel at all — so redrawing in one may not touch a pixel's opacity. Both share
+ * `nearestColor`, which is the half that would quietly diverge if they were written twice.
  */
 
 /**
  * The image with every pixel taking its nearest palette entry, by squared distance across all four
  * channels.
  *
- * **Fully transparent pixels are copied through untouched** and never consult the palette, matching
- * the histogram that excluded them: an empty field describes nothing, and mapping it to a palette
- * entry would put a colour where the sheet says there is none.
- *
- * Distances are resolved once per distinct colour rather than once per pixel — the difference
- * between a few thousand comparisons and a few million on a sheet with far fewer colours than pixels.
- * The cache holds packed integers on both sides for the same reason the loop reads channels in place:
- * at a grid of 1 this runs over the whole sheet, and an `Rgba` per pixel there is 16.8 million objects
- * allocated to be discarded a line later.
+ * For a palette **derived from this image**, which is what `buildPalette` returns: alpha is one of
+ * the four channels it split on, so an entry's opacity is as much a part of it as its hue, and the
+ * entry is written whole. That is what keeps the promise the colour count makes — reduce to N and
+ * exactly N distinct RGBA colours survive.
  */
 export function applyPalette(image: ImageData, palette: readonly Rgba[]): ImageData {
-  const output = createImage(image.width, image.height);
-  const resolved = new Map<number, number>();
-  const { data } = image;
+  // An empty palette means an image with no opaque pixels, none of which reach `resolve` at all.
+  return remapColors(image, (color) => nearestColor(color, palette) ?? color);
+}
 
-  for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
-    if (alphaAt(data, offset) === FULLY_TRANSPARENT) {
-      copyPixel(data, output.data, offset);
-      continue;
-    }
-
-    const key = packedColorAt(data, offset);
-    let mapped = resolved.get(key);
-    if (mapped === undefined) {
-      // An empty palette means an image with no opaque pixels, none of which reach this line. The
-      // unpack is per *distinct colour*, not per pixel, which is what makes it affordable.
-      const nearest = nearestColor(unpackColor(key), palette);
-      mapped = nearest === null ? key : packColor(nearest);
-      resolved.set(key, mapped);
-    }
-    writePackedColor(output.data, offset, mapped);
-  }
-
-  return output;
+/**
+ * The image with every pixel taking the nearest palette entry's **colour**, keeping its own alpha.
+ *
+ * For a palette that states which colours a machine could display. Those entries are opaque by
+ * construction — a hex triplet has no fourth channel — so writing them whole would flatten every
+ * anti-aliased or soft-keyed edge to fully opaque, putting a hard halo of palette colour where the
+ * sprite used to fade out. That is a decision about the sheet's *shape*, which belongs to the keying
+ * pass and not to a question about its colour; `snapToChannelDepth` states the same rule for the
+ * other kind of machine palette, and the two have to agree or the same sheet keeps its edge under a
+ * Mega Drive palette and loses it under a Game Boy one.
+ *
+ * Alpha plays no part in choosing the entry either, and needs no exclusion to be kept out: every
+ * entry is equally opaque, so the alpha term is the same constant for all of them and cannot change
+ * which one wins.
+ */
+export function applyRgbPalette(image: ImageData, palette: readonly Rgba[]): ImageData {
+  return remapColors(image, (color) => ({ ...(nearestColor(color, palette) ?? color), a: color.a }));
 }
 
 /**
  * The palette entry closest to a colour, the earliest entry taking a tie.
  *
- * Exported because "which palette entry does this colour belong to" is asked twice: here, to redraw
- * a pixel, and by `identityPalette`, to total how much of the image each entry speaks for. Two
- * distance loops would be two answers to one question, and the tie-break is the half that would
- * quietly diverge.
+ * Exported because "which palette entry does this colour belong to" is asked three times: by the two
+ * functions above, to redraw a pixel, and by `identityPalette`, to total how much of the image each
+ * entry speaks for. Three distance loops would be three answers to one question, and the tie-break
+ * is the half that would quietly diverge.
  */
 export function nearestColor(color: Rgba, palette: readonly Rgba[]): Rgba | null {
   let chosen: Rgba | null = null;

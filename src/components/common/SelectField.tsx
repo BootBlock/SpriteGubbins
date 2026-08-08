@@ -73,7 +73,7 @@ export function SelectField<T extends string | number>({
           const choice = choices.find((candidate) => String(candidate.value) === event.target.value);
           if (choice) onChange(choice.value);
         }}
-        className="w-full cursor-pointer rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-200 hover:border-accent/40 focus:border-accent"
+        className="w-full cursor-pointer rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent"
       >
         {choices.map((choice) => (
           <option key={choice.value} value={choice.value}>

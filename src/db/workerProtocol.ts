@@ -1,5 +1,6 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { AppSettings } from '../types/settings.ts';
 
 /**
  * The messages the database worker understands, and what comes back.
@@ -19,7 +20,9 @@ export type WorkerRequest =
   | { readonly kind: 'savePreset'; readonly preset: PresetArchetype }
   | { readonly kind: 'listPresets' }
   | { readonly kind: 'deletePreset'; readonly presetId: string }
-  | { readonly kind: 'replacePresets'; readonly presets: readonly PresetArchetype[] };
+  | { readonly kind: 'replacePresets'; readonly presets: readonly PresetArchetype[] }
+  | { readonly kind: 'loadSettings' }
+  | { readonly kind: 'saveSettings'; readonly settings: AppSettings };
 
 /** A request with the correlation id the reply will carry back. */
 export interface WorkerCall {

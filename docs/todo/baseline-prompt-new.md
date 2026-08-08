@@ -2,7 +2,7 @@
 
 > **Status:** 📘 REFERENCE — shipped. This is the template the compiler now emits, kept for the reasoning behind each rule rather than as open work; the change that landed it is [done/prompt-template-v2-integration.md](done/prompt-template-v2-integration.md).
 >
-> Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 is half shipped — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed rather than built because describing what a sheet depicts needs an outbound vision-model call this app does not make. Each item records its outcome in place.
+> Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 shipped by a route it did not name — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed **as that item framed it**, because describing what a sheet depicts needs an outbound vision-model call this app does not make. The studio derives those lines from the subject definition instead, which needs no image at all. Each item records its outcome in place.
 >
 > §3 is revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment, and it is now **pinned by [tests/prompt-template-mirror.test.ts](../../tests/prompt-template-mirror.test.ts)**, which compares the fence against `PROMPT_TEMPLATE` character for character. It needed to be, because a banner asserting §3 is current is worth nothing while nothing checks it — and checking showed the two had **never** agreed. They diverged the moment the template was transcribed into code: blank lines placed differently around the `[IF:…]` markers, and, in §5, a `---` sitting outside a `[/IF]` where the code puts it inside, which is a rule an unrigged sheet emits twice in the document's version and once in the app's. Then the document fell further behind twice — the category system (§0's guard paragraph, the precedence sentence rewritten so the category comparison settles *before* precedence applies, and `[DEFINE:CATEGORY_GUARD]`, `[DEFINE:CATEGORY_EXCLUSIONS]` and `[DEFINE:CATEGORY_AUDIT]` in §4, §8 and §9), and the `[IF:DELIBERATES]` gating of the self-audit, which §3 described in an italic aside citing a `GOOGLE_IMAGEN` target §7 has since removed. All of it is closed against the constant, and the aside is gone: an editorial annotation cannot survive inside a block that is checked verbatim, and §7 already carries what it said. Its earlier revisions, which the mirror did carry: the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives, and a rewording of §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
 
@@ -202,6 +202,37 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 | `IDENTITY_LOCK` | free text | Carries an identity digest into follow-up sheets (§5) |
 | `SPRITE_TARGET_SIZE` | free text, e.g. `48 × 96 px` | An explicit pixel target, which the profile names only vaguely |
 
+### `HARDWARE_PROFILE` and `PALETTE` — **NEW**, added after this document shipped
+
+Two parameters that arrived together and are deliberately kept apart. A **hardware profile** names a
+machine and states its *geometry* — native display, pixel shape, tile grid, hardware sprite sizes and
+how many the machine could show; a **palette** states its *colour* — the space, the on-screen count,
+the per-component count. Neither says a word about the other's half, which is what lets the two be
+set independently: a Mega Drive profile carrying a Game Boy palette is an unusual request, not a
+prompt that contradicts itself.
+
+| Parameter | Values | Emits |
+| --- | --- | --- |
+| `HARDWARE_PROFILE` | `NONE` · eighteen machines, from the Atari 2600 to the Neo Geo — see `src/constants/hardware/` | `### Target hardware` in §2, with the machine's constraint list |
+| `PALETTE` | `FREE` · nineteen palettes — see `src/constants/palettes/` | `### Palette` in §2, plus a clause in §0's contract and one in §9's audit |
+
+Choosing a profile in the studio is a **template**: it writes the render style, surface detail,
+resolution, component size, outline, lighting and palette in one act, and every one of them stays the
+user's to change afterwards. The stored id is what makes the prompt name the machine, which steers a
+generator further than any single figure in the list does.
+
+A palette is one of two kinds. A **fixed** one is a list — the Game Boy's four greens, the C64's
+sixteen, the 2600's 127 — and every entry is written into the prompt. A **channel-depth** one is a
+colour space, which is how the Master System (2 bits per channel), the Mega Drive (3), the Amiga (4)
+and the SNES (5) actually define colour; the prompt states the ladder instead, since 512 entries are
+not a list anybody reads.
+
+> **A pinned palette supersedes `PALETTE_LIMIT`.** A budget cannot express "four shades of green", so
+> where a palette is set the strategy line is dropped from §2 rather than emitted alongside it — the
+> same rule the Quantise tab applies when it maps a returned sheet onto the palette instead of
+> choosing colours by median cut. The one exception written into the palette block is the background
+> field, which stays the key colour §0 fixes: no palette in the library contains magenta.
+
 ---
 
 ## 3. The template
@@ -240,6 +271,11 @@ Satisfy this section before any aesthetic consideration.
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
+[/IF]
+[IF:PALETTE]
+[N]. Every colour on every component comes from the palette section 2 fixes, and no colour outside
+   it appears anywhere on them. The background field is the exception and stays the key colour
+   named above.
 [/IF]
 [IF:RETURNS_TEXT]
 
@@ -324,9 +360,29 @@ Where this conflicts with anything above, the identity lock wins.
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
+[IF:PALETTE!=yes]
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]
+[/IF]
 - Edge / outline treatment: [DEFINE:OUTLINE_DESCRIPTION]
 - Lighting model: [DEFINE:LIGHTING_DESCRIPTION]
+[IF:HARDWARE_PROFILE]
+
+### Target hardware — [DEFINE:HARDWARE_NAME]
+
+These components are artwork for [DEFINE:HARDWARE_NAME], and have to be drawable on it. Its limits
+are not a period flavour to gesture at; they are what the machine could put on a screen:
+
+[DEFINE:HARDWARE_CONSTRAINTS]
+
+Work to those figures rather than to a modern impression of them. Where one of them pulls against an
+aesthetic preference stated elsewhere in this section, the hardware wins.
+[/IF]
+[IF:PALETTE]
+
+### Palette — [DEFINE:PALETTE_NAME]
+
+[DEFINE:PALETTE_SPECIFICATION]
+[/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 
 ### Pixel discipline
@@ -558,6 +614,12 @@ Before delivering, verify:
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[/IF]
+[IF:PALETTE]
+[N]. Every colour on every component is one the palette in section 2 permits.
+[/IF]
+[IF:PALETTE_PER_COMPONENT]
+[N]. No component carries more colours at once than section 2 allows one.
 [/IF]
 [IF:MULTI_DIRECTION]
 
@@ -1367,13 +1429,20 @@ underneath it.
    accumulating, so re-reading sheet two of eight cannot leave two disagreeing lists in a field that
    says *reproduce exactly*. The image is decoded in the tab and never leaves it.
 
-   > The **prose** half is **removed rather than built.** "Cyan visor across upper face" and "three
-   > amber chest lights in a vertical row" need eyes on the image, which means the outbound
-   > vision-model call this application deliberately never makes: it composes prompt *text* for the
-   > user to paste elsewhere, handles no API key, and has no server to proxy one through. That is an
-   > architectural property, not a gap, so it is deleted with the reason stated rather than left on
-   > the list implying it is merely unstarted. Writing those lines by hand from the first accepted
-   > sheet, as §5 describes, remains the workflow.
+   > The **prose** half is **removed rather than built, as this item framed it.** "Cyan visor across
+   > upper face" and "three amber chest lights in a vertical row" need eyes on the image, which means
+   > the outbound vision-model call this application deliberately never makes: it composes prompt
+   > *text* for the user to paste elsewhere, handles no API key, and has no server to proxy one
+   > through. That is an architectural property, not a gap, so it is deleted with the reason stated
+   > rather than left on the list implying it is merely unstarted.
+
+   The prose lines are nonetheless **no longer typed from scratch**, by a route this item never
+   considered: the studio already holds most of the answer. `IdentitySubjectDigest` sits beside the
+   palette capture and restates the subject definition as `Form:`, `Features:` and `Colour:`
+   segments, folded through the same labelled-segment mechanism, so what the user wrote survives and
+   pressing it again rewrites only its own lines. That is a *starting point* rather than the digest —
+   the concrete, countable detail §5 asks for still has to be read off the accepted sheet and edited
+   in by hand, which is the part only eyes on the image can supply.
 
 4. **A post-generation quantisation step for pixel-art targets.** Independent of the prompt: models
    return smooth artwork downscaled far more often than true pixel art, however the request is

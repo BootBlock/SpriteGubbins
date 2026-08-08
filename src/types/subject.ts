@@ -3,8 +3,19 @@
  * (that is `OutputConfig` in ./output.ts).
  */
 
-/** The five kinds of thing the studio can describe. */
-export const SUBJECT_CATEGORIES = ['CHARACTER', 'CREATURE', 'OBJECT', 'ITEM', 'BUILDING'] as const;
+/**
+ * The kinds of thing the studio can describe.
+ *
+ * Each identifier is substituted into the compiled prompt verbatim — section 0 reads "components
+ * that do not belong to a [DEFINE:CATEGORY]" — so it has to be a noun that survives being dropped
+ * into a sentence, not an internal code.
+ *
+ * **A new category appends.** This order is the category selector's, the Presets tab's collection
+ * list, and the order `PRESETS` concatenates its collections in; a preset's position in that array
+ * is in turn the stop it takes on the hue wheel. Inserting mid-list would therefore re-colour every
+ * collection after the insertion point to express an ordering the list has never claimed to carry.
+ */
+export const SUBJECT_CATEGORIES = ['CHARACTER', 'CREATURE', 'OBJECT', 'ITEM', 'BUILDING', 'VEHICLE'] as const;
 
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
 

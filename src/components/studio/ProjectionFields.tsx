@@ -1,7 +1,7 @@
 import { DIRECTION_SET_CHOICES, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../constants/output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
-import { sheetDirections } from '../../utils/sheetDirections.ts';
+import { directionSetApplies, sheetDirections } from '../../utils/sheetDirections.ts';
 import { splitsIntoRuns } from '../../utils/sheetRuns.ts';
 import { NumberField } from '../common/NumberField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
@@ -20,6 +20,14 @@ const ELEVATION = { min: 0, max: 90, step: 1 } as const;
  * of one sheet — a mode covering one facing at a time, over a set naming more than one. Anywhere
  * else it is inert: a `CORE_DIRECTIONAL_VARIANTS` sheet draws its own three facings whatever this
  * said, so a visible control would promise something the prompt does not carry.
+ *
+ * **That argument always applied one control higher, and the set itself did not obey it.** The modes
+ * that fix their own coverage discard `directions` exactly as they discard `primaryDirection`, so
+ * "Directions Covered" sat on screen offering four choices the compiler threw away — in the state
+ * the app *opens* in, since `CORE_DIRECTIONAL_VARIANTS` is the default mode and the default config.
+ * Picking all eight compass points changed the summary line and nothing else. Both controls now hang
+ * off the same question, asked at the resolution each needs: does the mode defer to the set at all,
+ * and if it does, does the set name more than one facing.
  */
 export function ProjectionFields() {
   const output = useOutputStore((state) => state.output);
@@ -56,18 +64,20 @@ export function ProjectionFields() {
         }}
       />
 
-      <SelectField
-        label="Directions Covered"
-        tooltip={OUTPUT_TOOLTIPS.directions}
-        value={output.directions}
-        choices={DIRECTION_SET_CHOICES}
-        onChange={(directions) => {
-          // The facing is cleared with the set, in one write. A `north` held over into
-          // `THREE_CLASSIC` is a facing that set never turns to, and both values reaching the
-          // compiler together is what stops a render seeing the new set beside the old facing.
-          setOutputConfig({ ...output, directions, primaryDirection: null });
-        }}
-      />
+      {directionSetApplies(output) && (
+        <SelectField
+          label="Directions Covered"
+          tooltip={OUTPUT_TOOLTIPS.directions}
+          value={output.directions}
+          choices={DIRECTION_SET_CHOICES}
+          onChange={(directions) => {
+            // The facing is cleared with the set, in one write. A `north` held over into
+            // `THREE_CLASSIC` is a facing that set never turns to, and both values reaching the
+            // compiler together is what stops a render seeing the new set beside the old facing.
+            setOutputConfig({ ...output, directions, primaryDirection: null });
+          }}
+        />
+      )}
 
       {splitsIntoRuns(output) && (
         <SelectField

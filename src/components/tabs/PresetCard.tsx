@@ -52,12 +52,12 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
       // the allocation is visible on hover alone is one where it may as well not exist: the grid is
       // read all at once, and the whole point of giving each card a position on the wheel is that
       // the set reads as a spectrum from across the room.
-      className="animate-pop-in glass-panel group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border border-tab/35 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-tab/80 hover:shadow-2xl"
+      className="animate-view-pop-in glass-panel group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border border-tab/35 p-5 shadow-xl transition-all duration-585 hover:-translate-y-1 hover:border-tab/80 hover:shadow-2xl"
     >
       {/* A bloom in the card's own colour, existing only under the pointer, behind its content. */}
       <span
         aria-hidden="true"
-        className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-tab/25 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+        className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-tab/25 opacity-0 blur-2xl transition-opacity duration-975 group-hover:opacity-100"
       />
 
       <div className="relative space-y-3">
@@ -69,7 +69,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
         {isRenaming ? (
           <PresetRenameForm preset={preset} onRename={onRename} onClose={closeRename} />
         ) : (
-          <h3 className="text-base font-bold text-ink transition-colors duration-300 group-hover:text-tab">
+          <h3 className="text-base font-bold text-ink transition-colors duration-585 group-hover:text-tab">
             {preset.name}
           </h3>
         )}
@@ -108,13 +108,13 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
             onClick={() => {
               onLoad(preset);
             }}
-            className="action-tab group/load flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.98]"
+            className="action-tab group/load flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
           >
             {/* Named group: the card is already a `group`, and an unnamed one here would follow the
                 card's hover rather than this button's. */}
             <span
               aria-hidden="true"
-              className="inline-block transition-transform duration-300 group-hover/load:scale-125"
+              className="inline-block transition-transform duration-585 group-hover/load:scale-125"
             >
               ⚡
             </span>
@@ -130,7 +130,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
                   setIsRenaming(true);
                 }}
                 aria-label={`Rename preset ${preset.name}`}
-                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-200 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 active:translate-y-0"
+                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 active:translate-y-0"
               >
                 <span aria-hidden="true">✏️</span>
               </button>
@@ -142,7 +142,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
                   setIsConfirmingDelete(true);
                 }}
                 aria-label={`Delete preset ${preset.name}`}
-                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-rose transition-all duration-200 hover:-translate-y-px hover:border-rose/50 hover:bg-foundry-700 active:translate-y-0"
+                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-rose transition-all duration-390 hover:-translate-y-px hover:border-rose/50 hover:bg-foundry-700 active:translate-y-0"
               >
                 <span aria-hidden="true">🗑</span>
               </button>

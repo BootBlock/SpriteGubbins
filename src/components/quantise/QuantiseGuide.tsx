@@ -16,15 +16,16 @@ import { QUANTISE_STEPS } from '../../constants/quantiser.ts';
  */
 export function QuantiseGuide() {
   return (
-    <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-300 hover:border-tab/40">
+    <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
       <h3 className="mb-2 text-base font-bold text-tab">How this works</h3>
       <p className="max-w-3xl text-sm leading-relaxed text-ink-muted">
         A model asked for pixel art almost always returns a smooth painting of pixel art: the shapes are
         right, but every edge is anti-aliased and one drawn pixel is really an 8 × 8 patch of near-identical
         colours. This tab measures the scale it was actually drawn at, snaps each patch back to the single
-        colour that dominates it, reduces the sheet to the colour budget the prompt asked for, and can take
-        the background key out to transparency. Nothing is uploaded, nothing is averaged into a colour the
-        image did not already contain, and no dithering is applied.
+        colour that dominates it, brings its colours down to what the prompt asked for, and can take the
+        background key out to transparency. With no palette pinned in the studio, every colour that survives
+        is one the image already contained; pin one and each pixel moves to its nearest entry instead. Nothing
+        is uploaded, nothing is averaged into existence, and no dithering is applied either way.
       </p>
 
       <ol className="mt-4 grid gap-3 sm:grid-cols-2">

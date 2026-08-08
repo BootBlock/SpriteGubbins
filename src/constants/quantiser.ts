@@ -3,13 +3,16 @@ import type { PaletteLimit } from '../types/output.ts';
 /** The quantiser's fixed numbers and the copy that explains its one control. */
 
 /**
- * How many colours each studio palette limit allows the returned image, or `null` where the palette
- * step does not run.
+ * How many colours each studio palette limit allows the returned image, or `null` for no budget.
  *
  * Read from `useOutputStore` rather than chosen again here. The limit is already stated in the
  * prompt the user sent, so a second colour-count control on this tab would be a second source of
  * truth for a value the sheet was generated against — and the place to change it is the place it is
  * already changed.
+ *
+ * **It is not on its own the answer to whether the palette step runs.** A pinned palette supersedes
+ * the budget entirely, so `colorPlanFor` reads this only when there is none — and `null` here means
+ * "no budget", not "no reduction".
  */
 export const PALETTE_COLOR_COUNTS: Readonly<Record<PaletteLimit, number | null>> = {
   STRICT_32_COLOR: 32,

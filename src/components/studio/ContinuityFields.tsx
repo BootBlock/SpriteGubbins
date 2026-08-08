@@ -2,13 +2,17 @@ import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { TextField } from '../common/TextField.tsx';
 import { IdentityPaletteCapture } from './IdentityPaletteCapture.tsx';
+import { IdentitySubjectDigest } from './IdentitySubjectDigest.tsx';
 
 /**
  * The settings that only matter across *several* sheets.
  *
  * An eight-direction rig is eight generations of one subject, so the hardest part is not sheet one —
- * it is sheet two matching it. The identity lock is what carries a subject forward, and the palette
- * capture is what reads it back off a sheet already accepted.
+ * it is sheet two matching it. The identity lock is what carries a subject forward, and the two
+ * controls under it are what the app can fill it in with: the subject definition it already holds,
+ * and the palette read back off a sheet already accepted. They are in that order because that is the
+ * order they become available — one describes a sheet that does not exist yet, the other a sheet
+ * that does.
  *
  * The manifest checkbox belongs with the adherence report in `CompanionOutputFields` rather than
  * here, though the argument for here — it is what makes fifteen anonymous cells importable — is a
@@ -31,6 +35,7 @@ export function ContinuityFields() {
         }}
       />
 
+      <IdentitySubjectDigest />
       <IdentityPaletteCapture />
     </>
   );

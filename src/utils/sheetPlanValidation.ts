@@ -21,10 +21,15 @@ import type { SubjectCategory } from '../types/subject.ts';
 /**
  * Which kinds of component each category may ask for.
  *
- * A character is anatomy; a building is structure and tiles; an object and an item are made of parts
- * and mechanisms. The overlaps are deliberate — `structure` covers an item's guard as well as a
- * building's quoin — and the exclusions are the load-bearing half: no category admits every kind, so
- * a plan filed under the wrong one has somewhere to fail.
+ * A character is anatomy; a building is structure and tiles; an object, an item and a vehicle are
+ * made of parts and mechanisms. The overlaps are deliberate — `structure` covers an item's guard as
+ * well as a building's quoin — and the exclusions are the load-bearing half: no category admits every
+ * kind, so a plan filed under the wrong one has somewhere to fail.
+ *
+ * VEHICLE sharing OBJECT's pair is the honest answer rather than a missing distinction. What separates
+ * the two is *which* parts and mechanisms their plans name — a hull and a drive against a housing and
+ * a hatch — and that is a difference between two inventories, not between two kinds of component. A
+ * `drive` kind admitted by one category alone would classify nothing this check could act on.
  */
 export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly ComponentKind[]>> = {
   CHARACTER: ['anatomy', 'appendage'],
@@ -32,6 +37,7 @@ export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly Componen
   OBJECT: ['structure', 'mechanism'],
   ITEM: ['structure', 'mechanism'],
   BUILDING: ['structure', 'tile'],
+  VEHICLE: ['structure', 'mechanism'],
 };
 
 /** Whether this category may contain a component of this kind at all. */

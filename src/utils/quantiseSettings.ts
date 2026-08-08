@@ -1,4 +1,4 @@
-import type { BackgroundKeying, QuantiseSettings } from '../types/quantiser.ts';
+import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '../types/quantiser.ts';
 
 /**
  * Whether two sets of quantiser settings would produce the same sheet.
@@ -14,17 +14,48 @@ import type { BackgroundKeying, QuantiseSettings } from '../types/quantiser.ts';
  * and be recomputed. Comparing three fields costs nothing and does not depend on that promise.
  */
 export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSettings): boolean {
-  return left.grid === right.grid && left.maxColors === right.maxColors && sameKeying(left.key, right.key);
+  return (
+    left.grid === right.grid &&
+    sameKeying(left.key, right.key) &&
+    sameReduction(left.reduction, right.reduction)
+  );
 }
 
 /** The keying half of it: both absent, or the same colour matched to the same distance. */
 function sameKeying(left: BackgroundKeying | null, right: BackgroundKeying | null): boolean {
   if (left === null || right === null) return left === right;
-  return (
-    left.tolerance === right.tolerance &&
-    left.color.r === right.color.r &&
-    left.color.g === right.color.g &&
-    left.color.b === right.color.b &&
-    left.color.a === right.color.a
-  );
+  return left.tolerance === right.tolerance && sameColor(left.color, right.color);
+}
+
+/**
+ * The palette half: both absent, or the same instruction with the same numbers behind it.
+ *
+ * Each arm re-checks the other side's `kind` rather than testing the two for equality once up front,
+ * which is what narrows `right` as well as `left` — the alternative reads more neatly and needs a
+ * cast to get at the field it is comparing, which is the trade this repository does not make.
+ */
+function sameReduction(left: ColorReduction | null, right: ColorReduction | null): boolean {
+  if (left === null || right === null) return left === right;
+
+  switch (left.kind) {
+    case 'MAX_COLORS':
+      return right.kind === 'MAX_COLORS' && left.maxColors === right.maxColors;
+    case 'CHANNEL_DEPTH':
+      return right.kind === 'CHANNEL_DEPTH' && left.bitsPerChannel === right.bitsPerChannel;
+    case 'PALETTE':
+      return right.kind === 'PALETTE' && sameEntries(left.entries, right.entries);
+  }
+}
+
+/** Two pinned palettes: the same colours, in the same order, which is what `nearestColor` ties on. */
+function sameEntries(left: readonly Rgba[], right: readonly Rgba[]): boolean {
+  if (left.length !== right.length) return false;
+  return left.every((entry, index) => {
+    const other = right[index];
+    return other !== undefined && sameColor(entry, other);
+  });
+}
+
+function sameColor(left: Rgba, right: Rgba): boolean {
+  return left.r === right.r && left.g === right.g && left.b === right.b && left.a === right.a;
 }

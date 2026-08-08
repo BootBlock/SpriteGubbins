@@ -42,7 +42,7 @@ export function ComparisonToolbar({ zoom, onZoomChange, sourceName, resultImage 
         onClick={() => {
           if (resultImage !== null) download(sourceName, resultImage);
         }}
-        className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
+        className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
       >
         <span aria-hidden="true">⬇</span> Download PNG
       </button>

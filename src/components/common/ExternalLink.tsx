@@ -27,7 +27,7 @@ export function ExternalLink({ href, children }: ExternalLinkProps) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="rounded-sm font-semibold text-accent-soft underline decoration-accent/40 underline-offset-4 transition-colors duration-200 hover:text-ink hover:decoration-accent"
+      className="rounded-sm font-semibold text-accent-soft underline decoration-accent/40 underline-offset-4 transition-colors duration-390 hover:text-ink hover:decoration-accent"
     >
       {children}
       <span aria-hidden="true"> ↗</span>

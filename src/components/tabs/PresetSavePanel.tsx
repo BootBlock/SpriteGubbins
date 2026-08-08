@@ -30,9 +30,12 @@ export function PresetSavePanel() {
         <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Preset Archetype Library</h2>
         <p className="text-xs text-ink-muted">
           {/* Counted rather than written out: the library grows, and a number in this sentence would
-              be the copy that stopped being true first. */}
-          {PRESETS.length} built-in templates spanning characters, creatures, objects, items and buildings —
-          every render style, camera and sheet mode the studio offers.
+              be the copy that stopped being true first. The *categories* were written out anyway,
+              one clause later — so adding VEHICLE left this paragraph naming five of six, with the
+              collection list directly below it disagreeing. The list the sidebar renders is the one
+              that cannot go stale, so this sentence points at it rather than restating it. */}
+          {PRESETS.length} built-in templates spanning every subject category — every render style, camera and
+          sheet mode the studio offers.
         </p>
       </div>
 
@@ -67,7 +70,7 @@ export function PresetSavePanel() {
               setIsSaving(false);
             }
           }}
-          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
+          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
         >
           {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
         </button>
