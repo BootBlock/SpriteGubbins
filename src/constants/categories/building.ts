@@ -26,6 +26,17 @@ export const BUILDING: CategoryDefinition = {
         'Sci-Fi Landing Pad',
         'Tavern Inn',
         'Alchemist Lab',
+        // A tree and a distance band are environment art, which is what this category's second half of
+        // its name is for — the field labels read as architecture and still fit both.
+        'Broadleaf Canopy Tree',
+        'Parallax Background Band',
+        'Windmill / Water Mill',
+        'Lighthouse',
+        'Market Stall Row',
+        'Bridge Span Section',
+        'Mine Head & Winding Gear',
+        'Greenhouse / Conservatory',
+        'Fishing Jetty & Boathouse',
       ],
     },
     {
@@ -40,6 +51,8 @@ export const BUILDING: CategoryDefinition = {
         'Under Construction',
         'Severely Damaged',
         'Overgrown Nature takeover',
+        'Seasonally Shuttered',
+        'Recently Burned Out',
       ],
     },
     {
@@ -68,6 +81,8 @@ export const BUILDING: CategoryDefinition = {
         'Spawn Point',
         'Crafting Facility',
         'Resource Processing Plant',
+        'Landmark / Navigation Aid',
+        'Farm & Livestock Building',
       ],
     },
     {
@@ -82,6 +97,9 @@ export const BUILDING: CategoryDefinition = {
         'Enchanted Forest Clearing',
         'Volcanic Cavern Base',
         'Deep Space Orbital',
+        'Coastal Fishing Village',
+        'Terraced Rice Valley',
+        'Storm-Wracked Cliff',
       ],
     },
     {
@@ -110,6 +128,10 @@ export const BUILDING: CategoryDefinition = {
         'Dome Array',
         'Spiked Roof Gables',
         'Solar Glass Panels',
+        'Billowing Cloud Canopy',
+        'Layered Ridge Profiles',
+        'Stepped Terrace Levels',
+        'Sagging Thatch & Chimney Stack',
       ],
     },
     {
@@ -124,6 +146,9 @@ export const BUILDING: CategoryDefinition = {
         'Runic Archway',
         'Steel Blast Door',
         'Curtained Archway',
+        'Exposed Root Buttress',
+        'Distant Arch Formation',
+        'Shuttered Market Front',
       ],
     },
     {
@@ -151,6 +176,8 @@ export const BUILDING: CategoryDefinition = {
         'Wooden Scaffolding',
         'Neon Holographic Banner',
         'Ivy Trellis Grill',
+        'Drying Nets & Lobster Pots',
+        'Sail Cloth Windbreak',
       ],
     },
     {
@@ -165,6 +192,8 @@ export const BUILDING: CategoryDefinition = {
         'Moss & Ivy Growth',
         'Exposed Air Conditioning Units',
         'Bullet Scratches',
+        'Atmospheric Haze Banding',
+        'Washing Lines & Shutters',
       ],
     },
     {
@@ -179,6 +208,9 @@ export const BUILDING: CategoryDefinition = {
         'Sandstone & Copper',
         'Gothic Slate & Bronze',
         'White Polymer & Glass',
+        'Bark Umber & Deep Moss',
+        'Dusk Violet & Ochre Rock',
+        'Whitewash & Slate Blue',
       ],
     },
     {
@@ -206,6 +238,9 @@ export const BUILDING: CategoryDefinition = {
         'Corrugated Iron & Glass',
         'Marble & Gold',
         'Reinforced Concrete & Steel',
+        'Rough Bark, Leaf Mass & Loam',
+        'Weathered Sandstone & Ionised Haze',
+        'Thatch, Cob & Lime Render',
       ],
     },
     {
@@ -218,6 +253,8 @@ export const BUILDING: CategoryDefinition = {
         'No surrounding trees or sky',
         'No vehicles',
         'No floor shadow, no grid overlay',
+        'No ground terrain tiles, no characters, no floor shadow, no grid overlay',
+        'No characters, no foreground props, no vignette, no lens effects',
       ],
     },
     {
@@ -232,6 +269,10 @@ export const BUILDING: CategoryDefinition = {
         'Side Storage Shed Module ×1',
         'Defensive Turret Mount ×1',
         'Rooftop Heli-Pad ×1',
+        // One trunk, four canopies: separating the seasons into components is what lets a season change
+        // swap one piece instead of asking for four trees that never quite match.
+        'Summer Canopy ×1, Autumn Canopy ×1, Bare Winter Canopy ×1, Fallen Leaf Drift ×2',
+        'Far Band ×1, Middle Band ×1, Near Band ×1',
       ],
     },
   ],

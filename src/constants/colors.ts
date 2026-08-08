@@ -47,4 +47,11 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   vermilion: '#ea580c',
   teal: '#14b8a6',
   amber: '#f59e0b',
+  black: '#0a0a0a',
+  grey: '#6b7280',
+  brown: '#78350f',
+  pink: '#ec4899',
+  brass: '#c9a227',
+  umber: '#6b4423',
+  driftwood: '#a89880',
 };
