@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MAX_ANATOMY_MULTIPLIER, NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
-import { directionalModeChoices } from '../constants/output/index.ts';
+import { DEFAULT_OUTPUT_CONFIG, directionalModeChoices } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../constants/promptText/index.ts';
 import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
@@ -30,7 +30,7 @@ import { generatePrompt } from './promptCompiler.ts';
 const SUBJECT = DEFAULT_PRESET.subject;
 
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
-  return { ...DEFAULT_PRESET.output, ...overrides };
+  return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };
 }
 
 /**

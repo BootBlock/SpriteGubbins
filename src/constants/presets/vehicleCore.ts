@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -42,7 +42,7 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'PIXEL_ART',
       // Directly overhead, where a tank's turret is a disc on a rectangle and the traverse is the
       // only thing the player reads. Any elevation at all reintroduces a hull side that has to stay
@@ -88,7 +88,7 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Spare Wheel ×1, Fuel Drum ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'PIXEL_ART',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       rigMode: 'POSE_LIBRARY',
@@ -119,7 +119,7 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Missile Pod ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'PAINTED_2D',
       // A side-scroller's aircraft lives in flat side elevation, and that is also the one view in
       // which a rotor mast, a weapon pylon and an undercarriage can each be swapped without
@@ -161,7 +161,7 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Towed Trailer Section ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'LOW_POLY_3D',
       projection: 'TRUE_ISOMETRIC',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,

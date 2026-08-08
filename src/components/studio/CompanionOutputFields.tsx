@@ -36,6 +36,10 @@ function feedbackUnavailableReason(target: TargetModelId): string {
  * Grouped by what they need rather than by what they are for: both are text, so both are unavailable
  * the moment the target has no channel for text, and a user who has just been told why the manifest
  * is greyed out should not have to discover the same fact again two groups further down.
+ *
+ * **These are the only two controls in the studio a preset cannot move.** They are a preference of
+ * whoever is generating rather than a property of the archetype, so loading a preset leaves them
+ * exactly as they were found — see `OutputConfig`, which is where the type says so.
  */
 export function CompanionOutputFields() {
   const output = useOutputStore((state) => state.output);

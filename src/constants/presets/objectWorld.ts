@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -35,7 +35,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       projection: 'DIMETRIC_2_1',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.DIMETRIC_2_1,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
@@ -74,7 +74,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Articulated Arm Clamp ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Faceted geometry with flat per-face shading, so the palette cap comes off and the surface
       // detail goes down: a low-poly prop is read by its facets, and drawn seams would compete.
       renderStyle: 'LOW_POLY_3D',
@@ -113,7 +113,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Coolant Vent Flap ×2, Articulated Arm Clamp ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Oblique: the front face stays undistorted and depth is pushed back at 45°. It is the cabinet
       // projection, and it suits a machine whose face is a control panel that has to stay readable.
       projection: 'OBLIQUE_45',
@@ -150,7 +150,7 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',

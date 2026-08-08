@@ -27,6 +27,8 @@ export function createFailingBackend(): PersistenceBackend {
     replacePresets: fail,
     loadSettings: fail,
     saveSettings: fail,
+    loadSession: fail,
+    saveSession: fail,
   };
 }
 
@@ -69,6 +71,8 @@ export function createHeldDeleteBackend(inner: PersistenceBackend): {
       replacePresets: (presets) => inner.replacePresets(presets),
       loadSettings: () => inner.loadSettings(),
       saveSettings: (settings) => inner.saveSettings(settings),
+      loadSession: () => inner.loadSession(),
+      saveSession: (session) => inner.saveSession(session),
     },
     releaseDelete: () => {
       release();

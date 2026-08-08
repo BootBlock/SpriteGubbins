@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { COMPONENT_BUDGET_RANGE, NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { resolveSheetIndex, SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
-import { parseOutputConfig } from './configParsers.ts';
+import { parseImageConfig, parseOutputConfig } from './configParsers.ts';
 
 /**
  * The component budget crossing the storage boundary.
@@ -129,6 +129,40 @@ describe('parseOutputConfig — sheetIndex', () => {
     expect(sheetFrom(1)).toBe(1);
     expect(resolveSheetIndex('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 1)).toBe(1);
     expect(resolveSheetIndex('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 1)).toBe(0);
+  });
+});
+
+/**
+ * The two parsers differ in exactly one thing, and it is the thing that decides whether a stored
+ * preference belongs to the user or to whatever wrote the row.
+ *
+ * A preset is read with `parseImageConfig`, so a `custom_presets` row that somehow carries the
+ * companion outputs cannot deliver them into the studio; a history entry is read whole, because it
+ * records the configuration a prompt was actually composed from.
+ */
+describe('parseImageConfig against parseOutputConfig', () => {
+  const STORED = { emitManifest: true, emitPromptFeedback: true, renderStyle: 'CEL_SHADED' };
+
+  it('reads the image alone, ignoring stored companion outputs', () => {
+    const image = parseImageConfig(STORED);
+
+    expect(image.renderStyle).toBe('CEL_SHADED');
+    expect(Object.keys(image)).not.toContain('emitManifest');
+    expect(Object.keys(image)).not.toContain('emitPromptFeedback');
+  });
+
+  it('reads them for a history entry, which is what produced the prompt', () => {
+    expect(parseOutputConfig(STORED)).toMatchObject({ emitManifest: true, emitPromptFeedback: true });
+  });
+
+  it('agrees with the defaults on a payload it cannot read at all', () => {
+    // Non-record inputs take no shortcut through the parser: every field falls back on its own, so
+    // these are the defaults rather than a second copy of them that could drift.
+    for (const stored of [undefined, null, 'not a config', 42]) {
+      expect(parseOutputConfig(stored), `${String(stored)} should have defaulted`).toEqual(
+        DEFAULT_OUTPUT_CONFIG,
+      );
+    }
   });
 });
 

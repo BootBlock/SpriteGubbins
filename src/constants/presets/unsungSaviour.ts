@@ -1,6 +1,6 @@
 import { defaultSubjectFor } from '../categories/index.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
-import type { OutputConfig } from '../../types/output.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
+import type { ImageOutputConfig } from '../../types/output.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../../types/subject.ts';
@@ -20,8 +20,8 @@ import type { SubjectCategory, SubjectDefinition } from '../../types/subject.ts'
  */
 
 /** What all three share: the projection, scale and lighting discipline the game's renderer needs. */
-const US_SHARED: OutputConfig = {
-  ...DEFAULT_OUTPUT_CONFIG,
+const US_SHARED: ImageOutputConfig = {
+  ...DEFAULT_IMAGE_CONFIG,
   renderStyle: 'PIXEL_ART',
   projection: 'THREE_QUARTER_TOPDOWN',
   cameraElevation: 30,
@@ -71,9 +71,6 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
       // The slots exist in the art from the start and are kept clear, which is what makes the
       // game's deferred visible-equipment decision cheap later.
       sockets: 'head, chest, back, hand_left, hand_right',
-      // A rig sheet is exactly the case a manifest earns its keep on — it turns importing from
-      // "identify fifteen anonymous cells" into "verify fifteen labelled ones".
-      emitManifest: true,
     },
   },
   {
@@ -96,7 +93,6 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
       overlapMargin: 'HALF_CAP',
       // Empty: enemies do not wear player gear.
       sockets: '',
-      emitManifest: true,
     },
   },
   {

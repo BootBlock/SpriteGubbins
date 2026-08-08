@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
 /**
@@ -37,7 +37,7 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RETRO_PIXEL_ART',
       // The three that make a retro sheet retro, rather than a modern sheet described as one: a small
       // figure, a small palette, and no interior detail competing with the outline.
@@ -73,7 +73,7 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'PAINTED_2D',
       // A painted sheet has no colour budget to enforce and no outline to draw — asking for either
       // would fight the technique rather than constrain it.
@@ -108,15 +108,11 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GEMINI_PRO_IMAGE',
-      // A conversational target, so the companion manifest is honoured rather than dropped — the one
-      // preset in this file that asks for one, because a sheet whose cells have to be found by grid
-      // position is the case it pays for itself on.
-      emitManifest: true,
     },
   },
   {
@@ -142,7 +138,7 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'HAND_DRAWN_INK',
       // Hatching is texture, and it is the whole look — so this is the one style that wants the
       // surface detail turned up rather than down.

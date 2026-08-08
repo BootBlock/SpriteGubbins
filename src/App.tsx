@@ -12,6 +12,7 @@ import { QuantiseTab } from './components/tabs/QuantiseTab.tsx';
 import { SpecTab } from './components/tabs/SpecTab.tsx';
 import { StudioTab } from './components/tabs/StudioTab.tsx';
 import { usePresetStore } from './stores/usePresetStore.ts';
+import { useSessionStore } from './stores/useSessionStore.ts';
 import { useSettingsStore } from './stores/useSettingsStore.ts';
 import { useUIStore } from './stores/useUIStore.ts';
 import type { BeforeInstallPromptEvent } from './types/pwa.ts';
@@ -51,6 +52,7 @@ export function App() {
   const motion = useSettingsStore((state) => state.settings.motion);
   const ambientBackdrop = useSettingsStore((state) => state.settings.ambientBackdrop);
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
+  const restoreSession = useSessionStore((state) => state.restoreSession);
 
   // Catch the browser's install offer and hold on to it, so the app can make the offer itself at a
   // moment that makes sense rather than letting the mini-infobar interrupt.
@@ -77,6 +79,14 @@ export function App() {
   useEffect(() => {
     void fetchSettings();
   }, [fetchSettings]);
+
+  // …and the studio itself, as it was left. This one arms the writes as well as reading, and the
+  // order is what makes that safe: the subscriptions go on *after* the read resolves, so the boot
+  // defaults sitting in the stores until then never overwrite the session being restored. Strict
+  // Mode's double invocation is handled in the store, which joins the second call to the first.
+  useEffect(() => {
+    void restoreSession();
+  }, [restoreSession]);
 
   const ActiveView = VIEWS[activeTab];
 

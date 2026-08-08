@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -35,7 +35,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Prehensile Tentacle ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       directions: 'SINGLE_FRONT',
       // Black, because everything readable on this creature is emissive: on magenta the glow would be
@@ -72,7 +72,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       // Texture is the subject here — a fungal surface with clean panels reads as painted plastic —
       // and the expanded palette is what pays for the value bands that texture needs.
@@ -105,7 +105,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Faceted rather than drawn, and dimetric rather than true isometric — the two-axis projection
       // most 2.5D engines actually use, where the vertical axis is not foreshortened equally.
       renderStyle: 'LOW_POLY_3D',
@@ -145,7 +145,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Scorpion Sting Tail ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
       directions: 'EIGHT_COMPASS',
@@ -157,7 +157,6 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'MID_RESOLUTION',
       spriteTargetSize: '64 × 64 px assembled',
       aspectRatio: 'SQUARE_1_1',
-      emitManifest: true,
       targetModel: 'CHATGPT_5_6_SOL',
     },
   },

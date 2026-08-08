@@ -2,7 +2,7 @@ import { DIRECTION_SET_CHOICES, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../.
 import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { directionSetApplies, primaryFacing } from '../../utils/sheetDirections.ts';
-import { splitsIntoFacingRuns } from '../../utils/sheetRuns.ts';
+import { splitsIntoFacingRuns } from '../../utils/sheetBatch.ts';
 import { NumberField } from '../common/NumberField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
