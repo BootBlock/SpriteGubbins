@@ -291,6 +291,23 @@
   /* The signature easing — a decelerating curve used for anything that enters or expands. */
   --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
 
+  /*
+   * The same intent at a legible speed, for motion whose *travel* is the information.
+   *
+   * `ease-emphasized` is nearly all in the first few frames — 49% of the distance in the first
+   * tenth of its duration, 83% by the first quarter. On an entrance that is exactly right: opacity
+   * and a few pixels of offset want to be over before they are studied, and the long tail reads as
+   * a settle. On a **size** change it is wrong, and visibly so: a disclosure easing its height with
+   * this curve arrives before the eye catches it, so the panel appears to jump while the caret
+   * beside it turns — the motion is technically there and reads as absent.
+   *
+   * This curve spends its time where the eye is: 16% of the travel in the first tenth against 49%,
+   * 61% by the first quarter against 83%, 88% by the half against 97%. Same deceleration — it is
+   * still an ease-*out*, and still slowest at the end — spread across the duration rather than
+   * packed into the front of it. Reach for it when something changes *size*.
+   */
+  --ease-decelerate: cubic-bezier(0.2, 0, 0, 1);
+
   @keyframes fade-in {
     from {
       opacity: 0;
@@ -823,15 +840,32 @@
    * The outline is the first `box-shadow` ring rather than a `border` property, so a floating
    * surface can be inset-lit and outlined without a second element — which also means nothing here
    * fights a `shadow-*` utility, because neither call site uses one.
+   *
+   * **The blur is 14px because 24px was not glass — it was a solid panel.** Both numbers are
+   * genuinely translucent, and the difference is what survives the blur: this palette is nearly
+   * black, so the only thing behind a floating surface with any luminance to give is *text* and
+   * the occasional spectrum-painted control. At 24px those were spread far enough to vanish into a
+   * flat tone, and the card read as opaque however correct its alpha was. Measured in Edge over a
+   * full-strength stop, 14px carries the shape through as a soft bloom and 24px does not.
+   *
+   * **The alpha is the legibility budget, not a taste setting.** A tooltip opens over whatever the
+   * user was reading, and the app's brightest surfaces are the wheel stops at L 0.76 — a preset
+   * card, the selected tab pill — with `gold` and `accent-soft` a little above them. Body guidance
+   * measured in Edge over a stop: **4.99:1** at this alpha, against 4.79:1 at the 24px blur it
+   * replaces, so loosening the blur cost nothing and raising the alpha two points paid for it. The
+   * same measurement at 0.6 alpha is 2.91:1 — under the 4.5:1 AA body threshold, on a surface
+   * whose entire purpose is to be read. So this number is the guidance's contrast, and spending it
+   * to make the glass more obvious is the trade to refuse. `tests/design-tokens.test.ts` holds the
+   * floor.
    */
-  background-color: color-mix(in oklab, var(--color-foundry-900) 78%, transparent);
+  background-color: color-mix(in oklab, var(--color-foundry-900) 80%, transparent);
   background-image: linear-gradient(
     to bottom,
     color-mix(in oklab, var(--color-accent) 18%, transparent) 0%,
     transparent 55%
   );
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
   box-shadow:
     0 0 0 1px color-mix(in oklab, var(--color-accent) 40%, transparent),
     0 20px 45px -12px color-mix(in oklab, var(--color-foundry-950) 95%, transparent),
@@ -1015,36 +1049,31 @@
 
 @utility section-reveal {
   /*
-   * A `<details>` that opens on a height transition rather than snapping, and shuts at once.
+   * A `<details>` whose content eases open and shut instead of snapping.
    *
    * `::details-content` is the only handle a native disclosure gives on the part that appears, and
    * `interpolate-size: allow-keywords` is what makes `block-size: 0 → auto` an interpolable pair at
-   * all. The easing is `ease-emphasized`, whose curve is nearly all in the first third — the panel
-   * leaps open and settles, which is the shape that reads as responsive rather than slow.
+   * all. `content-visibility` rides along with `allow-discrete` in **both** states, which is what
+   * makes the close animate: the user agent hides that pseudo-element the moment `open` goes, and
+   * without the discrete transition holding the paint there is no box left to shrink.
    *
-   * 200ms is the caret's own `duration-200` and not a second number chosen to look like it: the
-   * chevron turning and the group opening are one gesture, so they finish together rather than one
-   * of them arriving to a panel that has already stopped moving.
+   * `ease-decelerate` and not `ease-emphasized`, for the reason that token records: the signature
+   * curve is 83% travelled in its first quarter, so a height easing with it lands before the eye
+   * catches it and the group reads as jumping while only the caret turns. 300ms, matched by the
+   * caret's own `duration-300`, so the chevron and the panel are one gesture.
    *
-   * **The transition is deliberately one-way, and the asymmetry is the whole design.** Only the
-   * `[open]` rule carries `content-visibility … allow-discrete`, so the content is painted from the
-   * first frame of an *opening* group and the height eases out from under it. Closing gets the
-   * height transition alone, which the user agent resolves instantly — because it hides
-   * `::details-content` the moment `open` goes, and there is then no box left to animate.
+   * **Keeping the content painted past the close is what makes the collapse animate, and it is also
+   * what leaves it briefly tabbable.** For the length of the transition the group is shut but its
+   * controls are not yet hidden, so Enter-then-Tab on a summary can put focus inside a closed group;
+   * when the paint finally stops, the user agent drops that focus to `<body>` — the position and the
+   * ring both gone, which is the failure `SectionToggleAll` exists to prevent. `CollapsibleSection`
+   * answers it where the answer belongs, in script: it catches the resulting `focusout` and puts
+   * focus back on the summary, so the worst case is a short hop rather than a lost place.
    *
-   * That is not a limitation worked around; it is the safe end of a platform trade-off, measured in
-   * Edge both ways. Adding `content-visibility` to the closed state does animate the collapse — and
-   * keeps every control inside focusable for the full 200ms while the group is already shut. Focus
-   * a summary, press Enter, press Tab, and focus lands on a tooltip trigger inside the closed group;
-   * 200ms later `content-visibility: hidden` finally applies and drops it to `<body>`, losing the
-   * ring and the position. That is precisely the failure `SectionToggleAll` exists to prevent, and
-   * a disclosure must not reintroduce it from a different direction.
-   *
-   * `inert` on the content would fix the focus half and break another: verified with a text-fragment
-   * navigation, which drives the same find-in-page machinery — a match inside a plain `<details>`
-   * auto-expands it, and a match inside an `inert` one never does. This component chose `<details>`
-   * partly *for* that behaviour. So the collapse stays instant, which costs a little polish and
-   * nothing else.
+   * `inert` on the content would have prevented the entry instead, and cost more than it saved:
+   * verified with a text-fragment navigation, which drives the same machinery as find-in-page, a
+   * match inside a plain `<details>` auto-expands it and a match inside an `inert` one never does.
+   * This component chose `<details>` partly *for* that behaviour.
    *
    * **The `@supports` gate is a correctness guard, not progressive enhancement.** The height
    * transition needs the content clipped, and a clipping ancestor around these fields is exactly
@@ -1069,14 +1098,13 @@
       block-size: 0;
       overflow-x: visible;
       overflow-y: clip;
-      transition: block-size 200ms var(--ease-emphasized);
+      transition:
+        block-size 300ms var(--ease-decelerate),
+        content-visibility 300ms allow-discrete;
     }
 
     &[open]::details-content {
       block-size: auto;
-      transition:
-        block-size 200ms var(--ease-emphasized),
-        content-visibility 200ms allow-discrete;
     }
   }
 }
