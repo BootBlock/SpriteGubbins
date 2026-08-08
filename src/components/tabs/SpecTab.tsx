@@ -29,9 +29,9 @@ export function SpecTab() {
       {ARCHITECTURE_SECTIONS.map((section) => (
         <section
           key={section.heading}
-          className="group space-y-2 border-l-2 border-tab/25 pl-4 transition-all duration-300 hover:translate-x-1 hover:border-tab"
+          className="group space-y-2 border-l-2 border-tab/25 pl-4 transition-all duration-450 hover:translate-x-1 hover:border-tab"
         >
-          <h3 className="text-base font-bold text-tab transition-colors duration-300 group-hover:text-ink">
+          <h3 className="text-base font-bold text-tab transition-colors duration-450 group-hover:text-ink">
             {section.heading}
           </h3>
           <p className="text-xs leading-relaxed text-ink-muted">{section.body}</p>

@@ -51,7 +51,7 @@ export function NumberField({ label, tooltip, value, min, max, step, onChange }:
           const parsed = Number(entered);
           if (Number.isFinite(parsed) && parsed >= min && parsed <= max) onChange(parsed);
         }}
-        className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-200 hover:border-accent/40 focus:border-accent"
+        className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-300 hover:border-accent/40 focus:border-accent"
       />
     </div>
   );

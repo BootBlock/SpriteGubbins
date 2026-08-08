@@ -61,13 +61,18 @@ export function TabSwitcher() {
           {/*
             The pill is painted in the view it is selecting, so the selection does two things at
             once as it travels: it moves, and it turns to the colour the whole page is turning to.
-            `--color-tab` is mid-transition for the same 600ms the pill is sliding, which is why
+            `--color-tab` is mid-transition for the same 900ms the pill is sliding, which is why
             these are not separately timed — the CSS transition and this one are describing the
             same event.
+
+            They now agree, which they had not: the pill was `duration-500` against a 600ms colour
+            sweep, so it arrived a tenth of a second before the page had finished turning and this
+            comment described an intent rather than the code. Both are the view-change's own length,
+            and moving one means moving the `[data-tab]` rule in `index.css` with it.
           */}
           <span
             style={{ width: SLOT_WIDTH, transform: `translateX(${activeIndex * 100}%)` }}
-            className="ease-emphasized block h-full rounded-lg bg-tab shadow-lg ring-1 ring-tab/60 transition-transform duration-500"
+            className="ease-emphasized block h-full rounded-lg bg-tab shadow-lg ring-1 ring-tab/60 transition-transform duration-900"
           />
         </span>
       )}
@@ -89,13 +94,13 @@ export function TabSwitcher() {
             // — they are one lightness precisely so they can be compared — so ink on top of one
             // would be two light tones a shade apart (~1.8:1). Inverting measures 8.7:1 at the
             // wheel's worst stop and 10.1:1 at its best, and the pill's vividness is what pays.
-            className={`group relative flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold transition-colors duration-200 sm:px-4 ${
+            className={`group relative flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold transition-colors duration-300 sm:px-4 ${
               isActive ? 'text-foundry-950' : 'text-ink-faint hover:bg-foundry-700/60 hover:text-ink'
             }`}
           >
             <span
               aria-hidden="true"
-              className={`inline-block transition-transform duration-300 group-hover:scale-125 ${
+              className={`inline-block transition-transform duration-450 group-hover:scale-125 ${
                 isActive ? 'scale-110' : ''
               }`}
             >

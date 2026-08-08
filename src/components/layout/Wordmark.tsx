@@ -34,7 +34,7 @@ export function Wordmark() {
       {/* The tile holds the glyph; it is not a canvas for the palette — see `bg-spectrum`. */}
       <span
         aria-hidden="true"
-        className="flex size-10 items-center justify-center rounded-xl bg-foundry-700 text-xl shadow-md ring-1 ring-foundry-600 transition-all duration-300 group-hover:scale-105 group-hover:rotate-6 group-hover:ring-tab/60"
+        className="flex size-10 items-center justify-center rounded-xl bg-foundry-700 text-xl shadow-md ring-1 ring-foundry-600 transition-all duration-450 group-hover:scale-105 group-hover:rotate-6 group-hover:ring-tab/60"
       >
         👾
       </span>

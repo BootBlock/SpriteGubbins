@@ -356,11 +356,13 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | An **overlay opening** — the panel, and the ground dimming behind it | `animate-modal-in` + `backdrop:animate-backdrop-in` | one fade on the `<dialog>`, which takes the backdrop with it |
 | A glass surface materialising | `animate-tooltip-in` | a bespoke fade, or a keyframe on `filter` that flattens a nested `glass-*` surface |
 | A **timed notification's countdown** | `animate-toast-timer` + the duration from `TOAST_DURATION_MS` | a `3s` written into the token, free to drift from the timer that dismisses it |
+| A **notification leaving** — the only exit in the app | `animate-toast-out` + the duration from `TOAST_EXIT_MS`, and `inert` while it runs | unmounting it, which leaves the surface nothing to animate away with |
 | A **section heading**, and the sheen travelling it | `heading-gradient` (+ `animate-gradient-pan`) | `bg-gradient-to-r … bg-clip-text text-transparent`, restated per heading |
 | A **`<details>` easing open and shut** | `section-reveal` | a keyframe on the content, which a `content-visibility: hidden` subtree plays exactly once |
 | The ambient wash breathing, and the live-compile beam | `animate-aurora` / `animate-scan-beam` | one-off durations at the call site |
 | Signature easing — an entrance, where the travel is not the point | `ease-emphasized` | `cubic-bezier(...)` inline |
 | Something changing **size**, where the travel *is* what is being read | `ease-decelerate` | `ease-emphasized`, 83% travelled in its first quarter, which reads as a jump |
+| Something **leaving** — an exit, which has to hold before it goes | `ease-exit` | either ease-*out* above run backwards, half gone before the eye catches it starting |
 | The ambient dot backdrop | `bg-grid-pattern` | a hand-rolled repeating gradient |
 | The ambient colour wash behind the page | `bg-aurora` | a stack of hand-written `radial-gradient()`s |
 | A loading placeholder's sheen | `shimmer-surface` + `animate-shimmer` | a bespoke gradient |
@@ -458,6 +460,16 @@ guidance. Fixing that is the layout's job, not the copy's.
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,
 verify it actually emits: build and grep the output CSS for the class name before trusting it.
+
+**The motion layer is deliberately slow, and it moves as one.** Every duration in the app — the
+`--animate-*` tokens, the `[data-tab]` colour sweep, `section-reveal`, `stagger-children`'s delays
+and every `duration-*` at a call site — was taken to 1.5× of what the app first shipped with, in a
+single pass, because this is a tool for making game art and motion that is over before it is seen
+buys none of that. The figures are therefore *relative* to each other and not independently chosen:
+a new transition written at the stock 200ms would be half the speed of everything beside it. Pick a
+duration by finding the nearest thing that already moves and matching it. Two pairs in particular
+have to stay equal — the tab pill and the `[data-tab]` sweep are one event at 900ms, and the
+disclosure's height and its caret are one gesture at 450ms — and each says so at both ends.
 
 **A keyframe animates `transform`; a utility sets `translate` / `scale` / `rotate`.** Tailwind v4
 compiles `-translate-y-1`, `scale-105` and `rotate-45` to the **independent** properties of those

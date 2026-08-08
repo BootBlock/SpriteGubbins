@@ -45,14 +45,14 @@ export function SubjectForm() {
   // `group-hover:` matches any `group` ancestor — so an unnamed one out here would roll its dice
   // from a pointer anywhere in the panel.
   return (
-    <section className="animate-fade-in glass-panel group/panel space-y-4 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-tab/40">
+    <section className="animate-fade-in glass-panel group/panel space-y-4 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-450 hover:border-tab/40">
       {/* `flex-wrap`: the header now carries two controls beside the heading, and at a narrow panel
           they would otherwise squeeze the title rather than dropping below it. */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-foundry-700 pb-3">
         <h2 className="flex items-center gap-2.5 text-base font-bold text-ink">
           <span
             aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-500 group-hover/panel:scale-110 group-hover/panel:ring-tab/60"
+            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-750 group-hover/panel:scale-110 group-hover/panel:ring-tab/60"
           >
             👤
           </span>
@@ -69,11 +69,11 @@ export function SubjectForm() {
               randomizeSubject();
               showToast(`Randomised ${categoryLabel} properties`);
             }}
-            className="group flex items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-xs font-black text-foundry-950 shadow-md transition-transform duration-200 hover:scale-[1.04] active:scale-[0.96]"
+            className="group flex items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-xs font-black text-foundry-950 shadow-md transition-transform duration-300 hover:scale-[1.04] active:scale-[0.96]"
           >
             <span
               aria-hidden="true"
-              className="inline-block transition-transform duration-500 group-hover:rotate-180"
+              className="inline-block transition-transform duration-750 group-hover:rotate-180"
             >
               🎲
             </span>

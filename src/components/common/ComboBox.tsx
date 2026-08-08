@@ -87,7 +87,7 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
           onFocus={combo.open}
           onClick={combo.open}
           onKeyDown={combo.handleKeyDown}
-          className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-3 font-sans text-xs text-ink shadow-inner transition-colors duration-200 hover:border-accent/40 focus:border-accent"
+          className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-3 font-sans text-xs text-ink shadow-inner transition-colors duration-300 hover:border-accent/40 focus:border-accent"
         />
 
         <button
@@ -100,7 +100,7 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
           className="absolute right-2 flex items-center justify-center p-1 text-ink-faint transition-colors hover:text-accent-soft"
         >
           <svg
-            className={`size-4 transition-transform duration-200 ${combo.isOpen ? 'rotate-180 text-accent-soft' : ''}`}
+            className={`size-4 transition-transform duration-300 ${combo.isOpen ? 'rotate-180 text-accent-soft' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"

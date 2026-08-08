@@ -11,6 +11,22 @@ import type { AppTab } from '../types/ui.ts';
  */
 export const TOAST_DURATION_MS = 3000;
 
+/**
+ * How long the toast then takes to fade off the screen.
+ *
+ * Read twice and it has to be the same number both times: the store keeps the message mounted for
+ * this long after the dwell above expires, and `Toast` hands it to `animate-toast-out` as that
+ * animation's duration — the token deliberately declares none. A drift between the two is silent
+ * and visible, leaving either a notification cut off mid-fade or a transparent one still sitting in
+ * the corner.
+ *
+ * Deliberately slow, and much slower than the entrance. A departure is the one piece of motion in
+ * the app nobody is waiting on, so it is where the flair is affordable — and a toast that is going
+ * anyway stays readable for the whole of it. The dwell above is unchanged: this is time added to the
+ * *end* of a toast's life, not taken from the part of it that is doing the announcing.
+ */
+export const TOAST_EXIT_MS = 2500;
+
 /** One view's entry in the header's switcher. */
 export interface AppTabChoice {
   readonly id: AppTab;

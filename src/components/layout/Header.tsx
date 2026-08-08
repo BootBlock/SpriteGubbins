@@ -12,10 +12,10 @@ import { Wordmark } from './Wordmark.tsx';
  * separate application bolted over the page.
  */
 const CHROME_ACTION =
-  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-800/70 px-3 py-2 text-xs font-bold shadow-md transition-all duration-200 hover:-translate-y-px hover:border-tab/60 hover:bg-foundry-700 hover:shadow-lg active:translate-y-0 active:shadow-md';
+  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-800/70 px-3 py-2 text-xs font-bold shadow-md transition-all duration-300 hover:-translate-y-px hover:border-tab/60 hover:bg-foundry-700 hover:shadow-lg active:translate-y-0 active:shadow-md';
 
 /** …and the matching lift for the glyph inside one, which is why both are `group`s. */
-const CHROME_ACTION_ICON = 'inline-block transition-transform duration-300 group-hover:scale-125';
+const CHROME_ACTION_ICON = 'inline-block transition-transform duration-450 group-hover:scale-125';
 
 /** The wheel along the bar's bottom edge — one string, so the bloom and the hairline cannot drift. */
 const SPECTRUM_EDGE = 'animate-spectrum-pan bg-spectrum pointer-events-none absolute inset-x-0';
@@ -106,11 +106,11 @@ export function Header() {
           onClick={() => {
             void copyPrompt();
           }}
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 transition-all duration-200 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
+          className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
         >
           <span
             aria-hidden="true"
-            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-700 group-hover:translate-x-full"
+            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1050 group-hover:translate-x-full"
           />
           <span className="relative flex items-center gap-2">
             <span aria-hidden="true">📋</span>

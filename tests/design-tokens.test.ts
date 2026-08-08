@@ -95,8 +95,10 @@ const REQUIRED_THEME_TOKENS = [
   '--animate-gradient-pan',
   '--animate-spectrum-pan',
   '--animate-toast-timer',
+  '--animate-toast-out',
   '--ease-emphasized',
   '--ease-decelerate',
+  '--ease-exit',
 ];
 
 /** Bespoke utilities components use by name, declared with `@utility` rather than `@theme`. */
@@ -130,6 +132,7 @@ const ANIMATION_KEYFRAMES = [
   'gradient-pan',
   'spectrum-pan',
   'toast-timer',
+  'toast-out',
 ];
 
 /**
@@ -411,8 +414,8 @@ describe('design tokens', () => {
     const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
 
     expect(closed).not.toBe('');
-    expect(closed).toContain('content-visibility 300ms allow-discrete');
-    expect(closed).toContain('block-size 300ms var(--ease-decelerate)');
+    expect(closed).toContain('content-visibility 450ms allow-discrete');
+    expect(closed).toContain('block-size 450ms var(--ease-decelerate)');
   });
 
   it('animates to a measured pixel height rather than to a keyword', () => {
