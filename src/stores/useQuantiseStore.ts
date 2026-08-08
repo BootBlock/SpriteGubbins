@@ -43,13 +43,20 @@ export interface QuantiseState {
   setGridOverride(gridOverride: PixelGrid | null): void;
   setKeyingEnabled(keyingEnabled: boolean): void;
   setKeyTolerance(keyTolerance: number): void;
+  /** Put the tab back where it opened: no sheet, and every control at its default. */
+  clear(): void;
 }
 
-export const useQuantiseStore = create<QuantiseState>((set) => ({
+/** What the tab opens with, and what `clear` puts back. */
+const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'keyingEnabled' | 'keyTolerance'> = {
   source: null,
   gridOverride: null,
   keyingEnabled: false,
   keyTolerance: DEFAULT_KEY_TOLERANCE,
+};
+
+export const useQuantiseStore = create<QuantiseState>((set) => ({
+  ...EMPTY,
 
   // Clearing the override is part of taking a new image, not a separate step a caller can forget: a
   // grid chosen for the last sheet says nothing about this one, and carrying it over would show a
@@ -74,5 +81,14 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setKeyTolerance: (keyTolerance) => {
     set({ keyTolerance });
+  },
+
+  // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is
+  // the difference between the two actions: dropping a second sheet continues a workflow — the
+  // splitter hands back eight passes at the same settings — while clearing is the user saying they
+  // are finished with this one. A "Clear" that left a tolerance and a toggle behind would be a
+  // half-clear, and the next sheet would arrive already keyed by a decision made about the last one.
+  clear: () => {
+    set({ ...EMPTY });
   },
 }));

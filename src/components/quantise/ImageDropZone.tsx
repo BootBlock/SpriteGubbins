@@ -5,6 +5,8 @@ interface ImageDropZoneProps {
   readonly acceptFile: (file: File | null | undefined) => void;
   /** The image currently loaded, or `null` before anything has been brought in. */
   readonly currentName: string | null;
+  /** Drop the sheet and put every control on the tab back to its default. */
+  readonly onClear: () => void;
 }
 
 /**
@@ -17,8 +19,12 @@ interface ImageDropZoneProps {
  * The paste route has no visible control here by design: it is registered on the window by
  * `useImagePaste`, which the tab adds, so a pasted sheet lands wherever the caret is. It is named in
  * the copy, which is the only way anyone would know it exists.
+ *
+ * **Clear appears only once there is something to clear**, beside the way in rather than beside the
+ * previews, because it is the opposite of the control next to it: this panel is where the sheet
+ * arrives, so it is where the sheet leaves.
  */
-export function ImageDropZone({ acceptFile, currentName }: ImageDropZoneProps) {
+export function ImageDropZone({ acceptFile, currentName, onClear }: ImageDropZoneProps) {
   const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
 
   return (
@@ -49,6 +55,19 @@ export function ImageDropZone({ acceptFile, currentName }: ImageDropZoneProps) {
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
         <FilePickerField label="Choose an image" acceptFile={acceptFile} tone="faint" />
+
+        {currentName !== null && (
+          // `rose` because it discards, and outlined rather than filled because what it discards is
+          // one tab's working state — nothing saved, nothing that cannot be dropped in again. The
+          // filled treatment belongs to an action that deletes something the user would miss.
+          <button
+            type="button"
+            onClick={onClear}
+            className="rounded-lg border border-rose/40 bg-rose/10 px-3 py-1.5 text-xs font-semibold text-rose transition-all duration-200 hover:border-rose hover:bg-rose/20 active:scale-[0.98]"
+          >
+            <span aria-hidden="true">✕</span> Clear
+          </button>
+        )}
       </div>
 
       {currentName !== null && (
