@@ -649,10 +649,37 @@ function compositeOf(
 describe("a view's primary action", () => {
   const block = ruleBlock('@utility action-tab {', '@utility ');
 
-  /** The two mix percentages the recipe is: the fill, then the border. */
-  const fillAlpha = Number(
-    /background-color: color-mix\(in oklab, var\(--color-tab\) ([\d.]+)%/.exec(block)?.[1],
-  );
+  /**
+   * Every background the utility paints, in every state — the value only, property name dropped.
+   *
+   * Read as a *complete list* rather than searched for the one shape the sweep understands, because
+   * the two are not the same guard and only this one is total. A regex that hunts for
+   * `background-color: color-mix(in oklab, var(--color-tab) N%…)` finds the fill as it happens to be
+   * written today and is blind to every other way of painting the same surface — `background-color:
+   * var(--color-tab)` at full strength, a different `color-mix` colour space, the arguments the other
+   * way round, the `background` shorthand, a `background-image` of two identical stops. Those are not
+   * exotic spellings; the first is the most natural way anyone would write "hover fills with the
+   * view's colour", and `text-ink` on an unmixed stop measures 1.62:1. Enumerating instead means a
+   * background this file cannot measure fails the check below rather than slipping past it.
+   *
+   * Anchored per line and requiring a `property: value;` shape, so the utility's own prose — which
+   * begins every line with ` * ` — cannot match.
+   */
+  const backgrounds = [...block.matchAll(/^\s*background[\w-]*: ([^;]+);/gm)].map((rule) => rule[1] ?? '');
+
+  /** The one shape the contrast sweep can measure: a `--color-tab` fill at a stated alpha. */
+  const TAB_FILL = /^color-mix\(in oklab, var\(--color-tab\) ([\d.]+)%, transparent\)$/;
+
+  /** The one background here that carries no view colour at all — the disabled state's flat tone. */
+  const COLOURLESS_FILL = 'var(--color-foundry-700)';
+
+  const fillAlphas = backgrounds
+    .map((value) => TAB_FILL.exec(value)?.[1])
+    .filter((alpha) => alpha !== undefined)
+    .map(Number);
+
+  /** The two mix percentages the recipe is: the resting fill, then the border. */
+  const fillAlpha = fillAlphas[0];
   const borderAlpha = Number(
     /border: 1px solid color-mix\(in oklab, var\(--color-tab\) ([\d.]+)%/.exec(block)?.[1],
   );
@@ -665,35 +692,56 @@ describe("a view's primary action", () => {
   const PANELS = ['--color-foundry-800', '--color-foundry-900', '--color-foundry-950'];
 
   it('mixes the fill and the border at the two strengths the recipe is', () => {
-    // Pinned because both numbers are load-bearing and neither looks it: the fill is the largest
-    // share of a L 0.76 stop that leaves `text-ink` above WCAG AA on it, and the border is what
-    // carries the button's edge past 1.4.11 given the fill alone does not. A later tidy-up that
-    // rounds either one to a friendlier figure is the change this exists to stop.
-    expect(fillAlpha).toBe(50);
+    // Pinned because the pair is the design and the gap between them is the whole point: the fill is
+    // a tint at 30% and the border is a boundary at 80%, and only the border clears the ratio that
+    // makes the control locatable. Nudging the fill toward the border — which looks like a tidy-up,
+    // since a 30% surface reads as barely there — is what this exists to stop.
+    expect(fillAlpha).toBe(30);
     expect(borderAlpha).toBe(80);
   });
 
-  it('keeps text-ink above 4.5:1 on the fill, at every stop and on every panel', () => {
-    // The stops are all L 0.76, so the composite lightens as the alpha rises and the ink on it
-    // darkens by comparison. This is the constraint that fixes the fill at 50%: at 60% the worst
-    // stop measures 3.68:1, which still looks perfectly deliberate.
+  it('paints no background the contrast sweep below cannot measure', () => {
+    // The half that makes the sweep total, and the reason it is a separate assertion: a fill written
+    // in a shape `TAB_FILL` does not recognise would otherwise be *silently* excluded from the
+    // contrast check — the loops would simply not visit it, and the suite would stay green while the
+    // button went under AA. So every background is required to be either a `--color-tab` mix this
+    // file can compute or the one colourless tone the disabled state uses; a third kind fails here,
+    // and the fix is to teach the sweep about it rather than to widen this list.
+    expect(backgrounds.length).toBeGreaterThanOrEqual(2);
+    expect(backgrounds.filter((value) => !TAB_FILL.test(value) && value !== COLOURLESS_FILL)).toStrictEqual(
+      [],
+    );
+  });
+
+  it('keeps text-ink above 4.5:1 on every fill it paints, at every stop and on every panel', () => {
+    // The stops are all L 0.76, so a composite lightens as the alpha rises and the ink on it darkens
+    // by comparison — 51% is the last value that still clears AA, and 52% does not. That ceiling,
+    // not the resting 30%, is the real rule, so this sweeps *every* fill the utility paints rather
+    // than the resting one alone: a hover or active state that later re-lights the surface is held
+    // to the same floor. The assertion above is what makes "every" true rather than "every one the
+    // regex happened to match".
     const ink = linearOf(oklchToken('--color-ink'));
 
-    for (const stop of SPECTRUM_STOPS) {
-      for (const panel of PANELS) {
-        const fill = compositeOf(oklchToken(`--color-spectrum-${stop}`), oklchToken(panel), fillAlpha / 100);
-        expect(contrastOf(fill, ink)).toBeGreaterThanOrEqual(4.5);
+    // Without this a parse that found nothing would make the loops below run zero assertions and
+    // the whole guard would pass having measured no colour at all.
+    expect(fillAlphas.length).toBeGreaterThan(0);
+
+    for (const alpha of fillAlphas) {
+      for (const stop of SPECTRUM_STOPS) {
+        for (const panel of PANELS) {
+          const fill = compositeOf(oklchToken(`--color-spectrum-${stop}`), oklchToken(panel), alpha / 100);
+          expect(contrastOf(fill, ink)).toBeGreaterThanOrEqual(4.5);
+        }
       }
     }
   });
 
-  it('carries the button edge on the border, which the fill cannot be relied on to do', () => {
-    // WCAG 1.4.11 wants 3:1 between a control and its surroundings. A 50% stop over a panel lands
-    // between 2.80:1 and 3.15:1 against that same panel depending on which stop and which panel —
-    // a little under half of those combinations clear it and none clears it with margin — so a
-    // borderless version of this button would have an edge that disappears on most of the wheel.
-    // The border is therefore a correctness property rather than a flourish, and unlike the fill it
-    // is asserted here because it has to hold at *every* combination.
+  it('carries the button edge on the border, which at this fill is the whole of it', () => {
+    // WCAG 1.4.11 wants 3:1 between a control and its surroundings, and the 30% fill contributes
+    // nothing towards it: over a panel it lands between 1.68:1 and 1.89:1, so *no* stop on *any*
+    // panel comes near. A borderless version of this button would have no locatable edge at all —
+    // which makes the border a correctness property rather than a flourish, and the reason the
+    // fill's reduction stopped at the fill and left the border where it was.
     for (const stop of SPECTRUM_STOPS) {
       for (const panel of PANELS) {
         const surface = oklchToken(panel);
@@ -703,14 +751,17 @@ describe("a view's primary action", () => {
     }
   });
 
-  it('never lets the hover state raise the fill, which is where the contrast headroom went', () => {
-    // The hover says so with the border and a bloom precisely because it cannot say it with the
-    // fill. Re-lighting the surface is the obvious edit, it looks better in isolation, and it takes
-    // the ink under AA on every stop — so the absence of a `background-color` here is the assertion.
+  it('says hover on the border and the bloom, which is what the button is read by', () => {
+    // Deliberately *not* "the hover sets no `background-color`". That was the assertion while the
+    // fill sat at its contrast ceiling and there was no headroom to raise it into; at 30% there is,
+    // so pinning the absence would be pinning an accident — a hover fill is now allowed, provided it
+    // clears AA, which the two assertions above enforce between them. What belongs here is the
+    // positive half: the hover has to change the border, because the border is the only part of this
+    // button carrying its edge, and a hover that moved the fill alone would say nothing.
     const hover = /&:hover:not\(:disabled\) \{([^}]*)\}/.exec(block)?.[1] ?? '';
 
     expect(hover).toMatch(/border-color: var\(--color-tab\)/);
-    expect(hover).not.toMatch(/background-color/);
+    expect(hover).toMatch(/box-shadow: .*var\(--color-tab\)/);
   });
 
   it('falls off the wheel entirely when disabled, so unavailable never reads as coloured', () => {
