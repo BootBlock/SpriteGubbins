@@ -22,6 +22,8 @@ const ATARI_2600_NTSC: Palette = {
   label: 'Atari 2600 (NTSC) — 127 colours',
   space: {
     kind: 'FIXED',
+    approximates:
+      'the composite signal the TIA emits, where a colour register selects a phase offset and a luminance rather than a colour, so what reached the screen depended on the television',
     entries: [
       '#000000',
       '#444400',

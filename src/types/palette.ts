@@ -30,6 +30,28 @@ export type PaletteSpace =
       readonly kind: 'FIXED';
       /** `#RRGGBB`, upper case, in the machine's own order. */
       readonly entries: readonly string[];
+      /**
+       * What the entries **approximate**, as a phrase read mid-sentence, or `null` where they are
+       * the machine's own values.
+       *
+       * Most machines here never held an RGB colour at all. The DMG stores a two-bit shade index and
+       * shows it through a reflective green LCD; the NES, the 2600, the C64 and the Spectrum drive an
+       * analogue signal a television decodes. So their hex entries are a *rendering* — one reading of
+       * how those colours appeared — and the published tables disagree with each other by a visible
+       * amount, because there is nothing to be right about. Three things are separate and stay
+       * separate: what the hardware **stores**, how that **appeared** on the display of the day, and
+       * the **sRGB** values that approximate it here.
+       *
+       * `null` is the honest minority rather than the default. CGA and EGA drive four TTL lines, so
+       * the sixteen RGBI colours are exactly what the standard says; PICO-8 is software and its
+       * palette is a literal in its source. Those three claim their values, and nothing else does.
+       *
+       * The prompt reads this: an approximated palette says so in as many words rather than telling a
+       * generator these are the colours the machine produced. It does **not** loosen the restriction
+       * — the sheet is still drawn in exactly these entries and no others, since they are the closest
+       * set that exists to reach for.
+       */
+      readonly approximates: string | null;
     }
   | { readonly kind: 'CHANNEL_DEPTH'; readonly bitsPerChannel: number };
 

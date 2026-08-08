@@ -10,15 +10,32 @@ import type { Palette, PaletteId } from '../../types/palette.ts';
  * table for it is one rendering of that signal among several, and taking a published one keeps this
  * file from being a private opinion about NTSC decoding.
  *
+ * **None of those three machines holds an RGB colour**, which is why all three carry an
+ * `approximates` phrase and the prompt repeats it. The DMG stores a two-bit shade index per pixel and
+ * nothing more: what a player saw was that index driven through a reflective green LCD lit by
+ * whatever was in the room, so the four hexes below are the appearance and not the data. They are
+ * kept because they are the convention every art tool, emulator and generator already means by "Game
+ * Boy green" — the value of a shared reference is the whole point of naming one — but a *measured*
+ * set would be equally defensible and no more authoritative, which is the reason the claim is worded
+ * down rather than the numbers swapped for someone else's.
+ *
  * The Game Boy Color and the SNES have no list at all: both are 15-bit RGB, so their palette is a
- * colour space, and their entry states the ladder instead.
+ * colour space, and their entry states the ladder instead. **That is the distinction the DMG and the
+ * Game Boy Color are most often collapsed into one of** — four greens is the DMG, and describing the
+ * colour machine that succeeded it in those terms would be wrong twice over: wrong about the count,
+ * and wrong about there being a list to count.
  */
 
 const GAME_BOY_DMG: Palette = {
   id: 'GAME_BOY_DMG',
   name: 'the original Game Boy (DMG)',
   label: 'Game Boy (DMG) — 4 shades of green',
-  space: { kind: 'FIXED', entries: ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'] },
+  space: {
+    kind: 'FIXED',
+    entries: ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F'],
+    approximates:
+      'the four shade levels a DMG stores, seen through its reflective green LCD — whose colour shifts with the ambient light, the viewing angle, the unit and its age, so no one set of four is the authoritative reading',
+  },
   onScreenColors: 4,
   colorsPerComponent: 3,
   note: 'Two bits per pixel, so four shades exist and no others. An object takes three of them from one of two object palettes, its fourth entry being transparent.',
@@ -31,7 +48,12 @@ const GAME_BOY_MONO: Palette = {
   // The same two-bit signal as the DMG, normalised onto grey rather than onto the green LCD: 0, 85,
   // 170 and 255 are `round(i × 255 / 3)`. This is the Pocket and Light read, and the one every
   // emulator offers as "greyscale".
-  space: { kind: 'FIXED', entries: ['#000000', '#555555', '#AAAAAA', '#FFFFFF'] },
+  space: {
+    kind: 'FIXED',
+    entries: ['#000000', '#555555', '#AAAAAA', '#FFFFFF'],
+    approximates:
+      'the four shade levels a Game Boy stores, read as neutral grey rather than through the DMG’s green LCD — which is how a Pocket or a Light shows them',
+  },
   onScreenColors: 4,
   colorsPerComponent: 3,
   note: 'Two bits per pixel, so four greys exist and no others. An object takes three of them, its fourth entry being transparent.',
@@ -53,6 +75,8 @@ const NES: Palette = {
   label: 'NES — 55 colours, 25 at once',
   space: {
     kind: 'FIXED',
+    approximates:
+      'the composite signal the PPU emits, which carries a hue and a luminance rather than a colour — several published tables decode it differently',
     entries: [
       '#000000',
       '#FCFCFC',

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTE_IDS } from '../../types/palette.ts';
 import type { Palette } from '../../types/palette.ts';
-import { channelLevels } from '../../utils/channelLevels.ts';
+import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
 import { fromHex, toHex } from '../../utils/imageData.ts';
 import { PALETTE_CHOICES, PALETTES, paletteFor } from './index.ts';
 
@@ -103,6 +103,66 @@ describe('a fixed palette’s entries', () => {
   it.each(fixed)('$id cannot show more colours at once than it has', (palette) => {
     if (palette.space.kind !== 'FIXED' || palette.onScreenColors === null) return;
     expect(palette.onScreenColors).toBeLessThanOrEqual(palette.space.entries.length);
+  });
+
+  it.each(fixed)('$id says whether its entries are the machine’s own values', (palette) => {
+    if (palette.space.kind !== 'FIXED') return;
+    const { approximates } = palette.space;
+    if (approximates === null) return;
+
+    // It is interpolated mid-sentence — "an sRGB approximation of one decoding of the composite
+    // signal…" — so it has to read as a phrase rather than as a sentence of its own.
+    expect(approximates.trim()).toBe(approximates);
+    expect(approximates).not.toBe('');
+    expect(approximates.at(-1)).not.toBe('.');
+    expect(approximates.charAt(0)).toBe(approximates.charAt(0).toLowerCase());
+  });
+
+  it('claims its values for the three palettes that own them, and no others', () => {
+    // The split is the whole point of the field, so it is pinned rather than left to whoever adds
+    // the next palette. CGA and EGA drive TTL lines and PICO-8 is software, so those three *are*
+    // their values; every other fixed palette is a rendering of a signal or a screen that never held
+    // an RGB colour, and the prompt says so. A new palette landing on the wrong side fails here.
+    const literal = fixed
+      .filter((palette) => palette.space.kind === 'FIXED' && palette.space.approximates === null)
+      .map((palette) => palette.id);
+
+    expect(literal).toEqual(['CGA_MODE_4', 'EGA_16', 'PICO_8']);
+  });
+});
+
+describe('the two Game Boys', () => {
+  /**
+   * The one pair in the library that is routinely collapsed into one machine, in both directions:
+   * "the Game Boy palette" meaning four greens when the Color is meant, and the Color described as
+   * though it had a fixed list at all. Each half is a different kind of wrong, so each is pinned.
+   */
+  it('gives the DMG four shade levels, three of them to an object', () => {
+    const dmg = paletteFor('GAME_BOY_DMG');
+    if (dmg === null || dmg.space.kind !== 'FIXED') throw new Error('the DMG should be a fixed palette.');
+
+    // Two bits per pixel is the hardware fact underneath, and it is what the four is *for*.
+    expect(dmg.space.entries).toHaveLength(4);
+    expect(dmg.onScreenColors).toBe(4);
+    // Colour 0 of an object palette is transparent, which is why an object shows three and not four.
+    expect(dmg.colorsPerComponent).toBe(3);
+    expect(dmg.space.approximates).not.toBeNull();
+  });
+
+  it('gives the Color a colour space rather than a list, at five bits a channel', () => {
+    const cgb = paletteFor('GAME_BOY_COLOR');
+    if (cgb === null) throw new Error('the Game Boy Color should ship.');
+
+    // The claim that has to stay false: that this machine has some canonical set of hex colours.
+    expect(cgb.space.kind).toBe('CHANNEL_DEPTH');
+    if (cgb.space.kind !== 'CHANNEL_DEPTH') return;
+    expect(cgb.space.bitsPerChannel).toBe(5);
+    expect(channelLevels(cgb.space.bitsPerChannel)).toHaveLength(32);
+    expect(channelSpaceSize(cgb.space.bitsPerChannel)).toBe(32768);
+
+    // 8 background palettes × 4 entries = 32, plus 8 object palettes × 3 visible = 24.
+    expect(cgb.onScreenColors).toBe(8 * 4 + 8 * 3);
+    expect(cgb.colorsPerComponent).toBe(3);
   });
 });
 

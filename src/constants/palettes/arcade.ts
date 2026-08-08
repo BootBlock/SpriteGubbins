@@ -41,6 +41,10 @@ const PICO_8: Palette = {
   label: 'PICO-8 — 16 fixed colours',
   space: {
     kind: 'FIXED',
+    // The one palette in the library that is authoritative by construction rather than by
+    // measurement: the console is software, so its sixteen are a literal in its source and there is
+    // no display to approximate. Hence `null` — see `PaletteSpace.approximates`.
+    approximates: null,
     entries: [
       '#000000',
       '#1D2B53',

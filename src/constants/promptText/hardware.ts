@@ -40,17 +40,36 @@ export function describePalette(palette: Palette): string {
   return parts.join('\n\n');
 }
 
-/** Which colours exist, and what to do about a subject colour that is not among them. */
+/**
+ * Which colours exist, what to do about a subject colour that is not among them, and — where the
+ * entries are a rendering rather than the machine's own values — what they actually are.
+ *
+ * **The caveat weakens the claim, never the constraint.** Most of these machines held no RGB colour
+ * at all, so telling a generator that four greens are "the colours of the original Game Boy" invites
+ * it to improve on them from knowledge of hardware that has nothing to improve on. What the hedge
+ * may not do is leave any doubt that the sheet is drawn in exactly these entries — so only the
+ * *ownership* clause varies, and the caveat lands after the list, closing on the instruction rather
+ * than on the doubt. It goes last in its own sentence too, because `approximates` ends several of
+ * these on an em-dash clause and interpolating it mid-sentence read as a run-on.
+ */
 function rule(palette: Palette): string {
   const nearest =
     'Where section 1 names a colour this palette does not hold, use the nearest entry it does — never mix, tint or dither one to approximate it. The background field is the exception: it stays the key colour section 0 fixes, and is not drawn from this palette.';
 
   if (palette.space.kind === 'FIXED') {
-    const count = palette.space.entries.length;
+    const { entries, approximates } = palette.space;
+    const count = String(entries.length);
+    const whose = approximates === null ? ` of ${palette.name}` : '';
+
     return [
-      `Every pixel of every component is exactly one of the ${String(count)} colours of ${palette.name}, listed below. No other colour appears on any component — not as a gradient, a blend, or an anti-aliased edge.`,
+      `Every pixel of every component is exactly one of the ${count} colours${whose}, listed below. No other colour appears on any component — not as a gradient, a blend, or an anti-aliased edge.`,
       nearest,
-      formatEntries(palette.space.entries),
+      formatEntries(entries),
+      ...(approximates === null
+        ? []
+        : [
+            `The ${count} values above are an sRGB approximation of ${approximates}. They are a rendering for a modern display, not colour values ${palette.name} holds. Draw in them exactly as listed — on this sheet they are the colours.`,
+          ]),
     ].join('\n\n');
   }
 

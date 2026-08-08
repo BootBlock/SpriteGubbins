@@ -691,6 +691,63 @@ describe('generatePrompt — the machine and its palette', () => {
     expect(prompt).not.toContain(promptText.PALETTE_TEXT.RESTRAINED_64_COLOR);
   });
 
+  it('calls an approximated palette’s entries an approximation, without loosening the rule', () => {
+    // The DMG holds a two-bit shade index and shows it through a green LCD, so naming four hexes
+    // "the colours of the original Game Boy" tells a generator something untrue about the hardware —
+    // and invites it to improve on them from knowledge the hardware cannot supply.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_DMG' }));
+
+    expect(prompt).not.toContain('one of the 4 colours of the original Game Boy (DMG)');
+    expect(prompt).toContain('exactly one of the 4 colours, listed below');
+    expect(prompt).toContain('are an sRGB approximation of');
+    expect(prompt).toContain('not colour values the original Game Boy (DMG) holds');
+    // The ambient-light point is the reason no four hexes can be the authoritative set, so the
+    // prompt carries it rather than leaving the hedge unexplained.
+    expect(prompt).toContain('shifts with the ambient light');
+    // The caveat is about provenance and may not become an excuse to drift off the four.
+    expect(prompt).toContain('No other colour appears on any component');
+    expect(prompt).toContain('on this sheet they are the colours');
+  });
+
+  it('lets the three palettes that own their values keep the plain claim', () => {
+    // PICO-8 is software and its sixteen are a literal in its source: hedging them would be its own
+    // kind of wrong, and the caveat has to be absent rather than harmlessly present everywhere.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'PICO_8' }));
+
+    expect(prompt).toContain('exactly one of the 16 colours of PICO-8, listed below');
+    expect(prompt).not.toContain('sRGB approximation');
+  });
+
+  it.each([
+    'GAME_BOY_DMG',
+    'GAME_BOY_MONO',
+    'NES',
+    'ATARI_2600_NTSC',
+    'COMMODORE_64',
+    'ZX_SPECTRUM',
+  ] as const)('never claims %s’s entries are the machine’s own colours', (id) => {
+    // Every palette on the approximate side of the split, so the wording cannot be fixed for the
+    // Game Boy alone and left overclaiming for the five machines with the same problem.
+    const palette = PALETTES[id];
+    if (palette === null) throw new Error(`${id} should ship.`);
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: id }));
+
+    expect(prompt).not.toContain(`colours of ${palette.name}, listed below`);
+    expect(prompt).toContain('are an sRGB approximation of');
+    expect(prompt).toContain(`not colour values ${palette.name} holds`);
+  });
+
+  it('states the Game Boy Color as a colour space, never as four greens', () => {
+    // The two machines are one hardware profile apart and are routinely conflated. The DMG's list
+    // must not reach the Color, and the Color's own block has to describe the 15-bit space.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_COLOR' }));
+
+    expect(prompt).toContain('32768 colours in all');
+    expect(prompt).toContain('No more than 56 distinct colours appear across the whole sheet.');
+    expect(prompt).toContain('No single component carries more than 3 of them');
+    for (const entry of ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F']) expect(prompt).not.toContain(entry);
+  });
+
   it('states the ladder rather than a list for a palette that is a colour space', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'MEGA_DRIVE' }));
 

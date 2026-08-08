@@ -19,6 +19,8 @@ const COMMODORE_64: Palette = {
   label: 'Commodore 64 — 16 fixed colours',
   space: {
     kind: 'FIXED',
+    approximates:
+      'the composite signal the VIC-II drives, which at least three well-known renderings of this palette disagree about by a visible amount',
     entries: [
       '#000000',
       '#626262',
@@ -53,6 +55,8 @@ const ZX_SPECTRUM: Palette = {
   label: 'ZX Spectrum — 15 fixed colours',
   space: {
     kind: 'FIXED',
+    approximates:
+      'the composite signal the ULA drives, whose eight hues at two brightness levels reach a screen as voltages rather than as a colour table',
     entries: [
       '#000000',
       '#0000D8',

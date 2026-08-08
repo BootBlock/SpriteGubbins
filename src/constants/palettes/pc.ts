@@ -8,6 +8,11 @@ import type { Palette, PaletteId } from '../../types/palette.ts';
  * the standard says they are, brown's dimmed green included — it is the one entry that is not simply
  * the intensity bit applied to the colour below it.
  *
+ * That is why these two are among the three palettes in the library whose `approximates` is `null`:
+ * the entries **are** the values, so the prompt states them flatly rather than hedging them as an
+ * appearance. Every other fixed palette here is a rendering of something that was never RGB, and
+ * says so.
+ *
  * `CGA_MODE_4` is the four-colour mode rather than the sixteen, because that is what CGA *artwork*
  * means: 320 × 200 with a fixed four-entry palette, of which the cyan/magenta/white one is the look
  * the era is remembered for.
@@ -17,7 +22,11 @@ const CGA_MODE_4: Palette = {
   id: 'CGA_MODE_4',
   name: 'IBM CGA in its four-colour mode',
   label: 'CGA (mode 4) — black, cyan, magenta, white',
-  space: { kind: 'FIXED', entries: ['#000000', '#55FFFF', '#FF55FF', '#FFFFFF'] },
+  space: {
+    kind: 'FIXED',
+    entries: ['#000000', '#55FFFF', '#FF55FF', '#FFFFFF'],
+    approximates: null,
+  },
   onScreenColors: 4,
   // The whole screen has four, and nothing is drawn as a hardware sprite, so a per-component figure
   // would restate the line above rather than add to it.
@@ -31,6 +40,7 @@ const EGA_16: Palette = {
   label: 'EGA — the 16 RGBI colours',
   space: {
     kind: 'FIXED',
+    approximates: null,
     entries: [
       '#000000',
       '#0000AA',
