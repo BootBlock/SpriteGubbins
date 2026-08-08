@@ -26,6 +26,19 @@ export const OBJECT: CategoryDefinition = {
         'Vending Machine',
         'Control Console',
         'Ancient Relic Shrine',
+        // Not every prop is a machine to interact with. An effect and a legibility test both want the
+        // hard-surface field labels this category gives them and have nowhere else to live. A vehicle
+        // does have somewhere — VEHICLE, which exists because a hull, a drive and a turning mount do
+        // not decompose the way a housing, a footing and a hinged panel do — so it does not go here.
+        'Explosion Burst Effect',
+        'Weather Particle Sheet',
+        'Silhouette Legibility Test',
+        'Pressure Plate Trap',
+        'Campfire & Cooking Pot',
+        'Signpost & Notice Board',
+        'Conveyor Belt Segment',
+        'Ladder / Climbable Rung Set',
+        'Crank Winch & Chain',
       ],
     },
     {
@@ -41,6 +54,9 @@ export const OBJECT: CategoryDefinition = {
         'Power Offline',
         'Corrupted Glitching',
         'Self-Destruct Sequence',
+        'Mid-Destruction Frame',
+        'Charging / Spooling Up',
+        'Buried & Partly Excavated',
       ],
     },
     {
@@ -56,6 +72,9 @@ export const OBJECT: CategoryDefinition = {
         'Steampunk Brass',
         'Alien Crystal Tech',
         'Post-Apocalyptic Scraps',
+        'Bronze Age Ritual',
+        'Modern Municipal',
+        'Deep-Sea Salvage',
       ],
     },
     {
@@ -71,6 +90,10 @@ export const OBJECT: CategoryDefinition = {
         'Resource Converter',
         'Security Gateway',
         'Ammunition Recharger',
+        'Traversal Aid',
+        'Checkpoint / Respawn Anchor',
+        'Trap / Ambush Trigger',
+        'Light Source',
       ],
     },
     {
@@ -86,6 +109,11 @@ export const OBJECT: CategoryDefinition = {
         'Temple Vault',
         'Space Station Engine Room',
         'Industrial Factory',
+        'Snowy Mountain Pass',
+        'Rain-Slicked Rooftop',
+        'Farmyard & Barn',
+        'Underground Mine Shaft',
+        'Coral Shelf Seabed',
       ],
     },
     {
@@ -101,6 +129,9 @@ export const OBJECT: CategoryDefinition = {
         'Cylindrical Conduit',
         'Pyramidal Structure',
         'Wall-Mounted Box',
+        'Flat Floor Inlay',
+        'Suspended Ceiling Fixture',
+        'Tall Narrow Post',
       ],
     },
     {
@@ -116,6 +147,10 @@ export const OBJECT: CategoryDefinition = {
         'Ornate Gothic Arches',
         'Sleek Oval Pod',
         'Hexagonal Tower',
+        'Ragged Expanding Ring',
+        'Fine Streaks & Flecks',
+        'Lattice Frame & Struts',
+        'Coiled Rope & Hook',
       ],
     },
     {
@@ -130,6 +165,12 @@ export const OBJECT: CategoryDefinition = {
         'Keypad & Biometric Scanner',
         'Glowing Monitor Array',
         'Lever & Valve Array',
+        'White-Hot Core Flash',
+        'Stencilled Cargo Panel',
+        'Open Flame & Cook Pot',
+        // For a sheet whose subject has no focal element at all — an effect, a particle set, a
+        // silhouette pass — because leaving the field empty would invite one to be invented.
+        'No Focal Feature',
       ],
     },
     {
@@ -143,6 +184,8 @@ export const OBJECT: CategoryDefinition = {
         'HINGED CHEST CONTAINER',
         'MODULAR CONDUIT',
         'ROTATING SPHERICAL CORE',
+        'BREAK-APART SHARD SET',
+        'PARTICLE FRAME SEQUENCE',
       ],
     },
     {
@@ -157,6 +200,8 @@ export const OBJECT: CategoryDefinition = {
         'Freestanding Base',
         'Wall-Anchored Brackets',
         'Hydraulic Lift Feet',
+        'Ceiling Chain Mount',
+        'Buried Foundation Plinth',
       ],
     },
     {
@@ -172,6 +217,11 @@ export const OBJECT: CategoryDefinition = {
         'Exposed Circuit Wiring',
         'Graffiti & Scratches',
         'Moss & Vines',
+        'Ember Sparks & Shockwave Ring',
+        'Splash Crowns & Settle Drifts',
+        'Soot Scorch Ring',
+        'Rope Fray & Knots',
+        'No Surface Detail At All',
       ],
     },
     {
@@ -187,6 +237,10 @@ export const OBJECT: CategoryDefinition = {
         'Gunmetal Grey & Orange',
         'Rusted Iron & Olive',
         'Gilded Gold #F59E0B & Marble',
+        'Molten Orange #F97316 & Deep Charcoal',
+        'Pale Frost White & Storm Grey',
+        'Weathered Pine & Rust Iron',
+        'Pure Black Fill',
       ],
     },
     {
@@ -202,6 +256,9 @@ export const OBJECT: CategoryDefinition = {
         'Neon Cyan Cables #06B6D4',
         'Arcane Purple Gem #8B5CF6',
         'Hot Pink Glitch #F43F5E',
+        'White-Hot Core #FFFFFF',
+        'Rain Sheen Blue #3B82F6',
+        'No Accent, Fill Only',
       ],
     },
     {
@@ -216,6 +273,10 @@ export const OBJECT: CategoryDefinition = {
         'Cast Iron',
         'Carved Granite & Crystal',
         'Reflective Mirror Alloy',
+        'Incandescent Plasma & Soot',
+        'Translucent Water & Ice',
+        'Splintered Timber & Banded Steel',
+        'Flat Fill, No Material Read',
       ],
     },
     {
@@ -229,6 +290,11 @@ export const OBJECT: CategoryDefinition = {
         'No text or letters',
         'No pedestal or ground grid',
         'No ambient smoke',
+        'No floor shadow, no debris props, no lens flare',
+        'No ground terrain tiles, no characters, no sky gradient',
+        'No living character, no shadows, no ground grid',
+        'No living character, no cables on floor, no ground grid',
+        'No internal detail, no outline, no gradient, no highlights',
       ],
     },
     {
@@ -243,6 +309,9 @@ export const OBJECT: CategoryDefinition = {
         'Coolant Vent Flap ×2',
         'Deployable Turret Barrel ×1',
         'Holographic Emitter Wing ×2',
+        'Shockwave Ring ×1, Ember Mote ×3',
+        'Rain Streak ×4, Snow Flake ×4, Ash Mote ×4, Ground Splash ×2',
+        'Intact Shell ×1, Cracked Shell ×1, Splinter Shard ×4',
       ],
     },
   ],

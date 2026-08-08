@@ -24,6 +24,15 @@ export const ITEM: CategoryDefinition = {
         'Armor Piece (Helmet/Shield)',
         'Keycard / Quest Item',
         'Energy Shield Unit',
+        // Nine-slice frames and buttons are inventory-scale flat art with rarity-free rules, so they
+        // belong to the icon category rather than to props: the field labels here are the right ones.
+        'Interface Frame & Button Kit',
+        'Crafting Material / Salvage',
+        'Map / Chart Scroll',
+        'Musical Instrument',
+        'Cooking Ingredient',
+        'Fishing Rod & Tackle',
+        'Currency & Coin Pile',
       ],
     },
     {
@@ -82,6 +91,8 @@ export const ITEM: CategoryDefinition = {
         'Sci-Fi Energy Weapon',
         'Gothic Vampire',
         'Post-Apocalyptic',
+        'Nautical Age Of Sail',
+        'Cosy Farm Life',
       ],
     },
     {
@@ -110,6 +121,10 @@ export const ITEM: CategoryDefinition = {
         'Ornate Crested Shield',
         'Double-Headed Axe Blade',
         'Curved Katana Edge',
+        'Rounded Flask & Stopper',
+        'Nine-Slice Panel Corners',
+        'Irregular Salvage Bundle',
+        'Stacked Coin Column',
       ],
     },
     {
@@ -123,6 +138,10 @@ export const ITEM: CategoryDefinition = {
         'Dragon-Head Crossguard',
         'Floating Crystal Core',
         'Gold Embossed Trigger Guard',
+        'Wax-Sealed Cork & Twine',
+        'Riveted Brass Bezel',
+        'Frayed Binding Twine',
+        'Carved Bone Handle',
       ],
     },
     {
@@ -164,6 +183,8 @@ export const ITEM: CategoryDefinition = {
         'Energy Conduits',
         'Blood Groove & Notch Marks',
         'Circuit Traces',
+        'Handwritten Apothecary Label',
+        'Tally Notches & Wear Marks',
       ],
     },
     {
@@ -178,6 +199,8 @@ export const ITEM: CategoryDefinition = {
         'Deep Ruby Glass #EF4444',
         'Emerald Crystal #10B981 & Platinum',
         'Matte Black & Cyan #06B6D4',
+        'Smoked Glass & Aged Brass',
+        'Salt-Bleached Driftwood & Rope',
       ],
     },
     {
@@ -207,6 +230,8 @@ export const ITEM: CategoryDefinition = {
         'Valyrian Steel',
         'Obsidian Glass & Brass',
         'Carbon Fibre & Titanium',
+        'Blown Glass, Cork & Wax',
+        'Salt-Cured Rope & Driftwood',
       ],
     },
     {
@@ -220,6 +245,9 @@ export const ITEM: CategoryDefinition = {
         'No magic smoke trails',
         'No floor shadow',
         'No text or stats box',
+        'No holding hand or character, no pedestal or stand, no text or stats box',
+        'No holding hand or character, no magic smoke trails, no floor shadow',
+        'No text or stats box, no drop shadow, no placeholder lorem text',
       ],
     },
     {
@@ -234,6 +262,9 @@ export const ITEM: CategoryDefinition = {
         'Tassel ×2, Charm Ribbon ×2',
         'Bayonet Blade Tip ×1',
         'Secondary Energy Cell ×1',
+        'Filled Variant ×3, Empty Variant ×1, Cork Stopper ×1',
+        'Scabbard ×1, Loose Pommel Gem ×1',
+        'Panel Corner ×4, Panel Edge ×4, Button State ×3, Slider Track ×1, Slider Knob ×1',
       ],
     },
   ],
