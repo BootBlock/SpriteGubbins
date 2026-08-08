@@ -24,8 +24,16 @@
  * than being spotted by eye in the output. Kept coarse deliberately — this classifies entries well
  * enough to catch a whole inventory belonging to another category, which is the failure that
  * actually happened, and finer distinctions would be modelling for its own sake.
+ *
+ * **`frame` is the one kind that classifies a position in *time* rather than a piece of the
+ * subject**, and it earns its place by the same test as the rest: excluding it from the other six
+ * categories catches a real misfiling, because a sequence of frames filed under OBJECT would be
+ * sitting in a plan whose every other entry is a part that coexists with the rest. It runs the other
+ * way too, and that is the half that matters more — EFFECT admits *nothing else*, so a part
+ * breakdown that drifts onto an effect sheet fails the check rather than shipping an explosion with
+ * a hatch and a footing.
  */
-export const COMPONENT_KINDS = ['anatomy', 'appendage', 'mechanism', 'structure', 'tile'] as const;
+export const COMPONENT_KINDS = ['anatomy', 'appendage', 'mechanism', 'structure', 'tile', 'frame'] as const;
 
 export type ComponentKind = (typeof COMPONENT_KINDS)[number];
 

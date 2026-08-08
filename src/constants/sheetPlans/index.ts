@@ -5,6 +5,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
 import { BUILDING_DIRECTIONAL_VARIANTS, BUILDING_MODULE_LIBRARY, BUILDING_TILESET } from './building.ts';
 import { CHARACTER_CUTOUT_RIG, CHARACTER_DIRECTIONAL_VARIANTS, CHARACTER_POSE_LIBRARY } from './character.ts';
 import { CREATURE_CUTOUT_RIG, CREATURE_DIRECTIONAL_VARIANTS, CREATURE_POSE_LIBRARY } from './creature.ts';
+import { EFFECT_FRAME_SEQUENCE } from './effect.ts';
 import { ITEM_DIRECTIONAL_VARIANTS, ITEM_PART_LIBRARY } from './item.ts';
 import { OBJECT_CUTOUT_RIG, OBJECT_DIRECTIONAL_VARIANTS, OBJECT_PART_LIBRARY } from './object.ts';
 import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY } from './vehicle.ts';
@@ -62,6 +63,14 @@ export const CATEGORY_SHEET_PLANS: Readonly<
     CORE_DIRECTIONAL_VARIANTS: [VEHICLE_DIRECTIONAL_VARIANTS],
     CUTOUT_RIG_SINGLE_DIRECTION: [VEHICLE_CUTOUT_RIG],
   },
+  // The one category that offers a single mode, and the `Partial` above is what lets it say so.
+  // An effect's sheet is a flipbook: `'primary'` coverage is the only one that leaves the whole
+  // component budget for *time*, and it is also what turns a direction set into a run list, so a
+  // directional slash gets eight frame sequences rather than one sheet of eight frozen frames.
+  // `sheetPlans/effect.ts` argues the other three modes out one by one.
+  EFFECT: {
+    SINGLE_DIRECTION_POSE_LIBRARY: [EFFECT_FRAME_SEQUENCE],
+  },
 };
 
 /**
@@ -99,6 +108,8 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   // A building is the one category for which a repeating tile field is the usual deliverable.
   BUILDING: 'TILESET_MODULAR',
   VEHICLE: 'CORE_DIRECTIONAL_VARIANTS',
+  // The only mode it has, so the fallback and the choice are the same thing here.
+  EFFECT: 'SINGLE_DIRECTION_POSE_LIBRARY',
 };
 
 /** Whether this category can produce this kind of sheet at all. */

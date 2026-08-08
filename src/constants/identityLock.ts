@@ -52,9 +52,9 @@ export interface IdentitySubjectSegment {
  * The three prose segments derived from the subject definition, and the fields each one restates.
  *
  * **The labels name the slot, not the category** — the same trap `constants/subjectGroups.ts`
- * documents. All six categories share these sixteen keys under completely different labels, so
+ * documents. All seven categories share these sixteen keys under completely different labels, so
  * `face_head` is *Face, Hair & Head* on a character, *Cockpit & Front Face* on a vehicle and *Grip &
- * Pommel* on an item. `Features` is true of all six; `Head` would be true of one.
+ * Pommel* on an item. `Features` is true of all seven; `Head` would be true of one.
  *
  * **Ten of the sixteen fields are here.** The digest states what the subject *looks like*, so the
  * six that are not fall into three groups, each excluded for its own reason:
@@ -73,7 +73,7 @@ export interface IdentitySubjectSegment {
  *   block headed "reproduce exactly".
  *
  * Ten fields across three segments comes out at the scale §5's worked example is written at: 243 to
- * 311 characters across the six categories' shipped defaults, against 197 of prose there and 275
+ * 311 characters across the seven categories' shipped defaults, against 197 of prose there and 275
  * with its palette line. `IDENTITY_PALETTE_SIZE`'s reasoning applies unchanged — brevity is a
  * correctness property here, not a style one — so a fourth segment is a decision about what the
  * lock can afford to say, not a free addition.
