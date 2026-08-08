@@ -224,6 +224,38 @@ describe('design tokens', () => {
     expect(body).toMatch(/^\s*-webkit-backdrop-filter: blur\(/m);
   });
 
+  it("lets the quantiser turn the floating glass opaque, its backdrop being the user's image", () => {
+    // Every other view's backdrop is the app's own dark surfaces, so `glass-float` can be mostly
+    // transparent and still be read through. The quantiser shows the user's sprite sheet at
+    // whatever brightness they drew it, so it raises the alpha rather than the whole app giving up
+    // the effect.
+    //
+    // What is asserted is the *structure* — that the mechanism is wired and that this view lands
+    // above the default — and deliberately not a contrast threshold. There was an `>= 80` here
+    // when the override cleared AA over pure white; the override is now 57%, which does not, and
+    // lowering the bound to fit would have kept the shape of an accessibility guarantee while
+    // asserting a number that no longer delivers one. The measurements live on the rule itself.
+    //
+    // Both halves are asserted because either alone is silent. A `glass-float` that stopped reading
+    // the property would ignore the override and render the quantiser's guidance unreadable over a
+    // light image; an override on a view that no longer sets it would leave the value dangling with
+    // nothing to say so. Neither changes a layout or throws.
+    const declaration = stylesheet.slice(stylesheet.indexOf('@utility glass-float {'));
+    const body = declaration.slice(0, declaration.indexOf('\n}'));
+
+    // Matched across newlines: Prettier wraps this declaration over four lines once the `var()`
+    // makes it long enough, and a single-line pattern passed right up until `format` ran.
+    expect(body).toMatch(
+      /background-color:\s*color-mix\(\s*in oklab,\s*var\(--color-foundry-900\) var\(--glass-float-opacity, \d+%\),\s*transparent\s*\)/,
+    );
+
+    const quantise = /\[data-tab='quantise'\] \{([\s\S]*?)\n {2}\}/.exec(stylesheet)?.[1] ?? '';
+    const override = /--glass-float-opacity: (\d+)%;/.exec(quantise)?.[1];
+    const fallback = /var\(--glass-float-opacity, (\d+)%\)/.exec(body)?.[1];
+
+    expect(Number(override)).toBeGreaterThan(Number(fallback));
+  });
+
   // There was an alpha floor here, asserting that `glass-float` stayed opaque enough for body
   // guidance to clear 4.5:1 over the app's brightest surface. It is gone rather than lowered,
   // because the project no longer makes that promise: the floating glass is now deliberately
