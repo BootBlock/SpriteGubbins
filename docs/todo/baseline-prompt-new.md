@@ -2,7 +2,7 @@
 
 > **Status:** 📘 REFERENCE — shipped. This is the template the compiler now emits, kept for the reasoning behind each rule rather than as open work; the change that landed it is [done/prompt-template-v2-integration.md](done/prompt-template-v2-integration.md).
 >
-> Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 is half shipped — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed rather than built because describing what a sheet depicts needs an outbound vision-model call this app does not make. Each item records its outcome in place.
+> Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 shipped by a route it did not name — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed **as that item framed it**, because describing what a sheet depicts needs an outbound vision-model call this app does not make. The studio derives those lines from the subject definition instead, which needs no image at all. Each item records its outcome in place.
 >
 > §3 is revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment, and it is now **pinned by [tests/prompt-template-mirror.test.ts](../../tests/prompt-template-mirror.test.ts)**, which compares the fence against `PROMPT_TEMPLATE` character for character. It needed to be, because a banner asserting §3 is current is worth nothing while nothing checks it — and checking showed the two had **never** agreed. They diverged the moment the template was transcribed into code: blank lines placed differently around the `[IF:…]` markers, and, in §5, a `---` sitting outside a `[/IF]` where the code puts it inside, which is a rule an unrigged sheet emits twice in the document's version and once in the app's. Then the document fell further behind twice — the category system (§0's guard paragraph, the precedence sentence rewritten so the category comparison settles *before* precedence applies, and `[DEFINE:CATEGORY_GUARD]`, `[DEFINE:CATEGORY_EXCLUSIONS]` and `[DEFINE:CATEGORY_AUDIT]` in §4, §8 and §9), and the `[IF:DELIBERATES]` gating of the self-audit, which §3 described in an italic aside citing a `GOOGLE_IMAGEN` target §7 has since removed. All of it is closed against the constant, and the aside is gone: an editorial annotation cannot survive inside a block that is checked verbatim, and §7 already carries what it said. Its earlier revisions, which the mirror did carry: the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives, and a rewording of §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
 
@@ -1429,13 +1429,20 @@ underneath it.
    accumulating, so re-reading sheet two of eight cannot leave two disagreeing lists in a field that
    says *reproduce exactly*. The image is decoded in the tab and never leaves it.
 
-   > The **prose** half is **removed rather than built.** "Cyan visor across upper face" and "three
-   > amber chest lights in a vertical row" need eyes on the image, which means the outbound
-   > vision-model call this application deliberately never makes: it composes prompt *text* for the
-   > user to paste elsewhere, handles no API key, and has no server to proxy one through. That is an
-   > architectural property, not a gap, so it is deleted with the reason stated rather than left on
-   > the list implying it is merely unstarted. Writing those lines by hand from the first accepted
-   > sheet, as §5 describes, remains the workflow.
+   > The **prose** half is **removed rather than built, as this item framed it.** "Cyan visor across
+   > upper face" and "three amber chest lights in a vertical row" need eyes on the image, which means
+   > the outbound vision-model call this application deliberately never makes: it composes prompt
+   > *text* for the user to paste elsewhere, handles no API key, and has no server to proxy one
+   > through. That is an architectural property, not a gap, so it is deleted with the reason stated
+   > rather than left on the list implying it is merely unstarted.
+
+   The prose lines are nonetheless **no longer typed from scratch**, by a route this item never
+   considered: the studio already holds most of the answer. `IdentitySubjectDigest` sits beside the
+   palette capture and restates the subject definition as `Form:`, `Features:` and `Colour:`
+   segments, folded through the same labelled-segment mechanism, so what the user wrote survives and
+   pressing it again rewrites only its own lines. That is a *starting point* rather than the digest —
+   the concrete, countable detail §5 asks for still has to be read off the accepted sheet and edited
+   in by hand, which is the part only eyes on the image can supply.
 
 4. **A post-generation quantisation step for pixel-art targets.** Independent of the prompt: models
    return smooth artwork downscaled far more often than true pixel art, however the request is
