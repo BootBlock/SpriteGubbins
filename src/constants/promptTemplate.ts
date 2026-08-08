@@ -63,8 +63,9 @@ Satisfy this section before any aesthetic consideration.
    overlapping.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
-[N]. No text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders
-   or grid lines anywhere in the image.
+[N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image, and nothing
+   annotating it: no arrows, callouts or grid lines, and no frame or border around the image or
+   around a component.
 [N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
    virtual canvas and downscale, and do not upscale a smaller one.
@@ -413,8 +414,9 @@ Absent from the image entirely:
 
 - [DEFINE:CATEGORY_EXCLUSIONS]
 - All shadows: cast, contact, drop, and ambient occlusion onto the background.
-- Text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders,
-  grid lines, colour swatches and legends.
+- Text, labels, numbers, captions, watermarks, signatures and legends; and anything annotating the
+  sheet: arrows, callouts, colour swatches, grid lines, and frames or borders around the image or
+  around a component.
 - Assembled or posed complete figures.
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
   effect the inventory in section 4 does not name.

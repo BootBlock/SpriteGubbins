@@ -15,7 +15,12 @@
  * for rather than what the user selected. {@link describeDirections} builds it.
  */
 export { DIRECTION_COVERAGE, PRACTICAL_COMPONENT_CEILING } from './inventory.ts';
-export { CATEGORY_AUDIT_TEXT, CATEGORY_EXCLUSION_TEXT, CATEGORY_GUARD_TEXT } from './exclusions.ts';
+export {
+  CATEGORY_AUDIT_TEXT,
+  CATEGORY_EXCLUSION_TEXT,
+  CATEGORY_GUARD_TEXT,
+  FRAME_IS_A_COMPONENT,
+} from './exclusions.ts';
 export {
   MIN_FEATURE_SIZE,
   RENDER_STYLE_TEXT,

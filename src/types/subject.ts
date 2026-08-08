@@ -23,6 +23,7 @@ export const SUBJECT_CATEGORIES = [
   'BUILDING',
   'VEHICLE',
   'EFFECT',
+  'INTERFACE',
 ] as const;
 
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];

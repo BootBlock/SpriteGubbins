@@ -14,15 +14,15 @@ export interface SubjectFieldGroup extends SectionDefinition {
  * checked against all of them. That matters more than it looks: the same sixteen keys carry
  * completely different labels per category, so a heading written from `character.ts` is quietly
  * false in the rest. `clothing` alone is *Clothing / Armour*, *Harness / Augments*, *Mounting /
- * Framework*, *Scabbard / Holster*, *Awning & Addons*, *Armour & Cladding* and *Secondary Layer* —
- * which is why this group is **Features & fittings** (every one of them sits over the base form
- * rather than being part of it) and not "Surface & detail" (true only of a character's armour, and
- * colliding with `RenderStyleFields`' own *Surface Detail Intensity* one panel down).
+ * Framework*, *Scabbard / Holster*, *Awning & Addons*, *Armour & Cladding*, *Secondary Layer* and
+ * *Ornament & Trim* — which is why this group is **Features & fittings** (every one of them sits over
+ * the base form rather than being part of it) and not "Surface & detail" (true only of a character's
+ * armour, and colliding with `RenderStyleFields`' own *Surface Detail Intensity* one panel down).
  *
  * **EFFECT is the label that made "fitted or attached" the wrong test**, and it is worth saying which
  * way the correction went. An effect's secondary layer is the smoke, debris and sparks that trail its
  * core — layered over it and emitted by it, never bolted to it — so the wording that covered the
- * first six categories did not survive the seventh. What all seven share is the weaker, truer
+ * first six categories did not survive the seventh. What every one of them shares is the weaker, truer
  * property above: the slot holds whatever sits *over* the subject's base form. The heading did not
  * have to move for that, which is the point of checking it against every category rather than
  * against the one the group was written from.

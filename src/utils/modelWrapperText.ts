@@ -108,9 +108,23 @@ ${prompt}`;
  * apply. The version pin is what makes this checkable: when `MIDJOURNEY_VERSION` moves, the flag
  * syntax for the version it moves to is part of what wants re-checking.
  * https://docs.midjourney.com/hc/en-us/articles/32634113811853-Raw
+ *
+ * **`frame, border` comes out when the subject *is* one.** Section 0 bans a frame or border "around
+ * the image or around a component", which is annotation; `--no` takes bare concepts and cannot carry
+ * that qualifier, so on an INTERFACE sheet the flag would suppress the panel edges the inventory
+ * asks for. The caller answers from `FRAME_IS_A_COMPONENT`. This is the same judgement the doc
+ * comment above already records for `background` — a term stays out of `--no` where excluding it
+ * would take the sheet's own subject with it.
  */
-export function wrapForMidjourney(prompt: string, aspectRatio: AspectRatio): string {
-  return `${prompt}\n\n${ASPECT_FLAGS[aspectRatio]} ${MIDJOURNEY_VERSION} --raw --s 50 --no text, labels, shadow, gradient, frame, border`;
+export function wrapForMidjourney(
+  prompt: string,
+  aspectRatio: AspectRatio,
+  frameIsAComponent: boolean,
+): string {
+  const negatives = frameIsAComponent
+    ? 'text, labels, shadow, gradient'
+    : 'text, labels, shadow, gradient, frame, border';
+  return `${prompt}\n\n${ASPECT_FLAGS[aspectRatio]} ${MIDJOURNEY_VERSION} --raw --s 50 --no ${negatives}`;
 }
 
 /**

@@ -111,4 +111,11 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // surfaces, because an effect has none of those to hide.
   EFFECT:
     'an effect’s front is the direction it travels, issues or is aimed — the leading edge of a cone, the tip of a trail, the side of a burst nearest whatever it struck — and its rear is the source it came from: the muzzle, the hand, the point of impact. A radial effect that is the same in every direction has no front axis at all, and states its orientation through what trails behind it rather than through the burst itself.',
+  // **Currently unreachable, and written properly anyway.** This whole block sits behind
+  // `[IF:MULTI_DIRECTION]`, and INTERFACE supports only single-facing sheet modes — so no
+  // configuration a user can reach emits this line. The record is exhaustive over the category
+  // union, so the entry has to exist; the choice is between a correct sentence and a placeholder,
+  // and a placeholder is what would ship the day a directional mode is added here.
+  INTERFACE:
+    'a widget’s front is the face it presents to the player — the lit surface, the side the glyph sits on, the side a pointer meets — and its rear is the back plate, the mounting side an interface never shows; a cursor’s front is its point.',
 };

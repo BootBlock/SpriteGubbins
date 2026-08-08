@@ -47,6 +47,12 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // the ban exactly as strong for the six whose inventories name none.
   EFFECT:
     'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any character, creature, hand, weapon, muzzle, projectile or object the effect plays against or issues from; any damage number, health bar, cursor or other interface element; and any motion blur, speed line or lens flare drawn across a frame.',
+  // The lettering ban is this category's own, and it is the one exclusion here that repeats section 0
+  // deliberately. Every real-world member of this category is labelled, so a generator asked for a
+  // button has to be told twice that the words go on at runtime — an atlas with "CONFIRM" baked into
+  // a sprite can only ever be used for that one string, in that one language.
+  INTERFACE:
+    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any character, creature or hand reaching for the interface; any gameplay art, portrait or map inside a frame; and any lettering, numeral, caption or legend on a component.',
 };
 
 /**
@@ -79,6 +85,13 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // the specification, which is exactly what the sentence tells the reader to act on.
   EFFECT:
     'Every entry below is one frame of this one effect’s sequence — a moment in time, not a piece of a machine — apart from the additional elements the subject itself named, which are listed and counted separately at the end. An entry describing anatomy, a housing, a hatch, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  // The second sentence is this category's alone, and it is load-bearing rather than reassurance:
+  // this is the one subject whose components *are* frames and borders, and section 0 forbids drawing
+  // one around the image or around a component. Those are two different things, and saying so where
+  // the inventory is about to list a panel frame is what stops a generator resolving the apparent
+  // conflict by delivering a panel with no edge.
+  INTERFACE:
+    'Every entry below is a piece of this one interface. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The frames, borders and panel edges it does list are components — the subject of the sheet, not the annotation section 0 forbids.',
 };
 
 /**
@@ -114,4 +127,38 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // qualifiers throughout are load-bearing exactly as VEHICLE's are.
   EFFECT:
     'Every component is a frame of this one effect, or one of the additional elements the subject named — no anatomy, machine parts, tiles, terrain or scenery, and no character, hand, weapon or object for the effect to play against. No two frames are the same drawing at a different brightness, scale, rotation or mirroring.',
+  // "No floor or terrain tiles" rather than "no tiles", for the same reason VEHICLE's line qualifies
+  // every noun in it: a nine-slice sheet's components *are* tiles, so an audit reading "no tiles"
+  // would fail a sheet on the entries section 4 required.
+  INTERFACE:
+    'Every component is a piece of this one interface — no anatomy, floor or terrain tiles, scenery, or gameplay art inside a frame — and no component carries lettering, a numeral or a caption.',
+};
+
+/**
+ * Whether a frame or a border can be a *component* of this category's sheet rather than annotation
+ * drawn around one.
+ *
+ * Read in exactly one place, and it exists because that place cannot say what section 0 says.
+ * Midjourney's `--no` takes bare concepts, so the wrapper cannot express "no border **around the
+ * image or around a component**" — the term is either in the negative prompt and suppressing the
+ * subject, or out of it. For every category but one a border is only ever the decorative surround a
+ * generator adds to a reference sheet, and excluding it does real work; for INTERFACE it is the
+ * panel edge the sheet exists to draw, and `--no border` would return a kit of frames with no frames
+ * in it.
+ *
+ * A record rather than a check on the category at the call site, for the reason every per-category
+ * fact in this file is one: the next category is a compile error here until somebody answers for it,
+ * where a `category === 'INTERFACE'` would silently answer for it wrongly.
+ */
+export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = {
+  CHARACTER: false,
+  CREATURE: false,
+  OBJECT: false,
+  ITEM: false,
+  BUILDING: false,
+  VEHICLE: false,
+  // An effect is drawn as light and particles, never as an edge around something, so a border on one
+  // of its frames is the decorative surround this term exists to suppress.
+  EFFECT: false,
+  INTERFACE: true,
 };

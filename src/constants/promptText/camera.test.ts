@@ -71,7 +71,7 @@ describe('direction-set coverage', () => {
     // The defect the five-view core was built for, as a property rather than as a story. A mode whose
     // coverage is a fixed set discards the direction control entirely, so whatever that set cannot
     // reach is unreachable from *anywhere* in the app — and `CORE_DIRECTIONAL_VARIANTS` is the default
-    // for five of the seven categories and the default configuration, so its set was the whole app's
+    // for five of the eight categories and the default configuration, so its set was the whole app's
     // ceiling. On THREE_CLASSIC it drew six of eight facings and neither of the two a player looks at
     // most, with no control anywhere that could have said otherwise.
     for (const coverage of Object.values(DIRECTION_COVERAGE)) {
