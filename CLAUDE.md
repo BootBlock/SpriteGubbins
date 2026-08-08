@@ -269,15 +269,19 @@ trailer — but if you also comment, that comment does (see
 
 Every colour and motion value in the UI must come from a **design token**, never a raw
 hex / `rgb()` / `oklch()` literal or an ad-hoc Tailwind palette class (`text-cyan-400`,
-`bg-slate-900`, …). Tokens are defined in the `@theme` block of
-[src/index.css](src/index.css) and Tailwind generates the utilities from them.
+`bg-slate-900`, …). Tokens are defined in the two `@theme` blocks of
+[src/index.css](src/index.css) — one `static` for the hue wheel, one for everything else — and
+Tailwind generates the utilities from them. **That file is the only place a colour value is
+written down**, and it writes them in `oklch()` because the palette's structure ("one lightness,
+one chroma budget, ten hues") is only expressible in a perceptual space; the equivalent hexes are
+ten unrelated numbers with no way to place an eleventh.
 
-This is the spec's own "**NO Hardcoded Magic Values**" guardrail, made concrete: a `#060911`
+This is the spec's own "**NO Hardcoded Magic Values**" guardrail, made concrete: a `#0a0c12`
 or a `bg-slate-900` scattered through a component is exactly the magic value the spec bans.
 
 | Need | Use | Not |
 | --- | --- | --- |
-| The page ground | `bg-foundry-900` | `bg-slate-950`, `#060911` |
+| The page ground | `bg-foundry-900` | `bg-slate-950`, `#0a0c12` |
 | An inset or well *below* the page (prompt box, code panel) | `bg-foundry-950` | `bg-slate-950` |
 | A panel resting on the page | `bg-foundry-800` | `bg-slate-900` |
 | A **glass** panel — header, studio panel, card, modal shell | `glass-panel` | `bg-foundry-800/80` + a hand-rolled `backdrop-blur` |
@@ -286,6 +290,9 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A border, or a hover/pressed state | `border-foundry-600` / `bg-foundry-600` | `border-slate-700` |
 | **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1` |
 | **Live** state — auto-sync, generating, updating as you type | `neon` / `neon-deep` | `text-cyan-400`, `#22d3ee` |
+| Anything belonging to the **active view** — panel edge, section heading, step chip, hover bloom | `bg-tab` / `text-tab` / `border-tab` / `ring-tab` | `accent`, which pins it to the primary in every view |
+| The **whole hue wheel** — the wordmark, the rule under the chrome | `bg-spectrum` / `heading-spectrum` (+ `animate-spectrum-pan`) | a hand-written ten-stop `linear-gradient()` |
+| One **member of an open-ended list**, coloured by position | `spectrumStopAt(index)` assigned to `--color-tab` | a runtime `` `text-spectrum-${name}` ``, which the scanner never sees and which emits nothing |
 | "Needs attention" chips and badges | `gold` | `text-amber-400` |
 | Success / valid / power-of-two clean | `emerald` | `text-emerald-400` |
 | Error / invalid / destructive | `rose` | `text-red-500` |
@@ -298,7 +305,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | An **overlay opening** — the panel, and the ground dimming behind it | `animate-modal-in` + `backdrop:animate-backdrop-in` | one fade on the `<dialog>`, which takes the backdrop with it |
 | A glass surface materialising | `animate-tooltip-in` | a bespoke fade, or a keyframe on `filter` that flattens a nested `glass-*` surface |
 | A **timed notification's countdown** | `animate-toast-timer` + the duration from `TOAST_DURATION_MS` | a `3s` written into the token, free to drift from the timer that dismisses it |
-| A **display heading**, and the sheen travelling it | `heading-gradient` (+ `animate-gradient-pan`) | `bg-gradient-to-r … bg-clip-text text-transparent`, restated per heading |
+| A **section heading**, and the sheen travelling it | `heading-gradient` (+ `animate-gradient-pan`) | `bg-gradient-to-r … bg-clip-text text-transparent`, restated per heading |
 | The ambient wash breathing, and the live-compile beam | `animate-aurora` / `animate-scan-beam` | one-off durations at the call site |
 | Signature easing | `ease-emphasized` | `cubic-bezier(...)` inline |
 | The ambient dot backdrop | `bg-grid-pattern` | a hand-rolled repeating gradient |
@@ -309,7 +316,35 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 selection, the background glow. Cyan marks something *live*: auto-syncing, generating,
 recomputing as the user types. The `pulse-glow` animation deliberately blooms from one to the
 other because that transition is the signal. Using cyan for an ordinary button, or indigo for a
-live badge, quietly destroys that distinction.
+live badge, quietly destroys that distinction. It is also why **no view owns the cyan stop** —
+`--color-tab` resting there would make every panel in that view look like it was recomputing, and
+a unit test asserts it never does.
+
+**The palette is one OKLCH hue wheel: ten stops, 36° apart, all at L 0.76.** Every colour in the
+app is a position on it. That is a structural claim and it has to stay true, so three things follow:
+
+- **Identity follows the view; interaction and status do not.** `--color-tab` is the active view's
+  stop, and the surfaces that *belong* to a view take it — panel edges, section headings, the step
+  chips, hover blooms, the dot grid, the ambient wash, the switcher's pill. Everything that means
+  the same thing wherever it appears keeps its fixed role colour: form focus, primary buttons, the
+  focus ring, the two floating glass surfaces, and `gold`/`emerald`/`rose`. Moving one across that
+  line is how a page ends up with no stable vocabulary at all.
+- **Chroma is per-hue, and it is not a free parameter.** sRGB is much narrower in some hues than
+  others, so one chroma across the wheel clamps the narrow ones onto the gamut surface and returns
+  near duplicates. Each stop is 90% of the largest chroma its hue sustains at L 0.76. Adding or
+  moving a stop means re-running the gamut search, not nudging a number until it looks right.
+- **Lightness is what makes the stops interchangeable**, which is why a test pins all ten to 0.76.
+  It is also why the selected tab's label is `text-foundry-950` and not `text-ink`: every stop is a
+  *light* colour, so ink on one is two light tones a shade apart (~1.8:1), where near-black measures
+  8.7:1 at the wheel's worst stop. Any new surface painted `bg-tab` needs dark text for the same
+  reason.
+
+**A view's colour is assigned on the element the `var()`s resolve against** — `data-tab` on the
+shell in [src/App.tsx](src/App.tsx), and nowhere else. Custom properties are substituted at
+computed-value time, so a `--color-tab` declared on `:root` in terms of another variable resolves
+*there* and inherits down already resolved; a descendant re-declaring the input would change
+nothing. That is also the mechanism a preset card uses to claim its own stop: it sets `--color-tab`
+inline, and every `*-tab` utility inside it follows without one of them being told.
 
 **Rules of thumb**
 

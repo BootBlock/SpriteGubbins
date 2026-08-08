@@ -58,9 +58,16 @@ export function TabSwitcher() {
       */}
       {activeIndex >= 0 && (
         <span aria-hidden="true" className="pointer-events-none absolute inset-y-1 right-1 left-1">
+          {/*
+            The pill is painted in the view it is selecting, so the selection does two things at
+            once as it travels: it moves, and it turns to the colour the whole page is turning to.
+            `--color-tab` is mid-transition for the same 600ms the pill is sliding, which is why
+            these are not separately timed — the CSS transition and this one are describing the
+            same event.
+          */}
           <span
             style={{ width: SLOT_WIDTH, transform: `translateX(${activeIndex * 100}%)` }}
-            className="ease-emphasized block h-full rounded-lg bg-gradient-to-b from-accent to-accent-strong shadow-lg ring-1 ring-accent-soft/50 transition-transform duration-500"
+            className="ease-emphasized block h-full rounded-lg bg-tab shadow-lg ring-1 ring-tab/60 transition-transform duration-500"
           />
         </span>
       )}
@@ -77,8 +84,13 @@ export function TabSwitcher() {
             }}
             // `relative` puts the label above the pill: the pill is positioned and these are not,
             // so without it every label would be painted underneath the thing selecting it.
+            //
+            // The selected label is near-black, not ink. Every stop on the wheel is a light colour
+            // — they are one lightness precisely so they can be compared — so ink on top of one
+            // would be two light tones a shade apart (~1.8:1). Inverting measures 8.7:1 at the
+            // wheel's worst stop and 10.1:1 at its best, and the pill's vividness is what pays.
             className={`group relative flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold transition-colors duration-200 sm:px-4 ${
-              isActive ? 'text-ink' : 'text-ink-faint hover:bg-foundry-700/60 hover:text-ink'
+              isActive ? 'text-foundry-950' : 'text-ink-faint hover:bg-foundry-700/60 hover:text-ink'
             }`}
           >
             <span

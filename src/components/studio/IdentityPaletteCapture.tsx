@@ -58,7 +58,7 @@ export function IdentityPaletteCapture() {
     <section
       {...dropHandlers}
       className={`rounded-xl border border-dashed p-3 transition-colors ${
-        isDraggedOver ? 'border-accent bg-accent/10' : 'border-foundry-600 bg-foundry-800/60'
+        isDraggedOver ? 'border-tab bg-tab/10' : 'border-foundry-600 bg-foundry-800/60'
       }`}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">

@@ -84,10 +84,13 @@ export function PresetsTab() {
       {/* The cards each carry their own entrance; this is what makes them arrive as a sweep across
           the row rather than all at once. */}
       <ul className="stagger-children grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {[...PRESETS, ...customPresets].map((preset) => (
+        {[...PRESETS, ...customPresets].map((preset, index) => (
           <PresetCard
             key={preset.id}
             preset={preset}
+            // Position in the combined list, so a saved preset simply continues round the wheel
+            // from where the built-ins left off rather than restarting the sequence.
+            index={index}
             onLoad={loadPreset}
             onRename={(target, name) => renameCustomPreset(target.id, name)}
             onDelete={(target) => {

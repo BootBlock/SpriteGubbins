@@ -25,61 +25,122 @@
 @source not "../**/*.md";
 
 /*
- * Sprite Gubbins design system (spec Phase 1, Task 1.4).
+ * Sprite Gubbins design system.
  *
- * A dark-only "foundry" aesthetic: near-black indigo surfaces lit by an indigo primary and a
- * cyan live-state accent, with a monospace face for anything the user will paste into a model.
- * The app has no light mode — it is a tool for looking at sprite work, and a bright field
- * around a preview misreads the colours the user is judging — so `color-scheme` is pinned to
- * `dark` and there is no theme-switching variant.
+ * A dark ground carrying a full spectrum. The surfaces are a near-neutral indigo-black so that
+ * colour, when it appears, is the loudest thing on the page; the colour itself is allocated from
+ * one OKLCH hue wheel rather than picked per component. The app has no light mode — it is a tool
+ * for looking at sprite work, and a bright field around a preview misreads the colours the user is
+ * judging — so `color-scheme` is pinned to `dark` and there is no theme-switching variant.
  *
- * Every value here is taken from the single-file application being migrated
- * (docs/todo/sprite-gubbins.html), which expressed most of its palette as stock Tailwind
- * classes rather than named colours. Naming them here is the point: components reference the
- * generated utilities (`bg-foundry-800`, `text-accent`, `animate-fade-in`) and never a raw hex,
- * `rgb()` or an ad-hoc palette class — see CLAUDE.md, "Design tokens are mandatory".
+ * **Everything is defined in `oklch()`, on purpose.** The palette's whole structure is "same
+ * lightness, same chroma, different hue", and that sentence is only true in a perceptual space:
+ * the equivalent sRGB hexes look like ten unrelated numbers, and the next person to add a stop has
+ * no way to place it. Written as OKLCH the relationship *is* the source, and a new stop is an
+ * angle.
+ *
+ * Components reference the generated utilities (`bg-foundry-800`, `text-accent`, `text-tab`,
+ * `animate-fade-in`) and never a raw hex, `rgb()` or an ad-hoc palette class — see CLAUDE.md,
+ * "Design tokens are mandatory". This file is the one place a colour value is written down.
  */
+
+/*
+ * The wheel: ten stops on a 36° pitch, every one at L 0.76.
+ *
+ * `static` rather than a plain `@theme`, and that is load-bearing. Tailwind emits only the theme
+ * variables some generated utility actually references, and these are reached *indirectly* — the
+ * per-view rule below assigns them to `--color-tab` and the two chord slots, which are `var()`s in
+ * a declaration value, not class names the scanner can see. Left to tree-shake, the stops would
+ * vanish from the output, `var(--color-spectrum-…)` would resolve to nothing, and `--color-tab` —
+ * a registered property, see below — would fall back to its `transparent` guarantee. Every surface
+ * painted with the view's colour would silently disappear.
+ *
+ * **Chroma is per-hue because it has to be.** sRGB is far narrower in some hues than others: at
+ * this lightness the wheel affords 0.21 of chroma at magenta and only 0.12 at indigo. Pinning one
+ * value across all ten would clamp the narrow hues onto the gamut surface and hand back near
+ * duplicates — the exact failure the reference design hit and documented. Each stop is therefore
+ * 90% of the largest chroma that hue can actually sustain at L 0.76, so nothing is clamped and the
+ * full hue separation survives. Re-derive with the gamut search described in the commit that
+ * introduced this, not by eye.
+ *
+ * Every stop clears 7.7:1 against `foundry-800` and 8.3:1 against `foundry-900` — above WCAG AAA
+ * for body text — which is what lets the spectrum be used for *text* and not only for decoration.
+ */
+@theme static {
+  --color-spectrum-rose: oklch(0.76 0.132 12);
+  --color-spectrum-ember: oklch(0.76 0.14 48);
+  --color-spectrum-gold: oklch(0.76 0.14 84);
+  --color-spectrum-lime: oklch(0.76 0.162 120);
+  --color-spectrum-jade: oklch(0.76 0.166 156);
+  --color-spectrum-cyan: oklch(0.76 0.117 192);
+  --color-spectrum-azure: oklch(0.76 0.133 228);
+  --color-spectrum-indigo: oklch(0.76 0.11 264);
+  --color-spectrum-violet: oklch(0.76 0.131 300);
+  --color-spectrum-magenta: oklch(0.76 0.188 336);
+}
+
 @theme {
   /*
    * The foundry surface ramp, darkest first. 900 is the page itself; 950 is an inset or well
    * *below* the page (a prompt box, a code panel); 800 is a panel resting on the page; 700 is
    * a control or row inside that panel; 600 is a border or a hover/pressed state.
    *
-   * 900 is the original app's own `foundry-900`; the rest are the slate steps it actually
-   * painted with, named so a component never has to reach for `bg-slate-800` again.
+   * Near-neutral by design — 0.013 to 0.031 of chroma, a hint of indigo and no more. The ramp this
+   * replaces was a saturated navy, which put a colour under every panel and left the accents
+   * competing with their own background instead of sitting on it. Lightness climbs in even steps of
+   * about 0.043 so the five rungs read as one ramp rather than five separate greys.
    */
-  --color-foundry-950: #020617;
-  --color-foundry-900: #060911;
-  --color-foundry-800: #0f172a;
-  --color-foundry-700: #1e293b;
-  --color-foundry-600: #334155;
+  --color-foundry-950: oklch(0.115 0.015 270);
+  --color-foundry-900: oklch(0.155 0.013 270);
+  --color-foundry-800: oklch(0.198 0.021 271);
+  --color-foundry-700: oklch(0.242 0.026 272);
+  --color-foundry-600: oklch(0.286 0.031 273);
 
   /*
-   * Accents.
+   * Roles: the meanings that are *not* free to move with the view.
    *
-   * `accent` (indigo) is the primary: actions, focus, selection, the ambient glow. `neon`
-   * (cyan) is the *live* accent — auto-sync, active generation, a value updating as you type —
-   * and the two are deliberately not interchangeable; the original app pulses from one to the
-   * other to signal exactly that transition.
+   * Each sits on the same wheel as the stops above — `gold` on the amber-gold arc, `emerald` on
+   * jade, `rose` on the red end, `accent` on indigo, `neon` on cyan — but each carries its own
+   * lightness, because a role has a job the stops do not. `accent-strong` is dark enough to be a
+   * *ground* with ink on top of it; the stops are all one lightness so they can be compared.
    *
-   * The remaining three are semantic and must not be borrowed for decoration: gold means
-   * "attention", emerald means "valid / power-of-two clean", rose means "problem".
+   * `accent` (indigo) is the primary: actions, focus, selection. `neon` (cyan) is the *live*
+   * accent — auto-sync, active generation, a value updating as you type — and the two are
+   * deliberately not interchangeable; `pulse-glow` blooms from one to the other to signal exactly
+   * that transition. The remaining three are semantic and must not be borrowed for decoration:
+   * gold means "attention", emerald means "valid / power-of-two clean", rose means "problem".
+   *
+   * Cyan is also why no view owns the cyan stop: `--color-tab` resting on the live colour would
+   * make every panel in that view look like it was recomputing. The nearest view hue is 26° off it.
    */
-  --color-accent: #6366f1;
-  --color-accent-strong: #4f46e5;
-  --color-accent-soft: #818cf8;
+  --color-accent: oklch(0.72 0.133 274);
+  --color-accent-strong: oklch(0.62 0.188 274);
+  --color-accent-soft: oklch(0.82 0.081 274);
 
-  --color-neon: #22d3ee;
-  --color-neon-deep: #06b6d4;
+  --color-neon: oklch(0.82 0.128 202);
+  --color-neon-deep: oklch(0.7 0.112 202);
 
-  --color-gold: #fbbf24;
-  --color-emerald: #34d399;
-  --color-rose: #f43f5e;
+  --color-gold: oklch(0.8 0.15 84);
+  --color-emerald: oklch(0.78 0.17 156);
+  --color-rose: oklch(0.68 0.2 12);
 
-  /* Text tones, layered on the foundry ramp. */
-  --color-ink: #f1f5f9;
-  --color-ink-muted: #cbd5e1;
-  --color-ink-faint: #94a3b8;
+  /*
+   * The active view's colour.
+   *
+   * Declared here so Tailwind generates `bg-tab`, `text-tab`, `border-tab` and `ring-tab`; the real
+   * value is assigned per view in the base layer below. Studio's stop is the default because studio
+   * is the view the app opens on.
+   */
+  --color-tab: var(--color-spectrum-violet);
+
+  /*
+   * Text tones, layered on the foundry ramp. Lightness is chosen against the *lightest* surface
+   * text ever sits on (`foundry-600`), not the page, so the faintest tone still clears WCAG AA
+   * there: 4.6:1 on a border-toned row, 6.3:1 on the page itself.
+   */
+  --color-ink: oklch(0.927 0.012 281);
+  --color-ink-muted: oklch(0.75 0.028 281);
+  --color-ink-faint: oklch(0.66 0.033 280);
 
   /*
    * Fonts. Inter carries the interface; JetBrains Mono carries every piece of generated
@@ -95,16 +156,14 @@
     'JetBrains Mono', 'Fira Code', ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
 
   /*
-   * Motion, at the original app's timings. Named for what each is for, not how it looks:
-   * `fade-in` mounts a panel, `pulse-glow` marks a live/auto-syncing element, `float-orb`
-   * drifts the two background glows (the second runs slower and in reverse so they never
-   * synchronise), `shimmer` fills a loading placeholder. The reduced-motion block at the
-   * bottom of this file neutralises all of them in one place.
+   * Motion. Named for what each is for, not how it looks: `fade-in` mounts a panel, `pulse-glow`
+   * marks a live/auto-syncing element, `float-orb` drifts the two background glows (the second runs
+   * slower and in reverse so they never synchronise), `shimmer` fills a loading placeholder. The
+   * reduced-motion block at the bottom of this file neutralises all of them in one place.
    *
-   * The last three are the dynamic layer: `tooltip-in` materialises the glass guidance card,
-   * `aurora` breathes the ambient wash behind the page, and `scan-beam` runs a cyan sweep along
-   * the prompt panel's top edge — cyan because that edge is claiming the compiler is live, which
-   * is the one thing cyan is reserved for.
+   * `tooltip-in` materialises the glass guidance card, `aurora` breathes the ambient wash behind the
+   * page, and `scan-beam` runs a cyan sweep along the prompt panel's top edge — cyan because that
+   * edge is claiming the compiler is live, which is the one thing cyan is reserved for.
    */
   --animate-fade-in: fade-in 300ms var(--ease-emphasized) forwards;
   --animate-pulse-glow: pulse-glow 4s ease-in-out infinite;
@@ -131,6 +190,16 @@
 
   /* The slow sheen travelling a `heading-gradient`, so a display heading is lit rather than flat. */
   --animate-gradient-pan: gradient-pan 14s ease-in-out infinite;
+
+  /*
+   * The wheel itself, turning, under whatever `bg-spectrum` or `heading-spectrum` paints.
+   *
+   * Slower than `gradient-pan` and linear rather than eased, because this one never reverses: those
+   * gradients repeat their first stop at both ends, so travelling exactly one background-width and
+   * starting over is seamless, and an eased curve would make a rotation that has no beginning
+   * appear to pause at each turn.
+   */
+  --animate-spectrum-pan: spectrum-pan 32s linear infinite;
 
   /*
    * The toast's own countdown, draining left to right.
@@ -299,6 +368,20 @@
     }
   }
 
+  /*
+   * One full turn of the wheel. The spectrum gradients are 200% wide and repeat their first stop at
+   * 100%, so travelling exactly one background-width lands on the colour it started from — which is
+   * why this runs to `100% 50%` and restarts rather than easing back the way `gradient-pan` does.
+   */
+  @keyframes spectrum-pan {
+    from {
+      background-position: 0% 50%;
+    }
+    to {
+      background-position: 100% 50%;
+    }
+  }
+
   /* Drains to nothing against `origin-left`; `transform` here has no utility to fight. */
   @keyframes toast-timer {
     from {
@@ -310,9 +393,100 @@
   }
 }
 
+/*
+ * The view's colour and its two companions have to be *registered* to be animatable.
+ *
+ * An ordinary custom property is an untyped token stream, and the engine cannot interpolate one —
+ * a plain `transition` on it would snap at the halfway point instead of travelling. Registering
+ * them as `<color>` is what lets a view change sweep round the wheel rather than cut, and it has to
+ * be all three or the dominant pool would travel while the chord under it jumped.
+ *
+ * `initial-value` is `transparent` rather than a stop, and deliberately so. A registered property's
+ * initial value has to be computationally independent, so it cannot be `var(--color-spectrum-…)` —
+ * writing a hex here instead would be a second, silently drifting copy of a colour this file
+ * already defines. Nothing renders with it: `@theme` sets `--color-tab` on `:root` and the rules
+ * below re-set all three per view, so the initial value only surfaces if a stop failed to resolve,
+ * and invisible is the right way for that to fail — loudly, rather than in a plausible wrong hue.
+ */
+@property --color-tab {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --tab-chord-a {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+@property --tab-chord-b {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
 @layer base {
   :root {
     color-scheme: dark;
+  }
+
+  /*
+   * Each view owns a stop on the wheel, and the whole page follows it.
+   *
+   * This is the reference design's own allocation idea — a family owns a contiguous arc, and the
+   * families sit far enough apart to read as separate — applied to the four things this app is.
+   * Panels, headings, the switcher's pill, the dot grid and the ambient wash all draw from
+   * `--color-tab`, so moving between views re-lights the page rather than swapping one highlight.
+   *
+   * The four are ≥72° apart, which is what keeps them nameable rather than four similar blues, and
+   * none of them is the cyan stop — see the note on `neon` above.
+   *
+   * Each view also names two companions, three and seven stops along, so `bg-aurora` can wash the
+   * page in an even triad rather than one hue smeared across it. They are written out per view
+   * rather than computed with `oklch(from …)`: relative colour syntax would express the triad in
+   * one line, but an engine that cannot parse it drops the whole `background-image` and takes the
+   * wash with it, and these are chosen values anyway — the chord avoids doubling a neighbouring
+   * view's colour, which arithmetic would not know to do.
+   *
+   * **All three are assigned on the same element the `var()`s resolve against.** Custom properties
+   * are substituted at computed-value time, so a `--color-tab` declared on `:root` in terms of some
+   * other variable would resolve *there*, against `:root`'s values, and inherit down already
+   * resolved — a descendant re-declaring the input would change nothing. Keeping the assignment and
+   * the selector together is what makes the cascade do the work.
+   *
+   * The transition is on the attribute selector rather than on `*`: three properties animating on
+   * one element, inherited by the rest, instead of every element in the document running its own.
+   */
+  [data-tab] {
+    transition:
+      --color-tab 600ms var(--ease-emphasized),
+      --tab-chord-a 600ms var(--ease-emphasized),
+      --tab-chord-b 600ms var(--ease-emphasized);
+  }
+
+  [data-tab='studio'] {
+    --color-tab: var(--color-spectrum-violet);
+    --tab-chord-a: var(--color-spectrum-ember);
+    --tab-chord-b: var(--color-spectrum-cyan);
+  }
+
+  [data-tab='quantise'] {
+    --color-tab: var(--color-spectrum-jade);
+    --tab-chord-a: var(--color-spectrum-indigo);
+    --tab-chord-b: var(--color-spectrum-ember);
+  }
+
+  [data-tab='presets'] {
+    --color-tab: var(--color-spectrum-ember);
+    --tab-chord-a: var(--color-spectrum-jade);
+    --tab-chord-b: var(--color-spectrum-violet);
+  }
+
+  [data-tab='spec'] {
+    --color-tab: var(--color-spectrum-azure);
+    --tab-chord-a: var(--color-spectrum-magenta);
+    --tab-chord-b: var(--color-spectrum-lime);
   }
 
   body {
@@ -332,6 +506,10 @@
    * One focus ring for the whole app, so no component has to remember to draw its own.
    * `:focus-visible` (not `:focus`) keeps it off mouse clicks while guaranteeing every
    * keyboard user can always see where they are.
+   *
+   * Deliberately `accent-soft` and not `--color-tab`: the ring is the one piece of feedback that
+   * must never be mistaken for decoration, and pinning it to the primary keeps it identical in
+   * every view rather than turning into whatever hue the page happens to be wearing.
    */
   :focus-visible {
     outline: 2px solid var(--color-accent-soft);
@@ -355,7 +533,7 @@
 
   ::-webkit-scrollbar-thumb {
     background: var(--color-foundry-700);
-    border: 1px solid color-mix(in oklab, var(--color-accent) 25%, transparent);
+    border: 1px solid color-mix(in oklab, var(--color-tab) 30%, transparent);
     border-radius: 4px;
   }
 
@@ -370,12 +548,13 @@
 
 @utility bg-grid-pattern {
   /*
-   * The ambient backdrop: a field of faint indigo dots on a 28px pitch, so the page reads as
-   * technical graph paper rather than flat black. Deliberately a dot grid rather than crossed
-   * rules — it stays quiet behind dense forms.
+   * The ambient backdrop: a field of faint dots on a 28px pitch, so the page reads as technical
+   * graph paper rather than flat black. Deliberately a dot grid rather than crossed rules — it
+   * stays quiet behind dense forms. The dots take the view's own colour, which is the quietest
+   * place the spectrum appears and the one that covers the most area.
    */
   background-image: radial-gradient(
-    color-mix(in oklab, var(--color-accent) 15%, transparent) 1px,
+    color-mix(in oklab, var(--color-tab) 16%, transparent) 1px,
     transparent 1px
   );
   background-size: 28px 28px;
@@ -383,33 +562,68 @@
 
 @utility bg-aurora {
   /*
-   * The ambient wash the two drifting orbs sit inside: three wide, low-opacity pools of the
-   * palette's own accents, positioned rather than tiled. Indigo dominates and cyan is a thin
-   * cool edge — the same hierarchy the accents carry everywhere else, at a fraction of the
-   * strength, so it reads as depth behind the page rather than as a coloured background.
+   * The ambient wash the two drifting orbs sit inside: four wide, low-opacity pools positioned
+   * rather than tiled.
+   *
+   * The dominant pool is the active view's own colour and the next two are its chord, so the wash
+   * is a triad of the spectrum rather than one hue smeared across the page, and it re-voices itself
+   * when the view changes. The fourth is a cool indigo floor at half their strength, which keeps
+   * the middle of the page from going muddy when the chord is warm.
    */
   background-image:
     radial-gradient(
       60% 50% at 12% -5%,
-      color-mix(in oklab, var(--color-accent) 26%, transparent),
+      color-mix(in oklab, var(--color-tab) 30%, transparent),
       transparent 70%
     ),
     radial-gradient(
       50% 45% at 88% 8%,
-      color-mix(in oklab, var(--color-neon-deep) 14%, transparent),
+      color-mix(in oklab, var(--tab-chord-a) 20%, transparent),
       transparent 70%
     ),
     radial-gradient(
       55% 45% at 50% 108%,
-      color-mix(in oklab, var(--color-accent-soft) 16%, transparent),
+      color-mix(in oklab, var(--tab-chord-b) 22%, transparent),
       transparent 70%
+    ),
+    radial-gradient(
+      70% 60% at 50% 50%,
+      color-mix(in oklab, var(--color-accent) 10%, transparent),
+      transparent 75%
     );
+}
+
+@utility bg-spectrum {
+  /*
+   * The whole wheel, left to right, for the surfaces that are *about* the palette rather than
+   * coloured by it — the hairlines that separate the chrome from the page, and the rule under a
+   * section that introduces the spectrum itself.
+   *
+   * Eleven stops for ten colours — the first is repeated at the end — and `200%` wide, so
+   * `animate-spectrum-pan` can travel exactly one background-width and land where it started. A
+   * ten-stop gradient would reverse direction at the seam, which reads as the wheel bouncing.
+   */
+  background-image: linear-gradient(
+    90deg,
+    var(--color-spectrum-rose) 0%,
+    var(--color-spectrum-ember) 10%,
+    var(--color-spectrum-gold) 20%,
+    var(--color-spectrum-lime) 30%,
+    var(--color-spectrum-jade) 40%,
+    var(--color-spectrum-cyan) 50%,
+    var(--color-spectrum-azure) 60%,
+    var(--color-spectrum-indigo) 70%,
+    var(--color-spectrum-violet) 80%,
+    var(--color-spectrum-magenta) 90%,
+    var(--color-spectrum-rose) 100%
+  );
+  background-size: 200% 100%;
 }
 
 @utility glass-panel {
   /*
    * The shared glass recipe: a translucent foundry surface that blurs and slightly saturates
-   * whatever passes behind it, lit by a hairline of light along its top edge.
+   * whatever passes behind it, lit by a hairline of the view's colour along its top edge.
    *
    * One definition rather than `bg-foundry-800/80 backdrop-blur-lg` repeated at a dozen call
    * sites, because the three properties have to move together — raise the opacity and the blur
@@ -423,7 +637,7 @@
   background-color: color-mix(in oklab, var(--color-foundry-800) 72%, transparent);
   background-image: linear-gradient(
     to bottom,
-    color-mix(in oklab, white 6%, transparent) 0%,
+    color-mix(in oklab, var(--color-tab) 14%, transparent) 0%,
     transparent 40%
   );
   -webkit-backdrop-filter: blur(18px) saturate(150%);
@@ -434,8 +648,12 @@
   /*
    * The heavier glass, for the two surfaces that float *above* a panel rather than resting on the
    * page: the tooltip's guidance card and the combo box's suggestion list. Both sit over dense
-   * form controls, so this blurs harder than `glass-panel` and carries its own indigo bloom to
-   * lift it off the panel beneath.
+   * form controls, so this blurs harder than `glass-panel` and carries its own bloom to lift it off
+   * the panel beneath.
+   *
+   * The bloom is `accent`, not `--color-tab`. These two are the app's only *floating* surfaces and
+   * they read as one component wherever they open — including inside a modal, which belongs to no
+   * view — so they keep the primary rather than inheriting whatever the page behind them wears.
    *
    * The outline is the first `box-shadow` ring rather than a `border` property, so a floating
    * surface can be inset-lit and outlined without a second element — which also means nothing here
@@ -458,13 +676,17 @@
 
 @utility heading-gradient {
   /*
-   * The display-heading treatment: ink lit by two passes of the accent, clipped to the glyphs.
+   * The section-heading treatment: ink lit by two passes of the active view's colour, clipped to
+   * the glyphs.
    *
    * One definition rather than `bg-gradient-to-r from-ink to-accent-soft bg-clip-text
    * text-transparent` restated at every heading, which leaves each of them free to pick a slightly
    * different pair of stops. The gradient is deliberately **wider than the box** so
    * `animate-gradient-pan` has somewhere to travel; without that the utility is still a perfectly
    * good static heading, which is how a heading that doesn't animate uses it.
+   *
+   * This one takes `--color-tab` and `heading-spectrum` below takes the whole wheel — the split is
+   * that a section heading belongs to the view it is in, and the wordmark belongs to the app.
    *
    * `-webkit-background-clip` is not redundant: Safari still requires the prefixed spelling, and
    * without it the heading is transparent text over an unclipped gradient — invisible, not merely
@@ -473,11 +695,27 @@
   background-image: linear-gradient(
     100deg,
     var(--color-ink) 0%,
-    var(--color-accent-soft) 30%,
+    var(--color-tab) 30%,
     var(--color-ink) 55%,
-    var(--color-accent-soft) 100%
+    var(--color-tab) 100%
   );
   background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility heading-spectrum {
+  /*
+   * The wordmark: the entire wheel poured through the glyphs, so the one piece of type that names
+   * the app carries the palette that defines it. Pair it with `animate-spectrum-pan` to turn the
+   * wheel through the letters.
+   *
+   * Same clipping mechanics — and the same Safari prefix requirement — as `heading-gradient`; only
+   * the fill differs, so the wheel comes from `bg-spectrum` via `@apply` rather than being written
+   * out a second time. One gradient, one place to add an eleventh stop.
+   */
+  @apply bg-spectrum;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -524,6 +762,10 @@
  * be the one thing in the app to escape this block. `animation-delay` is reset for the same reason
  * — `stagger-children` sets one, and a delay left standing in front of a 0.01ms animation is a
  * pause with nothing on the end of it.
+ *
+ * `transition-duration` covers the view-colour sweep as well: the three registered properties are
+ * transitioned on `[data-tab]`, which `*` does match, so the page re-lights instantly rather than
+ * travelling round the wheel.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
