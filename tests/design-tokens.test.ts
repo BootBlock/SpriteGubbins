@@ -227,9 +227,14 @@ describe('design tokens', () => {
   it("lets the quantiser turn the floating glass opaque, its backdrop being the user's image", () => {
     // Every other view's backdrop is the app's own dark surfaces, so `glass-float` can be mostly
     // transparent and still be read through. The quantiser shows the user's sprite sheet at
-    // whatever brightness they drew it: measured in Edge, guidance over a white sheet is 1.19:1 at
-    // the default and 5.09:1 at 85%, so this view raises the alpha rather than the whole app
-    // giving up the effect.
+    // whatever brightness they drew it, so it raises the alpha rather than the whole app giving up
+    // the effect.
+    //
+    // What is asserted is the *structure* — that the mechanism is wired and that this view lands
+    // above the default — and deliberately not a contrast threshold. There was an `>= 80` here
+    // when the override cleared AA over pure white; the override is now 57%, which does not, and
+    // lowering the bound to fit would have kept the shape of an accessibility guarantee while
+    // asserting a number that no longer delivers one. The measurements live on the rule itself.
     //
     // Both halves are asserted because either alone is silent. A `glass-float` that stopped reading
     // the property would ignore the override and render the quantiser's guidance unreadable over a
@@ -248,7 +253,6 @@ describe('design tokens', () => {
     const override = /--glass-float-opacity: (\d+)%;/.exec(quantise)?.[1];
     const fallback = /var\(--glass-float-opacity, (\d+)%\)/.exec(body)?.[1];
 
-    expect(Number(override)).toBeGreaterThanOrEqual(80);
     expect(Number(override)).toBeGreaterThan(Number(fallback));
   });
 

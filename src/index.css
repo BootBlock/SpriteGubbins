@@ -623,14 +623,20 @@
      * paragraph of guidance over a white sheet measures **1.19:1**. That is not degraded, it is
      * gone: below even the 3:1 floor for large text.
      *
-     * 85% is the lowest step that clears the 4.5:1 AA body threshold against the worst case the
-     * app can actually produce — 5.09:1 over pure white, 5.72:1 over a saturated wheel stop.
-     * Glass that cannot be read through is not a style, so this view spends the effect and keeps
-     * the words. It is scoped by *view* rather than per-control because the alpha inherits: a card
-     * lifted into the top layer stays a DOM descendant of this element, so `--glass-float-opacity`
-     * still reaches it however far `showPopover()` moves it on screen.
+     * 57% lifts it back out of that, but only partly, and the gap is where the card lands. Driven
+     * with a white sheet loaded, the two cards that open over the control column measure 7.06:1
+     * and 7.15:1 — the panel is behind most of their area, so the sheet barely reaches them. The
+     * keying card opens across the preview itself and measures **2.03:1**, and a card sitting
+     * wholly on a white sheet measures 1.94:1 against 5.02:1 at 85%. So this view is legible in
+     * two of its three tooltips and not in the third, which is a chosen position rather than a
+     * measurement nobody took.
+     *
+     * It is scoped by *view* rather than per-control because the alpha inherits: a card lifted
+     * into the top layer stays a DOM descendant of this element, so `--glass-float-opacity` still
+     * reaches it however far `showPopover()` moves it on screen. Per-control is what a future
+     * change would reach for to fix the keying card alone.
      */
-    --glass-float-opacity: 85%;
+    --glass-float-opacity: 57%;
   }
 
   [data-tab='presets'] {
