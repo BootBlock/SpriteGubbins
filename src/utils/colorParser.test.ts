@@ -59,9 +59,15 @@ describe('parseColorFromText', () => {
   it('does not match a colour name buried inside another word', () => {
     // Each of these previously produced a confident, wrong swatch: 'tan' inside Titanium and
     // Tank, 'red' inside Weathered and Armoured.
-    expect(parseColorFromText('Titanium Grey & Black')).toBeNull();
+    //
+    // The first two now name a colour the map holds, so the buried fragment is caught by *which*
+    // colour comes back rather than by nothing coming back — and that is the stronger check of the
+    // two. A buried match would sit earlier in the string than the real word and would therefore
+    // win: 'tan' at index 2 of "Titanium" beats 'grey' at 9, and 'red' at index 6 of "Weathered"
+    // beats 'grey' at 10. Getting grey is only possible if neither fragment matched.
+    expect(parseColorFromText('Titanium Grey & Black')).toBe(COLOR_HEX_MAP['grey']);
+    expect(parseColorFromText('Weathered Grey Stone & Oak')).toBe(COLOR_HEX_MAP['grey']);
     expect(parseColorFromText('Heavy Armoured Tank')).toBeNull();
-    expect(parseColorFromText('Weathered Grey Stone & Oak')).toBeNull();
     expect(parseColorFromText('Carbon Fibre & Titanium')).toBeNull();
   });
 
@@ -78,6 +84,58 @@ describe('parseColorFromText', () => {
     expect(parseColorFromText('Crimson Red & Black')).toBe(COLOR_HEX_MAP['crimson']);
     expect(parseColorFromText('Emerald Green & Tan')).toBe(COLOR_HEX_MAP['emerald']);
     expect(parseColorFromText('Dark Stained Wood & Vermilion Red #EA580C')).toBe('#EA580C');
+  });
+
+  it('shows a swatch for every colour option the app ships, or none where none is meant', () => {
+    /*
+     * The invariant behind the vocabulary: a pooled colour option either names a colour the map can
+     * resolve, or says in as many words that it has no accent. Anything else is an option that looks
+     * answered and previews nothing, which is how `grey` and `black` came to be missing for as long
+     * as they were — three shipped options quietly had no swatch and no test noticed.
+     *
+     * Only the two colour fields are swept. Every other pool is prose that may happen to name a
+     * colour ("Polished Brass & Oak"), and gets a swatch when it does, but owes none.
+     */
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const field of CATEGORY_OPTIONS[category].fields) {
+        if (field.key !== 'primary_colours' && field.key !== 'accent_colours') continue;
+        for (const option of field.options) {
+          if (option.startsWith('No Accent')) {
+            expect(parseColorFromText(option), `"${option}" declines an accent yet previews one`).toBeNull();
+            continue;
+          }
+          expect(
+            parseColorFromText(option),
+            `${category}.${field.key} option "${option}" resolves to no colour — add the word it ` +
+              `names to COLOR_HEX_MAP, or say "No Accent" if it means to have none`,
+          ).not.toBeNull();
+        }
+      }
+    }
+  });
+
+  it('resolves the shipped options that the black/grey/brown vocabulary was missing for', () => {
+    // Each of these was a pooled option with no swatch until its colour word joined the map.
+    expect(parseColorFromText('Void Black')).toBe(COLOR_HEX_MAP['black']);
+    expect(parseColorFromText('Ink Black & Parchment')).toBe(COLOR_HEX_MAP['black']);
+    expect(parseColorFromText('Heather Brown & Oat Cream')).toBe(COLOR_HEX_MAP['brown']);
+    expect(parseColorFromText('Warm Pink Hide & Sable Patches')).toBe(COLOR_HEX_MAP['pink']);
+    expect(parseColorFromText('Smoked Glass & Aged Brass')).toBe(COLOR_HEX_MAP['brass']);
+    expect(parseColorFromText('Bark Umber & Deep Moss')).toBe(COLOR_HEX_MAP['umber']);
+    expect(parseColorFromText('Salt-Bleached Driftwood & Rope')).toBe(COLOR_HEX_MAP['driftwood']);
+  });
+
+  it('does not let a new short name match inside a longer word', () => {
+    // 'umber' is a fragment of number, lumber and cucumber; 'brass' of brasserie. The boundary
+    // assertions are the only thing standing between those and a confidently wrong swatch.
+    expect(parseColorFromText('Serial Number Plate')).toBeNull();
+    expect(parseColorFromText('Stacked Lumber Pile')).toBeNull();
+    expect(parseColorFromText('Brasserie Awning')).toBeNull();
+    // The inflection set is deliberately short, and 'ened' is not in it — so "Blackened" is a miss
+    // rather than a match. A missing swatch is the cheap failure here; a wrong one is not.
+    expect(parseColorFromText('Blackened Steel')).toBeNull();
+    // What the set does cover, on a newly added name.
+    expect(parseColorFromText('Browned Copper Plate')).toBe(COLOR_HEX_MAP['brown']);
   });
 
   it('leaves every entry in COLOR_HEX_MAP reachable by its own name', () => {
