@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
 import type { ImportedImage, PixelGrid } from '../types/quantiser.ts';
 
 /**
@@ -24,23 +25,54 @@ export interface QuantiseState {
    * guessing.
    */
   readonly gridOverride: PixelGrid | null;
+  /**
+   * Whether the studio's background key is replaced with transparency.
+   *
+   * **Off by default, and opt-in.** Keying deletes pixels, and two of the four offered keys —
+   * `PURE_WHITE` and `PURE_BLACK` — share their colour with real artwork, so a tolerance loose enough
+   * to catch a drifting white field also takes the sheet's own highlights. Off by default means that
+   * never happens to someone who did not ask for it. It is also what keeps the panel's own promise
+   * honest: it says every colour in the result is one the image already contained, and silently
+   * removing a third of the sheet would contradict that.
+   */
+  readonly keyingEnabled: boolean;
+  /** How far a pixel may sit from the key colour, as Euclidean RGB distance. */
+  readonly keyTolerance: number;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
+  setKeyingEnabled(keyingEnabled: boolean): void;
+  setKeyTolerance(keyTolerance: number): void;
 }
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
   source: null,
   gridOverride: null,
+  keyingEnabled: false,
+  keyTolerance: DEFAULT_KEY_TOLERANCE,
 
   // Clearing the override is part of taking a new image, not a separate step a caller can forget: a
   // grid chosen for the last sheet says nothing about this one, and carrying it over would show a
   // confident result at a scale nobody claimed applied.
+  //
+  // **The keying settings deliberately survive**, and the asymmetry is the point. A grid is a
+  // measurement of one particular image, so a stale one silently mis-scales the next. Keying is a
+  // standing intent about a workflow — the splitter hands back eight sheets that are eight passes at
+  // the same settings — and unlike a wrong grid its effect is plainly visible in the preview, so
+  // carrying it over cannot mislead anyone the way a carried-over grid would.
   setSource: (source) => {
     set({ source, gridOverride: null });
   },
 
   setGridOverride: (gridOverride) => {
     set({ gridOverride });
+  },
+
+  setKeyingEnabled: (keyingEnabled) => {
+    set({ keyingEnabled });
+  },
+
+  setKeyTolerance: (keyTolerance) => {
+    set({ keyTolerance });
   },
 }));

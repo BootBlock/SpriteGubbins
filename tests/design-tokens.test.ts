@@ -102,6 +102,7 @@ const REQUIRED_THEME_TOKENS = [
 const REQUIRED_UTILITIES = [
   'bg-grid-pattern',
   'bg-aurora',
+  'bg-checkerboard',
   'bg-spectrum',
   'glass-panel',
   'glass-float',

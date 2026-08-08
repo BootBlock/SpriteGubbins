@@ -1,5 +1,6 @@
 import { PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
+import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
 interface ComparisonToolbarProps {
@@ -26,23 +27,13 @@ export function ComparisonToolbar({ zoom, onZoomChange, sourceName, resultImage 
               already over the image teaches nobody working from the keyboard that it is there. */}
           <Tooltip text={QUANTISE_TOOLTIPS.zoom} hint="Zoom" />
         </span>
-        {PREVIEW_ZOOMS.map((level) => (
-          <button
-            key={level}
-            type="button"
-            aria-pressed={level === zoom}
-            onClick={() => {
-              onZoomChange(level);
-            }}
-            className={`rounded-lg px-2.5 py-1 font-mono text-xs font-semibold transition-colors ${
-              level === zoom
-                ? 'bg-accent-strong text-ink'
-                : 'bg-foundry-700 text-ink-faint hover:bg-foundry-600 hover:text-ink'
-            }`}
-          >
-            {level}×
-          </button>
-        ))}
+        <SegmentedChoice
+          label="Preview magnification"
+          values={PREVIEW_ZOOMS}
+          value={zoom}
+          format={(level) => `${String(level)}×`}
+          onChange={onZoomChange}
+        />
       </div>
 
       <button
