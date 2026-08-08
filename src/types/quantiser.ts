@@ -63,9 +63,32 @@ export interface ImportedImage {
   readonly image: ImageData;
 }
 
+/**
+ * A key colour and how far a pixel may sit from it and still count as background.
+ *
+ * One value rather than two loose arguments, because neither means anything alone: a colour with no
+ * tolerance is the exact match that keys almost nothing on a real returned sheet, and a tolerance with
+ * no colour is a radius around nothing. Carried together, `null` says keying does not run at all —
+ * which is a state with two distinct causes (the user has not asked for it, or the studio's key is
+ * `TRANSPARENT` and there is no colour to match) that the transform does not need to tell apart.
+ */
+export interface BackgroundKeying {
+  readonly color: Rgba;
+  /**
+   * Euclidean distance across RGB, alpha ignored.
+   *
+   * Euclidean because `nearestColor` already defines what "how far apart are two colours" means in
+   * this app, and a second metric would be a second answer to one question. RGB-only because a key
+   * field is opaque by definition, so a pixel's own alpha says nothing about whether it is background.
+   */
+  readonly tolerance: number;
+}
+
 /** Everything `quantiseImage` needs beyond the image itself. */
 export interface QuantiseSettings {
   readonly grid: PixelGrid;
+  /** The background to remove, or `null` to leave every pixel where it is. */
+  readonly key: BackgroundKeying | null;
   /**
    * How many colours the result may use, or `null` to leave the palette alone.
    *
@@ -76,11 +99,24 @@ export interface QuantiseSettings {
   readonly maxColors: number | null;
 }
 
-/** What came back: the transformed image, and the two numbers that say what it did. */
+/** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
   /** Distinct non-transparent colours in the source. */
   readonly colorsBefore: number;
   /** Distinct non-transparent colours in {@link image}. */
   readonly colorsAfter: number;
+  /**
+   * The fraction of the source the key removed, 0–1, and `0` where keying did not run.
+   *
+   * Reported because it is the one question this feature cannot answer from the preview: the sheet
+   * that prompted the work had a *visibly* magenta field almost none of which was `#FF00FF`, and at
+   * 1× in a 24rem frame a field that was missed looks exactly like a field that was keyed. The number
+   * is what says which happened.
+   *
+   * Counts only pixels that arrived carrying some colour — any alpha above zero — and left fully
+   * transparent, so a sheet that already had empty space does not inflate it with area the key never
+   * touched.
+   */
+  readonly keyedShare: number;
 }

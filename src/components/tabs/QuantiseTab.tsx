@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { PALETTE_COLOR_COUNTS } from '../../constants/quantiser.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
@@ -13,6 +14,7 @@ import { parseTargetSize, targetSizeGrid } from '../../utils/targetSize.ts';
 import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
+import { KeyingControls } from '../quantise/KeyingControls.tsx';
 
 /**
  * Turning a returned sheet into genuine pixel art, after the fact.
@@ -26,20 +28,24 @@ import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
  * A tab rather than a modal: this is a workspace — an image, two previews at four zoom levels, a
  * grid control and a download — and the app's densest dialog is already a third of that surface.
  *
- * The state is the two things that cannot be derived: which image, and which grid. Everything else
- * below is a pure function of them recomputed in a `useMemo`, never mirrored into a `useState` and
- * refreshed by an effect.
+ * The state is only what cannot be derived: which image, which grid, and whether the background key
+ * comes out and from how far. Everything else below is a pure function of those recomputed in a
+ * `useMemo`, never mirrored into a `useState` and refreshed by an effect.
  */
 export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
+  const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
-  // In a store rather than here, because the workflow crosses tabs: the colour budget and the target
-  // size are studio settings, and `App` unmounts this view when the user goes to change one.
+  // In a store rather than here, because the workflow crosses tabs: the colour budget, the target
+  // size and the background key are studio settings, and `App` unmounts this view when the user goes
+  // to change one.
   const source = useQuantiseStore((state) => state.source);
   const gridOverride = useQuantiseStore((state) => state.gridOverride);
+  const keyingEnabled = useQuantiseStore((state) => state.keyingEnabled);
+  const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
   const setSource = useQuantiseStore((state) => state.setSource);
   const setGridOverride = useQuantiseStore((state) => state.setGridOverride);
 
@@ -69,12 +75,24 @@ export function QuantiseTab() {
     [source, target, category, directionalMode, additionalAnatomy],
   );
 
+  // `null` on either count — the user has not asked, or the studio's key names no colour to match —
+  // and the pipeline skips the pass entirely rather than keying against a default nobody chose.
+  const keyColor = BACKGROUND_KEY_COLORS[backgroundKey];
+  const keying = useMemo(
+    () => (!keyingEnabled || keyColor === null ? null : { color: keyColor, tolerance: keyTolerance }),
+    [keyingEnabled, keyColor, keyTolerance],
+  );
+
   const result = useMemo(
     () =>
       source === null || grid === null
         ? null
-        : quantiseImage(source.image, { grid, maxColors: PALETTE_COLOR_COUNTS[paletteLimit] }),
-    [source, grid, paletteLimit],
+        : quantiseImage(source.image, {
+            grid,
+            key: keying,
+            maxColors: PALETTE_COLOR_COUNTS[paletteLimit],
+          }),
+    [source, grid, keying, paletteLimit],
   );
 
   return (
@@ -82,9 +100,9 @@ export function QuantiseTab() {
       <header className="space-y-1">
         <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Quantise a returned sheet</h2>
         <p className="max-w-3xl text-xs leading-relaxed text-ink-muted">
-          Snap the image back to the pixel scale it was meant to be drawn at, and reduce it to the colour
-          budget the prompt asked for. Every colour in the result is one the image already contained — nothing
-          is averaged into existence, and no dithering is applied.
+          Snap the image back to the pixel scale it was meant to be drawn at, reduce it to the colour budget
+          the prompt asked for, and turn the background key into transparency. Every colour that survives is
+          one the image already contained — nothing is averaged into existence, and no dithering is applied.
         </p>
       </header>
 
@@ -99,6 +117,11 @@ export function QuantiseTab() {
             grid={grid}
             onGridChange={setGridOverride}
           />
+          {/* The panel is handed the same `keying` the pipeline was, rather than working it out again
+              from the two settings behind it — one rule, one place. The share is the transform's own
+              answer, so it is `null` until there is a transform, which is the same condition the
+              comparison below shows its placeholder for. */}
+          <KeyingControls keying={keying} keyedShare={result === null ? null : result.keyedShare} />
           <ImageComparison
             sourceName={source.name}
             source={source.image}

@@ -76,7 +76,11 @@ export function ComparisonPane({
             // reduced-motion catch-all at the bottom of `index.css` gives every element in the document a
             // non-zero `transition-duration` — so for a user who has asked their OS for less motion, this
             // canvas silently animates its own size and the anchoring breaks for them and nobody else.
-            className="transition-none"
+            //
+            // The board is what a transparent pixel shows, and it is on both panes rather than only the
+            // keyed one: an imported PNG can arrive with alpha of its own, and an opaque sheet covers the
+            // board completely, so it costs nothing where there is nothing to reveal.
+            className="bg-checkerboard transition-none"
             style={{
               width: content.image.width * content.magnification,
               height: content.image.height * content.magnification,

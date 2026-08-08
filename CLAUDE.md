@@ -358,6 +358,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | The ambient dot backdrop | `bg-grid-pattern` | a hand-rolled repeating gradient |
 | The ambient colour wash behind the page | `bg-aurora` | a stack of hand-written `radial-gradient()`s |
 | A loading placeholder's sheen | `shimmer-surface` + `animate-shimmer` | a bespoke gradient |
+| What a **transparent pixel** shows through — the quantiser's two preview canvases | `bg-checkerboard` | leaving the pane's `bg-foundry-950` behind it, where keyed-out reads as painted black |
 | The **scrollbar** — set once in `index.css`, for both engines | `--color-scrollbar-track` / `-thumb` / `-thumb-hover` | `foundry-700` on `foundry-900`, which measures 1.19:1 |
 
 **The scrollbar's three tokens are the one row here no component reaches for.** They are consumed

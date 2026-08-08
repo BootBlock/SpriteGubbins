@@ -9,6 +9,7 @@ import {
   FULLY_TRANSPARENT,
   packColor,
   readPixel,
+  toHex,
   unpackColor,
   writePixel,
 } from './imageData.ts';
@@ -72,9 +73,14 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  *
  * **The key is matched exactly, and on RGB alone.** Section 0 of the template requires a uniform key
  * filling all space between components, so a compliant sheet's field is one colour. A tolerance
- * would be the obvious generosity and is the wrong call: `PURE_WHITE` and `PURE_BLACK` are both
+ * would be the obvious generosity and is the wrong call *here*: `PURE_WHITE` and `PURE_BLACK` are both
  * offered keys, and anything loose enough to swallow fringing against those would eat the sheet's
  * own highlights and outlines.
+ *
+ * `keyBackground` does take one, and the difference is a restriction this function has nowhere to put:
+ * there, the loose threshold only reaches pixels that touch the keyed field, so it can only ever admit
+ * blends. A digest is a list of colours with no geometry to appeal to, and the coverage ordering below
+ * is what contains the damage instead.
  *
  * The cost is real and is left to the caller: an anti-aliased edge blends the key with the colour
  * beside it, and those blends are *opaque* colours the sheet genuinely contains, so nothing here
@@ -101,9 +107,4 @@ function subjectPixels(image: ImageData, exclude: Rgba | null): ImageData {
     writePixel(output.data, offset, { ...color, a: FULLY_OPAQUE });
   }
   return output;
-}
-
-/** `#RRGGBB`, uppercase, as §5's worked example writes them. */
-function toHex(color: Rgba): string {
-  return `#${[color.r, color.g, color.b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
 }

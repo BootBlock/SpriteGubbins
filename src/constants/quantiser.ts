@@ -53,6 +53,42 @@ export const MANUAL_GRID_RANGE = { min: 1, max: MAX_DETECTED_GRID } as const;
 export const PREVIEW_ZOOMS = [1, 2, 4, 8] as const;
 
 /**
+ * The tolerances the keying control offers, as Euclidean RGB distance from the key colour.
+ *
+ * **A ladder rather than a slider**, and the reason is the pipeline: every pass in it is linear in an
+ * image that may be {@link MAX_IMAGE_PIXELS}, so a range input would recompute the whole transform on
+ * every pointer move of a drag. Stepped values reach the same range in one click each, and match what
+ * this tab already does twice over — the zoom levels and the grid candidates.
+ *
+ * `0` is on the ladder because "exact match only" is a real request, and it is the one setting that
+ * also switches the fringe pass off (which is scaled from this number). The rest roughly double: 32 is
+ * about ±18 on each of the three channels, 128 about ±74, which is as loose as a colour can get and
+ * still be the colour that was asked for.
+ */
+export const KEY_TOLERANCES = [0, 16, 32, 64, 96, 128] as const;
+
+/**
+ * Where the tolerance starts: tight enough to be safe against `PURE_WHITE` and `PURE_BLACK`, which
+ * are offered keys and share their colour with real artwork, and loose enough to catch the drift a
+ * generative raster actually returns on the recommended magenta.
+ */
+export const DEFAULT_KEY_TOLERANCE = 32;
+
+/**
+ * How much further than {@link KEY_TOLERANCES} the one-pixel fringe pass reaches.
+ *
+ * A pixel on an anti-aliased edge is a blend of the key colour and the artwork beside it, so it sits
+ * *outside* any tolerance tight enough to be safe — which is why removing the field exactly leaves a
+ * halo. At 3, a blend has to be roughly three-quarters key colour to be eroded: the part of the halo
+ * that still reads as key colour rather than as art.
+ *
+ * It is safe to be this loose only because the fringe pass is restricted to pixels that touch the
+ * keyed field. The same threshold applied everywhere would swallow a genuinely magenta-ish sprite
+ * colour; applied at the boundary alone it only ever reaches pixels that are blends by construction.
+ */
+export const FRINGE_TOLERANCE_FACTOR = 3;
+
+/**
  * The largest image the tab will accept, in pixels.
  *
  * Every pass in the pipeline is linear in this number, so it is what bounds the work the main thread
@@ -68,4 +104,8 @@ export const QUANTISE_TOOLTIPS = {
   // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence
   // is the other thing nothing on screen says: the panes are linked, and moving one moves both.
   zoom: 'How many screen pixels one image pixel is drawn as. Magnifying never resamples — one pixel becomes a square of them. Both previews stay on the same part of the sheet at the same magnification, so moving one moves the other. When a preview is larger than its frame, drag it with the left mouse button or a finger to move around it, or give it focus with Tab and use the arrow keys.',
+  keying:
+    'Replaces the background key with transparency, so the sheet can be imported without a colour field behind it. The colour comes from the studio, which is where the prompt stated it. Anti-aliased edges carry blends of that key, and at any tolerance above exact the pixel touching the field is eroded with it — against a black or white key that will take some of the artwork’s own contour, which is why magenta is the recommended key.',
+  keyTolerance:
+    'How far a pixel may sit from the key colour and still count as background, measured across red, green and blue together. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
 } as const;

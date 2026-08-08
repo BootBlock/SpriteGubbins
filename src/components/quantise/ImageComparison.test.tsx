@@ -29,18 +29,18 @@ afterEach(() => {
 const SOURCE_SIDE = 128;
 
 /** A result as `quantiseImage` returns one: `⌈w / grid⌉` a side, per `downscaleNearest`. */
-function resultFor(grid: number): QuantiseResult {
+function resultFor(grid: number, colorsAfter = 32): QuantiseResult {
   const side = Math.ceil(SOURCE_SIDE / grid);
-  return { image: createImage(side, side), colorsBefore: 200, colorsAfter: 32 };
+  return { image: createImage(side, side), colorsBefore: 200, colorsAfter, keyedShare: 0 };
 }
 
-function show(grid: number | null) {
+function show(grid: number | null, colorsAfter?: number) {
   const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
   render(
     <ImageComparison
       sourceName="sheet.png"
       source={source}
-      quantised={grid === null ? null : { result: resultFor(grid), grid }}
+      quantised={grid === null ? null : { result: resultFor(grid, colorsAfter), grid }}
     />,
   );
   return {
@@ -98,6 +98,16 @@ describe('ImageComparison', () => {
     // and would make a failed transform look like a successful one.
     expect(arrived.style.imageRendering).toBe('pixelated');
     expect(quantised?.style.imageRendering).toBe('pixelated');
+  });
+
+  it('agrees with itself about one colour, which keying made a reachable answer', () => {
+    // A sheet reducing to a single colour used to take artwork that was already one colour, because
+    // the key field's own colours were counted. Now that the field can be removed it is the ordinary
+    // outcome for a simple sheet — and the caption read "1 colours" the first time one was driven.
+    show(8, 1);
+
+    expect(screen.getByText(/· 1 colour$/)).toBeInTheDocument();
+    expect(screen.queryByText(/1 colours/)).toBeNull();
   });
 
   it('says why there is nothing to compare yet, and leaves the first pane working', () => {

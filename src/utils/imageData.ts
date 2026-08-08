@@ -69,6 +69,22 @@ export function unpackColor(key: number): Rgba {
   };
 }
 
+/**
+ * `#RRGGBB`, uppercase.
+ *
+ * Here rather than beside either caller, because both of them state a colour to a *reader*: the
+ * identity digest writes its palette as hex the way `baseline-prompt-new.md` §5's worked example does,
+ * and the quantiser's keying control shows the key colour it is matching against. Two implementations
+ * of "a colour as text" would be two answers to one question, and the case of the digits is exactly the
+ * half that would quietly diverge.
+ *
+ * Alpha is dropped. Neither caller is describing a compositing state, and `#RRGGBBAA` is not the
+ * spelling either of them wants.
+ */
+export function toHex(color: Rgba): string {
+  return `#${[color.r, color.g, color.b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
+
 /** A blank image of the given size, every channel zero. */
 export function createImage(width: number, height: number): ImageData {
   return new ImageData(new Uint8ClampedArray(width * height * CHANNELS_PER_PIXEL), width, height);
