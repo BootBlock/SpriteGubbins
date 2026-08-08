@@ -222,6 +222,25 @@ describe('design tokens', () => {
     expect(body).toMatch(/^\s*-webkit-backdrop-filter: blur\(/m);
   });
 
+  it('keeps the floating glass opaque enough to read guidance through', () => {
+    // `glass-float` carries the tooltip's guidance and the combo box's options, and both open over
+    // whatever the user was looking at — including this app's brightest surfaces, which are wheel
+    // stops at L 0.76 (a preset card, the gold randomise button, the selected tab pill). The alpha
+    // is what decides whether the text on the card survives that, and it is the one number a
+    // "make it glassier" change reaches for first.
+    //
+    // Measured in Edge, body guidance over a stop at L 0.76: 0.80 alpha gives 4.99:1, and 0.60
+    // gives 2.91:1 — under the 4.5:1 AA body threshold, on a surface whose entire job is to be
+    // read. The floor sits between them rather than pinning 0.80 exactly, so the recipe can still
+    // be tuned without a test edit; what it cannot do is quietly cross into illegibility.
+    const declaration = stylesheet.slice(stylesheet.indexOf('@utility glass-float {'));
+    const body = declaration.slice(0, declaration.indexOf('\n}'));
+    const alpha = /background-color: color-mix\(in oklab, var\(--color-foundry-900\) (\d+)%/.exec(body)?.[1];
+
+    expect(alpha).toBeDefined();
+    expect(Number(alpha) / 100).toBeGreaterThanOrEqual(0.75);
+  });
+
   it.each(CLIPPED_HEADINGS)('clips %s to its glyphs, prefixed for Safari as well', (utility) => {
     // The same shape as the glass check above, with a worse failure — see CLIPPED_HEADINGS. Both
     // are checked because the second was added by copying the first, which is exactly the way the

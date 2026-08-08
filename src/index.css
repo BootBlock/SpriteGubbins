@@ -823,15 +823,32 @@
    * The outline is the first `box-shadow` ring rather than a `border` property, so a floating
    * surface can be inset-lit and outlined without a second element — which also means nothing here
    * fights a `shadow-*` utility, because neither call site uses one.
+   *
+   * **The blur is 14px because 24px was not glass — it was a solid panel.** Both numbers are
+   * genuinely translucent, and the difference is what survives the blur: this palette is nearly
+   * black, so the only thing behind a floating surface with any luminance to give is *text* and
+   * the occasional spectrum-painted control. At 24px those were spread far enough to vanish into a
+   * flat tone, and the card read as opaque however correct its alpha was. Measured in Edge over a
+   * full-strength stop, 14px carries the shape through as a soft bloom and 24px does not.
+   *
+   * **The alpha is the legibility budget, not a taste setting.** A tooltip opens over whatever the
+   * user was reading, and the app's brightest surfaces are the wheel stops at L 0.76 — a preset
+   * card, the selected tab pill — with `gold` and `accent-soft` a little above them. Body guidance
+   * measured in Edge over a stop: **4.99:1** at this alpha, against 4.79:1 at the 24px blur it
+   * replaces, so loosening the blur cost nothing and raising the alpha two points paid for it. The
+   * same measurement at 0.6 alpha is 2.91:1 — under the 4.5:1 AA body threshold, on a surface
+   * whose entire purpose is to be read. So this number is the guidance's contrast, and spending it
+   * to make the glass more obvious is the trade to refuse. `tests/design-tokens.test.ts` holds the
+   * floor.
    */
-  background-color: color-mix(in oklab, var(--color-foundry-900) 78%, transparent);
+  background-color: color-mix(in oklab, var(--color-foundry-900) 80%, transparent);
   background-image: linear-gradient(
     to bottom,
     color-mix(in oklab, var(--color-accent) 18%, transparent) 0%,
     transparent 55%
   );
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
   box-shadow:
     0 0 0 1px color-mix(in oklab, var(--color-accent) 40%, transparent),
     0 20px 45px -12px color-mix(in oklab, var(--color-foundry-950) 95%, transparent),
