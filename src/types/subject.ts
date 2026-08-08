@@ -55,7 +55,16 @@ export interface FieldOption {
   readonly options: readonly string[];
 }
 
-/** A category's full definition: its display name and its sixteen fields, in display order. */
+/**
+ * A category's full definition: its display name, and the *inventory* of its sixteen fields — what
+ * each one is called here, what it means here, and the values it suggests here.
+ *
+ * **Not display order.** `SubjectForm` renders through `SUBJECT_FIELD_GROUPS`
+ * (`constants/subjectGroups.ts`), which decides both the grouping and the order fields appear in,
+ * and looks each key up in this array for its label, tooltip and pool. Reordering a category file
+ * therefore changes nothing on screen — and nothing in the prompt either, which `generatePrompt`
+ * assembles by key against a fixed template.
+ */
 export interface CategoryDefinition {
   readonly label: string;
   readonly fields: readonly FieldOption[];
