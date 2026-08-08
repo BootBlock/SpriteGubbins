@@ -4,7 +4,7 @@ import { useDownload } from '../../hooks/useDownload.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { sheetRunCount } from '../../utils/sheetRuns.ts';
+import { sheetRunCount } from '../../utils/sheetBatch.ts';
 
 /**
  * Geometry and motion for the three secondary actions, so the set stays matched.

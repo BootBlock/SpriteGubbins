@@ -4,16 +4,19 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEPTH_ORDER_TEXT, DIRECTION_LISTS } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { sheetIdentity, sheetRunCount, sheetRuns, splitsIntoFacingRuns } from './sheetRuns.ts';
+import { sheetIdentity, sheetRuns } from './sheetRuns.ts';
 
 /**
- * The batch an N-direction rig actually is.
+ * The batch an N-direction rig actually is, once every sheet of it has been compiled.
  *
  * `baseline-prompt-new.md` §4: eight facings of a cut-out rig is 120 pieces, far past what a
  * generation delivers, so the workflow is eight sheets of fifteen sharing one identity lock. What
  * these assertions protect is that the eight are genuinely *different sheets of the same subject* —
  * eight identical prompts would be the same failure as one oversized one, and eight unrelated ones
  * would return eight different characters.
+ *
+ * Which sheets the batch holds, and where in it a configuration sits, are `sheetBatch.test.ts`'s —
+ * this file is about the prompts hung off that list.
  */
 const SUBJECT = defaultSubjectFor('CHARACTER');
 
@@ -30,18 +33,6 @@ const EIGHT_WAY_RIG = withOutput({
 });
 
 const runsCount = DIRECTION_LISTS.EIGHT_COMPASS.length;
-
-describe('splitsIntoFacingRuns', () => {
-  it('is true only for a run list: one facing at a time, over a set naming more than one', () => {
-    expect(splitsIntoFacingRuns(EIGHT_WAY_RIG)).toBe(true);
-    expect(splitsIntoFacingRuns({ ...EIGHT_WAY_RIG, directions: 'SINGLE_FRONT' })).toBe(false);
-    // The mode names its own five facings, so the chosen set buys no runs at all — whatever it says.
-    // That mode still splits, by the *other* axis: two sheets of one series, counted below.
-    expect(splitsIntoFacingRuns({ ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' })).toBe(
-      false,
-    );
-  });
-});
 
 describe('sheetRuns', () => {
   it('turns eight facings into eight distinct prompts', () => {
@@ -139,7 +130,7 @@ describe('sheetRuns', () => {
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
     });
 
-    expect(runs.map((run) => run.name)).toEqual(['Directional core', 'Articulation']);
+    expect(runs.map((run) => run.plan.name)).toEqual(['Directional core', 'Articulation']);
     expect(runs.map((run) => run.assembly)).toEqual(['front', 'front']);
     expect(new Set(runs.map((run) => run.promptText)).size).toBe(2);
     expect(runs.map((run) => run.output.sheetIndex)).toEqual([0, 1]);
@@ -147,22 +138,6 @@ describe('sheetRuns', () => {
     // a row cannot be labelled from the assembly direction alone: both would read `front` while one
     // draws five views and the other draws one.
     expect(runs.map((run) => run.covered.length)).toEqual([5, 1]);
-  });
-
-  it('resolves the mode on both axes, so an unsupported pairing cannot be split by a set it discards', () => {
-    // An ITEM has no cut-out rig, so the compiler resolves the pairing to that category's default —
-    // which covers its own facings and ignores `primaryDirection` entirely. Counting the facings from
-    // the *stored* mode while counting the sheets from the resolved one offered eight runs whose
-    // prompts were byte-identical, and one copy ticked all eight off.
-    const unsupported = withOutput({
-      directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
-      directions: 'EIGHT_COMPASS',
-    });
-
-    expect(sheetRunCount('ITEM', unsupported)).toBe(1);
-    const runs = sheetRuns('ITEM', SUBJECT, unsupported);
-    expect(runs).toHaveLength(1);
-    expect(sheetRunCount('ITEM', unsupported)).toBe(runs.length);
   });
 
   it('gives the two sheets of a series different identities, and each the config that reproduces it', () => {
@@ -187,20 +162,17 @@ describe('sheetRuns', () => {
     expect(sheetIdentity('CHARACTER', SUBJECT, moved)).toBe(sheetIdentity('CHARACTER', SUBJECT, output));
   });
 
-  it('multiplies the two axes, and counts them without compiling anything', () => {
-    // A rig is one sheet over eight facings; a character's directional core is two sheets over one.
-    // The count is what the studio's split button reads on every keystroke, so it has to agree with
-    // the list without paying to compile it.
-    const series = { ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' as const };
+  it('tells each run which sheet of the batch it is', () => {
+    // The half a run used to leave unsaid: eight prompts that differed only in their facing, each
+    // describing its own fifteen components as the whole deliverable. The ordinal has to be the row
+    // number the drawer shows, so it is asserted here against the position in this very list.
+    const runs = sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG);
 
-    expect(sheetRunCount('CHARACTER', EIGHT_WAY_RIG)).toBe(DIRECTION_LISTS.EIGHT_COMPASS.length);
-    expect(sheetRunCount('CHARACTER', series)).toBe(2);
-    // An OBJECT's five views are thirty components, which fits one sheet — so the same mode is a
-    // batch for one category and a single generation for another.
-    expect(sheetRunCount('OBJECT', series)).toBe(1);
-
-    for (const config of [EIGHT_WAY_RIG, series]) {
-      expect(sheetRuns('CHARACTER', SUBJECT, config)).toHaveLength(sheetRunCount('CHARACTER', config));
+    for (const [index, run] of runs.entries()) {
+      expect(run.promptText, run.assembly).toContain(
+        `**This is sheet ${String(index + 1)} of ${String(runs.length)} of one deliverable`,
+      );
+      expect(run.promptText, run.assembly).toContain('### The sheets in this series');
     }
   });
 });

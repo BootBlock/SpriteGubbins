@@ -487,6 +487,114 @@ describe('generatePrompt — the facing the sheet is for', () => {
   });
 });
 
+/**
+ * A sheet out of a batch used to describe itself as the whole deliverable. Section 0 opened with a
+ * component count and ranked it above everything else, section 4 said not to omit an entry, and
+ * section 6 stated an assembly capability the *series* reaches — so sheet three of eight arrived
+ * claiming a count and a capability belonging to something else, with nothing anywhere saying it was
+ * one of eight. The only cross-sheet sentence in the template was the identity lock's, and that is
+ * conditional on the user having filled a field in.
+ */
+describe('generatePrompt — a sheet that is one of a series', () => {
+  /** An eight-facing cut-out rig: one inventory, eight sheets, split along the facing axis. */
+  const RIG = withOutput({
+    directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+    rigMode: 'CUTOUT_RIG',
+    directions: 'EIGHT_COMPASS',
+  });
+
+  /** The other axis: a character's five-view core and its limbs, two sheets on one facing. */
+  const SERIES = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' });
+
+  /** One whole deliverable in one generation, which is the case that must not change at all. */
+  const ALONE = withOutput({
+    directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+    directions: 'SINGLE_FRONT',
+  });
+
+  it('says which sheet it is, and of how many, where the count is stated', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...RIG, primaryDirection: 'west' });
+    const contract = prompt.slice(
+      prompt.indexOf('## 0. NON-NEGOTIABLE OUTPUT CONTRACT'),
+      prompt.indexOf('## 1. SUBJECT DEFINITION'),
+    );
+
+    // In section 0 rather than further down, because that is where the count it qualifies is: the
+    // precedence order ranks the count and inventory first, so a reader told the number is the
+    // deliverable's works the ranking against the batch.
+    expect(contract).toMatch(
+      /\*\*This is sheet 3 of 8 of one deliverable, and the count\s+above is this sheet's own\.\*\*/,
+    );
+    expect(contract).toContain('never add a component because the set looks incomplete');
+  });
+
+  it('lists what every other sheet carries, and marks which one this is', () => {
+    // The failure this guards against is a run quietly adding the pieces it can see are missing. A
+    // sheet that can read the others' inventories has no gap to fill.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, { ...SERIES, sheetIndex: 1 });
+
+    expect(prompt).toContain('### The sheets in this series');
+    expect(prompt).toContain(
+      '- **Sheet 1 — Directional core**: 15 components, covering front, front-three-quarter, right side, back-three-quarter, back.',
+    );
+    expect(prompt).toContain(
+      '- **Sheet 2 — Articulation** *(this sheet)*: 34 components, drawn towards front.',
+    );
+  });
+
+  it('hands the assembly capability to the series rather than to this sheet', () => {
+    // Section 6 states what the component set assembles into, and for a per-facing rig run that is
+    // the whole rig's capability delivered by a sheet holding an eighth of it.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, RIG);
+
+    expect(prompt).toContain("**That is the finished series' capability, and not this sheet's alone.**");
+    expect(prompt).toMatch(/It is reached once every\s+sheet listed below has been generated/);
+  });
+
+  it('extends identity consistency across the series, and cites the lock when there is one', () => {
+    const locked = generatePrompt('CHARACTER', SUBJECT, { ...RIG, identityLock: 'Cyan visor' });
+    const unlocked = generatePrompt('CHARACTER', SUBJECT, RIG);
+
+    for (const prompt of [locked, unlocked]) {
+      expect(prompt).toContain('**That list holds across the whole series, not only across this sheet.**');
+    }
+    // The citation goes only where section 1 actually has the block to cite — the lock is optional,
+    // and pointing at an absent one is the dangling cross-reference this gate exists to avoid.
+    expect(locked).toContain('The identity lock in section 1 is the record of what the other sheets');
+    expect(unlocked).not.toContain('The identity lock in section 1');
+  });
+
+  it('says nothing at all when the configuration is a single sheet', () => {
+    // The whole point of gating it: a configuration that is one generation has no series to describe,
+    // and a "sheet 1 of 1" would be words spent telling the reader nothing.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, ALONE);
+
+    expect(prompt).not.toContain('of one deliverable');
+    expect(prompt).not.toContain('The sheets in this series');
+    expect(prompt).not.toContain('the whole series');
+    expect(prompt).not.toContain('*(this sheet)*');
+    // And section 6 keeps the plain claim it has always made.
+    expect(prompt).toContain('The component set must assemble cleanly into: ');
+  });
+
+  it('counts the facing axis in the order the direction set lists it', () => {
+    for (const [index, facing] of promptText.DIRECTION_LISTS.EIGHT_COMPASS.entries()) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, { ...RIG, primaryDirection: facing });
+      expect(prompt, facing).toContain(`**This is sheet ${String(index + 1)} of 8 of one deliverable`);
+    }
+  });
+
+  it('leaves the prompt free of ragged blank lines and unresolved markers', () => {
+    // The block is four conditionals in three sections, and a stray blank line at any of their
+    // seams is what makes a generated prompt look broken.
+    for (const output of [RIG, SERIES, { ...SERIES, sheetIndex: 1 }, ALONE]) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, output);
+      expect(prompt).not.toMatch(/\n\n\n/);
+      expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    }
+  });
+});
+
 describe('generatePrompt — camera azimuth versus object yaw', () => {
   /**
    * The defect: a sheet asking for a front-three-quarter, a right-side and a back-three-quarter head
@@ -622,7 +730,15 @@ describe('generatePrompt — technical settings in prose', () => {
     );
     expect(rig).toContain('- Directions required: South\n');
     expect(rig).toContain('- Primary assembly direction: south');
-    expect(rig).not.toContain('south-west');
+    // Every other facing is named exactly once, on section 6's list of the sheets that carry them —
+    // which is a statement about the batch rather than an instruction to draw them here. Everywhere
+    // else in the prompt this sheet is a single facing, so the list's own lines are the only thing
+    // dropped from the assertion rather than the whole check being narrowed to one section.
+    const outsideTheSeriesList = rig
+      .split('\n')
+      .filter((line) => !line.startsWith('- **Sheet '))
+      .join('\n');
+    expect(outsideTheSeriesList).not.toContain('south-west');
 
     // And it follows the chosen set's *first* facing, so eight runs cover eight sheets.
     const cardinal = generatePrompt(
