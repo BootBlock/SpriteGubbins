@@ -658,6 +658,34 @@
   background-size: 28px 28px;
 }
 
+@utility bg-checkerboard {
+  /*
+   * What shows through a transparent pixel, so the quantiser's keying can be seen at all.
+   *
+   * `PanViewport` is `bg-foundry-950`, near-black — so a canvas keyed to alpha over it renders
+   * indistinguishably from a canvas painted black, and the one thing the keying control claims to do
+   * would be invisible in the app's own preview. Worse, a user would download a file believing the
+   * wrong thing about it.
+   *
+   * It goes on the `<canvas>` itself rather than on a wrapper: a canvas's transparent pixels composite
+   * over its own CSS background, so the board appears exactly where nothing is painted and is covered
+   * completely everywhere else — which is why both comparison panes can carry it and a fully opaque
+   * sheet shows no change at all.
+   *
+   * Two rungs of the foundry ramp rather than the conventional grey-on-white: this is a backdrop for
+   * judging artwork, and a bright board would fight the sprite it sits behind. The pitch is in screen
+   * pixels, so the squares stay the same size at every magnification — a board that scaled with the
+   * zoom would be mistaken for part of the image.
+   */
+  background-image: conic-gradient(
+    var(--color-foundry-800) 25%,
+    var(--color-foundry-950) 0 50%,
+    var(--color-foundry-800) 0 75%,
+    var(--color-foundry-950) 0
+  );
+  background-size: 16px 16px;
+}
+
 @utility bg-aurora {
   /*
    * The ambient wash the two drifting orbs sit inside: four wide, low-opacity pools positioned

@@ -79,7 +79,7 @@ export function ImageComparison({ sourceName, source, quantised }: ImageComparis
           caption={
             <>
               As it arrived · {source.width} × {source.height}
-              {quantised !== null && ` · ${String(quantised.result.colorsBefore)} colours`}
+              {quantised !== null && ` · ${colourCount(quantised.result.colorsBefore)}`}
             </>
           }
           label="Pan the sheet as it arrived"
@@ -95,7 +95,7 @@ export function ImageComparison({ sourceName, source, quantised }: ImageComparis
             quantised === null ? (
               <span className="text-gold">Quantised · set a pixel grid above</span>
             ) : (
-              `Quantised · ${String(quantised.result.image.width)} × ${String(quantised.result.image.height)} · ${String(quantised.result.colorsAfter)} colours`
+              `Quantised · ${String(quantised.result.image.width)} × ${String(quantised.result.image.height)} · ${colourCount(quantised.result.colorsAfter)}`
             )
           }
           label="Pan the quantised sheet"
@@ -119,6 +119,18 @@ export function ImageComparison({ sourceName, source, quantised }: ImageComparis
       </div>
     </section>
   );
+}
+
+/**
+ * `1 colour`, `32 colours` — the figure and its noun, agreeing.
+ *
+ * A count of one used to be unreachable in practice: before the key field could be removed, its own
+ * colours were counted, so no real sheet reduced to a single one. Keying makes it the ordinary outcome
+ * for a simple sheet — the screenshot that caught this read "1 colours" — so the agreement is now
+ * load-bearing rather than pedantry. `IdentityPaletteCapture`'s toast already spells it this way.
+ */
+function colourCount(colors: number): string {
+  return `${String(colors)} ${colors === 1 ? 'colour' : 'colours'}`;
 }
 
 /** Put the pixels on the canvas verbatim. A missing canvas is the pane that is showing its `<p>`. */
