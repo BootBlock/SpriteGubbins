@@ -15,7 +15,9 @@ import {
   PROMPT_HISTORY_TABLE,
   SELECT_HISTORY_SQL,
   SELECT_PRESETS_SQL,
+  SELECT_SESSION_SQL,
   SELECT_SETTINGS_SQL,
+  UPSERT_SESSION_SQL,
   UPSERT_SETTINGS_SQL,
 } from './schema.ts';
 import type { WorkerCall, WorkerHandshake, WorkerReply } from './workerProtocol.ts';
@@ -141,6 +143,18 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
     case 'saveSettings':
       database.exec(UPSERT_SETTINGS_SQL, { bind: [JSON.stringify(request.settings)] });
       return undefined;
+
+    // The row itself again, not a list — `db/rows.ts` turns it, or its absence, into a session.
+    case 'loadSession':
+      return select(database, SELECT_SESSION_SQL).at(0);
+
+    case 'saveSession': {
+      const { session } = request;
+      database.exec(UPSERT_SESSION_SQL, {
+        bind: [session.category, JSON.stringify(session.subject), JSON.stringify(session.output)],
+      });
+      return undefined;
+    }
   }
 }
 

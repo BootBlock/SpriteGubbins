@@ -10,6 +10,7 @@ import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { StudioSession } from '../types/session.ts';
 
 /**
  * The localStorage backend is not a safety net — it is the backend the app genuinely runs on
@@ -27,6 +28,16 @@ function log(overrides: Partial<PromptHistoryLog> = {}): PromptHistoryLog {
     modelUsed: 'GENERIC',
     subject: DEFAULT_PRESET.subject,
     output: DEFAULT_PRESET.output,
+    ...overrides,
+  };
+}
+
+function session(overrides: Partial<StudioSession> = {}): StudioSession {
+  const category = overrides.category ?? 'CHARACTER';
+  return {
+    category,
+    subject: defaultSubjectFor(category),
+    output: DEFAULT_OUTPUT_CONFIG,
     ...overrides,
   };
 }
@@ -350,6 +361,14 @@ describe('LocalStorageBackend — a refused write', () => {
     await expect(promise).rejects.toThrow(/refused the write/i);
   });
 
+  it('rejects when the studio session cannot be stored', async () => {
+    // Unlike the settings, the session store swallows this one — a refusal it reported on every
+    // keystroke would be noise about something the user cannot act on. It still has to *reach* the
+    // store to be swallowed deliberately rather than never happening at all.
+    const promise = backend.saveSession(session());
+    await expect(promise).rejects.toThrow(/refused the write/i);
+  });
+
   it('rejects when a setting cannot be stored', async () => {
     // The store above keeps the change applied on this rejection rather than reverting it — a
     // preference the user can see working is not a lie the way an unsaved preset would be — but it
@@ -372,5 +391,67 @@ describe('LocalStorageBackend — a refused write', () => {
     await expect(backend.listHistoryLogs()).resolves.toEqual([]);
     await expect(backend.listPresets()).resolves.toEqual([]);
     await expect(backend.loadSettings()).resolves.toEqual(DEFAULT_SETTINGS);
+    await expect(backend.loadSession()).resolves.toBeNull();
+  });
+});
+
+describe('LocalStorageBackend — the studio session', () => {
+  let storage: WebStorageLike;
+  let backend: LocalStorageBackend;
+
+  beforeEach(() => {
+    storage = createMemoryStorage();
+    backend = new LocalStorageBackend(storage);
+  });
+
+  it('has no session before one is stored', async () => {
+    // `null` rather than a default session, and the distinction is the point: a reconstructed
+    // default would be indistinguishable from one the user actually left, and restoring it would
+    // overwrite the studio's own boot state with a copy of itself.
+    await expect(backend.loadSession()).resolves.toBeNull();
+  });
+
+  it('round-trips a session', async () => {
+    await backend.saveSession(session({ category: 'CREATURE' }));
+
+    const loaded = await backend.loadSession();
+    expect(loaded?.category).toBe('CREATURE');
+    expect(loaded?.subject).toEqual(defaultSubjectFor('CREATURE'));
+    expect(loaded?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
+  });
+
+  it('keeps only the newest session', async () => {
+    // One studio, so one row — a second save replaces rather than accumulating.
+    await backend.saveSession(session({ category: 'ITEM' }));
+    await backend.saveSession(session({ category: 'BUILDING' }));
+
+    expect((await backend.loadSession())?.category).toBe('BUILDING');
+  });
+
+  it('reads hand-edited storage as no session rather than throwing', async () => {
+    storage.setItem(STORAGE_KEYS.studioSession, '{ not json');
+    await expect(backend.loadSession()).resolves.toBeNull();
+  });
+
+  it('reads a session with an unusable category as no session', async () => {
+    storage.setItem(STORAGE_KEYS.studioSession, JSON.stringify({ category: 'SPACESHIP' }));
+    await expect(backend.loadSession()).resolves.toBeNull();
+  });
+
+  it('repairs a session that lost its payloads rather than discarding it', async () => {
+    storage.setItem(STORAGE_KEYS.studioSession, JSON.stringify({ category: 'OBJECT' }));
+
+    const loaded = await backend.loadSession();
+    expect(loaded?.category).toBe('OBJECT');
+    expect(loaded?.subject).toEqual(defaultSubjectFor('OBJECT'));
+    expect(loaded?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
+  });
+
+  it('stores the session under its own key, leaving the other collections alone', async () => {
+    await backend.savePreset(customPreset());
+    await backend.saveSession(session());
+
+    expect(storage.getItem(STORAGE_KEYS.studioSession)).not.toBeNull();
+    await expect(backend.listPresets()).resolves.toHaveLength(1);
   });
 });

@@ -1,5 +1,6 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 
 /**
@@ -22,7 +23,9 @@ export type WorkerRequest =
   | { readonly kind: 'deletePreset'; readonly presetId: string }
   | { readonly kind: 'replacePresets'; readonly presets: readonly PresetArchetype[] }
   | { readonly kind: 'loadSettings' }
-  | { readonly kind: 'saveSettings'; readonly settings: AppSettings };
+  | { readonly kind: 'saveSettings'; readonly settings: AppSettings }
+  | { readonly kind: 'loadSession' }
+  | { readonly kind: 'saveSession'; readonly session: StudioSession };
 
 /** A request with the correlation id the reply will carry back. */
 export interface WorkerCall {

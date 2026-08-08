@@ -17,6 +17,7 @@ export const OPFS_POOL_NAME = 'sprite-gubbins-pool';
 export const PROMPT_HISTORY_TABLE = 'prompt_history';
 export const CUSTOM_PRESETS_TABLE = 'custom_presets';
 export const APP_SETTINGS_TABLE = 'app_settings';
+export const STUDIO_SESSION_TABLE = 'studio_session';
 
 /**
  * The settings table holds exactly one row, and this is its key.
@@ -28,6 +29,17 @@ export const APP_SETTINGS_TABLE = 'app_settings';
  * "exactly one" a property of the schema rather than a habit of the code above it.
  */
 export const SETTINGS_ROW_ID = 1;
+
+/**
+ * The session table holds exactly one row, and this is its key.
+ *
+ * Single-row for the same reason the settings table is, and one more of its own: there is only ever
+ * one studio, so "the session" is a definite article rather than a collection with one member in it.
+ * A `CHECK` makes that a property of the schema. The three parts go in **one row** rather than three
+ * because they are written together — a subject and the category it was written for are meaningless
+ * apart, and a partial write would restore answers into the wrong form.
+ */
+export const SESSION_ROW_ID = 1;
 
 /**
  * `IF NOT EXISTS` throughout: this runs on every boot, against a database that usually already
@@ -63,6 +75,13 @@ CREATE TABLE IF NOT EXISTS ${APP_SETTINGS_TABLE} (
   settings_json TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS ${STUDIO_SESSION_TABLE} (
+  id INTEGER PRIMARY KEY CHECK (id = ${SESSION_ROW_ID}),
+  category TEXT NOT NULL,
+  subject_json TEXT NOT NULL,
+  output_json TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
   ON ${PROMPT_HISTORY_TABLE} (created_at DESC);
 `;
@@ -77,6 +96,7 @@ export const STORAGE_KEYS = {
   customPresets: 'sprite_gubbins_custom_presets',
   promptHistory: 'sprite_gubbins_prompt_history',
   appSettings: 'sprite_gubbins_app_settings',
+  studioSession: 'sprite_gubbins_studio_session',
 } as const;
 
 /** Newest first — the order the history drawer lists entries in. */
@@ -127,4 +147,20 @@ SELECT settings_json FROM ${APP_SETTINGS_TABLE} WHERE id = ${SETTINGS_ROW_ID}
  */
 export const UPSERT_SETTINGS_SQL = `
 INSERT OR REPLACE INTO ${APP_SETTINGS_TABLE} (id, settings_json) VALUES (${SETTINGS_ROW_ID}, ?)
+`;
+
+/** The one session row, or nothing at all on a first visit. */
+export const SELECT_SESSION_SQL = `
+SELECT category, subject_json, output_json FROM ${STUDIO_SESSION_TABLE} WHERE id = ${SESSION_ROW_ID}
+`;
+
+/**
+ * Write the session, replacing whatever was there.
+ *
+ * `INSERT OR REPLACE` against the fixed key, so the first save and every later one are the same
+ * statement — the caller never has to know whether a session has been stored before.
+ */
+export const UPSERT_SESSION_SQL = `
+INSERT OR REPLACE INTO ${STUDIO_SESSION_TABLE} (id, category, subject_json, output_json)
+VALUES (${SESSION_ROW_ID}, ?, ?, ?)
 `;

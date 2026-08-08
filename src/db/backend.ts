@@ -1,5 +1,6 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 
 /**
@@ -44,6 +45,19 @@ export interface PersistenceBackend {
   loadSettings(): Promise<AppSettings>;
   /** Write the settings whole — they are edited and saved as one object, never field by field. */
   saveSettings(settings: AppSettings): Promise<void>;
+
+  /**
+   * The studio as it was left, or `null` where nothing has been stored.
+   *
+   * `null` rather than a default session, which is the opposite of {@link loadSettings} and is the
+   * distinction that matters here: the settings' defaults *are* a complete answer, whereas a
+   * reconstructed default session would be indistinguishable from a real one the user had left, and
+   * restoring it would overwrite the studio's own boot state with a copy of itself. Absent has to
+   * stay sayable.
+   */
+  loadSession(): Promise<StudioSession | null>;
+  /** Write the session whole — the category, subject and output are only meaningful together. */
+  saveSession(session: StudioSession): Promise<void>;
 }
 
 export const BACKEND_KINDS = ['sqlite-opfs', 'localstorage'] as const;

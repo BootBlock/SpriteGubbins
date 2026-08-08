@@ -1,10 +1,12 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import { parseHistoryRow, parseImportedPreset } from './rows.ts';
 import { parseJson } from './readers.ts';
+import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
 import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
 
@@ -160,5 +162,29 @@ export class LocalStorageBackend implements PersistenceBackend {
 
   saveSettings(settings: AppSettings): Promise<void> {
     return this.write(STORAGE_KEYS.appSettings, settings);
+  }
+
+  /**
+   * The session, stored as the object itself.
+   *
+   * Nested rather than flattened into the SQLite row's three columns, exactly as the settings are:
+   * `parseSession` is the shared parser and takes the nested form, and the SQLite side unwraps its
+   * two JSON columns into that shape before handing it over. So the two backends are held to one
+   * definition of what a stored session may look like.
+   *
+   * Unreadable storage yields `null`, which is the same answer as never having stored one. Both mean
+   * the studio keeps the state it booted with, and neither is worth a toast.
+   */
+  loadSession(): Promise<StudioSession | null> {
+    try {
+      const stored = this.storage.getItem(STORAGE_KEYS.studioSession);
+      return Promise.resolve(stored === null ? null : parseSession(parseJson(stored)));
+    } catch {
+      return Promise.resolve(null);
+    }
+  }
+
+  saveSession(session: StudioSession): Promise<void> {
+    return this.write(STORAGE_KEYS.studioSession, session);
   }
 }

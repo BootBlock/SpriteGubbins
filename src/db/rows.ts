@@ -1,8 +1,10 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import { isSubjectCategory, isTargetModelId, parseOutputConfig, parseSubject } from './configParsers.ts';
 import { isRecord, parseJson, readNumber, readString } from './readers.ts';
+import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
 
 /**
@@ -89,6 +91,32 @@ export function parseSettingsRow(row: unknown): AppSettings {
 
   const settingsJson = readString(row, 'settings_json');
   return parseSettings(settingsJson === null ? undefined : parseJson(settingsJson));
+}
+
+/**
+ * Parse the single `studio_session` row.
+ *
+ * Unlike {@link parseSettingsRow} this can honestly return `null`, and the difference is worth
+ * holding on to: settings have a complete correct answer when nothing is stored — the defaults —
+ * whereas a session that was never saved is genuinely absent, and the studio's own boot state is
+ * already the right thing to show. Reporting "nothing" lets the store leave it alone rather than
+ * overwrite it with a reconstruction.
+ *
+ * The row keeps the category in its own column and the other two as JSON payloads, which is the
+ * shape `parsePresetRow` reads for the same three fields. Both payloads are unwrapped here and
+ * repaired by `parseSession`, so one parser covers this row and the localStorage object alike.
+ */
+export function parseSessionRow(row: unknown): StudioSession | null {
+  if (!isRecord(row)) return null;
+
+  const subjectJson = readString(row, 'subject_json');
+  const outputJson = readString(row, 'output_json');
+
+  return parseSession({
+    category: row['category'],
+    subject: subjectJson === null ? undefined : parseJson(subjectJson),
+    output: outputJson === null ? undefined : parseJson(outputJson),
+  });
 }
 
 /**

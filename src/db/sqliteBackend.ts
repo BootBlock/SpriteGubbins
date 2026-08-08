@@ -1,8 +1,9 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import type { PersistenceBackend } from './backend.ts';
-import { parseHistoryRow, parsePresetRow, parseSettingsRow } from './rows.ts';
+import { parseHistoryRow, parsePresetRow, parseSessionRow, parseSettingsRow } from './rows.ts';
 import { isWorkerHandshake, isWorkerReply } from './workerProtocol.ts';
 import type { WorkerCall, WorkerRequest } from './workerProtocol.ts';
 
@@ -102,6 +103,16 @@ export class SqliteBackend implements PersistenceBackend {
 
   async saveSettings(settings: AppSettings): Promise<void> {
     await this.request({ kind: 'saveSettings', settings });
+  }
+
+  async loadSession(): Promise<StudioSession | null> {
+    // One row or `undefined`, as with the settings — and `parseSessionRow` reads both as "nothing
+    // stored", which here is `null` rather than a set of defaults.
+    return parseSessionRow(await this.request({ kind: 'loadSession' }));
+  }
+
+  async saveSession(session: StudioSession): Promise<void> {
+    await this.request({ kind: 'saveSession', session });
   }
 }
 
