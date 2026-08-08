@@ -231,8 +231,9 @@ export interface ImageOutputConfig {
    * The colours this sheet may use, or `FREE`.
    *
    * **Supersedes `paletteLimit` wherever both would apply** — the prompt drops the budget line, the
-   * quantiser ignores the count, and the studio says so under the control. A budget cannot express
-   * "four shades of green", so where a palette is pinned the budget has nothing left to add.
+   * quantiser ignores the count, and the studio withdraws the budget control and says why on this
+   * one. A budget cannot express "four shades of green", so where a palette is pinned the budget has
+   * nothing left to add.
    */
   readonly palette: PaletteId;
 

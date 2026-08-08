@@ -11,8 +11,9 @@ import { fromHex } from './imageData.ts';
  *
  * The one place the "a pinned palette supersedes the budget" rule is turned into a decision, so no
  * caller has to know it and none can get it wrong. The prompt compiler expresses the same rule
- * through the template's `[IF:PALETTE!=yes]`, and the studio through the note under the budget
- * control; all three are the same sentence, and this is the machine-readable one.
+ * through the template's `[IF:PALETTE!=yes]`, and the studio by withdrawing the budget control and
+ * stating the supersession under the palette that caused it; all three are the same sentence, and
+ * this is the machine-readable one.
  *
  * **The transform and the words for it come back together**, deliberately. They were briefly two
  * functions and the tab's own control panel went on reporting the budget while the pipeline mapped
