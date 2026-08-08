@@ -1,4 +1,5 @@
 import type { SheetPlan } from '../../types/components.ts';
+import { atEachYaw, viewsOf } from './directionalViews.ts';
 
 /**
  * What an OBJECT sheet asks for, per sheet mode.
@@ -15,6 +16,8 @@ import type { SheetPlan } from '../../types/components.ts';
  */
 
 export const OBJECT_PART_LIBRARY: SheetPlan = {
+  name: 'Part library',
+  facings: 'assembly',
   assembly:
     'the complete object in its resting state, and in each state its moving parts allow — opened, activated, or mid-travel — without redrawing any part that does not move.',
   groups: [
@@ -41,42 +44,46 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   ],
 };
 
+/**
+ * One sheet, five views — a series of one, and legitimately so.
+ *
+ * Every entry here is already a piece drawn once per facing, so widening the core from three views
+ * to five scales the whole plan rather than a group of it: thirty components against a ceiling of
+ * forty-three. CHARACTER and CREATURE are the two categories that had to split, because theirs carry
+ * thirty-four limb variants that are not views of anything and do not scale with the set. Splitting
+ * this one to match would ask for five generations of six components each, and spend the identity
+ * lock five times to buy nothing.
+ */
 export const OBJECT_DIRECTIONAL_VARIANTS: SheetPlan = {
+  name: 'Directional views',
+  facings: 'every',
   assembly:
     'the complete object seen from each of the directions listed above, with its moving parts in matching positions across those views.',
   groups: [
     {
       heading: 'Directional core',
-      intro: `Three views each of **one** housing and **one** base: the same piece of geometry drawn
-at each object yaw section 3 lists, in that order. Three separate designs, three mirrored
-copies, or three views facing the same way are all failures of this entry.`,
-      entries: [
-        {
-          text: 'Housings: front-three-quarter, right side, back-three-quarter',
-          count: 3,
-          kind: 'structure',
-        },
-        { text: 'Bases: front-three-quarter, right side, back-three-quarter', count: 3, kind: 'structure' },
-      ],
+      intro: `One view of **one** housing and **one** base per facing: the same piece of geometry drawn at each
+object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing the
+same way are all failures of this entry.`,
+      entries: [viewsOf('Housings', 'structure'), viewsOf('Bases', 'structure')],
     },
     {
       heading: 'Moving parts',
       entries: [
-        { text: 'Access panel, lid or hatch, at each of the three yaws', count: 3, kind: 'mechanism' },
-        { text: 'Primary moving subassembly, at each of the three yaws', count: 3, kind: 'mechanism' },
+        atEachYaw('Access panel, lid or hatch', 'mechanism'),
+        atEachYaw('Primary moving subassembly', 'mechanism'),
       ],
     },
     {
       heading: 'Fittings',
-      entries: [
-        { text: 'Handle, at each of the three yaws', count: 3, kind: 'structure' },
-        { text: 'Latch or catch, at each of the three yaws', count: 3, kind: 'structure' },
-      ],
+      entries: [atEachYaw('Handle', 'structure'), atEachYaw('Latch or catch', 'structure')],
     },
   ],
 };
 
 export const OBJECT_CUTOUT_RIG: SheetPlan = {
+  name: 'Rig pieces',
+  facings: 'assembly',
   assembly:
     'any state the rig produces by rotating its moving parts about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
   groups: [

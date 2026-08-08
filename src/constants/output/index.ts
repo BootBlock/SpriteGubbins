@@ -25,5 +25,6 @@ export {
   SURFACE_DETAIL_CHOICES,
 } from './choices.ts';
 export { directionalModeChoices } from './directionalModeChoices.ts';
+export { sheetChoices } from './sheetChoices.ts';
 export { OUTPUT_TOOLTIPS } from './tooltips.ts';
 export { DEFAULT_OUTPUT_CONFIG } from './defaults.ts';

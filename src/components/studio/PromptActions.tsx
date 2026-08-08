@@ -4,8 +4,7 @@ import { useDownload } from '../../hooks/useDownload.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { DIRECTION_LISTS } from '../../constants/promptText/index.ts';
-import { splitsIntoRuns } from '../../utils/sheetRuns.ts';
+import { sheetRunCount } from '../../utils/sheetRuns.ts';
 
 /**
  * Geometry and motion for the three secondary actions, so the set stays matched.
@@ -60,6 +59,10 @@ export function PromptActions({ promptText }: PromptActionsProps) {
   const copyPrompt = useCopyPrompt();
   const download = useDownload();
 
+  // Derived, not compiled: this is asked on every keystroke and only needs the number, where
+  // `sheetRuns` would compile a prompt per sheet to arrive at the same figure.
+  const runCount = sheetRunCount(category, output);
+
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
       <button
@@ -88,9 +91,10 @@ export function PromptActions({ promptText }: PromptActionsProps) {
         Download .md
       </button>
 
-      {/* Offered only when the configuration genuinely is more than one sheet — a mode covering
-          one facing at a time, over a set naming more than one. */}
-      {splitsIntoRuns(output) && (
+      {/* Offered only when the configuration genuinely is more than one sheet, counting both axes it
+          can split along: a mode covering one facing at a time over a set naming more than one, and
+          a pairing whose inventory outgrew a single generation. */}
+      {runCount > 1 && (
         <button
           type="button"
           onClick={toggleSplitModal}
@@ -101,7 +105,7 @@ export function PromptActions({ promptText }: PromptActionsProps) {
           <span aria-hidden="true" className={PROMPT_ACTION_ICON}>
             🧩
           </span>
-          Split into {DIRECTION_LISTS[output.directions].length} sheets
+          Split into {runCount} sheets
         </button>
       )}
 

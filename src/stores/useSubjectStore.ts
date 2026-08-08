@@ -50,9 +50,17 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // Reaching into the other store rather than deriving this: the compiler resolves the pairing
     // again on every compile, so the *prompt* is safe either way, but a store left holding a mode
     // its own category cannot produce is state that a saved preset would then persist.
+    // The sheet of the series goes back to the first whether or not the mode survives, because the
+    // series is keyed on the *pairing*: a category the mode still supports can have a shorter series,
+    // so a CHARACTER left on sheet two and switched to an OBJECT would hold an index that pairing does
+    // not have. The compiler resolves such an index rather than trusting it, so this is not what makes
+    // the prompt correct — it is what stops a saved preset persisting a sheet nobody can select, since
+    // the sheet control is hidden for a single-sheet series and could not put it back.
     const output = useOutputStore.getState();
     const mode = resolveMode(category, output.output.directionalMode);
-    if (mode !== output.output.directionalMode) output.setOutputField('directionalMode', mode);
+    if (mode !== output.output.directionalMode || output.output.sheetIndex !== 0) {
+      output.setOutputConfig({ ...output.output, directionalMode: mode, sheetIndex: 0 });
+    }
   },
 
   setField: (key, value) => {

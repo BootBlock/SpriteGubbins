@@ -52,11 +52,15 @@ function copyButtons(): readonly HTMLElement[] {
 }
 
 describe('SheetSplitModal', () => {
-  it('offers one row per facing', () => {
+  it('offers one row per facing, each naming what is on it as well as which way it faces', () => {
     render(<SheetSplitModal />);
 
     expect(copyButtons()).toHaveLength(FACINGS.length);
-    for (const facing of FACINGS) expect(screen.getByText(facing)).toBeInTheDocument();
+    // Both halves of the label, because a batch can split by facing or by sheet and a row cannot
+    // know which: here the name is constant across the eight and the facing is what varies.
+    for (const facing of FACINGS) {
+      expect(screen.getByText(`Rig pieces · ${facing}`)).toBeInTheDocument();
+    }
   });
 
   it('records eight prompts, not one, each with the configuration that reproduces it', async () => {

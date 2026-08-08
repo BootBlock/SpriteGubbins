@@ -23,7 +23,7 @@ import type { JointCapStyle, OverlapMargin, RigMode } from '../../types/rigging.
  * state, and leave the rest to `tooltips.ts`, which has no width to run out of.
  * `tests/select-option-labels.test.ts` enforces the budget and derives the number.
  */
-export interface OutputChoice<T extends string> {
+export interface OutputChoice<T extends string | number> {
   readonly value: T;
   readonly label: string;
 }
@@ -53,6 +53,7 @@ export const PROJECTION_CHOICES: readonly OutputChoice<Projection>[] = [
 
 export const DIRECTION_SET_CHOICES: readonly OutputChoice<DirectionSet>[] = [
   { value: 'THREE_CLASSIC', label: 'THREE_CLASSIC (front-3/4, right side, back-3/4)' },
+  { value: 'FIVE_CLASSIC', label: 'FIVE_CLASSIC (adds front and back to those three)' },
   { value: 'SINGLE_FRONT', label: 'SINGLE_FRONT (front only)' },
   { value: 'FOUR_CARDINAL', label: 'FOUR_CARDINAL (S, W, N, E)' },
   { value: 'EIGHT_COMPASS', label: 'EIGHT_COMPASS (S, SW, W, NW, N, NE, E, SE)' },

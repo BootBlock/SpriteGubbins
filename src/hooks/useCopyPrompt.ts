@@ -22,8 +22,8 @@ import { useClipboard } from './useClipboard.ts';
  *
  * @param run one sheet of a split, or omitted for whatever the studio currently compiles to. A run
  * carries its own configuration as well as its own text, so the entry it logs restores to *that*
- * facing — an entry holding the batch's configuration would come back as run one whatever prompt it
- * showed.
+ * sheet — its facing and its place in the plan's series both — where an entry holding the batch's
+ * configuration would come back as run one whatever prompt it showed.
  */
 export function useCopyPrompt(): (run?: SheetRun) => Promise<void> {
   const copyText = useClipboard();
@@ -37,7 +37,7 @@ export function useCopyPrompt(): (run?: SheetRun) => Promise<void> {
 
       const copied = await copyText(
         promptText,
-        run ? `Copied the ${run.direction} sheet` : 'Prompt copied to the clipboard',
+        run ? `Copied the ${run.name} sheet — ${run.assembly}` : 'Prompt copied to the clipboard',
       );
       if (!copied) return;
 

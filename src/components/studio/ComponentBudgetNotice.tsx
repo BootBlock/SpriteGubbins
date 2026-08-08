@@ -27,14 +27,24 @@ import { Badge } from '../common/Badge.tsx';
  */
 export function ComponentBudgetNotice() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
+  const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const componentBudget = useOutputStore((state) => state.output.componentBudget);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
 
-  // The same sum the prompt, the inventory heading, the mode selector and the atlas grid all state,
-  // read through the one function that owns it — a warning computed from a second arithmetic could
-  // fire against a number the user is not being shown anywhere.
-  const count = componentCountFor(category, directionalMode, parseAdditionalAnatomy(additionalAnatomy));
+  // The same sum the prompt, the inventory heading and the atlas grid all state, read through the
+  // one function that owns it — a warning computed from a second arithmetic could fire against a
+  // number the user is not being shown anywhere.
+  //
+  // Counted for the sheet on screen, not the whole series, which is why it is not the figure the
+  // mode selector carries. The budget is what one generation may be asked for, so a two-sheet
+  // deliverable is over budget only if one of its sheets is.
+  const count = componentCountFor(
+    category,
+    directionalMode,
+    sheetIndex,
+    parseAdditionalAnatomy(additionalAnatomy),
+  );
 
   return (
     <div aria-live="polite" aria-atomic="true">

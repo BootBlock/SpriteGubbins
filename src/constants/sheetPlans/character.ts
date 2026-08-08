@@ -1,4 +1,5 @@
-import type { SheetPlan } from '../../types/components.ts';
+import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import { viewsOf } from './directionalViews.ts';
 
 /**
  * What a CHARACTER sheet asks for, per sheet mode.
@@ -15,9 +16,17 @@ import type { SheetPlan } from '../../types/components.ts';
 const MIRRORED_ARM = 'The same eight variants as the left arm, redrawn for the right side';
 const MIRRORED_LEG = 'The same nine variants as the left leg, redrawn for the right side';
 
+/**
+ * The poses a full set of a character's components has to reach, worded as one sentence fragment so
+ * both modes that promise them promise the same seven.
+ */
+const CHARACTER_POSES =
+  'a neutral standing pose; a relaxed stance; a forward reach; a walking stride with opposing limbs; a running stride with elbow and knee flexion; and both a shallow and a deep crouch';
+
 export const CHARACTER_POSE_LIBRARY: SheetPlan = {
-  assembly:
-    'a neutral standing pose; a relaxed stance; a forward reach; a walking stride with opposing limbs; a running stride with elbow and knee flexion; and both a shallow and a deep crouch.',
+  name: 'Pose library',
+  facings: 'assembly',
+  assembly: `${CHARACTER_POSES}.`,
   groups: [
     {
       heading: null,
@@ -40,21 +49,46 @@ export const CHARACTER_POSE_LIBRARY: SheetPlan = {
   ],
 };
 
-export const CHARACTER_DIRECTIONAL_VARIANTS: SheetPlan = {
+/**
+ * Sheet one of two: the trunk, turned.
+ *
+ * Five views rather than three, and that is the whole reason this mode is a series. Three views is
+ * the most a single forty-three-component sheet could carry beside a character's limbs — and 45°,
+ * 90° and 135° is simultaneously the *most* efficient three-view set (six facings, since each of
+ * them flips into a distinct second one) and the only one that can reach neither the camera-facing
+ * view nor the one directly away, because 0° and 180° are their own mirror. Drawing those two
+ * outright is what takes the classic vocabulary to all eight facings, and it costs six components
+ * the old single sheet did not have.
+ */
+export const CHARACTER_DIRECTIONAL_CORE: SheetPlan = {
+  name: 'Directional core',
+  facings: 'every',
   assembly:
-    'a neutral standing pose; a relaxed stance; a forward reach; a walking stride with opposing limbs; a running stride with elbow and knee flexion; and both a shallow and a deep crouch — in each of the directions listed above.',
+    'one head, one torso and one pelvis seen at each of the directions listed above, reading as one body turned rather than several drawings of it — the trunk the articulation sheet hangs its limbs on.',
   groups: [
     {
-      heading: 'Directional core',
-      intro: `Three views each of **one** head, **one** torso and **one** pelvis: the same piece of geometry drawn
-at each object yaw section 3 lists, in that order. Three separate designs, three mirrored copies, or
-three views facing the same way are all failures of this entry, however well drawn.`,
-      entries: [
-        { text: 'Heads: front-three-quarter, right side, back-three-quarter', count: 3, kind: 'anatomy' },
-        { text: 'Torsos: front-three-quarter, right side, back-three-quarter', count: 3, kind: 'anatomy' },
-        { text: 'Pelvises: front-three-quarter, right side, back-three-quarter', count: 3, kind: 'anatomy' },
-      ],
+      heading: null,
+      intro: `One view of **one** head, **one** torso and **one** pelvis per facing: the same piece of geometry
+drawn at each object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views
+facing the same way are all failures of this entry, however well drawn.`,
+      entries: [viewsOf('Heads', 'anatomy'), viewsOf('Torsos', 'anatomy'), viewsOf('Pelvises', 'anatomy')],
     },
+  ],
+};
+
+/**
+ * Sheet two of two: the limbs, at one facing.
+ *
+ * These thirty-four variants are unchanged from the single sheet they used to share with the core —
+ * they were never directional, which is exactly why they are the half that comes off. A limb pair
+ * redrawn at all five yaws would be a hundred and seventy components, so the sheet states one facing
+ * and section 3 names which: the same mechanism a cut-out rig's pieces already use.
+ */
+export const CHARACTER_ARTICULATION: SheetPlan = {
+  name: 'Articulation',
+  facings: 'assembly',
+  assembly: `the limbs of ${CHARACTER_POSES} — each fitted to the trunk drawn on the directional core sheet, at the single direction listed above.`,
+  groups: [
     {
       heading: 'Left arm',
       entries: [
@@ -88,7 +122,14 @@ three views facing the same way are all failures of this entry, however well dra
   ],
 };
 
+export const CHARACTER_DIRECTIONAL_VARIANTS: SheetSeries = [
+  CHARACTER_DIRECTIONAL_CORE,
+  CHARACTER_ARTICULATION,
+];
+
 export const CHARACTER_CUTOUT_RIG: SheetPlan = {
+  name: 'Rig pieces',
+  facings: 'assembly',
   assembly:
     'any pose the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.',
   groups: [

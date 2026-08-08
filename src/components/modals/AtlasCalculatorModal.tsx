@@ -45,6 +45,7 @@ import { AtlasMetricGrid } from './AtlasMetricGrid.tsx';
  */
 export function AtlasCalculatorModal() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
+  const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
@@ -58,7 +59,14 @@ export function AtlasCalculatorModal() {
   const config = {
     canvasSize,
     padding,
-    componentCount: componentCountFor(category, directionalMode, parseAdditionalAnatomy(additionalAnatomy)),
+    // The sheet the studio is showing, not the series it belongs to: an atlas is laid out from one
+    // returned image, and two sheets of a batch are two atlases.
+    componentCount: componentCountFor(
+      category,
+      directionalMode,
+      sheetIndex,
+      parseAdditionalAnatomy(additionalAnatomy),
+    ),
     widthBias: widthBiasFor(aspectRatio),
   };
   const metrics = calculateAtlasMetrics(config);

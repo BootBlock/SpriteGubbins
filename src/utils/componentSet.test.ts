@@ -3,7 +3,7 @@ import { MAX_ANATOMY_MULTIPLIER, NO_ADDITIONAL_ANATOMY } from '../constants/anat
 import { directionalModeChoices } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../constants/promptText/index.ts';
-import { modesFor } from '../constants/sheetPlans/index.ts';
+import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { NO_ADDITIONAL_ANATOMY as NONE_ANATOMY } from '../constants/anatomy.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -11,7 +11,7 @@ import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
-import { componentCountFor } from './componentSet.ts';
+import { componentCountFor, seriesComponentCount, sheetCountFor } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 
 /**
@@ -34,37 +34,43 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
 }
 
 /**
- * Every pairing that actually exists. Iterating the mode union alone would ask a character for a
+ * Every sheet that actually exists. Iterating the mode union alone would ask a character for a
  * tileset — the pairing this whole module now makes unreachable — so the pairs come from the plan
- * table, which is the only place that knows which combinations are real.
+ * table, which is the only place that knows which combinations are real; and each pairing is walked
+ * down to its individual sheets, because a series' second sheet has its own inventory, its own
+ * heading and its own count, none of which the first one's assertions would have looked at.
  */
-const PAIRS = SUBJECT_CATEGORIES.flatMap((category) =>
-  modesFor(category).map((mode) => ({ category, mode })),
+const SHEETS = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).flatMap((mode) =>
+    sheetSeriesFor(category, mode).map((plan, sheetIndex) => ({
+      category,
+      mode,
+      sheetIndex,
+      sheet: plan.name,
+    })),
+  ),
 );
 
 describe('component counts', () => {
-  it.each(PAIRS)(
-    '$category / $mode states one count consistently across the prompt, the inventory, the selector and the atlas',
-    ({ category, mode }) => {
+  it.each(SHEETS)(
+    '$category / $mode / $sheet states one count consistently across the prompt, the inventory and the atlas',
+    ({ category, mode, sheetIndex, sheet }) => {
       // A subject naming no additional anatomy, so the plan's own count is the whole count here. The
       // block below covers what happens when a subject adds to it.
       const subject = { ...defaultSubjectFor(category), additional_anatomy: NONE_ANATOMY };
-      const count = componentCountFor(category, mode, []);
+      const count = componentCountFor(category, mode, sheetIndex, []);
       expect(Number.isInteger(count) && count > 0).toBe(true);
 
       // The prompt states it twice — once as the contract, once as the self-audit — and both must
       // be the same number the inventory below them lists.
-      const prompt = generatePrompt(category, subject, withOutput({ directionalMode: mode }));
+      const prompt = generatePrompt(category, subject, withOutput({ directionalMode: mode, sheetIndex }));
       expect(prompt).toContain(`Exactly ${count} components`);
       expect(prompt).toContain(`Component count is exactly ${count}.`);
       // The inventory's own heading is the fourth statement of the number, and the one that reads
       // right beside the entries — a heading disagreeing with section 0 is what a model resolves
-      // arbitrarily.
-      expect(prompt).toContain(`### Component inventory — ${count} in total`);
-
-      // The selector must promise the same number the prompt will ask for.
-      const choice = directionalModeChoices(category, []).find((candidate) => candidate.value === mode);
-      expect(choice?.label).toContain(String(count));
+      // arbitrarily. It names the sheet too, because two sheets of one series are otherwise
+      // indistinguishable from one sheet that lost components to a bad edit.
+      expect(prompt).toContain(`### Component inventory: ${sheet} — ${count} in total`);
 
       // And the atlas has to lay out a grid that actually holds them.
       const metrics = calculateAtlasMetrics({
@@ -77,13 +83,87 @@ describe('component counts', () => {
     },
   );
 
-  it('has no pairing asking for more than a model can deliver', () => {
-    // 111 components in one image was deleted for this reason; the ceiling is roughly 40.
-    for (const { category, mode } of PAIRS) {
+  it('has no sheet asking for more than a model can deliver', () => {
+    // 111 components in one image was deleted for this reason; the ceiling is roughly 40. It bounds
+    // one *generation*, which is why a series is checked sheet by sheet rather than in total — a
+    // character's five-view core and its limbs are forty-nine together and neither is over.
+    for (const { category, mode, sheetIndex, sheet } of SHEETS) {
       expect(
-        componentCountFor(category, mode, []),
-        `${category}/${mode} exceeds the practical ceiling`,
+        componentCountFor(category, mode, sheetIndex, []),
+        `${category}/${mode}/${sheet} exceeds the practical ceiling`,
       ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
+    }
+  });
+
+  it('promises the selector the whole series, since that is what the user is choosing', () => {
+    // The one reader that is deliberately *not* per sheet. A pairing costing two generations reading
+    // the same figure as one that costs a single sheet would have the two looking like the same size
+    // of job, which is the question this label exists to answer.
+    for (const { category, mode } of SHEETS) {
+      const choice = directionalModeChoices(category, []).find((candidate) => candidate.value === mode);
+      expect(choice?.label).toContain(String(seriesComponentCount(category, mode, [])));
+      if (sheetCountFor(category, mode) > 1) {
+        expect(choice?.label).toContain(`across ${String(sheetCountFor(category, mode))} sheets`);
+      }
+    }
+  });
+
+  it('keeps the anatomy on a sheet index the pairing does not have', () => {
+    // The bug this pins: the plan was resolved through `resolveSheetIndex` and the anatomy decision
+    // was not, so an index outside the series compiled sheet one's inventory under sheet two's rule
+    // — the user's tail vanished from the count, from the self-audit and from the inventory, and all
+    // three still agreed, which is why every count-agreement assertion above stayed green.
+    //
+    // Reachable without corrupt storage: switching category carries the sheet mode across, and the
+    // new category's series can be shorter. An OBJECT has one directional sheet; a CHARACTER left on
+    // its second and switched to one is holding an index nothing on screen can put back.
+    const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
+    const subject = { ...defaultSubjectFor('OBJECT'), additional_anatomy: 'Demon Horn ×2, Tail ×1' };
+    const stale = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', sheetIndex: 1 });
+
+    expect(sheetCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS')).toBe(1);
+    expect(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 1, anatomy)).toBe(
+      componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 0, anatomy),
+    );
+
+    const prompt = generatePrompt('OBJECT', subject, stale);
+    expect(prompt).toContain('#### Additional anatomy — 3');
+    expect(prompt).toContain(
+      `Exactly ${String(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 0, anatomy))} components`,
+    );
+  });
+
+  it('says nothing about anatomy on a sheet of the series that does not carry it', () => {
+    // Section 1's own prose calls additional anatomy "the single exception" that section 4 lists and
+    // counts separately. Naming a tail on the articulation sheet — whose inventory has no tail and
+    // whose contract demands an exact count without one — is a contradiction inside one prompt, and
+    // the generator resolves it by drawing an uncounted piece or ignoring a binding line.
+    const subject = { ...SUBJECT, additional_anatomy: 'Tail ×1' };
+    const core = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', sheetIndex: 0 });
+    const limbs = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', sheetIndex: 1 });
+
+    expect(generatePrompt('CHARACTER', subject, core)).toContain('- Additional genuine anatomy: Tail ×1');
+    const articulation = generatePrompt('CHARACTER', subject, limbs);
+    expect(articulation).not.toContain('- Additional genuine anatomy:');
+    expect(articulation).not.toContain('Additional anatomy —');
+    expect(articulation).toContain('Exactly 34 components');
+  });
+
+  it('counts the subject’s own anatomy once across a series, on the sheet that establishes the body', () => {
+    // A tail drawn twice and counted twice would be two tails. It lands on the first sheet, and the
+    // series total is the plan's own plus that anatomy exactly once.
+    const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
+    for (const { category, mode } of SHEETS) {
+      const plain = seriesComponentCount(category, mode, []);
+      expect(seriesComponentCount(category, mode, anatomy)).toBe(plain + 3);
+      expect(componentCountFor(category, mode, 0, anatomy)).toBe(
+        componentCountFor(category, mode, 0, []) + 3,
+      );
+      for (let index = 1; index < sheetCountFor(category, mode); index += 1) {
+        expect(componentCountFor(category, mode, index, anatomy)).toBe(
+          componentCountFor(category, mode, index, []),
+        );
+      }
     }
   });
 });
@@ -92,7 +172,7 @@ describe('the count once a subject names anatomy of its own', () => {
   /** `CUTOUT_RIG_SINGLE_DIRECTION`: fifteen pieces, and room to add to them. */
   const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' });
   // Derived, not restated: the plan is the only place the figure lives now.
-  const BASE = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', []);
+  const BASE = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 0, []);
 
   function withAnatomy(additional_anatomy: string): SubjectDefinition {
     return { ...SUBJECT, additional_anatomy };
@@ -148,7 +228,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // components themselves are wired up in `SheetFields` and `AtlasCalculatorModal`, which are
     // driven in the browser rather than here.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
-    const count = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', anatomy);
+    const count = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 0, anatomy);
     expect(count).toBe(BASE + 3);
 
     const label = directionalModeChoices('CHARACTER', anatomy).find(

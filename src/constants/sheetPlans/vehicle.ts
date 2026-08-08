@@ -1,4 +1,5 @@
 import type { SheetPlan } from '../../types/components.ts';
+import { atEachYaw, viewsOf } from './directionalViews.ts';
 
 /**
  * What a VEHICLE sheet asks for, per sheet mode.
@@ -19,6 +20,8 @@ import type { SheetPlan } from '../../types/components.ts';
  */
 
 export const VEHICLE_PART_LIBRARY: SheetPlan = {
+  name: 'Part library',
+  facings: 'assembly',
   assembly:
     'the complete vehicle at rest, and in each state its moving parts allow — mount traversed or elevated, hatch open, drive at rest and at mid-travel — without redrawing any part that does not move.',
   groups: [
@@ -51,26 +54,21 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
   ],
 };
 
+/** One sheet, five views — thirty components. See `OBJECT_DIRECTIONAL_VARIANTS` for why it is not a series. */
 export const VEHICLE_DIRECTIONAL_VARIANTS: SheetPlan = {
+  name: 'Directional views',
+  facings: 'every',
   assembly:
     'the complete vehicle seen from each of the directions listed above, reading as one machine turned rather than several drawings of it, with its drive and mount in matching positions across those views.',
   groups: [
     {
       heading: 'Directional core',
-      intro: `Three views each of **one** hull and **one** mount: the same piece of geometry drawn
-at each object yaw section 3 lists, in that order. Three separate designs, three mirrored
-copies, or three views facing the same way are all failures of this entry.`,
+      intro: `One view of **one** hull and **one** mount per facing: the same piece of geometry drawn at each
+object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing the
+same way are all failures of this entry.`,
       entries: [
-        {
-          text: 'Hulls or fuselages: front-three-quarter, right side, back-three-quarter',
-          count: 3,
-          kind: 'structure',
-        },
-        {
-          text: 'Turret, weapon or working mounts: front-three-quarter, right side, back-three-quarter',
-          count: 3,
-          kind: 'mechanism',
-        },
+        viewsOf('Hulls or fuselages', 'structure'),
+        viewsOf('Turret, weapon or working mounts', 'mechanism'),
       ],
     },
     {
@@ -78,22 +76,18 @@ copies, or three views facing the same way are all failures of this entry.`,
       // rendered into section 4 above its own bullets, so "Running gear" over a cladding panel
       // describes the group wrongly to the one reader that cannot ask.
       heading: 'Moving parts',
-      entries: [
-        { text: 'Drive unit, at each of the three yaws', count: 3, kind: 'mechanism' },
-        { text: 'Crew hatch or canopy, at each of the three yaws', count: 3, kind: 'mechanism' },
-      ],
+      entries: [atEachYaw('Drive unit', 'mechanism'), atEachYaw('Crew hatch or canopy', 'mechanism')],
     },
     {
       heading: 'Fittings',
-      entries: [
-        { text: 'Cladding panel or fairing, at each of the three yaws', count: 3, kind: 'structure' },
-        { text: 'Lamp housing, at each of the three yaws', count: 3, kind: 'structure' },
-      ],
+      entries: [atEachYaw('Cladding panel or fairing', 'structure'), atEachYaw('Lamp housing', 'structure')],
     },
   ],
 };
 
 export const VEHICLE_CUTOUT_RIG: SheetPlan = {
+  name: 'Rig pieces',
+  facings: 'assembly',
   assembly:
     'any state the rig produces by rotating its drive and its mount about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
   groups: [

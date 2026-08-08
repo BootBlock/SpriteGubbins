@@ -140,8 +140,9 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       accent_colours: 'Magma Orange Glow #F97316',
       materials: 'Molten Rock & Obsidian',
       exclusions: 'No saddles, no mechanical parts',
-      // Affordable here precisely because a rig sheet is fifteen pieces rather than forty-three:
-      // wings and a tail cost three components and the sheet is still less than half the ceiling.
+      // Affordable here precisely because a rig sheet is fifteen pieces rather than a directional
+      // series' thirty-four: wings and a tail cost three components and the sheet is still less than
+      // half the ceiling.
       additional_anatomy: 'Webbed Wing ×2, Spike Tail Club ×1',
     },
     output: {

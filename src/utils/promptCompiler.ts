@@ -22,9 +22,9 @@ import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { resolveMode } from '../constants/sheetPlans/index.ts';
+import { resolveMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
-import { assemblyFor, componentBreakdownFor, componentCountFor } from './componentSet.ts';
+import { componentBreakdownFor, componentCountFor, sheetCarriesAnatomy } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
@@ -63,13 +63,18 @@ export function generatePrompt(
   // per call site is how three of them would agree and the fourth would not.
   const mode = resolveMode(category, output.directionalMode);
 
+  // Which sheet of that pairing's series this is. Resolved here for the same reason the mode is: a
+  // stored index can name a second sheet on a pairing that has one, and `sheetPlanFor` answers with
+  // the series' first rather than with `undefined`.
+  const plan = sheetPlanFor(category, mode, output.sheetIndex);
+
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would
   // eventually disagree about the prompt one of them is describing.
-  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections({
-    ...output,
-    directionalMode: mode,
-  });
+  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(
+    { ...output, directionalMode: mode },
+    plan,
+  );
 
   // Only a target that returns text alongside the image can honour a manifest; asking a pure image
   // endpoint for one just spends tokens on an instruction it will drop.
@@ -91,13 +96,13 @@ export function generatePrompt(
 
   const values: Record<string, string> = {
     CATEGORY: category,
-    COMPONENT_COUNT: String(componentCountFor(category, mode, anatomy)),
-    COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, anatomy),
+    COMPONENT_COUNT: String(componentCountFor(category, mode, output.sheetIndex, anatomy)),
+    COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, output.sheetIndex, anatomy),
     // Every one of these is now a function of the category as well as the mode. That is the whole
     // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
     // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
     CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category],
-    ASSEMBLY_POSES: assemblyFor(category, mode),
+    ASSEMBLY_POSES: plan.assembly,
     CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
     CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
 
@@ -137,7 +142,16 @@ export function generatePrompt(
   // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
   // another in the inventory. It also empties for `NONE`, which drops the line entirely rather than
   // putting a bare sentinel in the highest-weighted section.
-  values.ADDITIONAL_ANATOMY = anatomy.map(formatAnatomyComponent).join(', ');
+  //
+  // **And it empties on a sheet that does not carry the anatomy**, for the same reason and a sharper
+  // one. Section 1's own prose says additional anatomy is "the single exception" that section 4
+  // lists and counts separately — so naming a tail here on the sheet that draws the limbs, whose
+  // inventory has no tail in it and whose contract demands an exact count without one, is a
+  // contradiction inside one prompt. The generator resolves it by drawing an uncounted piece or by
+  // ignoring a line it was told was binding, and neither is recoverable.
+  values.ADDITIONAL_ANATOMY = sheetCarriesAnatomy(category, mode, output.sheetIndex)
+    ? anatomy.map(formatAnatomyComponent).join(', ')
+    : '';
 
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,

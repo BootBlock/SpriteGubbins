@@ -54,8 +54,23 @@ export interface ComponentGroup {
 }
 
 /**
- * Everything one (category, sheet-mode) pairing asks for: the components, and what they must
- * assemble into.
+ * How many of the facings its mode covers one sheet draws.
+ *
+ * `'every'` is a sheet whose components are *views* — the directional core draws one head at each
+ * yaw, and its inventory names them entry by entry. `'assembly'` is a sheet drawn to a single facing,
+ * the one the series assembles towards: a cut-out rig's pieces, a tileset, and the articulation
+ * variants that share a sheet with nothing directional.
+ *
+ * It sits on the sheet rather than beside the mode because one series can hold both, which is the
+ * whole reason the series exists. `CORE_DIRECTIONAL_VARIANTS` is a five-view core that no longer
+ * fits on one sheet with a character's thirty-four limb variants; splitting it puts an `'every'`
+ * sheet and an `'assembly'` sheet under one mode, and `DIRECTION_COVERAGE` — keyed on the mode — has
+ * no way to answer for both.
+ */
+export type SheetFacings = 'every' | 'assembly';
+
+/**
+ * One sheet: what it asks for, how many facings it draws, and what its components must assemble into.
  *
  * The assembly sentence lives here rather than in a table of its own because it is the same
  * decision as the inventory — a set of floor and wall tiles assembles into a floor field, and a set
@@ -63,7 +78,33 @@ export interface ComponentGroup {
  * things is how one of them came to describe a tileset while the other described a character.
  */
 export interface SheetPlan {
+  /**
+   * What this sheet carries, as the split drawer titles it and the inventory heading names it.
+   *
+   * Every plan has one, including the single-sheet ones: a run row reading only its facing tells a
+   * user working through a rig nothing about what is on it, and a name is the half that does not
+   * change between runs.
+   */
+  readonly name: string;
+  readonly facings: SheetFacings;
   readonly groups: readonly ComponentGroup[];
   /** Completes "The component set must assemble cleanly into: …". */
   readonly assembly: string;
 }
+
+/**
+ * Every sheet one (category, sheet-mode) pairing takes, in the order they are generated.
+ *
+ * **A pairing is a series because a sheet has a ceiling and a deliverable does not.**
+ * `PRACTICAL_COMPONENT_CEILING` is a fact about what one generation returns before it starts merging
+ * and dropping pieces, so anything larger has to arrive as more than one image — and until this type
+ * existed, the only thing a plan could do when it outgrew a sheet was shrink. That is what pinned
+ * the directional core at three views: a CHARACTER at forty-three components had no headroom, and
+ * three views is the most a single sheet could hold, which is also the only set of views that cannot
+ * reach the camera-facing one.
+ *
+ * A non-empty tuple, so the first sheet is a `SheetPlan` rather than a `SheetPlan | undefined` —
+ * every pairing produces at least one sheet, and a series that produced none would be a plan that
+ * asks for nothing.
+ */
+export type SheetSeries = readonly [SheetPlan, ...SheetPlan[]];

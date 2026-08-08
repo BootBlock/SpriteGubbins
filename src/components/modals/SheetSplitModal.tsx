@@ -11,13 +11,15 @@ import { Modal } from '../common/Modal.tsx';
 import { SheetSplitRun } from './SheetSplitRun.tsx';
 
 /**
- * The batch an N-direction rig actually is: one sheet per facing, worked through in one place.
+ * The batch a configuration actually is, worked through in one place.
  *
  * `baseline-prompt-new.md` §4 settles on this as the workflow for anything rigged — an eight-facing
  * cut-out rig is 120 pieces, so it is eight runs of fifteen tied together by one identity lock — and
- * documents it as eight manual passes through the studio. Here the runs are derived rather than
- * performed: `sheetRuns` is a pure function of the studio state, so this component holds no copy of
- * the prompts and cannot show one that has gone stale.
+ * documents it as eight manual passes through the studio. It is now also the workflow for a pairing
+ * whose inventory outgrew one generation: a character's five-view directional core and its
+ * thirty-four limb variants are two sheets of the same deliverable, held together by the same lock.
+ * Here the runs are derived rather than performed: `sheetRuns` is a pure function of the studio
+ * state, so this component holds no copy of the prompts and cannot show one that has gone stale.
  *
  * **Which runs are done is read from the history, not tracked here.** The obvious `useState` of
  * copied facings looks right and is wrong for the workflow this exists to serve: §5 advises writing
@@ -55,16 +57,17 @@ export function SheetSplitModal() {
 
   return (
     <Modal
-      title="Split into one sheet per direction"
+      title="Split into separate sheets"
       icon="🧩"
       onClose={toggleSplitModal}
       panelClassName="glass-panel flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foundry-700 shadow-2xl"
     >
       <div className="border-b border-foundry-700 px-6 py-4">
         <p className="text-xs leading-relaxed text-ink-muted">
-          Each sheet below asks for the same components drawn towards a different facing. Generate them one at
-          a time — a single sheet covering every facing would ask for more components than a model delivers,
-          which comes back as a plausible subset rather than an obvious shortfall.
+          Each sheet below is one generation, and together they are the deliverable — some batches repeat one
+          component set towards a different facing, others carry a different part of it. Generate them one at
+          a time: a single sheet asking for all of it would want more components than a model delivers, which
+          comes back as a plausible subset rather than an obvious shortfall.
         </p>
       </div>
 
@@ -85,8 +88,10 @@ export function SheetSplitModal() {
 
       <ul className="flex-1 space-y-3 overflow-y-auto px-6 py-4">
         {runs.map((run, index) => (
+          // Keyed on both axes, because neither is unique on its own once a batch can split along
+          // both: two sheets of a series share a facing, and every facing of a run list shares a name.
           <SheetSplitRun
-            key={run.direction}
+            key={`${run.assembly}::${run.name}`}
             run={run}
             ordinal={index + 1}
             total={runs.length}

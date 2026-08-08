@@ -228,6 +228,22 @@ export interface OutputConfig {
    * user switched sets, which is a facing the sheet does not cover.
    */
   readonly primaryDirection: Direction | null;
+  /**
+   * Which sheet of the pairing's series this prompt is for, from zero.
+   *
+   * The second axis a batch splits along, and a different one from `primaryDirection`. That says
+   * which *facing* of a run list a sheet covers, and every run of it draws the same inventory; this
+   * says which *part of the inventory* a sheet carries, and every sheet of a series draws a
+   * different one. A CHARACTER's five-view core and its thirty-four limb variants are 49 components
+   * together — past what one generation returns — so they are two sheets of one deliverable, and
+   * without this the studio could only ever express the first of them.
+   *
+   * A plain number rather than a nullable one: zero is a real sheet and the natural default, where
+   * `primaryDirection` is nullable because "the set's first" has to survive the set changing under
+   * it. An index the series does not have resolves to its first sheet in `sheetPlanFor`, which is
+   * what a stored `1` does when the category is switched to one whose series has a single sheet.
+   */
+  readonly sheetIndex: number;
   readonly backgroundKey: BackgroundKey;
   /** Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely. */
   readonly spriteTargetSize: string;

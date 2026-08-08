@@ -171,9 +171,19 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 | Value | Set |
 | --- | --- |
 | `SINGLE_FRONT` | Front only |
-| `THREE_CLASSIC` | Front-three-quarter, right side, back-three-quarter *(the current hardcoded set)* |
+| `THREE_CLASSIC` | Front-three-quarter, right side, back-three-quarter *(the set this template hardcoded)* |
+| `FIVE_CLASSIC` | Front, front-three-quarter, right side, back-three-quarter, back |
 | `FOUR_CARDINAL` | South, west, north, east |
 | `EIGHT_COMPASS` | S, SW, W, NW, N, NE, E, SE |
+
+> `FIVE_CLASSIC` was **added after this template shipped**, because three views cannot reach the two
+> facings a player looks at most and nothing in the app said so. 0° and 180° are their own mirror, so
+> they buy nothing from an engine's horizontal flip while each of 45/90/135 buys a distinct second
+> facing — which makes `THREE_CLASSIC` the most efficient *three*-view set at six facings and, by the
+> same arithmetic, structurally incapable of producing a subject facing the camera. Drawing 0° and
+> 180° outright takes the classic vocabulary to all eight. `CORE_DIRECTIONAL_VARIANTS` covers this
+> set rather than `THREE_CLASSIC`; both remain selectable, since three sheets is still the cheapest
+> run list a cut-out rig can be worked through.
 
 > A `CUSTOM` free list was specified here and has been **removed** rather than built. It needs a
 > field to hold it, no shipped preset exercises it, and a set resolving to nothing emits an empty

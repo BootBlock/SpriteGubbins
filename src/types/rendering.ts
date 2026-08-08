@@ -51,15 +51,30 @@ export type Projection = (typeof PROJECTIONS)[number];
  * Which facings the sheet covers. v1 hardcoded three even though the directional mode implied they
  * varied, so an eight-direction set — what a top-down cut-out rig needs — could not be requested.
  *
- * These four are the whole set. A `CUSTOM` free list was specified and then **deleted from the
+ * These five are the whole set. A `CUSTOM` free list was specified and then **deleted from the
  * specification** rather than built: it needs a field to hold it, no shipped preset exercises it,
  * and a set resolving to nothing would emit an empty "Directions required" line. It would also
  * break {@link Direction} open, and with it the exhaustiveness that makes `DEPTH_ORDER_TEXT` able to
  * answer for every facing a set can produce — a free list yields arbitrary strings with no depth
  * order at all. Same reasoning that deleted `FULL_DIRECTIONAL_POSE_LIBRARY`: a value whose only
  * outcome is a wrong sheet.
+ *
+ * **`FIVE_CLASSIC` is `THREE_CLASSIC` completed, and it exists because three views cannot reach the
+ * two facings a player looks at most.** 0° and 180° are their own mirror, so a front or rear view
+ * buys nothing from an engine's horizontal flip while each of 45/90/135 buys a distinct second
+ * facing — which makes 45/90/135 the most efficient *three*-view set at six facings, and by the same
+ * arithmetic structurally incapable of producing a subject looking at the camera. Adding 0° and 180°
+ * takes the classic vocabulary to all eight. Both sets stay: the three-view one is still the
+ * cheapest run list a cut-out rig can be worked through, and the five-view one is what a sheet that
+ * draws its own facings covers.
  */
-export const DIRECTION_SETS = ['SINGLE_FRONT', 'THREE_CLASSIC', 'FOUR_CARDINAL', 'EIGHT_COMPASS'] as const;
+export const DIRECTION_SETS = [
+  'SINGLE_FRONT',
+  'THREE_CLASSIC',
+  'FIVE_CLASSIC',
+  'FOUR_CARDINAL',
+  'EIGHT_COMPASS',
+] as const;
 export type DirectionSet = (typeof DIRECTION_SETS)[number];
 
 /**
@@ -74,12 +89,18 @@ export type DirectionSet = (typeof DIRECTION_SETS)[number];
  * holding one — `OutputConfig.primaryDirection` — is validated against *its own direction set*
  * rather than against every facing that exists. A stored `north` is not merely a `Direction`
  * question; it is wrong on a `THREE_CLASSIC` sheet, which never turns that way.
+ *
+ * The classic and compass vocabularies name the same four yaws twice over — `front` and `south` are
+ * both 0°, `back` and `north` both 180° — and that redundancy is deliberate. A set is chosen for the
+ * game's own read: `back` is the word for a platformer's or a side-on sheet's rear elevation, where
+ * `north` would describe a compass a flat projection does not have.
  */
 export type Direction =
   | 'front'
   | 'front-three-quarter'
   | 'right side'
   | 'back-three-quarter'
+  | 'back'
   | 'south'
   | 'south-west'
   | 'west'

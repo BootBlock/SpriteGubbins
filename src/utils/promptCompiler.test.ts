@@ -491,7 +491,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
    * identical across all of them", which reads as *every component faces the same way*, and a
    * generator resolving that against its own preference for three-quarter views resolves it wrongly.
    */
-  const CORE = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'THREE_CLASSIC' });
+  const CORE = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FIVE_CLASSIC' });
 
   it('fixes the camera and turns the component, and says which is which', () => {
     const prompt = generatePrompt('CREATURE', SUBJECT, CORE);
@@ -553,9 +553,9 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(rig).not.toContain('### Rotation, not redesign');
   });
 
-  it('makes the inventory demand one geometry rather than three designs', () => {
+  it('makes the inventory demand one geometry rather than several designs', () => {
     expect(generatePrompt('CREATURE', SUBJECT, CORE)).toMatch(
-      /the same piece of geometry drawn\s+at each object yaw section 3 lists/,
+      /the same piece of\s+geometry drawn at each object yaw section 3 lists/,
     );
   });
 
@@ -630,16 +630,19 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(cardinal).toContain('- Primary assembly direction: south');
   });
 
-  it('pins the core directional mode to the three facings its inventory names', () => {
-    // Its 43-component inventory lists front-three-quarter, right-side and back-three-quarter entry
-    // by entry, so a different set would leave section 3 asking for facings section 4 never lists.
+  it('pins the core directional mode to the five facings its inventory names', () => {
+    // Its directional core lists those five entry by entry, so a different set would leave section 3
+    // asking for facings section 4 never lists. Front leads, which is the point of the five-view set:
+    // 0° and 180° are their own mirror, so a three-view sheet could reach neither.
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
       withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' }),
     );
-    expect(prompt).toContain('- Directions required: Front-three-quarter, right side, back-three-quarter');
-    expect(prompt).toContain('- Primary assembly direction: front-three-quarter');
+    expect(prompt).toContain(
+      '- Directions required: Front, front-three-quarter, right side, back-three-quarter, back',
+    );
+    expect(prompt).toContain('- Primary assembly direction: front');
     expect(prompt).not.toContain('- Directions required: South, west, north, east');
   });
 

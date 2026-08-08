@@ -31,7 +31,7 @@ describe('every shipped preset', () => {
     // a request past the ceiling comes back as a plausible subset with the rest merged or dropped.
     const anatomy = parseAdditionalAnatomy(preset.subject.additional_anatomy);
     expect(
-      componentCountFor(preset.category, preset.output.directionalMode, anatomy),
+      componentCountFor(preset.category, preset.output.directionalMode, preset.output.sheetIndex, anatomy),
       `${preset.name} exceeds the practical ceiling`,
     ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
   });
@@ -52,7 +52,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
     expect(prompt).toContain('head, chest, back, hand_left, hand_right');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', []))} components`,
+      `Exactly ${String(componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 0, []))} components`,
     );
   });
 
@@ -81,7 +81,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('48 × 48 px per tile');
     expect(prompt).toContain('Seamless tiling');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('BUILDING', 'TILESET_MODULAR', []))} components`,
+      `Exactly ${String(componentCountFor('BUILDING', 'TILESET_MODULAR', 0, []))} components`,
     );
     // Not articulated, so neither rig section appears.
     expect(prompt).not.toContain('## 5.');

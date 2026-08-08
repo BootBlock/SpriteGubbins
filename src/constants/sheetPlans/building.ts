@@ -1,4 +1,5 @@
 import type { SheetPlan } from '../../types/components.ts';
+import { atEachYaw, viewsOf } from './directionalViews.ts';
 
 /**
  * What a BUILDING sheet asks for, per sheet mode.
@@ -15,6 +16,8 @@ import type { SheetPlan } from '../../types/components.ts';
  */
 
 export const BUILDING_TILESET: SheetPlan = {
+  name: 'Tile set',
+  facings: 'assembly',
   assembly:
     'a continuous floor field, a straight wall run, and both outer and inner corners, with no visible join where tiles meet.',
   groups: [
@@ -44,6 +47,8 @@ carries a feature that reveals repetition when laid in a field.`,
 };
 
 export const BUILDING_MODULE_LIBRARY: SheetPlan = {
+  name: 'Module library',
+  facings: 'assembly',
   assembly:
     'the complete structure, and the variations its modules allow — a longer façade by repeating a wall bay, an open or closed entrance, a roof carried across either footprint.',
   groups: [
@@ -69,34 +74,23 @@ beside any other without a step in the course lines.`,
   ],
 };
 
+/** One sheet, five views — twenty components. See `OBJECT_DIRECTIONAL_VARIANTS` for why it is not a series. */
 export const BUILDING_DIRECTIONAL_VARIANTS: SheetPlan = {
+  name: 'Directional views',
+  facings: 'every',
   assembly:
     'the complete structure seen from each of the directions listed above, with its module courses aligning across those views.',
   groups: [
     {
       heading: 'Directional core',
-      intro: `Three views each of **one** wall bay and **one** roof section: the same piece of geometry drawn
-at each object yaw section 3 lists, in that order. Three separate designs, three mirrored
-copies, or three views facing the same way are all failures of this entry.`,
-      entries: [
-        {
-          text: 'Wall bays: front-three-quarter, right side, back-three-quarter',
-          count: 3,
-          kind: 'structure',
-        },
-        {
-          text: 'Roof sections: front-three-quarter, right side, back-three-quarter',
-          count: 3,
-          kind: 'structure',
-        },
-      ],
+      intro: `One view of **one** wall bay and **one** roof section per facing: the same piece of geometry drawn
+at each object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing
+the same way are all failures of this entry.`,
+      entries: [viewsOf('Wall bays', 'structure'), viewsOf('Roof sections', 'structure')],
     },
     {
       heading: 'Openings and corners',
-      entries: [
-        { text: 'Entrance module, at each of the three yaws', count: 3, kind: 'structure' },
-        { text: 'Corner post or quoin, at each of the three yaws', count: 3, kind: 'structure' },
-      ],
+      entries: [atEachYaw('Entrance module', 'structure'), atEachYaw('Corner post or quoin', 'structure')],
     },
   ],
 };

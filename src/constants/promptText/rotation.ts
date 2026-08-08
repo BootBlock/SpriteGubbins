@@ -22,7 +22,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * classic set presents its *right* (`right side` means the right side faces the camera). Only one
  * set ever reaches a single sheet — `sheetDirections` resolves to one list — so the two senses never
  * appear together, and a signed axis would only have bought `315°, 270°, 225°` in place of the
- * classic set's plain `45°, 90°, 135°`.
+ * classic sets' plain `45°, 90°, 135°`.
  *
  * The three-quarter facings are `45°` and `135°`, not `0°` and `180°`: `front-three-quarter` is a
  * *turned* pose — that is why `DEPTH_ORDER_TEXT` distinguishes a near arm from a far one for it and
@@ -33,6 +33,7 @@ export const OBJECT_YAW: Readonly<Record<Direction, number>> = {
   'front-three-quarter': 45,
   'right side': 90,
   'back-three-quarter': 135,
+  back: 180,
   south: 0,
   'south-west': 45,
   west: 90,
@@ -59,6 +60,7 @@ export const FACING_TEXT: Readonly<Record<Direction, string>> = {
     'Turned until the subject’s **right** side squarely faces the camera — it therefore faces screen-right. The front reads only as a profile edge, and the left side is completely hidden.',
   'back-three-quarter':
     'Turned until the rear is angled towards the camera, the **right** side still leading: rear surfaces dominate, and front-facing features are mostly turned away and heavily foreshortened.',
+  back: 'Turned squarely away from the camera: the rear is fully presented, both sides are edge-on, and no front-facing feature is visible at all.',
   south:
     'Squarely towards the camera: the front is fully presented, both sides are edge-on, and no part of the rear is visible.',
   'south-west':
@@ -97,7 +99,7 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // axis *is* the end that leads when it moves forward. Said in its own vocabulary anyway, because
   // "the end that would lead" is a hypothetical for a chest and a fact for a hull, and a mount that
   // traverses independently of the hull is the piece most likely to be drawn facing the camera in
-  // all three views.
+  // every view.
   VEHICLE:
     'a hull’s front is the nose, prow or bow — the end that leads in travel and the end the driving position looks out of — and its rear is the engine deck, tail or transom; a turret or working mount’s front is its muzzle, boom or working end, which turns independently of the hull beneath it; a drive unit’s front is its leading edge in the direction of travel.',
 };

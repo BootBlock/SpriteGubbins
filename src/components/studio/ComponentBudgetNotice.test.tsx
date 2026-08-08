@@ -13,7 +13,7 @@ import { ComponentBudgetNotice } from './ComponentBudgetNotice.tsx';
  * component early would train the user to ignore it, and one that fires a component late is not
  * there for the sheet it exists to catch.
  */
-const RIG = componentCountFor(DEFAULT_PRESET.category, 'CUTOUT_RIG_SINGLE_DIRECTION', []);
+const RIG = componentCountFor(DEFAULT_PRESET.category, 'CUTOUT_RIG_SINGLE_DIRECTION', 0, []);
 
 /** Is the warning on screen? Matched on the phrase the notice leads with. */
 function isWarning(): boolean {

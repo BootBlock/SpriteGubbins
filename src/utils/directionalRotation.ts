@@ -6,7 +6,7 @@ import type { Direction } from '../types/rendering.ts';
  * what it puts in front of the camera.
  *
  * Computed rather than a fixed block of template text because the facings are not fixed — a sheet
- * covers the three classic views, or one of eight compass runs — and a list that named views the
+ * covers the five classic views, or one of eight compass runs — and a list that named views the
  * sheet does not draw would be worse than none. It is also the *only* place the yaw figures are
  * stated: the inventory names the views and points here, so the two cannot drift apart.
  *

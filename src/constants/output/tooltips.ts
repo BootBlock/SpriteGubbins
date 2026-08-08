@@ -10,8 +10,10 @@ export const OUTPUT_TOOLTIPS = {
   category:
     'The kind of thing being described. It swaps the entire field vocabulary and the option pools behind it — the first field is “Species / Archetype” for a character and “Structure Type” for a building — so switching resets the subject to that category’s defaults. Choose it before filling anything else in.',
 
+  sheetIndex:
+    'Which sheet of this deliverable the prompt below is for. Some sheet contents ask for more components than one generation returns, so they arrive as a short series: a character’s five directional views of head, torso and pelvis are one sheet, and its thirty-four limb variants are another. Generate them in order, and set the identity lock from the first one you accept so the rest depict the same individual. “Split into sheets” works through the whole series in one place.',
   directionalMode:
-    'What the sheet has to deliver, and therefore how many components the prompt asks for. CORE_DIRECTIONAL_VARIANTS is the recommended default; CUTOUT_RIG_SINGLE_DIRECTION covers one facing per sheet, so eight directions means eight runs rather than one 120-piece sheet no generator will return in a single pass. The count beside each option is the same number the prompt’s contract and self-audit state.',
+    'What the sheet has to deliver, and therefore how many components the prompt asks for. CORE_DIRECTIONAL_VARIANTS is the recommended default; CUTOUT_RIG_SINGLE_DIRECTION covers one facing per sheet, so eight directions means eight runs rather than one 120-piece sheet no generator will return in a single pass. The count beside each option is what the whole deliverable asks for — where that is more than one generation the option says so, and each sheet’s own figure is the one its prompt contracts for.',
   surfaceDetail:
     'How much internal seam, panel and fold complexity to draw on each component, while still respecting the palette limit. MINIMAL keeps base colours and essential joints, which is what a small sprite needs before detail turns to noise; CLEAN_PRODUCTION is the usual choice; TEXTURED is for large pieces that will be seen close up.',
   resolutionProfile:
@@ -36,7 +38,7 @@ export const OUTPUT_TOOLTIPS = {
   cameraElevation:
     'Degrees above the horizon, from 0 at eye level to 90 directly overhead. It defaults to whatever the chosen projection implies, so override it only when the game has a specific ground read to match — raising it shows more of the floor plane and foreshortens the figure’s height.',
   directions:
-    'Which facings the sheet covers, where Sheet Contents leaves the choice open — a cut-out rig and a tileset read this as the run list rather than the sheet contents, so generate one sheet per direction and tie them together with an identity lock. THREE_CLASSIC buys the most facings three drawings can, because each of its views flips at runtime into a different one — but every view in it is a turned pose, so it reaches no facing towards the camera and none directly away, and flipping cannot produce either. FOUR_CARDINAL and EIGHT_COMPASS both carry one.',
+    'Which facings the sheet covers, where Sheet Contents leaves the choice open — a cut-out rig and a tileset read this as the run list rather than the sheet contents, so generate one sheet per direction and tie them together with an identity lock. THREE_CLASSIC buys the most facings three drawings can, because each of its views flips at runtime into a different one — but every view in it is a turned pose, so it reaches no facing towards the camera and none directly away, and flipping cannot produce either. FIVE_CLASSIC adds exactly those two and reaches all eight; FOUR_CARDINAL and EIGHT_COMPASS carry them in compass terms instead.',
   primaryDirection:
     'Which facing of that run list this sheet is for. It sets the assembly direction and the depth order — which arm renders in front of the torso changes with the way the subject turns. Split the sheet to work through every facing in one pass.',
   backgroundKey:

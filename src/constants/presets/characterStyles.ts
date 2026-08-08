@@ -114,8 +114,8 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GEMINI_PRO_IMAGE',
       // A conversational target, so the companion manifest is honoured rather than dropped — the one
-      // preset in this file that asks for one, because forty-three labelled cells is the case it pays
-      // for itself on.
+      // preset in this file that asks for one, because a sheet whose cells have to be found by grid
+      // position is the case it pays for itself on.
       emitManifest: true,
     },
   },

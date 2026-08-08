@@ -23,9 +23,11 @@ export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
   targetModel: 'CHATGPT_5_6_SOL',
   // The practical ceiling rather than no cap, because the ceiling is a real property of current
   // models and a studio that never mentions it lets the user compose an unsatisfiable sheet in
-  // silence. It sits exactly at the default mode's own count, so the warning is quiet until
-  // something — additional anatomy, usually — actually pushes the sheet past what one generation
-  // delivers. A user whose target model does better sets their own number, or zero for no cap.
+  // silence. It is the ceiling itself rather than the default mode's own count: those coincided while
+  // that mode was one forty-three-component sheet, and a series is deliberately below it on every
+  // sheet — a budget re-derived to sit tight against the largest of them would fire on a sheet that
+  // is comfortably within what one generation delivers. A user whose target model does better sets
+  // their own number, or zero for no cap.
   componentBudget: PRACTICAL_COMPONENT_CEILING,
 
   renderStyle: 'PIXEL_ART',
@@ -36,6 +38,10 @@ export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
   // change of direction set, for no gain — "the first" is what the studio means until a split run
   // says otherwise.
   primaryDirection: null,
+  // The first sheet of whatever series the pairing turns out to be, which is the only index every
+  // pairing has. A studio that opened on sheet two of a two-sheet series would be showing the limbs
+  // of a character whose trunk had not been drawn yet.
+  sheetIndex: 0,
   backgroundKey: 'MAGENTA_FF00FF',
   spriteTargetSize: '',
 

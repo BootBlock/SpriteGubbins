@@ -6,8 +6,9 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * Powered props — the interactive machines a player walks up to and uses.
  *
  * An object decomposes by housing, mount and what moves, not by limb, which is why these can afford
- * far more additional anatomy than a humanoid can: the largest object plan is eighteen components
- * against the humanoid's forty-three, so a deployable dish or a second vent is cheap here.
+ * far more additional anatomy than a humanoid can: the largest object plan is thirty components on
+ * one sheet, against a humanoid whose forty-nine no longer fit on one at all, so a deployable dish or
+ * a second vent is cheap here.
  */
 export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
   {

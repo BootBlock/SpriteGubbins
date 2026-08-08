@@ -60,6 +60,51 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
     },
   },
   {
+    id: 'five-view-turnaround-rig',
+    name: 'Five-View Turnaround Rig',
+    category: 'CHARACTER',
+    subject: {
+      species: 'Duellist',
+      gender: 'Feminine',
+      age: 'Adult (30s)',
+      role: 'Blade Dancer',
+      setting: 'High Fantasy',
+      build: 'Lean & Wiry',
+      silhouette: 'Trailing Coat Tails',
+      face_head: 'Braided Topknot & Half-Mask',
+      anatomy: 'STANDARD HUMANOID',
+      clothing: 'Layered Duelling Coat',
+      worn_details: 'Buckled Sword Harness',
+      primary_colours: 'Deep Indigo & Bone White',
+      accent_colours: 'Antique Brass',
+      materials: 'Waxed Canvas & Tooled Leather',
+      exclusions: 'No cape, no floor terrain',
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
+    },
+    output: {
+      ...DEFAULT_OUTPUT_CONFIG,
+      projection: 'THREE_QUARTER_TOPDOWN',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.THREE_QUARTER_TOPDOWN,
+      rigMode: 'CUTOUT_RIG',
+      directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      // Five runs reaching all eight facings, which is the arithmetic `FIVE_CLASSIC` exists for. The
+      // three turned views each flip at runtime into a distinct second facing, and `front` and `back`
+      // are their own mirror — so they buy nothing from the flip and have to be drawn. Against
+      // `EIGHT_COMPASS` that is three fewer generations for the same coverage, and three fewer
+      // chances for a sheet to come back as a different character.
+      directions: 'FIVE_CLASSIC',
+      primaryDirection: 'front',
+      jointCapStyle: 'ROUNDED',
+      overlapMargin: 'HALF_CAP',
+      sockets: 'head, back, hand_left, hand_right',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '56 × 88 px assembled',
+      aspectRatio: 'WIDE_16_9',
+      emitManifest: true,
+      targetModel: 'CHATGPT_5_6_SOL',
+    },
+  },
+  {
     id: 'platformer-side-runner',
     name: 'Side-On Platformer Runner',
     category: 'CHARACTER',
@@ -162,8 +207,8 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_OUTPUT_CONFIG,
       // The question every sprite has to answer and most sheets never ask: at target size, with no
-      // interior detail at all, is the shape still recognisable? Three facings, because a silhouette
-      // that only works from the front is a silhouette that fails the moment the character turns.
+      // interior detail at all, is the shape still recognisable? Every facing the core draws, because
+      // a silhouette that only works from the front fails the moment the character turns.
       renderStyle: 'SILHOUETTE_ONLY',
       surfaceDetail: 'MINIMAL',
       paletteLimit: 'STRICT_32_COLOR',

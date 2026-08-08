@@ -2,6 +2,7 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { COMPONENT_BUDGET_RANGE } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
+import { SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
 import {
   ASPECT_RATIOS,
   BACKGROUND_KEYS,
@@ -132,6 +133,9 @@ export function parseOutputConfig(value: unknown): OutputConfig {
     ),
     directions,
     primaryDirection: pickPrimaryDirection(value, directions),
+    // Bounded but not validated: which sheet indices exist depends on the category, which this
+    // function is not given. `sheetPlanFor` resolves an index its own series does not have.
+    sheetIndex: pickWholeNumber(value, 'sheetIndex', DEFAULT_OUTPUT_CONFIG.sheetIndex, SHEET_INDEX_RANGE),
     backgroundKey: pick(value, 'backgroundKey', DEFAULT_OUTPUT_CONFIG.backgroundKey, BACKGROUND_KEYS),
     spriteTargetSize: typeof value['spriteTargetSize'] === 'string' ? value['spriteTargetSize'] : '',
 

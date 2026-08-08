@@ -1,5 +1,6 @@
 import { CATEGORY_SHEET_PLANS } from '../constants/sheetPlans/index.ts';
-import type { ComponentKind, SheetPlan } from '../types/components.ts';
+import { DIRECTION_COVERAGE } from '../constants/promptText/index.ts';
+import type { ComponentKind, SheetPlan, SheetSeries } from '../types/components.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
@@ -68,34 +69,54 @@ export function validateAllSheetPlans(): readonly PlanViolation[] {
 
   for (const category of SUBJECT_CATEGORIES) {
     const plans = CATEGORY_SHEET_PLANS[category];
-    for (const [mode, plan] of Object.entries(plans) as [DirectionalMode, SheetPlan][]) {
-      for (const kind of kindsIn(plan)) {
-        if (!categoryPermits(category, kind)) {
-          violations.push({
-            category,
-            mode,
-            message: `asks for a component of kind "${kind}", which ${category} does not admit`,
-          });
-        }
+    for (const [mode, series] of Object.entries(plans) as [DirectionalMode, SheetSeries][]) {
+      // Names are what a run row, a toast and an inventory heading identify a sheet by, and what
+      // `sheetIdentity` keys a batch's progress on — two sheets of one series sharing one would make
+      // the drawer tick both off when either was copied.
+      const names = new Set(series.map((plan) => plan.name));
+      if (names.size !== series.length) {
+        violations.push({ category, mode, message: 'has two sheets with the same name' });
       }
-      if (plan.groups.length === 0) {
-        violations.push({ category, mode, message: 'has no component groups' });
-      }
-      for (const group of plan.groups) {
-        if (group.entries.length === 0) {
-          violations.push({
-            category,
-            mode,
-            message: `has an empty group (${group.heading ?? 'unheaded'})`,
-          });
-        }
-        for (const entry of group.entries) {
-          if (entry.count < 1 || !Number.isInteger(entry.count)) {
+
+      for (const plan of series) {
+        for (const kind of kindsIn(plan)) {
+          if (!categoryPermits(category, kind)) {
             violations.push({
               category,
               mode,
-              message: `entry "${entry.text}" contributes ${String(entry.count)} components`,
+              message: `asks for a component of kind "${kind}", which ${category} does not admit`,
             });
+          }
+        }
+        // A sheet drawing every facing of a run list would be the 120-piece sheet the splitter exists
+        // to prevent: under `'primary'` coverage the set is a list of sheets to generate, not a
+        // description of one, so `'every'` there asks for all of them at once.
+        if (plan.facings === 'every' && DIRECTION_COVERAGE[mode] === 'primary') {
+          violations.push({
+            category,
+            mode,
+            message: `sheet "${plan.name}" draws every facing of a set the mode reads as a run list`,
+          });
+        }
+        if (plan.groups.length === 0) {
+          violations.push({ category, mode, message: `sheet "${plan.name}" has no component groups` });
+        }
+        for (const group of plan.groups) {
+          if (group.entries.length === 0) {
+            violations.push({
+              category,
+              mode,
+              message: `has an empty group (${group.heading ?? 'unheaded'})`,
+            });
+          }
+          for (const entry of group.entries) {
+            if (entry.count < 1 || !Number.isInteger(entry.count)) {
+              violations.push({
+                category,
+                mode,
+                message: `entry "${entry.text}" contributes ${String(entry.count)} components`,
+              });
+            }
           }
         }
       }

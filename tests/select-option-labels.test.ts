@@ -7,7 +7,9 @@ import { TARGET_MODELS } from '../src/constants/models.ts';
 import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
+import { sheetChoices } from '../src/constants/output/sheetChoices.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
+import { modesFor } from '../src/constants/sheetPlans/index.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 
 /**
@@ -68,6 +70,12 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionalModeChoices(category, HEAVY_ANATOMY).map((choice) => choice.label),
+  ),
+  // One list per pairing, so a series that grows a sheet is budgeted the moment it exists. No
+  // anatomy: this list distinguishes the sheets of one series from each other, and the subject's
+  // own anatomy lands on the first of them whatever the series holds.
+  seriesChoices: SUBJECT_CATEGORIES.flatMap((category) =>
+    modesFor(category).flatMap((mode) => sheetChoices(category, mode).map((choice) => choice.label)),
   ),
 };
 

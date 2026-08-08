@@ -36,6 +36,7 @@ export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
+  const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
@@ -70,9 +71,14 @@ export function QuantiseTab() {
         : targetSizeGrid(
             source.image,
             target,
-            componentCountFor(category, directionalMode, parseAdditionalAnatomy(additionalAnatomy)),
+            componentCountFor(
+              category,
+              directionalMode,
+              sheetIndex,
+              parseAdditionalAnatomy(additionalAnatomy),
+            ),
           ),
-    [source, target, category, directionalMode, additionalAnatomy],
+    [source, target, category, directionalMode, sheetIndex, additionalAnatomy],
   );
 
   // `null` on either count — the user has not asked, or the studio's key names no colour to match —

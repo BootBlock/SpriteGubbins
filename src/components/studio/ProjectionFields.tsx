@@ -1,8 +1,8 @@
 import { DIRECTION_SET_CHOICES, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../constants/output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
-import { directionSetApplies, sheetDirections } from '../../utils/sheetDirections.ts';
-import { splitsIntoRuns } from '../../utils/sheetRuns.ts';
+import { directionSetApplies, primaryFacing } from '../../utils/sheetDirections.ts';
+import { splitsIntoFacingRuns } from '../../utils/sheetRuns.ts';
 import { NumberField } from '../common/NumberField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
@@ -18,7 +18,7 @@ const ELEVATION = { min: 0, max: 90, step: 1 } as const;
  *
  * The primary facing appears only when the direction set is a **run list** rather than a description
  * of one sheet — a mode covering one facing at a time, over a set naming more than one. Anywhere
- * else it is inert: a `CORE_DIRECTIONAL_VARIANTS` sheet draws its own three facings whatever this
+ * else it is inert: a `CORE_DIRECTIONAL_VARIANTS` sheet draws its own five facings whatever this
  * said, so a visible control would promise something the prompt does not carry.
  *
  * **That argument always applied one control higher, and the set itself did not obey it.** The modes
@@ -79,11 +79,11 @@ export function ProjectionFields() {
         />
       )}
 
-      {splitsIntoRuns(output) && (
+      {splitsIntoFacingRuns(output) && (
         <SelectField
           label="Primary Facing"
           tooltip={OUTPUT_TOOLTIPS.primaryDirection}
-          value={sheetDirections(output).assembly}
+          value={primaryFacing(output)}
           choices={DIRECTION_LISTS[output.directions].map((direction) => ({
             value: direction,
             label: direction,

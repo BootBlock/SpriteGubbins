@@ -2,6 +2,18 @@ import type { DirectionalMode } from '../../types/output.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
 
 /**
+ * The facings `CORE_DIRECTIONAL_VARIANTS` draws, named separately from the table below because the
+ * plans are written against it entry by entry.
+ *
+ * Exported so `sheetPlans/directionalViews.ts` can build those entries *from the list itself* rather
+ * than re-spelling it. The two used to be independent prose — a plan reading "front-three-quarter,
+ * right side, back-three-quarter" beside a set that decided what section 3 actually asked for — and
+ * nothing related them, so a set edited without its six plans would have produced an inventory
+ * naming views the sheet was never told to draw.
+ */
+export const DIRECTIONAL_VARIANTS_SET: DirectionSet = 'FIVE_CLASSIC';
+
+/**
  * How many facings each mode's inventory is written for.
  *
  * Not a free choice: a mode's inventory is written against a specific number of directions, so the
@@ -10,8 +22,10 @@ import type { DirectionSet } from '../../types/rendering.ts';
  * the same breath, which is the self-contradiction v2 exists to remove.
  *
  * `'primary'` narrows to the first facing of whatever set the user chose — that is the run list for
- * a rig, one sheet per direction. `'three-classic'` is fixed, because the directional plans name
- * those three facings entry by entry.
+ * a rig, one sheet per direction. A named set is fixed, because the directional plans name those
+ * facings entry by entry: `CORE_DIRECTIONAL_VARIANTS` draws `FIVE_CLASSIC` whatever the direction
+ * control says, and `camera.test.ts` pins that a fixed set reaches all eight facings — a mode that
+ * discards the control cannot be steered past whatever its own set covers.
  *
  * This stays keyed on the mode alone, and legitimately so: how many facings a sheet covers is a
  * property of the *kind of sheet*, not of what is drawn on it. The inventory and the component count
@@ -20,7 +34,7 @@ import type { DirectionSet } from '../../types/rendering.ts';
  */
 export const DIRECTION_COVERAGE: Readonly<Record<DirectionalMode, 'primary' | DirectionSet>> = {
   SINGLE_DIRECTION_POSE_LIBRARY: 'primary',
-  CORE_DIRECTIONAL_VARIANTS: 'THREE_CLASSIC',
+  CORE_DIRECTIONAL_VARIANTS: DIRECTIONAL_VARIANTS_SET,
   CUTOUT_RIG_SINGLE_DIRECTION: 'primary',
   TILESET_MODULAR: 'primary',
 };

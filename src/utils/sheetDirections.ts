@@ -1,4 +1,5 @@
 import { DIRECTION_COVERAGE, DIRECTION_LISTS } from '../constants/promptText/index.ts';
+import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { Direction, DirectionSet } from '../types/rendering.ts';
 
@@ -21,21 +22,56 @@ export interface SheetDirections {
   readonly assembly: Direction;
 }
 
-export function sheetDirections(output: OutputConfig): SheetDirections {
+/**
+ * The facings one sheet of the series draws.
+ *
+ * **Two questions, asked at two levels, and conflating them is what this signature exists to stop.**
+ * The *mode* decides which direction set reaches the sheet at all: `'primary'` defers to the user's
+ * choice and treats it as a run list, and a named set is the mode's own, drawn whatever the control
+ * says. The *plan* then decides how much of that set this particular sheet carries — the directional
+ * core draws every facing of it, and the articulation sheet that shares its mode draws one.
+ *
+ * A plan's `facings` is only consulted on the mode's own set, because a run list has already
+ * narrowed to a single facing by the time it gets here: an `'every'` sheet under `'primary'` would
+ * be asking for the whole run list on one image, which is the 120-piece sheet the splitter exists to
+ * prevent. `sheetPlans.test.ts` pins that no such pairing is declared.
+ */
+export function sheetDirections(output: OutputConfig, plan: SheetPlan): SheetDirections {
+  const coverage = DIRECTION_COVERAGE[output.directionalMode];
+
+  if (coverage !== 'primary') {
+    const setFacings = DIRECTION_LISTS[coverage];
+    const [firstOfSet] = setFacings;
+    // The mode's own set, so `primaryDirection` is not consulted at either width — a sheet drawn to
+    // one facing of a set the user never chose takes the facing the rest of the series assembles
+    // towards, not a leftover from some other set the control was last left on.
+    const covered: readonly [Direction, ...Direction[]] =
+      plan.facings === 'every' ? setFacings : [firstOfSet];
+    const [assembly] = covered;
+    return { covered, assembly };
+  }
+
+  const primary = primaryFacing(output);
+  return { covered: [primary], assembly: primary };
+}
+
+/**
+ * The facing a run list's `primaryDirection` names, resolved through the set it belongs to.
+ *
+ * Its own function because three callers need exactly this and only one of them can name a sheet
+ * plan: the compiler resolves a whole sheet's coverage, the studio's facing control shows the
+ * value it is about to offer choices from, and the collapsed projection digest reports it. A
+ * digest that had to invent a `SheetPlan` to ask which facing was selected would be reaching for
+ * the category, which it does not have and does not need.
+ *
+ * Resolved *through* the set rather than trusted. A facing the set does not contain — a stale
+ * `north` left behind by a switch to `THREE_CLASSIC` — would otherwise reach the prompt's assembly
+ * direction and depth order while its "directions required" line never mentioned it.
+ */
+export function primaryFacing(output: OutputConfig): Direction {
   const facings = DIRECTION_LISTS[output.directions];
   const [firstFacing] = facings;
-
-  // Resolved *through* the set rather than trusted. A facing the set does not contain — a stale
-  // `north` left behind by a switch to `THREE_CLASSIC` — would otherwise reach the prompt's
-  // assembly direction and depth order while its "directions required" line never mentioned it.
-  const primary = facings.find((facing) => facing === output.primaryDirection) ?? firstFacing;
-
-  const coverage = DIRECTION_COVERAGE[output.directionalMode];
-  const covered: readonly [Direction, ...Direction[]] =
-    coverage === 'primary' ? [primary] : DIRECTION_LISTS[coverage];
-  const [assembly] = covered;
-
-  return { covered, assembly };
+  return facings.find((facing) => facing === output.primaryDirection) ?? firstFacing;
 }
 
 /**

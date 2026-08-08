@@ -8,7 +8,7 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * The set is chosen by *projection* rather than by subject, because that is the decision a vehicle
  * sheet turns on and the one a dropdown cannot teach: the same tank is a rig run eight times from
- * directly overhead, a three-view sheet under a three-quarter camera, or a single side elevation, and
+ * directly overhead, a turnaround under a three-quarter camera, or a single side elevation, and
  * each of those wants a different sheet mode with it. Picking four tanks in four paint schemes would
  * have demonstrated the option pool and none of the machinery.
  *

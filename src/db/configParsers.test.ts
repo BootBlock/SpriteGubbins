@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { COMPONENT_BUDGET_RANGE, NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { resolveSheetIndex, SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
 import { parseOutputConfig } from './configParsers.ts';
 
 /**
@@ -86,5 +87,47 @@ describe('parseOutputConfig — primaryDirection', () => {
     const parsed = parseOutputConfig({ directions: 'nonsense', primaryDirection: 'south-east' });
     expect(parsed.directions).toBe(DEFAULT_OUTPUT_CONFIG.directions);
     expect(parsed.primaryDirection).toBeNull();
+  });
+});
+
+/**
+ * The sheet of the series, which is the *other* field whose validity depends on something outside
+ * this function — and, unlike the primary facing, on something outside the configuration entirely.
+ *
+ * Which indices are real depends on the subject's category, which `parseOutputConfig` is not given,
+ * so this layer bounds the value and `sheetPlanFor` resolves it. The division matters: bounding it
+ * here to the longest series the plan table holds is what stops a stored `9999` reaching the studio's
+ * sheet control, while leaving the per-pairing question to the one place that can answer it.
+ */
+describe('parseOutputConfig — sheetIndex', () => {
+  const sheetFrom = (stored: unknown): number => parseOutputConfig({ sheetIndex: stored }).sheetIndex;
+
+  it('keeps an index the longest series in the table actually holds', () => {
+    expect(sheetFrom(0)).toBe(0);
+    expect(sheetFrom(SHEET_INDEX_RANGE.max)).toBe(SHEET_INDEX_RANGE.max);
+  });
+
+  it('is bounded by the plan table rather than by a number written down here', () => {
+    // Derived, so a pairing that grows a third sheet admits one in the same edit. Two sheets is the
+    // most any pairing takes today, and an index past that is corrupt storage rather than a choice.
+    expect(SHEET_INDEX_RANGE.min).toBe(0);
+    expect(SHEET_INDEX_RANGE.max).toBe(1);
+  });
+
+  it('falls back for anything outside that, fractional, or not a number', () => {
+    for (const stored of [undefined, null, -1, 1.5, SHEET_INDEX_RANGE.max + 1, 9999, '1', NaN]) {
+      expect(sheetFrom(stored), `${String(stored)} should not have been accepted`).toBe(
+        DEFAULT_OUTPUT_CONFIG.sheetIndex,
+      );
+    }
+  });
+
+  it('leaves the per-pairing question to the plan table, which is the only place that knows', () => {
+    // In range here, and still not a sheet an OBJECT has — its five directional views fit one image.
+    // Resolving that here would need the category, and inventing one is how a configuration would be
+    // rewritten by the layer that only had to read it.
+    expect(sheetFrom(1)).toBe(1);
+    expect(resolveSheetIndex('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 1)).toBe(1);
+    expect(resolveSheetIndex('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 1)).toBe(0);
   });
 });

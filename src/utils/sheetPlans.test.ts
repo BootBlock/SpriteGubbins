@@ -8,6 +8,7 @@ import {
   DEFAULT_MODE_FOR,
   modesFor,
   resolveMode,
+  sheetSeriesFor,
   supportsMode,
 } from '../constants/sheetPlans/index.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
@@ -41,17 +42,45 @@ const TILE_VOCABULARY =
 /** Vocabulary that belongs only to a humanoid or creature articulation sheet. */
 const LIMB_VOCABULARY = /upper arms?:|lower arms?:|left leg|right leg|pelvis|hindquarters|forelimb/i;
 
-/** Every (category, mode) pairing that actually exists. */
-const PAIRS: readonly { category: SubjectCategory; mode: DirectionalMode }[] = SUBJECT_CATEGORIES.flatMap(
-  (category) => modesFor(category).map((mode) => ({ category, mode })),
+/**
+ * Every sheet that actually exists — each pairing, walked down to the individual sheets of its
+ * series.
+ *
+ * A pairing is no longer one prompt: a character's five-view directional core arrives as a core
+ * sheet and an articulation sheet, and each has its own inventory to be contaminated. Checking the
+ * first alone would have left the second unwatched by every assertion below.
+ */
+const SHEETS: readonly {
+  category: SubjectCategory;
+  mode: DirectionalMode;
+  sheetIndex: number;
+  sheet: string;
+}[] = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).flatMap((mode) =>
+    sheetSeriesFor(category, mode).map((plan, sheetIndex) => ({
+      category,
+      mode,
+      sheetIndex,
+      sheet: plan.name,
+    })),
+  ),
 );
 
-function promptFor(category: SubjectCategory, mode: DirectionalMode, additional?: string): string {
+function promptFor(
+  category: SubjectCategory,
+  mode: DirectionalMode,
+  additional?: string,
+  sheetIndex = 0,
+): string {
   const subject = {
     ...defaultSubjectFor(category),
     additional_anatomy: additional ?? NO_ADDITIONAL_ANATOMY,
   };
-  return generatePrompt(category, subject, { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode });
+  return generatePrompt(category, subject, {
+    ...DEFAULT_OUTPUT_CONFIG,
+    directionalMode: mode,
+    sheetIndex,
+  });
 }
 
 describe('the plan table itself', () => {
@@ -76,8 +105,8 @@ describe('the plan table itself', () => {
 });
 
 describe('no category emits another category’s components', () => {
-  it.each(PAIRS)('$category / $mode', ({ category, mode }) => {
-    const prompt = promptFor(category, mode);
+  it.each(SHEETS)('$category / $mode / $sheet', ({ category, mode, sheetIndex }) => {
+    const prompt = promptFor(category, mode, undefined, sheetIndex);
     const inventory = /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/.exec(
       prompt,
     );
@@ -131,8 +160,8 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
     expect(prompt).not.toContain('a straight wall run');
 
     // And it is a character sheet instead.
-    expect(prompt).toContain('Heads: front-three-quarter, right side, back-three-quarter');
-    expect(prompt).toContain('Torsos: front-three-quarter, right side, back-three-quarter');
+    expect(prompt).toContain('Heads: front, front-three-quarter, right side, back-three-quarter, back');
+    expect(prompt).toContain('Torsos: front, front-three-quarter, right side, back-three-quarter, back');
   });
 
   it('keeps the subject’s own additional anatomy, which was the only correct part of it', () => {
@@ -176,16 +205,16 @@ describe('a BUILDING tileset is still a tileset', () => {
 });
 
 describe('the declared count is the inventory’s own length', () => {
-  it.each(PAIRS)('$category / $mode', ({ category, mode }) => {
-    const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1');
-    const expected = componentCountFor(category, mode, [
+  it.each(SHEETS)('$category / $mode / $sheet', ({ category, mode, sheetIndex, sheet }) => {
+    const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex);
+    const expected = componentCountFor(category, mode, sheetIndex, [
       { name: 'Demon Horn', count: 2 },
       { name: 'Tail', count: 1 },
     ]);
 
     // Stated four times over; all four are the same sum or the sheet is silently wrong.
     expect(prompt).toContain(`Exactly ${String(expected)} components`);
-    expect(prompt).toContain(`### Component inventory — ${String(expected)} in total`);
+    expect(prompt).toContain(`### Component inventory: ${sheet} — ${String(expected)} in total`);
     expect(prompt).toContain(`Component count is exactly ${String(expected)}.`);
   });
 });

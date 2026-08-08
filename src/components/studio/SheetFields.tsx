@@ -4,8 +4,9 @@ import {
   BACKGROUND_KEY_CHOICES,
   directionalModeChoices,
   OUTPUT_TOOLTIPS,
+  sheetChoices,
 } from '../../constants/output/index.ts';
-import { resolveMode } from '../../constants/sheetPlans/index.ts';
+import { resolveMode, resolveSheetIndex } from '../../constants/sheetPlans/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
@@ -26,24 +27,46 @@ import { SelectField } from '../common/SelectField.tsx';
 export function SheetFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
+  const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
 
   // Only the modes this category can actually produce. Offering the others is what put a tileset's
   // floors and walls one click away from a character.
+  const mode = resolveMode(category, output.directionalMode);
   const modeChoices = directionalModeChoices(category, parseAdditionalAnatomy(additionalAnatomy));
+  const seriesChoices = sheetChoices(category, mode);
 
   return (
     <>
       <SelectField
         label="Sheet Contents"
         tooltip={OUTPUT_TOOLTIPS.directionalMode}
-        value={resolveMode(category, output.directionalMode)}
+        value={mode}
         choices={modeChoices}
         onChange={(value) => {
-          setOutputField('directionalMode', value);
+          // The sheet goes back to the first in the same write. Every mode has one, and a stored
+          // index left pointing at a series member the new mode does not have would put the select
+          // below on a value its own options do not contain.
+          setOutputConfig({ ...output, directionalMode: value, sheetIndex: 0 });
         }}
       />
+
+      {/* Only where the pairing genuinely takes more than one generation, which is the same test the
+          split button applies — a select offering one option is a control with nothing to do. */}
+      {seriesChoices.length > 1 && (
+        <SelectField
+          label="Sheet of Series"
+          tooltip={OUTPUT_TOOLTIPS.sheetIndex}
+          // Resolved through the series rather than read raw, so a stored index the pairing does not
+          // have shows the sheet the compiler is actually producing instead of an empty control.
+          value={resolveSheetIndex(category, mode, output.sheetIndex)}
+          choices={seriesChoices}
+          onChange={(value) => {
+            setOutputField('sheetIndex', value);
+          }}
+        />
+      )}
 
       <NumberField
         label="Component Budget"

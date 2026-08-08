@@ -45,6 +45,10 @@ export const DEFAULT_CAMERA_ELEVATIONS: Readonly<Record<Projection, number>> = {
 export const DIRECTION_LISTS: Readonly<Record<DirectionSet, readonly [Direction, ...Direction[]]>> = {
   SINGLE_FRONT: ['front'],
   THREE_CLASSIC: ['front-three-quarter', 'right side', 'back-three-quarter'],
+  // Ascending by yaw, which puts `front` first — and first is load-bearing here rather than merely
+  // tidy: the leading entry is the facing the sheet assembles towards and fixes its depth order from,
+  // and a set that exists to reach the camera-facing view should assemble towards it.
+  FIVE_CLASSIC: ['front', 'front-three-quarter', 'right side', 'back-three-quarter', 'back'],
   FOUR_CARDINAL: ['south', 'west', 'north', 'east'],
   EIGHT_COMPASS: ['south', 'south-west', 'west', 'north-west', 'north', 'north-east', 'east', 'south-east'],
 };
@@ -83,6 +87,7 @@ export const DEPTH_ORDER_TEXT: Readonly<Record<Direction, string>> = {
     'In profile with the right side towards the camera: the right arm and leg render in front of the torso and pelvis, the left pair behind them.',
   'back-three-quarter':
     'Angled away from the camera: the near (right) arm renders in front of the torso, the far arm behind it, and the back of the head faces the viewer.',
+  back: 'Facing away from the camera: both arms render behind the torso, and the back of the head faces the viewer.',
   south: 'Facing the camera: both arms render in front of the torso, both legs in front of the pelvis.',
   'south-west':
     'Angled towards the camera: the near (left) arm renders in front of the torso, the far arm behind it.',

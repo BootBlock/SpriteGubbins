@@ -1,9 +1,9 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
-import { resolveMode } from '../constants/sheetPlans/index.ts';
+import { resolveMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
-import { effectiveDirectionSet, sheetDirections } from './sheetDirections.ts';
-import { splitsIntoRuns } from './sheetRuns.ts';
+import { effectiveDirectionSet, primaryFacing } from './sheetDirections.ts';
+import { splitsIntoFacingRuns } from './sheetRuns.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -24,12 +24,12 @@ import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
  *
  * **The direction set is the one entry reported rather than offered, and the distinction is the
  * point.** On a mode that names its own facings the studio shows no set control, because there is
- * nothing to choose — but the sheet still has a set, and `THREE_CLASSIC` is a true and useful thing
+ * nothing to choose — but the sheet still has a set, and `FIVE_CLASSIC` is a true and useful thing
  * for a folded group to say. What the rule above forbids is echoing back a *choice* the sheet
  * discarded, which is exactly what this line used to do: it read `output.directions` raw, so a
- * `CORE_DIRECTIONAL_VARIANTS` sheet covering three classic yaws announced whatever the set had last
+ * `CORE_DIRECTIONAL_VARIANTS` sheet covering the classic yaws announced whatever the set had last
  * been left at. It reads `effectiveDirectionSet` now, so it names the sheet's own answer. The
- * primary facing beneath it stays conditional for a different reason — a sheet covering three
+ * primary facing beneath it stays conditional for a different reason — a sheet covering several
  * facings has no single one to name at all.
  *
  * Controls that *do* something rather than *hold* something are deliberately absent:
@@ -102,8 +102,17 @@ export function subjectGroupDigest(subject: SubjectDefinition, keys: readonly Su
  * restated in words.
  */
 export function sheetDigest(category: SubjectCategory, output: OutputConfig): string {
+  const mode = resolveMode(category, output.directionalMode);
+  const series = sheetSeriesFor(category, mode);
+
   return join([
-    resolveMode(category, output.directionalMode),
+    mode,
+    // Only where the sheet control is on screen, which is the rule this whole module is written to:
+    // a pairing that is one generation has no sheet to name, and naming one would imply a setting
+    // that is not there. Where it *is* on screen the digest cannot be silent about it — two sheets of
+    // one series differ in nothing else the header carries, so a folded group would report the same
+    // four values above two entirely different inventories.
+    series.length > 1 ? sheetPlanFor(category, mode, output.sheetIndex).name : '',
     output.componentBudget === NO_COMPONENT_BUDGET ? 'uncapped' : `budget ${String(output.componentBudget)}`,
     output.backgroundKey,
     output.aspectRatio,
@@ -130,13 +139,13 @@ export function projectionDigest(output: OutputConfig): string {
     `${String(output.cameraElevation)}°`,
     // The set the sheet is drawn to, not the one stored. Reading `output.directions` here made the
     // collapsed summary the one place still reporting a value the compiler had discarded: a
-    // `CORE_DIRECTIONAL_VARIANTS` sheet covering three classic yaws announced `EIGHT_COMPASS`. The
+    // `CORE_DIRECTIONAL_VARIANTS` sheet covering the classic yaws announced `EIGHT_COMPASS`. The
     // line below already refused to name an inert facing for exactly this reason; the set it sat
     // beside was doing what that comment forbids.
     effectiveDirectionSet(output),
     // Only when the control is on screen. Anywhere else the facing is inert — the sheet draws its
     // own set whatever this said — so naming it would promise something the prompt does not carry.
-    splitsIntoRuns(output) ? sheetDirections(output).assembly : '',
+    splitsIntoFacingRuns(output) ? primaryFacing(output) : '',
   ]);
 }
 

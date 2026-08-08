@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { DIRECTION_SETS } from '../../types/rendering.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
 import { DIRECTION_LISTS } from './camera.ts';
+import { DIRECTION_COVERAGE } from './inventory.ts';
 import { OBJECT_YAW } from './rotation.ts';
 
 /**
@@ -35,6 +37,9 @@ const COVERAGE: readonly (readonly [DirectionSet, readonly number[]])[] = [
   ['SINGLE_FRONT', [0]],
   // Six facings from three drawings, and the two it misses are 0° and 180°.
   ['THREE_CLASSIC', [45, 90, 135, 225, 270, 315]],
+  // The two drawings THREE_CLASSIC cannot buy with a flip, bought outright: 0° and 180° are their own
+  // mirror, so each costs a view and each adds exactly one facing. Five drawings, all eight facings.
+  ['FIVE_CLASSIC', [0, 45, 90, 135, 180, 225, 270, 315]],
   ['FOUR_CARDINAL', [0, 90, 180, 270]],
   ['EIGHT_COMPASS', [0, 45, 90, 135, 180, 225, 270, 315]],
 ];
@@ -44,14 +49,35 @@ describe('direction-set coverage', () => {
     expect(reachableYaws(set)).toStrictEqual([...expected]);
   });
 
+  it('has a row for every set, so the next one added cannot be left out of the table', () => {
+    // The table above is hand-written, which is the only way to state what a set is *expected* to
+    // reach — but a hand-written table over an open union silently stops covering it. Adding
+    // `FIVE_CLASSIC` without this check would have left the set whose whole purpose is its coverage
+    // as the one set whose coverage nothing asserted.
+    expect(COVERAGE.map(([set]) => set).sort()).toStrictEqual([...DIRECTION_SETS].sort());
+  });
+
   it('offers at least one set that can face the camera and one that can turn its back', () => {
     // The property the app has to keep whatever the sets become: a user who needs a character to look
-    // at the player must have somewhere to go. THREE_CLASSIC alone would leave them nowhere, and the
-    // tooltip is what points them at the compass sets instead.
+    // at the player must have somewhere to go. THREE_CLASSIC alone would leave them nowhere, which is
+    // why FIVE_CLASSIC and the two compass sets exist.
     const sets = COVERAGE.map(([set]) => set);
 
     expect(sets.filter((set) => reachableYaws(set).includes(0))).not.toHaveLength(0);
     expect(sets.filter((set) => reachableYaws(set).includes(180))).not.toHaveLength(0);
+  });
+
+  it('draws the facings a sheet that fixes its own coverage cannot be steered towards', () => {
+    // The defect the five-view core was built for, as a property rather than as a story. A mode whose
+    // coverage is a fixed set discards the direction control entirely, so whatever that set cannot
+    // reach is unreachable from *anywhere* in the app — and `CORE_DIRECTIONAL_VARIANTS` is the default
+    // for five of the six categories and the default configuration, so its set was the whole app's
+    // ceiling. On THREE_CLASSIC it drew six of eight facings and neither of the two a player looks at
+    // most, with no control anywhere that could have said otherwise.
+    for (const coverage of Object.values(DIRECTION_COVERAGE)) {
+      if (coverage === 'primary') continue;
+      expect(reachableYaws(coverage)).toStrictEqual([0, 45, 90, 135, 180, 225, 270, 315]);
+    }
   });
 
   it('draws every facing it lists exactly once, so no set pays twice for one view', () => {

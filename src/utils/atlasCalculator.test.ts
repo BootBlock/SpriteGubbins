@@ -10,7 +10,7 @@ import { ATLAS_CANVAS_SIZES, ATLAS_PADDING_SIZES } from '../types/atlas.ts';
 import type { AtlasConfig } from '../types/atlas.ts';
 import type { AspectRatio } from '../types/output.ts';
 
-/** The default studio setup: 43 components on a 2048 texture with a standard 4px gutter. */
+/** A sheet at the practical ceiling: 43 components on a 2048 texture with a standard 4px gutter. */
 const BASE: AtlasConfig = {
   canvasSize: 2048,
   padding: 4,

@@ -1,4 +1,5 @@
 import type { SheetPlan } from '../../types/components.ts';
+import { atEachYaw, viewsOf } from './directionalViews.ts';
 
 /**
  * What an ITEM sheet asks for, per sheet mode.
@@ -13,6 +14,8 @@ import type { SheetPlan } from '../../types/components.ts';
  */
 
 export const ITEM_PART_LIBRARY: SheetPlan = {
+  name: 'Part library',
+  facings: 'assembly',
   assembly:
     'the complete item as held or stowed, and in each state its parts allow — sheathed, drawn, opened, or expended — without redrawing any part that does not change.',
   groups: [
@@ -35,33 +38,25 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   ],
 };
 
+/** One sheet, five views — twenty components. See `OBJECT_DIRECTIONAL_VARIANTS` for why it is not a series. */
 export const ITEM_DIRECTIONAL_VARIANTS: SheetPlan = {
+  name: 'Directional views',
+  facings: 'every',
   assembly:
     'the complete item seen from each of the directions listed above, reading as one object turned rather than several drawings of it.',
   groups: [
     {
       heading: 'Directional core',
-      intro: `Three views each of **one** body and **one** working end: the same piece of geometry drawn
-at each object yaw section 3 lists, in that order. Three separate designs, three mirrored
-copies, or three views facing the same way are all failures of this entry.`,
-      entries: [
-        {
-          text: 'Bodies or shafts: front-three-quarter, right side, back-three-quarter',
-          count: 3,
-          kind: 'structure',
-        },
-        {
-          text: 'Working ends: front-three-quarter, right side, back-three-quarter',
-          count: 3,
-          kind: 'mechanism',
-        },
-      ],
+      intro: `One view of **one** body and **one** working end per facing: the same piece of geometry drawn at
+each object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing
+the same way are all failures of this entry.`,
+      entries: [viewsOf('Bodies or shafts', 'structure'), viewsOf('Working ends', 'mechanism')],
     },
     {
       heading: 'Grip and fittings',
       entries: [
-        { text: 'Grip, handle or hold, at each of the three yaws', count: 3, kind: 'structure' },
-        { text: 'Guard, collar or transition piece, at each of the three yaws', count: 3, kind: 'structure' },
+        atEachYaw('Grip, handle or hold', 'structure'),
+        atEachYaw('Guard, collar or transition piece', 'structure'),
       ],
     },
   ],
