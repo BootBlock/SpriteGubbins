@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
 /**
@@ -43,7 +43,7 @@ const CYBERPUNK_KATANA: PresetArchetype = {
     additional_anatomy: NO_ADDITIONAL_ANATOMY,
   },
   output: {
-    ...DEFAULT_OUTPUT_CONFIG,
+    ...DEFAULT_IMAGE_CONFIG,
     directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
     surfaceDetail: 'CLEAN_PRODUCTION',
     resolutionProfile: 'HIGH_RESOLUTION',
@@ -83,7 +83,7 @@ export const CHARACTER_CORE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       surfaceDetail: 'DETAILED_PRODUCTION',
       resolutionProfile: 'HIGH_RESOLUTION',
@@ -117,7 +117,7 @@ export const CHARACTER_CORE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       surfaceDetail: 'CLEAN_PRODUCTION',
       resolutionProfile: 'RETRO_16_BIT',

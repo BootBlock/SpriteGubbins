@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -36,7 +36,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       surfaceDetail: 'DETAILED_PRODUCTION',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
@@ -69,7 +69,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Attachable Scope ×1, Laser Sight ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RENDERED_3D',
       // A gun is drawn side-on because that is the view its silhouette lives in — and a flat side
       // elevation is also the one that lets a scope and a sight be swapped without redrawing anything.
@@ -113,7 +113,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Bayonet Blade Tip ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'HAND_DRAWN_INK',
       surfaceDetail: 'TEXTURED',
       resolutionProfile: 'MID_RESOLUTION',
@@ -152,7 +152,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RETRO_PIXEL_ART',
       resolutionProfile: 'RETRO_16_BIT',
       paletteLimit: 'STRICT_32_COLOR',

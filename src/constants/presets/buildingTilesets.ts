@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -42,7 +42,7 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'TILESET_MODULAR',
       projection: 'PURE_TOPDOWN',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.PURE_TOPDOWN,
@@ -78,7 +78,7 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'TILESET_MODULAR',
       projection: 'TRUE_ISOMETRIC',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
@@ -118,7 +118,7 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'TILESET_MODULAR',
       directions: 'SINGLE_FRONT',
       renderStyle: 'RETRO_PIXEL_ART',
@@ -155,7 +155,7 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'TILESET_MODULAR',
       directions: 'SINGLE_FRONT',
       paletteLimit: 'EXPANDED_ALBEDO',

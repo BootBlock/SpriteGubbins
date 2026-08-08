@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
+import { withCompanionOutputs } from '../../utils/imageConfig.ts';
 import { readPromptBudget } from '../../utils/promptBudget.ts';
-import { returnsText } from '../../utils/targetCapabilities.ts';
 import {
   ASPECT_RATIOS,
   BACKGROUND_KEYS,
@@ -18,8 +18,9 @@ import {
   RIG_MODES,
   SURFACE_DETAILS,
 } from '../../types/output.ts';
-import type { OutputConfig } from '../../types/output.ts';
+import type { ImageOutputConfig } from '../../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { DIRECTION_LISTS } from '../promptText/index.ts';
 import { supportsMode } from '../sheetPlans/index.ts';
 import { PRESETS } from './index.ts';
@@ -52,7 +53,7 @@ import { PRESETS } from './index.ts';
  */
 
 /** The keys whose whole union has to appear somewhere in the library, with that union. */
-const COVERED_OPTIONS: readonly (readonly [keyof OutputConfig, readonly string[]])[] = [
+const COVERED_OPTIONS: readonly (readonly [keyof ImageOutputConfig, readonly string[]])[] = [
   ['renderStyle', RENDER_STYLES],
   ['projection', PROJECTIONS],
   ['directionalMode', DIRECTIONAL_MODES],
@@ -68,7 +69,7 @@ const COVERED_OPTIONS: readonly (readonly [keyof OutputConfig, readonly string[]
 ];
 
 /** The values the library actually uses for one output key. */
-function usedValues(key: keyof OutputConfig): ReadonlySet<string> {
+function usedValues(key: keyof ImageOutputConfig): ReadonlySet<string> {
   return new Set(PRESETS.map((preset) => String(preset.output[key])));
 }
 
@@ -121,14 +122,6 @@ describe('no shipped preset contradicts itself', () => {
     expect(DIRECTION_LISTS[directions]).toContain(primaryDirection);
   });
 
-  it.each(PRESETS)('$name only asks for a manifest where one can be returned', (preset) => {
-    // The compiler drops the request on a target with no text channel, so an inert `true` is a
-    // promise on the card that the prompt never makes.
-    if (!preset.output.emitManifest) return;
-
-    expect(returnsText(preset.output.targetModel)).toBe(true);
-  });
-
   it.each(PRESETS)('$name compiles to a prompt its own target will actually read', (preset) => {
     // The one invariant the coverage list above cannot express, and the reason it declines to require
     // a preset per target model: Stable Diffusion's documented ceiling is CLIP's 77-token context, and
@@ -136,7 +129,13 @@ describe('no shipped preset contradicts itself', () => {
     // effect on load is a gold notice saying the sheet is thirty times over budget. A shipped preset is
     // a worked example; an example that arrives already broken for its stated target is not one.
     const reading = readPromptBudget(
-      generatePrompt(preset.category, preset.subject, preset.output),
+      // Compiled the way a reader who has touched nothing else gets it: a preset carries no
+      // companion outputs of its own, and both of the studio's default to off.
+      generatePrompt(
+        preset.category,
+        preset.subject,
+        withCompanionOutputs(preset.output, DEFAULT_OUTPUT_CONFIG),
+      ),
       preset.output.targetModel,
     );
     if (reading === null) return;

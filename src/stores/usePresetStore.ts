@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { getDatabase } from '../db/database.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import { toImageConfig } from '../utils/imageConfig.ts';
 import { findPresetByName } from '../utils/presetNames.ts';
 import { parsePresetPack, serialisePresetPack } from '../utils/presetPack.ts';
 import { useOutputStore } from './useOutputStore.ts';
@@ -30,7 +31,12 @@ export interface PresetState {
 
   /** Load the stored custom presets into the store. Called once on boot. */
   fetchCustomPresets(): Promise<void>;
-  /** Put a preset's configuration into the studio and switch to it. */
+  /**
+   * Put a preset's configuration into the studio and switch to it.
+   *
+   * Everything the preset describes about the *image* is replaced; the two companion outputs are
+   * left as the user set them. See `OutputConfig` for why those are not an archetype's to move.
+   */
   loadPreset(preset: PresetArchetype): void;
   /**
    * Save the studio's current configuration under `name`; a blank name is ignored. Returns whether
@@ -73,7 +79,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
 
   loadPreset: (preset) => {
     useSubjectStore.getState().setSubject(preset.category, preset.subject);
-    useOutputStore.getState().setOutputConfig(preset.output);
+    useOutputStore.getState().applyImageConfig(preset.output);
     const ui = useUIStore.getState();
     ui.setActiveTab('studio');
     ui.showToast(`Loaded preset: ${preset.name}`);
@@ -93,7 +99,10 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       name: trimmed,
       category,
       subject,
-      output: useOutputStore.getState().output,
+      // Stripped rather than stored and ignored on load: a saved preset is also an exported preset,
+      // and a pack carrying `emitManifest` would be describing a preference of whoever happened to
+      // save it as though it were a property of the archetype.
+      output: toImageConfig(useOutputStore.getState().output),
       isCustom: true,
     };
 

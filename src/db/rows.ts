@@ -1,7 +1,13 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import type { AppSettings } from '../types/settings.ts';
-import { isSubjectCategory, isTargetModelId, parseOutputConfig, parseSubject } from './configParsers.ts';
+import {
+  isSubjectCategory,
+  isTargetModelId,
+  parseImageConfig,
+  parseOutputConfig,
+  parseSubject,
+} from './configParsers.ts';
 import { isRecord, parseJson, readNumber, readString } from './readers.ts';
 import { parseSettings } from './settingsParser.ts';
 
@@ -70,7 +76,10 @@ export function parsePresetRow(row: unknown): PresetArchetype | null {
     name,
     category,
     subject: parseSubject(parseJson(subjectJson), category),
-    output: parseOutputConfig(parseJson(outputJson)),
+    // The image half alone. A row written by a build that stored the companion outputs still parses
+    // — its two extra keys are simply not read — which is the ordinary pre-1.0 outcome rather than
+    // a translation: the studio's own answers are what apply on load.
+    output: parseImageConfig(parseJson(outputJson)),
     isCustom: true,
   };
 }
@@ -111,7 +120,7 @@ export function parseImportedPreset(value: unknown): PresetArchetype | null {
     name,
     category,
     subject: parseSubject(value['subject'], category),
-    output: parseOutputConfig(value['output']),
+    output: parseImageConfig(value['output']),
     isCustom: true,
   };
 }
