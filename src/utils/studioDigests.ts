@@ -1,8 +1,9 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
+import { paletteFor } from '../constants/palettes/index.ts';
 import { resolveMode } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
-import { sheetDirections } from './sheetDirections.ts';
+import { effectiveDirectionSet, sheetDirections } from './sheetDirections.ts';
 import { splitsIntoRuns } from './sheetRuns.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
@@ -21,6 +22,16 @@ import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
  * the manifest only where the target has a text channel to return one through. A digest naming a
  * control that is not there is worse than no digest, which is why these are pure functions with the
  * conditionals pinned by tests rather than strings assembled at the call site.
+ *
+ * **The direction set is the one entry reported rather than offered, and the distinction is the
+ * point.** On a mode that names its own facings the studio shows no set control, because there is
+ * nothing to choose — but the sheet still has a set, and `THREE_CLASSIC` is a true and useful thing
+ * for a folded group to say. What the rule above forbids is echoing back a *choice* the sheet
+ * discarded, which is exactly what this line used to do: it read `output.directions` raw, so a
+ * `CORE_DIRECTIONAL_VARIANTS` sheet covering three classic yaws announced whatever the set had last
+ * been left at. It reads `effectiveDirectionSet` now, so it names the sheet's own answer. The
+ * primary facing beneath it stays conditional for a different reason — a sheet covering three
+ * facings has no single one to name at all.
  *
  * Controls that *do* something rather than *hold* something are deliberately absent:
  * `IdentityPaletteCapture` sits inside the continuity group, but its whole effect lands in the
@@ -100,14 +111,21 @@ export function sheetDigest(category: SubjectCategory, output: OutputConfig): st
   ]);
 }
 
-/** How the sheet is drawn. */
+/**
+ * How the sheet is drawn.
+ *
+ * A pinned palette **replaces** the colour budget here rather than joining it, because that is what
+ * it does to the sheet: the compiled prompt drops the budget line and the quantiser ignores the
+ * count, so naming both would put a setting in the header that has no effect on anything. Same
+ * reasoning as `companionDigest`, which omits a deliverable its target cannot return.
+ */
 export function renderStyleDigest(output: OutputConfig): string {
   return join([
     output.renderStyle,
     output.surfaceDetail,
     output.resolutionProfile,
     output.spriteTargetSize,
-    output.paletteLimit,
+    paletteFor(output.palette) === null ? output.paletteLimit : output.palette,
     output.outlineStyle,
     output.lightingModel,
   ]);
@@ -118,7 +136,12 @@ export function projectionDigest(output: OutputConfig): string {
   return join([
     output.projection,
     `${String(output.cameraElevation)}°`,
-    output.directions,
+    // The set the sheet is drawn to, not the one stored. Reading `output.directions` here made the
+    // collapsed summary the one place still reporting a value the compiler had discarded: a
+    // `CORE_DIRECTIONAL_VARIANTS` sheet covering three classic yaws announced `EIGHT_COMPASS`. The
+    // line below already refused to name an inert facing for exactly this reason; the set it sat
+    // beside was doing what that comment forbids.
+    effectiveDirectionSet(output),
     // Only when the control is on screen. Anywhere else the facing is inert — the sheet draws its
     // own set whatever this said — so naming it would promise something the prompt does not carry.
     splitsIntoRuns(output) ? sheetDirections(output).assembly : '',

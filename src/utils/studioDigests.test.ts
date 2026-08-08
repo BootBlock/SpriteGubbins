@@ -92,7 +92,8 @@ describe('sheetDigest', () => {
 
 describe('renderStyleDigest', () => {
   it('covers all seven controls when they are all set', () => {
-    const output = withOutput({ spriteTargetSize: '48 × 96 px' });
+    // With no palette pinned, which is what leaves the colour budget as the group's colour setting.
+    const output = withOutput({ spriteTargetSize: '48 × 96 px', palette: 'FREE' });
     const digest = renderStyleDigest(output);
     for (const value of [
       output.renderStyle,
@@ -109,6 +110,18 @@ describe('renderStyleDigest', () => {
 
   it('omits the target size when it has none — the compiler omits its line too', () => {
     expect(renderStyleDigest(withOutput({ spriteTargetSize: '' }))).not.toContain(' ·  · ');
+  });
+
+  it('names a pinned palette in place of the budget it supersedes', () => {
+    // The digest lists what the group's controls actually *do*, and a pinned palette leaves the
+    // budget doing nothing — the prompt drops its line and the quantiser ignores it. Naming both
+    // would put a setting in a folded header that has no effect anywhere.
+    const digest = renderStyleDigest(
+      withOutput({ palette: 'GAME_BOY_DMG', paletteLimit: 'STRICT_32_COLOR' }),
+    );
+
+    expect(digest).toContain('GAME_BOY_DMG');
+    expect(digest).not.toContain('STRICT_32_COLOR');
   });
 });
 
@@ -137,6 +150,27 @@ describe('projectionDigest', () => {
     // Naming the *set* is right; naming the facing is not, and an exact match is the only assertion
     // that can tell those two apart — `back-three-quarter` is a member of `THREE_CLASSIC`.
     expect(projectionDigest(fixed)).toBe('THREE_QUARTER_TOPDOWN · 35° · THREE_CLASSIC');
+  });
+
+  it('names the set the sheet is drawn to, not the one the mode discarded', () => {
+    // The regression this pair exists for, and the one every case above is blind to: each of them
+    // holds a set the mode would have chosen anyway, so reading `output.directions` raw and reading
+    // it through `effectiveDirectionSet` produce the same string. Only a *disagreeing* pair can
+    // tell them apart — eight compass points asked for, three classic yaws drawn.
+    const discarded = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'EIGHT_COMPASS',
+      primaryDirection: 'north-west',
+    });
+    expect(projectionDigest(discarded)).toBe('THREE_QUARTER_TOPDOWN · 35° · THREE_CLASSIC');
+
+    // The same stored set, on a mode that does defer to it: here it is the honest answer.
+    const deferring = withOutput({
+      directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      directions: 'EIGHT_COMPASS',
+      primaryDirection: 'north-west',
+    });
+    expect(projectionDigest(deferring)).toBe('THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west');
   });
 });
 

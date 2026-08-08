@@ -25,7 +25,13 @@ export { DEFAULT_PRESET } from './characterCore.ts';
  * sheet mode, palette limit, outline, lighting model, resolution profile, aspect ratio, direction set,
  * background key and rig parameter the app offers appears in at least one of them, paired with the
  * other settings it actually implies. `presetCoverage.test.ts` enforces that coverage, so an option
- * added to the studio without a preset to demonstrate it fails the build.
+ * added to one of those controls without a preset to demonstrate it fails the build.
+ *
+ * **The System Profile and Palette selects are outside that contract, deliberately.** The argument
+ * turns on a dropdown of bare identifiers teaching nothing about which combinations cohere, and those
+ * two are the one place it does not hold: each entry names a real machine, states its own constraints
+ * under the control, and applies the settings that go with it. `presetCoverage.test.ts` says so where
+ * it declines to cover them, and their own libraries carry their own contracts.
  *
  * Filed one module per theme, grouped by category in the order the Presets tab lists them, because a
  * single file holding fifty complete subjects would be unreadable and unreviewable. Order matters in

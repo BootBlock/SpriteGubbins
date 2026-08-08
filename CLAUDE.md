@@ -118,6 +118,23 @@ git branch -d worktree-<topic>
   holds uncommitted or untracked changes — which means the commit step missed something. Go and
   look at what. Never reach for `--force`, which destroys precisely the work the refusal is
   protecting.
+- **A *locked file* is a different failure, and it does not look like one.** If anything still holds
+  a handle inside the tree — a dev server left running from the `verify` skill is the usual one, and
+  it holds `node_modules` — the removal fails partway with `failed to delete '…': Invalid argument`
+  rather than a refusal. By then it has already **unregistered** the worktree, so the directory is
+  still on disk while `git worktree list` no longer mentions it and a second `remove` answers
+  `fatal: '…' is not a working tree`. Read the message: the refusal above names uncommitted work,
+  this one names a path. Stop the process, then finish the removal by hand:
+
+  ```bash
+  # after stopping the dev server, from the primary checkout
+  rm -rf .claude/worktrees/<topic>     # the leftover the failed removal could not delete
+  git worktree prune                   # clear the stale administrative entry
+  git branch -d worktree-<topic>
+  ```
+
+  `git branch -d` still refuses anything unmerged, so this recovers the tidy-up without giving up
+  the check that matters. **Stop the dev server before removing the tree** and none of it arises.
 - **Land only your own tree.** `git worktree list` will show trees other agents are working in
   right now, and from the outside their in-progress work is indistinguishable from abandoned work.
   Leave them alone — this is the same rule as never adopting someone else's tree.
@@ -485,10 +502,15 @@ guidance. Fixing that is the layout's job, not the copy's.
   to write them once, so a test compares the sets rather than trusting that whoever edits one will
   remember the other.
 - **The colour-swatch surface is the deliberate exception.** `ColorSwatch` renders whatever
-  hex `parseColorFromText` resolved — a *user's* colour, not the app's — so it takes its value
-  as a prop via inline `style`. `COLOR_HEX_MAP` in `src/constants/colors.ts` is likewise the
-  one place raw hex literals belong: it is domain data (the vocabulary the prompt compiler
-  understands), not app styling. Nothing else gets to claim that exemption.
+  hex `parseColorFromText` resolved — a colour that is not the app's, so it takes its value as a
+  prop via inline `style`. **It is the only component that may**, and the way to show any other
+  colour is to hand it this one: `PaletteField`'s swatch strip passes a bare `#0F380F`, which
+  `parseColorFromText` resolves to itself, rather than reaching for a second inline `style`.
+  Two constants files hold raw hex literals for the same reason — they are **domain data**, the
+  vocabulary the prompt compiler understands, not app styling: `COLOR_HEX_MAP` in
+  `src/constants/colors.ts`, which is the colour names a subject field may use, and
+  `src/constants/palettes/`, which is the colours real hardware could display. Nothing else gets
+  to claim either exemption.
 
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,

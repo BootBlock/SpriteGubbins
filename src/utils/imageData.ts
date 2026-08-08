@@ -85,9 +85,68 @@ export function toHex(color: Rgba): string {
   return `#${[color.r, color.g, color.b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`.toUpperCase();
 }
 
+/**
+ * The inverse of {@link toHex}: `#RRGGBB` back to an opaque colour.
+ *
+ * Beside it because they are one convention read in two directions, and the pair is what stops the
+ * palette library and the quantiser disagreeing about what `#0F380F` is. Deliberately strict —
+ * exactly six digits, with the hash — since its only inputs are the literals in
+ * `src/constants/palettes/`, which a test checks are all written that way. `parseColorFromText` is
+ * the *lenient* reader and belongs to the free-text fields; a second lenient one here would be a
+ * second answer to a question that already has one.
+ *
+ * Returns `null` on anything else rather than a fallback colour, so a malformed entry drops out of
+ * the palette instead of silently becoming black.
+ */
+export function fromHex(hex: string): Rgba | null {
+  const match = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+  if (match === null) return null;
+  const [, r = '', g = '', b = ''] = match;
+  return { r: parseInt(r, 16), g: parseInt(g, 16), b: parseInt(b, 16), a: FULLY_OPAQUE };
+}
+
 /** A blank image of the given size, every channel zero. */
 export function createImage(width: number, height: number): ImageData {
   return new ImageData(new Uint8ClampedArray(width * height * CHANNELS_PER_PIXEL), width, height);
+}
+
+/**
+ * The image with every pixel's colour resolved through `resolve`, decided once per distinct colour.
+ *
+ * The walk the three colour transforms share, so that "which pixels are asked about, how often, and
+ * what happens to the empty ones" is answered here rather than three times. Each of them then
+ * consists of its own decision and nothing else: nearest palette entry, nearest palette entry with
+ * the pixel's own alpha, nearest rung per channel.
+ *
+ * **Fully transparent pixels are copied through untouched and never reach `resolve`**, matching the
+ * histogram that excludes them: a pixel carrying no colour has no colour to resolve, and giving it
+ * one would put paint where the sheet says there is none.
+ *
+ * `resolve` is called **once per distinct colour**, not once per pixel — the difference between a
+ * few thousand decisions and a few million on a sheet with far fewer colours than pixels. It must
+ * therefore be a pure function of the colour it is handed, which every caller's is.
+ */
+export function remapColors(image: ImageData, resolve: (color: Rgba) => Rgba): ImageData {
+  const output = createImage(image.width, image.height);
+  const resolved = new Map<number, Rgba>();
+
+  for (let offset = 0; offset < image.data.length; offset += CHANNELS_PER_PIXEL) {
+    const color = readPixel(image.data, offset);
+    if (color.a === FULLY_TRANSPARENT) {
+      writePixel(output.data, offset, color);
+      continue;
+    }
+
+    const key = packColor(color);
+    let mapped = resolved.get(key);
+    if (mapped === undefined) {
+      mapped = resolve(color);
+      resolved.set(key, mapped);
+    }
+    writePixel(output.data, offset, mapped);
+  }
+
+  return output;
 }
 
 /**

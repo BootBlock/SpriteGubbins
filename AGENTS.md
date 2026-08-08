@@ -76,7 +76,9 @@ git branch -d worktree-<topic>
 
 Untracked files are the commonest way half a change lands. Committing is not landing — an unmerged
 branch is invisible. If `git worktree remove` refuses, the commit step missed something: go and
-look, never `--force`. Land only your own tree; other agents' trees are in use. And if the work
+look, never `--force`. If instead it *fails* naming a path, something still holds a handle inside
+the tree — stop the dev server, then `rm -rf` the leftover and `git worktree prune`. Land only your
+own tree; other agents' trees are in use. And if the work
 genuinely can't land, leave the tree and **say so explicitly**, naming the branch and the blocker —
 silence is the banned outcome. Full detail in
 [CLAUDE.md](CLAUDE.md#work-is-not-done-until-it-has-landed-mandatory).

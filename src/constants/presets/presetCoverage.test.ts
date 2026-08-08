@@ -40,6 +40,15 @@ import { PRESETS } from './index.ts';
  * not fit inside — so requiring one preset each would mean shipping presets that warn on load by
  * design. The other half of that is checked instead: whatever target a preset *does* name has to be one
  * that will read the prompt the preset compiles to.
+ *
+ * **`hardwareProfile` and `palette` are excluded for a different reason**, and it is worth stating
+ * rather than leaving as an omission: the argument above turns on a dropdown of bare identifiers
+ * teaching nothing about which combinations are coherent, and those two selects are the one place
+ * that is not true. Each entry names a real machine, states its own constraints under the control,
+ * and *applies* the settings that go with it — the discovery a worked example exists to provide is
+ * the control itself. Thirty-seven archetypes to cover eighteen machines and nineteen palettes would
+ * demonstrate nothing the user cannot get by opening the list. Their own libraries are held to their
+ * own contracts, in `constants/hardware/hardware.test.ts` and `constants/palettes/palettes.test.ts`.
  */
 
 /** The keys whose whole union has to appear somewhere in the library, with that union. */
