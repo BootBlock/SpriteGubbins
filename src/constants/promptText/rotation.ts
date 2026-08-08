@@ -93,4 +93,11 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   ITEM: 'the front is the working or presenting end — the blade, the muzzle, the face of the dial, the opening; the rear is the butt, the grip end, or the closed back.',
   BUILDING:
     'the front is the entrance façade — the door, the main frontage, the side a visitor approaches; the rear is the back wall and its service side.',
+  // The one category whose landmark the template's own wording already describes: a vehicle's front
+  // axis *is* the end that leads when it moves forward. Said in its own vocabulary anyway, because
+  // "the end that would lead" is a hypothetical for a chest and a fact for a hull, and a mount that
+  // traverses independently of the hull is the piece most likely to be drawn facing the camera in
+  // all three views.
+  VEHICLE:
+    'a hull’s front is the nose, prow or bow — the end that leads in travel and the end the driving position looks out of — and its rear is the engine deck, tail or transom; a turret or working mount’s front is its muzzle, boom or working end, which turns independently of the hull beneath it; a drive unit’s front is its leading edge in the direction of travel.',
 };

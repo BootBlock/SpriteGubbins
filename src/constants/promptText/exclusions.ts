@@ -25,6 +25,13 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // building sheet is the inhabitants and their belongings, so those are what it excludes.
   BUILDING:
     'Characters, creatures, vehicles, loose props and clutter; sky, distant landscape and any backdrop behind the structure; and cast shadow onto the ground.',
+  // The road surface is named alongside the ground plane because it is the one a vehicle attracts:
+  // asked for a tank, a generator that has resisted every other backdrop will still lay a strip of
+  // tarmac under the tracks. The motion and exhaust ban is this category's own: both are drawn
+  // *outside* the vehicle's silhouette, so either one turns an extractable component into one that
+  // bleeds past its cell.
+  VEHICLE:
+    'Backgrounds, environments, ground planes, road or runway surfaces, terrain, sky, scenery; any driver, pilot, crew or passenger; and any exhaust plume, dust trail, wake, motion blur, speed line or weapon effect.',
 };
 
 /**
@@ -46,6 +53,8 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
   ITEM: 'Every entry below is a part of this one item. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
   BUILDING:
     'Every entry below is a structural or tile component. An entry describing a head, limb, hand or other anatomy does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  VEHICLE:
+    'Every entry below is a part of this one vehicle. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
 };
 
 /**
@@ -64,4 +73,11 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   ITEM: 'Every component is a part of this one item — no anatomy, tiles, terrain or scenery.',
   BUILDING:
     'Every component is a structural or tile piece — no characters, creatures, anatomy or loose props.',
+  // Every noun here carries its own qualifier, and that is load-bearing rather than wordy: the part
+  // library asks for an "exhaust or vent" as a component, so an audit reading "no exhaust" would
+  // fail the sheet on an entry section 4 required. Section 8 above states the same ban and gets it
+  // right; this line dropped the qualifiers and reintroduced the §4-requires/§9-forbids
+  // contradiction these per-category records exist to remove.
+  VEHICLE:
+    'Every component is a part of this one vehicle — no anatomy, tiles, terrain, scenery or crew, and no exhaust plume, dust trail, wake or motion effect drawn as though it were a component.',
 };

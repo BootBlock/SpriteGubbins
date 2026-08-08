@@ -15,7 +15,7 @@ import { SubjectForm } from './SubjectForm.tsx';
  * the failure mode that introduces is **silent**: a key missing from the grouping leaves the store
  * holding its value and the compiler emitting it, so the prompt still reads correctly and the only
  * symptom is a control the user cannot find. `subjectGroups.test.ts` catches that at the data level;
- * this catches it at the level that actually reaches the screen, in every category — the five carry
+ * this catches it at the level that actually reaches the screen, in every category — each carries
  * completely different labels for the same sixteen keys.
  *
  * Foldedness is asserted on `details[open]` rather than on whether a field can still be queried.

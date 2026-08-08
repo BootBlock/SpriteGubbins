@@ -11,12 +11,13 @@ export interface SubjectFieldGroup extends SectionDefinition {
  * The sixteen subject fields, in five groups.
  *
  * **The headings describe the *slot*, not the character category**, and every one of them has been
- * checked against all five. That matters more than it looks: the same sixteen keys carry completely
- * different labels per category, so a heading written from `character.ts` is quietly false in the
- * other four. `clothing` alone is *Clothing / Armour*, *Harness / Augments*, *Mounting / Framework*,
- * *Scabbard / Holster* and *Awning & Addons* — which is why this group is **Features & fittings**
- * (all five are fitted or attached) and not "Surface & detail" (true only of a character's armour,
- * and colliding with `RenderStyleFields`' own *Surface Detail Intensity* one panel down).
+ * checked against all of them. That matters more than it looks: the same sixteen keys carry
+ * completely different labels per category, so a heading written from `character.ts` is quietly
+ * false in the rest. `clothing` alone is *Clothing / Armour*, *Harness / Augments*, *Mounting /
+ * Framework*, *Scabbard / Holster*, *Awning & Addons* and *Armour & Cladding* — which is why this
+ * group is **Features & fittings** (every one of them is fitted or attached) and not "Surface &
+ * detail" (true only of a character's armour, and colliding with `RenderStyleFields`' own *Surface
+ * Detail Intensity* one panel down).
  *
  * Two placements are worth their reasons:
  *

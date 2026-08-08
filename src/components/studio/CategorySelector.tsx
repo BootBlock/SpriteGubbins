@@ -6,7 +6,7 @@ import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { SelectField } from '../common/SelectField.tsx';
 
 /**
- * The five categories, paired with their display names. Derived from the option pool once at module
+ * Every category, paired with its display name. Derived from the option pool once at module
  * scope rather than on every render — the pool is a compile-time constant, so this cannot go stale.
  */
 const CATEGORY_CHOICES = SUBJECT_CATEGORIES.map((value) => ({

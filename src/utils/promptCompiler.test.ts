@@ -652,7 +652,7 @@ describe('generatePrompt — technical settings in prose', () => {
 
 describe('every category', () => {
   it.each(SUBJECT_CATEGORIES)('compiles a default %s subject', (category) => {
-    // The five categories share sixteen keys but not their pools, so each one exercises a different
+    // Every category shares the same sixteen keys but not their pools, so each exercises a different
     // set of values through the same optional lines.
     const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${category}`);

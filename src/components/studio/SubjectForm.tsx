@@ -107,7 +107,7 @@ export function SubjectForm() {
                 const field = fieldsByKey.get(key);
                 // `Map.get` is typed `V | undefined`, so this is required whatever the compiler
                 // flags say. Unreachable in practice — `subjectGroups.test.ts` pins that every key
-                // resolves in all five categories — and a missing one should leave a hole rather
+                // resolves in every category — and a missing one should leave a hole rather
                 // than take the panel down.
                 if (!field) return null;
 

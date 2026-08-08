@@ -16,7 +16,7 @@ import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { validateAllSheetPlans } from './sheetPlanValidation.ts';
+import { PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
  * The category-contamination regression suite.
@@ -84,13 +84,21 @@ describe('no category emits another category’s components', () => {
     expect(inventory).not.toBeNull();
     const section = inventory?.[0] ?? '';
 
-    if (category === 'BUILDING') {
+    // Both halves are derived from `PERMITTED_KINDS` rather than from a list of category names, and
+    // that is the fix rather than the tidy-up: the limb half used to read `category === 'OBJECT' ||
+    // category === 'ITEM'`, so VEHICLE — which holds exactly OBJECT's `['structure', 'mechanism']`
+    // pair — joined this suite running only the tile half. It passed, because the vehicle plans
+    // happen to name no limbs, and nothing said the other half had stopped being asserted. A list
+    // of names cannot notice a seventh category; the kinds table has to answer for one.
+    //
+    // `validateAllSheetPlans` does not make this redundant. `kind` is hand-assigned per entry, so
+    // `{ text: 'Left leg ×1', kind: 'structure' }` satisfies the structural check and only the prose
+    // net catches it — which is why the two run side by side.
+    if (!PERMITTED_KINDS[category].includes('anatomy')) {
       expect(section).not.toMatch(LIMB_VOCABULARY);
-    } else {
-      expect(section).not.toMatch(TILE_VOCABULARY);
     }
-    if (category === 'OBJECT' || category === 'ITEM') {
-      expect(section).not.toMatch(LIMB_VOCABULARY);
+    if (!PERMITTED_KINDS[category].includes('tile')) {
+      expect(section).not.toMatch(TILE_VOCABULARY);
     }
   });
 });
