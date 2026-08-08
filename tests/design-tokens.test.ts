@@ -46,6 +46,10 @@ const SPECTRUM_STOPS = [...spectrumDeclaration.matchAll(/'([a-z]+)'/g)].map((mat
 
 /** Every token CLAUDE.md's design-token table promises a component can reach for. */
 const REQUIRED_THEME_TOKENS = [
+  // The scrollbar's own three, which exist because no tone on the ramp clears 3:1 against the track.
+  '--color-scrollbar-track',
+  '--color-scrollbar-thumb',
+  '--color-scrollbar-thumb-hover',
   // The foundry surface ramp.
   '--color-foundry-950',
   '--color-foundry-900',
@@ -364,5 +368,135 @@ describe('design tokens', () => {
     const offenders = files.filter((file) => arbitrarySize.test(readFileSync(file, 'utf8')));
 
     expect(offenders).toStrictEqual([]);
+  });
+});
+
+/**
+ * Reading a colour token back out of the stylesheet, in the space it is written in.
+ *
+ * Parsed rather than hard-coded so the assertions below measure *the palette*, not a copy of it
+ * that would go on passing after someone changed the real thing.
+ */
+function oklchToken(name: string): [number, number, number] {
+  const declaration = new RegExp(name + String.raw`: oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)`).exec(stylesheet);
+  if (declaration === null) throw new Error(`${name} is not declared as an oklch() triple`);
+  return [Number(declaration[1]), Number(declaration[2]), Number(declaration[3])];
+}
+
+/**
+ * OKLCH to linear sRGB, then WCAG's relative luminance — which *is* linear sRGB, since the standard's
+ * channel formula is the inverse of the sRGB transfer function this conversion stops short of.
+ *
+ * Clamped to the gamut the way a browser clamps, which matters not at all for these near-neutral
+ * tones and would matter a great deal for a saturated one.
+ */
+function luminanceOf([L, C, hDeg]: [number, number, number]): number {
+  const h = (hDeg * Math.PI) / 180;
+  const a = C * Math.cos(h);
+  const b = C * Math.sin(h);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const [r, g, blue] = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ].map((v) => Math.min(Math.max(v, 0), 1)) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * blue;
+}
+
+/** WCAG contrast between two tokens, by name. */
+function contrastBetween(one: string, other: string): number {
+  const a = luminanceOf(oklchToken(one));
+  const b = luminanceOf(oklchToken(other));
+  return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+}
+
+describe('scrollbar contrast', () => {
+  /**
+   * WCAG 1.4.11 wants 3:1 between a control and what it sits on. The scrollbar had been failing it
+   * in both states — 1.19:1 resting, 1.36:1 hovered — with a thumb nobody could see, and the
+   * obvious repair does not work: the whole foundry ramp tops out at L 0.286 and the ratio needs
+   * L ≥ 0.482, so it takes tokens outside the ramp rather than a shade further along it.
+   */
+  it('clears 3:1 for the resting thumb, which is the state a scrollbar is in', () => {
+    expect(contrastBetween('--color-scrollbar-thumb', '--color-scrollbar-track')).toBeGreaterThanOrEqual(3);
+  });
+
+  it('clears 3:1 hovered too, because both states failed and only fixing one is half a fix', () => {
+    expect(
+      contrastBetween('--color-scrollbar-thumb-hover', '--color-scrollbar-track'),
+    ).toBeGreaterThanOrEqual(3);
+  });
+
+  it('keeps the two thumb states apart from each other, not merely from the track', () => {
+    // A hover that clears the track by a mile and is indistinguishable from the resting thumb has
+    // answered the ratio and lost the affordance.
+    const [rest] = oklchToken('--color-scrollbar-thumb');
+    const [hover] = oklchToken('--color-scrollbar-thumb-hover');
+    expect(hover - rest).toBeGreaterThanOrEqual(0.05);
+  });
+
+  it('stays visible on every surface a scroll container actually sits on', () => {
+    // The track is painted under the thumb, but the *surrounding* surface is what the eye compares
+    // the whole scrollbar against — and in this app that is a well, the page, or a panel.
+    for (const surface of ['--color-foundry-950', '--color-foundry-900', '--color-foundry-800']) {
+      expect(contrastBetween('--color-scrollbar-thumb', surface)).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('drives both engines from the tokens, since they share no declaration', () => {
+    // Firefox reads `scrollbar-color`; Chromium reads the `::-webkit-scrollbar-*` rules. Fixing one
+    // and not the other is a fix that works in half the browsers, which is the bug this replaced.
+    expect(stylesheet).toMatch(
+      /scrollbar-color: var\(--color-scrollbar-thumb\) var\(--color-scrollbar-track\)/,
+    );
+    expect(stylesheet).toMatch(/::-webkit-scrollbar-thumb \{[^}]*background: var\(--color-scrollbar-thumb\)/);
+    expect(stylesheet).toMatch(
+      /::-webkit-scrollbar-thumb:hover \{[^}]*background: var\(--color-scrollbar-thumb-hover\)/,
+    );
+    expect(stylesheet).toMatch(/::-webkit-scrollbar-track \{[^}]*background: var\(--color-scrollbar-track\)/);
+  });
+});
+
+describe('forced colours and the sticky header', () => {
+  it('re-expresses the colour-only signals in system colours', () => {
+    const block = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(block).not.toBe('');
+    // The four things this app says with colour and no words: the focus ring, a drag under way,
+    // which of a set of controls is current, and which row the combo box's arrow keys are on.
+    expect(block).toMatch(/outline-color: Highlight/);
+    expect(block).toMatch(/border-color: Highlight/);
+    expect(block).toMatch(/background-color: Highlight/);
+    expect(block).toMatch(/color: HighlightText/);
+    expect(block).toMatch(/\[data-active='true'\]/);
+  });
+
+  it('marks the live drag with an outline, which does not take part in layout', () => {
+    const block = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/.exec(stylesheet)?.[1] ?? '';
+
+    // `PanViewport` keeps the same 1px border in both states and only changes its colour, so
+    // thickening it here would shrink the content box by 2px at the moment the drag starts — moving
+    // the image under the pointer, in the one mode this block exists to serve.
+    expect(block).toMatch(/\.border-neon \{[^}]*outline: 2px solid Highlight/);
+    expect(block).not.toMatch(/\.border-neon \{[^}]*border-width/);
+  });
+
+  it('never opts an element out of the forced palette instead of adapting to it', () => {
+    // `forced-color-adjust: none` restores the author's colour by leaving the mode the user turned
+    // on, which is the cheap fix the block above exists instead of. Comments are stripped first
+    // rather than the match being narrowed to a line ending in a semicolon: that shape misses both
+    // `none !important` and a single-line rule, which are the two spellings someone reaching for
+    // this would actually write.
+    const declarations = stylesheet.replace(/\/\*[\s\S]*?\*\//g, '');
+
+    expect(declarations).not.toMatch(/forced-color-adjust:\s*none\b/);
+  });
+
+  it('holds the sticky header open at the top of a scroll, from a measured height', () => {
+    // A number here would be a magic value, and worse, wrong at more than one width: the header
+    // wraps. `Header` publishes its own height, which is the one figure that cannot drift.
+    expect(stylesheet).toMatch(/scroll-padding-top: var\(--header-height, 0px\)/);
   });
 });

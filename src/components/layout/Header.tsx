@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -34,9 +35,35 @@ export function Header() {
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const toggleHistoryModal = useUIStore((state) => state.toggleHistoryModal);
   const copyPrompt = useCopyPrompt();
+  const bar = useRef<HTMLElement>(null);
+
+  // Publish the bar's height for `scroll-padding-top`, which holds that much space open at the top
+  // of every scroll so a Tab landing below the fold does not put its focus ring underneath this.
+  // Measured rather than written into the stylesheet as a number, because the bar wraps: on a narrow
+  // viewport it is genuinely two or three rows tall, so no single figure is right everywhere, and
+  // one written down would rot the first time its padding or type size moved. The observer covers
+  // both — the wrap, and the change nobody remembered to update a constant for.
+  useLayoutEffect(() => {
+    const element = bar.current;
+    if (element === null) return;
+
+    const observer = new ResizeObserver(() => {
+      document.documentElement.style.setProperty('--header-height', `${String(element.offsetHeight)}px`);
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      // The property outlives this component otherwise, leaving the page reserving room for a bar
+      // that is no longer there.
+      document.documentElement.style.removeProperty('--header-height');
+    };
+  }, []);
 
   return (
-    <header className="glass-panel sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 px-6 py-4 shadow-2xl">
+    <header
+      ref={bar}
+      className="glass-panel sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 px-6 py-4 shadow-2xl"
+    >
       {/*
         The rule under the bar is the whole wheel, turning. It is the app's signature and the one
         surface that shows the palette entire rather than the slice belonging to the current view —

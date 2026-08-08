@@ -26,6 +26,12 @@ export function ComboBoxOption({ id, option, isSelected, isActive, onSelect, onH
       type="button"
       role="option"
       aria-selected={isSelected}
+      // Which row the arrow keys are on. It is already announced through the listbox's
+      // `aria-activedescendant`, but on screen it is a background tint and a 2px nudge and nothing
+      // else — so a forced palette flattens it away and the keyboard cursor becomes invisible.
+      // The attribute is what `index.css` can reach to put it back; `aria-selected` is a different
+      // thing entirely (chosen, not pointed at) and already survives on its own ✓ glyph.
+      data-active={isActive}
       tabIndex={-1}
       // The press must not pull focus out of the text field, or the list would close before the
       // click could select anything.

@@ -143,6 +143,30 @@
   --color-ink-faint: oklch(0.66 0.033 280);
 
   /*
+   * The scrollbar, which is a UI component and needs its own contrast.
+   *
+   * WCAG 1.4.11 wants 3:1 between a control and what it sits on, and the thumb had been painted
+   * `foundry-700` on a `foundry-900` track — **1.19:1**, which is a thumb you cannot see. The hover
+   * state was no better at 1.36:1, so both states failed, not just the resting one.
+   *
+   * No tone on the foundry ramp fixes it: the ramp spans L 0.115–0.286, and 3:1 needs L ≥ 0.482
+   * against the old `foundry-900` track (0.476 against the one below) — either way off the end of
+   * the ramp, so the answer was never a shade further along it. Borrowing `accent` or `neon` would
+   * clear the ratio and break the palette's vocabulary — indigo means primary/focus, cyan *live* —
+   * and a scrollbar is neither. So it takes tokens of its own, on the foundry hue and measured:
+   *
+   *   thumb on track   4.11:1      hover on track   6.41:1
+   *
+   * The thumb also clears 3:1 against every surface a scroll container actually sits on in this app
+   * (4.19:1 on `foundry-950`, 4.02:1 on `foundry-900`, 3.74:1 on `foundry-800`), so it stays visible
+   * wherever one is put. `tests/design-tokens.test.ts` recomputes all of that from these values and
+   * fails below 3:1, which is what stops the next palette change quietly undoing it.
+   */
+  --color-scrollbar-track: oklch(0.135 0.013 270);
+  --color-scrollbar-thumb: oklch(0.55 0.03 272);
+  --color-scrollbar-thumb-hover: oklch(0.66 0.035 272);
+
+  /*
    * Fonts. Inter carries the interface; JetBrains Mono carries every piece of generated
    * prompt text, atlas metric and JSON payload — the things a user reads character by
    * character or pastes elsewhere. Neither is bundled: both are used if the reader has them
@@ -536,6 +560,26 @@
     --tab-chord-b: var(--color-spectrum-lime);
   }
 
+  /*
+   * Hold the sticky header's own height open at the top of every scroll.
+   *
+   * The header is `sticky top-0`, so anything the browser scrolls to — a Tab landing on a control
+   * below the fold, an `scrollIntoView`, a fragment link — is put at the very top of the viewport,
+   * which is underneath it. `scroll-padding-top` is the platform's answer: it moves the *resting
+   * place* rather than the element, so nothing about the layout changes and the focus ring is
+   * simply no longer hidden.
+   *
+   * The value is **measured, not written down**. A number here would be a magic value that silently
+   * rots the first time the header's padding or type size changes — and worse, it cannot be right
+   * at more than one width: the header is `flex-wrap`, so on a narrow viewport it genuinely becomes
+   * two or three rows tall. `Header` publishes its own height to `--header-height` from a
+   * `ResizeObserver`, which is the only figure that cannot drift from the thing it describes. The
+   * `0px` fallback is what applies for the one frame before the first measurement lands.
+   */
+  html {
+    scroll-padding-top: var(--header-height, 0px);
+  }
+
   body {
     background-color: var(--color-foundry-900);
     color: var(--color-ink);
@@ -563,10 +607,16 @@
     outline-offset: 2px;
   }
 
-  /* Firefox and the standards-track properties; the WebKit rules below cover Chromium. */
+  /*
+   * Firefox and the standards-track properties; the WebKit rules below cover Chromium.
+   *
+   * **Both engines, always.** They share no declaration, so a thumb fixed in one and left in the
+   * other is a fix that only works in half the browsers — which is the shape of the bug this
+   * replaced. The tokens are the single definition both sides read.
+   */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-foundry-700) var(--color-foundry-900);
+    scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
   }
 
   ::-webkit-scrollbar {
@@ -575,17 +625,17 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: var(--color-foundry-900);
+    background: var(--color-scrollbar-track);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: var(--color-foundry-700);
+    background: var(--color-scrollbar-thumb);
     border: 1px solid color-mix(in oklab, var(--color-tab) 30%, transparent);
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-foundry-600);
+    background: var(--color-scrollbar-thumb-hover);
   }
 
   ::-webkit-scrollbar-corner {
@@ -824,5 +874,50 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/*
+ * Windows High Contrast, and anything else that forces a palette.
+ *
+ * Forced-colors mode replaces every author colour with one of a handful the user chose, which is
+ * exactly what they asked for — so the answer is never to opt an element back out of it wholesale.
+ * That defeats the mode the user turned on, and it is the cheap fix this block exists instead of.
+ * The correct move is to re-express the *meaning* in the system colours the mode does honour.
+ *
+ * What needs re-expressing is everything the app says with colour and nothing else. Anything
+ * carrying words or a glyph survives on its own: the badges keep their text, the toast keeps its
+ * message, a selected combo-box option keeps its ✓. These four do not:
+ *
+ *   - **The focus ring.** It still draws, but forced against the ordinary text colour it stops
+ *     reading as a *ring*. `Highlight` is the system's own "this is where you are" colour.
+ *   - **A drag under way.** `PanViewport` says so with a cyan border and nothing else — no cursor
+ *     change reaches a touch user, and no text appears — so a forced palette makes the pane's only
+ *     feedback vanish. An **outline**, not a thicker border: the border is on the box in both
+ *     states and only its colour changes, so growing it would shrink the content box by 2px in the
+ *     middle of the gesture, shifting the very image being dragged.
+ *   - **A current selection.** The zoom level in use and the open view are marked by a fill, which
+ *     the mode flattens to the same fill as every unselected sibling.
+ *   - **The combo box's arrow-key cursor.** The active row is a background tint and a 2px nudge —
+ *     the one state in that list with no glyph of its own — so without this a keyboard user in a
+ *     forced palette cannot see which option they are on. `aria-selected` is the *chosen* row and
+ *     is a different thing; `data-active` is the row `aria-activedescendant` points at.
+ */
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+
+  .border-neon {
+    border-color: Highlight;
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+
+  [aria-pressed='true'],
+  [aria-current]:not([aria-current='false']),
+  [data-active='true'] {
+    background-color: Highlight;
+    color: HighlightText;
   }
 }

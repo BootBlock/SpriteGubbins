@@ -358,6 +358,17 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | The ambient dot backdrop | `bg-grid-pattern` | a hand-rolled repeating gradient |
 | The ambient colour wash behind the page | `bg-aurora` | a stack of hand-written `radial-gradient()`s |
 | A loading placeholder's sheen | `shimmer-surface` + `animate-shimmer` | a bespoke gradient |
+| The **scrollbar** — set once in `index.css`, for both engines | `--color-scrollbar-track` / `-thumb` / `-thumb-hover` | `foundry-700` on `foundry-900`, which measures 1.19:1 |
+
+**The scrollbar's three tokens are the one row here no component reaches for.** They are consumed
+only by the base-layer rules in `index.css` — `scrollbar-color` for Firefox and the
+`::-webkit-scrollbar-*` rules for Chromium — because a scrollbar is painted by the engine and has no
+element to put a class on. They exist as tokens anyway, and outside the foundry ramp, because WCAG
+1.4.11 wants 3:1 against the track and the ramp cannot reach it: it tops out at L 0.286 where the
+ratio needs L ≥ 0.48. `accent` and `neon` clear it and are spoken for — indigo is primary, cyan is
+*live* — and a scrollbar is neither. `tests/design-tokens.test.ts` recomputes the ratio from the
+token values and fails below 3:1, in both the resting and the hover state, so the next palette change
+cannot quietly undo it.
 
 **`accent` and `neon` are not interchangeable.** Indigo is the primary — actions, focus,
 selection, the background glow. Cyan marks something *live*: auto-syncing, generating,
