@@ -33,7 +33,7 @@ export function PresetsTab() {
     <div className="animate-fade-in space-y-6">
       <section className="glass-panel flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-foundry-700 p-6 shadow-xl">
         <div>
-          <h2 className="bg-gradient-to-r from-ink to-accent-soft bg-clip-text text-lg font-bold text-transparent">
+          <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">
             Preset Archetype Library
           </h2>
           <p className="text-xs text-ink-muted">
@@ -72,7 +72,7 @@ export function PresetsTab() {
                 setIsSaving(false);
               }
             }}
-            className="rounded-lg bg-accent-strong px-3.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:bg-foundry-700 disabled:text-ink-faint"
+            className="rounded-lg bg-accent-strong px-3.5 py-1.5 text-xs font-semibold text-ink shadow-md transition-all duration-200 hover:bg-accent hover:shadow-lg active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-foundry-700 disabled:text-ink-faint disabled:shadow-none"
           >
             {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
           </button>
@@ -81,7 +81,9 @@ export function PresetsTab() {
         </div>
       </section>
 
-      <ul className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {/* The cards each carry their own entrance; this is what makes them arrive as a sweep across
+          the row rather than all at once. */}
+      <ul className="stagger-children grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
         {[...PRESETS, ...customPresets].map((preset) => (
           <PresetCard
             key={preset.id}

@@ -59,11 +59,26 @@ const REQUIRED_THEME_TOKENS = [
   '--animate-tooltip-in',
   '--animate-aurora',
   '--animate-scan-beam',
+  // The entrance layer, one per kind of thing that arrives, plus the two ambient/behavioural ones.
+  '--animate-pop-in',
+  '--animate-toast-in',
+  '--animate-modal-in',
+  '--animate-backdrop-in',
+  '--animate-gradient-pan',
+  '--animate-toast-timer',
   '--ease-emphasized',
 ];
 
 /** Bespoke utilities components use by name, declared with `@utility` rather than `@theme`. */
-const REQUIRED_UTILITIES = ['bg-grid-pattern', 'bg-aurora', 'glass-panel', 'glass-float', 'shimmer-surface'];
+const REQUIRED_UTILITIES = [
+  'bg-grid-pattern',
+  'bg-aurora',
+  'glass-panel',
+  'glass-float',
+  'shimmer-surface',
+  'heading-gradient',
+  'stagger-children',
+];
 
 /** An `--animate-*` token names a keyframe; if that keyframe is missing the animation is a no-op. */
 const ANIMATION_KEYFRAMES = [
@@ -74,6 +89,12 @@ const ANIMATION_KEYFRAMES = [
   'tooltip-in',
   'aurora',
   'scan-beam',
+  'pop-in',
+  'toast-in',
+  'modal-in',
+  'backdrop-in',
+  'gradient-pan',
+  'toast-timer',
 ];
 
 /**
@@ -107,6 +128,18 @@ describe('design tokens', () => {
     // every non-Safari engine reads had been deleted.
     expect(body).toMatch(/^\s*backdrop-filter: blur\(/m);
     expect(body).toMatch(/^\s*-webkit-backdrop-filter: blur\(/m);
+  });
+
+  it('clips heading-gradient to its glyphs, prefixed for Safari as well', () => {
+    // The same shape as the glass check above, with a worse failure. `heading-gradient` paints its
+    // text `transparent` and relies on `background-clip: text` to fill the glyphs — so on an engine
+    // that only understands the prefixed spelling, losing it does not render a flat heading, it
+    // renders **no heading at all**: transparent text over a gradient filling the whole box.
+    const declaration = stylesheet.slice(stylesheet.indexOf('@utility heading-gradient {'));
+    const body = declaration.slice(0, declaration.indexOf('\n}'));
+
+    expect(body).toMatch(/^\s*background-clip: text;/m);
+    expect(body).toMatch(/^\s*-webkit-background-clip: text;/m);
   });
 
   it('pins the colour scheme to dark, because there is no light palette to fall back to', () => {

@@ -80,9 +80,7 @@ export function QuantiseTab() {
   return (
     <div className="animate-fade-in mx-auto max-w-6xl space-y-6">
       <header className="space-y-1">
-        <h2 className="bg-gradient-to-r from-ink to-accent-soft bg-clip-text text-lg font-bold text-transparent">
-          Quantise a returned sheet
-        </h2>
+        <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Quantise a returned sheet</h2>
         <p className="max-w-3xl text-xs leading-relaxed text-ink-muted">
           Snap the image back to the pixel scale it was meant to be drawn at, and reduce it to the colour
           budget the prompt asked for. Every colour in the result is one the image already contained — nothing

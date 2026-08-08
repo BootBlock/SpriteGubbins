@@ -31,8 +31,14 @@ export function PresetCard({ preset, onLoad, onRename, onDelete }: PresetCardPro
   };
 
   return (
-    <li className="glass-panel group flex flex-col justify-between gap-4 rounded-2xl border border-foundry-700 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:shadow-2xl">
-      <div className="space-y-3">
+    <li className="animate-pop-in glass-panel group relative flex flex-col justify-between gap-4 overflow-hidden rounded-2xl border border-foundry-700 p-5 shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-accent/60 hover:shadow-2xl">
+      {/* An accent bloom that only exists under the pointer, behind the card's own content. */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-16 -right-16 size-32 rounded-full bg-accent/20 opacity-0 blur-2xl transition-opacity duration-500 group-hover:opacity-100"
+      />
+
+      <div className="relative space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Badge tone="accent">{preset.category}</Badge>
           <Badge>{preset.isCustom === true ? 'Your preset' : 'Built-in'}</Badge>
@@ -51,7 +57,7 @@ export function PresetCard({ preset, onLoad, onRename, onDelete }: PresetCardPro
       </div>
 
       {isConfirmingDelete ? (
-        <div className="flex gap-2">
+        <div className="relative flex gap-2">
           <button
             type="button"
             onClick={() => {
@@ -73,15 +79,22 @@ export function PresetCard({ preset, onLoad, onRename, onDelete }: PresetCardPro
           </button>
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="relative flex gap-2">
           <button
             type="button"
             onClick={() => {
               onLoad(preset);
             }}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-strong to-accent py-2 text-xs font-semibold text-ink ring-1 ring-accent-soft/30 transition-all duration-200 hover:ring-accent-soft active:scale-[0.98]"
+            className="group/load flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-strong to-accent py-2 text-xs font-semibold text-ink shadow-md ring-1 ring-accent-soft/30 transition-all duration-200 hover:shadow-lg hover:ring-accent-soft active:scale-[0.98]"
           >
-            <span aria-hidden="true">⚡</span>
+            {/* Named group: the card is already a `group`, and an unnamed one here would follow the
+                card's hover rather than this button's. */}
+            <span
+              aria-hidden="true"
+              className="inline-block transition-transform duration-300 group-hover/load:scale-125"
+            >
+              ⚡
+            </span>
             Load preset
           </button>
 
@@ -94,7 +107,7 @@ export function PresetCard({ preset, onLoad, onRename, onDelete }: PresetCardPro
                   setIsRenaming(true);
                 }}
                 aria-label={`Rename preset ${preset.name}`}
-                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-foundry-700 active:translate-y-0"
               >
                 <span aria-hidden="true">✏️</span>
               </button>
@@ -106,7 +119,7 @@ export function PresetCard({ preset, onLoad, onRename, onDelete }: PresetCardPro
                   setIsConfirmingDelete(true);
                 }}
                 aria-label={`Delete preset ${preset.name}`}
-                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700"
+                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-rose transition-all duration-200 hover:-translate-y-px hover:border-rose/50 hover:bg-foundry-700 active:translate-y-0"
               >
                 <span aria-hidden="true">🗑</span>
               </button>

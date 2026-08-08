@@ -5,7 +5,10 @@ import { TabSwitcher } from './TabSwitcher.tsx';
 
 /** Shared geometry and motion for the two secondary chrome actions, so they stay a matched pair. */
 const CHROME_ACTION =
-  'flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-800/70 px-3 py-2 text-xs font-bold shadow-md transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-foundry-700 active:translate-y-0';
+  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-800/70 px-3 py-2 text-xs font-bold shadow-md transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-foundry-700 hover:shadow-lg active:translate-y-0 active:shadow-md';
+
+/** …and the matching lift for the glyph inside one, which is why both are `group`s. */
+const CHROME_ACTION_ICON = 'inline-block transition-transform duration-300 group-hover:scale-125';
 
 /**
  * The app's chrome: identity, navigation, and the two things worth reaching from anywhere — the
@@ -48,9 +51,7 @@ export function Header() {
         </span>
         <span>
           <span className="flex items-center gap-2 text-xl font-black tracking-tight">
-            <span className="bg-gradient-to-r from-ink via-accent-soft to-ink bg-clip-text text-transparent">
-              Sprite Gubbins
-            </span>
+            <span className="heading-gradient animate-gradient-pan">Sprite Gubbins</span>
             <Badge tone="accent">Serverless</Badge>
           </span>
           <span className="block text-[11px] text-ink-faint transition-colors group-hover:text-ink-muted">
@@ -63,12 +64,17 @@ export function Header() {
 
       <div className="flex items-center gap-2">
         <button type="button" onClick={toggleAtlasModal} className={`${CHROME_ACTION} text-accent-soft`}>
-          <span aria-hidden="true">📊</span>
+          <span aria-hidden="true" className={CHROME_ACTION_ICON}>
+            📊
+          </span>
           Atlas Calc
         </button>
 
         <button type="button" onClick={toggleHistoryModal} className={`${CHROME_ACTION} text-ink-muted`}>
-          <span aria-hidden="true">🕓</span>
+          {/* The one glyph that turns rather than grows — it is a clock, and this is history. */}
+          <span aria-hidden="true" className={`${CHROME_ACTION_ICON} group-hover:-rotate-45`}>
+            🕓
+          </span>
           History
         </button>
 

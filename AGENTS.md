@@ -10,7 +10,7 @@ inventory — is [docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-gubbins-spe
 
 ## Mandatory rules — the complete list
 
-Every rule below is mandatory. The first three are spelled out on this page; the rest are one
+Every rule below is mandatory. The ones marked with an emoji appear on this page; the rest are one
 click away and are **equally binding** — "I only read AGENTS.md" is not a defence.
 
 | Rule | Where |
@@ -18,10 +18,12 @@ click away and are **equally binding** — "I only read AGENTS.md" is not a defe
 | No secrets in the repository | 🔒 below |
 | Public-repository hygiene | 🌐 below |
 | Attribution on GitHub issues and PRs you write | ✍️ below |
+| Reconcile an issue's labels whenever you touch it | [CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory) |
 | Design tokens, not hard-coded colour/motion values | [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists) |
+| No backwards compatibility, shims or data migrations before `1.0.0` | 🚧 below |
 | The structural laws — <150 lines, one thing per file, SoC by directory, YAGNI, DRY, no stubs | [CLAUDE.md](CLAUDE.md#architecture-the-specs-structural-laws) |
 | The banned patterns, and which ones the build catches | [CLAUDE.md](CLAUDE.md#banned-patterns-and-which-ones-the-build-catches) |
-| Cross-origin isolation is load-bearing — it decides which database the app gets | [CLAUDE.md](CLAUDE.md#cross-origin-isolation-is-load-bearing) |
+| Cross-origin isolation — what it is for, and what actually depends on it | [CLAUDE.md](CLAUDE.md#cross-origin-isolation-and-what-actually-depends-on-it) |
 | Accessibility wiring — roles, labels, live regions, focus | [CLAUDE.md](CLAUDE.md#accessibility-is-not-optional) |
 | Plan docs under `docs/todo/` carry a status banner | [CLAUDE.md](CLAUDE.md#plan-docs-carry-a-status-docstodo) |
 | How to verify a change before calling it done | [CLAUDE.md](CLAUDE.md#verifying-a-change) |
@@ -100,6 +102,13 @@ it. This does **not** apply to git commit messages — those carry a `Co-Authore
 instead. Full detail in
 [CLAUDE.md](CLAUDE.md#agent-attribution-on-github-content-mandatory).
 
+**The same visit owes the issue its labels.** Whenever you open, action, comment substantively on
+or close an issue or PR, reconcile its **whole** label set from the repository's own list
+(`gh label list --limit 200`) — removing what no longer applies as much as adding what now does,
+and never inventing a label. `status:` is the one that goes stale: exactly one, or none once the
+issue closes. Full detail in
+[CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory).
+
 ## ⚠️ Use design tokens, not hard-coded values
 
 Every colour and motion value in the UI must come from a **design token** in the `@theme` block
@@ -107,3 +116,21 @@ of [src/index.css](src/index.css) — never a raw hex, `rgb()`/`oklch()` literal
 Tailwind palette class. Unknown Tailwind utilities **fail silently**, so verify a new one
 actually emits CSS. Full table and the two documented exceptions in
 [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists).
+
+## 🚧 No backwards compatibility before `1.0.0` (mandatory)
+
+The `version` in [package.json](package.json) is **0.x**. Everything below `1.0.0` is explicitly
+unstable — any release may break anything, and users are told to expect that — so **there is no
+backwards-compatibility surface to preserve and none may be built.**
+
+A change *replaces* what it supersedes: rename the symbol and update every call site in the same
+commit, delete the retired option and let a stored value naming it fall through to its default,
+change the DDL and let an incompatible database be discarded. Banned until `1.0.0`: aliases and
+forwarding re-exports, `@deprecated` wrappers, dual code paths that read a previous shape,
+schema migrations, legacy fixtures proving an old format still loads, and a `v2` left beside an
+undeleted `v1`.
+
+Three things are **not** covered by this and stay: guards against *corrupt* storage, support for
+the browser a user has today (the localStorage fallback, cross-origin isolation, popover feature
+detection), and the verification gate. Full detail, including what happens at `1.0.0`, in
+[CLAUDE.md](CLAUDE.md#no-backwards-compatibility-before-100-mandatory).

@@ -115,6 +115,34 @@
   --animate-aurora: aurora 24s ease-in-out infinite;
   --animate-scan-beam: scan-beam 4s linear infinite;
 
+  /*
+   * The entrance layer: one animation per kind of thing that arrives.
+   *
+   * `fade-in` above mounts a *panel* — a nudge upwards and no scale, because a full-width panel
+   * that grows looks like the layout settling. These four are for the surfaces it does not fit:
+   * `pop-in` for a tile in a grid (it has room to grow into), `toast-in` for a notification
+   * arriving from off the bottom edge, and `modal-in`/`backdrop-in` for the two halves of an
+   * overlay opening — the panel rising into place while the ground behind it dims.
+   */
+  --animate-pop-in: pop-in 320ms var(--ease-emphasized) backwards;
+  --animate-toast-in: toast-in 320ms var(--ease-emphasized) backwards;
+  --animate-modal-in: modal-in 280ms var(--ease-emphasized) backwards;
+  --animate-backdrop-in: backdrop-in 240ms var(--ease-emphasized) backwards;
+
+  /* The slow sheen travelling a `heading-gradient`, so a display heading is lit rather than flat. */
+  --animate-gradient-pan: gradient-pan 14s ease-in-out infinite;
+
+  /*
+   * The toast's own countdown, draining left to right.
+   *
+   * The one animation here that deliberately carries **no duration**: the bar is a picture of
+   * `TOAST_DURATION_MS`, which is behaviour and lives in `src/constants/ui.ts`. Writing `3s` here
+   * would be a second copy of that number, free to drift from the timer that actually dismisses
+   * the toast — so the call site supplies the duration from the constant instead, and the
+   * reduced-motion block below still overrides it.
+   */
+  --animate-toast-timer: toast-timer linear forwards;
+
   /* The signature easing — a decelerating curve used for anything that enters or expands. */
   --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
 
@@ -162,8 +190,9 @@
   /*
    * The glass card resolving out of its own blur. `filter` rather than a slide, because the card
    * is translucent: fading a blurred pane into focus reads as glass settling, where a translation
-   * would just look like a panel arriving. Nothing here touches `transform` — the tooltip is
-   * centred with a translate utility, and an animated `transform` would overwrite it.
+   * would just look like a panel arriving. The scale is the `scale` property rather than a
+   * `transform`, so it composes with the `-translate-x-1/2` centring the card — but that also means
+   * a `scale-*` utility on this card would be overwritten, which is why it carries none.
    */
   @keyframes tooltip-in {
     from {
@@ -198,6 +227,85 @@
     }
     to {
       transform: translateX(300%);
+    }
+  }
+
+  /*
+   * The three entrances that move, and why all of them animate `transform` — the same property
+   * `fade-in` above uses, and the opposite of the choice `tooltip-in` makes.
+   *
+   * Tailwind v4 compiles `translate-*`, `scale-*` and `rotate-*` to the **independent** properties
+   * of those names, not to `transform`. The engine composes `translate`, `rotate` and `scale` with
+   * `transform` rather than one replacing the other, so a keyframe here on `transform` layers over
+   * a component's own `hover:-translate-y-1` instead of overwriting it — a preset card mid-entrance
+   * still lifts under the pointer. Reach for `translate` or `scale` in a keyframe and it is that
+   * utility, specifically, that stops working.
+   *
+   * All three fill **backwards**, not forwards: that holds the *start* frame for anything given a
+   * delay, without leaving the end frame latched on afterwards. A latched identity `transform` is
+   * not the no-op it looks like — any value other than `none` makes the element a containing block,
+   * which would silently re-parent a fixed-position descendant.
+   */
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.94);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(24px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes modal-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes backdrop-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* The lit band of a `heading-gradient` sliding across the glyphs and back. */
+  @keyframes gradient-pan {
+    0%,
+    100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+
+  /* Drains to nothing against `origin-left`; `transform` here has no utility to fight. */
+  @keyframes toast-timer {
+    from {
+      transform: scaleX(1);
+    }
+    to {
+      transform: scaleX(0);
     }
   }
 }
@@ -348,6 +456,52 @@
     inset 0 1px 0 color-mix(in oklab, white 14%, transparent);
 }
 
+@utility heading-gradient {
+  /*
+   * The display-heading treatment: ink lit by two passes of the accent, clipped to the glyphs.
+   *
+   * One definition rather than `bg-gradient-to-r from-ink to-accent-soft bg-clip-text
+   * text-transparent` restated at every heading, which leaves each of them free to pick a slightly
+   * different pair of stops. The gradient is deliberately **wider than the box** so
+   * `animate-gradient-pan` has somewhere to travel; without that the utility is still a perfectly
+   * good static heading, which is how a heading that doesn't animate uses it.
+   *
+   * `-webkit-background-clip` is not redundant: Safari still requires the prefixed spelling, and
+   * without it the heading is transparent text over an unclipped gradient — invisible, not merely
+   * unstyled.
+   */
+  background-image: linear-gradient(
+    100deg,
+    var(--color-ink) 0%,
+    var(--color-accent-soft) 30%,
+    var(--color-ink) 55%,
+    var(--color-accent-soft) 100%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility stagger-children {
+  /*
+   * A cascade across a row, for a grid whose children each carry an entrance animation.
+   *
+   * Three steps on a repeating cycle rather than one delay per child: the lists this runs on are
+   * open-ended (the preset library grows with every preset a user saves), and a per-child rule
+   * would either cap the list or make the last card in a long one wait absurdly. On the
+   * three-column layout it reads as a left-to-right sweep; on the narrower ones it becomes a
+   * repeating ripple, which is the same idea at a different width.
+   */
+  & > *:nth-child(3n + 2) {
+    animation-delay: 70ms;
+  }
+
+  & > *:nth-child(3n + 3) {
+    animation-delay: 140ms;
+  }
+}
+
 @utility shimmer-surface {
   /* The moving highlight `animate-shimmer` slides across; kept beside the keyframe so the
      gradient and the animation that drives it can't drift apart. */
@@ -364,12 +518,20 @@
  * The single reduced-motion catch-all. A user who has asked their OS for less motion gets it
  * everywhere, including from components written later that never considered it — which is the
  * point of putting it here rather than at each call site.
+ *
+ * `::backdrop` is named explicitly because the universal selector does **not** reach it: it is not
+ * a descendant of anything, so `*` never matches it and an animation on a dialog's backdrop would
+ * be the one thing in the app to escape this block. `animation-delay` is reset for the same reason
+ * — `stagger-children` sets one, and a delay left standing in front of a 0.01ms animation is a
+ * pause with nothing on the end of it.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after,
+  ::backdrop {
     animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;

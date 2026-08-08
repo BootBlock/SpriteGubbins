@@ -13,6 +13,16 @@ import type { AppTab } from '../types/ui.ts';
 export interface UIState {
   readonly activeTab: AppTab;
   readonly toastMessage: string | null;
+  /**
+   * How many toasts have been raised, ever.
+   *
+   * Not shown anywhere — it is the identity of the *current* toast, which the message alone cannot
+   * supply. Copying the prompt twice raises the same text twice, and React would reconcile that as
+   * the same element left untouched, so the countdown drawn across the toast would keep draining
+   * from wherever the first one had got to while the store's timer had started again from zero.
+   * Keying on this number remounts the surface for each toast, repeated wording included.
+   */
+  readonly toastId: number;
   readonly isAtlasModalOpen: boolean;
   readonly isHistoryModalOpen: boolean;
   readonly isSplitModalOpen: boolean;
@@ -64,6 +74,7 @@ function cancelDismiss(): void {
 export const useUIStore = create<UIState>((set) => ({
   activeTab: 'studio',
   toastMessage: null,
+  toastId: 0,
   ...ALL_OVERLAYS_CLOSED,
   deferredPWAInstallPrompt: null,
 
@@ -73,7 +84,7 @@ export const useUIStore = create<UIState>((set) => ({
 
   showToast: (message) => {
     cancelDismiss();
-    set({ toastMessage: message });
+    set((state) => ({ toastMessage: message, toastId: state.toastId + 1 }));
     dismissTimer = setTimeout(() => {
       dismissTimer = undefined;
       set({ toastMessage: null });
