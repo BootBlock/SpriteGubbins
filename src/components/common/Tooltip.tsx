@@ -124,7 +124,7 @@ export function Tooltip({ text, hint }: TooltipProps) {
           if (isVisible) setIsDismissed(true);
           else reveal('focus');
         }}
-        className={`flex size-4 cursor-help items-center justify-center rounded-full border font-mono text-2xs leading-none font-bold transition-all duration-200 hover:scale-110 ${
+        className={`flex size-4 cursor-help items-center justify-center rounded-full border font-mono text-2xs leading-none font-bold transition-all duration-300 hover:scale-110 ${
           isVisible
             ? 'border-accent bg-accent/25 text-accent-soft ring-2 ring-accent/20'
             : 'border-foundry-600 bg-foundry-950/60 text-ink-faint hover:border-accent hover:text-accent-soft'

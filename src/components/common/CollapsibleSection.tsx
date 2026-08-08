@@ -54,7 +54,7 @@ interface CollapsibleSectionProps extends SectionDefinition {
  * it is the one event that hears about a keyboard toggle, a click, *and* a find-in-page expansion.
  *
  * **It eases open and shut** — `section-reveal`, defined in `index.css` as every `@utility` in this
- * app is, and applied here as an ordinary class. The caret's rotation shares its 300ms, so the
+ * app is, and applied here as an ordinary class. The caret's rotation shares its 450ms, so the
  * chevron and the group are one gesture rather than two things of different lengths.
  *
  * This carried a "deliberately not animated" note for a while, and the objection it recorded was
@@ -67,7 +67,7 @@ interface CollapsibleSectionProps extends SectionDefinition {
  *
  * **What animating the close costs is a focus hazard, and the `onBlur` below is what pays it.**
  * Holding the content painted past the moment `open` goes is the only way to have a box left to
- * shrink, and for those 300ms a shut group is still tabbable; the handler catches the focus the user
+ * shrink, and for those 450ms a shut group is still tabbable; the handler catches the focus the user
  * agent then throws to `<body>` and puts it back on the summary. The rejected alternative, `inert`,
  * is recorded in `section-reveal` — it prevents the entry and costs find-in-page, which is one of
  * the reasons this component is a `<details>` at all.
@@ -142,7 +142,7 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
         Catching the focus the collapse throws away.
 
         `section-reveal` keeps `::details-content` painted for the length of the transition, which is
-        the only way the close can animate at all — and for those 300ms the group is shut while its
+        the only way the close can animate at all — and for those 450ms the group is shut while its
         controls are still reachable, so Enter-then-Tab on the summary lands inside a closed group.
         When the paint stops, the user agent has nowhere to put that focus and drops it to `<body>`:
         the ring gone, the position gone, exactly what `SectionToggleAll` moves focus to avoid.
@@ -175,14 +175,14 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
       <summary
         aria-labelledby={headingId}
         aria-describedby={isOpen ? undefined : digestId}
-        className="grid cursor-pointer list-none grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 rounded-lg py-3 transition-colors duration-200 hover:bg-foundry-700/40 [&::-webkit-details-marker]:hidden"
+        className="grid cursor-pointer list-none grid-cols-[auto_1fr] items-center gap-x-2 gap-y-1 rounded-lg py-3 transition-colors duration-300 hover:bg-foundry-700/40 [&::-webkit-details-marker]:hidden"
       >
         <svg
           aria-hidden="true"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          className={`size-3.5 shrink-0 text-tab transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`}
+          className={`size-3.5 shrink-0 text-tab transition-transform duration-450 ${isOpen ? 'rotate-90' : ''}`}
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
         </svg>

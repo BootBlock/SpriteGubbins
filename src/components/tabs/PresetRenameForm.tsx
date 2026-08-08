@@ -65,7 +65,7 @@ export function PresetRenameForm({ preset, onRename, onClose }: PresetRenameForm
       <button
         type="submit"
         disabled={isSaving || draftName.trim() === ''}
-        className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
+        className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed"
       >
         {isSaving ? 'Saving…' : 'Save'}
       </button>

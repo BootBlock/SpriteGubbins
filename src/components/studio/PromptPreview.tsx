@@ -71,10 +71,10 @@ export function PromptPreview() {
           digits would shuffle the chip's width — and the badge beside it — with each one.
         */}
         <div className="flex items-center gap-2 font-mono text-xs tabular-nums text-ink-faint">
-          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-300 hover:border-neon/40">
+          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-450 hover:border-neon/40">
             Words: <strong className="text-neon">{wordCount}</strong>
           </span>
-          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-300 hover:border-accent/40">
+          <span className="rounded-lg border border-foundry-700 bg-foundry-950/60 px-2 py-1 transition-colors duration-450 hover:border-accent/40">
             Est. tokens: <strong className="text-accent-soft">~{tokenEstimate}</strong>
           </span>
           <Badge tone="live">Auto-Sync</Badge>
@@ -86,7 +86,7 @@ export function PromptPreview() {
       <PromptActions promptText={promptText} />
 
       {/* `select-all` so one click selects the whole prompt for a manual copy. */}
-      <pre className="flex-1 overflow-y-auto rounded-xl border border-foundry-700 bg-foundry-950/80 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-ink-muted shadow-inner transition-colors duration-300 select-all hover:border-neon/30">
+      <pre className="flex-1 overflow-y-auto rounded-xl border border-foundry-700 bg-foundry-950/80 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-ink-muted shadow-inner transition-colors duration-450 select-all hover:border-neon/30">
         {promptText}
       </pre>
     </section>

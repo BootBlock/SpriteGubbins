@@ -78,7 +78,7 @@ export function Modal({ title, icon, onClose, panelClassName, children }: ModalP
             type="button"
             onClick={onClose}
             aria-label={`Close ${title}`}
-            className="flex size-7 items-center justify-center rounded-lg text-sm font-bold text-ink-faint transition-all duration-200 hover:rotate-90 hover:bg-foundry-700 hover:text-ink"
+            className="flex size-7 items-center justify-center rounded-lg text-sm font-bold text-ink-faint transition-all duration-300 hover:rotate-90 hover:bg-foundry-700 hover:text-ink"
           >
             <span aria-hidden="true">✕</span>
           </button>
