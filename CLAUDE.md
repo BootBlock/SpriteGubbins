@@ -251,6 +251,64 @@ A label-only edit is the one GitHub write with no body to sign, so it carries no
 trailer — but if you also comment, that comment does (see
 [agent attribution](#agent-attribution-on-github-content-mandatory)).
 
+## Close the issue you actioned (mandatory)
+
+The open issues are the queue. An issue whose work has shipped but which nobody closed is
+indistinguishable, from the list, from work still waiting to be done — so it gets re-triaged,
+re-estimated, and eventually picked up by someone who does the whole thing again. It also makes
+every count drawn from that list wrong. The agent that actioned the issue is the only one who
+knows it is finished, and the moment that knowledge exists is the moment it has to be recorded.
+
+**The rule:** when you have actioned an issue and [the work has
+landed](#work-is-not-done-until-it-has-landed-mandatory), close it in the same visit — with a
+comment saying what was done. Closing an issue whose work is still sitting in a worktree is worse
+than leaving it open, because it asserts something untrue; land first, then close.
+
+```bash
+gh issue comment <n> --body-file <file>    # what was done — multi-line goes through a file
+gh issue close <n>
+gh issue edit <n> --remove-label "status: in-progress"   # reconcile the whole set, not just this
+```
+
+Closing is a label event too: `status:` comes **off entirely** when the issue closes, and the rest
+of the set gets reconciled in the same visit — see [reconcile an issue's
+labels](#reconcile-an-issues-labels-whenever-you-touch-it-mandatory). The comment carries the
+attribution trailer, as every issue body you write does.
+
+**Not closing is the exception, and it has to be argued in the comment.** If there is a genuinely
+good reason to leave an issue open, **say what it is in the comment you just posted** — an issue
+left open with no explanation reads as forgotten, which is the failure this rule exists to stop.
+Reasons that qualify are ones where the issue is honestly not finished:
+
+- **You actioned part of it.** The issue asks for four things and you did two. Say which two
+  landed and which two remain — or split the remainder into its own issue and close this one
+  against it.
+- **It is a tracking or `epic` issue** whose children are still open.
+- **It needs a decision, or verification, that is not yours to make** — a maintainer's call on
+  behaviour, or a check on hardware you don't have.
+
+Reasons that do **not** qualify: leaving it open "for visibility", leaving it for the maintainer to
+close, or hedging because you are unsure the fix works. That last one is a verification problem,
+not a closing problem — run the gate and drive the app, then close it.
+
+**A comment on a closed issue does not reopen it.** Follow-up arriving on something already
+actioned is normal, and it is how the record of a piece of work stays in one place. Do the extra
+work, land it, and add a **new comment** on that same issue describing what you did — a new
+comment, not an edit of the old one, because editing rewrites the record rather than extending it.
+The issue stays closed.
+
+Reopening is a claim that the work is outstanding again, and everyone reading the list will act on
+it. So it takes a **very good** reason, and there are essentially two:
+
+- **The fix did not work, or regressed.** What was closed was not actually done.
+- **The issue was closed on a false premise** — the wrong thing was fixed, or the report was
+  misread.
+
+If the follow-up is genuinely *new* work rather than a continuation, open a new issue and link it
+to the closed one instead. That keeps the closed issue's record honest about what it covered. When
+you do reopen, say why in a comment in the same visit, and put a `status:` label back on — a
+reopened issue with no status is back to being invisible.
+
 ## Design tokens are mandatory where one exists
 
 Every colour and motion value in the UI must come from a **design token**, never a raw

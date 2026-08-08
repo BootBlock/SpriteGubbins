@@ -22,6 +22,7 @@ click away and are **equally binding** — "I only read AGENTS.md" is not a defe
 | Attribution on GitHub issues and PRs you write | ✍️ below |
 | Do the whole fix, never the cheap one | 🎯 below |
 | Reconcile an issue's labels whenever you touch it | [CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory) |
+| Close the issue you actioned; a comment on a closed one does not reopen it | [CLAUDE.md](CLAUDE.md#close-the-issue-you-actioned-mandatory) |
 | Design tokens, not hard-coded colour/motion values | [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists) |
 | No backwards compatibility, shims or data migrations before `1.0.0` | 🚧 below |
 | The structural laws — <150 lines, one thing per file, SoC by directory, YAGNI, DRY, no stubs | [CLAUDE.md](CLAUDE.md#architecture-the-specs-structural-laws) |
@@ -158,6 +159,17 @@ or close an issue or PR, reconcile its **whole** label set from the repository's
 and never inventing a label. `status:` is the one that goes stale: exactly one, or none once the
 issue closes. Full detail in
 [CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory).
+
+**And the same visit closes it.** An issue you actioned, whose work has landed, gets closed then
+and there — an open issue whose work has shipped is indistinguishable from work still waiting, and
+someone will do it again. Comment what you did, then `gh issue close <n>`. Leaving it open needs a
+reason, and the reason goes **in that comment**: you actioned only part of it, it tracks children
+still open, or it needs a decision that isn't yours. "For visibility" and "the maintainer can close
+it" don't count. A **comment on an already-closed issue does not reopen it** — do the extra work
+and add a *new* comment; reopening claims the work is outstanding again, so it takes a very good
+reason (the fix regressed, or the issue was closed on a false premise). Genuinely new work gets a
+new issue linked to the old one. Full detail in
+[CLAUDE.md](CLAUDE.md#close-the-issue-you-actioned-mandatory).
 
 ## 🎯 Do the whole fix, never the cheap one (mandatory)
 
