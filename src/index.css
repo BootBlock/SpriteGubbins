@@ -99,6 +99,11 @@
   /*
    * Roles: the meanings that are *not* free to move with the view.
    *
+   * The three `accent` tokens below are the **default** — the primary this app has always shipped —
+   * and the settings dialog can repoint them, which is the one exception to "not free to move". See
+   * the `[data-accent]` rules in the base layer for what that costs and what it is not allowed to
+   * touch: the *view's* colour is untouched by it, so the two kinds of movement stay separate.
+   *
    * Each sits on the same wheel as the stops above — `gold` on the amber-gold arc, `emerald` on
    * jade, `rose` on the red end, `accent` on indigo, `neon` on cyan — but each carries its own
    * lightness, because a role has a job the stops do not. `accent-strong` is dark enough to be a
@@ -753,6 +758,97 @@
   }
 
   /*
+   * The accent the user chose — nine hues, and **not** nine stops off the wheel above.
+   *
+   * The wheel is one lightness because its members stand in for one another. The accent is three
+   * lightnesses, chosen for three different jobs: `accent-strong` is dark enough to be a *ground*
+   * with ink on it, `accent-soft` is light enough to be the focus ring on the page's darkest well,
+   * and `accent` sits between them. So transposing the role to another hue cannot mean "take the
+   * stop at that angle" — the stops are all L 0.76, and none of the three roles is.
+   *
+   * **What is held constant is luminance, not lightness**, and that is the whole safety argument for
+   * letting a user change this at all. OKLCH lightness is perceptual and its relationship to relative
+   * luminance depends on the hue — gold at L 0.62 is far brighter than indigo at L 0.62 — so nine
+   * hues at one lightness would be nine different contrast ratios against `ink` and against every
+   * panel. Solving for the lightness that reproduces the indigo default's *luminance* instead makes
+   * every ratio in the app identical whichever hue is chosen: ink on the primary button, the focus
+   * ring on a well, the accent as text on a panel. Changing the accent cannot change how legible
+   * anything is, and `tests/design-tokens.test.ts` recomputes that from these values rather than
+   * trusting the paragraph.
+   *
+   * **Chroma is per-hue, for the reason the wheel gives**: sRGB is much narrower in some hues than
+   * others, so one figure across nine hues would clamp the narrow ones onto the gamut surface. Each
+   * value here is the same *fraction* of the largest chroma its hue sustains at its own lightness as
+   * the indigo default is of its — 91% for `accent` and `accent-strong`, 90% for `accent-soft` — so
+   * every hue is as saturated as it can be while being the same distance inside the gamut. Re-derive
+   * with a bisection on lightness against a gamut search, not by eye.
+   *
+   * `indigo` restates the `@theme` default rather than being left implicit, which is the same shape
+   * `[data-tab='studio']` has: the default needs to be in `@theme` for Tailwind to generate the
+   * utilities at all, and a rule missing from this list would be a hue that silently rendered as
+   * whatever the previous one left behind.
+   *
+   * Assigned on the same element the `var()`s resolve against — the shell in `App.tsx`, alongside
+   * `data-tab` — because a custom property declared on `:root` in terms of these would resolve there
+   * and inherit down already resolved. That is also what lets the settings dialog's own swatches
+   * carry `data-accent` themselves and paint with `bg-accent`: each one shows the hue it offers,
+   * from these rules, without a second copy of the colour anywhere.
+   */
+  [data-accent='indigo'] {
+    --color-accent: oklch(0.72 0.133 274);
+    --color-accent-strong: oklch(0.62 0.188 274);
+    --color-accent-soft: oklch(0.82 0.081 274);
+  }
+
+  [data-accent='rose'] {
+    --color-accent: oklch(0.733 0.153 12);
+    --color-accent-strong: oklch(0.638 0.233 12);
+    --color-accent-soft: oklch(0.828 0.088 12);
+  }
+
+  [data-accent='ember'] {
+    --color-accent: oklch(0.729 0.165 48);
+    --color-accent-strong: oklch(0.623 0.155 48);
+    --color-accent-soft: oklch(0.825 0.096 48);
+  }
+
+  [data-accent='gold'] {
+    --color-accent: oklch(0.717 0.134 84);
+    --color-accent-strong: oklch(0.611 0.115 84);
+    --color-accent-soft: oklch(0.82 0.152 84);
+  }
+
+  [data-accent='lime'] {
+    --color-accent: oklch(0.705 0.153 120);
+    --color-accent-strong: oklch(0.601 0.13 120);
+    --color-accent-soft: oklch(0.807 0.173 120);
+  }
+
+  [data-accent='jade'] {
+    --color-accent: oklch(0.696 0.154 156);
+    --color-accent-strong: oklch(0.593 0.132 156);
+    --color-accent-soft: oklch(0.797 0.174 156);
+  }
+
+  [data-accent='azure'] {
+    --color-accent: oklch(0.706 0.126 228);
+    --color-accent-strong: oklch(0.602 0.107 228);
+    --color-accent-soft: oklch(0.81 0.11 228);
+  }
+
+  [data-accent='violet'] {
+    --color-accent: oklch(0.728 0.152 300);
+    --color-accent-strong: oklch(0.632 0.215 300);
+    --color-accent-soft: oklch(0.825 0.093 300);
+  }
+
+  [data-accent='magenta'] {
+    --color-accent: oklch(0.741 0.211 336);
+    --color-accent-strong: oklch(0.643 0.26 336);
+    --color-accent-soft: oklch(0.833 0.121 336);
+  }
+
+  /*
    * Hold the sticky header's own height open at the top of every scroll.
    *
    * The header is `sticky top-0`, so anything the browser scrolls to — a Tab landing on a control
@@ -1314,6 +1410,48 @@
   *::details-content {
     transition-duration: 0.01ms !important;
   }
+}
+
+/*
+ * The same quiet, for the user who asked *this app* for it rather than their operating system.
+ *
+ * The settings dialog offers it because the two questions are genuinely different: someone can be
+ * perfectly happy with their desktop's animations and still not want a tool they read dense forms in
+ * breathing at them for the length of a session. A media query cannot express that, and the app has
+ * no business writing to a system preference.
+ *
+ * **It only ever subtracts.** There is no setting that turns motion back *on*: this block and the one
+ * above are independent, neither overrides the other, and a user whose system asks for reduced motion
+ * gets it whatever is chosen here. That asymmetry is why the two are not one rule with a toggle.
+ *
+ * **The declarations are duplicated, and CSS leaves no way not to.** A media query and an attribute
+ * selector cannot be combined into one condition, and there is no mixin to share a body between them
+ * — the only alternative is to drive both from script, which would mean the app's reduced-motion
+ * guarantee no longer held until JavaScript had run, on the first paint, for the users it exists to
+ * protect. A duplicated block is the cheaper failure, and `tests/design-tokens.test.ts` asserts the
+ * two carry the same declarations so they cannot drift.
+ *
+ * The attribute sits on the shell in `App.tsx`, beside `data-tab` and `data-accent`, so the
+ * descendant combinator reaches everything the app renders — dialogs and their `::backdrop` included,
+ * since a `<dialog>` lifted into the top layer is still a DOM descendant of the element it was
+ * written under. The shell itself is named as well as its descendants, because `*` matches neither
+ * it nor `::backdrop`. `::details-content` gets its own rule for the reason the block above gives: an
+ * unknown pseudo-element invalidates the entire selector list it appears in.
+ */
+[data-motion='reduced'],
+[data-motion='reduced'] *,
+[data-motion='reduced'] *::before,
+[data-motion='reduced'] *::after,
+[data-motion='reduced'] ::backdrop {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+[data-motion='reduced'] *::details-content {
+  transition-duration: 0.01ms !important;
 }
 
 /*

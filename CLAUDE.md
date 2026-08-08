@@ -13,7 +13,7 @@
 
 Sprite Gubbins is a browser PWA that composes precise, model-targeted prompts for generating
 game sprite sheets and texture atlases. It is offline-capable, has no server, and persists its
-prompt history and custom presets in browser-embedded SQLite (WASM + OPFS).
+prompt history, custom presets and interface settings in browser-embedded SQLite (WASM + OPFS).
 
 **The specification is [docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-gubbins-spec.md)** —
 the five-phase implementation blueprint, the full field/option/tooltip inventory, and the
@@ -334,7 +334,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A **single control** whose card lands on that image — the quantiser's keying tooltip, at 2.03:1 | set `--glass-float-opacity` on the control, which the card inherits through the top layer | raising the whole view, which spends the glass on the two cards that never needed it |
 | A control or row inside a panel | `bg-foundry-700` | `bg-slate-800` |
 | A border, or a hover/pressed state | `border-foundry-600` / `bg-foundry-600` | `border-slate-700` |
-| **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1` |
+| **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1`, or a hue read off the settings store into a `style` |
 | **Live** state — auto-sync, generating, updating as you type | `neon` / `neon-deep` | `text-cyan-400`, `#22d3ee` |
 | Anything belonging to the **active view** — panel edge, section heading, step chip, hover bloom | `bg-tab` / `text-tab` / `border-tab` / `ring-tab` | `accent`, which pins it to the primary in every view |
 | A **primary action inside a view** — Save, Load preset, Download PNG, the file chooser | `action-tab` | `accent`, which the chrome's Copy Prompt keeps and a panel's own action does not |
@@ -386,7 +386,32 @@ recomputing as the user types. The `pulse-glow` animation deliberately blooms fr
 other because that transition is the signal. Using cyan for an ordinary button, or indigo for a
 live badge, quietly destroys that distinction. It is also why **no view owns the cyan stop** —
 `--color-tab` resting there would make every panel in that view look like it was recomputing, and
-a unit test asserts it never does.
+a unit test asserts it never does. **The settings dialog cannot reach it either**: the accent is
+the one role colour a user may repoint, and cyan is missing from the nine hues it offers, for
+exactly this reason.
+
+**The accent is settable, and that changes nothing a component does.** A reader picks one of nine
+hues in the settings dialog; `App` puts it on the shell as `data-accent`, and the `[data-accent]`
+rules in `index.css` repoint the three `--color-accent*` tokens there. So a component still writes
+`bg-accent` and `ring-accent-soft` and knows nothing about it — **reading `accentHue` out of the
+settings store to choose a colour at a call site is the mistake this arrangement exists to prevent**,
+and it would also miss the swatches, which set the attribute on themselves and paint `bg-accent` to
+show the hue they offer.
+
+Two properties make that safe to hand to a user, and both are asserted rather than intended:
+
+- **The accent cannot reach a view's colour.** `--color-tab` is not among the tokens these rules
+  set, so the Studio stays violet and Quantise jade whatever the accent is — which is what keeps the
+  page able to say *where you are* independently of what the primary looks like. A `--color-tab`
+  added to one of those rules would win over the `[data-tab]` rule on the same element, and every
+  view would light up in the accent.
+- **The accent cannot change a contrast ratio.** Every hue is the default's *luminance*, not its
+  lightness: OKLCH lightness is perceptual and its relationship to luminance depends on hue, so nine
+  hues at one lightness would be nine different ratios against `ink` and every panel — `text-ink`
+  sits on `accent-strong` in the app's loudest button. Chroma is then the same fraction of each
+  hue's own gamut maximum as the default is of its, per the wheel's rule. Derive a new hue by
+  bisecting lightness against a gamut search, never by eye: the test that guards this fails on a
+  0.003 nudge.
 
 **The palette is one OKLCH hue wheel: ten stops, 36° apart, all at L 0.76.** Every colour in the
 app is a position on it. That is a structural claim and it has to stay true, so three things follow:
@@ -415,7 +440,10 @@ shell in [src/App.tsx](src/App.tsx), and nowhere else. Custom properties are sub
 computed-value time, so a `--color-tab` declared on `:root` in terms of another variable resolves
 *there* and inherits down already resolved; a descendant re-declaring the input would change
 nothing. That is also the mechanism a preset card uses to claim its own stop: it sets `--color-tab`
-inline, and every `*-tab` utility inside it follows without one of them being told.
+inline, and every `*-tab` utility inside it follows without one of them being told — and the one
+the settings dialog's swatches use, each carrying `data-accent` so it paints in the hue it offers.
+**Three attributes now sit on that shell for the same reason** — `data-tab`, `data-accent` and
+`data-motion` — and a fourth thing decided by a custom property belongs there too, not on `:root`.
 
 **The type scale is three rungs, and a component picks one — it does not name a size.** Tailwind's
 stock ladder bottoms out at 12px, so for a long time anything this app wanted smaller was written at
@@ -451,7 +479,11 @@ guidance. Fixing that is the layout's job, not the copy's.
 - If a token *doesn't* exist for a genuinely new semantic role, **add the token** to the
   `@theme` block in [src/index.css](src/index.css) rather than hard-coding the value at the
   call site. One definition, restyleable in one place. A literal written at the call site also
-  bypasses the reduced-motion catch-all at the bottom of that file.
+  bypasses the two reduced-motion catch-alls at the bottom of that file — the media query for a
+  system preference, and the `[data-motion='reduced']` block for the in-app setting. **Those two
+  carry the same declarations and have to keep carrying the same declarations**: CSS offers no way
+  to write them once, so a test compares the sets rather than trusting that whoever edits one will
+  remember the other.
 - **The colour-swatch surface is the deliberate exception.** `ColorSwatch` renders whatever
   hex `parseColorFromText` resolved — a *user's* colour, not the app's — so it takes its value
   as a prop via inline `style`. `COLOR_HEX_MAP` in `src/constants/colors.ts` is likewise the

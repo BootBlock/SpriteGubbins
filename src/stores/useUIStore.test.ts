@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../constants/ui.ts';
-import { useUIStore } from './useUIStore.ts';
+import { resetNavigationForTests, useUIStore } from './useUIStore.ts';
 
 /**
  * The toast's auto-dismiss is the only timing behaviour in the app, and it lives in the store
@@ -145,5 +145,54 @@ describe('useUIStore', () => {
     useUIStore.getState().toggleAtlasModal();
     expect(useUIStore.getState().isAtlasModalOpen).toBe(true);
     expect(useUIStore.getState().isHistoryModalOpen).toBe(false);
+  });
+
+  it('shuts every other overlay when the settings dialog opens, and is shut by them', () => {
+    // The fourth overlay, and the one that arrived after the invariant was written — which is
+    // exactly the shape that gets half-applied. Both directions are checked: an overlay added to
+    // `ALL_OVERLAYS_CLOSED` but toggled without spreading it closes the others while nothing closes
+    // *it*, so the first assertion alone would pass on a store that still stacks two dialogs.
+    useUIStore.getState().toggleAtlasModal();
+    useUIStore.getState().toggleSettingsModal();
+
+    expect(useUIStore.getState().isSettingsModalOpen).toBe(true);
+    expect(useUIStore.getState().isAtlasModalOpen).toBe(false);
+
+    useUIStore.getState().toggleHistoryModal();
+    expect(useUIStore.getState().isSettingsModalOpen).toBe(false);
+    expect(useUIStore.getState().isHistoryModalOpen).toBe(true);
+  });
+});
+
+describe('the view the app opens on', () => {
+  beforeEach(() => {
+    // A fact about a session, and each of these is a fresh load.
+    resetNavigationForTests();
+    useUIStore.setState({ activeTab: 'studio' });
+  });
+
+  it('moves the app when the preference arrives after first paint', () => {
+    // It always does arrive late: reading it means opening a worker, a WebAssembly module and an
+    // OPFS pool, so the app is on the studio for a moment whatever the setting says.
+    useUIStore.getState().openInitialTab('spec');
+    expect(useUIStore.getState().activeTab).toBe('spec');
+  });
+
+  it('declines to move anyone who has already navigated', () => {
+    useUIStore.getState().setActiveTab('presets');
+    useUIStore.getState().openInitialTab('spec');
+
+    expect(useUIStore.getState().activeTab).toBe('presets');
+  });
+
+  it('counts navigating back to the studio as navigating', () => {
+    // The case the tab alone cannot answer, and the reason a flag exists rather than a comparison
+    // against the default: someone who went to Quantise and came back is on `studio` for the same
+    // reason a fresh load is, and only one of them should be moved.
+    useUIStore.getState().setActiveTab('quantise');
+    useUIStore.getState().setActiveTab('studio');
+    useUIStore.getState().openInitialTab('spec');
+
+    expect(useUIStore.getState().activeTab).toBe('studio');
   });
 });

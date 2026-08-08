@@ -1,7 +1,9 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { AppSettings } from '../types/settings.ts';
 import { isSubjectCategory, isTargetModelId, parseOutputConfig, parseSubject } from './configParsers.ts';
 import { isRecord, parseJson, readNumber, readString } from './readers.ts';
+import { parseSettings } from './settingsParser.ts';
 
 /**
  * Turning untrusted storage rows into domain objects.
@@ -71,6 +73,22 @@ export function parsePresetRow(row: unknown): PresetArchetype | null {
     output: parseOutputConfig(parseJson(outputJson)),
     isCustom: true,
   };
+}
+
+/**
+ * Parse the single `app_settings` row.
+ *
+ * The one row parser that returns a value rather than `null`, because there is nothing for a caller
+ * to drop: an install that has never opened the settings dialog has no row at all, and that is not a
+ * failure — it is the ordinary case, and it means the defaults. A row whose payload is unreadable
+ * means the same thing, so both arrive here as "no usable settings" and leave as `DEFAULT_SETTINGS`.
+ * `parseSettings` then falls back field by field within a payload it *can* read.
+ */
+export function parseSettingsRow(row: unknown): AppSettings {
+  if (!isRecord(row)) return parseSettings(undefined);
+
+  const settingsJson = readString(row, 'settings_json');
+  return parseSettings(settingsJson === null ? undefined : parseJson(settingsJson));
 }
 
 /**

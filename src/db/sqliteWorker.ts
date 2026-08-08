@@ -15,6 +15,8 @@ import {
   PROMPT_HISTORY_TABLE,
   SELECT_HISTORY_SQL,
   SELECT_PRESETS_SQL,
+  SELECT_SETTINGS_SQL,
+  UPSERT_SETTINGS_SQL,
 } from './schema.ts';
 import type { WorkerCall, WorkerHandshake, WorkerReply } from './workerProtocol.ts';
 
@@ -130,6 +132,15 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
       }
       return undefined;
     }
+
+    // The row itself, not a list: `db/rows.ts` on the other side turns it — or its absence — into a
+    // settings object, which is where every other row shape is interpreted too.
+    case 'loadSettings':
+      return select(database, SELECT_SETTINGS_SQL).at(0);
+
+    case 'saveSettings':
+      database.exec(UPSERT_SETTINGS_SQL, { bind: [JSON.stringify(request.settings)] });
+      return undefined;
   }
 }
 

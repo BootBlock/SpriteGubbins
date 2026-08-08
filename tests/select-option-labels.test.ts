@@ -8,6 +8,7 @@ import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
+import { OPENING_VIEW_CHOICES } from '../src/constants/settings.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 
 /**
@@ -66,6 +67,7 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   CATEGORY_CHOICES: SUBJECT_CATEGORIES.map((category) => CATEGORY_OPTIONS[category].label),
   DIRECTION_LISTS: Object.values(DIRECTION_LISTS).flat(),
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
+  OPENING_VIEW_CHOICES: OPENING_VIEW_CHOICES.map((choice) => choice.label),
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionalModeChoices(category, HEAVY_ANATOMY).map((choice) => choice.label),
   ),

@@ -18,7 +18,7 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '2. Modular front end',
-    body: 'Vite bundles a React 19 application written in strict TypeScript. State lives in five independent Zustand stores — subject, output, presets, history and interface — which components read through narrow selectors, so editing a subject field re-renders the prompt preview and nothing else.',
+    body: 'Vite bundles a React 19 application written in strict TypeScript. State lives in six independent Zustand stores — subject, output, presets, history, interface and settings — which components read through narrow selectors, so editing a subject field re-renders the prompt preview and nothing else. The interface store and the settings store are separate on purpose: one is what is happening now and is meant to be forgotten when the tab closes, the other is what you decided once and expect to find again.',
   },
   {
     heading: '3. The prompt compiler',
@@ -30,7 +30,7 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '5. Browser-embedded SQLite',
-    body: 'Your prompt history and saved presets are stored in a real SQLite database compiled to WebAssembly, persisted to the Origin Private File System. Where that is unavailable — a private window, a browser without OPFS, an exhausted quota — the same interface is served from your browser’s local storage instead, so nothing is lost either way.',
+    body: 'Your prompt history, saved presets and interface settings are stored in a real SQLite database compiled to WebAssembly, persisted to the Origin Private File System. Where that is unavailable — a private window, a browser without OPFS, an exhausted quota — the same interface is served from your browser’s local storage instead, so nothing is lost either way.',
   },
   {
     heading: '6. The database runs on its own thread',
@@ -46,6 +46,6 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '9. Design tokens and accessibility',
-    body: 'Every colour and animation in the interface comes from a named design token, so the palette is defined in exactly one place. Indigo marks actions and focus, cyan marks anything recomputing live. The suggestion fields are real ARIA comboboxes with keyboard selection, overlays are native dialogs with genuine focus containment, confirmations announce through a live region, and a single reduced-motion rule quiets every animation for anyone who has asked their system for less movement.',
+    body: 'Every colour and animation in the interface comes from a named design token, so the palette is defined in exactly one place. The accent marks actions and focus — indigo by default, and one of nine hues you can change in Settings — while cyan is reserved for anything recomputing live and is not offered as an accent, because that would erase the distinction. Each of the four views keeps its own colour whatever you choose, since that is how the page says where you are. Every hue carries the same luminance as the default, so changing it cannot change how legible anything is. The suggestion fields are real ARIA comboboxes with keyboard selection, overlays are native dialogs with genuine focus containment, confirmations announce through a live region, and a single reduced-motion rule quiets every animation for anyone who has asked their system for less movement — with the same quiet available in Settings for anyone who wants this app calm without changing that system-wide.',
   },
 ];
