@@ -51,7 +51,7 @@ describe('the two halves agree about the built-ins', () => {
   it('round-trips an export back to exactly the custom presets that went in', () => {
     // The asymmetry is the point: the export writes the built-ins and the import must skip them.
     // If either half changed its mind about that, re-importing your own export would either
-    // duplicate all six built-ins as custom presets or lose the user's own.
+    // duplicate every built-in as a custom preset or lose the user's own.
     const mine = [customPreset({ id: 'custom-a', name: 'A' }), customPreset({ id: 'custom-b', name: 'B' })];
 
     const reimported = parsePresetPack(serialisePresetPack(mine));
