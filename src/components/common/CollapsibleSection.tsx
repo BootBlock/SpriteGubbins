@@ -117,8 +117,36 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
           it was *smaller* than the labels it heads while sharing their colour. It carries the rank
           in the other three dimensions instead: bold against semibold, `ink` against `ink-muted`,
           and uppercase with tracking against neither.
+
+          **The trailing rule separates one group from the next**, which is the thing those four
+          dimensions do not do — they rank a heading against the fields *under* it. That job was left
+          to the `foundry-700/70` border atop each `<details>`, which sits a full `py-3` away and
+          reads, in a column of six, as one more hairline in a form full of them. This puts the
+          boundary on the heading itself, and its ragged left edge tracks the heading length, so
+          consecutive groups differ in outline and not only in wording.
+
+          `bg-tab`, because it belongs to the view — the caret beside it already takes that stop, so
+          the two read as one piece of section furniture. The quarter alpha is the whole of the
+          subtlety: a dimmer colour would be a value written at the call site, and the token is a
+          *light* one on a dark ground.
+
+          An `::after` rather than an element. `<summary>` takes phrasing content intermixed with
+          heading content, so a `<div>` wrapper would leave that model, and anything real inside the
+          heading would have to be kept out of the accessible name `aria-labelledby` computes from
+          it; empty generated content is in neither the DOM nor the name. Being decorative is also
+          why it is left to vanish under `forced-colors`, where backgrounds are repainted — the
+          heading, the disclosure semantics and the section border all survive without it.
+
+          `gap-2` matches the grid's own caret-to-heading gap, and those 8px are the only width this
+          costs the heading — unavoidably, not by choice: the rule is `flex-1` from a zero basis, so
+          its scaled shrink factor is zero and every pixel of shortfall falls on the text, and a
+          margin or a border in its place would not shrink either. So the wrap point moves by exactly
+          the gap and nothing else; below about 335px the rule is 0px wide and simply is not drawn.
         */}
-        <h3 id={headingId} className="text-xs font-bold tracking-wide text-ink uppercase">
+        <h3
+          id={headingId}
+          className="flex items-center gap-2 text-xs font-bold tracking-wide text-ink uppercase after:h-px after:flex-1 after:bg-tab/25 after:content-['']"
+        >
           {heading}
         </h3>
 
