@@ -24,13 +24,14 @@ import type { SheetPlan } from '../../types/components.ts';
  * autotiler indexes and leaves the blob set's redundant permutations to the tool that assembles them.
  *
  * **The scatter layer is carried by the base tile's variants rather than by overlay components**, and
- * that is a constraint from the template rather than a preference: section 1 states that the clothing
- * layer — which is what `clothing` is labelled *Scatter Layer* for here — is painted onto the
- * component it sits on and never drawn as separate pieces, with additional anatomy named as the
- * single exception. Six scatter overlays in section 4 would be a second one, and a sheet whose
- * section 1 forbids what its section 4 requires is the contradiction these per-category plans exist
- * to remove. Variants are also the honest answer for a tile set: an overlay decal that must never
- * reach a tile edge is one more thing that can be recognised twice across a field.
+ * that is a constraint from the template rather than a preference: section 1 states that every
+ * fitted, applied and worn attribute it lists is painted onto the component it sits on and never
+ * drawn as a separate piece, naming the additional-anatomy field as the single exception. `clothing`
+ * is *Scatter Layer* in this category, so six scatter overlays in section 4 would be a second
+ * exception — and a sheet whose section 1 forbids what its section 4 requires is the contradiction
+ * these per-category plans exist to remove. Variants are also the honest answer for a tile set: an
+ * overlay decal that must never reach a tile edge is one more thing that can be recognised twice
+ * across a field.
  */
 
 export const TERRAIN_BLEND_SET: SheetPlan = {

@@ -98,7 +98,7 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
         { text: 'Fittings: handle ×1, latch or catch ×1', count: 2, kind: 'structure' },
       ],
       outro: `Each moving piece carries its pivot at the joint it turns about, matched in diameter to the piece
-it turns against, exactly as a limb segment would.`,
+it turns against, exactly as any other articulated segment on a rigged sheet would.`,
     },
   ],
 };

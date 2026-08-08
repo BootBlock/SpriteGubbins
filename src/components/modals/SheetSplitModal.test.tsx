@@ -11,6 +11,8 @@ import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { batchComponentCount, componentCountFor } from '../../utils/componentSet.ts';
+import { sheetRuns } from '../../utils/sheetRuns.ts';
 import { SheetSplitModal } from './SheetSplitModal.tsx';
 
 /**
@@ -61,6 +63,22 @@ describe('SheetSplitModal', () => {
     for (const facing of FACINGS) {
       expect(screen.getByText(`Rig pieces · ${facing}`)).toBeInTheDocument();
     }
+  });
+
+  it('states what the whole batch asks for, not what one sheet of it does', () => {
+    // The gap this closes: eight rows each showing a word count, beside a studio saying "this sheet
+    // asks for 15 components" — true of every one of them, and no answer at all to how large the
+    // job is. The arithmetic is `componentSet.test.ts`'s; what is checked here is that the drawer
+    // shows the batch's figure rather than a sheet's.
+    render(<SheetSplitModal />);
+
+    const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
+    const perSheet = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 0, []);
+    const total = batchComponentCount('CHARACTER', runs, []);
+
+    expect(total).toBe(perSheet * FACINGS.length);
+    expect(screen.getByText(`${String(total)} components`)).toBeInTheDocument();
+    expect(screen.queryByText(`${String(perSheet)} components`)).not.toBeInTheDocument();
   });
 
   it('records eight prompts, not one, each with the configuration that reproduces it', async () => {
