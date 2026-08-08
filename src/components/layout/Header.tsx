@@ -17,10 +17,7 @@ const CHROME_ACTION =
 /** …and the matching lift for the glyph inside one, which is why both are `group`s. */
 const CHROME_ACTION_ICON = 'inline-block transition-transform duration-300 group-hover:scale-125';
 
-/**
- * The wheel, turning, along the bar's bottom edge. One string rather than two: the bloom and the
- * hairline are one surface, and spelled out separately they would be free to drift a stop apart.
- */
+/** The wheel along the bar's bottom edge — one string, so the bloom and the hairline cannot drift. */
 const SPECTRUM_EDGE = 'animate-spectrum-pan bg-spectrum pointer-events-none absolute inset-x-0';
 
 /**
@@ -87,9 +84,10 @@ export function Header() {
         }}
         className="group flex items-center gap-3 text-left"
       >
+        {/* The tile holds the glyph; it is not a canvas for the palette — see `bg-spectrum`. */}
         <span
           aria-hidden="true"
-          className="animate-spectrum-pan bg-spectrum flex size-10 items-center justify-center rounded-xl text-xl shadow-lg ring-1 ring-accent-soft/40 transition-all duration-300 group-hover:scale-105 group-hover:rotate-6 group-hover:ring-accent-soft"
+          className="flex size-10 items-center justify-center rounded-xl bg-foundry-700 text-xl shadow-md ring-1 ring-foundry-600 transition-all duration-300 group-hover:scale-105 group-hover:rotate-6 group-hover:ring-tab/60"
         >
           👾
         </span>

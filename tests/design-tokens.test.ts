@@ -391,16 +391,62 @@ function ruleBlock(opener: string, kind: string): string {
 
 describe('the wheel turns without a seam', () => {
   const spectrum = ruleBlock('@utility bg-spectrum {', '@utility ');
+  const wordmark = ruleBlock('@utility heading-spectrum {', '@utility ');
   const keyframe = ruleBlock('@keyframes spectrum-pan {', '@keyframes ');
 
-  /** Every `var(--color-spectrum-…) NN%` in `bg-spectrum`'s gradient, in the order written. */
-  const stops = [...spectrum.matchAll(/var\(--color-spectrum-(\w+)\) ([\d.]+)%/g)].map((stop) => ({
+  /**
+   * The wheel image itself, taken from the one declaration both utilities compose.
+   *
+   * A CSS declaration ends at the first `;` outside brackets, and a gradient carries none, so the
+   * value is everything up to it.
+   */
+  const wheel = /--spectrum-wheel:([^;]+);/.exec(stylesheet)?.[1] ?? '';
+
+  /** Every `var(--color-spectrum-…) NN%` in that gradient, in the order written. */
+  const stops = [...wheel.matchAll(/var\(--color-spectrum-(\w+)\) ([\d.]+)%/g)].map((stop) => ({
     name: stop[1],
     at: Number(stop[2]),
   }));
 
-  /** The width `bg-spectrum` sizes its gradient to, as a percentage of the element. */
+  /** The width `bg-spectrum` sizes the wheel to, as a percentage of the element. */
   const width = Number(/background-size: ([\d.]+)% [\d.]+%;/.exec(spectrum)?.[1]);
+
+  it('is one image both spectrum surfaces reach for, never two copies of the stop list', () => {
+    // `heading-spectrum` used to `@apply bg-spectrum`, which made sharing automatic. It cannot any
+    // more — it composes the wheel under a veil, so it writes its own `background-image` — and the
+    // failure that opens up is a second stop list drifting from the first: ten colours in one
+    // place and eleven in the other renders perfectly and looks like nothing in a diff.
+    expect(wheel).toContain('linear-gradient');
+    expect(spectrum).toContain('background-image: var(--spectrum-wheel);');
+    expect(wordmark).toContain('var(--spectrum-wheel)');
+    expect(wordmark).not.toMatch(/var\(--color-spectrum-\w+\) [\d.]+%/);
+  });
+
+  it('sizes both spectrum surfaces alike, because one keyframe drives them both', () => {
+    // `animate-spectrum-pan` is written once and lands on the hairline and the wordmark alike, and
+    // its end position is only correct for the size it was derived against. Let the two sizes drift
+    // and the seam comes back on whichever surface lost — silently, since both still animate.
+    const wordmarkWidth = Number(/background-size: ([\d.]+)% [\d.]+%;/.exec(wordmark)?.[1]);
+
+    // The floor first, because `toBe` is `Object.is` and `Object.is(NaN, NaN)` is `true`: if both
+    // rules lost their `background-size` the equality alone would call that agreement.
+    expect(wordmarkWidth).toBeGreaterThan(100);
+    expect(wordmarkWidth).toBe(width);
+  });
+
+  it("keeps the wordmark behind a veil, so the app's name is not the loudest thing on a page", () => {
+    // The wheel neat through 20px of bold type put ten saturated hues in the corner the eye lands
+    // on first, cycling. Losing the veil is a one-line edit that renders beautifully and undoes the
+    // whole point, so the layer is asserted rather than left to a comment — and asserted *in
+    // order*, because a background layer listed after the wheel is painted behind it.
+    expect(wordmark).toMatch(
+      /background-image:[\s\S]*color-mix\(in oklab, var\(--color-ink\) \d+%[\s\S]*var\(--spectrum-wheel\)/,
+    );
+
+    // The veil has to be an image layer. `background-color` is painted under every image, so the
+    // same colour written that way would sit behind the wheel and show through nothing.
+    expect(wordmark).not.toMatch(/^\s*background-color:/m);
+  });
 
   it('travels exactly one image width per turn, so the loop closes where it opened', () => {
     // The bug this replaced: a `background-position` percentage resolves against *(positioning

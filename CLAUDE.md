@@ -335,7 +335,8 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1` |
 | **Live** state — auto-sync, generating, updating as you type | `neon` / `neon-deep` | `text-cyan-400`, `#22d3ee` |
 | Anything belonging to the **active view** — panel edge, section heading, step chip, hover bloom | `bg-tab` / `text-tab` / `border-tab` / `ring-tab` | `accent`, which pins it to the primary in every view |
-| The **whole hue wheel** — the wordmark, the rule under the chrome | `bg-spectrum` / `heading-spectrum` (+ `animate-spectrum-pan`) | a hand-written ten-stop `linear-gradient()` |
+| The **whole hue wheel, neat** — the hairline under the chrome, and nothing broader than one | `bg-spectrum` (+ `animate-spectrum-pan`) | a hand-written ten-stop `linear-gradient()`, or a panel, tile or block filled with the wheel |
+| The **wordmark** — ink with the wheel drifting behind it | `heading-spectrum` (+ `animate-spectrum-pan`) | `bg-spectrum` poured through the type, which out-shouts every control in the chrome |
 | One **member of an open-ended list**, coloured by position | `spectrumStopAt(index)` assigned to `--color-tab` | a runtime `` `text-spectrum-${name}` ``, which the scanner never sees and which emits nothing |
 | "Needs attention" chips and badges | `gold` | `text-amber-400` |
 | Success / valid — it fits, it parsed, it is clean | `emerald` | `text-emerald-400` |
@@ -460,6 +461,16 @@ silently cancels it — `tooltip-in` is the one that animates `scale`, and nothi
 flat), and a `forwards` fill latches the end frame, where any non-`none` `transform` makes the
 element a containing block for fixed-position descendants. Prefer `backwards`, which holds the
 *start* frame for a delayed animation and latches nothing — as the four entrance tokens do.
+
+**The wheel is a hairline, not a fill — and there is exactly one image of it.** `--spectrum-wheel`
+in the base layer is the gradient; `bg-spectrum` paints it neat and `heading-spectrum` paints it
+under a veil of `ink`, and neither restates the eleven stops. Volume is the reason for the split:
+the spectrum reads as a signature at one pixel high and as noise at forty, so the wordmark and the
+logo tile both used to shout — a rainbow behind the app's own name, in the corner the eye lands on
+first, cycling every 32 seconds. The veil is an **image layer over** the wheel, never a
+`background-color`, which is painted under every image and would show through nothing. A surface
+that wants the palette without the volume takes the veiled form or takes `--color-tab`; filling a
+block with the neat wheel is the mistake this row exists to name.
 
 **A `background-position` percentage is not a fraction of the image.** It resolves against
 *(positioning area − image size)*, so a gradient sized `S%` of its box travels `P/100 × (S − 100)/S`
