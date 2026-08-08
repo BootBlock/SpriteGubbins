@@ -354,9 +354,10 @@ describe('design tokens', () => {
     // fields would slice `ComboBox`'s suggestion list in half. That is safe only because
     // `useAnchoredSurface` lifts the list into the top layer, and only where `showPopover()` exists
     // — so the clip must not outlive the lift. Both halves are named in the same `@supports`.
-    expect(stylesheet).toMatch(
-      /@supports \(interpolate-size: allow-keywords\) and selector\(:popover-open\)/,
-    );
+    expect(stylesheet).toMatch(/@supports selector\(::details-content\) and selector\(:popover-open\)/);
+    // Not `interpolate-size`. It is Chromium-only, and gating on it shipped a reveal that Firefox
+    // skipped entirely — the caret turning was the only motion left, which is how the bug arrived.
+    expect(stylesheet).not.toMatch(/@supports \(interpolate-size/);
     // Scoped to the declaration block, not the whole file: the paragraph above this rule *names*
     // `overflow-y: clip`, so a global match would be satisfied by the prose that explains the
     // declaration and would still pass with the declaration itself deleted.
@@ -380,6 +381,23 @@ describe('design tokens', () => {
     expect(closed).not.toBe('');
     expect(closed).toContain('content-visibility 300ms allow-discrete');
     expect(closed).toContain('block-size 300ms var(--ease-decelerate)');
+  });
+
+  it('animates to a measured pixel height rather than to a keyword', () => {
+    // `block-size: 0 → auto` needs `interpolate-size`, which Firefox 153 does not support — gating
+    // the rule on it is what left Firefox with no reveal at all and only the caret turning. A pixel
+    // length needs no keyword interpolation, so both engines animate it; the number comes from
+    // `CollapsibleSection`, which measures its own content.
+    const open = /\n {4}&\[open\]::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+    const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(open).not.toBe('');
+    expect(open).toContain('block-size: var(--section-content-block-size, auto)');
+    // Scoped to the declarations. The comment above them names `interpolate-size` while explaining
+    // why it is not used, so a whole-file assertion would be satisfied by that prose — the exact
+    // failure mode this suite exists to catch, arriving inside the suite itself.
+    expect(open).not.toContain('interpolate-size');
+    expect(closed).not.toContain('interpolate-size');
   });
 
   it('eases the size change on the curve whose travel is legible, not the entrance curve', () => {

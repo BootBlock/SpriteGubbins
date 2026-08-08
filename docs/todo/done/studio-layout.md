@@ -374,8 +374,10 @@ worth a regression in the fallback.
 > the group is already shut, which leaves it briefly tabbable — so `CollapsibleSection` carries an
 > `onBlur` that catches the focus the user agent then throws away. And the curve mattered more than
 > anyone expected: on `ease-emphasized` the height was 83% travelled in its first quarter and read as
-> a jump, which is why `--ease-decelerate` exists. The paragraph above is left as written, since it
-> records the reasoning at the time.
+> a jump, which is why `--ease-decelerate` exists. Nor is the recipe the one named above: gating on
+> `interpolate-size` shipped a reveal that only Chromium ran, and the height transitions to a height
+> `CollapsibleSection` measures rather than to `auto`. The paragraph above is left as written, since
+> it records the reasoning at the time.
 
 **A fade on the content does not replay, contrary to what an earlier draft of this document claimed.**
 The reasoning was that a `content-visibility: hidden` subtree resets its animations, so an

@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { useSectionStore } from '../../stores/useSectionStore.ts';
 import type { SectionDefinition } from '../../types/ui.ts';
@@ -94,6 +94,40 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
   const baseId = useId();
   const headingId = `${baseId}-heading`;
   const digestId = `${baseId}-digest`;
+  const contentRef = useRef<HTMLFieldSetElement>(null);
+
+  /*
+    Publishing the content's height, because `section-reveal` transitions to a pixel length and only
+    what renders the content can know it — that utility explains why `auto` is not an option.
+
+    A `ResizeObserver` rather than one measurement on toggle: the height is not a constant. A label
+    wraps, the category swaps one field set for another, the window resizes — and a stale number
+    would animate the group to the wrong height and jump at the end.
+
+    **Zero is discarded rather than published.** A shut group sits in a `content-visibility: hidden`
+    subtree, so it is not laid out and the observer reports nothing; keeping the last real figure is
+    exactly what gives the *next* expand something to travel towards. The variable is therefore only
+    ever wrong in one direction — stale, never zero — and is corrected on the first frame the content
+    is laid out again.
+
+    Written to the DOM rather than to React state on purpose: this changes on every frame of a window
+    resize, and routing it through a store or a `useState` would re-render every section in the
+    studio for a number only CSS reads.
+  */
+  useEffect(() => {
+    const content = contentRef.current;
+    const details = content?.closest('details');
+    if (!content || !details) return;
+
+    const observer = new ResizeObserver(() => {
+      const height = content.getBoundingClientRect().height;
+      if (height > 0) details.style.setProperty('--section-content-block-size', `${height}px`);
+    });
+    observer.observe(content);
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
 
   return (
     <details
@@ -223,7 +257,7 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
         `min-w-0` because a fieldset's `min-inline-size: min-content` is a user-agent default that
         Tailwind's preflight does not reset, and it would stop the grid inside from shrinking.
       */}
-      <fieldset aria-labelledby={headingId} className="min-w-0 space-y-3.5 pt-1 pb-4">
+      <fieldset ref={contentRef} aria-labelledby={headingId} className="min-w-0 space-y-3.5 pt-1 pb-4">
         {children}
       </fieldset>
     </details>

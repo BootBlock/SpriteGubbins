@@ -1061,10 +1061,24 @@
    * A `<details>` whose content eases open and shut instead of snapping.
    *
    * `::details-content` is the only handle a native disclosure gives on the part that appears, and
-   * `interpolate-size: allow-keywords` is what makes `block-size: 0 → auto` an interpolable pair at
-   * all. `content-visibility` rides along with `allow-discrete` in **both** states, which is what
-   * makes the close animate: the user agent hides that pseudo-element the moment `open` goes, and
-   * without the discrete transition holding the paint there is no box left to shrink.
+   * **the height it transitions to is a measured pixel value, not `auto`.**
+   *
+   * `auto` was the first spelling, and it needs `interpolate-size: allow-keywords` to be an
+   * interpolable endpoint at all. That is Chromium-only — Firefox 153 answers `false` to
+   * `CSS.supports('interpolate-size', 'allow-keywords')` — so gating the rule on it meant Firefox
+   * matched nothing, and the caret's rotation was the only motion left in the disclosure. That is
+   * exactly how the bug was reported, and it is why the gate now names `selector(::details-content)`
+   * instead: the thing this actually reaches for, rather than one engine's way of sizing it.
+   *
+   * A pixel length needs no keyword interpolation, so both engines simply animate it. The cost is
+   * that something has to know the number, which is why `CollapsibleSection` measures its own
+   * content — see there. Verified in **headed** Firefox 153 and Edge, both directions; headless
+   * Firefox is not a usable instrument for this, since it starves the frame loop and reports
+   * after-change values for a pseudo-element's computed style rather than the animating ones.
+   *
+   * `content-visibility` rides along with `allow-discrete` in **both** states, which is what makes
+   * the close animate: the user agent hides that pseudo-element the moment `open` goes, and without
+   * the discrete transition holding the paint there is no box left to shrink.
    *
    * `ease-decelerate` and not `ease-emphasized`, for the reason that token records: the signature
    * curve is 83% travelled in its first quarter, so a height easing with it lands before the eye
@@ -1091,7 +1105,9 @@
    * that list into the top layer, where nothing clips it, and it only does so where `showPopover()`
    * exists. Gating on `selector(:popover-open)` *alongside* the feature this needs ties the clip to
    * the lift: a browser that would clip the list without lifting it gets no clip, because it gets
-   * no animation. Both halves are named rather than one being assumed from the other.
+   * no animation. Both halves are named rather than one being assumed from the other — and the
+   * feature half is now `selector(::details-content)`, the thing actually reached for, rather than
+   * `interpolate-size`, which was a Chromium-only means to the same end.
    *
    * `overflow-y: clip` rather than `overflow: hidden`, on both axes for two different reasons.
    * Vertically, `clip` establishes no scroll container — there is nothing here to scroll, and
@@ -1100,9 +1116,7 @@
    * every control in these groups is full-width, and the global focus ring is drawn 4px outside its
    * box — clipping the inline axis would shave the ring off both edges of every focused field.
    */
-  @supports (interpolate-size: allow-keywords) and selector(:popover-open) {
-    interpolate-size: allow-keywords;
-
+  @supports selector(::details-content) and selector(:popover-open) {
     &::details-content {
       block-size: 0;
       overflow-x: visible;
@@ -1113,7 +1127,14 @@
     }
 
     &[open]::details-content {
-      block-size: auto;
+      /*
+       * The measured height, published by `CollapsibleSection` — see there for why it is measured
+       * rather than written. `auto` is the fallback for the one case with no measurement yet: a
+       * group that was already shut when the app loaded, opening for the first time. That open
+       * snaps; every toggle after it animates, because the measurement lands as soon as the content
+       * is laid out.
+       */
+      block-size: var(--section-content-block-size, auto);
     }
   }
 }
