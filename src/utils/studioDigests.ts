@@ -33,9 +33,9 @@ import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
  * facings has no single one to name at all.
  *
  * Controls that *do* something rather than *hold* something are deliberately absent:
- * `IdentityPaletteCapture` sits inside the continuity group, but its whole effect lands in the
- * identity lock, which the digest already carries — naming it would imply a second setting that
- * does not exist.
+ * `IdentitySubjectDigest` and `IdentityPaletteCapture` both sit inside the continuity group, but the
+ * whole effect of each lands in the identity lock, which the digest already carries — naming either
+ * would imply a setting that does not exist.
  *
  * "Digest" is used here in the ordinary sense of a short summary. `identityDigest.ts` uses the word
  * in the baseline prompt's sense — the identity-lock text itself — which is why `continuityDigest`
@@ -153,8 +153,9 @@ export function riggingDigest(output: OutputConfig): string {
  * blank — so the blank case is stated rather than left silent. A header with nothing after it reads
  * as a group that failed to describe itself, not as a group with nothing set.
  *
- * `IdentityPaletteCapture` is the group's other child and is deliberately unnamed here: it is an
- * action, not a setting, and everything it does lands in the lock this digest already carries.
+ * `IdentitySubjectDigest` and `IdentityPaletteCapture` are the group's other two children and are
+ * deliberately unnamed here: both are actions rather than settings, and everything either does lands
+ * in the lock this digest already carries.
  */
 export function continuityDigest(output: OutputConfig): string {
   return join([output.identityLock.trim() === '' ? 'no identity lock' : output.identityLock]);

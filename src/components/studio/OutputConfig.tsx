@@ -38,8 +38,8 @@ import { SheetFields } from './SheetFields.tsx';
  *   projection moves the elevation with it, and three of Rigging's four controls do not exist
  *   outside a cut-out rig.
  * - **Continuity across sheets** — folded. The identity lock is written *after* sheet one is
- *   accepted, so on arrival the group is inert and its digest says so; it is also the tallest of
- *   the six, carrying the palette-capture drop zone and its explanation.
+ *   accepted, so on arrival the group is inert and its digest says so; it is also by some way the
+ *   tallest of the six, carrying both of the lock's derivation controls and their explanations.
  * - **Returned alongside the image** — folded. Both its checkboxes are off by default, and each
  *   adds a second deliverable to the prompt rather than changing the sheet.
  *
