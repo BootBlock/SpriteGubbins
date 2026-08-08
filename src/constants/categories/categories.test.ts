@@ -24,6 +24,31 @@ function subjectAt(category: SubjectCategory, pick: number): SubjectDefinition {
   return subject;
 }
 
+/**
+ * Section 1's `- Label: value` lines, in the order the compiled prompt carries them.
+ *
+ * Read off the rendered prompt rather than off the template, because what is being checked is what a
+ * model is actually shown. The list runs from the `- Category:` line to the first line that is not a
+ * bullet, which is the paragraph beneath it.
+ */
+function subjectLines(prompt: string): readonly string[] {
+  const lines = prompt.split('\n');
+  const start = lines.findIndex((line) => line.startsWith('- Category: '));
+  const bullets: string[] = [];
+  for (let index = start; index < lines.length; index += 1) {
+    const line = lines[index] ?? '';
+    if (!line.startsWith('- ')) break;
+    bullets.push(line);
+  }
+  return bullets;
+}
+
+/** A section 1 label, with the qualifier the template adds to the two colour lines removed. */
+function labelOf(bullet: string): string {
+  const [label = ''] = bullet.slice('- '.length).split(': ');
+  return label.replace(/ \((?:dominant|highlights only)\)$/, '');
+}
+
 describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
   const { fields } = CATEGORY_OPTIONS[category];
 
@@ -41,6 +66,42 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
       for (const option of field.options) {
         expect(option.trim(), `${category}.${field.key} offers a blank option`).not.toBe('');
       }
+    }
+  });
+
+  it('labels section 1 in its own vocabulary, and in nobody else’s', () => {
+    // The defect this pins: section 1 used to write its labels into the template, so one category's
+    // words reached all six. A vehicle's *Service Condition* arrived as "Age / Vitality", its turret
+    // under "Anatomy base" and its vision slit under "Head & sensory features" — every value right
+    // and every label from the category the sixteen keys were first designed for, in the section the
+    // prompt calls the sole authority for the subject's design.
+    //
+    // Checked against the *rendered* prompt rather than the template, because what matters is what a
+    // model is shown, and per label rather than by grepping for the retired ones: a label this
+    // category does not define is the failure, whichever category it came from.
+    const byLabel = new Map(fields.map((field) => [field.label, field.key]));
+    expect(byLabel.size, `${category} gives two fields the same label`).toBe(fields.length);
+
+    // The second option of every pool rather than the defaults, because `additional_anatomy` defaults
+    // to `NONE` and that line is deliberately omitted — which would leave the one field whose label
+    // section 4 reads as well untested.
+    const subject = subjectAt(category, 1);
+    const bullets = subjectLines(generatePrompt(category, subject, DEFAULT_OUTPUT_CONFIG));
+
+    // The category line, then one per field except `exclusions`, which section 8 carries instead.
+    expect(bullets[0]).toBe(`- Category: ${category}`);
+    expect(bullets.length).toBe(fields.length);
+
+    for (const bullet of bullets.slice(1)) {
+      const label = labelOf(bullet);
+      const key = byLabel.get(label);
+      expect(key, `section 1 labels a line "${label}", which ${category} does not define`).toBeDefined();
+      expect(key, 'section 8 carries the exclusions, not section 1').not.toBe('exclusions');
+      if (key === undefined) continue;
+      // `additional_anatomy` is the one field rendered from its parse rather than passed through, so
+      // a pooled value with no multiplier comes back carrying the `×1` the inventory counts it by.
+      if (key === 'additional_anatomy') expect(bullet).toContain(subject[key]);
+      else expect(bullet.endsWith(`: ${subject[key]}`), `"${bullet}" does not state ${key}`).toBe(true);
     }
   });
 

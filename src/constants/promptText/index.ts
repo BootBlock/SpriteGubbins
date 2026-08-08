@@ -38,4 +38,5 @@ export {
 } from './camera.ts';
 export { FACING_TEXT, LANDMARK_TEXT, OBJECT_YAW } from './rotation.ts';
 export { ASPECT_TEXT, BACKGROUND_KEY_TEXT } from './sheet.ts';
+export { SCALE_EXAMPLE_TEXT } from './subject.ts';
 export { JOINT_CAP_TEXT, OVERLAP_MARGIN_TEXT } from './rigging.ts';

@@ -5,6 +5,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
 import { BUILDING_DIRECTIONAL_VARIANTS, BUILDING_MODULE_LIBRARY, BUILDING_TILESET } from './building.ts';
 import { CHARACTER_CUTOUT_RIG, CHARACTER_DIRECTIONAL_VARIANTS, CHARACTER_POSE_LIBRARY } from './character.ts';
 import { CREATURE_CUTOUT_RIG, CREATURE_DIRECTIONAL_VARIANTS, CREATURE_POSE_LIBRARY } from './creature.ts';
+import { EFFECT_FRAME_SEQUENCE } from './effect.ts';
 import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
 import { ITEM_DIRECTIONAL_VARIANTS, ITEM_PART_LIBRARY } from './item.ts';
 import { OBJECT_CUTOUT_RIG, OBJECT_DIRECTIONAL_VARIANTS, OBJECT_PART_LIBRARY } from './object.ts';
@@ -64,6 +65,14 @@ export const CATEGORY_SHEET_PLANS: Readonly<
     CORE_DIRECTIONAL_VARIANTS: [VEHICLE_DIRECTIONAL_VARIANTS],
     CUTOUT_RIG_SINGLE_DIRECTION: [VEHICLE_CUTOUT_RIG],
   },
+  // The one category that offers a single mode, and the `Partial` above is what lets it say so.
+  // An effect's sheet is a flipbook: `'primary'` coverage is the only one that leaves the whole
+  // component budget for *time*, and it is also what turns a direction set into a run list, so a
+  // directional slash gets eight frame sequences rather than one sheet of eight frozen frames.
+  // `sheetPlans/effect.ts` argues the other three modes out one by one.
+  EFFECT: {
+    SINGLE_DIRECTION_POSE_LIBRARY: [EFFECT_FRAME_SEQUENCE],
+  },
   // Two of the four, and the two gaps are the argument in `sheetPlans/interface.ts`: a flat widget
   // has no facings to turn to, and nothing on an interface rotates about a pivot. The nine-slice
   // takes `TILESET_MODULAR` because that is genuinely what it is — fixed corners, edges that repeat
@@ -109,6 +118,8 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   // A building is the one category for which a repeating tile field is the usual deliverable.
   BUILDING: 'TILESET_MODULAR',
   VEHICLE: 'CORE_DIRECTIONAL_VARIANTS',
+  // The only mode it has, so the fallback and the choice are the same thing here.
+  EFFECT: 'SINGLE_DIRECTION_POSE_LIBRARY',
   // The state library rather than the nine-slice: it is the mode that covers every widget an
   // interface has, where a nine-slice is one widget's stretching frame. It is also the only one of
   // the two that carries a cursor, a bar and a toggle, which is most of what a kit is asked for.

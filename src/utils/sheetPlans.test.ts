@@ -11,14 +11,14 @@ import {
   sheetSeriesFor,
   supportsMode,
 } from '../constants/sheetPlans/index.ts';
-import { CATEGORY_EXCLUSION_TEXT } from '../constants/promptText/index.ts';
+import { CATEGORY_EXCLUSION_TEXT, DIRECTION_COVERAGE } from '../constants/promptText/index.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
-import type { SubjectCategory } from '../types/subject.ts';
+import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
+import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
  * The category-contamination regression suite.
@@ -64,8 +64,8 @@ const ENVIRONMENT_VOCABULARY =
  * environment in section 8 must not require one in section 4**, which is the §4-requires/§8-forbids
  * contradiction the per-category text in `promptText/exclusions.ts` exists to remove.
  *
- * The probe is the word `environments` rather than `floor tiles`, which five of the seven happen to
- * name and VEHICLE does not — it bans "ground planes, road or runway surfaces" instead, and would
+ * The probe is the word `environments` rather than `floor tiles`, which most of them happen to name
+ * and VEHICLE does not — it bans "ground planes, road or runway surfaces" instead, and would
  * have been exempted by an accident of wording.
  */
 const BANS_AN_ENVIRONMENT = SUBJECT_CATEGORIES.filter((category) =>
@@ -146,6 +146,118 @@ describe('the plan table itself', () => {
     const exempt = SUBJECT_CATEGORIES.filter((c) => !BANS_AN_ENVIRONMENT.includes(c));
     expect(exempt).toEqual(['BUILDING']);
   });
+
+  it('gives the frame to the one category that is a sequence, and to no other', () => {
+    // `frame` classifies a position in *time* where every other kind classifies a piece of the
+    // subject, so it is the one pairing in `PERMITTED_KINDS` that has to hold in both directions —
+    // and a one-way check would pass on either half of the misfiling it exists to catch. A frame
+    // under OBJECT sits in a plan whose every other entry is a part that coexists with the rest; a
+    // part breakdown that drifts onto an effect sheet ships an explosion with a hatch and a footing.
+    const withFrames = SUBJECT_CATEGORIES.filter((c) => categoryPermits(c, 'frame'));
+    expect(withFrames).toEqual(['EFFECT']);
+    expect(PERMITTED_KINDS.EFFECT).toEqual(['frame']);
+  });
+
+  it('gives EFFECT the one mode that leaves its budget for time', () => {
+    // The directional modes spend the sheet on facings, which delivers stills of a thing whose whole
+    // identity is that it changes — and section 3's rotation half asks an explosion to prove it
+    // turned by occluding surfaces it does not have. A rig articulates about pivots an effect has
+    // none of. What a *directional* effect needs is this mode plus a direction set, which
+    // `'primary'` coverage reads as a run list: eight frame sequences, not one sheet of eight frames.
+    expect(modesFor('EFFECT')).toEqual(['SINGLE_DIRECTION_POSE_LIBRARY']);
+    expect(DIRECTION_COVERAGE.SINGLE_DIRECTION_POSE_LIBRARY).toBe('primary');
+  });
+});
+
+describe('an EFFECT sheet does not forbid in section 8 what it requires in section 4', () => {
+  // The same contradiction the BUILDING tileset had, arriving from the other direction: section 8's
+  // *static* list banned "particle effects" outright, which was true while every category's subject
+  // was a solid object and false the moment one of them could ask for a spark shower by name.
+  const SPARKS = 'Trailing Spark Shower';
+
+  function sectionsOf(subject: SubjectDefinition) {
+    const prompt = generatePrompt('EFFECT', subject, {
+      ...DEFAULT_OUTPUT_CONFIG,
+      directionalMode: DEFAULT_MODE_FOR.EFFECT,
+    });
+    return {
+      prompt,
+      inventory:
+        /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/.exec(prompt)?.[0] ??
+        '',
+      exclusions: /## 8\. EXCLUSIONS[\s\S]*?---/.exec(prompt)?.[0] ?? '',
+    };
+  }
+
+  it('asks for the secondary layer the subject named', () => {
+    const { prompt, inventory } = sectionsOf({ ...defaultSubjectFor('EFFECT'), clothing: SPARKS });
+
+    // Section 1 carries the subject's own words; section 4 names the *role* rather than repeating
+    // them, exactly as every other category's plan does — an inventory reading "spark shower" would
+    // be inferring on the template's behalf for every frost nova and portal that has none. So the
+    // contradiction is between what the subject asked for and what section 8 then banned, and both
+    // halves have to be in the prompt for it to exist at all.
+    expect(prompt).toContain(SPARKS);
+    expect(inventory).toContain('Secondary layer — 6');
+    expect(inventory).toContain('The trailing layer the subject names');
+  });
+
+  it('bans only the particles the inventory did not name', () => {
+    const { exclusions } = sectionsOf({ ...defaultSubjectFor('EFFECT'), clothing: SPARKS });
+    expect(exclusions).toContain('any particle');
+    expect(exclusions).toContain('the inventory in section 4 does not name');
+    // The unqualified form is what made the two sections contradict each other.
+    expect(exclusions).not.toContain('silhouette, particle effects');
+  });
+
+  it('does not call the subject’s own additional elements an error in the specification', () => {
+    // EFFECT is the only category whose additional-anatomy field holds something that is *not* the
+    // kind its components are: a character's extra horn is still anatomy and a vehicle's extra pod
+    // is still a part, so those guards stay true above the appended block. A shockwave ring is not
+    // a frame — and §4's guard tells the reader that an entry which does not belong "is an error in
+    // this specification, not an instruction to follow", while §9's audit is a check they perform.
+    // Unqualified, both would condemn components §4 had just required, which is the §4-requires /
+    // §9-forbids contradiction the per-category records exist to remove. Five of the eight shipped
+    // EFFECT presets name additional elements, so this shipped in the box or not at all.
+    const subject = { ...defaultSubjectFor('EFFECT'), additional_anatomy: 'Shockwave Ring ×1' };
+    const { prompt, inventory } = sectionsOf(subject);
+
+    expect(inventory).toContain('- Shockwave Ring ×1.');
+    expect(prompt).toContain('Exactly 17 components');
+    for (const exempting of [
+      'apart from the additional elements the subject itself named',
+      'or one of the additional elements the subject named',
+    ]) {
+      expect(prompt).toContain(exempting);
+    }
+    // The unqualified forms are what made §4 and §9 contradict each other. Both negatives name the
+    // *join* the exemption clause was spliced into rather than a whole sentence, so dropping the
+    // clause trips them — a negative written against a sentence nobody would regress to would assert
+    // nothing at all.
+    expect(prompt).not.toContain('not a piece of a machine. An entry describing');
+    expect(prompt).not.toContain('Every component is a frame of this one effect —');
+  });
+
+  it('still bans the source the effect plays against, which is this category’s own hazard', () => {
+    // Asked for a muzzle flash, a generator draws the gun; asked for an impact spark, the thing
+    // being hit. Neither is scenery, so the environment ban the other categories carry misses both.
+    const { exclusions } = sectionsOf(defaultSubjectFor('EFFECT'));
+    expect(exclusions).toContain('weapon, muzzle, projectile or object the effect plays against');
+  });
+
+  it('leaves the ban unqualified in substance for a category that names no particles', () => {
+    // The repair may not have weakened section 8 for the six categories it was already right for:
+    // a CHARACTER inventory names no particle effect, so nothing there is exempted by the clause.
+    const prompt = generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), DEFAULT_OUTPUT_CONFIG);
+    const exclusions = /## 8\. EXCLUSIONS[\s\S]*?---/.exec(prompt)?.[0] ?? '';
+    const inventory = /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/
+      .exec(prompt)?.[0]
+      ?.toLowerCase();
+
+    expect(exclusions).toContain('any particle');
+    expect(inventory).not.toContain('particle');
+    expect(inventory).not.toContain('spark');
+  });
 });
 
 describe('no category emits another category’s components', () => {
@@ -217,7 +329,7 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
     const prompt = promptFor('CHARACTER', 'TILESET_MODULAR', CYBORG);
     expect(prompt).toContain('- Demon Horn ×2.');
     expect(prompt).toContain('- Tail ×1.');
-    expect(prompt).toContain('#### Additional anatomy — 3');
+    expect(prompt).toContain('#### Additional Genuine Anatomy — 3');
   });
 });
 

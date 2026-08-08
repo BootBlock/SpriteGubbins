@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as promptText from './promptText/index.ts';
 import { PROMPT_TEMPLATE } from './promptTemplate.ts';
+import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 
 /**
  * The template document's own integrity, as opposed to what the compiler does with it.
@@ -29,6 +30,46 @@ describe('the template itself', () => {
       if (COMPUTED_DESCRIPTIONS.has(token)) continue;
       const mapName = token.replace(/_DESCRIPTION$/, '_TEXT');
       expect(exported, `[DEFINE:${token}] has no ${mapName} to fill it from`).toContain(mapName);
+    }
+  });
+
+  it('fills every _LABEL token from a subject field the categories define', () => {
+    // The second half of the same contract: a `[DEFINE:FOO_LABEL]` is filled from the category's own
+    // definition of the field `foo`, so the token has to name a key that exists. A token for a key
+    // no category defines would reach `substitute` with no value and throw the compiler mid-render —
+    // which is the loud failure, but this is the cheap one, and it names the typo.
+    const tokens = new Set(
+      [...PROMPT_TEMPLATE.matchAll(/\[DEFINE:([A-Z0-9_]+)_LABEL\]/g)].map((match) =>
+        (match[1] ?? '').toLowerCase(),
+      ),
+    );
+    // Fifteen of the sixteen: `exclusions` is section 8's line, and section 8 writes its own heading.
+    expect(tokens.size).toBe(SUBJECT_FIELD_KEYS.length - 1);
+    expect(tokens.has('exclusions')).toBe(false);
+    for (const token of tokens) {
+      expect(SUBJECT_FIELD_KEYS, `[DEFINE:${token.toUpperCase()}_LABEL] names no subject field`).toContain(
+        token,
+      );
+    }
+  });
+
+  it('writes no subject-field label of its own', () => {
+    // What the tokens above replaced. Section 1's labels used to be fixed here, which meant one
+    // category's vocabulary reaching all six — a tank's turret under "Anatomy base", its vision slit
+    // under "Head & sensory features". Every bullet in section 1 is now a token, so there is no
+    // label in this file that could go stale against the studio.
+    const section = PROMPT_TEMPLATE.slice(
+      PROMPT_TEMPLATE.indexOf('## 1. SUBJECT DEFINITION'),
+      PROMPT_TEMPLATE.indexOf('## 2. RENDER STYLE'),
+    );
+    const bullets = [
+      ...section.matchAll(/^\[OPTIONAL:[A-Z0-9_]+ *\| *- (.*): \[DEFINE:[A-Z0-9_]+\]\]$/gm),
+    ].map((match) => match[1] ?? '');
+    expect(bullets.length).toBe(SUBJECT_FIELD_KEYS.length - 1);
+    for (const bullet of bullets) {
+      expect(bullet, 'a section 1 bullet names its own label').toMatch(
+        /^\[DEFINE:[A-Z0-9_]+_LABEL\]( \((?:dominant|highlights only)\))?$/,
+      );
     }
   });
 

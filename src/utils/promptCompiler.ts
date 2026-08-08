@@ -20,8 +20,10 @@ import {
   PROJECTION_TEXT,
   RENDER_STYLE_TEXT,
   RESOLUTION_PROFILE_TEXT,
+  SCALE_EXAMPLE_TEXT,
   SURFACE_DETAIL_TEXT,
 } from '../constants/promptText/index.ts';
+import { fieldLabelFor } from '../constants/categories/index.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
@@ -127,6 +129,10 @@ export function generatePrompt(
     ASSEMBLY_POSES: plan.assembly,
     CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
     CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
+    // Section 0's "one consistent scale" rule is abstract, and its worked example is what makes it
+    // land — so the example names pieces this category's sheet actually holds, rather than the hand
+    // and torso it named for every subject the app can describe.
+    SCALE_EXAMPLE_DESCRIPTION: SCALE_EXAMPLE_TEXT[category],
 
     RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
     SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
@@ -173,7 +179,19 @@ export function generatePrompt(
 
   // The sixteen subject fields, keyed by the upper-case form of their own key rather than written
   // out again — a field added to `SUBJECT_FIELD_KEYS` reaches the template without a second edit.
-  for (const key of SUBJECT_FIELD_KEYS) values[key.toUpperCase()] = subject[key];
+  //
+  // **Each one supplies its label as well as its value**, because section 1 no longer writes the
+  // labels itself. Sixteen keys shared by six categories meant one category's vocabulary reaching
+  // all of them: a vehicle's *Service Condition* arrived as "Age / Vitality", its turret under
+  // "Anatomy base" and its vision slit under "Head & sensory features" — correct values, every one
+  // of them labelled from the category the keys were first designed for, in the section the template
+  // calls the sole authority for the subject's design and which forbids inferring anything it does
+  // not state. Read through `fieldLabelFor` so the prompt and the studio cannot drift apart: they
+  // are now the same string.
+  for (const key of SUBJECT_FIELD_KEYS) {
+    values[key.toUpperCase()] = subject[key];
+    values[`${key.toUpperCase()}_LABEL`] = fieldLabelFor(category, key);
+  }
 
   // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
   // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
@@ -186,9 +204,13 @@ export function generatePrompt(
   // inventory has no tail in it and whose contract demands an exact count without one, is a
   // contradiction inside one prompt. The generator resolves it by drawing an uncounted piece or by
   // ignoring a line it was told was binding, and neither is recoverable.
-  values.ADDITIONAL_ANATOMY = sheetCarriesAnatomy(category, mode, output.sheetIndex)
+  //
+  // Held in a local as well, because `config` below gates section 1's exception sentence on it and
+  // reading it back off `values` would come out `string | undefined`.
+  const additionalAnatomyLine = sheetCarriesAnatomy(category, mode, output.sheetIndex)
     ? anatomy.map(formatAnatomyComponent).join(', ')
     : '';
+  values.ADDITIONAL_ANATOMY = additionalAnatomyLine;
 
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
@@ -211,6 +233,13 @@ export function generatePrompt(
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.
     MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
+    // Section 1's "painted onto, never a separate piece" rule names its own exception, and the
+    // exception is a line that is often not there — cleared, `NONE`, or on the second sheet of a
+    // series, which carries the anatomy on the first. Naming an absent line is worse here than
+    // anywhere else in the prompt: the sentence is the one that decides how many components the
+    // sheet has. Read off the *rendered* value rather than the raw field, so the gate answers
+    // whether the line was emitted rather than whether the user typed something.
+    ADDITIONAL_ANATOMY: additionalAnatomyLine,
     // Whether this sheet is one of several, which is a property of the configuration rather than a
     // switch the user sets: the splitter's runs differ from the studio's own configuration only in
     // fields `output` already carries, so a sheet compiled from the drawer and the same sheet

@@ -11,6 +11,7 @@ import { OBJECT } from './object.ts';
 import { ITEM } from './item.ts';
 import { BUILDING } from './building.ts';
 import { VEHICLE } from './vehicle.ts';
+import { EFFECT } from './effect.ts';
 import { INTERFACE } from './interface.ts';
 
 /**
@@ -27,8 +28,30 @@ export const CATEGORY_OPTIONS: Readonly<Record<SubjectCategory, CategoryDefiniti
   ITEM,
   BUILDING,
   VEHICLE,
+  EFFECT,
   INTERFACE,
 };
+
+/**
+ * What this category calls one of the sixteen fields — `species` is "Species / Archetype" on a
+ * character and "Vehicle Class" on a vehicle.
+ *
+ * **The compiled prompt reads these, not just the studio.** Section 1 of the prompt writes the label
+ * beside the value, and section 4's additional-anatomy heading takes the one belonging to that
+ * field, so the model is shown the same vocabulary the user chose the value under. Section 1 used to
+ * fix its own labels in `constants/promptTemplate.ts`, which meant six categories reading one
+ * category's words: a vehicle's *Service Condition* arrived as "Age / Vitality".
+ *
+ * **Throws rather than falling back**, for the reason `templateEngine.substitute` throws on an
+ * unfilled token — a blank label emits `- : Field-Worn Service`, which reads as prose to satisfy
+ * rather than as a missing label. `categories.test.ts` pins every category to all sixteen keys, so
+ * reaching this is an authoring error and not a state a user can get into.
+ */
+export function fieldLabelFor(category: SubjectCategory, key: SubjectFieldKey): string {
+  const field = CATEGORY_OPTIONS[category].fields.find((candidate) => candidate.key === key);
+  if (field === undefined) throw new Error(`Category ${category} defines no "${key}" field.`);
+  return field.label;
+}
 
 /** A field's first option — the value that field defaults to. */
 function firstOption(fields: readonly FieldOption[], key: SubjectFieldKey): string {

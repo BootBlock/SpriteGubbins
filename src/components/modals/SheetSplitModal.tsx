@@ -4,6 +4,8 @@ import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { batchComponentCount } from '../../utils/componentSet.ts';
 import { sheetIdentity, sheetRuns } from '../../utils/sheetRuns.ts';
 import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -55,6 +57,13 @@ export function SheetSplitModal() {
   const isCopied = (run: SheetRun) => takenAway.has(sheetIdentity(category, subject, run.output));
   const copiedCount = runs.filter(isCopied).length;
 
+  // What the whole batch asks for — summed over the very runs listed below rather than multiplied
+  // out of the two axes, so the figure cannot describe a batch other than this one. It is the number
+  // nothing in the app was saying: the studio reports what *this sheet* asks for, which is true of
+  // each of the eight and no help to someone deciding whether to start a job of one hundred and
+  // twenty.
+  const batchTotal = batchComponentCount(category, runs, parseAdditionalAnatomy(subject.additional_anatomy));
+
   return (
     <Modal
       title="Split into separate sheets"
@@ -68,6 +77,13 @@ export function SheetSplitModal() {
           component set towards a different facing, others carry a different part of it. Generate them one at
           a time: a single sheet asking for all of it would want more components than a model delivers, which
           comes back as a plausible subset rather than an obvious shortfall.
+        </p>
+
+        <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+          Together they ask for <span className="font-mono font-bold text-ink">{batchTotal} components</span>,
+          which is the sum of what each sheet below contracts for. The component budget is a cap on one
+          generation, so it is not measured against that total — the studio checks it against the sheet you
+          have configured.
         </p>
       </div>
 
