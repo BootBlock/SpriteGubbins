@@ -1,8 +1,8 @@
 import { useLayoutEffect, useRef } from 'react';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { Badge } from '../common/Badge.tsx';
 import { TabSwitcher } from './TabSwitcher.tsx';
+import { Wordmark } from './Wordmark.tsx';
 
 /**
  * Shared geometry and motion for the two secondary chrome actions, so they stay a matched pair.
@@ -21,8 +21,8 @@ const CHROME_ACTION_ICON = 'inline-block transition-transform duration-450 group
 const SPECTRUM_EDGE = 'animate-spectrum-pan bg-spectrum pointer-events-none absolute inset-x-0';
 
 /**
- * The app's chrome: identity, navigation, and the two things worth reaching from anywhere — the
- * atlas calculator and the prompt itself.
+ * The app's chrome: identity, navigation, and the three things worth reaching from anywhere — the
+ * source, the atlas calculator, and the prompt itself.
  *
  * Sticky, because "Copy Prompt" has to be available at the bottom of a sixteen-field form as well as
  * the top. Nothing here subscribes to the subject or output state; the copy action reads it when
@@ -32,7 +32,6 @@ const SPECTRUM_EDGE = 'animate-spectrum-pan bg-spectrum pointer-events-none abso
  * scrolls, which is what stops a sticky header reading as a lid clamped over the document.
  */
 export function Header() {
-  const setActiveTab = useUIStore((state) => state.setActiveTab);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const toggleHistoryModal = useUIStore((state) => state.toggleHistoryModal);
   const copyPrompt = useCopyPrompt();
@@ -77,30 +76,7 @@ export function Header() {
       <span aria-hidden="true" className={`${SPECTRUM_EDGE} -bottom-0.5 h-1 opacity-50 blur-xs`} />
       <span aria-hidden="true" className={`${SPECTRUM_EDGE} bottom-0 h-px opacity-80`} />
 
-      <button
-        type="button"
-        onClick={() => {
-          setActiveTab('studio');
-        }}
-        className="group flex items-center gap-3 text-left"
-      >
-        {/* The tile holds the glyph; it is not a canvas for the palette — see `bg-spectrum`. */}
-        <span
-          aria-hidden="true"
-          className="flex size-10 items-center justify-center rounded-xl bg-foundry-700 text-xl shadow-md ring-1 ring-foundry-600 transition-all duration-450 group-hover:scale-105 group-hover:rotate-6 group-hover:ring-tab/60"
-        >
-          👾
-        </span>
-        <span>
-          <span className="flex items-center gap-2 text-xl font-black tracking-tight">
-            <span className="heading-spectrum animate-spectrum-pan">Sprite Gubbins</span>
-            <Badge tone="accent">Serverless</Badge>
-          </span>
-          <span className="block text-xs text-ink-faint transition-colors group-hover:text-ink-muted">
-            Modular sprite-sheet prompt architecture
-          </span>
-        </span>
-      </button>
+      <Wordmark />
 
       <TabSwitcher />
 

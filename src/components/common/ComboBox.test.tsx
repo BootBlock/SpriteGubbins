@@ -127,6 +127,24 @@ describe('ComboBox', () => {
     expect(comboBox()).toHaveValue('Human');
   });
 
+  it('reopens the list when the field is clicked again after Escape', async () => {
+    const user = userEvent.setup();
+    render(<Harness initialValue="Human" />);
+
+    await user.click(comboBox());
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+
+    // Focus never left the field, so `focus` cannot fire a second time — with only that handler
+    // bound, every further press on the field is inert, and the caret is the only pointer route
+    // back. Escape-then-reach-for-the-same-field is an ordinary correction; it must not dead-end.
+    expect(comboBox()).toHaveFocus();
+    await user.click(comboBox());
+
+    expect(screen.getByRole('listbox')).toBeInTheDocument();
+    expect(comboBox()).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('takes an option that is clicked', async () => {
     const user = userEvent.setup();
     render(<Harness />);

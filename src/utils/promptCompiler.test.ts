@@ -316,6 +316,59 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
   });
 });
 
+describe('generatePrompt — section 0’s exclusion precedence', () => {
+  /**
+   * The prompt with its wrapping removed, so an assertion can quote a whole sentence rather than
+   * the fragment that happens to fall between two of the template's line breaks — which would make
+   * a rewrap look like a deleted rule.
+   */
+  function unwrapped(prompt: string): string {
+    return prompt.replaceAll('\n', ' ');
+  }
+
+  const OUTRANKS =
+    'An exclusion in section 8 outranks every attribute that asks for the same visible element.';
+  const NO_COMPROMISE = 'never satisfy both by drawing a reduced, integrated or decorative version of it';
+  const NOT_THE_INVENTORY = 'draw the entry, because the count and inventory rank first';
+
+  it('ranks section 8 above the attributes that name the same element, for every target', () => {
+    // Reported from a delivered sheet: section 1 named an integrated worn item that a later
+    // exclusion in section 8 prohibited, and with the exclusions outside the precedence order there
+    // was nothing to settle the two — leaving the compromise, where the excluded element is drawn in
+    // a reduced or integrated form and both instructions are counted as honoured. Unlike the
+    // category tripwire above, this needs no channel to report through, so every target gets it: a
+    // diffusion model meets the same contradiction and simply cannot tell anyone it did.
+    for (const targetModel of TARGET_MODEL_IDS) {
+      const prompt = unwrapped(generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel })));
+
+      expect(prompt, targetModel).toContain(OUTRANKS);
+      expect(prompt, targetModel).toContain(NO_COMPROMISE);
+    }
+  });
+
+  it('stops the rule short of the inventory, which outranks it in turn', () => {
+    // The half that keeps the ranking coherent. The count and inventory head the same list, and
+    // section 4's placement rule makes grid position the only identity map — so a component dropped
+    // to honour an exclusion would mis-map every component after it. An exclusion decides what a
+    // component shows; it never deletes an entry.
+    const prompt = unwrapped(generatePrompt('CHARACTER', SUBJECT, OUTPUT));
+
+    expect(prompt).toContain(NOT_THE_INVENTORY);
+  });
+
+  it('carries the rule for a subject that actually states the contradiction', () => {
+    // Why it is generic rather than a quirk of one sheet: `worn_details` and `exclusions` are two of
+    // the same sixteen free-text fields, so any configuration can request an element and prohibit it.
+    // Both lines reach the prompt — nothing compares them — which is what leaves section 0 to settle.
+    const subject = { ...SUBJECT, worn_details: 'Brass shoulder pauldron', exclusions: 'No pauldrons' };
+    const prompt = unwrapped(generatePrompt('CHARACTER', subject, OUTPUT));
+
+    expect(prompt).toContain('- Integrated worn details: Brass shoulder pauldron');
+    expect(prompt).toContain('- Subject-specific: No pauldrons');
+    expect(prompt).toContain(OUTRANKS);
+  });
+});
+
 describe('generatePrompt — the adherence report', () => {
   /** Every capability the report needs, so only the flag under test is deciding anything. */
   const CAPABLE = { emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' } as const;

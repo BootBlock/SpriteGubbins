@@ -76,7 +76,16 @@ export function ComboBox({ label, tooltip, value, options, onChange }: ComboBoxP
             combo.open();
             combo.highlight(-1);
           }}
+          // Both, and neither is redundant. `focus` is what opens the list when the field is
+          // *reached* — by pointer, by Tab, or programmatically — but it fires once, and the field
+          // keeps focus after Escape has closed the list. So every further press on it was inert,
+          // and the caret was the only pointer route back: a keyboard already had two ways in, an
+          // ArrowDown and typing, so it was the pointer alone that dead-ended. `click` covers
+          // reaching straight back for the same field, which is the ordinary shape of a
+          // correction, and `open()` is idempotent — the press that focuses a cold field and
+          // clicks it is still one open.
           onFocus={combo.open}
+          onClick={combo.open}
           onKeyDown={combo.handleKeyDown}
           className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-3 font-sans text-xs text-ink shadow-inner transition-colors duration-300 hover:border-accent/40 focus:border-accent"
         />
