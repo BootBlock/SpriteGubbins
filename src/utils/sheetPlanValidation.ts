@@ -31,6 +31,13 @@ import type { SubjectCategory } from '../types/subject.ts';
  * the two is *which* parts and mechanisms their plans name — a hull and a drive against a housing and
  * a hatch — and that is a difference between two inventories, not between two kinds of component. A
  * `drive` kind admitted by one category alone would classify nothing this check could act on.
+ *
+ * **EFFECT is the one row that admits a single kind, and the one kind no other row admits.** That is
+ * not a stronger claim about effects than the rows above make about their subjects — it is the same
+ * claim, and it happens to bite hardest here: `frame` classifies a position in time, so an entry of
+ * that kind under any of the six spatial categories is a flipbook filed under a part breakdown, and
+ * an entry of any other kind under EFFECT is a part breakdown filed under a flipbook. Both directions
+ * fail, which is what makes this the sharpest pairing in the table rather than the loosest.
  */
 export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly ComponentKind[]>> = {
   CHARACTER: ['anatomy', 'appendage'],
@@ -39,6 +46,7 @@ export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly Componen
   ITEM: ['structure', 'mechanism'],
   BUILDING: ['structure', 'tile'],
   VEHICLE: ['structure', 'mechanism'],
+  EFFECT: ['frame'],
 };
 
 /** Whether this category may contain a component of this kind at all. */
