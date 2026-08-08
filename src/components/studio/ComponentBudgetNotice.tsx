@@ -20,7 +20,10 @@ import { Badge } from '../common/Badge.tsx';
  *
  * **The live region is rendered always, with only its contents conditional**, for the reason `Toast`
  * documents: a region added to the document at the same moment as its text is not reliably
- * announced. An empty block element costs no layout here — its margins collapse through it.
+ * announced. Empty, it must therefore cost nothing — which is why the spacing above the notice lives
+ * on the notice, and the sticky column in `StudioTab` sets no `gap` of its own. A flex `gap` is
+ * charged either side of a zero-height item and does not collapse the way block margins do, so the
+ * quiet case would otherwise pay twice over for a warning that is not on screen.
  */
 export function ComponentBudgetNotice() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
@@ -36,7 +39,7 @@ export function ComponentBudgetNotice() {
   return (
     <div aria-live="polite" aria-atomic="true">
       {exceedsComponentBudget(count, componentBudget) && (
-        <section className="animate-fade-in rounded-2xl border border-gold/30 bg-gold/10 p-4 shadow-lg">
+        <section className="animate-fade-in mt-4 rounded-2xl border border-gold/30 bg-gold/10 p-4 shadow-lg">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge tone="attention">Over budget</Badge>
             <p className="text-xs font-bold text-gold">

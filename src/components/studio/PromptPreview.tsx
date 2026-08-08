@@ -31,7 +31,26 @@ export function PromptPreview() {
   const tokenEstimate = estimateTokens(promptText);
 
   return (
-    <section className="animate-fade-in glass-panel relative flex max-h-[36rem] flex-col overflow-hidden rounded-2xl border border-foundry-700 p-5 shadow-2xl">
+    /*
+      `max-h-[36rem]` while the layout is stacked — a prompt box as tall as a phone screen is not an
+      improvement — and above `lg` the cap comes off so the panel fills whatever the sticky column
+      has left.
+
+      `lg:min-h-[24rem]` is a floor, and it is not decoration. This panel is `overflow-hidden`, so
+      anything flex squeezes out of it is *clipped*, not scrolled — and with `min-h-0` the squeeze
+      had no limit: measured, a 400px-tall window left the `<pre>` at zero and pushed the Copy Prompt
+      button past the panel's own edge. It is also the only `min-h-0` child of the sticky column, so
+      it absorbed the whole deficit under browser zoom — nine lines of prompt left at 1024×600, from
+      a pre-change 576px. The floor keeps the toolbar and a readable run of prompt intact, and
+      `StudioTab`'s column scrolls once the floor is what no longer fits. The `<pre>`'s
+      `overflow-y-auto` gives it an automatic minimum size of zero, so it still absorbs the shrinking
+      down to that point.
+
+      The `mt-4` is this panel's own, not the column's: the column sets no `gap`, because a flex gap
+      would be charged either side of the always-present, usually-empty live region above — see
+      `StudioTab` and `ComponentBudgetNotice`.
+    */
+    <section className="animate-fade-in glass-panel relative mt-4 flex max-h-[36rem] flex-col overflow-hidden rounded-2xl border border-foundry-700 p-5 shadow-2xl lg:max-h-none lg:min-h-[24rem] lg:flex-1">
       {/*
         The live rail: a cyan highlight travelling the panel's top edge for as long as the compiler
         is watching the studio. Cyan rather than indigo because that is precisely the claim it makes,
