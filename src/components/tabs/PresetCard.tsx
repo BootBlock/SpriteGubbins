@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react';
 import { spectrumStopAt } from '../../constants/spectrum.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { Badge } from '../common/Badge.tsx';
+import { PresetCardSpecs } from './PresetCardSpecs.tsx';
 import { PresetRenameForm } from './PresetRenameForm.tsx';
 
 interface PresetCardProps {
@@ -74,6 +75,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
         <p className="line-clamp-2 text-xs text-ink-muted">
           {preset.subject.species} — {preset.subject.setting}
         </p>
+        <PresetCardSpecs output={preset.output} />
       </div>
 
       {isConfirmingDelete ? (
