@@ -6,7 +6,8 @@ import { DIRECTIONAL_VARIANTS_SET } from '../promptText/inventory.ts';
  * The two entry shapes every `CORE_DIRECTIONAL_VARIANTS` plan is built from, written against the
  * direction set the mode actually covers.
  *
- * All six categories describe the same thing in the same two ways — a piece drawn once per facing,
+ * Every category that has such a plan — six of the seven — describes the same thing in the same two
+ * ways, a piece drawn once per facing,
  * either spelling the facings out or referring to them — and every one of them used to write the
  * count and the facing names by hand. That is three spellings of one fact: the set in
  * `DIRECTION_LISTS`, the names in the entry text, and the number in `count`. Widening the core from

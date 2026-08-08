@@ -5,6 +5,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
 import { BUILDING_DIRECTIONAL_VARIANTS, BUILDING_MODULE_LIBRARY, BUILDING_TILESET } from './building.ts';
 import { CHARACTER_CUTOUT_RIG, CHARACTER_DIRECTIONAL_VARIANTS, CHARACTER_POSE_LIBRARY } from './character.ts';
 import { CREATURE_CUTOUT_RIG, CREATURE_DIRECTIONAL_VARIANTS, CREATURE_POSE_LIBRARY } from './creature.ts';
+import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
 import { ITEM_DIRECTIONAL_VARIANTS, ITEM_PART_LIBRARY } from './item.ts';
 import { OBJECT_CUTOUT_RIG, OBJECT_DIRECTIONAL_VARIANTS, OBJECT_PART_LIBRARY } from './object.ts';
 import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY } from './vehicle.ts';
@@ -21,8 +22,9 @@ import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY 
  * Keying on both makes the relation explicit: a pairing that is absent here does not exist, and
  * `resolveMode` below is what stops an absent one ever reaching the compiler.
  *
- * `Partial` is load-bearing. Not every category supports every mode — an item has no cut-out rig, and
- * only a building is a tile field — so the gaps are the point rather than an omission to fill.
+ * `Partial` is load-bearing. Not every category supports every mode — an item has no cut-out rig,
+ * nothing on an interface turns about a pivot, and only a building and an interface assemble from
+ * repeating pieces — so the gaps are the point rather than an omission to fill.
  *
  * **Every entry is a series, and most of them have one member.** A pairing outgrows a single sheet
  * when its inventory passes `PRACTICAL_COMPONENT_CEILING`, which is a fact about what a generation
@@ -62,6 +64,14 @@ export const CATEGORY_SHEET_PLANS: Readonly<
     CORE_DIRECTIONAL_VARIANTS: [VEHICLE_DIRECTIONAL_VARIANTS],
     CUTOUT_RIG_SINGLE_DIRECTION: [VEHICLE_CUTOUT_RIG],
   },
+  // Two of the four, and the two gaps are the argument in `sheetPlans/interface.ts`: a flat widget
+  // has no facings to turn to, and nothing on an interface rotates about a pivot. The nine-slice
+  // takes `TILESET_MODULAR` because that is genuinely what it is — fixed corners, edges that repeat
+  // along one axis, a centre that repeats along both.
+  INTERFACE: {
+    SINGLE_DIRECTION_POSE_LIBRARY: [INTERFACE_STATE_LIBRARY],
+    TILESET_MODULAR: [INTERFACE_NINE_SLICE],
+  },
 };
 
 /**
@@ -99,6 +109,10 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   // A building is the one category for which a repeating tile field is the usual deliverable.
   BUILDING: 'TILESET_MODULAR',
   VEHICLE: 'CORE_DIRECTIONAL_VARIANTS',
+  // The state library rather than the nine-slice: it is the mode that covers every widget an
+  // interface has, where a nine-slice is one widget's stretching frame. It is also the only one of
+  // the two that carries a cursor, a bar and a toggle, which is most of what a kit is asked for.
+  INTERFACE: 'SINGLE_DIRECTION_POSE_LIBRARY',
 };
 
 /** Whether this category can produce this kind of sheet at all. */

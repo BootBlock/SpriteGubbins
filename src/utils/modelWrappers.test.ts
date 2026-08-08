@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
-import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -45,6 +45,27 @@ describe('wrapForModel', () => {
     // `MIDJOURNEY_VERSION` because that is the pairing — either half moving alone is the defect.
     expect(prompt).toContain(`${MIDJOURNEY_VERSION} --raw`);
     expect(prompt).not.toContain('--style');
+  });
+
+  it('stops excluding a frame on the one category whose components are frames', () => {
+    // Section 0 forbids a frame or border "around the image or around a component", which is
+    // annotation. `--no` takes bare concepts and cannot carry that qualifier, so on an INTERFACE
+    // sheet the flag would suppress the panel edges section 4 asks for — the same judgement that
+    // already keeps `background` out of the list. Both directions are asserted, because a wrapper
+    // that dropped the terms for everyone would pass a one-sided check.
+    const character = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'MIDJOURNEY' }));
+    expect(character).toMatch(/--no[^\n]*\bframe, border\b/);
+
+    const kit = PRESETS.find((preset) => preset.category === 'INTERFACE');
+    if (!kit) throw new Error('an INTERFACE preset should ship.');
+    const interfaceSheet = generatePrompt(
+      'INTERFACE',
+      kit.subject,
+      withOutput({ ...kit.output, targetModel: 'MIDJOURNEY' }),
+    );
+    expect(interfaceSheet).toMatch(/--no[^\n]*text, labels/);
+    expect(interfaceSheet).not.toMatch(/--no[^\n]*\bframe\b/);
+    expect(interfaceSheet).not.toMatch(/--no[^\n]*\bborder\b/);
   });
 
   it('gives Flux prose rather than a negative block it would discard', () => {

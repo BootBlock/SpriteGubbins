@@ -6,6 +6,7 @@ import { CHARACTER_RIG_PRESETS } from './characterRigs.ts';
 import { CHARACTER_STYLE_PRESETS } from './characterStyles.ts';
 import { CREATURE_BEAST_PRESETS } from './creatureBeasts.ts';
 import { CREATURE_HORROR_PRESETS } from './creatureHorrors.ts';
+import { INTERFACE_KIT_PRESETS } from './interfaceKits.ts';
 import { ITEM_GEAR_PRESETS } from './itemGear.ts';
 import { ITEM_WEAPON_PRESETS } from './itemWeapons.ts';
 import { OBJECT_MACHINE_PRESETS } from './objectMachines.ts';
@@ -58,5 +59,6 @@ export const PRESETS: readonly PresetArchetype[] = [
   ...BUILDING_TILESET_PRESETS,
   ...VEHICLE_CORE_PRESETS,
   ...VEHICLE_CRAFT_PRESETS,
+  ...INTERFACE_KIT_PRESETS,
   ...UNSUNG_SAVIOUR_PRESETS,
 ];

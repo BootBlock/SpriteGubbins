@@ -15,7 +15,15 @@
  * is in turn the stop it takes on the hue wheel. Inserting mid-list would therefore re-colour every
  * collection after the insertion point to express an ordering the list has never claimed to carry.
  */
-export const SUBJECT_CATEGORIES = ['CHARACTER', 'CREATURE', 'OBJECT', 'ITEM', 'BUILDING', 'VEHICLE'] as const;
+export const SUBJECT_CATEGORIES = [
+  'CHARACTER',
+  'CREATURE',
+  'OBJECT',
+  'ITEM',
+  'BUILDING',
+  'VEHICLE',
+  'INTERFACE',
+] as const;
 
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
 

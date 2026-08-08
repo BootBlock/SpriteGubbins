@@ -102,4 +102,11 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // every view.
   VEHICLE:
     'a hull’s front is the nose, prow or bow — the end that leads in travel and the end the driving position looks out of — and its rear is the engine deck, tail or transom; a turret or working mount’s front is its muzzle, boom or working end, which turns independently of the hull beneath it; a drive unit’s front is its leading edge in the direction of travel.',
+  // **Currently unreachable, and written properly anyway.** This whole block sits behind
+  // `[IF:MULTI_DIRECTION]`, and INTERFACE supports only single-facing sheet modes — so no
+  // configuration a user can reach emits this line. The record is exhaustive over the category
+  // union, so the entry has to exist; the choice is between a correct sentence and a placeholder,
+  // and a placeholder is what would ship the day a directional mode is added here.
+  INTERFACE:
+    'a widget’s front is the face it presents to the player — the lit surface, the side the glyph sits on, the side a pointer meets — and its rear is the back plate, the mounting side an interface never shows; a cursor’s front is its point.',
 };

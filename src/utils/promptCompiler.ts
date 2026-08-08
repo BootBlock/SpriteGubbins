@@ -8,6 +8,7 @@ import {
   describeDirections,
   describeHardware,
   describePalette,
+  FRAME_IS_A_COMPONENT,
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
   LIGHTING_TEXT,
@@ -247,6 +248,7 @@ export function generatePrompt(
   return wrapForModel(prompt, output.targetModel, {
     aspectRatio: output.aspectRatio,
     backgroundKeyDescription: BACKGROUND_KEY_TEXT[output.backgroundKey],
+    frameIsAComponent: FRAME_IS_A_COMPONENT[category],
   });
 }
 

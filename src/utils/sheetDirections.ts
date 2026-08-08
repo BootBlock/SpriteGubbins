@@ -79,7 +79,7 @@ export function primaryFacing(output: OutputConfig): Direction {
  *
  * `false` for the modes that name their own facings — `CORE_DIRECTIONAL_VARIANTS` draws the three
  * classic yaws whatever the control is set to, because its inventory names them entry by entry. The
- * studio has to know, because that mode is the default for five of the six categories *and* the
+ * studio has to know, because that mode is the default for five of the seven categories *and* the
  * default in `DEFAULT_OUTPUT_CONFIG`: without this the app opens showing a live four-choice select
  * whose value the compiler discards, and a user who picks all eight compass points gets a
  * three-facing sheet with nothing anywhere saying why.

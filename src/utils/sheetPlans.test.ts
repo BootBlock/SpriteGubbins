@@ -11,6 +11,7 @@ import {
   sheetSeriesFor,
   supportsMode,
 } from '../constants/sheetPlans/index.ts';
+import { CATEGORY_EXCLUSION_TEXT } from '../constants/promptText/index.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
@@ -35,9 +36,41 @@ import { PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts
  * vocabulary, whatever it is paired with.
  */
 
-/** Vocabulary that belongs only to an environment/tile sheet. */
-const TILE_VOCABULARY =
+/**
+ * Vocabulary that belongs only to a sheet whose components *are* the environment.
+ *
+ * Renamed from `TILE_VOCABULARY` because tiling stopped being the distinguishing property the moment
+ * a second category took `TILESET_MODULAR`: a nine-slice frame's edges repeat and butt against
+ * copies of themselves exactly as a floor field's do. Floors, walls and terrain are what remain
+ * foreign to every category but one.
+ *
+ * **Every alternative is a string BUILDING's own plan writes**, which is what keeps the net a test
+ * for *borrowed prose* rather than a ban on a topic — "every tile is seamless" stays for that
+ * reason, even though a nine-slice could legitimately have said it, because a plan that reaches for
+ * BUILDING's exact sentence is far likelier to have been copied from it than to have arrived there
+ * independently. `INTERFACE_NINE_SLICE` states the same requirement in its own words.
+ */
+const ENVIRONMENT_VOCABULARY =
   /floor ×|wall top|wall face|floor edge trim|every tile is seamless|continuous floor field|straight wall run/i;
+
+/**
+ * The categories whose own section 8 bans an environment — every one but the category that *is* one.
+ *
+ * Derived from the exclusion text rather than from `PERMITTED_KINDS`, and that is the fix rather
+ * than the tidy-up. The kinds gate answered "may this category contain a tile at all", which
+ * distinguished BUILDING from the five categories that draw no tiles and would have quietly stopped
+ * asking anything of INTERFACE the moment it gained a nine-slice. The property actually worth
+ * asserting is narrower and does not care how many categories tile: **a category that forbids an
+ * environment in section 8 must not require one in section 4**, which is the §4-requires/§8-forbids
+ * contradiction the per-category text in `promptText/exclusions.ts` exists to remove.
+ *
+ * The probe is the word `environments` rather than `floor tiles`, which five of the seven happen to
+ * name and VEHICLE does not — it bans "ground planes, road or runway surfaces" instead, and would
+ * have been exempted by an accident of wording.
+ */
+const BANS_AN_ENVIRONMENT = SUBJECT_CATEGORIES.filter((category) =>
+  /environments/i.test(CATEGORY_EXCLUSION_TEXT[category]),
+);
 
 /** Vocabulary that belongs only to a humanoid or creature articulation sheet. */
 const LIMB_VOCABULARY = /upper arms?:|lower arms?:|left leg|right leg|pelvis|hindquarters|forelimb/i;
@@ -96,11 +129,22 @@ describe('the plan table itself', () => {
     expect(supportsMode(category, DEFAULT_MODE_FOR[category])).toBe(true);
   });
 
-  it('gives the tileset to the one category that is an environment, and to no other', () => {
-    // BUILDING is labelled "Building / Environment Tile"; a tile field is the right answer there and
-    // nowhere else. This is the exact pairing the reported defect produced for a CHARACTER.
+  it('gives the tileset only to the categories that assemble from repeating pieces', () => {
+    // BUILDING is labelled "Building / Environment Tile" and INTERFACE ships a nine-slice, whose
+    // corners are fixed while its edges and centre repeat and butt against copies of themselves —
+    // which is what this mode means. Every other category is a *subject* rather than a field of
+    // pieces, and a CHARACTER reaching this mode is the exact pairing the reported defect produced.
     const withTileset = SUBJECT_CATEGORIES.filter((c) => supportsMode(c, 'TILESET_MODULAR'));
-    expect(withTileset).toEqual(['BUILDING']);
+    expect(withTileset).toEqual(['BUILDING', 'INTERFACE']);
+  });
+
+  it('exempts exactly the category whose components are the environment', () => {
+    // The guard on `BANS_AN_ENVIRONMENT` above. It is derived by matching prose, so a reword of one
+    // exclusion line could empty it and take the check below with it, silently — this is what makes
+    // that loud. BUILDING is the exemption, and it is the only one: its inventory *is* floor tiles,
+    // which is why its section 8 bans inhabitants and clutter instead.
+    const exempt = SUBJECT_CATEGORIES.filter((c) => !BANS_AN_ENVIRONMENT.includes(c));
+    expect(exempt).toEqual(['BUILDING']);
   });
 });
 
@@ -113,21 +157,26 @@ describe('no category emits another category’s components', () => {
     expect(inventory).not.toBeNull();
     const section = inventory?.[0] ?? '';
 
-    // Both halves are derived from `PERMITTED_KINDS` rather than from a list of category names, and
-    // that is the fix rather than the tidy-up: the limb half used to read `category === 'OBJECT' ||
-    // category === 'ITEM'`, so VEHICLE — which holds exactly OBJECT's `['structure', 'mechanism']`
-    // pair — joined this suite running only the tile half. It passed, because the vehicle plans
-    // happen to name no limbs, and nothing said the other half had stopped being asserted. A list
-    // of names cannot notice a seventh category; the kinds table has to answer for one.
+    // Neither half is a list of category names, and that is the fix rather than the tidy-up: the
+    // limb half used to read `category === 'OBJECT' || category === 'ITEM'`, so VEHICLE — which
+    // holds exactly OBJECT's `['structure', 'mechanism']` pair — joined this suite running only the
+    // tile half. It passed, because the vehicle plans happen to name no limbs, and nothing said the
+    // other half had stopped being asserted. A list of names cannot notice a seventh category; each
+    // half has to be answered by something the seventh category is obliged to fill in.
     //
-    // `validateAllSheetPlans` does not make this redundant. `kind` is hand-assigned per entry, so
+    // The two halves are derived from *different* things, and the reason is above each constant: a
+    // category either admits anatomy or it does not, which the kinds table answers, while whether it
+    // may draw an environment is what its own section 8 answers — and only that second one stopped
+    // tracking the kinds table when INTERFACE took the tileset mode.
+    //
+    // `validateAllSheetPlans` does not make either redundant. `kind` is hand-assigned per entry, so
     // `{ text: 'Left leg ×1', kind: 'structure' }` satisfies the structural check and only the prose
     // net catches it — which is why the two run side by side.
     if (!PERMITTED_KINDS[category].includes('anatomy')) {
       expect(section).not.toMatch(LIMB_VOCABULARY);
     }
-    if (!PERMITTED_KINDS[category].includes('tile')) {
-      expect(section).not.toMatch(TILE_VOCABULARY);
+    if (BANS_AN_ENVIRONMENT.includes(category)) {
+      expect(section).not.toMatch(ENVIRONMENT_VOCABULARY);
     }
   });
 });
@@ -169,6 +218,43 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
     expect(prompt).toContain('- Demon Horn ×2.');
     expect(prompt).toContain('- Tail ×1.');
     expect(prompt).toContain('#### Additional anatomy — 3');
+  });
+});
+
+describe('an INTERFACE sheet may draw the frames it is made of', () => {
+  /**
+   * The second §4-requires/§8-forbids contradiction, found where the first one was fixed.
+   *
+   * Sections 0 and 8 both listed "frames, borders" among the things absent from the image entirely,
+   * and this is the one category whose components *are* frames. Section 0's precedence rules did
+   * answer it — section 4 outranks section 8, so the entry is still drawn — but the reading they
+   * arrive at is a panel drawn with no edge, which is not a panel. Both bans now name a *placement*
+   * rather than a shape, which is strictly more correct for the other six as well: a building's
+   * window frame and an object's display cabinet were caught by the old wording too.
+   */
+  const flatten = (text: string): string => text.replace(/\s+/g, ' ');
+
+  it('bans a frame drawn around the image or a component, not a frame that is one', () => {
+    const prompt = promptFor('INTERFACE', 'SINGLE_DIRECTION_POSE_LIBRARY');
+    expect(prompt).toContain('Panel or window frame ×1');
+
+    const contract = /## 0\. NON-NEGOTIABLE[\s\S]*?## 1\. SUBJECT/.exec(prompt)?.[0] ?? '';
+    const exclusions = /## 8\. EXCLUSIONS[\s\S]*?---/.exec(prompt)?.[0] ?? '';
+    expect(flatten(contract)).toContain('no frame or border around the image or around a component');
+    expect(flatten(exclusions)).toContain('frames or borders around the image or around a component');
+
+    // The wording that shipped, in both sections. Named exactly, because a revert would otherwise
+    // only surface as a sheet of panels with no edges.
+    expect(flatten(prompt)).not.toContain('callouts, frames, borders');
+  });
+
+  it('says so in section 4, where the inventory is about to list one', () => {
+    // Defence in depth, and the same argument as `CATEGORY_GUARD_TEXT` itself: the template wording
+    // above is what makes the sheet possible, and this sentence is what makes the reasoning visible
+    // at the point a reader meets the entry.
+    expect(promptFor('INTERFACE', 'TILESET_MODULAR')).toContain(
+      'are components — the subject of the sheet, not the annotation section 0 forbids',
+    );
   });
 });
 

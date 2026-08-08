@@ -54,4 +54,5 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   brass: '#c9a227',
   umber: '#6b4423',
   driftwood: '#a89880',
+  parchment: '#e8dcb5',
 };

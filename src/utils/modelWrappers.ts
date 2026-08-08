@@ -30,14 +30,25 @@ import {
 export function wrapForModel(
   prompt: string,
   target: TargetModelId,
-  options: { readonly aspectRatio: AspectRatio; readonly backgroundKeyDescription: string },
+  options: {
+    readonly aspectRatio: AspectRatio;
+    readonly backgroundKeyDescription: string;
+    /**
+     * Whether a frame or a border is one of this sheet's components, from `FRAME_IS_A_COMPONENT`.
+     *
+     * Only Midjourney reads it, and only because `--no` negates a bare concept where section 0
+     * negates a placement — see `wrapForMidjourney`. It is passed rather than derived here so this
+     * file stays dispatch and knows nothing about categories.
+     */
+    readonly frameIsAComponent: boolean;
+  },
 ): string {
   switch (target) {
     case 'CHATGPT_5_6_SOL':
       return wrapForSol(prompt);
 
     case 'MIDJOURNEY':
-      return wrapForMidjourney(prompt, options.aspectRatio);
+      return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent);
 
     case 'STABLE_DIFFUSION':
       return wrapForStableDiffusion(prompt);

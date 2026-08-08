@@ -273,8 +273,9 @@ Satisfy this section before any aesthetic consideration.
    overlapping.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
-[N]. No text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders
-   or grid lines anywhere in the image.
+[N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image, and nothing
+   annotating it: no arrows, callouts or grid lines, and no frame or border around the image or
+   around a component.
 [N]. One consistent scale across every component: a hand drawn beside a torso is in proportion to it.
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
    virtual canvas and downscale, and do not upscale a smaller one.
@@ -620,8 +621,9 @@ Absent from the image entirely:
 
 - [DEFINE:CATEGORY_EXCLUSIONS]
 - All shadows: cast, contact, drop, and ambient occlusion onto the background.
-- Text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders,
-  grid lines, colour swatches and legends.
+- Text, labels, numbers, captions, watermarks, signatures and legends; and anything annotating the
+  sheet: arrows, callouts, colour swatches, grid lines, and frames or borders around the image or
+  around a component.
 - Assembled or posed complete figures.
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, particle effects.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
@@ -944,6 +946,22 @@ Emit unmodified. Correct for a conversational model, and the only target that ca
 > beside it self-checking. `MIDJOURNEY_VERSION` was introduced so the version had one place to
 > change, and the flags around it silently kept belonging to the version it replaced. Re-checking the
 > pin means re-checking its neighbours.
+
+> **Corrected after shipping — `frame, border` now comes out for the category whose components are
+> frames.** The `--no` list above is unconditional, and that held while every category's subject was
+> a figure, a prop or a structure. The `INTERFACE` category breaks it: its inventory is
+> `Frame corners ×4`, `Frame edges ×4` and a panel frame, so `--no border` suppresses the sheet's own
+> subject. §0 and §3 were reworded in the same change to ban a frame or border *around the image or
+> around a component* rather than the shapes themselves — annotation, which is what the rule always
+> meant — but `--no` takes bare concepts and cannot carry that qualifier, so the term has to be
+> present or absent rather than qualified. `wrapForMidjourney` now drops `frame, border` when
+> `FRAME_IS_A_COMPONENT[category]` is true, and emits the list above otherwise.
+>
+> This is the same judgement as the `background` bullet above, and it is worth naming as a pattern
+> rather than a second exception: **a term belongs in `--no` only while no subject the app can
+> describe is made of it.** A negative prompt is the one place in this app that cannot say *where*
+> something is forbidden, so every entry in it is a claim about the whole configuration space, and
+> that space widens each time a category is added.
 
 ### `STABLE_DIFFUSION` (SD 1.5 / SDXL)
 ```

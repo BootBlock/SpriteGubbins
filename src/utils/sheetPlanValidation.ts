@@ -31,6 +31,15 @@ import type { SubjectCategory } from '../types/subject.ts';
  * the two is *which* parts and mechanisms their plans name — a hull and a drive against a housing and
  * a hatch — and that is a difference between two inventories, not between two kinds of component. A
  * `drive` kind admitted by one category alone would classify nothing this check could act on.
+ *
+ * INTERFACE shares BUILDING's pair for the same reason, and it is worth saying why `tile` is right
+ * there rather than loose: a nine-slice's edges and centre repeat and butt against copies of
+ * themselves, which is the whole of what this union means by a tile. What separates the two
+ * categories is that one tiles a floor and the other tiles a panel edge — again a difference between
+ * inventories. The check that keeps *those* apart is the environment-vocabulary net in
+ * `sheetPlans.test.ts`, which is derived from each category's own section 8 rather than from this
+ * table, because a category that bans floors in its exclusions must not require them in its
+ * inventory whatever kinds it admits.
  */
 export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly ComponentKind[]>> = {
   CHARACTER: ['anatomy', 'appendage'],
@@ -39,6 +48,7 @@ export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly Componen
   ITEM: ['structure', 'mechanism'],
   BUILDING: ['structure', 'tile'],
   VEHICLE: ['structure', 'mechanism'],
+  INTERFACE: ['structure', 'tile'],
 };
 
 /** Whether this category may contain a component of this kind at all. */
