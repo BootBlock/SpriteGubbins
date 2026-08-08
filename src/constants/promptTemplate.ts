@@ -25,7 +25,11 @@
  * cross-reference either — which matters here, because the report's whole job is to cite sections
  * back.
  *
- * Taken from `docs/todo/baseline-prompt-new.md` §3.
+ * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
+ * each rule lives. This constant is the one the app emits and therefore the source of the pair, so
+ * a change made here is copied over that fence in the same commit —
+ * `tests/prompt-template-mirror.test.ts` compares the two character for character and fails the
+ * build if they ever disagree.
  */
 export const PROMPT_TEMPLATE = `# MODULAR SPRITE-SHEET SPECIFICATION — [DEFINE:CATEGORY]
 

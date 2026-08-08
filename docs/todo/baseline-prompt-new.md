@@ -4,7 +4,7 @@
 >
 > Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 is half shipped — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed rather than built because describing what a sheet depicts needs an outbound vision-model call this app does not make. Each item records its outcome in place.
 >
-> §3 has since been revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment. The revision is the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives. It also rewords §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
+> §3 is revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment, and it is now **pinned by [tests/prompt-template-mirror.test.ts](../../tests/prompt-template-mirror.test.ts)**, which compares the fence against `PROMPT_TEMPLATE` character for character. It needed to be, because a banner asserting §3 is current is worth nothing while nothing checks it — and checking showed the two had **never** agreed. They diverged the moment the template was transcribed into code: blank lines placed differently around the `[IF:…]` markers, and, in §5, a `---` sitting outside a `[/IF]` where the code puts it inside, which is a rule an unrigged sheet emits twice in the document's version and once in the app's. Then the document fell further behind twice — the category system (§0's guard paragraph, the precedence sentence rewritten so the category comparison settles *before* precedence applies, and `[DEFINE:CATEGORY_GUARD]`, `[DEFINE:CATEGORY_EXCLUSIONS]` and `[DEFINE:CATEGORY_AUDIT]` in §4, §8 and §9), and the `[IF:DELIBERATES]` gating of the self-audit, which §3 described in an italic aside citing a `GOOGLE_IMAGEN` target §7 has since removed. All of it is closed against the constant, and the aside is gone: an editorial annotation cannot survive inside a block that is checked verbatim, and §7 already carries what it said. Its earlier revisions, which the mirror did carry: the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives, and a rewording of §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
 
 A replacement for the template compiled by `src/utils/promptCompiler.ts`. Same job, same
 customisation surface, with the defects in §8 fixed and three capabilities added: **multi-style
@@ -192,6 +192,13 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 
 Everything between the rules is the emitted prompt.
 
+**The block below is `PROMPT_TEMPLATE` in
+[src/constants/promptTemplate.ts](../../src/constants/promptTemplate.ts), character for character**,
+and [tests/prompt-template-mirror.test.ts](../../tests/prompt-template-mirror.test.ts) fails the
+build when the two disagree. The constant is the one the app emits, so a change is made *there* and
+copied over this fence in the same commit — editing the fence alone changes nothing a model ever
+reads, and the test will say so.
+
 ---
 
 ```
@@ -219,6 +226,11 @@ Satisfy this section before any aesthetic consideration.
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
 
+**The subject's category decides what kind of components this sheet may contain; the inventory in
+section 4 then names the exact set within that kind.** These two can never legitimately disagree. If
+the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
+building, floor tiles on a character — this specification is malformed. Say so rather than resolving
+it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
 [IF:MULTI_DIRECTION]
 
 **A component the inventory lists in more than one direction is one component, drawn once per
@@ -228,10 +240,10 @@ Section 3 states how far each turn goes and what it must reveal; this is the con
 happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
-**Where two instructions in this specification pull against each other**, satisfy them in this
-order: the component count and inventory · each component's identity and grid position · the object
-orientation each component is asked for · the fixed camera, one scale and pivot compatibility ·
-subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
+**Where two instructions pull against each other without contradicting the category**, satisfy them
+in this order: the component count and inventory · each component's identity and grid position · the
+object orientation each component is asked for · the fixed camera, one scale and pivot compatibility
+· subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
 so a general aesthetic preference never overrules a component's stated direction.
 
 ---
@@ -269,8 +281,8 @@ weapons or equipment from the role: if it is not listed above, it does not exist
 
 Material descriptions define **visual identity, not rendering complexity**. Translate every
 material into the simplified shapes and controlled value bands of the selected render style.
-
 [IF:IDENTITY_LOCK]
+
 ### Identity lock — match a previous sheet
 This sheet depicts the same individual as a previously generated one. Reproduce exactly:
 [DEFINE:IDENTITY_LOCK]
@@ -288,8 +300,8 @@ Where this conflicts with anything above, the identity lock wins.
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]
 - Edge / outline treatment: [DEFINE:OUTLINE_DESCRIPTION]
 - Lighting model: [DEFINE:LIGHTING_DESCRIPTION]
-
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
+
 ### Pixel discipline
 - Build every form from deliberate, contiguous pixel clusters placed by intent.
 - No feature smaller than [DEFINE:MIN_FEATURE_SIZE] native pixels.
@@ -303,6 +315,7 @@ Where this conflicts with anything above, the identity lock wins.
   the image must survive inspection at 1:1 with no anti-aliased edges.
 [/IF]
 [IF:RENDER_STYLE!=PIXEL_ART,RETRO_PIXEL_ART]
+
 ### Surface discipline
 - Keep surface treatment consistent across every component; a technique used on one limb is used
   on all of them.
@@ -387,6 +400,8 @@ component back towards the primary assembly direction because the rest of the sh
 
 ## 4. COMPONENT INVENTORY
 
+[DEFINE:CATEGORY_GUARD]
+
 [DEFINE:COMPONENT_BREAKDOWN]
 
 Draw every entry in full, and one separate visible component for each item it names — an entry
@@ -401,8 +416,8 @@ order the inventory above lists them. A reordered, merged or omitted entry silen
 component after it.
 
 ---
-
 [IF:RIG_MODE=CUTOUT_RIG]
+
 ## 5. CUT-OUT RIG REQUIREMENTS
 
 These components are bound to a skeleton and rotated independently at runtime. The rig, not the
@@ -435,8 +450,8 @@ details stay on the correct side rather than flipping with the mirror — a hols
 not swap hips between the left and right leg sets. **This is the only mirroring the sheet permits:**
 a left piece and a right piece are two different parts, whereas a direction is a rotation, and
 section 3 forbids producing one by mirroring another.
-
 [IF:SOCKETS]
+
 ### Attachment sockets
 Keep these regions clear of fine detail and busy contrast, so equipment can be overlaid later
 without fighting what is underneath: [DEFINE:SOCKETS]
@@ -444,16 +459,19 @@ without fighting what is underneath: [DEFINE:SOCKETS]
 
 ### Depth order for this direction
 [DEFINE:DEPTH_ORDER_DESCRIPTION]
+
+---
 [/IF]
 [IF:RIG_MODE=POSE_LIBRARY]
+
 ## 5. RIGID SEGMENTS AND PIVOTS
 
 Every articulated part is a separate **rigid** component. Never draw a pre-bent arm or leg —
 flexion comes from assembling separately oriented rigid segments around shared pivots. Matching
 pivots share a diameter and cap geometry so segments register when assembled.
-[/IF]
 
 ---
+[/IF]
 
 ## 6. REQUIRED ASSEMBLY CAPABILITY
 
@@ -477,7 +495,7 @@ requires.
 
 Absent from the image entirely:
 
-- Backgrounds, environments, ground planes, floor tiles, terrain, sky, props and scenery.
+- [DEFINE:CATEGORY_EXCLUSIONS]
 - All shadows: cast, contact, drop, and ambient occlusion onto the background.
 - Text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders,
   grid lines, colour swatches and legends.
@@ -487,14 +505,17 @@ Absent from the image entirely:
 
 ---
 
+[IF:DELIBERATES]
 ## 9. LAYOUT AND SELF-AUDIT
-
-*Titled `## 9. LAYOUT` and ending after the paragraph below on a target that cannot run a
-verification pass — see the outcome note under `GOOGLE_IMAGEN` in §7.*
+[/IF]
+[IF:DELIBERATES!=yes]
+## 9. LAYOUT
+[/IF]
 
 Arrange components in a clean exploded grid in [DEFINE:ASPECT_DESCRIPTION] format, generously and
 uniformly spaced, in the reading order fixed by section 4. Nothing touches, overlaps, or is cropped
 by the image edge.
+[IF:DELIBERATES]
 
 Before delivering, verify:
 
@@ -504,11 +525,12 @@ Before delivering, verify:
 4. Components appear in the exact order the inventory lists them.
 5. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
+6. [DEFINE:CATEGORY_AUDIT]
 [IF:RIG_MODE=CUTOUT_RIG]
-6. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
+7. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
-7. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+8. One pixel grid and density throughout, with no anti-aliased silhouette edges.
 [/IF]
 [IF:MULTI_DIRECTION]
 
@@ -526,8 +548,9 @@ each of its views and confirm:
 If two views of one component still face effectively the same way, **the sheet has failed**. Redraw
 that component at the object yaw section 3 gives it rather than delivering the sheet.
 [/IF]
-
+[/IF]
 [IF:EMIT_MANIFEST]
+
 ---
 
 ## 10. COMPANION MANIFEST
