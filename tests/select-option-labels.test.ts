@@ -3,7 +3,9 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { ATLAS_CANVAS_CHOICES, ATLAS_PADDING_CHOICES } from '../src/constants/atlas.ts';
 import { CATEGORY_OPTIONS } from '../src/constants/categories/index.ts';
+import { HARDWARE_PROFILE_CHOICES } from '../src/constants/hardware/index.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
+import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
 import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
@@ -65,7 +67,12 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   ATLAS_PADDING_CHOICES: ATLAS_PADDING_CHOICES.map((choice) => choice.label),
   CATEGORY_CHOICES: SUBJECT_CATEGORIES.map((category) => CATEGORY_OPTIONS[category].label),
   DIRECTION_LISTS: Object.values(DIRECTION_LISTS).flat(),
+  // The two lists that name a *machine* rather than the stored identifier, and are budgeted here
+  // rather than picked up from `choices.ts` because their libraries are far too large to file with
+  // the option pools. The budget is the same one: the column does not care what the string means.
+  HARDWARE_PROFILE_CHOICES: HARDWARE_PROFILE_CHOICES.map((choice) => choice.label),
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
+  PALETTE_CHOICES: PALETTE_CHOICES.map((choice) => choice.label),
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionalModeChoices(category, HEAVY_ANATOMY).map((choice) => choice.label),
   ),

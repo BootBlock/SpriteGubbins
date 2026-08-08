@@ -450,10 +450,15 @@ guidance. Fixing that is the layout's job, not the copy's.
   call site. One definition, restyleable in one place. A literal written at the call site also
   bypasses the reduced-motion catch-all at the bottom of that file.
 - **The colour-swatch surface is the deliberate exception.** `ColorSwatch` renders whatever
-  hex `parseColorFromText` resolved — a *user's* colour, not the app's — so it takes its value
-  as a prop via inline `style`. `COLOR_HEX_MAP` in `src/constants/colors.ts` is likewise the
-  one place raw hex literals belong: it is domain data (the vocabulary the prompt compiler
-  understands), not app styling. Nothing else gets to claim that exemption.
+  hex `parseColorFromText` resolved — a colour that is not the app's, so it takes its value as a
+  prop via inline `style`. **It is the only component that may**, and the way to show any other
+  colour is to hand it this one: `PaletteField`'s swatch strip passes a bare `#0F380F`, which
+  `parseColorFromText` resolves to itself, rather than reaching for a second inline `style`.
+  Two constants files hold raw hex literals for the same reason — they are **domain data**, the
+  vocabulary the prompt compiler understands, not app styling: `COLOR_HEX_MAP` in
+  `src/constants/colors.ts`, which is the colour names a subject field may use, and
+  `src/constants/palettes/`, which is the colours real hardware could display. Nothing else gets
+  to claim either exemption.
 
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,

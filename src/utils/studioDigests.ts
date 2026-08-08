@@ -1,4 +1,5 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
+import { paletteFor } from '../constants/palettes/index.ts';
 import { resolveMode } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
@@ -100,14 +101,21 @@ export function sheetDigest(category: SubjectCategory, output: OutputConfig): st
   ]);
 }
 
-/** How the sheet is drawn. */
+/**
+ * How the sheet is drawn.
+ *
+ * A pinned palette **replaces** the colour budget here rather than joining it, because that is what
+ * it does to the sheet: the compiled prompt drops the budget line and the quantiser ignores the
+ * count, so naming both would put a setting in the header that has no effect on anything. Same
+ * reasoning as `companionDigest`, which omits a deliverable its target cannot return.
+ */
 export function renderStyleDigest(output: OutputConfig): string {
   return join([
     output.renderStyle,
     output.surfaceDetail,
     output.resolutionProfile,
     output.spriteTargetSize,
-    output.paletteLimit,
+    paletteFor(output.palette) === null ? output.paletteLimit : output.palette,
     output.outlineStyle,
     output.lightingModel,
   ]);

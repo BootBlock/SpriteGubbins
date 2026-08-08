@@ -92,7 +92,8 @@ describe('sheetDigest', () => {
 
 describe('renderStyleDigest', () => {
   it('covers all seven controls when they are all set', () => {
-    const output = withOutput({ spriteTargetSize: '48 × 96 px' });
+    // With no palette pinned, which is what leaves the colour budget as the group's colour setting.
+    const output = withOutput({ spriteTargetSize: '48 × 96 px', palette: 'FREE' });
     const digest = renderStyleDigest(output);
     for (const value of [
       output.renderStyle,
@@ -109,6 +110,18 @@ describe('renderStyleDigest', () => {
 
   it('omits the target size when it has none — the compiler omits its line too', () => {
     expect(renderStyleDigest(withOutput({ spriteTargetSize: '' }))).not.toContain(' ·  · ');
+  });
+
+  it('names a pinned palette in place of the budget it supersedes', () => {
+    // The digest lists what the group's controls actually *do*, and a pinned palette leaves the
+    // budget doing nothing — the prompt drops its line and the quantiser ignores it. Naming both
+    // would put a setting in a folded header that has no effect anywhere.
+    const digest = renderStyleDigest(
+      withOutput({ palette: 'GAME_BOY_DMG', paletteLimit: 'STRICT_32_COLOR' }),
+    );
+
+    expect(digest).toContain('GAME_BOY_DMG');
+    expect(digest).not.toContain('STRICT_32_COLOR');
   });
 });
 

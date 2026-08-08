@@ -1,8 +1,7 @@
 import { useId } from 'react';
-import { MANUAL_GRID_RANGE, PALETTE_COLOR_COUNTS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
-import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { MANUAL_GRID_RANGE, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import type { TargetSize } from '../../types/output.ts';
-import type { PixelGrid } from '../../types/quantiser.ts';
+import type { ColorPlan, PixelGrid } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
@@ -15,6 +14,15 @@ interface GridControlsProps {
   readonly suggested: PixelGrid | null;
   /** The grid actually in force — the user's, or the detected one behind it. */
   readonly grid: PixelGrid | null;
+  /**
+   * What the studio decided about colour, as the pipeline was handed it.
+   *
+   * A prop rather than a second store read, exactly as `KeyingControls` takes the keying the
+   * transform got: this panel reports what is *happening* to the image beside it, so reading the
+   * settings again and re-deciding would be a second answer that can disagree — and did, when a
+   * pinned palette left this readout still naming the colour budget it supersedes.
+   */
+  readonly colorPlan: ColorPlan;
   /** `null` clears the override, handing the decision back to detection. */
   readonly onGridChange: (grid: PixelGrid | null) => void;
 }
@@ -26,19 +34,25 @@ const CANDIDATE_CLASS =
  * The one decision this tab asks the user to make, the two facts behind it, and the scales worth
  * trying first.
  *
- * The colour count is *not* one of them: it comes from the studio's palette limit, which the prompt
- * that produced this sheet already stated. A second colour control here would be a second source of
- * truth for a value the generation was made against, so the limit is shown and changed where it is
- * already changed.
+ * Colour is *not* one of them: it comes from the studio — a pinned palette, or the colour budget
+ * behind it — which is where the prompt that produced this sheet stated it. A second colour control
+ * here would be a second source of truth for a value the generation was made against, so it is shown
+ * and changed where it is already changed. What is shown is `colorPlan`, the decision the pipeline
+ * was handed, rather than the settings behind it: those two parted company once already.
  *
  * The grid box is a plain `<input type="number">` rather than `NumberField`, for the one reason that
  * component documents about itself: it is bound to a stored number and refuses an empty value.
  * Emptiness is meaningful here — "no grid, use whatever was detected" — and is the state the tab
  * opens in when nothing was detected.
  */
-export function GridControls({ detected, target, suggested, grid, onGridChange }: GridControlsProps) {
-  const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
-  const maxColors = PALETTE_COLOR_COUNTS[paletteLimit];
+export function GridControls({
+  detected,
+  target,
+  suggested,
+  grid,
+  colorPlan,
+  onGridChange,
+}: GridControlsProps) {
   const inputId = useId();
 
   return (
@@ -89,10 +103,9 @@ export function GridControls({ detected, target, suggested, grid, onGridChange }
         </div>
 
         <div className="pb-2.5">
-          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Palette limit</p>
+          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Colour</p>
           <p className="font-mono text-xs text-ink-faint">
-            {paletteLimit} —{' '}
-            {maxColors === null ? 'no colour budget, palette left alone' : `${String(maxColors)} colours`}
+            {colorPlan.setting} — {colorPlan.effect}
           </p>
         </div>
       </div>

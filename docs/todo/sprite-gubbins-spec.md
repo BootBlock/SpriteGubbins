@@ -15,12 +15,13 @@
 >   graphics memory.
 > - **§2.4 — `prompt_history` carries two more columns than the DDL here lists** (`subject_json`, `output_json`). Without them the drawer's "one-click restore" in §4.4 cannot exist: the compiled prompt is a one-way rendering of the studio state, so the state has to be stored alongside it. Rows written before those columns restore to their category's defaults.
 >
-> The app has since grown past this blueprint, and the three places it has are recorded here so a reader is not left comparing the tree against a document that predates them. All three follow [baseline-prompt-new.md](baseline-prompt-new.md) §10 rather than the phases above, and its list is now closed:
+> The app has since grown past this blueprint, and the places it has are recorded here so a reader is not left comparing the tree against a document that predates them. The first four came off [baseline-prompt-new.md](baseline-prompt-new.md) §10's follow-up list rather than the phases above, and that list is now closed; what comes after it is growth §10 never anticipated either:
 >
 > - **A fourth view, `quantise`**, alongside the studio, presets and architecture tabs this document describes — grid alignment and palette reduction applied to the image a model returned, in `src/components/quantise/` and `src/utils/`. Plan: [done/post-generation-quantisation.md](done/post-generation-quantisation.md).
 > - **The app reads images**, which §2 of this document never contemplated: `src/hooks/useImageFile.ts` decodes a dropped, chosen or pasted file to `ImageData` in the tab. Nothing is uploaded, and the no-outbound-request rule is unchanged. Besides the quantiser, `IdentityPaletteCapture` in the studio uses it to read an accepted sheet's palette into the identity lock.
 > - **A sheet splitter** (`SheetSplitModal`), turning one N-direction rig request into N single-direction runs sharing an identity lock — a third overlay beside the atlas calculator and history drawer.
 > - **A component budget** on `OutputConfig`, reported in the studio when a sheet outgrows it and deliberately absent from the compiled prompt.
+> - **A machine to draw for, and a palette to draw it in** — two further `OutputConfig` fields this document never contemplated, in `src/constants/hardware/` and `src/constants/palettes/`. The first is the Output Configuration panel's template dropdown: choosing the Game Boy, the Mega Drive, the C64 or one of fifteen others writes the render settings that machine's artwork actually used, and puts its display, tile grid and sprite limits into §2 of the prompt. The second makes palettes first-class — a fixed list of colours or a machine's bits-per-channel colour space — which the prompt states in full and the Quantise tab maps a returned sheet onto, superseding the `PALETTE_LIMIT` budget §2 of this document specifies wherever one is pinned.
 
 ## **Project: Sprite Gubbins — Vite \+ React \+ TypeScript \+ PWA \+ SQLite**
 

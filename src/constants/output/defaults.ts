@@ -28,6 +28,12 @@ export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
   // delivers. A user whose target model does better sets their own number, or zero for no cap.
   componentBudget: PRACTICAL_COMPONENT_CEILING,
 
+  // No machine and no pinned palette. Both are opt-in by nature: they are the answer to "draw this
+  // the way a Game Boy could", which is a question most sheets are not asking, and either one
+  // defaulted to a machine would put a hardware contract into every prompt the app composes.
+  hardwareProfile: 'NONE',
+  palette: 'FREE',
+
   renderStyle: 'PIXEL_ART',
   projection: 'THREE_QUARTER_TOPDOWN',
   cameraElevation: DEFAULT_CAMERA_ELEVATIONS.THREE_QUARTER_TOPDOWN,
