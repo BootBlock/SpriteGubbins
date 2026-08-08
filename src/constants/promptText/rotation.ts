@@ -102,6 +102,15 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // every view.
   VEHICLE:
     'a hull’s front is the nose, prow or bow — the end that leads in travel and the end the driving position looks out of — and its rear is the engine deck, tail or transom; a turret or working mount’s front is its muzzle, boom or working end, which turns independently of the hull beneath it; a drive unit’s front is its leading edge in the direction of travel.',
+  // **This one reaches no prompt today, and saying so is the point.** The block it sits in is gated
+  // on `MULTI_DIRECTION`, which is set only where one sheet carries more than one facing — and EFFECT
+  // offers `SINGLE_DIRECTION_POSE_LIBRARY` alone, whose coverage is always a single facing. The
+  // `Record` is exhaustive, so the entry is required either way; what it must not be is a lie told to
+  // satisfy the compiler. It is written as the honest answer for the day a multi-facing effect mode
+  // exists, and it is deliberately about the *direction of travel* rather than about occluded
+  // surfaces, because an effect has none of those to hide.
+  EFFECT:
+    'an effect’s front is the direction it travels, issues or is aimed — the leading edge of a cone, the tip of a trail, the side of a burst nearest whatever it struck — and its rear is the source it came from: the muzzle, the hand, the point of impact. A radial effect that is the same in every direction has no front axis at all, and states its orientation through what trails behind it rather than through the burst itself.',
   // The one category with no directional mode, so this never reaches a compiled prompt today — every
   // TERRAIN pairing covers a single facing, and section 3's landmark block sits behind
   // `[IF:MULTI_DIRECTION]`. Written for the sheet it *would* describe rather than left as a

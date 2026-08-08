@@ -626,7 +626,8 @@ Absent from the image entirely:
 - Text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders,
   grid lines, colour swatches and legends.
 - Assembled or posed complete figures.
-- Motion blur, speed lines, glow bleeding beyond a component's silhouette, particle effects.
+- Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
+  effect the inventory in section 4 does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
 
 ---

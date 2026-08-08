@@ -20,8 +20,10 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
   ITEM: 'a pommel drawn beside the body or shaft it caps is in proportion to it',
   BUILDING: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
   VEHICLE: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
-  // The one category whose pieces are not a fitting and the body it is mounted on, because a terrain
-  // sheet has no body: its tiles are all one size by construction, so the scale that can actually go
-  // wrong is between a tile and the loose features standing on it.
+  // Neither of the last two is a fitting against the body it is mounted on, because neither sheet has
+  // a body. An effect's components are one phenomenon at successive moments, so the scale that can go
+  // wrong is between its core and the secondary layer drawn on its own frames beside it; a terrain's
+  // tiles are all one size by construction, so it is between a tile and the features standing on it.
+  EFFECT: 'a smoke frame drawn beside the core frame it trails is in proportion to it',
   TERRAIN: 'a boulder drawn beside the ground tile it stands on is in proportion to it',
 };

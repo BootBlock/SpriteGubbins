@@ -6,14 +6,13 @@ import { DIRECTIONAL_VARIANTS_SET } from '../promptText/inventory.ts';
  * The two entry shapes every `CORE_DIRECTIONAL_VARIANTS` plan is built from, written against the
  * direction set the mode actually covers.
  *
- * Every category with a directional core describes the same thing in the same two ways — a piece
- * drawn once per facing,
- * either spelling the facings out or referring to them — and every one of them used to write the
- * count and the facing names by hand. That is three spellings of one fact: the set in
- * `DIRECTION_LISTS`, the names in the entry text, and the number in `count`. Widening the core from
- * three views to five had to change all three in fourteen entries across six files, and a missed one
- * is silent: the sheet asks for five views in section 3 and lists three in section 4, and the model
- * resolves the contradiction however it likes.
+ * All six categories with a directional plan describe the same thing in the same two ways — a piece
+ * drawn once per facing, either spelling the facings out or referring to them — and every one of
+ * them used to write the count and the facing names by hand. That is three spellings of one fact:
+ * the set in `DIRECTION_LISTS`, the names in the entry text, and the number in `count`. Widening the
+ * core from three views to five had to change all three in fourteen entries across six files, and a
+ * missed one is silent: the sheet asks for five views in section 3 and lists three in section 4, and
+ * the model resolves the contradiction however it likes.
  *
  * Deriving them here leaves one spelling. A sixth view added to the set changes every plan's text
  * and every plan's count in the same edit, because there is only one edit to make.
