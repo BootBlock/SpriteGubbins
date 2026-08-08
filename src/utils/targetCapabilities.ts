@@ -5,7 +5,7 @@ import type { PromptBudget, TargetCapabilities, TargetModelId } from '../types/o
  * What each target generator can do with the prompt, looked up by id.
  *
  * The capabilities themselves are declared on the model entries in `constants/models.ts`, beside
- * the name and tooltip, so there is one place a target is described rather than a set of ids per
+ * the name and description, so there is one place a target is described rather than a set of ids per
  * capability sitting somewhere else. See {@link TargetCapabilities} for what each one means and why
  * it is a property of the endpoint rather than a preference.
  *

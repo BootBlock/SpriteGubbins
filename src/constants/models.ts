@@ -33,7 +33,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   {
     id: 'GENERIC',
     name: 'Generic / Baseline Prompt',
-    tooltip:
+    description:
       'Standard un-wrapped prompt suitable for ChatGPT, Claude, Gemini, or general LLM text-to-image workflows.',
     capabilities: { deliberates: true, emitsText: true, promptBudget: null },
   },
@@ -55,7 +55,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // the far side of a tool call, which is what its wrapper in `utils/modelWrapperText.ts` says.
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
-    tooltip:
+    description:
       'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. Choosing Sol in ChatGPT also puts you on a thinking tier, which is what enables images with thinking on a paid plan. It reasons over the brief, so it gets the self-audit and can return a companion JSON manifest.',
     capabilities: {
       deliberates: true,
@@ -79,7 +79,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://ai.google.dev/gemini-api/docs/image-generation
     id: 'GEMINI_FLASH_IMAGE',
     name: 'Gemini 3.1 Flash Image / Nano Banana 2',
-    tooltip:
+    description:
       'Google’s replacement for the retired Imagen models. A thinking model that reasons over complex prompts, so it receives the full specification including the self-audit, and it can return a companion JSON manifest alongside the image.',
     capabilities: {
       deliberates: true,
@@ -95,7 +95,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // exploded component grid is. https://ai.google.dev/gemini-api/docs/models
     id: 'GEMINI_PRO_IMAGE',
     name: 'Gemini 3 Pro Image / Nano Banana Pro',
-    tooltip:
+    description:
       'The heavier Gemini image model, built for complex layouts and precise text rendering. Same handling as Nano Banana 2 — full specification, self-audit and optional manifest — at higher cost and quality.',
     capabilities: {
       deliberates: true,
@@ -125,7 +125,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://fal.ai/learn/tools/how-to-use-seedream-5-0-pro-v2
     id: 'SEEDREAM',
     name: 'Seedream 5.0 (ByteDance)',
-    tooltip:
+    description:
       'ByteDance’s reasoning image model — it plans the layout before rendering, so it receives the full specification including the self-audit. Returns images only, so it cannot return a manifest. Its prompt is led by a planning directive, because long briefs here are documented to lose instructions.',
     capabilities: {
       deliberates: true,
@@ -150,7 +150,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // shipped cloud-only: no weights, no model card, no benchmarks, unlike Qwen-Image 1.0 and 2.0.
     id: 'QWEN_IMAGE',
     name: 'Qwen-Image 3.0 (Alibaba)',
-    tooltip:
+    description:
       'Built for dense structured layouts and long briefs — at 4.5K tokens it is the tightest published ceiling the full specification still fits inside. Gets a plain negative-prompt block, because Qwen exposes negative_prompt as a documented parameter.',
     capabilities: {
       deliberates: false,
@@ -171,14 +171,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://docs.midjourney.com/hc/en-us/articles/32023408776205-Prompt-Basics
     id: 'MIDJOURNEY',
     name: 'Midjourney',
-    tooltip:
+    description:
       'Appends Midjourney flags: aspect ratio, version, --raw, and a low stylisation value, because high stylisation fights a technical layout brief. The background is deliberately not excluded — the sheet needs a keyable one.',
     capabilities: { deliberates: false, emitsText: false, promptBudget: null },
   },
   {
     id: 'STABLE_DIFFUSION',
     name: 'Stable Diffusion (SD 1.5 / SDXL)',
-    tooltip:
+    description:
       'Appends a weighted negative-prompt block aimed at the two failures that actually recur: assembling the figure instead of exploding it, and adding shadows.',
     capabilities: {
       deliberates: false,
@@ -204,7 +204,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://deepwiki.com/black-forest-labs/flux2/3.2-text-encoders
     id: 'FLUX',
     name: 'Flux (open weights — FLUX.2 dev / klein)',
-    tooltip:
+    description:
       'Separate from Stable Diffusion because Black Forest Labs state outright that FLUX.2 does not support negative prompts — the SD block would be silently discarded — so the same constraints are restated positively, and stated first because only the first 512 tokens are read.',
     capabilities: {
       deliberates: false,
@@ -226,7 +226,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // times over a ceiling that does not apply to them. https://bfl.ai/models/flux-2
     id: 'FLUX_API',
     name: 'Flux (BFL API — FLUX.2 pro / max / flex)',
-    tooltip:
+    description:
       'Black Forest Labs’ hosted FLUX.2 tier, which reads 32K tokens — so the whole specification fits. Same positive restatement as the open weights, since no FLUX.2 model takes a negative prompt.',
     capabilities: {
       deliberates: false,
@@ -240,7 +240,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // https://developers.openai.com/api/docs/deprecations
     id: 'GPT_IMAGE',
     name: 'GPT Image 2 (OpenAI)',
-    tooltip:
+    description:
       'OpenAI’s current image model, replacing the retired DALL·E 3. Returns images only, so it gets the specification without the self-audit or the manifest.',
     capabilities: {
       deliberates: false,

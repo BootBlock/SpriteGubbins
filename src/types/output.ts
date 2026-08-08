@@ -167,7 +167,21 @@ export interface TargetSize {
 export interface TargetModel {
   readonly id: TargetModelId;
   readonly name: string;
-  readonly tooltip: string;
+  /**
+   * What choosing this target does to the prompt, shown under the selector as the control's
+   * accessible description.
+   *
+   * **Named for what it is rather than for where it is drawn**, because it spent its whole life
+   * called `tooltip` while nothing rendered it: the field was obliged by this interface, filled by
+   * every entry, and read by no one. A name that describes a widget is a name that stops being true
+   * the moment the copy moves, and there was nothing to notice when it did.
+   *
+   * Distinct from `OUTPUT_TOOLTIPS.targetModel`, which explains the *field* — what a target model is
+   * and why it changes the shape of the output — and is one string for all eleven entries. This is
+   * the half that can only be written per target, so it is the half the user could not previously
+   * get at.
+   */
+  readonly description: string;
   readonly capabilities: TargetCapabilities;
 }
 
