@@ -16,6 +16,7 @@ import { ProjectionFields } from './ProjectionFields.tsx';
 import { RenderStyleFields } from './RenderStyleFields.tsx';
 import { RiggingFields } from './RiggingFields.tsx';
 import { SheetFields } from './SheetFields.tsx';
+import { SystemProfileField } from './SystemProfileField.tsx';
 
 /**
  * Which of the six groups is unfolded to begin with.
@@ -97,6 +98,16 @@ export function OutputConfig() {
         </h2>
 
         <SectionToggleAll sections={ALL_SECTIONS} panelLabel="Output Configuration" />
+      </div>
+
+      {/*
+        Above the groups, because it writes into two of them: choosing a machine sets the render
+        style, surface detail, resolution, component size, outline, lighting and palette at once.
+        Folded away inside one group it would be a control that silently changed another group's
+        header while that group was shut.
+      */}
+      <div className="mb-4 border-b border-foundry-700 pb-4">
+        <SystemProfileField />
       </div>
 
       {/*

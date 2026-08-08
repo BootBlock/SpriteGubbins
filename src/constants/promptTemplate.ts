@@ -61,6 +61,11 @@ Satisfy this section before any aesthetic consideration.
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
+[IF:PALETTE]
+[N]. Every colour on every component comes from the palette section 2 fixes, and no colour outside
+   it appears anywhere on them. The background field is the exception and stays the key colour
+   named above.
+[/IF]
 [IF:RETURNS_TEXT]
 
 **The subject's category decides what kind of components this sheet may contain; the inventory in
@@ -144,9 +149,29 @@ Where this conflicts with anything above, the identity lock wins.
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
+[IF:PALETTE!=yes]
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]
+[/IF]
 - Edge / outline treatment: [DEFINE:OUTLINE_DESCRIPTION]
 - Lighting model: [DEFINE:LIGHTING_DESCRIPTION]
+[IF:HARDWARE_PROFILE]
+
+### Target hardware — [DEFINE:HARDWARE_NAME]
+
+These components are artwork for [DEFINE:HARDWARE_NAME], and have to be drawable on it. Its limits
+are not a period flavour to gesture at; they are what the machine could put on a screen:
+
+[DEFINE:HARDWARE_CONSTRAINTS]
+
+Work to those figures rather than to a modern impression of them. Where one of them pulls against an
+aesthetic preference stated elsewhere in this section, the hardware wins.
+[/IF]
+[IF:PALETTE]
+
+### Palette — [DEFINE:PALETTE_NAME]
+
+[DEFINE:PALETTE_SPECIFICATION]
+[/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 
 ### Pixel discipline
@@ -378,6 +403,12 @@ Before delivering, verify:
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[/IF]
+[IF:PALETTE]
+[N]. Every colour on every component is one the palette in section 2 permits.
+[/IF]
+[IF:PALETTE_PER_COMPONENT]
+[N]. No component carries more colours at once than section 2 allows one.
 [/IF]
 [IF:MULTI_DIRECTION]
 
