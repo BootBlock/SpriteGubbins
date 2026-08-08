@@ -17,7 +17,7 @@ import type { DigestSegment } from './identityDigest.ts';
  * substitute for it.
  *
  * Pure, and independent of the category: every category labels these sixteen keys differently but
- * carry the same keys, so a segment written against the keys is right in all of them. Which keys
+ * carries the same keys, so a segment written against the keys is right in all of them. Which keys
  * each segment states — and why six of the sixteen state nothing — is `IDENTITY_SUBJECT_SEGMENTS`.
  */
 export function identitySubjectSegments(subject: SubjectDefinition): readonly DigestSegment[] {

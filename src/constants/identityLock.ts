@@ -53,8 +53,9 @@ export interface IdentitySubjectSegment {
  *
  * **The labels name the slot, not the category** — the same trap `constants/subjectGroups.ts`
  * documents. Every category shares these sixteen keys under completely different labels, so
- * `face_head` is *Face, Hair & Head* on a character, *Cockpit & Front Face* on a vehicle and *Grip &
- * Pommel* on an item. `Features` is true of every one of them; `Head` would be true of one.
+ * `face_head` is *Face, Hair & Head* on a character, *Cockpit & Front Face* on a vehicle, *Grip &
+ * Pommel* on an item and *Focal Glyph* on an interface. `Features` is true of all of them; `Head`
+ * would be true of one.
  *
  * **Ten of the sixteen fields are here.** The digest states what the subject *looks like*, so the
  * six that are not fall into three groups, each excluded for its own reason:

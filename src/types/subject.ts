@@ -23,6 +23,7 @@ export const SUBJECT_CATEGORIES = [
   'BUILDING',
   'VEHICLE',
   'EFFECT',
+  'INTERFACE',
   'TERRAIN',
 ] as const;
 

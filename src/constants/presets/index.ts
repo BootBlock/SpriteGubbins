@@ -8,6 +8,7 @@ import { CREATURE_BEAST_PRESETS } from './creatureBeasts.ts';
 import { CREATURE_HORROR_PRESETS } from './creatureHorrors.ts';
 import { EFFECT_COMBAT_PRESETS } from './effectCombat.ts';
 import { EFFECT_MAGIC_PRESETS } from './effectMagic.ts';
+import { INTERFACE_KIT_PRESETS } from './interfaceKits.ts';
 import { ITEM_GEAR_PRESETS } from './itemGear.ts';
 import { ITEM_WEAPON_PRESETS } from './itemWeapons.ts';
 import { OBJECT_MACHINE_PRESETS } from './objectMachines.ts';
@@ -63,6 +64,7 @@ export const PRESETS: readonly PresetArchetype[] = [
   ...VEHICLE_CRAFT_PRESETS,
   ...EFFECT_COMBAT_PRESETS,
   ...EFFECT_MAGIC_PRESETS,
+  ...INTERFACE_KIT_PRESETS,
   ...TERRAIN_FIELD_PRESETS,
   ...UNSUNG_SAVIOUR_PRESETS,
 ];

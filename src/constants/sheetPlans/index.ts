@@ -6,6 +6,7 @@ import { BUILDING_DIRECTIONAL_VARIANTS, BUILDING_MODULE_LIBRARY, BUILDING_TILESE
 import { CHARACTER_CUTOUT_RIG, CHARACTER_DIRECTIONAL_VARIANTS, CHARACTER_POSE_LIBRARY } from './character.ts';
 import { CREATURE_CUTOUT_RIG, CREATURE_DIRECTIONAL_VARIANTS, CREATURE_POSE_LIBRARY } from './creature.ts';
 import { EFFECT_FRAME_SEQUENCE } from './effect.ts';
+import { INTERFACE_NINE_SLICE, INTERFACE_STATE_LIBRARY } from './interface.ts';
 import { ITEM_DIRECTIONAL_VARIANTS, ITEM_PART_LIBRARY } from './item.ts';
 import { OBJECT_CUTOUT_RIG, OBJECT_DIRECTIONAL_VARIANTS, OBJECT_PART_LIBRARY } from './object.ts';
 import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
@@ -24,6 +25,8 @@ import { VEHICLE_CUTOUT_RIG, VEHICLE_DIRECTIONAL_VARIANTS, VEHICLE_PART_LIBRARY 
  * `resolveMode` below is what stops an absent one ever reaching the compiler.
  *
  * `Partial` is load-bearing. Not every category supports every mode — an item has no cut-out rig,
+ * nothing on an interface turns about a pivot, and only a building and an interface assemble from
+ * repeating pieces — so the gaps are the point rather than an omission to fill.
  * only a building and a terrain are laid as a tile field, and a terrain has no directional core at
  * all — so the gaps are the point rather than an omission to fill.
  *
@@ -73,6 +76,14 @@ export const CATEGORY_SHEET_PLANS: Readonly<
   EFFECT: {
     SINGLE_DIRECTION_POSE_LIBRARY: [EFFECT_FRAME_SEQUENCE],
   },
+  // Two of the four, and the two gaps are the argument in `sheetPlans/interface.ts`: a flat widget
+  // has no facings to turn to, and nothing on an interface rotates about a pivot. The nine-slice
+  // takes `TILESET_MODULAR` because that is genuinely what it is — fixed corners, edges that repeat
+  // along one axis, a centre that repeats along both.
+  INTERFACE: {
+    SINGLE_DIRECTION_POSE_LIBRARY: [INTERFACE_STATE_LIBRARY],
+    TILESET_MODULAR: [INTERFACE_NINE_SLICE],
+  },
   // No directional mode, and that absence is the answer rather than a gap. A tile is laid flat and
   // read from above; turning one 90° produces the tile the set already draws at the next edge, so a
   // five-view core would be five drawings of one component the inventory names once. The landform
@@ -115,12 +126,18 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   CREATURE: 'CORE_DIRECTIONAL_VARIANTS',
   OBJECT: 'CORE_DIRECTIONAL_VARIANTS',
   ITEM: 'CORE_DIRECTIONAL_VARIANTS',
-  // The two categories whose usual deliverable is a repeating field rather than a subject: a
-  // building's floors and walls, and a terrain's two materials meeting.
+  // BUILDING and TERRAIN are the two whose usual deliverable is a repeating field rather than a
+  // subject — a building's floors and walls, and a terrain's two materials meeting. INTERFACE can
+  // produce a tile field too and does not default to one, which is the distinction: a nine-slice is
+  // one widget's stretching frame, not the whole deliverable.
   BUILDING: 'TILESET_MODULAR',
   VEHICLE: 'CORE_DIRECTIONAL_VARIANTS',
   // The only mode it has, so the fallback and the choice are the same thing here.
   EFFECT: 'SINGLE_DIRECTION_POSE_LIBRARY',
+  // The state library rather than the nine-slice: it is the mode that covers every widget an
+  // interface has, where a nine-slice is one widget's stretching frame. It is also the only one of
+  // the two that carries a cursor, a bar and a toggle, which is most of what a kit is asked for.
+  INTERFACE: 'SINGLE_DIRECTION_POSE_LIBRARY',
   TERRAIN: 'TILESET_MODULAR',
 };
 

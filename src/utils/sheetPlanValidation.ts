@@ -39,6 +39,14 @@ import type { SubjectCategory } from '../types/subject.ts';
  * that kind under any of the spatial categories is a flipbook filed under a part breakdown, and an
  * entry of any other kind under EFFECT is a part breakdown filed under a flipbook. Both directions
  * fail, which is what makes this the sharpest pairing in the table rather than the loosest.
+ * INTERFACE shares BUILDING's pair for the same reason, and it is worth saying why `tile` is right
+ * there rather than loose: a nine-slice's edges and centre repeat and butt against copies of
+ * themselves, which is the whole of what this union means by a tile. What separates the two
+ * categories is that one tiles a floor and the other tiles a panel edge — again a difference between
+ * inventories. The check that keeps *those* apart is the environment-vocabulary net in
+ * `sheetPlans.test.ts`, which is derived from each category's own section 8 rather than from this
+ * table, because a category that bans floors in its exclusions must not require them in its
+ * inventory whatever kinds it admits.
  */
 export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly ComponentKind[]>> = {
   CHARACTER: ['anatomy', 'appendage'],
@@ -48,6 +56,7 @@ export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly Componen
   BUILDING: ['structure', 'tile'],
   VEHICLE: ['structure', 'mechanism'],
   EFFECT: ['frame'],
+  INTERFACE: ['structure', 'tile'],
   TERRAIN: ['tile', 'structure'],
 };
 

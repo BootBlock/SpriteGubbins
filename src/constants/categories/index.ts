@@ -12,6 +12,7 @@ import { ITEM } from './item.ts';
 import { BUILDING } from './building.ts';
 import { VEHICLE } from './vehicle.ts';
 import { EFFECT } from './effect.ts';
+import { INTERFACE } from './interface.ts';
 import { TERRAIN } from './terrain.ts';
 
 /**
@@ -29,6 +30,7 @@ export const CATEGORY_OPTIONS: Readonly<Record<SubjectCategory, CategoryDefiniti
   BUILDING,
   VEHICLE,
   EFFECT,
+  INTERFACE,
   TERRAIN,
 };
 
