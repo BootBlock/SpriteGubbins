@@ -25,9 +25,10 @@ interface PresetCardProps {
  *
  * **Each card re-points `--color-tab` to its own stop on the wheel**, so the library reads as a
  * spectrum rather than a grid of one colour repeated. Nothing below had to change for that: the
- * card's edge, its hover bloom and its title already reach for `*-tab` utilities, and those resolve
- * against whichever element last set the property. Assigning it here rather than passing a colour
- * down is what keeps a card's decoration out of its props.
+ * card's edge, its hover bloom, its title and its load button all reach for `*-tab` utilities, and
+ * those resolve against whichever element last set the property. Assigning it here rather than
+ * passing a colour down is what keeps a card's decoration out of its props — and it is why the
+ * button needs no prop either: `action-tab` picks up the card's stop, not the presets view's.
  */
 export function PresetCard({ preset, index, onLoad, onRename, onDelete }: PresetCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -107,7 +108,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
             onClick={() => {
               onLoad(preset);
             }}
-            className="group/load flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-accent-strong to-accent py-2 text-xs font-semibold text-ink shadow-md ring-1 ring-accent-soft/30 transition-all duration-200 hover:shadow-lg hover:ring-accent-soft active:scale-[0.98]"
+            className="action-tab group/load flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-200 active:scale-[0.98]"
           >
             {/* Named group: the card is already a `group`, and an unnamed one here would follow the
                 card's hover rather than this button's. */}
@@ -129,7 +130,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
                   setIsRenaming(true);
                 }}
                 aria-label={`Rename preset ${preset.name}`}
-                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-foundry-700 active:translate-y-0"
+                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-200 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 active:translate-y-0"
               >
                 <span aria-hidden="true">✏️</span>
               </button>

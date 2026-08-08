@@ -40,7 +40,18 @@ export function FilePickerField({ label, acceptFile, tone = 'muted' }: FilePicke
           acceptFile(input.files?.item(0));
           input.value = '';
         }}
-        className="max-w-full text-xs text-ink-muted file:mr-3 file:rounded-lg file:border-0 file:bg-accent-strong file:px-3 file:py-1.5 file:font-semibold file:text-ink hover:file:bg-accent"
+        // The chooser wears the view's colour like every other action inside a tab — both callers
+        // are tab panels. `file:` reaches `::file-selector-button`, which is where the border and
+        // the fill belong; the input itself is only the label beside it.
+        //
+        // The hover is spelled out here because **`file:` carries the utility's resting declarations
+        // and silently drops its nested `&:hover` and `&:disabled` rules** — verified by grepping the
+        // built CSS, where `.file\:action-tab::file-selector-button` emits four declarations and no
+        // state rule at all. So this restores the one state that matters: the border going to full
+        // opacity. (The bloom does not survive, and the disabled colours have nothing to restore —
+        // this input is never disabled.) `hover:file:` is hover on the *input*, which is also how
+        // the treatment this replaced was written, so the trigger area is unchanged.
+        className="max-w-full text-xs text-ink-muted file:mr-3 file:action-tab file:rounded-lg file:px-3 file:py-1.5 file:font-semibold hover:file:border-tab"
       />
     </>
   );

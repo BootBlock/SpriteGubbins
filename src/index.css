@@ -823,6 +823,72 @@
     inset 0 1px 0 color-mix(in oklab, white 14%, transparent);
 }
 
+@utility action-tab {
+  /*
+   * A primary action *inside a view*: the button wears the view's own colour instead of the primary.
+   *
+   * The app had a single indigo primary in two spellings — an `accent-strong → accent` gradient on
+   * three buttons, a flat `accent-strong` with an `accent` hover on nine more — and between them
+   * twelve buttons wore it, which is every primary in the app whether or not they belong together.
+   * "Copy Prompt" in the chrome is reachable from every view and is the app's single loudest action;
+   * "Save" beside a preset name, "Download PNG" under the quantiser's previews and "Load preset" on
+   * a card are all *local* actions, and painting them the same indigo made the page's colour identity
+   * stop at the panel edges. Worse, on the preset library — where every card claims its own stop on
+   * the wheel — the one control on the card was the one thing that ignored it.
+   *
+   * So this takes `--color-tab`, which means it needs no argument and no prop: the value resolves
+   * against whichever ancestor last set it, so the same class is the view's colour inside a tab and
+   * the *card's* colour inside a preset card, which sets the property inline. The chrome's Copy
+   * Prompt keeps the indigo gradient — it is the primary, and the primary is fixed in every view.
+   *
+   * **The fill is pinned at 50% by contrast, not by taste.** Every stop is L 0.76, so the composite
+   * lightens as the alpha rises and `text-ink` on it darkens by comparison: 50% clears WCAG AA on the
+   * lightest panel these sit on (4.67:1 at the wheel's worst stop), 60% is 3.68:1 and fails. That is
+   * why **hover does not touch the fill** — it takes the border to full opacity and swaps the shadow
+   * for a bloom in the same colour, which is a change the button can afford to make.
+   *
+   * The border is not decoration either. Across the ten stops and the three panels these sit on, a
+   * 50% fill measures between 2.80:1 and 3.15:1 against the panel behind it — so a little under half
+   * of those combinations clear the 3:1 WCAG 1.4.11 asks of a control's boundary and none clears it
+   * with any margin, which makes the fill alone an edge you cannot rely on seeing. At 80% the border
+   * clears the ratio at every stop on every panel, 5.36:1 at its worst, so the border is what makes
+   * the button's edge perceivable. `tests/design-tokens.test.ts` recomputes the border's figure from
+   * the tokens and fails below the threshold.
+   *
+   * The shadow lives here rather than at the call sites so the bloom can be the view's colour — which
+   * a `shadow-*` utility cannot express — and because a utility owning `box-shadow` must own both
+   * states or Tailwind's would compose with one of them. No call site wearing this carries a
+   * `shadow-*`, exactly as with `glass-float`. Call sites still bring their own geometry, type and
+   * motion: these buttons are deliberately different sizes, and only their colour is shared.
+   *
+   * **The `file:` variant carries the declarations below and drops the two nested state rules.**
+   * `FilePickerField` is the one call site that styles a `::file-selector-button` rather than a
+   * `<button>`, and it restores the hover itself — see the comment there, which is where that
+   * limitation is worth knowing about.
+   */
+  background-color: color-mix(in oklab, var(--color-tab) 50%, transparent);
+  border: 1px solid color-mix(in oklab, var(--color-tab) 80%, transparent);
+  color: var(--color-ink);
+  box-shadow: 0 2px 8px -3px color-mix(in oklab, var(--color-foundry-950) 85%, transparent);
+
+  /*
+   * `:not(:disabled)` because a disabled button still matches `:hover` — the pointer-events rule
+   * that suppresses activation does not suppress the selector — so without it the hover state would
+   * re-light a control that cannot be pressed.
+   */
+  &:hover:not(:disabled) {
+    border-color: var(--color-tab);
+    box-shadow: 0 8px 22px -8px color-mix(in oklab, var(--color-tab) 60%, transparent);
+  }
+
+  &:disabled {
+    background-color: var(--color-foundry-700);
+    border-color: var(--color-foundry-600);
+    color: var(--color-ink-faint);
+    box-shadow: none;
+  }
+}
+
 @utility heading-gradient {
   /*
    * The section-heading treatment: ink lit by two passes of the active view's colour, clipped to

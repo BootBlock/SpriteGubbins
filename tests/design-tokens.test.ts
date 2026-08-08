@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -106,6 +106,7 @@ const REQUIRED_UTILITIES = [
   'bg-spectrum',
   'glass-panel',
   'glass-float',
+  'action-tab',
   'shimmer-surface',
   'heading-gradient',
   'heading-spectrum',
@@ -474,27 +475,189 @@ function oklchToken(name: string): [number, number, number] {
  * Clamped to the gamut the way a browser clamps, which matters not at all for these near-neutral
  * tones and would matter a great deal for a saturated one.
  */
-function luminanceOf([L, C, hDeg]: [number, number, number]): number {
+function linearOf([L, C, hDeg]: [number, number, number]): [number, number, number] {
   const h = (hDeg * Math.PI) / 180;
   const a = C * Math.cos(h);
   const b = C * Math.sin(h);
   const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
   const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
   const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  const [r, g, blue] = [
+  return [
     4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
     -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
     -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
   ].map((v) => Math.min(Math.max(v, 0), 1)) as [number, number, number];
-  return 0.2126 * r + 0.7152 * g + 0.0722 * blue;
 }
 
-/** WCAG contrast between two tokens, by name. */
-function contrastBetween(one: string, other: string): number {
-  const a = luminanceOf(oklchToken(one));
-  const b = luminanceOf(oklchToken(other));
+/** WCAG relative luminance of an already-resolved linear-sRGB triple. */
+function luminanceOf([r, g, b]: [number, number, number]): number {
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast between two linear-sRGB triples — the one place the ratio is written down. */
+function contrastOf(one: [number, number, number], other: [number, number, number]): number {
+  const [a, b] = [luminanceOf(one), luminanceOf(other)];
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
+
+/** The same ratio between two tokens, by name. */
+function contrastBetween(one: string, other: string): number {
+  return contrastOf(linearOf(oklchToken(one)), linearOf(oklchToken(other)));
+}
+
+/**
+ * The sRGB transfer function and its inverse.
+ *
+ * Needed only for the alpha compositing below: CSS blends a translucent fill with what is behind it
+ * in **gamma-encoded** sRGB, not in the linear space WCAG measures luminance in. Averaging the
+ * linear values instead — the shortcut that looks equivalent — makes every composite come out
+ * lighter than the browser paints it, which for a check that exists to find a *too light* fill would
+ * quietly report the failure as a pass.
+ */
+const encode = (v: number): number => (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+const decode = (v: number): number => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+
+/**
+ * A token laid over another at `alpha`, the way the engine composites it, as linear sRGB.
+ *
+ * Destructured into three channels rather than mapped over an array, which is what keeps the return
+ * a *tuple*: `Array.prototype.map` widens to `number[]`, and under `noUncheckedIndexedAccess` every
+ * consumer of that would have to admit a possibly-missing channel it can see there are three of.
+ */
+function compositeOf(
+  fg: [number, number, number],
+  bg: [number, number, number],
+  alpha: number,
+): [number, number, number] {
+  const [fr, fg_, fb] = linearOf(fg);
+  const [br, bg_, bb] = linearOf(bg);
+  const mix = (over: number, under: number) => decode(alpha * encode(over) + (1 - alpha) * encode(under));
+  return [mix(fr, br), mix(fg_, bg_), mix(fb, bb)];
+}
+
+describe("a view's primary action", () => {
+  const block = ruleBlock('@utility action-tab {', '@utility ');
+
+  /** The two mix percentages the recipe is: the fill, then the border. */
+  const fillAlpha = Number(
+    /background-color: color-mix\(in oklab, var\(--color-tab\) ([\d.]+)%/.exec(block)?.[1],
+  );
+  const borderAlpha = Number(
+    /border: 1px solid color-mix\(in oklab, var\(--color-tab\) ([\d.]+)%/.exec(block)?.[1],
+  );
+
+  /**
+   * Every panel one of these buttons actually sits on. `foundry-800` is the lightest — `glass-panel`
+   * is that tone at 72% over the page, so it never resolves lighter — and it is therefore the case
+   * the text contrast has to survive; `foundry-950` is the well the preset save row sits in.
+   */
+  const PANELS = ['--color-foundry-800', '--color-foundry-900', '--color-foundry-950'];
+
+  it('mixes the fill and the border at the two strengths the recipe is', () => {
+    // Pinned because both numbers are load-bearing and neither looks it: the fill is the largest
+    // share of a L 0.76 stop that leaves `text-ink` above WCAG AA on it, and the border is what
+    // carries the button's edge past 1.4.11 given the fill alone does not. A later tidy-up that
+    // rounds either one to a friendlier figure is the change this exists to stop.
+    expect(fillAlpha).toBe(50);
+    expect(borderAlpha).toBe(80);
+  });
+
+  it('keeps text-ink above 4.5:1 on the fill, at every stop and on every panel', () => {
+    // The stops are all L 0.76, so the composite lightens as the alpha rises and the ink on it
+    // darkens by comparison. This is the constraint that fixes the fill at 50%: at 60% the worst
+    // stop measures 3.68:1, which still looks perfectly deliberate.
+    const ink = linearOf(oklchToken('--color-ink'));
+
+    for (const stop of SPECTRUM_STOPS) {
+      for (const panel of PANELS) {
+        const fill = compositeOf(oklchToken(`--color-spectrum-${stop}`), oklchToken(panel), fillAlpha / 100);
+        expect(contrastOf(fill, ink)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it('carries the button edge on the border, which the fill cannot be relied on to do', () => {
+    // WCAG 1.4.11 wants 3:1 between a control and its surroundings. A 50% stop over a panel lands
+    // between 2.80:1 and 3.15:1 against that same panel depending on which stop and which panel —
+    // a little under half of those combinations clear it and none clears it with margin — so a
+    // borderless version of this button would have an edge that disappears on most of the wheel.
+    // The border is therefore a correctness property rather than a flourish, and unlike the fill it
+    // is asserted here because it has to hold at *every* combination.
+    for (const stop of SPECTRUM_STOPS) {
+      for (const panel of PANELS) {
+        const surface = oklchToken(panel);
+        const border = compositeOf(oklchToken(`--color-spectrum-${stop}`), surface, borderAlpha / 100);
+        expect(contrastOf(border, linearOf(surface))).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  it('never lets the hover state raise the fill, which is where the contrast headroom went', () => {
+    // The hover says so with the border and a bloom precisely because it cannot say it with the
+    // fill. Re-lighting the surface is the obvious edit, it looks better in isolation, and it takes
+    // the ink under AA on every stop — so the absence of a `background-color` here is the assertion.
+    const hover = /&:hover:not\(:disabled\) \{([^}]*)\}/.exec(block)?.[1] ?? '';
+
+    expect(hover).toMatch(/border-color: var\(--color-tab\)/);
+    expect(hover).not.toMatch(/background-color/);
+  });
+
+  it('falls off the wheel entirely when disabled, so unavailable never reads as coloured', () => {
+    const disabled = /&:disabled \{([^}]*)\}/.exec(block)?.[1] ?? '';
+
+    expect(disabled).toMatch(/background-color: var\(--color-foundry-700\)/);
+    expect(disabled).toMatch(/color: var\(--color-ink-faint\)/);
+    // The bloom is the one hover declaration with nothing to override it here — `box-shadow: none`
+    // is what stops a disabled control keeping the lit edge of the state before it.
+    expect(disabled).toMatch(/box-shadow: none/);
+  });
+
+  it('leaves no button inside a view still painting itself the chrome primary', () => {
+    // The defect this replaced: one indigo button treatment worn by every primary in the app, so
+    // the page's colour identity stopped at the panel edge — and on a preset card, whose whole
+    // point is that it owns a stop on the wheel, the single control ignored it.
+    //
+    // "Inside a view" is not the same as "in a view directory", and scoping this to the three view
+    // directories alone would have left the hole that `SegmentedChoice` and `FilePickerField` sit
+    // in: both live in `common/` and both render only ever inside a tab, so reverting either would
+    // have gone unnoticed by the guard named for catching exactly that.
+    //
+    // `common/` cannot simply be added, because it also holds `Toast` and `Modal`, which belong to
+    // no view and keep the primary on purpose. So a shared component is judged by *who imports it*
+    // — it counts as being inside a view when every file that imports it is. That is derived rather
+    // than listed, so a shared component later pulled into the chrome stops being checked here
+    // without anyone remembering to remove it.
+    const sources = scannableSources();
+    const inView = (file: string) =>
+      ['tabs', 'studio', 'quantise'].some((view) => file.includes(`components${sep}${view}${sep}`));
+
+    const sharedInView = sources
+      .filter((file) => file.includes(`components${sep}common${sep}`) && !file.endsWith('.test.tsx'))
+      .filter((file) => {
+        const importPath = new RegExp(`from '[^']*${basename(file, '.tsx')}\\.tsx'`);
+        const importers = sources.filter(
+          (other) => other !== file && importPath.test(readFileSync(other, 'utf8')),
+        );
+        // The `length` guard matters: without it a component nobody imports would pass `every`
+        // vacuously and be swept in on the strength of having no callers at all.
+        return importers.length > 0 && importers.every(inView);
+      });
+
+    const scoped = [...sources.filter(inView), ...sharedInView];
+
+    // A filter that matched nothing — a directory renamed, a `sep` that is not the platform's —
+    // would make the sweep below trivially empty and this guard pass having read no component at
+    // all, which is the same failure shape the type-scale sweep above guards its own count against.
+    // The second floor is what keeps the *derived* half honest, since it is the half that can go
+    // quietly empty while the first stays green.
+    expect(scoped.length).toBeGreaterThan(20);
+    expect(sharedInView.length).toBeGreaterThanOrEqual(2);
+
+    const offenders = scoped.filter((file) => /(bg|from|to)-accent-strong/.test(readFileSync(file, 'utf8')));
+
+    expect(offenders).toStrictEqual([]);
+  });
+});
 
 describe('scrollbar contrast', () => {
   /**

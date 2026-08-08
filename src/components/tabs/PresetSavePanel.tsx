@@ -67,7 +67,7 @@ export function PresetSavePanel() {
               setIsSaving(false);
             }
           }}
-          className="rounded-lg bg-accent-strong px-3.5 py-1.5 text-xs font-semibold text-ink shadow-md transition-all duration-200 hover:bg-accent hover:shadow-lg active:scale-[0.97] disabled:cursor-not-allowed disabled:bg-foundry-700 disabled:text-ink-faint disabled:shadow-none"
+          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed"
         >
           {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
         </button>
