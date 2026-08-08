@@ -20,6 +20,7 @@ click away and are **equally binding** — "I only read AGENTS.md" is not a defe
 | No secrets in the repository | 🔒 below |
 | Public-repository hygiene | 🌐 below |
 | Attribution on GitHub issues and PRs you write | ✍️ below |
+| Do the whole fix, never the cheap one | 🎯 below |
 | Reconcile an issue's labels whenever you touch it | [CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory) |
 | Design tokens, not hard-coded colour/motion values | [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists) |
 | No backwards compatibility, shims or data migrations before `1.0.0` | 🚧 below |
@@ -157,6 +158,26 @@ or close an issue or PR, reconcile its **whole** label set from the repository's
 and never inventing a label. `status:` is the one that goes stale: exactly one, or none once the
 issue closes. Full detail in
 [CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory).
+
+## 🎯 Do the whole fix, never the cheap one (mandatory)
+
+Every fix arrives with a cheap version attached — the narrow patch on the one branch that reported
+the bug, the guard that suppresses the symptom, the special case that satisfies the failing test.
+It is always quicker to write, smaller to review and easier to justify, and it is why the same
+defect gets found again a month later wearing a different symptom.
+
+**The rule:** when you decide *how* to fix something — a review finding, a bug you tripped over, a
+gap you noticed while working elsewhere — take the correct, complete, root-cause fix. Never choose
+an approach because it is quick, easy, or touches fewer files. Fix the cause at the level it lives,
+fix every instance rather than the reported one, update every call site, test and doc the change
+implies, and delete what it supersedes.
+
+This is **not** a licence for scope creep (complete is measured against the defect, not everything
+nearby), **not** a licence for speculative generality (YAGNI still holds — powerful means the cause
+is gone, not that the machinery is bigger), and **not** "fix it badly rather than raise it" (if the
+correct fix is genuinely too large or needs a decision that isn't yours, say so and leave the
+defect documented). What is banned is shipping the narrow version and calling it fixed. Full detail
+in [CLAUDE.md](CLAUDE.md#do-the-whole-fix-never-the-cheap-one-mandatory).
 
 ## ⚠️ Use design tokens, not hard-coded values
 

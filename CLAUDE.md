@@ -1,25 +1,15 @@
 # Sprite Gubbins — working conventions
 
-> 🔒 **NEVER COMMIT SECRETS.** This repository is **public**. No API keys, tokens,
-> passwords, private keys, connection strings, or personal data may ever enter the working
-> tree, a commit, or git history. Read the section below before adding any credential-shaped
-> value or committing changes.
-
-> ⚠️ **USE DESIGN TOKENS, NOT HARD-CODED VALUES.** This is the one rule that is easy to
-> break and hard to spot in review. Read the section below before adding any colour,
-> spacing, radius, easing, or other visual value.
-
-> 🌿 **WORK IN A GIT WORKTREE.** Several agents typically work in this repository at the same
-> time, and a shared checkout gives them one working tree to fight over. Create a worktree on
-> its own branch before you touch a file. Read the section below.
-
-> 🏁 **A GREEN GATE IS NOT A FINISHED TASK.** Work left sitting in a worktree has shipped
-> nothing. Commit everything the change touched, merge the branch into `main`, and remove the
-> worktree — in the session that did the work, before reporting it done. Read the section below.
-
-> 🚧 **NO BACKWARDS COMPATIBILITY BEFORE `1.0.0`.** This project is pre-1.0, so every release
-> may break anything and users are told to expect exactly that. Never add a compatibility shim,
-> alias, dual code path or data migration to keep an older shape working. Read the section below.
+> **Six rules break the build, the repository or someone else's work when they are missed, and
+> every one of them is easy to miss. Read the section behind each before you edit.**
+>
+> - 🔒 **NEVER COMMIT SECRETS.** This repository is **public**, and a committed secret is
+>   permanent.
+> - ⚠️ **USE DESIGN TOKENS.** No raw colour or easing value, and no ad-hoc Tailwind palette class.
+> - 🌿 **WORK IN A GIT WORKTREE.** Agents work here concurrently; a shared checkout loses edits.
+> - 🏁 **LAND THE WORK.** A green gate is not done — commit, merge to `main`, remove the tree.
+> - 🎯 **DO THE WHOLE FIX.** Never the quick, narrow or low-surface one.
+> - 🚧 **NO BACKWARDS COMPATIBILITY BEFORE `1.0.0`.** Replace what you supersede; build no shims.
 
 Sprite Gubbins is a browser PWA that composes precise, model-targeted prompts for generating
 game sprite sheets and texture atlases. It is offline-capable, has no server, and persists its
@@ -50,9 +40,6 @@ git worktree remove .claude/worktrees/<topic>          # once the work has lande
 git branch -d worktree-<topic>
 ```
 
-Those last three lines are not optional tidying — they are where the work actually ships, and
-they have their own section: [work is not done until it has landed](#work-is-not-done-until-it-has-landed-mandatory).
-
 **The worktrees live inside the repository on purpose**, and that only works because every tool
 walking the project root is kept out of them. Three different mechanisms do that, and they are
 not interchangeable:
@@ -81,9 +68,8 @@ root is ever added, give it the same exclusion in the same change.**
 - **Never run `git clean -ffdx`.** A single `-f` is safe even with `-x`: git refuses to descend
   into a nested repository and reports `Would skip repository .claude/worktrees/…`. The second
   `-f` removes exactly that protection, and takes every other agent's uncommitted work with it.
-- **Remove the worktree once the work lands.** A stale tree keeps its branch checked out — which
-  blocks anyone else from checking that branch out — and leaves `git worktree list` describing
-  work that finished days ago. The section below says when and how.
+- **The last three lines above are where the work ships**, not tidying — the section below says
+  when and how.
 - **Nothing else in this file relaxes inside a worktree.** The secrets audit, the design tokens,
   the verification gate and the review pass all apply to the commit you make there, because that
   is the commit that reaches the public history.
@@ -346,18 +332,17 @@ computed-value time, so a `--color-tab` declared on `:root` in terms of another 
 nothing. That is also the mechanism a preset card uses to claim its own stop: it sets `--color-tab`
 inline, and every `*-tab` utility inside it follows without one of them being told.
 
-**Rules of thumb**
+**Two rules of thumb**
 
 - If a token *doesn't* exist for a genuinely new semantic role, **add the token** to the
   `@theme` block in [src/index.css](src/index.css) rather than hard-coding the value at the
-  call site. One definition, restyleable in one place.
+  call site. One definition, restyleable in one place. A literal written at the call site also
+  bypasses the reduced-motion catch-all at the bottom of that file.
 - **The colour-swatch surface is the deliberate exception.** `ColorSwatch` renders whatever
   hex `parseColorFromText` resolved — a *user's* colour, not the app's — so it takes its value
   as a prop via inline `style`. `COLOR_HEX_MAP` in `src/constants/colors.ts` is likewise the
   one place raw hex literals belong: it is domain data (the vocabulary the prompt compiler
   understands), not app styling. Nothing else gets to claim that exemption.
-- A raw colour/easing literal anywhere else is a smell — it bypasses the palette and the
-  reduced-motion catch-all at the bottom of `index.css`.
 
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,
@@ -443,12 +428,66 @@ initial build. They are not stylistic preferences.
 - **YAGNI.** Build what the spec describes and nothing else. No speculative abstraction
   layers, wrapper hooks around a single `useState`, factory functions for simple transforms,
   or configuration knobs nobody asked for.
-- **DRY.** Reuse the primitives in `src/components/common/` (`ComboBox`, `Tooltip`,
-  `ColorSwatch`, `Badge`, `Toast`) rather than re-styling a bare `<input>` or `<button>`. A
-  second, subtly-different implementation of a solved problem is the failure mode to watch for.
+- **DRY.** Reuse the primitives in `src/components/common/` rather than re-styling a bare element:
+  `TextField` / `NumberField` / `SelectField` / `CheckboxField` / `FilePickerField` for form
+  controls, `ComboBox` for a typed-or-chosen value, and `Tooltip`, `ColorSwatch`, `Badge`, `Toast`,
+  `Modal`, `ExternalLink` for the rest. A second, subtly-different implementation of a solved
+  problem is the failure mode to watch for.
 - **Completeness.** Never write `// TODO: add remaining fields`, `/* rest of options here */`,
   or a stubbed function body. Every category, field, option, tooltip and compiler rule ships
   whole or not at all.
+
+## Do the whole fix, never the cheap one (mandatory)
+
+Every fix arrives with a cheap version attached. The review finds a bug in one branch and the
+narrow patch fixes that branch; the bug is in the shared helper three of them call. A guard
+suppresses the symptom where it was reported and leaves the other four call sites reaching the
+same broken state. A special case handles the input in the failing test and the general case still
+returns nonsense. The cheap version is always the one that is quicker to write, smaller to review
+and easier to justify — and it is the reason the same defect gets found again a month later,
+wearing a different symptom.
+
+**The rule:** when you decide *how* to fix something — a review finding, a bug you tripped over, a
+gap you noticed while working elsewhere — take the correct, complete, root-cause fix. Never choose
+an approach because it is quick, easy, or touches fewer files. Surface area is not a cost worth
+optimising against; a wrong or partial fix is.
+
+**What "the whole fix" means in practice:**
+
+- **Fix the cause, at the level it lives.** If the defect is in a shared utility, fix the utility
+  and let every call site benefit — don't patch the one caller that reported it. If the type
+  allowed the invalid state, narrow the type; if the invariant was never expressed, express it.
+- **Fix every instance, not the reported one.** Grep for the pattern before you finish. A bug found
+  in one component is a bug in the three that were written by copying it, and landing one of four
+  is how a defect survives being fixed.
+- **Update everything the change implies, in the same commit.** Call sites, types, tests, tooltips,
+  constants, the token table, the docs paragraph that now describes the old behaviour. A change
+  that leaves its own documentation lying is not finished.
+- **Cover the new behaviour with a test that would have caught the original.** A fix with no test
+  is a fix waiting to be re-broken.
+- **Delete what the fix supersedes.** The pre-1.0 policy below is the same instinct: the old path
+  goes, it does not linger behind a branch.
+
+**Three things this rule is not:**
+
+- **It is not a licence for scope creep.** "Complete" is measured against the defect, not against
+  everything you noticed nearby. An unrelated improvement found on the way is raised, or done as
+  its own change with its own commit — not smuggled in because the file was already open. Deciding
+  *whether* to fix something is a scope judgement and stays one; this rule governs *how*, once the
+  answer is yes.
+- **It is not a licence for speculative generality.** The complete fix is the one that makes the
+  code correct, not the one with the most abstraction. YAGNI above still holds: a factory, a
+  config knob or a plugin seam added "while we're here" is a different failure with the same
+  excuse. Powerful means the cause is gone, not that the machinery is bigger.
+- **It is not "fix it badly rather than raise it".** If the correct fix is genuinely too large for
+  this change, or needs a decision that isn't yours, say so plainly and leave the defect
+  documented — an open issue naming the root cause beats a patch that hides it. What is banned is
+  the third option: shipping the narrow version and describing it as fixed.
+
+**When you catch yourself reaching for the cheap fix**, the tell is the justification. "Minimal
+change", "safer to keep the blast radius small", "the rest is out of scope for this bug", "we can
+generalise it later" — each is a reason to do less work, dressed as engineering judgement. In this
+repository they are not accepted. Do it properly, and say what it cost.
 
 ## No backwards compatibility before 1.0.0 (mandatory)
 
@@ -597,8 +636,8 @@ npm run build          # tsc -b && vite build — must emit dist/ + a valid serv
 npm run format         # prettier --write . before committing
 ```
 
-The spec's Phase 5 gate is `lint` and `build` clean. Run all four — types, lint, tests, build —
-before considering a change done.
+All five run clean before a change is done — the first four prove it, `format` is what stops the
+next diff being full of reflowed lines nobody wrote.
 
 **Where the change has a runtime surface, drive it** rather than trusting types alone; the
 `verify` skill covers running the app and the cross-origin-isolation gotcha that decides
@@ -638,7 +677,7 @@ heading, and finished work is archived:
   banner and the placement, so drift fails the build rather than review. It can't judge whether
   "COMPLETE" is *true* — that's yours.
 
-### Multi-line text goes through a file, not inline quoting
+## Multi-line text goes through a file, not inline quoting
 
 Multi-line commit messages, PR bodies, and issue/PR comments must be passed via a **file**, not
 inline shell quoting: write the text to a file, then `git commit -F <file>` and
