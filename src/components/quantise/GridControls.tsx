@@ -1,7 +1,8 @@
 import { useId } from 'react';
 import { MANUAL_GRID_RANGE, PALETTE_COLOR_COUNTS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
-import type { PixelGrid, TargetSize } from '../../types/quantiser.ts';
+import type { TargetSize } from '../../types/output.ts';
+import type { PixelGrid } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 

@@ -11,35 +11,42 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { textureCostsFor } from '../../utils/atlasBudget.ts';
+import { smallestCanvasFor, spriteFitFor } from '../../utils/atlasFit.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
+import { parseTargetSize } from '../../utils/targetSize.ts';
 import {
   buildEngineMetadata,
   calculateAtlasMetrics,
   formatEngineMetadata,
   widthBiasFor,
 } from '../../utils/atlasCalculator.ts';
-import { Badge } from '../common/Badge.tsx';
 import { Modal } from '../common/Modal.tsx';
 import { SelectField } from '../common/SelectField.tsx';
+import { AtlasFitSummary } from './AtlasFitSummary.tsx';
 import { AtlasGridPreview } from './AtlasGridPreview.tsx';
-import { AtlasMetric } from './AtlasMetric.tsx';
+import { AtlasMemoryBudget } from './AtlasMemoryBudget.tsx';
+import { AtlasMetricGrid } from './AtlasMetricGrid.tsx';
 
 /**
  * Planning the texture the finished components will be packed into.
  *
- * Answers an engine question rather than a prompt question: given the component count the sheet asks
- * for, how big can each cell be on a texture of this size, and does that texture stay GPU-friendly?
- * All of the arithmetic is in `utils/atlasCalculator.ts` — this component chooses the inputs and
- * displays the answers.
+ * Answers an engine question rather than a prompt question, and answers three of them: given the
+ * component count the sheet asks for, how big can each cell be on a texture of this size, does the
+ * component size the prompt requests actually fit that cell, and what does the texture cost in
+ * graphics memory. All of the arithmetic is in `utils/atlas*.ts` — this component chooses the
+ * inputs and displays the answers.
  *
- * The component count and the grid's width bias come from the studio's own configuration, so the
- * atlas being planned is always the atlas the prompt would produce — which is why the subject's
- * additional anatomy is read here too. Those pieces are components like any other, and a grid short
- * of a cell for each of them would not hold the sheet the prompt asks for.
+ * Every input but two comes from the studio's own configuration, so the atlas being planned is
+ * always the atlas the prompt would produce: the component count and the grid's width bias, and now
+ * the target component size the fit is checked against. The subject's additional anatomy is read
+ * here for the same reason — those pieces are components like any other, and a grid short of a cell
+ * for each of them would not hold the sheet the prompt asks for.
  */
 export function AtlasCalculatorModal() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
+  const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
@@ -58,7 +65,11 @@ export function AtlasCalculatorModal() {
   // Derived during render rather than memoised. Every input is a primitive that changed this render
   // anyway, so a memo keyed on the two objects above would rebuild on every pass and only add a
   // cache that never hits.
-  const engineSpec = formatEngineMetadata(buildEngineMetadata(config, metrics));
+  const target = parseTargetSize(spriteTargetSize);
+  const fit = target === null ? null : spriteFitFor(metrics.usableBounds, target);
+  const smallestCanvas = target === null ? null : smallestCanvasFor(config, target);
+  const costs = textureCostsFor(canvasSize);
+  const engineSpec = formatEngineMetadata(buildEngineMetadata(config, metrics, fit));
 
   return (
     <Modal
@@ -94,27 +105,18 @@ export function AtlasCalculatorModal() {
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-foundry-700 bg-foundry-950 p-2.5 font-mono text-xs">
-          <span className="text-ink-faint">GPU VRAM optimisation status</span>
-          {metrics.isPowerOfTwo ? (
-            <Badge tone="valid">✓ Power of 2 compliant ({canvasSize}px)</Badge>
-          ) : (
-            <Badge tone="attention">⚠ Non-PO2 canvas resolution</Badge>
-          )}
-        </div>
-
-        <dl className="grid grid-cols-2 gap-2.5 font-mono md:grid-cols-4">
-          <AtlasMetric label="Components" value={`${config.componentCount} parts`} />
-          <AtlasMetric label="Grid layout" value={`${metrics.columns}×${metrics.rows}`} />
-          <AtlasMetric label="Cell size" value={`${metrics.cellSize}×${metrics.cellSize} px`} />
-          <AtlasMetric label="Usable bounds" value={`${metrics.usableBounds} px max`} />
-        </dl>
-
-        <AtlasGridPreview
-          columns={metrics.columns}
-          rows={metrics.rows}
-          componentCount={config.componentCount}
+        <AtlasFitSummary
+          usableBounds={metrics.usableBounds}
+          fit={fit}
+          canvasSize={canvasSize}
+          smallestCanvas={smallestCanvas}
         />
+
+        <AtlasMetricGrid metrics={metrics} componentCount={config.componentCount} />
+
+        <AtlasMemoryBudget costs={costs} />
+
+        <AtlasGridPreview metrics={metrics} canvasSize={canvasSize} componentCount={config.componentCount} />
       </div>
 
       <div className="flex flex-wrap gap-2 border-t border-foundry-700 px-6 py-4">

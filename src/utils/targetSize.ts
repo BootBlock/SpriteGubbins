@@ -1,5 +1,6 @@
 import { MANUAL_GRID_RANGE } from '../constants/quantiser.ts';
-import type { PixelGrid, TargetSize } from '../types/quantiser.ts';
+import type { TargetSize } from '../types/output.ts';
+import type { PixelGrid } from '../types/quantiser.ts';
 
 /**
  * Reading the studio's `spriteTargetSize` as a pixel scale the returned sheet might have been drawn
