@@ -1,4 +1,4 @@
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -53,7 +53,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Roof Turret ×1, Ammo Box ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
       // Three runs sharing one identity, started from the middle of the set rather than its first
@@ -73,8 +73,9 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       spriteTargetSize: '64 × 80 px assembled',
       aspectRatio: 'SQUARE_1_1',
       // Thirteen unlabelled cells, four of which are leg segments that differ only in which end
-      // carries the pivot. A manifest is what makes them addressable without guessing.
-      emitManifest: true,
+      // carries the pivot — which is the sheet a companion manifest earns its keep on. Asking for
+      // one is the user's switch rather than the preset's, so this names a target that *can* return
+      // text and leaves the choice where it belongs.
       targetModel: 'GEMINI_FLASH_IMAGE',
     },
   },
@@ -104,7 +105,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Deployable Landing Gear ×3',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Retro Space Age is a poster style before it is a spaceship: flat areas, one hard contour and
       // no colour budget to speak of. Surface detail comes down for the same reason a low-poly sheet
       // brings it down — drawn seams compete with the shapes that are doing the work.
@@ -157,7 +158,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Boarding Ramp ×2, Anchor ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Ink and wash: a hard contour carrying the rigging and the carved work, with the tone laid in
       // behind it. Texture is the whole point of the style, so surface detail goes up rather than
       // down, and the colour budget comes off because a wash has no countable colours.
@@ -198,7 +199,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Towed Trailer Section ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // The 16-bit contract, stated in full: a coarser pixel grid, a hard 32-colour ceiling and no
       // interior detail beyond what survives it. Each of the three is what makes the other two
       // achievable — a 64-colour sheet at high resolution simply is not the same picture.
