@@ -1,6 +1,6 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
-import { resolveMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { effectiveDirectionSet, primaryFacing } from './sheetDirections.ts';
@@ -143,11 +143,15 @@ export function renderStyleDigest(output: OutputConfig): string {
 /**
  * Where the camera stands, and which facings the sheet covers.
  *
- * Takes the category for the same reason `sheetDigest` does: both of the values below are resolved
- * through it. The mode decides whether the chosen set reaches the sheet at all, and the category
- * decides whether its subject can be turned to that set — an INTERFACE draws `SINGLE_FRONT` whatever
- * a stored `THREE_CLASSIC` says, and a digest reading the raw field would disagree with both the
- * select above it and the prompt below it.
+ * Takes the category for the same reason `sheetDigest` above does, and it is the same sentence: the
+ * mode is resolved through the category, exactly as the controls are. Both entries below are answers
+ * about the sheet's mode rather than the stored one, and a digest reading the raw value would report
+ * a set the prompt never mentions on any configuration whose pairing the category cannot produce.
+ *
+ * The *set* is resolved through it as well, which is the other half of the same sentence: an
+ * INTERFACE draws `SINGLE_FRONT` whatever a stored `THREE_CLASSIC` says, so a header reading the raw
+ * field would disagree with the select above it and the prompt below it — and would name a facing,
+ * because three classic yaws look like a run list until the category is consulted.
  */
 export function projectionDigest(category: SubjectCategory, output: OutputConfig): string {
   return join([
@@ -165,10 +169,18 @@ export function projectionDigest(category: SubjectCategory, output: OutputConfig
   ]);
 }
 
-/** What the components are for, and the geometry that makes them riggable. */
-export function riggingDigest(output: OutputConfig): string {
-  if (output.rigMode !== 'CUTOUT_RIG') return output.rigMode;
-  return join([output.rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
+/**
+ * What the components are for, and the geometry that makes them riggable.
+ *
+ * The rig is resolved through the category exactly as `sheetDigest` resolves the sheet mode, and for
+ * the reason `projectionDigest` states above: a digest reading the stored field would be the one
+ * place still reporting a value the compiler had discarded. A category that articulates about
+ * nothing says `NONE` here whatever the configuration was left holding.
+ */
+export function riggingDigest(category: SubjectCategory, output: OutputConfig): string {
+  const rigMode = resolveRigMode(category, output.rigMode);
+  if (rigMode !== 'CUTOUT_RIG') return rigMode;
+  return join([rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
 }
 
 /**

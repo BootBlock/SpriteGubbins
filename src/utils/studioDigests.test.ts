@@ -211,15 +211,45 @@ describe('projectionDigest', () => {
       'THREE_QUARTER_TOPDOWN · 35° · THREE_CLASSIC · front-three-quarter',
     );
   });
+
+  it('reads the same mode the controls under it do, resolved through the category', () => {
+    // Both entries are answers about the sheet's mode, and the digest asked them of the stored one —
+    // as the two controls it summarises did, which is why they went wrong together. The two
+    // configurations below are the two directions of that: each names a pairing its category has no
+    // plan for, so the sheet the compiler produces is the category's default and the digest above it
+    // described a different sheet entirely.
+
+    // An EFFECT's frame sequence defers to the chosen set, so the facing is live and the set is the
+    // one asked for. Read raw, this line said `FIVE_CLASSIC` and named no facing — a set the
+    // compiled prompt never mentions, beside a facing it drives the depth order from.
+    const hidden = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'EIGHT_COMPASS',
+      primaryDirection: 'north-west',
+    });
+    expect(projectionDigest('EFFECT', hidden)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west',
+    );
+
+    // And the other way about: an ITEM has no cut-out rig, so the sheet draws its own five facings
+    // and neither the set asked for nor the facing pinned reaches it.
+    const shown = withOutput({
+      directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      directions: 'EIGHT_COMPASS',
+      primaryDirection: 'north-west',
+    });
+    expect(projectionDigest('ITEM', shown)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+  });
 });
 
 describe('riggingDigest', () => {
   it('says only the mode when the rig has no geometry to describe', () => {
-    expect(riggingDigest(withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('POSE_LIBRARY');
+    expect(riggingDigest('CHARACTER', withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('POSE_LIBRARY');
   });
 
   it('adds the joint, overlap and socket settings for a cut-out rig', () => {
     const digest = riggingDigest(
+      'CHARACTER',
       withOutput({
         rigMode: 'CUTOUT_RIG',
         jointCapStyle: 'ROUNDED',
@@ -231,7 +261,18 @@ describe('riggingDigest', () => {
   });
 
   it('omits empty sockets rather than trailing a separator', () => {
-    expect(riggingDigest(withOutput({ rigMode: 'CUTOUT_RIG', sockets: '' }))).not.toMatch(/·\s*$/);
+    expect(riggingDigest('CHARACTER', withOutput({ rigMode: 'CUTOUT_RIG', sockets: '' }))).not.toMatch(
+      /·\s*$/,
+    );
+  });
+
+  it('names the rig the sheet actually gets, not the one the configuration was left holding', () => {
+    // The same rule `projectionDigest` is written to: a digest echoing back a value the compiler
+    // discarded is the one place in the app still reporting it. A stored `CUTOUT_RIG` on a category
+    // that turns about nothing emits no section 5, so the header may not claim one — and it may not
+    // list the joint geometry either, since the controls for it are not on screen.
+    expect(riggingDigest('INTERFACE', withOutput({ rigMode: 'CUTOUT_RIG', sockets: 'head' }))).toBe('NONE');
+    expect(riggingDigest('BUILDING', withOutput({ rigMode: 'POSE_LIBRARY' }))).toBe('NONE');
   });
 });
 

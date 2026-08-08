@@ -155,4 +155,109 @@ describe('useSubjectStore', () => {
       expect(useOutputStore.getState().output.directionalMode).toBe(DEFAULT_MODE_FOR.ITEM);
     });
   });
+
+  /**
+   * The same leak, one control down — and the one that shipped in the state the app *opens* in.
+   *
+   * `rigMode` was not reconciled at all, so a cut-out rig configured on a character survived a switch
+   * to BUILDING and put section 5's bone axes and joint caps on a sheet of floor tiles. It matters
+   * for the same reason the sheet mode does and no more: the compiler resolves the pairing on every
+   * compile, so the prompt was never the risk — a preset saved in that state was.
+   */
+  describe('the rig when the category changes', () => {
+    it('drops a rig the new category has no joints for', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'CUTOUT_RIG' } });
+      useSubjectStore.getState().setCategory('BUILDING');
+
+      expect(useOutputStore.getState().output.rigMode).toBe('NONE');
+    });
+
+    it('keeps a rig the new category shares, rather than resetting for its own sake', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'CUTOUT_RIG' } });
+      useSubjectStore.getState().setCategory('CREATURE');
+
+      expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
+    });
+
+    it('does not put a rig back when the category could take one', () => {
+      // `NONE` is a choice, not an absence: switching from a tileset to a character must not hand
+      // the user articulation rules they never asked for. The fallback only ever removes.
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'NONE' } });
+      useSubjectStore.getState().setCategory('CHARACTER');
+
+      expect(useOutputStore.getState().output.rigMode).toBe('NONE');
+    });
+
+    it('reconciles the sheet mode and the rig in one write', () => {
+      // Two `setOutputConfig` calls would put a resolved mode beside an unresolved rig into the
+      // compiler between renders, which is the reason the sheet index travels here too.
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+          rigMode: 'CUTOUT_RIG',
+          sheetIndex: 1,
+        },
+      });
+      useSubjectStore.getState().setCategory('INTERFACE');
+
+      const { output } = useOutputStore.getState();
+      expect(output.directionalMode).toBe(DEFAULT_MODE_FOR.INTERFACE);
+      expect(output.rigMode).toBe('NONE');
+      expect(output.sheetIndex).toBe(0);
+    });
+  });
+
+  /**
+   * The third leak, and the one that was visible from a default session in one click.
+   *
+   * `directions` was not reconciled at all, so `THREE_CLASSIC` — the set the app opens on — survived
+   * a switch to INTERFACE or TERRAIN. Neither subject has a front to turn away from, so the studio
+   * offered "Split into 3 sheets" and the first run asked for a button, and for a flat ground tile,
+   * at object yaw 45°. It matters here for the same reason the two above do: the compiler resolves
+   * the set on every compile, so what was at risk was a preset saved in that state.
+   */
+  describe('the direction set when the category changes', () => {
+    it('drops a set the new subject has no facing for', () => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, directions: 'THREE_CLASSIC' } });
+      useSubjectStore.getState().setCategory('INTERFACE');
+
+      expect(useOutputStore.getState().output.directions).toBe('SINGLE_FRONT');
+    });
+
+    it('keeps a set the new subject can be turned to, rather than resetting for its own sake', () => {
+      // Seven of the nine categories can be turned to all five, so this is most switches — and an
+      // EFFECT is the one worth naming: a directional slash genuinely is eight runs.
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, directions: 'EIGHT_COMPASS' } });
+      useSubjectStore.getState().setCategory('EFFECT');
+
+      expect(useOutputStore.getState().output.directions).toBe('EIGHT_COMPASS');
+    });
+
+    it('clears the pinned facing with the set, and only when the set actually moves', () => {
+      // A facing is only valid against its own set, so one held over from `THREE_CLASSIC` is a yaw
+      // `SINGLE_FRONT` never turns to — which a preset saved from here would carry.
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directions: 'THREE_CLASSIC',
+          primaryDirection: 'front-three-quarter',
+        },
+      });
+      useSubjectStore.getState().setCategory('TERRAIN');
+      expect(useOutputStore.getState().output.primaryDirection).toBeNull();
+
+      // And left alone where the set survives: the facing is still one of its own, so clearing it
+      // would silently move a split batch back to run one.
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directions: 'EIGHT_COMPASS',
+          primaryDirection: 'north-west',
+        },
+      });
+      useSubjectStore.getState().setCategory('CREATURE');
+      expect(useOutputStore.getState().output.primaryDirection).toBe('north-west');
+    });
+  });
 });

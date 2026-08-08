@@ -30,7 +30,7 @@ import { paletteFor } from '../constants/palettes/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { resolveMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { componentBreakdownFor, componentCountFor, sheetCarriesAnatomy } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
@@ -66,12 +66,23 @@ export function generatePrompt(
   subject: SubjectDefinition,
   output: OutputConfig,
 ): string {
-  // The sheet mode this category can actually produce. Resolved **once**, at the top, and used for
-  // every mode-dependent value below — the inventory, the count, the assembly sentence and the
-  // direction coverage. A stored configuration can name a mode its category has no plan for (a
-  // preset saved before the plans were split by category, or a hand-edited export), and resolving it
-  // per call site is how three of them would agree and the fourth would not.
+  // The sheet mode this category can actually produce, for the values below that are read from it
+  // directly — the plan, the inventory, the count and the anatomy's sheet. A stored configuration can
+  // name a mode its category has no plan for (a preset saved before the plans were split by category,
+  // or a hand-edited export), and a reader that skipped this would be describing a different sheet
+  // from the one beside it.
+  //
+  // Everything else here takes the **category** and resolves for itself, which is the stronger
+  // arrangement and the one this file is converging on: `sheetDirections` and `sheetBatch` below both
+  // do, so there is no way to reach them with an unresolved mode at all, where handing down a
+  // pre-resolved one only works for as long as every call site remembers to.
   const mode = resolveMode(category, output.directionalMode);
+
+  // And the rig this category can actually be asked for, resolved for the same reason: a stored
+  // configuration can name one its category has no joints for, and section 5 is what that decides.
+  // Unresolved, `POSE_LIBRARY` — the default — put "flexion comes from assembling separately
+  // oriented rigid segments around shared pivots" on a tileset, a nine-slice and a flipbook.
+  const rigMode = resolveRigMode(category, output.rigMode);
 
   // Which sheet of that pairing's series this is. Resolved here for the same reason the mode is: a
   // stored index can name a second sheet on a pairing that has one, and `sheetPlanFor` answers with
@@ -80,10 +91,11 @@ export function generatePrompt(
 
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would
-  // eventually disagree about the prompt one of them is describing. It takes the category rather
-  // than the mode resolved above, because the *direction set* is category-scoped as well: an
-  // INTERFACE or a TERRAIN has no facing to turn to, so a stored `THREE_CLASSIC` degrades there the
-  // same way an unsupported mode does.
+  // eventually disagree about the prompt one of them is describing. It takes the category rather than
+  // the `mode` above because it resolves the pairing itself, which is what stops the studio's own
+  // reading of that answer drifting from this one — and because the *direction set* is category-scoped
+  // as well: an INTERFACE or a TERRAIN has no facing to turn to, so a stored `THREE_CLASSIC` degrades
+  // there the way an unsupported mode does.
   const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(category, output, plan);
 
   // Which sheet of which batch this configuration is. Every prompt before this one described its
@@ -214,7 +226,7 @@ export function generatePrompt(
 
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
-    RIG_MODE: output.rigMode,
+    RIG_MODE: rigMode,
     // Read from the resolved profile rather than from the stored id, so a configuration naming a
     // machine this build no longer has emits no heading rather than an empty one — the same
     // reasoning that makes `resolveMode` the single answer about the sheet mode.

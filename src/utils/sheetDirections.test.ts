@@ -34,6 +34,16 @@ const RIG_PLAN = sheetPlanFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 0);
 const CORE = sheetPlanFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 0);
 const ARTICULATION = sheetPlanFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 1);
 
+/**
+ * The only sheet an EFFECT has, and the plan a stored `CORE_DIRECTIONAL_VARIANTS` resolves to there.
+ *
+ * The category that made the second half of the divergence reachable: the first to *lack* the one
+ * mode whose coverage is a fixed set, so the first on which a resolution can turn a fixed set into a
+ * run list rather than the other way about. TERRAIN is now a second, and the whole-category loops
+ * below cover it — this stays on EFFECT because it is the case the defect was found against.
+ */
+const EFFECT_SEQUENCE = sheetPlanFor('EFFECT', 'CORE_DIRECTIONAL_VARIANTS', 0);
+
 describe('sheetDirections', () => {
   it('takes the set’s first facing when none is pinned', () => {
     const { covered, assembly } = sheetDirections('CHARACTER', { ...RIG, primaryDirection: null }, RIG_PLAN);
@@ -90,6 +100,20 @@ describe('sheetDirections', () => {
     expect(assembly).toBe('front');
   });
 
+  it('covers the facings of the mode the category resolves to, not the one stored', () => {
+    // The stored pairing is one an EFFECT has no plan for, so the sheet is a frame sequence — a run
+    // list, covering the one facing this run is. Read raw, the same configuration claimed the five
+    // classic yaws: a set the compiled prompt never mentions, on a sheet whose whole component
+    // budget goes to time rather than to turning.
+    const { covered, assembly } = sheetDirections(
+      'EFFECT',
+      { ...RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS', primaryDirection: 'north-west' },
+      EFFECT_SEQUENCE,
+    );
+    expect(covered).toEqual(['north-west']);
+    expect(assembly).toBe('north-west');
+  });
+
   it('assembles every sheet of a series towards the same facing', () => {
     // What makes the sheets fit together: the limbs are drawn for the trunk view the core sheet
     // leads with, so a series whose members assembled towards different facings would return pieces
@@ -134,14 +158,14 @@ describe('sheetDirections', () => {
  */
 describe('the direction set the sheet is actually drawn to', () => {
   it('defers to the chosen set only for the modes that cover one facing at a time', () => {
+    // Each mode asked of a category that actually has it — `TILESET_MODULAR` on a CHARACTER is not a
+    // tileset, it is a humanoid's five views, which is the whole point of the resolution below.
     expect(
       directionSetApplies('CHARACTER', withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' })),
     ).toBe(true);
     expect(
       directionSetApplies('CHARACTER', withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' })),
     ).toBe(true);
-    // Asked of a category that has the mode. `TILESET_MODULAR` belongs to BUILDING, INTERFACE and
-    // TERRAIN, and asking a CHARACTER about it is the next assertion, not this one.
     expect(directionSetApplies('BUILDING', withOutput({ directionalMode: 'TILESET_MODULAR' }))).toBe(true);
     // The one that names its own five, and the default the app boots into.
     expect(
@@ -150,18 +174,24 @@ describe('the direction set the sheet is actually drawn to', () => {
     expect(directionSetApplies('CHARACTER', DEFAULT_OUTPUT_CONFIG)).toBe(false);
   });
 
-  it('answers for the sheet the category produces, not for the mode it was handed', () => {
-    // A CHARACTER cannot produce a tileset, so a stored `TILESET_MODULAR` compiles as
-    // `CORE_DIRECTIONAL_VARIANTS` — which names its own five facings. Reading `DIRECTION_COVERAGE`
-    // off the raw field said the set applied, so the studio showed a live "Directions Covered"
-    // select above a sheet that discards it, and the digest beside it named the discarded value.
-    const stored = withOutput({ directionalMode: 'TILESET_MODULAR', directions: 'EIGHT_COMPASS' });
-    expect(directionSetApplies('CHARACTER', stored)).toBe(false);
-    expect(effectiveDirectionSet('CHARACTER', stored)).toBe('FIVE_CLASSIC');
-    // And the same stored configuration under a category that does have the mode, where the set is
-    // read as the run list it is.
-    expect(directionSetApplies('BUILDING', stored)).toBe(true);
-    expect(effectiveDirectionSet('BUILDING', stored)).toBe('EIGHT_COMPASS');
+  it('answers for the mode the category resolves to, in both directions', () => {
+    // The studio/compiler divergence, as the one question both sides now ask. A configuration
+    // carrying a pairing its category has no plan for reaches the app through an imported preset or
+    // a hand-edited session, and `resolveMode` repairs it for the compiler; read raw here, the two
+    // controls this predicate gates disagreed with the prompt about the same configuration.
+
+    // Shown, and discarded: an ITEM has no cut-out rig, so the sheet is its five directional views
+    // and both direction controls were on screen with nothing to change.
+    expect(directionSetApplies('ITEM', withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }))).toBe(
+      false,
+    );
+
+    // Hidden, and honoured — the worse way round, and the one an EFFECT made reachable. The sheet is
+    // a frame sequence, so the prompt's directions, its rotation, its primary facing and its depth
+    // order all come from the two fields the studio had decided were inert.
+    expect(directionSetApplies('EFFECT', withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }))).toBe(
+      true,
+    );
   });
 
   it('reports the mode’s own set where the chosen one is discarded', () => {
@@ -171,6 +201,9 @@ describe('the direction set the sheet is actually drawn to', () => {
       directions: 'EIGHT_COMPASS',
     });
     expect(effectiveDirectionSet('CHARACTER', output)).toBe('FIVE_CLASSIC');
+    // And the same configuration on the category that cannot draw it: the frame sequence defers to
+    // the chosen set, so `FIVE_CLASSIC` here would be naming a set no sheet in the batch covers.
+    expect(effectiveDirectionSet('EFFECT', output)).toBe('EIGHT_COMPASS');
   });
 
   it('reports the chosen set where the mode does defer to it', () => {
@@ -179,6 +212,8 @@ describe('the direction set the sheet is actually drawn to', () => {
       directions: 'EIGHT_COMPASS',
     });
     expect(effectiveDirectionSet('CHARACTER', output)).toBe('EIGHT_COMPASS');
+    // An ITEM resolves that rig to its own five views, which name their own facings.
+    expect(effectiveDirectionSet('ITEM', output)).toBe('FIVE_CLASSIC');
   });
 
   it('never names a set the sheet does not draw, for any mode', () => {
@@ -186,7 +221,9 @@ describe('the direction set the sheet is actually drawn to', () => {
     // the facings actually covered are that set's; where it does not apply, they are not.
     // Every category, not just one: `sheetSeriesFor` resolves a pairing a category does not support
     // back to that category's default, so pinning one category would have checked `TILESET_MODULAR`
-    // against a humanoid's plan and never against the tileset it names.
+    // against a humanoid's plan and never against the tileset it names. The category now reaches the
+    // two predicates as well as the plans, so every pairing here is asked of one resolved sheet
+    // rather than of a plan and a coverage that could describe different ones.
     for (const category of SUBJECT_CATEGORIES) {
       for (const directionalMode of DIRECTIONAL_MODES) {
         const output = withOutput({ directionalMode, directions: 'EIGHT_COMPASS', primaryDirection: null });
@@ -204,8 +241,9 @@ describe('the direction set the sheet is actually drawn to', () => {
 
 describe('primaryFacing', () => {
   it('is the resolved run-list facing, whatever any sheet plan does with it', () => {
-    // Its own function because the studio's facing control and the collapsed projection digest both
-    // need this answer and neither has a category to resolve a sheet plan from.
+    // It reads no *mode*, which is why every one of its callers gates on `directionSetApplies`
+    // first — directly, or through the `splitsIntoFacingRuns` that delegates to it. The category it
+    // does take is for the *set*: which sets mean anything is a property of the subject.
     expect(primaryFacing('CHARACTER', { ...RIG, primaryDirection: 'north-west' })).toBe('north-west');
     expect(primaryFacing('CHARACTER', { ...RIG, primaryDirection: null })).toBe('south');
     expect(

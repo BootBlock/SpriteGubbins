@@ -20,11 +20,11 @@ export {
   PROJECTION_CHOICES,
   RENDER_STYLE_CHOICES,
   RESOLUTION_PROFILE_CHOICES,
-  RIG_MODE_CHOICES,
   SURFACE_DETAIL_CHOICES,
 } from './choices.ts';
 export { directionalModeChoices } from './directionalModeChoices.ts';
 export { directionSetChoices } from './directionSetChoices.ts';
+export { rigModeChoices } from './rigModeChoices.ts';
 export { sheetChoices } from './sheetChoices.ts';
 export { OUTPUT_TOOLTIPS } from './tooltips.ts';
 export { DEFAULT_IMAGE_CONFIG, DEFAULT_OUTPUT_CONFIG } from './defaults.ts';

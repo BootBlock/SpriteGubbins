@@ -52,7 +52,7 @@ export const OUTPUT_TOOLTIPS = {
     'An explicit pixel target for a single component, e.g. “48 × 96 px”. The resolution profile only says roughly how large a figure is; this says exactly, and is what the CUSTOM profile expects to find. Leave it empty and the line is omitted from the prompt entirely rather than sent blank.',
 
   rigMode:
-    'What the components are for once they leave the sheet. CUTOUT_RIG adds rest-orientation, pivot-registration, overlap and depth-order rules, because those pieces get bound to bones and rotated at runtime; POSE_LIBRARY assumes you assemble poses by hand and needs none of them; NONE suits tilesets and props that never articulate.',
+    'What the components are for once they leave the sheet. CUTOUT_RIG adds rest-orientation, pivot-registration, overlap and depth-order rules, because those pieces get bound to bones and rotated at runtime; POSE_LIBRARY assumes you assemble poses by hand and needs none of them; NONE suits tilesets and props that never articulate. Only the categories whose components have joints offer a choice here — a tile, a widget and a frame of an effect all turn about nothing.',
   jointCapStyle:
     'The shape drawn at each joint end — and therefore where the pivot is, since the pivot is the centre of that cap. ROUNDED rotates cleanly through any angle; SQUARED reads better on mechanical parts but shows its corners past roughly 30°; TAPERED suits organic limbs that narrow towards the joint.',
   overlapMargin:

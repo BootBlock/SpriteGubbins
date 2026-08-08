@@ -7,7 +7,7 @@ import type {
   SurfaceDetail,
 } from '../../types/output.ts';
 import type { BackgroundKey, Projection, RenderStyle } from '../../types/rendering.ts';
-import type { JointCapStyle, OverlapMargin, RigMode } from '../../types/rigging.ts';
+import type { JointCapStyle, OverlapMargin } from '../../types/rigging.ts';
 
 /**
  * The options each output control offers.
@@ -23,10 +23,10 @@ import type { JointCapStyle, OverlapMargin, RigMode } from '../../types/rigging.
  * state, and leave the rest to `tooltips.ts`, which has no width to run out of.
  * `tests/select-option-labels.test.ts` enforces the budget and derives the number.
  *
- * **Every list here is offered whole, to every category.** The three that are not — the sheet mode,
- * the sheet of the series and the direction set — are built per category in their own files, because
- * each is a question a category can answer differently: see `directionalModeChoices.ts`,
- * `sheetChoices.ts` and `directionSetChoices.ts`.
+ * **Every list here is offered whole, to every category.** The four that are not — the sheet mode,
+ * the sheet of the series, the direction set and the rig mode — are built per category in their own
+ * files, because each is a question a category can answer differently: see
+ * `directionalModeChoices.ts`, `sheetChoices.ts`, `directionSetChoices.ts` and `rigModeChoices.ts`.
  */
 export interface OutputChoice<T extends string | number> {
   readonly value: T;
@@ -63,12 +63,10 @@ export const BACKGROUND_KEY_CHOICES: readonly OutputChoice<BackgroundKey>[] = [
   { value: 'TRANSPARENT', label: 'TRANSPARENT (alpha, where the target supports it)' },
 ];
 
-export const RIG_MODE_CHOICES: readonly OutputChoice<RigMode>[] = [
-  { value: 'POSE_LIBRARY', label: 'POSE_LIBRARY (rigid segments assembled by hand)' },
-  { value: 'CUTOUT_RIG', label: 'CUTOUT_RIG (bones rotate the pieces at runtime)' },
-  { value: 'NONE', label: 'NONE (not articulated — tilesets, props)' },
-];
-
+// The rig modes are **not** here, and the absence is deliberate: which of them a category can be
+// asked for depends on whether that category articulates at all, so their labels live with the
+// function that scopes them, in `rigModeChoices.ts`. The two below are unconditional because a
+// cut-out rig is the only thing that renders either, whatever the subject is.
 export const JOINT_CAP_STYLE_CHOICES: readonly OutputChoice<JointCapStyle>[] = [
   { value: 'ROUNDED', label: 'ROUNDED' },
   { value: 'SQUARED', label: 'SQUARED' },

@@ -31,12 +31,20 @@ const ELEVATION = { min: 0, max: 90, step: 1 } as const;
  * off the same question, asked at the resolution each needs: does the mode defer to the set at all,
  * and if it does, does the set name more than one facing.
  *
- * **The *options* are the category's, which is a third question again.** Whether the sheet reads the
- * set is the mode's answer; which sets the subject can be turned to is `CATEGORY_DIRECTION_SETS`,
- * and for an interface widget or a ground tile the answer is `SINGLE_FRONT` alone. The control stays
- * on screen there with its one option rather than disappearing, exactly as "Sheet Contents" does for
- * an EFFECT: the value is used — it is the "Directions required" line of the prompt — and a control
- * that vanishes between categories hides a setting the folded digest still reports.
+ * **The category is read here because that question is about the sheet's mode, not the stored one.**
+ * `SheetFields` next door has always resolved the mode before showing it; these two conditions did
+ * not, so a configuration naming a pairing its category cannot produce — which is what an imported
+ * preset or a hand-edited session may hold — hid or showed the wrong control. Hiding is the worse
+ * way round: the compiler still reads both fields, so the sheet's own direction set and depth order
+ * came from controls the panel had decided were inert.
+ *
+ * **The set's *options* are the category's too, which is a third question again.** Whether the sheet
+ * reads the set is the mode's answer; which sets the subject can be turned to is
+ * `CATEGORY_DIRECTION_SETS`, and for an interface widget or a ground tile the answer is
+ * `SINGLE_FRONT` alone. The control stays on screen there with its one option rather than
+ * disappearing, exactly as "Sheet Contents" does for an EFFECT: the value is used — it is the
+ * "Directions required" line of the prompt — and a control that vanishes between categories hides a
+ * setting the folded digest still reports.
  */
 export function ProjectionFields() {
   const output = useOutputStore((state) => state.output);
@@ -44,10 +52,10 @@ export function ProjectionFields() {
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const category = useSubjectStore((state) => state.category);
 
-  // Resolved through the category rather than read raw, so a stored set this subject cannot be
-  // turned to shows the one the compiler is actually drawing instead of an empty control — the same
-  // reasoning as `SheetFields`' sheet index, and the same as the facing list below, which must offer
-  // the facings of the set that is really in force.
+  // Resolved through the category rather than read raw, for the same reason `SheetFields` resolves
+  // its sheet index: a stored set this subject cannot be turned to would otherwise put the select on
+  // a value its own options do not contain. The facing list below takes it too, because the facings
+  // offered have to be those of the set actually in force.
   const directions = resolveDirectionSet(category, output.directions);
   const setChoices = directionSetChoices(category);
 

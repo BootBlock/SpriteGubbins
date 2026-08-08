@@ -23,7 +23,7 @@ import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { supportsDirectionSet } from '../categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { DIRECTION_LISTS } from '../promptText/index.ts';
-import { supportsMode } from '../sheetPlans/index.ts';
+import { supportsMode, supportsRigMode } from '../sheetPlans/index.ts';
 import { PRESETS } from './index.ts';
 
 /**
@@ -122,6 +122,14 @@ describe('no shipped preset contradicts itself', () => {
     // Every INTERFACE and TERRAIN preset already wrote `SINGLE_FRONT` by hand, which is the
     // workaround this table replaced; this is what keeps the next one from having to know.
     expect(supportsDirectionSet(preset.category, preset.output.directions)).toBe(true);
+  });
+
+  it.each(PRESETS)('$name asks for a rig its own category has joints for', (preset) => {
+    // The same failure one control down, and it had shipped: `DEFAULT_IMAGE_CONFIG` sets
+    // `POSE_LIBRARY`, so a preset that spread it without overriding the rig handed section 5's
+    // shared pivots to a building. `resolveRigMode` substitutes silently, which is exactly why the
+    // library has to be checked rather than trusted to degrade.
+    expect(supportsRigMode(preset.category, preset.output.rigMode)).toBe(true);
   });
 
   it.each(PRESETS)('$name names a facing its own direction set contains', (preset) => {

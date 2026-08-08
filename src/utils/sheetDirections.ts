@@ -17,17 +17,6 @@ import type { SubjectCategory } from '../types/subject.ts';
  * Extracted from the compiler because the splitter needs the same answer: it labels each run with
  * the facing that run covers, and a second implementation of this would eventually disagree with
  * the prompt it is labelling. One resolution, two readers.
- *
- * **Every function in this file takes the category, and resolves both stored axes through it.**
- * Neither can be trusted as stored: a category supports some sheet modes and not others
- * (`resolveMode`), and its subject can be turned to some direction sets and not others
- * (`resolveDirectionSet`) — so a configuration arriving from a preset, a history row or a
- * hand-edited export can name either one its category cannot honour. Resolving *inside* these
- * functions, rather than asking callers to hand in an already-resolved configuration, is what makes
- * that safe: the compiler, the batch enumerator, the splitter's identity key, the studio's two
- * controls and the collapsed digest all ask these questions, and a call site that remembered one
- * resolution and forgot the other would answer differently from the prompt it is describing. There
- * is nowhere left to forget it.
  */
 export interface SheetDirections {
   /** Every facing this one sheet draws, in the order the prompt lists them. */
@@ -37,15 +26,24 @@ export interface SheetDirections {
 }
 
 /**
- * How many facings the sheet this category actually produces covers — the mode's own set, or
- * `'primary'` for the modes that defer to whichever set was chosen.
+ * How the sheet's mode covers its facings — the one question every function here is asking, and the
+ * one place the category is needed to answer it.
  *
- * Asked of the **resolved** mode, which is the whole reason it is a function rather than three
- * lookups: a CHARACTER holding a stored `TILESET_MODULAR` compiles as `CORE_DIRECTIONAL_VARIANTS`,
- * so reading `DIRECTION_COVERAGE` off the raw field says the chosen set applies while the sheet
- * discards it. Every question below turns on this answer, and they have to give the same one.
+ * **A stored `directionalMode` is not yet the sheet's mode.** `resolveMode` substitutes the
+ * category's default wherever the pairing has no plan, and the compiler, the inventory and the
+ * component count all read the resolved answer. Asking `DIRECTION_COVERAGE` for the raw value is a
+ * different question, and it diverges both ways: a `CUTOUT_RIG_SINGLE_DIRECTION` stored on an `ITEM`
+ * reports `'primary'` while the sheet draws its own five facings, and a `CORE_DIRECTIONAL_VARIANTS`
+ * stored on an `EFFECT` reports a fixed set while the sheet is a run list driven by the very controls
+ * that answer hides.
+ *
+ * That state is not reachable through the studio — `setCategory` writes the resolved mode back — but
+ * `parseImportedPreset` and `parseSession` both reach `parseImageConfig`, which validates
+ * `directionalMode` against the flat `DIRECTIONAL_MODES` union with no category in scope to check the
+ * pairing against. So an imported preset or a hand-edited session can carry one, and `resolveMode` is
+ * what repairs it — for the compiler, and now for the interface as well.
  */
-function coverageFor(category: SubjectCategory, output: OutputConfig): 'primary' | DirectionSet {
+function sheetCoverage(category: SubjectCategory, output: OutputConfig): 'primary' | DirectionSet {
   return DIRECTION_COVERAGE[resolveMode(category, output.directionalMode)];
 }
 
@@ -62,13 +60,19 @@ function coverageFor(category: SubjectCategory, output: OutputConfig): 'primary'
  * narrowed to a single facing by the time it gets here: an `'every'` sheet under `'primary'` would
  * be asking for the whole run list on one image, which is the 120-piece sheet the splitter exists to
  * prevent. `sheetPlans.test.ts` pins that no such pairing is declared.
+ *
+ * **The category is taken rather than a pre-resolved mode**, so the resolution above cannot be
+ * skipped. Its three callers in the app used to hand it a rewritten configuration — `{ ...output,
+ * directionalMode: mode }` — while every caller in the tests passed the configuration as it stood,
+ * which is why a green suite sat above the defect. The plan argument already came from a pairing the
+ * category *had* resolved, so the two could describe different sheets while looking like one.
  */
 export function sheetDirections(
   category: SubjectCategory,
   output: OutputConfig,
   plan: SheetPlan,
 ): SheetDirections {
-  const coverage = coverageFor(category, output);
+  const coverage = sheetCoverage(category, output);
 
   if (coverage !== 'primary') {
     const setFacings = DIRECTION_LISTS[coverage];
@@ -89,17 +93,27 @@ export function sheetDirections(
 /**
  * The facing a run list's `primaryDirection` names, resolved through the set it belongs to.
  *
- * Its own function because three callers need exactly this and only one of them is asking about a
- * *sheet*: the compiler resolves a whole sheet's coverage, while the studio's facing control shows
- * the value it is about to offer choices from and the collapsed projection digest reports it. Those
- * two are asking which run of the list is selected, which is a question about the configuration
- * rather than about any one sheet of it — routing them through {@link sheetDirections} would mean
- * naming a `SheetPlan` to answer something no plan decides.
+ * Its own function because three callers need exactly this and only one of them can name a sheet
+ * plan: the compiler resolves a whole sheet's coverage, the studio's facing control shows the
+ * value it is about to offer choices from, and the collapsed projection digest reports it. A
+ * digest that had to invent a `SheetPlan` to ask which facing was selected would be answering a
+ * question about the whole sheet in order to report one control.
  *
- * Resolved *through* the set rather than trusted, and the set resolved through the category first.
- * A facing the set does not contain — a stale `north` left behind by a switch to `THREE_CLASSIC` —
- * would otherwise reach the prompt's assembly direction and depth order while its "directions
- * required" line never mentioned it.
+ * **Two resolutions, in that order, and both are needed.** The set is resolved through the
+ * *category* first, because which sets mean anything is a property of the subject:
+ * `CATEGORY_DIRECTION_SETS` narrows a stored `THREE_CLASSIC` to `SINGLE_FRONT` on an interface
+ * widget or a ground tile, neither of which has a front to turn away from. The facing is then
+ * resolved through *that* set rather than the stored one — doing only the second accepts a
+ * `front-three-quarter` that is perfectly valid against `THREE_CLASSIC` and still a yaw the subject
+ * does not have.
+ *
+ * It reads no *mode*, so the category reaches it for the set alone; its callers ask
+ * {@link directionSetApplies} first, and that is where the mode decides whether this answer is worth
+ * anything at all.
+ *
+ * Resolved *through* the set rather than trusted. A facing the set does not contain — a stale
+ * `north` left behind by a switch to `THREE_CLASSIC` — would otherwise reach the prompt's assembly
+ * direction and depth order while its "directions required" line never mentioned it.
  */
 export function primaryFacing(category: SubjectCategory, output: OutputConfig): Direction {
   const facings = DIRECTION_LISTS[resolveDirectionSet(category, output.directions)];
@@ -110,26 +124,38 @@ export function primaryFacing(category: SubjectCategory, output: OutputConfig): 
 /**
  * Whether the chosen direction set reaches the sheet at all.
  *
- * `false` for the modes that name their own facings — `CORE_DIRECTIONAL_VARIANTS` draws the three
- * classic yaws whatever the control is set to, because its inventory names them entry by entry. The
+ * `false` for the modes that name their own facings — `CORE_DIRECTIONAL_VARIANTS` draws the five
+ * classic views whatever the control is set to, because its inventory names them entry by entry. The
  * studio has to know, because that mode is the default for more categories than any other *and* the
  * default in `DEFAULT_OUTPUT_CONFIG`: without this the app opens showing a live four-choice select
  * whose value the compiler discards, and a user who picks all eight compass points gets a
- * three-facing sheet with nothing anywhere saying why.
+ * five-facing sheet with nothing anywhere saying why.
+ *
+ * Asked of the **resolved** mode, which is what makes that argument hold in both directions — see
+ * {@link sheetCoverage}. A control hidden on a sheet whose prompt does read it is the worse half: the
+ * value still reaches `DIRECTIONS_DESCRIPTION` and the depth order, and nothing on screen says so.
  */
 export function directionSetApplies(category: SubjectCategory, output: OutputConfig): boolean {
-  return coverageFor(category, output) === 'primary';
+  return sheetCoverage(category, output) === 'primary';
 }
 
 /**
  * The direction set the sheet is actually drawn to.
  *
- * The chosen one only where the mode defers to it *and* the category's subject can be turned to it;
- * otherwise the mode's own. Distinct from {@link sheetDirections}, which resolves all the way down to
- * the individual facings — a digest wants the set's *name*, and reading `output.directions` for it is
- * what made the collapsed projection summary report `EIGHT_COMPASS` on a sheet covering three.
+ * The chosen one only where the mode defers to it; otherwise the mode's own. Distinct from
+ * {@link sheetDirections}, which resolves all the way down to the individual facings — a digest
+ * wants the set's *name*, and reading `output.directions` for it is what made the collapsed
+ * projection summary report `EIGHT_COMPASS` on a sheet covering three.
+ *
+ * Reading the *stored* mode was the same defect one level up, and it survived that fix: the digest
+ * reported `FIVE_CLASSIC` on an `EFFECT` carrying `CORE_DIRECTIONAL_VARIANTS` — a set the compiled
+ * prompt never mentions, which is exactly the failure the paragraph above says this function removed.
+ *
+ * Reading the *stored set* is the third form of it, and the category answers that one too: an
+ * INTERFACE draws `SINGLE_FRONT` whatever `THREE_CLASSIC` was carried in on, so the chosen set is
+ * honoured only where the subject can actually be turned to it.
  */
 export function effectiveDirectionSet(category: SubjectCategory, output: OutputConfig): DirectionSet {
-  const coverage = coverageFor(category, output);
+  const coverage = sheetCoverage(category, output);
   return coverage === 'primary' ? resolveDirectionSet(category, output.directions) : coverage;
 }

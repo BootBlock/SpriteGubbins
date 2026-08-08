@@ -45,8 +45,27 @@ describe('splitsIntoFacingRuns', () => {
     // The mode names its own five facings, so the chosen set buys no runs at all — whatever it says.
     // That mode still splits, by the *other* axis: two sheets of one series, counted below.
     expect(
-      splitsIntoFacingRuns('CHARACTER', { ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }),
+      splitsIntoFacingRuns('CHARACTER', {
+        ...EIGHT_WAY_RIG,
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      }),
     ).toBe(false);
+  });
+
+  it('asks the mode the category resolves to, which is what the studio shows the control for', () => {
+    // The predicate `ProjectionFields` gates the facing control on, so an answer taken from the
+    // stored mode is a control the panel shows or hides against a sheet nobody is compiling.
+    // An ITEM has no cut-out rig: eight compass points buy it nothing, because the sheet it resolves
+    // to draws its own five facings.
+    expect(splitsIntoFacingRuns('ITEM', EIGHT_WAY_RIG)).toBe(false);
+    // An EFFECT has no directional core: the sheet it resolves to is a frame sequence, which reads
+    // the chosen set as a run list — so the control belongs on screen and the batch below is eight.
+    expect(
+      splitsIntoFacingRuns('EFFECT', { ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }),
+    ).toBe(true);
+    expect(sheetRunCount('EFFECT', { ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' })).toBe(
+      DIRECTION_LISTS.EIGHT_COMPASS.length,
+    );
   });
 });
 

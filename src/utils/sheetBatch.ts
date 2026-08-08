@@ -1,6 +1,6 @@
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
-import { resolveMode, resolveSheetIndex, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { resolveSheetIndex, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { Direction } from '../types/rendering.ts';
@@ -87,13 +87,15 @@ export interface SheetBatch {
  * not displaying. The second is this function's own: a single-facing set is one run however the mode
  * covers it.
  *
- * The set is resolved through the category for the same reason the mode is, and it is what stops the
- * degenerate batch: an INTERFACE or a TERRAIN can only be drawn `SINGLE_FRONT`, so whatever set the
- * configuration arrived carrying, there is one run of it rather than three of a button turned to a
- * yaw it does not have.
- *
  * This is the **facing** axis alone, which is why it is not what the split button asks. A pairing
  * whose series holds two sheets is a batch even on a single facing — see {@link sheetRunCount}.
+ *
+ * The category comes with the configuration for the same reason it does everywhere else the sheet's
+ * mode is read: the stored mode may be one this category cannot produce, and the axis this counts
+ * belongs to the mode the sheet is actually drawn in. It answers the *set* as well, and that is what
+ * stops the degenerate batch — an INTERFACE or a TERRAIN can only be drawn `SINGLE_FRONT`, so
+ * whatever set the configuration arrived carrying there is one run of it, not three of a button
+ * turned to a yaw it does not have.
  */
 export function splitsIntoFacingRuns(category: SubjectCategory, output: OutputConfig): boolean {
   return (
@@ -104,13 +106,12 @@ export function splitsIntoFacingRuns(category: SubjectCategory, output: OutputCo
 
 /** Every sheet this configuration asks for, and its own position among them. */
 export function sheetBatch(category: SubjectCategory, output: OutputConfig): SheetBatch {
-  // Both axes asked of the *resolved* pairing. A configuration can name a mode its category has no
-  // plan for, and the compiler resolves it — so counting the facings from the stored mode while
-  // counting the sheets from the resolved one would offer eight runs of a mode that draws its own
-  // facings and ignores every one of them, giving eight rows with the same prompt. The direction set
-  // is resolved through the category too, inside the two helpers below.
-  const mode = resolveMode(category, output.directionalMode);
-  const series = sheetSeriesFor(category, mode);
+  // Both axes asked of the *resolved* pairing — which is now what handing each of them the category
+  // means, rather than something this function does on their behalf by resolving once and spreading
+  // the answer back over `output`. Counting the facings from the stored mode while counting the
+  // sheets from the resolved one would offer eight runs of a mode that draws its own facings and
+  // ignores every one of them, giving eight rows with the same prompt.
+  const series = sheetSeriesFor(category, output.directionalMode);
   const splits = splitsIntoFacingRuns(category, output);
 
   // The chosen set where the *resolved* mode reads it as a run list; otherwise the configuration's
@@ -132,7 +133,7 @@ export function sheetBatch(category: SubjectCategory, output: OutputConfig): She
   // flattening order is stated once, in the `flatMap` above, and an ordinal with its own arithmetic
   // for it would disagree the moment that order changed.
   const selectedFacing = splits ? primaryFacing(category, output) : output.primaryDirection;
-  const selectedSheet = resolveSheetIndex(category, mode, output.sheetIndex);
+  const selectedSheet = resolveSheetIndex(category, output.directionalMode, output.sheetIndex);
   const found = sheets.findIndex(
     (sheet) => sheet.output.primaryDirection === selectedFacing && sheet.output.sheetIndex === selectedSheet,
   );
