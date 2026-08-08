@@ -2,9 +2,17 @@
 
 > **Status:** 📘 REFERENCE — all five phases shipped: build system and PWA shell, design tokens, domain types and option pools, the prompt compiler, SQLite-on-OPFS persistence (in a worker — see the note on §2.4 below) with its localStorage fallback, the five Zustand stores, the full component tree and app assembly, and the verification pass. Kept here as the durable blueprint the implementation is held to, not as open work.
 >
-> Two places where the implementation knowingly departs from the text below, both verified in a real browser:
+> Three places where the implementation knowingly departs from the text below, each verified in a real browser:
 >
 > - **§2.4 / Task 1.3.4 — SQLite cannot run on the main thread.** The SAH-pool VFS needs `FileSystemFileHandle.prototype.createSyncAccessHandle`, which browsers expose only inside a worker, so the database lives in `src/db/sqliteWorker.ts` behind a message bridge rather than being opened in the page.
+> - **The atlas calculator has no power-of-two check**, wherever the text below asks for one — the
+>   file trees' "PO2 calculations" and "PO2 grid visualizer", Task 2.3's "PO2 compliance checks", and
+>   §4.4's "PO2 VRAM status badge". Every canvas size §4.4 itself offers is a power of two, so the
+>   check could not fail: it read "✓ Power of 2 compliant" for every configuration the app can reach,
+>   and stated no VRAM. The size list is now the closed union the arithmetic is defined over, and the
+>   badge's place is taken by the two answers it was standing in for — whether the studio's target
+>   component size fits the cell this texture affords, and what the texture actually costs in
+>   graphics memory.
 > - **§2.4 — `prompt_history` carries two more columns than the DDL here lists** (`subject_json`, `output_json`). Without them the drawer's "one-click restore" in §4.4 cannot exist: the compiled prompt is a one-way rendering of the studio state, so the state has to be stored alongside it. Rows written before those columns restore to their category's defaults.
 >
 > The app has since grown past this blueprint, and the three places it has are recorded here so a reader is not left comparing the tree against a document that predates them. All three follow [baseline-prompt-new.md](baseline-prompt-new.md) §10 rather than the phases above, and its list is now closed:

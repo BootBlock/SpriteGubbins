@@ -108,7 +108,8 @@
    * accent — auto-sync, active generation, a value updating as you type — and the two are
    * deliberately not interchangeable; `pulse-glow` blooms from one to the other to signal exactly
    * that transition. The remaining three are semantic and must not be borrowed for decoration:
-   * gold means "attention", emerald means "valid / power-of-two clean", rose means "problem".
+   * gold means "attention", emerald means "valid — it fits, it parsed, it is clean", rose means
+   * "problem".
    *
    * Cyan is also why no view owns the cyan stop: `--color-tab` resting on the live colour would
    * make every panel in that view look like it was recomputing. The nearest view hue is 26° off it.

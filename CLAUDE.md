@@ -338,7 +338,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | The **whole hue wheel** — the wordmark, the rule under the chrome | `bg-spectrum` / `heading-spectrum` (+ `animate-spectrum-pan`) | a hand-written ten-stop `linear-gradient()` |
 | One **member of an open-ended list**, coloured by position | `spectrumStopAt(index)` assigned to `--color-tab` | a runtime `` `text-spectrum-${name}` ``, which the scanner never sees and which emits nothing |
 | "Needs attention" chips and badges | `gold` | `text-amber-400` |
-| Success / valid / power-of-two clean | `emerald` | `text-emerald-400` |
+| Success / valid — it fits, it parsed, it is clean | `emerald` | `text-emerald-400` |
 | Error / invalid / destructive | `rose` | `text-red-500` |
 | Body, secondary and faint text | `text-ink` / `text-ink-muted` / `text-ink-faint` | `text-slate-300` |
 | Prompt text, metrics, JSON | `font-mono` | a raw font stack |
