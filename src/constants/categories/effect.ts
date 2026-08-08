@@ -162,7 +162,7 @@ export const EFFECT: CategoryDefinition = {
       key: 'clothing',
       label: 'Secondary Layer',
       tooltip:
-        'What trails the core and outlives it — smoke, debris, sparks. It is drawn on its own frames rather than painted into the core’s, because it almost always runs at a different rate: the flash is over in three frames and the smoke it left is still clearing eight later.',
+        'What trails the core and outlives it — smoke, debris, sparks. Painted into the frames rather than drawn as a separate piece, and it is what carries the tail of the sequence: the flash is over in three frames and the smoke it left is still clearing eight later, so this is what those last frames have in them.',
       options: [
         'Smoke & Soot Plume',
         'Flying Debris Chunks',

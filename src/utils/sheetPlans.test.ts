@@ -201,8 +201,18 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
     // contradiction is between what the subject asked for and what section 8 then banned, and both
     // halves have to be in the prompt for it to exist at all.
     expect(prompt).toContain(SPARKS);
-    expect(inventory).toContain('Secondary layer — 6');
-    expect(inventory).toContain('The trailing layer the subject names');
+    expect(inventory).toContain('Residue and clearing — 6');
+    expect(inventory).toContain('whatever secondary\nlayer the subject named, painted into these frames');
+    // Section 1 says every applied attribute is painted onto the component it sits on, and names the
+    // additional-elements field as the *single* exception. Breaking the subject's secondary layer
+    // out into six components of its own would have made that sentence false — so the tail of the
+    // sequence is more frames, never a second layer to composite.
+    // Asserted positively rather than by banning the vocabulary: the plan *uses* both "composited"
+    // and "a second layer" in the sentences that forbid them, so a negative on either would fail on
+    // the disclaimer that makes the point.
+    expect(inventory).toContain('painted into these frames');
+    expect(inventory).toContain('This is a stretch of time, not a second layer to composite');
+    expect(inventory).toContain('only makes sense composited over its neighbour is a failure');
   });
 
   it('bans only the particles the inventory did not name', () => {

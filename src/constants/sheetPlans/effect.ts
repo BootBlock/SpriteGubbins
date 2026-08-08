@@ -29,12 +29,21 @@ import type { SheetPlan } from '../../types/components.ts';
  * Assembly Base already say whether this is a burst, a loop or a telegraph. An inventory reading
  * "fireball at 20% expansion" would do that inferring on the template's behalf for every frost nova
  * and portal that is neither.
+ *
+ * **The two groups are two stretches of one sequence, not two layers to composite**, and that is a
+ * correction rather than a nicety. Section 1 states that every applied attribute is painted onto the
+ * component it sits on and that the additional-elements field is "the single exception" — so a plan
+ * that broke the subject's Secondary Layer out into six components of its own would have made that
+ * sentence false, in the same way an unqualified section 8 made the particle ban false. It is also
+ * the wrong shape for the deliverable: one flipbook is what a generation can register against a
+ * single point, and a user who genuinely wants a separable shockwave ring or debris chunk has the
+ * additional-elements field, which is exactly what section 1 exempts.
  */
 export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   name: 'Frame sequence',
   facings: 'assembly',
   assembly:
-    'a single continuous animation played in the order the inventory lists, every frame sharing one registration point, one cell scale and one camera — and, where the subject asks for a loop, a cycle whose final frame reads back into its first with no visible seam.',
+    'one continuous animation played in the order the inventory lists — every frame a complete state of the effect, sharing one registration point, one cell scale and one camera, and none of them a layer to be stacked on another. Where the subject asks for a loop, that same run is a cycle whose final frame reads back into its first with no visible seam.',
   groups: [
     {
       heading: 'Core sequence',
@@ -59,21 +68,26 @@ transforms the engine already has, and a sheet that spends a component on one ha
 The peak frame fixes the extent every other frame is drawn inside, so nothing overruns its own cell.`,
     },
     {
-      heading: 'Secondary layer',
-      intro: `The trailing layer the subject names — smoke, debris, sparks — on its own frames rather than
-painted into the core's. It almost always outlives the core, so keeping it separate is what lets the
-engine run the two at different rates, tint one without the other, or drop it entirely at low
-quality:`,
+      heading: 'Residue and clearing',
+      intro: `The **later frames of that same sequence**, after the core has burnt out. They continue the run
+above without a break — frame eleven follows frame ten — and what carries them is whatever secondary
+layer the subject named, painted into these frames exactly as it is painted into the ones before.
+This is a stretch of time, not a second layer to composite: the effect simply outlives its own core,
+which is what the trailing smoke, debris or sparks are for.`,
       entries: [
-        { text: 'Emergence: first frame, second frame', count: 2, kind: 'frame' },
-        { text: 'Full extent frame ×1', count: 1, kind: 'frame' },
-        { text: 'Clearing: early, mid, final frame', count: 3, kind: 'frame' },
+        {
+          text: 'Core spent: the last frame the core is visible in, and the first without it',
+          count: 2,
+          kind: 'frame',
+        },
+        { text: 'Residue at full extent ×1', count: 1, kind: 'frame' },
+        { text: 'Clearing: early, mid, late', count: 3, kind: 'frame' },
       ],
-      outro: `Drawn against the same registration point as the core sequence, so the two overlay without being
-nudged into place. Where the subject states no secondary layer, these components carry the core's own
-lingering residue instead — the last of the glow, the settling motes — rather than being omitted:
-the count section 0 contracts for is exact, and a sheet returning six fewer components than it
-promised fails that contract whatever the subject said.`,
+      outro: `Where the subject names no secondary layer, these frames carry the core's own lingering residue
+instead — the last of the glow, the settling motes — rather than being dropped: the count section 0
+contracts for is exact, and a sheet returning six fewer components than it promised fails that
+contract whatever the subject said. A looping effect has no residue to clear, so these are the frames
+that carry it back round to its first.`,
     },
   ],
 };
