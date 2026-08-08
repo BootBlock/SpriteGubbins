@@ -26,20 +26,51 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
 };
 
 /**
- * ChatGPT 5.6 Sol: reasoning effort and a pointer at the template's own contract sections.
+ * ChatGPT 5.6 Sol, which is the one target here that **cannot draw**.
  *
- * Deliberately thin. The previous wrapper restated the component count, the background rule, the
- * pixel-density contract and a verification checklist — all written against v1, whose critical
- * constraints sat at the *bottom* of the prompt. v2 puts them in section 0 and repeats them in
- * section 9, so carrying the old wrapper would state the same rules three times, which dilutes
- * instruction-following rather than reinforcing it.
+ * Its model page lists `text` as its only output modality and `image_generation` among its *tools*,
+ * and OpenAI's tool guide states what happens at that boundary: "When using the image generation
+ * tool, the mainline model … will automatically revise your prompt for improved performance",
+ * surfaced back as `revised_prompt`, and "The model used for the image generation process is always
+ * a GPT Image model". So the specification this app composes is not what gets rendered — Sol's
+ * *rewrite* of it is, and that rewrite is a compression step the app cannot see and did not ask
+ * for. It is the obvious candidate for adherence that varies run to run on a prompt nothing else
+ * about the target explains.
+ *
+ * **That is the whole wrapper, and everything else it used to say is now gone.** It previously
+ * opened "High reasoning effort" and then pointed at section 0 as a done-condition and section 9 as
+ * a verification pass. Reasoning effort is a request parameter rather than something prose sets, and
+ * the two pointers restate headings the template already carries — section 0 is titled NON-NEGOTIABLE
+ * OUTPUT CONTRACT and opens "Satisfy this section before any aesthetic consideration", and section 9
+ * opens "Before delivering, verify". OpenAI's own guidance for this model family is that such lines
+ * are not free: it says to remove "repeated statements of the same rule" and "process instructions
+ * for behavior the model already performs reliably", and warns that "GPT-5-class models follow
+ * prompt contracts closely, so conflicting rules can create more instability than missing detail".
+ * A target-specific wrapper that repeats the template is therefore a cost here, not a reinforcement.
+ *
+ * **The measurement behind that is quoted with its scope, because the scope is load-bearing.** The
+ * sentence is "*In a sample of internal coding-agent eval runs*, configurations with leaner system
+ * prompts improved evaluation scores by roughly 10–15% while reducing total tokens by 41–66% and
+ * cost by 33–67%" — coding agents, not image briefs. It is enough to stop restating the template at
+ * a model whose vendor says restating hurts it; it is not enough to start cutting the specification
+ * itself, which is why section 8's exclusions still restate section 0's and nothing here touches
+ * them. Dropping the qualifier would turn a bounded finding into a licence.
+ *
+ * The same guidance is why the self-audit stays: "Render the artifact before finalizing. Inspect
+ * layout, clipping, spacing, missing content, and visual consistency" is section 9, and a
+ * verification pass is not a repeated statement of a rule.
+ *
+ * Sources: [model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
+ * [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation),
+ * [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6).
  */
 export function wrapForSol(prompt: string): string {
-  return `[SYSTEM DIRECTIVE — REASONING & OUTPUT CONTRACT]
-High reasoning effort: this is a multi-component spatial layout task. Plan the grid and the
-per-component bounding boxes before drawing.
-Treat section 0 as a hard done-condition and section 9 as a required verification pass before
-delivery.
+  return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
+You are not the model that draws this sheet. You will call an image tool, and what it renders is
+your rewrite of the specification below rather than the specification itself — so that rewrite is
+where a sheet loses its component count, its background or its per-component directions. Carry
+section 0, the object yaws in section 3 and the inventory in section 4 through to the tool as they
+are written. If the brief must be shortened to fit, shorten the prose elsewhere, never those three.
 
 ${prompt}`;
 }

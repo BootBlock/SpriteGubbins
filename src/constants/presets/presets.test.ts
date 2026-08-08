@@ -19,7 +19,7 @@ describe('every shipped preset', () => {
 
   it.each(PRESETS)('$name compiles with no leftover marker and no placeholder token', (preset) => {
     const prompt = generatePrompt(preset.category, preset.subject, preset.output);
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]/);
+    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
     expect(prompt).not.toContain('DEFINED');
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${preset.category}`);
   });

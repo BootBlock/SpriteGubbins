@@ -11,6 +11,13 @@
  * text" are the constraints that fail most often. Section 9 repeats them as a self-audit, which is
  * the one place redundancy earns its keep.
  *
+ * **Neither of those two lists writes its own numerals**, because both are assembled conditionally
+ * and a hand-numbered list cannot survive that: section 9's rig and pixel-art checks appear
+ * independently, so numbering them 7 and 8 emitted `…6. 8.` on a pixel-art sheet without a cut-out
+ * rig — on the targets that see that list at all, since the whole of it sits behind
+ * `[IF:DELIBERATES]`. `[N].` is numbered at render time by `applyNumbering`, so an item that is
+ * dropped takes its number with it.
+ *
  * **The adherence report is a third mention of those checks, and it deliberately does not restate
  * them.** It points at section 9's list instead, because the two are asking for different things
  * from the same checks — section 9 audits *before* delivery so the sheet can still be fixed, and the
@@ -41,25 +48,29 @@ or a character portrait. Every rule below serves extraction.
 
 Satisfy this section before any aesthetic consideration.
 
-1. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
+[N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
    overlapping.
-2. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
+[N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
-3. No text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders
+[N]. No text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders
    or grid lines anywhere in the image.
-4. One consistent scale across every component: a hand drawn beside a torso is in proportion to it.
-5. Render every component directly at the delivered output resolution. Do not compose at a larger
+[N]. One consistent scale across every component: a hand drawn beside a torso is in proportion to it.
+[N]. Render every component directly at the delivered output resolution. Do not compose at a larger
    virtual canvas and downscale, and do not upscale a smaller one.
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
-6. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
+[N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
+[IF:RETURNS_TEXT]
 
 **The subject's category decides what kind of components this sheet may contain; the inventory in
 section 4 then names the exact set within that kind.** These two can never legitimately disagree. If
 the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
 building, floor tiles on a character — this specification is malformed. Say so rather than resolving
 it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
+**That settles before the precedence order below is reached** — a category disagreement is a fault
+to report, never a conflict to rank.
+[/IF]
 [IF:MULTI_DIRECTION]
 
 **A component the inventory lists in more than one direction is one component, drawn once per
@@ -69,11 +80,11 @@ Section 3 states how far each turn goes and what it must reveal; this is the con
 happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
-**Where two instructions pull against each other without contradicting the category**, satisfy them
-in this order: the component count and inventory · each component's identity and grid position · the
-object orientation each component is asked for · the fixed camera, one scale and pivot compatibility
-· subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
-so a general aesthetic preference never overrules a component's stated direction.
+**Where two instructions pull against each other**, satisfy them in this order: the component count
+and inventory · each component's identity and grid position · the object orientation each component
+is asked for · the fixed camera, one scale and pivot compatibility · subject identity · the render
+style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
+preference never overrules a component's stated direction.
 
 ---
 
@@ -348,18 +359,18 @@ by the image edge.
 
 Before delivering, verify:
 
-1. Component count is exactly [DEFINE:COMPONENT_COUNT].
-2. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
-3. No text or labels anywhere.
-4. Components appear in the exact order the inventory lists them.
-5. One camera, one scale and one light direction across every component — nothing on the sheet was
+[N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
+[N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[N]. No text or labels anywhere.
+[N]. Components appear in the exact order the inventory lists them.
+[N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
-6. [DEFINE:CATEGORY_AUDIT]
+[N]. [DEFINE:CATEGORY_AUDIT]
 [IF:RIG_MODE=CUTOUT_RIG]
-7. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
+[N]. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
-8. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
 [/IF]
 [IF:MULTI_DIRECTION]
 
