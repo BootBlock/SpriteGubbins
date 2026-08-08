@@ -86,6 +86,13 @@ is asked for · the fixed camera, one scale and pivot compatibility · subject i
 style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
 preference never overrules a component's stated direction.
 
+**An exclusion in section 8 outranks every attribute that asks for the same visible element.**
+Where the subject definition, the render style or any other description names something section 8
+excludes, leave that element out of the image entirely — never satisfy both by drawing a reduced,
+integrated or decorative version of it. That decides what a component *shows*, not which components
+exist: where section 4 lists an entry section 8 excludes, draw the entry, because the count and
+inventory rank first and an omitted one mis-maps every component after it.
+
 ---
 
 ## 1. SUBJECT DEFINITION

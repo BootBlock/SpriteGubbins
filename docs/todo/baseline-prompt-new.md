@@ -266,6 +266,13 @@ is asked for · the fixed camera, one scale and pivot compatibility · subject i
 style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
 preference never overrules a component's stated direction.
 
+**An exclusion in section 8 outranks every attribute that asks for the same visible element.**
+Where the subject definition, the render style or any other description names something section 8
+excludes, leave that element out of the image entirely — never satisfy both by drawing a reduced,
+integrated or decorative version of it. That decides what a component *shows*, not which components
+exist: where section 4 lists an entry section 8 excludes, draw the entry, because the count and
+inventory rank first and an omitted one mis-maps every component after it.
+
 ---
 
 ## 1. SUBJECT DEFINITION
@@ -1282,6 +1289,29 @@ the two are present together or absent together, so they cannot be separated aga
 The general lesson is worth more than the fix: **making a paragraph conditional is not a local edit
 if anything else was written against it.** The tripwire read as self-contained, and the sentence that
 depended on it sat two paragraphs away with no marker saying so.
+
+**R5. §8's exclusions sat outside the precedence order entirely.** §1 states what the subject has and
+§8 states what must be absent, and the two are assembled independently — §8's subject-specific line
+is one of the same sixteen free-text fields §1's attributes come from, and the standing bullets above
+it are fixed per category. So a worn detail, a material or a silhouette note can be requested by one
+and prohibited by the other, and §0's ranking had nothing to say about it: it ordered "subject
+identity" against "the render style" and never mentioned a *negative* instruction at all, which
+leaves the generator to invent a resolution. Reported by an adherence report on a delivered sheet,
+whose §1 named an integrated worn item that a later exclusion in §8 prohibited; the resolution it
+warns against is the compromise — the excluded element reinterpreted as an integrated, decorative or
+non-separate version, with both instructions counted as honoured. The conflict needs only a positive
+attribute and an exclusion naming the same element, so it is a property of the template rather than
+of that subject.
+
+**Where the new rule stops is the half worth stating.** Ranking an exclusion above §1 and §2 is
+uncontroversial — both describe what a component *shows*, and losing a flourish costs nothing
+structural. Letting it reach §4 would be the opposite: the count and inventory head that same
+ranking, and §4's placement rule makes grid position the only identity map, so a component quietly
+dropped to honour an exclusion mis-maps every component after it. The addition therefore says
+outright that an exclusion never deletes an inventory entry — the entry is drawn, and a specification
+excluding one of its own components is a contradiction the *sheet* should survive rather than obey.
+It is unconditional, unlike R4's tripwire: this one asks for a drawing decision rather than a report,
+so a target with no text channel needs it just as much.
 
 ---
 
