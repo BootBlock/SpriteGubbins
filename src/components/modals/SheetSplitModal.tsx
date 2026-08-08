@@ -91,7 +91,7 @@ export function SheetSplitModal() {
           // Keyed on both axes, because neither is unique on its own once a batch can split along
           // both: two sheets of a series share a facing, and every facing of a run list shares a name.
           <SheetSplitRun
-            key={`${run.assembly}::${run.name}`}
+            key={`${run.assembly}::${run.plan.name}`}
             run={run}
             ordinal={index + 1}
             total={runs.length}

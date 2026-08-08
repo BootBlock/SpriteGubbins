@@ -33,6 +33,8 @@ import { componentBreakdownFor, componentCountFor, sheetCarriesAnatomy } from '.
 import { directionalRotation } from './directionalRotation.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
+import { describeSeries } from './describeSeries.ts';
+import { sheetBatch } from './sheetBatch.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import {
   applyConditionals,
@@ -80,6 +82,14 @@ export function generatePrompt(
     { ...output, directionalMode: mode },
     plan,
   );
+
+  // Which sheet of which batch this configuration is. Every prompt before this one described its
+  // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and
+  // section 6's assembly capability all read as statements about the finished set — so sheet three
+  // of eight arrived claiming a count and a capability belonging to something else. The batch is
+  // enumerated rather than passed in because a configuration already *is* one sheet of one batch:
+  // the splitter varies nothing but the facing and the sheet index, and both are fields of `output`.
+  const batch = sheetBatch(category, output);
 
   // Only a target that returns text alongside the image can honour a manifest; asking a pure image
   // endpoint for one just spends tokens on an instruction it will drop.
@@ -151,6 +161,13 @@ export function generatePrompt(
     OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
     SOCKETS: output.sockets,
     IDENTITY_LOCK: output.identityLock,
+
+    SERIES_POSITION: String(batch.ordinal),
+    SERIES_TOTAL: String(batch.sheets.length),
+    // Computed whether or not the block survives, as `PALETTE_DESCRIPTION` is: `substitute` throws
+    // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
+    // the token is still there to be filled.
+    SERIES_SHEETS: describeSeries(category, batch, anatomy),
   };
 
   // The sixteen subject fields, keyed by the upper-case form of their own key rather than written
@@ -193,6 +210,12 @@ export function generatePrompt(
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.
     MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
+    // Whether this sheet is one of several, which is a property of the configuration rather than a
+    // switch the user sets: the splitter's runs differ from the studio's own configuration only in
+    // fields `output` already carries, so a sheet compiled from the drawer and the same sheet
+    // compiled from the studio are the same prompt and say the same thing about their batch. A
+    // configuration that is one whole deliverable says nothing at all, and its prompt is unchanged.
+    SERIES: batch.sheets.length > 1 ? 'yes' : '',
     IDENTITY_LOCK: output.identityLock,
     SOCKETS: output.sockets,
     EMIT_MANIFEST: emitManifest ? 'yes' : '',

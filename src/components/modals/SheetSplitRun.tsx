@@ -45,7 +45,7 @@ export function SheetSplitRun({ run, ordinal, total, isCopied, onCopy }: SheetSp
           Sheet {ordinal} of {total}
         </span>
         <span className="font-mono text-xs font-bold text-ink">
-          {run.name} ·{' '}
+          {run.plan.name} ·{' '}
           {/* The facing, or how many of them — a sheet that draws five and a sheet that draws one
               would otherwise both read as their assembly direction and claim the same coverage. */}
           {run.covered.length > 1 ? `${run.covered.length} facings` : run.assembly}

@@ -4,7 +4,7 @@ import { resolveMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPla
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { effectiveDirectionSet, primaryFacing } from './sheetDirections.ts';
-import { splitsIntoFacingRuns } from './sheetRuns.ts';
+import { splitsIntoFacingRuns } from './sheetBatch.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**

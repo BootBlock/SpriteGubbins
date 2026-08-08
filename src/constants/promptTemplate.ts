@@ -66,6 +66,14 @@ Satisfy this section before any aesthetic consideration.
    it appears anywhere on them. The background field is the exception and stays the key colour
    named above.
 [/IF]
+[IF:SERIES]
+
+**This is sheet [DEFINE:SERIES_POSITION] of [DEFINE:SERIES_TOTAL] of one deliverable, and the count
+above is this sheet's own.** The other sheets are generated separately, each from its own copy of
+this specification, and section 6 says what each of them carries. Draw this sheet's inventory and
+nothing else: never add a component because the set looks incomplete without it, and never drop one
+because another sheet carries something like it.
+[/IF]
 [IF:RETURNS_TEXT]
 
 **The subject's category decides what kind of components this sheet may contain; the inventory in
@@ -348,6 +356,17 @@ pivots share a diameter and cap geometry so segments register when assembled.
 ## 6. REQUIRED ASSEMBLY CAPABILITY
 
 The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
+[IF:SERIES]
+
+**That is the finished series' capability, and not this sheet's alone.** It is reached once every
+sheet listed below has been generated and their components are brought together, so this sheet
+supplies its own share of it and no more. Whatever the assembled set needs that section 4 does not
+list is drawn on one of the others.
+
+### The sheets in this series
+
+[DEFINE:SERIES_SHEETS]
+[/IF]
 
 ---
 
@@ -356,6 +375,17 @@ The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
 Every component belongs to the **same single subject**. Hold constant across all of them:
 silhouette language and proportion · joint and attachment geometry · clothing and structural
 regions · primary colour blocking · large identifying accents · material treatment.
+[IF:SERIES]
+
+**That list holds across the whole series, not only across this sheet.** A component drawn here has
+to sit beside one drawn on another sheet and read as the same object, and those sheets are separate
+generations with nothing carried between them but the text of the specification. A sheet that is
+consistent within itself and does not match the rest of the series has failed.
+[IF:IDENTITY_LOCK]
+The identity lock in section 1 is the record of what the other sheets actually drew, which is why it
+wins wherever it and the subject definition above it disagree.
+[/IF]
+[/IF]
 
 Where a component appears at more than one object yaw, it is one persistent three-dimensional form
 seen after a turn — every feature stays attached to the same physical region of it, as section 3

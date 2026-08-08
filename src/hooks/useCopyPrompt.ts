@@ -37,7 +37,7 @@ export function useCopyPrompt(): (run?: SheetRun) => Promise<void> {
 
       const copied = await copyText(
         promptText,
-        run ? `Copied the ${run.name} sheet — ${run.assembly}` : 'Prompt copied to the clipboard',
+        run ? `Copied the ${run.plan.name} sheet — ${run.assembly}` : 'Prompt copied to the clipboard',
       );
       if (!copied) return;
 
