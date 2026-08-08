@@ -408,6 +408,20 @@ lede without the two competing — so a bold heading goes on `base`, never on `s
 `text-[…px]` anywhere in `src/` fails a test** — not because the size is wrong, but because a call
 site that names its own size stops moving when the scale does.
 
+**An option label in a `SelectField` is at most 50 characters.** A native `<select>` sizes the
+selected option's box from its container and truncates rather than wrapping, so a label the control
+cannot fit loses its *tail* — which in this app is the parenthetical marking the standard choice, the
+half a first-time user is choosing by. The studio's left column is the narrowest control the app
+settles a select into, and it fits 51 characters of `font-mono` at `text-xs`, so every option list in
+the app is written to that budget.
+[tests/select-option-labels.test.ts](tests/select-option-labels.test.ts) derives the number from the
+measured column, and fails on both an overlong label and a new select nobody budgeted. The identifier
+is the prompt's own term and cannot move, so the parenthetical is what gives — whatever doesn't fit
+belongs in the tooltip, which has no width to run out of. **A label budget only reaches a column
+wide enough to have one**: between the `lg` breakpoint and the page's `max-w-7xl` cap that column
+narrows to 351px, where 38 characters fit and several identifiers are longer than the whole
+guidance. Fixing that is the layout's job, not the copy's.
+
 **Two rules of thumb**
 
 - If a token *doesn't* exist for a genuinely new semantic role, **add the token** to the

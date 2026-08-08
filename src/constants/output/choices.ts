@@ -15,6 +15,13 @@ import type { JointCapStyle, OverlapMargin, RigMode } from '../../types/rigging.
  * The identifiers are the domain's, declared in `src/types/`; these pair them with the wording the
  * selector shows. The label keeps the identifier visible on purpose — it is the term the prompt is
  * written against, so a user comparing two generations can see which setting changed.
+ *
+ * **A label is at most 50 characters**, identifier and parenthetical together. A native `<select>`
+ * truncates its selected option rather than wrapping it, and what a truncation takes is the *tail* —
+ * here the parenthetical, which is the half a first-time user is choosing by. The identifier cannot
+ * move, so the parenthetical is what gives: keep it to the fact the identifier does not already
+ * state, and leave the rest to `tooltips.ts`, which has no width to run out of.
+ * `tests/select-option-labels.test.ts` enforces the budget and derives the number.
  */
 export interface OutputChoice<T extends string> {
   readonly value: T;
@@ -23,15 +30,15 @@ export interface OutputChoice<T extends string> {
 
 export const RENDER_STYLE_CHOICES: readonly OutputChoice<RenderStyle>[] = [
   { value: 'PIXEL_ART', label: 'PIXEL_ART (modern high-resolution pixel art)' },
-  { value: 'RETRO_PIXEL_ART', label: 'RETRO_PIXEL_ART (8/16-bit, small palette, chunky pixels)' },
-  { value: 'PAINTED_2D', label: 'PAINTED_2D (soft blended forms, visible brush economy)' },
-  { value: 'CEL_SHADED', label: 'CEL_SHADED (flat fills, hard shadow steps, ink contour)' },
+  { value: 'RETRO_PIXEL_ART', label: 'RETRO_PIXEL_ART (8/16-bit, chunky, small palette)' },
+  { value: 'PAINTED_2D', label: 'PAINTED_2D (soft blended forms, brush economy)' },
+  { value: 'CEL_SHADED', label: 'CEL_SHADED (flat fills, stepped shadows, ink line)' },
   { value: 'VECTOR_FLAT', label: 'VECTOR_FLAT (flat geometry, no gradients)' },
-  { value: 'HAND_DRAWN_INK', label: 'HAND_DRAWN_INK (inked linework, visible line weight)' },
+  { value: 'HAND_DRAWN_INK', label: 'HAND_DRAWN_INK (inked lines, visible line weight)' },
   { value: 'RENDERED_3D', label: 'RENDERED_3D (material shading, soft form shadow)' },
   { value: 'LOW_POLY_3D', label: 'LOW_POLY_3D (faceted, flat per-face shading)' },
-  { value: 'CLAY_RENDER', label: 'CLAY_RENDER (untextured form study — validate volume)' },
-  { value: 'SILHOUETTE_ONLY', label: 'SILHOUETTE_ONLY (readability pass — does the shape read?)' },
+  { value: 'CLAY_RENDER', label: 'CLAY_RENDER (untextured form study — check volume)' },
+  { value: 'SILHOUETTE_ONLY', label: 'SILHOUETTE_ONLY (readability pass — does it read?)' },
 ];
 
 export const PROJECTION_CHOICES: readonly OutputChoice<Projection>[] = [
@@ -40,7 +47,7 @@ export const PROJECTION_CHOICES: readonly OutputChoice<Projection>[] = [
   { value: 'TRUE_ISOMETRIC', label: 'TRUE_ISOMETRIC (2:1 diamond, equal foreshortening)' },
   { value: 'DIMETRIC_2_1', label: 'DIMETRIC_2_1 (unequal foreshortening)' },
   { value: 'OBLIQUE_45', label: 'OBLIQUE_45 (undistorted front, depth at 45°)' },
-  { value: 'ORTHOGRAPHIC_SIDE', label: 'ORTHOGRAPHIC_SIDE (flat side elevation — platformer)' },
+  { value: 'ORTHOGRAPHIC_SIDE', label: 'ORTHOGRAPHIC_SIDE (side elevation — platformer)' },
   { value: 'ORTHOGRAPHIC_FRONT', label: 'ORTHOGRAPHIC_FRONT (flat front elevation)' },
 ];
 
@@ -60,7 +67,7 @@ export const BACKGROUND_KEY_CHOICES: readonly OutputChoice<BackgroundKey>[] = [
 
 export const RIG_MODE_CHOICES: readonly OutputChoice<RigMode>[] = [
   { value: 'POSE_LIBRARY', label: 'POSE_LIBRARY (rigid segments assembled by hand)' },
-  { value: 'CUTOUT_RIG', label: 'CUTOUT_RIG (pieces bound to bones, rotated at runtime)' },
+  { value: 'CUTOUT_RIG', label: 'CUTOUT_RIG (bones rotate the pieces at runtime)' },
   { value: 'NONE', label: 'NONE (not articulated — tilesets, props)' },
 ];
 
@@ -73,12 +80,12 @@ export const JOINT_CAP_STYLE_CHOICES: readonly OutputChoice<JointCapStyle>[] = [
 export const OVERLAP_MARGIN_CHOICES: readonly OutputChoice<OverlapMargin>[] = [
   { value: 'HALF_CAP', label: 'HALF_CAP (half a cap radius — recommended)' },
   { value: 'FULL_CAP', label: 'FULL_CAP (a full cap radius)' },
-  { value: 'NONE', label: 'NONE (pieces butt exactly — expect gaps on rotation)' },
+  { value: 'NONE', label: 'NONE (pieces butt exactly — gaps on rotation)' },
 ];
 
 export const SURFACE_DETAIL_CHOICES: readonly OutputChoice<SurfaceDetail>[] = [
   { value: 'MINIMAL', label: 'MINIMAL (base colours and essential joints only)' },
-  { value: 'CLEAN_PRODUCTION', label: 'CLEAN_PRODUCTION (major panels and folds — standard)' },
+  { value: 'CLEAN_PRODUCTION', label: 'CLEAN_PRODUCTION (major panels, folds — standard)' },
   { value: 'DETAILED_PRODUCTION', label: 'DETAILED_PRODUCTION (seams and material divisions)' },
   { value: 'TEXTURED', label: 'TEXTURED (controlled surface texturing)' },
 ];
@@ -98,13 +105,13 @@ export const PALETTE_LIMIT_CHOICES: readonly OutputChoice<PaletteLimit>[] = [
 ];
 
 export const OUTLINE_STYLE_CHOICES: readonly OutputChoice<OutlineStyle>[] = [
-  { value: 'DARK_LOCAL_CONTOUR', label: 'DARK_LOCAL_CONTOUR (1px darker local colour — standard)' },
+  { value: 'DARK_LOCAL_CONTOUR', label: 'DARK_LOCAL_CONTOUR (1px darker fill — standard)' },
   { value: 'PURE_BLACK_OUTLINE', label: 'PURE_BLACK_OUTLINE (crisp 1px black)' },
   { value: 'OUTLINE_LESS_ALBEDO', label: 'OUTLINE_LESS_ALBEDO (value and hue contrast only)' },
 ];
 
 export const LIGHTING_MODEL_CHOICES: readonly OutputChoice<LightingModel>[] = [
-  { value: 'FLAT_NEUTRAL_ALBEDO', label: 'FLAT_NEUTRAL_ALBEDO (engine lights the sprite — standard)' },
+  { value: 'FLAT_NEUTRAL_ALBEDO', label: 'FLAT_NEUTRAL_ALBEDO (engine-lit — standard)' },
   { value: 'ISOMETRIC_TOP_LEFT', label: 'ISOMETRIC_TOP_LEFT (fixed 45° key, hard shadows)' },
   { value: 'UNLIT_EMISSIVE_BAKED', label: 'UNLIT_EMISSIVE_BAKED (flat unlit diffuse)' },
 ];
