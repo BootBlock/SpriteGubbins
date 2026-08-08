@@ -42,7 +42,7 @@ export function GridControls({ detected, target, suggested, grid, onGridChange }
   const inputId = useId();
 
   return (
-    <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-450 hover:border-tab/40">
+    <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
       <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
         <div>
           <div className="mb-1 flex items-center gap-1.5">

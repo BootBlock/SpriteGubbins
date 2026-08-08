@@ -350,7 +350,8 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | An uppercase eyebrow or legend, a badge pill, a mono metadata chip (timestamp, word count, dimensions) | `text-2xs` (11px), the floor | a bracketed size, or `text-xs` for something only ever scanned |
 | The paragraph or value that opens a panel | `text-sm` (15px) | `text-base`, which is the bold-heading rung |
 | Panel entrance, live pulse, ambience, loading | `animate-fade-in` / `animate-pulse-glow` / `animate-float-orb` (+ `-slow`) / `animate-shimmer` | inline `@keyframes`, one-off durations |
-| A **tile in a grid** arriving (a preset card, a button that comes and goes) | `animate-pop-in` | `animate-fade-in`, which is for a full-width panel |
+| A **tile in a grid** arriving (a button that comes and goes) | `animate-pop-in` | `animate-fade-in`, which is for a full-width panel |
+| A **view's own content** arriving on navigation — a tab's root, a studio panel, a preset card | `animate-view-fade-in` / `animate-view-pop-in`, the page-transition speed | the plain entrances, which are for a surface that turns up mid-session |
 | A **cascade** across a grid of those | `stagger-children` on the list | per-child `animation-delay` at the call site |
 | A **notification** arriving from off the bottom edge | `animate-toast-in` | `animate-fade-in` |
 | An **overlay opening** — the panel, and the ground dimming behind it | `animate-modal-in` + `backdrop:animate-backdrop-in` | one fade on the `<dialog>`, which takes the backdrop with it |
@@ -462,14 +463,28 @@ guidance. Fixing that is the layout's job, not the copy's.
 verify it actually emits: build and grep the output CSS for the class name before trusting it.
 
 **The motion layer is deliberately slow, and it moves as one.** Every duration in the app — the
-`--animate-*` tokens, the `[data-tab]` colour sweep, `section-reveal`, `stagger-children`'s delays
-and every `duration-*` at a call site — was taken to 1.5× of what the app first shipped with, in a
-single pass, because this is a tool for making game art and motion that is over before it is seen
+`--animate-*` tokens, `section-reveal`, and every `duration-*` at a call site — has been taken
+through two whole-layer passes, **1.5× and then a further 1.3×**, so it now runs at **1.95×** what
+it first shipped with. This is a tool for making game art, and motion that is over before it is seen
 buys none of that. The figures are therefore *relative* to each other and not independently chosen:
-a new transition written at the stock 200ms would be half the speed of everything beside it. Pick a
-duration by finding the nearest thing that already moves and matching it. Two pairs in particular
-have to stay equal — the tab pill and the `[data-tab]` sweep are one event at 900ms, and the
-disclosure's height and its caret are one gesture at 450ms — and each says so at both ends.
+a new transition written at the stock 200ms would run at roughly twice the speed of everything
+beside it. Pick a duration by finding the nearest thing that already moves and matching it. Two
+pairs have to stay equal — the tab pill and the `[data-tab]` sweep are one event at 1440ms, and the
+disclosure's height and its caret are one gesture at 585ms — and each says so at both ends.
+
+**A page transition is the app's second speed, and it is a `view-*` token rather than a number.**
+Navigating is worth dwelling on, so the second pass gave it 1.6× where everything else took 1.3× —
+putting the view entrances, the `[data-tab]` colour sweep, the tab pill and the preset grid's
+stagger at **2.4×** the shipped figure against the 1.95× above. That distinction is about *when* an
+animation fires, not what it looks like, which is why it could not be carried by `fade-in` and
+`pop-in` themselves. Each of those
+lands on two different kinds of moment: a panel fades in when you navigate to the studio **and**
+when a budget notice appears mid-edit; a tile pops in as the preset library fills **and** as the
+"Split into sheets" button turns up. `animate-view-fade-in` and `animate-view-pop-in` run the same
+keyframes at the slower figure, and the test of which one a surface takes is not where it sits but
+what makes it appear: **anything that can turn up while the user is working takes the ordinary
+entrance.** `ComboBox`'s suggestion list is the case that proves it — it wears `fade-in`, and at the
+page-transition speed it would simply be a slow dropdown.
 
 **A keyframe animates `transform`; a utility sets `translate` / `scale` / `rotate`.** Tailwind v4
 compiles `-translate-y-1`, `scale-105` and `rotate-45` to the **independent** properties of those

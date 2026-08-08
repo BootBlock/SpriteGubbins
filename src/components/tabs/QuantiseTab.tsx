@@ -96,7 +96,7 @@ export function QuantiseTab() {
   );
 
   return (
-    <div className="animate-fade-in mx-auto max-w-6xl space-y-6">
+    <div className="animate-view-fade-in mx-auto max-w-6xl space-y-6">
       <header className="space-y-1">
         <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Quantise a returned sheet</h2>
         <p className="max-w-3xl text-xs leading-relaxed text-ink-muted">

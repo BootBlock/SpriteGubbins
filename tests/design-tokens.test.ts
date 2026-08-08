@@ -89,6 +89,8 @@ const REQUIRED_THEME_TOKENS = [
   '--animate-scan-beam',
   // The entrance layer, one per kind of thing that arrives, plus the two ambient/behavioural ones.
   '--animate-pop-in',
+  '--animate-view-fade-in',
+  '--animate-view-pop-in',
   '--animate-toast-in',
   '--animate-modal-in',
   '--animate-backdrop-in',
@@ -213,6 +215,26 @@ describe('design tokens', () => {
   it.each(ANIMATION_KEYFRAMES)('defines the @keyframes %s its --animate token references', (name) => {
     expect(stylesheet).toContain(`@keyframes ${name}`);
     expect(stylesheet).toContain(`--animate-${name}: ${name} `);
+  });
+
+  it('names a defined keyframe from every --animate token, however the token is named', () => {
+    // The check above is driven by the keyframe list, so it only reaches tokens named *after* their
+    // keyframe — which most are. The view entrances are not: `--animate-view-fade-in` runs the
+    // `fade-in` keyframe at the page-transition speed, so a typo in the name it references would
+    // sail past a per-keyframe check and, because an unresolved animation name is not an error,
+    // would show up only as a panel that had stopped animating. This reads the reference out of
+    // each token instead.
+    const tokens = [...stylesheet.matchAll(/^\s*--animate-[a-z-]+:\s*([a-z-]+)/gm)].map(
+      ([, keyframe]) => keyframe,
+    );
+
+    // Guards the regex itself: a pattern that matched nothing would make every assertion below
+    // vacuous, and this file's whole job is to fail when the stylesheet drifts.
+    expect(tokens.length).toBeGreaterThanOrEqual(ANIMATION_KEYFRAMES.length);
+
+    for (const keyframe of new Set(tokens)) {
+      expect(stylesheet).toContain(`@keyframes ${keyframe}`);
+    }
   });
 
   it.each(GLASS_UTILITIES)('blurs what is behind %s, prefixed for Safari as well', (utility) => {
@@ -414,8 +436,8 @@ describe('design tokens', () => {
     const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
 
     expect(closed).not.toBe('');
-    expect(closed).toContain('content-visibility 450ms allow-discrete');
-    expect(closed).toContain('block-size 450ms var(--ease-decelerate)');
+    expect(closed).toContain('content-visibility 585ms allow-discrete');
+    expect(closed).toContain('block-size 585ms var(--ease-decelerate)');
   });
 
   it('animates to a measured pixel height rather than to a keyword', () => {

@@ -70,7 +70,7 @@ export function PresetSavePanel() {
               setIsSaving(false);
             }
           }}
-          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-300 active:scale-[0.98] disabled:cursor-not-allowed"
+          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
         >
           {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
         </button>

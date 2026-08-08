@@ -72,7 +72,7 @@ export function PresetSearchField({ value, onChange, matchCount, isNarrowed }: P
           // The engine's own cancel button is suppressed rather than styled: it is not reachable by
           // keyboard, and leaving it beside the button below would put two clear affordances in one
           // control, one of which half the app's users cannot use.
-          className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-8 text-xs text-ink shadow-inner transition-colors duration-300 hover:border-accent/40 focus:border-accent [&::-webkit-search-cancel-button]:appearance-none"
+          className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-8 text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent [&::-webkit-search-cancel-button]:appearance-none"
         />
 
         {hasText && (

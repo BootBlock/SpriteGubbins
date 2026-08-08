@@ -40,7 +40,7 @@ export function ComboBoxOption({ id, option, isSelected, isActive, onSelect, onH
       }}
       onClick={onSelect}
       onMouseEnter={onHover}
-      className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition-all duration-225 ${
+      className={`flex cursor-pointer items-center justify-between rounded-lg px-3 py-2 text-left text-xs transition-all duration-293 ${
         isSelected
           ? 'bg-accent/30 font-bold text-accent-soft ring-1 ring-accent/40'
           : isActive

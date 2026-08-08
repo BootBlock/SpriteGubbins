@@ -60,7 +60,7 @@ export function Toast() {
             type="button"
             onClick={dismissToast}
             aria-label="Dismiss notification"
-            className="text-ink-muted transition-all duration-300 hover:rotate-90 hover:text-ink"
+            className="text-ink-muted transition-all duration-390 hover:rotate-90 hover:text-ink"
           >
             <span aria-hidden="true">✕</span>
           </button>

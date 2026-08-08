@@ -24,7 +24,7 @@ export function ImageDropZone({ acceptFile, currentName }: ImageDropZoneProps) {
   return (
     <section
       {...dropHandlers}
-      className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-450 ${
+      className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-585 ${
         isDraggedOver
           ? 'scale-[1.01] border-tab bg-tab/10 shadow-2xl ring-1 ring-tab/40'
           : 'border-foundry-600 bg-foundry-800/60 hover:border-tab/50 hover:bg-foundry-800/80'

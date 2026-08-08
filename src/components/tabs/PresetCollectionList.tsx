@@ -48,7 +48,7 @@ export function PresetCollectionList({ counts, active, isFiltering, onSelect }: 
                 onClick={() => {
                   onSelect(collection);
                 }}
-                className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition-colors duration-300 ${
+                className={`flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition-colors duration-390 ${
                   isActive
                     ? // Near-black on the view's own stop. Every stop on the wheel is a *light* colour
                       // — they share one lightness precisely so they are interchangeable — so ink on

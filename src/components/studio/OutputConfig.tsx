@@ -82,13 +82,13 @@ export function OutputConfig() {
   const category = useSubjectStore((state) => state.category);
 
   return (
-    <section className="animate-fade-in glass-panel group/panel rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-450 hover:border-tab/40">
+    <section className="animate-view-fade-in glass-panel group/panel rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-585 hover:border-tab/40">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-foundry-700 pb-3">
         <h2 className="flex items-center gap-2.5 text-base font-bold text-ink">
           {/* A gear that turns when the panel it heads is under the pointer. */}
           <span
             aria-hidden="true"
-            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-750 group-hover/panel:rotate-90 group-hover/panel:ring-tab/60"
+            className="flex size-7 items-center justify-center rounded-lg bg-tab/15 text-sm ring-1 ring-tab/30 transition-all duration-975 group-hover/panel:rotate-90 group-hover/panel:ring-tab/60"
           >
             ⚙️
           </span>

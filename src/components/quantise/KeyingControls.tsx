@@ -59,7 +59,7 @@ export function KeyingControls({ keying, keyedShare }: KeyingControlsProps) {
   const isKeying = keying !== null;
 
   return (
-    <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-450 hover:border-tab/40">
+    <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
       <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
         <CheckboxField
           label="Key the background to transparency"
