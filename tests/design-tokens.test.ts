@@ -372,6 +372,89 @@ describe('design tokens', () => {
 });
 
 /**
+ * The `@utility bg-spectrum` body, and the `@keyframes spectrum-pan` block, isolated.
+ *
+ * Both are bounded by the *next* at-rule of their own kind rather than by a closing brace at a
+ * guessed indentation: the keyframe nests two frames inside itself and sits inside `@theme`, so a
+ * search for the first `}` lands in the wrong place either way. A window that overshoots would only
+ * ever let a later declaration answer a question about this one, and every assertion below reads a
+ * value that appears exactly once in its window.
+ */
+function ruleBlock(opener: string, kind: string): string {
+  const start = stylesheet.indexOf(opener);
+  if (start === -1) throw new Error(`${opener} is not in the stylesheet`);
+  const rest = stylesheet.slice(start + opener.length);
+  const next = rest.indexOf(kind);
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
+describe('the wheel turns without a seam', () => {
+  const spectrum = ruleBlock('@utility bg-spectrum {', '@utility ');
+  const keyframe = ruleBlock('@keyframes spectrum-pan {', '@keyframes ');
+
+  /** Every `var(--color-spectrum-…) NN%` in `bg-spectrum`'s gradient, in the order written. */
+  const stops = [...spectrum.matchAll(/var\(--color-spectrum-(\w+)\) ([\d.]+)%/g)].map((stop) => ({
+    name: stop[1],
+    at: Number(stop[2]),
+  }));
+
+  /** The width `bg-spectrum` sizes its gradient to, as a percentage of the element. */
+  const width = Number(/background-size: ([\d.]+)% [\d.]+%;/.exec(spectrum)?.[1]);
+
+  it('travels exactly one image width per turn, so the loop closes where it opened', () => {
+    // The bug this replaced: a `background-position` percentage resolves against *(positioning
+    // area − image size)*, not against the image, so `100%` on a `200%`-wide gradient moved it a
+    // single element width — half the image. The wheel restarted five stops round from where it
+    // ended and the chrome's hairline flicked from cyan back to rose every 32 seconds. Nothing
+    // else notices: the animation runs, the colours are right, the discontinuity is one frame.
+    //
+    // Asserted as *travel*, and deliberately not as `to === width`. Those two agree at `200%` and
+    // at no other size, so the equality would be a coincidence dressed as a derivation: a gradient
+    // sized `S%` of its box moves `P/100 × (S − 100)/S` of its own width as the position runs to
+    // `P%`, which puts the seamless end at `150%` for a `300%` image — where `300%` would close
+    // cleanly but turn the wheel *twice* a cycle, and the token calls 32s one turn. `toBeCloseTo`
+    // because a size whose end position is a repeating decimal has to be written rounded, while
+    // every way of getting this wrong is at least half a turn out.
+    const from = Number(/from \{\s*background-position: ([\d.]+)% /.exec(keyframe)?.[1]);
+    const to = Number(/to \{\s*background-position: ([\d.]+)% /.exec(keyframe)?.[1]);
+    const turns = ((to - from) / 100) * ((width - 100) / width);
+
+    // Before the travel, because it is what makes the range non-zero — and because `Object.is`
+    // says NaN is NaN, so a failed parse would otherwise satisfy an equality rather than break it.
+    expect(width).toBeGreaterThan(100);
+    expect(from).toBe(0);
+    expect(turns).toBeCloseTo(1, 4);
+  });
+
+  it('closes the wheel on the colour it opened with, because the image tiles', () => {
+    // `background-repeat` is left at `repeat`, so the gradient's last stop sits against its first
+    // at every tile boundary. Drop the repeated stop and magenta butts straight against rose — a
+    // hard edge sliding across the page once per turn, which the check above cannot see.
+    expect(stops.length).toBe(SPECTRUM_STOPS.length + 1);
+    expect(stops.at(0)?.name).toBe(stops.at(-1)?.name);
+    expect(stops.at(0)?.at).toBe(0);
+    expect(stops.at(-1)?.at).toBe(100);
+  });
+
+  it('lays the whole wheel out in the order the constant turns it', () => {
+    // A stop dropped from the gradient still renders — as a wider band of its neighbour — and one
+    // transposed still renders as a spectrum. Neither is visible in a diff of a colour list.
+    expect(stops.slice(0, -1).map((stop) => stop.name)).toStrictEqual(SPECTRUM_STOPS);
+  });
+
+  it('spaces the stops evenly, since the wheel they name is evenly spaced', () => {
+    // The palette's claim is ten hues 36° apart; a gradient that crowds them is a picture of a
+    // different wheel. Derived from the count so an eleventh stop needs no edit here.
+    const pitch = 100 / SPECTRUM_STOPS.length;
+
+    // Both sides of the comparison come from `stops`, so a parse that matched nothing would
+    // compare `[]` with `[]` and pass having read no CSS at all. The length is the guard.
+    expect(stops.length).toBe(SPECTRUM_STOPS.length + 1);
+    expect(stops.map((stop) => stop.at)).toStrictEqual(stops.map((_, index) => index * pitch));
+  });
+});
+
+/**
  * Reading a colour token back out of the stylesheet, in the space it is written in.
  *
  * Parsed rather than hard-coded so the assertions below measure *the palette*, not a copy of it

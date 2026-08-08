@@ -266,10 +266,14 @@
   /*
    * The wheel itself, turning, under whatever `bg-spectrum` or `heading-spectrum` paints.
    *
-   * Slower than `gradient-pan` and linear rather than eased, because this one never reverses: those
-   * gradients repeat their first stop at both ends, so travelling exactly one background-width and
-   * starting over is seamless, and an eased curve would make a rotation that has no beginning
-   * appear to pause at each turn.
+   * Linear rather than eased, because this one never reverses: it travels one whole turn and starts
+   * the next, so every restart lands on the colour it left (see the keyframe, which is where that
+   * arithmetic actually lives). An eased curve would make a rotation with no beginning appear to
+   * pause at each turn.
+   *
+   * 32s is one full turn, and because `bg-spectrum` sizes itself in percentages of its own box,
+   * that rate is the same on every surface wearing the wheel whatever its width — the hairline
+   * running the width of the page and the 40px logo tile beside the wordmark alike.
    */
   --animate-spectrum-pan: spectrum-pan 32s linear infinite;
 
@@ -441,16 +445,28 @@
   }
 
   /*
-   * One full turn of the wheel. The spectrum gradients are 200% wide and repeat their first stop at
-   * 100%, so travelling exactly one background-width lands on the colour it started from — which is
-   * why this runs to `100% 50%` and restarts rather than easing back the way `gradient-pan` does.
+   * One full turn of the wheel — and `200%` is the arithmetic, not a doubling of the distance.
+   *
+   * A `background-position` percentage is **not** a fraction of the image. It resolves against
+   * *(positioning area − image size)*, which for a `bg-spectrum` sized `200%` is one element width.
+   * So `100%` moves the wheel by an element width, which is only **half** the image: the loop
+   * restarted five stops round from where it ended, and the hairline under the chrome jumped from
+   * cyan back to rose every 32 seconds — a flick, in the one surface whose whole job is to turn
+   * smoothly. `200%` is the value that travels the full image width, and since the gradient repeats
+   * its first stop at both ends, the tile it arrives on is identical to the one it left.
+   *
+   * The two `200%`s agreeing is a coincidence of this size and not a rule: a gradient sized `S%`
+   * travels `P/100 × (S − 100)/S` of its own width, so a `300%` image closes at `150%` — and at
+   * `300%` it would close cleanly while turning the wheel *twice* a cycle, which the 32s above
+   * calls one turn. `tests/design-tokens.test.ts` therefore computes the travel from
+   * `bg-spectrum`'s own `background-size` and requires one image width, pinning neither number.
    */
   @keyframes spectrum-pan {
     from {
       background-position: 0% 50%;
     }
     to {
-      background-position: 100% 50%;
+      background-position: 200% 50%;
     }
   }
 
@@ -697,9 +713,16 @@
    * coloured by it — the hairlines that separate the chrome from the page, and the rule under a
    * section that introduces the spectrum itself.
    *
-   * Eleven stops for ten colours — the first is repeated at the end — and `200%` wide, so
-   * `animate-spectrum-pan` can travel exactly one background-width and land where it started. A
-   * ten-stop gradient would reverse direction at the seam, which reads as the wheel bouncing.
+   * Eleven stops for ten colours — the first is repeated at the end — because the image tiles.
+   * `background-repeat` is left at `repeat`, so magenta at the right edge of one tile would butt
+   * straight against rose at the left edge of the next: a hard seam travelling across the page
+   * once per turn. Closing the wheel on the colour it opened with makes every tile boundary
+   * invisible, which is the whole reason `animate-spectrum-pan` can loop at all.
+   *
+   * `200%` wide, and it has to be wider than the box: `background-position` percentages resolve
+   * against *(positioning area − image size)*, so an image the size of its element has a range of
+   * zero and the animation would have nowhere to travel. At `200%` that range is one element
+   * width, which is what the keyframe's own `200%` end position is measured in.
    */
   background-image: linear-gradient(
     90deg,

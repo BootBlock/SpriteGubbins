@@ -18,6 +18,12 @@ const CHROME_ACTION =
 const CHROME_ACTION_ICON = 'inline-block transition-transform duration-300 group-hover:scale-125';
 
 /**
+ * The wheel, turning, along the bar's bottom edge. One string rather than two: the bloom and the
+ * hairline are one surface, and spelled out separately they would be free to drift a stop apart.
+ */
+const SPECTRUM_EDGE = 'animate-spectrum-pan bg-spectrum pointer-events-none absolute inset-x-0';
+
+/**
  * The app's chrome: identity, navigation, and the two things worth reaching from anywhere — the
  * atlas calculator and the prompt itself.
  *
@@ -26,9 +32,7 @@ const CHROME_ACTION_ICON = 'inline-block transition-transform duration-300 group
  * pressed, so a keystroke in the form does not re-render the header.
  *
  * Glass rather than a solid bar: the aurora and the dot grid keep moving behind it as the page
- * scrolls, which is what stops a sticky header reading as a lid clamped over the document. The
- * hairline under it is a gradient rather than a flat rule, so the bar dissolves into the page at its
- * edges instead of ending in two hard corners.
+ * scrolls, which is what stops a sticky header reading as a lid clamped over the document.
  */
 export function Header() {
   const setActiveTab = useUIStore((state) => state.setActiveTab);
@@ -65,14 +69,16 @@ export function Header() {
       className="glass-panel sticky top-0 z-40 flex flex-wrap items-center justify-between gap-4 px-6 py-4 shadow-2xl"
     >
       {/*
-        The rule under the bar is the whole wheel, turning. It is the app's signature and the one
-        surface that shows the palette entire rather than the slice belonging to the current view —
-        which is why it is here, on the chrome every view shares, and nowhere else.
+        The rule under the bar is the whole wheel, turning — the app's signature, and the one
+        surface showing the palette entire rather than the slice belonging to the current view,
+        which is why it is here on the chrome every view shares and nowhere else.
+
+        Two layers: a blurred bloom straddling the bar's bottom edge, half over the glass and half
+        over the page, and the crisp hairline over it. A 1px line changing hue across half a minute
+        is a change nobody catches sight of; light spilling below the bar is noticed regardless.
       */}
-      <span
-        aria-hidden="true"
-        className="animate-spectrum-pan bg-spectrum pointer-events-none absolute inset-x-0 bottom-0 h-px opacity-80"
-      />
+      <span aria-hidden="true" className={`${SPECTRUM_EDGE} -bottom-0.5 h-1 opacity-50 blur-xs`} />
+      <span aria-hidden="true" className={`${SPECTRUM_EDGE} bottom-0 h-px opacity-80`} />
 
       <button
         type="button"
