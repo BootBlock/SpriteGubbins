@@ -3,7 +3,7 @@ import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
-import { RENDER_STYLES, RIG_MODES } from '../types/output.ts';
+import { RENDER_STYLES, RIG_MODES, TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
@@ -173,22 +173,122 @@ describe('generatePrompt — conditional blocks', () => {
   });
 
   it('never lets a template marker reach the output, across every branch', () => {
-    // Every combination of the three switches the template branches on, so no block escapes being
+    // Every combination of the four switches the template branches on, so no block escapes being
     // both taken and skipped.
     for (const renderStyle of RENDER_STYLES) {
       for (const rigMode of RIG_MODES) {
         for (const emitManifest of [true, false]) {
-          const prompt = generatePrompt(
-            'CHARACTER',
-            SUBJECT,
-            withOutput({ renderStyle, rigMode, emitManifest, targetModel: 'GENERIC' }),
-          );
-          expect(prompt, `${renderStyle}/${rigMode}/${String(emitManifest)}`).not.toMatch(
-            /\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]/,
-          );
+          for (const emitPromptFeedback of [true, false]) {
+            const prompt = generatePrompt(
+              'CHARACTER',
+              SUBJECT,
+              withOutput({
+                renderStyle,
+                rigMode,
+                emitManifest,
+                emitPromptFeedback,
+                targetModel: 'GENERIC',
+              }),
+            );
+            const branch = `${renderStyle}/${rigMode}/${String(emitManifest)}/${String(emitPromptFeedback)}`;
+            expect(prompt, branch).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]/);
+          }
         }
       }
     }
+  });
+});
+
+describe('generatePrompt — the adherence report', () => {
+  /** Every capability the report needs, so only the flag under test is deciding anything. */
+  const CAPABLE = { emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' } as const;
+
+  it('is absent until it is asked for', () => {
+    expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT)).not.toContain('ADHERENCE REPORT');
+  });
+
+  it('asks the target to audit what it delivered and write back about the prompt', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
+
+    expect(prompt).toContain('ADHERENCE REPORT');
+    // The two halves the feature is: audit the pixels, then critique the wording that produced
+    // them. A section carrying only the first is the self-audit section 9 already has.
+    expect(prompt).toContain('write the report from the delivered pixels');
+    expect(prompt).toContain('its wording\nis what needs to change');
+    expect(prompt).toContain('three backticks, then the');
+  });
+
+  it('tells the target its feedback changes a whole tool rather than this one sheet', () => {
+    // The instruction the issue behind this feature turns on: without it a model writes "redraw the
+    // rear torso", which is useless to someone editing a template that composes every prompt.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
+
+    expect(prompt).toContain('one rendering of a template shared by all of them');
+    expect(prompt).toContain('Write nothing specific to this subject');
+  });
+
+  it('cites section 9 rather than restating its checks', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
+
+    expect(prompt).toContain("work section 9's checks");
+    // Section 9's own numbered list appears exactly once. A second copy of it inside the report is
+    // the diluting third statement of the same rules that `modelWrapperText.ts` warns against.
+    expect(prompt.match(/Component count is exactly/g)).toHaveLength(1);
+  });
+
+  it('never emits the report onto a prompt whose section 9 has no checks to cite', () => {
+    // The implication the report's wording depends on: it says "work section 9's checks", and
+    // section 9 is a bare `## 9. LAYOUT` heading on a target that does not deliberate. Asserted
+    // across the whole target list against the *compiled prompt*, because that is where the two
+    // gates actually meet — `EMIT_PROMPT_FEEDBACK` and `DELIBERATES` are computed separately in the
+    // compiler, and loosening either one is what would ship a citation of a section that is not
+    // there. Gating the report on `returnsText` alone, for instance, breaks this on Seedream.
+    for (const target of TARGET_MODEL_IDS) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...CAPABLE, targetModel: target }));
+      if (!prompt.includes('ADHERENCE REPORT')) continue;
+
+      expect(prompt, target).toContain('## 9. LAYOUT AND SELF-AUDIT');
+      expect(prompt, target).toContain('Before delivering, verify:');
+    }
+  });
+
+  it('is withheld from a target that cannot both re-read and answer back', () => {
+    // Seedream plans its layout before rendering, so it could audit the sheet — and returns nothing
+    // but an image, so it has nowhere to put the answer. Being half-capable is not capable.
+    const seedream = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ emitPromptFeedback: true, targetModel: 'SEEDREAM' }),
+    );
+    expect(seedream).not.toContain('ADHERENCE REPORT');
+
+    const midjourney = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ emitPromptFeedback: true, targetModel: 'MIDJOURNEY' }),
+    );
+    expect(midjourney).not.toContain('ADHERENCE REPORT');
+  });
+
+  it('numbers itself by what precedes it, so the sections never skip a number', () => {
+    // A "## 11." with no 10 above it reads as an authoring error — and the report's own text cites
+    // sections back, so a reader who cannot trust the numbering cannot follow the citation either.
+    const withoutManifest = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
+    expect(withoutManifest).toContain('## 10. ADHERENCE REPORT');
+    expect(withoutManifest).not.toContain('## 11.');
+
+    const withManifest = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...CAPABLE, emitManifest: true }));
+    expect(withManifest).toContain('## 10. COMPANION MANIFEST');
+    expect(withManifest).toContain('## 11. ADHERENCE REPORT');
+  });
+
+  it('names the second deliverable in the closing line rather than ending on the image alone', () => {
+    // Last-position attention is strong, and "Generate the sheet now." as the final word is what a
+    // model acts on. The report is the one addition that happens *after* that instruction.
+    expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT).trimEnd()).toMatch(/Generate the sheet now\.$/);
+    expect(generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE)).trimEnd()).toMatch(
+      /never in place of it\.$/,
+    );
   });
 });
 
@@ -291,6 +391,31 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
 
   it('orders the rules so aesthetics cannot outrank a stated direction', () => {
     expect(generatePrompt('CHARACTER', SUBJECT, CORE)).toContain('Nothing later overrides anything earlier');
+  });
+
+  it('states the requirement in section 0 as well, where attention is strongest', () => {
+    // Section 0 is the contract and section 9 audits it, but *that the turns happen at all* was
+    // stated in neither — it lived only in section 3, halfway down a prompt of some 3,600 tokens.
+    // This is the hoist, not a third copy: section 3 still owns how far each turn goes.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
+    const contract = prompt.slice(
+      prompt.indexOf('## 0. NON-NEGOTIABLE OUTPUT CONTRACT'),
+      prompt.indexOf('## 1. SUBJECT DEFINITION'),
+    );
+
+    expect(contract).toMatch(
+      /\*\*A component the inventory lists in more than one direction is one\s+component/,
+    );
+    expect(contract).toContain('never one view repeated, never a mirrored copy');
+  });
+
+  it('leaves that clause out of a single-facing sheet, which has no turns to contract for', () => {
+    const rig = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', directions: 'FOUR_CARDINAL' }),
+    );
+    expect(rig).not.toContain('A component the inventory lists in more than one direction');
   });
 });
 

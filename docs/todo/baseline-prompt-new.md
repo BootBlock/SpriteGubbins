@@ -60,7 +60,7 @@ Three forms:
 | --- | --- |
 | `[IF:KEY=A,B]` | `KEY` is `A` or `B` |
 | `[IF:KEY!=A,B]` | `KEY` is neither |
-| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_MANIFEST`, `DELIBERATES`)* |
+| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_MANIFEST`, `EMIT_PROMPT_FEEDBACK`, `DELIBERATES`)* |
 
 **Blocks nest.** A block inside a dropped block is dropped with it, whatever its own condition says.
 That is what lets a section state its precondition once and its parts state theirs beneath it — §9's
@@ -175,6 +175,7 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 | `OVERLAP_MARGIN` | `NONE` · `HALF_CAP` · `FULL_CAP` |
 | `SOCKETS` | list, e.g. `head, chest, back, hand_left, hand_right` |
 | `EMIT_MANIFEST` | boolean — request a companion JSON manifest (text targets only) |
+| `EMIT_PROMPT_FEEDBACK` | boolean — ask the target to audit its own sheet and report back on this template's wording (targets that both deliberate *and* return text) |
 
 ### Other — **NEW**
 
@@ -216,6 +217,15 @@ Satisfy this section before any aesthetic consideration.
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 6. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
+[/IF]
+
+[IF:MULTI_DIRECTION]
+
+**A component the inventory lists in more than one direction is one component, drawn once per
+direction.** Each of those drawings is that same geometry turned to the object yaw section 3 gives
+it — never one view repeated, never a mirrored copy, never the same view with its details moved.
+Section 3 states how far each turn goes and what it must reveal; this is the contract that the turns
+happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
 **Where two instructions in this specification pull against each other**, satisfy them in this
@@ -530,8 +540,70 @@ the pivot as a fraction of the component's cell:
 The manifest describes what you actually drew. If a component moved or was omitted, say so there
 rather than describing the ideal.
 [/IF]
+[IF:EMIT_PROMPT_FEEDBACK]
+
+---
+[IF:EMIT_MANIFEST]
+
+## 11. ADHERENCE REPORT
+[/IF]
+[IF:EMIT_MANIFEST!=yes]
+
+## 10. ADHERENCE REPORT
+[/IF]
+
+After the sheet is delivered, and as text beside it, report on what you actually produced. Nothing
+in this section changes the image — write the report from the delivered pixels, never from the plan
+you drew them to.
+
+### The audit
+
+Section 9 still stands: fix what you can before delivering. This report is about the sheet you did
+deliver, so work section 9's checks — and its directional audit, where the sheet has one — once more
+against the finished image, and state for each whether it holds. Where one does not, say what the
+image contains instead, concretely: "three heads, all at roughly the same yaw" rather than
+"directional coverage could be improved". A check you cannot settle by looking at the image is
+reported as unverified rather than as passed.
+
+### The feedback block
+
+If every check holds, say so, and write nothing further.
+
+If any check is missed, then this specification failed to obtain what it asked for, and its wording
+is what needs to change. Close your reply with one fenced code block — three backticks, then the
+word markdown — holding a brief addressed to a software engineer who maintains the tool that
+composed this specification. Put nothing in that block but the brief, and nothing after it.
+
+**What that tool is, and why it constrains what you write.** This specification was composed by
+Sprite Gubbins, a browser application that assembles sprite-sheet prompts across a large
+configurable range of subjects, categories, render styles, projections, direction sets and rig
+modes. What you received is one rendering of a template shared by all of them. Your brief will be
+used to change that template, so it reaches every prompt the tool composes — and not this sheet,
+which nobody will regenerate from it. Four things follow:
+
+- **Write about the instruction, not the artwork.** "Redraw the rear torso" cannot be acted on
+  there. "Section 3 fixes the yaw but never states that a rear view must hide the face, so a second
+  three-quarter view satisfies it" can.
+- **Write nothing specific to this subject.** The next prompt from this tool may be a building, a
+  pistol or a tileset, and a change that only makes sense for this one cannot be made.
+- **Propose wording, not architecture.** Name the section, quote the sentence that let the miss
+  through, and give the replacement or addition you would make. Keep it proportionate: this
+  specification largely works, and a brief that restructures it cannot be used.
+- **Say when nothing should change.** If a miss was your own lapse against wording that was already
+  unambiguous, write that instead of inventing an improvement — a rule added against an instruction
+  that was already clear makes the template longer and worse.
+
+Close the brief — still inside that same block — with what only you can report: which instructions
+were hard to satisfy, which pulled against each other, and which were buried far enough down the
+specification to lose their force. None of that is visible in the image, and it is the most useful
+part of the brief.
+[/IF]
 
 Generate the sheet now.
+[IF:EMIT_PROMPT_FEEDBACK]
+
+Then write the adherence report — after the image has been delivered, never in place of it.
+[/IF]
 ```
 
 ---

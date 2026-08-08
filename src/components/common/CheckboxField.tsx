@@ -14,9 +14,10 @@ interface CheckboxFieldProps {
  * A labelled on/off setting.
  *
  * `disabledReason` is a string rather than a boolean because a control that is simply greyed out
- * tells the user nothing about why. The one option this carries — asking for a companion manifest —
- * is unavailable on most targets, and "this target cannot return text alongside an image" is the
- * part worth saying.
+ * tells the user nothing about why. Both options this carries — the companion manifest and the
+ * adherence report — are unavailable on most targets, and *which* capability the target is missing
+ * is the part worth saying: a string lets the caller name it, where a boolean could only hide the
+ * control and leave the user guessing.
  */
 export function CheckboxField({ label, tooltip, checked, disabledReason, onChange }: CheckboxFieldProps) {
   const inputId = useId();

@@ -27,7 +27,7 @@ import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnat
 import { assemblyFor, componentBreakdownFor, componentCountFor } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
 import { wrapForModel } from './modelWrappers.ts';
-import { deliberates, supportsManifest } from './targetCapabilities.ts';
+import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import { applyConditionals, applyOptionals, assertBlocksResolved, substitute } from './templateEngine.ts';
 
@@ -67,7 +67,16 @@ export function generatePrompt(
 
   // Only a target that returns text alongside the image can honour a manifest; asking a pure image
   // endpoint for one just spends tokens on an instruction it will drop.
-  const emitManifest = output.emitManifest && supportsManifest(output.targetModel);
+  const emitManifest = output.emitManifest && returnsText(output.targetModel);
+
+  // The report needs *both* halves of that — a pass in which to re-read the specification against
+  // the pixels, and a channel to answer through — so it is gated on the conjunction rather than on
+  // either alone. The `deliberates` half is also what makes the section's wording safe: it points at
+  // section 9's checks instead of restating them, and section 9 is a bare `## 9. LAYOUT` heading on
+  // a target that does not deliberate. That meeting of two separately-computed flags is asserted on
+  // the compiled prompt across every target, since here is where they meet rather than in either
+  // gate alone.
+  const emitPromptFeedback = output.emitPromptFeedback && supportsPromptFeedback(output.targetModel);
 
   // Additional anatomy is separate pieces by section 1's own rule, so it is counted and listed
   // rather than folded into a neighbouring component — otherwise the sheet asks for more pieces than
@@ -134,6 +143,10 @@ export function generatePrompt(
     IDENTITY_LOCK: output.identityLock,
     SOCKETS: output.sockets,
     EMIT_MANIFEST: emitManifest ? 'yes' : '',
+    // Read twice by the template: once for the report section itself, and once more by the closing
+    // line, which names the second deliverable so the last thing the target reads is not "generate
+    // the sheet now" alone.
+    EMIT_PROMPT_FEEDBACK: emitPromptFeedback ? 'yes' : '',
     // Section 9's self-audit tells the reader to check the sheet and redraw before delivering. A
     // single-pass diffusion endpoint has no such step, so on those targets it is the most
     // rule-list-shaped block in the template sitting where attention is weakest. Same reasoning as
