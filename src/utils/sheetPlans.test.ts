@@ -168,7 +168,7 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
     const prompt = promptFor('CHARACTER', 'TILESET_MODULAR', CYBORG);
     expect(prompt).toContain('- Demon Horn ×2.');
     expect(prompt).toContain('- Tail ×1.');
-    expect(prompt).toContain('#### Additional anatomy — 3');
+    expect(prompt).toContain('#### Additional Genuine Anatomy — 3');
   });
 });
 

@@ -24,7 +24,7 @@ interface SheetSplitRunProps {
  * like.
  *
  * The depth order is shown because it is the thing that actually differs between facings — the
- * pieces are identical, and which arm renders in front of the torso is what makes a west-facing
+ * pieces are identical, and which side renders in front of the body is what makes a west-facing
  * sheet not simply a mirrored east-facing one. A row that named only the facing would leave the user
  * unable to tell whether the split had done anything.
  *

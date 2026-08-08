@@ -80,7 +80,7 @@ export type DirectionSet = (typeof DIRECTION_SETS)[number];
 /**
  * One facing, as the prompt names it.
  *
- * A closed union because depth order is keyed by it: which arm is nearer the camera is a property of
+ * A closed union because depth order is keyed by it: which side is nearer the camera is a property of
  * the facing, so `DEPTH_ORDER_TEXT` must have an answer for every direction a set can resolve to, and
  * a `Record` over this union is what makes the compiler insist on that.
  *

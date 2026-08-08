@@ -135,7 +135,7 @@ describe('component counts', () => {
     );
 
     const prompt = generatePrompt('OBJECT', subject, stale);
-    expect(prompt).toContain('#### Additional anatomy — 3');
+    expect(prompt).toContain('#### Deployable Modules — 3');
     expect(prompt).toContain(
       `Exactly ${String(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 0, anatomy))} components`,
     );
@@ -150,10 +150,10 @@ describe('component counts', () => {
     const core = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', sheetIndex: 0 });
     const limbs = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', sheetIndex: 1 });
 
-    expect(generatePrompt('CHARACTER', subject, core)).toContain('- Additional genuine anatomy: Tail ×1');
+    expect(generatePrompt('CHARACTER', subject, core)).toContain('- Additional Genuine Anatomy: Tail ×1');
     const articulation = generatePrompt('CHARACTER', subject, limbs);
-    expect(articulation).not.toContain('- Additional genuine anatomy:');
-    expect(articulation).not.toContain('Additional anatomy —');
+    expect(articulation).not.toContain('- Additional Genuine Anatomy:');
+    expect(articulation).not.toContain('Additional Genuine Anatomy —');
     expect(articulation).toContain('Exactly 34 components');
   });
 
@@ -201,7 +201,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // at the index the mode's inventory promised.
     const prompt = generatePrompt('CHARACTER', withAnatomy('Demon Horn ×2, Tail ×1'), RIG);
 
-    expect(prompt).toContain('#### Additional anatomy — 3');
+    expect(prompt).toContain('#### Additional Genuine Anatomy — 3');
     expect(prompt).toContain(`They come last in reading order, after the ${String(BASE)} components above:`);
     expect(prompt).toContain('- Demon Horn ×2.');
     expect(prompt).toContain('- Tail ×1.');
@@ -211,20 +211,23 @@ describe('the count once a subject names anatomy of its own', () => {
 
   it('states it in the subject definition as well as the inventory', () => {
     const prompt = generatePrompt('CHARACTER', withAnatomy('Serpentine Tail ×1'), RIG);
-    expect(prompt).toContain('- Additional genuine anatomy: Serpentine Tail ×1');
+    expect(prompt).toContain('- Additional Genuine Anatomy: Serpentine Tail ×1');
   });
 
   it('leaves the count untouched, and says nothing, when there is none', () => {
-    // `NONE` is a statement, not a name. Emitting `Additional genuine anatomy: NONE` would put a
+    // `NONE` is a statement, not a name. Emitting `Additional Genuine Anatomy: NONE` would put a
     // content-shaped token in the highest-weighted section — the defect that deleted `DEFINED`.
     for (const value of [NO_ADDITIONAL_ANATOMY, '']) {
       const prompt = generatePrompt('CHARACTER', withAnatomy(value), RIG);
 
       expect(prompt).toContain(`Exactly ${String(BASE)} components`);
-      expect(prompt).not.toContain('Additional anatomy —');
-      // The label line, not the phrase: section 1's prose names additional anatomy either way, to
-      // tell the generator that such pieces are the one thing it does not paint onto a neighbour.
-      expect(prompt).not.toContain('- Additional genuine anatomy:');
+      expect(prompt).not.toContain('Additional Genuine Anatomy —');
+      expect(prompt).not.toContain('- Additional Genuine Anatomy:');
+      // And section 1's prose stops naming it as well. That sentence is the exception to "painted
+      // onto the component it sits on", and it now names the line it excepts by that line's own
+      // label — so with no line above it, it would be a rule about an attribute the prompt never
+      // states, in the section that opens by forbidding any inference from what is not stated.
+      expect(prompt).not.toContain('is the single exception');
       expect(prompt).not.toContain(NO_ADDITIONAL_ANATOMY);
     }
   });
@@ -266,7 +269,7 @@ describe('the count once a subject names anatomy of its own', () => {
     expect(prompt).not.toContain('Infinity');
     expect(prompt).not.toContain('e+');
     // Section 1 states the clipped count too, so it cannot promise more than section 4 lists.
-    expect(prompt).toContain(`- Additional genuine anatomy: Tail ×${String(MAX_ANATOMY_MULTIPLIER)}`);
+    expect(prompt).toContain(`- Additional Genuine Anatomy: Tail ×${String(MAX_ANATOMY_MULTIPLIER)}`);
   });
 
   it('describes the same anatomy in the subject definition and the inventory', () => {
@@ -274,7 +277,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // carried the parse, so `Tail ×0` said one thing at the top of the prompt and another below.
     const prompt = generatePrompt('CHARACTER', withAnatomy('Tail ×0'), RIG);
 
-    expect(prompt).toContain('- Additional genuine anatomy: Tail ×1');
+    expect(prompt).toContain('- Additional Genuine Anatomy: Tail ×1');
     expect(prompt).toContain('- Tail ×1.');
     expect(prompt).toContain(`Exactly ${String(BASE + 1)} components`);
     // Never two counts in one entry — that is an instruction to draw both.

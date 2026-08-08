@@ -67,38 +67,46 @@ export function describeDirections(directions: readonly Direction[]): string {
 }
 
 /**
- * Which limbs sit in front of the torso, per facing.
+ * Which of the subject's sides sits in front of its body, per facing.
  *
- * Keyed by direction rather than by mode because it is a property of *facing*: south-facing puts
- * both arms in front, north-facing puts both behind, and the diagonals split. Without it, the near
- * arm renders behind the torso the moment the character turns.
+ * Keyed by direction rather than by mode because it is a property of *facing*: south-facing puts the
+ * front in front, north-facing puts it behind, and the diagonals split. Without it, the near-side
+ * pieces render behind the body the moment the subject turns.
  *
- * **Which diagonal puts which arm in front is not a choice.** Facing north your right hand points
+ * **It says "pieces", not "arms".** These lines reach section 5 of every cut-out-rig sheet the app
+ * composes, and five of the six categories have no arms, no torso and no pelvis to order — a tank
+ * rig was told which of its arms rendered in front of its torso. The geometry is the same for all
+ * six and it is the whole content of the line: whatever the subject carries on the side facing the
+ * camera draws over the body, and whatever it carries on the far side draws under it.
+ *
+ * **Which diagonal puts which side in front is not a choice.** Facing north your right hand points
  * east, so facing south-west it points north-west — away from a camera sitting south of the subject,
- * which makes the *left* arm the near one. Derive it rather than picking whichever reads better: a
- * near arm that disagrees with the side `rotation.ts` says the same facing presents is a
+ * which makes the *left* side the near one. Derive it rather than picking whichever reads better: a
+ * near side that disagrees with the side `rotation.ts` says the same facing presents is a
  * contradiction inside one prompt, and the generator resolves it however it likes.
  */
 export const DEPTH_ORDER_TEXT: Readonly<Record<Direction, string>> = {
-  front: 'Facing the camera: both arms render in front of the torso, both legs in front of the pelvis.',
+  front:
+    'Facing the camera: every piece carried on the front or the sides of the body renders in front of it.',
   'front-three-quarter':
-    'Angled towards the camera: the near (right) arm renders in front of the torso, the far arm behind it.',
+    'Angled towards the camera: pieces on the near (right) side render in front of the body, pieces on the far side behind it.',
   'right side':
-    'In profile with the right side towards the camera: the right arm and leg render in front of the torso and pelvis, the left pair behind them.',
+    'In profile with the right side towards the camera: pieces on the right render in front of the body, pieces on the left behind it.',
   'back-three-quarter':
-    'Angled away from the camera: the near (right) arm renders in front of the torso, the far arm behind it, and the back of the head faces the viewer.',
-  back: 'Facing away from the camera: both arms render behind the torso, and the back of the head faces the viewer.',
-  south: 'Facing the camera: both arms render in front of the torso, both legs in front of the pelvis.',
+    'Angled away from the camera: pieces on the near (right) side render in front of the body, pieces on the far side behind it, and the rear of the body faces the viewer.',
+  back: 'Facing away from the camera: every piece carried on the front or the sides of the body renders behind it, and its rear faces the viewer.',
+  south:
+    'Facing the camera: every piece carried on the front or the sides of the body renders in front of it.',
   'south-west':
-    'Angled towards the camera: the near (left) arm renders in front of the torso, the far arm behind it.',
+    'Angled towards the camera: pieces on the near (left) side render in front of the body, pieces on the far side behind it.',
   'south-east':
-    'Angled towards the camera: the near (right) arm renders in front of the torso, the far arm behind it.',
-  west: 'In profile with the left side towards the camera: the left arm and leg render in front of the torso and pelvis, the right pair behind them.',
-  east: 'In profile with the right side towards the camera: the right arm and leg render in front of the torso and pelvis, the left pair behind them.',
+    'Angled towards the camera: pieces on the near (right) side render in front of the body, pieces on the far side behind it.',
+  west: 'In profile with the left side towards the camera: pieces on the left render in front of the body, pieces on the right behind it.',
+  east: 'In profile with the right side towards the camera: pieces on the right render in front of the body, pieces on the left behind it.',
   north:
-    'Facing away from the camera: both arms render behind the torso, and the back of the head faces the viewer.',
+    'Facing away from the camera: every piece carried on the front or the sides of the body renders behind it, and its rear faces the viewer.',
   'north-west':
-    'Angled away from the camera: the near (left) arm renders in front of the torso, the far arm behind it.',
+    'Angled away from the camera: pieces on the near (left) side render in front of the body, pieces on the far side behind it.',
   'north-east':
-    'Angled away from the camera: the near (right) arm renders in front of the torso, the far arm behind it.',
+    'Angled away from the camera: pieces on the near (right) side render in front of the body, pieces on the far side behind it.',
 };

@@ -59,17 +59,17 @@ describe('directionalRotation', () => {
 
   it('agrees with the depth order about which side leads', () => {
     // Two maps describing one facing: `rotation.ts` says which side the turn presents, `camera.ts`
-    // says which arm therefore renders in front of the torso. Both reach the same prompt, so a
-    // disagreement is a self-contradiction the generator resolves however it likes — and they *did*
-    // disagree: the two southern diagonals named the far arm as the near one.
-    const NEAR_ARM = /near \((left|right)\) arm|profile with the (left|right) side/;
+    // says which side's pieces therefore render in front of the body. Both reach the same prompt, so
+    // a disagreement is a self-contradiction the generator resolves however it likes — and they
+    // *did* disagree: the two southern diagonals named the far side as the near one.
+    const NEAR_SIDE = /near \((left|right)\) side|profile with the (left|right) side/;
 
     for (const facing of Object.keys(FACING_TEXT) as Direction[]) {
       const leading = /\*\*(left|right)\*\*/.exec(FACING_TEXT[facing]);
       if (leading === null) continue; // `front`, `south` and `north` present no side at all.
 
-      const near = NEAR_ARM.exec(DEPTH_ORDER_TEXT[facing]);
-      expect(near, `${facing} names a leading side but its depth order names no near arm`).not.toBeNull();
+      const near = NEAR_SIDE.exec(DEPTH_ORDER_TEXT[facing]);
+      expect(near, `${facing} names a leading side but its depth order names no near side`).not.toBeNull();
       expect(near?.[1] ?? near?.[2], facing).toBe(leading[1]);
     }
   });

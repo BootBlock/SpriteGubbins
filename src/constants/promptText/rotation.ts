@@ -25,8 +25,8 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * classic sets' plain `45°, 90°, 135°`.
  *
  * The three-quarter facings are `45°` and `135°`, not `0°` and `180°`: `front-three-quarter` is a
- * *turned* pose — that is why `DEPTH_ORDER_TEXT` distinguishes a near arm from a far one for it and
- * does not for `front`, where both arms are equally near.
+ * *turned* pose — that is why `DEPTH_ORDER_TEXT` distinguishes a near side from a far one for it
+ * and does not for `front`, where both sides are equally near.
  */
 export const OBJECT_YAW: Readonly<Record<Direction, number>> = {
   front: 0,
