@@ -96,6 +96,7 @@ const REQUIRED_THEME_TOKENS = [
   '--animate-spectrum-pan',
   '--animate-toast-timer',
   '--ease-emphasized',
+  '--ease-decelerate',
 ];
 
 /** Bespoke utilities components use by name, declared with `@utility` rather than `@theme`. */
@@ -221,6 +222,25 @@ describe('design tokens', () => {
     // every non-Safari engine reads had been deleted.
     expect(body).toMatch(/^\s*backdrop-filter: blur\(/m);
     expect(body).toMatch(/^\s*-webkit-backdrop-filter: blur\(/m);
+  });
+
+  it('keeps the floating glass opaque enough to read guidance through', () => {
+    // `glass-float` carries the tooltip's guidance and the combo box's options, and both open over
+    // whatever the user was looking at — including this app's brightest surfaces, which are wheel
+    // stops at L 0.76 (a preset card, the gold randomise button, the selected tab pill). The alpha
+    // is what decides whether the text on the card survives that, and it is the one number a
+    // "make it glassier" change reaches for first.
+    //
+    // Measured in Edge, body guidance over a stop at L 0.76: 0.80 alpha gives 4.99:1, and 0.60
+    // gives 2.91:1 — under the 4.5:1 AA body threshold, on a surface whose entire job is to be
+    // read. The floor sits between them rather than pinning 0.80 exactly, so the recipe can still
+    // be tuned without a test edit; what it cannot do is quietly cross into illegibility.
+    const declaration = stylesheet.slice(stylesheet.indexOf('@utility glass-float {'));
+    const body = declaration.slice(0, declaration.indexOf('\n}'));
+    const alpha = /background-color: color-mix\(in oklab, var\(--color-foundry-900\) (\d+)%/.exec(body)?.[1];
+
+    expect(alpha).toBeDefined();
+    expect(Number(alpha) / 100).toBeGreaterThanOrEqual(0.75);
   });
 
   it.each(CLIPPED_HEADINGS)('clips %s to its glyphs, prefixed for Safari as well', (utility) => {
@@ -361,19 +381,26 @@ describe('design tokens', () => {
     expect(closed).not.toContain('overflow: hidden');
   });
 
-  it('transitions content-visibility on the open state only, so a shut group is never tabbable', () => {
-    // The asymmetry is load-bearing, and it looks like an oversight — which is exactly why it is
-    // pinned. `content-visibility … allow-discrete` in the *closed* rule is what animates the
-    // collapse, and it does so by keeping `::details-content` painted past the moment `open` goes:
-    // measured in Edge, Enter-then-Tab then lands on a control inside a group that is already shut,
-    // and `<body>` gets the focus 200ms later. `SectionToggleAll` exists to stop that happening.
+  it('holds the content painted through the close, which is the only way it animates', () => {
+    // `content-visibility … allow-discrete` on the *closed* rule is what gives the collapse a box to
+    // shrink: the user agent hides `::details-content` the moment `open` goes, and without the
+    // discrete transition deferring that there is nothing left to transition and the group snaps.
+    // Losing this line is silent — the open still animates, so it reads as working.
     const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
-    const open = /\n {4}&\[open\]::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
 
     expect(closed).not.toBe('');
-    expect(open).not.toBe('');
-    expect(closed).not.toContain('content-visibility');
-    expect(open).toContain('content-visibility 200ms allow-discrete');
+    expect(closed).toContain('content-visibility 300ms allow-discrete');
+    expect(closed).toContain('block-size 300ms var(--ease-decelerate)');
+  });
+
+  it('eases the size change on the curve whose travel is legible, not the entrance curve', () => {
+    // `ease-emphasized` is 83% travelled in its first quarter, which is right for an entrance and
+    // wrong for a height: the panel arrives before the eye catches it and the motion reads as
+    // absent, leaving the caret the only thing that appears to move. That was the reported symptom.
+    const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(closed).toContain('var(--ease-decelerate)');
+    expect(closed).not.toContain('var(--ease-emphasized)');
   });
 
   it.each(TYPE_SCALE)('sizes %s at the rung it names, and gives it a line height', (token, pixels) => {
@@ -685,11 +712,14 @@ describe("a view's primary action", () => {
 
   it('mixes the fill and the border at the two strengths the recipe is', () => {
     // Pinned because the pair is the design and the gap between them is the whole point: the fill is
-    // a tint at 30% and the border is a boundary at 80%, and only the border clears the ratio that
-    // makes the control locatable. Nudging the fill toward the border — which looks like a tidy-up,
-    // since a 30% surface reads as barely there — is what this exists to stop.
-    expect(fillAlpha).toBe(30);
-    expect(borderAlpha).toBe(80);
+    // a tint at 24% and the border is a boundary at 54%, and only the border clears the ratio that
+    // makes the control locatable. The border is also the number with almost nowhere left to go:
+    // 52.73% is the lowest alpha that still clears 3:1, so 54% is carrying about 1.3 points of
+    // headroom and no more. A later trim of "just a few percent", which looks like nothing, is
+    // therefore the edit that takes the button's only edge under the threshold. The check below
+    // measures that rather than trusting this, but a value changed here should be a deliberate act.
+    expect(fillAlpha).toBe(24);
+    expect(borderAlpha).toBe(54);
   });
 
   it('paints no background the contrast sweep below cannot measure', () => {
@@ -708,7 +738,7 @@ describe("a view's primary action", () => {
   it('keeps text-ink above 4.5:1 on every fill it paints, at every stop and on every panel', () => {
     // The stops are all L 0.76, so a composite lightens as the alpha rises and the ink on it darkens
     // by comparison — 51% is the last value that still clears AA, and 52% does not. That ceiling,
-    // not the resting 30%, is the real rule, so this sweeps *every* fill the utility paints rather
+    // not the resting 24%, is the real rule, so this sweeps *every* fill the utility paints rather
     // than the resting one alone: a hover or active state that later re-lights the surface is held
     // to the same floor. The assertion above is what makes "every" true rather than "every one the
     // regex happened to match".
@@ -729,11 +759,13 @@ describe("a view's primary action", () => {
   });
 
   it('carries the button edge on the border, which at this fill is the whole of it', () => {
-    // WCAG 1.4.11 wants 3:1 between a control and its surroundings, and the 30% fill contributes
-    // nothing towards it: over a panel it lands between 1.68:1 and 1.89:1, so *no* stop on *any*
-    // panel comes near. A borderless version of this button would have no locatable edge at all —
-    // which makes the border a correctness property rather than a flourish, and the reason the
-    // fill's reduction stopped at the fill and left the border where it was.
+    // WCAG 1.4.11 wants 3:1 between a control and its surroundings, and the 24% fill contributes
+    // nothing towards it: over a panel it lands between 1.45:1 and 1.63:1, so *no* stop on *any*
+    // panel comes near. That leaves the border carrying the whole requirement by itself, and at 54%
+    // it clears at 3.09:1 on its worst combination — a margin of 0.09, which is why this is asserted
+    // at every stop on every panel rather than sampled. The threshold is crossed at 52.73%, and the
+    // ratio falls away smoothly rather than off a cliff (52% is 2.95:1, 50% is 2.80:1), so nothing
+    // about the rendering announces the moment the button stops meeting 1.4.11 — this does.
     for (const stop of SPECTRUM_STOPS) {
       for (const panel of PANELS) {
         const surface = oklchToken(panel);
@@ -745,7 +777,7 @@ describe("a view's primary action", () => {
 
   it('says hover on the border and the bloom, which is what the button is read by', () => {
     // Deliberately *not* "the hover sets no `background-color`". That was the assertion while the
-    // fill sat at its contrast ceiling and there was no headroom to raise it into; at 30% there is,
+    // fill sat at its contrast ceiling and there was no headroom to raise it into; at 24% there is,
     // so pinning the absence would be pinning an accident — a hover fill is now allowed, provided it
     // clears AA, which the two assertions above enforce between them. What belongs here is the
     // positive half: the hover has to change the border, because the border is the only part of this

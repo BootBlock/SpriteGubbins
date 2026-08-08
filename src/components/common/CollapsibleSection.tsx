@@ -53,9 +53,9 @@ interface CollapsibleSectionProps extends SectionDefinition {
  * fold survives the tab switch that unmounts the view. `onToggle` rather than an intercepted click:
  * it is the one event that hears about a keyboard toggle, a click, *and* a find-in-page expansion.
  *
- * **It opens on a height transition and shuts at once** — `section-reveal`, defined in `index.css`
- * as every `@utility` in this app is, and applied here as an ordinary class. The caret's rotation
- * shares its 200ms, so the chevron and the group are one gesture.
+ * **It eases open and shut** — `section-reveal`, defined in `index.css` as every `@utility` in this
+ * app is, and applied here as an ordinary class. The caret's rotation shares its 300ms, so the
+ * chevron and the group are one gesture rather than two things of different lengths.
  *
  * This carried a "deliberately not animated" note for a while, and the objection it recorded was
  * real: the height transition needs the content clipped, and a clipping ancestor around these
@@ -65,11 +65,12 @@ interface CollapsibleSectionProps extends SectionDefinition {
  * that list is lifted into the top layer and cannot be clipped by anything. A browser without the
  * lift gets the instant open it always had.
  *
- * **The close is instant on purpose**, and `section-reveal` records the measurement: animating it
- * means keeping `::details-content` painted past the moment `open` goes, which keeps everything
- * inside tabbable while the group is already shut — Enter then Tab lands on a control inside a
- * closed group and is dropped to `<body>` when the paint finally stops. That is the failure
- * `SectionToggleAll` exists to prevent, arriving from another direction.
+ * **What animating the close costs is a focus hazard, and the `onBlur` below is what pays it.**
+ * Holding the content painted past the moment `open` goes is the only way to have a box left to
+ * shrink, and for those 300ms a shut group is still tabbable; the handler catches the focus the user
+ * agent then throws to `<body>` and puts it back on the summary. The rejected alternative, `inert`,
+ * is recorded in `section-reveal` — it prevents the entry and costs find-in-page, which is one of
+ * the reasons this component is a `<details>` at all.
  *
  * The other half of the old note still stands, and is why the motion is a *transition* and not a
  * keyframe: measured in Edge and in Chromium, a keyframe animation on a child of a `<details>`
@@ -103,6 +104,26 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
       onToggle={(event) => {
         setSectionsOpen([id], event.currentTarget.open);
       }}
+      /*
+        Catching the focus the collapse throws away.
+
+        `section-reveal` keeps `::details-content` painted for the length of the transition, which is
+        the only way the close can animate at all — and for those 300ms the group is shut while its
+        controls are still reachable, so Enter-then-Tab on the summary lands inside a closed group.
+        When the paint stops, the user agent has nowhere to put that focus and drops it to `<body>`:
+        the ring gone, the position gone, exactly what `SectionToggleAll` moves focus to avoid.
+
+        `onBlur` is React's name for `focusout`, which bubbles — so this hears the blur wherever
+        inside the group it came from. The two guards are what keep it from firing on anything else:
+        a `relatedTarget` of `null` means focus went nowhere rather than on to another control, and
+        an already-closed `<details>` means this is the collapse rather than a click on empty page.
+        Landing on the summary rather than the next group is deliberate — it is the control that
+        reopens what just shut, and it is where the user was a moment ago.
+      */
+      onBlur={(event) => {
+        if (event.currentTarget.open || event.relatedTarget !== null) return;
+        event.currentTarget.querySelector('summary')?.focus();
+      }}
       // The last group's own bottom padding would otherwise stack on the panel's, leaving far more
       // air under the final field than there is above the panel heading. Trimmed to `pb-1` rather
       // than removed: `section-reveal` clips the block axis of `::details-content`, and clipping
@@ -127,7 +148,7 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          className={`size-3.5 shrink-0 text-tab transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
+          className={`size-3.5 shrink-0 text-tab transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`}
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
         </svg>
