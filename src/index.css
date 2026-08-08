@@ -612,6 +612,25 @@
     --color-tab: var(--color-spectrum-jade);
     --tab-chord-a: var(--color-spectrum-indigo);
     --tab-chord-b: var(--color-spectrum-ember);
+
+    /*
+     * The one view whose backdrop the app does not choose.
+     *
+     * Every other surface a floating card can open over is ours and is dark, which is why
+     * `glass-float` can afford to be mostly transparent — measured on the studio, guidance reads
+     * 6.61:1 through it. The quantiser puts the *user's own sprite sheet* on screen at whatever
+     * brightness they drew it, over a checkerboard that is itself light, and through 40% glass a
+     * paragraph of guidance over a white sheet measures **1.19:1**. That is not degraded, it is
+     * gone: below even the 3:1 floor for large text.
+     *
+     * 85% is the lowest step that clears the 4.5:1 AA body threshold against the worst case the
+     * app can actually produce — 5.09:1 over pure white, 5.72:1 over a saturated wheel stop.
+     * Glass that cannot be read through is not a style, so this view spends the effect and keeps
+     * the words. It is scoped by *view* rather than per-control because the alpha inherits: a card
+     * lifted into the top layer stays a DOM descendant of this element, so `--glass-float-opacity`
+     * still reaches it however far `showPopover()` moves it on screen.
+     */
+    --glass-float-opacity: 85%;
   }
 
   [data-tab='presets'] {
@@ -870,7 +889,11 @@
    * measures 4.93:1 — the same glass and the same contrast as 80% alpha with no filter at all, in
    * different notation. Measured, not reasoned. There is no setting that is both.
    */
-  background-color: color-mix(in oklab, var(--color-foundry-900) 40%, transparent);
+  background-color: color-mix(
+    in oklab,
+    var(--color-foundry-900) var(--glass-float-opacity, 40%),
+    transparent
+  );
   background-image: linear-gradient(
     to bottom,
     color-mix(in oklab, var(--color-accent) 18%, transparent) 0%,

@@ -330,6 +330,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A panel resting on the page | `bg-foundry-800` | `bg-slate-900` |
 | A **glass** panel — header, studio panel, card, modal shell | `glass-panel` | `bg-foundry-800/80` + a hand-rolled `backdrop-blur` |
 | A surface **floating above** a panel — tooltip card, combo-box list | `glass-float` | a bespoke translucent panel with its own border and shadow |
+| A view whose backdrop is **not the app's own** — the quantiser, showing the user's image | raise `--glass-float-opacity` on that view's `[data-tab]` rule | leaving the default, where guidance over a white sheet measures 1.19:1 |
 | A control or row inside a panel | `bg-foundry-700` | `bg-slate-800` |
 | A border, or a hover/pressed state | `border-foundry-600` / `bg-foundry-600` | `border-slate-700` |
 | **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1` |
