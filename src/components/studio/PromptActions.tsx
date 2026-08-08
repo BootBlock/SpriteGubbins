@@ -12,9 +12,13 @@ import { splitsIntoRuns } from '../../utils/sheetRuns.ts';
  *
  * One string rather than one per button: they sit side by side, so a difference between any two of
  * them reads as a mistake rather than as emphasis.
+ *
+ * The hover border is the view's colour, matching the chrome's own secondary pair and the primary
+ * beside them: every button inside a panel now answers to `--color-tab`, and one of the four still
+ * lighting up indigo would read as belonging to something else.
  */
 const PROMPT_ACTION =
-  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-200 hover:-translate-y-px hover:border-accent/50 hover:bg-foundry-700 hover:text-ink active:translate-y-0';
+  'group flex items-center gap-1.5 rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-200 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 hover:text-ink active:translate-y-0';
 
 /** The glyph inside one of those, lifting with it — which is why each button is a `group`. */
 const PROMPT_ACTION_ICON = 'inline-block transition-transform duration-300 group-hover:scale-125';
@@ -106,10 +110,12 @@ export function PromptActions({ promptText }: PromptActionsProps) {
         onClick={() => {
           void copyPrompt();
         }}
-        className="group relative ml-auto overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-1.5 text-xs font-extrabold text-ink shadow-md ring-1 ring-accent-soft/30 transition-all duration-200 hover:scale-[1.03] hover:shadow-xl hover:ring-accent-soft active:scale-[0.98]"
+        // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
+        // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
+        className="action-tab group relative ml-auto overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
       >
         {/* The sheen is a child rather than a background layer on the button, so it can be clipped
-            to the rounded corners and slid across without disturbing the gradient underneath. */}
+            to the rounded corners and slid across without disturbing the fill underneath. */}
         <span
           aria-hidden="true"
           className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-700 group-hover:translate-x-full"

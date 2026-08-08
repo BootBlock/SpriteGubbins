@@ -26,8 +26,13 @@ interface SegmentedChoiceProps {
  *
  * Extracted rather than written twice: the second copy is where the `aria-pressed` goes missing, and
  * that attribute is doing more than it looks — `index.css`'s forced-colours block keys the selected
- * state off it, so a row that conveys "current" with `bg-accent-strong` alone conveys nothing at all
- * to a user in that mode.
+ * state off it, so a row that conveys "current" with a fill alone conveys nothing at all to a user in
+ * that mode.
+ *
+ * The selected pill is the view's colour, painted the way `TabSwitcher` paints its own: a *selection*
+ * is solid `bg-tab`, where an *action* is the translucent, outlined `action-tab`. Keeping those two
+ * apart is what stops "the zoom is at 4×" and "press this to download" reading as the same offer.
+ * Both call sites are in the Quantise tab, so this used to be the one indigo control in a jade panel.
  */
 export function SegmentedChoice({ label, values, value, format, onChange }: SegmentedChoiceProps) {
   return (
@@ -40,9 +45,12 @@ export function SegmentedChoice({ label, values, value, format, onChange }: Segm
           onClick={() => {
             onChange(option);
           }}
+          // The selected label is near-black, not ink, for the reason `TabSwitcher` gives at length:
+          // every stop on the wheel is a *light* colour, so ink on one is two light tones a shade
+          // apart (~1.8:1), where near-black measures 8.7:1 at the wheel's worst stop.
           className={`rounded-lg px-2.5 py-1 font-mono text-xs font-semibold transition-colors ${
             option === value
-              ? 'bg-accent-strong text-ink'
+              ? 'bg-tab text-foundry-950'
               : 'bg-foundry-700 text-ink-faint hover:bg-foundry-600 hover:text-ink'
           }`}
         >

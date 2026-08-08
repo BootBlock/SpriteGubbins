@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -106,6 +106,7 @@ const REQUIRED_UTILITIES = [
   'bg-spectrum',
   'glass-panel',
   'glass-float',
+  'action-tab',
   'shimmer-surface',
   'heading-gradient',
   'heading-spectrum',
@@ -596,27 +597,240 @@ function oklchToken(name: string): [number, number, number] {
  * Clamped to the gamut the way a browser clamps, which matters not at all for these near-neutral
  * tones and would matter a great deal for a saturated one.
  */
-function luminanceOf([L, C, hDeg]: [number, number, number]): number {
+function linearOf([L, C, hDeg]: [number, number, number]): [number, number, number] {
   const h = (hDeg * Math.PI) / 180;
   const a = C * Math.cos(h);
   const b = C * Math.sin(h);
   const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
   const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
   const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
-  const [r, g, blue] = [
+  return [
     4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
     -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
     -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
   ].map((v) => Math.min(Math.max(v, 0), 1)) as [number, number, number];
-  return 0.2126 * r + 0.7152 * g + 0.0722 * blue;
 }
 
-/** WCAG contrast between two tokens, by name. */
-function contrastBetween(one: string, other: string): number {
-  const a = luminanceOf(oklchToken(one));
-  const b = luminanceOf(oklchToken(other));
+/** WCAG relative luminance of an already-resolved linear-sRGB triple. */
+function luminanceOf([r, g, b]: [number, number, number]): number {
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast between two linear-sRGB triples — the one place the ratio is written down. */
+function contrastOf(one: [number, number, number], other: [number, number, number]): number {
+  const [a, b] = [luminanceOf(one), luminanceOf(other)];
   return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
 }
+
+/** The same ratio between two tokens, by name. */
+function contrastBetween(one: string, other: string): number {
+  return contrastOf(linearOf(oklchToken(one)), linearOf(oklchToken(other)));
+}
+
+/**
+ * The sRGB transfer function and its inverse.
+ *
+ * Needed only for the alpha compositing below: CSS blends a translucent fill with what is behind it
+ * in **gamma-encoded** sRGB, not in the linear space WCAG measures luminance in. Averaging the
+ * linear values instead — the shortcut that looks equivalent — makes every composite come out
+ * lighter than the browser paints it, which for a check that exists to find a *too light* fill would
+ * quietly report the failure as a pass.
+ */
+const encode = (v: number): number => (v <= 0.0031308 ? 12.92 * v : 1.055 * v ** (1 / 2.4) - 0.055);
+const decode = (v: number): number => (v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+
+/**
+ * A token laid over another at `alpha`, the way the engine composites it, as linear sRGB.
+ *
+ * Destructured into three channels rather than mapped over an array, which is what keeps the return
+ * a *tuple*: `Array.prototype.map` widens to `number[]`, and under `noUncheckedIndexedAccess` every
+ * consumer of that would have to admit a possibly-missing channel it can see there are three of.
+ */
+function compositeOf(
+  fg: [number, number, number],
+  bg: [number, number, number],
+  alpha: number,
+): [number, number, number] {
+  const [fr, fg_, fb] = linearOf(fg);
+  const [br, bg_, bb] = linearOf(bg);
+  const mix = (over: number, under: number) => decode(alpha * encode(over) + (1 - alpha) * encode(under));
+  return [mix(fr, br), mix(fg_, bg_), mix(fb, bb)];
+}
+
+describe("a view's primary action", () => {
+  const block = ruleBlock('@utility action-tab {', '@utility ');
+
+  /**
+   * Every background the utility paints, in every state — the value only, property name dropped.
+   *
+   * Read as a *complete list* rather than searched for the one shape the sweep understands, because
+   * the two are not the same guard and only this one is total. A regex that hunts for
+   * `background-color: color-mix(in oklab, var(--color-tab) N%…)` finds the fill as it happens to be
+   * written today and is blind to every other way of painting the same surface — `background-color:
+   * var(--color-tab)` at full strength, a different `color-mix` colour space, the arguments the other
+   * way round, the `background` shorthand, a `background-image` of two identical stops. Those are not
+   * exotic spellings; the first is the most natural way anyone would write "hover fills with the
+   * view's colour", and `text-ink` on an unmixed stop measures 1.62:1. Enumerating instead means a
+   * background this file cannot measure fails the check below rather than slipping past it.
+   *
+   * Anchored per line and requiring a `property: value;` shape, so the utility's own prose — which
+   * begins every line with ` * ` — cannot match.
+   */
+  const backgrounds = [...block.matchAll(/^\s*background[\w-]*: ([^;]+);/gm)].map((rule) => rule[1] ?? '');
+
+  /** The one shape the contrast sweep can measure: a `--color-tab` fill at a stated alpha. */
+  const TAB_FILL = /^color-mix\(in oklab, var\(--color-tab\) ([\d.]+)%, transparent\)$/;
+
+  /** The one background here that carries no view colour at all — the disabled state's flat tone. */
+  const COLOURLESS_FILL = 'var(--color-foundry-700)';
+
+  const fillAlphas = backgrounds
+    .map((value) => TAB_FILL.exec(value)?.[1])
+    .filter((alpha) => alpha !== undefined)
+    .map(Number);
+
+  /** The two mix percentages the recipe is: the resting fill, then the border. */
+  const fillAlpha = fillAlphas[0];
+  const borderAlpha = Number(
+    /border: 1px solid color-mix\(in oklab, var\(--color-tab\) ([\d.]+)%/.exec(block)?.[1],
+  );
+
+  /**
+   * Every panel one of these buttons actually sits on. `foundry-800` is the lightest — `glass-panel`
+   * is that tone at 72% over the page, so it never resolves lighter — and it is therefore the case
+   * the text contrast has to survive; `foundry-950` is the well the preset save row sits in.
+   */
+  const PANELS = ['--color-foundry-800', '--color-foundry-900', '--color-foundry-950'];
+
+  it('mixes the fill and the border at the two strengths the recipe is', () => {
+    // Pinned because the pair is the design and the gap between them is the whole point: the fill is
+    // a tint at 30% and the border is a boundary at 80%, and only the border clears the ratio that
+    // makes the control locatable. Nudging the fill toward the border — which looks like a tidy-up,
+    // since a 30% surface reads as barely there — is what this exists to stop.
+    expect(fillAlpha).toBe(30);
+    expect(borderAlpha).toBe(80);
+  });
+
+  it('paints no background the contrast sweep below cannot measure', () => {
+    // The half that makes the sweep total, and the reason it is a separate assertion: a fill written
+    // in a shape `TAB_FILL` does not recognise would otherwise be *silently* excluded from the
+    // contrast check — the loops would simply not visit it, and the suite would stay green while the
+    // button went under AA. So every background is required to be either a `--color-tab` mix this
+    // file can compute or the one colourless tone the disabled state uses; a third kind fails here,
+    // and the fix is to teach the sweep about it rather than to widen this list.
+    expect(backgrounds.length).toBeGreaterThanOrEqual(2);
+    expect(backgrounds.filter((value) => !TAB_FILL.test(value) && value !== COLOURLESS_FILL)).toStrictEqual(
+      [],
+    );
+  });
+
+  it('keeps text-ink above 4.5:1 on every fill it paints, at every stop and on every panel', () => {
+    // The stops are all L 0.76, so a composite lightens as the alpha rises and the ink on it darkens
+    // by comparison — 51% is the last value that still clears AA, and 52% does not. That ceiling,
+    // not the resting 30%, is the real rule, so this sweeps *every* fill the utility paints rather
+    // than the resting one alone: a hover or active state that later re-lights the surface is held
+    // to the same floor. The assertion above is what makes "every" true rather than "every one the
+    // regex happened to match".
+    const ink = linearOf(oklchToken('--color-ink'));
+
+    // Without this a parse that found nothing would make the loops below run zero assertions and
+    // the whole guard would pass having measured no colour at all.
+    expect(fillAlphas.length).toBeGreaterThan(0);
+
+    for (const alpha of fillAlphas) {
+      for (const stop of SPECTRUM_STOPS) {
+        for (const panel of PANELS) {
+          const fill = compositeOf(oklchToken(`--color-spectrum-${stop}`), oklchToken(panel), alpha / 100);
+          expect(contrastOf(fill, ink)).toBeGreaterThanOrEqual(4.5);
+        }
+      }
+    }
+  });
+
+  it('carries the button edge on the border, which at this fill is the whole of it', () => {
+    // WCAG 1.4.11 wants 3:1 between a control and its surroundings, and the 30% fill contributes
+    // nothing towards it: over a panel it lands between 1.68:1 and 1.89:1, so *no* stop on *any*
+    // panel comes near. A borderless version of this button would have no locatable edge at all —
+    // which makes the border a correctness property rather than a flourish, and the reason the
+    // fill's reduction stopped at the fill and left the border where it was.
+    for (const stop of SPECTRUM_STOPS) {
+      for (const panel of PANELS) {
+        const surface = oklchToken(panel);
+        const border = compositeOf(oklchToken(`--color-spectrum-${stop}`), surface, borderAlpha / 100);
+        expect(contrastOf(border, linearOf(surface))).toBeGreaterThanOrEqual(3);
+      }
+    }
+  });
+
+  it('says hover on the border and the bloom, which is what the button is read by', () => {
+    // Deliberately *not* "the hover sets no `background-color`". That was the assertion while the
+    // fill sat at its contrast ceiling and there was no headroom to raise it into; at 30% there is,
+    // so pinning the absence would be pinning an accident — a hover fill is now allowed, provided it
+    // clears AA, which the two assertions above enforce between them. What belongs here is the
+    // positive half: the hover has to change the border, because the border is the only part of this
+    // button carrying its edge, and a hover that moved the fill alone would say nothing.
+    const hover = /&:hover:not\(:disabled\) \{([^}]*)\}/.exec(block)?.[1] ?? '';
+
+    expect(hover).toMatch(/border-color: var\(--color-tab\)/);
+    expect(hover).toMatch(/box-shadow: .*var\(--color-tab\)/);
+  });
+
+  it('falls off the wheel entirely when disabled, so unavailable never reads as coloured', () => {
+    const disabled = /&:disabled \{([^}]*)\}/.exec(block)?.[1] ?? '';
+
+    expect(disabled).toMatch(/background-color: var\(--color-foundry-700\)/);
+    expect(disabled).toMatch(/color: var\(--color-ink-faint\)/);
+    // The bloom is the one hover declaration with nothing to override it here — `box-shadow: none`
+    // is what stops a disabled control keeping the lit edge of the state before it.
+    expect(disabled).toMatch(/box-shadow: none/);
+  });
+
+  it('leaves no button inside a view still painting itself the chrome primary', () => {
+    // The defect this replaced: one indigo button treatment worn by every primary in the app, so
+    // the page's colour identity stopped at the panel edge — and on a preset card, whose whole
+    // point is that it owns a stop on the wheel, the single control ignored it.
+    //
+    // "Inside a view" is not the same as "in a view directory", and scoping this to the three view
+    // directories alone would have left the hole that `SegmentedChoice` and `FilePickerField` sit
+    // in: both live in `common/` and both render only ever inside a tab, so reverting either would
+    // have gone unnoticed by the guard named for catching exactly that.
+    //
+    // `common/` cannot simply be added, because it also holds `Toast` and `Modal`, which belong to
+    // no view and keep the primary on purpose. So a shared component is judged by *who imports it*
+    // — it counts as being inside a view when every file that imports it is. That is derived rather
+    // than listed, so a shared component later pulled into the chrome stops being checked here
+    // without anyone remembering to remove it.
+    const sources = scannableSources();
+    const inView = (file: string) =>
+      ['tabs', 'studio', 'quantise'].some((view) => file.includes(`components${sep}${view}${sep}`));
+
+    const sharedInView = sources
+      .filter((file) => file.includes(`components${sep}common${sep}`) && !file.endsWith('.test.tsx'))
+      .filter((file) => {
+        const importPath = new RegExp(`from '[^']*${basename(file, '.tsx')}\\.tsx'`);
+        const importers = sources.filter(
+          (other) => other !== file && importPath.test(readFileSync(other, 'utf8')),
+        );
+        // The `length` guard matters: without it a component nobody imports would pass `every`
+        // vacuously and be swept in on the strength of having no callers at all.
+        return importers.length > 0 && importers.every(inView);
+      });
+
+    const scoped = [...sources.filter(inView), ...sharedInView];
+
+    // A filter that matched nothing — a directory renamed, a `sep` that is not the platform's —
+    // would make the sweep below trivially empty and this guard pass having read no component at
+    // all, which is the same failure shape the type-scale sweep above guards its own count against.
+    // The second floor is what keeps the *derived* half honest, since it is the half that can go
+    // quietly empty while the first stays green.
+    expect(scoped.length).toBeGreaterThan(20);
+    expect(sharedInView.length).toBeGreaterThanOrEqual(2);
+
+    const offenders = scoped.filter((file) => /(bg|from|to)-accent-strong/.test(readFileSync(file, 'utf8')));
+
+    expect(offenders).toStrictEqual([]);
+  });
+});
 
 describe('scrollbar contrast', () => {
   /**

@@ -335,6 +335,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | **Primary** action, focus, selection, ambience | `accent` / `accent-strong` / `accent-soft` | `bg-indigo-500`, `#6366f1` |
 | **Live** state — auto-sync, generating, updating as you type | `neon` / `neon-deep` | `text-cyan-400`, `#22d3ee` |
 | Anything belonging to the **active view** — panel edge, section heading, step chip, hover bloom | `bg-tab` / `text-tab` / `border-tab` / `ring-tab` | `accent`, which pins it to the primary in every view |
+| A **primary action inside a view** — Save, Load preset, Download PNG, the file chooser | `action-tab` | `accent`, which the chrome's Copy Prompt keeps and a panel's own action does not |
 | The **whole hue wheel, neat** — the hairline under the chrome, and nothing broader than one | `bg-spectrum` (+ `animate-spectrum-pan`) | a hand-written ten-stop `linear-gradient()`, or a panel, tile or block filled with the wheel |
 | The **wordmark** — ink with the wheel drifting behind it | `heading-spectrum` (+ `animate-spectrum-pan`) | `bg-spectrum` poured through the type, which out-shouts every control in the chrome |
 | One **member of an open-ended list**, coloured by position | `spectrumStopAt(index)` assigned to `--color-tab` | a runtime `` `text-spectrum-${name}` ``, which the scanner never sees and which emits nothing |
@@ -386,10 +387,13 @@ app is a position on it. That is a structural claim and it has to stay true, so 
 
 - **Identity follows the view; interaction and status do not.** `--color-tab` is the active view's
   stop, and the surfaces that *belong* to a view take it — panel edges, section headings, the step
-  chips, hover blooms, the dot grid, the ambient wash, the switcher's pill. Everything that means
-  the same thing wherever it appears keeps its fixed role colour: form focus, primary buttons, the
-  focus ring, the two floating glass surfaces, and `gold`/`emerald`/`rose`. Moving one across that
-  line is how a page ends up with no stable vocabulary at all.
+  chips, hover blooms, the dot grid, the ambient wash, the switcher's pill, and the primary action
+  *inside* a panel (`action-tab`). Everything that means the same thing wherever it appears keeps
+  its fixed role colour: form focus, the focus ring, the two floating glass surfaces, the chrome's
+  own Copy Prompt, and `gold`/`emerald`/`rose`. Moving one across that line is how a page ends up
+  with no stable vocabulary at all. **A button is on both sides of it**, which is the distinction to
+  hold: "Copy Prompt" in the header is reachable from every view and is fixed indigo, while "Save",
+  "Load preset" and "Download PNG" are local to the panel they sit in and take its colour.
 - **Chroma is per-hue, and it is not a free parameter.** sRGB is much narrower in some hues than
   others, so one chroma across the wheel clamps the narrow ones onto the gamut surface and returns
   near duplicates. Each stop is 90% of the largest chroma its hue sustains at L 0.76. Adding or
