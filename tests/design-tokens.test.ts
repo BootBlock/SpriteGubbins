@@ -701,11 +701,14 @@ describe("a view's primary action", () => {
 
   it('mixes the fill and the border at the two strengths the recipe is', () => {
     // Pinned because the pair is the design and the gap between them is the whole point: the fill is
-    // a tint at 30% and the border is a boundary at 80%, and only the border clears the ratio that
-    // makes the control locatable. Nudging the fill toward the border — which looks like a tidy-up,
-    // since a 30% surface reads as barely there — is what this exists to stop.
-    expect(fillAlpha).toBe(30);
-    expect(borderAlpha).toBe(80);
+    // a tint at 24% and the border is a boundary at 54%, and only the border clears the ratio that
+    // makes the control locatable. The border is also the number with almost nowhere left to go:
+    // 52.73% is the lowest alpha that still clears 3:1, so 54% is carrying about 1.3 points of
+    // headroom and no more. A later trim of "just a few percent", which looks like nothing, is
+    // therefore the edit that takes the button's only edge under the threshold. The check below
+    // measures that rather than trusting this, but a value changed here should be a deliberate act.
+    expect(fillAlpha).toBe(24);
+    expect(borderAlpha).toBe(54);
   });
 
   it('paints no background the contrast sweep below cannot measure', () => {
@@ -724,7 +727,7 @@ describe("a view's primary action", () => {
   it('keeps text-ink above 4.5:1 on every fill it paints, at every stop and on every panel', () => {
     // The stops are all L 0.76, so a composite lightens as the alpha rises and the ink on it darkens
     // by comparison — 51% is the last value that still clears AA, and 52% does not. That ceiling,
-    // not the resting 30%, is the real rule, so this sweeps *every* fill the utility paints rather
+    // not the resting 24%, is the real rule, so this sweeps *every* fill the utility paints rather
     // than the resting one alone: a hover or active state that later re-lights the surface is held
     // to the same floor. The assertion above is what makes "every" true rather than "every one the
     // regex happened to match".
@@ -745,11 +748,13 @@ describe("a view's primary action", () => {
   });
 
   it('carries the button edge on the border, which at this fill is the whole of it', () => {
-    // WCAG 1.4.11 wants 3:1 between a control and its surroundings, and the 30% fill contributes
-    // nothing towards it: over a panel it lands between 1.68:1 and 1.89:1, so *no* stop on *any*
-    // panel comes near. A borderless version of this button would have no locatable edge at all —
-    // which makes the border a correctness property rather than a flourish, and the reason the
-    // fill's reduction stopped at the fill and left the border where it was.
+    // WCAG 1.4.11 wants 3:1 between a control and its surroundings, and the 24% fill contributes
+    // nothing towards it: over a panel it lands between 1.45:1 and 1.63:1, so *no* stop on *any*
+    // panel comes near. That leaves the border carrying the whole requirement by itself, and at 54%
+    // it clears at 3.09:1 on its worst combination — a margin of 0.09, which is why this is asserted
+    // at every stop on every panel rather than sampled. The threshold is crossed at 52.73%, and the
+    // ratio falls away smoothly rather than off a cliff (52% is 2.95:1, 50% is 2.80:1), so nothing
+    // about the rendering announces the moment the button stops meeting 1.4.11 — this does.
     for (const stop of SPECTRUM_STOPS) {
       for (const panel of PANELS) {
         const surface = oklchToken(panel);
@@ -761,7 +766,7 @@ describe("a view's primary action", () => {
 
   it('says hover on the border and the bloom, which is what the button is read by', () => {
     // Deliberately *not* "the hover sets no `background-color`". That was the assertion while the
-    // fill sat at its contrast ceiling and there was no headroom to raise it into; at 30% there is,
+    // fill sat at its contrast ceiling and there was no headroom to raise it into; at 24% there is,
     // so pinning the absence would be pinning an accident — a hover fill is now allowed, provided it
     // clears AA, which the two assertions above enforce between them. What belongs here is the
     // positive half: the hover has to change the border, because the border is the only part of this
