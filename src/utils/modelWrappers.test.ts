@@ -112,14 +112,55 @@ describe('wrapForModel', () => {
     expect(prompt).not.toContain('## 10. COMPANION MANIFEST');
   });
 
-  it('does not restate in the Sol wrapper what the template now says twice', () => {
+  it('tells Sol that what its tool call carries is what gets drawn', () => {
+    // The one fact about this target the template cannot know: `gpt-5.6-sol` outputs text only and
+    // reaches an image through a *tool*, whose far side is "always a GPT Image model". So the
+    // rendered sheet comes from whatever that call carries, not from this specification.
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
-    expect(prompt).toContain('High reasoning effort');
-    expect(prompt).toContain('Treat section 0 as a hard done-condition');
-    // The old wrapper carried its own component count, background rule and checklist. Section 0 and
-    // section 9 are those now, and stating a rule three times dilutes it.
-    expect(prompt).not.toContain('[VERIFICATION CONTRACT');
-    expect(prompt).not.toContain('Strict Done-Condition');
+
+    expect(prompt.startsWith('[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]')).toBe(true);
+    expect(prompt).toContain('You are not the model that draws this sheet');
+    // Naming the three parts is the point — a bare "do not summarise" gives it nothing to protect
+    // when it does have to shorten something.
+    expect(prompt).toContain('section 0, the object\nyaws in section 3 and the inventory in section 4');
+  });
+
+  it('does not tell a ChatGPT user about a rewrite OpenAI documents only for the API', () => {
+    // `revised_prompt` and "the mainline model … will automatically revise your prompt" are stated
+    // for the Responses API. No OpenAI page says ChatGPT's own image surface does the same — and
+    // pasting into ChatGPT is the path this app's users are on, so an earlier draft asserted the
+    // API's documented behaviour to a surface it was not documented for. The hand-off itself is
+    // certain on both paths; the rewrite is not, so the wrapper claims only the hand-off.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+    const wrapper = prompt.slice(0, prompt.indexOf('# MODULAR SPRITE-SHEET SPECIFICATION'));
+
+    expect(wrapper).not.toMatch(/rewrite|revise|paraphrase|summaris/i);
+    // What replaces it names the mechanism both paths do share.
+    expect(wrapper).toContain('a GPT Image model');
+  });
+
+  it('states nothing in the Sol wrapper that the template already states', () => {
+    // OpenAI's guidance for this family lists "repeated statements of the same rule" and "process
+    // instructions for behavior the model already performs reliably" among what to remove, and warns
+    // that conflicting rules destabilise a GPT-5-class model more than missing detail does. Each
+    // line below was in the wrapper and is a restatement of a heading the template carries.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
+
+    // Reasoning effort is a request parameter, not something a line of prose sets.
+    expect(prompt).not.toContain('High reasoning effort');
+    expect(prompt).not.toContain('Treat section 0 as a hard done-condition');
+    expect(prompt).not.toContain('Plan the grid and the per-component bounding boxes');
+    // Section 0 and section 9 say these for themselves, and are what the wrapper used to point at.
+    expect(prompt).toContain('Satisfy this section before any aesthetic consideration.');
+    expect(prompt).toContain('Before delivering, verify:');
+  });
+
+  it('gives the hand-off to Sol alone, since no other target has one', () => {
+    for (const targetModel of TARGET_MODEL_IDS) {
+      if (targetModel === 'CHATGPT_5_6_SOL') continue;
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
+      expect(prompt, targetModel).not.toContain('You are not the model that draws this sheet');
+    }
   });
 
   it('has a selector entry for every wrapped model, and no more', () => {

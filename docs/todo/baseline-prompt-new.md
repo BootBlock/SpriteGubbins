@@ -60,7 +60,7 @@ Three forms:
 | --- | --- |
 | `[IF:KEY=A,B]` | `KEY` is `A` or `B` |
 | `[IF:KEY!=A,B]` | `KEY` is neither |
-| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_MANIFEST`, `EMIT_PROMPT_FEEDBACK`, `DELIBERATES`)* |
+| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_MANIFEST`, `EMIT_PROMPT_FEEDBACK`, `DELIBERATES`, `RETURNS_TEXT`)* |
 
 **Blocks nest.** A block inside a dropped block is dropped with it, whatever its own condition says.
 That is what lets a section state its precondition once and its parts state theirs beneath it — §9's
@@ -72,6 +72,22 @@ inside the cut-out rig section) was expressed by the compiler blanking the value
 **Use `[IF:KEY]` rather than `[OPTIONAL:…]` whenever the content spans more than one line.**
 `[OPTIONAL:…]` is strictly single-line by contract, so a multi-line optional would silently leave
 its tail behind when the value is unset — which is a worse failure than the one §1 exists to fix.
+
+### `[N].` — an auto-numbered list item — **NEW**
+
+> **Added after shipping, for a defect the conditional blocks above created.** Numerals written into
+> the template cannot survive a list whose items are conditional. §9's verification list ends with a
+> cut-out-rig check and a pixel-art check that appear *independently*, so numbering them 7 and 8 by
+> hand emitted `…6. 8.` for a pixel-art sheet that is not a cut-out rig — which is the app's most
+> ordinary configuration, and a checklist that skips a number reads as one whose seventh check went
+> missing. That list is itself gated on `DELIBERATES`, so the gap only ever reached the five targets
+> that are sent it; §0's output contract, which **every** target gets, is one conditional item away
+> from the same failure.
+>
+> `[N].` opens a list item and is numbered at render time by `applyNumbering`, counting from one and
+> restarting at each blank line. The pass runs **after** the conditional and optional passes, so a
+> dropped item takes its number with it, and **before** substitution, so a subject field containing
+> `[N].` is an odd name rather than a list item. Both numbered lists in §3 now use it.
 
 ---
 
@@ -212,25 +228,29 @@ or a character portrait. Every rule below serves extraction.
 
 Satisfy this section before any aesthetic consideration.
 
-1. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
+[N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
    overlapping.
-2. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
+[N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
-3. No text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders
+[N]. No text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders
    or grid lines anywhere in the image.
-4. One consistent scale across every component: a hand drawn beside a torso is in proportion to it.
-5. Render every component directly at the delivered output resolution. Do not compose at a larger
+[N]. One consistent scale across every component: a hand drawn beside a torso is in proportion to it.
+[N]. Render every component directly at the delivered output resolution. Do not compose at a larger
    virtual canvas and downscale, and do not upscale a smaller one.
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
-6. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
+[N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
+[IF:RETURNS_TEXT]
 
 **The subject's category decides what kind of components this sheet may contain; the inventory in
 section 4 then names the exact set within that kind.** These two can never legitimately disagree. If
 the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
 building, floor tiles on a character — this specification is malformed. Say so rather than resolving
 it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
+**That settles before the precedence order below is reached** — a category disagreement is a fault
+to report, never a conflict to rank.
+[/IF]
 [IF:MULTI_DIRECTION]
 
 **A component the inventory lists in more than one direction is one component, drawn once per
@@ -240,11 +260,11 @@ Section 3 states how far each turn goes and what it must reveal; this is the con
 happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
-**Where two instructions pull against each other without contradicting the category**, satisfy them
-in this order: the component count and inventory · each component's identity and grid position · the
-object orientation each component is asked for · the fixed camera, one scale and pivot compatibility
-· subject identity · the render style · surface aesthetics. Nothing later overrides anything earlier,
-so a general aesthetic preference never overrules a component's stated direction.
+**Where two instructions pull against each other**, satisfy them in this order: the component count
+and inventory · each component's identity and grid position · the object orientation each component
+is asked for · the fixed camera, one scale and pivot compatibility · subject identity · the render
+style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
+preference never overrules a component's stated direction.
 
 ---
 
@@ -519,18 +539,18 @@ by the image edge.
 
 Before delivering, verify:
 
-1. Component count is exactly [DEFINE:COMPONENT_COUNT].
-2. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
-3. No text or labels anywhere.
-4. Components appear in the exact order the inventory lists them.
-5. One camera, one scale and one light direction across every component — nothing on the sheet was
+[N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
+[N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[N]. No text or labels anywhere.
+[N]. Components appear in the exact order the inventory lists them.
+[N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
-6. [DEFINE:CATEGORY_AUDIT]
+[N]. [DEFINE:CATEGORY_AUDIT]
 [IF:RIG_MODE=CUTOUT_RIG]
-7. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
+[N]. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
-8. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
 [/IF]
 [IF:MULTI_DIRECTION]
 
@@ -940,6 +960,100 @@ twice.
 This target is also the natural home for `EMIT_MANIFEST` (§4) alongside `GENERIC`, since it returns
 text with the image — as, since the corrections above, are both Gemini image targets.
 
+> **Corrected after shipping — Sol does not draw, and the wrapper above was written as though it
+> did.** The section headed this target "keep the target, slim the wrapper" and then slimmed it by
+> reasoning about the *template*, because at the time nothing about the model had been checked. It
+> has been now, prompted by [issue #20](https://github.com/BootBlock/SpriteGubbins/issues/20)
+> reporting that adherence on this target "isn't too good and seems a bit random sometimes", and the
+> checking found a mechanism that no amount of template reasoning could have reached.
+>
+> **`gpt-5.6-sol` lists `text` as its only output modality**, with `image_generation` among its
+> *tools* ([model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol)). A sheet
+> therefore arrives by Sol calling that tool — and OpenAI document what happens at the boundary:
+> "When using the image generation tool, the mainline model … will automatically revise your prompt
+> for improved performance", returned as `revised_prompt`, with "always a GPT Image model" doing the
+> rendering ([image generation
+> tool](https://developers.openai.com/api/docs/guides/tools-image-generation)). **So this app's
+> specification is not what gets rendered on this target. Sol's paraphrase of it is** — through a
+> compression step the app never sees, does not control, and had never accounted for. That is a
+> plain candidate for run-to-run variance the prompt itself does not explain, and it is invisible
+> from inside the template.
+>
+> The wrapper is now that finding and nothing else: it tells Sol it is handing off, and names the
+> three parts of the specification the hand-off must carry through unshortened — §0's contract, §3's
+> object yaws and §4's inventory. Everything the block above emitted is **gone**, on OpenAI's own
+> guidance for the family ([GPT-5.6 model
+> guidance](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6)):
+>
+> - `High reasoning effort:` — effort is a request parameter, not something a line of prose sets.
+>   The guide's advice on it also runs the other way: establish a baseline at the current setting,
+>   then test *one level lower*.
+> - `Plan the grid and the per-component bounding boxes before drawing.` — the guide lists "process
+>   instructions for behavior the model already performs reliably" among what to remove.
+> - `Treat section 0 as a hard done-condition and section 9 as a required verification pass` —
+>   "repeated statements of the same rule", also listed. §0 is *titled* NON-NEGOTIABLE OUTPUT
+>   CONTRACT and opens "Satisfy this section before any aesthetic consideration"; §9 opens "Before
+>   delivering, verify".
+>
+> Those removals are not a token economy. OpenAI report that leaner prompts "improved evaluation
+> scores by roughly 10–15% while reducing total tokens by 41–66%", and warn that "GPT-5-class models
+> follow prompt contracts closely, so conflicting rules can create more instability than missing
+> detail" — which makes a wrapper that restates the template a *cost* on this target rather than
+> reinforcement. **This is the answer to the question issue #20 opened with.** More target-specific
+> text is not the same as better adherence: for Sol the correct adaptation was subtraction plus one
+> thing the template cannot say for itself, because the template does not know it is being relayed.
+>
+> The same guidance is why §9 stays here rather than joining the cuts: "Render the artifact before
+> finalizing. Inspect layout, clipping, spacing, missing content, and visual consistency" is §9, and
+> a verification pass is not a repeated statement of a rule.
+>
+> **`EMIT_MANIFEST` survives this, on a corrected premise.** The paragraph above ends "since it
+> returns text *with the image*", which the finding falsifies — nothing on this target returns an
+> image at all. The conclusion is unchanged and the reason is now the right one: Sol answers in text,
+> which is the whole of what a manifest needs, and the image arrives separately from the tool. That
+> is what `emitsText: true` has always meant, so no capability moves; only the sentence explaining it
+> was wrong.
+>
+> **Left open, deliberately.** §8's exclusions restate §0.2 and §0.3, which is the "repeated
+> statements of the same rule" the guide names — but dropping a section for one target is a
+> behavioural bet, and the evidence above says lean prompts win *on OpenAI's coding evals*, not that
+> this specification's redundancy is what costs it a sheet. That wants real generations rather than
+> reasoning, the same way the Imagen condensation question above did.
+
+> **Closed, and not by generations — by reading the other half of the vendor's own advice.** The
+> maintainer asked what actually renders the image on this target, which sent this back to OpenAI's
+> pages for the *product* rather than the API. Two findings came out of it, and the second answers
+> the paragraph above.
+>
+> **What renders it is `gpt-image-2`**, branded **ChatGPT Images 2.0** in the product. The chain:
+> `gpt-5.6-sol` gives `text` as its only output modality with `image_generation` under *tools*; the
+> tool guide says the renderer is "always a GPT Image model" and that "**the tool handles GPT Image
+> model selection**"; the [ChatGPT release
+> notes](https://help.openai.com/en/articles/6825453-chatgpt-release-notes) for 21 April 2026
+> introduce "**ChatGPT Images 2.0**, our new image generation model in ChatGPT"; `gpt-image-2` ships
+> the same day (`gpt-image-2-2026-04-21`) with `image` as its only output modality; and OpenAI's own
+> [ChatGPT docs](https://learn.chatgpt.com/docs/image-generation) state "Built-in image generation
+> uses `gpt-image-2`". *No single page equates the product name to the model id in those words — that
+> last step is inference, and it is recorded as inference.*
+>
+> **Selecting Sol is not inert, and not for the reason the wrapper assumed.** The same release notes:
+> "images with thinking … is available on all paid ChatGPT plans. **It is available when you select
+> Thinking and Pro models**", and [GPT-5.6 in
+> ChatGPT](https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt) states that "GPT-5.6 Sol
+> now powers the **Medium**, **High**, and **Extra High** reasoning options", with Instant being
+> GPT-5.5 Instant. So choosing Sol puts the user on a thinking tier, which is the documented switch
+> for the image model's own planning pass. Nothing in the prompt can set that — it is the user's
+> pick — which is why it belongs in what the app *tells* them, not in what it emits.
+>
+> **And §8 stays.** OpenAI's guidance for an *image* prompt is "**Repeat any requirement that must
+> stay fixed**" — the exact opposite of the line the paragraph above was weighing, for the exact
+> repetition it was weighing cutting. The two do not contradict: the lean guidance addresses the model
+> **reading** this specification, the repetition guidance the model **rendering** from it, and on this
+> target those are two different models with a tool call between them. The open question was framed as
+> "does this specification's redundancy cost it a sheet", and the answer is that redundancy was never
+> a single question — it depends which side of the hand-off a given restatement is for. Cutting §8 on
+> the strength of the GPT-5.6 guidance would apply a text model's rules to the image model's half.
+
 ### Documented prompt ceilings
 
 Each target's `promptBudget` records what the vendor or the architecture publishes about how much
@@ -1128,6 +1242,46 @@ making the *left* arm the near one. `DEPTH_ORDER_TEXT` had it the other way for 
 `south-east` (and the other way again for the two northern diagonals, which were right). Harmless
 while nothing else stated which side a facing presents; a contradiction inside one prompt the moment
 R1's rotation list did.
+
+**R3. §9's verification list skipped a number on the app's most ordinary sheet.** Its last two
+checks are conditional and independent — a cut-out-rig check and a pixel-art check, hand-numbered 7
+and 8 — so a pixel-art sheet in `POSE_LIBRARY` mode emitted `…6. 8.`, a checklist whose seventh
+check appears to have gone missing in the one section meant to be worked through item by item. It is
+the same class of error the §3 mirror's own commentary calls out for headings ("a `## 11.` with no 10
+above it reads as an authoring error"), reached by the same route: a numeral written down beside a
+condition that decides whether its neighbour exists. Fixed at the cause rather than at the two call
+sites — see `[N].` in §1, which numbers at render time.
+
+The list is gated on `DELIBERATES`, so the gap reached the five targets sent it and no others. That
+bounds the defect; it does not make the fix narrower, because **§0's contract is one conditional item
+from the identical failure and every target gets §0**. Numbering by hand was the defect. Doing it by
+hand in one fewer place would have been the same defect with better luck.
+
+**R4. §0's category tripwire asked a diffusion model to speak.** "…this specification is malformed.
+Say so rather than resolving it" names a text channel, in the highest-weighted section of the
+prompt, on seven of the eleven targets that have no such channel. It is the argument `deliberates`
+already makes about §9's self-audit, applied to the other capability, and the paragraph is now gated
+on `RETURNS_TEXT` for it. Note what the clause actually guards: the category and the inventory are
+compiled from a single value, so they can only disagree if *this app* is wrong — which makes it a
+report addressed to the maintainer, and worth nothing from a target that cannot file one.
+
+**Gating it caught a second clause on the way out, which is the part worth recording.** §0's
+precedence list opened "Where two instructions pull against each other **without contradicting the
+category**" — and that qualifier is not a turn of phrase, it is a cross-reference. Both strings
+entered the template in the same change (`bd954d2`, "Let a category decide what its own sheet
+contains"), whose message says why: "Category and inventory cannot legitimately disagree, so a
+disagreement is now named as a malformed specification **rather than ranked**." The carve-out exists
+to hand the category case to the tripwire instead of the ranking. Gating one and not the other would
+have left seven targets reading an exception for a rule they were never given — and, worse, left §4's
+guard ("an error in this specification, not an instruction to follow") unreconciled with a ranking
+that puts the inventory *above* subject identity, which is the exact behaviour `bd954d2` was written
+to stop. The carve-out now lives inside the gated block, stated outright ("a category disagreement is
+a fault to report, never a conflict to rank"), and the shared sentence is unqualified. A test asserts
+the two are present together or absent together, so they cannot be separated again.
+
+The general lesson is worth more than the fix: **making a paragraph conditional is not a local edit
+if anything else was written against it.** The tripwire read as self-contained, and the sentence that
+depended on it sat two paragraphs away with no marker saying so.
 
 ---
 

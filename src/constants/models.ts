@@ -38,16 +38,36 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     capabilities: { deliberates: true, emitsText: true, promptBudget: null },
   },
   {
+    // **The only target here that cannot draw.** Its model page gives `text` as the sole output
+    // modality and lists `image_generation` under *tools*, so a sheet arrives by Sol calling that
+    // tool — and the tool guide names what is on the far side: the renderer is "always a GPT Image
+    // model", with "the tool handles GPT Image model selection".
+    // https://developers.openai.com/api/docs/guides/tools-image-generation
+    //
+    // In ChatGPT that renderer is `gpt-image-2`, sold as **ChatGPT Images 2.0**: OpenAI's release
+    // notes introduce it on 21 April 2026 as "our new image generation model in ChatGPT", the model
+    // ships the same day as `gpt-image-2-2026-04-21`, and OpenAI's ChatGPT docs state "Built-in image
+    // generation uses `gpt-image-2`". No one page equates the two names outright — that last step is
+    // inference, recorded as such. https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    //
+    // Both capability flags below are still about Sol and still true: it reasons over the brief, and
+    // it answers in text. What they do not say is that the *picture* comes from a second model on
+    // the far side of a tool call, which is what its wrapper in `utils/modelWrapperText.ts` says.
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     tooltip:
-      'Adds a short reasoning-effort directive and points the model at the template’s own done-condition and verification sections. Can also return a companion JSON manifest.',
+      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. Choosing Sol in ChatGPT also puts you on a thinking tier, which is what enables images with thinking on a paid plan. It reasons over the brief, so it gets the self-audit and can return a companion JSON manifest.',
     capabilities: {
       deliberates: true,
       emitsText: true,
       // The *input* ceiling, not the 1,050,000 context window: the window is input plus the
       // 128,000 output tokens reserved against it, and what this field is measured against is the
       // prompt alone. https://developers.openai.com/api/docs/models/gpt-5.6-sol
+      //
+      // It is also not the ceiling that binds on this target, and the one that does cannot honestly
+      // be recorded here: what reaches the renderer is whatever Sol's tool call carries, which this
+      // app never composes and no OpenAI page gives a length for on the ChatGPT path. Borrowing the
+      // GPT Image ceiling from `GPT_IMAGE` below would measure somebody else's text with our field.
       promptBudget: { limit: 922_000, unit: 'tokens', note: 'Maximum input tokens.' },
     },
   },

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { applyConditionals, applyOptionals, assertBlocksResolved, substitute } from './templateEngine.ts';
+import {
+  applyConditionals,
+  applyNumbering,
+  applyOptionals,
+  assertBlocksResolved,
+  substitute,
+} from './templateEngine.ts';
 
 /**
  * Each case here is a way a template can fail *quietly* — emitting literal markup, a
@@ -128,6 +134,54 @@ describe('applyOptionals', () => {
   });
 });
 
+describe('applyNumbering', () => {
+  it('numbers consecutive items from one', () => {
+    expect(applyNumbering('[N]. first\n[N]. second\n[N]. third')).toBe('1. first\n2. second\n3. third');
+  });
+
+  it('closes the gap a dropped conditional item used to leave', () => {
+    // The defect this pass exists for: §9's rig check and pixel-art check are independent, so
+    // hand-numbering them 7 and 8 emitted "…6. 8." on a pixel-art sheet that is not a cut-out rig.
+    const list = '[N]. count\n[IF:RIG]\n[N]. joint caps\n[/IF]\n[N]. pixel grid';
+    const rendered = applyNumbering(applyConditionals(list, { RIG: '' }));
+
+    expect(rendered).toBe('1. count\n2. pixel grid');
+  });
+
+  it('leaves a continuation line alone and does not let it consume a number', () => {
+    // Continuation lines are indented and carry no marker, which is what separates them from items.
+    expect(applyNumbering('[N]. first line\n   wrapped onto a second\n[N]. second')).toBe(
+      '1. first line\n   wrapped onto a second\n2. second',
+    );
+  });
+
+  it('restarts at the next list rather than continuing the last one', () => {
+    // §0's contract and §9's audit are both numbered, and both start at 1. A blank line is the only
+    // thing separating them, so it has to be what resets the count.
+    expect(applyNumbering('[N]. a\n[N]. b\n\nprose\n\n[N]. c')).toBe('1. a\n2. b\n\nprose\n\n1. c');
+  });
+
+  it('keeps the indentation the item was written with', () => {
+    expect(applyNumbering('  [N]. nested')).toBe('  1. nested');
+  });
+
+  it('numbers past nine without mangling the item', () => {
+    // Guards the replacement itself: building it as a `$1`-style pattern makes "$11." ambiguous
+    // between group eleven and group one followed by a digit.
+    const items = Array.from({ length: 11 }, () => '[N]. item').join('\n');
+
+    expect(applyNumbering(items).split('\n').at(-1)).toBe('11. item');
+  });
+
+  it('ignores an [N] that is not opening a list item', () => {
+    // Left for `assertBlocksResolved`, which is what turns a marker written mid-line into an error
+    // rather than into literal template text sent to a model.
+    expect(applyNumbering('a sentence mentioning [N] in passing')).toBe(
+      'a sentence mentioning [N] in passing',
+    );
+  });
+});
+
 describe('substitute', () => {
   it('replaces every occurrence of a token', () => {
     expect(substitute('[DEFINE:N] then [DEFINE:N]', { N: '15' })).toBe('15 then 15');
@@ -154,6 +208,7 @@ describe('assertBlocksResolved', () => {
     ['[OPTIONAL:X | y]', 'an optional'],
     ['[IF:X]', 'a conditional'],
     ['[/IF]', 'a close marker'],
+    ['[N]', 'a numbering marker'],
   ])('rejects %s, which is %s that survived', (marker) => {
     expect(() => {
       assertBlocksResolved(`line one\nline two ${marker}`);

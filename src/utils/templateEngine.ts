@@ -1,14 +1,15 @@
 /**
- * The three passes that turn the prompt template into a prompt, plus the guard that proves nothing
+ * The four passes that turn the prompt template into a prompt, plus the guard that proves nothing
  * was left behind.
  *
  * Pure functions of their arguments — no state, no DOM — which is what lets the compiler stay a
  * pure function and the preview derive its output during render.
  *
- * **Run them in this order: conditionals, then optionals, then substitution.** Conditionals go first
- * so that optionals inside a dropped block are dropped with it; substitution goes last because an
- * optional line's text may itself contain a `[DEFINE:…]`, and substituting first would fill a token
- * on a line that is about to be removed.
+ * **Run them in this order: conditionals, optionals, numbering, then substitution.** Conditionals go
+ * first so that optionals inside a dropped block are dropped with it; numbering follows both, so a
+ * list item that was dropped never consumes a number; substitution goes last because an optional
+ * line's text may itself contain a `[DEFINE:…]`, and substituting first would fill a token on a line
+ * that is about to be removed.
  *
  * Every marker occupies a whole line, and removing one removes its line entirely. That is what keeps
  * a sparse subject — fifteen optional fields, most of them empty — from leaving a ladder of blank
@@ -30,14 +31,17 @@ const OPTIONAL_LINE = /^[ \t]*\[OPTIONAL:([A-Z0-9_]+)[ \t]*\|[ \t]?(.*)\][ \t]*$
 
 const DEFINE_TOKEN = /\[DEFINE:([A-Z0-9_]+)\]/g;
 
+/** `[N].` opening a list item, with whatever indentation precedes it. */
+const NUMBERED_ITEM_LINE = /^([ \t]*)\[N\]\./;
+
 /**
- * The block markers, which the first two passes must have consumed.
+ * The block markers, which the first three passes must have consumed.
  *
  * `[DEFINE:…]` is deliberately absent: substitution runs last and rejects an unknown token itself,
  * and by then the text contains arbitrary user input. Scanning *that* for markers would make a
  * subject field of `Robot [IF:X] guard` throw out of the compiler.
  */
-const RESIDUAL_BLOCK_MARKER = /\[(?:OPTIONAL|IF):|\[\/IF\]/;
+const RESIDUAL_BLOCK_MARKER = /\[(?:OPTIONAL|IF):|\[\/IF\]|\[N\]/;
 
 /** A value counts as set when it holds something other than whitespace. */
 function isSet(value: string | undefined): boolean {
@@ -127,6 +131,44 @@ export function applyOptionals(template: string, values: Readonly<Record<string,
 }
 
 /**
+ * Number each `[N].` list item, counting from one and restarting at every blank line.
+ *
+ * **The template must not write the numerals itself, because its lists are assembled
+ * conditionally.** Section 9's verification list carries a rig check and a pixel-art check that
+ * appear independently, so hand-numbering them at 7 and 8 produced `…6. 8.` on a pixel-art sheet
+ * without a cut-out rig — a checklist that skips a number reads as one whose seventh check went
+ * missing, in the section whose whole job is to be worked through item by item. That list is itself
+ * gated on the target deliberating, so the gap only ever reached a target that reads it; the same
+ * trap is one conditional item away in section 0's contract, which every target gets.
+ *
+ * A blank line is what separates one list from the next; a continuation line is indented and carries
+ * no marker, so it neither resets the count nor consumes a number. **Run this after the conditional
+ * and optional passes** — a dropped item must not take a number with it — **and before
+ * substitution**, since afterwards the text holds whatever the user typed into sixteen free-text
+ * fields, and a subject named `[N]. guard` is an odd name rather than a list item.
+ */
+export function applyNumbering(template: string): string {
+  let index = 0;
+
+  return template
+    .split('\n')
+    .map((line) => {
+      if (line.trim() === '') {
+        index = 0;
+        return line;
+      }
+
+      const item = NUMBERED_ITEM_LINE.exec(line);
+      if (!item) return line;
+
+      index += 1;
+      const [marker, indent = ''] = item;
+      return `${indent}${index}.${line.slice(marker.length)}`;
+    })
+    .join('\n');
+}
+
+/**
  * Replace every `[DEFINE:NAME]` with its value.
  *
  * A token with no value **throws**. The alternative — leaving it in place — sends literal template
@@ -142,13 +184,16 @@ export function substitute(template: string, values: Readonly<Record<string, str
 }
 
 /**
- * Fail if a block marker survived the conditional and optional passes.
+ * Fail if a block marker survived the conditional, optional and numbering passes.
  *
  * A marker that is malformed — split across lines, mis-spelled, indented into a code fence — matches
  * no pattern at all and would otherwise travel to the model untouched. This is the check that
- * catches those.
+ * catches those. A surviving `[N]` is the same failure in the numbering pass: one written mid-line,
+ * or followed by anything other than a period, is not a list item and would reach the model as
+ * literal template text. Like the block markers, it catches only a *well-formed* marker in the wrong
+ * place — `[N ].` is misspelled rather than misplaced, and matches nothing here either.
  *
- * **Run it between `applyOptionals` and `substitute`, never after.** After substitution the text
+ * **Run it between `applyNumbering` and `substitute`, never after.** After substitution the text
  * holds whatever the user typed into sixteen free-text fields, and a subject of `Robot [IF:X] guard`
  * is a strange name, not a broken template — throwing there would take the app down mid-render for
  * an input it should simply pass through.

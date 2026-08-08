@@ -462,6 +462,21 @@ flat), and a `forwards` fill latches the end frame, where any non-`none` `transf
 element a containing block for fixed-position descendants. Prefer `backwards`, which holds the
 *start* frame for a delayed animation and latches nothing — as the four entrance tokens do.
 
+**A `background-position` percentage is not a fraction of the image.** It resolves against
+*(positioning area − image size)*, so a gradient sized `S%` of its box travels `P/100 × (S − 100)/S`
+of its own width as the position runs to `P%`. A pan loops seamlessly when that comes to **exactly
+one image width**, and `spectrum-pan` — sized `200%` — ended at `100%`, which is half of one: the
+wheel restarted five stops round from where it finished, a one-frame flick in the chrome's hairline
+every 32 seconds, which is why it survived so long. At `200%` the seamless end position is also
+`200%`, and those two numbers agree at that size and no other (`300%` closes at `150%`, and would
+turn the wheel twice a cycle if written `300%`) — so reach for the formula, never the coincidence.
+Two further conditions are cheap to meet and silent to lose: the image must be **wider than its
+box**, or the range is zero and nothing moves at all; and the gradient must **repeat its first stop
+at the end**, because `background-repeat` is `repeat` and each tile's right edge sits against its
+own left edge. Both were already true of the broken version — they are necessary, not sufficient.
+`tests/design-tokens.test.ts` computes the travel from `bg-spectrum`'s own `background-size` and
+fails unless it is one image width.
+
 **A floating surface goes in the top layer, not up a `z-index`.** `glass-panel` is on every panel
 in the app, and its `backdrop-filter` makes each one a **stacking context** — so a `z-index` on
 anything inside is only ever compared with that panel's own contents, and the next panel down the
