@@ -12,6 +12,7 @@ import { OBJECT_MACHINE_PRESETS } from './objectMachines.ts';
 import { OBJECT_WORLD_PRESETS } from './objectWorld.ts';
 import { UNSUNG_SAVIOUR_PRESETS } from './unsungSaviour.ts';
 import { VEHICLE_CORE_PRESETS } from './vehicleCore.ts';
+import { VEHICLE_CRAFT_PRESETS } from './vehicleCraft.ts';
 
 export { DEFAULT_PRESET } from './characterCore.ts';
 
@@ -56,5 +57,6 @@ export const PRESETS: readonly PresetArchetype[] = [
   ...BUILDING_STREET_PRESETS,
   ...BUILDING_TILESET_PRESETS,
   ...VEHICLE_CORE_PRESETS,
+  ...VEHICLE_CRAFT_PRESETS,
   ...UNSUNG_SAVIOUR_PRESETS,
 ];
