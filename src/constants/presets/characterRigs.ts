@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -36,7 +36,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       projection: 'TRUE_ISOMETRIC',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
       rigMode: 'CUTOUT_RIG',
@@ -55,7 +55,6 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '64 × 96 px assembled',
       aspectRatio: 'SQUARE_1_1',
-      emitManifest: true,
       targetModel: 'CHATGPT_5_6_SOL',
     },
   },
@@ -82,7 +81,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       projection: 'THREE_QUARTER_TOPDOWN',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.THREE_QUARTER_TOPDOWN,
       rigMode: 'CUTOUT_RIG',
@@ -100,7 +99,6 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'CUSTOM',
       spriteTargetSize: '56 × 88 px assembled',
       aspectRatio: 'WIDE_16_9',
-      emitManifest: true,
       targetModel: 'CHATGPT_5_6_SOL',
     },
   },
@@ -127,7 +125,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // The platformer contract: a flat side elevation with no perspective, one facing, and the sheet
       // laid out wide because a run cycle reads along a row.
       projection: 'ORTHOGRAPHIC_SIDE',
@@ -164,7 +162,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // An untextured pass whose only question is whether the volumes read. Colour is what hides a
       // broken form, so the palette goes away, the detail goes down, and a hard key light goes on —
       // the three settings that leave nothing but shape to look at.
@@ -205,7 +203,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // The question every sprite has to answer and most sheets never ask: at target size, with no
       // interior detail at all, is the shape still recognisable? Every facing the core draws, because
       // a silhouette that only works from the front fails the moment the character turns.

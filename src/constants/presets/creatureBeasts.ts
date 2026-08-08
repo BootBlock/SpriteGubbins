@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -35,7 +35,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Insectoid Wing ×4',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // The single-direction inventory rather than the three-facing one, because the wings above are
       // counted into the sheet: 43 + 4 is past the ~40 components a single generation reliably
       // delivers, while 37 + 4 is not. A winged creature is the case additional anatomy exists for,
@@ -75,7 +75,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       aspectRatio: 'WIDE_16_9',
       targetModel: 'GENERIC',
@@ -104,7 +104,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Chitinous Blade Arm ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Straight down, which is the twin-stick and roguelike camera — and the one projection where
       // the top of a carapace is the whole design.
       projection: 'PURE_TOPDOWN',
@@ -146,7 +146,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Webbed Wing ×2, Spike Tail Club ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
       directions: 'EIGHT_COMPASS',
@@ -160,7 +160,6 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       spriteTargetSize: '96 × 96 px assembled',
       aspectRatio: 'ULTRAWIDE_21_9',
-      emitManifest: true,
       targetModel: 'GENERIC',
     },
   },

@@ -1,4 +1,4 @@
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -34,7 +34,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Secondary Energy Cell ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Flat geometry, no gradients, one value per shape — so there is nothing for an outline or a
       // light to do, and the palette can be tiny without the art looking starved.
       renderStyle: 'VECTOR_FLAT',
@@ -77,7 +77,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Elemental Effect Aura ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'PAINTED_2D',
       paletteLimit: 'UNRESTRICTED',
       surfaceDetail: 'DETAILED_PRODUCTION',
@@ -118,14 +118,13 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Tassel ×2, Charm Ribbon ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'CEL_SHADED',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       rigMode: 'NONE',
       spriteTargetSize: '96 × 96 px per icon cell',
       aspectRatio: 'WIDE_16_9',
-      emitManifest: true,
       targetModel: 'CHATGPT_5_6_SOL',
     },
   },
@@ -152,7 +151,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Elemental Effect Aura ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Straight down, and one sheet per cardinal facing: a floating ring set has no front, so what
       // changes between facings is which ring is nearest — which is a depth-order question, and the
       // reason the four runs are worth generating rather than mirroring.

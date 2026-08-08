@@ -1,7 +1,7 @@
-import type { OutputConfig } from '../../types/output.ts';
+import type { ImageOutputConfig } from '../../types/output.ts';
 
 interface PresetCardSpecsProps {
-  readonly output: OutputConfig;
+  readonly output: ImageOutputConfig;
 }
 
 /**

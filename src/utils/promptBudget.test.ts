@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import { generatePrompt } from './promptCompiler.ts';
@@ -108,7 +109,7 @@ describe('readPromptBudget', () => {
 
 describe('the app’s own output against the ceilings it now records', () => {
   const prompt = generatePrompt('CHARACTER', DEFAULT_PRESET.subject, {
-    ...DEFAULT_PRESET.output,
+    ...DEFAULT_OUTPUT_CONFIG,
     targetModel: 'STABLE_DIFFUSION',
   });
 

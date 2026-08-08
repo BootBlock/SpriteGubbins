@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -16,7 +17,7 @@ import { generatePrompt } from './promptCompiler.ts';
 const SUBJECT = DEFAULT_PRESET.subject;
 
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
-  return { ...DEFAULT_PRESET.output, ...overrides };
+  return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };
 }
 
 describe('wrapForModel', () => {

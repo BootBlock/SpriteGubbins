@@ -1,4 +1,4 @@
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -34,7 +34,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Deployable Sensor Dish ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       surfaceDetail: 'CLEAN_PRODUCTION',
       resolutionProfile: 'MID_RESOLUTION',
@@ -68,7 +68,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Deployable Turret Barrel ×1, Articulated Arm Clamp ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // A prop can be rigged too, and a turret is the clearest case: the base never moves, the yoke
       // yaws, the barrel pitches. Seven pieces plus two deployables — a quarter of what a humanoid
       // rig costs.
@@ -83,7 +83,6 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       surfaceDetail: 'DETAILED_PRODUCTION',
       spriteTargetSize: '48 × 64 px assembled',
       aspectRatio: 'SQUARE_1_1',
-      emitManifest: true,
       targetModel: 'GENERIC',
     },
   },
@@ -110,7 +109,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Coolant Vent Flap ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Dead flat on. A machine the player faces has one interesting side, and a front elevation is
       // the projection that draws it without any of the depth cues that would fight a 2D scene's own.
       projection: 'ORTHOGRAPHIC_FRONT',
@@ -149,7 +148,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Holographic Emitter Wing ×2',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RENDERED_3D',
       projection: 'TRUE_ISOMETRIC',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,

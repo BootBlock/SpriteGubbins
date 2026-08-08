@@ -27,4 +27,4 @@ export {
 export { directionalModeChoices } from './directionalModeChoices.ts';
 export { sheetChoices } from './sheetChoices.ts';
 export { OUTPUT_TOOLTIPS } from './tooltips.ts';
-export { DEFAULT_OUTPUT_CONFIG } from './defaults.ts';
+export { DEFAULT_IMAGE_CONFIG, DEFAULT_OUTPUT_CONFIG } from './defaults.ts';

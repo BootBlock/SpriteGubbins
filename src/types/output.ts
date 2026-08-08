@@ -192,13 +192,15 @@ export interface TargetModel {
 }
 
 /**
- * The complete technical configuration.
+ * Everything that decides the image itself.
  *
  * **Every field is always set** — see `useOutputStore`, which gives each one a default. Nothing here
  * is optional, because an optional field would push `?? fallback` handling into the compiler, and
  * absence in the *prompt* is expressed by a field being empty rather than by the field not existing.
+ *
+ * This is the half a *preset* carries, and the reason the split exists at all: see `OutputConfig`.
  */
-export interface OutputConfig {
+export interface ImageOutputConfig {
   readonly directionalMode: DirectionalMode;
   readonly surfaceDetail: SurfaceDetail;
   readonly resolutionProfile: ResolutionProfile;
@@ -281,6 +283,24 @@ export interface OutputConfig {
 
   /** Free text carrying an identity digest into follow-up sheets. Empty means no lock. */
   readonly identityLock: string;
+}
+
+/**
+ * The complete technical configuration: the image, and what is returned alongside it.
+ *
+ * **The two halves belong to different people, which is why they are two types.** Everything in
+ * `ImageOutputConfig` describes the sheet — an archetype can have an opinion about it, and a preset
+ * is exactly that opinion written down. The two fields below describe what the user wants *handed
+ * back* with the picture, which is a working preference of whoever is generating it: whether they
+ * want a JSON manifest to import from, and whether they want the target to write back about the
+ * prompt. Nothing about a Cyberpunk Katana Specialist implies either answer.
+ *
+ * So a preset carries an `ImageOutputConfig` and loading one goes through
+ * `useOutputStore.applyImageConfig`, which leaves these two exactly as the user set them. Widening
+ * `PresetArchetype['output']` back to this type would put them back under a preset's control, which
+ * is the bug the split exists to make unrepresentable.
+ */
+export interface OutputConfig extends ImageOutputConfig {
   /** Ask for a companion JSON manifest. Only conversational targets can honour it. */
   readonly emitManifest: boolean;
   /**

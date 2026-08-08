@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
-import type { OutputConfig } from '../types/output.ts';
+import { withCompanionOutputs } from '../utils/imageConfig.ts';
+import type { ImageOutputConfig, OutputConfig } from '../types/output.ts';
 
 /**
  * How the sheet should be rendered: the technical half of the prompt.
@@ -30,7 +31,17 @@ export interface OutputState {
    * component composing `{ ...output, ...patch }` would be writing back a snapshot.
    */
   applyOutputPatch(patch: Partial<OutputConfig>): void;
-  /** Replace the whole configuration — what loading a preset does. */
+  /**
+   * Replace everything that decides the image, keeping the companion outputs the user chose — what
+   * loading a preset does.
+   *
+   * The distinction from `setOutputConfig` is the whole point: a preset describes an archetype and
+   * has no business deciding whether this user wants a JSON manifest back, so those two answers
+   * survive a load. A prompt restored from history goes the other way and takes the lot, because
+   * that entry *is* the configuration that produced the prompt in it — companions included.
+   */
+  applyImageConfig(config: ImageOutputConfig): void;
+  /** Replace the whole configuration — what restoring a history entry does. */
   setOutputConfig(config: OutputConfig): void;
 }
 
@@ -46,6 +57,13 @@ export const useOutputStore = create<OutputState>((set) => ({
 
   applyOutputPatch: (patch) => {
     set((state) => ({ output: { ...state.output, ...patch } }));
+  },
+
+  applyImageConfig: (config) => {
+    // Merged from the *current* state rather than from a snapshot the caller read, for the same
+    // reason `applyOutputPatch` is: the two companion answers being carried across are the ones in
+    // the store at the moment of the load.
+    set((state) => ({ output: withCompanionOutputs(config, state.output) }));
   },
 
   setOutputConfig: (config) => {

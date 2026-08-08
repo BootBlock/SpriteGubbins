@@ -1,18 +1,18 @@
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/camera.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../promptText/inventory.ts';
-import type { OutputConfig } from '../../types/output.ts';
+import type { ImageOutputConfig, OutputConfig } from '../../types/output.ts';
 
 /**
- * The configuration the studio opens on.
+ * The image the studio opens on, and the base every built-in preset is written against.
  *
- * Every field is set, because `OutputConfig` has no optional members: a field that could be absent
- * would push `?? fallback` handling into the compiler, and "unset" is already expressible as an
- * empty string for the three free-text fields.
+ * Every field is set, because `ImageOutputConfig` has no optional members: a field that could be
+ * absent would push `?? fallback` handling into the compiler, and "unset" is already expressible as
+ * an empty string for the three free-text fields.
  *
  * A pose library in modern pixel art at a three-quarter overhead angle — the most common thing this
  * app is used for, and the configuration the first built-in preset shares.
  */
-export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
+export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
   directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
   surfaceDetail: 'CLEAN_PRODUCTION',
   resolutionProfile: 'HIGH_RESOLUTION',
@@ -57,8 +57,23 @@ export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
   sockets: '',
 
   identityLock: '',
+};
+
+/**
+ * The configuration the studio opens on: {@link DEFAULT_IMAGE_CONFIG} plus the two companion
+ * deliverables, both off.
+ *
+ * Written as an extension rather than as a second full literal, so each default value is still
+ * stated exactly once — the split here mirrors the one in `OutputConfig` and adds no second place
+ * to keep in step.
+ *
+ * Both companions start off because each adds a section to the prompt and asks the target for a
+ * second deliverable, and a user who has not asked for a manifest — or for a critique of their own
+ * prompt — should not have to read one. They stay wherever the user leaves them: a preset cannot
+ * move them, and neither can this constant once the studio is open.
+ */
+export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
+  ...DEFAULT_IMAGE_CONFIG,
   emitManifest: false,
-  // Off, like the manifest: it adds a section to every prompt and asks for a second deliverable, and
-  // a user who has not asked for a critique of their own prompt should not have to read one.
   emitPromptFeedback: false,
 };
