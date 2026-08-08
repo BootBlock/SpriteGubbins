@@ -370,9 +370,12 @@ worth a regression in the fallback.
 > ring is not shaved off the inline edges), and the fallback path does not have to be traded away
 > (the whole rule sits behind `@supports … and selector(:popover-open)`, so the clip exists only
 > where the list is lifted into the top layer and cannot be clipped by it). What *was* right is the
-> instinct that this costs something: the collapse is still instant, because animating it means
-> keeping the content painted — and therefore tabbable — after the group is already shut. The
-> paragraph above is left as written, since it records the reasoning at the time.
+> instinct that this costs something. Animating the **close** means holding the content painted after
+> the group is already shut, which leaves it briefly tabbable — so `CollapsibleSection` carries an
+> `onBlur` that catches the focus the user agent then throws away. And the curve mattered more than
+> anyone expected: on `ease-emphasized` the height was 83% travelled in its first quarter and read as
+> a jump, which is why `--ease-decelerate` exists. The paragraph above is left as written, since it
+> records the reasoning at the time.
 
 **A fade on the content does not replay, contrary to what an earlier draft of this document claimed.**
 The reasoning was that a `content-visibility: hidden` subtree resets its animations, so an
