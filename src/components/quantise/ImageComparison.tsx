@@ -1,29 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
-import type { PixelGrid, QuantiseResult } from '../../types/quantiser.ts';
+import type { Quantised } from '../../types/quantiser.ts';
 import { ComparisonPane } from './ComparisonPane.tsx';
 import { ComparisonToolbar } from './ComparisonToolbar.tsx';
-
-/**
- * What the transform returned, and the pixel scale it returned it at.
- *
- * One value rather than two, because the two are only ever known together — the grid is what the
- * result was computed *from*, so there is no such thing as a result without one. Carried separately
- * they would need a fallback at the point of use, and the only fallback available is a grid of 1:
- * exactly the mis-scaling this component was changed to fix, arriving silently.
- */
-interface Quantised {
-  readonly result: QuantiseResult;
-  readonly grid: PixelGrid;
-}
 
 interface ImageComparisonProps {
   /** The dropped file's name — what the download is named after. */
   readonly sourceName: string;
   readonly source: ImageData;
+  /** Distinct colours the sheet arrived with, or `null` while they are still being counted. */
+  readonly sourceColors: number | null;
   /** `null` until a grid is settled, which is the one thing the transform cannot guess. */
   readonly quantised: Quantised | null;
+  /** Whether a newer result is on its way, which is what {@link quantised} may be lagging behind. */
+  readonly busy: boolean;
 }
 
 /**
@@ -39,7 +30,7 @@ interface ImageComparisonProps {
  * Linking is unconditional and has no toggle: a comparison view whose halves show different places is
  * not comparing anything, so the alternative is not a preference, it is the defect.
  */
-export function ImageComparison({ sourceName, source, quantised }: ImageComparisonProps) {
+export function ImageComparison({ sourceName, source, sourceColors, quantised, busy }: ImageComparisonProps) {
   const [zoom, setZoom] = useState<number>(PREVIEW_ZOOMS[0]);
   const sourceView = useRef<HTMLDivElement>(null);
   const resultView = useRef<HTMLDivElement>(null);
@@ -79,7 +70,7 @@ export function ImageComparison({ sourceName, source, quantised }: ImageComparis
           caption={
             <>
               As it arrived · {source.width} × {source.height}
-              {quantised !== null && ` · ${colourCount(quantised.result.colorsBefore)}`}
+              {sourceColors !== null && ` · ${colourCount(sourceColors)}`}
             </>
           }
           label="Pan the sheet as it arrived"
@@ -93,14 +84,17 @@ export function ImageComparison({ sourceName, source, quantised }: ImageComparis
         <ComparisonPane
           caption={
             quantised === null ? (
-              <span className="text-gold">Quantised · set a pixel grid above</span>
+              <span className={busy ? 'text-neon' : 'text-gold'}>
+                {busy ? 'Quantised · working…' : 'Quantised · set a pixel grid above'}
+              </span>
             ) : (
-              `Quantised · ${String(quantised.result.image.width)} × ${String(quantised.result.image.height)} · ${colourCount(quantised.result.colorsAfter)}`
+              `Quantised · ${String(quantised.result.image.width)} × ${String(quantised.result.image.height)} · ${colourCount(quantised.result.colors)}${busy ? ' · updating…' : ''}`
             )
           }
           label="Pan the quantised sheet"
           viewportRef={resultView}
           canvasRef={resultCanvas}
+          busy={busy}
           // One result pixel covers `grid` source pixels, so this is what puts the two panes at the
           // same scale. Both halves come from the same value, so neither can go missing on its own.
           content={
@@ -112,7 +106,9 @@ export function ImageComparison({ sourceName, source, quantised }: ImageComparis
           placeholder={
             // Its own padding, because `PanViewport` carries none — see the note on its geometry.
             <p className="p-3 text-xs leading-relaxed text-ink-muted">
-              Detection found no pixel scale in this image, so there is nothing to align it to yet.
+              {busy
+                ? 'Reading the sheet and working out the scale it was drawn at…'
+                : 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one in the box above.'}
             </p>
           }
         />

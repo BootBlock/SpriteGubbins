@@ -52,6 +52,21 @@ export interface ImportedImage {
 }
 
 /**
+ * What one look at a newly-loaded sheet establishes, before any setting has been chosen.
+ *
+ * Separate from {@link QuantiseResult} because these two answers depend on the *image* and nothing
+ * else, and the transform's answers depend on the settings as well. Kept together with the result
+ * they would be recomputed on every grid keystroke — which is what they were, and counting the
+ * colours in a 16.8-megapixel sheet is not a thing to do on a keystroke.
+ */
+export interface SheetFacts {
+  /** The scale detection measured, or `null` for artwork with no pixel scale at all. */
+  readonly detected: PixelGrid | null;
+  /** Distinct non-transparent colours in the sheet as it arrived. */
+  readonly colors: number;
+}
+
+/**
  * A key colour and how far a pixel may sit from it and still count as background.
  *
  * One value rather than two loose arguments, because neither means anything alone: a colour with no
@@ -72,28 +87,66 @@ export interface BackgroundKeying {
   readonly tolerance: number;
 }
 
+/**
+ * What the palette step is asked to do, which is one of three different things.
+ *
+ * The studio can constrain a returned sheet's colour two ways, and they are not variations of one
+ * setting: a **budget** says how many colours, leaving the choice of them to the image, while a
+ * **palette** says which colours, leaving the count to fall out. Pinning a palette supersedes the
+ * budget, so exactly one of these ever applies — which is why this is a union rather than three
+ * fields that would have to be checked against each other.
+ *
+ * `CHANNEL_DEPTH` is the palette case for the machines whose colours are a space rather than a list.
+ * It reduces the colour *count* barely at all, and that is not what it is for: it makes every colour
+ * one the machine could actually have shown.
+ */
+export type ColorReduction =
+  | { readonly kind: 'MAX_COLORS'; readonly maxColors: number }
+  | { readonly kind: 'PALETTE'; readonly entries: readonly Rgba[] }
+  | { readonly kind: 'CHANNEL_DEPTH'; readonly bitsPerChannel: number };
+
+/**
+ * The reduction, and what the tab's own panel calls it.
+ *
+ * One value rather than two functions, because the two must always describe the same thing: the
+ * panel sits beside the preview, and a readout naming the colour budget while the pipeline maps to
+ * four greens is two statements on one screen contradicting each other. `colorPlanFor` decides both
+ * in one branch, so they cannot part company.
+ */
+export interface ColorPlan {
+  /** What the palette step will do, or `null` to leave the colours alone. */
+  readonly reduction: ColorReduction | null;
+  /** The stored identifier of whichever studio setting decided it — a palette, or the budget. */
+  readonly setting: string;
+  /** What that does to the image, as a clause following the setting's name. */
+  readonly effect: string;
+}
+
 /** Everything `quantiseImage` needs beyond the image itself. */
 export interface QuantiseSettings {
   readonly grid: PixelGrid;
   /** The background to remove, or `null` to leave every pixel where it is. */
   readonly key: BackgroundKeying | null;
   /**
-   * How many colours the result may use, or `null` to leave the palette alone.
+   * How the result's colours are constrained, or `null` to leave them alone.
    *
-   * `null` rather than a large number, because `UNRESTRICTED` means the palette step does not run at
-   * all — a painted or 3D-rendered sheet has no colour budget to enforce, and reducing it to some
-   * high figure anyway would still be a reduction.
+   * `null` rather than a generous budget, because `UNRESTRICTED` with no palette pinned means the
+   * step does not run at all — a painted or 3D-rendered sheet has no colour budget to enforce, and
+   * reducing it to some high figure anyway would still be a reduction.
    */
-  readonly maxColors: number | null;
+  readonly reduction: ColorReduction | null;
 }
 
 /** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
-  /** Distinct non-transparent colours in the source. */
-  readonly colorsBefore: number;
-  /** Distinct non-transparent colours in {@link image}. */
-  readonly colorsAfter: number;
+  /**
+   * Distinct non-transparent colours in {@link image}.
+   *
+   * The figure it is read against — how many the sheet arrived with — is {@link SheetFacts.colors},
+   * which is measured once when the sheet loads rather than again on every settings change.
+   */
+  readonly colors: number;
   /**
    * The fraction of the source the key removed, 0–1, and `0` where keying did not run.
    *
@@ -107,4 +160,22 @@ export interface QuantiseResult {
    * touched.
    */
   readonly keyedShare: number;
+}
+
+/**
+ * What the transform returned, and the pixel scale it returned it at.
+ *
+ * One value rather than two, because the two are only ever known together — the grid is what the
+ * result was computed *from*, so there is no such thing as a result without one. Carried separately
+ * they would need a fallback at the point of use, and the only fallback available is a grid of 1:
+ * exactly the mis-scaling this pairing was introduced to fix, arriving silently.
+ *
+ * It matters twice over now that the transform is asynchronous. While a new grid is being computed
+ * the tab keeps the previous sheet on screen rather than blanking the pane, so what is displayed is
+ * briefly a result for a grid that is no longer the one in the box — and drawing it at the *box's*
+ * grid would stretch it by the ratio between them.
+ */
+export interface Quantised {
+  readonly result: QuantiseResult;
+  readonly grid: PixelGrid;
 }

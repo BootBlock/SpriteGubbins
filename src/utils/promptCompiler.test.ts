@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
+import { PALETTES } from '../constants/palettes/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
-import { RENDER_STYLES, RIG_MODES, TARGET_MODEL_IDS } from '../types/output.ts';
+import { HARDWARE_PROFILE_IDS, RENDER_STYLES, RIG_MODES, TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
@@ -650,6 +652,168 @@ describe('generatePrompt — technical settings in prose', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ backgroundKey: 'MAGENTA_FF00FF' }));
     expect(prompt).toContain('Background is uniform flat magenta #FF00FF, filling all space');
     expect(prompt).toContain('Background is uniform flat magenta #FF00FF with no shadow');
+  });
+});
+
+describe('generatePrompt — the machine and its palette', () => {
+  it('says nothing about either when neither is set', () => {
+    // Both are opt-in, and the default studio must not carry a hardware contract nobody asked for.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, OUTPUT);
+
+    expect(prompt).not.toContain('### Target hardware');
+    expect(prompt).not.toContain('### Palette —');
+    // The colour budget is the line a pinned palette supersedes, so it has to be here when none is.
+    expect(prompt).toContain('- Palette strategy: ');
+  });
+
+  it('states the machine’s geometry and names it, without a word about colour', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ hardwareProfile: 'GAME_BOY' }));
+    const profile = HARDWARE_PROFILES.GAME_BOY;
+    if (profile === null) throw new Error('the Game Boy profile should ship.');
+
+    expect(prompt).toContain(`### Target hardware — ${profile.name}`);
+    for (const constraint of profile.constraints) expect(prompt).toContain(`- ${constraint}`);
+    // The identifier never reaches the prompt — the machine's name does.
+    expect(prompt).not.toContain('GAME_BOY');
+  });
+
+  it('lists every entry of a fixed palette, and drops the budget line it supersedes', () => {
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ palette: 'GAME_BOY_DMG', paletteLimit: 'RESTRAINED_64_COLOR' }),
+    );
+    const palette = PALETTES.GAME_BOY_DMG;
+    if (palette === null || palette.space.kind !== 'FIXED') throw new Error('DMG should be a fixed palette.');
+
+    expect(prompt).toContain(`### Palette — ${palette.name}`);
+    for (const entry of palette.space.entries) expect(prompt).toContain(entry);
+    // The rule the whole feature turns on: a budget cannot say "four shades of green", so where a
+    // palette does, the budget is not stated at all rather than stated alongside and contradicting.
+    expect(prompt).not.toContain('- Palette strategy: ');
+    expect(prompt).not.toContain(promptText.PALETTE_TEXT.RESTRAINED_64_COLOR);
+  });
+
+  it('calls an approximated palette’s entries an approximation, without loosening the rule', () => {
+    // The DMG holds a two-bit shade index and shows it through a green LCD, so naming four hexes
+    // "the colours of the original Game Boy" tells a generator something untrue about the hardware —
+    // and invites it to improve on them from knowledge the hardware cannot supply.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_DMG' }));
+
+    expect(prompt).not.toContain('one of the 4 colours of the original Game Boy (DMG)');
+    expect(prompt).toContain('exactly one of the 4 colours, listed below');
+    expect(prompt).toContain('are an sRGB approximation of');
+    expect(prompt).toContain('not colour values the original Game Boy (DMG) holds');
+    // The ambient-light point is the reason no four hexes can be the authoritative set, so the
+    // prompt carries it rather than leaving the hedge unexplained.
+    expect(prompt).toContain('shifts with the ambient light');
+    // The caveat is about provenance and may not become an excuse to drift off the four.
+    expect(prompt).toContain('No other colour appears on any component');
+    expect(prompt).toContain('on this sheet they are the colours');
+  });
+
+  it('lets the three palettes that own their values keep the plain claim', () => {
+    // PICO-8 is software and its sixteen are a literal in its source: hedging them would be its own
+    // kind of wrong, and the caveat has to be absent rather than harmlessly present everywhere.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'PICO_8' }));
+
+    expect(prompt).toContain('exactly one of the 16 colours of PICO-8, listed below');
+    expect(prompt).not.toContain('sRGB approximation');
+  });
+
+  it.each([
+    'GAME_BOY_DMG',
+    'GAME_BOY_MONO',
+    'NES',
+    'ATARI_2600_NTSC',
+    'COMMODORE_64',
+    'ZX_SPECTRUM',
+  ] as const)('never claims %s’s entries are the machine’s own colours', (id) => {
+    // Every palette on the approximate side of the split, so the wording cannot be fixed for the
+    // Game Boy alone and left overclaiming for the five machines with the same problem.
+    const palette = PALETTES[id];
+    if (palette === null) throw new Error(`${id} should ship.`);
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: id }));
+
+    expect(prompt).not.toContain(`colours of ${palette.name}, listed below`);
+    expect(prompt).toContain('are an sRGB approximation of');
+    expect(prompt).toContain(`not colour values ${palette.name} holds`);
+  });
+
+  it('states the Game Boy Color as a colour space, never as four greens', () => {
+    // The two machines are one hardware profile apart and are routinely conflated. The DMG's list
+    // must not reach the Color, and the Color's own block has to describe the 15-bit space.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_COLOR' }));
+
+    expect(prompt).toContain('32768 colours in all');
+    expect(prompt).toContain('No more than 56 distinct colours appear across the whole sheet.');
+    expect(prompt).toContain('No single component carries more than 3 of them');
+    for (const entry of ['#0F380F', '#306230', '#8BAC0F', '#9BBC0F']) expect(prompt).not.toContain(entry);
+  });
+
+  it('states the ladder rather than a list for a palette that is a colour space', () => {
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'MEGA_DRIVE' }));
+
+    expect(prompt).toContain('0, 36, 73, 109, 146, 182, 219, 255');
+    expect(prompt).toContain('512 colours in all');
+    expect(prompt).toContain('No more than 61 distinct colours appear across the whole sheet.');
+  });
+
+  it('excepts the background field from the palette, in the contract and in the block', () => {
+    // Without this the two halves of the prompt contradict each other outright: section 0 fixes the
+    // field at magenta, and no palette in the library contains it.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_DMG' }));
+
+    expect(prompt).toContain('The background field is the exception and stays the key colour');
+    expect(prompt).toContain('it stays the key colour section 0 fixes, and is not drawn from this palette');
+  });
+
+  it('adds the colour clause to the contract and the audit, only where a palette is pinned', () => {
+    const withPalette = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'NES' }));
+    const without = generatePrompt('CHARACTER', SUBJECT, OUTPUT);
+
+    expect(withPalette).toContain('comes from the palette section 2 fixes');
+    expect(withPalette).toContain('is one the palette in section 2 permits');
+    expect(without).not.toContain('palette section 2 fixes');
+    expect(without).not.toContain('palette in section 2 permits');
+  });
+
+  it('states a sheet-wide colour limit only where it is tighter than the palette itself', () => {
+    // The Game Boy's four colours are the sheet's four colours, so a "no more than 4 across the
+    // whole sheet" line would restate the sentence above it — two constraints that happen to agree,
+    // one of them buying nothing. The NES's 25-of-55 is a real second limit and survives.
+    const gameBoy = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_DMG' }));
+    const nes = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'NES' }));
+
+    expect(gameBoy).not.toContain('distinct colours appear across the whole sheet');
+    expect(nes).toContain('No more than 25 distinct colours appear across the whole sheet.');
+  });
+
+  it('asks the audit about a per-component limit only where section 2 gave one', () => {
+    // Seven of the nineteen palettes state no per-component cap, and an audit telling the reader to
+    // compare against an allowance that was never printed is a check that cannot be worked.
+    const gameBoy = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'GAME_BOY_DMG' }));
+    const spectrum = generatePrompt('CHARACTER', SUBJECT, withOutput({ palette: 'ZX_SPECTRUM' }));
+
+    expect(gameBoy).toContain('No component carries more colours at once than section 2 allows one.');
+    expect(gameBoy).toContain('No single component carries more than 3 of them');
+    // The Spectrum's constraint is the attribute cell, which its note carries; it has no per-object
+    // number, so neither the section-2 line nor the audit that cites it may appear.
+    expect(spectrum).not.toContain('No component carries more colours at once');
+    expect(spectrum).not.toContain('No single component carries more than');
+  });
+
+  it.each(HARDWARE_PROFILE_IDS)('compiles a whole sheet for %s with no marker left behind', (id) => {
+    // Every machine through the compiler, since each one pins a different palette and the two kinds
+    // of palette take different paths through `describePalette`.
+    const profile = HARDWARE_PROFILES[id];
+    const output = withOutput(
+      profile === null ? { hardwareProfile: id } : { hardwareProfile: id, ...profile.settings },
+    );
+    const prompt = generatePrompt('CHARACTER', SUBJECT, output);
+
+    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).toContain('Generate the sheet now.');
   });
 });
 

@@ -8,11 +8,17 @@
  * back from it; presets and the architecture spec are reference material reached from the same
  * header.
  *
- * A bare union rather than the `as const` array the closed sets in `types/output.ts` use, because
- * nothing needs to enumerate these at runtime: the tab is never persisted, so no parser validates
- * it against the set, and the header renders a table of labels rather than raw identifiers.
+ * An `as const` array, like the closed sets in `types/output.ts`, because the tab **is** persisted:
+ * the settings carry the view the app opens on, so `db/settingsParser.ts` has to validate a stored
+ * value against the set. Declaring the union any other way would mean writing the four identifiers
+ * out a second time in the parser, which is the drift this project's guards exist to prevent — the
+ * list that *defines* a union is the only list a type guard may check against.
+ *
+ * The order is the union's alone and says nothing about the interface. `APP_TAB_CHOICES` in
+ * `constants/ui.ts` is what decides the order the switcher shows them in.
  */
-export type AppTab = 'studio' | 'presets' | 'spec' | 'quantise';
+export const APP_TABS = ['studio', 'presets', 'spec', 'quantise'] as const;
+export type AppTab = (typeof APP_TABS)[number];
 
 /**
  * A collapsible section's identity and the state it starts in.

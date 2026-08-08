@@ -29,6 +29,15 @@ interface KeyingControlsProps {
    * frame a field that was missed looks exactly like a field that was keyed.
    */
   readonly keyedShare: number | null;
+  /**
+   * Whether a newer transform is on its way, which {@link keyedShare} would otherwise pre-empt.
+   *
+   * The share is the *previous* job's answer for as long as the next one is running — which is
+   * deliberate for the preview, where a sheet on screen beats a blank frame, and misleading here,
+   * where a bare number reads as current. Switching keying on with nothing keyed yet would announce
+   * "Nothing matched the key colour" about a pass that had not run.
+   */
+  readonly busy: boolean;
 }
 
 /**
@@ -43,7 +52,7 @@ interface KeyingControlsProps {
  * how far this particular generation drifted from the colour it was asked for. That makes it the pixel
  * grid's sibling rather than the palette limit's, and it lives beside the grid in `useQuantiseStore`.
  */
-export function KeyingControls({ keying, keyedShare }: KeyingControlsProps) {
+export function KeyingControls({ keying, keyedShare, busy }: KeyingControlsProps) {
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
   const setKeyingEnabled = useQuantiseStore((state) => state.setKeyingEnabled);
@@ -98,12 +107,16 @@ export function KeyingControls({ keying, keyedShare }: KeyingControlsProps) {
             format={(value) => (value === 0 ? 'exact' : String(value))}
             onChange={setKeyTolerance}
           />
-          {keyedShare !== null &&
+          {busy ? (
+            <Badge tone="live">Keying the sheet…</Badge>
+          ) : (
+            keyedShare !== null &&
             (keyedShare === 0 ? (
               <Badge tone="attention">Nothing matched the key colour</Badge>
             ) : (
               <Badge tone="valid">{(keyedShare * 100).toFixed(1)}% of the sheet keyed</Badge>
-            ))}
+            ))
+          )}
         </div>
       )}
 

@@ -8,10 +8,12 @@ import {
   BACKGROUND_KEYS,
   DIRECTION_SETS,
   DIRECTIONAL_MODES,
+  HARDWARE_PROFILE_IDS,
   JOINT_CAP_STYLES,
   LIGHTING_MODELS,
   OUTLINE_STYLES,
   OVERLAP_MARGINS,
+  PALETTE_IDS,
   PALETTE_LIMITS,
   PROJECTIONS,
   RENDER_STYLES,
@@ -122,6 +124,17 @@ export function parseOutputConfig(value: unknown): OutputConfig {
       DEFAULT_OUTPUT_CONFIG.componentBudget,
       COMPONENT_BUDGET_RANGE,
     ),
+
+    // Both fall back to their own "none", which is the honest reading of a value this layer cannot
+    // vouch for: a stored `MEGA_DRIVE` that no longer names a machine must not become some other
+    // machine, and no machine at all is the only answer that adds nothing to the prompt.
+    hardwareProfile: pick(
+      value,
+      'hardwareProfile',
+      DEFAULT_OUTPUT_CONFIG.hardwareProfile,
+      HARDWARE_PROFILE_IDS,
+    ),
+    palette: pick(value, 'palette', DEFAULT_OUTPUT_CONFIG.palette, PALETTE_IDS),
 
     renderStyle: pick(value, 'renderStyle', DEFAULT_OUTPUT_CONFIG.renderStyle, RENDER_STYLES),
     projection: pick(value, 'projection', DEFAULT_OUTPUT_CONFIG.projection, PROJECTIONS),

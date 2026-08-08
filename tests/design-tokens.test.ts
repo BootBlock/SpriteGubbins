@@ -339,12 +339,18 @@ describe('design tokens', () => {
 
   it('gives every view its own stop, and never the one reserved for the live state', () => {
     // A view added to `AppTab` without a rule here inherits studio's colour rather than getting its
-    // own, which looks like a design decision instead of an omission. The union is read from disk
+    // own, which looks like a design decision instead of an omission. The list is read from disk
     // for the same reason the stylesheet is — `tests/` is the Node-side program and does not import
     // application modules.
+    //
+    // Read from `APP_TABS`, the `as const` array, rather than from the `AppTab` type it derives:
+    // the union became an array when the opening view started being persisted, since a stored tab
+    // has to be validated against the list that *defines* the set. A regex over the type alias now
+    // matches the alias and finds no identifiers in it, which is why the floor below is asserted —
+    // an empty list would turn every check that follows into zero cases that all pass.
     const types = readFileSync(resolve(process.cwd(), 'src/types/ui.ts'), 'utf8');
-    const union = /export type AppTab =([^;]+);/.exec(types)?.[1] ?? '';
-    const tabs = [...union.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]);
+    const declaration = /export const APP_TABS = \[([^\]]+)\]/.exec(types)?.[1] ?? '';
+    const tabs = [...declaration.matchAll(/'([a-z-]+)'/g)].map((match) => match[1]);
 
     expect(tabs.length).toBeGreaterThan(0);
 
@@ -383,6 +389,35 @@ describe('design tokens', () => {
     // actively unpleasant for the ones it exists to protect.
     expect(stylesheet).toContain('@media (prefers-reduced-motion: reduce)');
     expect(stylesheet).toContain('animation-duration: 0.01ms !important');
+  });
+
+  it('gives the in-app switch the same quiet as the system preference, declaration for declaration', () => {
+    // The settings dialog offers reduced motion for this app alone, which a media query cannot
+    // express — so the declarations exist twice, and CSS offers no way to share them: a media query
+    // and an attribute selector cannot be one condition, and driving both from script would leave
+    // the guarantee off until JavaScript had run, on the first paint, for the users it protects.
+    //
+    // Duplication is therefore the chosen cost, and *drift* is what it buys a risk of: a fifth
+    // declaration added to one block and not the other is invisible in a diff and produces an
+    // in-app setting that quiets slightly less than the system one. This compares the sets rather
+    // than listing them, so anything added to either has to be added to both.
+    const media = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(stylesheet)?.[1] ?? '';
+    const systemBlock = /\n {2}\*,\n[\s\S]*?\{([^}]*)\}/.exec(media)?.[1] ?? '';
+    const inAppBlock = /\n\[data-motion='reduced'\],\n[\s\S]*?\{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    const declarations = (block: string) =>
+      [...block.matchAll(/^\s*([\w-]+:[^;]+);/gm)].map((rule) => rule[1]).sort();
+
+    // Both floors first: a regex that matched nothing would compare `[]` with `[]` and call two
+    // empty results agreement, having read no CSS at all.
+    expect(declarations(systemBlock).length).toBeGreaterThanOrEqual(4);
+    expect(declarations(inAppBlock)).toStrictEqual(declarations(systemBlock));
+
+    // `::details-content` is excluded from both selector lists — an unknown pseudo-element
+    // invalidates the whole list it appears in — so it needs its own rule on each side too.
+    expect(stylesheet).toMatch(
+      /\[data-motion='reduced'\] \*::details-content \{[^}]*transition-duration: 0\.01ms !important/,
+    );
   });
 
   it('reaches the two pseudo-elements the universal selector does not', () => {
@@ -906,6 +941,144 @@ describe("a view's primary action", () => {
     const offenders = scoped.filter((file) => /(bg|from|to)-accent-strong/.test(readFileSync(file, 'utf8')));
 
     expect(offenders).toStrictEqual([]);
+  });
+});
+
+/**
+ * The hues the settings dialog offers, read from the `as const` array that defines the union.
+ *
+ * Parsed rather than restated for the reason the wheel is: a hue offered in the dialog with no rule
+ * in the stylesheet renders as whatever the previous selection left behind — the custom properties
+ * simply do not change — which is a swatch that appears to do nothing, with no error anywhere.
+ */
+const settingsTypes = readFileSync(resolve(process.cwd(), 'src/types/settings.ts'), 'utf8');
+const accentDeclaration = /export const ACCENT_HUES = \[([^\]]+)\]/.exec(settingsTypes)?.[1] ?? '';
+const ACCENT_HUES = [...accentDeclaration.matchAll(/'([a-z]+)'/g)].map((match) => match[1] ?? '');
+
+/** The three role tokens a `[data-accent]` rule has to repoint, in the order they are declared. */
+const ACCENT_TOKENS = ['--color-accent', '--color-accent-strong', '--color-accent-soft'];
+
+/** One hue's rule body, bounded by the two-space closing brace every rule in `@layer base` has. */
+function accentRule(hue: string): string {
+  const opener = `[data-accent='${hue}'] {`;
+  const start = stylesheet.indexOf(opener);
+  if (start === -1) return '';
+  const rest = stylesheet.slice(start + opener.length);
+  const end = rest.indexOf('\n  }');
+  return end === -1 ? rest : rest.slice(0, end);
+}
+
+/** One `oklch()` triple out of a rule body. */
+function accentToken(hue: string, token: string): [number, number, number] {
+  const declaration = new RegExp(token + String.raw`: oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)`).exec(
+    accentRule(hue),
+  );
+  if (declaration === null) throw new Error(`${token} is not declared for the ${hue} accent`);
+  return [Number(declaration[1]), Number(declaration[2]), Number(declaration[3])];
+}
+
+/**
+ * OKLCH to linear sRGB **without the clamp** `linearOf` applies.
+ *
+ * The clamp is what a browser does, and it is right for measuring what a user sees — which is why
+ * every contrast check above uses it. It is exactly wrong for asking whether a colour is *inside*
+ * the gamut, because clamping is the thing being detected: a chroma past the boundary comes back
+ * from `linearOf` as a perfectly plausible colour that is not the one written down.
+ */
+function unclampedOf([L, C, hDeg]: [number, number, number]): [number, number, number] {
+  const h = (hDeg * Math.PI) / 180;
+  const a = C * Math.cos(h);
+  const b = C * Math.sin(h);
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+}
+
+describe('the accent hue the user chose', () => {
+  it('parsed the hue list out of the module it is checking against', () => {
+    // Without this an `ACCENT_HUES` the regex failed to find would be an empty array, and every
+    // `it.each` below would become zero cases that all pass — the whole contract dark, suite green.
+    expect(ACCENT_HUES.length).toBeGreaterThanOrEqual(3);
+    expect(ACCENT_HUES).toContain('indigo');
+  });
+
+  it.each(ACCENT_HUES)('gives %s a rule declaring all three role tokens', (hue) => {
+    // A hue offered with no rule is not a rendering error — the properties keep the value they had,
+    // so the swatch is painted in the *previous* selection's colour and pressing it changes nothing.
+    for (const token of ACCENT_TOKENS) expect(accentRule(hue)).toContain(`${token}: oklch(`);
+  });
+
+  it('leaves the default exactly where it was, in both places it is written', () => {
+    // The `@theme` block has to carry a concrete default or Tailwind generates no `accent` utilities
+    // at all, so the default hue's values exist twice. They are not free to disagree: `@theme` is
+    // what paints anything outside the shell, and the rule is what paints everything inside it.
+    for (const token of ACCENT_TOKENS) {
+      expect(oklchToken(token)).toStrictEqual(accentToken('indigo', token));
+    }
+  });
+
+  it('never offers the stop reserved for the live state', () => {
+    // `neon` is cyan and means "this is recomputing"; `pulse-glow` blooms from the accent to it
+    // precisely to mark that transition. An accent resting on cyan collapses both ends of the signal
+    // into one colour — the same reason no *view* owns that stop.
+    const [, , cyanHue] = oklchToken('--color-spectrum-cyan');
+
+    expect(ACCENT_HUES).not.toContain('cyan');
+    for (const hue of ACCENT_HUES) {
+      for (const token of ACCENT_TOKENS) expect(accentToken(hue, token)[2]).not.toBe(cyanHue);
+    }
+  });
+
+  it('holds every hue to the default’s luminance, which is what makes the setting safe', () => {
+    // The claim this whole feature rests on: **changing the accent cannot change a contrast ratio**.
+    // It holds because luminance is held, not lightness — OKLCH lightness is perceptual and its
+    // relationship to luminance depends on hue, so nine hues at one lightness would be nine
+    // different ratios against `ink` and against every panel. Gold at L 0.62 is far brighter than
+    // indigo at L 0.62, and `text-ink` sits on `accent-strong` in the app's loudest button.
+    //
+    // 1% of tolerance, against a derivation whose worst rounding error is 0.211%: wide enough that
+    // three decimal places in the stylesheet are not a failure, narrow enough that a hue picked by
+    // eye — which is how this would actually go wrong — cannot pass.
+    for (const token of ACCENT_TOKENS) {
+      const target = luminanceOf(linearOf(accentToken('indigo', token)));
+      for (const hue of ACCENT_HUES) {
+        const measured = luminanceOf(linearOf(accentToken(hue, token)));
+        expect(Math.abs(measured - target) / target).toBeLessThan(0.01);
+      }
+    }
+  });
+
+  it('keeps every hue inside sRGB, so its chroma is the one written down', () => {
+    // Each value is the same *fraction* of its own hue's gamut maximum as the default is of its, so
+    // no hue is clamped and none is left undersaturated. A chroma nudged past the boundary still
+    // renders — the engine clamps it — as a colour that is not what the declaration says, which
+    // silently breaks the luminance match above at the same time.
+    for (const hue of ACCENT_HUES) {
+      for (const token of ACCENT_TOKENS) {
+        for (const channel of unclampedOf(accentToken(hue, token))) {
+          expect(channel).toBeGreaterThanOrEqual(-1e-6);
+          expect(channel).toBeLessThanOrEqual(1 + 1e-6);
+        }
+      }
+    }
+  });
+
+  it('never reaches the view’s own colour, which is not the user’s to set', () => {
+    // The issue this feature answers asked for an accent that does *not* repaint the per-view
+    // colours, and this is where that could quietly stop being true: a `--color-tab` added to one of
+    // these rules would override the `[data-tab]` rule on the same element — same specificity, later
+    // in the file — and every view would light up in the accent instead of its own stop. Nothing
+    // would look broken; the app would simply stop saying which view you are in.
+    for (const hue of ACCENT_HUES) {
+      const rule = accentRule(hue);
+      expect(rule).not.toContain('--color-tab');
+      expect(rule).not.toContain('--tab-chord');
+    }
   });
 });
 

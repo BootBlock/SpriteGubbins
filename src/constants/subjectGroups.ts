@@ -70,9 +70,10 @@ export const SUBJECT_FIELD_GROUPS: readonly SubjectFieldGroup[] = [
     keys: ['face_head', 'clothing', 'worn_details'],
   },
   {
-    // Not "Palette": that word already means a bounded colour count in three places the user meets —
-    // `RenderStyleFields`' *Palette Limit*, the quantiser's, and the `Palette:` line the identity
-    // lock carries.
+    // Not "Palette": the studio already spends that word on the colours the *sheet* may be drawn
+    // from — `RenderStyleFields`' Palette and Palette Limit, and the `Palette:` line the identity lock
+    // carries. These three fields describe what the subject *is* coloured, which is a different claim,
+    // and the collision got sharper rather than softer when a control took the bare word.
     id: 'subject:colour',
     heading: 'Colour & materials',
     defaultOpen: true,

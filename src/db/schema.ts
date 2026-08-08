@@ -16,6 +16,18 @@ export const OPFS_POOL_NAME = 'sprite-gubbins-pool';
 
 export const PROMPT_HISTORY_TABLE = 'prompt_history';
 export const CUSTOM_PRESETS_TABLE = 'custom_presets';
+export const APP_SETTINGS_TABLE = 'app_settings';
+
+/**
+ * The settings table holds exactly one row, and this is its key.
+ *
+ * A single-row table rather than a key/value one: the settings are read and written as a whole
+ * object — the store hydrates all four at once and every action rewrites the set — so a row per
+ * preference would be four statements doing one job, and would let a partial write leave the app
+ * with two settings from one session and two from another. The `CHECK` in the DDL is what makes
+ * "exactly one" a property of the schema rather than a habit of the code above it.
+ */
+export const SETTINGS_ROW_ID = 1;
 
 /**
  * `IF NOT EXISTS` throughout: this runs on every boot, against a database that usually already
@@ -46,6 +58,11 @@ CREATE TABLE IF NOT EXISTS ${CUSTOM_PRESETS_TABLE} (
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS ${APP_SETTINGS_TABLE} (
+  id INTEGER PRIMARY KEY CHECK (id = ${SETTINGS_ROW_ID}),
+  settings_json TEXT NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
   ON ${PROMPT_HISTORY_TABLE} (created_at DESC);
 `;
@@ -59,6 +76,7 @@ CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
 export const STORAGE_KEYS = {
   customPresets: 'sprite_gubbins_custom_presets',
   promptHistory: 'sprite_gubbins_prompt_history',
+  appSettings: 'sprite_gubbins_app_settings',
 } as const;
 
 /** Newest first — the order the history drawer lists entries in. */
@@ -95,3 +113,18 @@ VALUES (?, ?, ?, ?, ?, ?)
 export const DELETE_PRESET_SQL = `DELETE FROM ${CUSTOM_PRESETS_TABLE} WHERE id = ?`;
 
 export const DELETE_ALL_PRESETS_SQL = `DELETE FROM ${CUSTOM_PRESETS_TABLE}`;
+
+/** The one settings row, or nothing at all on an install that has never opened the dialog. */
+export const SELECT_SETTINGS_SQL = `
+SELECT settings_json FROM ${APP_SETTINGS_TABLE} WHERE id = ${SETTINGS_ROW_ID}
+`;
+
+/**
+ * Write the settings, replacing whatever was there.
+ *
+ * `INSERT OR REPLACE` against the fixed key, so the first save and every later one are the same
+ * statement — there is no "have they saved before" question for the caller to get wrong.
+ */
+export const UPSERT_SETTINGS_SQL = `
+INSERT OR REPLACE INTO ${APP_SETTINGS_TABLE} (id, settings_json) VALUES (${SETTINGS_ROW_ID}, ?)
+`;

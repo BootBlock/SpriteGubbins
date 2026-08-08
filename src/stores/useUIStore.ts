@@ -36,10 +36,24 @@ export interface UIState {
   readonly isAtlasModalOpen: boolean;
   readonly isHistoryModalOpen: boolean;
   readonly isSplitModalOpen: boolean;
+  readonly isSettingsModalOpen: boolean;
   /** The deferred `beforeinstallprompt` event, or `null` when the app can't offer an install. */
   readonly deferredPWAInstallPrompt: BeforeInstallPromptEvent | null;
 
   setActiveTab(tab: AppTab): void;
+  /**
+   * Open the app on `tab`, unless the user has already gone somewhere themselves.
+   *
+   * The settings carry a preferred opening view, and they arrive *after* the first render — reading
+   * them means opening a database, which is a worker, a WebAssembly module and an OPFS pool. So the
+   * app is always on the studio for a moment first, and this is what moves it.
+   *
+   * The guard is the whole point. Those few hundred milliseconds are enough for someone who knows
+   * where they are going to press a tab, and a preference that arrived late and pulled them back
+   * would be the app fighting the person using it. A stored view is a statement about how the app
+   * should *open*, which stops being true the moment they navigate.
+   */
+  openInitialTab(tab: AppTab): void;
   /**
    * Show a message, replacing any current one. It announces for {@link TOAST_DURATION_MS}, then
    * fades for {@link TOAST_EXIT_MS} before clearing itself.
@@ -69,6 +83,8 @@ export interface UIState {
   toggleHistoryModal(): void;
   /** Open or close the sheet splitter. Closes whichever other overlay was open. */
   toggleSplitModal(): void;
+  /** Open or close the settings dialog. Closes whichever other overlay was open. */
+  toggleSettingsModal(): void;
   setInstallPrompt(prompt: BeforeInstallPromptEvent | null): void;
 }
 
@@ -83,7 +99,18 @@ const ALL_OVERLAYS_CLOSED = {
   isAtlasModalOpen: false,
   isHistoryModalOpen: false,
   isSplitModalOpen: false,
+  isSettingsModalOpen: false,
 } as const;
+
+/**
+ * Whether the user has chosen a view themselves yet.
+ *
+ * Module-level and outside the store for the same reason the toast's timer is: it is not state any
+ * component renders, and putting it in the store would invite a selector onto it. It exists solely
+ * so {@link UIState.openInitialTab} can tell "the app is still where it started" from "the app is on
+ * the studio because that is where they went", which the tab alone cannot say.
+ */
+let hasNavigated = false;
 
 /**
  * Whichever of the toast's two timers is pending — the dwell, or the fade that follows it.
@@ -119,6 +146,12 @@ export const useUIStore = create<UIState>((set) => ({
   deferredPWAInstallPrompt: null,
 
   setActiveTab: (activeTab) => {
+    hasNavigated = true;
+    set({ activeTab });
+  },
+
+  openInitialTab: (activeTab) => {
+    if (hasNavigated) return;
     set({ activeTab });
   },
 
@@ -158,7 +191,21 @@ export const useUIStore = create<UIState>((set) => ({
     set((state) => ({ ...ALL_OVERLAYS_CLOSED, isSplitModalOpen: !state.isSplitModalOpen }));
   },
 
+  toggleSettingsModal: () => {
+    set((state) => ({ ...ALL_OVERLAYS_CLOSED, isSettingsModalOpen: !state.isSettingsModalOpen }));
+  },
+
   setInstallPrompt: (deferredPWAInstallPrompt) => {
     set({ deferredPWAInstallPrompt });
   },
 }));
+
+/**
+ * Forget that the user has navigated, so `openInitialTab` will apply again.
+ *
+ * For tests, which need each case to start from a fresh load; the running app has exactly one, and
+ * `hasNavigated` is a fact about the session that nothing in it should be able to un-say.
+ */
+export function resetNavigationForTests(): void {
+  hasNavigated = false;
+}

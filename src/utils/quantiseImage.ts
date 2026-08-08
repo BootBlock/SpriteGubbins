@@ -1,5 +1,6 @@
-import type { QuantiseResult, QuantiseSettings } from '../types/quantiser.ts';
-import { applyPalette } from './applyPalette.ts';
+import type { ColorReduction, QuantiseResult, QuantiseSettings } from '../types/quantiser.ts';
+import { applyPalette, applyRgbPalette } from './applyPalette.ts';
+import { snapToChannelDepth } from './channelDepth.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { countColors } from './imageData.ts';
 import { keyBackground } from './keyBackground.ts';
@@ -39,7 +40,11 @@ import { buildPalette } from './medianCut.ts';
  * transparent pixels, so the keyed field claims no palette slots, and `applyPalette` copies it through
  * untouched rather than mapping it onto a colour.
  *
- * Pure, and deliberately so: if a large sheet ever does stall, this moves to a worker unchanged.
+ * Pure, and deliberately so — which is what let it move into `src/workers/quantiseWorker.ts` without
+ * a line of it changing when a large sheet did stall. It no longer runs on the main thread at all:
+ * every pass is linear in a pixel count this app admits up to 16.8 million of, and a transform that
+ * re-runs on each keystroke of the grid box has no business holding the one thread that could paint a
+ * spinner.
  */
 export function quantiseImage(image: ImageData, settings: QuantiseSettings): QuantiseResult {
   // `null` skips the pass outright rather than keying against some default colour: the studio's key
@@ -51,20 +56,48 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const aligned = alignToGrid(source, settings.grid);
   const reduced = downscaleNearest(aligned, settings.grid);
 
-  // `UNRESTRICTED` skips the palette step outright rather than reducing to some generous figure. A
-  // painted or 3D-rendered sheet has no colour budget to enforce, and a high cap is still a cap.
-  const output =
-    settings.maxColors === null ? reduced : applyPalette(reduced, buildPalette(reduced, settings.maxColors));
+  // `UNRESTRICTED` with no palette pinned skips the step outright rather than reducing to some
+  // generous figure. A painted or 3D-rendered sheet has no colour budget to enforce, and a high cap
+  // is still a cap.
+  const output = settings.reduction === null ? reduced : reduceColors(reduced, settings.reduction);
 
   return {
     image: output,
-    // The sheet the user dropped, before keying or alignment collapsed anything — otherwise the pair
-    // of figures understates the work and the two are not comparable.
-    colorsBefore: countColors(image),
-    colorsAfter: countColors(output),
+    // Only the result is counted here. The figure it is read against belongs to the sheet rather than
+    // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
+    colors: countColors(output),
     // No zero-pixel guard: `ImageData`'s constructor throws `IndexSizeError` for a zero width or
     // height, so an image with nothing in it cannot reach this line and a division by zero has no way
     // to arise. A guard against it would be a comment claiming to protect against the impossible.
     keyedShare: keyed === null ? 0 : keyed.keyedPixels / pixels,
   };
+}
+
+/**
+ * The palette step, in whichever of its three forms the studio asked for.
+ *
+ * **A pinned palette is applied on its own, never after a median cut.** Reducing to N colours and
+ * then mapping those onto a fixed list is two quantisations where one was asked for, and the first
+ * of them throws away exactly the information the second needs — a Game Boy's four shades are much
+ * better chosen from the image's own colours than from four the median cut picked first.
+ *
+ * The *on-screen* colour limit a machine imposes is deliberately not enforced here either. It is a
+ * per-frame figure, and a sprite sheet is not a frame: it is the source artwork a frame is later
+ * assembled from, so nothing on this side knows which components would ever be visible together.
+ * The prompt states it; this makes the colours legal.
+ *
+ * **The two palette arms take different functions, and it is not an oversight.** A budget's palette
+ * comes from this very image and carries the alpha median cut split it on, so it is written whole; a
+ * machine's palette is a list of colours with no fourth channel, so writing it whole would flatten
+ * every soft edge to opaque. `applyPalette` and `applyRgbPalette` say which is which.
+ */
+function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
+  switch (reduction.kind) {
+    case 'MAX_COLORS':
+      return applyPalette(image, buildPalette(image, reduction.maxColors));
+    case 'PALETTE':
+      return applyRgbPalette(image, reduction.entries);
+    case 'CHANNEL_DEPTH':
+      return snapToChannelDepth(image, reduction.bitsPerChannel);
+  }
 }

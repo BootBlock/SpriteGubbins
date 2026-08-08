@@ -1,9 +1,11 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { AppSettings } from '../types/settings.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import { parseHistoryRow, parseImportedPreset } from './rows.ts';
 import { parseJson } from './readers.ts';
+import { parseSettings } from './settingsParser.ts';
 import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
 
 /**
@@ -133,5 +135,30 @@ export class LocalStorageBackend implements PersistenceBackend {
 
   replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
     return this.write(STORAGE_KEYS.customPresets, [...presets]);
+  }
+
+  /**
+   * The settings, stored as the object itself rather than as a row.
+   *
+   * The two collections above keep the SQLite table's `snake_case` shape so one parser can read
+   * both backends; there is nothing to align here, because the SQLite side stores this same object
+   * serialised into a single column. `parseSettings` is that shared parser — the SQLite backend
+   * unwraps its row and hands the payload to it, and this hands over what it read.
+   *
+   * Unreadable storage yields the defaults rather than throwing, exactly as {@link read} does for the
+   * collections: an install with no settings and one whose settings cannot be parsed both mean "the
+   * app as it ships".
+   */
+  loadSettings(): Promise<AppSettings> {
+    try {
+      const stored = this.storage.getItem(STORAGE_KEYS.appSettings);
+      return Promise.resolve(parseSettings(stored === null ? undefined : parseJson(stored)));
+    } catch {
+      return Promise.resolve(parseSettings(undefined));
+    }
+  }
+
+  saveSettings(settings: AppSettings): Promise<void> {
+    return this.write(STORAGE_KEYS.appSettings, settings);
   }
 }

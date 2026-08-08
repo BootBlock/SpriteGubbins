@@ -6,6 +6,8 @@ import {
   CATEGORY_GUARD_TEXT,
   DEPTH_ORDER_TEXT,
   describeDirections,
+  describeHardware,
+  describePalette,
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
   LIGHTING_TEXT,
@@ -13,12 +15,15 @@ import {
   OUTLINE_TEXT,
   OVERLAP_MARGIN_TEXT,
   PALETTE_TEXT,
+  perComponentLimit,
   PROJECTION_TEXT,
   RENDER_STYLE_TEXT,
   RESOLUTION_PROFILE_TEXT,
   SURFACE_DETAIL_TEXT,
 } from '../constants/promptText/index.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
+import { hardwareProfileFor } from '../constants/hardware/index.ts';
+import { paletteFor } from '../constants/palettes/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -94,6 +99,12 @@ export function generatePrompt(
   // the contract says it has, which is the one arithmetic the whole template rests on.
   const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
 
+  // The machine and its colours, or `null` for `NONE`/`FREE`. Resolved once and read four times
+  // below, so the two blocks and the two flags that gate them cannot disagree about whether there
+  // is a machine — the failure mode being a heading with nothing under it.
+  const hardware = hardwareProfileFor(output.hardwareProfile);
+  const palette = paletteFor(output.palette);
+
   const values: Record<string, string> = {
     CATEGORY: category,
     COMPONENT_COUNT: String(componentCountFor(category, mode, output.sheetIndex, anatomy)),
@@ -110,10 +121,18 @@ export function generatePrompt(
     SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
     RESOLUTION_PROFILE_DESCRIPTION: RESOLUTION_PROFILE_TEXT[output.resolutionProfile],
     MIN_FEATURE_SIZE: MIN_FEATURE_SIZE[output.resolutionProfile],
+    // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
+    // the value is still supplied because `substitute` throws on a token it has no value for, and
+    // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
     PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
     OUTLINE_DESCRIPTION: OUTLINE_TEXT[output.outlineStyle],
     LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
     SPRITE_TARGET_SIZE: output.spriteTargetSize,
+
+    HARDWARE_NAME: hardware?.name ?? '',
+    HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
+    PALETTE_NAME: palette?.name ?? '',
+    PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
 
     PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
     CAMERA_ELEVATION: String(output.cameraElevation),
@@ -156,6 +175,20 @@ export function generatePrompt(
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
     RIG_MODE: output.rigMode,
+    // Read from the resolved profile rather than from the stored id, so a configuration naming a
+    // machine this build no longer has emits no heading rather than an empty one — the same
+    // reasoning that makes `resolveMode` the single answer about the sheet mode.
+    HARDWARE_PROFILE: hardware === null ? '' : 'yes',
+    // Gates three places at once: the colour clause in section 0, the palette block in section 2,
+    // and the audit line in section 9 — and, negated, the palette-strategy line the pinned palette
+    // supersedes. One flag, because a pinned palette either governs the sheet's colour or does not.
+    PALETTE: palette === null ? '' : 'yes',
+    // A second, narrower flag, because section 9's per-component check cites a number section 2 does
+    // not always print: seven of the nineteen palettes state no per-component cap, and an audit
+    // asking the reader to compare against an allowance that was never given cannot be worked.
+    // Read through `perComponentLimit` rather than off `colorsPerComponent`, so the gate answers
+    // whether the line was *emitted* rather than whether the field was set.
+    PALETTE_PER_COMPONENT: palette !== null && perComponentLimit(palette) !== null ? 'yes' : '',
     // The rules about views *disagreeing* — landmarks, occlusion, no mirroring, the directional
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.

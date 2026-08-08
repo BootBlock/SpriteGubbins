@@ -131,3 +131,31 @@ describe('parseOutputConfig — sheetIndex', () => {
     expect(resolveSheetIndex('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 1)).toBe(0);
   });
 });
+
+describe('parseOutputConfig — the machine and its palette', () => {
+  it('keeps a stored machine and palette that still exist', () => {
+    const parsed = parseOutputConfig({ hardwareProfile: 'MEGA_DRIVE', palette: 'MEGA_DRIVE' });
+    expect(parsed.hardwareProfile).toBe('MEGA_DRIVE');
+    expect(parsed.palette).toBe('MEGA_DRIVE');
+  });
+
+  it('falls back to no machine and no palette rather than to some other one', () => {
+    // The two fields where a *wrong* fallback would be worse than none: a stored `SATURN` becoming
+    // `GAME_BOY` would put a hardware contract in the prompt for a machine nobody named. Both
+    // defaults add nothing to the prompt, which is the only honest answer to a value this layer
+    // cannot vouch for.
+    for (const stored of [undefined, null, 42, 'SATURN', 'game_boy', {}]) {
+      const parsed = parseOutputConfig({ hardwareProfile: stored, palette: stored });
+      expect(parsed.hardwareProfile, `${String(stored)} should not have been accepted`).toBe('NONE');
+      expect(parsed.palette, `${String(stored)} should not have been accepted`).toBe('FREE');
+    }
+  });
+
+  it('does not require the two to agree, because the user is free to disagree', () => {
+    // A machine's geometry with another machine's colours is a legitimate request the studio can
+    // express, so storage must round-trip it rather than "correcting" one to match the other.
+    const parsed = parseOutputConfig({ hardwareProfile: 'MEGA_DRIVE', palette: 'GAME_BOY_DMG' });
+    expect(parsed.hardwareProfile).toBe('MEGA_DRIVE');
+    expect(parsed.palette).toBe('GAME_BOY_DMG');
+  });
+});

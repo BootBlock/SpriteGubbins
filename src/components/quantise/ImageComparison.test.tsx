@@ -29,18 +29,20 @@ afterEach(() => {
 const SOURCE_SIDE = 128;
 
 /** A result as `quantiseImage` returns one: `⌈w / grid⌉` a side, per `downscaleNearest`. */
-function resultFor(grid: number, colorsAfter = 32): QuantiseResult {
+function resultFor(grid: number, colors = 32): QuantiseResult {
   const side = Math.ceil(SOURCE_SIDE / grid);
-  return { image: createImage(side, side), colorsBefore: 200, colorsAfter, keyedShare: 0 };
+  return { image: createImage(side, side), colors, keyedShare: 0 };
 }
 
-function show(grid: number | null, colorsAfter?: number) {
+function show(grid: number | null, colors?: number, busy = false) {
   const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
   render(
     <ImageComparison
       sourceName="sheet.png"
       source={source}
-      quantised={grid === null ? null : { result: resultFor(grid, colorsAfter), grid }}
+      sourceColors={200}
+      quantised={grid === null ? null : { result: resultFor(grid, colors), grid }}
+      busy={busy}
     />,
   );
   return {
@@ -114,7 +116,26 @@ describe('ImageComparison', () => {
     const { arrived, quantised } = show(null);
 
     expect(quantised).toBeNull();
-    expect(screen.getByText(/no pixel scale in this image/)).toBeInTheDocument();
+    expect(screen.getByText(/No pixel scale was measured/)).toBeInTheDocument();
     expect(arrived.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+  });
+
+  it('says it is working, over the previous result rather than instead of it', () => {
+    // The transform runs on a worker, so a settings change is answered a few hundred milliseconds
+    // later. Blanking the pane for that long would throw away what the tab exists to show — and take
+    // the reader's pan position with it, since the pane collapses to a placeholder and the scroll
+    // offset is clamped to nothing. So the last result stays up and the chip says a newer one is due.
+    const { quantised } = show(8, 32, true);
+
+    expect(quantised).not.toBeNull();
+    expect(screen.getByText('Quantising…')).toBeInTheDocument();
+    expect(screen.getByText(/· updating…$/)).toBeInTheDocument();
+  });
+
+  it('says nothing about working when it is not', () => {
+    show(8);
+
+    expect(screen.queryByText('Quantising…')).toBeNull();
+    expect(screen.queryByText(/updating…/)).toBeNull();
   });
 });

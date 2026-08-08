@@ -11,9 +11,15 @@ It also warns when a prompt has outgrown what the chosen target is documented to
 out atlas grid layouts and VRAM budgets, and exports engine metadata for Godot, Unity and PixiJS.
 
 Everything runs in the browser. There is no server, no account, and **no model API key** —
-the app produces prompt *text* for you to paste wherever you like. Prompt history and custom
-presets are stored locally in SQLite (WebAssembly, persisted to the Origin Private File
-System).
+the app produces prompt *text* for you to paste wherever you like. Prompt history, custom
+presets and your interface settings are stored locally in SQLite (WebAssembly, persisted to
+the Origin Private File System).
+
+A Settings dialog in the header carries the app-wide preferences: the accent colour, whether
+the ambient backdrop is painted, an in-app reduced-motion switch, and which view the app opens
+on. None of them changes what a prompt says, and none of them repaints the per-view colours —
+the Studio, Quantise, Presets and Architecture tabs keep their own, which is how the page says
+where you are.
 
 ## Status
 
