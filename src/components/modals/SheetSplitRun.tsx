@@ -34,7 +34,7 @@ export function SheetSplitRun({ run, ordinal, total, isCopied, onCopy }: SheetSp
   return (
     <li className="rounded-xl border border-foundry-700 bg-foundry-950 p-4">
       <div className="mb-2 flex flex-wrap items-center gap-2">
-        <span className="font-mono text-[10px] text-ink-faint">
+        <span className="font-mono text-2xs text-ink-faint">
           Sheet {ordinal} of {total}
         </span>
         <span className="font-mono text-xs font-bold text-ink">{run.direction}</span>
@@ -51,19 +51,19 @@ export function SheetSplitRun({ run, ordinal, total, isCopied, onCopy }: SheetSp
           onClick={() => {
             onCopy(run);
           }}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-[11px] font-extrabold text-ink shadow-md transition-colors hover:bg-accent"
+          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-extrabold text-ink shadow-md transition-colors hover:bg-accent"
         >
           Copy this sheet
         </button>
 
-        <span className="font-mono text-[10px] text-ink-faint">{countWords(run.promptText)} words</span>
+        <span className="font-mono text-2xs text-ink-faint">{countWords(run.promptText)} words</span>
       </div>
 
       <details className="mt-3">
-        <summary className="cursor-pointer text-[11px] font-semibold text-ink-faint transition-colors hover:text-ink-muted">
+        <summary className="cursor-pointer text-xs font-semibold text-ink-faint transition-colors hover:text-ink-muted">
           Read the prompt for this sheet
         </summary>
-        <pre className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-foundry-700 bg-foundry-950 p-3 font-mono text-[10px] leading-relaxed whitespace-pre-wrap text-ink-muted select-all">
+        <pre className="mt-2 max-h-64 overflow-y-auto rounded-lg border border-foundry-700 bg-foundry-950 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-ink-muted select-all">
           {run.promptText}
         </pre>
       </details>

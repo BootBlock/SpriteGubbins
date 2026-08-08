@@ -156,6 +156,53 @@
     'JetBrains Mono', 'Fira Code', ui-monospace, 'SFMono-Regular', 'Cascadia Mono', Menlo, Consolas, monospace;
 
   /*
+   * The type scale: three rungs below the heading sizes, and only three.
+   *
+   * Tailwind's stock ladder starts at 12px, so every piece of type this app wanted *smaller* than
+   * that was written at the call site as an arbitrary bracketed value — 39 of them, 18 at 10px and
+   * 21 at 11px, against 70 uses of the stock `text-xs` at 12px. (Those bracketed spellings are not
+   * repeated here: an arbitrary utility written in this comment is a candidate the scanner would
+   * emit, for the same reason the `@source not` rules at the top of this file exist.) Three sizes
+   * within 2px of each other, only the largest of them named, and nothing to consult about which
+   * one a new component should take: the guidance card's paragraph landed on 11px and the label of
+   * the field it explains on 12px, so the explanation rendered *smaller* than the thing it was
+   * explaining. That is the shape of the bug — not a tooltip that was mis-set, but a scale that
+   * never existed to set it against.
+   *
+   * So the rungs are defined here rather than at the call sites, and they are 2px apart, because
+   * 1px is not a hierarchy — it is drift that reads as one blurry band:
+   *
+   * - `text-2xs` (11px) — **micro.** Uppercase eyebrows and legends, badge pills, and the mono
+   *   metadata chips (a timestamp, a word count, an image's dimensions). Things scanned at a
+   *   glance, never read in a run. This is the floor; nothing in the app goes below it.
+   * - `text-xs` (13px) — **body**, and the app's default. Labels, inputs, buttons, guidance
+   *   paragraphs, prompt text, list rows.
+   * - `text-sm` (15px) — **lede.** The paragraph or value that opens a panel.
+   *
+   * Each is one step up from the band it replaces, which is the increase itself: the app's body
+   * type was 12px and is now 13px, and its smallest text was 10px and is now 11px. Raising the
+   * *root* font size would have done that too, but it would have taken the spacing scale with it —
+   * Tailwind's `--spacing` is in `rem` — so the whole app would have grown rather than its type,
+   * and the guidance card would still have been the smallest text on the page.
+   *
+   * `--text-base` and up are deliberately untouched: 16/18/20/24 are the headings, and they were
+   * never the complaint. `base` sits only 1px above the `sm` lede, which is only safe because the
+   * two never do the same job — `base` is the bold-heading rung and nothing else wears it. The two
+   * studio panel headings had to move onto it here to keep that true: they are bold `<h2>`s that
+   * were on `sm`, so raising `sm` would otherwise have left the app with bold headings 1px apart,
+   * which is the very drift the rungs above are spaced to avoid.
+   *
+   * Line heights follow Tailwind's own convention — a unitless multiplier written as the `rem`
+   * value it works out to, so the ratio and the rendered leading are both legible at a glance.
+   */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: calc(1 / 0.6875);
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: calc(1.125 / 0.8125);
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: calc(1.375 / 0.9375);
+
+  /*
    * Motion. Named for what each is for, not how it looks: `fade-in` mounts a panel, `pulse-glow`
    * marks a live/auto-syncing element, `float-orb` drifts the two background glows (the second runs
    * slower and in reverse so they never synchronise), `shimmer` fills a loading placeholder. The

@@ -342,6 +342,9 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | Error / invalid / destructive | `rose` | `text-red-500` |
 | Body, secondary and faint text | `text-ink` / `text-ink-muted` / `text-ink-faint` | `text-slate-300` |
 | Prompt text, metrics, JSON | `font-mono` | a raw font stack |
+| Body type — a label, an input, a button, a guidance paragraph, a list row, prompt text | `text-xs` (13px), the app's default rung | a bracketed `text-[…px]`, which no longer moves when the scale does |
+| An uppercase eyebrow or legend, a badge pill, a mono metadata chip (timestamp, word count, dimensions) | `text-2xs` (11px), the floor | a bracketed size, or `text-xs` for something only ever scanned |
+| The paragraph or value that opens a panel | `text-sm` (15px) | `text-base`, which is the bold-heading rung |
 | Panel entrance, live pulse, ambience, loading | `animate-fade-in` / `animate-pulse-glow` / `animate-float-orb` (+ `-slow`) / `animate-shimmer` | inline `@keyframes`, one-off durations |
 | A **tile in a grid** arriving (a preset card, a button that comes and goes) | `animate-pop-in` | `animate-fade-in`, which is for a full-width panel |
 | A **cascade** across a grid of those | `stagger-children` on the list | per-child `animation-delay` at the call site |
@@ -389,6 +392,21 @@ computed-value time, so a `--color-tab` declared on `:root` in terms of another 
 *there* and inherits down already resolved; a descendant re-declaring the input would change
 nothing. That is also the mechanism a preset card uses to claim its own stop: it sets `--color-tab`
 inline, and every `*-tab` utility inside it follows without one of them being told.
+
+**The type scale is three rungs, and a component picks one — it does not name a size.** Tailwind's
+stock ladder bottoms out at 12px, so for a long time anything this app wanted smaller was written at
+the call site as a bracketed arbitrary value: 39 of them, 18 at 10px and 21 at 11px, sitting beside
+70 uses of the stock `text-xs` at 12px. Three sizes within 2px of each other, only the largest of
+them named, and nothing to consult about which a new component should take — so the guidance card's
+paragraph landed on 11px while the label of the field it explains landed on 12px, and the
+explanation rendered *smaller* than the thing being explained. The rungs are now defined in the
+`@theme` block instead, 2px apart because 1px is not a hierarchy: **`text-2xs` (11px)** for what is
+scanned, **`text-xs` (13px)** for what is read — the default — and **`text-sm` (15px)** for what
+opens a panel. `text-base` and up are Tailwind's own and are the headings; **`base` is the
+bold-heading rung and nothing else wears it**, which is the only reason it can sit 1px above the
+lede without the two competing — so a bold heading goes on `base`, never on `sm`. **A bracketed
+`text-[…px]` anywhere in `src/` fails a test** — not because the size is wrong, but because a call
+site that names its own size stops moving when the scale does.
 
 **Two rules of thumb**
 

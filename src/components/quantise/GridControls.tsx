@@ -19,7 +19,7 @@ interface GridControlsProps {
 }
 
 const CANDIDATE_CLASS =
-  'rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 font-mono text-[11px] font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink';
+  'rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 font-mono text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink';
 
 /**
  * The one decision this tab asks the user to make, the two facts behind it, and the scales worth
@@ -89,7 +89,7 @@ export function GridControls({ detected, target, suggested, grid, onGridChange }
 
         <div className="pb-2.5">
           <p className="mb-1.5 text-xs font-semibold text-ink-muted">Palette limit</p>
-          <p className="font-mono text-[11px] text-ink-faint">
+          <p className="font-mono text-xs text-ink-faint">
             {paletteLimit} —{' '}
             {maxColors === null ? 'no colour budget, palette left alone' : `${String(maxColors)} colours`}
           </p>
@@ -128,7 +128,7 @@ export function GridControls({ detected, target, suggested, grid, onGridChange }
         // An upper bound, not a measurement: at any coarser scale the sheet could not seat the
         // components asked for, and a generator that left canvas empty drew finer. Hence a scale to
         // click rather than one adopted.
-        <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
+        <p className="mt-2 text-xs leading-relaxed text-ink-faint">
           Components were asked for at{' '}
           <span className="font-mono text-ink-muted">
             {target.width} × {target.height} px

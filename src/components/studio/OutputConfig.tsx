@@ -16,7 +16,7 @@ interface FieldGroupProps {
 function FieldGroup({ heading, children }: FieldGroupProps) {
   return (
     <fieldset className="space-y-3.5">
-      <legend className="mb-2 flex items-center gap-2 text-[10px] font-bold tracking-wide text-ink-faint uppercase">
+      <legend className="mb-2 flex items-center gap-2 text-2xs font-bold tracking-wide text-ink-faint uppercase">
         <span aria-hidden="true" className="h-px w-3 rounded-full bg-tab/60" />
         {heading}
       </legend>
@@ -41,7 +41,7 @@ export function OutputConfig() {
   return (
     <section className="animate-fade-in glass-panel group/panel space-y-6 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-300 hover:border-tab/40">
       <div className="flex items-center justify-between gap-3 border-b border-foundry-700 pb-3">
-        <h2 className="flex items-center gap-2.5 text-sm font-bold text-ink">
+        <h2 className="flex items-center gap-2.5 text-base font-bold text-ink">
           {/* A gear that turns when the panel it heads is under the pointer. */}
           <span
             aria-hidden="true"
