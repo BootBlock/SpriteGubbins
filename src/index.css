@@ -857,19 +857,21 @@
    * the *card's* colour inside a preset card, which sets the property inline. The chrome's Copy
    * Prompt keeps the indigo gradient — it is the primary, and the primary is fixed in every view.
    *
-   * **The fill is pinned at 50% by contrast, not by taste.** Every stop is L 0.76, so the composite
-   * lightens as the alpha rises and `text-ink` on it darkens by comparison: 50% clears WCAG AA on the
-   * lightest panel these sit on (4.67:1 at the wheel's worst stop), 60% is 3.68:1 and fails. That is
-   * why **hover does not touch the fill** — it takes the border to full opacity and swaps the shadow
-   * for a bloom in the same colour, which is a change the button can afford to make.
+   * **The fill is a 30% tint, and 51% is the ceiling above it.** Every stop is L 0.76, so the
+   * composite lightens as the alpha rises and `text-ink` on it darkens by comparison: 30% leaves the
+   * worst stop at 7.74:1, 51% is the last value that still clears WCAG AA at 4.50:1, and 52% fails.
+   * So there is headroom here, and **hover still does not spend it on the fill**. That is now a
+   * choice rather than a constraint, and the reason is below: at this weight the fill is a tint
+   * saying which view you are in, while the border is the whole of the button's edge — so lighting
+   * the border and blooming the shadow changes the thing the eye is actually reading the button by.
    *
-   * The border is not decoration either. Across the ten stops and the three panels these sit on, a
-   * 50% fill measures between 2.80:1 and 3.15:1 against the panel behind it — so a little under half
-   * of those combinations clear the 3:1 WCAG 1.4.11 asks of a control's boundary and none clears it
-   * with any margin, which makes the fill alone an edge you cannot rely on seeing. At 80% the border
-   * clears the ratio at every stop on every panel, 5.36:1 at its worst, so the border is what makes
-   * the button's edge perceivable. `tests/design-tokens.test.ts` recomputes the border's figure from
-   * the tokens and fails below the threshold.
+   * The border is not decoration either; at this fill it *is* the button. A 30% fill measures between
+   * 1.68:1 and 1.89:1 against the panel behind it, so **no stop on any panel comes near** the 3:1
+   * WCAG 1.4.11 asks of a control's boundary — the fill says which view the button belongs to and
+   * nothing whatever about where it ends. At 80% the border clears the ratio at every stop on every
+   * panel, 5.36:1 at its worst. Take it away and the control stops being locatable, which is why
+   * `tests/design-tokens.test.ts` recomputes that figure from the tokens and fails below the
+   * threshold — and why the border keeps its own weight when the fill is reduced.
    *
    * The shadow lives here rather than at the call sites so the bloom can be the view's colour — which
    * a `shadow-*` utility cannot express — and because a utility owning `box-shadow` must own both
@@ -882,7 +884,7 @@
    * `<button>`, and it restores the hover itself — see the comment there, which is where that
    * limitation is worth knowing about.
    */
-  background-color: color-mix(in oklab, var(--color-tab) 50%, transparent);
+  background-color: color-mix(in oklab, var(--color-tab) 30%, transparent);
   border: 1px solid color-mix(in oklab, var(--color-tab) 80%, transparent);
   color: var(--color-ink);
   box-shadow: 0 2px 8px -3px color-mix(in oklab, var(--color-foundry-950) 85%, transparent);
