@@ -145,7 +145,7 @@ describe('renderStyleDigest', () => {
 
 describe('projectionDigest', () => {
   it('carries the elevation with its unit', () => {
-    expect(projectionDigest(withOutput({ cameraElevation: 30 }))).toContain('30°');
+    expect(projectionDigest('CHARACTER', withOutput({ cameraElevation: 30 }))).toContain('30°');
   });
 
   it('names the primary facing only when the mode splits into runs', () => {
@@ -156,7 +156,7 @@ describe('projectionDigest', () => {
       directions: 'THREE_CLASSIC',
       primaryDirection: 'back-three-quarter',
     });
-    expect(projectionDigest(splitting)).toContain('back-three-quarter');
+    expect(projectionDigest('CHARACTER', splitting)).toContain('back-three-quarter');
 
     // The default mode draws its own five facings whatever the facing said, and the control is
     // hidden — so the digest must not claim one.
@@ -167,7 +167,7 @@ describe('projectionDigest', () => {
     });
     // Naming the *set* is right; naming the facing is not, and an exact match is the only assertion
     // that can tell those two apart — `back-three-quarter` is a member of `FIVE_CLASSIC`.
-    expect(projectionDigest(fixed)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+    expect(projectionDigest('CHARACTER', fixed)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
   });
 
   it('names the set the sheet is drawn to, not the one the mode discarded', () => {
@@ -180,7 +180,7 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest(discarded)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+    expect(projectionDigest('CHARACTER', discarded)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
 
     // The same stored set, on a mode that does defer to it: here it is the honest answer.
     const deferring = withOutput({
@@ -188,7 +188,38 @@ describe('projectionDigest', () => {
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest(deferring)).toBe('THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west');
+    expect(projectionDigest('CHARACTER', deferring)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west',
+    );
+  });
+
+  it('reads the same mode the controls under it do, resolved through the category', () => {
+    // Both entries are answers about the sheet's mode, and the digest asked them of the stored one —
+    // as the two controls it summarises did, which is why they went wrong together. The two
+    // configurations below are the two directions of that: each names a pairing its category has no
+    // plan for, so the sheet the compiler produces is the category's default and the digest above it
+    // described a different sheet entirely.
+
+    // An EFFECT's frame sequence defers to the chosen set, so the facing is live and the set is the
+    // one asked for. Read raw, this line said `FIVE_CLASSIC` and named no facing — a set the
+    // compiled prompt never mentions, beside a facing it drives the depth order from.
+    const hidden = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'EIGHT_COMPASS',
+      primaryDirection: 'north-west',
+    });
+    expect(projectionDigest('EFFECT', hidden)).toBe(
+      'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west',
+    );
+
+    // And the other way about: an ITEM has no cut-out rig, so the sheet draws its own five facings
+    // and neither the set asked for nor the facing pinned reaches it.
+    const shown = withOutput({
+      directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      directions: 'EIGHT_COMPASS',
+      primaryDirection: 'north-west',
+    });
+    expect(projectionDigest('ITEM', shown)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
   });
 });
 

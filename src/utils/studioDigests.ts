@@ -140,8 +140,15 @@ export function renderStyleDigest(output: OutputConfig): string {
   ]);
 }
 
-/** Where the camera stands, and which facings the sheet covers. */
-export function projectionDigest(output: OutputConfig): string {
+/**
+ * Where the camera stands, and which facings the sheet covers.
+ *
+ * Takes the category for the same reason `sheetDigest` above does, and it is the same sentence: the
+ * mode is resolved through the category, exactly as the controls are. Both entries below are answers
+ * about the sheet's mode rather than the stored one, and a digest reading the raw value would report
+ * a set the prompt never mentions on any configuration whose pairing the category cannot produce.
+ */
+export function projectionDigest(category: SubjectCategory, output: OutputConfig): string {
   return join([
     output.projection,
     `${String(output.cameraElevation)}°`,
@@ -150,10 +157,10 @@ export function projectionDigest(output: OutputConfig): string {
     // `CORE_DIRECTIONAL_VARIANTS` sheet covering the classic yaws announced `EIGHT_COMPASS`. The
     // line below already refused to name an inert facing for exactly this reason; the set it sat
     // beside was doing what that comment forbids.
-    effectiveDirectionSet(output),
+    effectiveDirectionSet(category, output),
     // Only when the control is on screen. Anywhere else the facing is inert — the sheet draws its
     // own set whatever this said — so naming it would promise something the prompt does not carry.
-    splitsIntoFacingRuns(output) ? primaryFacing(output) : '',
+    splitsIntoFacingRuns(category, output) ? primaryFacing(output) : '',
   ]);
 }
 

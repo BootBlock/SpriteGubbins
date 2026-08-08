@@ -131,7 +131,7 @@ export function OutputConfig() {
         <CollapsibleSection
           {...SECTIONS.projection}
           heading="Projection & camera"
-          digest={projectionDigest(output)}
+          digest={projectionDigest(category, output)}
         >
           <ProjectionFields />
         </CollapsibleSection>

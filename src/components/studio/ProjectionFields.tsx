@@ -1,6 +1,7 @@
 import { DIRECTION_SET_CHOICES, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../constants/output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { directionSetApplies, primaryFacing } from '../../utils/sheetDirections.ts';
 import { splitsIntoFacingRuns } from '../../utils/sheetBatch.ts';
 import { NumberField } from '../common/NumberField.tsx';
@@ -28,11 +29,19 @@ const ELEVATION = { min: 0, max: 90, step: 1 } as const;
  * Picking all eight compass points changed the summary line and nothing else. Both controls now hang
  * off the same question, asked at the resolution each needs: does the mode defer to the set at all,
  * and if it does, does the set name more than one facing.
+ *
+ * **The category is read here because that question is about the sheet's mode, not the stored one.**
+ * `SheetFields` next door has always resolved the mode before showing it; these two conditions did
+ * not, so a configuration naming a pairing its category cannot produce — which is what an imported
+ * preset or a hand-edited session may hold — hid or showed the wrong control. Hiding is the worse
+ * way round: the compiler still reads both fields, so the sheet's own direction set and depth order
+ * came from controls the panel had decided were inert.
  */
 export function ProjectionFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
+  const category = useSubjectStore((state) => state.category);
 
   return (
     <>
@@ -64,7 +73,7 @@ export function ProjectionFields() {
         }}
       />
 
-      {directionSetApplies(output) && (
+      {directionSetApplies(category, output) && (
         <SelectField
           label="Directions Covered"
           tooltip={OUTPUT_TOOLTIPS.directions}
@@ -79,7 +88,7 @@ export function ProjectionFields() {
         />
       )}
 
-      {splitsIntoFacingRuns(output) && (
+      {splitsIntoFacingRuns(category, output) && (
         <SelectField
           label="Primary Facing"
           tooltip={OUTPUT_TOOLTIPS.primaryDirection}

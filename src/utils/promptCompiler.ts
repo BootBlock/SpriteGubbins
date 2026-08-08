@@ -66,11 +66,16 @@ export function generatePrompt(
   subject: SubjectDefinition,
   output: OutputConfig,
 ): string {
-  // The sheet mode this category can actually produce. Resolved **once**, at the top, and used for
-  // every mode-dependent value below — the inventory, the count, the assembly sentence and the
-  // direction coverage. A stored configuration can name a mode its category has no plan for (a
-  // preset saved before the plans were split by category, or a hand-edited export), and resolving it
-  // per call site is how three of them would agree and the fourth would not.
+  // The sheet mode this category can actually produce, for the values below that are read from it
+  // directly — the plan, the inventory, the count and the anatomy's sheet. A stored configuration can
+  // name a mode its category has no plan for (a preset saved before the plans were split by category,
+  // or a hand-edited export), and a reader that skipped this would be describing a different sheet
+  // from the one beside it.
+  //
+  // Everything else here takes the **category** and resolves for itself, which is the stronger
+  // arrangement and the one this file is converging on: `sheetDirections` and `sheetBatch` below both
+  // do, so there is no way to reach them with an unresolved mode at all, where handing down a
+  // pre-resolved one only works for as long as every call site remembers to.
   const mode = resolveMode(category, output.directionalMode);
 
   // Which sheet of that pairing's series this is. Resolved here for the same reason the mode is: a
@@ -80,11 +85,10 @@ export function generatePrompt(
 
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would
-  // eventually disagree about the prompt one of them is describing.
-  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(
-    { ...output, directionalMode: mode },
-    plan,
-  );
+  // eventually disagree about the prompt one of them is describing. It takes the category rather than
+  // the `mode` above because it resolves the pairing itself, which is what stops the studio's own
+  // reading of that answer drifting from this one.
+  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(category, output, plan);
 
   // Which sheet of which batch this configuration is. Every prompt before this one described its
   // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and
