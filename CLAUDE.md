@@ -354,6 +354,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A glass surface materialising | `animate-tooltip-in` | a bespoke fade, or a keyframe on `filter` that flattens a nested `glass-*` surface |
 | A **timed notification's countdown** | `animate-toast-timer` + the duration from `TOAST_DURATION_MS` | a `3s` written into the token, free to drift from the timer that dismisses it |
 | A **section heading**, and the sheen travelling it | `heading-gradient` (+ `animate-gradient-pan`) | `bg-gradient-to-r … bg-clip-text text-transparent`, restated per heading |
+| A **`<details>` opening** on a height transition | `section-reveal` | a keyframe on the content, which a `content-visibility: hidden` subtree plays exactly once — or transitioning the close, which keeps a shut group tabbable |
 | The ambient wash breathing, and the live-compile beam | `animate-aurora` / `animate-scan-beam` | one-off durations at the call site |
 | Signature easing | `ease-emphasized` | `cubic-bezier(...)` inline |
 | The ambient dot backdrop | `bg-grid-pattern` | a hand-rolled repeating gradient |

@@ -937,6 +937,74 @@
   background-size: 200% 100%;
 }
 
+@utility section-reveal {
+  /*
+   * A `<details>` that opens on a height transition rather than snapping, and shuts at once.
+   *
+   * `::details-content` is the only handle a native disclosure gives on the part that appears, and
+   * `interpolate-size: allow-keywords` is what makes `block-size: 0 → auto` an interpolable pair at
+   * all. The easing is `ease-emphasized`, whose curve is nearly all in the first third — the panel
+   * leaps open and settles, which is the shape that reads as responsive rather than slow.
+   *
+   * 200ms is the caret's own `duration-200` and not a second number chosen to look like it: the
+   * chevron turning and the group opening are one gesture, so they finish together rather than one
+   * of them arriving to a panel that has already stopped moving.
+   *
+   * **The transition is deliberately one-way, and the asymmetry is the whole design.** Only the
+   * `[open]` rule carries `content-visibility … allow-discrete`, so the content is painted from the
+   * first frame of an *opening* group and the height eases out from under it. Closing gets the
+   * height transition alone, which the user agent resolves instantly — because it hides
+   * `::details-content` the moment `open` goes, and there is then no box left to animate.
+   *
+   * That is not a limitation worked around; it is the safe end of a platform trade-off, measured in
+   * Edge both ways. Adding `content-visibility` to the closed state does animate the collapse — and
+   * keeps every control inside focusable for the full 200ms while the group is already shut. Focus
+   * a summary, press Enter, press Tab, and focus lands on a tooltip trigger inside the closed group;
+   * 200ms later `content-visibility: hidden` finally applies and drops it to `<body>`, losing the
+   * ring and the position. That is precisely the failure `SectionToggleAll` exists to prevent, and
+   * a disclosure must not reintroduce it from a different direction.
+   *
+   * `inert` on the content would fix the focus half and break another: verified with a text-fragment
+   * navigation, which drives the same find-in-page machinery — a match inside a plain `<details>`
+   * auto-expands it, and a match inside an `inert` one never does. This component chose `<details>`
+   * partly *for* that behaviour. So the collapse stays instant, which costs a little polish and
+   * nothing else.
+   *
+   * **The `@supports` gate is a correctness guard, not progressive enhancement.** The height
+   * transition needs the content clipped, and a clipping ancestor around these fields is exactly
+   * what would slice `ComboBox`'s suggestion list in half — the reason this component carried
+   * "deliberately not animated" until now. What makes it safe is that `useAnchoredSurface` lifts
+   * that list into the top layer, where nothing clips it, and it only does so where `showPopover()`
+   * exists. Gating on `selector(:popover-open)` *alongside* the feature this needs ties the clip to
+   * the lift: a browser that would clip the list without lifting it gets no clip, because it gets
+   * no animation. Both halves are named rather than one being assumed from the other.
+   *
+   * `overflow-y: clip` rather than `overflow: hidden`, on both axes for two different reasons.
+   * Vertically, `clip` establishes no scroll container — there is nothing here to scroll, and
+   * `hidden` would quietly make one that `scroll-padding` and scroll anchoring can then act on.
+   * Horizontally it stays `visible` (a legal pairing only with `clip`, never with `hidden`) because
+   * every control in these groups is full-width, and the global focus ring is drawn 4px outside its
+   * box — clipping the inline axis would shave the ring off both edges of every focused field.
+   */
+  @supports (interpolate-size: allow-keywords) and selector(:popover-open) {
+    interpolate-size: allow-keywords;
+
+    &::details-content {
+      block-size: 0;
+      overflow-x: visible;
+      overflow-y: clip;
+      transition: block-size 200ms var(--ease-emphasized);
+    }
+
+    &[open]::details-content {
+      block-size: auto;
+      transition:
+        block-size 200ms var(--ease-emphasized),
+        content-visibility 200ms allow-discrete;
+    }
+  }
+}
+
 /*
  * The single reduced-motion catch-all. A user who has asked their OS for less motion gets it
  * everywhere, including from components written later that never considered it — which is the
@@ -951,6 +1019,12 @@
  * `transition-duration` covers the view-colour sweep as well: the three registered properties are
  * transitioned on `[data-tab]`, which `*` does match, so the page re-lights instantly rather than
  * travelling round the wheel.
+ *
+ * `::details-content` needs naming for the same reason `::backdrop` does — `*` reaches neither —
+ * but it gets a **rule of its own** rather than a fifth line in the list above. An unknown
+ * pseudo-element invalidates the entire selector list it appears in, not just its own compound, so
+ * folding it in would silently take the whole catch-all down on every engine that has not shipped
+ * it yet. That is the one failure this block must never have.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -962,6 +1036,10 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  *::details-content {
+    transition-duration: 0.01ms !important;
   }
 }
 

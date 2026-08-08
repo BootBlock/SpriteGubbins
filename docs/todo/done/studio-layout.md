@@ -364,6 +364,16 @@ That would **clip the combo box's suggestion list in the no-popover fallback pat
 without `showPopover()`, and a new clipping ancestor would break exactly that path. The polish is not
 worth a regression in the fallback.
 
+> **Superseded — the height transition shipped as `section-reveal`.** Two of the claims above did
+> not survive: the recipe does not require `overflow: hidden` (`overflow-x: visible` with
+> `overflow-y: clip` is a legal pairing that clips only the axis the animation needs, so the focus
+> ring is not shaved off the inline edges), and the fallback path does not have to be traded away
+> (the whole rule sits behind `@supports … and selector(:popover-open)`, so the clip exists only
+> where the list is lifted into the top layer and cannot be clipped by it). What *was* right is the
+> instinct that this costs something: the collapse is still instant, because animating it means
+> keeping the content painted — and therefore tabbable — after the group is already shut. The
+> paragraph above is left as written, since it records the reasoning at the time.
+
 **A fade on the content does not replay, contrary to what an earlier draft of this document claimed.**
 The reasoning was that a `content-visibility: hidden` subtree resets its animations, so an
 `animate-fade-in` on the always-mounted content would run afresh on every open with no state at all.

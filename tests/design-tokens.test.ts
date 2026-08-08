@@ -318,6 +318,63 @@ describe('design tokens', () => {
     expect(stylesheet).toContain('animation-duration: 0.01ms !important');
   });
 
+  it('reaches the two pseudo-elements the universal selector does not', () => {
+    const block = /@media \(prefers-reduced-motion: reduce\) \{([\s\S]*?)\n\}/.exec(stylesheet)?.[1] ?? '';
+
+    // `*` matches neither `::backdrop` (no parent to descend from) nor `::details-content`, so each
+    // has to be named or its motion escapes the catch-all entirely — a modal's backdrop fading and
+    // `section-reveal`'s height transition are the two that would.
+    expect(block).toMatch(/::backdrop/);
+    expect(block).toMatch(/\*::details-content \{[^}]*transition-duration: 0\.01ms !important/);
+  });
+
+  it('keeps ::details-content out of the main catch-all selector list', () => {
+    // An unknown pseudo-element invalidates the whole selector list it appears in, not just its own
+    // compound. Folded into the `*, *::before, *::after, ::backdrop` list, it would take the entire
+    // catch-all down on every engine that has not shipped `::details-content` — turning a
+    // reduced-motion guarantee off for the users it exists to protect, silently.
+    const universalList = /\n {2}\*,\n([\s\S]*?)\{/.exec(stylesheet)?.[0] ?? '';
+
+    expect(universalList).not.toBe('');
+    expect(universalList).not.toContain('details-content');
+  });
+
+  it('gates the section reveal on the lift that keeps its clip safe', () => {
+    // The height transition clips `::details-content`, and a clipping ancestor around the studio's
+    // fields would slice `ComboBox`'s suggestion list in half. That is safe only because
+    // `useAnchoredSurface` lifts the list into the top layer, and only where `showPopover()` exists
+    // — so the clip must not outlive the lift. Both halves are named in the same `@supports`.
+    expect(stylesheet).toMatch(
+      /@supports \(interpolate-size: allow-keywords\) and selector\(:popover-open\)/,
+    );
+    // Scoped to the declaration block, not the whole file: the paragraph above this rule *names*
+    // `overflow-y: clip`, so a global match would be satisfied by the prose that explains the
+    // declaration and would still pass with the declaration itself deleted.
+    const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(closed).not.toBe('');
+    // `hidden` would establish a scroll container; the inline axis stays `visible` so the global
+    // focus ring, drawn 4px outside a full-width control, is not shaved off either edge.
+    expect(closed).toContain('overflow-y: clip');
+    expect(closed).toContain('overflow-x: visible');
+    expect(closed).not.toContain('overflow: hidden');
+  });
+
+  it('transitions content-visibility on the open state only, so a shut group is never tabbable', () => {
+    // The asymmetry is load-bearing, and it looks like an oversight — which is exactly why it is
+    // pinned. `content-visibility … allow-discrete` in the *closed* rule is what animates the
+    // collapse, and it does so by keeping `::details-content` painted past the moment `open` goes:
+    // measured in Edge, Enter-then-Tab then lands on a control inside a group that is already shut,
+    // and `<body>` gets the focus 200ms later. `SectionToggleAll` exists to stop that happening.
+    const closed = /\n {4}&::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+    const open = /\n {4}&\[open\]::details-content \{([^}]*)\}/.exec(stylesheet)?.[1] ?? '';
+
+    expect(closed).not.toBe('');
+    expect(open).not.toBe('');
+    expect(closed).not.toContain('content-visibility');
+    expect(open).toContain('content-visibility 200ms allow-discrete');
+  });
+
   it.each(TYPE_SCALE)('sizes %s at the rung it names, and gives it a line height', (token, pixels) => {
     const size = new RegExp(`${token}: ([\\d.]+)rem;`).exec(stylesheet)?.[1];
 
