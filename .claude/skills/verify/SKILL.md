@@ -33,9 +33,39 @@ On Windows, launching the dev server detached through `npx` may fail to start at
 invoking the bin directly is reliable:
 
 ```powershell
-Start-Process node -ArgumentList 'node_modules/vite/bin/vite.js','--port','5199','--strictPort' `
-  -WorkingDirectory 'p:\Source\TypeScript\SpriteGubbins' -PassThru -WindowStyle Hidden
+$port = 5199
+$server = Start-Process node -ArgumentList 'node_modules/vite/bin/vite.js','--port',"$port",'--strictPort' `
+  -WorkingDirectory 'p:\Source\TypeScript\SpriteGubbins\.claude\worktrees\<topic>' -PassThru -WindowStyle Hidden
 ```
+
+**Then confirm the server on that port is *yours*.** Picking a port is not the same as getting
+it, and the failure mode is genuinely nasty: another agent's tree may already be serving there,
+in which case `--strictPort` makes *your* Vite exit immediately — while `curl` against the port
+still answers 200, still sends the isolation headers, and still serves a Sprite Gubbins that
+looks exactly right. Every probe passes and every assertion is being made against the wrong
+application. This has already cost one full debugging cycle chasing a `data-tab` attribute that
+was only "missing" because the page under test came from someone else's branch.
+
+A 200 proves a server is there. It does not prove it is the one you started, so check the
+process that actually holds the socket:
+
+```powershell
+Start-Sleep -Seconds 4
+$owner = (Get-NetTCPConnection -LocalPort $port -State Listen -EA SilentlyContinue).OwningProcess
+# $server.HasExited must be false, and $owner must equal $server.Id — anything else means the
+# port was already taken and the thing answering it is not yours.
+```
+
+A second confirmation costs one request and catches the same class of problem however it arose —
+a stale server, a tree you forgot you were serving, a port that moved under you. Ask the dev
+server for a module you have just edited, and look for your own change in what comes back:
+
+```bash
+curl -s http://localhost:5199/SpriteGubbins/src/App.tsx | grep 'data-tab'
+```
+
+Vite serves source over that path unbundled, so the response is the file on disk in the tree that
+server was started from. If your edit isn't in it, stop and find out whose tree is.
 
 Then drive it with Playwright (a devDependency — **the script must live in the repo root** so
 `import { chromium } from 'playwright'` resolves):

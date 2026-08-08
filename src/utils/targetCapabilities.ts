@@ -42,14 +42,35 @@ export function deliberates(target: TargetModelId): boolean {
 }
 
 /**
- * Which targets can return a JSON manifest alongside the image.
+ * Whether this target hands back text alongside the image.
  *
- * A pure image endpoint has no channel for text, so asking it for a manifest spends tokens on an
- * instruction it can only drop — which is why the option is gated rather than emitted and silently
- * ignored.
+ * A pure image endpoint has no channel for it, so anything the template asks to be *written* spends
+ * tokens on an instruction it can only drop — which is why both companion outputs are gated rather
+ * than emitted and silently ignored.
+ *
+ * Named for the capability rather than for the manifest it was first added to gate: the adherence
+ * report needs the same channel, and a predicate called `supportsManifest` answering "may this
+ * target write a report?" would be the loose seam where the two quietly stop meaning the same thing.
  */
-export function supportsManifest(target: TargetModelId): boolean {
+export function returnsText(target: TargetModelId): boolean {
   return capabilitiesFor(target).emitsText;
+}
+
+/**
+ * Whether this target can audit the sheet it just produced and write back about it.
+ *
+ * The conjunction of the two capabilities above, and it needs both halves for different reasons:
+ * without {@link deliberates} there is no pass in which to re-read the specification against the
+ * pixels, and without {@link returnsText} there is nowhere to put the answer. Seedream is the target
+ * that proves they are separate questions — it plans before it renders, and still returns nothing
+ * but an image.
+ *
+ * Stated once here rather than composed at each call site, because the compiler's gate and the
+ * studio's availability check must agree: a checkbox the user can tick that compiles to nothing is
+ * the failure this file exists to prevent.
+ */
+export function supportsPromptFeedback(target: TargetModelId): boolean {
+  return deliberates(target) && returnsText(target);
 }
 
 /**

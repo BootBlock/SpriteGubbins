@@ -99,7 +99,7 @@ export function SheetSplitModal() {
       </ul>
 
       <div className="border-t border-foundry-700 px-6 py-4">
-        <span className="font-mono text-[10px] text-ink-faint">
+        <span className="font-mono text-2xs text-ink-faint">
           {copiedCount} of {runs.length} copied
         </span>
       </div>

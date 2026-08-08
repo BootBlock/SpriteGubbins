@@ -52,7 +52,7 @@ export function ImageDropZone({ acceptFile, currentName }: ImageDropZoneProps) {
       </div>
 
       {currentName !== null && (
-        <p className="mt-3 font-mono text-[10px] text-ink-faint">Loaded: {currentName}</p>
+        <p className="mt-3 font-mono text-2xs text-ink-faint">Loaded: {currentName}</p>
       )}
     </section>
   );

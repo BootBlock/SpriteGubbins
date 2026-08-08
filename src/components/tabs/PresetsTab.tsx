@@ -43,7 +43,7 @@ export function PresetsTab() {
 
         <div className="flex flex-wrap items-end gap-2 rounded-xl border border-foundry-700 bg-foundry-950 p-2">
           <div>
-            <label htmlFor={nameId} className="mb-1 block text-[10px] font-semibold text-ink-faint">
+            <label htmlFor={nameId} className="mb-1 block text-xs font-semibold text-ink-faint">
               Save the current studio setup as
             </label>
             <input

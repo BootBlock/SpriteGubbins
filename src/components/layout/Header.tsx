@@ -65,7 +65,7 @@ export function Header() {
             <span className="heading-spectrum animate-spectrum-pan">Sprite Gubbins</span>
             <Badge tone="accent">Serverless</Badge>
           </span>
-          <span className="block text-[11px] text-ink-faint transition-colors group-hover:text-ink-muted">
+          <span className="block text-xs text-ink-faint transition-colors group-hover:text-ink-muted">
             Modular sprite-sheet prompt architecture
           </span>
         </span>

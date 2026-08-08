@@ -68,7 +68,7 @@ export function Tooltip({ text, hint }: TooltipProps) {
         onKeyDown={(event) => {
           if (event.key === 'Escape') setIsVisible(false);
         }}
-        className={`flex size-4 cursor-help items-center justify-center rounded-full border font-mono text-[10px] leading-none font-bold transition-all duration-200 hover:scale-110 ${
+        className={`flex size-4 cursor-help items-center justify-center rounded-full border font-mono text-2xs leading-none font-bold transition-all duration-200 hover:scale-110 ${
           isVisible
             ? 'border-accent bg-accent/25 text-accent-soft ring-2 ring-accent/20'
             : 'border-foundry-600 bg-foundry-950/60 text-ink-faint hover:border-accent hover:text-accent-soft'
@@ -93,12 +93,12 @@ export function Tooltip({ text, hint }: TooltipProps) {
           // two user-agent popover declarations Tailwind's preflight does not already neutralise:
           // `overflow: auto`, which clips the caret hanging off the edge, and `color: CanvasText`,
           // which would take any child without a `text-*` of its own out of the palette.
-          className="glass-float animate-tooltip-in group/card pointer-events-none absolute top-full left-1/2 z-50 mt-2.5 block w-72 -translate-x-1/2 origin-top overflow-visible rounded-xl p-3 text-[11px] leading-relaxed text-ink"
+          className="glass-float animate-tooltip-in group/card pointer-events-none absolute top-full left-1/2 z-50 mt-2.5 block w-72 -translate-x-1/2 origin-top overflow-visible rounded-xl p-3 text-xs leading-relaxed text-ink"
         >
           <span className="mb-1.5 flex items-center gap-2">
             {/* The accent tick that ties the card back to the trigger it belongs to. */}
             <span aria-hidden="true" className="h-3 w-0.5 shrink-0 rounded-full bg-accent-soft" />
-            <span className="text-[10px] font-bold tracking-wide text-accent-soft uppercase">{hint}</span>
+            <span className="text-2xs font-bold tracking-wide text-accent-soft uppercase">{hint}</span>
           </span>
 
           <span className="block font-sans text-ink-muted">{text}</span>

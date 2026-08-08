@@ -34,7 +34,7 @@ export function ComparisonToolbar({ zoom, onZoomChange, sourceName, resultImage 
             onClick={() => {
               onZoomChange(level);
             }}
-            className={`rounded-lg px-2.5 py-1 font-mono text-[11px] font-semibold transition-colors ${
+            className={`rounded-lg px-2.5 py-1 font-mono text-xs font-semibold transition-colors ${
               level === zoom
                 ? 'bg-accent-strong text-ink'
                 : 'bg-foundry-700 text-ink-faint hover:bg-foundry-600 hover:text-ink'

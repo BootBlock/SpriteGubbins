@@ -46,4 +46,7 @@ export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
 
   identityLock: '',
   emitManifest: false,
+  // Off, like the manifest: it adds a section to every prompt and asks for a second deliverable, and
+  // a user who has not asked for a critique of their own prompt should not have to read one.
+  emitPromptFeedback: false,
 };

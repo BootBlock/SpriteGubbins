@@ -55,7 +55,7 @@ export function ComparisonPane({
 }: ComparisonPaneProps) {
   return (
     <figure className="space-y-2">
-      <figcaption className="font-mono text-[10px] text-ink-faint">{caption}</figcaption>
+      <figcaption className="font-mono text-2xs text-ink-faint">{caption}</figcaption>
       <PanViewport label={label} viewportRef={viewportRef}>
         {content === null ? (
           placeholder

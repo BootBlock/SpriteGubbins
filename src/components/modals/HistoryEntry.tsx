@@ -42,15 +42,15 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="accent">{log.category}</Badge>
         <Badge>{MODEL_NAMES.get(log.modelUsed) ?? log.modelUsed}</Badge>
-        <span className="ml-auto font-mono text-[10px] text-ink-faint">
+        <span className="ml-auto font-mono text-2xs text-ink-faint">
           {TIMESTAMP_FORMAT.format(log.createdAt)}
         </span>
       </div>
 
-      <p className="line-clamp-3 font-mono text-[11px] leading-relaxed text-ink-muted">{log.promptText}</p>
+      <p className="line-clamp-3 font-mono text-xs leading-relaxed text-ink-muted">{log.promptText}</p>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="font-mono text-[10px] text-ink-faint">{log.wordCount} words</span>
+        <span className="font-mono text-2xs text-ink-faint">{log.wordCount} words</span>
 
         <div className="flex items-center gap-2">
           {/* Same button in both states, so pressing it does not move focus off itself. */}
@@ -67,8 +67,8 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
             }}
             className={
               isConfirmingDelete
-                ? 'rounded-lg bg-rose px-2.5 py-1 text-[11px] font-bold text-foundry-950 transition-opacity hover:opacity-90'
-                : 'rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-[11px] font-semibold text-rose transition-colors hover:bg-foundry-700'
+                ? 'rounded-lg bg-rose px-2.5 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90'
+                : 'rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700'
             }
           >
             {isConfirmingDelete ? 'Delete?' : <span aria-hidden="true">🗑</span>}
@@ -80,7 +80,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
               onClick={() => {
                 setIsConfirmingDelete(false);
               }}
-              className="rounded-lg border border-foundry-600 px-2.5 py-1 text-[11px] font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+              className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
               Cancel
             </button>
@@ -91,7 +91,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
             onClick={() => {
               onCopy(log);
             }}
-            className="rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-[11px] font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+            className="rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
           >
             Copy prompt
           </button>
@@ -100,7 +100,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
             onClick={() => {
               onRestore(log);
             }}
-            className="rounded-lg bg-accent-strong px-2.5 py-1 text-[11px] font-semibold text-ink transition-colors hover:bg-accent"
+            className="rounded-lg bg-accent-strong px-2.5 py-1 text-xs font-semibold text-ink transition-colors hover:bg-accent"
           >
             Restore
           </button>
