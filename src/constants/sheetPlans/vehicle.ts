@@ -107,9 +107,9 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
         { text: 'Fittings: cladding panel ×1, lamp housing ×1', count: 2, kind: 'structure' },
       ],
       outro: `Each moving piece carries its pivot at the joint it turns about, matched in diameter to the piece
-it turns against, exactly as a limb segment would. Where a drive has no articulated pair — a single
-road wheel, a fixed thruster — its travelling segment is the part that turns or extends against the
-root: the wheel against its hub, the nozzle against its housing.`,
+it turns against, exactly as any other articulated segment on a rigged sheet would. Where a drive has
+no articulated pair — a single road wheel, a fixed thruster — its travelling segment is the part that
+turns or extends against the root: the wheel against its hub, the nozzle against its housing.`,
     },
   ],
 };

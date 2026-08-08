@@ -60,7 +60,7 @@ describe('generatePrompt — the subject', () => {
     expect(prompt).not.toContain('Species / Archetype');
     expect(prompt).not.toContain('DEFINED');
     // The fields that are still set must survive the removal.
-    expect(prompt).toContain(`- Role / Function: ${SUBJECT.role}`);
+    expect(prompt).toContain(`- Role / Class: ${SUBJECT.role}`);
   });
 
   it('leaves no DEFINED token and no ragged blank lines for a wholly empty subject', () => {
@@ -81,6 +81,37 @@ describe('generatePrompt — the subject', () => {
     // Absence has to be *declared*, or it is merely silent — and silence is what a model fills in.
     expect(generatePrompt('CHARACTER', EMPTY_SUBJECT, OUTPUT)).toContain(
       '**An attribute that is absent from this list is yours to decide**',
+    );
+  });
+
+  it('names the separately-counted field by the label its own category gives it', () => {
+    // Section 1's "painted onto the component it sits on" rule has exactly one exception, and the
+    // sentence stating it has to name the line it excepts — otherwise a reader cannot tell which of
+    // the fifteen attributes above is the one section 4 counts separately. So the sentence takes the
+    // same per-category label the line does: *Attached Modules* on a vehicle, not "anatomy".
+    const vehicle = generatePrompt(
+      'VEHICLE',
+      { ...defaultSubjectFor('VEHICLE'), additional_anatomy: 'Missile Pod ×2' },
+      OUTPUT,
+    );
+
+    expect(vehicle).toContain('- Attached Modules: Missile Pod ×2');
+    expect(vehicle).toContain('**Attached Modules** is the single exception');
+    expect(vehicle).not.toContain('anatomical');
+  });
+
+  it('draws section 0’s scale example from components this category’s sheet actually holds', () => {
+    // "One consistent scale across every component" is abstract, and the clause after the colon is
+    // what makes it land — so it was a hand and a torso for all six categories, telling a vehicle
+    // sheet to keep in proportion two things it has neither of.
+    for (const category of SUBJECT_CATEGORIES) {
+      const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
+      expect(prompt).toContain(
+        `One consistent scale across every component: ${promptText.SCALE_EXAMPLE_TEXT[category]}.`,
+      );
+    }
+    expect(generatePrompt('VEHICLE', defaultSubjectFor('VEHICLE'), OUTPUT)).not.toContain(
+      promptText.SCALE_EXAMPLE_TEXT.CHARACTER,
     );
   });
 });
@@ -365,7 +396,7 @@ describe('generatePrompt — section 0’s exclusion precedence', () => {
     const subject = { ...SUBJECT, worn_details: 'Brass shoulder pauldron', exclusions: 'No pauldrons' };
     const prompt = unwrapped(generatePrompt('CHARACTER', subject, OUTPUT));
 
-    expect(prompt).toContain('- Integrated worn details: Brass shoulder pauldron');
+    expect(prompt).toContain('- Integrated Worn Details: Brass shoulder pauldron');
     expect(prompt).toContain('- Subject-specific: No pauldrons');
     expect(prompt).toContain(OUTRANKS);
   });
@@ -468,7 +499,7 @@ describe('generatePrompt — the facing the sheet is for', () => {
   it('carries the pinned facing into the assembly direction and the depth order', () => {
     // `sheetDirections.test.ts` covers the resolution itself; this is the seam — that the resolved
     // facing reaches *both* places the prompt states it. Depth order is a property of facing, so a
-    // pinned run that moved one and not the other would render its near arm behind the torso.
+    // pinned run that moved one and not the other would render its near-side pieces behind the body.
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
@@ -527,7 +558,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
 
     expect(prompt).toContain('**A mirrored copy is not a rotation.**');
-    expect(prompt).toContain('**Rotation never swaps anatomical left and right.**');
+    expect(prompt).toContain("**Rotation never swaps the subject's own left and right.**");
     expect(prompt).toContain('a "side" view that is the three-quarter view with');
     expect(prompt).toContain('### Directional audit');
   });
@@ -906,7 +937,7 @@ describe('generatePrompt — the self-audit, per target', () => {
     });
     const prompt = generatePrompt('CHARACTER', SUBJECT, output);
 
-    expect(prompt).not.toContain('Every limb segment is straight and unposed');
+    expect(prompt).not.toContain('Every articulated segment is straight and unposed');
     expect(prompt).not.toContain('One pixel grid and density throughout');
     expect(prompt).not.toContain('### Directional audit');
     expect(prompt).not.toContain('the sheet has failed');
@@ -921,7 +952,7 @@ describe('generatePrompt — the self-audit, per target', () => {
     });
     const prompt = generatePrompt('CHARACTER', SUBJECT, output);
 
-    expect(prompt).toContain('Every limb segment is straight and unposed');
+    expect(prompt).toContain('Every articulated segment is straight and unposed');
     expect(prompt).toContain('One pixel grid and density throughout');
     expect(prompt).toContain('### Directional audit');
   });

@@ -45,7 +45,7 @@ export const OUTPUT_TOOLTIPS = {
   directions:
     'Which facings the sheet covers, where Sheet Contents leaves the choice open — a cut-out rig and a tileset read this as the run list rather than the sheet contents, so generate one sheet per direction and tie them together with an identity lock. THREE_CLASSIC buys the most facings three drawings can, because each of its views flips at runtime into a different one — but every view in it is a turned pose, so it reaches no facing towards the camera and none directly away, and flipping cannot produce either. FIVE_CLASSIC adds exactly those two and reaches all eight; FOUR_CARDINAL and EIGHT_COMPASS carry them in compass terms instead.',
   primaryDirection:
-    'Which facing of that run list this sheet is for. It sets the assembly direction and the depth order — which arm renders in front of the torso changes with the way the subject turns. Split the sheet to work through every facing in one pass.',
+    'Which facing of that run list this sheet is for. It sets the assembly direction and the depth order — which of the subject’s sides renders in front of its body changes with the way it turns. Split the sheet to work through every facing in one pass.',
   backgroundKey:
     'What the components sit on, so they can be cut out afterwards. Magenta is the default because white bleeds into light-coloured edges and leaves alpha keying ambiguous — white armour on a white field has no recoverable boundary. Pick TRANSPARENT only if the target genuinely returns alpha; most return a flat matte whatever you ask for.',
   spriteTargetSize:

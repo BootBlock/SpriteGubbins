@@ -11,6 +11,17 @@
  * text" are the constraints that fail most often. Section 9 repeats them as a self-audit, which is
  * the one place redundancy earns its keep.
  *
+ * **Nothing here writes a label for a subject field, and nothing here names a body part.** Section
+ * 1's sixteen lines take their labels from `[DEFINE:*_LABEL]`, which the compiler fills from the
+ * category's own field definitions, because a label fixed in this file is a label written for one
+ * category and read by all six: a tank's *Service Condition* reached the model as "Age / Vitality",
+ * its turret as "Anatomy base", and its vision slit as "Head & sensory features" — every value
+ * correct and every label from the category the sixteen keys were first designed for. The same
+ * defect wore a different shape wherever the prose reached for a worked example, so section 0's
+ * scale rule now takes `[DEFINE:SCALE_EXAMPLE_DESCRIPTION]` and the rig sections of 5 and 9 talk
+ * about *segments* rather than limbs. **A new rule that wants a concrete example needs one that is
+ * true of a building and a pistol**, or a per-category map in `constants/promptText/` to hold six.
+ *
  * **Neither of those two lists writes its own numerals**, because both are assembled conditionally
  * and a hand-numbered list cannot survive that: section 9's rig and pixel-art checks appear
  * independently, so numbering them 7 and 8 emitted `…6. 8.` on a pixel-art sheet without a cut-out
@@ -54,7 +65,7 @@ Satisfy this section before any aesthetic consideration.
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
 [N]. No text, labels, numbers, captions, watermarks, signatures, arrows, callouts, frames, borders
    or grid lines anywhere in the image.
-[N]. One consistent scale across every component: a hand drawn beside a torso is in proportion to it.
+[N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
    virtual canvas and downscale, and do not upscale a smaller one.
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
@@ -110,26 +121,29 @@ consistent with what *is* stated, rather than inventing a distinctive one. Absen
 not an omission to be filled dramatically.
 
 - Category: [DEFINE:CATEGORY]
-[OPTIONAL:SPECIES             | - Species / Archetype: [DEFINE:SPECIES]]
-[OPTIONAL:GENDER              | - Presentation / Form: [DEFINE:GENDER]]
-[OPTIONAL:AGE                 | - Age / Vitality: [DEFINE:AGE]]
-[OPTIONAL:ROLE                | - Role / Function: [DEFINE:ROLE]]
-[OPTIONAL:SETTING             | - Setting / Theme: [DEFINE:SETTING]]
-[OPTIONAL:BUILD               | - Build / Proportions: [DEFINE:BUILD]]
-[OPTIONAL:SILHOUETTE          | - Silhouette & hard edges: [DEFINE:SILHOUETTE]]
-[OPTIONAL:FACE_HEAD           | - Head & sensory features: [DEFINE:FACE_HEAD]]
-[OPTIONAL:ANATOMY             | - Anatomy base: [DEFINE:ANATOMY]]
-[OPTIONAL:CLOTHING            | - Clothing / armour / harness: [DEFINE:CLOTHING]]
-[OPTIONAL:WORN_DETAILS        | - Integrated worn details: [DEFINE:WORN_DETAILS]]
-[OPTIONAL:PRIMARY_COLOURS     | - Primary colours (dominant): [DEFINE:PRIMARY_COLOURS]]
-[OPTIONAL:ACCENT_COLOURS      | - Accent colours (highlights only): [DEFINE:ACCENT_COLOURS]]
-[OPTIONAL:MATERIALS           | - Materials & surface identity: [DEFINE:MATERIALS]]
-[OPTIONAL:ADDITIONAL_ANATOMY  | - Additional genuine anatomy: [DEFINE:ADDITIONAL_ANATOMY]]
+[OPTIONAL:SPECIES             | - [DEFINE:SPECIES_LABEL]: [DEFINE:SPECIES]]
+[OPTIONAL:GENDER              | - [DEFINE:GENDER_LABEL]: [DEFINE:GENDER]]
+[OPTIONAL:AGE                 | - [DEFINE:AGE_LABEL]: [DEFINE:AGE]]
+[OPTIONAL:ROLE                | - [DEFINE:ROLE_LABEL]: [DEFINE:ROLE]]
+[OPTIONAL:SETTING             | - [DEFINE:SETTING_LABEL]: [DEFINE:SETTING]]
+[OPTIONAL:BUILD               | - [DEFINE:BUILD_LABEL]: [DEFINE:BUILD]]
+[OPTIONAL:SILHOUETTE          | - [DEFINE:SILHOUETTE_LABEL]: [DEFINE:SILHOUETTE]]
+[OPTIONAL:FACE_HEAD           | - [DEFINE:FACE_HEAD_LABEL]: [DEFINE:FACE_HEAD]]
+[OPTIONAL:ANATOMY             | - [DEFINE:ANATOMY_LABEL]: [DEFINE:ANATOMY]]
+[OPTIONAL:CLOTHING            | - [DEFINE:CLOTHING_LABEL]: [DEFINE:CLOTHING]]
+[OPTIONAL:WORN_DETAILS        | - [DEFINE:WORN_DETAILS_LABEL]: [DEFINE:WORN_DETAILS]]
+[OPTIONAL:PRIMARY_COLOURS     | - [DEFINE:PRIMARY_COLOURS_LABEL] (dominant): [DEFINE:PRIMARY_COLOURS]]
+[OPTIONAL:ACCENT_COLOURS      | - [DEFINE:ACCENT_COLOURS_LABEL] (highlights only): [DEFINE:ACCENT_COLOURS]]
+[OPTIONAL:MATERIALS           | - [DEFINE:MATERIALS_LABEL]: [DEFINE:MATERIALS]]
+[OPTIONAL:ADDITIONAL_ANATOMY  | - [DEFINE:ADDITIONAL_ANATOMY_LABEL]: [DEFINE:ADDITIONAL_ANATOMY]]
 
-Clothing, armour, footwear, augmetics and worn details are **painted onto** the anatomical
-component they sit on, never drawn as separate pieces. Additional genuine anatomy is the single
-exception: section 4 lists each named piece separately and counts it there. Do not infer props,
-weapons or equipment from the role: if it is not listed above, it does not exist.
+Every fitted, applied and worn attribute listed above — cladding, armour, harness, markings and
+surface detail alike — is **painted onto** the component it sits on, never drawn as a separate piece.
+[IF:ADDITIONAL_ANATOMY]
+**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section 4 lists each piece named there
+separately and counts it as a component of its own.
+[/IF]
+Do not infer props, weapons or equipment from the role: if it is not listed above, it does not exist.
 
 Material descriptions define **visual identity, not rendering complexity**. Translate every
 material into the simplified shapes and controlled value bands of the selected render style.
@@ -177,8 +191,8 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 ### Pixel discipline
 - Build every form from deliberate, contiguous pixel clusters placed by intent.
 - No feature smaller than [DEFINE:MIN_FEATURE_SIZE] native pixels.
-- Diagonals use clean, regular staircase patterns. Equivalent edges on matching components
-  (left arm vs right arm) use identical staircase patterns.
+- Diagonals use clean, regular staircase patterns. Equivalent edges on matching components — a
+  left-side piece and its right-side counterpart — use identical staircase patterns.
 - No doubled contours, overlapping outline strokes or irregular edge chatter.
 - Do not render materials as microtexture: no scratches, etched strokes, fabric weave, pores,
   grain, crosshatching, repeated reflective streaks, sparkle noise, scattered single-pixel
@@ -189,7 +203,7 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 [IF:RENDER_STYLE!=PIXEL_ART,RETRO_PIXEL_ART]
 
 ### Surface discipline
-- Keep surface treatment consistent across every component; a technique used on one limb is used
+- Keep surface treatment consistent across every component; a technique used on one piece is used
   on all of them.
 - Detail serves silhouette and material read, not density. Preserve readable component scale
   before preserving surface detail.
@@ -250,13 +264,13 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   view does is a failed rotation**, not a stylistic choice.
 - **A mirrored copy is not a rotation.** Mirroring flips handedness in the image without exposing a
   single surface that turning the component would reveal, so it may never stand in for a turned view.
-- **Rotation never swaps anatomical left and right.** A right-side view is this same subject turned
-  until its right side faces the camera; asymmetric features stay on the side of the subject they
-  belong to at every yaw.
+- **Rotation never swaps the subject's own left and right.** A right-side view is this same subject
+  turned until its right side faces the camera; asymmetric features stay on the side of the subject
+  they belong to at every yaw.
 
 Each of these is the easy way out of the rules above, and each is a defect: two views of one
 component facing effectively the same way · a "side" view that is the three-quarter view with
-altered details · a rear view still presenting its face or front · a view produced by mirroring
+altered details · a rear view still presenting its front · a view produced by mirroring
 another · a view produced by moving the camera · direction signalled by changing details while the
 orientation stays put.
 
@@ -296,15 +310,15 @@ These components are bound to a skeleton and rotated independently at runtime. T
 artwork, supplies all motion.
 
 ### Rest orientation
-Draw every piece in its **neutral rest orientation**, not posed: limb segments straight and
-aligned along their bone axis, hands relaxed, feet flat. Never draw a pre-bent arm or leg — flexion
-comes from the rig rotating separate rigid segments.
+Draw every piece in its **neutral rest orientation**, not posed: each segment straight and aligned
+along its own long axis, and every articulation left at its neutral angle. Never draw a pre-bent
+segment — flexion comes from the rig rotating separate rigid segments.
 
 ### Pivot registration
 - Each piece's joint end carries a consistent [DEFINE:JOINT_CAP_DESCRIPTION] cap, and **the pivot
   is the centre of that cap**.
-- Matching pivots share a diameter: an upper arm's elbow cap matches its lower arm's elbow cap
-  exactly, so the two rotate about one point.
+- Matching pivots share a diameter: the cap on one segment's joint end matches the cap on the
+  segment it meets there exactly, so the two rotate about one point.
 - Cap diameter stays consistent across the sheet for joints of the same kind.
 
 ### Overlap margin
@@ -318,10 +332,10 @@ were the only one present.
 
 ### Mirroring
 Left and right versions are mirrored in silhouette but redrawn for their own side. Asymmetric
-details stay on the correct side rather than flipping with the mirror — a holstered sidearm does
-not swap hips between the left and right leg sets. **This is the only mirroring the sheet permits:**
-a left piece and a right piece are two different parts, whereas a direction is a rotation, and
-section 3 forbids producing one by mirroring another.
+details stay on the correct side rather than flipping with the mirror — a fitting carried on one side
+does not change sides between the left and right sets. **This is the only mirroring the sheet
+permits:** a left piece and a right piece are two different parts, whereas a direction is a rotation,
+and section 3 forbids producing one by mirroring another.
 [IF:SOCKETS]
 
 ### Attachment sockets
@@ -338,7 +352,7 @@ without fighting what is underneath: [DEFINE:SOCKETS]
 
 ## 5. RIGID SEGMENTS AND PIVOTS
 
-Every articulated part is a separate **rigid** component. Never draw a pre-bent arm or leg —
+Every articulated part is a separate **rigid** component. Never draw a pre-bent segment —
 flexion comes from assembling separately oriented rigid segments around shared pivots. Matching
 pivots share a diameter and cap geometry so segments register when assembled.
 
@@ -354,7 +368,7 @@ The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
 ## 7. IDENTITY CONSISTENCY
 
 Every component belongs to the **same single subject**. Hold constant across all of them:
-silhouette language and proportion · joint and attachment geometry · clothing and structural
+silhouette language and proportion · joint and attachment geometry · fitted and structural
 regions · primary colour blocking · large identifying accents · material treatment.
 
 Where a component appears at more than one object yaw, it is one persistent three-dimensional form
@@ -399,7 +413,7 @@ Before delivering, verify:
    drawn through a camera that moved.
 [N]. [DEFINE:CATEGORY_AUDIT]
 [IF:RIG_MODE=CUTOUT_RIG]
-[N]. Every limb segment is straight and unposed, with matching joint caps at shared pivots.
+[N]. Every articulated segment is straight and unposed, with matching joint caps at shared pivots.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
@@ -462,9 +476,9 @@ you drew them to.
 Section 9 still stands: fix what you can before delivering. This report is about the sheet you did
 deliver, so work section 9's checks — and its directional audit, where the sheet has one — once more
 against the finished image, and state for each whether it holds. Where one does not, say what the
-image contains instead, concretely: "three heads, all at roughly the same yaw" rather than
-"directional coverage could be improved". A check you cannot settle by looking at the image is
-reported as unverified rather than as passed.
+image contains instead, concretely: "three of the five directional views at roughly the same yaw"
+rather than "directional coverage could be improved". A check you cannot settle by looking at the
+image is reported as unverified rather than as passed.
 
 ### The feedback block
 
@@ -482,9 +496,9 @@ modes. What you received is one rendering of a template shared by all of them. Y
 used to change that template, so it reaches every prompt the tool composes — and not this sheet,
 which nobody will regenerate from it. Four things follow:
 
-- **Write about the instruction, not the artwork.** "Redraw the rear torso" cannot be acted on
-  there. "Section 3 fixes the yaw but never states that a rear view must hide the face, so a second
-  three-quarter view satisfies it" can.
+- **Write about the instruction, not the artwork.** "Redraw the third component's rear view" cannot
+  be acted on there. "Section 3 fixes the yaw but never states that a rear view must hide what the
+  front view presented, so a second three-quarter view satisfies it" can.
 - **Write nothing specific to this subject.** The next prompt from this tool may be a building, a
   pistol or a tileset, and a change that only makes sense for this one cannot be made.
 - **Propose wording, not architecture.** Name the section, quote the sentence that let the miss

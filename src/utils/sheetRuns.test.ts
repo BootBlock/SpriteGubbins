@@ -56,7 +56,7 @@ describe('sheetRuns', () => {
 
   it('names its own facing and its own depth order in each prompt', () => {
     // Depth order is the thing that actually differs. The pieces are identical across the eight, and
-    // which arm renders in front of the torso is what stops a west-facing sheet being a mirrored
+    // which side renders in front of the body is what stops a west-facing sheet being a mirrored
     // east-facing one.
     for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
       expect(run.promptText).toContain(`- Primary assembly direction: ${run.assembly}`);

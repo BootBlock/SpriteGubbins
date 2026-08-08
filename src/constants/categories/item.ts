@@ -252,7 +252,10 @@ export const ITEM: CategoryDefinition = {
     },
     {
       key: 'additional_anatomy',
-      label: 'Attached Attachments',
+      // Not "Attached Attachments", which said the same word twice and said nothing: this label is
+      // now what section 1 and section 4 of the prompt call these pieces, so a tautology is an
+      // instruction that carries no information in the two places it is read hardest.
+      label: 'Detachable Parts',
       tooltip:
         'Extra detachable parts — scopes, ribbons, power cells — each isolated into its own sprite slot so it can be swapped or animated. Comma-separated, with ×N for how many of each: “Scope ×1, Charm Ribbon ×2” adds three components to the inventory and to the sheet’s stated count.',
       options: [

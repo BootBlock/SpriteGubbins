@@ -1,3 +1,4 @@
+import { fieldLabelFor } from '../constants/categories/index.ts';
 import { resolveSheetIndex, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
@@ -114,6 +115,11 @@ function renderGroup(group: ComponentGroup): string {
  * same configuration, and a reader handed one of them has no way to tell which — nor to tell a
  * thirty-four-component sheet apart from a sheet that lost nine components to a bad edit.
  *
+ * **Its heading is the category's own name for the field**, read from `fieldLabelFor` exactly as
+ * section 1's lines are, so the two sections call the same pieces the same thing. A fixed
+ * "Additional anatomy" was the character vocabulary reaching all six categories — the defect section
+ * 1 carried at sixteen sites and this one carried at one.
+ *
  * The anatomy comes *last*, and the text says so. Labels are banned by section 0, so grid position is
  * the only thing that identifies a component — appending keeps every base entry at the position the
  * plan promised, where interleaving would silently renumber everything after it.
@@ -134,11 +140,16 @@ ${plan.groups.map(renderGroup).join('\n\n')}`;
 
   const entries = additional.map((component) => `- ${formatAnatomyComponent(component)}.`).join('\n');
 
+  // Headed by whatever this category calls the field, the same way section 1's lines are: these are
+  // the pieces named in *Attached Modules* on a vehicle and in *Extra Appendages* on a creature, and
+  // a heading reading "Additional anatomy" over a missile pod is the character vocabulary reaching a
+  // category that has none. The word "anatomy" went with it — what the sentence is actually claiming
+  // is that these are separate components rather than painted-on detail, which is true of a turret.
   return `${inventory}
 
-#### Additional anatomy — ${String(countAnatomyComponents(additional))}
+#### ${fieldLabelFor(category, 'additional_anatomy')} — ${String(countAnatomyComponents(additional))}
 
-Genuine anatomy, so each of these is drawn as its own component rather than painted onto another.
+Each of these is drawn as its own component rather than painted onto another.
 They come last in reading order, after the ${String(planComponentCount(plan))} components above:
 
 ${entries}`;
