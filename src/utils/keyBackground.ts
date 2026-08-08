@@ -1,6 +1,6 @@
 import { FRINGE_TOLERANCE_FACTOR } from '../constants/quantiser.ts';
 import type { BackgroundKeying, Rgba } from '../types/quantiser.ts';
-import { CHANNELS_PER_PIXEL, createImage, FULLY_TRANSPARENT, readPixel, writePixel } from './imageData.ts';
+import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage, FULLY_TRANSPARENT } from './imageData.ts';
 
 /**
  * Turning a returned sheet's background key into transparency.
@@ -70,10 +70,13 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
 
   const field = new Uint8Array(pixels);
   for (let index = 0; index < pixels; index += 1) {
-    const pixel = readPixel(data, index * CHANNELS_PER_PIXEL);
+    const offset = index * CHANNELS_PER_PIXEL;
     // Already-transparent pixels join the field rather than being left out of it: an empty region is
     // an empty region however it got that way, and the fringe around one is contaminated the same way.
-    if (pixel.a === FULLY_TRANSPARENT || rgbDistanceSquared(pixel, color) <= fieldRadius) {
+    if (
+      alphaAt(data, offset) === FULLY_TRANSPARENT ||
+      rgbDistanceSquared(data, offset, color) <= fieldRadius
+    ) {
       field[index] = 1;
     }
   }
@@ -83,31 +86,36 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
 
   for (let index = 0; index < pixels; index += 1) {
     const offset = index * CHANNELS_PER_PIXEL;
-    const pixel = readPixel(data, offset);
     const isKeyed =
       field[index] === 1 ||
       // Adjacency first, and deliberately: it fails for every interior pixel, which is nearly all of
       // them, and it fails on four array reads rather than three multiplications.
-      (touchesField(field, width, height, index) && rgbDistanceSquared(pixel, color) <= fringeRadius);
+      (touchesField(field, width, height, index) && rgbDistanceSquared(data, offset, color) <= fringeRadius);
 
     if (!isKeyed) {
-      writePixel(output.data, offset, pixel);
+      copyPixel(data, output.data, offset);
       continue;
     }
 
     // Nothing is written for a keyed pixel: `createImage` zero-fills, which is exactly the canonical
     // `{0, 0, 0, 0}` the modal vote downstream depends on.
-    if (pixel.a !== FULLY_TRANSPARENT) keyedPixels += 1;
+    if (alphaAt(data, offset) !== FULLY_TRANSPARENT) keyedPixels += 1;
   }
 
   return { image: output, keyedPixels };
 }
 
-/** Squared distance across RGB alone — the restriction of `nearestColor`'s metric to the three channels a key field has. */
-function rgbDistanceSquared(color: Rgba, key: Rgba): number {
-  const r = color.r - key.r;
-  const g = color.g - key.g;
-  const b = color.b - key.b;
+/**
+ * Squared distance from the key across RGB alone — the restriction of `nearestColor`'s metric to the
+ * three channels a key field has.
+ *
+ * Reads the pixel's channels in place rather than taking an `Rgba`, because it is called once or
+ * twice for every pixel of the image and the object would be the whole cost of the pass.
+ */
+function rgbDistanceSquared(data: Uint8ClampedArray, offset: number, key: Rgba): number {
+  const r = (data[offset] ?? 0) - key.r;
+  const g = (data[offset + 1] ?? 0) - key.g;
+  const b = (data[offset + 2] ?? 0) - key.b;
   return r * r + g * g + b * b;
 }
 

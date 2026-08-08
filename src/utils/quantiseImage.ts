@@ -39,7 +39,11 @@ import { buildPalette } from './medianCut.ts';
  * transparent pixels, so the keyed field claims no palette slots, and `applyPalette` copies it through
  * untouched rather than mapping it onto a colour.
  *
- * Pure, and deliberately so: if a large sheet ever does stall, this moves to a worker unchanged.
+ * Pure, and deliberately so — which is what let it move into `src/workers/quantiseWorker.ts` without
+ * a line of it changing when a large sheet did stall. It no longer runs on the main thread at all:
+ * every pass is linear in a pixel count this app admits up to 16.8 million of, and a transform that
+ * re-runs on each keystroke of the grid box has no business holding the one thread that could paint a
+ * spinner.
  */
 export function quantiseImage(image: ImageData, settings: QuantiseSettings): QuantiseResult {
   // `null` skips the pass outright rather than keying against some default colour: the studio's key
@@ -58,10 +62,9 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
 
   return {
     image: output,
-    // The sheet the user dropped, before keying or alignment collapsed anything — otherwise the pair
-    // of figures understates the work and the two are not comparable.
-    colorsBefore: countColors(image),
-    colorsAfter: countColors(output),
+    // Only the result is counted here. The figure it is read against belongs to the sheet rather than
+    // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
+    colors: countColors(output),
     // No zero-pixel guard: `ImageData`'s constructor throws `IndexSizeError` for a zero width or
     // height, so an image with nothing in it cannot reach this line and a division by zero has no way
     // to arise. A guard against it would be a comment claiming to protect against the impossible.

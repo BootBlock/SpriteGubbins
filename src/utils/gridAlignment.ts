@@ -1,5 +1,5 @@
-import type { PixelGrid, Rgba } from '../types/quantiser.ts';
-import { createImage, packColor, pixelOffset, readPixel, unpackColor, writePixel } from './imageData.ts';
+import type { PixelGrid } from '../types/quantiser.ts';
+import { createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
 
 /**
  * Snapping an image to a pixel scale, and reducing it to one pixel per drawn pixel.
@@ -22,19 +22,33 @@ import { createImage, packColor, pixelOffset, readPixel, unpackColor, writePixel
  * the clearest single check that the step did what it claims, and the tests pin it. Cells the image
  * cuts short are aligned too, over whatever they contain; skipping them would leave an unaligned
  * strip down the edge of any sheet whose size is not a multiple of its own grid.
+ *
+ * **One tally is allocated for the whole image and cleared between cells**, rather than one per cell —
+ * which at a grid of 1, where every pixel is its own cell, is 16.8 million `Map`s on the largest sheet
+ * the app admits. Measured, that spelling costs *nothing*: V8 scalar-replaces a tally that never
+ * escapes, and swapping the two moves the figure by noise in both directions. It is written this way
+ * because 16.8 million allocations is not a thing to ask for on the strength of an optimisation that
+ * might stop applying — not because it was where the time went.
+ *
+ * The time went on the **per-pixel colour object**, which is a different claim and a measured one: see
+ * the note at the top of `imageData.ts`. Its cost is invisible to a micro-benchmark of this function
+ * alone, and that is the trap — `readPixel` is monomorphic there, so the object never escapes either.
+ * In the real pipeline, where detection has already run and given those helpers a second call site,
+ * escape analysis stops applying and the whole transform goes from about two seconds to about thirty.
  */
 export function alignToGrid(image: ImageData, grid: PixelGrid): ImageData {
   const output = createImage(image.width, image.height);
+  const counts = new Map<number, number>();
 
   for (let top = 0; top < image.height; top += grid) {
     for (let left = 0; left < image.width; left += grid) {
       const right = Math.min(left + grid, image.width);
       const bottom = Math.min(top + grid, image.height);
-      const color = modalColor(image, left, top, right, bottom);
+      const color = modalColor(image, counts, left, top, right, bottom);
 
       for (let y = top; y < bottom; y += 1) {
         for (let x = left; x < right; x += 1) {
-          writePixel(output.data, pixelOffset(image.width, x, y), color);
+          writePackedColor(output.data, pixelOffset(image.width, x, y), color);
         }
       }
     }
@@ -43,15 +57,28 @@ export function alignToGrid(image: ImageData, grid: PixelGrid): ImageData {
   return output;
 }
 
-/** The most frequent colour in one cell, ties going to whichever was met first in scan order. */
-function modalColor(image: ImageData, left: number, top: number, right: number, bottom: number): Rgba {
-  const counts = new Map<number, number>();
+/**
+ * The most frequent colour in one cell as a packed value, ties going to whichever was met first in
+ * scan order.
+ *
+ * Takes the tally it counts into rather than making one, and leaves it empty for the next cell. The
+ * caller owns it because the caller is the loop that would otherwise allocate one per cell.
+ */
+function modalColor(
+  image: ImageData,
+  counts: Map<number, number>,
+  left: number,
+  top: number,
+  right: number,
+  bottom: number,
+): number {
+  counts.clear();
   let winner = 0;
   let winningCount = 0;
 
   for (let y = top; y < bottom; y += 1) {
     for (let x = left; x < right; x += 1) {
-      const key = packColor(readPixel(image.data, pixelOffset(image.width, x, y)));
+      const key = packedColorAt(image.data, pixelOffset(image.width, x, y));
       const count = (counts.get(key) ?? 0) + 1;
       counts.set(key, count);
       // Strictly greater, so an earlier colour keeps the cell on a tie. That is what makes a cell of
@@ -63,7 +90,7 @@ function modalColor(image: ImageData, left: number, top: number, right: number, 
     }
   }
 
-  return unpackColor(winner);
+  return winner;
 }
 
 /**
@@ -81,8 +108,8 @@ export function downscaleNearest(image: ImageData, grid: PixelGrid): ImageData {
 
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
-      const color = readPixel(image.data, pixelOffset(image.width, x * grid, y * grid));
-      writePixel(output.data, pixelOffset(width, x, y), color);
+      const color = packedColorAt(image.data, pixelOffset(image.width, x * grid, y * grid));
+      writePackedColor(output.data, pixelOffset(width, x, y), color);
     }
   }
 

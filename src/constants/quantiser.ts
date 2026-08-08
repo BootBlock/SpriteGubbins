@@ -27,11 +27,13 @@ export const PALETTE_COLOR_COUNTS: Readonly<Record<PaletteLimit, number | null>>
 export const MAX_DETECTED_GRID = 32;
 
 /**
- * The fraction of blocks that must be perfectly uniform for a grid to be believed.
+ * The fraction of an image's colour transitions that must fall on a scale's lattice for that scale to
+ * be believed.
  *
  * Not 1.0: a returned sheet is rarely flawless, and a single stray pixel from a compression artefact
- * should not deny an otherwise obvious grid. Not much lower either — the threshold is what separates
- * "drawn at this scale" from "happens to have flat areas".
+ * should not deny an otherwise obvious grid. It can afford to be no higher than this and no lower,
+ * because of how far apart the two answers sit — the true scale scores 1, and a scale twice as coarse
+ * misses every other lattice line and scores about a half. There is nothing legitimate in between.
  */
 export const GRID_DETECTION_THRESHOLD = 0.9;
 
@@ -91,15 +93,62 @@ export const FRINGE_TOLERANCE_FACTOR = 3;
 /**
  * The largest image the tab will accept, in pixels.
  *
- * Every pass in the pipeline is linear in this number, so it is what bounds the work the main thread
- * takes on. The honest response to a 40000 × 40000 PNG is to decline it with a message, not to
- * appear to hang — the same reasoning that bounds the anatomy multiplier.
+ * Every pass in the pipeline is linear in this number, so it is what bounds the work one job asks
+ * for. The honest response to a 40000 × 40000 PNG is to decline it with a message, not to appear to
+ * hang — the same reasoning that bounds the anatomy multiplier.
+ *
+ * The pipeline runs in a worker now, so exceeding this no longer freezes the page — but the limit is
+ * not therefore redundant. A sheet this size still costs a second of real work per settings change
+ * and holds two copies of itself in memory, and neither of those improves by being invisible.
  */
 export const MAX_IMAGE_PIXELS = 4096 * 4096;
 
+/**
+ * How long the grid and tolerance controls settle before the transform is asked for.
+ *
+ * Not a throttle on a stream of events — a **filter on states nobody chose**. The grid box is typed
+ * into, so reaching 16 means passing through 1, and 1 is the most expensive scale the pipeline has:
+ * every pixel becomes a cell of its own and nothing is downscaled before the palette step. Holding
+ * the spinner arrow repeats at roughly thirty a second, so without this every intermediate value is a
+ * full transform of a sheet that may be 16.8 million pixels.
+ *
+ * Long enough to span ordinary typing between two digits, short enough that a single deliberate click
+ * on a candidate scale still feels immediate.
+ */
+export const QUANTISE_DEBOUNCE_MS = 250;
+
+/**
+ * The order the tab's controls are meant to be used in, as the guide panel lists them.
+ *
+ * Here rather than inline in the component for the reason every other block of user-facing copy in
+ * this app is: it is content, it ships in the bundle, and it is read by strangers. It is also the one
+ * place the tab says what to *do* rather than what it is — see `QuantiseGuide`.
+ */
+export const QUANTISE_STEPS = [
+  {
+    title: 'Bring the sheet in',
+    detail: 'drop it here, paste it from the clipboard, or choose a file. It never leaves the tab.',
+  },
+  {
+    title: 'Check the measured scale',
+    detail:
+      'the pixel grid is measured from the image itself. Overrule it if the preview disagrees, and type it yourself if nothing was found.',
+  },
+  {
+    title: 'Key the background, if it has one',
+    detail:
+      'raise the tolerance until the field goes and stop before the sprite does. The colour comes from the studio.',
+  },
+  {
+    title: 'Compare, then download',
+    detail:
+      'the two previews stay on the same part of the sheet at the same magnification. Judge an edge at 4× or 8×.',
+  },
+] as const;
+
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */
 export const QUANTISE_TOOLTIPS = {
-  grid: 'How many image pixels wide one drawn pixel is. Detected from the image where it can be; type it yourself when the model returned smooth artwork, or when the detected value is wrong. A grid of 1 leaves the size alone and only reduces the palette.',
+  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Type it yourself when the model returned smooth artwork, or when the measurement disagrees with the preview. A grid of 1 leaves the size alone and only reduces the palette.',
   // Where panning is named. The grab cursor only appears once a pointer is already over the image,
   // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence
   // is the other thing nothing on screen says: the panes are linked, and moving one moves both.

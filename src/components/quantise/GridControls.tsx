@@ -2,13 +2,19 @@ import { useId } from 'react';
 import { MANUAL_GRID_RANGE, PALETTE_COLOR_COUNTS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import type { TargetSize } from '../../types/output.ts';
-import type { PixelGrid } from '../../types/quantiser.ts';
+import type { PixelGrid, SheetFacts } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
 interface GridControlsProps {
-  /** What detection found, or `null` for artwork with no pixel scale at all. */
-  readonly detected: PixelGrid | null;
+  /**
+   * What one look at the sheet established, or `null` while the worker is still looking.
+   *
+   * The measurement and "no measurement yet" arrive as one value rather than as a `detected` beside a
+   * `measuring`, because two props can contradict each other and these two never may: an empty badge
+   * and a spinner shown at once is the state that tells a user the tab is broken.
+   */
+  readonly facts: SheetFacts | null;
   /** The studio's target component size, where it names one. */
   readonly target: TargetSize | null;
   /** The scale {@link target} implies for this sheet, or `null` where it implies none. */
@@ -36,10 +42,11 @@ const CANDIDATE_CLASS =
  * Emptiness is meaningful here — "no grid, use whatever was detected" — and is the state the tab
  * opens in when nothing was detected.
  */
-export function GridControls({ detected, target, suggested, grid, onGridChange }: GridControlsProps) {
+export function GridControls({ facts, target, suggested, grid, onGridChange }: GridControlsProps) {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const maxColors = PALETTE_COLOR_COUNTS[paletteLimit];
   const inputId = useId();
+  const detected = facts?.detected ?? null;
 
   return (
     <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-300 hover:border-tab/40">
@@ -80,12 +87,27 @@ export function GridControls({ detected, target, suggested, grid, onGridChange }
         </div>
 
         <div className="pb-2.5">
-          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Detected scale</p>
-          {detected === null ? (
-            <Badge tone="attention">No grid found</Badge>
+          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Measured scale</p>
+          {facts === null ? (
+            // The only tone that pulses, and this is what it is for: the sheet is being read, right
+            // now, on the worker. See the note on `BadgeTone`.
+            <Badge tone="live">Measuring the sheet…</Badge>
+          ) : detected === null ? (
+            <Badge tone="attention">No pixel scale in this image</Badge>
           ) : (
-            <Badge tone="valid">{detected}× — cells are one colour</Badge>
+            // Not "every edge falls on it": the threshold believes a scale that up to a tenth of the
+            // sheet's transitions miss, which is the whole point of it not being 1.0 — a stray pixel
+            // from a compression artefact should not deny an obvious grid. The badge says how the
+            // number was arrived at instead of overstating how cleanly it fits.
+            <Badge tone="valid">{detected}× — measured where the art changes</Badge>
           )}
+        </div>
+
+        <div className="pb-2.5">
+          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Colours in the sheet</p>
+          <p className="font-mono text-xs text-ink-faint">
+            {facts === null ? 'counting…' : `${facts.colors.toLocaleString()} before reduction`}
+          </p>
         </div>
 
         <div className="pb-2.5">
@@ -138,12 +160,14 @@ export function GridControls({ detected, target, suggested, grid, onGridChange }
         </p>
       )}
 
-      {detected === null && (
+      {facts !== null && detected === null && (
         <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-          No block of pixels in this image is uniform, which is what smooth artwork downscaled to sprite size
-          looks like — the thing the prompt asks for and models deliver anyway. Type the scale the art was
-          meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1
-          keeps the size and reduces the palette only.
+          Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite
+          size looks like — the thing the prompt asks against and models deliver anyway. Type the scale the
+          art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A
+          grid of 1 keeps the size and reduces the palette only. If the art starts a few pixels in from the
+          top-left corner, no scale can be measured from it and none can be applied to it either — crop the
+          margin off and bring it back.
         </p>
       )}
     </section>

@@ -7,9 +7,18 @@ import type { Rgba } from '../types/quantiser.ts';
  * it here breaks none of the purity this directory depends on. Nothing in this file touches a
  * canvas, a document or a store; the DOM half of the feature lives in `src/hooks/`.
  *
- * Every read goes through {@link readPixel} for one reason beyond tidiness: `noUncheckedIndexedAccess`
- * makes `data[offset]` a `number | undefined`, and a `?? 0` at each of the dozens of call sites is
- * both noise and a place to forget one. Here it is written once.
+ * **Nothing outside this file indexes a channel array**, and that is the rule the whole set of
+ * primitives below exists to keep: `noUncheckedIndexedAccess` makes `data[offset]` a
+ * `number | undefined`, so a `?? 0` at each of the dozens of call sites would be both noise and a
+ * place to forget one. Every one of them is written here instead.
+ *
+ * They come in two forms, and which to reach for is decided by how often it runs. {@link readPixel}
+ * and {@link writePixel} hand back and take an {@link Rgba}, which is what a caller reasoning about a
+ * *colour* wants — a palette entry, a key to match against. {@link alphaAt},
+ * {@link packedColorAt}, {@link writePackedColor} and {@link copyPixel} do the same work without the
+ * object, and are what the per-pixel loops use: at the 16.8 million pixels this app admits, a
+ * short-lived `{r, g, b, a}` per pixel per pass is tens of millions of allocations whose only purpose
+ * is to be read once and discarded, and it was measurably most of the cost of the pipeline.
  */
 
 /** The alpha at which a pixel carries no colour at all, and is left exactly as it was found. */
@@ -36,6 +45,51 @@ export function readPixel(data: Uint8ClampedArray, offset: number): Rgba {
 }
 
 /**
+ * The alpha channel alone, without reading the other three.
+ *
+ * The pipeline asks "is this pixel transparent?" far more often than it asks what colour it is —
+ * `applyPalette` and `colorHistogram` both decide it before anything else — and answering from one
+ * channel rather than a whole {@link Rgba} is the difference between one array read and four plus an
+ * object.
+ */
+export function alphaAt(data: Uint8ClampedArray, offset: number): number {
+  return data[offset + 3] ?? 0;
+}
+
+/**
+ * {@link packColor} straight off the channel array, without the {@link Rgba} in between.
+ *
+ * The same integer {@link packColor} returns for the same pixel — this is the packing, reading its
+ * four channels itself rather than being handed an object. That equivalence is what lets the two be
+ * used interchangeably, and a test pins it.
+ *
+ * Every pass in the quantiser packs one colour per pixel — to key a histogram, to vote for a cell's
+ * modal colour, to compare a pixel with its neighbour — which is why this form exists at all; see the
+ * note at the top of the file.
+ */
+export function packedColorAt(data: Uint8ClampedArray, offset: number): number {
+  const r = data[offset] ?? 0;
+  const g = data[offset + 1] ?? 0;
+  const b = data[offset + 2] ?? 0;
+  return ((r * 256 + g) * 256 + b) * 256 + (data[offset + 3] ?? 0);
+}
+
+/**
+ * {@link writePixel} for a packed colour, without the {@link Rgba} in between.
+ *
+ * The counterpart to {@link packedColorAt}, and the reason a transform can carry packed integers all
+ * the way from its input to its output: `alignToGrid` votes in packed values and writes the winner,
+ * `applyPalette` looks one up and writes what it found, and neither has to unpack a colour it is only
+ * going to store again.
+ */
+export function writePackedColor(data: Uint8ClampedArray, offset: number, packed: number): void {
+  data[offset] = Math.floor(packed / 16777216) % 256;
+  data[offset + 1] = Math.floor(packed / 65536) % 256;
+  data[offset + 2] = Math.floor(packed / 256) % 256;
+  data[offset + 3] = packed % 256;
+}
+
+/**
  * Write a colour into a channel array.
  *
  * Mutating, and still pure in the sense this directory means: the array is one the caller has just
@@ -50,16 +104,35 @@ export function writePixel(data: Uint8ClampedArray, offset: number, color: Rgba)
 }
 
 /**
+ * One pixel, verbatim, at the same position in another image of the same width.
+ *
+ * The pass-through case, and it earns a name because both transforms that have one would otherwise
+ * spell it as a pack immediately undone by a write: `keyBackground` copies every pixel the key did
+ * not match, and `applyPalette` copies every fully transparent pixel rather than mapping it onto a
+ * colour the sheet says is not there.
+ */
+export function copyPixel(source: Uint8ClampedArray, target: Uint8ClampedArray, offset: number): void {
+  target[offset] = source[offset] ?? 0;
+  target[offset + 1] = source[offset + 1] ?? 0;
+  target[offset + 2] = source[offset + 2] ?? 0;
+  target[offset + 3] = source[offset + 3] ?? 0;
+}
+
+/**
  * A colour as one integer, so it can key a `Map`.
  *
  * Multiplication rather than the usual `r << 24 | …`: a red channel above 127 makes the shifted form
  * negative, and two colours that differ only in sign handling are exactly the kind of bug a
  * histogram hides. This form stays a positive integer well inside the safe range.
+ *
+ * {@link packedColorAt} is this same packing read straight off a channel array, and is what the
+ * per-pixel loops use; this form is for a colour that is already an {@link Rgba}.
  */
 export function packColor(color: Rgba): number {
   return ((color.r * 256 + color.g) * 256 + color.b) * 256 + color.a;
 }
 
+/** The object form of {@link writePackedColor} — the two undo {@link packColor} identically. */
 export function unpackColor(key: number): Rgba {
   return {
     r: Math.floor(key / 16777216) % 256,
@@ -102,10 +175,10 @@ export function createImage(width: number, height: number): ImageData {
  */
 export function colorHistogram(image: ImageData): ReadonlyMap<number, number> {
   const counts = new Map<number, number>();
-  for (let offset = 0; offset < image.data.length; offset += CHANNELS_PER_PIXEL) {
-    const color = readPixel(image.data, offset);
-    if (color.a === FULLY_TRANSPARENT) continue;
-    const key = packColor(color);
+  const { data } = image;
+  for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
+    if (alphaAt(data, offset) === FULLY_TRANSPARENT) continue;
+    const key = packedColorAt(data, offset);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return counts;

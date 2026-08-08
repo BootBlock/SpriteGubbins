@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
 import { channels, imageFrom, upscale } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
-import { pixelOffset, readPixel } from './imageData.ts';
+import { countColors, pixelOffset, readPixel } from './imageData.ts';
 import { quantiseImage } from './quantiseImage.ts';
 
 /** 16 × 16 art, every pixel a different colour. */
@@ -66,8 +66,8 @@ describe('quantiseImage', () => {
   it('reduces the palette to the colour count it is given', () => {
     const result = quantiseImage(TWO_HUNDRED_COLORS, { grid: 1, key: null, maxColors: 32 });
 
-    expect(result.colorsBefore).toBe(200);
-    expect(result.colorsAfter).toBe(32);
+    expect(countColors(TWO_HUNDRED_COLORS)).toBe(200);
+    expect(result.colors).toBe(32);
   });
 
   it('leaves the colours alone for UNRESTRICTED', () => {
@@ -81,18 +81,19 @@ describe('quantiseImage', () => {
     });
 
     expect(PALETTE_COLOR_COUNTS.UNRESTRICTED).toBeNull();
-    expect(result.colorsAfter).toBe(result.colorsBefore);
+    expect(result.colors).toBe(countColors(TWO_HUNDRED_COLORS));
     expect(channels(result.image)).toEqual(channels(TWO_HUNDRED_COLORS));
   });
 
-  it('reports the colour counts of the source and of the result, not of the steps between', () => {
-    // The summary claims "4,096 colours became 32". `colorsBefore` therefore has to be the sheet the
-    // user dropped, before keying or alignment collapsed anything — otherwise the figure understates
-    // the work and the two numbers are not comparable.
-    const result = quantiseImage(upscale(SPRITE, 8), { grid: 8, key: null, maxColors: 32 });
+  it('counts the colours of the result, not of the steps that produced it', () => {
+    // The summary claims "256 colours became 32", and the second figure is this one. The first is
+    // `SheetFacts.colors`, measured once when the sheet loads rather than again on every settings
+    // change — so the two are read off different values and both have to mean what they say.
+    const source = upscale(SPRITE, 8);
+    const result = quantiseImage(source, { grid: 8, key: null, maxColors: 32 });
 
-    expect(result.colorsBefore).toBe(256);
-    expect(result.colorsAfter).toBe(32);
+    expect(countColors(source)).toBe(256);
+    expect(result.colors).toBe(32);
   });
 
   it('keys the field before the alignment votes, so the sprite does not dilate into it', () => {
@@ -135,8 +136,8 @@ describe('quantiseImage', () => {
     const result = quantiseImage(STRADDLING_SHEET, { grid: 8, key: KEYING, maxColors: 32 });
 
     // 64 drifting magentas plus the one sprite colour went in; one colour survives.
-    expect(result.colorsBefore).toBe(65);
-    expect(result.colorsAfter).toBe(1);
+    expect(countColors(STRADDLING_SHEET)).toBe(65);
+    expect(result.colors).toBe(1);
   });
 
   it('leaves every pixel where it is when keying is off', () => {
