@@ -116,6 +116,42 @@ describe('CollapsibleSection', () => {
     expect(document.activeElement).toBe(summary);
   });
 
+  /**
+   * `section-reveal` transitions to a pixel height, because that is the only target both Firefox and
+   * Chromium interpolate — so something has to supply the pixels, and it is this component.
+   *
+   * happy-dom lays nothing out, so every element measures zero and the observer correctly publishes
+   * nothing. What is testable here is the half that is not layout: that the component observes its
+   * own content at all, and that a zero measurement is *discarded* rather than written — because a
+   * published zero is what would make the next expand animate from nothing to nothing.
+   */
+  it('watches its own content so the reveal has a height to animate towards', () => {
+    const observed: Element[] = [];
+    const original = globalThis.ResizeObserver;
+    globalThis.ResizeObserver = class {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+      observe(target: Element) {
+        observed.push(target);
+        this.callback([], this as unknown as ResizeObserver);
+      }
+      unobserve() {}
+      disconnect() {}
+    } as unknown as typeof ResizeObserver;
+
+    try {
+      renderSection(true);
+      // The content itself, not the summary or the disclosure — the fieldset is what has the height.
+      expect(observed.map((el) => el.tagName)).toEqual(['FIELDSET']);
+      // happy-dom measures 0, and 0 must never be published: a shut group reports exactly that, and
+      // overwriting the last real figure with it would leave the next expand nothing to travel to.
+      expect(document.querySelector('details')?.style.getPropertyValue('--section-content-block-size')).toBe(
+        '',
+      );
+    } finally {
+      globalThis.ResizeObserver = original;
+    }
+  });
+
   it('leaves focus alone while the group is still open — that blur is not a collapse', () => {
     // Without this guard, any click into empty space would yank focus back to the summary of
     // whichever group the user happened to be typing in.
