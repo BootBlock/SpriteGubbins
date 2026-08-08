@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TARGET_MODELS } from '../constants/models.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
-import { deliberates, supportsManifest } from './targetCapabilities.ts';
+import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
  * These decide what a target is *sent*, so getting one wrong is silent: the prompt still reads
@@ -55,7 +55,8 @@ describe('the capability table', () => {
   it('answers for every id without throwing', () => {
     for (const target of TARGET_MODEL_IDS) {
       expect(typeof deliberates(target), target).toBe('boolean');
-      expect(typeof supportsManifest(target), target).toBe('boolean');
+      expect(typeof returnsText(target), target).toBe('boolean');
+      expect(typeof supportsPromptFeedback(target), target).toBe('boolean');
     }
   });
 });
@@ -74,10 +75,10 @@ describe('deliberates', () => {
   });
 });
 
-describe('supportsManifest', () => {
-  it('is true only where there is a text channel to return one through', () => {
-    for (const target of DELIBERATING) expect(supportsManifest(target), target).toBe(true);
-    for (const target of SINGLE_PASS) expect(supportsManifest(target), target).toBe(false);
+describe('returnsText', () => {
+  it('is true only where there is a channel to return text through', () => {
+    for (const target of DELIBERATING) expect(returnsText(target), target).toBe(true);
+    for (const target of SINGLE_PASS) expect(returnsText(target), target).toBe(false);
   });
 
   it('is false for a reasoning model that still returns only an image', () => {
@@ -85,7 +86,23 @@ describe('supportsManifest', () => {
     // asking Seedream for a JSON manifest spends tokens on an instruction it can only drop.
     for (const target of DELIBERATING_IMAGE_ONLY) {
       expect(deliberates(target), target).toBe(true);
-      expect(supportsManifest(target), target).toBe(false);
+      expect(returnsText(target), target).toBe(false);
+    }
+  });
+});
+
+describe('supportsPromptFeedback', () => {
+  it('is true only where the target can both re-read the sheet and write back about it', () => {
+    for (const target of DELIBERATING) expect(supportsPromptFeedback(target), target).toBe(true);
+    for (const target of SINGLE_PASS) expect(supportsPromptFeedback(target), target).toBe(false);
+  });
+
+  it('is false for a reasoning model with nowhere to put the report', () => {
+    // Seedream is the whole reason this is a conjunction rather than an alias for `deliberates`: it
+    // plans the layout before rendering and hands back nothing but pixels, so it could audit the
+    // sheet and could not tell anyone what it found.
+    for (const target of DELIBERATING_IMAGE_ONLY) {
+      expect(supportsPromptFeedback(target), target).toBe(false);
     }
   });
 });
@@ -96,7 +113,7 @@ describe('the two capabilities are asked separately', () => {
     // flag standing in for both is now a failing arrangement rather than merely a fragile one.
     for (const model of TARGET_MODELS) {
       expect(deliberates(model.id), model.id).toBe(model.capabilities.deliberates);
-      expect(supportsManifest(model.id), model.id).toBe(model.capabilities.emitsText);
+      expect(returnsText(model.id), model.id).toBe(model.capabilities.emitsText);
     }
   });
 

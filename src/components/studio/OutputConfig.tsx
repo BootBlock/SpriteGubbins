@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Badge } from '../common/Badge.tsx';
+import { CompanionOutputFields } from './CompanionOutputFields.tsx';
 import { ContinuityFields } from './ContinuityFields.tsx';
 import { ProjectionFields } from './ProjectionFields.tsx';
 import { RenderStyleFields } from './RenderStyleFields.tsx';
@@ -72,6 +73,10 @@ export function OutputConfig() {
 
       <FieldGroup heading="Continuity across sheets">
         <ContinuityFields />
+      </FieldGroup>
+
+      <FieldGroup heading="Returned alongside the image">
+        <CompanionOutputFields />
       </FieldGroup>
     </section>
   );
