@@ -26,7 +26,7 @@ function log(overrides: Partial<PromptHistoryLog> = {}): PromptHistoryLog {
     wordCount: 5,
     modelUsed: 'GENERIC',
     subject: DEFAULT_PRESET.subject,
-    output: DEFAULT_PRESET.output,
+    output: DEFAULT_OUTPUT_CONFIG,
     ...overrides,
   };
 }
@@ -142,7 +142,7 @@ describe('LocalStorageBackend — history', () => {
 
     const [kept] = await backend.listHistoryLogs();
     expect(kept?.subject).toEqual(subject);
-    expect(kept?.output).toEqual(DEFAULT_PRESET.output);
+    expect(kept?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 
   it('clears the history', async () => {

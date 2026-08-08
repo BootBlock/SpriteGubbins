@@ -58,6 +58,11 @@ export function PaletteField() {
  * Deliberately shorter than what the prompt carries: this answers "what did I just pin", and the
  * paragraph the generator reads answers "what may you draw", which is a different question and four
  * times the length.
+ *
+ * It says "the colour budget" rather than "the colour budget *below*" because there is nothing below
+ * once this text is on screen: `RenderStyleFields` withdraws that control on the same
+ * `paletteFor(…) === null` this sentence hangs off, so the two are complementary by construction
+ * rather than by coincidence.
  */
 function summarise(palette: Palette): string {
   const size =
@@ -71,5 +76,5 @@ function summarise(palette: Palette): string {
       ? ''
       : ` No component uses more than ${String(palette.colorsPerComponent)} at once.`;
 
-  return `${size}. Supersedes the colour budget below, in the prompt and in the quantiser.${perComponent}`;
+  return `${size}. Supersedes the colour budget, in the prompt and in the quantiser.${perComponent}`;
 }

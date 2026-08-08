@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
+import { withCompanionOutputs } from '../../utils/imageConfig.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
+import type { PresetArchetype } from '../../types/preset.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
 
@@ -11,6 +14,21 @@ import { PRESETS } from './index.ts';
  * project it was written for.
  */
 
+/**
+ * What a preset compiles to in a studio nobody has touched.
+ *
+ * A preset holds the image alone, so the two companion outputs have to come from somewhere to
+ * compile at all — and the studio's own defaults are the honest choice: they are what a reader who
+ * loads this preset and copies the prompt actually gets.
+ */
+function promptFor(preset: PresetArchetype): string {
+  return generatePrompt(
+    preset.category,
+    preset.subject,
+    withCompanionOutputs(preset.output, DEFAULT_OUTPUT_CONFIG),
+  );
+}
+
 describe('every shipped preset', () => {
   it('has a unique id', () => {
     const ids = PRESETS.map((preset) => preset.id);
@@ -18,7 +36,7 @@ describe('every shipped preset', () => {
   });
 
   it.each(PRESETS)('$name compiles with no leftover marker and no placeholder token', (preset) => {
-    const prompt = generatePrompt(preset.category, preset.subject, preset.output);
+    const prompt = promptFor(preset);
     expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
     expect(prompt).not.toContain('DEFINED');
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${preset.category}`);
@@ -35,6 +53,14 @@ describe('every shipped preset', () => {
       `${preset.name} exceeds the practical ceiling`,
     ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
   });
+
+  it.each(PRESETS)('$name leaves the companion outputs to the user', (preset) => {
+    // The type says a preset holds the image alone, and structural typing means the type alone
+    // cannot enforce it: a whole `OutputConfig` spread into `output` type-checks, and would ship an
+    // archetype with an opinion about whether *this* reader wants a JSON manifest handed back.
+    expect(Object.keys(preset.output)).not.toContain('emitManifest');
+    expect(Object.keys(preset.output)).not.toContain('emitPromptFeedback');
+  });
 });
 
 describe('the Unsung Saviour presets', () => {
@@ -44,7 +70,7 @@ describe('the Unsung Saviour presets', () => {
 
   it('carries the character rig’s contract into the prompt', () => {
     if (!characterRig) throw new Error('the Unsung Saviour character rig preset should ship.');
-    const prompt = generatePrompt(characterRig.category, characterRig.subject, characterRig.output);
+    const prompt = promptFor(characterRig);
 
     expect(prompt).toContain('48 × 96 px assembled');
     expect(prompt).toContain('- Camera elevation: 30° above the horizon');
@@ -61,22 +87,18 @@ describe('the Unsung Saviour presets', () => {
     // Load-bearing: the engine lights actors with CanvasModulate and Light2D and draws its own
     // shadows, so baked directional lighting would fight both.
     expect(characterRig.output.lightingModel).toBe('FLAT_NEUTRAL_ALBEDO');
-    expect(generatePrompt(characterRig.category, characterRig.subject, characterRig.output)).toContain(
-      LIGHTING_TEXT.FLAT_NEUTRAL_ALBEDO,
-    );
+    expect(promptFor(characterRig)).toContain(LIGHTING_TEXT.FLAT_NEUTRAL_ALBEDO);
   });
 
   it('gives the creature rig no sockets, because enemies do not wear player gear', () => {
     if (!creatureRig) throw new Error('the Unsung Saviour creature rig preset should ship.');
     expect(creatureRig.output.sockets).toBe('');
-    expect(generatePrompt(creatureRig.category, creatureRig.subject, creatureRig.output)).not.toContain(
-      'Attachment sockets',
-    );
+    expect(promptFor(creatureRig)).not.toContain('Attachment sockets');
   });
 
   it('carries the tileset’s contract into the prompt', () => {
     if (!tileset) throw new Error('the Unsung Saviour tileset preset should ship.');
-    const prompt = generatePrompt(tileset.category, tileset.subject, tileset.output);
+    const prompt = promptFor(tileset);
 
     expect(prompt).toContain('48 × 48 px per tile');
     expect(prompt).toContain('Seamless tiling');
@@ -85,13 +107,5 @@ describe('the Unsung Saviour presets', () => {
     );
     // Not articulated, so neither rig section appears.
     expect(prompt).not.toContain('## 5.');
-  });
-
-  it('asks the rig presets for a manifest, and the tileset not', () => {
-    // A rig sheet is the case a manifest earns its keep on: fifteen anonymous cells become fifteen
-    // labelled ones. A tileset has no bone parents to describe.
-    expect(characterRig?.output.emitManifest).toBe(true);
-    expect(creatureRig?.output.emitManifest).toBe(true);
-    expect(tileset?.output.emitManifest).toBe(false);
   });
 });

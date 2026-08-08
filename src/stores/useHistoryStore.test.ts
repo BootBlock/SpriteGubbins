@@ -4,6 +4,7 @@ import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { createFailingBackend, createHeldDeleteBackend } from '../test/backendDoubles.ts';
 import { createRefusingStorage } from '../test/storageDoubles.ts';
@@ -31,7 +32,7 @@ function entry(overrides: Partial<NewPromptHistoryLog> = {}): NewPromptHistoryLo
     wordCount: 6,
     modelUsed: 'CHATGPT_5_6_SOL',
     subject: DEFAULT_PRESET.subject,
-    output: DEFAULT_PRESET.output,
+    output: DEFAULT_OUTPUT_CONFIG,
     ...overrides,
   };
 }
@@ -127,11 +128,11 @@ describe('fetchHistory', () => {
 describe('restoreLog', () => {
   it('puts the recorded studio state back and shows it', async () => {
     useSubjectStore.setState({ category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') });
-    useOutputStore.setState({ output: DEFAULT_PRESET.output });
+    useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
     useUIStore.setState({ activeTab: 'presets', isHistoryModalOpen: true });
 
     const creature = { ...defaultSubjectFor('CREATURE'), species: 'Cybernetic Attack Drone' };
-    const output = { ...DEFAULT_PRESET.output, targetModel: 'MIDJOURNEY' } as const;
+    const output = { ...DEFAULT_OUTPUT_CONFIG, targetModel: 'MIDJOURNEY' } as const;
     await useHistoryStore.getState().addLog(entry({ category: 'CREATURE', subject: creature, output }));
 
     const [log] = useHistoryStore.getState().historyLogs;
@@ -153,7 +154,7 @@ describe('restoreLog', () => {
     // actually holds — the studio state has to survive being serialised into the payload columns.
     const [stored] = await backend.listHistoryLogs();
     expect(stored?.subject).toEqual(creature);
-    expect(stored?.output).toEqual(DEFAULT_PRESET.output);
+    expect(stored?.output).toEqual(DEFAULT_OUTPUT_CONFIG);
   });
 });
 

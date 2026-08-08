@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
@@ -23,7 +24,7 @@ import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts'
  */
 
 const SUBJECT = DEFAULT_PRESET.subject;
-const OUTPUT = DEFAULT_PRESET.output;
+const OUTPUT = DEFAULT_OUTPUT_CONFIG;
 
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...OUTPUT, ...overrides };

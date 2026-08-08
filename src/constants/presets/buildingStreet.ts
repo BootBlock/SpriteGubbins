@@ -1,4 +1,4 @@
-import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
+import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 
@@ -34,7 +34,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'External Chimney ×1, Smoke Pipe ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       surfaceDetail: 'DETAILED_PRODUCTION',
       resolutionProfile: 'HIGH_RESOLUTION',
@@ -68,7 +68,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Rooftop Antenna Rig ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       // Oblique keeps the shopfronts undistorted while still showing depth, which is what lets a row
       // of separate bays be laid side by side without the perspective disagreeing between them.
       projection: 'OBLIQUE_45',
@@ -107,7 +107,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Defensive Turret Mount ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       projection: 'TRUE_ISOMETRIC',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
@@ -144,7 +144,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       additional_anatomy: 'Rooftop Heli-Pad ×1',
     },
     output: {
-      ...DEFAULT_OUTPUT_CONFIG,
+      ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'RENDERED_3D',
       paletteLimit: 'UNRESTRICTED',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
@@ -153,7 +153,6 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       backgroundKey: 'TRANSPARENT',
       rigMode: 'NONE',
       aspectRatio: 'WIDE_16_9',
-      emitManifest: true,
       targetModel: 'GEMINI_FLASH_IMAGE',
     },
   },

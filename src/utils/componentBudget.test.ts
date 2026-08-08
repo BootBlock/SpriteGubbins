@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { PRACTICAL_COMPONENT_CEILING } from '../constants/promptText/index.ts';
 import { exceedsComponentBudget } from './componentBudget.ts';
@@ -30,7 +31,8 @@ describe('the budget’s effect on the prompt', () => {
     // the self-contradiction v2 exists to remove — and emitting the budget as prose would ask the
     // generator to negotiate a figure only the user can change. Its whole visible effect is the
     // studio warning, which `ComponentBudgetNotice.test.tsx` covers.
-    const { category, subject, output } = DEFAULT_PRESET;
+    const { category, subject } = DEFAULT_PRESET;
+    const output = DEFAULT_OUTPUT_CONFIG;
     const uncapped = generatePrompt(category, subject, { ...output, componentBudget: NO_COMPONENT_BUDGET });
 
     for (const componentBudget of [1, 5, PRACTICAL_COMPONENT_CEILING, 999]) {

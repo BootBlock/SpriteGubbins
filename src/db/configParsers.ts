@@ -22,7 +22,7 @@ import {
   SURFACE_DETAILS,
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
-import type { OutputConfig, TargetModelId } from '../types/output.ts';
+import type { ImageOutputConfig, OutputConfig, TargetModelId } from '../types/output.ts';
 import type { Direction, DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -89,37 +89,46 @@ function pickPrimaryDirection(source: Record<string, unknown>, directions: Direc
 }
 
 /**
- * Parse a stored output config, falling back per field rather than wholesale.
+ * Parse the stored settings that decide the image, falling back per field rather than wholesale.
  *
  * One bad value costs that field its default instead of discarding the entire configuration — which
  * matters most for a preset, where the user would otherwise lose twenty settings to one bad one.
+ *
+ * A payload that is not a record at all is read as `{}` rather than short-circuited, because every
+ * field below already falls back when its key is absent: the two spellings produce the same result,
+ * and one of them cannot drift from the defaults it claims to return.
  */
-export function parseOutputConfig(value: unknown): OutputConfig {
-  if (!isRecord(value)) return DEFAULT_OUTPUT_CONFIG;
+export function parseImageConfig(value: unknown): ImageOutputConfig {
+  const source = isRecord(value) ? value : {};
 
   // Read before the object literal, because the primary facing is only valid against *this* set.
-  const directions = pick(value, 'directions', DEFAULT_OUTPUT_CONFIG.directions, DIRECTION_SETS);
+  const directions = pick(source, 'directions', DEFAULT_OUTPUT_CONFIG.directions, DIRECTION_SETS);
 
   return {
-    directionalMode: pick(value, 'directionalMode', DEFAULT_OUTPUT_CONFIG.directionalMode, DIRECTIONAL_MODES),
-    surfaceDetail: pick(value, 'surfaceDetail', DEFAULT_OUTPUT_CONFIG.surfaceDetail, SURFACE_DETAILS),
+    directionalMode: pick(
+      source,
+      'directionalMode',
+      DEFAULT_OUTPUT_CONFIG.directionalMode,
+      DIRECTIONAL_MODES,
+    ),
+    surfaceDetail: pick(source, 'surfaceDetail', DEFAULT_OUTPUT_CONFIG.surfaceDetail, SURFACE_DETAILS),
     resolutionProfile: pick(
-      value,
+      source,
       'resolutionProfile',
       DEFAULT_OUTPUT_CONFIG.resolutionProfile,
       RESOLUTION_PROFILES,
     ),
-    paletteLimit: pick(value, 'paletteLimit', DEFAULT_OUTPUT_CONFIG.paletteLimit, PALETTE_LIMITS),
-    outlineStyle: pick(value, 'outlineStyle', DEFAULT_OUTPUT_CONFIG.outlineStyle, OUTLINE_STYLES),
-    lightingModel: pick(value, 'lightingModel', DEFAULT_OUTPUT_CONFIG.lightingModel, LIGHTING_MODELS),
-    aspectRatio: pick(value, 'aspectRatio', DEFAULT_OUTPUT_CONFIG.aspectRatio, ASPECT_RATIOS),
-    targetModel: pick(value, 'targetModel', DEFAULT_OUTPUT_CONFIG.targetModel, TARGET_MODEL_IDS),
+    paletteLimit: pick(source, 'paletteLimit', DEFAULT_OUTPUT_CONFIG.paletteLimit, PALETTE_LIMITS),
+    outlineStyle: pick(source, 'outlineStyle', DEFAULT_OUTPUT_CONFIG.outlineStyle, OUTLINE_STYLES),
+    lightingModel: pick(source, 'lightingModel', DEFAULT_OUTPUT_CONFIG.lightingModel, LIGHTING_MODELS),
+    aspectRatio: pick(source, 'aspectRatio', DEFAULT_OUTPUT_CONFIG.aspectRatio, ASPECT_RATIOS),
+    targetModel: pick(source, 'targetModel', DEFAULT_OUTPUT_CONFIG.targetModel, TARGET_MODEL_IDS),
     // Whole components, because the number is read straight back into prose — a fractional budget
     // would report `48 components against a budget of 42.7`. Rejected rather than rounded: this
     // layer drops what it cannot vouch for, and rounding `0.5` to `0` would turn a corrupt budget
     // into no budget at all.
     componentBudget: pickWholeNumber(
-      value,
+      source,
       'componentBudget',
       DEFAULT_OUTPUT_CONFIG.componentBudget,
       COMPONENT_BUDGET_RANGE,
@@ -129,36 +138,52 @@ export function parseOutputConfig(value: unknown): OutputConfig {
     // vouch for: a stored `MEGA_DRIVE` that no longer names a machine must not become some other
     // machine, and no machine at all is the only answer that adds nothing to the prompt.
     hardwareProfile: pick(
-      value,
+      source,
       'hardwareProfile',
       DEFAULT_OUTPUT_CONFIG.hardwareProfile,
       HARDWARE_PROFILE_IDS,
     ),
-    palette: pick(value, 'palette', DEFAULT_OUTPUT_CONFIG.palette, PALETTE_IDS),
+    palette: pick(source, 'palette', DEFAULT_OUTPUT_CONFIG.palette, PALETTE_IDS),
 
-    renderStyle: pick(value, 'renderStyle', DEFAULT_OUTPUT_CONFIG.renderStyle, RENDER_STYLES),
-    projection: pick(value, 'projection', DEFAULT_OUTPUT_CONFIG.projection, PROJECTIONS),
+    renderStyle: pick(source, 'renderStyle', DEFAULT_OUTPUT_CONFIG.renderStyle, RENDER_STYLES),
+    projection: pick(source, 'projection', DEFAULT_OUTPUT_CONFIG.projection, PROJECTIONS),
     cameraElevation: pickNumber(
-      value,
+      source,
       'cameraElevation',
       DEFAULT_OUTPUT_CONFIG.cameraElevation,
       ELEVATION_RANGE,
     ),
     directions,
-    primaryDirection: pickPrimaryDirection(value, directions),
+    primaryDirection: pickPrimaryDirection(source, directions),
     // Bounded but not validated: which sheet indices exist depends on the category, which this
     // function is not given. `sheetPlanFor` resolves an index its own series does not have.
-    sheetIndex: pickWholeNumber(value, 'sheetIndex', DEFAULT_OUTPUT_CONFIG.sheetIndex, SHEET_INDEX_RANGE),
-    backgroundKey: pick(value, 'backgroundKey', DEFAULT_OUTPUT_CONFIG.backgroundKey, BACKGROUND_KEYS),
-    spriteTargetSize: typeof value['spriteTargetSize'] === 'string' ? value['spriteTargetSize'] : '',
+    sheetIndex: pickWholeNumber(source, 'sheetIndex', DEFAULT_OUTPUT_CONFIG.sheetIndex, SHEET_INDEX_RANGE),
+    backgroundKey: pick(source, 'backgroundKey', DEFAULT_OUTPUT_CONFIG.backgroundKey, BACKGROUND_KEYS),
+    spriteTargetSize: typeof source['spriteTargetSize'] === 'string' ? source['spriteTargetSize'] : '',
 
-    rigMode: pick(value, 'rigMode', DEFAULT_OUTPUT_CONFIG.rigMode, RIG_MODES),
-    jointCapStyle: pick(value, 'jointCapStyle', DEFAULT_OUTPUT_CONFIG.jointCapStyle, JOINT_CAP_STYLES),
-    overlapMargin: pick(value, 'overlapMargin', DEFAULT_OUTPUT_CONFIG.overlapMargin, OVERLAP_MARGINS),
-    sockets: typeof value['sockets'] === 'string' ? value['sockets'] : '',
+    rigMode: pick(source, 'rigMode', DEFAULT_OUTPUT_CONFIG.rigMode, RIG_MODES),
+    jointCapStyle: pick(source, 'jointCapStyle', DEFAULT_OUTPUT_CONFIG.jointCapStyle, JOINT_CAP_STYLES),
+    overlapMargin: pick(source, 'overlapMargin', DEFAULT_OUTPUT_CONFIG.overlapMargin, OVERLAP_MARGINS),
+    sockets: typeof source['sockets'] === 'string' ? source['sockets'] : '',
 
-    identityLock: typeof value['identityLock'] === 'string' ? value['identityLock'] : '',
-    emitManifest: pickBoolean(value, 'emitManifest', DEFAULT_OUTPUT_CONFIG.emitManifest),
-    emitPromptFeedback: pickBoolean(value, 'emitPromptFeedback', DEFAULT_OUTPUT_CONFIG.emitPromptFeedback),
+    identityLock: typeof source['identityLock'] === 'string' ? source['identityLock'] : '',
+  };
+}
+
+/**
+ * Parse a stored output config whole — the image, and the two companion outputs beside it.
+ *
+ * Only a **history** entry is read this way, and that is the distinction to hold: an entry records
+ * the configuration a prompt was actually composed from, so restoring one has to bring back the
+ * companion requests the prompt in it carries. A preset goes through `parseImageConfig` above,
+ * because an archetype has no companion outputs to store in the first place.
+ */
+export function parseOutputConfig(value: unknown): OutputConfig {
+  const source = isRecord(value) ? value : {};
+
+  return {
+    ...parseImageConfig(source),
+    emitManifest: pickBoolean(source, 'emitManifest', DEFAULT_OUTPUT_CONFIG.emitManifest),
+    emitPromptFeedback: pickBoolean(source, 'emitPromptFeedback', DEFAULT_OUTPUT_CONFIG.emitPromptFeedback),
   };
 }

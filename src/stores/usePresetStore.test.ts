@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import type { PersistenceBackend } from '../db/backend.ts';
@@ -7,6 +8,7 @@ import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
 import { createRefusingStorage } from '../test/storageDoubles.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import { withCompanionOutputs } from '../utils/imageConfig.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { usePresetStore } from './usePresetStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
@@ -49,7 +51,7 @@ beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
   usePresetStore.setState({ customPresets: [], isExporting: false });
   useSubjectStore.setState({ category: DEFAULT_PRESET.category, subject: DEFAULT_PRESET.subject });
-  useOutputStore.setState({ output: DEFAULT_PRESET.output });
+  useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useUIStore.getState().dismissToast();
   useUIStore.setState({ activeTab: 'presets' });
 });
@@ -61,7 +63,7 @@ afterEach(() => {
 });
 
 describe('loadPreset', () => {
-  it('moves the whole configuration into the studio', () => {
+  it('moves the whole image configuration into the studio', () => {
     const marine = PRESETS[1];
     if (!marine) throw new Error('PRESETS must hold more than one archetype.');
 
@@ -69,9 +71,43 @@ describe('loadPreset', () => {
 
     expect(useSubjectStore.getState().category).toBe(marine.category);
     expect(useSubjectStore.getState().subject).toEqual(marine.subject);
-    expect(useOutputStore.getState().output).toEqual(marine.output);
+    // Exactly the preset's image over the studio's own companion answers — nothing else, so an
+    // extra key arriving from anywhere would fail here rather than pass a looser match.
+    expect(useOutputStore.getState().output).toEqual(
+      withCompanionOutputs(marine.output, DEFAULT_OUTPUT_CONFIG),
+    );
     expect(useUIStore.getState().activeTab).toBe('studio');
     expect(useUIStore.getState().toastMessage).toContain(marine.name);
+  });
+
+  it('leaves the companion outputs exactly as the user set them', () => {
+    // The two checkboxes under "Returned alongside the image" are working preferences, not part of
+    // any archetype: a reader who wants a JSON manifest wants one for the sheet they are about to
+    // make, and browsing the library must not quietly switch that off — or on.
+    const marine = PRESETS[1];
+    if (!marine) throw new Error('PRESETS must hold more than one archetype.');
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, emitManifest: true, emitPromptFeedback: true },
+    });
+
+    usePresetStore.getState().loadPreset(marine);
+
+    const { output } = useOutputStore.getState();
+    expect(output.emitManifest).toBe(true);
+    expect(output.emitPromptFeedback).toBe(true);
+    // And the rest of the studio really did move, so this is not passing on a load that did nothing.
+    expect(output.targetModel).toBe(marine.output.targetModel);
+  });
+
+  it('leaves them off when that is how they were left', () => {
+    const marine = PRESETS[1];
+    if (!marine) throw new Error('PRESETS must hold more than one archetype.');
+    useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
+
+    usePresetStore.getState().loadPreset(marine);
+
+    expect(useOutputStore.getState().output.emitManifest).toBe(false);
+    expect(useOutputStore.getState().output.emitPromptFeedback).toBe(false);
   });
 });
 
@@ -87,6 +123,20 @@ describe('saveCustomPreset', () => {
 
     // And it is in storage, not merely in the store.
     await expect(backend.listPresets()).resolves.toHaveLength(1);
+  });
+
+  it('stores the image alone, not the user’s companion-output preferences', async () => {
+    // What a preset holds is also what an exported pack publishes, so a `true` saved here would
+    // travel to whoever imports the pack and turn a working preference into part of the archetype.
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, emitManifest: true, emitPromptFeedback: true },
+    });
+
+    await usePresetStore.getState().saveCustomPreset('My Archetype');
+
+    const [saved] = await backend.listPresets();
+    expect(Object.keys(saved?.output ?? {})).not.toContain('emitManifest');
+    expect(Object.keys(saved?.output ?? {})).not.toContain('emitPromptFeedback');
   });
 
   it('ignores a blank name without touching storage', async () => {
