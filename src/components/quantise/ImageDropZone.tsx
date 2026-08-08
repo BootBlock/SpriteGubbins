@@ -26,8 +26,8 @@ export function ImageDropZone({ acceptFile, currentName }: ImageDropZoneProps) {
       {...dropHandlers}
       className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-300 ${
         isDraggedOver
-          ? 'scale-[1.01] border-accent bg-accent/10 shadow-2xl ring-1 ring-accent/40'
-          : 'border-foundry-600 bg-foundry-800/60 hover:border-accent/50 hover:bg-foundry-800/80'
+          ? 'scale-[1.01] border-tab bg-tab/10 shadow-2xl ring-1 ring-tab/40'
+          : 'border-foundry-600 bg-foundry-800/60 hover:border-tab/50 hover:bg-foundry-800/80'
       }`}
     >
       {/* A sheen crossing the zone for as long as a file is over it — the one moment this panel is

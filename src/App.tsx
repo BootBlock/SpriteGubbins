@@ -67,17 +67,28 @@ export function App() {
   const ActiveView = VIEWS[activeTab];
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-foundry-900 text-ink">
+    /*
+      `data-tab` is what lights the page. Every surface that follows the active view — the wash, the
+      dot grid, each panel's top edge, the switcher's pill, every section heading — reads
+      `--color-tab`, and this attribute is the single place it is decided. See the per-view rules in
+      `index.css`: the assignment has to sit on the element the `var()`s resolve against, which is
+      why it is here on the shell rather than passed down as a prop.
+    */
+    <div data-tab={activeTab} className="relative flex min-h-dvh flex-col bg-foundry-900 text-ink">
       {/*
         Four decorative layers, painted back to front: the aurora wash that gives the page depth,
         the technical dot grid over it, and the two orbs drifting on top out of phase. All fixed,
         all `pointer-events-none`, all hidden from assistive technology — none of it is content.
+
+        The first orb carries the view's colour and the second stays on the primary, so the pair
+        reads as the page being lit from two directions rather than dipped in one — and the moving
+        one is what makes a view change visible out at the edges of the layout.
       */}
       <div aria-hidden="true" className="animate-aurora pointer-events-none fixed inset-0 bg-aurora" />
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 bg-grid-pattern opacity-40" />
       <div
         aria-hidden="true"
-        className="animate-float-orb pointer-events-none fixed -top-40 left-1/4 size-[28rem] rounded-full bg-accent/10 blur-3xl"
+        className="animate-float-orb pointer-events-none fixed -top-40 left-1/4 size-[28rem] rounded-full bg-tab/15 blur-3xl"
       />
       <div
         aria-hidden="true"
