@@ -4,11 +4,16 @@ import { atEachYaw, viewsOf } from './directionalViews.ts';
 /**
  * What a BUILDING sheet asks for, per sheet mode.
  *
- * This category is labelled "Building / Environment Tile", so it is the one category for which a
- * modular tile set is the *right* answer — and the tileset plan below is the original text, moved
- * here unchanged. What was wrong was never this inventory; it was that it sat in a table keyed on
- * the sheet mode alone, where every other category could reach it. A character asking for floors and
- * wall corners is the failure that produced these files.
+ * This category is labelled "Building / Environment Tile", so a modular tile set is a *right* answer
+ * for it — and the tileset plan below is the original text, moved here unchanged. What was wrong was
+ * never this inventory; it was that it sat in a table keyed on the sheet mode alone, where every
+ * other category could reach it. A character asking for floors and wall corners is the failure that
+ * produced these files.
+ *
+ * TERRAIN is the other category laid as a tile field, and the two do not overlap: this plan is a
+ * floor field with walls *around* it, which is architecture, and a terrain blend set is two materials
+ * meeting across open ground. What stays here is the environment art that is a discrete structure —
+ * a tree, a parallax band, a bridge span.
  *
  * The two non-tile modes describe a building as discrete structural modules, so a subject that is a
  * single structure rather than a repeating field still has an inventory of its own instead of

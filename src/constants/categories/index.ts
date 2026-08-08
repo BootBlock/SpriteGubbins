@@ -11,6 +11,7 @@ import { OBJECT } from './object.ts';
 import { ITEM } from './item.ts';
 import { BUILDING } from './building.ts';
 import { VEHICLE } from './vehicle.ts';
+import { TERRAIN } from './terrain.ts';
 
 /**
  * The complete option pool for every category.
@@ -26,6 +27,7 @@ export const CATEGORY_OPTIONS: Readonly<Record<SubjectCategory, CategoryDefiniti
   ITEM,
   BUILDING,
   VEHICLE,
+  TERRAIN,
 };
 
 /** A field's first option — the value that field defaults to. */

@@ -96,11 +96,14 @@ describe('the plan table itself', () => {
     expect(supportsMode(category, DEFAULT_MODE_FOR[category])).toBe(true);
   });
 
-  it('gives the tileset to the one category that is an environment, and to no other', () => {
-    // BUILDING is labelled "Building / Environment Tile"; a tile field is the right answer there and
-    // nowhere else. This is the exact pairing the reported defect produced for a CHARACTER.
+  it('gives the tileset to the categories that are laid as a field, and to no other', () => {
+    // The two categories whose deliverable repeats: BUILDING, labelled "Building / Environment
+    // Tile", and TERRAIN, whose blend set is the ground those buildings stand on. A tile field is
+    // the right answer for those two and wrong everywhere else — this is the exact pairing the
+    // reported defect produced for a CHARACTER. Written as the whole list rather than as two
+    // `supportsMode` assertions, so a further category quietly acquiring a tileset fails here.
     const withTileset = SUBJECT_CATEGORIES.filter((c) => supportsMode(c, 'TILESET_MODULAR'));
-    expect(withTileset).toEqual(['BUILDING']);
+    expect(withTileset).toEqual(['BUILDING', 'TERRAIN']);
   });
 });
 

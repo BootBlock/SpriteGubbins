@@ -10,8 +10,8 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * of the prompt called a failure.
  *
  * So the environment ban is stated by the categories for which an environment really is scenery, and
- * BUILDING bans the things that are foreign to *it* instead. Same mechanism as the inventory: the
- * category owns its own rules rather than inheriting another's.
+ * BUILDING and TERRAIN ban the things that are foreign to *them* instead. Same mechanism as the
+ * inventory: the category owns its own rules rather than inheriting another's.
  */
 export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> = {
   CHARACTER:
@@ -32,6 +32,13 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // bleeds past its cell.
   VEHICLE:
     'Backgrounds, environments, ground planes, road or runway surfaces, terrain, sky, scenery; any driver, pilot, crew or passenger; and any exhaust plume, dust trail, wake, motion blur, speed line or weapon effect.',
+  // No environment ban either, and for a sharper version of BUILDING's reason: the ground plane the
+  // other five categories forbid is this one's entire deliverable. What a terrain sheet attracts
+  // instead is a *composed landscape* — asked for terrain, a generator draws a view of it, and a view
+  // cannot be cut into tiles. The landmark clause is scoped to tiles meant to repeat, because the
+  // feature library's focal outcrop is deliberately distinctive and is placed once.
+  TERRAIN:
+    'Characters, creatures, vehicles, buildings and their fittings; sky, horizon and distant landscape; any composed landscape, vista or diorama drawn in place of the component grid; and, on any tile meant to repeat, a landmark distinctive enough to be recognised twice across a laid field.',
 };
 
 /**
@@ -55,6 +62,8 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
     'Every entry below is a structural or tile component. An entry describing a head, limb, hand or other anatomy does not belong to this sheet and is an error in this specification, not an instruction to follow.',
   VEHICLE:
     'Every entry below is a part of this one vehicle. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  TERRAIN:
+    'Every entry below is a ground tile or a landform piece. An entry describing anatomy, a wall, a roof, a building module or a vehicle part does not belong to this sheet and is an error in this specification, not an instruction to follow.',
 };
 
 /**
@@ -80,4 +89,13 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // contradiction these per-category records exist to remove.
   VEHICLE:
     'Every component is a part of this one vehicle — no anatomy, tiles, terrain, scenery or crew, and no exhaust plume, dust trail, wake or motion effect drawn as though it were a component.',
+  // The second half is this category's own, and it is the check no generic audit can stand in for: a
+  // terrain sheet can pass every count, background and ordering test and still be unusable, because
+  // seamlessness only shows up when the tiles are laid together. It is stated as an agreement about
+  // *edges* rather than as "every tile butts against its own copy", which would be this record's
+  // VEHICLE mistake again — a transition tile carries a boundary, so it cannot meet its own copy
+  // without a seam, and an audit demanding that fails the sheet on the fourteen tiles section 4
+  // requires.
+  TERRAIN:
+    'Every component is a ground tile or a landform piece — no characters, creatures, anatomy, buildings or vehicles, and nothing drawn as a landscape view rather than as a separate piece. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.',
 };

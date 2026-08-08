@@ -102,4 +102,11 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // every view.
   VEHICLE:
     'a hull’s front is the nose, prow or bow — the end that leads in travel and the end the driving position looks out of — and its rear is the engine deck, tail or transom; a turret or working mount’s front is its muzzle, boom or working end, which turns independently of the hull beneath it; a drive unit’s front is its leading edge in the direction of travel.',
+  // The one category with no directional mode, so this never reaches a compiled prompt today — every
+  // TERRAIN pairing covers a single facing, and section 3's landmark block sits behind
+  // `[IF:MULTI_DIRECTION]`. Written for the sheet it *would* describe rather than left as a
+  // placeholder, and written honestly: a tile has no front at all, and saying it does would be the
+  // loose wording this record exists to replace.
+  TERRAIN:
+    'a tile has no front — it is laid flat and read from above, and its sides are named by the compass edge they sit on rather than by any facing; a landform piece’s front is the exposed face the camera sees, the rock wall, the cut bank or the outward side of an outcrop, and its rear is the buried side the ground behind it hides.',
 };
