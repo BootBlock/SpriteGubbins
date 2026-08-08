@@ -1,9 +1,9 @@
-import { DIRECTION_COVERAGE, DIRECTION_LISTS } from '../constants/promptText/index.ts';
+import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { Direction } from '../types/rendering.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { sheetDirections } from './sheetDirections.ts';
+import { directionSetApplies, sheetDirections } from './sheetDirections.ts';
 
 /**
  * Turning one studio configuration into the sheets it actually takes to satisfy it.
@@ -61,13 +61,14 @@ export function sheetIdentity(
 /**
  * Whether this configuration is more than one sheet.
  *
- * Both halves matter. A mode whose coverage is a fixed set already draws its facings on one sheet,
- * so there is nothing to split; and a single-facing set is one run however the mode covers it.
+ * Both halves matter, and they are two different questions. The first is whether the mode defers to
+ * the chosen set at all — `directionSetApplies`, which is also what decides whether the studio shows
+ * the set control, so the two cannot drift apart and the panel cannot offer a split for a set it is
+ * not displaying. The second is this function's own: a single-facing set is one run however the mode
+ * covers it.
  */
 export function splitsIntoRuns(output: OutputConfig): boolean {
-  return (
-    DIRECTION_COVERAGE[output.directionalMode] === 'primary' && DIRECTION_LISTS[output.directions].length > 1
-  );
+  return directionSetApplies(output) && DIRECTION_LISTS[output.directions].length > 1;
 }
 
 /**

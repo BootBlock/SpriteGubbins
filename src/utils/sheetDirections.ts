@@ -1,6 +1,6 @@
 import { DIRECTION_COVERAGE, DIRECTION_LISTS } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
-import type { Direction } from '../types/rendering.ts';
+import type { Direction, DirectionSet } from '../types/rendering.ts';
 
 /**
  * Which facings a sheet actually covers, and which of them it assembles towards.
@@ -36,4 +36,31 @@ export function sheetDirections(output: OutputConfig): SheetDirections {
   const [assembly] = covered;
 
   return { covered, assembly };
+}
+
+/**
+ * Whether the chosen direction set reaches the sheet at all.
+ *
+ * `false` for the modes that name their own facings — `CORE_DIRECTIONAL_VARIANTS` draws the three
+ * classic yaws whatever the control is set to, because its inventory names them entry by entry. The
+ * studio has to know, because that mode is the default for five of the six categories *and* the
+ * default in `DEFAULT_OUTPUT_CONFIG`: without this the app opens showing a live four-choice select
+ * whose value the compiler discards, and a user who picks all eight compass points gets a
+ * three-facing sheet with nothing anywhere saying why.
+ */
+export function directionSetApplies(output: OutputConfig): boolean {
+  return DIRECTION_COVERAGE[output.directionalMode] === 'primary';
+}
+
+/**
+ * The direction set the sheet is actually drawn to.
+ *
+ * The chosen one only where the mode defers to it; otherwise the mode's own. Distinct from
+ * {@link sheetDirections}, which resolves all the way down to the individual facings — a digest
+ * wants the set's *name*, and reading `output.directions` for it is what made the collapsed
+ * projection summary report `EIGHT_COMPASS` on a sheet covering three.
+ */
+export function effectiveDirectionSet(output: OutputConfig): DirectionSet {
+  const coverage = DIRECTION_COVERAGE[output.directionalMode];
+  return coverage === 'primary' ? output.directions : coverage;
 }
