@@ -155,25 +155,33 @@ export default defineConfig({
     // the loader uses to find the binary (spec Task 1.3.4).
     exclude: ['@sqlite.org/sqlite-wasm'],
 
-    // Every runtime dependency the app actually imports, named rather than discovered.
+    // Every runtime dependency the app imports, named rather than left to be discovered.
     //
     // The dev server rewrites each bare import to `/node_modules/.vite/deps/<dep>.js?v=<hash>`,
-    // and that hash belongs to one optimisation round. Ask for a *previous* round's hash and Vite
+    // and a hash belongs to one optimisation round. Ask for a *previous* round's hash and Vite
     // answers `504 Outdated Optimize Dep` — a response that carries **no `Content-Type` at all**,
     // which Firefox reports as `blocked because of a disallowed MIME type ("")` before refusing to
     // execute the module. React, react-dom/client and the JSX runtime are all static imports of
     // `main.tsx`, so they fail together and the page stays blank. Vite's recovery is a full reload
     // pushed over the HMR socket, and on a cold load that socket is still connecting when the
     // imports fail — the console shows `[vite] connecting…` *after* the failures — so the message
-    // lands on nothing and the blank page is permanent until someone refreshes by hand.
+    // can land on nothing and the blank page persists until someone refreshes by hand.
     //
-    // A re-optimisation mid-session is what makes a hash go stale, and the scanner is what makes
-    // one likely: it crawls the static import graph from `index.html`, which cannot reach
-    // `src/db/sqliteWorker.ts` because that module is loaded through
-    // `new Worker(new URL(…, import.meta.url))` — a runtime construction, not an import. Anything
-    // only that worker pulls in is therefore discovered after the page has already booted, which
-    // is precisely the case Vite's documentation says to answer by naming the dependency here.
-    // Listing the set outright means the first round is the only round.
+    // **`react-dom/client` is the entry that was not pinned.** `@vitejs/plugin-react` contributes
+    // an include list of its own — `react`, `react-dom`, `react/jsx-runtime` and
+    // `react/jsx-dev-runtime` — and the specifier `main.tsx` actually imports, `react-dom/client`,
+    // is not in it. Vite optimises per entry point rather than per package, so that one was pinned
+    // separately from the other three and carried a different `?v=` hash; with the whole set named
+    // here the hashes match. Anything imported as a subpath needs naming for the same reason —
+    // `zustand/middleware` would be a fresh entry, not covered by `zustand`.
+    //
+    // The list is exhaustive rather than minimal because the scanner cannot be trusted to find
+    // everything: it crawls the static import graph from `index.html`, which never reaches
+    // `src/db/sqliteWorker.ts` — that module is constructed at runtime by
+    // `new Worker(new URL(…, import.meta.url))`, which is not an import. Nothing the worker pulls
+    // in needs an entry *today* (its one bare import is excluded above, and an excluded dependency
+    // is never pre-bundled, so it cannot trigger a round of its own). That makes the worker a
+    // reason to keep naming dependencies, not an account of what went wrong here.
     include: ['react', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'zustand'],
   },
 
@@ -195,6 +203,10 @@ export default defineConfig({
   },
   preview: {
     headers: { ...crossOriginIsolationHeaders },
+    // Pinned for the same reason as the dev server minus the dependency half of it: `vite preview`
+    // serves a built `dist/`, so it pre-bundles nothing and has no `?v=` hashes to go stale. What
+    // it shares is the hazard of quietly answering on a port you believed belonged to another
+    // tree — here handing back someone else's build, which looks exactly like your own.
     port: 4173,
     strictPort: true,
   },
