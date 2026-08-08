@@ -29,7 +29,13 @@ import { directionalRotation } from './directionalRotation.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 import { sheetDirections } from './sheetDirections.ts';
-import { applyConditionals, applyOptionals, assertBlocksResolved, substitute } from './templateEngine.ts';
+import {
+  applyConditionals,
+  applyNumbering,
+  applyOptionals,
+  assertBlocksResolved,
+  substitute,
+} from './templateEngine.ts';
 
 /**
  * Compile the studio's state into the prompt the user copies.
@@ -152,12 +158,19 @@ export function generatePrompt(
     // rule-list-shaped block in the template sitting where attention is weakest. Same reasoning as
     // MULTI_DIRECTION above, applied to what the *target* can do rather than what the sheet holds.
     DELIBERATES: deliberates(output.targetModel) ? 'yes' : '',
+    // Section 0's category tripwire ends "say so rather than resolving it", which names a channel a
+    // pure image endpoint does not have. It is the same argument as DELIBERATES above, applied to
+    // the other capability: an instruction that cannot be carried out spends tokens in the
+    // highest-weighted section of the prompt to buy nothing. What it guards against is this app's
+    // own bug — the category and the inventory are compiled from one value, so they can only
+    // disagree if something here is wrong — and only a target with a text channel can report that.
+    RETURNS_TEXT: returnsText(output.targetModel) ? 'yes' : '',
   };
 
-  // Blocks first, then optionals, then substitution — see `templateEngine.ts` for why that order. The
-  // marker check sits *before* substitution: afterwards the text carries whatever the user typed, and
-  // a subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
-  const resolved = applyOptionals(applyConditionals(PROMPT_TEMPLATE, config), values);
+  // Blocks, then optionals, then numbering, then substitution — see `templateEngine.ts` for why that
+  // order. The marker check sits *before* substitution: afterwards the text carries whatever the user
+  // typed, and a subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
+  const resolved = applyNumbering(applyOptionals(applyConditionals(PROMPT_TEMPLATE, config), values));
   assertBlocksResolved(resolved);
   const prompt = substitute(resolved, values);
 

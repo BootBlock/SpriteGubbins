@@ -38,16 +38,30 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     capabilities: { deliberates: true, emitsText: true, promptBudget: null },
   },
   {
+    // **The only target here that cannot draw.** Its model page gives `text` as the sole output
+    // modality and lists `image_generation` under *tools*, so a sheet arrives by Sol calling that
+    // tool — and OpenAI document that the mainline model "will automatically revise your prompt for
+    // improved performance" on the way, with "always a GPT Image model" doing the rendering.
+    // https://developers.openai.com/api/docs/guides/tools-image-generation
+    //
+    // Both capability flags below are still about Sol and still true: it reasons over the brief, and
+    // it answers in text. What they do not say is that the *picture* comes from a second model
+    // reading Sol's paraphrase, which is what its wrapper in `utils/modelWrapperText.ts` addresses.
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     tooltip:
-      'Adds a short reasoning-effort directive and points the model at the template’s own done-condition and verification sections. Can also return a companion JSON manifest.',
+      'Sol returns text, never an image: it calls an image tool and hands that tool its own rewrite of this specification, which is where adherence is lost. Its wrapper names the three parts the rewrite must carry through unshortened. It reasons over the brief, so it also gets the self-audit and can return a companion JSON manifest.',
     capabilities: {
       deliberates: true,
       emitsText: true,
       // The *input* ceiling, not the 1,050,000 context window: the window is input plus the
       // 128,000 output tokens reserved against it, and what this field is measured against is the
       // prompt alone. https://developers.openai.com/api/docs/models/gpt-5.6-sol
+      //
+      // It is also not the ceiling that binds on this target. The prompt Sol passes on is its own
+      // rewrite, against the GPT Image ceiling recorded on `GPT_IMAGE` below — but that is a limit
+      // on text this app never composes, so recording it here would attribute somebody else's
+      // budget to a field measured against ours.
       promptBudget: { limit: 922_000, unit: 'tokens', note: 'Maximum input tokens.' },
     },
   },

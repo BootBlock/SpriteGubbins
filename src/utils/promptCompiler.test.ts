@@ -173,28 +173,145 @@ describe('generatePrompt — conditional blocks', () => {
   });
 
   it('never lets a template marker reach the output, across every branch', () => {
-    // Every combination of the four switches the template branches on, so no block escapes being
-    // both taken and skipped.
-    for (const renderStyle of RENDER_STYLES) {
-      for (const rigMode of RIG_MODES) {
-        for (const emitManifest of [true, false]) {
-          for (const emitPromptFeedback of [true, false]) {
-            const prompt = generatePrompt(
-              'CHARACTER',
-              SUBJECT,
-              withOutput({
-                renderStyle,
-                rigMode,
-                emitManifest,
-                emitPromptFeedback,
-                targetModel: 'GENERIC',
-              }),
-            );
-            const branch = `${renderStyle}/${rigMode}/${String(emitManifest)}/${String(emitPromptFeedback)}`;
-            expect(prompt, branch).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]/);
+    // Every combination of the switches the template branches on, so no block escapes being both
+    // taken and skipped. The target is one of them: it decides the self-audit and section 0's
+    // category tripwire, so pinning it to one model would leave half of each of those unrendered.
+    for (const targetModel of TARGET_MODEL_IDS) {
+      for (const renderStyle of RENDER_STYLES) {
+        for (const rigMode of RIG_MODES) {
+          for (const emitManifest of [true, false]) {
+            for (const emitPromptFeedback of [true, false]) {
+              const prompt = generatePrompt(
+                'CHARACTER',
+                SUBJECT,
+                withOutput({ renderStyle, rigMode, emitManifest, emitPromptFeedback, targetModel }),
+              );
+              const branch = `${targetModel}/${renderStyle}/${rigMode}/${String(emitManifest)}/${String(emitPromptFeedback)}`;
+              expect(prompt, branch).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+            }
           }
         }
       }
+    }
+  });
+});
+
+describe('generatePrompt — numbered lists', () => {
+  /**
+   * Every run of `N. ` items in the prompt, split at the blank lines that separate one list from the
+   * next — the same rule `applyNumbering` counts by, read back off the finished text.
+   */
+  function numberedRuns(prompt: string): number[][] {
+    const runs: number[][] = [];
+    let current: number[] = [];
+
+    for (const line of prompt.split('\n')) {
+      const item = /^[ \t]*(\d+)\. /.exec(line);
+      if (item) current.push(Number(item[1]));
+      else if (line.trim() === '' && current.length > 0) {
+        runs.push(current);
+        current = [];
+      }
+    }
+    if (current.length > 0) runs.push(current);
+
+    return runs;
+  }
+
+  it('numbers every list consecutively from one, whichever items the sheet drops', () => {
+    // The defect: section 9's rig check and pixel-art check are conditional and independent, so a
+    // pixel-art sheet in POSE_LIBRARY mode used to emit "…6. 8." — a checklist whose seventh check
+    // appears to have gone missing, in the section meant to be worked through item by item.
+    for (const targetModel of TARGET_MODEL_IDS) {
+      for (const renderStyle of RENDER_STYLES) {
+        for (const rigMode of RIG_MODES) {
+          const prompt = generatePrompt(
+            'CHARACTER',
+            SUBJECT,
+            withOutput({ renderStyle, rigMode, targetModel }),
+          );
+          const branch = `${targetModel}/${renderStyle}/${rigMode}`;
+
+          for (const run of numberedRuns(prompt)) {
+            expect(run, `${branch}: ${run.join(', ')}`).toStrictEqual(run.map((_item, index) => index + 1));
+          }
+        }
+      }
+    }
+  });
+
+  it('is checking lists that are actually there', () => {
+    // Guards the sweep above, which passes vacuously if the prompt stops carrying numbered lists at
+    // all. Section 0's contract and section 9's audit are both present on this configuration.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ targetModel: 'CHATGPT_5_6_SOL', renderStyle: 'PIXEL_ART', rigMode: 'POSE_LIBRARY' }),
+    );
+
+    expect(numberedRuns(prompt)).toHaveLength(2);
+    // Six in the contract — five fixed plus the pixel-grid rule — and seven in the audit, which is
+    // the run that used to end at 8 with no 7 above it.
+    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([6, 7]);
+  });
+});
+
+describe('generatePrompt — section 0’s category tripwire, per target', () => {
+  const TRIPWIRE = 'this specification is malformed. Say so rather than resolving';
+
+  it('is sent only to a target with a channel to say so through', () => {
+    for (const target of ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
+      expect(prompt, target).toContain(TRIPWIRE);
+    }
+  });
+
+  it('is dropped for every target that returns an image and nothing else', () => {
+    // SEEDREAM is the case that makes this a separate question from the self-audit: it reasons over
+    // the brief, so it could notice — and it returns JPEG or PNG, so it could not tell anyone.
+    for (const target of [
+      'SEEDREAM',
+      'QWEN_IMAGE',
+      'MIDJOURNEY',
+      'STABLE_DIFFUSION',
+      'FLUX',
+      'FLUX_API',
+      'GPT_IMAGE',
+    ] as const) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target }));
+      expect(prompt, target).not.toContain(TRIPWIRE);
+    }
+  });
+
+  it('leaves the rest of section 0 in place when it goes', () => {
+    // Only the paragraph that asks for a reply is conditional. The contract itself describes the
+    // image, and the precedence order settles conflicts the generator can act on either way.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'MIDJOURNEY' }));
+
+    expect(prompt).toContain('## 0. NON-NEGOTIABLE OUTPUT CONTRACT');
+    expect(prompt).toContain('Satisfy this section before any aesthetic consideration.');
+    expect(prompt).toContain('**Where two instructions pull against each other**');
+    // The category guard proper lives in section 4 and states what the components *are*, which is
+    // conditioning every target can use.
+    expect(prompt).toContain(promptText.CATEGORY_GUARD_TEXT.CHARACTER);
+  });
+
+  it('never leaves the precedence list carrying an exception the prompt has dropped', () => {
+    // The trap this gate walked into. The precedence order and the tripwire were written in one
+    // change, and the ranking carried the carve-out — "…without contradicting the category" — that
+    // handed the category case to the tripwire instead of ranking it. Gating the tripwire alone left
+    // seven targets reading an exception clause for a rule they were never given, and left section
+    // 4's guard ("an error in this specification, not an instruction to follow") unreconciled with a
+    // ranking that puts the inventory above subject identity. The carve-out now lives in the gated
+    // block, so the two cannot be separated again.
+    for (const targetModel of TARGET_MODEL_IDS) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
+
+      expect(prompt, targetModel).toContain('**Where two instructions pull against each other**');
+      expect(prompt, targetModel).not.toContain('without contradicting the category');
+      // The clause that says a category disagreement is not ranked travels with the tripwire it
+      // defers to — present together, absent together, never one without the other.
+      expect(prompt.includes('never a conflict to rank'), targetModel).toBe(prompt.includes(TRIPWIRE));
     }
   });
 });
@@ -486,7 +603,7 @@ describe('every category', () => {
     // set of values through the same optional lines.
     const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${category}`);
-    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]/);
+    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
   });
 });
 
