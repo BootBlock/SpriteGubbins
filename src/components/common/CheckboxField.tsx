@@ -52,7 +52,7 @@ export function CheckboxField({ label, tooltip, checked, disabledReason, onChang
       </div>
 
       {isDisabled && (
-        <p id={reasonId} className="mt-1 ml-6 text-[10px] text-ink-faint">
+        <p id={reasonId} className="mt-1 ml-6 text-xs text-ink-faint">
           {disabledReason}
         </p>
       )}

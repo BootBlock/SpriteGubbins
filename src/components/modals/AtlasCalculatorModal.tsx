@@ -85,7 +85,7 @@ export function AtlasCalculatorModal() {
           />
         </div>
 
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-foundry-700 bg-foundry-950 p-2.5 font-mono text-[11px]">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-foundry-700 bg-foundry-950 p-2.5 font-mono text-xs">
           <span className="text-ink-faint">GPU VRAM optimisation status</span>
           {metrics.isPowerOfTwo ? (
             <Badge tone="valid">✓ Power of 2 compliant ({canvasSize}px)</Badge>

@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -68,9 +68,12 @@ const REQUIRED_THEME_TOKENS = [
   '--color-ink',
   '--color-ink-muted',
   '--color-ink-faint',
-  // Type.
+  // Type: the two families, and the three rungs of the scale below the heading sizes.
   '--font-sans',
   '--font-mono',
+  '--text-2xs',
+  '--text-xs',
+  '--text-sm',
   // Motion.
   '--animate-fade-in',
   '--animate-pulse-glow',
@@ -144,6 +147,41 @@ const GLASS_UTILITIES = ['glass-panel', 'glass-float'];
  * gradient filling the whole box behind invisible text.
  */
 const CLIPPED_HEADINGS = ['heading-gradient', 'heading-spectrum'];
+
+/**
+ * The type scale below the headings: the rung, and the pixel size it has to render at.
+ *
+ * Three rungs, 2px apart, and that spacing is the contract rather than a coincidence. What this
+ * replaced was three sizes 1px apart — 10, 11 and 12 — of which only 12 had a name at all, the
+ * other two being written as arbitrary bracketed values at 39 call sites. That is a band rather
+ * than a hierarchy: nothing told a new component which of them to take, and the tooltip's guidance
+ * paragraph ended up smaller than the label it explains.
+ *
+ * A rung nudged to an adjacent value still renders, and renders plausibly, so nothing else in the
+ * toolchain would notice the ladder collapsing back into that band.
+ */
+const TYPE_SCALE = [
+  ['--text-2xs', 11],
+  ['--text-xs', 13],
+  ['--text-sm', 15],
+] as const;
+
+/**
+ * Every source file under `src/` that can carry a Tailwind class name.
+ *
+ * Deliberately not just `.tsx`. A class string does not have to sit in JSX to reach the bundle —
+ * Tailwind reads whatever its content scan reads, so a `.ts` module hoisting a shared `className`
+ * constant (this repo already has three) counts, and so does `index.css` itself, where a class
+ * written even inside a comment is a candidate the build emits. Scanning components alone would
+ * leave the one place a size could hide from the guard: `src/constants/`, which is exactly where
+ * CLAUDE.md's directory rule sends a hoisted constant.
+ */
+function scannableSources(): string[] {
+  const root = resolve(process.cwd(), 'src');
+  return readdirSync(root, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && /\.(tsx?|css)$/.test(entry.name))
+    .map((entry) => resolve(entry.parentPath, entry.name));
+}
 
 describe('design tokens', () => {
   it('parsed the wheel out of the constant it is checking against', () => {
@@ -273,5 +311,58 @@ describe('design tokens', () => {
     // actively unpleasant for the ones it exists to protect.
     expect(stylesheet).toContain('@media (prefers-reduced-motion: reduce)');
     expect(stylesheet).toContain('animation-duration: 0.01ms !important');
+  });
+
+  it.each(TYPE_SCALE)('sizes %s at the rung it names, and gives it a line height', (token, pixels) => {
+    const size = new RegExp(`${token}: ([\\d.]+)rem;`).exec(stylesheet)?.[1];
+
+    // `rem` against the 16px root, because that is what the rung is chosen in — a value edited to
+    // a bare `px` would defeat a reader's OS text-size preference and this check would go quiet.
+    expect(size).toBeDefined();
+    expect(Number(size) * 16).toBe(pixels);
+
+    // Overriding a size without its companion leaves Tailwind's leading for the *stock* size
+    // underneath it. Those are unitless ratios, not lengths, so the leading does not stay put as
+    // the size moves — it scales with it, landing at whatever the old rung's ratio implies rather
+    // than at a chosen value. It renders, and renders plausibly, which is why this is asserted.
+    expect(stylesheet).toContain(`${token}--line-height:`);
+  });
+
+  it('keeps the rungs 2px apart, and all of them under the heading sizes', () => {
+    // 1px between two rungs is not a hierarchy, it is the drift this scale replaced: three sizes
+    // that read as one blurry band, so which one a component took was arbitrary. `--text-base`
+    // and up are Tailwind's own and deliberately not redefined, so the top rung has to stay below
+    // 16px or the lede and the bold headings it introduces would collide.
+    const sizes = TYPE_SCALE.map(([token]) => {
+      const value = new RegExp(`${token}: ([\\d.]+)rem;`).exec(stylesheet)?.[1];
+      return Number(value) * 16;
+    });
+
+    // The gap check subsumes an ordering check — a rung out of order yields a negative difference,
+    // never `[2, 2]` — so asserting the sort separately would be a line no breakage can reach.
+    expect(sizes.slice(1).map((size, index) => size - (sizes[index] ?? 0))).toStrictEqual([2, 2]);
+    expect(Math.max(...sizes)).toBeLessThan(16);
+  });
+
+  it('leaves nothing under src/ setting its own font size outside the scale', () => {
+    // The failure this suite exists for, in its type form: Tailwind happily compiles a bracketed
+    // arbitrary size, so a component that wants something smaller than the ladder offers just
+    // takes it, silently, and the scale stops describing the app. Thirty-nine call sites had done
+    // exactly that — including the guidance card the scale was eventually rebuilt around.
+    //
+    // The pattern is assembled from parts rather than written out whole: this file is inside
+    // Tailwind's content scan, and a complete arbitrary utility spelled here would be a candidate
+    // the build emits — the same trap the `@source not` rules above exist for.
+    const arbitrarySize = new RegExp(String.raw`text-` + String.raw`\[[\d.]+(px|rem|em)\]`);
+    const files = scannableSources();
+
+    // A `scannableSources()` that returned nothing — a moved directory, a changed `cwd` — would
+    // make the filter below trivially empty and this whole guard pass while scanning no code at
+    // all. `src/` holds 200-odd files, so this floor is nowhere near the real count.
+    expect(files.length).toBeGreaterThan(20);
+
+    const offenders = files.filter((file) => arbitrarySize.test(readFileSync(file, 'utf8')));
+
+    expect(offenders).toStrictEqual([]);
   });
 });
