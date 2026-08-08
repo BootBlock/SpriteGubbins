@@ -118,6 +118,23 @@ git branch -d worktree-<topic>
   holds uncommitted or untracked changes — which means the commit step missed something. Go and
   look at what. Never reach for `--force`, which destroys precisely the work the refusal is
   protecting.
+- **A *locked file* is a different failure, and it does not look like one.** If anything still holds
+  a handle inside the tree — a dev server left running from the `verify` skill is the usual one, and
+  it holds `node_modules` — the removal fails partway with `failed to delete '…': Invalid argument`
+  rather than a refusal. By then it has already **unregistered** the worktree, so the directory is
+  still on disk while `git worktree list` no longer mentions it and a second `remove` answers
+  `fatal: '…' is not a working tree`. Read the message: the refusal above names uncommitted work,
+  this one names a path. Stop the process, then finish the removal by hand:
+
+  ```bash
+  # after stopping the dev server, from the primary checkout
+  rm -rf .claude/worktrees/<topic>     # the leftover the failed removal could not delete
+  git worktree prune                   # clear the stale administrative entry
+  git branch -d worktree-<topic>
+  ```
+
+  `git branch -d` still refuses anything unmerged, so this recovers the tidy-up without giving up
+  the check that matters. **Stop the dev server before removing the tree** and none of it arises.
 - **Land only your own tree.** `git worktree list` will show trees other agents are working in
   right now, and from the outside their in-progress work is indistinguishable from abandoned work.
   Leave them alone — this is the same rule as never adopting someone else's tree.
