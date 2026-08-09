@@ -158,13 +158,13 @@ export const INTERFACE: CategoryDefinition = {
       tooltip:
         'How the widget is cut so the engine can resize it. Choose by which way it has to stretch — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, and a fixed piece never resizes at all.',
       options: [
-        'SINGLE FIXED-SIZE PIECE',
-        'THREE-SLICE HORIZONTAL STRETCH',
-        'THREE-SLICE VERTICAL STRETCH',
-        'NINE-SLICE STRETCHING FRAME',
-        'NINE-SLICE WITH TILING FILL',
-        'STACKED HEADER, BODY & FOOTER',
-        'RADIAL CLOCK-SWEEP FILL',
+        'Single Fixed-Size Piece',
+        'Three-Slice Horizontal Stretch',
+        'Three-Slice Vertical Stretch',
+        'Nine-Slice Stretching Frame',
+        'Nine-Slice With Tiling Fill',
+        'Stacked Header, Body & Footer',
+        'Radial Clock-Sweep Fill',
       ],
     },
     {

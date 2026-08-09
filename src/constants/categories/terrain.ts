@@ -17,7 +17,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * 16-tile Wang set, a nine-patch — and naming one in section 1 would put a number beside section 0's
  * binding "Exactly N components", which is the §1-says-one-thing/§0-says-another contradiction the
  * per-category records exist to remove. So each option names the *matching discipline* stripped of
- * its count — `FRAMED PLATFORM SET` for the nine-patch, `UNIFORM SELF-TILING FIELD` for the single
+ * its count — `Framed Platform Set` for the nine-patch, `Uniform Self-Tiling Field` for the single
  * tile that needs no transitions — and the sheet plan is left to say how many pieces there are.
  */
 export const TERRAIN: CategoryDefinition = {
@@ -157,12 +157,12 @@ export const TERRAIN: CategoryDefinition = {
       tooltip:
         'How an autotiler is meant to index the set. Choose by how the pieces will be *placed* — a corner-matched set blends two materials in any arrangement, a nine-patch frames one rectangular platform — because the discipline decides which boundaries have to be drawn at all. It names a discipline rather than a tile count; the sheet’s own inventory is what fixes how many pieces there are.',
       options: [
-        'CORNER-MATCHED BLOB SET',
-        'EDGE-MATCHED WANG SET',
-        'FRAMED PLATFORM SET',
-        'UNIFORM SELF-TILING FIELD',
-        'TERRACED ELEVATION SET',
-        'FREESTANDING FEATURE PIECES',
+        'Corner-Matched Blob Set',
+        'Edge-Matched Wang Set',
+        'Framed Platform Set',
+        'Uniform Self-Tiling Field',
+        'Terraced Elevation Set',
+        'Freestanding Feature Pieces',
       ],
     },
     {

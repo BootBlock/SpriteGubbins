@@ -100,7 +100,7 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
     name: 'Unsung Saviour — Three-quarter tileset',
     category: 'BUILDING',
     subject: sparseSubject('BUILDING', {
-      anatomy: 'MODULAR BUILDING TILES',
+      anatomy: 'Modular Building Tiles',
       materials:
         'Seamless tiling: opposite edges match so tiles butt without a visible join, and no tile carries a feature that reveals repetition when laid in a field',
       exclusions: 'No characters, no props, no baked lighting, no shadow',

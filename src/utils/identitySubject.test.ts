@@ -14,7 +14,7 @@ function subjectWith(answers: Partial<SubjectDefinition>): SubjectDefinition {
 /** A subject answered across all three segments. */
 const CYBORG = subjectWith({
   species: 'Cybernetic Cyborg',
-  anatomy: 'STANDARD HUMANOID',
+  anatomy: 'Standard Humanoid',
   build: 'Athletic & Slender',
   silhouette: 'Dynamic Sharp Edges',
   face_head: 'Neon Visor & Undercut',
@@ -56,7 +56,7 @@ describe('identitySubjectSegments', () => {
     expect(identitySubjectSegments(CYBORG)).toEqual([
       {
         label: 'Form',
-        value: 'Cybernetic Cyborg, STANDARD HUMANOID, Athletic & Slender, Dynamic Sharp Edges',
+        value: 'Cybernetic Cyborg, Standard Humanoid, Athletic & Slender, Dynamic Sharp Edges',
       },
       {
         label: 'Features',
@@ -107,7 +107,7 @@ describe('folding the subject into a digest', () => {
 
     expect(digest).toBe(
       'Three amber chest lights in a vertical row; Palette: #1E1E24, #334155; ' +
-        'Form: Cybernetic Cyborg, STANDARD HUMANOID, Athletic & Slender, Dynamic Sharp Edges; ' +
+        'Form: Cybernetic Cyborg, Standard Humanoid, Athletic & Slender, Dynamic Sharp Edges; ' +
         'Features: Neon Visor & Undercut, Tactical Kevlar & Plates, Holstered Sidearm & Pouch; ' +
         'Colour: Matte Charcoal Black & Gunmetal, Cyan Neon #06B6D4, Reinforced Composites & Alloy',
     );
