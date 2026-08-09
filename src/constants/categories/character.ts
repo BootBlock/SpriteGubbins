@@ -202,20 +202,20 @@ export const CHARACTER: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The skeleton the component breakdown is derived from. STANDARD HUMANOID yields the default 9 core and 34 limb components; a winged, tailed or four-armed base adds dedicated slots of its own rather than fusing the extra parts onto existing ones.',
+        'The skeleton the component breakdown is derived from. Standard Humanoid yields the default 9 core and 34 limb components; a winged, tailed or four-armed base adds dedicated slots of its own rather than fusing the extra parts onto existing ones.',
       options: [
-        'STANDARD HUMANOID',
-        'HUMANOID WITH WINGS',
-        'TAILED HUMANOID',
-        'QUADRUPED TAUR',
-        'CENTAUR LOWER BODY',
-        'FOUR-ARMED HUMANOID',
-        'SERPENT LOWER BODY',
+        'Standard Humanoid',
+        'Humanoid With Wings',
+        'Tailed Humanoid',
+        'Quadruped Taur',
+        'Centaur Lower Body',
+        'Four-Armed Humanoid',
+        'Serpent Lower Body',
         // A portrait sheet has no body to break down, so it needs a base that says so — otherwise the
         // inventory's arm and leg entries describe components the sheet was never meant to carry.
-        'BUST — HEAD, NECK AND SHOULDERS',
-        'CHIBI SUPER-DEFORMED',
-        'HUMANOID WITH PROSTHETIC LIMB',
+        'Bust — Head, Neck And Shoulders',
+        'Chibi Super-Deformed',
+        'Humanoid With Prosthetic Limb',
       ],
     },
     {

@@ -150,11 +150,11 @@ export const ITEM: CategoryDefinition = {
       tooltip:
         'How the item splits into components. Choose by what has to detach or animate — a magazine, a blade, a lid — rather than by how detailed the item looks; a rigid icon needs no split at all.',
       options: [
-        'SINGLE WEAPON ITEM',
-        'WEAPON WITH DETACHABLE MAG',
-        'SHIELD WITH EMBLEM',
-        'POTION BOTTLE & CORK',
-        'ORB WITH FLOATING RINGS',
+        'Single Weapon Item',
+        'Weapon With Detachable Mag',
+        'Shield With Emblem',
+        'Potion Bottle & Cork',
+        'Orb With Floating Rings',
       ],
     },
     {

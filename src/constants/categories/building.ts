@@ -157,11 +157,11 @@ export const BUILDING: CategoryDefinition = {
       tooltip:
         'How the structure is split into modular tiles or components. Choose by how it will be placed — a repeating wall module tiles horizontally, a single-piece kiosk does not — because the split has to match the level grid.',
       options: [
-        'MODULAR BUILDING TILES',
-        'SINGLE STRUCTURE MODEL',
-        'TOWER WITH DETACHABLE ROOF',
-        'WALL SECTION WITH GATE',
-        'CORNER TILE PIECE',
+        'Modular Building Tiles',
+        'Single Structure Model',
+        'Tower With Detachable Roof',
+        'Wall Section With Gate',
+        'Corner Tile Piece',
       ],
     },
     {

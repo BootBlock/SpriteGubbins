@@ -39,6 +39,11 @@ export function ComponentBudgetNotice() {
   // Counted for the sheet on screen, not the whole series, which is why it is not the figure the
   // mode selector carries. The budget is what one generation may be asked for, so a two-sheet
   // deliverable is over budget only if one of its sheets is.
+  //
+  // Which is also why this notice is not the whole answer: it can only ever describe the sheet the
+  // control above it is pointed at. `SheetSplitRun` asks the same question of every sheet of the
+  // batch, so a series whose *other* sheet is the heavy one is caught without the user having to go
+  // and select it.
   const count = componentCountFor(
     category,
     directionalMode,

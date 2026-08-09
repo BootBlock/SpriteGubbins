@@ -76,7 +76,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
         <p className="line-clamp-2 text-xs text-ink-muted">
           {preset.subject.species} — {preset.subject.setting}
         </p>
-        <PresetCardSpecs output={preset.output} />
+        <PresetCardSpecs category={preset.category} output={preset.output} />
       </div>
 
       {isConfirmingDelete ? (

@@ -477,19 +477,49 @@ lede without the two competing — so a bold heading goes on `base`, never on `s
 `text-[…px]` anywhere in `src/` fails a test** — not because the size is wrong, but because a call
 site that names its own size stops moving when the scale does.
 
-**An option label in a `SelectField` is at most 50 characters.** A native `<select>` sizes the
-selected option's box from its container and truncates rather than wrapping, so a label the control
-cannot fit loses its *tail* — which in this app is the parenthetical marking the standard choice, the
-half a first-time user is choosing by. The studio's left column is the narrowest control the app
-settles a select into, and it fits 51 characters of `font-mono` at `text-xs`, so every option list in
-the app is written to that budget.
-[tests/select-option-labels.test.ts](tests/select-option-labels.test.ts) derives the number from the
-measured column, and fails on both an overlong label and a new select nobody budgeted. The identifier
-is the prompt's own term and cannot move, so the parenthetical is what gives — whatever doesn't fit
-belongs in the tooltip, which has no width to run out of. **A label budget only reaches a column
-wide enough to have one**: between the `lg` breakpoint and the page's `max-w-7xl` cap that column
-narrows to 351px, where 38 characters fit and several identifiers are longer than the whole
-guidance. Fixing that is the layout's job, not the copy's.
+**An option label in a `SelectField` is at most 50 characters, and the layout owes it 442px.** A
+native `<select>` sizes the selected option's box from its container and truncates rather than
+wrapping, so a label the control cannot fit loses its *tail* — which in this app is the parenthetical
+marking the standard choice, the half a first-time user is choosing by. The identifier is the
+prompt's own term and cannot move, so the parenthetical is what gives; whatever doesn't fit belongs
+in the tooltip, which has no width to run out of. 50 characters of `font-mono` at `text-xs`, plus the
+42px the control keeps back for its border, padding and dropdown arrow, is **442px** — and
+[tests/selectLabelBudget.ts](tests/selectLabelBudget.ts) is where both numbers live.
+
+**The budget is the anchor and the layout follows it, never the reverse.** Deriving the budget from
+whatever width a column happens to *settle* at says nothing about the widths it passes through on the
+way, and that is exactly how the studio's split came to engage at `lg` while the column it produced
+there was 434px: every select in the tab 8px short of its own longest option, at the one viewport
+where the second column first appears. So a stock device breakpoint is the wrong instrument for a
+split whose columns hold a select — `--breakpoint-studio` in [src/index.css](src/index.css) derives
+1040px from the budget instead, and every class that decides whether those columns exist is prefixed
+with it, the sticky preview included. Two tests keep the halves honest:
+[select-option-labels.test.ts](tests/select-option-labels.test.ts) fails on an overlong label or a new
+select nobody budgeted, and [studio-column-width.test.ts](tests/studio-column-width.test.ts) re-derives
+the column from the grid, page and panel classes themselves and fails if the split engages before it
+reaches 442px. **A new two-column layout that lands a select in a column needs its own derivation** —
+1040px is this grid's answer, not a general one.
+
+**A category's option pool is written in title case, and `NONE` is the only value that may shout.**
+The pools in `src/constants/categories/` are two things at once: the suggestions a `ComboBox`
+offers, and the text section 1 of the prompt carries verbatim. That makes casing visible in the
+studio, where one field's values sit directly under another's — and the `anatomy` pool was in full
+capitals in all nine categories, so `STANDARD HUMANOID` sat one row under `Athletic & Slender` in
+the same column. Five of those nine pools came over from the original single-file app
+([docs/todo/sprite-gubbins.html](docs/todo/sprite-gubbins.html)) carrying the capitals, and the four
+categories this app added later followed the four already there. `NONE` is exempt because it is a
+**sentinel** standing for "this subject has none" rather than a description of anything — the two
+`clothing` pools that offer no harness or holster spell the same word for the same reason, and
+`additional_anatomy` names it as `NO_ADDITIONAL_ANATOMY`. The exclusions pools are the other
+deliberate departure: each option is a negative statement rather than a name, so they stay sentence
+case.
+
+**Only the shouting is machine-enforced.** `src/constants/categories/categories.test.ts` fails on
+any all-capitals option that is not the sentinel, which is a rule with no judgement in it. It says
+nothing about *which* words a title-cased option capitalises, and the pools are not uniform there:
+most capitalise the function words (`Head And Shoulders Only`, `Nautical Age Of Sail`), while five
+lower-case an `of` or an `or` (`Relic of Lost Era`, `Thin Trail or Ribbon`). Match the file you are
+editing, and don't read the test's silence as approval of either spelling.
 
 **Two rules of thumb**
 
