@@ -672,13 +672,11 @@ initial build. They are not stylistic preferences.
   worker has answered is state in `src/stores/`, and `quantiseWorker.ts` and `quantiseSession.ts` are
   the two ends of the wire between them. (The database's worker is the exception that predates the
   directory and stays in `src/db/` with the rest of the persistence layer — near side and all —
-  because it *is* that layer rather than a thread something else was moved onto.)
-- **A worker that outlives a view is owned outside React.** `App` swaps the whole view on
-  navigation, so a thread started by a `useEffect` is terminated and restarted on every trip — and a
-  new thread holds nothing, so whatever it was given has to cross the boundary again. Where that
-  payload is large or the work is slow, own the thread in a module and let the component subscribe:
-  `quantiseSession.ts` and `useQuantiseAnswerStore` are that arrangement, and the tab is a reader of
-  both.
+  because it *is* that layer rather than a thread something else was moved onto.) **Neither of the
+  app's two threads is owned by a component**, and the quantiser's says why in its own file: `App`
+  swaps the whole view on navigation, so a thread started by a `useEffect` is terminated and
+  restarted on every trip, and a new thread holds nothing — so whatever it was given has to cross
+  the boundary again.
 - **`src/hooks/` exists because `src/utils/` must stay pure.** The clipboard, file downloads and
   the combo box's keyboard state machine are all impure — they touch `navigator`, the DOM, or a
   store — so they cannot live in `src/utils/`, and they are not components. A hook belongs there

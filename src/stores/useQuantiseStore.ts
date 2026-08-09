@@ -103,9 +103,12 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
   // half-clear, and the next sheet would arrive already keyed by a decision made about the last one.
   clear: () => {
     set({ ...EMPTY });
-    useQuantiseAnswerStore.getState().forget();
-    // The thread goes with the sheet. It is holding the only other copy of the image, plus whatever
-    // a transform still running had allocated, and a cleared tab has no use for either.
+    // `reset` rather than `forget`, and the pair below is why: the thread goes with the sheet — it is
+    // holding the only other copy of the image, plus whatever a transform still running had
+    // allocated — and `releaseSheet` also lets a *new* thread be built for the next sheet. So a
+    // thread that had died is no longer a fact about this app, and the message saying it had must go
+    // in the same breath, or the tab reports a quantiser that could not start while one is running.
+    useQuantiseAnswerStore.getState().reset();
     releaseSheet();
   },
 }));

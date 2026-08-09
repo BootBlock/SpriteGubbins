@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import type { QuantiseResult, QuantiseSettings, SheetFacts } from '../types/quantiser.ts';
 
-/** What the worker made of the sheet it was handed, or why it could not. */
-export type Survey =
+/**
+ * What the worker made of the sheet it was handed, or why it could not.
+ *
+ * Local, as are the two below: they are the shape of this store's own state and nothing outside reads
+ * them by name. `QuantiseAnswerState` is exported and refers to them, which TypeScript is content
+ * with — a consumer can hold one without being able to write its type down.
+ */
+type Survey =
   | { readonly kind: 'facts'; readonly facts: SheetFacts }
   | { readonly kind: 'failed'; readonly reason: string };
 
 /** An answer, and the exact question it answered — kept together so staleness is decidable. */
-export type Attempt =
+type Attempt =
   | {
       readonly kind: 'quantised';
       readonly settings: QuantiseSettings;
@@ -16,7 +22,7 @@ export type Attempt =
   | { readonly kind: 'failed'; readonly settings: QuantiseSettings; readonly reason: string };
 
 /** A transform that produced a sheet, and the settings it was computed at. */
-export interface Succeeded {
+interface Succeeded {
   readonly settings: QuantiseSettings;
   readonly result: QuantiseResult;
 }
@@ -53,18 +59,26 @@ export interface QuantiseAnswerState {
   /**
    * The worker itself failed to start or died.
    *
-   * Terminal, and the only thing here that is: the thread is gone, so nothing it is asked will ever
-   * answer and no later sheet can recover. A job that *failed* is a different matter entirely — the
-   * worker survives its own `catch` — so those are filed against the settings they were about, and
-   * stop applying when those change.
+   * Terminal for the **session** rather than for the sheet, which is the distinction the other three
+   * do not need: both causes are properties of the browser — the worker module would not evaluate,
+   * or module workers are unsupported — so dropping a new image meets the same failure, and
+   * {@link forget} deliberately leaves this in place. A job that *failed* is a different matter
+   * entirely, because the worker survives its own `catch`; those are filed against the settings they
+   * were about, and stop applying when those change.
+   *
+   * {@link reset} is the only thing that clears it, and `quantiseSession`'s `releaseSheet` is the
+   * only thing that lets a thread be built again — the two are called together, from `clear`, so the
+   * app can never claim the quantiser could not start while a working thread is answering.
    */
   readonly fatal: string | null;
 
   surveyed(survey: Survey): void;
   attempted(attempt: Attempt): void;
   died(reason: string): void;
-  /** Drop every answer, because they were all about a sheet that is no longer loaded. */
+  /** Drop every answer about the sheet, because a different one is being loaded. */
   forget(): void;
+  /** Drop everything, because the session itself is over. */
+  reset(): void;
 }
 
 export const useQuantiseAnswerStore = create<QuantiseAnswerState>((set) => ({
@@ -96,5 +110,14 @@ export const useQuantiseAnswerStore = create<QuantiseAnswerState>((set) => ({
   // 4096 × 4096 result is the memory the user pressed Clear to be rid of.
   forget: () => {
     set({ survey: null, attempt: null, succeeded: null });
+  },
+
+  // What `forget` leaves behind, and the reason the two are separate rather than one action with a
+  // flag: they answer different questions. A new sheet asks "is any of this still about the image on
+  // screen?"; ending the session asks "is any of this still true at all?" — and after Clear the
+  // answer to the second includes `fatal`, because `releaseSheet` will build a new thread for the
+  // next sheet dropped.
+  reset: () => {
+    set({ survey: null, attempt: null, succeeded: null, fatal: null });
   },
 }));

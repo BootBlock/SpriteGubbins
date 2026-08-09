@@ -41,7 +41,7 @@ import type { QuantiseCall, QuantiseReply } from './quantiseProtocol.ts';
  */
 declare const self: DedicatedWorkerGlobalScope;
 
-/** The sheet the tab last sent, or `null` before the first one and after a release. */
+/** The sheet the tab last sent, or `null` before the first one arrives. */
 let sheet: ImageData | null = null;
 
 function post(reply: QuantiseReply): void {

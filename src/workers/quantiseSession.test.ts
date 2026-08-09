@@ -24,11 +24,10 @@ function thread(): FakeWorker {
 
 beforeEach(() => {
   // The session and the store it writes into are both module singletons, so a test file is one long
-  // session unless each test ends the last one. `releaseSheet` is the app's own way of doing that;
-  // `fatal` has no action to clear it because nothing in the app ever recovers from a dead thread,
-  // which leaves `setState` as the honest way to put a fresh page back.
+  // session unless each test ends the last one. This is the pair `clear` calls, in the same order,
+  // rather than a test-only back door: whatever a test leaves behind, the app can get out of.
   releaseSheet();
-  useQuantiseAnswerStore.setState({ survey: null, attempt: null, succeeded: null, fatal: null });
+  useQuantiseAnswerStore.getState().reset();
   FakeWorker.started = [];
   vi.stubGlobal('Worker', FakeWorker);
 });
@@ -130,6 +129,43 @@ describe('quantiseSession', () => {
     thread().die();
 
     expect(useQuantiseAnswerStore.getState().fatal).toBe('The quantiser could not start in this browser');
+  });
+
+  it('does not quietly reconnect for a later sheet once the thread has died', () => {
+    // Both causes of a lost thread are properties of the browser rather than of the sheet, so the
+    // next image meets the same failure. A session that reconnected here would put a working preview
+    // under the banner saying the quantiser could not start — and `fatal` has no way back, by
+    // design. It also matters that the dead thread is dropped: a terminated worker still accepts
+    // `postMessage`, so a job posted to one is never answered and never leaves `jobs`, where the
+    // in-flight guard would then suppress that question for the rest of the session.
+    loadSheet(createImage(64, 64));
+    const first = thread();
+    first.die();
+
+    loadSheet(createImage(32, 32));
+    quantiseSheet(settingsAt(8));
+
+    expect(FakeWorker.started).toHaveLength(1);
+    expect(first.terminated).toBe(true);
+    expect(first.of('load')).toHaveLength(1);
+    expect(first.of('quantise')).toHaveLength(0);
+  });
+
+  it('lets the next sheet start a new thread once the session has ended', () => {
+    // The other half of the same rule. `releaseSheet` is what makes a fresh start possible, so it is
+    // also what may clear the message saying one was not — and `useQuantiseStore.clear` calls it
+    // beside the store's `reset` for exactly that reason.
+    loadSheet(createImage(64, 64));
+    thread().die();
+    expect(useQuantiseAnswerStore.getState().fatal).not.toBeNull();
+
+    releaseSheet();
+    useQuantiseAnswerStore.getState().reset();
+    loadSheet(createImage(32, 32));
+
+    expect(FakeWorker.started).toHaveLength(2);
+    expect(thread().of('load')).toHaveLength(1);
+    expect(useQuantiseAnswerStore.getState().fatal).toBeNull();
   });
 
   it('reports a thread this browser will not start at all', () => {

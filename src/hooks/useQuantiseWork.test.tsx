@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { QUANTISE_DEBOUNCE_MS } from '../constants/quantiser.ts';
-import { useQuantiseAnswerStore } from '../stores/useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from '../stores/useQuantiseStore.ts';
 import { FakeWorker } from '../test/fakeWorker.ts';
 import type { ImportedImage, QuantiseResult, SheetFacts } from '../types/quantiser.ts';
@@ -72,11 +71,10 @@ function settle(): void {
 }
 
 beforeEach(() => {
-  // `clear` ends the previous test's session and forgets its answers, which is exactly what the app
-  // does when the user is finished with a sheet. `fatal` alone has no action to clear it, because
-  // nothing in the app recovers from a dead thread.
+  // `clear` ends the previous test's session and drops everything it answered — including a thread
+  // it recorded as lost, which is the whole point of `clear` resetting rather than forgetting. It is
+  // exactly what the app does when the user is finished with a sheet, so nothing here is a back door.
   useQuantiseStore.getState().clear();
-  useQuantiseAnswerStore.setState({ fatal: null });
   FakeWorker.started = [];
   vi.stubGlobal('Worker', FakeWorker);
   vi.useFakeTimers();
@@ -214,7 +212,40 @@ describe('useQuantiseWork', () => {
     renderHook(() => useQuantiseWork(source, null, null, REDUCTION));
     settle();
 
+    // Counted across every thread rather than on the one `drive` returned. The arrangement this
+    // replaced started a *second* worker on remount and posted the duplicate to that, which leaves
+    // the first thread's tally at one — so an assertion naming a single thread would have passed
+    // against the very code this is here to catch.
+    expect(FakeWorker.started).toHaveLength(1);
+    expect(FakeWorker.started.flatMap((started) => started.of('quantise'))).toHaveLength(1);
     expect(worker.of('quantise')).toHaveLength(1);
+  });
+
+  it('stops reporting a dead thread once the tab is cleared and a new sheet works', () => {
+    // The pairing that has to hold between the session and the store. `clear` ends the session, and
+    // ending the session is what lets a thread be built again — so the message saying one could not
+    // be has to go at the same moment. Kept apart, the tab captions a preview it has just produced
+    // with "The quantiser could not start in this browser", for the rest of the page's life: the
+    // component state that used to be discarded on unmount was the only thing clearing it.
+    const { result, rerender } = drive({ source: sheet('a.png'), gridOverride: null });
+    act(() => {
+      thread().die();
+    });
+    expect(result.current.error).toBe('The quantiser could not start in this browser');
+
+    act(() => {
+      useQuantiseStore.getState().clear();
+    });
+    const next = sheet('b.png');
+    act(() => {
+      useQuantiseStore.getState().setSource(next);
+    });
+    rerender({ source: next, gridOverride: null });
+    answer({ id: thread().lastId('load'), kind: 'loaded', facts: FACTS });
+
+    expect(FakeWorker.started).toHaveLength(2);
+    expect(result.current.error).toBeNull();
+    expect(result.current.facts).toEqual(FACTS);
   });
 
   it('shows no result at all once there is no scale to compute one at', () => {
