@@ -177,15 +177,15 @@ export const OBJECT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Structure Base',
       tooltip:
-        'How the object is broken into isolated components. SINGLE RIGID OBJECT emits one piece; the multi-segment and hinged plans split out the parts that actually move, so choose by what has to animate rather than by how complex the prop looks.',
+        'How the object is broken into isolated components. Single Rigid Object emits one piece; the multi-segment and hinged plans split out the parts that actually move, so choose by what has to animate rather than by how complex the prop looks.',
       options: [
-        'SINGLE RIGID OBJECT',
-        'MULTI-SEGMENT TURRET',
-        'HINGED CHEST CONTAINER',
-        'MODULAR CONDUIT',
-        'ROTATING SPHERICAL CORE',
-        'BREAK-APART SHARD SET',
-        'PARTICLE FRAME SEQUENCE',
+        'Single Rigid Object',
+        'Multi-Segment Turret',
+        'Hinged Chest Container',
+        'Modular Conduit',
+        'Rotating Spherical Core',
+        'Break-Apart Shard Set',
+        'Particle Frame Sequence',
       ],
     },
     {

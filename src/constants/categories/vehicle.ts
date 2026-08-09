@@ -146,13 +146,13 @@ export const VEHICLE: CategoryDefinition = {
       tooltip:
         'How the vehicle breaks into isolated components. Choose by what has to turn, spin or travel — a turret ring, a road wheel, a leg joint — rather than by how detailed the hull is; a rigid hull with no moving drive needs no split at all.',
       options: [
-        'SINGLE RIGID HULL',
-        'HULL WITH ROTATING TURRET',
-        'WHEELED CHASSIS & AXLES',
-        'TRACKED CHASSIS & ROAD WHEELS',
-        'ARTICULATED WALKER LEGS',
-        'ROTOR-BORNE AIRFRAME',
-        'THRUSTER-BORNE AIRFRAME',
+        'Single Rigid Hull',
+        'Hull With Rotating Turret',
+        'Wheeled Chassis & Axles',
+        'Tracked Chassis & Road Wheels',
+        'Articulated Walker Legs',
+        'Rotor-Borne Airframe',
+        'Thruster-Borne Airframe',
       ],
     },
     {

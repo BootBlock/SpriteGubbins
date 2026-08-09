@@ -69,6 +69,25 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
     }
   });
 
+  it('writes every option in the app’s own casing, and shouts only the sentinel', () => {
+    // The defect this pins: the `anatomy` pool of all nine categories was written in full capitals,
+    // so `STANDARD HUMANOID` sat one row under `Athletic & Slender` in the same column of the
+    // studio. A pooled value is user-facing copy *and* the text section 1 carries verbatim, so its
+    // casing is read twice and has to be the app's own.
+    //
+    // `NONE` is the one value that may shout, wherever it is offered: a sentinel standing for "this
+    // subject has none" rather than a description of anything, which is why `additional_anatomy`
+    // names it as a constant and why the two `clothing` pools offering no harness and no holster
+    // spell the same word. Exempted by value for that reason, not by field. Only the shouting is
+    // checked — which words a title-cased option capitalises is left to the pool it joins.
+    for (const field of fields) {
+      const shouting = field.options.filter(
+        (option) => option !== NO_ADDITIONAL_ANATOMY && /\p{Lu}/u.test(option) && !/\p{Ll}/u.test(option),
+      );
+      expect(shouting, `${category}.${field.key} offers an all-capitals option`).toEqual([]);
+    }
+  });
+
   it('labels section 1 in its own vocabulary, and in nobody else’s', () => {
     // The defect this pins: section 1 used to write its labels into the template, so one category's
     // words reached all six. A vehicle's *Service Condition* arrived as "Age / Vitality", its turret

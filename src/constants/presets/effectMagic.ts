@@ -7,8 +7,8 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * The combat four fire, land, and are gone inside half a second. These four are what an effect does
  * when it has to last: **two loop** (the portal and the aura, which say so through
- * `SEAMLESS LOOP CYCLE`), **one holds** before it pays off (the nova's
- * `TELEGRAPH, IMPACT, RESIDUE`), and **one travels** (`CORE AND SECONDARY SPLIT`, a projectile body
+ * `Seamless Loop Cycle`), **one holds** before it pays off (the nova's
+ * `Telegraph, Impact, Residue`), and **one travels** (`Core And Secondary Split`, a projectile body
  * with its own trail behind it). Between them that is every Frame Assembly Base shape except the
  * plain burst the combat file already covers.
  *
@@ -35,7 +35,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       build: 'Tall Column or Beam',
       silhouette: 'Spiralling Vortex',
       face_head: 'Hollow Ring, No Centre',
-      anatomy: 'SEAMLESS LOOP CYCLE',
+      anatomy: 'Seamless Loop Cycle',
       clothing: 'Drifting Ember Motes',
       worn_details: 'Runic Glyphs & Sigils',
       primary_colours: 'Arcane Violet #8B5CF6 & Indigo',
@@ -75,7 +75,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       build: 'Wide Area Blast',
       silhouette: 'Radial Burst',
       face_head: 'Layered Multi-Core Cluster',
-      anatomy: 'TELEGRAPH, IMPACT, RESIDUE',
+      anatomy: 'Telegraph, Impact, Residue',
       clothing: 'Condensation & Vapour',
       worn_details: 'Crackle & Fracture Lines',
       primary_colours: 'Frost Blue #38BDF8 & Pale White',
@@ -120,7 +120,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       build: 'Actor-Sized Burst',
       silhouette: 'Expanding Ring / Shockwave',
       face_head: 'Diffuse, No Single Focus',
-      anatomy: 'SEAMLESS LOOP CYCLE',
+      anatomy: 'Seamless Loop Cycle',
       clothing: 'No Secondary Layer',
       worn_details: 'Concentric Pulse Rings',
       primary_colours: 'Void Black & Crimson',
@@ -162,7 +162,7 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       build: 'Thin Trail or Ribbon',
       silhouette: 'Sweeping Ribbon Arc',
       face_head: 'Dense Molten Core',
-      anatomy: 'CORE AND SECONDARY SPLIT',
+      anatomy: 'Core And Secondary Split',
       clothing: 'Smoke & Soot Plume',
       worn_details: 'Scrolling Noise Texture',
       primary_colours: 'Ember Orange #F97316 & Deep Red',
