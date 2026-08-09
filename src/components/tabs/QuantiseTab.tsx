@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
-import { useQuantiseWorker } from '../../hooks/useQuantiseWorker.ts';
+import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
@@ -31,9 +31,11 @@ import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
  *
  * The state is only what cannot be derived: which image, which grid, and whether the background key
  * comes out and from how far. Everything the transform says about them lives on a **worker** — see
- * `useQuantiseWorker`, and the measurements behind that decision in `src/workers/quantiseWorker.ts`.
- * What the tab keeps here is the two studio-derived candidates, which are arithmetic on a handful of
- * numbers rather than passes over sixteen megapixels.
+ * `useQuantiseWork`, and the measurements behind that decision in `src/workers/quantiseWorker.ts`.
+ * Neither the thread nor its answers belong to this component, which is what lets the user go to the
+ * studio to change the colour budget and come back to the sheet they left rather than to a pipeline
+ * starting again from nothing. What the tab keeps here is the two studio-derived candidates, which
+ * are arithmetic on a handful of numbers rather than passes over sixteen megapixels.
  */
 export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
@@ -76,7 +78,7 @@ export function QuantiseTab() {
   // `KeyingControls` is handed the keying: two readings of one setting can disagree, and did.
   const colorPlan = useMemo(() => colorPlanFor(palette, paletteLimit), [palette, paletteLimit]);
 
-  const { facts, grid, quantised, busy, error } = useQuantiseWorker(
+  const { facts, grid, quantised, busy, error } = useQuantiseWork(
     source,
     gridOverride,
     keying,

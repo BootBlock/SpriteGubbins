@@ -629,17 +629,26 @@ initial build. They are not stylistic preferences.
   its own dedicated file, named for the thing it exports.
 - **Separation of concerns is directory-enforced.** Domain and compiler logic in `src/utils/`;
   state in `src/stores/`; persistence in `src/db/`; browser-effect and shared-interaction hooks in
-  `src/hooks/`; worker entry points and their protocols in `src/workers/`; constants in
+  `src/hooks/`; worker entry points, their protocols and the near side that speaks them in
+  `src/workers/`; constants in
   `src/constants/`; types in `src/types/`; UI primitives in `src/components/common/`; studio panels
   in `src/components/studio/`; the quantiser's image panels in `src/components/quantise/`; modals in
   `src/components/modals/`; tab views in `src/components/tabs/`; chrome in
   `src/components/layout/`. A file in the wrong directory is a design error, not a filing error.
-- **`src/workers/` holds threads, not logic.** A file there is a `new Worker(…)` target and the
-  message protocol its two ends share — a thread to run work on and the vocabulary for asking, never
-  the work itself. The quantiser's pipeline is the example: every line of the transform stays pure in
-  `src/utils/`, and `quantiseWorker.ts` is only the thread it runs on. (The database's worker is the
-  exception that predates the directory and stays in `src/db/` with the rest of the persistence
-  layer, because it *is* that layer rather than a thread something else was moved onto.)
+- **`src/workers/` holds threads, not logic.** A file there is a `new Worker(…)` target, the message
+  protocol its two ends share, or the **near side** that owns the instance and files its replies — a
+  thread to run work on and the vocabulary for asking, never the work itself. The quantiser's
+  pipeline is the example: every line of the transform stays pure in `src/utils/`, everything the
+  worker has answered is state in `src/stores/`, and `quantiseWorker.ts` and `quantiseSession.ts` are
+  the two ends of the wire between them. (The database's worker is the exception that predates the
+  directory and stays in `src/db/` with the rest of the persistence layer — near side and all —
+  because it *is* that layer rather than a thread something else was moved onto.)
+- **A worker that outlives a view is owned outside React.** `App` swaps the whole view on
+  navigation, so a thread started by a `useEffect` is terminated and restarted on every trip — and a
+  new thread holds nothing, so whatever it was given has to cross the boundary again. Where that
+  payload is large or the work is slow, own the thread in a module and let the component subscribe:
+  `quantiseSession.ts` and `useQuantiseAnswerStore` are that arrangement, and the tab is a reader of
+  both.
 - **`src/hooks/` exists because `src/utils/` must stay pure.** The clipboard, file downloads and
   the combo box's keyboard state machine are all impure — they touch `navigator`, the DOM, or a
   store — so they cannot live in `src/utils/`, and they are not components. A hook belongs there

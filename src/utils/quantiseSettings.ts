@@ -6,7 +6,9 @@ import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '.
  * The question a worker forces: the transform's answer arrives long after it was asked for, so
  * something has to decide whether what came back is an answer to the question still being asked. That
  * decision is what tells the tab it is up to date rather than still working, and getting it wrong in
- * either direction is visible — a stale result shown as current, or a spinner that never stops.
+ * either direction is visible — a stale result shown as current, or a spinner that never stops. The
+ * same comparison is what stops a question already in flight being asked a second time, which is a
+ * live case now that the session outlives the tab that asked.
  *
  * **By value, not by reference**, although both sides are built by one `useMemo` in one hook and
  * their identities would usually agree. `useMemo` is a performance hint the React documentation is

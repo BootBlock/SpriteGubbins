@@ -19,11 +19,13 @@ import type { QuantiseCall, QuantiseReply } from './quantiseProtocol.ts';
  * no longer allocate an object per pixel, which is where most of the 28 seconds went. The worker is
  * what makes the remainder *invisible*: the tab can say it is working, and mean it.
  *
- * **The worker owns the sheet.** It is sent once when the user drops it and kept until the tab
- * releases it, so the settings that change — the grid, the tolerance — cross the boundary as three
+ * **The worker owns the sheet.** It is sent once when the user drops it and kept for as long as this
+ * thread runs, so the settings that change — the grid, the tolerance — cross the boundary as three
  * small numbers rather than dragging 67 megabytes of pixels with them. The two figures that depend on
  * the image alone are measured on arrival for the same reason: counting the colours in the sheet as
- * it arrived is a property of the sheet, and it was being recomputed on every keystroke.
+ * it arrived is a property of the sheet, and it was being recomputed on every keystroke. The thread
+ * outlives the tab and ends when the tab is cleared, which is what releases the sheet — see
+ * `quantiseSession.ts`, the half of this conversation the app holds.
  *
  * Nothing here is quantiser logic. Every line of that is in `src/utils/`, pure and tested without a
  * DOM; this file is the thread it runs on.
@@ -84,11 +86,6 @@ self.addEventListener('message', (event: MessageEvent<QuantiseCall>) => {
           return;
         }
         post({ id, kind: 'quantised', result: quantiseImage(sheet, request.settings) });
-        return;
-      }
-
-      case 'release': {
-        sheet = null;
         return;
       }
 
