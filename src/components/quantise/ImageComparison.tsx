@@ -77,10 +77,18 @@ export function ImageComparison({
   // React writes the `width`/`height` attributes first, which blanks the backing store, so the paint
   // has to follow the commit rather than sit in the render. Zoom is absent from the dependencies on
   // purpose: it changes the CSS box, never the pixels.
+  //
+  // **The pixels, not the wrapper around them.** `quantised` is built fresh on every render of the
+  // hook above, so depending on it meant repainting both canvases on every render of this panel —
+  // two `putImageData` calls of up to 67 megabytes each, on the main thread, for a keystroke in the
+  // grid box or a zoom the paint deliberately ignores. The `ImageData` is the thing that actually
+  // changes when there is something new to draw, and the canvas takes its size from that same value,
+  // so nothing can resize without this re-running.
+  const resultImage = quantised?.result.image;
   useEffect(() => {
     paint(sourceCanvas.current, source);
-    paint(resultCanvas.current, quantised?.result.image);
-  }, [source, quantised]);
+    paint(resultCanvas.current, resultImage);
+  }, [source, resultImage]);
 
   return (
     <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">

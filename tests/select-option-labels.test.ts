@@ -16,41 +16,16 @@ import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
 import { modesFor } from '../src/constants/sheetPlans/index.ts';
 import { OPENING_VIEW_CHOICES } from '../src/constants/settings.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
+import { LABEL_BUDGET } from './selectLabelBudget.ts';
 
 /**
- * The character budget every `SelectField` option label is written to.
+ * Every option label in the app, held to the budget the narrowest `SelectField` can render.
  *
- * A native `<select>` renders its selected option in a box sized by its container: it cannot wrap,
- * shrink or abbreviate, so an option longer than the control is truncated with the user agent's own
- * ellipsis — and what disappears is the *end* of the label, which in this app is the parenthetical
- * telling a first-time user which option is the standard one. Twelve options across seven studio
- * selects shipped that way.
- *
- * The budget is a character count rather than a width because the control is `font-mono`, where the
- * two are the same measurement. Derived in Edge, on the studio tab:
- *
- * - the left column (`lg:col-span-5` of a `max-w-7xl` page) settles at **457px** once the page
- *   reaches its 1280px cap, and holds that width at every larger viewport;
- * - its chrome — 1px of border and 10px of `p-2.5` padding either side, plus the 20px the user
- *   agent reserves for the dropdown arrow — takes **42px**;
- * - `font-mono` at `text-xs` (13px) advances **8px** per character.
- *
- * So (457 − 42) / 8 = 51.8, and 51 characters is the most that renders whole. The budget is one
- * below that: 50 is the length of the longest label that already fitted before this was enforced
- * (`DETAILED_PRODUCTION (seams and material divisions)`, 442px, 15px of slack), which leaves a
- * character in hand for a monospace face whose advance is slightly wider than the one measured.
- *
- * **Between the `lg` breakpoint and that cap the column is narrower than this budget** — 351px at
- * a 1024px viewport, which is 38 characters — and no label budget reaches it, because several
- * identifiers are 19 to 29 characters on their own and 38 would leave nothing for the guidance that
- * follows them. A control too narrow for anything it can render is a column problem, not a label
- * one; it belongs to the studio layout, which is what decides that column's width. **A layout that
- * keeps the two-column split at every width needs 442px** — this budget plus the 42px of chrome —
- * for a label to stay whole.
- *
- * So 457px is the number to re-derive if that column's settled width changes.
+ * The budget itself, and why it is 50, live in `selectLabelBudget.ts` — this file is the half that
+ * checks the *copy*. Its sibling, `studio-column-width.test.ts`, checks that the studio's layout
+ * actually gives a control the 442px those 50 characters need, which is the half that was missing
+ * while the two-column split engaged 16px too early.
  */
-const LABEL_BUDGET = 50;
 
 /**
  * A subject naming extra anatomy raises the component count `directionalModeChoices` interpolates,

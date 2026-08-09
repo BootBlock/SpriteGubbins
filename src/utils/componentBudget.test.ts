@@ -29,8 +29,9 @@ describe('the budget’s effect on the prompt', () => {
     // The budget caps the *request*, not the contract, and this is the assertion that keeps it that
     // way. Clamping the count to fit would make section 0 demand a number section 4 does not list —
     // the self-contradiction v2 exists to remove — and emitting the budget as prose would ask the
-    // generator to negotiate a figure only the user can change. Its whole visible effect is the
-    // studio warning, which `ComponentBudgetNotice.test.tsx` covers.
+    // generator to negotiate a figure only the user can change. Its whole visible effect is the two
+    // warnings — the studio's, which `ComponentBudgetNotice.test.tsx` covers, and the split drawer's
+    // per-row chip, which `SheetSplitModal.test.tsx` does.
     const { category, subject } = DEFAULT_PRESET;
     const output = DEFAULT_OUTPUT_CONFIG;
     const uncapped = generatePrompt(category, subject, { ...output, componentBudget: NO_COMPONENT_BUDGET });

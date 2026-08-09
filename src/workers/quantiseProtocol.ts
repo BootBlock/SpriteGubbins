@@ -21,15 +21,12 @@ export type QuantiseRequest =
   /** Adopt a sheet. Answered with {@link SheetFacts} — the two measurements that outlive any setting. */
   | { readonly kind: 'load'; readonly image: ImageData }
   /** Run the pipeline over the adopted sheet at these settings. */
-  | { readonly kind: 'quantise'; readonly settings: QuantiseSettings }
-  /**
-   * Drop the sheet.
-   *
-   * Answered with nothing, because there is nothing to say: it exists so that clearing the tab
-   * releases the pixels rather than leaving a second copy of a 67-megabyte sheet held by a worker
-   * whose page has moved on.
-   */
-  | { readonly kind: 'release' };
+  | { readonly kind: 'quantise'; readonly settings: QuantiseSettings };
+
+// There is deliberately no "drop the sheet" request. Clearing the tab ends the session outright —
+// see `releaseSheet` in `quantiseSession.ts` — and terminating the thread releases the sheet, any
+// intermediate a running transform had allocated, and the thread itself, where a message could only
+// ever have released the first.
 
 /** A request with the correlation id its reply will carry back. */
 export interface QuantiseCall {

@@ -1,6 +1,9 @@
 import { DEPTH_ORDER_TEXT } from '../../constants/promptText/index.ts';
 import { resolveRigMode } from '../../constants/sheetPlans/index.ts';
+import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
+import { exceedsComponentBudget } from '../../utils/componentBudget.ts';
+import { sheetComponentCount } from '../../utils/componentSet.ts';
 import { countWords } from '../../utils/promptCompiler.ts';
 import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -13,6 +16,13 @@ interface SheetSplitRunProps {
    * for — so the row would otherwise describe a depth order the prompt beside it never mentions.
    */
   readonly category: SubjectCategory;
+  /**
+   * The subject's own additional anatomy, parsed — the half of this sheet's component count that the
+   * plan does not supply. Passed in rather than read from the store because the row is handed
+   * everything else it draws, and parsing it once for the whole drawer is also what keeps the figure
+   * below and the batch total above summing the same pieces.
+   */
+  readonly additional: readonly AnatomyComponent[];
   /** Position in the batch, from one — what the user counts off as they work through it. */
   readonly ordinal: number;
   readonly total: number;
@@ -46,8 +56,33 @@ interface SheetSplitRunProps {
  * The prompt itself sits behind a `<details>` rather than being laid out in full. Eight prompts of
  * a thousand words each is not a list anybody can scan, and the summary is what the user is choosing
  * between; the platform's own disclosure widget is keyboard-operable and announced without help.
+ *
+ * **Every row states what its own sheet asks for, and flags it where that is over the budget.** The
+ * budget is a cap on one generation, so it has an answer for each sheet of a batch — but the only
+ * sheet ever compared to it used to be the one the studio's sheet control happened to be on. That is
+ * exact on the facing axis, where all eight runs carry the same plan and therefore the same count,
+ * and silently wrong on the series axis, where a fifteen-component directional core sits beside a
+ * thirty-four-component articulation sheet: the user's only route to the warning was to go and select
+ * the other sheet, which is the errand the drawer exists to save them. The count is shown whether or
+ * not it bites, because a chip with no figure beside it says a number is wrong without saying which.
+ *
+ * The cap is read off `run.output` rather than taken as a prop: every run is the studio's
+ * configuration with a facing and a sheet index varied, so the budget travels with the sheet — and
+ * the count and the cap it is measured against then come from the one configuration that compiled
+ * the prompt in the disclosure below.
  */
-export function SheetSplitRun({ run, category, ordinal, total, isCopied, onCopy }: SheetSplitRunProps) {
+export function SheetSplitRun({
+  run,
+  category,
+  additional,
+  ordinal,
+  total,
+  isCopied,
+  onCopy,
+}: SheetSplitRunProps) {
+  const componentCount = sheetComponentCount(category, run, additional);
+  const isOverBudget = exceedsComponentBudget(componentCount, run.output.componentBudget);
+
   return (
     <li className="rounded-xl border border-foundry-700 bg-foundry-950 p-4">
       <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -61,6 +96,10 @@ export function SheetSplitRun({ run, category, ordinal, total, isCopied, onCopy 
           {run.covered.length > 1 ? `${run.covered.length} facings` : run.assembly}
         </span>
         {isCopied ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
+        {/* Gold rather than rose: the configuration is valid and the prompt compiles, and what is
+            being reported is that a model asked for this many components will most likely merge or
+            drop some of them — the same claim, in the same tone, as the studio's own notice. */}
+        {isOverBudget && <Badge tone="attention">Over budget</Badge>}
       </div>
 
       {resolveRigMode(category, run.output.rigMode) === 'CUTOUT_RIG' && (
@@ -77,6 +116,12 @@ export function SheetSplitRun({ run, category, ordinal, total, isCopied, onCopy 
         >
           Copy this sheet
         </button>
+
+        {/* Gold on the figure as well as the chip, so the warning names the number it is about —
+            the drawer states the cap once, above, rather than repeating it on every row. */}
+        <span className={`font-mono text-2xs ${isOverBudget ? 'text-gold' : 'text-ink-faint'}`}>
+          {componentCount} components
+        </span>
 
         <span className="font-mono text-2xs text-ink-faint">{countWords(run.promptText)} words</span>
       </div>

@@ -150,12 +150,12 @@ export const EFFECT: CategoryDefinition = {
       tooltip:
         'How the sequence divides in time — the equivalent of the part split every other category makes in space. It decides what the first and last frames have to do: a loop’s final frame must read back into its first with no seam, where a one-shot’s simply ends.',
       options: [
-        'ONE-SHOT BURST SEQUENCE',
-        'SEAMLESS LOOP CYCLE',
-        'TELEGRAPH, IMPACT, RESIDUE',
-        'IN, HOLD, OUT TRANSITIONS',
-        'CORE AND SECONDARY SPLIT',
-        'STAGGERED MULTI-BURST',
+        'One-Shot Burst Sequence',
+        'Seamless Loop Cycle',
+        'Telegraph, Impact, Residue',
+        'In, Hold, Out Transitions',
+        'Core And Secondary Split',
+        'Staggered Multi-Burst',
       ],
     },
     {

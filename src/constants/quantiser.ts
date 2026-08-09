@@ -51,14 +51,19 @@ export const GRID_DETECTION_THRESHOLD = 0.9;
  *
  * `1` is therefore the whole claim the estimator makes about what happened to the image, and it is
  * a claim with a cost at both ends. Narrower and a three-tap ramp is two-thirds off-lattice again.
- * Wider and the window swallows the phase: measured on art inset one pixel from the corner, a
- * two-pixel ramp scores a perfect 1.0 at the wrong offset, which is the {@link MIN_ESTIMATED_GRID}
- * failure this exists to avoid. Softening broader than this falls short of
- * {@link GRID_ESTIMATION_THRESHOLD} and answers `null`, which is the honest outcome rather than a
- * missed one: past a ramp this wide there is no lattice left in the image for `alignToGrid` to snap
- * to. How far short depends on how much broader — a five-tap kernel still measures 0.64 to 0.73,
- * while a bilinear upscale spreads each boundary across the whole cell rather than one pixel either
- * side and measures below 0.04. The two are not one band, and only the conclusion is shared.
+ * **Wider costs two things, both measured.** {@link MIN_ESTIMATED_GRID} is derived from this, so a
+ * ramp of 2 raises the floor to 6 and grids of 4 and 5 stop being measurable at all — softened art
+ * at both answers `null` there. And the widened window starts admitting scales that do not divide
+ * the truth: crisp grid-8 art inset four pixels comes back as **6** at a ramp of 2, a lattice that
+ * cuts every cell of the art in half, where at a ramp of 1 the same sheet comes back as 4 — which
+ * divides 8, and is lossless.
+ *
+ * Softening broader than this falls short of {@link GRID_ESTIMATION_THRESHOLD} and answers `null`,
+ * which is the honest outcome rather than a missed one: past a ramp this wide there is no lattice
+ * left in the image for `alignToGrid` to snap to. How far short depends on how much broader — a
+ * five-tap kernel still measures 0.64 to 0.72, while a bilinear upscale spreads each boundary across
+ * the whole cell rather than one pixel either side and measures essentially nothing (−0.01). The two
+ * are not one band, and only the conclusion is shared.
  */
 export const SOFTENED_EDGE_RAMP = 1;
 
@@ -83,16 +88,27 @@ export const MIN_ESTIMATED_GRID = 2 * SOFTENED_EDGE_RAMP + 2;
  * spacing between them counts as a period.
  *
  * Two, because **one interval is not a period**. A share of change on its own says only that the
- * change *fits* a lattice, and a single edge anywhere in an otherwise flat sheet fits one perfectly:
- * whatever position it sits at, some candidate puts a lattice line through it, collects every last
- * unit of the sheet's change, and scores 1. Measured before this existed, a flat 256 × 256 sheet
- * inside a one-pixel frame came back as a confident grid of 32, and a 64 × 64 sheet with a single
- * vertical line at x = 20 as a grid of 21 — both of which reduce the art to nothing when applied.
+ * change *fits* a lattice, and a single feature anywhere in an otherwise flat sheet fits one
+ * perfectly: whatever position it sits at, some candidate puts a lattice line through it, collects
+ * every last unit of the sheet's change, and scores 1. Measured before this existed, a 64 × 64 sheet
+ * with one vertical line at x = 20 came back as a grid of 21, a one-pixel frame down two sides of a
+ * 128 × 128 sheet as 21 as well, and a single separator each way on a 256 × 256 sheet as 25 — every
+ * one of which `alignToGrid` then erases, because the feature is one column inside a cell of
+ * hundreds of flat pixels.
  *
- * The count is **pooled across both axes**, which is what keeps the smallest honest sheet readable:
- * art two cells to a side has exactly one interior line down and one across, and those two together
- * are a period observed twice rather than a coincidence observed once. A lone vertical line has one
- * and nothing across it, and is refused.
+ * It is required **per axis rather than pooled**, and that distinction is the whole of the second
+ * fix: pooling let a one-pixel *cross* through, because one line down and one across sum to two
+ * while neither axis has seen the spacing twice. `sawTheSpacing` therefore asks each axis on its own
+ * — and accepts an axis that used every line the scale offered it, which is what keeps the smallest
+ * honest sheet readable, since art two cells to a side has exactly one interior boundary and no
+ * reading of it can ask for more.
+ *
+ * **Two shapes remain measurable that arguably should not be, and they are the same shape.** A cross
+ * at the exact midpoint of a square sheet, and two isolated marks spaced exactly one candidate apart
+ * on both axes, are — in the profile this reads — indistinguishable from art two cells to a side and
+ * from sparse periodic art respectively. No period measurement separates them, because there is
+ * nothing there to separate: the evidence really is periodic. That is one of the reasons an estimate
+ * is offered rather than adopted.
  */
 export const MIN_LATTICE_LINES = 2;
 
@@ -111,7 +127,9 @@ export const MIN_LATTICE_LINES = 2;
  * click, and it hands back a sheet reduced by the wrong factor with nothing on screen saying so.
  * Measured across softened art at 4, 6, 8, 12 and 16 — varied cell colours, two-colour art, and a
  * small sprite on a large key field — the true scale scores exactly 1, the best **coarser**
- * candidate 0.52, and smooth painted artwork with no scale in it at most 0.40.
+ * candidate 0.37, and smooth painted artwork with no scale in it at most 0.40. A doubled scale
+ * *collects* about half the sheet's change, which is the figure intuition reaches for, but scores
+ * 0.17 to 0.38 once the share a lattice that coarse would collect by chance is taken back out.
  *
  * **Coarser is the only direction this number defends, and that is not a weakness.** A *finer*
  * candidate scores 1 as well and always will: art drawn at 8 changes only on multiples of 8, every
@@ -250,7 +268,7 @@ export const QUANTISE_SCALE_GUIDANCE = {
   none: 'Nothing in this image changes on a regular grid, and its edges do not soften at a regular spacing either, so neither reading of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. If the art starts a few pixels in from the top-left corner, no scale can be measured from it and none can be applied to it either — crop the margin off and bring it back.',
   /** The edges repeat at a spacing, which is a candidate the reader still has to check. */
   estimated:
-    'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do soften at a regular spacing, though, and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',
+    'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do repeat at a regular spacing, though, and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',
 } as const;
 
 /**
@@ -272,7 +290,7 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
   none: 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one in the box above.',
   /** A scale was estimated and deliberately not applied — it is waiting to be chosen. */
   estimated:
-    'The scale in this sheet was estimated from its softened edges rather than measured, so it has not been applied. Click it above to align the sheet to it, or type a different one.',
+    'The scale in this sheet was estimated from the spacing of its edges rather than measured outright, so it has not been applied. Click it above to align the sheet to it, or type a different one.',
   /**
    * A scale **is** in force and still produced nothing, which only a failure explains.
    *

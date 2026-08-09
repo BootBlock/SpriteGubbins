@@ -46,9 +46,9 @@ describe('GridControls', () => {
   it('marks an estimate as an estimate, and asks for the click that would apply it', () => {
     show(factsWith({ grid: 8, measurement: 'ESTIMATED' }), null);
 
-    expect(screen.getByText(/estimated from the softened edges/)).toBeInTheDocument();
+    expect(screen.getByText(/estimated from the spacing of its edges/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
-    expect(screen.getByText(/Its edges do soften at a regular spacing/)).toBeInTheDocument();
+    expect(screen.getByText(/Its edges do repeat at a regular spacing/)).toBeInTheDocument();
   });
 
   it('stops asking for the click once the estimate has been applied', () => {
@@ -61,19 +61,28 @@ describe('GridControls', () => {
     expect(screen.queryByText(/so it has not been applied/)).toBeNull();
     // The badge and the candidate stay: they report where the number came from, which is still true
     // and is the one thing the reader must not lose track of once it is applied.
-    expect(screen.getByText(/estimated from the softened edges/)).toBeInTheDocument();
+    expect(screen.getByText(/estimated from the spacing of its edges/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
   });
 
-  it('keeps asking for a number when neither reading found a scale, whatever is typed', () => {
-    // The counterpart, and the asymmetry is deliberate: this paragraph is *instructions* — what to
-    // type, what a grid of 1 does, what to do about a margin — and every word stays true after the
-    // reader answers, so it stays up where the estimate's does not.
+  it('asks for a number when neither reading found a scale', () => {
     show(factsWith(null), null);
-    expect(screen.getByText(/neither reading of the sheet found a scale/)).toBeInTheDocument();
 
+    expect(screen.getByText(/neither reading of the sheet found a scale/)).toBeInTheDocument();
+  });
+
+  it('goes on asking for it after one has been typed', () => {
+    // The counterpart to the estimate's paragraph disappearing, and the asymmetry is deliberate:
+    // this one is *instructions* — what to type, what a grid of 1 does, what to do about a margin —
+    // and every word stays true after the reader answers.
+    //
+    // Its own `it`, because `cleanup` runs between tests and not between renders: a second `show`
+    // in one case mounts a second panel beside the first, and an assertion that the paragraph is
+    // present is then satisfied by the *previous* render whatever this one did. `getByText` rather
+    // than `getAllByText` for the same reason — it throws on a duplicate, so the leak cannot hide.
     show(factsWith(null), 6);
-    expect(screen.getAllByText(/neither reading of the sheet found a scale/)).not.toHaveLength(0);
+
+    expect(screen.getByText(/neither reading of the sheet found a scale/)).toBeInTheDocument();
   });
 
   it('says it is still looking, and offers nothing to try, before the sheet has been read', () => {

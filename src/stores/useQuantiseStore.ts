@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
 import type { ImportedImage, PixelGrid } from '../types/quantiser.ts';
+import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
+import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 
 /**
  * The sheet being quantised, and the scale the user chose for it.
@@ -10,6 +12,12 @@ import type { ImportedImage, PixelGrid } from '../types/quantiser.ts';
  * rather than offering a second copy — so going to the studio to change one and coming back is the
  * ordinary case, not an edge. `App` swaps the whole view on navigation, which unmounts the tab, and
  * local state would drop the image on every one of those trips.
+ *
+ * **The two actions that change the sheet are also where the pipeline is told**, rather than an
+ * effect in the tab noticing afterwards. Those are the same thing while the tab is mounted and a
+ * very different thing when it is not: an effect keyed on the image re-runs on every remount, so
+ * every trip to the studio and back re-sent a sheet the worker was already holding. Here it is sent
+ * when it actually arrives, once, and `useQuantiseAnswerStore` keeps what came back.
  *
  * Nothing here is persisted. The plan is explicit that no image is written to the database: it is
  * the user's, this is a transform, and keeping sheets in OPFS is a different feature with its own
@@ -69,6 +77,11 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
   // carrying it over cannot mislead anyone the way a carried-over grid would.
   setSource: (source) => {
     set({ source, gridOverride: null });
+    // In this order, and both before the load: every answer in the store is about the sheet being
+    // replaced, so leaving one in place for the render between here and the worker's first reply
+    // would caption the new sheet with the old one's colour count and detected scale.
+    useQuantiseAnswerStore.getState().forget();
+    loadSheet(source.image);
   },
 
   setGridOverride: (gridOverride) => {
@@ -90,5 +103,12 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
   // half-clear, and the next sheet would arrive already keyed by a decision made about the last one.
   clear: () => {
     set({ ...EMPTY });
+    // `reset` rather than `forget`, and the pair below is why: the thread goes with the sheet — it is
+    // holding the only other copy of the image, plus whatever a transform still running had
+    // allocated — and `releaseSheet` also lets a *new* thread be built for the next sheet. So a
+    // thread that had died is no longer a fact about this app, and the message saying it had must go
+    // in the same breath, or the tab reports a quantiser that could not start while one is running.
+    useQuantiseAnswerStore.getState().reset();
+    releaseSheet();
   },
 }));

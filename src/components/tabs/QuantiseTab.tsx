@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
-import { useQuantiseWorker } from '../../hooks/useQuantiseWorker.ts';
+import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import type { Quantised, SheetFacts } from '../../types/quantiser.ts';
+import type { PixelGrid, Quantised, SheetFacts } from '../../types/quantiser.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
@@ -31,9 +31,11 @@ import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
  *
  * The state is only what cannot be derived: which image, which grid, and whether the background key
  * comes out and from how far. Everything the transform says about them lives on a **worker** — see
- * `useQuantiseWorker`, and the measurements behind that decision in `src/workers/quantiseWorker.ts`.
- * What the tab keeps here is the two studio-derived candidates, which are arithmetic on a handful of
- * numbers rather than passes over sixteen megapixels.
+ * `useQuantiseWork`, and the measurements behind that decision in `src/workers/quantiseWorker.ts`.
+ * Neither the thread nor its answers belong to this component, which is what lets the user go to the
+ * studio to change the colour budget and come back to the sheet they left rather than to a pipeline
+ * starting again from nothing. What the tab keeps here is the two studio-derived candidates, which
+ * are arithmetic on a handful of numbers rather than passes over sixteen megapixels.
  */
 export function QuantiseTab() {
   const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
@@ -76,7 +78,7 @@ export function QuantiseTab() {
   // `KeyingControls` is handed the keying: two readings of one setting can disagree, and did.
   const colorPlan = useMemo(() => colorPlanFor(palette, paletteLimit), [palette, paletteLimit]);
 
-  const { facts, grid, quantised, busy, error } = useQuantiseWorker(
+  const { facts, grid, quantised, busy, error } = useQuantiseWork(
     source,
     gridOverride,
     keying,
@@ -121,7 +123,7 @@ export function QuantiseTab() {
           than three, because three would talk over each other; rendered unconditionally, because a
           live region has to be in the document *before* its content changes to be announced at all. */}
       <p role="status" className="sr-only">
-        {statusOf(busy, facts, quantised)}
+        {statusOf(busy, facts, grid, quantised)}
       </p>
 
       <QuantiseGuide />
@@ -179,11 +181,22 @@ export function QuantiseTab() {
  * region falls silent for good at the exact moment a sighted reader is being shown a badge, a
  * button and a paragraph all asking them to act. Saying "nothing is happening" by saying nothing is
  * indistinguishable from the tab having finished.
+ *
+ * **That announcement turns on `grid`, not on there being no result**, for the same reason the
+ * result pane's placeholder does: with the estimate applied and the transform then failing, there
+ * is still no result, and "it has not been applied" would be telling the reader to do the thing
+ * they have just done — while the pane beside it says the transform failed. The two read the same
+ * state and have to say the same thing about it.
  */
-function statusOf(busy: boolean, facts: SheetFacts | null, quantised: Quantised | null): string {
+function statusOf(
+  busy: boolean,
+  facts: SheetFacts | null,
+  grid: PixelGrid | null,
+  quantised: Quantised | null,
+): string {
   if (busy) return facts === null ? 'Measuring the sheet.' : 'Quantising the sheet.';
-  if (facts?.scale?.measurement === 'ESTIMATED' && quantised === null) {
-    return `Estimated a pixel scale of ${String(facts.scale.grid)} from this sheet's softened edges. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
+  if (facts?.scale?.measurement === 'ESTIMATED' && grid === null) {
+    return `Estimated a pixel scale of ${String(facts.scale.grid)} from the spacing of this sheet's edges. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
   }
   if (quantised === null) return '';
   const { image, colors } = quantised.result;

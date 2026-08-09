@@ -162,6 +162,41 @@ describe('ImageComparison', () => {
     expect(screen.getByText(/· updating…$/)).toBeInTheDocument();
   });
 
+  it('repaints when the pixels change and not merely when the panel renders', () => {
+    // `quantised` is built fresh by `useQuantiseWork` on every render, so an effect keyed on that
+    // wrapper repainted both canvases whenever anything in the tab re-rendered — two `putImageData`
+    // calls of up to 67 megabytes each, on the main thread, for a keystroke that changed no pixel.
+    // Counting `getContext` counts paints, because `paint` reaches for one every time it draws.
+    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const quantised = { result: resultFor(8), grid: 8 };
+    const panel = (shown: typeof quantised, busy: boolean) => (
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={{ grid: shown.grid, measurement: 'EXACT' }}
+        grid={shown.grid}
+        quantised={shown}
+        busy={busy}
+      />
+    );
+
+    const { rerender } = render(panel(quantised, false));
+    const onMount = context.mock.calls.length;
+    expect(onMount).toBeGreaterThan(0);
+
+    // The same pixels in a new wrapper, which is what every render of the tab hands this panel.
+    rerender(panel({ ...quantised }, true));
+    expect(context.mock.calls).toHaveLength(onMount);
+
+    // A genuinely different result, which is the only thing there is anything to redraw for.
+    rerender(panel({ result: resultFor(4), grid: 4 }, false));
+    expect(context.mock.calls.length).toBeGreaterThan(onMount);
+
+    context.mockRestore();
+  });
+
   it('says nothing about working when it is not', () => {
     show(8);
 

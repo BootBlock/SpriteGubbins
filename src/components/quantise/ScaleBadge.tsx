@@ -43,7 +43,7 @@ export function ScaleBadge({ facts }: ScaleBadgeProps) {
     return <Badge tone="attention">No pixel scale in this image</Badge>;
   }
   if (facts.scale.measurement === 'ESTIMATED') {
-    return <Badge tone="attention">{facts.scale.grid}× — estimated from the softened edges</Badge>;
+    return <Badge tone="attention">{facts.scale.grid}× — estimated from the spacing of its edges</Badge>;
   }
   // Not "every edge falls on it": the threshold believes a scale that up to a tenth of the sheet's
   // transitions miss, which is the whole point of it not being 1.0 — a stray pixel from a

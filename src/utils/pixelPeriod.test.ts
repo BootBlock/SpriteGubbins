@@ -75,20 +75,27 @@ describe('estimatePixelGrid', () => {
     }
   });
 
-  it('refuses a sheet whose only change is a single edge, at any position', () => {
-    // A share of change alone says the change *fits* a lattice, which one edge always does: some
+  it('refuses a sheet whose only change is a stray feature, however it is arranged', () => {
+    // A share of change alone says the change *fits* a lattice, which one feature always does: some
     // candidate puts a line through it, collects every unit of the sheet's change and scores a
-    // perfect 1. Requiring the spacing to be used more than once is what makes it a period rather
-    // than a coincidence — measured before that existed, these came back as 21 and 32.
+    // perfect 1. Requiring the spacing to have been *used* is what makes it a period rather than a
+    // coincidence — and requiring it per axis rather than pooled is what closes the cross, where one
+    // line down and one across sum to two while neither axis has seen a repeat. Measured before
+    // those guards, in order: 21, 21, 25, 21.
     const flat = { r: 40, g: 40, b: 40, a: 255 };
     const mark = { r: 200, g: 10, b: 10, a: 255 };
-    const line = imageFrom(64, 64, (x) => (x === 20 ? mark : flat));
-    expect(estimatePixelGrid(line)).toBeNull();
-
-    const border = imageFrom(256, 256, (x, y) =>
-      x === 0 || y === 0 || x === 255 || y === 255 ? mark : flat,
-    );
-    expect(estimatePixelGrid(border)).toBeNull();
+    const sheets = {
+      'one vertical line': imageFrom(64, 64, (x) => (x === 20 ? mark : flat)),
+      'a one-pixel cross': imageFrom(64, 64, (x, y) => (x === 20 || y === 20 ? mark : flat)),
+      'a separator each way': imageFrom(256, 256, (x, y) => (x === 100 || y === 150 ? mark : flat)),
+      'a frame down two sides': imageFrom(128, 128, (x, y) => (x === 127 || y === 127 ? mark : flat)),
+      'a full one-pixel frame': imageFrom(256, 256, (x, y) =>
+        x === 0 || y === 0 || x === 255 || y === 255 ? mark : flat,
+      ),
+    };
+    for (const [name, sheet] of Object.entries(sheets)) {
+      expect({ name, measured: estimatePixelGrid(sheet) }).toEqual({ name, measured: null });
+    }
   });
 
   it('refuses a sheet too small to hold a period, however much it changes', () => {
@@ -163,27 +170,51 @@ describe('estimatePixelGrid', () => {
     expect(estimatePixelGrid(soften(GRADIENT))).toBeNull();
   });
 
-  it('answers null for art that does not start at the top-left corner', () => {
+  it('answers null for art whose offset from the corner no scale fits', () => {
     // `alignToGrid` snaps from the origin, so a scale measured against any other phase is one the
     // transform cannot apply — it would resolve each cell across two of the art's own. This is the
     // trap a comb taking its *modal* remainder falls into, and the reason the window here is fixed
-    // on remainder zero: inset art keeps answering `null`, which is what sends the user to crop it.
-    const sheet = soften(upscale(variedCells(16), 8));
-    for (const inset of [2, 3, 5, 6]) {
-      expect({ inset, measured: estimatePixelGrid(shifted(sheet, inset)) }).toEqual({
+    // on remainder zero. **Both forms of the sheet are checked**: the softened one is refused far
+    // more readily, so testing it alone would hide what a crisp margin does — and a crisp margin is
+    // exactly what reaches here, since `detectPixelGrid` is origin-anchored too and fails on it.
+    const crisp = upscale(variedCells(16), 8);
+    for (const inset of [1, 2, 6]) {
+      expect({ inset, measured: estimatePixelGrid(shifted(crisp, inset)) }).toEqual({
+        inset,
+        measured: null,
+      });
+    }
+
+    const softened = soften(crisp);
+    for (const inset of [1, 2, 3, 5, 6, 7]) {
+      expect({ inset, measured: estimatePixelGrid(shifted(softened, inset)) }).toEqual({
         inset,
         measured: null,
       });
     }
   });
 
-  it('offers a lattice it can actually apply when the inset happens to admit one', () => {
+  it('offers the coarsest lattice it can apply where the offset admits one', () => {
     // Not every inset is unreadable, and refusing one that is would be its own wrong answer. Art
-    // drawn at 8 that starts four pixels in has every boundary on a multiple of **4**, so the grid-4
-    // lattice is origin-anchored *and* lossless — each of its cells falls wholly inside one of the
-    // art's. 4 is the coarsest scale the transform can apply to this sheet, and under-reducing by a
-    // factor of two is a far smaller wrong than reducing across two cells at 8.
-    expect(estimatePixelGrid(shifted(upscale(variedCells(16), 8), 4))).toBe(4);
+    // drawn at 8 that starts three, four or five pixels in has every boundary within a pixel of a
+    // multiple of **4**; at seven, within a pixel of a multiple of 8. Those lattices genuinely sit
+    // on the art from the corner, and `alignToGrid`'s modal vote absorbs the pixel — each cell holds
+    // `(grid - 1)²` of one art cell out of `grid²`, nine against three, three and one at the
+    // narrowest scale this considers. Under-reducing by a factor of two is a far smaller wrong than
+    // refusing to reduce at all, and a lattice that cut cells down the middle could not reach here:
+    // it would not clear the threshold.
+    const crisp = upscale(variedCells(16), 8);
+    for (const [inset, expected] of [
+      [3, 4],
+      [4, 4],
+      [5, 4],
+      [7, 8],
+    ] as const) {
+      expect({ inset, measured: estimatePixelGrid(shifted(crisp, inset)) }).toEqual({
+        inset,
+        measured: expected,
+      });
+    }
   });
 
   it('answers null for softening wider than one pixel either side', () => {

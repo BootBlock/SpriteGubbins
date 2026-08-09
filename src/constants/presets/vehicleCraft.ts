@@ -43,7 +43,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       // The one drive the rig plan's closing paragraph describes without analogy: a leg genuinely is
       // a root segment and a travelling segment turning about a pivot, where a road wheel and a
       // thruster nozzle are that arrangement only by extension.
-      anatomy: 'ARTICULATED WALKER LEGS',
+      anatomy: 'Articulated Walker Legs',
       clothing: 'Reactive Armour Blocks',
       worn_details: 'Exposed Cabling & Hoses',
       primary_colours: 'Deep Navy #1E3A8A & Steel',
@@ -92,7 +92,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       build: 'Light & Nimble',
       silhouette: 'Swept Delta Wing',
       face_head: 'Armoured Glass Canopy',
-      anatomy: 'THRUSTER-BORNE AIRFRAME',
+      anatomy: 'Thruster-Borne Airframe',
       clothing: 'Ablative Heat Shielding',
       worn_details: 'Kill Tally Marks',
       primary_colours: 'Crimson Lacquer #DC2626 & Chrome',
@@ -148,7 +148,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       // Lift fans rather than a rigid hull, so the plan's "drive unit" has something concrete to be
       // at rest and at mid-travel — the sails above are cladding, and a sheet whose only drive was
       // canvas would leave four components with nothing to draw.
-      anatomy: 'ROTOR-BORNE AIRFRAME',
+      anatomy: 'Rotor-Borne Airframe',
       clothing: 'Canvas sails & rope rigging',
       worn_details: 'Gilded scrollwork & pennant streamers',
       primary_colours: 'Varnished Oak & Verdigris Copper #2A9D8F',
@@ -186,7 +186,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       build: 'Heavy Armoured Bulk',
       silhouette: 'Boxy Utilitarian Slab',
       face_head: 'Vision Slit & Periscope',
-      anatomy: 'WHEELED CHASSIS & AXLES',
+      anatomy: 'Wheeled Chassis & Axles',
       clothing: 'Bolted Applique Plating',
       worn_details: 'Scorch Marks & Weld Seams',
       primary_colours: 'Soot Black & Oxidised Brass #B45309',

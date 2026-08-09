@@ -1,12 +1,27 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
+import { FakeWorker } from '../test/fakeWorker.ts';
 import { createImage } from '../utils/imageData.ts';
+import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 
 const SHEET = { name: 'returned-sheet.png', image: createImage(4, 4) };
 
+/** The thread the last `setSource` started. */
+function thread(): FakeWorker {
+  const started = FakeWorker.started.at(-1);
+  if (started === undefined) throw new Error('no thread was started');
+  return started;
+}
+
 beforeEach(() => {
   useQuantiseStore.getState().clear();
+  FakeWorker.started = [];
+  vi.stubGlobal('Worker', FakeWorker);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('useQuantiseStore', () => {
@@ -52,5 +67,42 @@ describe('useQuantiseStore', () => {
       keyingEnabled: false,
       keyTolerance: DEFAULT_KEY_TOLERANCE,
     });
+  });
+
+  it('sends the sheet to the worker as it arrives, once', () => {
+    // Here rather than in an effect in the tab, because an effect keyed on the image re-runs on
+    // every remount — and `App` unmounts the tab on every trip to the studio and back, which is how
+    // the ordinary use of this feature came to re-send a sheet of up to 67 megabytes each way.
+    const store = useQuantiseStore.getState();
+    store.setSource(SHEET);
+
+    expect(thread().of('load')).toHaveLength(1);
+    expect(thread().of('load')[0]?.request).toEqual({ kind: 'load', image: SHEET.image });
+  });
+
+  it('forgets what was measured about the sheet being replaced', () => {
+    const store = useQuantiseStore.getState();
+    store.setSource(SHEET);
+    thread().answer({
+      id: thread().lastId('load'),
+      kind: 'loaded',
+      facts: { scale: { grid: 8, measurement: 'EXACT' }, colors: 1024 },
+    });
+
+    store.setSource({ name: 'another.png', image: createImage(8, 8) });
+
+    // A colour count and a detected scale are measurements of one particular image. Left in place
+    // they would caption the new sheet with the old one's numbers until the worker answered.
+    expect(useQuantiseAnswerStore.getState().survey).toBeNull();
+  });
+
+  it('ends the session when the tab is cleared', () => {
+    const store = useQuantiseStore.getState();
+    store.setSource(SHEET);
+    const started = thread();
+
+    store.clear();
+
+    expect(started.terminated).toBe(true);
   });
 });
