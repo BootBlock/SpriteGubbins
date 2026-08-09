@@ -110,8 +110,8 @@ export const EFFECT: CategoryDefinition = {
         'Actor-Sized Burst',
         'Wide Area Blast',
         'Screen-Filling Cataclysm',
-        'Thin Trail or Ribbon',
-        'Tall Column or Beam',
+        'Thin Trail Or Ribbon',
+        'Tall Column Or Beam',
       ],
     },
     {

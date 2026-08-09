@@ -15,6 +15,20 @@ import { CATEGORY_OPTIONS, defaultSubjectFor } from './index.ts';
  * the generator would never be told. These tests are the check that every offered value is live.
  */
 
+/**
+ * A word of an option that opens in lower case — every match is a title-case violation.
+ *
+ * A word is a run of letters and digits, so both halves of a hyphenated compound are checked
+ * separately: `Pocket-Sized` is the pools' own spelling and `Over-sized` was the odd one out. The
+ * lookbehind is what makes the run's *first* character the one under test, and it excludes the two
+ * positions that legitimately hold a lower-case letter — after another letter or digit (the rest of
+ * any word, and the `s` of `(20s)`), and after an apostrophe (the `s` of `Surgeon’s`).
+ *
+ * A word opening with a digit is not matched at all and needs no exemption: `#06B6D4`, `16-Bit` and
+ * `1940s` have no case to get wrong.
+ */
+const LOWER_CASE_WORD = /(?<![\p{L}\p{N}'’])\p{Ll}[\p{L}\p{N}]*/gu;
+
 /** Every field set to its `pick`th option, wrapping round the shorter pools. */
 function subjectAt(category: SubjectCategory, pick: number): SubjectDefinition {
   const subject = { ...defaultSubjectFor(category) };
@@ -78,13 +92,37 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
     // `NONE` is the one value that may shout, wherever it is offered: a sentinel standing for "this
     // subject has none" rather than a description of anything, which is why `additional_anatomy`
     // names it as a constant and why the two `clothing` pools offering no harness and no holster
-    // spell the same word. Exempted by value for that reason, not by field. Only the shouting is
-    // checked — which words a title-cased option capitalises is left to the pool it joins.
+    // spell the same word. Exempted by value for that reason, not by field.
     for (const field of fields) {
       const shouting = field.options.filter(
         (option) => option !== NO_ADDITIONAL_ANATOMY && /\p{Lu}/u.test(option) && !/\p{Ll}/u.test(option),
       );
       expect(shouting, `${category}.${field.key} offers an all-capitals option`).toEqual([]);
+    }
+  });
+
+  it('capitalises every word of every option, outside the exclusions pool', () => {
+    // The defect this pins: the pools disagreed about title case in the one place a reader sees both
+    // spellings at once. `Relic of Lost Era` sat forty-seven lines from `Nautical Age Of Sail` in the
+    // same file, and `Over-sized Colossal` shared a pool with `Pocket-Sized Device` — two spellings
+    // of one rule, in a list scanned in a single glance and carried verbatim into section 1.
+    //
+    // The house style is that every word takes a capital, which is what the large majority already
+    // did: eighteen mid-title function words were capitalised against five that were not. It is also
+    // the half of the choice a test can hold, because there is no judgement in it — the alternative
+    // needs a hand-kept list of function words and still cannot tell a preposition from the particle
+    // of a phrasal verb (`Frozen Over`, `Charging / Spooling Up`, both capitalised either way).
+    //
+    // `exclusions` is the one pool exempt, and by field rather than by value: each of its options is
+    // a negative statement rather than a name ("No ground terrain tiles, no characters"), so sentence
+    // case is what it means to write.
+    for (const field of fields) {
+      if (field.key === 'exclusions') continue;
+
+      for (const option of field.options) {
+        const lowered = [...option.matchAll(LOWER_CASE_WORD)].map((match) => match[0]);
+        expect(lowered, `${category}.${field.key} option "${option}" opens a word in lower case`).toEqual([]);
+      }
     }
   });
 

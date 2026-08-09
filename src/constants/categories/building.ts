@@ -50,7 +50,7 @@ export const BUILDING: CategoryDefinition = {
         'Fortified Stronghold',
         'Under Construction',
         'Severely Damaged',
-        'Overgrown Nature takeover',
+        'Overgrown Nature Takeover',
         'Seasonally Shuttered',
         'Recently Burned Out',
       ],

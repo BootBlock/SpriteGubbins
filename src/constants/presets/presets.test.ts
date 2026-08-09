@@ -4,6 +4,7 @@ import { componentCountFor } from '../../utils/componentSet.ts';
 import { withCompanionOutputs } from '../../utils/imageConfig.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
+import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
@@ -33,6 +34,32 @@ describe('every shipped preset', () => {
   it('has a unique id', () => {
     const ids = PRESETS.map((preset) => preset.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it.each(PRESETS)('$name spells a pooled value the way its pool spells it', (preset) => {
+    // The gap this closes: re-casing an option pool leaves every preset that names the old spelling
+    // behind, and nothing notices. The combo boxes are unfiltered, so the preset still loads and
+    // still compiles — it just puts the retired spelling into section 1 verbatim, which is the exact
+    // inconsistency the re-casing set out to remove. All eight of the options fixed for #43 were
+    // pinned in a preset as well as offered in a pool.
+    //
+    // Case-insensitive equality is the whole test, and deliberately not membership: a preset may
+    // legitimately carry free text no pool offers, and sixty-two of them do — `Domed lid over a
+    // banded body` is a worked example's own wording, in sentence case because a user typed it
+    // rather than chose it. A value that matches a pooled option in every respect *but* case is not
+    // that; it is the pool's own value, misspelled.
+    const fields = CATEGORY_OPTIONS[preset.category].fields;
+
+    for (const field of fields) {
+      const value = preset.subject[field.key];
+      if (value === '' || field.options.includes(value)) continue;
+
+      const pooled = field.options.find((option) => option.toLowerCase() === value.toLowerCase());
+      expect(
+        pooled,
+        `${preset.name} writes ${field.key} as "${value}", where the pool offers "${String(pooled)}"`,
+      ).toBeUndefined();
+    }
   });
 
   it.each(PRESETS)('$name compiles with no leftover marker and no placeholder token', (preset) => {
