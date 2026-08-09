@@ -1,12 +1,12 @@
-import type { Rgba } from '../types/quantiser.ts';
+import type { Rgba, RgbaChannel } from '../types/quantiser.ts';
 import { createImage, pixelOffset, readPixel, writePixel } from '../utils/imageData.ts';
 
 /**
  * Building `ImageData` for the quantiser's tests.
  *
  * Test-only, and here rather than in `src/utils/` because nothing in the app constructs an image
- * from a formula — the app's images come from a file the user dropped. Three test files need the
- * same three builders, which is one implementation rather than three subtly different ones.
+ * from a formula — the app's images come from a file the user dropped. Several test files need the
+ * same builders, and this is one implementation of each rather than several subtly different ones.
  *
  * No canvas is involved: `ImageData` is a width, a height and a `Uint8ClampedArray`, all three of
  * which happy-dom provides, so the pure pipeline is testable without a rendering surface.
@@ -31,6 +31,43 @@ export function upscale(image: ImageData, scale: number): ImageData {
   return imageFrom(image.width * scale, image.height * scale, (x, y) =>
     readPixel(image.data, pixelOffset(image.width, Math.floor(x / scale), Math.floor(y / scale))),
   );
+}
+
+/**
+ * The image with every pixel averaged with the two beside it, horizontally and then vertically —
+ * what a model hands back when it draws at a scale and then resamples.
+ *
+ * A three-tap box, separable, clamped at the edges: the kernel that turns one crisp boundary into
+ * **three equal steps** rather than one, which is the whole of what defeats `detectPixelGrid`. It
+ * counts any colour inequality as a transition, so every cell boundary becomes three of which two
+ * miss the lattice, no candidate can account for nine tenths of them, and the answer is `null` for
+ * artwork that plainly was drawn at a scale.
+ *
+ * Deliberately not a Gaussian or a wider kernel. Three taps is the narrowest softening that breaks
+ * the exact detector, so it is the case an estimator has to read, and being able to state the kernel
+ * exactly is what makes the arithmetic in these tests checkable rather than empirical: the step
+ * signal is the crisp one convolved with the same three taps, so all of it lands within one pixel of
+ * where it started.
+ */
+export function soften(image: ImageData): ImageData {
+  const pass = (source: ImageData, horizontal: boolean): ImageData =>
+    imageFrom(source.width, source.height, (x, y) => {
+      const taps = [-1, 0, 1].map((offset) => {
+        const sampleX = horizontal ? clamp(x + offset, source.width) : x;
+        const sampleY = horizontal ? y : clamp(y + offset, source.height);
+        return readPixel(source.data, pixelOffset(source.width, sampleX, sampleY));
+      });
+      const mean = (channel: RgbaChannel) =>
+        taps.reduce((total, tap) => total + tap[channel], 0) / taps.length;
+      return { r: mean('r'), g: mean('g'), b: mean('b'), a: mean('a') };
+    });
+
+  return pass(pass(image, true), false);
+}
+
+/** A sample position held inside the image, which is what makes the kernel clamp at the edges. */
+function clamp(position: number, extent: number): number {
+  return Math.min(extent - 1, Math.max(0, position));
 }
 
 /** Every channel as a plain array, so two images can be compared byte for byte by `toEqual`. */

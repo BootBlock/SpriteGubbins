@@ -64,8 +64,10 @@ class FakeWorker {
 /** A stable reference, as `colorPlanFor`'s memo gives the hook — see the note on `key`. */
 const REDUCTION = { kind: 'MAX_COLORS', maxColors: 32 } as const;
 
-const FACTS: SheetFacts = { detected: 8, colors: 1024 };
-const NO_SCALE: SheetFacts = { detected: null, colors: 1024 };
+const FACTS: SheetFacts = { scale: { grid: 8, measurement: 'EXACT' }, colors: 1024 };
+const NO_SCALE: SheetFacts = { scale: null, colors: 1024 };
+/** A sheet whose scale was read through its softening — a candidate, never the grid in force. */
+const ESTIMATED: SheetFacts = { scale: { grid: 8, measurement: 'ESTIMATED' }, colors: 1024 };
 
 function resultOf(side: number): QuantiseResult {
   return { image: createImage(side, side), colors: 32, keyedShare: 0 };
@@ -210,6 +212,37 @@ describe('useQuantiseWorker', () => {
     expect(result.current.grid).toBeNull();
     expect(result.current.busy).toBe(false);
     expect(result.current.quantised).toBeNull();
+  });
+
+  it('does not adopt an estimated scale, and computes nothing until one is chosen', () => {
+    // The rule the estimate exists under: it is read through the resampling that destroyed the
+    // sheet's edges, so it carries a tolerance the exact reading does not. Adopted here it would
+    // reduce the sheet by a factor nobody chose and nobody was asked to check, while the panel
+    // beside the preview described it as an estimate. `GridControls` offers it to click instead.
+    const source = sheet('resampled.png');
+    const { result, worker } = drive({ source, gridOverride: null });
+    worker.answer({ id: worker.lastId('load'), kind: 'loaded', facts: ESTIMATED });
+    settle();
+
+    expect(result.current.facts).toEqual(ESTIMATED);
+    expect(result.current.grid).toBeNull();
+    expect(worker.of('quantise')).toHaveLength(0);
+    expect(result.current.busy).toBe(false);
+  });
+
+  it('takes an estimated scale once the user clicks it', () => {
+    // The other half of the same rule: nothing about an estimate is unusable, it simply has to be
+    // chosen. Once it is, it is an override like any other and the transform runs at it.
+    const source = sheet('resampled.png');
+    const { result, rerender, worker } = drive({ source, gridOverride: null });
+    worker.answer({ id: worker.lastId('load'), kind: 'loaded', facts: ESTIMATED });
+    settle();
+
+    rerender({ source, gridOverride: 8 });
+    settle();
+
+    expect(result.current.grid).toBe(8);
+    expect(worker.of('quantise')).toHaveLength(1);
   });
 
   it('lets a new sheet recover from a survey that failed', () => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
+import { PREVIEW_ZOOMS, QUANTISE_RESULT_PLACEHOLDER } from '../../constants/quantiser.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
-import type { Quantised } from '../../types/quantiser.ts';
+import type { PixelGrid, Quantised, SheetScale } from '../../types/quantiser.ts';
 import { ComparisonPane } from './ComparisonPane.tsx';
 import { ComparisonToolbar } from './ComparisonToolbar.tsx';
 
@@ -11,6 +11,24 @@ interface ImageComparisonProps {
   readonly source: ImageData;
   /** Distinct colours the sheet arrived with, or `null` while they are still being counted. */
   readonly sourceColors: number | null;
+  /**
+   * What the sheet itself was read as, which is half of why this pane may be empty.
+   *
+   * Needed because "no result yet" has causes that call for opposite instructions: no scale was
+   * found at all, so one has to be typed — or one was **estimated** and deliberately not adopted, so
+   * it is waiting to be clicked. Telling a reader to type a number the panel above is already
+   * offering them is how a working feature reads as a broken one.
+   */
+  readonly scale: SheetScale | null;
+  /**
+   * The scale actually in force, which is the other half.
+   *
+   * Without it the pane cannot tell "nothing has been chosen yet" from "something was chosen and
+   * the transform failed", and the second is the case where every instruction about choosing a
+   * scale is wrong: the reader has chosen one. `quantised.grid` cannot answer this — it is the
+   * scale the *last successful result* was computed at, which in this state does not exist.
+   */
+  readonly grid: PixelGrid | null;
   /** `null` until a grid is settled, which is the one thing the transform cannot guess. */
   readonly quantised: Quantised | null;
   /** Whether a newer result is on its way, which is what {@link quantised} may be lagging behind. */
@@ -30,7 +48,15 @@ interface ImageComparisonProps {
  * Linking is unconditional and has no toggle: a comparison view whose halves show different places is
  * not comparing anything, so the alternative is not a preference, it is the defect.
  */
-export function ImageComparison({ sourceName, source, sourceColors, quantised, busy }: ImageComparisonProps) {
+export function ImageComparison({
+  sourceName,
+  source,
+  sourceColors,
+  scale,
+  grid,
+  quantised,
+  busy,
+}: ImageComparisonProps) {
   const [zoom, setZoom] = useState<number>(PREVIEW_ZOOMS[0]);
   const sourceView = useRef<HTMLDivElement>(null);
   const resultView = useRef<HTMLDivElement>(null);
@@ -105,11 +131,7 @@ export function ImageComparison({ sourceName, source, sourceColors, quantised, b
           alt="The sheet after grid alignment and palette reduction"
           placeholder={
             // Its own padding, because `PanViewport` carries none — see the note on its geometry.
-            <p className="p-3 text-xs leading-relaxed text-ink-muted">
-              {busy
-                ? 'Reading the sheet and working out the scale it was drawn at…'
-                : 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one in the box above.'}
-            </p>
+            <p className="p-3 text-xs leading-relaxed text-ink-muted">{emptyReason(busy, grid, scale)}</p>
           }
         />
       </div>
@@ -127,6 +149,21 @@ export function ImageComparison({ sourceName, source, sourceColors, quantised, b
  */
 function colourCount(colors: number): string {
   return `${String(colors)} ${colors === 1 ? 'colour' : 'colours'}`;
+}
+
+/**
+ * Why the result pane is empty, which decides what the reader is asked to do about it.
+ *
+ * Ordered by how much is settled. Something is still coming; then a scale **is** in force and
+ * produced nothing anyway, which only a failure explains and which no instruction about choosing a
+ * scale fits; then the two ways of having no scale — one estimated and waiting to be taken, or none
+ * found at all.
+ */
+function emptyReason(busy: boolean, grid: PixelGrid | null, scale: SheetScale | null): string {
+  if (busy) return QUANTISE_RESULT_PLACEHOLDER.reading;
+  if (grid !== null) return QUANTISE_RESULT_PLACEHOLDER.failed;
+  if (scale?.measurement === 'ESTIMATED') return QUANTISE_RESULT_PLACEHOLDER.estimated;
+  return QUANTISE_RESULT_PLACEHOLDER.none;
 }
 
 /** Put the pixels on the canvas verbatim. A missing canvas is the pane that is showing its `<p>`. */

@@ -23,9 +23,12 @@ import { isQuantiseReply } from '../workers/quantiseProtocol.ts';
  * disagree with what is on screen, because it is computed from the same comparison the result is.
  */
 export interface QuantiseWork {
-  /** Detection and the source colour count, or `null` while the worker is still looking. */
+  /** The sheet's scale reading and its colour count, or `null` while the worker is still looking. */
   readonly facts: SheetFacts | null;
-  /** The scale in force — the user's, or the detected one behind it. `null` when there is neither. */
+  /**
+   * The scale in force — the user's, or an `EXACT` reading of the sheet behind it. `null` when there
+   * is neither, **which an `ESTIMATED` reading does not resolve**: see the note above.
+   */
   readonly grid: PixelGrid | null;
   /**
    * The most recent transform of the sheet on screen, **which may lag the settings in force**.
@@ -78,15 +81,20 @@ type Job =
  * scroll, and no way to show that anything was happening. See `src/workers/quantiseWorker.ts`.
  *
  * **Only what changed is sent.** The sheet crosses once, on load, and the worker keeps it; a settings
- * change is three small numbers. The two figures that depend on the image alone — the detected scale
- * and the colour count of the sheet as it arrived — come back from that one load. Detection was
- * already measured once per sheet; the colour count was not, and was being recomputed alongside every
- * transform over an image of up to 16.8 million pixels.
+ * change is three small numbers. The two figures that depend on the image alone — the scale the sheet
+ * was read at and the colour count it arrived with — come back from that one load. The scale reading
+ * was already measured once per sheet; the colour count was not, and was being recomputed alongside
+ * every transform over an image of up to 16.8 million pixels.
  *
- * **The grid is resolved here**, from the user's override and what detection found, because this is
- * the only place that knows both: the override is the caller's, and detection is the worker's answer.
- * A caller that had to wait for `facts` before it could say what to compute would have to run the
- * rule itself, and the rule would then live in two places.
+ * **The grid is resolved here**, from the user's override and what the sheet was read as, because
+ * this is the only place that knows both: the override is the caller's, and the reading is the
+ * worker's answer. A caller that had to wait for `facts` before it could say what to compute would
+ * have to run the rule itself, and the rule would then live in two places.
+ *
+ * **That rule has a second half, and it lives here too**: only an `EXACT` reading becomes the grid in
+ * force. An `ESTIMATED` one is read through the resampling that destroyed the sheet's edges, so it is
+ * offered by `GridControls` for the reader to click and never adopted on their behalf — which is why
+ * a sheet can be fully surveyed, carry a scale, and still have nothing computed for it.
  *
  * `key` must keep its identity between renders — memoise it, as `QuantiseTab` does. A fresh object
  * every render restarts the debounce every render, and the transform never runs.
@@ -215,12 +223,19 @@ export function useQuantiseWorker(
   // sheet changes: the reset covers the state, and the guard covers a reply for the previous sheet
   // that is still in flight when the new one arrives.
   const surveyed = source !== null && survey !== null && survey.image === source.image ? survey : null;
-  // What detection found — a `facts` still describing the previous image would put its scale in the
-  // grid box and its colour count under the preview.
+  // What the sheet was read as — a `facts` still describing the previous image would put its scale
+  // in the grid box and its colour count under the preview.
   const facts = surveyed?.kind === 'facts' ? surveyed.facts : null;
-  // The user's answer wins where they gave one; clearing the box falls back to detection, which may
-  // itself have found nothing — in which case there is no result to compute, and the panel says so.
-  const grid = gridOverride ?? facts?.detected ?? null;
+  // The user's answer wins where they gave one; clearing the box falls back to the sheet's own
+  // scale, which may not have one — in which case there is no result to compute, and the panel says
+  // so.
+  //
+  // **An `ESTIMATED` scale is deliberately not adopted here.** It is read through the resampling
+  // that destroyed the sheet's edges, so it carries a tolerance the exact reading does not, and a
+  // scale nobody chose and nobody was asked to check would reduce the sheet by a factor the panel
+  // above is at that moment describing as an estimate. `GridControls` offers it to click instead,
+  // which is the same standing this tab gives the target size: a candidate, never a default.
+  const grid = gridOverride ?? (facts?.scale?.measurement === 'EXACT' ? facts.scale.grid : null);
 
   const settings = useMemo<QuantiseSettings | null>(
     () => (grid === null ? null : { grid, key, reduction }),

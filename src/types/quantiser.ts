@@ -52,6 +52,33 @@ export interface ImportedImage {
 }
 
 /**
+ * Which of the two readings of a sheet produced its scale, and therefore how far it can be trusted.
+ *
+ * `EXACT` is `detectPixelGrid`: every colour transition in the image falls on the lattice, give or
+ * take the stray pixel a compression artefact leaves, and there is nothing to check. `ESTIMATED` is
+ * `estimatePixelGrid`, reading the *period* of edges that resampling has already destroyed — a
+ * measurement with a tolerance in it, so it is offered as a candidate and never adopted on its own.
+ *
+ * The distinction is carried rather than dropped because the two are not interchangeable on screen:
+ * a number the user must check against the preview, presented as one they need not, is the failure
+ * this whole reading exists to avoid.
+ */
+export type ScaleMeasurement = 'EXACT' | 'ESTIMATED';
+
+/**
+ * The pixel scale in a sheet, and how it was arrived at.
+ *
+ * One value rather than an exact scale beside an estimated one, because at most one of those is ever
+ * true: the estimate is what the app falls back to *when* the exact reading found nothing, so a pair
+ * of fields would spend most of its life half `null` and would admit a state — both set, disagreeing
+ * — that has no meaning and would have to be resolved at every point of use.
+ */
+export interface SheetScale {
+  readonly grid: PixelGrid;
+  readonly measurement: ScaleMeasurement;
+}
+
+/**
  * What one look at a newly-loaded sheet establishes, before any setting has been chosen.
  *
  * Separate from {@link QuantiseResult} because these two answers depend on the *image* and nothing
@@ -60,8 +87,8 @@ export interface ImportedImage {
  * colours in a 16.8-megapixel sheet is not a thing to do on a keystroke.
  */
 export interface SheetFacts {
-  /** The scale detection measured, or `null` for artwork with no pixel scale at all. */
-  readonly detected: PixelGrid | null;
+  /** The scale the sheet was read at, or `null` for artwork with no pixel scale in it at all. */
+  readonly scale: SheetScale | null;
   /** Distinct non-transparent colours in the sheet as it arrived. */
   readonly colors: number;
 }

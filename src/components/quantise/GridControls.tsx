@@ -1,15 +1,16 @@
 import { useId } from 'react';
-import { MANUAL_GRID_RANGE, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
+import { MANUAL_GRID_RANGE, QUANTISE_SCALE_GUIDANCE, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import type { TargetSize } from '../../types/output.ts';
-import type { ColorPlan, PixelGrid, SheetFacts } from '../../types/quantiser.ts';
-import { Badge } from '../common/Badge.tsx';
+import type { ColorPlan, PixelGrid, SheetFacts, SheetScale } from '../../types/quantiser.ts';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { GridCandidates } from './GridCandidates.tsx';
+import { ScaleBadge } from './ScaleBadge.tsx';
 
 interface GridControlsProps {
   /**
    * What one look at the sheet established, or `null` while the worker is still looking.
    *
-   * The measurement and "no measurement yet" arrive as one value rather than as a `detected` beside a
+   * The reading and "no reading yet" arrive as one value rather than as a `scale` beside a
    * `measuring`, because two props can contradict each other and these two never may: an empty badge
    * and a spinner shown at once is the state that tells a user the tab is broken.
    */
@@ -18,7 +19,13 @@ interface GridControlsProps {
   readonly target: TargetSize | null;
   /** The scale {@link target} implies for this sheet, or `null` where it implies none. */
   readonly suggested: PixelGrid | null;
-  /** The grid actually in force — the user's, or the detected one behind it. */
+  /**
+   * The grid actually in force — the user's, or an `EXACT` reading of the sheet behind it.
+   *
+   * An `ESTIMATED` reading is **not** among the things that can be in force: it reaches the box only
+   * by being clicked in the row of candidates below. See `useQuantiseWorker`, which is where the
+   * rule is applied.
+   */
   readonly grid: PixelGrid | null;
   /**
    * What the studio decided about colour, as the pipeline was handed it.
@@ -29,12 +36,9 @@ interface GridControlsProps {
    * pinned palette left this readout still naming the colour budget it supersedes.
    */
   readonly colorPlan: ColorPlan;
-  /** `null` clears the override, handing the decision back to detection. */
+  /** `null` clears the override, handing the decision back to the sheet's own reading. */
   readonly onGridChange: (grid: PixelGrid | null) => void;
 }
-
-const CANDIDATE_CLASS =
-  'rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 font-mono text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink';
 
 /**
  * The one decision this tab asks the user to make, the two facts behind it, and the scales worth
@@ -48,12 +52,15 @@ const CANDIDATE_CLASS =
  *
  * The grid box is a plain `<input type="number">` rather than `NumberField`, for the one reason that
  * component documents about itself: it is bound to a stored number and refuses an empty value.
- * Emptiness is meaningful here — "no grid, use whatever was detected" — and is the state the tab
- * opens in when nothing was detected.
+ * Emptiness is meaningful here — "no grid, use whatever the sheet was read as" — and is the state
+ * the tab opens in whenever that reading was not an exact one, an **estimate included**: the
+ * estimate is offered to click, so an empty box beside a badge naming a number is not a
+ * contradiction but the distinction the panel exists to draw.
  */
 export function GridControls({ facts, target, suggested, grid, colorPlan, onGridChange }: GridControlsProps) {
   const inputId = useId();
-  const detected = facts?.detected ?? null;
+  const scale = facts?.scale ?? null;
+  const guidance = scaleGuidance(facts, scale, grid);
 
   return (
     <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
@@ -94,20 +101,13 @@ export function GridControls({ facts, target, suggested, grid, colorPlan, onGrid
         </div>
 
         <div className="pb-2.5">
-          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Measured scale</p>
-          {facts === null ? (
-            // The only tone that pulses, and this is what it is for: the sheet is being read, right
-            // now, on the worker. See the note on `BadgeTone`.
-            <Badge tone="live">Measuring the sheet…</Badge>
-          ) : detected === null ? (
-            <Badge tone="attention">No pixel scale in this image</Badge>
-          ) : (
-            // Not "every edge falls on it": the threshold believes a scale that up to a tenth of the
-            // sheet's transitions miss, which is the whole point of it not being 1.0 — a stray pixel
-            // from a compression artefact should not deny an obvious grid. The badge says how the
-            // number was arrived at instead of overstating how cleanly it fits.
-            <Badge tone="valid">{detected}× — measured where the art changes</Badge>
-          )}
+          {/* Not "Measured scale", which the badge below now contradicts in one of its four states:
+              an estimate is a reading of the sheet but not a measurement of it, and a label
+              asserting otherwise takes back the hedge the badge is there to make. This says what the
+              readout is *about* and leaves the badge to say how it was arrived at — and it rhymes
+              with "Colours in the sheet" beside it, which is the same kind of fact. */}
+          <p className="mb-1.5 text-xs font-semibold text-ink-muted">Scale in the sheet</p>
+          <ScaleBadge facts={facts} />
         </div>
 
         <div className="pb-2.5">
@@ -125,33 +125,7 @@ export function GridControls({ facts, target, suggested, grid, colorPlan, onGrid
         </div>
       </div>
 
-      {(detected !== null || suggested !== null) && (
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-ink-muted">Try</span>
-          {detected !== null && (
-            <button
-              type="button"
-              onClick={() => {
-                onGridChange(detected);
-              }}
-              className={CANDIDATE_CLASS}
-            >
-              {detected}× measured
-            </button>
-          )}
-          {suggested !== null && (
-            <button
-              type="button"
-              onClick={() => {
-                onGridChange(suggested);
-              }}
-              className={CANDIDATE_CLASS}
-            >
-              {suggested}× from the target size
-            </button>
-          )}
-        </div>
-      )}
+      <GridCandidates scale={scale} suggested={suggested} onChoose={onGridChange} />
 
       {suggested !== null && target !== null && (
         // An upper bound, not a measurement: at any coarser scale the sheet could not seat the
@@ -166,16 +140,28 @@ export function GridControls({ facts, target, suggested, grid, colorPlan, onGrid
         </p>
       )}
 
-      {facts !== null && detected === null && (
-        <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-          Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite
-          size looks like — the thing the prompt asks against and models deliver anyway. Type the scale the
-          art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A
-          grid of 1 keeps the size and reduces the palette only. If the art starts a few pixels in from the
-          top-left corner, no scale can be measured from it and none can be applied to it either — crop the
-          margin off and bring it back.
-        </p>
-      )}
+      {guidance !== null && <p className="mt-3 text-xs leading-relaxed text-ink-muted">{guidance}</p>}
     </section>
   );
+}
+
+/**
+ * Which paragraph the panel owes the reader, or `null` where it owes them none.
+ *
+ * Nothing at all while the sheet is still being read, and nothing for an `EXACT` scale, which is
+ * already in the box and needs no explaining.
+ *
+ * **The two that remain are not the same kind of sentence, and that is why one of them goes away.**
+ * `none` is *instructions* — what to type, what a grid of 1 does, what to do about a margin — and
+ * every word of it stays true however the reader answers, so it stays up. `estimated` is a
+ * statement about the **state**: it says the scale above has not been applied and asks for a click.
+ * The moment a grid is in force that has stopped being true, and leaving it up would have the panel
+ * asking for something the reader had already done, beside a box holding the number and a preview
+ * showing the result.
+ */
+function scaleGuidance(facts: SheetFacts | null, scale: SheetScale | null, grid: PixelGrid | null) {
+  if (facts === null) return null;
+  if (scale === null) return QUANTISE_SCALE_GUIDANCE.none;
+  if (scale.measurement === 'EXACT') return null;
+  return grid === null ? QUANTISE_SCALE_GUIDANCE.estimated : null;
 }

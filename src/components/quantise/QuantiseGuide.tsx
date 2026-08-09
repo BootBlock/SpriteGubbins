@@ -21,11 +21,14 @@ export function QuantiseGuide() {
       <p className="max-w-3xl text-sm leading-relaxed text-ink-muted">
         A model asked for pixel art almost always returns a smooth painting of pixel art: the shapes are
         right, but every edge is anti-aliased and one drawn pixel is really an 8 × 8 patch of near-identical
-        colours. This tab measures the scale it was actually drawn at, snaps each patch back to the single
-        colour that dominates it, brings its colours down to what the prompt asked for, and can take the
-        background key out to transparency. With no palette pinned in the studio, every colour that survives
-        is one the image already contained; pin one and each pixel moves to its nearest entry instead. Nothing
-        is uploaded, nothing is averaged into existence, and no dithering is applied either way.
+        colours. This tab reads the scale it was actually drawn at — measured outright where the art is crisp,
+        and estimated from the spacing of its edges where softening has destroyed them — then snaps each patch
+        back to the single colour that dominates it, brings its colours down to what the prompt asked for, and
+        can take the background key out to transparency. An estimate is offered rather than applied, because
+        it carries a tolerance a measurement does not. With no palette pinned in the studio, every colour that
+        survives is one the image already contained; pin one and each pixel moves to its nearest entry
+        instead. Nothing is uploaded, nothing is averaged into existence, and no dithering is applied either
+        way.
       </p>
 
       <ol className="mt-4 grid gap-3 sm:grid-cols-2">

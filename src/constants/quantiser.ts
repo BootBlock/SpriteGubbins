@@ -41,6 +41,90 @@ export const MAX_DETECTED_GRID = 32;
 export const GRID_DETECTION_THRESHOLD = 0.9;
 
 /**
+ * How far either side of a boundary the softening in a resampled sheet is taken to reach.
+ *
+ * Art drawn at a scale and then **resampled** has no colour transitions left to count: a symmetric
+ * three-tap kernel convolves each boundary's step with itself, so one crisp edge becomes a ramp
+ * spread over the pixel before it, the pixel itself, and the pixel after. `detectPixelGrid` sees
+ * that as three transitions of which two miss the lattice, and answers `null` for the whole sheet —
+ * correctly, by its own definition, and uselessly.
+ *
+ * `1` is therefore the whole claim the estimator makes about what happened to the image, and it is
+ * a claim with a cost at both ends. Narrower and a three-tap ramp is two-thirds off-lattice again.
+ * Wider and the window swallows the phase: measured on art inset one pixel from the corner, a
+ * two-pixel ramp scores a perfect 1.0 at the wrong offset, which is the {@link MIN_ESTIMATED_GRID}
+ * failure this exists to avoid. Softening broader than this falls short of
+ * {@link GRID_ESTIMATION_THRESHOLD} and answers `null`, which is the honest outcome rather than a
+ * missed one: past a ramp this wide there is no lattice left in the image for `alignToGrid` to snap
+ * to. How far short depends on how much broader — a five-tap kernel still measures 0.64 to 0.73,
+ * while a bilinear upscale spreads each boundary across the whole cell rather than one pixel either
+ * side and measures below 0.04. The two are not one band, and only the conclusion is shared.
+ */
+export const SOFTENED_EDGE_RAMP = 1;
+
+/**
+ * The smallest scale the estimator will consider, and the one number here that is derived rather
+ * than chosen.
+ *
+ * A ramp of {@link SOFTENED_EDGE_RAMP} admits `2 × ramp + 1` offsets out of every `grid`, so at a
+ * grid of `2 × ramp + 1` the window covers *every* offset and the measurement below becomes the
+ * statement that an image is an image. One more than that is the coarsest scale at which a single
+ * offset is still left over to disagree — at 4, the cell's own centre — which is what the score is
+ * measured against.
+ *
+ * It is also the honest floor on the question. A boundary softened across three pixels inside a
+ * cell four pixels wide has already consumed three quarters of it; below that the ramps either side
+ * of a cell overlap, and there is no period left in the image to find.
+ */
+export const MIN_ESTIMATED_GRID = 2 * SOFTENED_EDGE_RAMP + 2;
+
+/**
+ * How many of a scale's lattice lines must actually carry some of the sheet's change before the
+ * spacing between them counts as a period.
+ *
+ * Two, because **one interval is not a period**. A share of change on its own says only that the
+ * change *fits* a lattice, and a single edge anywhere in an otherwise flat sheet fits one perfectly:
+ * whatever position it sits at, some candidate puts a lattice line through it, collects every last
+ * unit of the sheet's change, and scores 1. Measured before this existed, a flat 256 × 256 sheet
+ * inside a one-pixel frame came back as a confident grid of 32, and a 64 × 64 sheet with a single
+ * vertical line at x = 20 as a grid of 21 — both of which reduce the art to nothing when applied.
+ *
+ * The count is **pooled across both axes**, which is what keeps the smallest honest sheet readable:
+ * art two cells to a side has exactly one interior line down and one across, and those two together
+ * are a period observed twice rather than a coincidence observed once. A lone vertical line has one
+ * and nothing across it, and is refused.
+ */
+export const MIN_LATTICE_LINES = 2;
+
+/**
+ * The share of a sheet's change that must sit on a scale's lattice for that scale to be *offered*.
+ *
+ * The same nine tenths as {@link GRID_DETECTION_THRESHOLD}, measuring the same thing about a
+ * different quantity: that is a share of colour *transitions*, this a share of the summed magnitude
+ * of every step between neighbouring pixels, corrected for the share a lattice of this scale would
+ * collect from an image with no structure at all. So both read as "nine tenths of what changes in
+ * this sheet changes on the lattice", and neither can be nudged into believing a scale twice the
+ * truth — which collects about half, whatever the wording.
+ *
+ * High, and deliberately so, because the two answers are not symmetric: a scale that is not offered
+ * costs the user a number they must type themselves, while a **wrong** scale offered is one they
+ * click, and it hands back a sheet reduced by the wrong factor with nothing on screen saying so.
+ * Measured across softened art at 4, 6, 8, 12 and 16 — varied cell colours, two-colour art, and a
+ * small sprite on a large key field — the true scale scores exactly 1, the best **coarser**
+ * candidate 0.52, and smooth painted artwork with no scale in it at most 0.40.
+ *
+ * **Coarser is the only direction this number defends, and that is not a weakness.** A *finer*
+ * candidate scores 1 as well and always will: art drawn at 8 changes only on multiples of 8, every
+ * one of which is also a multiple of 4, so a grid of 4 explains it perfectly and would merely fail
+ * to reduce it as far. What picks the right one is the **descending loop** in `estimatePixelGrid`,
+ * which takes the coarsest scale that holds — exactly the rule `detectPixelGrid` uses, and for
+ * exactly the same reason. Read this figure as the headroom above a scale that would *destroy*
+ * detail, never as a general 1-against-0.52 margin, because a reader who takes it for the latter
+ * will conclude there is room to lower it.
+ */
+export const GRID_ESTIMATION_THRESHOLD = 0.9;
+
+/**
  * What the user may type when detection finds nothing, or disagrees with them.
  *
  * The floor is 1 rather than 2, because "this image is already at its own resolution, just reduce
@@ -133,9 +217,9 @@ export const QUANTISE_STEPS = [
     detail: 'drop it here, paste it from the clipboard, or choose a file. It never leaves the tab.',
   },
   {
-    title: 'Check the measured scale',
+    title: 'Check the scale in the sheet',
     detail:
-      'the pixel grid is measured from the image itself. Overrule it if the preview disagrees, and type it yourself if nothing was found.',
+      'the pixel grid is read from the image itself — exactly where the art is crisp, and as an estimate to click where resampling has softened it. Overrule it if the preview disagrees, and type it yourself if neither reading found one.',
   },
   {
     title: 'Key the background, if it has one',
@@ -149,9 +233,59 @@ export const QUANTISE_STEPS = [
   },
 ] as const;
 
+/**
+ * What the panel says when the sheet's scale could not be read exactly, keyed to how far the reading
+ * got.
+ *
+ * Here rather than inline in `GridControls` for the reason {@link QUANTISE_STEPS} is: it is content,
+ * it ships in the bundle, and it is read by strangers. It became a *set* when the estimator arrived,
+ * which is the other half of the reason — one paragraph inline is a component with some copy in it,
+ * and a choice between paragraphs is a component deciding what the app says.
+ *
+ * Neither names the scale it is talking about. The badge above and the button beside it both state
+ * the number already, and a third copy of it in prose is one more place for the three to disagree.
+ */
+export const QUANTISE_SCALE_GUIDANCE = {
+  /** Nothing was read at all — the sheet is smooth, or its art does not start at the corner. */
+  none: 'Nothing in this image changes on a regular grid, and its edges do not soften at a regular spacing either, so neither reading of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. If the art starts a few pixels in from the top-left corner, no scale can be measured from it and none can be applied to it either — crop the margin off and bring it back.',
+  /** The edges repeat at a spacing, which is a candidate the reader still has to check. */
+  estimated:
+    'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do soften at a regular spacing, though, and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',
+} as const;
+
+/**
+ * What the result pane says when it has no result to show, keyed to the reason it has none.
+ *
+ * Three reasons, not two, and they call for three different things from the reader — which is the
+ * whole reason this is a set rather than the one line it began as. A pane that tells someone to type
+ * a number the panel above is already offering them, or to type one they have just typed, reads as a
+ * working feature having failed.
+ *
+ * Beside {@link QUANTISE_SCALE_GUIDANCE} rather than inside it: that is the *panel's* prose, several
+ * sentences of instruction, and this is a caption on an empty frame. They are answering the same
+ * question at different lengths, and each says only what its own surface has room for.
+ */
+export const QUANTISE_RESULT_PLACEHOLDER = {
+  /** The worker is still reading the sheet, before any setting could apply. */
+  reading: 'Reading the sheet and working out the scale it was drawn at…',
+  /** Neither reading found a scale, so there is nothing to align to until one is typed. */
+  none: 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one in the box above.',
+  /** A scale was estimated and deliberately not applied — it is waiting to be chosen. */
+  estimated:
+    'The scale in this sheet was estimated from its softened edges rather than measured, so it has not been applied. Click it above to align the sheet to it, or type a different one.',
+  /**
+   * A scale **is** in force and still produced nothing, which only a failure explains.
+   *
+   * Reachable two ways — the transform threw, or the worker died — and both put a message above this
+   * pane saying which. So this points at that rather than repeating it, and above all does not fall
+   * back to "type a scale in the box above", which is what the reader has already done.
+   */
+  failed: 'This sheet could not be quantised at the scale in force. The message above the controls says why.',
+} as const;
+
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */
 export const QUANTISE_TOOLTIPS = {
-  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Type it yourself when the model returned smooth artwork, or when the measurement disagrees with the preview. A grid of 1 leaves the size alone and only reduces the palette.',
+  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still repeat at is estimated instead and offered to click rather than applied. Type it yourself when neither reading found a scale, or when the one reported disagrees with the preview. A grid of 1 leaves the size alone and only reduces the palette.',
   // Where panning is named. The grab cursor only appears once a pointer is already over the image,
   // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence
   // is the other thing nothing on screen says: the panes are linked, and moving one moves both.

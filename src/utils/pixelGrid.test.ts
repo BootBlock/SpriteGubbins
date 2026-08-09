@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { imageFrom, upscale } from '../test/images.ts';
-import { detectPixelGrid } from './pixelGrid.ts';
+import { imageFrom, soften, upscale } from '../test/images.ts';
+import { detectPixelGrid, measureSheetScale } from './pixelGrid.ts';
 
 /** A 16 × 16 source in which every pixel is a different colour, so no block of two is ever uniform. */
 const PIXEL_SOURCE = imageFrom(16, 16, (x, y) => ({ r: x * 16 + 1, g: y * 16 + 1, b: 64, a: 255 }));
@@ -84,5 +84,40 @@ describe('detectPixelGrid', () => {
     // candidate fits it equally and none of them is a measurement — where the block count would have
     // reported the largest candidate with complete confidence.
     expect(detectPixelGrid(imageFrom(64, 64, () => ({ r: 10, g: 20, b: 30, a: 255 })))).toBeNull();
+  });
+});
+
+describe('measureSheetScale', () => {
+  it('reports an exact reading where every transition falls on the lattice', () => {
+    // Nothing is estimated about crisp art, and the reading says so: the tab shows this as a
+    // measurement, adopts it as the grid in force, and asks the user for nothing.
+    expect(measureSheetScale(upscale(PIXEL_SOURCE, 8))).toEqual({ grid: 8, measurement: 'EXACT' });
+  });
+
+  it('falls back to the estimate where softening has destroyed the transitions', () => {
+    // The same art, resampled. `detectPixelGrid` cannot see it — that is the gap this fallback
+    // exists for — and what comes back is the same scale carrying the label that stops it being
+    // adopted silently.
+    const resampled = soften(upscale(PIXEL_SOURCE, 8));
+    expect(detectPixelGrid(resampled)).toBeNull();
+    expect(measureSheetScale(resampled)).toEqual({ grid: 8, measurement: 'ESTIMATED' });
+  });
+
+  it('never estimates over an exact reading', () => {
+    // The two are tried in order and never both. An exact reading has no tolerance in it, so a
+    // second opinion could only disagree with it — and the sheet gets one pass rather than two.
+    expect(measureSheetScale(spottedGrid(20))).toEqual({ grid: 4, measurement: 'EXACT' });
+  });
+
+  it('answers null where neither reading finds a scale', () => {
+    // Smooth artwork with no scale in it at all, which is what the panel's "type it yourself"
+    // guidance is written for.
+    const gradient = imageFrom(64, 64, (x, y) => ({
+      r: Math.round((x / 63) * 255),
+      g: Math.round((y / 63) * 255),
+      b: 128,
+      a: 255,
+    }));
+    expect(measureSheetScale(gradient)).toBeNull();
   });
 });

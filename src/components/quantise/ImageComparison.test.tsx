@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { createImage } from '../../utils/imageData.ts';
-import type { QuantiseResult } from '../../types/quantiser.ts';
+import type { QuantiseResult, SheetScale } from '../../types/quantiser.ts';
 import { ImageComparison } from './ImageComparison.tsx';
 
 /**
@@ -34,13 +34,21 @@ function resultFor(grid: number, colors = 32): QuantiseResult {
   return { image: createImage(side, side), colors, keyedShare: 0 };
 }
 
-function show(grid: number | null, colors?: number, busy = false) {
+function show(
+  grid: number | null,
+  colors?: number,
+  busy = false,
+  scale: SheetScale | null = null,
+  inForce: number | null = grid,
+) {
   const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
   render(
     <ImageComparison
       sourceName="sheet.png"
       source={source}
       sourceColors={200}
+      scale={scale}
+      grid={inForce}
       quantised={grid === null ? null : { result: resultFor(grid, colors), grid }}
       busy={busy}
     />,
@@ -118,6 +126,28 @@ describe('ImageComparison', () => {
     expect(quantised).toBeNull();
     expect(screen.getByText(/No pixel scale was measured/)).toBeInTheDocument();
     expect(arrived.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+  });
+
+  it('asks for a click, not a number, when a scale was estimated and left unapplied', () => {
+    // The empty states are told apart by what the reader has to *do*, and only one of them wants a
+    // number typed. An estimate is offered above and waiting to be clicked, so the "type one"
+    // wording would send a reader looking for something the panel had already handed them — and
+    // reads as the estimate having failed.
+    show(null, undefined, false, { grid: 8, measurement: 'ESTIMATED' }, null);
+
+    expect(screen.getByText(/Click it above to align the sheet to it/)).toBeInTheDocument();
+    expect(screen.queryByText(/No pixel scale was measured/)).toBeNull();
+  });
+
+  it('points at the error, rather than asking for a scale, when one is already in force', () => {
+    // The third cause of an empty pane, and the one where every instruction about *choosing* a scale
+    // is wrong: 8 is in the box and the transform still produced nothing, which only a failure
+    // explains — and the tab renders that failure directly above. Saying "type one in the box above"
+    // here tells the reader to do the thing they have just done.
+    show(null, undefined, false, { grid: 8, measurement: 'EXACT' }, 8);
+
+    expect(screen.getByText(/could not be quantised at the scale in force/)).toBeInTheDocument();
+    expect(screen.queryByText(/No pixel scale was measured/)).toBeNull();
   });
 
   it('says it is working, over the previous result rather than instead of it', () => {

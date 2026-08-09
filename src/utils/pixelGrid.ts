@@ -1,6 +1,7 @@
 import { GRID_DETECTION_THRESHOLD, MAX_DETECTED_GRID } from '../constants/quantiser.ts';
-import type { PixelGrid } from '../types/quantiser.ts';
+import type { PixelGrid, SheetScale } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, packedColorAt } from './imageData.ts';
+import { estimatePixelGrid } from './pixelPeriod.ts';
 
 /**
  * Finding the scale a returned sheet's art was actually drawn at.
@@ -9,6 +10,26 @@ import { CHANNELS_PER_PIXEL, packedColorAt } from './imageData.ts';
  * `alignToGrid` and `downscaleNearest` in ./gridAlignment.ts, and `quantiseImage` is what runs the
  * three in order.
  */
+
+/**
+ * The scale in a sheet, read exactly where the sheet allows it and estimated where it does not.
+ *
+ * The two readings are tried in this order and never both: {@link detectPixelGrid} is exact and has
+ * no tolerance in it, so where it answers there is nothing an estimate could add and a second
+ * opinion could only disagree. `estimatePixelGrid` is the fallback, and the case it covers —
+ * artwork drawn at a scale and then resampled — is the one this tab meets most often, which is why
+ * a sheet it cannot read is worth a second pass rather than an immediate `null`.
+ *
+ * Running the estimator only on that fallback is also what keeps the survey to one extra pass on the
+ * sheets that need it and none on the sheets that do not.
+ */
+export function measureSheetScale(image: ImageData): SheetScale | null {
+  const detected = detectPixelGrid(image);
+  if (detected !== null) return { grid: detected, measurement: 'EXACT' };
+
+  const estimated = estimatePixelGrid(image);
+  return estimated === null ? null : { grid: estimated, measurement: 'ESTIMATED' };
+}
 
 /**
  * Where one pixel differs from the neighbour above it or to its left, totalled by position.
@@ -43,15 +64,18 @@ interface EdgeLattice {
  * coarsest grid that holds is the real one. Candidates stop at 2 because every image is trivially
  * uniform at 1, so a detector that considered it could never answer `null`.
  *
- * `null` is the honest answer for genuinely smooth artwork, and a useful one: it says the model
- * returned a painted image rather than pixel art at a scale, and the tab then asks for a grid instead
- * of guessing. An image with **no** transitions at all — one flat colour, edge to edge — answers
- * `null` too: there is no scale in it to measure, and every candidate would fit equally.
+ * `null` is the honest answer for genuinely smooth artwork, and it is where {@link measureSheetScale}
+ * hands the sheet to the estimator: this asks whether every transition falls on a lattice, which
+ * resampling makes false of art that was nevertheless drawn at a scale, so the question worth asking
+ * next is a different one. An image with **no** transitions at all — one flat colour, edge to edge —
+ * answers `null` too, and the estimator agrees: there is no scale in it to measure, and every
+ * candidate would fit equally.
  *
  * **The lattice is assumed to start at the image's own origin.** A sheet whose art is offset by a few
  * pixels from the top-left corner has a scale this cannot see, and the manual grid box will not fix
  * it either, because the transform snaps from the origin as well. Cropping the margin off is the
- * answer, and detection saying `null` is what tells the user to go and look.
+ * answer, and it is one the estimator is deliberately anchored the same way to preserve — it reads
+ * period rather than membership, but only ever against the corner.
  */
 export function detectPixelGrid(image: ImageData): PixelGrid | null {
   const lattice = edgeLattice(image);

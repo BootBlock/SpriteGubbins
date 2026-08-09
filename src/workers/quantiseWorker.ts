@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import type { SheetFacts } from '../types/quantiser.ts';
 import { countColors } from '../utils/imageData.ts';
-import { detectPixelGrid } from '../utils/pixelGrid.ts';
+import { measureSheetScale } from '../utils/pixelGrid.ts';
 import { quantiseImage } from '../utils/quantiseImage.ts';
 import type { QuantiseCall, QuantiseReply } from './quantiseProtocol.ts';
 
@@ -46,9 +46,9 @@ function post(reply: QuantiseReply): void {
   self.postMessage(reply);
 }
 
-/** Detection and the source colour count — one pass each, once per sheet. */
+/** The scale reading and the source colour count — once per sheet, never per settings change. */
 function survey(image: ImageData): SheetFacts {
-  return { detected: detectPixelGrid(image), colors: countColors(image) };
+  return { scale: measureSheetScale(image), colors: countColors(image) };
 }
 
 /**

@@ -115,7 +115,7 @@ export function QuantiseTab() {
       </header>
 
       {/* The one place the tab's state is *spoken*. Three separate chips say it visually — the
-          measured-scale badge, the keyed share, and the pulsing chip over the result — and none of
+          scale badge, the keyed share, and the pulsing chip over the result — and none of
           them is announced, so without this the tab goes silent for the debounce plus a job that can
           run for seconds and then swaps the result underneath a screen-reader user. One region rather
           than three, because three would talk over each other; rendered unconditionally, because a
@@ -156,6 +156,8 @@ export function QuantiseTab() {
             sourceName={source.name}
             source={source.image}
             sourceColors={facts?.colors ?? null}
+            scale={facts?.scale ?? null}
+            grid={grid}
             quantised={quantised}
             busy={busy}
           />
@@ -171,9 +173,18 @@ export function QuantiseTab() {
  * Announces the **outcome** as well as the wait, because the outcome is the half a screen-reader user
  * cannot otherwise get: the two previews say everything visually and nothing else does. An empty
  * string while there is no sheet, so the region exists from the first render with nothing to say.
+ *
+ * **An estimated scale is announced too, and it is the state that most needs it.** Nothing is
+ * running and nothing has been produced — the tab is waiting on the reader — so without this the
+ * region falls silent for good at the exact moment a sighted reader is being shown a badge, a
+ * button and a paragraph all asking them to act. Saying "nothing is happening" by saying nothing is
+ * indistinguishable from the tab having finished.
  */
 function statusOf(busy: boolean, facts: SheetFacts | null, quantised: Quantised | null): string {
   if (busy) return facts === null ? 'Measuring the sheet.' : 'Quantising the sheet.';
+  if (facts?.scale?.measurement === 'ESTIMATED' && quantised === null) {
+    return `Estimated a pixel scale of ${String(facts.scale.grid)} from this sheet's softened edges. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
+  }
   if (quantised === null) return '';
   const { image, colors } = quantised.result;
   return `Quantised to ${String(image.width)} by ${String(image.height)} pixels, ${String(colors)} ${colors === 1 ? 'colour' : 'colours'}.`;
