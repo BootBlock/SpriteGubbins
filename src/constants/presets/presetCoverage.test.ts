@@ -112,7 +112,9 @@ describe('the built-in library spans the vocabulary', () => {
 describe('no shipped preset contradicts itself', () => {
   it.each(PRESETS)('$name asks for a sheet its own category can produce', (preset) => {
     // `resolveMode` would silently substitute the category's default, so a mismatch here does not
-    // fail — it ships a preset whose card says one thing and whose prompt says another.
+    // fail — it ships a preset that draws a different sheet from the one it was written for. The
+    // library card resolves the mode too, so nothing on screen would report the substitution: this
+    // assertion is the only thing that does.
     expect(supportsMode(preset.category, preset.output.directionalMode)).toBe(true);
   });
 
