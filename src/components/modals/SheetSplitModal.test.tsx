@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
+import { NO_COMPONENT_BUDGET } from '../../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
 import { DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import type { PersistenceBackend } from '../../db/backend.ts';
@@ -11,7 +12,7 @@ import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { batchComponentCount, componentCountFor } from '../../utils/componentSet.ts';
+import { batchComponentCount, componentCountFor, sheetComponentCount } from '../../utils/componentSet.ts';
 import { sheetRuns } from '../../utils/sheetRuns.ts';
 import { SheetSplitModal } from './SheetSplitModal.tsx';
 
@@ -49,8 +50,43 @@ beforeEach(() => {
   vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
 });
 
+/** Above the directional core's fifteen components and below the articulation sheet's thirty-four. */
+const BUDGET_BETWEEN_THE_TWO_SHEETS = 20;
+
 function copyButtons(): readonly HTMLElement[] {
   return screen.getAllByRole('button', { name: 'Copy this sheet' });
+}
+
+interface RowUnderTest {
+  readonly name: string;
+  readonly count: number;
+  readonly row: HTMLElement;
+}
+
+/**
+ * Every rendered row paired with the sheet behind it, so an assertion about a row can name which
+ * sheet it belongs to.
+ *
+ * The count comes from `sheetComponentCount` — the same function the row calls. That is deliberate:
+ * what is under test here is whether the drawer *asks* the budget about every sheet of the batch,
+ * and whether the arithmetic itself is right is `componentSet.test.ts`'s question.
+ */
+function sheetsOnScreen(): readonly RowUnderTest[] {
+  const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
+  const rows = screen.getAllByRole('listitem');
+
+  return runs.map((run, index) => {
+    const row = rows[index];
+    if (row === undefined) throw new Error('the drawer should render one row per sheet of the batch.');
+    return { name: run.plan.name, count: sheetComponentCount('CHARACTER', run, []), row };
+  });
+}
+
+/** The sheets whose rows carry the over-budget chip, named. */
+function flaggedIn(sheets: readonly RowUnderTest[]): readonly string[] {
+  return sheets
+    .filter((sheet) => within(sheet.row).queryByText('Over budget') !== null)
+    .map((sheet) => sheet.name);
 }
 
 describe('SheetSplitModal', () => {
@@ -68,8 +104,9 @@ describe('SheetSplitModal', () => {
   it('states what the whole batch asks for, not what one sheet of it does', () => {
     // The gap this closes: eight rows each showing a word count, beside a studio saying "this sheet
     // asks for 15 components" — true of every one of them, and no answer at all to how large the
-    // job is. The arithmetic is `componentSet.test.ts`'s; what is checked here is that the drawer
-    // shows the batch's figure rather than a sheet's.
+    // job is. The arithmetic is `componentSet.test.ts`'s; what is checked here is that the summary
+    // states the batch's figure and each row states its own, rather than one of them standing in
+    // for the other.
     render(<SheetSplitModal />);
 
     const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
@@ -78,7 +115,63 @@ describe('SheetSplitModal', () => {
 
     expect(total).toBe(perSheet * FACINGS.length);
     expect(screen.getByText(`${String(total)} components`)).toBeInTheDocument();
-    expect(screen.queryByText(`${String(perSheet)} components`)).not.toBeInTheDocument();
+    // Once per row and nowhere else — the eight sheets of a rig all carry the same plan, so the
+    // per-sheet figure is the same eight times and is never the number in the summary.
+    expect(screen.getAllByText(`${String(perSheet)} components`)).toHaveLength(FACINGS.length);
+  });
+
+  it('flags the sheet of a series that is over the budget, and only that one', () => {
+    // The gap this closes: `exceedsComponentBudget` was only ever asked about the sheet the studio's
+    // own control was pointed at. On the facing axis that checks everything, because all eight runs
+    // of a rig carry the same plan and therefore the same count — on the series axis it checked one
+    // of two, and the heavy sheet is precisely the one the studio is not on. A character's
+    // directional core is fifteen components and the articulation sheet beside it thirty-four, so a
+    // budget between the two is over on exactly one row.
+    useOutputStore.setState({
+      output: {
+        ...DEFAULT_OUTPUT_CONFIG,
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+        componentBudget: BUDGET_BETWEEN_THE_TWO_SHEETS,
+      },
+    });
+    render(<SheetSplitModal />);
+
+    const sheets = sheetsOnScreen();
+    expect(sheets).toHaveLength(2);
+
+    // The premise rather than a restatement of the arithmetic: a fixture where both sheets sat under
+    // the budget would satisfy every assertion below while proving nothing at all.
+    expect(sheets.filter((sheet) => sheet.count > BUDGET_BETWEEN_THE_TWO_SHEETS)).toHaveLength(1);
+
+    for (const sheet of sheets) {
+      expect(within(sheet.row).getByText(`${String(sheet.count)} components`)).toBeInTheDocument();
+    }
+
+    // Named, not counted: which sheet carries the warning is the whole point, and a test that only
+    // checked "one of them" would pass with the flag on the wrong row.
+    expect(flaggedIn(sheets)).toEqual(['Articulation']);
+    expect(
+      screen.getByText(new RegExp(`over the budget of ${String(BUDGET_BETWEEN_THE_TWO_SHEETS)}`)),
+    ).toBeInTheDocument();
+  });
+
+  it('flags nothing when no budget is set, however heavy the sheet', () => {
+    // `NO_COMPONENT_BUDGET` is zero, so a comparison that folded the unset case into `count > budget`
+    // would report every sheet in the app as over budget — and the drawer, unlike the studio, would
+    // say so on every row at once.
+    useOutputStore.setState({
+      output: {
+        ...DEFAULT_OUTPUT_CONFIG,
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+        componentBudget: NO_COMPONENT_BUDGET,
+      },
+    });
+    render(<SheetSplitModal />);
+
+    const sheets = sheetsOnScreen();
+    expect(sheets.some((sheet) => sheet.count > 0)).toBe(true);
+    expect(flaggedIn(sheets)).toEqual([]);
+    expect(screen.getByText(/no budget is set/)).toBeInTheDocument();
   });
 
   it('records eight prompts, not one, each with the configuration that reproduces it', async () => {

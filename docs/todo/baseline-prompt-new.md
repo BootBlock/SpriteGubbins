@@ -890,7 +890,7 @@ gear.
 | `RIG_MODE` | `NONE` |
 | `DIRECTIONAL_MODE` | `TILESET_MODULAR` |
 | `SPRITE_TARGET_SIZE` | `48 × 48 px per tile (1 metre)` |
-| `ANATOMY` | `MODULAR BUILDING TILES` |
+| `ANATOMY` | `Modular Building Tiles` |
 | `EXCLUSIONS` | `No characters, no props, no baked lighting, no shadow` |
 
 Inventory for the three-quarter read — a floor, a wall **top**, and a wall **face** are three

@@ -10,7 +10,15 @@ import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
  * ask the generator to negotiate a number the user is the one who has to change.
  *
  * So the only correct response is to say so, before the prompt is copied, and leave the sheet alone.
- * See `ComponentBudgetNotice`, which is where that is said.
+ * That is said in the two places a prompt is taken away from: `ComponentBudgetNotice`, beside the
+ * studio's own preview, and `SheetSplitRun`, on each row of the split drawer.
+ *
+ * **Both, because either alone leaves sheets nobody checked.** The studio holds one sheet of a batch
+ * at a time, so on its own it compares whichever the sheet control is pointed at — exact for a rig
+ * over eight facings, where every run carries the same plan and the same count, and blind on the
+ * series axis, where a directional core and the articulation sheet beside it deliberately carry
+ * different parts of one inventory. Asking it of every row of the drawer is what makes the answer
+ * cover the batch, and the drawer is where the batch is visible.
  *
  * **It is a per-generation cap, and a batch total is deliberately not measured against it.** A split
  * configuration is several generations — `batchComponentCount` is what the whole batch asks for, and

@@ -500,6 +500,27 @@ the column from the grid, page and panel classes themselves and fails if the spl
 reaches 442px. **A new two-column layout that lands a select in a column needs its own derivation** —
 1040px is this grid's answer, not a general one.
 
+**A category's option pool is written in title case, and `NONE` is the only value that may shout.**
+The pools in `src/constants/categories/` are two things at once: the suggestions a `ComboBox`
+offers, and the text section 1 of the prompt carries verbatim. That makes casing visible in the
+studio, where one field's values sit directly under another's — and the `anatomy` pool was in full
+capitals in all nine categories, so `STANDARD HUMANOID` sat one row under `Athletic & Slender` in
+the same column. Five of those nine pools came over from the original single-file app
+([docs/todo/sprite-gubbins.html](docs/todo/sprite-gubbins.html)) carrying the capitals, and the four
+categories this app added later followed the four already there. `NONE` is exempt because it is a
+**sentinel** standing for "this subject has none" rather than a description of anything — the two
+`clothing` pools that offer no harness or holster spell the same word for the same reason, and
+`additional_anatomy` names it as `NO_ADDITIONAL_ANATOMY`. The exclusions pools are the other
+deliberate departure: each option is a negative statement rather than a name, so they stay sentence
+case.
+
+**Only the shouting is machine-enforced.** `src/constants/categories/categories.test.ts` fails on
+any all-capitals option that is not the sentinel, which is a rule with no judgement in it. It says
+nothing about *which* words a title-cased option capitalises, and the pools are not uniform there:
+most capitalise the function words (`Head And Shoulders Only`, `Nautical Age Of Sail`), while five
+lower-case an `of` or an `or` (`Relic of Lost Era`, `Thin Trail or Ribbon`). Match the file you are
+editing, and don't read the test's silence as approval of either spelling.
+
 **Two rules of thumb**
 
 - If a token *doesn't* exist for a genuinely new semantic role, **add the token** to the
