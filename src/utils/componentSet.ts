@@ -108,9 +108,11 @@ export function sheetCountFor(category: SubjectCategory, mode: DirectionalMode):
  * other reader does: a batch sheet carries the configuration's *stored* mode, which the category may
  * have no plan for.
  *
- * Its existence is what stops section 6's per-sheet list and the batch total below being two
- * arithmetics over one run list — the drift this module was written to make impossible, arriving one
- * axis further out.
+ * Its existence is what stops section 6's per-sheet list, the split drawer's row figures and the
+ * batch total below being three arithmetics over one run list — the drift this module was written to
+ * make impossible, arriving one axis further out. That the row's figure and the prompt's own are one
+ * sum is what makes the row's budget flag checkable: a chip reading "over budget" beside a number the
+ * sheet does not actually contract for would be worse than no chip at all.
  */
 export function sheetComponentCount(
   category: SubjectCategory,

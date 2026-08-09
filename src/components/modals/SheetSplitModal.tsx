@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { NO_COMPONENT_BUDGET } from '../../constants/componentBudget.ts';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
 import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
@@ -57,12 +58,24 @@ export function SheetSplitModal() {
   const isCopied = (run: SheetRun) => takenAway.has(sheetIdentity(category, subject, run.output));
   const copiedCount = runs.filter(isCopied).length;
 
+  // Parsed once for the drawer and handed down, so the total below and the per-sheet figure on every
+  // row are sums over the same pieces rather than two parses of one field.
+  const additional = parseAdditionalAnatomy(subject.additional_anatomy);
+
   // What the whole batch asks for — summed over the very runs listed below rather than multiplied
   // out of the two axes, so the figure cannot describe a batch other than this one. It is the number
   // nothing in the app was saying: the studio reports what *this sheet* asks for, which is true of
   // each of the eight and no help to someone deciding whether to start a job of one hundred and
   // twenty.
-  const batchTotal = batchComponentCount(category, runs, parseAdditionalAnatomy(subject.additional_anatomy));
+  const batchTotal = batchComponentCount(category, runs, additional);
+
+  // The cap is stated once here rather than on each of the rows that may be over it: every sheet of
+  // a batch is the same configuration bar a facing and a sheet index, so they all share one budget,
+  // and eight rows each repeating it would be eight copies of a number that cannot differ.
+  const budgetSentence =
+    output.componentBudget === NO_COMPONENT_BUDGET
+      ? 'Each sheet below states what it asks for; no budget is set, so none of them can be over one.'
+      : `Each sheet below states what it asks for, and is flagged where that is over the budget of ${String(output.componentBudget)}.`;
 
   return (
     <Modal
@@ -82,8 +95,7 @@ export function SheetSplitModal() {
         <p className="mt-2 text-xs leading-relaxed text-ink-muted">
           Together they ask for <span className="font-mono font-bold text-ink">{batchTotal} components</span>,
           which is the sum of what each sheet below contracts for. The component budget is a cap on one
-          generation, so it is not measured against that total — the studio checks it against the sheet you
-          have configured.
+          generation, so it is not measured against that total. {budgetSentence}
         </p>
       </div>
 
@@ -110,6 +122,7 @@ export function SheetSplitModal() {
             key={`${run.assembly}::${run.plan.name}`}
             run={run}
             category={category}
+            additional={additional}
             ordinal={index + 1}
             total={runs.length}
             isCopied={isCopied(run)}

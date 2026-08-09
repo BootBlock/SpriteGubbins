@@ -27,7 +27,7 @@ export const OUTPUT_TOOLTIPS = {
   aspectRatio:
     'The shape of the sheet canvas, passed to the generator so it lays the component grid out inside the frame instead of cropping it. WIDE_16_9 fits the usual wide grid; TALL_9_16 suits one tall figure with its variants stacked; SQUARE_1_1 is the safest choice on targets that quietly re-frame anything else.',
   componentBudget:
-    'The most components you want one generation asked for. Around forty is what current models deliver before they start merging or dropping pieces. Exceeding it is reported in the studio and never changes the prompt — the sheet is not trimmed behind your back. Set 0 for no cap.',
+    'The most components you want one generation asked for. Around forty is what current models deliver before they start merging or dropping pieces. Exceeding it is reported against the sheet configured here, and on every row of the split drawer where a batch carries sheets of different weights. It never changes the prompt — the sheet is not trimmed behind your back. Set 0 for no cap.',
   targetModel:
     'Which generator the prompt is written for. This changes the shape of the output, not just its wording: a reasoning contract, command-line flags, a separate negative-prompt block or a directive prefix are added or dropped to match what the target actually reads. Set it before copying — the same configuration compiles differently for each one.',
 
