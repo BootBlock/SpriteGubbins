@@ -16,6 +16,15 @@ import { TargetModelSelector } from '../studio/TargetModelSelector.tsx';
  * wraps to whatever it is given. The old 5/7 spent width on the half that could not use it and left
  * the form three viewport-heights tall beside a sticky column that was empty for two thirds of it.
  *
+ * **The split engages at `studio:`, not `lg:`, and that is a correctness bound rather than a taste.**
+ * A native `<select>` truncates a label its container cannot fit, so a column holding one has a
+ * minimum width — and `lg` (1024px) sits 16px below it, which put every select in this tab 8px short
+ * of its own longest option at exactly the viewport where the two columns first appeared. Both
+ * columns are bound by it, the form's fifteen selects and the target model's one, so the even split
+ * above is what has to clear the minimum rather than the form column alone. `--breakpoint-studio` in
+ * `src/index.css` derives the 1040px; below it the studio stacks, which is the layout it already
+ * used below `lg`.
+ *
  * **The sticky column is capped at the viewport and lays itself out as a flex column**, so
  * `PromptPreview` grows into whatever height is left rather than stopping at a fixed cap and leaving
  * the rest of the screen blank. That is also what makes `ComponentBudgetNotice` free to appear: the
@@ -34,8 +43,8 @@ import { TargetModelSelector } from '../studio/TargetModelSelector.tsx';
  */
 export function StudioTab() {
   return (
-    <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-      <div className="space-y-6 lg:col-span-6">
+    <div className="grid grid-cols-1 items-start gap-6 studio:grid-cols-12">
+      <div className="space-y-6 studio:col-span-6">
         <SubjectForm />
         <OutputConfig />
       </div>
@@ -45,7 +54,11 @@ export function StudioTab() {
         the height cap gives back that offset plus a little breathing room at the bottom. The chrome
         is not one height — the header wraps to two rows below `xl`, measuring 127px there against
         77px above it — so an offset written once would either tuck the target-model select under
-        the header at 1024–1279 or leave a 60px hole above it everywhere else.
+        the header at 1040–1279 or leave a 60px hole above it everywhere else.
+
+        Sticky and its cap are prefixed `studio:` for the same reason the grid is, and not merely to
+        match: below that width the columns stack, and a cap left on `lg` would spend those 16px
+        scrolling a full-width preview inside a viewport-height box for no reason.
 
         `overflow-y-auto` is what makes the cap safe rather than merely tidy. A sticky element taller
         than its cap does not simply overflow harmlessly: its top stays pinned, so whatever hangs
@@ -56,7 +69,7 @@ export function StudioTab() {
         `scroll` on the document in the capture phase precisely because an anchor may sit inside a
         scrolling panel, so they re-pin against this one exactly as they do the atlas calculator's.
       */}
-      <div className="flex flex-col lg:sticky lg:top-34 lg:col-span-6 lg:max-h-[calc(100dvh-10rem)] lg:overflow-y-auto xl:top-24 xl:max-h-[calc(100dvh-7rem)]">
+      <div className="flex flex-col studio:sticky studio:top-34 studio:col-span-6 studio:max-h-[calc(100dvh-10rem)] studio:overflow-y-auto xl:top-24 xl:max-h-[calc(100dvh-7rem)]">
         <TargetModelSelector />
         {/* Above the preview, so a sheet that has outgrown its budget is read before it is copied. */}
         <ComponentBudgetNotice />

@@ -233,6 +233,36 @@
   --text-sm--line-height: calc(1.375 / 0.9375);
 
   /*
+   * The width at which the studio may split into two columns — a breakpoint derived from the type
+   * scale above rather than picked off Tailwind's device ladder.
+   *
+   * A native `<select>` sizes its selected option from its container and truncates rather than
+   * wrapping, so a column holding one has a hard minimum: the label budget in
+   * `tests/selectLabelBudget.ts`. Every stock breakpoint is a statement
+   * about a *device*, and `lg` (64rem) landed 16px below what that budget needs — so the studio's
+   * two columns engaged at a width where every select in them clipped the parenthetical marking the
+   * standard choice. Moving up to `xl` would have closed it by stacking the studio across the whole
+   * 64–80rem band, where all but the first 16px of it lays out perfectly well.
+   *
+   * Derived, at the 8px `font-mono` advance the budget assumes:
+   *
+   * - 50 characters plus the control's own 42px of chrome (1px border and 10px `p-2.5` padding
+   *   either side, plus the 20px the user agent reserves for the dropdown arrow) → **442px**;
+   * - the panel's 42px (`p-5` either side and its 1px border) → a **484px** column;
+   * - `grid-cols-12` with `gap-6` gives a `col-span-6` child `C/2 − 12` of the page's content width
+   *   `C`, so C ≥ 992px;
+   * - `main` is `max-w-7xl` with `md:p-6`, so C is the viewport less 48px → **1040px**.
+   *
+   * Both columns carry a `SelectField` — the form's fifteen and the target-model select — so the
+   * even split is what has to clear this, not the form column alone. The figure is exact rather than
+   * cushioned, because it rests on the same 8px advance the budget does: cushion one and the other
+   * goes stale silently. Re-derive it whenever the page cap, the grid or the panel padding moves —
+   * `tests/studio-column-width.test.ts` recomputes it from those very classes and fails if this
+   * token no longer reaches.
+   */
+  --breakpoint-studio: 65rem;
+
+  /*
    * Motion. Named for what each is for, not how it looks: `fade-in` mounts a panel, `pulse-glow`
    * marks a live/auto-syncing element, `float-orb` drifts the two background glows (the second runs
    * slower and in reverse so they never synchronise), `shimmer` fills a loading placeholder. The
