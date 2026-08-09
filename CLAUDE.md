@@ -514,12 +514,35 @@ categories this app added later followed the four already there. `NONE` is exemp
 deliberate departure: each option is a negative statement rather than a name, so they stay sentence
 case.
 
-**Only the shouting is machine-enforced.** `src/constants/categories/categories.test.ts` fails on
-any all-capitals option that is not the sentinel, which is a rule with no judgement in it. It says
-nothing about *which* words a title-cased option capitalises, and the pools are not uniform there:
-most capitalise the function words (`Head And Shoulders Only`, `Nautical Age Of Sail`), while five
-lower-case an `of` or an `or` (`Relic of Lost Era`, `Thin Trail or Ribbon`). Match the file you are
-editing, and don't read the test's silence as approval of either spelling.
+**Every word takes a capital — the function words included.** `Head And Shoulders Only`,
+`Nautical Age Of Sail`, `Tower With Detachable Roof`, `Primary Call To Action`. Both spellings are
+defensible in isolation, and for a while the pools carried both: eighteen mid-title function words
+capitalised against five that were not, so `Relic of Lost Era` sat forty-seven lines from
+`Nautical Age Of Sail` in the same file. Only that one came over from the original single-file app —
+the other four were written for `effect` and `terrain`, two of the categories this app added later,
+which is the direction this drifts if nothing checks it. **A hyphenated compound capitalises both
+halves** for the same reason and by the same lopsided count — `Pocket-Sized`, `Battle-Scarred`,
+`Nine-Slice`, 101 of the 103 that existed when the rule was settled.
+
+The majority spelling is what decided it, but the tie-breaker was that this half of the choice is
+the one a test can hold: capitalising everything has no judgement in it, whereas lower-casing short
+function words needs a hand-kept list and *still* cannot tell a preposition from the particle of a
+phrasal verb — `Frozen Over` and `Charging / Spooling Up` keep their capitals under either style.
+
+**Both halves are machine-enforced, and the second one is easy to miss.**
+`src/constants/categories/categories.test.ts` fails on an all-capitals option that is not the
+sentinel, and on any option whose word opens in lower case. Three positions are not words for that
+purpose and need no exemption: the rest of a word, the `s` of a possessive (`Surgeon’s`), and
+anything opening with a digit (`#06B6D4`, `16-Bit`, `(20s)`).
+
+The second half is in `src/constants/presets/presets.test.ts`, because **a pooled value is written
+down twice**: once in the pool that offers it and once in every preset that names it. All eight
+options re-cased for this rule were pinned in a preset too, and a preset left behind still loads and
+still compiles — the combo boxes are unfiltered — it just carries the retired spelling into section
+1, which is the inconsistency the re-casing was for. So a preset value that matches a pooled option
+in every respect *but* case is a failure. Deliberately not membership: sixty-two preset values are
+free text no pool offers, and `Domed lid over a banded body` is sentence case because it is a worked
+example's own wording rather than a name the app suggests.
 
 **Two rules of thumb**
 

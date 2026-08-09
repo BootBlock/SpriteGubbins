@@ -132,7 +132,7 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
       age: 'Slumbering Dormant',
       role: 'Burrowing Surprise Attacker',
       setting: 'Toxic Sewers',
-      build: 'Slender Serpent-like',
+      build: 'Slender Serpent-Like',
       silhouette: 'Spike-Covered Back',
       face_head: 'Triple Jaw Mandibles',
       anatomy: 'Serpentine Tailless',

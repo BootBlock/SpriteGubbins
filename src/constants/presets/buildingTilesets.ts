@@ -101,7 +101,7 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
     category: 'BUILDING',
     subject: {
       species: 'Forest ground tile set',
-      gender: 'Overgrown Nature takeover',
+      gender: 'Overgrown Nature Takeover',
       age: 'Medieval Timber-Frame',
       role: 'Level geometry tiles',
       setting: 'Enchanted Forest Clearing',

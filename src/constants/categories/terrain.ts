@@ -84,7 +84,7 @@ export const TERRAIN: CategoryDefinition = {
         'Blocking Obstacle',
         'Hazard & Damage Surface',
         'Transition Between Zones',
-        'Slow or Difficult Going',
+        'Slow Or Difficult Going',
         'Water Crossing',
         'Cover & Concealment',
         'Decorative Backdrop Ground',
@@ -143,7 +143,7 @@ export const TERRAIN: CategoryDefinition = {
       options: [
         'Hero Boulder Outcrop',
         'Still Water Surface',
-        'Glowing Vent or Fissure',
+        'Glowing Vent Or Fissure',
         'Ancient Standing Stone',
         'Gnarled Exposed Root Mass',
         'Crystal Formation',

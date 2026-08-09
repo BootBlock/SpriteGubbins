@@ -100,7 +100,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       age: 'Corroded / Ruined',
       role: 'Primary Offensive Weapon',
       setting: 'Eldritch Void',
-      build: 'Over-sized Colossal',
+      build: 'Over-Sized Colossal',
       silhouette: 'Double-Headed Axe Blade',
       face_head: 'Dragon-Head Crossguard',
       anatomy: 'Single Weapon Item',

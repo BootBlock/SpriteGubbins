@@ -134,7 +134,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
     category: 'ITEM',
     subject: {
       species: 'Magical Artefact / Orb',
-      gender: 'Relic of Lost Era',
+      gender: 'Relic Of Lost Era',
       age: 'Overcharged Energy',
       role: 'Buff Emitter Stat Boost',
       setting: 'Steampunk Clockwork',

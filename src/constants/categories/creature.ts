@@ -110,7 +110,7 @@ export const CREATURE: CategoryDefinition = {
       options: [
         'Low-Slung Quadruped',
         'Huge Heavy Carapace',
-        'Slender Serpent-like',
+        'Slender Serpent-Like',
         'Multi-Legged Walker',
         'Massive Winged Fiend',
         'Amorphous Blob Frame',
