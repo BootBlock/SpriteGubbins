@@ -74,8 +74,8 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       // A prop can be rigged too, and a turret is the clearest case: the base never moves, the yoke
-      // yaws, the barrel pitches. Seven pieces plus two deployables — a quarter of what a humanoid
-      // rig costs.
+      // yaws, the barrel pitches. Seven pieces plus two deployables, against the fifteen a humanoid
+      // rig asks for — a little over half the sheet, for a subject with three moving parts.
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
       directions: 'FOUR_CARDINAL',
