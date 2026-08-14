@@ -8,19 +8,29 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * Between them these four exercise the three sheets a creature can be asked for: the pose library,
  * the directional core, and the bone rig. What separates them is not how many components each holds
- * but how each *prices* the subject's own extra appendages, and the two answers are far apart. A
- * multi-view sheet redraws every named piece at every facing it covers, so a wing costs one drawing
- * per view; a run sheet draws each piece once, whatever the run list. That makes the pose library
- * the mode with almost nothing left over — 37 of the 43 components one generation reliably delivers,
- * before a single appendage is declared — while the core opens at three pieces per facing and has
- * headroom to sell. Each preset below states its own arithmetic rather than inheriting a claim.
+ * but how each *prices* the subject's own extra appendages **on one sheet** — which is the unit
+ * `PRACTICAL_COMPONENT_CEILING` bounds, and the only unit where the three differ. A multi-view sheet
+ * redraws every named piece at every facing it covers, so a wing costs one drawing per view. A run
+ * sheet draws each piece once where it draws them at all: only the sheet that carries the trunk
+ * does, which is why the articulation sheet of a directional pairing lists no appendages beside the
+ * limbs it exists for.
+ *
+ * That makes the pose library the mode with almost nothing left over — 37 of the 43 components one
+ * generation reliably delivers, before a single appendage is declared — while the core opens at
+ * three pieces per facing and has headroom to sell.
+ *
+ * **Across the whole deliverable the three converge, so the comparison has to name its unit.** A
+ * run sheet is generated once per facing of the set, so a rig run eight ways draws its appendages
+ * eight times — the same twenty-four an eight-compass core spends on them. The per-sheet figure is
+ * the one that decides whether a generation comes back whole; the batch figure decides how long the
+ * job is.
  */
 export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'creature-drone',
     name: 'Cybernetic Attack Drone',
     description:
-      'A four-winged machine turned through the directional core, where every appendage is redrawn at each facing — four wings across five views is twenty of the sheet’s thirty-five components, more than the trunk they hang on.',
+      'A four-winged machine turned through the directional core, where every appendage is redrawn at each facing — its four wings are drawn five times over, twenty components before the turned trunk is counted at all.',
     category: 'CREATURE',
     subject: {
       species: 'Mechanical Automaton',
@@ -47,8 +57,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       // subject's own anatomy at every one of them, so five facings is 15 + 4×5 = 35 of the 43 a
       // single generation reliably delivers: a fifth appendage would still fit, at 40, and a sixth
       // would not, at 45. The pose library is the tighter of the two, not the looser — 37 before the
-      // wings and 41 after — which is the arithmetic this preset had backwards until the counts were
-      // recomputed from the plans instead of recalled.
+      // wings and 41 after — which is the arithmetic this preset had backwards.
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       // Pinned rather than inherited, because the arithmetic above counts these facings and a number
       // resting on the studio's default is one edit away from being false.
@@ -84,11 +93,16 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       accent_colours: 'Stasis Blue #3B82F6',
       materials: 'Leathery Hide',
       exclusions: 'No human clothing, no weapons',
-      // The sentinel rather than a blank, and it describes the subject rather than a budget: a wolf
-      // has nothing beyond the head, body, hindquarters and four limbs the creature plans already
-      // enumerate, so there is nothing to declare. Nothing about the core forced the field empty —
-      // it opens at three pieces per facing, and the drone in this file spends that headroom on four
-      // wings. This one has nothing to spend it on.
+      // The sentinel rather than a blank, and it is a choice about this preset rather than a budget:
+      // the sheet it asks for is the trunk and limbs the creature plans enumerate and nothing else,
+      // which is what makes it the file's plain baseline. Nothing about the core forced it — the
+      // core opens at three pieces per facing and the drone above spends that headroom on four
+      // wings, so a declared piece here would have fitted several times over.
+      //
+      // Worth knowing before copying this preset: a tail is **not** implied. `TRUNK_TERMINATION` in
+      // `sheetPlans/creature.ts` has a hindquarters carry "no tail, unless the inventory lists a tail
+      // as its own component", so a wolf that should have one has to name it here — at one drawing
+      // per facing, like every other appendage.
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
@@ -143,7 +157,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
     id: 'magma-drake-rig',
     name: 'Magma Drake Elder',
     description:
-      'A winged, tailed drake as a cut-out rig run eight ways. A rig draws each piece once in rest orientation, so its wings and tail cost three components rather than three at every facing.',
+      'A winged, tailed drake as a cut-out rig run eight ways. A rig sheet draws each piece once in rest orientation, so its wings and tail are three components on the sheet where the directional core would put twelve.',
     category: 'CREATURE',
     subject: {
       species: 'Draconic Drake',
@@ -161,11 +175,15 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       accent_colours: 'Magma Orange Glow #F97316',
       materials: 'Molten Rock & Obsidian',
       exclusions: 'No saddles, no mechanical parts',
-      // Priced once rather than once per facing, which is what a rig sheet buys: its pieces are drawn
-      // in rest orientation and rotated about their pivots, so two wings and a tail are three
-      // components on a fifteen-piece sheet. The same three on the eight-compass core this preset
-      // runs would be twelve added to each of its two chunks, redrawn at all four of that chunk's
-      // facings.
+      // Priced once per *sheet* rather than once per facing, which is what a rig buys: its pieces are
+      // drawn in rest orientation and rotated about their pivots, so two wings and a tail are three
+      // components on a fifteen-piece sheet. The same three on the eight-compass core would be twelve
+      // added to each of its two chunks, redrawn at all four of that chunk's facings.
+      //
+      // Per generation that is 18 against 24, and it is the figure that decides whether a sheet comes
+      // back whole. Across the batch the two draw level — this rig runs eight times, so its three
+      // pieces are twenty-four drawings, exactly what the core spends — so the saving is in what any
+      // one image is asked for, not in the size of the job.
       additional_anatomy: 'Webbed Wing ×2, Spike Tail Club ×1',
     },
     output: {

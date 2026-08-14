@@ -101,7 +101,7 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
     id: 'emblazoned-tower-shield',
     name: 'Emblazoned Tower Shield',
     description:
-      'A cel-shaded shield with four hanging pieces that each move independently of the face. An item sheet has the component headroom for that where a humanoid would not.',
+      'A cel-shaded shield with four hanging pieces that each move independently of the face. Each is redrawn at all five facings — twenty drawings before the shield is counted, and one piece more would not come back whole.',
     category: 'ITEM',
     subject: {
       species: 'Armor Piece (Helmet/Shield)',
@@ -119,8 +119,11 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       accent_colours: 'Golden Sunburst #F59E0B',
       materials: 'Valyrian Steel',
       exclusions: 'No holding hand or character',
-      // Four separate hanging pieces, which an item sheet can afford: twelve components plus four is
-      // nowhere near the ceiling, and each tassel has to move independently of the shield face.
+      // Four separate hanging pieces, because each tassel has to move independently of the shield
+      // face. They are not cheap, and this is among the fullest sheets the library ships: the item
+      // core is four pieces at each of the five facings below, and every named piece is redrawn at
+      // all five too, so 20 + 4×5 is 40 of the 43 a single generation reliably delivers. A fifth
+      // piece would ask for 45 and would not come back whole.
       additional_anatomy: 'Tassel ×2, Charm Ribbon ×2',
     },
     output: {
@@ -128,6 +131,9 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
       renderStyle: 'CEL_SHADED',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      // Pinned rather than inherited, because the arithmetic above counts these facings and this
+      // sheet has only three components of room — a default that moved would take it over silently.
+      directions: 'FIVE_CLASSIC',
       rigMode: 'NONE',
       spriteTargetSize: '96 × 96 px per icon cell',
       aspectRatio: 'WIDE_16_9',
