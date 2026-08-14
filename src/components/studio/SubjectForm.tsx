@@ -1,10 +1,12 @@
 import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
 import { SUBJECT_FIELD_GROUPS } from '../../constants/subjectGroups.ts';
+import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { subjectGroupDigest } from '../../utils/studioDigests.ts';
 import { CollapsibleSection } from '../common/CollapsibleSection.tsx';
 import { ComboBox } from '../common/ComboBox.tsx';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SectionToggleAll } from '../common/SectionToggleAll.tsx';
 import { CategorySelector } from './CategorySelector.tsx';
 
@@ -63,22 +65,24 @@ export function SubjectForm() {
         <div className="flex items-center gap-2">
           <SectionToggleAll sections={SUBJECT_FIELD_GROUPS} panelLabel="Subject Definition" />
 
-          <button
-            type="button"
-            onClick={() => {
-              randomizeSubject();
-              showToast(`Randomised ${categoryLabel} properties`);
-            }}
-            className="group flex items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-xs font-black text-foundry-950 shadow-md transition-transform duration-390 hover:scale-[1.04] active:scale-[0.96]"
-          >
-            <span
-              aria-hidden="true"
-              className="inline-block transition-transform duration-975 group-hover:rotate-180"
+          <ControlTooltip hint="Randomise" text={STUDIO_ACTION_TOOLTIPS.randomise}>
+            <button
+              type="button"
+              onClick={() => {
+                randomizeSubject();
+                showToast(`Randomised ${categoryLabel} properties`);
+              }}
+              className="group flex items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-xs font-black text-foundry-950 shadow-md transition-transform duration-390 hover:scale-[1.04] active:scale-[0.96]"
             >
-              🎲
-            </span>
-            Randomise
-          </button>
+              <span
+                aria-hidden="true"
+                className="inline-block transition-transform duration-975 group-hover:rotate-180"
+              >
+                🎲
+              </span>
+              Randomise
+            </button>
+          </ControlTooltip>
         </div>
       </div>
 

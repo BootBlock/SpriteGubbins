@@ -1,10 +1,12 @@
 import { Fragment } from 'react';
 import { IDENTITY_PALETTE_LABEL, IDENTITY_SUBJECT_SEGMENTS } from '../../constants/identityLock.ts';
+import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { withSegments } from '../../utils/identityDigest.ts';
 import { identitySubjectSegments } from '../../utils/identitySubject.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 /**
  * Writes what the studio already knows about the subject into the identity lock above it.
@@ -53,13 +55,15 @@ export function IdentitySubjectDigest() {
 
   return (
     <section className="rounded-xl border border-foundry-600 bg-foundry-800/60 p-3">
-      <button
-        type="button"
-        onClick={handleClick}
-        className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
-      >
-        Describe the subject
-      </button>
+      <ControlTooltip hint="Describe the subject" text={STUDIO_ACTION_TOOLTIPS.describeSubject}>
+        <button
+          type="button"
+          onClick={handleClick}
+          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
+        >
+          Describe the subject
+        </button>
+      </ControlTooltip>
 
       {/* The labels are read from the constant rather than written out again: they are what the
           button actually produces, and a paragraph naming a segment the fold no longer writes is

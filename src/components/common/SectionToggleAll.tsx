@@ -1,6 +1,8 @@
+import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useSectionStore } from '../../stores/useSectionStore.ts';
 import type { SectionDefinition } from '../../types/ui.ts';
 import { sectionElementId } from '../../utils/sectionElementId.ts';
+import { ControlTooltip } from './ControlTooltip.tsx';
 
 interface SectionToggleAllProps {
   readonly sections: readonly SectionDefinition[];
@@ -56,27 +58,35 @@ export function SectionToggleAll({ sections, panelLabel }: SectionToggleAllProps
   }
 
   return (
-    <button
-      type="button"
-      aria-expanded={allOpen}
-      aria-controls={controlledIds.join(' ')}
-      // The visible text is the start of the accessible name rather than being replaced by it, so a
-      // voice-control user asking for "expand all" still matches what they can read.
-      aria-label={`${action} all ${panelLabel} sections`}
-      onClick={() => {
-        if (allOpen) keepFocusInTheDocument();
-        setSectionsOpen(
-          sections.map((section) => section.id),
-          !allOpen,
-        );
-      }}
-      // The app's established secondary button — `PresetRenameForm`'s Cancel, `HistoryFooter`'s
-      // export, the quantiser's scale candidates — with the quantiser's resting fill. The fill is
-      // not decoration: unfilled, a bordered run of sentence-case text is a weak affordance, and the
-      // border alone carries too little contrast against the panel to be what identifies a control.
-      className="shrink-0 rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink"
+    // `shrink-0` moves out to the wrapper with the button: it is what the button was saying about its
+    // own box in the panel header's flex row, and the wrapper is the item in that row now.
+    <ControlTooltip
+      hint={`${action} all`}
+      text={STUDIO_ACTION_TOOLTIPS.expandAll}
+      className="relative inline-flex shrink-0"
     >
-      {action} all
-    </button>
+      <button
+        type="button"
+        aria-expanded={allOpen}
+        aria-controls={controlledIds.join(' ')}
+        // The visible text is the start of the accessible name rather than being replaced by it, so a
+        // voice-control user asking for "expand all" still matches what they can read.
+        aria-label={`${action} all ${panelLabel} sections`}
+        onClick={() => {
+          if (allOpen) keepFocusInTheDocument();
+          setSectionsOpen(
+            sections.map((section) => section.id),
+            !allOpen,
+          );
+        }}
+        // The app's established secondary button — `PresetRenameForm`'s Cancel, `HistoryFooter`'s
+        // export, the quantiser's scale candidates — with the quantiser's resting fill. The fill is
+        // not decoration: unfilled, a bordered run of sentence-case text is a weak affordance, and the
+        // border alone carries too little contrast against the panel to be what identifies a control.
+        className="rounded-lg border border-foundry-600 bg-foundry-700 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-600 hover:text-ink"
+      >
+        {action} all
+      </button>
+    </ControlTooltip>
   );
 }

@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { spectrumStopAt } from '../../constants/spectrum.ts';
+import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { Badge } from '../common/Badge.tsx';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetCardSpecs } from './PresetCardSpecs.tsx';
 import { PresetRenameForm } from './PresetRenameForm.tsx';
 
@@ -81,71 +83,90 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
 
       {isConfirmingDelete ? (
         <div className="relative flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setIsConfirmingDelete(false);
-              onDelete(preset);
-            }}
-            className="flex-1 rounded-xl bg-rose py-2 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
+          {/* `flex-1` travels with the button to the wrapper, which is the flex item in this row. */}
+          <ControlTooltip
+            hint={`Delete “${preset.name}”`}
+            text={PRESET_ACTION_TOOLTIPS.confirmDeletePreset}
+            className="relative flex flex-1"
           >
-            Delete “{preset.name}”
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsConfirmingDelete(false);
-            }}
-            className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-          >
-            Cancel
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsConfirmingDelete(false);
+                onDelete(preset);
+              }}
+              className="w-full rounded-xl bg-rose py-2 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
+            >
+              Delete “{preset.name}”
+            </button>
+          </ControlTooltip>
+          <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelDeletePreset}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsConfirmingDelete(false);
+              }}
+              className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+            >
+              Cancel
+            </button>
+          </ControlTooltip>
         </div>
       ) : (
         <div className="relative flex gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              onLoad(preset);
-            }}
-            className="action-tab group/load flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
+          <ControlTooltip
+            hint="Load preset"
+            text={PRESET_ACTION_TOOLTIPS.loadPreset}
+            className="relative flex flex-1"
           >
-            {/* Named group: the card is already a `group`, and an unnamed one here would follow the
-                card's hover rather than this button's. */}
-            <span
-              aria-hidden="true"
-              className="inline-block transition-transform duration-585 group-hover/load:scale-125"
+            <button
+              type="button"
+              onClick={() => {
+                onLoad(preset);
+              }}
+              className="action-tab group/load flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
             >
-              ⚡
-            </span>
-            Load preset
-          </button>
+              {/* Named group: the card is already a `group`, and an unnamed one here would follow the
+                  card's hover rather than this button's. */}
+              <span
+                aria-hidden="true"
+                className="inline-block transition-transform duration-585 group-hover/load:scale-125"
+              >
+                ⚡
+              </span>
+              Load preset
+            </button>
+          </ControlTooltip>
 
           {preset.isCustom === true && (
             <>
-              <button
-                ref={renameButtonRef}
-                type="button"
-                onClick={() => {
-                  setIsRenaming(true);
-                }}
-                aria-label={`Rename preset ${preset.name}`}
-                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 active:translate-y-0"
-              >
-                <span aria-hidden="true">✏️</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  // The editor would otherwise sit above a confirm asking to delete what it edits.
-                  setIsRenaming(false);
-                  setIsConfirmingDelete(true);
-                }}
-                aria-label={`Delete preset ${preset.name}`}
-                className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-rose transition-all duration-390 hover:-translate-y-px hover:border-rose/50 hover:bg-foundry-700 active:translate-y-0"
-              >
-                <span aria-hidden="true">🗑</span>
-              </button>
+              <ControlTooltip hint="Rename" text={PRESET_ACTION_TOOLTIPS.renamePreset}>
+                <button
+                  ref={renameButtonRef}
+                  type="button"
+                  onClick={() => {
+                    setIsRenaming(true);
+                  }}
+                  aria-label={`Rename preset ${preset.name}`}
+                  className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 active:translate-y-0"
+                >
+                  <span aria-hidden="true">✏️</span>
+                </button>
+              </ControlTooltip>
+              <ControlTooltip hint="Delete" text={PRESET_ACTION_TOOLTIPS.deletePreset}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // The editor would otherwise sit above a confirm asking to delete what it edits.
+                    setIsRenaming(false);
+                    setIsConfirmingDelete(true);
+                  }}
+                  aria-label={`Delete preset ${preset.name}`}
+                  className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-rose transition-all duration-390 hover:-translate-y-px hover:border-rose/50 hover:bg-foundry-700 active:translate-y-0"
+                >
+                  <span aria-hidden="true">🗑</span>
+                </button>
+              </ControlTooltip>
             </>
           )}
         </div>

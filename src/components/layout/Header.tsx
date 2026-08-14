@@ -1,6 +1,8 @@
 import { useLayoutEffect, useRef } from 'react';
+import { CHROME_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { TabSwitcher } from './TabSwitcher.tsx';
 import { Wordmark } from './Wordmark.tsx';
 
@@ -82,42 +84,48 @@ export function Header() {
       <TabSwitcher />
 
       <div className="flex items-center gap-2">
-        <button type="button" onClick={toggleAtlasModal} className={`${CHROME_ACTION} text-accent-soft`}>
-          <span aria-hidden="true" className={CHROME_ACTION_ICON}>
-            📊
-          </span>
-          Atlas Calc
-        </button>
+        <ControlTooltip hint="Atlas Calc" text={CHROME_TOOLTIPS.atlasCalculator}>
+          <button type="button" onClick={toggleAtlasModal} className={`${CHROME_ACTION} text-accent-soft`}>
+            <span aria-hidden="true" className={CHROME_ACTION_ICON}>
+              📊
+            </span>
+            Atlas Calc
+          </button>
+        </ControlTooltip>
 
-        <button type="button" onClick={toggleHistoryModal} className={`${CHROME_ACTION} text-ink-muted`}>
-          {/* The one glyph that turns rather than grows — it is a clock, and this is history. */}
-          <span aria-hidden="true" className={`${CHROME_ACTION_ICON} group-hover:-rotate-45`}>
-            🕓
-          </span>
-          History
-        </button>
+        <ControlTooltip hint="History" text={CHROME_TOOLTIPS.history}>
+          <button type="button" onClick={toggleHistoryModal} className={`${CHROME_ACTION} text-ink-muted`}>
+            {/* The one glyph that turns rather than grows — it is a clock, and this is history. */}
+            <span aria-hidden="true" className={`${CHROME_ACTION_ICON} group-hover:-rotate-45`}>
+              🕓
+            </span>
+            History
+          </button>
+        </ControlTooltip>
 
         {/*
           The primary action, and the only control in the chrome that glows. The sheen is a child
           rather than a background layer on the button itself, so it can be clipped to the rounded
           corners and slid across on hover without disturbing the gradient underneath.
         */}
-        <button
-          type="button"
-          onClick={() => {
-            void copyPrompt();
-          }}
-          className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 transition-all duration-390 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
-        >
-          <span
-            aria-hidden="true"
-            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
-          />
-          <span className="relative flex items-center gap-2">
-            <span aria-hidden="true">📋</span>
-            Copy Prompt
-          </span>
-        </button>
+        <ControlTooltip hint="Copy Prompt" text={CHROME_TOOLTIPS.copyPrompt}>
+          <button
+            type="button"
+            onClick={() => {
+              void copyPrompt();
+            }}
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 transition-all duration-390 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
+          >
+            <span
+              aria-hidden="true"
+              className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
+            />
+            <span className="relative flex items-center gap-2">
+              <span aria-hidden="true">📋</span>
+              Copy Prompt
+            </span>
+          </button>
+        </ControlTooltip>
 
         {/*
           The far right of the bar, past the primary, which is where a settings control has been for
@@ -135,16 +143,18 @@ export function Header() {
           precedent for: a rotation is what these two glyphs mean, where a magnifier or a clipboard
           would only look restless.
         */}
-        <button
-          type="button"
-          onClick={toggleSettingsModal}
-          aria-label="Settings"
-          className={`${CHROME_ACTION} text-ink-muted`}
-        >
-          <span aria-hidden="true" className={`${CHROME_ACTION_ICON} group-hover:rotate-90`}>
-            ⚙️
-          </span>
-        </button>
+        <ControlTooltip hint="Settings" text={CHROME_TOOLTIPS.settings}>
+          <button
+            type="button"
+            onClick={toggleSettingsModal}
+            aria-label="Settings"
+            className={`${CHROME_ACTION} text-ink-muted`}
+          >
+            <span aria-hidden="true" className={`${CHROME_ACTION_ICON} group-hover:rotate-90`}>
+              ⚙️
+            </span>
+          </button>
+        </ControlTooltip>
       </div>
     </header>
   );

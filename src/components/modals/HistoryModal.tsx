@@ -1,7 +1,9 @@
 import { useEffect, useId, useMemo, useState } from 'react';
+import { HISTORY_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
 import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Modal } from '../common/Modal.tsx';
 import { HistoryEntry } from './HistoryEntry.tsx';
 import { HistoryFooter } from './HistoryFooter.tsx';
@@ -55,16 +57,23 @@ export function HistoryModal() {
         <label htmlFor={searchId} className="mb-1 block text-xs font-semibold text-ink-muted">
           Search prompts
         </label>
-        <input
-          id={searchId}
-          type="search"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-          }}
-          placeholder="Category, generator, or any words in the prompt"
-          className="w-full rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-2 text-xs text-ink shadow-inner transition-colors focus:border-accent"
-        />
+        {/* The wrapper is the block the field fills now, so the full width belongs to it. */}
+        <ControlTooltip
+          hint="Search prompts"
+          text={HISTORY_ACTION_TOOLTIPS.search}
+          className="relative flex w-full"
+        >
+          <input
+            id={searchId}
+            type="search"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+            }}
+            placeholder="Category, generator, or any words in the prompt"
+            className="w-full rounded-xl border border-foundry-600 bg-foundry-950 px-3 py-2 text-xs text-ink shadow-inner transition-colors focus:border-accent"
+          />
+        </ControlTooltip>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-4">

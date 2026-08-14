@@ -1,7 +1,9 @@
 import { DEFAULT_SETTINGS, OPENING_VIEW_CHOICES, SETTINGS_TOOLTIPS } from '../../constants/settings.ts';
+import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useSettingsStore } from '../../stores/useSettingsStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { CheckboxField } from '../common/CheckboxField.tsx';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Modal } from '../common/Modal.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 import { SettingsAccentField } from './SettingsAccentField.tsx';
@@ -60,22 +62,31 @@ export function SettingsModal() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-foundry-700 px-6 py-4">
-        <button
-          type="button"
-          onClick={() => {
-            void updateSettings(DEFAULT_SETTINGS);
-          }}
-          className="flex-1 rounded-xl border border-foundry-600 bg-foundry-950 py-2.5 text-xs font-bold text-ink-muted shadow-md transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
+        {/* `flex-1` travels with the button to the wrapper, which is the flex item in this footer. */}
+        <ControlTooltip
+          hint="Reset to defaults"
+          text={DIALOG_TOOLTIPS.resetSettings}
+          className="relative flex flex-1"
         >
-          Reset to defaults
-        </button>
-        <button
-          type="button"
-          onClick={toggleSettingsModal}
-          className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-ink shadow-lg transition-colors duration-390 hover:bg-accent"
-        >
-          Done
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              void updateSettings(DEFAULT_SETTINGS);
+            }}
+            className="w-full rounded-xl border border-foundry-600 bg-foundry-950 py-2.5 text-xs font-bold text-ink-muted shadow-md transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
+          >
+            Reset to defaults
+          </button>
+        </ControlTooltip>
+        <ControlTooltip hint="Done" text={DIALOG_TOOLTIPS.done}>
+          <button
+            type="button"
+            onClick={toggleSettingsModal}
+            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-ink shadow-lg transition-colors duration-390 hover:bg-accent"
+          >
+            Done
+          </button>
+        </ControlTooltip>
       </div>
     </Modal>
   );

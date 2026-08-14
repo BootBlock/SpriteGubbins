@@ -46,6 +46,20 @@ export const ACCENT_LABELS: Record<AccentHue, string> = {
 export const DEFAULT_ACCENT_LABEL = ACCENT_LABELS[DEFAULT_SETTINGS.accentHue];
 
 /**
+ * What one swatch says on hover, given the hue it offers.
+ *
+ * A function rather than nine written-out sentences, because the nine differ in exactly one word and
+ * a hand-kept record is where the tenth hue arrives without a description. The row as a whole is
+ * explained by the ⓘ beside its label — this is the per-swatch half, which is the half a sighted
+ * reader needs: the colours are the labels here, and Ember against Gold is not a distinction a swatch
+ * makes on its own.
+ */
+export function accentSwatchGuidance(hue: AccentHue): string {
+  const label = ACCENT_LABELS[hue];
+  return `Sets the primary action, the focus ring, selection and the ambient glow to ${label.toLowerCase()}. It applies the moment you press it and is kept for next time. Each view keeps its own colour whichever of these is chosen, and nothing here reaches the compiled prompt.`;
+}
+
+/**
  * The opening view's options, taken from the switcher's own table rather than restated.
  *
  * One consequence worth having: the dropdown lists the views in the order the header shows them, so

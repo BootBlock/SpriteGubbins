@@ -1,5 +1,6 @@
 import { DEPTH_ORDER_TEXT } from '../../constants/promptText/index.ts';
 import { resolveRigMode } from '../../constants/sheetPlans/index.ts';
+import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import { exceedsComponentBudget } from '../../utils/componentBudget.ts';
@@ -7,6 +8,7 @@ import { sheetComponentCount } from '../../utils/componentSet.ts';
 import { countWords } from '../../utils/promptCompiler.ts';
 import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 interface SheetSplitRunProps {
   readonly run: SheetRun;
@@ -107,15 +109,17 @@ export function SheetSplitRun({
       )}
 
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={() => {
-            onCopy(run);
-          }}
-          className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-extrabold text-ink shadow-md transition-colors hover:bg-accent"
-        >
-          Copy this sheet
-        </button>
+        <ControlTooltip hint="Copy this sheet" text={DIALOG_TOOLTIPS.copySheetPrompt}>
+          <button
+            type="button"
+            onClick={() => {
+              onCopy(run);
+            }}
+            className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-extrabold text-ink shadow-md transition-colors hover:bg-accent"
+          >
+            Copy this sheet
+          </button>
+        </ControlTooltip>
 
         {/* Gold on the figure as well as the chip, so the warning names the number it is about —
             the drawer states the cap once, above, rather than repeating it on every row. */}
@@ -126,6 +130,10 @@ export function SheetSplitRun({
         <span className="font-mono text-2xs text-ink-faint">{countWords(run.promptText)} words</span>
       </div>
 
+      {/* The one control in this row with no guidance card, and it is the markup rather than a
+          judgement: a `<summary>` has to be the first child of its `<details>`, so there is nowhere
+          to put a wrapper that would not stop it being the disclosure's control. Its label says the
+          whole of what it does, which is why it is an acceptable place for the exception to fall. */}
       <details className="mt-3">
         <summary className="cursor-pointer text-xs font-semibold text-ink-faint transition-colors hover:text-ink-muted">
           Read the prompt for this sheet

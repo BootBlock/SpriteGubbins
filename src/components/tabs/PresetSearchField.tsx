@@ -1,4 +1,6 @@
 import { useId, useRef } from 'react';
+import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 interface PresetSearchFieldProps {
   readonly value: string;
@@ -54,44 +56,59 @@ export function PresetSearchField({ value, onChange, matchCount, isNarrowed }: P
           🔍
         </span>
 
-        <input
-          ref={inputRef}
-          id={inputId}
-          type="search"
-          value={value}
-          placeholder="Name, style, camera…"
-          onChange={(event) => {
-            onChange(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            // The conventional way out of a filter box. Not `preventDefault`ed and not stopped from
-            // propagating: nothing above this listens for Escape, and swallowing it would break
-            // whatever eventually does.
-            if (event.key === 'Escape') onChange('');
-          }}
-          // The engine's own cancel button is suppressed rather than styled: it is not reachable by
-          // keyboard, and leaving it beside the button below would put two clear affordances in one
-          // control, one of which half the app's users cannot use.
-          className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-8 text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent [&::-webkit-search-cancel-button]:appearance-none"
-        />
+        {/* The wrapper is the block the field fills now, so the full width belongs to it. */}
+        <ControlTooltip
+          hint="Search presets"
+          text={PRESET_ACTION_TOOLTIPS.searchPresets}
+          className="relative flex w-full"
+        >
+          <input
+            ref={inputRef}
+            id={inputId}
+            type="search"
+            value={value}
+            placeholder="Name, style, camera…"
+            onChange={(event) => {
+              onChange(event.target.value);
+            }}
+            onKeyDown={(event) => {
+              // The conventional way out of a filter box. Not `preventDefault`ed and not stopped from
+              // propagating: nothing above this listens for Escape, and swallowing it would break
+              // whatever eventually does.
+              if (event.key === 'Escape') onChange('');
+            }}
+            // The engine's own cancel button is suppressed rather than styled: it is not reachable by
+            // keyboard, and leaving it beside the button below would put two clear affordances in one
+            // control, one of which half the app's users cannot use.
+            className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-8 text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent [&::-webkit-search-cancel-button]:appearance-none"
+          />
+        </ControlTooltip>
 
         {hasText && (
-          <button
-            type="button"
-            onClick={() => {
-              // Focused *before* the state change, not after: clearing the box unmounts this button,
-              // so a focus call afterwards would be aimed at an element React has already removed and
-              // focus would fall to the document — leaving a keyboard user's next Tab starting again
-              // from the top of the page. The input is also where the caret belongs once a filter has
-              // been cleared, so this is the right destination rather than merely a safe one.
-              inputRef.current?.focus();
-              onChange('');
-            }}
-            aria-label="Clear the preset search"
-            className="absolute top-1/2 right-1.5 -translate-y-1/2 rounded-lg px-1.5 py-1 text-2xs font-semibold text-ink-faint transition-colors hover:bg-foundry-700 hover:text-ink"
+          // The absolute placement travels to the wrapper, which is what is positioned against the
+          // field's box now — left on the button it would resolve against the wrapper instead.
+          <ControlTooltip
+            hint="Clear the search"
+            text={PRESET_ACTION_TOOLTIPS.clearSearch}
+            className="absolute top-1/2 right-1.5 inline-flex -translate-y-1/2"
           >
-            <span aria-hidden="true">✕</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => {
+                // Focused *before* the state change, not after: clearing the box unmounts this button,
+                // so a focus call afterwards would be aimed at an element React has already removed and
+                // focus would fall to the document — leaving a keyboard user's next Tab starting again
+                // from the top of the page. The input is also where the caret belongs once a filter has
+                // been cleared, so this is the right destination rather than merely a safe one.
+                inputRef.current?.focus();
+                onChange('');
+              }}
+              aria-label="Clear the preset search"
+              className="rounded-lg px-1.5 py-1 text-2xs font-semibold text-ink-faint transition-colors hover:bg-foundry-700 hover:text-ink"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          </ControlTooltip>
         )}
       </div>
 

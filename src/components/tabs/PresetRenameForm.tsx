@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react';
+import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 interface PresetRenameFormProps {
   readonly preset: PresetArchetype;
@@ -49,33 +51,44 @@ export function PresetRenameForm({ preset, onRename, onClose }: PresetRenameForm
         }
       }}
     >
-      <input
-        ref={focusOnMount}
-        type="text"
-        value={draftName}
-        aria-label={`New name for ${preset.name}`}
-        onChange={(event) => {
-          setDraftName(event.target.value);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') onClose();
-        }}
-        className="w-full min-w-0 rounded-lg border border-foundry-600 bg-foundry-950 px-2 py-1 text-sm font-bold text-ink transition-colors focus:border-accent"
-      />
-      <button
-        type="submit"
-        disabled={isSaving || draftName.trim() === ''}
-        className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
+      {/* The box is what stretches in this row, so `w-full min-w-0` moves to the wrapper with it. */}
+      <ControlTooltip
+        hint="New name"
+        text={PRESET_ACTION_TOOLTIPS.renameNameBox}
+        className="relative flex w-full min-w-0"
       >
-        {isSaving ? 'Saving…' : 'Save'}
-      </button>
-      <button
-        type="button"
-        onClick={onClose}
-        className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-      >
-        Cancel
-      </button>
+        <input
+          ref={focusOnMount}
+          type="text"
+          value={draftName}
+          aria-label={`New name for ${preset.name}`}
+          onChange={(event) => {
+            setDraftName(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') onClose();
+          }}
+          className="w-full min-w-0 rounded-lg border border-foundry-600 bg-foundry-950 px-2 py-1 text-sm font-bold text-ink transition-colors focus:border-accent"
+        />
+      </ControlTooltip>
+      <ControlTooltip hint="Save" text={PRESET_ACTION_TOOLTIPS.confirmRename}>
+        <button
+          type="submit"
+          disabled={isSaving || draftName.trim() === ''}
+          className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
+        >
+          {isSaving ? 'Saving…' : 'Save'}
+        </button>
+      </ControlTooltip>
+      <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelRename}>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+        >
+          Cancel
+        </button>
+      </ControlTooltip>
     </form>
   );
 }

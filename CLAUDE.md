@@ -638,8 +638,8 @@ containing block for fixed-position descendants, so `position: fixed` doesn't es
 an `overflow` ancestor (the atlas calculator's scrolling panel) clips the surface whatever it is
 positioned against.
 
-`showPopover()` answers all three, and is how `ComboBox`'s suggestion list and `Tooltip`'s guidance
-card reach the page: the top layer is not clipped, paints above the whole document including an open
+`showPopover()` answers all three, and is how `ComboBox`'s suggestion list and the guidance card
+both triggers share reach the page: the top layer is not clipped, paints above the whole document including an open
 modal `<dialog>`, and resolves `position: fixed` against the viewport. `useAnchoredSurface` owns
 that — a new floating surface uses it rather than a fourth spelling of the same problem — and **the
 lift is applied entirely from the hook**, attribute included. The call site still positions its
@@ -670,6 +670,84 @@ attribute and the call belong together — which is why `useAnchoredSurface` set
 place. Don't write a guard, a comment or a test that assumes a state mismatch throws; happy-dom
 implements none of this, and the no-op stubs in `src/test/setup.ts` deliberately model that silence
 rather than inventing an invariant.
+
+## Every control carries guidance, and there are two ways to show it
+
+A control this app puts on screen is a control it owes an explanation. The vocabulary is technical
+by necessity — `CORE_DIRECTIONAL_VARIANTS`, a pixel grid, an identity lock — and a reader who
+cannot tell what a button will do to their configuration will not press it, or will press it once
+and lose work. So **a new control ships with comprehensive guidance or it does not ship**, and
+"comprehensive" is three things in one paragraph: what the control *is*, what it changes — the
+compiled prompt, the studio, stored data, or nothing at all — and why anyone would reach for it.
+Naming what a control does **not** touch is worth as much as naming what it does; half the
+questions a prompt tool raises are "does this end up in the text I paste?".
+
+**Which of the two forms a control takes is decided by what it is, not by how much room is left.**
+
+- **A setting takes `Tooltip`** — the ⓘ beside its label. A value that reaches the compiled prompt
+  is worth an affordance a reader can *see* before they know they need it, and worth a target a
+  finger can tap. Every field primitive already carries one, so this comes free: `TextField`,
+  `NumberField`, `SelectField`, `CheckboxField`, `ComboBox` and `FilePickerField` all take a
+  `tooltip` prop and there is nothing to wire up.
+- **Everything else takes `ControlTooltip`**, which hangs the same glass card off the control
+  itself and shows it on hover or focus. Actions, navigation, search boxes, confirmations — around
+  fifty of them, and **an ⓘ beside each would be fifty more glyphs in rows that are already full**,
+  in a header that wraps on a phone and card footers three buttons wide. Hovering a control is what
+  a tooltip has always meant; that is the trigger, and the card is the same card.
+
+**Do not add a second ⓘ to a control that already reads as one thing.** The mistake this rule
+exists to stop is a button growing an information glyph beside it, which doubles the number of
+targets in every toolbar and reads as though the glyph were a second action.
+
+**One card, one implementation.** `TooltipCard` is the surface, `useTooltipReveal` is the state
+machine — hover, focus, the Escape latch, the outside press — and `useAnchoredSurface` puts the
+card in the top layer and decides which side of the anchor it opens on. All three are shared by
+both triggers, deliberately: WCAG 1.4.13 asks for *dismissible*, *hoverable* and *persistent*, and
+a second implementation is where one of those quietly becomes "Escape works while the trigger has
+focus". **Never re-style a floating panel to look like the guidance card**, and never write a
+`title` attribute — it is unreachable by keyboard, untouchable by pointer, and on its own timer.
+
+Three details of `ControlTooltip` are worth knowing before using it:
+
+- **It wraps the control in a `<span>` that takes the control's place in the layout.** So anything
+  the control was saying about its own box in a flex or grid parent — `ml-auto`, `flex-1`, `w-full`,
+  an absolute placement — moves out to the wrapper's `className`, and the control is told to fill
+  it. That prop **replaces** the default `relative inline-flex` rather than adding to it, because
+  two `display` or two `position` utilities on one element resolve by where they land in the
+  generated stylesheet, which no call site can see.
+- **A press dismisses, and so does typing.** The ⓘ toggles on a press because revealing its card is
+  its only job; a wrapped control is the thing the press was *meant* for, so the guidance stands
+  aside rather than sitting under the pointer describing a button already used. `input` bubbles to
+  the wrapper, which is what stops a card hanging under a search box over the results it is
+  narrowing.
+- **It cannot be reached by touch**, because a tap on a control runs the control. That is inherent
+  to the form and is the second reason a *setting* keeps its ⓘ. The compensation is
+  `aria-describedby`, which `ControlTooltip` puts on the control while the card is up, so a screen
+  reader announces the guidance on focus however the pointer situation stands.
+
+**Where a control genuinely cannot be wrapped, say so where the exception lives.** A `<summary>`
+has to be the first child of its `<details>`, so the split drawer's disclosure carries no card and
+its code says why. That is the whole list; anything added to it needs the same treatment, not
+silence.
+
+**The copy is content, so it lives in `src/constants/` and is written like content.** A setting's
+guidance sits with the options that setting offers — `constants/output/tooltips.ts` beside
+`choices.ts`, `SETTINGS_TOOLTIPS` beside the defaults — because an option list and the sentence
+explaining it drift apart the moment they are filed apart. An action has no option list to sit
+beside, so those live in `src/constants/tooltips/`. Two rules on the writing itself:
+
+- **Natural English, in the voice the rest of the app is written in.** Plain declarative sentences,
+  British spelling, concrete nouns, and the reader addressed as "you". No marketing register, no
+  rhetorical triads, no "not just X but Y", no sentence that exists to introduce the next one.
+  Read it back as though a stranger were reading it over your shoulder, because on a public site
+  one is.
+- **Typographic punctuation**, as every other string in the bundle uses: `’` and `“ ”`, never the
+  straight ASCII forms.
+
+`src/constants/tooltips/tooltips.test.ts` holds the mechanical half — a length floor that catches a
+three-word stub, prose shape, the punctuation above, and that no two controls share a sentence,
+which is the copy-paste that leaves one of them describing the other and is invisible in review.
+Whether the words are *true* is still yours.
 
 ## Prompt text is the product, and it is written to rules
 
@@ -755,9 +833,10 @@ initial build. They are not stylistic preferences.
   or configuration knobs nobody asked for.
 - **DRY.** Reuse the primitives in `src/components/common/` rather than re-styling a bare element:
   `TextField` / `NumberField` / `SelectField` / `CheckboxField` / `FilePickerField` for form
-  controls, `ComboBox` for a typed-or-chosen value, and `Tooltip`, `ColorSwatch`, `Badge`, `Toast`,
-  `Modal`, `ExternalLink` for the rest. A second, subtly-different implementation of a solved
-  problem is the failure mode to watch for.
+  controls, `ComboBox` for a typed-or-chosen value, `Tooltip` and `ControlTooltip` for the two ways
+  a control's guidance is shown, and `ColorSwatch`, `Badge`, `Toast`, `Modal`, `ExternalLink` for
+  the rest. A second, subtly-different implementation of a solved problem is the failure mode to
+  watch for.
 - **Completeness.** Never write `// TODO: add remaining fields`, `/* rest of options here */`,
   or a stubbed function body. Every category, field, option, tooltip and compiler rule ships
   whole or not at all.

@@ -1,7 +1,9 @@
 import { useId, useState } from 'react';
 import { PRESETS } from '../../constants/presets/index.ts';
+import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { findPresetByName } from '../../utils/presetNames.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetTransferControls } from './PresetTransferControls.tsx';
 
 /**
@@ -44,36 +46,43 @@ export function PresetSavePanel() {
           <label htmlFor={nameId} className="mb-1 block text-xs font-semibold text-ink-faint">
             Save the current studio setup as
           </label>
-          <input
-            id={nameId}
-            type="text"
-            value={presetName}
-            placeholder="Preset name"
-            onChange={(event) => {
-              setPresetName(event.target.value);
-            }}
-            className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
-          />
+          <ControlTooltip
+            hint="Save the current studio setup as"
+            text={PRESET_ACTION_TOOLTIPS.savePresetName}
+          >
+            <input
+              id={nameId}
+              type="text"
+              value={presetName}
+              placeholder="Preset name"
+              onChange={(event) => {
+                setPresetName(event.target.value);
+              }}
+              className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
+            />
+          </ControlTooltip>
         </div>
 
-        <button
-          type="button"
-          disabled={isSaving || presetName.trim() === ''}
-          onClick={async () => {
-            setIsSaving(true);
-            try {
-              // Cleared only when it was actually stored. The store reports a failed write with a
-              // toast and resolves normally, so emptying the box unconditionally would make the
-              // user retype the name to retry.
-              if (await saveCustomPreset(presetName)) setPresetName('');
-            } finally {
-              setIsSaving(false);
-            }
-          }}
-          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
-        >
-          {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
-        </button>
+        <ControlTooltip hint={overwrites ? 'Update' : 'Save'} text={PRESET_ACTION_TOOLTIPS.savePreset}>
+          <button
+            type="button"
+            disabled={isSaving || presetName.trim() === ''}
+            onClick={async () => {
+              setIsSaving(true);
+              try {
+                // Cleared only when it was actually stored. The store reports a failed write with a
+                // toast and resolves normally, so emptying the box unconditionally would make the
+                // user retype the name to retry.
+                if (await saveCustomPreset(presetName)) setPresetName('');
+              } finally {
+                setIsSaving(false);
+              }
+            }}
+            className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
+          >
+            {isSaving ? 'Saving…' : overwrites ? 'Update' : 'Save'}
+          </button>
+        </ControlTooltip>
 
         <PresetTransferControls />
       </div>

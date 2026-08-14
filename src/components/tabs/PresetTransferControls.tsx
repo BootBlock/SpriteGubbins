@@ -1,6 +1,8 @@
 import { useId, useRef } from 'react';
+import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useDownload } from '../../hooks/useDownload.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 /** The filename an exported pack arrives as. */
 const PACK_FILENAME = 'sprite-gubbins-presets.json';
@@ -23,16 +25,18 @@ export function PresetTransferControls() {
 
   return (
     <>
-      <button
-        type="button"
-        disabled={isExporting}
-        onClick={() => {
-          download(PACK_FILENAME, exportPresetsJSON(), 'application/json');
-        }}
-        className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint"
-      >
-        <span aria-hidden="true">📤</span> Export JSON
-      </button>
+      <ControlTooltip hint="Export JSON" text={PRESET_ACTION_TOOLTIPS.exportPresets}>
+        <button
+          type="button"
+          disabled={isExporting}
+          onClick={() => {
+            download(PACK_FILENAME, exportPresetsJSON(), 'application/json');
+          }}
+          className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint"
+        >
+          <span aria-hidden="true">📤</span> Export JSON
+        </button>
+      </ControlTooltip>
 
       {/*
         A real button that opens the file picker, rather than a `<label>` wrapping the input.
@@ -41,16 +45,18 @@ export function PresetTransferControls() {
         styling a label to look like a button and giving it its own focus ring would
         re-implement the global `:focus-visible` rule that `index.css` already owns.
       */}
-      <button
-        type="button"
-        disabled={isExporting}
-        onClick={() => {
-          fileInputRef.current?.click();
-        }}
-        className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint"
-      >
-        <span aria-hidden="true">📥</span> Import JSON
-      </button>
+      <ControlTooltip hint="Import JSON" text={PRESET_ACTION_TOOLTIPS.importPresets}>
+        <button
+          type="button"
+          disabled={isExporting}
+          onClick={() => {
+            fileInputRef.current?.click();
+          }}
+          className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint"
+        >
+          <span aria-hidden="true">📥</span> Import JSON
+        </button>
+      </ControlTooltip>
       <input
         ref={fileInputRef}
         id={importId}

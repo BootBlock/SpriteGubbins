@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { TARGET_MODELS } from '../../constants/models.ts';
+import { HISTORY_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { PromptHistoryLog } from '../../types/history.ts';
 import { Badge } from '../common/Badge.tsx';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 /** Model display names, keyed by id, so an entry can name the generator it was written for. */
 const MODEL_NAMES = new Map(TARGET_MODELS.map((model) => [model.id, model.name]));
@@ -53,57 +55,73 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
         <span className="font-mono text-2xs text-ink-faint">{log.wordCount} words</span>
 
         <div className="flex items-center gap-2">
-          {/* Same button in both states, so pressing it does not move focus off itself. */}
-          <button
-            type="button"
-            aria-label={isConfirmingDelete ? 'Confirm deleting this prompt' : 'Delete this prompt'}
-            onClick={() => {
-              if (!isConfirmingDelete) {
-                setIsConfirmingDelete(true);
-                return;
-              }
-              setIsConfirmingDelete(false);
-              onDelete(log);
-            }}
-            className={
+          {/* Same button in both states, so pressing it does not move focus off itself — and the
+              guidance changes with it, since the second press is the one that cannot be taken back. */}
+          <ControlTooltip
+            hint={isConfirmingDelete ? 'Delete?' : 'Delete this prompt'}
+            text={
               isConfirmingDelete
-                ? 'rounded-lg bg-rose px-2.5 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90'
-                : 'rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700'
+                ? HISTORY_ACTION_TOOLTIPS.confirmDeleteEntry
+                : HISTORY_ACTION_TOOLTIPS.deleteEntry
             }
           >
-            {isConfirmingDelete ? 'Delete?' : <span aria-hidden="true">🗑</span>}
-          </button>
+            <button
+              type="button"
+              aria-label={isConfirmingDelete ? 'Confirm deleting this prompt' : 'Delete this prompt'}
+              onClick={() => {
+                if (!isConfirmingDelete) {
+                  setIsConfirmingDelete(true);
+                  return;
+                }
+                setIsConfirmingDelete(false);
+                onDelete(log);
+              }}
+              className={
+                isConfirmingDelete
+                  ? 'rounded-lg bg-rose px-2.5 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90'
+                  : 'rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700'
+              }
+            >
+              {isConfirmingDelete ? 'Delete?' : <span aria-hidden="true">🗑</span>}
+            </button>
+          </ControlTooltip>
 
           {isConfirmingDelete && (
+            <ControlTooltip hint="Cancel" text={HISTORY_ACTION_TOOLTIPS.cancelDeleteEntry}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsConfirmingDelete(false);
+                }}
+                className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+              >
+                Cancel
+              </button>
+            </ControlTooltip>
+          )}
+
+          <ControlTooltip hint="Copy prompt" text={HISTORY_ACTION_TOOLTIPS.copyEntry}>
             <button
               type="button"
               onClick={() => {
-                setIsConfirmingDelete(false);
+                onCopy(log);
               }}
-              className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+              className="rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
-              Cancel
+              Copy prompt
             </button>
-          )}
-
-          <button
-            type="button"
-            onClick={() => {
-              onCopy(log);
-            }}
-            className="rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-          >
-            Copy prompt
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onRestore(log);
-            }}
-            className="rounded-lg bg-accent-strong px-2.5 py-1 text-xs font-semibold text-ink transition-colors hover:bg-accent"
-          >
-            Restore
-          </button>
+          </ControlTooltip>
+          <ControlTooltip hint="Restore" text={HISTORY_ACTION_TOOLTIPS.restoreEntry}>
+            <button
+              type="button"
+              onClick={() => {
+                onRestore(log);
+              }}
+              className="rounded-lg bg-accent-strong px-2.5 py-1 text-xs font-semibold text-ink transition-colors hover:bg-accent"
+            >
+              Restore
+            </button>
+          </ControlTooltip>
         </div>
       </div>
     </li>

@@ -1,7 +1,8 @@
 import { useId } from 'react';
-import { ACCENT_LABELS, SETTINGS_TOOLTIPS } from '../../constants/settings.ts';
+import { ACCENT_LABELS, SETTINGS_TOOLTIPS, accentSwatchGuidance } from '../../constants/settings.ts';
 import { useSettingsStore } from '../../stores/useSettingsStore.ts';
 import { ACCENT_HUES } from '../../types/settings.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
 /**
@@ -46,28 +47,34 @@ export function SettingsAccentField() {
         {ACCENT_HUES.map((hue) => {
           const isSelected = hue === accentHue;
           return (
-            <button
-              key={hue}
-              type="button"
-              data-accent={hue}
-              aria-pressed={isSelected}
-              onClick={() => {
-                void updateSettings({ accentHue: hue });
-              }}
-              className={`flex size-9 items-center justify-center rounded-lg bg-accent text-sm font-bold text-foundry-950 transition-transform duration-390 hover:scale-110 ${
-                isSelected ? 'ring-2 ring-ink ring-offset-2 ring-offset-foundry-800' : ''
-              }`}
-            >
-              {/*
-                The tick is the second way the selection is said, and it is near-black for the reason
-                every label on a coloured fill in this app is: these hues are light, so ink on one is
-                two light tones a shade apart. The name goes to assistive technology rather than under
-                the swatch — nine labels in a row is a paragraph of text where the colours are the
-                whole point, and each is already announced.
-              */}
-              {isSelected && <span aria-hidden="true">✓</span>}
-              <span className="sr-only">{ACCENT_LABELS[hue]}</span>
-            </button>
+            // The ⓘ above explains the *row*; this names the individual hue, which is the half a
+            // sighted reader cannot get from the swatches — the colours are the labels here, and
+            // Ember against Gold is not a distinction one square makes on its own. The name is
+            // already announced, so this adds nothing for a screen reader and everything for a
+            // pointer.
+            <ControlTooltip key={hue} hint={ACCENT_LABELS[hue]} text={accentSwatchGuidance(hue)}>
+              <button
+                type="button"
+                data-accent={hue}
+                aria-pressed={isSelected}
+                onClick={() => {
+                  void updateSettings({ accentHue: hue });
+                }}
+                className={`flex size-9 items-center justify-center rounded-lg bg-accent text-sm font-bold text-foundry-950 transition-transform duration-390 hover:scale-110 ${
+                  isSelected ? 'ring-2 ring-ink ring-offset-2 ring-offset-foundry-800' : ''
+                }`}
+              >
+                {/*
+                  The tick is the second way the selection is said, and it is near-black for the reason
+                  every label on a coloured fill in this app is: these hues are light, so ink on one is
+                  two light tones a shade apart. The name goes to assistive technology rather than under
+                  the swatch — nine labels in a row is a paragraph of text where the colours are the
+                  whole point, and each is already announced.
+                */}
+                {isSelected && <span aria-hidden="true">✓</span>}
+                <span className="sr-only">{ACCENT_LABELS[hue]}</span>
+              </button>
+            </ControlTooltip>
           );
         })}
       </div>

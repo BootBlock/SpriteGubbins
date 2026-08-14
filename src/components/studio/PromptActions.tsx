@@ -1,3 +1,4 @@
+import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
 import { useDownload } from '../../hooks/useDownload.ts';
@@ -5,6 +6,7 @@ import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { sheetRunCount } from '../../utils/sheetBatch.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 /**
  * Geometry and motion for the three secondary actions, so the set stays matched.
@@ -65,70 +67,90 @@ export function PromptActions({ promptText }: PromptActionsProps) {
 
   return (
     <div className="mb-3 flex flex-wrap items-center gap-2">
-      <button
-        type="button"
-        onClick={() => {
-          void copyText(JSON.stringify({ category, subject, output }, null, 2), 'JSON specification copied');
-        }}
-        className={PROMPT_ACTION}
-      >
-        <span aria-hidden="true" className={`${PROMPT_ACTION_ICON} font-mono`}>
-          {'{ }'}
-        </span>
-        Copy JSON
-      </button>
+      <ControlTooltip hint="Copy JSON" text={STUDIO_ACTION_TOOLTIPS.copyJSON}>
+        <button
+          type="button"
+          onClick={() => {
+            void copyText(
+              JSON.stringify({ category, subject, output }, null, 2),
+              'JSON specification copied',
+            );
+          }}
+          className={PROMPT_ACTION}
+        >
+          <span aria-hidden="true" className={`${PROMPT_ACTION_ICON} font-mono`}>
+            {'{ }'}
+          </span>
+          Copy JSON
+        </button>
+      </ControlTooltip>
 
-      <button
-        type="button"
-        onClick={() => {
-          download(promptFileName(subject.species), promptText, 'text/markdown');
-        }}
-        className={PROMPT_ACTION}
-      >
-        <span aria-hidden="true" className={PROMPT_ACTION_ICON}>
-          💾
-        </span>
-        Download .md
-      </button>
+      <ControlTooltip hint="Download .md" text={STUDIO_ACTION_TOOLTIPS.downloadMarkdown}>
+        <button
+          type="button"
+          onClick={() => {
+            download(promptFileName(subject.species), promptText, 'text/markdown');
+          }}
+          className={PROMPT_ACTION}
+        >
+          <span aria-hidden="true" className={PROMPT_ACTION_ICON}>
+            💾
+          </span>
+          Download .md
+        </button>
+      </ControlTooltip>
 
       {/* Offered only when the configuration genuinely is more than one sheet, counting both axes it
           can split along: a mode covering one facing at a time over a set naming more than one, and
           a pairing whose inventory outgrew a single generation. */}
       {runCount > 1 && (
-        <button
-          type="button"
-          onClick={toggleSplitModal}
-          // Alone among the four in coming and going with the configuration, so it arrives rather
-          // than simply being there — which is what tells the user it is new.
-          className={`${PROMPT_ACTION} animate-pop-in`}
+        <ControlTooltip
+          hint={`Split into ${String(runCount)} sheets`}
+          text={STUDIO_ACTION_TOOLTIPS.splitIntoSheets}
         >
-          <span aria-hidden="true" className={PROMPT_ACTION_ICON}>
-            🧩
-          </span>
-          Split into {runCount} sheets
-        </button>
+          <button
+            type="button"
+            onClick={toggleSplitModal}
+            // Alone among the four in coming and going with the configuration, so it arrives rather
+            // than simply being there — which is what tells the user it is new.
+            className={`${PROMPT_ACTION} animate-pop-in`}
+          >
+            <span aria-hidden="true" className={PROMPT_ACTION_ICON}>
+              🧩
+            </span>
+            Split into {runCount} sheets
+          </button>
+        </ControlTooltip>
       )}
 
-      <button
-        type="button"
-        onClick={() => {
-          void copyPrompt();
-        }}
-        // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
-        // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
-        className="action-tab group relative ml-auto overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-390 hover:scale-[1.03] active:scale-[0.98]"
+      {/* `ml-auto` belongs to the wrapper, which is the flex item in this row now — on the button it
+          would be measured against the wrapper's own box and push nothing. */}
+      <ControlTooltip
+        hint="Copy Prompt"
+        text={STUDIO_ACTION_TOOLTIPS.copyPrompt}
+        className="relative ml-auto inline-flex"
       >
-        {/* The sheen is a child rather than a background layer on the button, so it can be clipped
-            to the rounded corners and slid across without disturbing the fill underneath. */}
-        <span
-          aria-hidden="true"
-          className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
-        />
-        <span className="relative flex items-center gap-1.5">
-          <span aria-hidden="true">📋</span>
-          Copy Prompt
-        </span>
-      </button>
+        <button
+          type="button"
+          onClick={() => {
+            void copyPrompt();
+          }}
+          // `action-tab`, not the chrome's indigo: this one belongs to the studio, and the header's
+          // Copy Prompt — the same action, reachable from every view — is the one that stays primary.
+          className="action-tab group relative overflow-hidden rounded-xl px-4 py-1.5 text-xs font-extrabold transition-all duration-390 hover:scale-[1.03] active:scale-[0.98]"
+        >
+          {/* The sheen is a child rather than a background layer on the button, so it can be clipped
+              to the rounded corners and slid across without disturbing the fill underneath. */}
+          <span
+            aria-hidden="true"
+            className="shimmer-surface absolute inset-0 -translate-x-full transition-transform duration-1365 group-hover:translate-x-full"
+          />
+          <span className="relative flex items-center gap-1.5">
+            <span aria-hidden="true">📋</span>
+            Copy Prompt
+          </span>
+        </button>
+      </ControlTooltip>
     </div>
   );
 }

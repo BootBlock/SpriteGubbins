@@ -1,5 +1,7 @@
 import { PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
+import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
@@ -36,16 +38,18 @@ export function ComparisonToolbar({ zoom, onZoomChange, sourceName, resultImage 
         />
       </div>
 
-      <button
-        type="button"
-        disabled={resultImage === null}
-        onClick={() => {
-          if (resultImage !== null) download(sourceName, resultImage);
-        }}
-        className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
-      >
-        <span aria-hidden="true">⬇</span> Download PNG
-      </button>
+      <ControlTooltip hint="Download PNG" text={QUANTISE_ACTION_TOOLTIPS.downloadPNG}>
+        <button
+          type="button"
+          disabled={resultImage === null}
+          onClick={() => {
+            if (resultImage !== null) download(sourceName, resultImage);
+          }}
+          className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
+        >
+          <span aria-hidden="true">⬇</span> Download PNG
+        </button>
+      </ControlTooltip>
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
+import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useFileDropTarget } from '../../hooks/useFileDropTarget.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
@@ -63,7 +64,11 @@ export function IdentityPaletteCapture() {
       }`}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-        <FilePickerField label="Read the palette from an accepted sheet" acceptFile={acceptFile} />
+        <FilePickerField
+          label="Read the palette from an accepted sheet"
+          tooltip={STUDIO_ACTION_TOOLTIPS.readPalette}
+          acceptFile={acceptFile}
+        />
       </div>
 
       <p className="mt-2 text-xs leading-relaxed text-ink-faint">

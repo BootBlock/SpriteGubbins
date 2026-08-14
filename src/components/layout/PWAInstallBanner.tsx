@@ -1,4 +1,6 @@
+import { CHROME_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 /**
  * The offer to install the app, shown only when the browser has actually made one.
@@ -28,33 +30,37 @@ export function PWAInstallBanner() {
       </p>
 
       <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={async () => {
-            setInstallPrompt(null);
-            try {
-              await installPrompt.prompt();
-              await installPrompt.userChoice;
-            } catch {
-              // The browser refused to show its dialogue — most often because the event has already
-              // been spent. Reported rather than left as an unhandled rejection with no explanation
-              // for a button that appeared to do nothing.
-              showToast('The browser would not open its install dialogue');
-            }
-          }}
-          className="rounded-xl bg-accent-strong px-4 py-1.5 text-xs font-bold text-ink shadow-md transition-colors hover:bg-accent"
-        >
-          Install
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setInstallPrompt(null);
-          }}
-          className="rounded-xl border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-        >
-          Not now
-        </button>
+        <ControlTooltip hint="Install" text={CHROME_TOOLTIPS.installApp}>
+          <button
+            type="button"
+            onClick={async () => {
+              setInstallPrompt(null);
+              try {
+                await installPrompt.prompt();
+                await installPrompt.userChoice;
+              } catch {
+                // The browser refused to show its dialogue — most often because the event has already
+                // been spent. Reported rather than left as an unhandled rejection with no explanation
+                // for a button that appeared to do nothing.
+                showToast('The browser would not open its install dialogue');
+              }
+            }}
+            className="rounded-xl bg-accent-strong px-4 py-1.5 text-xs font-bold text-ink shadow-md transition-colors hover:bg-accent"
+          >
+            Install
+          </button>
+        </ControlTooltip>
+        <ControlTooltip hint="Not now" text={CHROME_TOOLTIPS.dismissInstall}>
+          <button
+            type="button"
+            onClick={() => {
+              setInstallPrompt(null);
+            }}
+            className="rounded-xl border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
+          >
+            Not now
+          </button>
+        </ControlTooltip>
       </div>
     </div>
   );

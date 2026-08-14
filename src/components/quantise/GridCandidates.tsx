@@ -1,4 +1,6 @@
+import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { PixelGrid, SheetScale } from '../../types/quantiser.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 interface GridCandidatesProps {
   /** What the sheet itself was read as, exactly or as an estimate, or `null` for neither. */
@@ -32,26 +34,33 @@ export function GridCandidates({ scale, suggested, onChoose }: GridCandidatesPro
     <div className="mt-4 flex flex-wrap items-center gap-2">
       <span className="text-xs font-semibold text-ink-muted">Try</span>
       {scale !== null && (
-        <button
-          type="button"
-          onClick={() => {
-            onChoose(scale.grid);
-          }}
-          className={CANDIDATE_CLASS}
+        <ControlTooltip
+          hint={scale.measurement === 'ESTIMATED' ? 'Estimated scale' : 'Measured scale'}
+          text={QUANTISE_ACTION_TOOLTIPS.candidateFromSheet}
         >
-          {scale.grid}× {scale.measurement === 'ESTIMATED' ? 'estimated' : 'measured'}
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              onChoose(scale.grid);
+            }}
+            className={CANDIDATE_CLASS}
+          >
+            {scale.grid}× {scale.measurement === 'ESTIMATED' ? 'estimated' : 'measured'}
+          </button>
+        </ControlTooltip>
       )}
       {suggested !== null && (
-        <button
-          type="button"
-          onClick={() => {
-            onChoose(suggested);
-          }}
-          className={CANDIDATE_CLASS}
-        >
-          {suggested}× from the target size
-        </button>
+        <ControlTooltip hint="Scale from the target size" text={QUANTISE_ACTION_TOOLTIPS.candidateFromTarget}>
+          <button
+            type="button"
+            onClick={() => {
+              onChoose(suggested);
+            }}
+            className={CANDIDATE_CLASS}
+          >
+            {suggested}× from the target size
+          </button>
+        </ControlTooltip>
       )}
     </div>
   );

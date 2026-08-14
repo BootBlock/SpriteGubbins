@@ -6,6 +6,7 @@ import {
   DEFAULT_ATLAS_CANVAS_SIZE,
   DEFAULT_ATLAS_PADDING,
 } from '../../constants/atlas.ts';
+import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
@@ -21,6 +22,7 @@ import {
   formatEngineMetadata,
   widthBiasFor,
 } from '../../utils/atlasCalculator.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Modal } from '../common/Modal.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 import { AtlasFitSummary } from './AtlasFitSummary.tsx';
@@ -130,22 +132,31 @@ export function AtlasCalculatorModal() {
       </div>
 
       <div className="flex flex-wrap gap-2 border-t border-foundry-700 px-6 py-4">
-        <button
-          type="button"
-          onClick={() => {
-            void copyText(engineSpec, 'Atlas engine spec copied');
-          }}
-          className="flex-1 rounded-xl border border-foundry-600 bg-foundry-950 py-2.5 text-xs font-bold text-accent-soft shadow-md transition-colors hover:bg-foundry-700"
+        {/* `flex-1` travels with the button to the wrapper, which is the flex item in this footer. */}
+        <ControlTooltip
+          hint="Copy Atlas Engine Spec"
+          text={DIALOG_TOOLTIPS.copyAtlasSpec}
+          className="relative flex flex-1"
         >
-          <span aria-hidden="true">📋</span> Copy Atlas Engine Spec (JSON)
-        </button>
-        <button
-          type="button"
-          onClick={toggleAtlasModal}
-          className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-ink shadow-lg transition-colors hover:bg-accent"
-        >
-          Done
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              void copyText(engineSpec, 'Atlas engine spec copied');
+            }}
+            className="w-full rounded-xl border border-foundry-600 bg-foundry-950 py-2.5 text-xs font-bold text-accent-soft shadow-md transition-colors hover:bg-foundry-700"
+          >
+            <span aria-hidden="true">📋</span> Copy Atlas Engine Spec (JSON)
+          </button>
+        </ControlTooltip>
+        <ControlTooltip hint="Done" text={DIALOG_TOOLTIPS.done}>
+          <button
+            type="button"
+            onClick={toggleAtlasModal}
+            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-ink shadow-lg transition-colors hover:bg-accent"
+          >
+            Done
+          </button>
+        </ControlTooltip>
       </div>
     </Modal>
   );

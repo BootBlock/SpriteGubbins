@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { ControlTooltip } from './ControlTooltip.tsx';
 import { Toast } from './Toast.tsx';
 
 interface ModalProps {
@@ -74,14 +76,16 @@ export function Modal({ title, icon, onClose, panelClassName, children }: ModalP
             </span>
             {title}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={`Close ${title}`}
-            className="flex size-7 items-center justify-center rounded-lg text-sm font-bold text-ink-faint transition-all duration-390 hover:rotate-90 hover:bg-foundry-700 hover:text-ink"
-          >
-            <span aria-hidden="true">✕</span>
-          </button>
+          <ControlTooltip hint={`Close ${title}`} text={DIALOG_TOOLTIPS.close}>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={`Close ${title}`}
+              className="flex size-7 items-center justify-center rounded-lg text-sm font-bold text-ink-faint transition-all duration-390 hover:rotate-90 hover:bg-foundry-700 hover:text-ink"
+            >
+              <span aria-hidden="true">✕</span>
+            </button>
+          </ControlTooltip>
         </div>
         {children}
       </div>

@@ -2,6 +2,7 @@ import { APP_TAB_CHOICES } from '../../constants/ui.ts';
 import { PRESETS } from '../../constants/presets/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 /**
  * Equal-width columns, one per view.
@@ -80,45 +81,49 @@ export function TabSwitcher() {
       {APP_TAB_CHOICES.map((tab) => {
         const isActive = tab.id === activeTab;
         return (
-          <button
-            key={tab.id}
-            type="button"
-            aria-current={isActive ? 'page' : undefined}
-            onClick={() => {
-              setActiveTab(tab.id);
-            }}
-            // `relative` puts the label above the pill: the pill is positioned and these are not,
-            // so without it every label would be painted underneath the thing selecting it.
-            //
-            // The selected label is near-black, not ink. Every stop on the wheel is a light colour
-            // — they are one lightness precisely so they can be compared — so ink on top of one
-            // would be two light tones a shade apart (~1.8:1). Inverting measures 8.7:1 at the
-            // wheel's worst stop and 10.1:1 at its best, and the pill's vividness is what pays.
-            className={`group relative flex items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold transition-colors duration-390 sm:px-4 ${
-              isActive ? 'text-foundry-950' : 'text-ink-faint hover:bg-foundry-700/60 hover:text-ink'
-            }`}
-          >
-            <span
-              aria-hidden="true"
-              className={`inline-block transition-transform duration-585 group-hover:scale-125 ${
-                isActive ? 'scale-110' : ''
+          // The wrapper takes the button's place as the grid item, which is what keeps each view a
+          // clean `1 / n` of the row and the pill's geometry knowable without measuring anything —
+          // so the button inside is told to fill it rather than sizing to its own label.
+          <ControlTooltip key={tab.id} hint={tab.label} text={tab.guidance} className="relative flex">
+            <button
+              type="button"
+              aria-current={isActive ? 'page' : undefined}
+              onClick={() => {
+                setActiveTab(tab.id);
+              }}
+              // `relative` puts the label above the pill: the pill is positioned and these are not,
+              // so without it every label would be painted underneath the thing selecting it.
+              //
+              // The selected label is near-black, not ink. Every stop on the wheel is a light colour
+              // — they are one lightness precisely so they can be compared — so ink on top of one
+              // would be two light tones a shade apart (~1.8:1). Inverting measures 8.7:1 at the
+              // wheel's worst stop and 10.1:1 at its best, and the pill's vividness is what pays.
+              className={`group relative flex w-full items-center justify-center gap-2 rounded-lg px-2 py-2 text-xs font-semibold transition-colors duration-390 sm:px-4 ${
+                isActive ? 'text-foundry-950' : 'text-ink-faint hover:bg-foundry-700/60 hover:text-ink'
               }`}
             >
-              {tab.icon}
-            </span>
-            {/*
-              Four labels cannot fit four equal columns on a phone — "Architecture" alone is most of
-              one — so below `sm` the switcher is its glyphs, and the wording goes screen-reader-only
-              rather than away. The accessible name is the same at every width; only what is painted
-              changes, which is what keeps this a rendering decision rather than an accessibility one.
-            */}
-            <span className="sr-only gap-2 sm:not-sr-only sm:flex sm:items-center">
-              {tab.label}
-              {tab.id === 'presets' && (
-                <span className="font-mono">({PRESETS.length + customPresetCount})</span>
-              )}
-            </span>
-          </button>
+              <span
+                aria-hidden="true"
+                className={`inline-block transition-transform duration-585 group-hover:scale-125 ${
+                  isActive ? 'scale-110' : ''
+                }`}
+              >
+                {tab.icon}
+              </span>
+              {/*
+                Four labels cannot fit four equal columns on a phone — "Architecture" alone is most of
+                one — so below `sm` the switcher is its glyphs, and the wording goes screen-reader-only
+                rather than away. The accessible name is the same at every width; only what is painted
+                changes, which is what keeps this a rendering decision rather than an accessibility one.
+              */}
+              <span className="sr-only gap-2 sm:not-sr-only sm:flex sm:items-center">
+                {tab.label}
+                {tab.id === 'presets' && (
+                  <span className="font-mono">({PRESETS.length + customPresetCount})</span>
+                )}
+              </span>
+            </button>
+          </ControlTooltip>
         );
       })}
     </nav>
