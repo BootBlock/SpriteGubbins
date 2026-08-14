@@ -37,7 +37,6 @@ interface TooltipProps {
  * the click. **Persistent**: nothing here is on a timer.
  */
 export function Tooltip({ text, hint }: TooltipProps) {
-  const wrapperRef = useRef<HTMLSpanElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   // Anchored to the ⓘ itself rather than to the wrapper around it. The two boxes are all but
   // identical, and the button is the thing the caret has to point at.
@@ -45,7 +44,6 @@ export function Tooltip({ text, hint }: TooltipProps) {
 
   return (
     <span
-      ref={wrapperRef}
       // The hover lives here rather than on the button, and that is what makes the card hoverable:
       // the card is a DOM child of this span however far the top layer moves it on screen, so a
       // pointer travelling from the ⓘ onto the guidance never leaves this element and `mouseleave`

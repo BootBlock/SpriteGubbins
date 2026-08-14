@@ -3,13 +3,16 @@
  *
  * A close button is the one control here that looks too obvious to explain, and it is the one most
  * worth a sentence: what a reader wants to know before pressing it is whether anything is about to
- * be discarded. In this app the answer is always no, and saying so is the point.
+ * be lost. These two are shown on **every** dialog, so what they say has to be true of all of them —
+ * and it is not the same answer in each. The settings dialog applies every change as it is made and
+ * has nothing to lose; the atlas calculator's canvas size and gutter are its own working state and
+ * go when it closes. So they say what is *durable* rather than promising that nothing goes.
  */
 export const DIALOG_TOOLTIPS = {
   close:
-    'Closes this panel. Nothing is discarded — every dialog in this app applies its changes as they are made, so there is nothing held back waiting to be saved. Escape does the same thing.',
+    'Closes this panel. Nothing you have set outside it is affected, and nothing here was waiting on a Save — a preference applies as you change it, and the atlas calculator’s own two settings are working state that starts fresh next time. Escape does the same thing.',
 
-  done: 'Closes the panel. Everything here has already been applied, so this only puts the page back.',
+  done: 'Closes the panel, exactly as the ✕ does. Nothing is submitted by it: whatever this dialog changes has already been changed.',
 
   copyAtlasSpec:
     'Puts the atlas layout on the clipboard as JSON — the texture size, the grid, the cell pitch, the usable bounds each component gets, and whether the requested component size fits them. It is engine metadata rather than prompt text: paste it into the importer, packer or build script that has to know how the returned sheet is laid out. It changes nothing in the studio.',

@@ -18,6 +18,11 @@ interface ComboBoxOptionProps {
  *
  * *Selected* and *active* are different states: selected is the value the field holds, active is
  * where the keyboard highlight currently is. Both can be visible at once, on different rows.
+ *
+ * **No guidance card**, which is the same call `SegmentedChoice` makes about its pills: an option is
+ * one *value* of a setting rather than a control, and the field's own ⓘ explains the whole pool at
+ * once. A card per option would also have nothing to open from — the pattern above keeps focus in
+ * the text field, so no row here is ever focused.
  */
 export function ComboBoxOption({ id, option, isSelected, isActive, onSelect, onHover }: ComboBoxOptionProps) {
   return (

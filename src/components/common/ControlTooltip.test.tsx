@@ -109,24 +109,22 @@ describe('ControlTooltip', () => {
     expect(screen.getByRole('tooltip')).toBeInTheDocument();
   });
 
-  it('gets out of the way as soon as a wrapped field is typed into', async () => {
-    const user = userEvent.setup();
+  it('hands a disabled control back the pointer events its guidance now depends on', () => {
     render(
-      <ControlTooltip hint="Search presets" text={GUIDANCE}>
-        <input type="search" aria-label="Search presets" />
+      <ControlTooltip hint="Download PNG" text={GUIDANCE}>
+        <button type="button" disabled>
+          Download PNG
+        </button>
       </ControlTooltip>,
     );
-    const field = screen.getByRole('searchbox', { name: 'Search presets' });
 
-    await user.click(field);
-    await user.hover(field);
-    expect(screen.getByRole('tooltip')).toBeInTheDocument();
-
-    await user.type(field, 'knight');
-
-    // The card opens *under* the field, which for a filter box is over the results it is narrowing.
-    // Focus alone would hold it there for as long as someone is typing, which is the whole session.
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    // A disabled control dispatches no pointer events and does not pass them to an ancestor, so the
+    // wrapper — which is where the hover is tracked — would never hear one. Two of the wrapped
+    // controls explain the very condition that disables them, so this is the difference between
+    // guidance a user can read when they need it and guidance only reachable once it is moot.
+    expect(screen.getByRole('button', { name: 'Download PNG' }).parentElement).toHaveClass(
+      '[&>*:disabled]:pointer-events-none',
+    );
   });
 
   it('dismisses on Escape from anywhere, not only while the control is focused', async () => {

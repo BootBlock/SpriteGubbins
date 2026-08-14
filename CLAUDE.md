@@ -638,9 +638,10 @@ containing block for fixed-position descendants, so `position: fixed` doesn't es
 an `overflow` ancestor (the atlas calculator's scrolling panel) clips the surface whatever it is
 positioned against.
 
-`showPopover()` answers all three, and is how `ComboBox`'s suggestion list and the guidance card
-both triggers share reach the page: the top layer is not clipped, paints above the whole document including an open
-modal `<dialog>`, and resolves `position: fixed` against the viewport. `useAnchoredSurface` owns
+`showPopover()` answers all three, and is how `ComboBox`'s suggestion list and the guidance card that
+`Tooltip` and `ControlTooltip` share both reach the page: the top layer is not clipped, paints above
+the whole document including an open modal `<dialog>`, and resolves `position: fixed` against the
+viewport. `useAnchoredSurface` owns
 that — a new floating surface uses it rather than a fourth spelling of the same problem — and **the
 lift is applied entirely from the hook**, attribute included. The call site still positions its
 surface inside its own panel the ordinary way, so a browser without the API keeps the surface it
@@ -682,18 +683,29 @@ compiled prompt, the studio, stored data, or nothing at all — and why anyone w
 Naming what a control does **not** touch is worth as much as naming what it does; half the
 questions a prompt tool raises are "does this end up in the text I paste?".
 
-**Which of the two forms a control takes is decided by what it is, not by how much room is left.**
+**Which form a control takes is decided by what the control *is* — never by how much room is left.**
 
-- **A setting takes `Tooltip`** — the ⓘ beside its label. A value that reaches the compiled prompt
-  is worth an affordance a reader can *see* before they know they need it, and worth a target a
-  finger can tap. Every field primitive already carries one, so this comes free: `TextField`,
-  `NumberField`, `SelectField`, `CheckboxField`, `ComboBox` and `FilePickerField` all take a
-  `tooltip` prop and there is nothing to wire up.
-- **Everything else takes `ControlTooltip`**, which hangs the same glass card off the control
-  itself and shows it on hover or focus. Actions, navigation, search boxes, confirmations — around
-  fifty of them, and **an ⓘ beside each would be fifty more glyphs in rows that are already full**,
-  in a header that wraps on a phone and card footers three buttons wide. Hovering a control is what
-  a tooltip has always meant; that is the trigger, and the card is the same card.
+- **Anything holding a value takes `Tooltip`**, the ⓘ beside its label: a field, a select, a
+  checkbox, a search box, a name box. A value is worth an affordance a reader can *see* before they
+  know they need it, and worth a target a finger can tap. Every field primitive carries one already,
+  so it comes free — `TextField`, `NumberField`, `SelectField`, `CheckboxField` and `ComboBox` all
+  take a `tooltip` prop and there is nothing to wire up.
+- **Anything that *does* something takes `ControlTooltip`**, which hangs the same glass card off the
+  control itself and shows it on hover or keyboard focus. Actions, navigation, confirmations,
+  choosers — around fifty of them, and **an ⓘ beside each would be fifty more glyphs in rows that
+  are already full**, in a header that wraps on a phone and card footers three buttons wide.
+  Hovering a control is what a tooltip has always meant; that is the trigger, and the card is the
+  same card. `FilePickerField` is on this side of the line and not the one above: it is a button
+  that opens a file dialog, not a box holding a value.
+
+**That line is load-bearing, not tidiness.** `ControlTooltip` reveals on focus only when
+`:focus-visible` matches, because a press focuses what it lands on and an unconditional reveal would
+undo the dismissal the press just latched — every button in the app answering a click by opening a
+paragraph under itself. The selector answers "did the keyboard bring me here" for a control and
+**does not answer it for a value box**: it matches a text field however that field was focused. So a
+search box wrapped in `ControlTooltip` opens its card on a click and holds it over the results it is
+filtering, and a box that is focused as it appears — `PresetRenameForm`'s — opens one unasked. Put a
+value on the ⓘ and none of that arises.
 
 **Do not add a second ⓘ to a control that already reads as one thing.** The mistake this rule
 exists to stop is a button growing an information glyph beside it, which doubles the number of
@@ -704,8 +716,11 @@ machine — hover, focus, the Escape latch, the outside press — and `useAnchor
 card in the top layer and decides which side of the anchor it opens on. All three are shared by
 both triggers, deliberately: WCAG 1.4.13 asks for *dismissible*, *hoverable* and *persistent*, and
 a second implementation is where one of those quietly becomes "Escape works while the trigger has
-focus". **Never re-style a floating panel to look like the guidance card**, and never write a
-`title` attribute — it is unreachable by keyboard, untouchable by pointer, and on its own timer.
+focus". **Never re-style a floating panel to look like the guidance card**, and never reach for a
+`title` attribute in its place — it is unreachable by keyboard, untouchable by pointer, and on the
+platform's own timer. (`Wordmark` carries one, and is not the exception it looks like: it is a
+*link*, it warns that following it leaves the app, and it pairs the attribute with the screen-reader
+text saying the same thing. That is `ExternalLink`'s warning, not guidance about a control.)
 
 Three details of `ControlTooltip` are worth knowing before using it:
 
@@ -715,20 +730,25 @@ Three details of `ControlTooltip` are worth knowing before using it:
   it. That prop **replaces** the default `relative inline-flex` rather than adding to it, because
   two `display` or two `position` utilities on one element resolve by where they land in the
   generated stylesheet, which no call site can see.
-- **A press dismisses, and so does typing.** The ⓘ toggles on a press because revealing its card is
-  its only job; a wrapped control is the thing the press was *meant* for, so the guidance stands
-  aside rather than sitting under the pointer describing a button already used. `input` bubbles to
-  the wrapper, which is what stops a card hanging under a search box over the results it is
-  narrowing.
-- **It cannot be reached by touch**, because a tap on a control runs the control. That is inherent
-  to the form and is the second reason a *setting* keeps its ⓘ. The compensation is
-  `aria-describedby`, which `ControlTooltip` puts on the control while the card is up, so a screen
-  reader announces the guidance on focus however the pointer situation stands.
+- **A press dismisses.** The ⓘ toggles on a press because revealing its card is its only job; a
+  wrapped control is the thing the press was *meant* for, so the guidance stands aside rather than
+  sitting under the pointer describing a button already used.
+- **It cannot be reached by touch**, because a tap on a control runs the control — the second reason
+  a value keeps its ⓘ. The compensation is `aria-describedby`, which `ControlTooltip` puts on the
+  control while the card is up, so a screen reader announces the guidance on focus however the
+  pointer situation stands. A **`disabled`** control is thinner still: it dispatches no pointer
+  events and is out of the tab order, so the wrapper takes the pointer events off it to recover the
+  hover, and nothing recovers the keyboard route.
 
-**Where a control genuinely cannot be wrapped, say so where the exception lives.** A `<summary>`
-has to be the first child of its `<details>`, so the split drawer's disclosure carries no card and
-its code says why. That is the whole list; anything added to it needs the same treatment, not
-silence.
+**Everything else on screen carries a card, and the exceptions are these — each for a reason
+recorded at the control itself, which is the treatment anything added to the list needs too:**
+
+| What | Why it carries none |
+| --- | --- |
+| `CollapsibleSection`'s section headers, `SheetSplitRun`'s prompt disclosure | A `<summary>` has to be the **first child** of its `<details>`, so a wrapper round it stops it being the disclosure's control. Both already name and describe themselves through `aria-labelledby` / `aria-describedby`. |
+| `Toast`'s ✕ | The surface is on a three-second timer and goes `inert` for its exit, so a card anchored to it outlives its anchor — and a ✕ on a notification needs no explaining. |
+| `SegmentedChoice`'s pills, `ComboBoxOption`'s options | Each is one **value** of a setting, not a control; the ⓘ on the setting above explains all of them at once, and a card per value is one explanation in ten places. |
+| `ComboBox`'s chevron | Not a control at all — `tabIndex={-1}`, `aria-hidden`, and a pointer-only duplicate of what the field it sits in already does. |
 
 **The copy is content, so it lives in `src/constants/` and is written like content.** A setting's
 guidance sits with the options that setting offers — `constants/output/tooltips.ts` beside

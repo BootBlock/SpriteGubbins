@@ -4,6 +4,7 @@ import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { findPresetByName } from '../../utils/presetNames.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Tooltip } from '../common/Tooltip.tsx';
 import { PresetTransferControls } from './PresetTransferControls.tsx';
 
 /**
@@ -43,24 +44,25 @@ export function PresetSavePanel() {
 
       <div className="flex flex-wrap items-end gap-2 rounded-xl border border-foundry-700 bg-foundry-950 p-2">
         <div>
-          <label htmlFor={nameId} className="mb-1 block text-xs font-semibold text-ink-faint">
-            Save the current studio setup as
-          </label>
-          <ControlTooltip
-            hint="Save the current studio setup as"
-            text={PRESET_ACTION_TOOLTIPS.savePresetName}
-          >
-            <input
-              id={nameId}
-              type="text"
-              value={presetName}
-              placeholder="Preset name"
-              onChange={(event) => {
-                setPresetName(event.target.value);
-              }}
-              className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
-            />
-          </ControlTooltip>
+          {/* The ⓘ, not a card on the field itself: this is a labelled box holding a value, which is
+              what that affordance has always marked, and a card revealed by focusing a field sits
+              over the library below for as long as the caret is in it. */}
+          <div className="mb-1 flex items-center gap-1.5">
+            <label htmlFor={nameId} className="text-xs font-semibold text-ink-faint">
+              Save the current studio setup as
+            </label>
+            <Tooltip text={PRESET_ACTION_TOOLTIPS.savePresetName} hint="Save the current studio setup as" />
+          </div>
+          <input
+            id={nameId}
+            type="text"
+            value={presetName}
+            placeholder="Preset name"
+            onChange={(event) => {
+              setPresetName(event.target.value);
+            }}
+            className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
+          />
         </div>
 
         <ControlTooltip hint={overwrites ? 'Update' : 'Save'} text={PRESET_ACTION_TOOLTIPS.savePreset}>

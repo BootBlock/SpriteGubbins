@@ -2,8 +2,13 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { useAnchoredSurface } from './useAnchoredSurface.ts';
 
-/** Which of the two inputs a reveal or a release is about. */
-export type TooltipInput = 'hover' | 'focus';
+/**
+ * Which of the two inputs a reveal or a release is about.
+ *
+ * Not exported: it is only ever written as a literal at a call site, and {@link TooltipReveal} is
+ * the type a consumer actually names.
+ */
+type TooltipInput = 'hover' | 'focus';
 
 /** Everything a component needs to put a `TooltipCard` on screen and take it off again. */
 export interface TooltipReveal {
@@ -43,7 +48,14 @@ export interface TooltipReveal {
  * why, makes the above/below call, and publishes it as `data-placement` for the caret.
  */
 export function useTooltipReveal(
-  /** The element the card is positioned against — in both components, the wrapper holding both. */
+  /**
+   * The element the card is positioned against, and what its caret points at.
+   *
+   * The two components answer that differently, and both are right: `Tooltip` anchors to the ⓘ
+   * itself, which is a 16px button beside a label, while `ControlTooltip` anchors to the wrapper it
+   * puts round the control — that wrapper's box *is* the control's, and it is also where the hover
+   * is tracked.
+   */
   anchorRef: RefObject<HTMLElement | null>,
   /**
    * A press inside this element does **not** dismiss, where one is given.

@@ -13,19 +13,19 @@ export const PRESET_ACTION_TOOLTIPS = {
     'Stores the studio exactly as it stands — the category, every subject field and every output setting — in the library under the name beside this. It reads as Update instead when the name matches a preset you already saved, and then overwrites that one. Built-in presets are never touched. Saved presets live in this browser’s own storage, so exporting the library is what gets them onto another machine.',
 
   exportPresets:
-    'Downloads every preset you have saved as a single JSON file. It is the way to move a library between browsers or machines, to keep a copy somewhere that survives clearing this browser’s storage, and to hand a set of configurations to somebody else. Built-in presets are not included — they ship with the app, so every copy already has them.',
+    'Downloads the whole library as a single JSON file — the built-in presets as well as your own, so the file makes sense on its own to somebody who opens it. It is the way to move a library between browsers or machines, to keep a copy that survives clearing this browser’s storage, and to hand a set of configurations to somebody else. Importing it back skips the built-ins, so they never arrive twice.',
 
   importPresets:
-    'Reads a preset pack exported from this app and adds what it holds to your saved presets. A preset whose name matches one you already have replaces it, so re-importing a pack you have edited updates rather than duplicates. Built-in presets are never affected, and nothing in the studio changes until you load one of the presets that arrives.',
+    'Reads a preset pack exported from this app and replaces your saved presets with the ones it holds — anything of yours not in the file is deleted, so export the library first if you have presets you want to keep. Built-in presets in the file are skipped, since the app already ships them, and nothing in the studio changes until you load one of the presets that arrives.',
 
   searchPresets:
     'Narrows the library to presets matching what you type, across their names, subjects and the settings on each card, so “isometric” or “cut-out” finds them as readily as a name does. It filters every collection at once, and the number beside each collection in the list says how many of its presets match. Escape clears the box.',
 
   clearSearch:
-    'Empties the search box and puts the whole library back, leaving the collection you are looking at selected. Escape in the box does the same thing.',
+    'Empties the search box and puts the whole library back, returning to the collection you last chose from the list — a search that found its match somewhere else moves the view while it is running, and this is what takes you back. Escape in the box does the same thing.',
 
   loadPreset:
-    'Replaces the entire studio configuration with this preset’s — the category, every subject field and every output setting — and takes you nowhere, so the prompt is recompiled where you can read it. Anything currently in the studio that has not been saved as a preset or copied is gone, so save it first if you want it back. A preset is a starting point rather than a finished answer: change whatever it got wrong for your subject afterwards.',
+    'Replaces the entire studio configuration with this preset’s — the category, every subject field and every output setting — and takes you to the Studio, where the prompt has been recompiled from it. Anything currently in the studio that has not been saved as a preset or copied is gone, so save it first if you want it back. A preset is a starting point rather than a finished answer: change whatever it got wrong for your subject afterwards.',
 
   renamePreset:
     'Renames this preset in place. Only its label changes — the configuration behind it is untouched, and nothing in the studio moves. A name another of your presets already uses is refused, because saving under a name that exists overwrites it, and two presets with one name would make which of them a mystery.',

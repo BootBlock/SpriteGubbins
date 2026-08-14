@@ -1,6 +1,7 @@
 import { useId, useRef } from 'react';
 import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Tooltip } from '../common/Tooltip.tsx';
 
 interface PresetSearchFieldProps {
   readonly value: string;
@@ -25,7 +26,9 @@ interface PresetSearchFieldProps {
  * Not a `TextField`: that primitive is for a *setting* — a labelled value with a tooltip explaining
  * what the prompt does with it — and this is a control that changes what is on screen and nothing
  * about the prompt. It needs the three things a search box has and a setting does not: search
- * semantics, Escape to clear, and a spoken count of what the query found.
+ * semantics, Escape to clear, and a spoken count of what the query found. What it does take from
+ * that primitive is the ⓘ, hand-assembled here: a box holding a value gets one wherever it sits, and
+ * guidance revealed by focusing this box would open across the library it is filtering.
  *
  * That count is the reason for the live region. Filtering as you type is a purely visual answer, so
  * without it a screen-reader user typing into this box gets no feedback at all until they navigate
@@ -41,12 +44,15 @@ export function PresetSearchField({ value, onChange, matchCount, isNarrowed }: P
 
   return (
     <div>
-      <label
-        htmlFor={inputId}
-        className="mb-1 block text-2xs font-semibold tracking-wide text-ink-faint uppercase"
-      >
-        Search presets
-      </label>
+      {/* The ⓘ, not a card on the field itself: this is a labelled box holding a value, which is
+          what that affordance has always marked, and a card revealed by focusing a field opens over
+          the library the field is filtering for as long as the caret is in it. */}
+      <div className="mb-1 flex items-center gap-1.5">
+        <label htmlFor={inputId} className="text-2xs font-semibold tracking-wide text-ink-faint uppercase">
+          Search presets
+        </label>
+        <Tooltip text={PRESET_ACTION_TOOLTIPS.searchPresets} hint="Search presets" />
+      </div>
 
       <div className="relative">
         <span
@@ -56,33 +62,26 @@ export function PresetSearchField({ value, onChange, matchCount, isNarrowed }: P
           🔍
         </span>
 
-        {/* The wrapper is the block the field fills now, so the full width belongs to it. */}
-        <ControlTooltip
-          hint="Search presets"
-          text={PRESET_ACTION_TOOLTIPS.searchPresets}
-          className="relative flex w-full"
-        >
-          <input
-            ref={inputRef}
-            id={inputId}
-            type="search"
-            value={value}
-            placeholder="Name, style, camera…"
-            onChange={(event) => {
-              onChange(event.target.value);
-            }}
-            onKeyDown={(event) => {
-              // The conventional way out of a filter box. Not `preventDefault`ed and not stopped from
-              // propagating: nothing above this listens for Escape, and swallowing it would break
-              // whatever eventually does.
-              if (event.key === 'Escape') onChange('');
-            }}
-            // The engine's own cancel button is suppressed rather than styled: it is not reachable by
-            // keyboard, and leaving it beside the button below would put two clear affordances in one
-            // control, one of which half the app's users cannot use.
-            className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-8 text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent [&::-webkit-search-cancel-button]:appearance-none"
-          />
-        </ControlTooltip>
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="search"
+          value={value}
+          placeholder="Name, style, camera…"
+          onChange={(event) => {
+            onChange(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            // The conventional way out of a filter box. Not `preventDefault`ed and not stopped from
+            // propagating: nothing above this listens for Escape, and swallowing it would break
+            // whatever eventually does.
+            if (event.key === 'Escape') onChange('');
+          }}
+          // The engine's own cancel button is suppressed rather than styled: it is not reachable by
+          // keyboard, and leaving it beside the button below would put two clear affordances in one
+          // control, one of which half the app's users cannot use.
+          className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 py-2 pr-9 pl-8 text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent [&::-webkit-search-cancel-button]:appearance-none"
+        />
 
         {hasText && (
           // The absolute placement travels to the wrapper, which is what is positioned against the

@@ -171,6 +171,13 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
         takes the second cell of the second column so it starts under the heading rather than under
         the caret. `list-none` kills the marker in Firefox and Chromium; the WebKit pseudo-element is
         its own rule, and without it Safari draws a second triangle beside the caret.
+
+        **This is one of the app's two controls that carries no guidance card, and the markup is
+        why.** A `<summary>` has to be the first child of its `<details>`, so there is nowhere to put
+        a wrapper that would not stop it being the disclosure's control — and it is already spoken
+        for twice over, naming itself through `aria-labelledby` and describing itself with the
+        digest, which is the configuration a fold must never hide. What it does is also said by the
+        heading it carries and by the caret beside it, and every field inside keeps its own ⓘ.
       */}
       <summary
         aria-labelledby={headingId}

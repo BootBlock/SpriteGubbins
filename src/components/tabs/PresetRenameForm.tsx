@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { Tooltip } from '../common/Tooltip.tsx';
 
 interface PresetRenameFormProps {
   readonly preset: PresetArchetype;
@@ -51,26 +52,27 @@ export function PresetRenameForm({ preset, onRename, onClose }: PresetRenameForm
         }
       }}
     >
-      {/* The box is what stretches in this row, so `w-full min-w-0` moves to the wrapper with it. */}
-      <ControlTooltip
-        hint="New name"
-        text={PRESET_ACTION_TOOLTIPS.renameNameBox}
-        className="relative flex w-full min-w-0"
-      >
-        <input
-          ref={focusOnMount}
-          type="text"
-          value={draftName}
-          aria-label={`New name for ${preset.name}`}
-          onChange={(event) => {
-            setDraftName(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') onClose();
-          }}
-          className="w-full min-w-0 rounded-lg border border-foundry-600 bg-foundry-950 px-2 py-1 text-sm font-bold text-ink transition-colors focus:border-accent"
-        />
-      </ControlTooltip>
+      {/*
+        The ⓘ rather than a card on the box, for the reason every other value field in the app takes
+        one — and here the reason is sharper than consistency. This field is focused the instant it
+        appears, so guidance revealed by focus would open unasked over the card below every time the
+        rename editor is opened. The ⓘ is also the only affordance a finger can reach, and it needs
+        no label beside it: it names itself.
+      */}
+      <Tooltip text={PRESET_ACTION_TOOLTIPS.renameNameBox} hint="New name" />
+      <input
+        ref={focusOnMount}
+        type="text"
+        value={draftName}
+        aria-label={`New name for ${preset.name}`}
+        onChange={(event) => {
+          setDraftName(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') onClose();
+        }}
+        className="w-full min-w-0 rounded-lg border border-foundry-600 bg-foundry-950 px-2 py-1 text-sm font-bold text-ink transition-colors focus:border-accent"
+      />
       <ControlTooltip hint="Save" text={PRESET_ACTION_TOOLTIPS.confirmRename}>
         <button
           type="submit"

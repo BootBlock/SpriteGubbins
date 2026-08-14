@@ -56,6 +56,13 @@ export function Toast() {
           className={`${isLeaving ? 'animate-toast-out' : 'animate-toast-in'} pointer-events-auto relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent-soft/40 bg-gradient-to-r from-accent-strong to-accent px-5 py-3 shadow-2xl ring-1 ring-accent-soft/20 backdrop-blur-xl`}
         >
           <span className="text-xs font-semibold text-ink">{message}</span>
+          {/*
+            No guidance card, deliberately. This surface is on a three-second timer and goes `inert`
+            for the fade, so a card hung off it would be anchored to something that is leaving before
+            anyone finished reading — and it would have to open *upwards* over the page from the
+            bottom-right corner. There is also nothing to explain: the ✕ on a notification dismisses
+            the notification, and the `aria-label` says so.
+          */}
           <button
             type="button"
             onClick={dismissToast}

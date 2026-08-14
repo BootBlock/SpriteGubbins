@@ -5,6 +5,7 @@ import { useDownload } from '../../hooks/useDownload.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { promptFileName } from '../../utils/promptFileName.ts';
 import { sheetRunCount } from '../../utils/sheetBatch.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
@@ -23,16 +24,6 @@ const PROMPT_ACTION =
 
 /** The glyph inside one of those, lifting with it — which is why each button is a `group`. */
 const PROMPT_ACTION_ICON = 'inline-block transition-transform duration-585 group-hover:scale-125';
-
-/** A filename from the subject's own name, so a folder of downloads stays readable. */
-function promptFileName(species: string): string {
-  const stem = species
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-  return `${stem || 'sprite'}-prompt.md`;
-}
 
 interface PromptActionsProps {
   /**

@@ -33,6 +33,11 @@ interface SegmentedChoiceProps {
  * is solid `bg-tab`, where an *action* is the translucent, outlined `action-tab`. Keeping those two
  * apart is what stops "the zoom is at 4×" and "press this to download" reading as the same offer.
  * Both call sites are in the Quantise tab, so this used to be the one indigo control in a jade panel.
+ *
+ * **The pills carry no guidance card of their own**, and that is the same call `ComboBox` makes about
+ * its options: a pill is one *value* of a setting, not a control in its own right, and the setting is
+ * explained by the ⓘ beside the label both call sites put above this row. Ten cards saying "this is
+ * 4×" would be ten places for the explanation of one thing to drift apart.
  */
 export function SegmentedChoice({ label, values, value, format, onChange }: SegmentedChoiceProps) {
   return (
