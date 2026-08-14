@@ -687,7 +687,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(cardinals).toContain(
       "**This sheet pairs views that are each other's reflection** — west and east —",
     );
-    expect(cardinals).toContain('- The paired views — west and east — show opposite sides');
+    expect(cardinals).toContain('- Neither member of a pair — west and east — is the other reflected');
   });
 
   it('names both diagonal pairs on the diagonal half of the eight-compass core', () => {
@@ -710,7 +710,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     // not hold, which is the same reasoning that gates MULTI_DIRECTION.
     const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
 
-    expect(prompt).not.toContain('The paired views');
+    expect(prompt).not.toContain('Neither member of a pair');
     expect(prompt).not.toContain("each other's reflection");
   });
 

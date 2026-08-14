@@ -497,10 +497,11 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   single surface that turning the component would reveal, so it may never stand in for a turned view.
 [IF:MIRROR_PAIRS]
 - **This sheet pairs views that are each other's reflection** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
-  which is exactly where a mirrored copy is most tempting to substitute. Each pair shows *opposite
-  sides* of the subject, so whatever the subject carries on one side only is visible in the member
-  of the pair that shows that side and hidden in the other. Two views identical up to reflection
-  are one view delivered twice, not two views.
+  which is exactly where a mirrored copy is most tempting to substitute. The members of a pair are
+  opposite turns of one object: a feature the subject carries on one side only sits at full
+  prominence in the member that turns that side towards the camera, and the other member keeps at
+  most what its own yaw above leaves visible of it — never the feature at full prominence, flipped.
+  Two views identical up to reflection are one view delivered twice, not two views.
 [/IF]
 - **Rotation never swaps the subject's own left and right.** A right-side view is this same subject
   turned until its right side faces the camera; asymmetric features stay on the side of the subject
@@ -712,10 +713,11 @@ each of its views and confirm:
 - The side view reads as a side, not as a second three-quarter view.
 - The rear view hides most of what the front view presented, and shows rear surfaces in its place.
 [IF:MIRROR_PAIRS]
-- The paired views — [DEFINE:MIRROR_PAIRS_DESCRIPTION] — show opposite sides of the subject rather
-  than one side reflected: every feature the subject carries on one side only appears in the member
-  of the pair that shows that side, and nowhere in the other. A pair identical up to mirroring is a
-  failed rotation, however correctly each member faces.
+- Neither member of a pair — [DEFINE:MIRROR_PAIRS_DESCRIPTION] — is the other reflected: every
+  feature the subject carries on one side only sits at full prominence in the member that turns
+  that side towards the camera, and appears in the other only as far as its yaw in section 3
+  allows. A pair identical up to mirroring is a failed rotation, however correctly each member
+  faces.
 [/IF]
 - Every view is the same geometry at the same scale through the same unmoved camera, differing by
   rotation rather than by redesign.
