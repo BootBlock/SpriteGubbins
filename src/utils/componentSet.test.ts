@@ -266,6 +266,30 @@ describe('component counts', () => {
       }
     }
   });
+
+  it('gives an entry that refers to its facings the same arithmetic as one that names them', () => {
+    // The `atEachYaw` shape — `Handle, at each of the yaws section 3 lists` — names no facing on
+    // the entry itself, so section 4's rule as first written ("an entry naming several facings
+    // names one drawing at each") bound it only by charitable reading: a generator taking the
+    // sentence literally had no stated arithmetic for the entry at all. The rule now says
+    // reference counts as naming, and this walks every sheet carrying such an entry to check the
+    // two travel together.
+    let referringSheets = 0;
+    for (const { category, mode, directions, sheetIndex } of SHEETS) {
+      const prompt = generatePrompt(
+        category,
+        defaultSubjectFor(category),
+        withOutput({ directionalMode: mode, directions, sheetIndex }),
+      );
+      if (!prompt.includes('at each of the yaws section 3 lists')) continue;
+      referringSheets += 1;
+      expect(prompt, `${category}/${mode}/${directions}`).toContain(
+        'an entry naming or referring to several facings names one drawing at',
+      );
+    }
+    // The pairing above is vacuous unless the referring shape actually ships on some sheet.
+    expect(referringSheets).toBeGreaterThan(0);
+  });
 });
 
 describe('the count once a subject names anatomy of its own', () => {

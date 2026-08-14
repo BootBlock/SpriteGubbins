@@ -522,10 +522,10 @@ component back towards the primary assembly direction because the rest of the sh
 [DEFINE:COMPONENT_BREAKDOWN]
 
 Draw every entry in full, and one separate visible component for each item it names — an entry
-marked **×N** names N of them, an entry naming several facings names one drawing at each, and an
-entry carrying both names N separate components at every facing it lists. Do not merge entries,
-substitute duplicates, add filler, or omit entries. Do not draw an assembled figure anywhere on the
-sheet, including as a reference or key.
+marked **×N** names N of them, an entry naming or referring to several facings names one drawing at
+each, and an entry carrying both names N separate components at each of those facings. Do not merge
+entries, substitute duplicates, add filler, or omit entries. Do not draw an assembled figure
+anywhere on the sheet, including as a reference or key.
 
 ### A component ends at its own boundary
 
