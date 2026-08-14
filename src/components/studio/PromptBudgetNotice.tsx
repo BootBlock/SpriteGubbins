@@ -1,5 +1,5 @@
 import { useOutputStore } from '../../stores/useOutputStore.ts';
-import { readPromptBudget } from '../../utils/promptBudget.ts';
+import { describeOverage, describeUsage, readPromptBudget } from '../../utils/promptBudget.ts';
 import { Badge } from '../common/Badge.tsx';
 
 interface PromptBudgetNoticeProps {
@@ -36,8 +36,8 @@ export function PromptBudgetNotice({ prompt }: PromptBudgetNoticeProps) {
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <Badge tone="attention">Over this target’s ceiling</Badge>
             <p className="text-xs font-bold text-gold">
-              ~{reading.used} {reading.budget.unit} against a documented {reading.budget.limit} —{' '}
-              {Math.round(reading.overBy)}× over.
+              {describeUsage(reading)} against a documented {reading.budget.limit} —{' '}
+              {describeOverage(reading)}.
             </p>
           </div>
 

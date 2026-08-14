@@ -164,9 +164,10 @@ describe('no shipped preset contradicts itself', () => {
   it.each(PRESETS)('$name compiles to a prompt its own target will actually read', (preset) => {
     // The one invariant the coverage list above cannot express, and the reason it declines to require
     // a preset per target model: Stable Diffusion's documented ceiling is CLIP's 77-token context, and
-    // this template is around 2,400 tokens — so a preset naming that target ships a card whose only
-    // effect on load is a gold notice saying the sheet is thirty times over budget. A shipped preset is
-    // a worked example; an example that arrives already broken for its stated target is not one.
+    // the shortest prompt anything in this library compiles to is over 2,600 tokens — so a preset
+    // naming that target ships a card whose only effect on load is a gold notice saying the sheet is
+    // at least thirty-four times over budget. A shipped preset is a worked example; an example that
+    // arrives already broken for its stated target is not one.
     const reading = readPromptBudget(
       // Compiled the way a reader who has touched nothing else gets it: a preset carries no
       // companion outputs of its own, and both of the studio's default to off.

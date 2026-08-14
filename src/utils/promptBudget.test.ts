@@ -3,7 +3,7 @@ import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { readPromptBudget } from './promptBudget.ts';
+import { describeOverage, describeUsage, readPromptBudget } from './promptBudget.ts';
 import { promptBudgetFor } from './targetCapabilities.ts';
 
 /**
@@ -104,6 +104,81 @@ describe('readPromptBudget', () => {
     // note naming T5 would be describing FLUX.1 — which is how this row went stale the first time.
     expect(readPromptBudget('x', 'FLUX')?.budget.note).toMatch(/inference code/i);
     expect(readPromptBudget('x', 'FLUX')?.budget.note).not.toMatch(/T5 text-encoder/i);
+  });
+});
+
+/**
+ * What the studio actually prints. Both of these existed as expressions inside the notice's JSX,
+ * where neither could be tested — and both were wrong in the same direction: they stated a precision
+ * the number underneath did not have.
+ */
+describe('describeUsage', () => {
+  it('marks a token count as an estimate, because that is what it is', () => {
+    const reading = readPromptBudget('a'.repeat(400), 'STABLE_DIFFUSION');
+    expect(reading).not.toBeNull();
+    if (reading === null) return;
+
+    expect(describeUsage(reading)).toBe('~100 tokens');
+  });
+
+  it('does not mark a character count as an estimate, because it is counted', () => {
+    // `prompt.length` is the figure itself. A `~` here disclaims a precision the reading has, which
+    // is the same fault as claiming one it hasn't — and it shipped that way on every GPT Image
+    // reading, the one target whose ceiling is published in characters.
+    const reading = readPromptBudget('a'.repeat(32_500), 'GPT_IMAGE');
+    expect(reading).not.toBeNull();
+    if (reading === null) return;
+
+    expect(describeUsage(reading)).toBe('32500 characters');
+    expect(describeUsage(reading)).not.toContain('~');
+  });
+});
+
+describe('describeOverage', () => {
+  it('states the excess near the ceiling, where a multiplier says nothing', () => {
+    // One token past Qwen's 4,500. `Math.round(overBy)` was `1` here, printed as "1× over" — which
+    // is both uninformative and, read plainly, says the prompt is the same size as the ceiling.
+    const reading = readPromptBudget('a'.repeat(4_501 * 4), 'QWEN_IMAGE');
+    expect(reading).not.toBeNull();
+    if (reading === null) return;
+
+    expect(reading.used).toBe(4_501);
+    expect(describeOverage(reading)).toBe('over by 1');
+  });
+
+  it('keeps distinguishing two prompts that a multiplier rounded together', () => {
+    // The failure this replaces: everything from 1× to 1.5× rendered identically. These two are
+    // 1,999 tokens apart and must not read the same.
+    const justOver = readPromptBudget('a'.repeat(4_501 * 4), 'QWEN_IMAGE');
+    const farther = readPromptBudget('a'.repeat(6_500 * 4), 'QWEN_IMAGE');
+    expect(justOver).not.toBeNull();
+    expect(farther).not.toBeNull();
+    if (justOver === null || farther === null) return;
+
+    expect(describeOverage(justOver)).not.toBe(describeOverage(farther));
+    expect(describeOverage(farther)).toBe('over by 2000');
+  });
+
+  it('switches to a multiplier once one carries more than the excess', () => {
+    // Exactly twice the ceiling is the handover point, and the multiplier is right from there on:
+    // "58× over" is what a full specification aimed at a CLIP encoder actually means.
+    const doubled = readPromptBudget('a'.repeat(77 * 4 * 2), 'STABLE_DIFFUSION');
+    const wayOver = readPromptBudget('a'.repeat(77 * 4 * 58), 'STABLE_DIFFUSION');
+    expect(doubled).not.toBeNull();
+    expect(wayOver).not.toBeNull();
+    if (doubled === null || wayOver === null) return;
+
+    expect(describeOverage(doubled)).toBe('2× over');
+    expect(describeOverage(wayOver)).toBe('58× over');
+  });
+
+  it('counts a character overage in characters', () => {
+    // The unit follows the budget, not the target: this one is not divided by four on the way out.
+    const reading = readPromptBudget('a'.repeat(32_050), 'GPT_IMAGE');
+    expect(reading).not.toBeNull();
+    if (reading === null) return;
+
+    expect(describeOverage(reading)).toBe('over by 50');
   });
 });
 
