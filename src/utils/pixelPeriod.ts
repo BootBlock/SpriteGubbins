@@ -1,6 +1,6 @@
 import {
   GRID_ESTIMATION_THRESHOLD,
-  MAX_DETECTED_GRID,
+  measurableGridCeiling,
   MIN_ESTIMATED_GRID,
   MIN_LATTICE_LINES,
   SOFTENED_EDGE_RAMP,
@@ -113,7 +113,7 @@ export function estimatePixelGrid(image: ImageData): PixelGrid | null {
   const profile = stepProfile(image);
   if (profile.total === 0) return null;
 
-  for (let grid = MAX_DETECTED_GRID; grid >= MIN_ESTIMATED_GRID; grid -= 1) {
+  for (let grid = measurableGridCeiling(image.width, image.height); grid >= MIN_ESTIMATED_GRID; grid -= 1) {
     if (fitsLattice(profile, grid)) return grid;
   }
   return null;

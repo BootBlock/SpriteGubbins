@@ -58,6 +58,13 @@ describe('estimatePixelGrid', () => {
     expect(estimatePixelGrid(soften(upscale(variedCells(8), 16)))).toBe(16);
   });
 
+  it('measures sprite-scale softening, past the old fixed ceiling', () => {
+    // Eight cells a side drawn at 64 and then resampled — a 512-pixel sheet of 8 × 8 logical
+    // pixels. Under a fixed ceiling of 32 no candidate could reach the truth, and the answer for a
+    // sheet this coarse was a divisor at best and `null` at worst.
+    expect(estimatePixelGrid(soften(upscale(variedCells(8), 64)))).toBe(64);
+  });
+
   it('answers the scale the art was drawn at, not a multiple of it', () => {
     // The failure mode that matters most, in the direction candidates are actually tried: this
     // counts *down* from the largest, so an image drawn at 8 passes 32, 24 and 16 before it reaches
