@@ -215,7 +215,12 @@ function renderGroup(group: ComponentGroup): string {
  * what engages section 3's rotation rules and section 9's directional audit, which bind any
  * component "the inventory lists in more than one direction". The intro states the arithmetic
  * (×N pieces at each listed facing) in the same terms as section 4's own entry rule, and the
- * heading's total is that product, summed by {@link componentCountFor}'s own helper.
+ * heading's total is that product, summed by {@link componentCountFor}'s own helper. The intro also
+ * fixes the *within-entry* reading order that arithmetic leaves open — an entry carrying both a ×N
+ * and a facing list expands along two axes, and section 4 orders entries against each other without
+ * saying which axis varies faster inside one. Facings are the outer axis, in the order the entry
+ * lists them, with the N copies together at each — the reading every `viewsOf` entry already has,
+ * extended rather than contradicted.
  *
  * The anatomy comes *last*, and the text says so. Labels are banned by section 0, so grid position is
  * the only thing that identifies a component — appending keeps every base entry at the position the
@@ -249,13 +254,19 @@ ${plan.groups.map(renderGroup).join('\n\n')}`;
 
   // On a multi-view sheet the pieces turn with the trunk, so the sentence states the per-view
   // arithmetic in the same terms as section 4's own entry rule — a piece marked ×N at each listed
-  // facing — where a run sheet draws each piece once, at the run's own facing.
+  // facing — and then the sub-order that arithmetic leaves open. An entry carrying both a ×N and a
+  // facing list expands along two axes, and grid position is the only identity a labelless sheet
+  // has, so which axis varies faster decides which drawing *is* component k: the facings are the
+  // outer axis, exactly as the entry spells them, because that is how every `viewsOf` entry above
+  // already reads. A run sheet draws each piece once, so its sentence carries no arithmetic at all.
   const drawn =
     facings === 'run'
       ? 'Each of these is drawn as its own component rather than painted onto another.'
       : `Each of these is drawn as its own component rather than painted onto another — and, like every
 entry above, once per facing: a piece marked ×N is N separate components at each of the facings its
-entry names.`;
+entry names. Within one entry, walk its facings in the order listed and place all N copies together
+at each facing before moving to the next — never one copy at every facing before the second copy
+appears.`;
 
   // Headed by whatever this category calls the field, the same way section 1's lines are: these are
   // the pieces named in *Attached Modules* on a vehicle and in *Extra Appendages* on a creature, and

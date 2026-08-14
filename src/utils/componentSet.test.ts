@@ -235,6 +235,37 @@ describe('component counts', () => {
     expect(articulation).not.toContain('Additional Genuine Anatomy');
     expect(articulation).not.toContain('Demon Horn');
   });
+
+  it('states the within-entry reading order wherever an entry can expand along two axes', () => {
+    // The ambiguity this pins: section 4 fixes reading order *between* entries only, and an anatomy
+    // entry carrying both a ×N and a facing list expands along two axes — `Demon Horn ×2: south,
+    // west, north, east` is eight components in either piece-major or facing-major order, and a
+    // generator free to pick either silently mis-maps every anatomy component's identity. The
+    // intro now states the sub-order — facings in listed order, the ×N copies together at each —
+    // as the extension of how every `viewsOf` entry above it already reads. Every multi-view sheet
+    // carries the sentence, because every one of them accepts a ×N entry; a run sheet has one axis
+    // and stays without it.
+    const anatomy = 'Demon Horn ×2, Tail ×1';
+    for (const { category, mode, directions, sheetIndex } of SHEETS) {
+      const plan = sheetSeriesFor(category, mode, directions)[sheetIndex];
+      if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
+      const prompt = generatePrompt(
+        category,
+        { ...defaultSubjectFor(category), additional_anatomy: anatomy },
+        withOutput({ directionalMode: mode, directions, sheetIndex }),
+      );
+
+      const label = `${category}/${mode}/${directions}/${plan.name}`;
+      if (plan.facings !== 'run') {
+        expect(prompt, label).toContain(
+          'Within one entry, walk its facings in the order listed and place all N copies together',
+        );
+        expect(prompt, label).toContain('never one copy at every facing before the second copy');
+      } else {
+        expect(prompt, label).not.toContain('Within one entry');
+      }
+    }
+  });
 });
 
 describe('the count once a subject names anatomy of its own', () => {
