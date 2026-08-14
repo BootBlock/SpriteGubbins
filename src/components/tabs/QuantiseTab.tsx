@@ -10,7 +10,8 @@ import type { PixelGrid, Quantised, SheetFacts } from '../../types/quantiser.ts'
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
-import { parseTargetSize, targetSizeGrid } from '../../utils/targetSize.ts';
+import { parseTargetSize } from '../../utils/targetSize.ts';
+import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
 import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';

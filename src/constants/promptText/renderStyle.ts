@@ -1,5 +1,6 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, SurfaceDetail } from '../../types/output.ts';
+import { parseTargetSize } from '../../utils/targetSize.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -45,15 +46,65 @@ export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, string>
 };
 
 /**
- * The smallest feature the pixel-discipline section permits, per resolution profile.
+ * What the three profiles that *are* a scale permit.
  *
  * v1 stated a flat `2×2` across every profile, which is wrong at both ends: at high resolution a
  * two-pixel minimum is small enough to read as noise, and at 16-bit scale it forbids the
  * single-pixel detail that style is made of. The minimum therefore scales with the canvas.
  */
-export const MIN_FEATURE_SIZE: Readonly<Record<ResolutionProfile, string>> = {
+const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>, string>> = {
   HIGH_RESOLUTION: '3 × 3',
   MID_RESOLUTION: '2 × 2',
   RETRO_16_BIT: '1 × 1',
-  CUSTOM: '2 × 2',
 };
+
+/**
+ * The same three rungs as a function of the component size `CUSTOM` states, keyed on its **smaller**
+ * edge.
+ *
+ * Smaller rather than taller, because that is the edge detail runs out on: a 16 × 128 polearm has a
+ * hundred and twenty-eight rows and sixteen columns, and it is the sixteen that decide whether a
+ * two-pixel feature is affordable. Keying on height would call that component mid-resolution.
+ *
+ * Both boundaries are read off the profiles above rather than chosen. `RETRO_16_BIT` runs to 96 px
+ * per figure and `MID_RESOLUTION` starts at roughly 184 on a 1024-pixel sheet, so the `1 × 1` rung
+ * ends somewhere in that gap — 128 is the round number inside it, and is itself a size people draw
+ * sprites at. `MID_RESOLUTION` tops out near 256 on the same sheet and `HIGH_RESOLUTION` begins at
+ * that figure, so the second boundary is that number exactly.
+ */
+const CUSTOM_MIN_FEATURE = [
+  { upTo: 128, size: '1 × 1' },
+  { upTo: 256, size: '2 × 2' },
+] as const;
+
+/** Past the last rung, which is `HIGH_RESOLUTION`'s own answer. */
+const LARGEST_MIN_FEATURE = '3 × 3';
+
+/**
+ * `CUSTOM` with no readable size in it.
+ *
+ * The profile then falls back to "the sheet aspect", so there is no scale to reason from and the
+ * middle rung is the only answer that is not a guess at one end or the other.
+ */
+const UNSTATED_MIN_FEATURE = '2 × 2';
+
+/**
+ * The smallest feature the pixel-discipline section permits.
+ *
+ * **Three of the four profiles *are* a scale, and `CUSTOM` is not** — which is what makes this a
+ * function rather than the record it began as. `CUSTOM` means "work to the target component size",
+ * so its scale lives in `spriteTargetSize` and nowhere else. Keying the minimum on the profile alone
+ * gave the one profile that can state *16 × 16* the same `2 × 2` floor as a 256-pixel figure, and a
+ * sprite sixteen pixels across whose smallest permitted feature is four of them is a contradiction
+ * the generator resolves by discarding one half of it — silently, and in whichever direction it
+ * likes.
+ */
+export function minFeatureSize(profile: ResolutionProfile, spriteTargetSize: string): string {
+  if (profile !== 'CUSTOM') return PROFILE_MIN_FEATURE[profile];
+
+  const target = parseTargetSize(spriteTargetSize);
+  if (target === null) return UNSTATED_MIN_FEATURE;
+
+  const edge = Math.min(target.width, target.height);
+  return CUSTOM_MIN_FEATURE.find((rung) => edge <= rung.upTo)?.size ?? LARGEST_MIN_FEATURE;
+}

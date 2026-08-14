@@ -1,16 +1,19 @@
-import { MANUAL_GRID_RANGE } from '../constants/quantiser.ts';
 import type { TargetSize } from '../types/output.ts';
-import type { PixelGrid } from '../types/quantiser.ts';
 
 /**
- * Reading the studio's `spriteTargetSize` as a pixel scale the returned sheet might have been drawn
- * at.
+ * Reading the studio's `spriteTargetSize` as the component size it states.
  *
  * The field is free prose — the shipped presets hold *"48 × 96 px assembled (2 metres tall at 48 px
- * per metre)"* — and it names a **component** size, not a sheet scale. The two are related only
- * through how many components the sheet carries, which is the relation below. Its answer is
- * therefore a *candidate*, offered beside what detection found and never silently preferred: a
- * generator that left half the canvas empty was drawn at a smaller scale than this suggests.
+ * per metre)"* — and it names a **component** size, not a sheet scale. Two features read it and
+ * neither owns it: `minFeatureSize` takes it as the scale the pixel-discipline section is written
+ * against, and `targetSizeGrid` turns it into a candidate scale for a returned sheet.
+ *
+ * **The parse is kept apart from that second reading, and the separation is load-bearing.**
+ * `targetSizeGrid` takes an `ImageData` and so belongs to a program with the DOM lib; this function
+ * is reached from `src/constants/promptText/`, which the suites under `tests/` pull into
+ * `tsconfig.node.json`'s program, and that one has no DOM. Putting the two in one file compiles
+ * until something in the prompt constants reads a target size, and then fails in files that never
+ * changed — `Cannot find name 'ImageData'`, reported against the quantiser's types.
  */
 
 /**
@@ -30,29 +33,4 @@ export function parseTargetSize(text: string): TargetSize | null {
   // A capture that matched is always a run of digits, so this rejects only the degenerate `0 × 0`.
   if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1) return null;
   return { width, height };
-}
-
-/**
- * The largest pixel scale at which this sheet could still hold every component at the target size,
- * or `null` when even 1:1 cannot fit them.
- *
- * At a scale of `n` a component occupies `n × width` by `n × height` sheet pixels, so the sheet
- * affords `⌊W / (n·width)⌋ × ⌊H / (n·height)⌋` cells. That count falls as the scale rises, so the
- * largest `n` that still seats `components` of them is the tightest scale the sheet can have been
- * drawn at — the one a generator that used its canvas would have chosen.
- *
- * An **upper bound**, then, rather than a measurement, which is exactly why the tab offers it as a
- * candidate to click rather than adopting it. Measuring the drawn scale properly means finding where
- * one component actually sits, and cutting the sheet into components is a separate tool.
- */
-export function targetSizeGrid(image: ImageData, target: TargetSize, components: number): PixelGrid | null {
-  if (components < 1) return null;
-
-  for (let grid = MANUAL_GRID_RANGE.max; grid >= MANUAL_GRID_RANGE.min; grid -= 1) {
-    const columns = Math.floor(image.width / (grid * target.width));
-    const rows = Math.floor(image.height / (grid * target.height));
-    if (columns * rows >= components) return grid;
-  }
-
-  return null;
 }

@@ -12,7 +12,7 @@ import {
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
   LIGHTING_TEXT,
-  MIN_FEATURE_SIZE,
+  minFeatureSize,
   OUTLINE_TEXT,
   OVERLAP_MARGIN_TEXT,
   PALETTE_TEXT,
@@ -149,7 +149,9 @@ export function generatePrompt(
     RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
     SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
     RESOLUTION_PROFILE_DESCRIPTION: RESOLUTION_PROFILE_TEXT[output.resolutionProfile],
-    MIN_FEATURE_SIZE: MIN_FEATURE_SIZE[output.resolutionProfile],
+    // A function of the target size as well as the profile, because `CUSTOM` is the one profile
+    // that carries no scale of its own — see `minFeatureSize`.
+    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.

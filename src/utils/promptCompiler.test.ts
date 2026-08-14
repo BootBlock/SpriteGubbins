@@ -739,6 +739,35 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(prompt).not.toContain('HIGH_RESOLUTION');
   });
 
+  it('scales the pixel-discipline minimum to the component size a custom profile states', () => {
+    // The two statements of scale in section 2 have to agree, and `CUSTOM` is the one profile whose
+    // scale lives in the target-size field rather than in the profile itself. A 16 × 16 icon whose
+    // smallest permitted feature was 2 × 2 asked for a sprite drawn in sixteenths of itself, and the
+    // generator resolved that by discarding one half of the instruction.
+    const icon = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        renderStyle: 'RETRO_PIXEL_ART',
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '16 × 16 px',
+      }),
+    );
+    expect(icon).toContain('- Target component size: 16 × 16 px');
+    expect(icon).toContain('No feature smaller than 1 × 1 native pixels.');
+
+    const large = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        renderStyle: 'RETRO_PIXEL_ART',
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '512 × 512 px',
+      }),
+    );
+    expect(large).toContain('No feature smaller than 3 × 3 native pixels.');
+  });
+
   it('names one projection and one elevation', () => {
     const prompt = generatePrompt(
       'CHARACTER',

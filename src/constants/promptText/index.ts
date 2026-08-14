@@ -23,7 +23,7 @@ export {
   FRAME_IS_A_COMPONENT,
 } from './exclusions.ts';
 export {
-  MIN_FEATURE_SIZE,
+  minFeatureSize,
   RENDER_STYLE_TEXT,
   RESOLUTION_PROFILE_TEXT,
   SURFACE_DETAIL_TEXT,

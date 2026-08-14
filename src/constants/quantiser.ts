@@ -143,13 +143,40 @@ export const MIN_LATTICE_LINES = 2;
 export const GRID_ESTIMATION_THRESHOLD = 0.9;
 
 /**
+ * The longest edge an accepted image can have, and so the largest one worth reasoning about.
+ *
+ * A square at this edge is exactly {@link MAX_IMAGE_PIXELS}. A sheet may of course be wider and
+ * shorter within the same budget — this is the bound the *controls* are derived from, not a second
+ * limit imposed on the image.
+ */
+export const MAX_IMAGE_EDGE = 4096;
+
+/**
+ * The smallest edge anyone actually draws a sprite at — an inventory icon, a console-era tile.
+ *
+ * Sixteen is the floor rather than a typical value, which is what makes it the right divisor for a
+ * *ceiling*: a grid coarser than this reduces the widest sheet the tab accepts to something smaller
+ * than any sprite it could have held.
+ */
+const SMALLEST_SPRITE_EDGE = 16;
+
+/**
  * What the user may type when detection finds nothing, or disagrees with them.
  *
  * The floor is 1 rather than 2, because "this image is already at its own resolution, just reduce
  * the palette" is a real request — and it is the one answer detection can never give, since every
  * image is trivially uniform at a grid of 1.
+ *
+ * **The ceiling is derived here rather than borrowed from {@link MAX_DETECTED_GRID}, which it used
+ * to be.** That number bounds what an *automatic* reading will consider, and its reason — past 32 a
+ * match says more about a flat background than about the art — is a statement about what detection
+ * can be fooled by. The manual box exists precisely for the answers detection cannot give, so
+ * borrowing it turned a limit on inference into a limit on what the user is allowed to assert: a
+ * single 16 × 16 sprite returned alone on a 1024-pixel canvas is a grid of 64, which was untypeable,
+ * and that sheet could not be reduced at all. The honest bound is the arithmetic — the widest sheet
+ * the tab accepts, cut to the smallest edge a sprite is drawn at.
  */
-export const MANUAL_GRID_RANGE = { min: 1, max: MAX_DETECTED_GRID } as const;
+export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE_EDGE } as const;
 
 /**
  * The preview magnifications, in the order the control offers them.
@@ -206,7 +233,7 @@ export const FRINGE_TOLERANCE_FACTOR = 3;
  * not therefore redundant. A sheet this size still costs a second of real work per settings change
  * and holds two copies of itself in memory, and neither of those improves by being invisible.
  */
-export const MAX_IMAGE_PIXELS = 4096 * 4096;
+export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
 
 /**
  * How long the grid and tolerance controls settle before the transform is asked for.
