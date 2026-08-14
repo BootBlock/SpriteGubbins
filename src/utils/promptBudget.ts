@@ -48,41 +48,63 @@ export function readPromptBudget(prompt: string, target: TargetModelId): BudgetR
 /**
  * Where a multiplier starts carrying more information than the excess does.
  *
- * Below twice the ceiling `Math.round` returns `1` for everything, so the multiplier stops
- * distinguishing anything: one token past a 4,500-token budget and two thousand past it both render
- * as the same phrase.
+ * Two rather than 1.5, which is where the arithmetic alone would put it. `Math.round` returns `1`
+ * for everything under 1.5×, so below that the multiplier stops distinguishing anything at all —
+ * one token past a 4,500-token budget and two thousand past it render as the same phrase. From 1.5×
+ * it starts answering, but coarsely enough to mislead in the other direction: 1.6× rounds *up* to
+ * "2× over", overstating by a quarter. A whole multiple is only worth printing once rounding to it
+ * is a small fraction of the claim, and the excess is exact all the way down.
  */
 const MULTIPLIER_FROM = 2;
+
+/**
+ * The `~` marking a figure as the token estimator's answer rather than a count.
+ *
+ * It belongs on **every figure derived from `used`** — the size itself, the excess over the ceiling,
+ * and the multiple of it — because all three inherit the estimate's error. It never belongs on
+ * `limit`, which is a documented figure and exact whatever the unit.
+ *
+ * Keyed off `characters` rather than `tokens` so that it agrees with {@link readPromptBudget}, which
+ * reaches for the estimator for any unit that is not `characters`. A unit added on one side and not
+ * the other then ends up hedged rather than quietly presented as exact.
+ */
+function estimateMarker(reading: BudgetReading): string {
+  return reading.budget.unit === 'characters' ? '' : '~';
+}
 
 /**
  * The prompt's measured size, marked as an estimate only where it actually is one.
  *
  * The `~` is not decoration: a token figure is `prompt.length / 4` because no tokeniser ships with
- * the app, while a character figure is the length itself. Printing `~17771 characters` disclaims a
- * precision the reading has, which is the same fault as claiming one it hasn't — and it is the unit,
- * not the target, that decides which of the two a given reading is.
+ * the app, while a character figure is the length itself. Putting a `~` in front of a character
+ * count disclaims a precision the reading has, which is the same fault as claiming one it hasn't —
+ * and it is the unit, not the target, that decides which of the two a given reading is.
  */
 export function describeUsage(reading: BudgetReading): string {
-  const estimated = reading.budget.unit === 'tokens' ? '~' : '';
-  return `${estimated}${String(reading.used)} ${reading.budget.unit}`;
+  return `${estimateMarker(reading)}${String(reading.used)} ${reading.budget.unit}`;
 }
 
 /**
  * How far past its ceiling a prompt has gone, phrased at the magnitude it is actually at.
  *
- * A multiplier is the right unit for a prompt many times over: *58× over* is what a two-and-a-half
- * thousand token specification aimed at CLIP's 77-token window actually means, and the 4,410 tokens
- * it works out at says far less. It is the wrong unit anywhere near the ceiling, and that is the
- * whole band a user editing their own prompt sits in — `Math.round` collapses everything under 1.5×
- * to `1`, so a prompt one token past a 4,500-token budget read identically to one 2,000 past it, and
- * "1× over" reads as *equal to* rather than *past*. Under {@link MULTIPLIER_FROM} the excess itself
- * is exact, short, and directly actionable: it is how much has to come out.
+ * A multiplier is the right unit for a prompt many times over: aimed at CLIP's 77-token window, this
+ * app's specification is dozens of times past it, and *how many times* is the fact that lands — the
+ * raw excess is a five-figure number that says far less. It is the wrong unit anywhere near the
+ * ceiling, and that is the whole band a user editing their own prompt sits in: `Math.round`
+ * collapses everything under 1.5× to `1`, so a prompt one token past a 4,500-token budget read
+ * identically to one two thousand past it, and "1× over" reads as *equal to* rather than *past*.
+ * Under {@link MULTIPLIER_FROM} the excess is both finer and directly actionable — it is how much
+ * has to come out.
+ *
+ * Both branches are figures derived from `used`, so both carry {@link estimateMarker}: the excess of
+ * an estimate is an estimate, and it is the number a user acts on.
  *
  * Only meaningful for a reading that is over — the studio's notice gates on `isOver`, and there is
  * no overage to describe otherwise.
  */
 export function describeOverage(reading: BudgetReading): string {
+  const marker = estimateMarker(reading);
   return reading.overBy >= MULTIPLIER_FROM
-    ? `${String(Math.round(reading.overBy))}× over`
-    : `over by ${String(reading.used - reading.budget.limit)}`;
+    ? `${marker}${String(Math.round(reading.overBy))}× over`
+    : `over by ${marker}${String(reading.used - reading.budget.limit)}`;
 }

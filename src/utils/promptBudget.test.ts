@@ -143,7 +143,7 @@ describe('describeOverage', () => {
     if (reading === null) return;
 
     expect(reading.used).toBe(4_501);
-    expect(describeOverage(reading)).toBe('over by 1');
+    expect(describeOverage(reading)).toBe('over by ~1');
   });
 
   it('keeps distinguishing two prompts that a multiplier rounded together', () => {
@@ -156,7 +156,20 @@ describe('describeOverage', () => {
     if (justOver === null || farther === null) return;
 
     expect(describeOverage(justOver)).not.toBe(describeOverage(farther));
-    expect(describeOverage(farther)).toBe('over by 2000');
+    expect(describeOverage(farther)).toBe('over by ~2000');
+  });
+
+  it('states the excess through the band a multiplier rounds *up*, not just the band it flattens', () => {
+    // The half of the defect that is not "1× over": from 1.5× `Math.round` starts answering, but it
+    // answers coarsely. 1.6× past Qwen's ceiling rendered "2× over", overstating by a quarter — so
+    // this band is the one where the old and new phrasings differ without either being degenerate,
+    // and nothing else in this file reaches it.
+    const reading = readPromptBudget('a'.repeat(7_200 * 4), 'QWEN_IMAGE');
+    expect(reading).not.toBeNull();
+    if (reading === null) return;
+
+    expect(reading.overBy).toBeCloseTo(1.6, 5);
+    expect(describeOverage(reading)).toBe('over by ~2700');
   });
 
   it('switches to a multiplier once one carries more than the excess', () => {
@@ -168,17 +181,32 @@ describe('describeOverage', () => {
     expect(wayOver).not.toBeNull();
     if (doubled === null || wayOver === null) return;
 
-    expect(describeOverage(doubled)).toBe('2× over');
-    expect(describeOverage(wayOver)).toBe('58× over');
+    expect(describeOverage(doubled)).toBe('~2× over');
+    expect(describeOverage(wayOver)).toBe('~58× over');
   });
 
-  it('counts a character overage in characters', () => {
-    // The unit follows the budget, not the target: this one is not divided by four on the way out.
+  it('counts a character overage in characters, and does not hedge it', () => {
+    // The unit follows the budget, not the target: this one is not divided by four on the way out,
+    // so unlike every case above it carries no `~`. The excess of an exact count is exact.
     const reading = readPromptBudget('a'.repeat(32_050), 'GPT_IMAGE');
     expect(reading).not.toBeNull();
     if (reading === null) return;
 
     expect(describeOverage(reading)).toBe('over by 50');
+    expect(describeOverage(reading)).not.toContain('~');
+  });
+
+  it('hedges a token overage, because the excess of an estimate is an estimate', () => {
+    // The finding this pass added: `describeUsage` marked `used` as estimated and `describeOverage`
+    // then subtracted it from the limit and printed the result bare — as though the *difference*
+    // between an estimate and an exact figure were exact. It is the number a user acts on, and at
+    // ~4,501 estimated tokens the true count could sit either side of the ceiling.
+    const tokens = readPromptBudget('a'.repeat(9_000 * 4), 'QWEN_IMAGE');
+    expect(tokens).not.toBeNull();
+    if (tokens === null) return;
+
+    expect(describeOverage(tokens)).toBe('~2× over');
+    expect(describeOverage(tokens)).toContain('~');
   });
 });
 
