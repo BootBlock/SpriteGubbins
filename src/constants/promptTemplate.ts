@@ -150,8 +150,15 @@ not an omission to be filled dramatically.
 Every fitted, applied and worn attribute listed above — cladding, armour, harness, markings and
 surface detail alike — is **painted onto** the component it sits on, never drawn as a separate piece.
 [IF:ADDITIONAL_ANATOMY]
+[IF:ANATOMY_PER_VIEW]
+**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section 4 lists each piece named there
+separately, drawn at every facing this sheet covers and counted once per view, like the components
+beside it.
+[/IF]
+[IF:ANATOMY_PER_VIEW!=yes]
 **[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section 4 lists each piece named there
 separately and counts it as a component of its own.
+[/IF]
 [/IF]
 Do not infer props, weapons or equipment from the role: if it is not listed above, it does not exist.
 
@@ -301,8 +308,10 @@ component back towards the primary assembly direction because the rest of the sh
 [DEFINE:COMPONENT_BREAKDOWN]
 
 Draw every entry in full, and one separate visible component for each item it names — an entry
-marked **×N** names N of them. Do not merge entries, substitute duplicates, add filler, or omit
-entries. Do not draw an assembled figure anywhere on the sheet, including as a reference or key.
+marked **×N** names N of them, an entry naming several facings names one drawing at each, and an
+entry carrying both names N separate components at every facing it lists. Do not merge entries,
+substitute duplicates, add filler, or omit entries. Do not draw an assembled figure anywhere on the
+sheet, including as a reference or key.
 
 ### A component ends at its own boundary
 

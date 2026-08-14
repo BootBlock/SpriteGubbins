@@ -65,14 +65,16 @@ describe('describeSeries', () => {
   });
 
   it('counts the subject’s own anatomy onto the sheet that actually carries it', () => {
-    // Additional anatomy lands on the first sheet of a series and is counted there, so a list that
-    // ignored it would tell the reader of sheet one that its contract was three components lighter
-    // than section 0 says.
+    // Additional anatomy lands on the directional core at every facing the core covers — three
+    // pieces across five views is fifteen drawings on top of the trunk's fifteen — and never on
+    // the articulation runs, whose limbs hang on a trunk the core carries. A list that ignored
+    // either half would tell a sheet's reader that its contract was a different number than the
+    // one section 0 states.
     const anatomy = parseAdditionalAnatomy('Tail ×2, Wing ×1');
     const batch = sheetBatch('CHARACTER', TWO_SHEET_SERIES);
     const lines = describeSeries('CHARACTER', batch, anatomy).split('\n');
 
-    expect(lines[0]).toContain('18 components');
+    expect(lines[0]).toContain('30 components');
     expect(lines[1]).toContain('34 components');
   });
 });

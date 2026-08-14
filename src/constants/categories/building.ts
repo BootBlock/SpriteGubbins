@@ -261,7 +261,7 @@ export const BUILDING: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Structural Appendages',
       tooltip:
-        'Extra attached structures — chimneys, antennae, annexes — each isolated into its own sprite slot so it can be varied per placement. Comma-separated, with ×N for how many of each: “Chimney ×2, Antenna Rig ×1” adds three components to the inventory and to the sheet’s stated count.',
+        'Extra attached structures — chimneys, antennae, annexes — each isolated into its own sprite slot so it can be varied per placement. Comma-separated, with ×N for how many of each: “Chimney ×2, Antenna Rig ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing tileset or module sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'External Chimney ×1, Smoke Pipe ×1',

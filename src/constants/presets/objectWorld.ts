@@ -119,6 +119,12 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
       projection: 'OBLIQUE_45',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.OBLIQUE_45,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      // Cardinal facings, because the cabinet projection keeps a face flat to the camera — a
+      // three-quarter yaw is the read it exists to avoid. It is also what keeps the sheet inside
+      // the component ceiling: the vent flaps and the arm clamp are drawn at every facing the core
+      // covers, and five facings of this six-piece core plus three extras would ask one generation
+      // for 45.
+      directions: 'FOUR_CARDINAL',
       paletteLimit: 'EXPANDED_ALBEDO',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       surfaceDetail: 'TEXTURED',

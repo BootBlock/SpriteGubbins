@@ -257,7 +257,7 @@ export const ITEM: CategoryDefinition = {
       // instruction that carries no information in the two places it is read hardest.
       label: 'Detachable Parts',
       tooltip:
-        'Extra detachable parts — scopes, ribbons, power cells — each isolated into its own sprite slot so it can be swapped or animated. Comma-separated, with ×N for how many of each: “Scope ×1, Charm Ribbon ×2” adds three components to the inventory and to the sheet’s stated count.',
+        'Extra detachable parts — scopes, ribbons, power cells — each isolated into its own sprite slot so it can be swapped or animated. Comma-separated, with ×N for how many of each: “Scope ×1, Charm Ribbon ×2” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Attachable Scope ×1, Laser Sight ×1',

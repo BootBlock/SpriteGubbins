@@ -155,7 +155,10 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       accent_colours: 'Running-Light White',
       materials: 'Riveted Brass & Hardwood',
       exclusions: 'No driver, pilot or crew',
-      additional_anatomy: 'Boarding Ramp ×2, Anchor ×1',
+      // One ramp and one anchor, not a pair of ramps: the extras are drawn at every facing the
+      // five-view core covers, so each named piece costs five drawings, and a third would put the
+      // sheet at 45 against the 43-component ceiling.
+      additional_anatomy: 'Boarding Ramp ×1, Anchor ×1',
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,
@@ -166,8 +169,8 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       paletteLimit: 'UNRESTRICTED',
       outlineStyle: 'PURE_BLACK_OUTLINE',
       surfaceDetail: 'TEXTURED',
-      // Thirty components arriving as six pieces across five facings, which is very nearly a square
-      // grid already — a wide canvas would stretch six rows across a strip.
+      // Forty components arriving as eight pieces across five facings, which is very nearly a
+      // square grid already — a wide canvas would stretch the rows across a strip.
       aspectRatio: 'SQUARE_1_1',
       rigMode: 'NONE',
       targetModel: 'GEMINI_PRO_IMAGE',

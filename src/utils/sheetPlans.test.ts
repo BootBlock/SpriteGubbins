@@ -382,10 +382,14 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
   });
 
   it('keeps the subject’s own additional anatomy, which was the only correct part of it', () => {
+    // The degraded pairing is the five-view directional core, so the anatomy arrives the way that
+    // sheet draws everything: each piece at each of the five facings, fifteen components in all.
     const prompt = promptFor('CHARACTER', 'TILESET_MODULAR', CYBORG);
-    expect(prompt).toContain('- Demon Horn ×2.');
-    expect(prompt).toContain('- Tail ×1.');
-    expect(prompt).toContain('#### Additional Genuine Anatomy — 3');
+    expect(prompt).toContain(
+      '- Demon Horn ×2: front, front-three-quarter, right side, back-three-quarter, back.',
+    );
+    expect(prompt).toContain('- Tail ×1: front, front-three-quarter, right side, back-three-quarter, back.');
+    expect(prompt).toContain('#### Additional Genuine Anatomy — 15');
   });
 });
 

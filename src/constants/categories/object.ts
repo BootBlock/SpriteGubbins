@@ -301,7 +301,7 @@ export const OBJECT: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Deployable Modules',
       tooltip:
-        'Extra moving parts — dishes, clamps, vents, barrels — each isolated into its own sprite slot so it can animate against a static body. Comma-separated, with ×N for how many of each: “Vent Flap ×2, Clamp ×1” adds three components to the inventory and to the sheet’s stated count.',
+        'Extra moving parts — dishes, clamps, vents, barrels — each isolated into its own sprite slot so it can animate against a static body. Comma-separated, with ×N for how many of each: “Vent Flap ×2, Clamp ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Deployable Sensor Dish ×1',

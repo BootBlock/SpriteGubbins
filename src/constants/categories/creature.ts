@@ -286,7 +286,7 @@ export const CREATURE: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Extra Appendages',
       tooltip:
-        'Extra appendages — a sting tail, blade arms, another wing pair — each requested as its own sprite slot so it can be animated independently of the body. Comma-separated, with ×N for how many of each: “Blade Arm ×2, Sting Tail ×1” adds three components to the inventory and to the sheet’s stated count.',
+        'Extra appendages — a sting tail, blade arms, another wing pair — each requested as its own sprite slot so it can be animated independently of the body. Comma-separated, with ×N for how many of each: “Blade Arm ×2, Sting Tail ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Scorpion Sting Tail ×1',

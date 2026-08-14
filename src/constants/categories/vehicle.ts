@@ -243,7 +243,7 @@ export const VEHICLE: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Attached Modules',
       tooltip:
-        'Extra bolted-on parts — pods, gear, drums, trailers — each isolated into its own sprite slot so it can be swapped or animated against a static hull. Comma-separated, with ×N for how many of each: “Missile Pod ×2, Ammo Box ×1” adds three components to the inventory and to the sheet’s stated count.',
+        'Extra bolted-on parts — pods, gear, drums, trailers — each isolated into its own sprite slot so it can be swapped or animated against a static hull. Comma-separated, with ×N for how many of each: “Missile Pod ×2, Ammo Box ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Roof Turret ×1, Ammo Box ×2',

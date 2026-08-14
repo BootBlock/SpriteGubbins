@@ -91,6 +91,11 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
       ...DEFAULT_IMAGE_CONFIG,
       renderStyle: 'PIXEL_ART',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      // The set the preset is named for — its deliverable is the three-quarter read. It is also
+      // what keeps the sheet inside the component ceiling: the spare wheel and both fuel drums are
+      // drawn at every facing the core covers, and five facings of this six-piece core plus three
+      // extras would ask one generation for 45.
+      directions: 'THREE_CLASSIC',
       rigMode: 'POSE_LIBRARY',
       surfaceDetail: 'DETAILED_PRODUCTION',
       targetModel: 'GENERIC',

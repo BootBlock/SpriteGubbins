@@ -145,7 +145,8 @@ describe('component counts', () => {
     );
 
     const prompt = generatePrompt('OBJECT', subject, stale);
-    expect(prompt).toContain('#### Deployable Modules — 3');
+    // Fifteen, not three: a five-view core draws the three named pieces at each of its facings.
+    expect(prompt).toContain('#### Deployable Modules — 15');
     expect(prompt).toContain(
       `Exactly ${String(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy))} components`,
     );
@@ -167,22 +168,72 @@ describe('component counts', () => {
     expect(articulation).toContain('Exactly 34 components');
   });
 
-  it('counts the subject’s own anatomy once across a series, on the sheet that establishes the body', () => {
-    // A tail drawn twice and counted twice would be two tails. It lands on the first sheet, and the
-    // series total is the plan's own plus that anatomy exactly once.
+  it('draws the anatomy at every facing of a multi-view sheet, and once per run on a run-series trunk', () => {
+    // The defect this pins: the anatomy landed on the first sheet as a single drawing whatever the
+    // sheet was, so a directional core turned its heads while the horns beside them sat at one
+    // unstated yaw, and the diagonal half of a split core got no anatomy at all. A multi-view
+    // sheet now draws each named piece at each of its own facings, exactly as the plan's entries
+    // are drawn; a run sheet keeps one drawing per generation, but only where it is the series'
+    // trunk — the articulation runs stay bare, because their limbs hang on a trunk the core
+    // sheets carry.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
-    for (const { category, mode, directions } of SHEETS) {
-      const plain = seriesComponentCount(category, mode, directions, []);
-      expect(seriesComponentCount(category, mode, directions, anatomy)).toBe(plain + 3);
-      expect(componentCountFor(category, mode, directions, 0, anatomy)).toBe(
-        componentCountFor(category, mode, directions, 0, []) + 3,
-      );
-      for (let index = 1; index < sheetCountFor(category, mode, directions); index += 1) {
-        expect(componentCountFor(category, mode, directions, index, anatomy)).toBe(
-          componentCountFor(category, mode, directions, index, []),
-        );
-      }
+    for (const { category, mode, directions, sheetIndex } of SHEETS) {
+      const plan = sheetSeriesFor(category, mode, directions)[sheetIndex];
+      if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
+      const views = plan.facings === 'run' ? (sheetIndex === 0 ? 1 : 0) : plan.facings.length;
+      expect(
+        componentCountFor(category, mode, directions, sheetIndex, anatomy),
+        `${category}/${mode}/${directions}/${plan.name}`,
+      ).toBe(componentCountFor(category, mode, directions, sheetIndex, []) + 3 * views);
     }
+  });
+
+  it('carries the anatomy on both chunks of a split eight-compass core, each at its own facings', () => {
+    // The split core is where the old first-sheet rule failed twice over: the cardinal sheet got a
+    // single unturned drawing and the diagonal sheet got nothing. Both chunks now carry the whole
+    // anatomy at their own four facings, and the articulation run that follows them carries none —
+    // so the series totals the anatomy once per core view and never on a run.
+    const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
+    const at = (sheetIndex: number, additional: readonly AnatomyComponent[]) =>
+      componentCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS', sheetIndex, additional);
+
+    expect(sheetCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS')).toBe(3);
+    expect(at(0, anatomy)).toBe(at(0, []) + 3 * 4);
+    expect(at(1, anatomy)).toBe(at(1, []) + 3 * 4);
+    expect(at(2, anatomy)).toBe(at(2, []));
+    expect(seriesComponentCount('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS', anatomy)).toBe(
+      seriesComponentCount('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS', []) + 3 * 8,
+    );
+  });
+
+  it('names the anatomy views on both core sheets, and the articulation prompt never mentions it', () => {
+    // The compiled prompt is where the arithmetic has to surface as words: each core sheet lists
+    // the anatomy at its own facings in the `viewsOf` shape — which is what engages section 3's
+    // rotation rules and section 9's directional audit, both bound to components "the inventory
+    // lists in more than one direction" — and section 1's exception sentence states the per-view
+    // counting rather than promising a single drawing the inventory multiplies.
+    const subject = { ...defaultSubjectFor('CHARACTER'), additional_anatomy: 'Demon Horn ×2, Tail ×1' };
+    const sheet = (sheetIndex: number) =>
+      generatePrompt(
+        'CHARACTER',
+        subject,
+        withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'EIGHT_COMPASS', sheetIndex }),
+      );
+
+    const cardinal = sheet(0);
+    expect(cardinal).toContain('- Demon Horn ×2: south, west, north, east.');
+    expect(cardinal).toContain('- Tail ×1: south, west, north, east.');
+    expect(cardinal).toContain('#### Additional Genuine Anatomy — 12');
+    expect(cardinal).toContain('drawn at every facing this sheet covers');
+
+    const diagonal = sheet(1);
+    expect(diagonal).toContain('- Demon Horn ×2: south-west, north-west, north-east, south-east.');
+    expect(diagonal).toContain('- Tail ×1: south-west, north-west, north-east, south-east.');
+    expect(diagonal).toContain('#### Additional Genuine Anatomy — 12');
+
+    const articulation = sheet(2);
+    expect(articulation).not.toContain('Additional Genuine Anatomy');
+    expect(articulation).not.toContain('Demon Horn');
   });
 });
 
@@ -222,6 +273,14 @@ describe('the count once a subject names anatomy of its own', () => {
   it('states it in the subject definition as well as the inventory', () => {
     const prompt = generatePrompt('CHARACTER', withAnatomy('Serpentine Tail ×1'), RIG);
     expect(prompt).toContain('- Additional Genuine Anatomy: Serpentine Tail ×1');
+  });
+
+  it('keeps the single-drawing exception sentence on a run sheet', () => {
+    // The rig draws one facing per generation, so its exception sentence promises one drawing per
+    // piece — the per-view wording belongs to the multi-view sheets, whose inventories multiply.
+    const prompt = generatePrompt('CHARACTER', withAnatomy('Serpentine Tail ×1'), RIG);
+    expect(prompt).toContain('counts it as a component of its own');
+    expect(prompt).not.toContain('counted once per view');
   });
 
   it('leaves the count untouched, and says nothing, when there is none', () => {

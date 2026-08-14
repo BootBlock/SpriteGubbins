@@ -347,7 +347,7 @@ export const CHARACTER: CategoryDefinition = {
       key: 'additional_anatomy',
       label: 'Additional Genuine Anatomy',
       tooltip:
-        'Extra anatomy — a tail, a wing pair, auxiliary arms — each requested as its own sprite slot so it can be animated separately from the body. Comma-separated, with ×N for how many of each: “Demon Horn ×2, Tail ×1” adds three components to the inventory and to the sheet’s stated count.',
+        'Extra anatomy — a tail, a wing pair, auxiliary arms — each requested as its own sprite slot so it can be animated separately from the body. Comma-separated, with ×N for how many of each: “Demon Horn ×2, Tail ×1” names three pieces, each drawn at every facing the sheet covers — fifteen components on a five-view directional core, three on a single-facing sheet.',
       options: [
         NO_ADDITIONAL_ANATOMY,
         'Prehensile Cyber Tail ×1',

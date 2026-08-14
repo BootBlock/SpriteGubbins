@@ -5,7 +5,7 @@ import {
   sheetPlanFor,
   sheetSeriesFor,
 } from '../constants/sheetPlans/index.ts';
-import type { ComponentGroup, SheetPlan } from '../types/components.ts';
+import type { ComponentGroup, SheetFacings, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
@@ -50,12 +50,20 @@ export function planComponentCount(plan: SheetPlan): number {
 }
 
 /**
- * Whether this sheet is the one the subject's additional anatomy lands on.
+ * The facings this sheet draws the subject's additional anatomy at, or `null` where it draws none.
  *
- * The first, always. A tail or a second pair of wings is part of the body rather than of any one
- * group of it, so it goes where the body is established — and putting it on every sheet of a series
- * would ask for it to be drawn twice and counted twice, while spreading it across them would need a
- * rule for which limb belongs with which trunk that nothing in the subject definition supplies.
+ * A **multi-view sheet** draws each named piece at each of its own facings, exactly as its plan's
+ * entries are drawn: the trunk is one body turned, and a tail drawn once at one unstated yaw cannot
+ * attach to that trunk at any other facing — which was the shipped defect, a directional core whose
+ * heads turned while the horns beside them did not. The answer is the plan's own tuple, so both
+ * chunks of a split eight-compass core carry the anatomy, each at its own facings, and the
+ * inventory can name the facings per entry the way `viewsOf` does.
+ *
+ * A **`'run'` sheet** carries the anatomy only where it is the series' trunk — the first sheet,
+ * whose inventory is the whole subject drawn to one facing per generation, so the anatomy is one
+ * more piece of that facing's body. The character and creature articulation sheets are `'run'`
+ * sheets that are *not* first, and they stay bare: their inventory is limbs for a trunk the core
+ * sheets drew, and a tail beside them would hang on nothing.
  *
  * **Asked of the *resolved* index, never the stored one.** The two answer differently exactly where
  * the stored index is not one the series holds — and that state is reachable without corrupt
@@ -64,13 +72,20 @@ export function planComponentCount(plan: SheetPlan): number {
  * to an OBJECT got the right plan and no anatomy, so the prompt's count, its self-audit and its
  * inventory all agreed on a figure that silently omitted the pieces the user had typed.
  */
-export function sheetCarriesAnatomy(
+export function anatomyFacingsFor(
   category: SubjectCategory,
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
-): boolean {
-  return resolveSheetIndex(category, mode, directions, sheetIndex) === 0;
+): SheetFacings | null {
+  const plan = sheetPlanFor(category, mode, directions, sheetIndex);
+  if (plan.facings !== 'run') return plan.facings;
+  return resolveSheetIndex(category, mode, directions, sheetIndex) === 0 ? 'run' : null;
+}
+
+/** What the anatomy adds to a sheet drawing it at these facings: every piece, once per view. */
+function anatomyCountAt(facings: SheetFacings, additional: readonly AnatomyComponent[]): number {
+  return countAnatomyComponents(additional) * (facings === 'run' ? 1 : facings.length);
 }
 
 /** The count the prompt states, once the subject's own additional anatomy is included. */
@@ -82,8 +97,8 @@ export function componentCountFor(
   additional: readonly AnatomyComponent[],
 ): number {
   const plan = sheetPlanFor(category, mode, directions, sheetIndex);
-  const carries = sheetCarriesAnatomy(category, mode, directions, sheetIndex);
-  return planComponentCount(plan) + (carries ? countAnatomyComponents(additional) : 0);
+  const facings = anatomyFacingsFor(category, mode, directions, sheetIndex);
+  return planComponentCount(plan) + (facings === null ? 0 : anatomyCountAt(facings, additional));
 }
 
 /** What every sheet of the pairing costs together — what the deliverable asks for, not one image. */
@@ -195,6 +210,13 @@ function renderGroup(group: ComponentGroup): string {
  * "Additional anatomy" was the character vocabulary reaching all six categories — the defect section
  * 1 carried at sixteen sites and this one carried at one.
  *
+ * **On a multi-view sheet each entry names the facings it is drawn at**, in the `viewsOf` shape the
+ * plan's own entries use — `Demon Horn ×2: south, west, north, east` — because naming the views is
+ * what engages section 3's rotation rules and section 9's directional audit, which bind any
+ * component "the inventory lists in more than one direction". The intro states the arithmetic
+ * (×N pieces at each listed facing) in the same terms as section 4's own entry rule, and the
+ * heading's total is that product, summed by {@link componentCountFor}'s own helper.
+ *
  * The anatomy comes *last*, and the text says so. Labels are banned by section 0, so grid position is
  * the only thing that identifies a component — appending keeps every base entry at the position the
  * plan promised, where interleaving would silently renumber everything after it.
@@ -212,11 +234,28 @@ export function componentBreakdownFor(
   const inventory = `### Component inventory: ${plan.name} — ${String(total)} in total
 
 ${plan.groups.map(renderGroup).join('\n\n')}`;
-  if (!sheetCarriesAnatomy(category, mode, directions, sheetIndex) || additional.length === 0) {
+  const facings = anatomyFacingsFor(category, mode, directions, sheetIndex);
+  if (facings === null || additional.length === 0) {
     return inventory;
   }
 
-  const entries = additional.map((component) => `- ${formatAnatomyComponent(component)}.`).join('\n');
+  const entries = additional
+    .map((component) =>
+      facings === 'run'
+        ? `- ${formatAnatomyComponent(component)}.`
+        : `- ${formatAnatomyComponent(component)}: ${facings.join(', ')}.`,
+    )
+    .join('\n');
+
+  // On a multi-view sheet the pieces turn with the trunk, so the sentence states the per-view
+  // arithmetic in the same terms as section 4's own entry rule — a piece marked ×N at each listed
+  // facing — where a run sheet draws each piece once, at the run's own facing.
+  const drawn =
+    facings === 'run'
+      ? 'Each of these is drawn as its own component rather than painted onto another.'
+      : `Each of these is drawn as its own component rather than painted onto another — and, like every
+entry above, once per facing: a piece marked ×N is N separate components at each of the facings its
+entry names.`;
 
   // Headed by whatever this category calls the field, the same way section 1's lines are: these are
   // the pieces named in *Attached Modules* on a vehicle and in *Extra Appendages* on a creature, and
@@ -225,9 +264,9 @@ ${plan.groups.map(renderGroup).join('\n\n')}`;
   // is that these are separate components rather than painted-on detail, which is true of a turret.
   return `${inventory}
 
-#### ${fieldLabelFor(category, 'additional_anatomy')} — ${String(countAnatomyComponents(additional))}
+#### ${fieldLabelFor(category, 'additional_anatomy')} — ${String(anatomyCountAt(facings, additional))}
 
-Each of these is drawn as its own component rather than painted onto another.
+${drawn}
 They come last in reading order, after the ${String(planComponentCount(plan))} components above:
 
 ${entries}`;

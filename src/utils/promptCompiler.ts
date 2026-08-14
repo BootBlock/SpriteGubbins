@@ -32,7 +32,7 @@ import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { resolveMode, resolveRigMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
-import { componentBreakdownFor, componentCountFor, sheetCarriesAnatomy } from './componentSet.ts';
+import { anatomyFacingsFor, componentBreakdownFor, componentCountFor } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
@@ -212,16 +212,17 @@ export function generatePrompt(
   //
   // **And it empties on a sheet that does not carry the anatomy**, for the same reason and a sharper
   // one. Section 1's own prose says additional anatomy is "the single exception" that section 4
-  // lists and counts separately — so naming a tail here on the sheet that draws the limbs, whose
-  // inventory has no tail in it and whose contract demands an exact count without one, is a
-  // contradiction inside one prompt. The generator resolves it by drawing an uncounted piece or by
-  // ignoring a line it was told was binding, and neither is recoverable.
+  // lists and counts separately — so naming a tail here on the articulation sheet, whose inventory
+  // has no tail in it and whose contract demands an exact count without one, is a contradiction
+  // inside one prompt. The generator resolves it by drawing an uncounted piece or by ignoring a
+  // line it was told was binding, and neither is recoverable.
   //
-  // Held in a local as well, because `config` below gates section 1's exception sentence on it and
-  // reading it back off `values` would come out `string | undefined`.
-  const additionalAnatomyLine = sheetCarriesAnatomy(category, mode, output.directions, output.sheetIndex)
-    ? anatomy.map(formatAnatomyComponent).join(', ')
-    : '';
+  // The facings are held rather than a boolean, because the exception sentence has two shapes: a
+  // multi-view sheet draws each piece at each of its facings, so its sentence has to say so, where
+  // a run sheet draws each piece once. Held in a local as well, because `config` below gates both on
+  // it and reading it back off `values` would come out `string | undefined`.
+  const anatomyFacings = anatomyFacingsFor(category, mode, output.directions, output.sheetIndex);
+  const additionalAnatomyLine = anatomyFacings !== null ? anatomy.map(formatAnatomyComponent).join(', ') : '';
   values.ADDITIONAL_ANATOMY = additionalAnatomyLine;
 
   const config: Record<string, string> = {
@@ -246,12 +247,17 @@ export function generatePrompt(
     // would be forty lines of instruction about a comparison the generator cannot make.
     MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
     // Section 1's "painted onto, never a separate piece" rule names its own exception, and the
-    // exception is a line that is often not there — cleared, `NONE`, or on the second sheet of a
-    // series, which carries the anatomy on the first. Naming an absent line is worse here than
+    // exception is a line that is often not there — cleared, `NONE`, or on an articulation sheet,
+    // which draws limbs for a trunk the core sheets carry. Naming an absent line is worse here than
     // anywhere else in the prompt: the sentence is the one that decides how many components the
     // sheet has. Read off the *rendered* value rather than the raw field, so the gate answers
     // whether the line was emitted rather than whether the user typed something.
     ADDITIONAL_ANATOMY: additionalAnatomyLine,
+    // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
+    // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view
+    // — so the sentence must say so, or section 1 promises a single drawing the inventory below it
+    // multiplies. A run sheet keeps the single-drawing sentence.
+    ANATOMY_PER_VIEW: anatomyFacings !== null && anatomyFacings !== 'run' ? 'yes' : '',
     // Whether this sheet is one of several, which is a property of the configuration rather than a
     // switch the user sets: the splitter's runs differ from the studio's own configuration only in
     // fields `output` already carries, so a sheet compiled from the drawer and the same sheet

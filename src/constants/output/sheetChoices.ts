@@ -16,9 +16,10 @@ import type { OutputChoice } from './choices.ts';
  * variants would appear under a preview indistinguishable from its fifteen-component core.
  *
  * The count is the *plan's* alone — no additional anatomy — because this list is read while choosing
- * between sheets of one series rather than between pairings, and the anatomy lands on the first of
- * them either way. Folding it in would move exactly one number in a list whose whole job is to tell
- * the entries apart.
+ * between sheets of one series rather than between pairings: the numbers are here to tell the
+ * entries apart, and the plan's own size is the half that differs by design. The anatomy's
+ * contribution varies with the subject and lands on every sheet that draws the body
+ * (`anatomyFacingsFor`), so folding it in would move most of the figures without separating any.
  *
  * Numbered from one, because it is a position in a sequence the user works through, and the zero it
  * is built from is an array index nobody outside the code has to know about.
