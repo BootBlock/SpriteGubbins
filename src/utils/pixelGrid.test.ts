@@ -80,9 +80,11 @@ describe('detectPixelGrid', () => {
   });
 
   it('refuses a stray feature whatever candidates the raised ceiling admits', () => {
-    // A one-pixel line is two transition columns — where it starts and where it ends — and no
-    // lattice holds both, so no candidate accounts for nine tenths of this sheet however coarse the
-    // image's own ceiling lets it look.
+    // A one-pixel line in the sheet's interior is two transition columns — where it starts and
+    // where it ends — and no lattice holds both, so no candidate accounts for nine tenths of this
+    // sheet however coarse the image's own ceiling lets it look. (A line touching the far edge has
+    // no end inside the image and reads as a coarse two-cell sheet instead — losslessly, and under
+    // the old fixed ceiling as much as this one.)
     const flat = { r: 40, g: 40, b: 40, a: 255 };
     const mark = { r: 200, g: 10, b: 10, a: 255 };
     expect(detectPixelGrid(imageFrom(256, 256, (x) => (x === 100 ? mark : flat)))).toBeNull();

@@ -182,14 +182,17 @@ export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE
  * reader needs the small bound to stay honest: a coarser-than-true candidate collects about half an
  * image's change against thresholds of nine tenths, and the sparse shapes that could flatter a
  * coarse lattice are refused by the estimator's line-count guard, while under the exact detector a
- * stray feature is *two* transitions — where it starts and where it ends — which no lattice holds
- * both of.
+ * stray feature in the sheet's interior is *two* transitions — where it starts and where it ends —
+ * which no lattice holds both of. One touching the far edge has no end inside the image and does
+ * read as a coarse two-cell sheet, but it did under the fixed ceiling too, at a smaller divisor of
+ * the same lattice — and a share of 1 means every cell is uniform, so either reduction is lossless.
  *
  * Two bounds remain, and each is a statement rather than a tuning:
  *
  * - **Half the shorter edge**, because a period has to fit in the image at least twice — art two
  *   cells to a side is the smallest sheet that holds one, and both readers' tests pin that case.
- *   Past it, every candidate would be scored on no interior lattice line at all.
+ *   Past it the *shorter* axis offers no interior lattice line to score; the longer one still may,
+ *   but art with fewer than two cells on an axis is not a period, whichever axis holds the lines.
  * - **{@link MANUAL_GRID_RANGE}'s own ceiling**, so an automatic answer is always one the reader
  *   could have typed and can correct in place. Art genuinely drawn coarser than that comes back as
  *   the coarsest divisor the range holds — an under-reduction the user can finish, not a refusal.
