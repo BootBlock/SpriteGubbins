@@ -215,7 +215,14 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       resolutionProfile: 'MID_RESOLUTION',
       backgroundKey: 'PURE_WHITE',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'QWEN_IMAGE',
+      // Deliberately not Qwen, whose 4,500-token ceiling this sheet lands exactly on: every facing
+      // of the core, each with its own inventory, compiles to ~18,000 characters, and read at the
+      // app's ~4-characters-per-token estimate that is 4,500 against 4,500 — a margin narrower than
+      // the estimate's own error, so it demonstrates nothing about fitting. GPT Image publishes its
+      // ceiling in characters, which the app measures exactly rather than estimating, and the same
+      // sheet spends a little over half of it. Qwen keeps the two presets that genuinely show off a
+      // tight budget, at ~68% and ~71% of it.
+      targetModel: 'GPT_IMAGE',
     },
   },
 ];

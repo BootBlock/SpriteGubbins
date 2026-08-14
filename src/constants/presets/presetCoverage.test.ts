@@ -41,7 +41,8 @@ import { PRESETS } from './index.ts';
  * property of whoever is generating it, and two of the eleven publish prompt budgets this template does
  * not fit inside — so requiring one preset each would mean shipping presets that warn on load by
  * design. The other half of that is checked instead: whatever target a preset *does* name has to be one
- * that will read the prompt the preset compiles to.
+ * that will read the prompt the preset compiles to, with enough of the ceiling left unspent for that
+ * reading to mean anything — see {@link MAX_BUDGET_SHARE}.
  *
  * **`hardwareProfile` and `palette` are excluded for a different reason**, and it is worth stating
  * rather than leaving as an omission: the argument above turns on a dropdown of bare identifiers
@@ -83,6 +84,24 @@ function usedValues(key: keyof ImageOutputConfig): ReadonlySet<string> {
  * camera, one sheet mode is not a library, it is an example.
  */
 const MINIMUM_PER_CATEGORY = 4;
+
+/**
+ * How much of its target's documented ceiling a shipped preset is allowed to actually spend.
+ *
+ * `used <= limit` is the wrong bar, and the library found both reasons it is. A token reading is the
+ * app's ~4-characters-per-token estimate — no tokeniser ships with the app, and every target uses a
+ * different one — so a preset landing *on* its ceiling has not been shown to fit anything: the
+ * estimate's error is wider than the margin being measured, which is precisely the reading
+ * {@link readPromptBudget} disclaims in its own doc comment. And a preset is measured against a
+ * template it *shares*, so one with no slack turns the next wording change anywhere in
+ * `promptTemplate.ts` into a failure in this file — which is what happened, at a margin of four
+ * estimated tokens, to a §4 rewording that had nothing to do with any preset.
+ *
+ * A fifth of the ceiling answers both: it is wider than the estimate's error against prose this
+ * punctuation-dense, and it is room the template can grow into without a preset having to be tuned
+ * to the character to stay inside it.
+ */
+const MAX_BUDGET_SHARE = 0.8;
 
 describe('the built-in library spans the vocabulary', () => {
   it.each(COVERED_OPTIONS)('demonstrates every %s the studio offers', (key, union) => {
@@ -159,11 +178,16 @@ describe('no shipped preset contradicts itself', () => {
     );
     if (reading === null) return;
 
+    // Derived by multiplying rather than by dividing `used` into a share: a `limit` of zero is a
+    // nonsense entry, and a share computed against one would sail past this assertion instead of
+    // failing where someone can read it.
+    const allowance = Math.floor(reading.budget.limit * MAX_BUDGET_SHARE);
     expect(
-      reading.isOver,
-      `${preset.name} is ${reading.overBy.toFixed(1)}× over ${preset.output.targetModel}'s documented ` +
-        `${String(reading.budget.limit)} ${reading.budget.unit}`,
-    ).toBe(false);
+      reading.used,
+      `${preset.name} compiles to ${String(reading.used)} ${reading.budget.unit} against ` +
+        `${preset.output.targetModel}'s documented ${String(reading.budget.limit)} — past the ` +
+        `${String(allowance)} a shipped preset may spend`,
+    ).toBeLessThanOrEqual(allowance);
   });
 
   it.each(PRESETS)('$name gives a CUSTOM resolution something to work to', (preset) => {
