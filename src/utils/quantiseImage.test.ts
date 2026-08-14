@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
-import { channels, imageFrom, upscale } from '../test/images.ts';
+import { channels, imageFrom } from '../test/images.ts';
+import { upscaleNearest } from './upscaleNearest.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { channelLevels } from './channelLevels.ts';
 import { colorPlanFor } from './colorReduction.ts';
@@ -58,7 +59,7 @@ describe('quantiseImage', () => {
   it('recovers the art a sheet was drawn at from the sheet it came back on', () => {
     // The whole feature in one assertion: 16 × 16 art returned on a 128 × 128 canvas comes back as
     // the 16 × 16 art, pixel for pixel, with nothing invented and nothing lost.
-    const result = quantiseImage(upscale(SPRITE, 8), { grid: 8, key: null, reduction: null });
+    const result = quantiseImage(upscaleNearest(SPRITE, 8), { grid: 8, key: null, reduction: null });
 
     expect(result.image.width).toBe(16);
     expect(result.image.height).toBe(16);
@@ -95,7 +96,7 @@ describe('quantiseImage', () => {
     // The summary claims "256 colours became 32", and the second figure is this one. The first is
     // `SheetFacts.colors`, measured once when the sheet loads rather than again on every settings
     // change — so the two are read off different values and both have to mean what they say.
-    const source = upscale(SPRITE, 8);
+    const source = upscaleNearest(SPRITE, 8);
     const result = quantiseImage(source, {
       grid: 8,
       key: null,

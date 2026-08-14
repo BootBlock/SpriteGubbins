@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { imageFrom, soften, upscale } from '../test/images.ts';
+import { imageFrom, soften } from '../test/images.ts';
+import { upscaleNearest } from './upscaleNearest.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
@@ -53,16 +54,16 @@ describe('estimatePixelGrid', () => {
     // these, because a three-tap softening puts a transition on every column. The scale is still in
     // the image — it is the spacing the softening repeats at — and these are the sizes a sheet
     // actually comes back at.
-    expect(estimatePixelGrid(soften(upscale(variedCells(32), 4)))).toBe(4);
-    expect(estimatePixelGrid(soften(upscale(variedCells(16), 8)))).toBe(8);
-    expect(estimatePixelGrid(soften(upscale(variedCells(8), 16)))).toBe(16);
+    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(32), 4)))).toBe(4);
+    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(16), 8)))).toBe(8);
+    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(8), 16)))).toBe(16);
   });
 
   it('measures sprite-scale softening, past the old fixed ceiling', () => {
     // Eight cells a side drawn at 64 and then resampled — a 512-pixel sheet of 8 × 8 logical
     // pixels. Under a fixed ceiling of 32 no candidate could reach the truth, and the answer for a
     // sheet this coarse was a divisor at best and `null` at worst.
-    expect(estimatePixelGrid(soften(upscale(variedCells(8), 64)))).toBe(64);
+    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(8), 64)))).toBe(64);
   });
 
   it('answers the scale the art was drawn at, not a multiple of it', () => {
@@ -77,7 +78,7 @@ describe('estimatePixelGrid', () => {
     // 16 are all *reachable* candidates that a scorer without the coarse-scale margin would return.
     // Only the sheet's own scale comes back.
     for (const grid of [4, 8, 16]) {
-      const sheet = soften(upscale(variedCells(96 / grid), grid));
+      const sheet = soften(upscaleNearest(variedCells(96 / grid), grid));
       expect({ grid, measured: estimatePixelGrid(sheet) }).toEqual({ grid, measured: grid });
     }
   });
@@ -121,7 +122,7 @@ describe('estimatePixelGrid', () => {
     // The counterpart, and why the line count is pooled across the two axes rather than required of
     // each: art two cells a side has exactly one interior line down and one across, which together
     // are the same spacing observed twice.
-    expect(estimatePixelGrid(soften(upscale(variedCells(2), 32)))).toBe(32);
+    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(2), 32)))).toBe(32);
   });
 
   it('reads a two-colour sheet, where every boundary carries the same contrast', () => {
@@ -140,7 +141,7 @@ describe('estimatePixelGrid', () => {
     // around them. The field contributes nothing in either direction — it is flat, so it has no
     // steps to contribute — which is what makes a share of *change* the right quantity to score. A
     // share of canvas would be answered by the background.
-    const sprite = soften(upscale(variedCells(8), 4));
+    const sprite = soften(upscaleNearest(variedCells(8), 4));
     const sheet = imageFrom(256, 256, (x, y) =>
       x < sprite.width && y < sprite.height ? pixelAt(sprite, x, y) : { r: 255, g: 0, b: 255, a: 255 },
     );
@@ -165,7 +166,7 @@ describe('estimatePixelGrid', () => {
     // It is a period measurement, not a blur detector. Nothing about it requires the edges to have
     // been destroyed first — `measureSheetScale` reaches for it only when the exact reading found
     // nothing, but that is a rule about which question to ask, not a limit on this one.
-    expect(estimatePixelGrid(upscale(variedCells(16), 8))).toBe(8);
+    expect(estimatePixelGrid(upscaleNearest(variedCells(16), 8))).toBe(8);
   });
 
   it('answers null for smooth artwork rather than inventing a scale', () => {
@@ -184,7 +185,7 @@ describe('estimatePixelGrid', () => {
     // on remainder zero. **Both forms of the sheet are checked**: the softened one is refused far
     // more readily, so testing it alone would hide what a crisp margin does — and a crisp margin is
     // exactly what reaches here, since `detectPixelGrid` is origin-anchored too and fails on it.
-    const crisp = upscale(variedCells(16), 8);
+    const crisp = upscaleNearest(variedCells(16), 8);
     for (const inset of [1, 2, 6]) {
       expect({ inset, measured: estimatePixelGrid(shifted(crisp, inset)) }).toEqual({
         inset,
@@ -210,7 +211,7 @@ describe('estimatePixelGrid', () => {
     // narrowest scale this considers. Under-reducing by a factor of two is a far smaller wrong than
     // refusing to reduce at all, and a lattice that cut cells down the middle could not reach here:
     // it would not clear the threshold.
-    const crisp = upscale(variedCells(16), 8);
+    const crisp = upscaleNearest(variedCells(16), 8);
     for (const [inset, expected] of [
       [3, 4],
       [4, 4],
@@ -231,7 +232,7 @@ describe('estimatePixelGrid', () => {
     // is the intended trade: past a ramp this wide there is no lattice left for `alignToGrid` to
     // snap to either.
     for (const grid of [8, 12, 16]) {
-      const twiceSoftened = soften(soften(upscale(variedCells(96 / grid), grid)));
+      const twiceSoftened = soften(soften(upscaleNearest(variedCells(96 / grid), grid)));
       expect({ grid, measured: estimatePixelGrid(twiceSoftened) }).toEqual({ grid, measured: null });
     }
   });

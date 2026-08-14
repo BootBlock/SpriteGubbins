@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { imageFrom, soften, upscale } from '../test/images.ts';
+import { imageFrom, soften } from '../test/images.ts';
+import { upscaleNearest } from './upscaleNearest.ts';
 import { detectPixelGrid, measureSheetScale } from './pixelGrid.ts';
 
 /** A 16 × 16 source in which every pixel is a different colour, so no block of two is ever uniform. */
@@ -42,8 +43,8 @@ describe('detectPixelGrid', () => {
     // The case the whole feature exists for: 16 × 16 art delivered on a 128 × 128 canvas. 8 rather
     // than 4, 2 or 1 — all of which also score perfectly — because the coarsest grid that holds is
     // the real one, which is why detection counts down rather than up.
-    expect(detectPixelGrid(upscale(PIXEL_SOURCE, 8))).toBe(8);
-    expect(detectPixelGrid(upscale(PIXEL_SOURCE, 4))).toBe(4);
+    expect(detectPixelGrid(upscaleNearest(PIXEL_SOURCE, 8))).toBe(8);
+    expect(detectPixelGrid(upscaleNearest(PIXEL_SOURCE, 4))).toBe(4);
   });
 
   it('measures the art rather than the empty space around it', () => {
@@ -57,7 +58,7 @@ describe('detectPixelGrid', () => {
     // One 16 × 16 sprite filling a 1024-pixel canvas is a grid of 64. Under a fixed ceiling of 32
     // this came back as 32 — a finer, lossless reading of the same lattice, which reduced the sheet
     // to twice the size that was asked for while reading as an exact measurement.
-    expect(detectPixelGrid(upscale(PIXEL_SOURCE, 64))).toBe(64);
+    expect(detectPixelGrid(upscaleNearest(PIXEL_SOURCE, 64))).toBe(64);
   });
 
   it('derives its ceiling from the image, so two-cell art is measurable at any size', () => {
@@ -66,7 +67,7 @@ describe('detectPixelGrid', () => {
     const twoCells = imageFrom(2, 2, (x, y) =>
       (x + y) % 2 === 0 ? { r: 30, g: 200, b: 90, a: 255 } : { r: 220, g: 60, b: 40, a: 255 },
     );
-    expect(detectPixelGrid(upscale(twoCells, 128))).toBe(128);
+    expect(detectPixelGrid(upscaleNearest(twoCells, 128))).toBe(128);
   });
 
   it('never answers past what the manual box could hold', () => {
@@ -76,7 +77,7 @@ describe('detectPixelGrid', () => {
     const twoCells = imageFrom(2, 2, (x, y) =>
       (x + y) % 2 === 0 ? { r: 30, g: 200, b: 90, a: 255 } : { r: 220, g: 60, b: 40, a: 255 },
     );
-    expect(detectPixelGrid(upscale(twoCells, 512))).toBe(256);
+    expect(detectPixelGrid(upscaleNearest(twoCells, 512))).toBe(256);
   });
 
   it('refuses a stray feature whatever candidates the raised ceiling admits', () => {
@@ -128,14 +129,14 @@ describe('measureSheetScale', () => {
   it('reports an exact reading where every transition falls on the lattice', () => {
     // Nothing is estimated about crisp art, and the reading says so: the tab shows this as a
     // measurement, adopts it as the grid in force, and asks the user for nothing.
-    expect(measureSheetScale(upscale(PIXEL_SOURCE, 8))).toEqual({ grid: 8, measurement: 'EXACT' });
+    expect(measureSheetScale(upscaleNearest(PIXEL_SOURCE, 8))).toEqual({ grid: 8, measurement: 'EXACT' });
   });
 
   it('falls back to the estimate where softening has destroyed the transitions', () => {
     // The same art, resampled. `detectPixelGrid` cannot see it — that is the gap this fallback
     // exists for — and what comes back is the same scale carrying the label that stops it being
     // adopted silently.
-    const resampled = soften(upscale(PIXEL_SOURCE, 8));
+    const resampled = soften(upscaleNearest(PIXEL_SOURCE, 8));
     expect(detectPixelGrid(resampled)).toBeNull();
     expect(measureSheetScale(resampled)).toEqual({ grid: 8, measurement: 'ESTIMATED' });
   });

@@ -15,11 +15,11 @@ import { useUIStore } from '../stores/useUIStore.ts';
  * PNG, not JPEG or WebP. The result is flat colour regions with hard edges and, often, real
  * transparency — every one of which a lossy encoder would undo at the last step.
  */
-export function useImageDownload(): (sourceName: string, image: ImageData) => void {
+export function useImageDownload(): (sourceName: string, image: ImageData, scale: number) => void {
   const showToast = useUIStore((state) => state.showToast);
 
   return useCallback(
-    (sourceName, image) => {
+    (sourceName, image, scale) => {
       const canvas = document.createElement('canvas');
       canvas.width = image.width;
       canvas.height = image.height;
@@ -32,7 +32,7 @@ export function useImageDownload(): (sourceName: string, image: ImageData) => vo
       // transform the context might otherwise apply to a nearest-neighbour result.
       context.putImageData(image, 0, 0);
 
-      const filename = quantisedName(sourceName);
+      const filename = quantisedName(sourceName, scale);
       canvas.toBlob((blob) => {
         if (blob === null) {
           showToast(`Could not encode ${filename}`);
@@ -56,13 +56,16 @@ export function useImageDownload(): (sourceName: string, image: ImageData) => vo
 }
 
 /**
- * `character-sheet.webp` → `character-sheet-quantised.png`.
+ * `character-sheet.webp` → `character-sheet-quantised.png`, or `…-quantised@4x.png` magnified.
  *
  * Named after the source so a batch of eight split sheets stays sorted beside its originals, and
  * suffixed so the download never silently replaces the file it came from. The extension is always
- * `.png` because that is what was encoded, whatever arrived.
+ * `.png` because that is what was encoded, whatever arrived. A magnified copy carries its factor in
+ * the `@4x` form asset pipelines already read, so the 1× file and its magnifications sort together
+ * and none of them overwrites another.
  */
-function quantisedName(sourceName: string): string {
+function quantisedName(sourceName: string, scale: number): string {
   const stem = sourceName.replace(/\.[^./\\]+$/, '');
-  return `${stem === '' ? 'sprite-sheet' : stem}-quantised.png`;
+  const factor = scale === 1 ? '' : `@${String(scale)}x`;
+  return `${stem === '' ? 'sprite-sheet' : stem}-quantised${factor}.png`;
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { createImage } from '../../utils/imageData.ts';
 import type { QuantiseResult, SheetScale } from '../../types/quantiser.ts';
 import { ImageComparison } from './ImageComparison.tsx';
@@ -77,7 +77,10 @@ describe('ImageComparison', () => {
   it('keeps the two matched after the magnification changes', () => {
     const { arrived, quantised } = show(8);
 
-    fireEvent.click(screen.getByRole('button', { name: '8×' }));
+    // Scoped to the zoom row: the Save At row offers the same rungs, and an unscoped query finds
+    // both of each.
+    const zoomRow = screen.getByRole('group', { name: 'Preview magnification' });
+    fireEvent.click(within(zoomRow).getByRole('button', { name: '8×' }));
 
     // Both panes grow by the same factor, so the match survives — and both genuinely grew, which is
     // what separates this from two canvases that happen to agree at the zoom the control starts on.

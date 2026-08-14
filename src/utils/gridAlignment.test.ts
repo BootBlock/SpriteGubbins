@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { channels, imageFrom, upscale } from '../test/images.ts';
+import { channels, imageFrom } from '../test/images.ts';
+import { upscaleNearest } from './upscaleNearest.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
@@ -59,9 +60,9 @@ describe('downscaleNearest', () => {
   it('is lossless after alignment — upscaling reproduces the aligned image exactly', () => {
     // What makes the pair of steps a change of scale rather than a resampling: every pixel in a cell
     // is already identical, so taking the top-left one discards nothing.
-    const aligned = alignToGrid(upscale(PIXEL_SOURCE, 8), 8);
+    const aligned = alignToGrid(upscaleNearest(PIXEL_SOURCE, 8), 8);
     const reduced = downscaleNearest(aligned, 8);
-    expect(channels(upscale(reduced, 8))).toEqual(channels(aligned));
+    expect(channels(upscaleNearest(reduced, 8))).toEqual(channels(aligned));
   });
 
   it('keeps trailing partial cells instead of cropping them away', () => {
