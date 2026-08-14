@@ -21,6 +21,7 @@ import {
   RENDER_STYLE_TEXT,
   RESOLUTION_PROFILE_TEXT,
   SCALE_EXAMPLE_TEXT,
+  smallScaleDiscipline,
   SURFACE_DETAIL_TEXT,
 } from '../constants/promptText/index.ts';
 import { fieldLabelFor } from '../constants/categories/index.ts';
@@ -160,6 +161,9 @@ export function generatePrompt(
     // A function of the target size as well as the profile, because `CUSTOM` is the one profile
     // that carries no scale of its own — see `minFeatureSize`.
     MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize),
+    // Sprite-scale bullets join the pixel discipline only when the stated component is small
+    // enough that silhouette carries the identity; `''` is what drops the optional line.
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, output.spriteTargetSize),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.

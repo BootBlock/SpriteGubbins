@@ -53,6 +53,43 @@ describe('detectPixelGrid', () => {
     expect(detectPixelGrid(sparseSheet())).toBe(4);
   });
 
+  it('measures a sprite-scale sheet, past the old fixed ceiling', () => {
+    // One 16 × 16 sprite filling a 1024-pixel canvas is a grid of 64. Under a fixed ceiling of 32
+    // this came back as 32 — a finer, lossless reading of the same lattice, which reduced the sheet
+    // to twice the size that was asked for while reading as an exact measurement.
+    expect(detectPixelGrid(upscale(PIXEL_SOURCE, 64))).toBe(64);
+  });
+
+  it('derives its ceiling from the image, so two-cell art is measurable at any size', () => {
+    // Half the shorter edge is the coarsest scale an image can attest — one interior boundary each
+    // way, the smallest sheet that holds a period at all.
+    const twoCells = imageFrom(2, 2, (x, y) =>
+      (x + y) % 2 === 0 ? { r: 30, g: 200, b: 90, a: 255 } : { r: 220, g: 60, b: 40, a: 255 },
+    );
+    expect(detectPixelGrid(upscale(twoCells, 128))).toBe(128);
+  });
+
+  it('never answers past what the manual box could hold', () => {
+    // Art genuinely drawn coarser than the manual ceiling comes back as the coarsest divisor the
+    // range holds — an under-reduction the user can finish in the box, never a value they could not
+    // have typed into it.
+    const twoCells = imageFrom(2, 2, (x, y) =>
+      (x + y) % 2 === 0 ? { r: 30, g: 200, b: 90, a: 255 } : { r: 220, g: 60, b: 40, a: 255 },
+    );
+    expect(detectPixelGrid(upscale(twoCells, 512))).toBe(256);
+  });
+
+  it('refuses a stray feature whatever candidates the raised ceiling admits', () => {
+    // A one-pixel line in the sheet's interior is two transition columns — where it starts and
+    // where it ends — and no lattice holds both, so no candidate accounts for nine tenths of this
+    // sheet however coarse the image's own ceiling lets it look. (A line touching the far edge has
+    // no end inside the image and reads as a coarse two-cell sheet instead — losslessly, and under
+    // the old fixed ceiling as much as this one.)
+    const flat = { r: 40, g: 40, b: 40, a: 255 };
+    const mark = { r: 200, g: 10, b: 10, a: 255 };
+    expect(detectPixelGrid(imageFrom(256, 256, (x) => (x === 100 ? mark : flat)))).toBeNull();
+  });
+
   it('believes a grid that scores exactly the threshold', () => {
     // The boundary itself. `GRID_DETECTION_THRESHOLD` says "at or above", and 720 of 800 is exactly
     // nine tenths — a returned sheet is rarely flawless, and this is the near-miss the tolerance

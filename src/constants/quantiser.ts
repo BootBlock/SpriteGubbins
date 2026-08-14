@@ -22,14 +22,6 @@ export const PALETTE_COLOR_COUNTS: Readonly<Record<PaletteLimit, number | null>>
 };
 
 /**
- * The largest pixel scale detection will consider.
- *
- * A 16 × 16 sprite on a 2048 × 2048 sheet is a grid of 8 or 16; past 32 the candidate is larger than
- * most whole sprites, so a match at that size says more about a flat background than about the art.
- */
-export const MAX_DETECTED_GRID = 32;
-
-/**
  * The fraction of an image's colour transitions that must fall on a scale's lattice for that scale to
  * be believed.
  *
@@ -170,16 +162,44 @@ const SMALLEST_SPRITE_EDGE = 16;
  * the palette" is a real request — and it is the one answer detection can never give, since every
  * image is trivially uniform at a grid of 1.
  *
- * **The ceiling is derived here rather than borrowed from {@link MAX_DETECTED_GRID}, which it used
- * to be.** That number bounds what an *automatic* reading will consider, and its reason — past 32 a
- * match says more about a flat background than about the art — is a statement about what detection
- * can be fooled by. The manual box exists precisely for the answers detection cannot give, so
- * borrowing it turned a limit on inference into a limit on what the user is allowed to assert: a
- * single 16 × 16 sprite returned alone on a 1024-pixel canvas is a grid of 64, which was untypeable,
- * and that sheet could not be reduced at all. The honest bound is the arithmetic — the widest sheet
- * the tab accepts, cut to the smallest edge a sprite is drawn at.
+ * **The ceiling is derived from the sheets the tab accepts, not from what the readers measure.**
+ * For a while it borrowed the automatic readers' old fixed ceiling of 32, which turned a limit on
+ * inference into a limit on what the user is allowed to assert: a single 16 × 16 sprite returned
+ * alone on a 1024-pixel canvas is a grid of 64, which was untypeable, and that sheet could not be
+ * reduced at all. The honest bound is the arithmetic — the widest sheet the tab accepts, cut to the
+ * smallest edge a sprite is drawn at. {@link measurableGridCeiling} caps the automatic readers to
+ * this same figure, so nothing is ever measured that could not have been typed.
  */
 export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE_EDGE } as const;
+
+/**
+ * The coarsest scale the two automatic readers will consider for an image of this size.
+ *
+ * Derived per image rather than fixed, because the fixed version was a cap on the truth: detection
+ * stopped at 32, so a sheet drawn at 64 — one 16 × 16 sprite filling a 1024-pixel canvas — was
+ * reported as **32**, a finer, lossless reading of the same lattice that reduces the sheet to twice
+ * the size that was asked for, wearing the confidence of a measurement while it does. Neither
+ * reader needs the small bound to stay honest: a coarser-than-true candidate collects about half an
+ * image's change against thresholds of nine tenths, and the sparse shapes that could flatter a
+ * coarse lattice are refused by the estimator's line-count guard, while under the exact detector a
+ * stray feature in the sheet's interior is *two* transitions — where it starts and where it ends —
+ * which no lattice holds both of. One touching the far edge has no end inside the image and does
+ * read as a coarse two-cell sheet, but it did under the fixed ceiling too, at a smaller divisor of
+ * the same lattice — and a share of 1 means every cell is uniform, so either reduction is lossless.
+ *
+ * Two bounds remain, and each is a statement rather than a tuning:
+ *
+ * - **Half the shorter edge**, because a period has to fit in the image at least twice — art two
+ *   cells to a side is the smallest sheet that holds one, and both readers' tests pin that case.
+ *   Past it the *shorter* axis offers no interior lattice line to score; the longer one still may,
+ *   but art with fewer than two cells on an axis is not a period, whichever axis holds the lines.
+ * - **{@link MANUAL_GRID_RANGE}'s own ceiling**, so an automatic answer is always one the reader
+ *   could have typed and can correct in place. Art genuinely drawn coarser than that comes back as
+ *   the coarsest divisor the range holds — an under-reduction the user can finish, not a refusal.
+ */
+export function measurableGridCeiling(width: number, height: number): number {
+  return Math.min(MANUAL_GRID_RANGE.max, Math.floor(Math.min(width, height) / 2));
+}
 
 /**
  * The preview magnifications, in the order the control offers them.

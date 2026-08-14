@@ -810,6 +810,40 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(large).toContain('No feature smaller than 3 × 3 native pixels.');
   });
 
+  it('adds the sprite-scale bullets only where the target is sprite-sized and the style is pixel', () => {
+    const spriteScale = withOutput({
+      renderStyle: 'RETRO_PIXEL_ART',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '16 × 16 px',
+    });
+
+    // At sprite scale the pixel-discipline section grows the silhouette-first rules, beside the
+    // target-size line the bullets refer back to.
+    const icon = generatePrompt('CHARACTER', SUBJECT, spriteScale);
+    expect(icon).toContain('- Target component size: 16 × 16 px');
+    expect(icon).toContain('every component is designed silhouette-first');
+
+    // A larger target keeps the generic discipline alone — no bullet, and no blank line where the
+    // optional was, which is what the OPTIONAL marker exists to guarantee.
+    const large = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ ...spriteScale, spriteTargetSize: '128 × 128 px' }),
+    );
+    expect(large).not.toContain('silhouette-first');
+
+    // A painted sheet drops the whole pixel-discipline block, sprite-sized target or not — these
+    // are pixel rules, and a painted 16 px icon is a different discipline this section does not
+    // claim to state.
+    const painted = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ ...spriteScale, renderStyle: 'PAINTED_2D' }),
+    );
+    expect(painted).not.toContain('silhouette-first');
+    expect(painted).not.toContain('Pixel discipline');
+  });
+
   it('names one projection and one elevation', () => {
     const prompt = generatePrompt(
       'CHARACTER',

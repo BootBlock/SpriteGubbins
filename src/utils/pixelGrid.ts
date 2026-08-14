@@ -1,4 +1,4 @@
-import { GRID_DETECTION_THRESHOLD, MAX_DETECTED_GRID } from '../constants/quantiser.ts';
+import { GRID_DETECTION_THRESHOLD, measurableGridCeiling } from '../constants/quantiser.ts';
 import type { PixelGrid, SheetScale } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, packedColorAt } from './imageData.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
@@ -37,7 +37,8 @@ export function measureSheetScale(image: ImageData): SheetScale | null {
  * The whole of what detection needs to know about an image, and the reason it needs only one pass to
  * learn it: a grid of `g` is exactly the claim that **no colour changes anywhere except on the
  * `g`-lattice**, so once the transitions are counted by the row and column they fall on, every
- * candidate scale is scored by adding up thirty-odd numbers rather than by walking the image again.
+ * candidate scale is scored by summing the entries on its lattice rather than by walking the image
+ * again.
  */
 interface EdgeLattice {
   /** `columnEdges[x]` — rows in which pixel `x` differs from pixel `x - 1`. Index 0 is unused. */
@@ -61,8 +62,9 @@ interface EdgeLattice {
  * Measured on exactly that image, the block count returns 32 and this returns 4.
  *
  * Largest candidate first, because a true grid of 8 also scores perfectly at 4, 2 and 1 — the
- * coarsest grid that holds is the real one. Candidates stop at 2 because every image is trivially
- * uniform at 1, so a detector that considered it could never answer `null`.
+ * coarsest grid that holds is the real one. Where the count starts is a property of the image
+ * rather than a constant — see `measurableGridCeiling` — and candidates stop at 2 because every
+ * image is trivially uniform at 1, so a detector that considered it could never answer `null`.
  *
  * `null` is the honest answer for genuinely smooth artwork, and it is where {@link measureSheetScale}
  * hands the sheet to the estimator: this asks whether every transition falls on a lattice, which
@@ -81,7 +83,7 @@ export function detectPixelGrid(image: ImageData): PixelGrid | null {
   const lattice = edgeLattice(image);
   if (lattice.total === 0) return null;
 
-  for (let grid = MAX_DETECTED_GRID; grid >= 2; grid -= 1) {
+  for (let grid = measurableGridCeiling(image.width, image.height); grid >= 2; grid -= 1) {
     if (alignedShare(lattice, grid) >= GRID_DETECTION_THRESHOLD) return grid;
   }
   return null;
