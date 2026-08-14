@@ -672,6 +672,48 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(prompt).toContain('### Directional audit');
   });
 
+  it('names the reflection pair a cardinal sheet holds, in section 3 and in the audit', () => {
+    // The counterfeit the yaw fix cannot catch: a `west` view flipped is a counterfeit `east`,
+    // facing exactly where the audit's other checks require — the reported failure being side
+    // views that came back as mirror images, with the subject's one-sided features on both sides.
+    // Only a sheet holding both members of such a pair can be cheated this way, so the rule names
+    // the pair it carries.
+    const cardinals = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' }),
+    );
+
+    expect(cardinals).toContain(
+      "**This sheet pairs views that are each other's reflection** — west and east —",
+    );
+    expect(cardinals).toContain('- The paired views — west and east — show opposite sides');
+  });
+
+  it('names both diagonal pairs on the diagonal half of the eight-compass core', () => {
+    const diagonals = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+        directions: 'EIGHT_COMPASS',
+        sheetIndex: 1,
+      }),
+    );
+
+    expect(diagonals).toContain('— south-west and south-east; north-west and north-east —');
+  });
+
+  it('keeps the pair rules off the classic sets, which hold no reflection pair', () => {
+    // FIVE_CLASSIC runs 0° to 180° with every view right-leading, so there is no view on the sheet
+    // a reflection could counterfeit — the rule would be instruction about views the sheet does
+    // not hold, which is the same reasoning that gates MULTI_DIRECTION.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
+
+    expect(prompt).not.toContain('The paired views');
+    expect(prompt).not.toContain("each other's reflection");
+  });
+
   it('stops the primary assembly direction overriding a stated one', () => {
     // "Primary assembly direction: front-three-quarter" is the instruction that biased every
     // component back towards the one view the model already preferred.

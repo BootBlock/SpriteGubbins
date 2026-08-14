@@ -34,6 +34,7 @@ import { resolveMode, resolveRigMode, sheetPlanFor } from '../constants/sheetPla
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { anatomyFacingsFor, componentBreakdownFor, componentCountFor } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
+import { describeMirrorPairs, mirrorPairs } from './mirrorPairs.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 import { describeSeries } from './describeSeries.ts';
@@ -97,6 +98,13 @@ export function generatePrompt(
   // as well: an INTERFACE or a TERRAIN has no facing to turn to, so a stored `THREE_CLASSIC` degrades
   // there the way an unsupported mode does.
   const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(category, output, plan);
+
+  // The covered facings a mirrored copy could counterfeit — `west` flipped is a counterfeit `east`
+  // — which only the compass sets put on one sheet. Where a pair exists, section 3 and the
+  // directional audit both name it: the audit's other checks all pass a reflection, since it faces
+  // exactly where the turned view would, and only the named pair gives the generator a comparison
+  // that catches one.
+  const coveredMirrorPairs = mirrorPairs(coveredDirections);
 
   // Which sheet of which batch this configuration is. Every prompt before this one described its
   // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and
@@ -172,6 +180,9 @@ export function generatePrompt(
     // head come back at the same angle: the facings are stated as object *yaws* beneath a camera the
     // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
     DIRECTIONAL_ROTATION: directionalRotation(coveredDirections),
+    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
+    // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
+    MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),
     LANDMARK_DESCRIPTION: LANDMARK_TEXT[category],
     PRIMARY_DIRECTION: assemblyDirection,
     DEPTH_ORDER_DESCRIPTION: DEPTH_ORDER_TEXT[assemblyDirection],
@@ -248,6 +259,10 @@ export function generatePrompt(
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.
     MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
+    // Narrower than MULTI_DIRECTION for the same reason that flag exists at all: the anti-reflection
+    // pair rules only bite where the sheet holds both members of a reflection pair, and on the
+    // classic sets — which never do — they would be instruction about views the sheet does not hold.
+    MIRROR_PAIRS: coveredMirrorPairs.length > 0 ? 'yes' : '',
     // Section 1's "painted onto, never a separate piece" rule names its own exception, and the
     // exception is a line that is often not there — cleared, `NONE`, or on an articulation sheet,
     // which draws limbs for a trunk the core sheets carry. Naming an absent line is worse here than

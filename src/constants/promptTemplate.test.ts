@@ -13,7 +13,7 @@ import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
  */
 
 /** Tokens the compiler computes rather than looking up. See the test that pins each one. */
-const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION']);
+const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION', 'MIRROR_PAIRS_DESCRIPTION']);
 
 describe('the template itself', () => {
   it('fills every _DESCRIPTION token from a matching _TEXT map', () => {
