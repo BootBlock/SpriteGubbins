@@ -58,6 +58,9 @@ export function ImageComparison({
   busy,
 }: ImageComparisonProps) {
   const [zoom, setZoom] = useState<number>(PREVIEW_ZOOMS[0]);
+  // Beside `zoom` rather than in the store, for the same reason `zoom` is: both are preferences
+  // about how this panel presents a result, not part of what the result is.
+  const [downloadScale, setDownloadScale] = useState<number>(PREVIEW_ZOOMS[0]);
   const sourceView = useRef<HTMLDivElement>(null);
   const resultView = useRef<HTMLDivElement>(null);
   const sourceCanvas = useRef<HTMLCanvasElement>(null);
@@ -95,6 +98,8 @@ export function ImageComparison({
       <ComparisonToolbar
         zoom={zoom}
         onZoomChange={setZoom}
+        downloadScale={downloadScale}
+        onDownloadScaleChange={setDownloadScale}
         sourceName={sourceName}
         resultImage={quantised?.result.image ?? null}
       />

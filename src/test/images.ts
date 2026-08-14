@@ -24,16 +24,6 @@ export function imageFrom(width: number, height: number, pixel: (x: number, y: n
 }
 
 /**
- * The image with each pixel drawn as a `scale × scale` block — what a model returns when it draws
- * pixel art at 16 × 16 and hands back a 128 × 128 sheet.
- */
-export function upscale(image: ImageData, scale: number): ImageData {
-  return imageFrom(image.width * scale, image.height * scale, (x, y) =>
-    readPixel(image.data, pixelOffset(image.width, Math.floor(x / scale), Math.floor(y / scale))),
-  );
-}
-
-/**
  * The image with every pixel averaged with the two beside it, horizontally and then vertically —
  * what a model hands back when it draws at a scale and then resamples.
  *
