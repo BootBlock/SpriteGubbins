@@ -775,11 +775,11 @@ describe('generatePrompt — technical settings in prose', () => {
       spriteTargetSize: '16 × 16 px',
     });
 
-    // At sprite scale the pixel-discipline section grows the silhouette-first rules, with the
-    // dimensions and the count derived from the same parse the target-size line uses.
+    // At sprite scale the pixel-discipline section grows the silhouette-first rules, beside the
+    // target-size line the bullets refer back to.
     const icon = generatePrompt('CHARACTER', SUBJECT, spriteScale);
-    expect(icon).toContain('design it silhouette-first');
-    expect(icon).toContain('16 × 16 px — 256 pixels in all');
+    expect(icon).toContain('- Target component size: 16 × 16 px');
+    expect(icon).toContain('every component is designed silhouette-first');
 
     // A larger target keeps the generic discipline alone — no bullet, and no blank line where the
     // optional was, which is what the OPTIONAL marker exists to guarantee.

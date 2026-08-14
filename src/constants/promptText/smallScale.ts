@@ -30,11 +30,25 @@ const SPRITE_SCALE_EDGE = 32;
  * The extra bullets, or `''` where the configuration is not sprite-scale — which is what makes the
  * template's `[OPTIONAL:SMALL_SCALE_DISCIPLINE | …]` line disappear rather than arrive blank.
  *
- * The dimensions and the pixel count are derived from the parsed target rather than written twice,
- * per the rule that two places stating one fact must share a source. Every bullet holds under every
- * outline, palette and lighting choice the studio can pair it with: none of them names a colour
- * count or bans an outline, because section 2 states those beside this and the prompt may not
- * disagree with itself.
+ * Every word here is checked against what section 2 can say beside it, and four collisions shaped
+ * the wording:
+ *
+ * - **The bullets never restate the size.** The target names a typical whole figure, not a hard
+ *   per-component dimension — a hand drawn beside a torso is in proportion to it, per section 0's
+ *   scale rule — so a bullet claiming each component *is* W × H would contradict that rule on every
+ *   multi-part sheet. The target-size line directly above already states the figure, in the field's
+ *   own words. (The bullets can still say "above": they only fire when the field is non-empty,
+ *   which is exactly when that line survives its own `[OPTIONAL:…]`.)
+ * - **"Silhouette", never "outline"** — `OUTLINE_LESS_ALBEDO` puts "No outline" a few lines up, and
+ *   an "outline shape" bullet under it hands the generator a contradiction. "Recognisable" rather
+ *   than "identifies", because section 4 defines identification as grid position.
+ * - **No blanket ban on per-pixel variation** — `TEXTURED` surface detail requests controlled
+ *   texturing in the same section, and a sentence calling that noise asks the generator to discard
+ *   one of the pair. The microtexture bullet above already names the specific techniques banned.
+ * - **Properties, not deliberation.** "Judge every component before finishing it" is a
+ *   verify-before-delivering instruction, and those are gated on a target's declared capabilities —
+ *   so each bullet states what is true of the finished sheet, as the 1:1 inspection bullet beside
+ *   it does.
  */
 export function smallScaleDiscipline(profile: ResolutionProfile, spriteTargetSize: string): string {
   if (profile !== 'CUSTOM') return '';
@@ -42,10 +56,9 @@ export function smallScaleDiscipline(profile: ResolutionProfile, spriteTargetSiz
   const target = parseTargetSize(spriteTargetSize);
   if (target === null || Math.min(target.width, target.height) > SPRITE_SCALE_EDGE) return '';
 
-  const pixels = target.width * target.height;
   return [
-    `- A component here is ${String(target.width)} × ${String(target.height)} px — ${String(pixels)} pixels in all — so design it silhouette-first: the outline shape alone identifies the component before any interior detail is added, and where the two compete the silhouette wins.`,
-    '- Prefer one large readable feature to several small ones. Flat colour areas read at this size; per-pixel variation reads as noise.',
-    '- Judge every component at 1:1 against the background field before finishing it. A component that only reads magnified does not read.',
+    '- The target component size above is sprite scale, so every component is designed silhouette-first: its silhouette alone makes it recognisable before any interior detail is added, and where the two compete the silhouette wins.',
+    '- Prefer one large readable feature to several small ones.',
+    '- Every component reads at 1:1 against the background field. A component that is only legible magnified is not legible.',
   ].join('\n');
 }

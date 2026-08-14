@@ -9,11 +9,20 @@ describe('smallScaleDiscipline', () => {
     expect(bullets).toContain('at 1:1 against the background field');
   });
 
-  it('derives the dimensions and the pixel count from the stated target', () => {
-    // Two places stating one fact share a source, per the compiler's own rule — so the numbers in
-    // the bullet are read out of the same parse the target-size line uses, never written again.
-    expect(smallScaleDiscipline('CUSTOM', '16 × 16 px')).toContain('16 × 16 px — 256 pixels in all');
-    expect(smallScaleDiscipline('CUSTOM', '24 × 32 px')).toContain('24 × 32 px — 768 pixels in all');
+  it('never restates the size as a per-component fact', () => {
+    // The target names a typical whole figure, and section 0 requires the components to be in
+    // proportion to each other — so a bullet claiming each component *is* 16 × 16 would contradict
+    // that rule on every multi-part sheet. The target-size line above the bullets already states
+    // the figure in the field's own words.
+    const bullets = smallScaleDiscipline('CUSTOM', '16 × 16 px');
+    expect(bullets).not.toContain('16 × 16');
+    expect(bullets).not.toContain('256');
+  });
+
+  it('speaks of silhouettes, never of outlines', () => {
+    // `OUTLINE_LESS_ALBEDO` puts "No outline" a few lines up in the same section, so a bullet that
+    // leaned on "the outline shape" would hand the generator a contradiction to resolve.
+    expect(smallScaleDiscipline('CUSTOM', '16 × 16 px')).not.toMatch(/outline/iu);
   });
 
   it('keys on the smaller edge, which is the one detail runs out on', () => {
