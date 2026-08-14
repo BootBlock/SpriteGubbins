@@ -26,6 +26,12 @@ import { PRESETS } from './index.ts';
  * Each is the distinguishing half of an `anatomy` option in the interface pool — the field that
  * decides how the widget is cut, and the one a name reaches for when it wants to say what the kit
  * is. A card naming one is making a claim about the compiled prompt, not choosing a word.
+ *
+ * **The hyphens are the point, and normalising them would break this.** A pooled term is a name and
+ * carries its hyphen wherever it is written down; ordinary prose does not, and this preset's own
+ * description ends “rather than at one fixed size” — the same two words, meaning the opposite of a
+ * claim about the cut. Matching the hyphenated spelling is what tells a borrowed term from a
+ * sentence that happens to contain it.
  */
 const SLICE_TERMS = ['nine-slice', 'three-slice', 'fixed-size'] as const;
 
