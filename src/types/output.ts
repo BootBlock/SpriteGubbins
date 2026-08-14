@@ -159,10 +159,11 @@ export interface TargetCapabilities {
 /**
  * A component size in art pixels, read out of the free-text `spriteTargetSize` below.
  *
- * The size the *components* were asked for, not the sheet's pixel scale. Two features read it and
- * neither owns it: the quantiser turns it into a candidate pixel grid for a returned sheet, and the
- * atlas calculator checks it against the cell a texture affords. It lives beside the field it is the
- * parsed form of, rather than in either of their vocabularies.
+ * The size the *components* were asked for, not the sheet's pixel scale. Three features read it and
+ * none owns it: the prompt compiler takes it as the scale the pixel-discipline section is written
+ * against, the quantiser turns it into a candidate pixel grid for a returned sheet, and the atlas
+ * calculator checks it against the cell a texture affords. It lives beside the field it is the
+ * parsed form of, rather than in any of their vocabularies.
  */
 export interface TargetSize {
   readonly width: number;

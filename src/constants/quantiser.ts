@@ -143,13 +143,16 @@ export const MIN_LATTICE_LINES = 2;
 export const GRID_ESTIMATION_THRESHOLD = 0.9;
 
 /**
- * The longest edge an accepted image can have, and so the largest one worth reasoning about.
+ * The edge of the largest **square** sheet the tab accepts, and the figure its controls are derived
+ * from.
  *
- * A square at this edge is exactly {@link MAX_IMAGE_PIXELS}. A sheet may of course be wider and
- * shorter within the same budget — this is the bound the *controls* are derived from, not a second
- * limit imposed on the image.
+ * A square at this edge is exactly {@link MAX_IMAGE_PIXELS}, which is the limit actually enforced —
+ * and that one bounds *area*, so a sheet may be wider and shorter than this and still be taken. So
+ * it is the size a control reasons from, never a second limit imposed on the image. Module-private,
+ * as `SMALLEST_SPRITE_EDGE` below is: both exist to derive a bound in this file, and neither is a
+ * number anything outside it should be reading.
  */
-export const MAX_IMAGE_EDGE = 4096;
+const MAX_IMAGE_EDGE = 4096;
 
 /**
  * The smallest edge anyone actually draws a sprite at — an inventory icon, a console-era tile.

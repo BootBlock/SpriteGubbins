@@ -4,9 +4,10 @@ import type { TargetSize } from '../types/output.ts';
  * Reading the studio's `spriteTargetSize` as the component size it states.
  *
  * The field is free prose — the shipped presets hold *"48 × 96 px assembled (2 metres tall at 48 px
- * per metre)"* — and it names a **component** size, not a sheet scale. Two features read it and
- * neither owns it: `minFeatureSize` takes it as the scale the pixel-discipline section is written
- * against, and `targetSizeGrid` turns it into a candidate scale for a returned sheet.
+ * per metre)"* — and it names a **component** size, not a sheet scale. Three features read it and
+ * none owns it: `minFeatureSize` takes it as the scale the pixel-discipline section is written
+ * against, `targetSizeGrid` turns it into a candidate scale for a returned sheet, and the atlas
+ * calculator checks it against the cell a texture affords.
  *
  * **The parse is kept apart from that second reading, and the separation is load-bearing.**
  * `targetSizeGrid` takes an `ImageData` and so belongs to a program with the DOM lib; this function
