@@ -7,8 +7,11 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * A building is one of the two categories whose default sheet is a tile field, so these four
  * deliberately take the other two plans: the module library, which delivers a façade as repeatable
- * bays, and the three-facing set, which delivers one structure turned. The tile-field presets live
+ * bays, and the directional core, which delivers one structure turned. The tile-field presets live
  * next door in `buildingTilesets.ts`.
+ *
+ * The core's facing count is a property of the configuration rather than of the mode, so the
+ * watchtower states its own — see the comment there for why three and not the default five.
  */
 export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
   {
@@ -97,7 +100,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
     id: 'gothic-watchtower',
     name: 'Gothic Watchtower',
     description:
-      'One structure turned through the directional core under a true-isometric camera, laid out tall — a sheet’s shape should match its subject’s, and three storeys waste most of a landscape canvas.',
+      'One structure turned three ways through the directional core, under a true-isometric camera and laid out tall — a sheet’s shape should match its subject’s, and three storeys waste most of a landscape canvas.',
     category: 'BUILDING',
     subject: {
       species: 'Modular Watchtower',
@@ -122,6 +125,11 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
       projection: 'TRUE_ISOMETRIC',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      // Pinned rather than inherited: `DEFAULT_IMAGE_CONFIG` opens on `FIVE_CLASSIC`, whose extra two
+      // views are the flat front and back a true-isometric camera never gives you. The three-quarter
+      // pair and the side are the yaws this projection actually draws, and three of them is what the
+      // portrait canvas below is sized for.
+      directions: 'THREE_CLASSIC',
       paletteLimit: 'EXPANDED_ALBEDO',
       surfaceDetail: 'TEXTURED',
       lightingModel: 'ISOMETRIC_TOP_LEFT',

@@ -115,7 +115,10 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
   },
   {
     id: 'flat-mobile-ui-slices',
-    name: 'Flat Mobile UI Nine-Slices',
+    // Named for the slice assembly it actually uses. A pill-ended button cap at a fixed 48 px height
+    // has no vertical stretch to cut for, so three-slice is the honest assembly and nine-slice is
+    // the panel-and-frame one `fantasy-parchment-menu` above already covers.
+    name: 'Flat Mobile UI Button Slices',
     description:
       'Flat vector button pieces at 96 × 48 px on transparency, cut so the middle stretches and the ends hold their shape. The tile-set mode is what delivers a widget as parts rather than at one fixed size.',
     category: 'INTERFACE',
