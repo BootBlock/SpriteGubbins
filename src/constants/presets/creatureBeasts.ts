@@ -75,7 +75,7 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
     id: 'dire-wolf-alpha',
     name: 'Dire Wolf Alpha',
     description:
-      'A quadruped on the directional core with nothing to declare beyond the head, body and hindquarters its plan already lists — the plain trunk that the articulation sheet’s limbs hang on.',
+      'A quadruped on the directional core declaring no extra appendages at all — the plain trunk its articulation sheet hangs limbs on, and the baseline a sheet that does declare some is read against.',
     category: 'CREATURE',
     subject: {
       species: 'Beast / Quadruped',
