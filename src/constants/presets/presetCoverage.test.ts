@@ -94,8 +94,9 @@ const MINIMUM_PER_CATEGORY = 4;
  * estimate's error is wider than the margin being measured, which is precisely the reading
  * {@link readPromptBudget} disclaims in its own doc comment. And a preset is measured against a
  * template it *shares*, so one with no slack turns the next wording change anywhere in
- * `promptTemplate.ts` into a failure in this file — which is what happened, at a margin of four
- * estimated tokens, to a §4 rewording that had nothing to do with any preset.
+ * `promptTemplate.ts` into a failure in this file. A §4 rewording with nothing to do with any preset
+ * met that against a margin of four estimated tokens: its first draft tripped this test, and the
+ * wording that landed had to be measured against the ceiling rather than chosen for the sheet.
  *
  * A fifth of the ceiling answers both: it is wider than the estimate's error against prose this
  * punctuation-dense, and it is room the template can grow into without a preset having to be tuned
@@ -178,9 +179,9 @@ describe('no shipped preset contradicts itself', () => {
     );
     if (reading === null) return;
 
-    // Derived by multiplying rather than by dividing `used` into a share: a `limit` of zero is a
-    // nonsense entry, and a share computed against one would sail past this assertion instead of
-    // failing where someone can read it.
+    // Multiplied out rather than read off `reading.overBy`, which is this same ratio already: that
+    // field guards a `limit` of zero by resolving to 0, and 0 is under every share — so a nonsense
+    // budget entry would sail past this assertion instead of failing where someone can read it.
     const allowance = Math.floor(reading.budget.limit * MAX_BUDGET_SHARE);
     expect(
       reading.used,
