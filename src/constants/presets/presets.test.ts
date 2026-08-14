@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
-import { componentCountFor } from '../../utils/componentSet.ts';
+import { componentCountFor, sheetCountFor } from '../../utils/componentSet.ts';
 import { withCompanionOutputs } from '../../utils/imageConfig.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
@@ -112,23 +112,37 @@ describe('every shipped preset', () => {
     expect(prompt).toContain(`# MODULAR SPRITE-SHEET SPECIFICATION — ${preset.category}`);
   });
 
-  it.each(PRESETS)('$name stays inside what one generation delivers', (preset) => {
-    // The mode counts alone are checked in `promptCompiler.test.ts`; this checks the number a
-    // preset *actually* asks for, which its additional anatomy adds to. A mode already at the
-    // ceiling has no headroom, and 111 components was deleted outright for exactly this reason —
-    // a request past the ceiling comes back as a plausible subset with the rest merged or dropped.
-    const anatomy = parseAdditionalAnatomy(preset.subject.additional_anatomy);
-    expect(
-      componentCountFor(
-        preset.category,
-        preset.output.directionalMode,
-        preset.output.directions,
-        preset.output.sheetIndex,
-        anatomy,
-      ),
-      `${preset.name} exceeds the practical ceiling`,
-    ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
-  });
+  it.each(PRESETS)(
+    '$name stays inside what one generation delivers, on every sheet it asks for',
+    (preset) => {
+      // The mode counts alone are checked in `promptCompiler.test.ts`; this checks the number a
+      // preset *actually* asks for, which its additional anatomy adds to. A mode already at the
+      // ceiling has no headroom, and 111 components was deleted outright for exactly this reason —
+      // a request past the ceiling comes back as a plausible subset with the rest merged or dropped.
+      //
+      // **Every sheet of the series, not the one the preset names.** The ceiling bounds a single
+      // generation and a pairing is more than one, so asking about `output.sheetIndex` alone — which
+      // is nought for every built-in — left the rest of the deliverable unheld. The sheets it skipped
+      // are not reliably the cheaper ones: an eight-compass core arrives as two chunks that *each*
+      // carry the subject's anatomy, redrawn at their own four facings, and the second chunk is the
+      // one nobody thinks to count.
+      const anatomy = parseAdditionalAnatomy(preset.subject.additional_anatomy);
+      const sheets = sheetCountFor(preset.category, preset.output.directionalMode, preset.output.directions);
+
+      for (let sheetIndex = 0; sheetIndex < sheets; sheetIndex += 1) {
+        expect(
+          componentCountFor(
+            preset.category,
+            preset.output.directionalMode,
+            preset.output.directions,
+            sheetIndex,
+            anatomy,
+          ),
+          `${preset.name} exceeds the practical ceiling on sheet ${String(sheetIndex + 1)} of ${String(sheets)}`,
+        ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
+      }
+    },
+  );
 
   it.each(PRESETS)('$name leaves the companion outputs to the user', (preset) => {
     // The type says a preset holds the image alone, and structural typing means the type alone
