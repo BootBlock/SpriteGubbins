@@ -10,7 +10,7 @@ export const PRESET_ACTION_TOOLTIPS = {
     'The name this configuration goes into the library under. Names are what the library is searched and sorted by, so something describing the subject and the treatment — “Knight, eight-way cut-out rig” — is worth more later than “test 3”. Reusing the name of a preset you already saved updates that one rather than adding a second, and the button beside this says which of the two it is about to do.',
 
   savePresetDescription:
-    'A sentence saying what this configuration is for, shown on its card under the name and searched alongside it — “Eight-way overworld rig for the town scenes” tells you in a month what a name on its own will not. It is optional, and a preset saved without one shows its subject and setting instead. Naming a preset the library already holds fills this in with that preset’s own description, so updating it edits what is in front of you rather than quietly replacing it.',
+    'A sentence saying what this configuration is for, shown on its card under the name and searched alongside it — “Eight-way overworld rig for the town scenes” tells you in a month what a name on its own will not. It is optional, and a preset saved without one shows its subject and setting instead. Naming a preset you already saved fills this in with that preset’s own description, so updating it edits what is in front of you rather than quietly replacing it.',
 
   savePreset:
     'Stores the studio exactly as it stands — the category, every subject field and every output setting — in the library under the name beside this. It reads as Update instead when the name matches a preset you already saved, and then overwrites that one. Built-in presets are never touched. Saved presets live in this browser’s own storage, so exporting the library is what gets them onto another machine.',
@@ -37,7 +37,7 @@ export const PRESET_ACTION_TOOLTIPS = {
     'Deletes this preset, after asking once. It is one of yours rather than a built-in, so nothing else holds a copy: unless it is in a preset pack you exported, deleting it is the end of that configuration. Nothing in the studio changes — a preset you had loaded stays loaded, so saving it again under the same name is the way back if you press this by mistake.',
 
   detailsNameBox:
-    'The preset’s new name. Enter saves both boxes and Escape leaves the preset as it was. Only the label changes — the configuration stored under it is untouched, and nothing in the studio moves.',
+    'The preset’s new name. Enter saves both boxes and Escape leaves the preset as it was. The configuration stored under it is untouched either way, and nothing in the studio moves.',
 
   detailsDescriptionBox:
     'The sentence this preset’s card carries under its title, and one more thing the search looks through. Leaving it empty is fine — the card names the subject and the setting instead. Enter saves both boxes and Escape abandons the edit; neither the stored configuration nor the studio is affected either way.',

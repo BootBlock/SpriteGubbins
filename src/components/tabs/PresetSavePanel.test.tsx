@@ -6,14 +6,13 @@ import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { PresetSavePanel } from './PresetSavePanel.tsx';
 
 /**
- * The description box follows the preset the Save button would update, and stops following the
- * moment the user types in it.
+ * The description box holds exactly what Save is about to write.
  *
- * That is the whole reason the draft is `string | null` rather than a string, and it is invisible
- * from the outside: saving writes exactly what the box holds, so a box that stayed empty while the
- * name grew into one the library already holds would silently wipe that preset's sentence on the
- * next Update. Neither half of the rule announces itself, and both are one `??` away from being
- * lost in an edit.
+ * That invariant is invisible from the outside and is the only thing standing between an Update and
+ * a silently blanked description, so each of its three halves is pinned below: the box adopts the
+ * named preset's own sentence, it adopts **once** per preset rather than once per keystroke, and
+ * what the reader leaves in it — including an empty box they cleared on purpose — is what gets
+ * stored.
  */
 
 const EXISTING = {
@@ -53,15 +52,52 @@ describe('PresetSavePanel', () => {
     expect(descriptionBox()).toHaveValue('For the town scenes.');
   });
 
-  it('keeps what the user typed, whatever the name does afterwards', async () => {
+  it('adopts it again after the box was typed in and then cleared', async () => {
     const user = userEvent.setup();
     usePresetStore.setState({ customPresets: [EXISTING] });
     render(<PresetSavePanel />);
 
-    await user.type(descriptionBox(), 'Mine');
+    // The regression this replaced a cleverer arrangement to fix. A `draft ?? target.description`
+    // read falls through on `null` and not on `''`, so typing into the box and then emptying it left
+    // the box permanently blank — and the Update that followed wiped the stored sentence with
+    // nothing on screen to say it was about to.
+    await user.type(descriptionBox(), 'Town');
+    await user.clear(descriptionBox());
     await user.type(nameBox(), 'My Knight');
 
-    expect(descriptionBox()).toHaveValue('Mine');
+    expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
+    expect(descriptionBox()).toHaveValue('For the town scenes.');
+  });
+
+  it('adopts once per preset, not once per keystroke', async () => {
+    const user = userEvent.setup();
+    usePresetStore.setState({ customPresets: [EXISTING] });
+    render(<PresetSavePanel />);
+
+    await user.type(nameBox(), 'My Knight');
+    await user.clear(descriptionBox());
+    await user.type(descriptionBox(), 'My own wording');
+    // Any further edit to the name that lands back on the same preset — a typo fixed, a trailing
+    // space added and removed — must not throw away what has since been written beside it.
+    await user.type(nameBox(), ' ');
+    await user.keyboard('{Backspace}');
+
+    expect(descriptionBox()).toHaveValue('My own wording');
+  });
+
+  it('stores an empty box when the reader cleared it deliberately', async () => {
+    const user = userEvent.setup();
+    const saveCustomPreset = vi.fn().mockResolvedValue(true);
+    usePresetStore.setState({ customPresets: [EXISTING], saveCustomPreset });
+    render(<PresetSavePanel />);
+
+    await user.type(nameBox(), 'My Knight');
+    await user.clear(descriptionBox());
+    await user.click(screen.getByRole('button', { name: 'Update' }));
+
+    // Removing a description has to remain possible, which is why the box is not simply ignored
+    // when it is empty — a blank box means one thing, and this is it.
+    expect(saveCustomPreset).toHaveBeenCalledWith('My Knight', '');
   });
 
   it('saves the name and the description together, and clears both on success', async () => {

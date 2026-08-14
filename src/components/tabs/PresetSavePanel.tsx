@@ -19,16 +19,31 @@ export function PresetSavePanel() {
 
   const [presetName, setPresetName] = useState('');
   /**
-   * The description as typed, or `null` while the box is still following the preset it would update.
+   * The description exactly as it will be saved — **the box always holds what Save is about to
+   * write**, and that invariant is the whole design.
    *
-   * Two states rather than one string, because a blank box means two different things. Saving writes
-   * exactly what is here, so a box that stayed empty while the name grew into one the library
-   * already holds would silently wipe that preset's sentence on the next Update. Following the
-   * target instead puts its own description in front of the user to edit or clear deliberately —
-   * and the moment they type, `null` gives way and their text is theirs, whatever the name does
-   * afterwards.
+   * Saving writes what is here, so a box that sat empty while the name grew into one the library
+   * already holds would wipe that preset's sentence with nothing on screen to say so. The answer is
+   * to adopt that preset's own description the moment the name starts naming it, in the name box's
+   * own handler: the reader then edits or clears a sentence they can see, and a blank box means one
+   * thing rather than two.
+   *
+   * The rejected alternative was a `string | null` draft displayed as `draft ?? target.description`,
+   * where `null` meant "still following". It reads well and is wrong: `??` falls through on `null`
+   * and not on `''`, so a reader who typed into the box and then *cleared* it left `''` behind, the
+   * box stopped following, and the next Update blanked the stored description silently — the exact
+   * failure the arrangement existed to prevent.
    */
-  const [descriptionDraft, setDescriptionDraft] = useState<string | null>(null);
+  const [description, setDescription] = useState('');
+  /**
+   * Which preset the box last adopted from, so it adopts once per target rather than once per
+   * keystroke.
+   *
+   * Without it, every edit to the name that lands back on the same preset — fixing a typo, adding
+   * and removing a trailing space — would re-adopt and throw away whatever the reader had since
+   * written in the description box.
+   */
+  const [followedId, setFollowedId] = useState<string | null>(null);
   // The store's save is asynchronous and its button is otherwise disabled only on a blank name, so
   // without this a double-press writes the same configuration twice.
   const [isSaving, setIsSaving] = useState(false);
@@ -38,7 +53,6 @@ export function PresetSavePanel() {
   // Derived during render, by the rule the store saves by, so the button cannot promise one thing
   // and the store do another. Saying "Update" before the press is what makes a confirm unnecessary.
   const overwrites = findPresetByName(customPresets, presetName);
-  const description = descriptionDraft ?? overwrites?.description ?? '';
 
   return (
     <section className="glass-panel flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-foundry-700 p-6 shadow-xl">
@@ -72,7 +86,16 @@ export function PresetSavePanel() {
             value={presetName}
             placeholder="Preset name"
             onChange={(event) => {
-              setPresetName(event.target.value);
+              const nextName = event.target.value;
+              const adopted = findPresetByName(customPresets, nextName);
+              setPresetName(nextName);
+              // Adopt once, when the name starts naming a preset it was not naming before. Matched
+              // by the rule the store saves by, so what the box shows and what Update writes are
+              // decided by one function rather than by two that could disagree.
+              if (adopted !== undefined && adopted.id !== followedId) {
+                setFollowedId(adopted.id);
+                setDescription(adopted.description);
+              }
             }}
             className="rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
           />
@@ -92,7 +115,7 @@ export function PresetSavePanel() {
             value={description}
             placeholder="What it is for"
             onChange={(event) => {
-              setDescriptionDraft(event.target.value);
+              setDescription(event.target.value);
             }}
             className="w-64 max-w-full rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
           />
@@ -107,11 +130,12 @@ export function PresetSavePanel() {
               try {
                 // Cleared only when it was actually stored. The store reports a failed write with a
                 // toast and resolves normally, so emptying the box unconditionally would make the
-                // user retype the name to retry. The description goes back to following the name
-                // rather than to an empty string, which is the same distinction it draws throughout.
+                // user retype the name to retry. All three go back to their opening state together
+                // — a preset left half-selected is what would make the next save adopt nothing.
                 if (await saveCustomPreset(presetName, description)) {
                   setPresetName('');
-                  setDescriptionDraft(null);
+                  setDescription('');
+                  setFollowedId(null);
                 }
               } finally {
                 setIsSaving(false);

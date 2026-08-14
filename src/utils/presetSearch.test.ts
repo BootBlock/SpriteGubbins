@@ -82,6 +82,13 @@ describe('matchPresetEntries', () => {
     expect(namesFor('ramen')).toEqual(['Neo-Tokyo Ramen Kiosk']);
   });
 
+  it('searches the description, which is the only field written in a reader’s own words', () => {
+    // "dithers" appears nowhere in that preset's name, subject or settings — those are identifiers,
+    // and this is the one field somebody wrote a sentence in. So the query only lands if the
+    // description is in the haystack, which is what the search box's own guidance promises.
+    expect(namesFor('dithers')).toEqual(['Pixel Explosion Flipbook']);
+  });
+
   it('matches a partial word, because half of what it searches is an identifier', () => {
     expect(namesFor('tile').length).toBeGreaterThan(0);
   });

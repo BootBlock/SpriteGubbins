@@ -97,7 +97,7 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
     id: 'gothic-watchtower',
     name: 'Gothic Watchtower',
     description:
-      'One structure turned through the directional core under a true-isometric camera, on a portrait canvas — three storeys turned three ways waste most of a landscape one.',
+      'One structure turned through the directional core under a true-isometric camera, laid out tall — a sheet’s shape should match its subject’s, and three storeys waste most of a landscape canvas.',
     category: 'BUILDING',
     subject: {
       species: 'Modular Watchtower',

@@ -93,7 +93,7 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
     id: 'cel-shaded-duellist',
     name: 'Cel-Shaded Arena Duellist',
     description:
-      'Flat cel shading under a hard black contour, with everything else left at the studio’s defaults. The clearest look at what the cel-shaded style changes and what it leaves alone.',
+      'Flat cel shading under a hard black contour, with the camera, the palette and the detail left where the studio opens them. The clearest look at what the cel-shaded style changes and what it leaves alone.',
     category: 'CHARACTER',
     subject: {
       species: 'Human',

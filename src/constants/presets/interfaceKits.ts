@@ -117,7 +117,7 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
     id: 'flat-mobile-ui-slices',
     name: 'Flat Mobile UI Nine-Slices',
     description:
-      'Flat vector buttons as nine-slice pieces at 96 × 48 px, on transparency. The tile-set mode is what makes them stretchable rather than fixed-size.',
+      'Flat vector button pieces at 96 × 48 px on transparency, cut so the middle stretches and the ends hold their shape. The tile-set mode is what delivers a widget as parts rather than at one fixed size.',
     category: 'INTERFACE',
     subject: {
       species: 'Button & Key Cap',

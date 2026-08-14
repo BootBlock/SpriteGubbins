@@ -31,7 +31,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
     id: 'cutout-rig-command-walker',
     name: 'Cut-Out Rig Command Walker',
     description:
-      'A legged mech rigged from the side elevation, where a hip, a knee and an ankle are all unambiguous. Tapered caps and a full overlap, because armour over a joint opens a gap at full stride.',
+      'A legged mech rigged from the side facing, where a hip, a knee and an ankle are all unambiguous. Tapered caps and a full overlap, because armour over a joint opens a gap at full stride.',
     category: 'VEHICLE',
     subject: {
       species: 'Walker / Mech',

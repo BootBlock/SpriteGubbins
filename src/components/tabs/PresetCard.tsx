@@ -87,8 +87,8 @@ export function PresetCard({ preset, index, onLoad, onUpdateDetails, onDelete }:
           guard against a description somebody pasted a paragraph into, not a budget the built-ins
           are written to: at the narrowest the card ever gets — three columns inside the page's
           `max-w-7xl` cap — a line holds about forty characters, so the 220 the presets are capped
-          at needs six. It was three while the line said "species — setting", which never wrapped
-          past two, and three lines truncated every built-in description in the library mid-clause.
+          at needs six. Two was right for "species — setting", which never reached a third line;
+          carrying that figure over to prose is what truncated every built-in description mid-clause.
         */}
         <p className="line-clamp-6 text-xs text-ink-muted">
           {preset.description === ''

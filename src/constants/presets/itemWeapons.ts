@@ -17,7 +17,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
     id: 'legendary-greatsword',
     name: 'Legendary Greatsword',
     description:
-      'An inventory icon at 64 × 64 px cells, turned through the directional core with top-left lighting. It excludes the hand, the stand and the glow trail, each of which would break the cell.',
+      'An inventory icon at 64 × 64 px cells, turned through the directional core with top-left lighting. It excludes the holding hand, which reaches past the item’s own bounds and breaks the cell.',
     category: 'ITEM',
     subject: {
       species: 'Melee Weapon (Sword/Axe)',

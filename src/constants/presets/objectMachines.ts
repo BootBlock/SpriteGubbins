@@ -15,7 +15,7 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
     id: 'prop-terminal',
     name: 'Sci-Fi Control Console',
     description:
-      'A console the player walks up to and uses, drawn once with its screens lit from within rather than by a key light. The plainest example of how an object decomposes by housing and mount.',
+      'A console the player walks up to and uses, with its screens lit from within rather than by a key light. The plainest example of how an object decomposes by housing and mount rather than by limb.',
     category: 'OBJECT',
     subject: {
       species: 'Interactive Terminal',
