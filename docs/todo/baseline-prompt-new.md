@@ -430,6 +430,7 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
   highlights or painterly brush marks. Materials read through **colour and value blocking**.
 - **Do not produce smooth artwork that has been downscaled.** Every pixel is placed deliberately;
   the image must survive inspection at 1:1 with no anti-aliased edges.
+[OPTIONAL:SMALL_SCALE_DISCIPLINE | [DEFINE:SMALL_SCALE_DISCIPLINE]]
 [/IF]
 [IF:RENDER_STYLE!=PIXEL_ART,RETRO_PIXEL_ART]
 

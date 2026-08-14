@@ -28,6 +28,7 @@ export {
   RESOLUTION_PROFILE_TEXT,
   SURFACE_DETAIL_TEXT,
 } from './renderStyle.ts';
+export { smallScaleDiscipline } from './smallScale.ts';
 export { LIGHTING_TEXT, OUTLINE_TEXT, PALETTE_TEXT } from './palette.ts';
 export { describeHardware, describePalette, perComponentLimit } from './hardware.ts';
 export {

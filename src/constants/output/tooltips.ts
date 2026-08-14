@@ -21,7 +21,7 @@ export const OUTPUT_TOOLTIPS = {
   paletteLimit:
     'The total colour budget across the whole sheet, which is what keeps every component looking like it came from one set. STRICT_32_COLOR and RESTRAINED_64_COLOR suit pixel work; painted, cel-shaded and 3D styles usually want UNRESTRICTED, because a hard colour count fights the blending they depend on.',
   outlineStyle:
-    'How a component’s boundary is drawn where it meets the background. DARK_LOCAL_CONTOUR — a 1px darker shade of each local colour — keeps parts separable without flattening them; PURE_BLACK_OUTLINE gives the harder retro read; OUTLINE_LESS_ALBEDO leans on value and hue contrast alone, which needs a busy scene to sit against.',
+    'How a component’s boundary is drawn where it meets the background. DARK_LOCAL_CONTOUR — a 1px darker shade of each local colour — keeps parts separable without flattening them; PURE_BLACK_OUTLINE gives the harder retro read; OUTLINE_LESS_ALBEDO leans on value and hue contrast alone, which needs a busy scene to sit against. Below about 32 px the contour is a serious share of the pixels — a 16 px sprite spends roughly a quarter of its area on a 1px boundary — so the darker local shade or no outline usually reads better there than pure black.',
   lightingModel:
     'The key light angle and shadow treatment baked into the sprite. FLAT_NEUTRAL_ALBEDO is what a game engine wants, because the engine lights the sprite itself and a baked highlight would fight its own. Choose a fixed key only when the scene lighting is fixed too, as it is in a locked isometric view.',
   aspectRatio:
@@ -49,7 +49,7 @@ export const OUTPUT_TOOLTIPS = {
   backgroundKey:
     'What the components sit on, so they can be cut out afterwards. Magenta is the default because white bleeds into light-coloured edges and leaves alpha keying ambiguous — white armour on a white field has no recoverable boundary. Pick TRANSPARENT only if the target genuinely returns alpha; most return a flat matte whatever you ask for.',
   spriteTargetSize:
-    'An explicit pixel target for a single component, e.g. “48 × 96 px”. The resolution profile only says roughly how large a figure is; this says exactly, and is what the CUSTOM profile expects to find. Leave it empty and the line is omitted from the prompt entirely rather than sent blank.',
+    'An explicit pixel target for a single component, e.g. “48 × 96 px”. The resolution profile only says roughly how large a figure is; this says exactly, and is what the CUSTOM profile expects to find. Leave it empty and the line is omitted from the prompt entirely rather than sent blank. On the CUSTOM profile the stated size also sets the smallest feature the pixel discipline permits, and a size of 32 px or under on its shorter edge adds sprite-scale rules — silhouette first, one large feature over several small — to that same section.',
 
   rigMode:
     'What the components are for once they leave the sheet. CUTOUT_RIG adds rest-orientation, pivot-registration, overlap and depth-order rules, because those pieces get bound to bones and rotated at runtime; POSE_LIBRARY assumes you assemble poses by hand and needs none of them; NONE suits tilesets and props that never articulate. Only the categories whose components have joints offer a choice here — a tile, a widget and a frame of an effect all turn about nothing.',
