@@ -20,6 +20,8 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'topdown-dungeon-tileset',
     name: 'Top-Down Dungeon Tileset',
+    description:
+      'The sixteen-tile field a dungeon floor is built from, seen straight down at 32 × 32 px per tile. The size is stated outright because a tile off the engine’s grid is unusable.',
     category: 'BUILDING',
     subject: {
       species: 'Ancient Temple Gate',
@@ -58,6 +60,8 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'iso-city-tileset',
     name: 'Isometric City Tileset',
+    description:
+      'The same sixteen tiles drawn as 64 × 32 px isometric diamonds. A tile whose width is not exactly twice its height does not tessellate, and no amount of art fixes that.',
     category: 'BUILDING',
     subject: {
       species: 'City block tile set',
@@ -98,6 +102,8 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'retro-forest-tileset',
     name: '16-Bit Forest Tileset',
+    description:
+      'A 16 × 16 px tile field in retro pixel art, 32 colours and a hard black outline. The smallest grid the library ships, and the one most 16-bit engines actually used.',
     category: 'BUILDING',
     subject: {
       species: 'Forest ground tile set',
@@ -135,6 +141,8 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'volcanic-cavern-tileset',
     name: 'Volcanic Cavern Tileset',
+    description:
+      'A textured 48 × 48 px cavern field keyed on black, because the fissures are the light source — on magenta an emissive crack keys against a field brighter than itself.',
     category: 'BUILDING',
     subject: {
       species: 'Volcanic cavern tile set',

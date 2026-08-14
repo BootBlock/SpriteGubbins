@@ -30,10 +30,50 @@ function promptFor(preset: PresetArchetype): string {
   );
 }
 
+/**
+ * What a built-in's description has to be, mechanically.
+ *
+ * A floor rather than a target, on the same argument as the guidance in `constants/tooltips`: the
+ * failure this catches is a preset added with `description: 'A knight'`, which looks covered from
+ * the outside and says nothing the name did not. The ceiling is the card's own: three clamped lines
+ * of `text-xs` in a grid column, past which the sentence is written but never read.
+ */
+const SHORTEST_USEFUL_DESCRIPTION = 60;
+const LONGEST_READABLE_DESCRIPTION = 220;
+
 describe('every shipped preset', () => {
   it('has a unique id', () => {
     const ids = PRESETS.map((preset) => preset.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it.each(PRESETS)('$name describes itself at a length its card can carry', (preset) => {
+    expect(preset.description.length).toBeGreaterThanOrEqual(SHORTEST_USEFUL_DESCRIPTION);
+    expect(preset.description.length).toBeLessThanOrEqual(LONGEST_READABLE_DESCRIPTION);
+  });
+
+  it.each(PRESETS)('$name describes itself in prose, punctuated as the app is', (preset) => {
+    // A sentence shown to a stranger, not a label — and set with the same typographic apostrophes
+    // and quotes as every other string in the bundle. A straight one is the tell that a line was
+    // pasted in from somewhere else rather than written here.
+    expect(preset.description).toMatch(/^[A-Z“]/);
+    expect(preset.description.endsWith('.')).toBe(true);
+    expect(preset.description.trim()).toBe(preset.description);
+    expect(preset.description).not.toMatch(/ {2}/);
+    expect(preset.description).not.toContain("'");
+    expect(preset.description).not.toContain('"');
+  });
+
+  it('never describes two presets with the same sentence', () => {
+    // The copy-paste that leaves one preset describing another. It is invisible in review, because
+    // each card reads correctly on its own — and the library is where a reader goes to tell fifty
+    // similar configurations apart.
+    const byDescription = new Map<string, string[]>();
+    for (const preset of PRESETS) {
+      byDescription.set(preset.description, [...(byDescription.get(preset.description) ?? []), preset.name]);
+    }
+
+    expect([...byDescription.values()].filter((names) => names.length > 1)).toEqual([]);
   });
 
   it.each(PRESETS)('$name spells a pooled value the way its pool spells it', (preset) => {

@@ -65,7 +65,17 @@ function haystackFor(preset: PresetArchetype, collection: PresetCollectionId): s
   const output = Object.values(preset.output).filter((value): value is string => typeof value === 'string');
 
   return normalise(
-    [preset.name, preset.category, presetCollectionLabel(collection), ...subject, ...output].join(' '),
+    [
+      preset.name,
+      // The one field written for a reader rather than for the compiler, so it holds the words
+      // somebody would actually search by — "tiling", "cut-out", "handheld" — where the rest of the
+      // haystack holds identifiers. Empty on a preset that has none, which costs the join nothing.
+      preset.description,
+      preset.category,
+      presetCollectionLabel(collection),
+      ...subject,
+      ...output,
+    ].join(' '),
   );
 }
 

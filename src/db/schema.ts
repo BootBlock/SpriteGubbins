@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS ${PROMPT_HISTORY_TABLE} (
 CREATE TABLE IF NOT EXISTS ${CUSTOM_PRESETS_TABLE} (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  description TEXT NOT NULL,
   category TEXT NOT NULL,
   subject_json TEXT NOT NULL,
   output_json TEXT NOT NULL,
@@ -85,6 +86,55 @@ CREATE TABLE IF NOT EXISTS ${STUDIO_SESSION_TABLE} (
 CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
   ON ${PROMPT_HISTORY_TABLE} (created_at DESC);
 `;
+
+/**
+ * The columns each table above declares, as a set the worker can compare a *stored* table against.
+ *
+ * `CREATE TABLE IF NOT EXISTS` runs against a database that usually already exists, and it does
+ * nothing at all when the table is there — so adding a column to the DDL leaves every existing
+ * install with the old table, and the first `SELECT` naming the new column fails with
+ * "no such column" for as long as that database lives. Nothing about that is loud: the stores catch
+ * a failed read and raise a toast, so the symptom is a collection that is permanently empty and a
+ * save that is permanently refused.
+ *
+ * This is what makes the file's own rule — *an incompatible database is discarded rather than
+ * translated* — something the code actually does. The worker reads `PRAGMA table_info` for each
+ * table on boot, drops any whose columns are not exactly this set, and lets the DDL rebuild it. That
+ * is a discard and not a migration: there is no version column, no upgrade step and no translation
+ * of a stored row into a newer shape, and the data in a table that no longer matches is gone rather
+ * than repaired. Pre-1.0 that is the bargain, and it is the same one `db/configParsers.ts` makes.
+ *
+ * Written out rather than parsed back out of the DDL, because a regular expression over SQL is a
+ * second thing to get wrong. `schema.test.ts` extracts the columns from `CREATE_TABLES_SQL` and
+ * fails unless the two agree, so the drift this would otherwise invite is caught at build time.
+ */
+export const TABLE_COLUMNS = {
+  [PROMPT_HISTORY_TABLE]: [
+    'id',
+    'category',
+    'prompt_text',
+    'created_at',
+    'word_count',
+    'model_used',
+    'subject_json',
+    'output_json',
+  ],
+  [CUSTOM_PRESETS_TABLE]: [
+    'id',
+    'name',
+    'description',
+    'category',
+    'subject_json',
+    'output_json',
+    'updated_at',
+  ],
+  [APP_SETTINGS_TABLE]: ['id', 'settings_json'],
+  [STUDIO_SESSION_TABLE]: ['id', 'category', 'subject_json', 'output_json'],
+} as const satisfies Record<string, readonly string[]>;
+
+/** What the stored table's columns are read with, and what a mismatched one is dropped by. */
+export const TABLE_INFO_SQL = (table: string) => `PRAGMA table_info(${table})`;
+export const DROP_TABLE_SQL = (table: string) => `DROP TABLE IF EXISTS ${table}`;
 
 /**
  * Where the localStorage fallback keeps its two collections.
@@ -119,15 +169,15 @@ export const DELETE_HISTORY_SQL = `DELETE FROM ${PROMPT_HISTORY_TABLE} WHERE id 
 export const DELETE_ALL_HISTORY_SQL = `DELETE FROM ${PROMPT_HISTORY_TABLE}`;
 
 export const SELECT_PRESETS_SQL = `
-SELECT id, name, category, subject_json, output_json, updated_at
+SELECT id, name, description, category, subject_json, output_json, updated_at
 FROM ${CUSTOM_PRESETS_TABLE}
 ORDER BY updated_at DESC
 `;
 
 export const INSERT_PRESET_SQL = `
 INSERT OR REPLACE INTO ${CUSTOM_PRESETS_TABLE}
-  (id, name, category, subject_json, output_json, updated_at)
-VALUES (?, ?, ?, ?, ?, ?)
+  (id, name, description, category, subject_json, output_json, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?)
 `;
 
 export const DELETE_PRESET_SQL = `DELETE FROM ${CUSTOM_PRESETS_TABLE} WHERE id = ?`;

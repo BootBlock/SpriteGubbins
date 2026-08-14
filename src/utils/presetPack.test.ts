@@ -8,6 +8,7 @@ function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype
   return {
     id: 'custom-1',
     name: 'My Knight',
+    description: 'A knight of my own.',
     category: 'CHARACTER',
     subject: defaultSubjectFor('CHARACTER'),
     output: DEFAULT_PRESET.output,
@@ -58,5 +59,18 @@ describe('the two halves agree about the built-ins', () => {
 
     expect(reimported?.map((preset) => preset.name)).toEqual(['A', 'B']);
     expect(reimported?.every((preset) => preset.isCustom)).toBe(true);
+    // The description travels with the preset. It is the one field a reader wrote themselves, so
+    // losing it in transit would cost more than any of the identifiers around it.
+    expect(reimported?.map((preset) => preset.description)).toEqual([
+      'A knight of my own.',
+      'A knight of my own.',
+    ]);
+  });
+
+  it('imports a hand-written entry that names no description', () => {
+    // Optional in the app, so optional in a pack somebody edited by hand — the entry arrives with an
+    // empty description rather than being dropped for a field it never had to carry.
+    const text = JSON.stringify([{ id: 'custom-c', name: 'C', category: 'CHARACTER' }]);
+    expect(parsePresetPack(text)?.map((preset) => preset.description)).toEqual(['']);
   });
 });

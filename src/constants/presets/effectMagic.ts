@@ -25,6 +25,8 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'arcane-portal-loop',
     name: 'Painted Arcane Portal Loop',
+    description:
+      'A painted portal that has to loop: its last frame reads back into its first without a seam, which is a property of the whole sequence rather than of any frame in it.',
     category: 'EFFECT',
     subject: {
       species: 'Portal / Rift Opening',
@@ -65,6 +67,8 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'frost-nova-cast',
     name: 'Three-Quarter Frost Nova',
+    description:
+      'A rendered nova that telegraphs, lands and leaves residue, at 256 × 256 px per frame under the studio’s default camera — which it has to agree with, or it will not sit flat on the floor.',
     category: 'EFFECT',
     subject: {
       species: 'Spell Cast / Channel',
@@ -110,6 +114,8 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'vector-status-aura',
     name: 'Vector Status Aura Loop',
+    description:
+      'A looping status marker in flat vector shapes at 32 colours. It sits under an actor’s feet for as long as the status lasts, so nothing the engine draws over it is baked in.',
     category: 'EFFECT',
     subject: {
       species: 'Aura / Status Field',
@@ -152,6 +158,8 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'ink-void-projectile-trail',
     name: 'Hand-Drawn Void Projectile Trail',
+    description:
+      'A projectile body with its own trail behind it, inked over three facings under a 2:1 dimetric camera. The travelling shape of an effect, rather than a burst or a loop.',
     category: 'EFFECT',
     subject: {
       species: 'Projectile Body & Trail',

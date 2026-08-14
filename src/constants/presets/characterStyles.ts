@@ -17,6 +17,8 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'retro-village-hero',
     name: '16-Bit Village Hero',
+    description:
+      'The whole retro contract in one place: a coarse pixel grid, 32 colours, no interior detail and a hard black outline. Change the subject and the look survives.',
     category: 'CHARACTER',
     subject: {
       species: 'Human',
@@ -53,6 +55,8 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'painted-storybook-ranger',
     name: 'Painted Storybook Ranger',
+    description:
+      'Painted rather than pixelled, so there is no colour budget to keep and no outline to draw. A portrait canvas and top-left lighting, aimed at Midjourney.',
     category: 'CHARACTER',
     subject: {
       species: 'High Elf',
@@ -88,6 +92,8 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'cel-shaded-duellist',
     name: 'Cel-Shaded Arena Duellist',
+    description:
+      'Flat cel shading under a hard black contour, with everything else left at the studio’s defaults. The clearest look at what the cel-shaded style changes and what it leaves alone.',
     category: 'CHARACTER',
     subject: {
       species: 'Human',
@@ -118,6 +124,8 @@ export const CHARACTER_STYLE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'inked-plague-doctor',
     name: 'Inked Woodcut Plague Doctor',
+    description:
+      'A woodcut-style pose library on white, one facing only, with the hatching turned up and the palette held to 32 colours. An illustrated sheet rather than a turnaround.',
     category: 'CHARACTER',
     subject: {
       species: 'Human',

@@ -30,6 +30,8 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'cutout-rig-command-walker',
     name: 'Cut-Out Rig Command Walker',
+    description:
+      'A legged mech rigged from the side elevation, where a hip, a knee and an ankle are all unambiguous. Tapered caps and a full overlap, because armour over a joint opens a gap at full stride.',
     category: 'VEHICLE',
     subject: {
       species: 'Walker / Mech',
@@ -82,6 +84,8 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'topdown-shmup-interceptor',
     name: 'Top-Down Shmup Interceptor',
+    description:
+      'A vertical shoot-’em-up ship that never turns: flat vector shapes seen straight down on a tall canvas, with the whole yaw budget spent on states instead of facings.',
     category: 'VEHICLE',
     subject: {
       species: 'Starship / Shuttle',
@@ -130,6 +134,8 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'inked-sky-galleon',
     name: 'Ink-Washed Sky-Galleon',
+    description:
+      'A wooden sailing hull in ink and wash, textured and turned through the five-view core. Five of its sixteen subject fields are free text, because this pool is written for hard-surface machines.',
     category: 'VEHICLE',
     subject: {
       // A sailing hull is filed under the watercraft class because that is what it is; the era is
@@ -179,6 +185,8 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'side-on-rail-gun-car',
     name: 'Side-On Rail Gun Car',
+    description:
+      'The 16-bit contract on a rail vehicle: a coarse grid, 32 colours and no interior detail, in the flat side elevation a car on a fixed line is only ever seen from.',
     category: 'VEHICLE',
     subject: {
       species: 'Rail Car / Mine Cart',

@@ -15,6 +15,8 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'void-abomination',
     name: 'Void Abomination',
+    description:
+      'A tentacled, translucent horror keyed against black instead of magenta, because everything readable on it glows. Copy it when your subject emits its own light.',
     category: 'CREATURE',
     subject: {
       species: 'Void Abomination',
@@ -52,6 +54,8 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'fungal-spore-host',
     name: 'Fungal Spore Host',
+    description:
+      'A segmented fungal growth with the surface detail turned up and the palette expanded to pay for it. Texture is the subject here, and clean panels would read as painted plastic.',
     category: 'CREATURE',
     subject: {
       species: 'Fungal Spore Monster',
@@ -85,6 +89,8 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'clockwork-sentry-hound',
     name: 'Clockwork Sentry Hound',
+    description:
+      'A faceted low-poly quadruped under a 2:1 dimetric camera, delivered on transparency — a 3D render hands back its own alpha, so there is nothing to key out.',
     category: 'CREATURE',
     subject: {
       species: 'Mechanical Automaton',
@@ -125,6 +131,8 @@ export const CREATURE_HORROR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'ooze-hydra-brood',
     name: 'Ooze Hydra Brood',
+    description:
+      'A jelly-bodied hydra rigged with no joint overlap at all. It is the one material where butted joints work, since a translucent body has no hard edge for a gap to appear at.',
     category: 'CREATURE',
     subject: {
       species: 'Hydra Multi-Head',

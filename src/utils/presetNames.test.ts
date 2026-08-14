@@ -8,6 +8,7 @@ function preset(id: string, name: string): PresetArchetype {
   return {
     id,
     name,
+    description: '',
     category: 'CHARACTER',
     subject: defaultSubjectFor('CHARACTER'),
     output: DEFAULT_PRESET.output,

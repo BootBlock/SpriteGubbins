@@ -15,6 +15,8 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'dimetric-loot-chest',
     name: 'Dimetric Loot Chest',
+    description:
+      'A container under a 2:1 dimetric camera at 32 × 32 px cells, as four sheets one per cardinal facing: a chest against a wall has to open towards the room whichever way the room runs.',
     category: 'OBJECT',
     subject: {
       species: 'Loot Chest / Container',
@@ -54,6 +56,8 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'lowpoly-camp-station',
     name: 'Low-Poly Camp Station',
+    description:
+      'Faceted low-poly geometry with the palette off and the detail down, on transparency. A prop is read by its facets here, and drawn seams would only compete with them.',
     category: 'OBJECT',
     subject: {
       species: 'Healing Station',
@@ -93,6 +97,8 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'hazard-conveyor',
     name: 'Industrial Hazard Conveyor',
+    description:
+      'A machine under the 45° cabinet projection, which keeps its control face undistorted while still showing depth. Four cardinal facings, on an ultrawide canvas.',
     category: 'OBJECT',
     subject: {
       species: 'Power Generator',
@@ -136,6 +142,8 @@ export const OBJECT_WORLD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'cel-shaded-shrine',
     name: 'Cel-Shaded Forest Shrine',
+    description:
+      'A stone shrine in flat cel shading under a hard black contour, turned through the directional core. The set-dressing counterpart to the cel-shaded humanoid.',
     category: 'OBJECT',
     subject: {
       species: 'Ancient Relic Shrine',

@@ -23,6 +23,8 @@ import type { PresetArchetype } from '../../types/preset.ts';
 const CYBERPUNK_KATANA: PresetArchetype = {
   id: 'cyberpunk-katana',
   name: 'Cyberpunk Katana Specialist',
+  description:
+    'The studio’s opening state, with all sixteen subject fields answered. Modern pixel art at the default three-quarter camera and a five-view directional core — a worked example of a filled-in studio.',
   category: 'CHARACTER',
   subject: {
     species: 'Cybernetic Cyborg',
@@ -63,6 +65,8 @@ export const CHARACTER_CORE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'scifi-marine',
     name: 'Sci-Fi Void Marine',
+    description:
+      'A heavily plated humanoid held to 32 colours, with a hard black outline and top-left key lighting. Reach for it when you want a chunky, high-contrast figure rather than a clean production one.',
     category: 'CHARACTER',
     subject: {
       species: 'Human',
@@ -97,6 +101,8 @@ export const CHARACTER_CORE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'dungeon-knight',
     name: 'Pixel Dungeon Knight',
+    description:
+      'A plate-armoured paladin at 16-bit resolution on a 32-colour budget, laid out square. The nearest thing in the library to a classic dungeon-crawler sprite.',
     category: 'CHARACTER',
     subject: {
       species: 'Human',

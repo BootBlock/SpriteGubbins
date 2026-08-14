@@ -39,6 +39,7 @@ function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype
   return {
     id: 'custom-imported-1',
     name: 'Imported Knight',
+    description: '',
     category: 'CHARACTER',
     subject: defaultSubjectFor('CHARACTER'),
     output: DEFAULT_PRESET.output,
@@ -114,7 +115,7 @@ describe('loadPreset', () => {
 describe('saveCustomPreset', () => {
   it('persists the studio state under the given name', async () => {
     useSubjectStore.getState().setField('role', 'Lamplighter');
-    await usePresetStore.getState().saveCustomPreset('  My Archetype  ');
+    await usePresetStore.getState().saveCustomPreset('  My Archetype  ', '');
 
     const [saved] = usePresetStore.getState().customPresets;
     expect(saved?.name).toBe('My Archetype');
@@ -132,22 +133,47 @@ describe('saveCustomPreset', () => {
       output: { ...DEFAULT_OUTPUT_CONFIG, emitManifest: true, emitPromptFeedback: true },
     });
 
-    await usePresetStore.getState().saveCustomPreset('My Archetype');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', '');
 
     const [saved] = await backend.listPresets();
     expect(Object.keys(saved?.output ?? {})).not.toContain('emitManifest');
     expect(Object.keys(saved?.output ?? {})).not.toContain('emitPromptFeedback');
   });
 
+  it('stores the description beside the name, trimmed', async () => {
+    await usePresetStore.getState().saveCustomPreset('Described', '  A knight for the town scenes  ');
+
+    const [saved] = await backend.listPresets();
+    expect(saved?.description).toBe('A knight for the town scenes');
+  });
+
+  it('lets a preset be saved with no description at all', async () => {
+    // Optional means optional: the card names the subject and setting instead, and the pack format
+    // carries the empty string rather than dropping the field.
+    await usePresetStore.getState().saveCustomPreset('Bare', '   ');
+
+    const [saved] = await backend.listPresets();
+    expect(saved?.description).toBe('');
+  });
+
+  it('writes the description it was given when it updates an existing preset', async () => {
+    await usePresetStore.getState().saveCustomPreset('My Archetype', 'First wording');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', 'Second wording');
+
+    const stored = await backend.listPresets();
+    expect(stored).toHaveLength(1);
+    expect(stored[0]?.description).toBe('Second wording');
+  });
+
   it('ignores a blank name without touching storage', async () => {
-    await usePresetStore.getState().saveCustomPreset('   ');
+    await usePresetStore.getState().saveCustomPreset('   ', '');
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     await expect(backend.listPresets()).resolves.toHaveLength(0);
   });
 
   it('reports a failed write instead of showing a preset that was never saved', async () => {
     backend = createFailingBackend();
-    await usePresetStore.getState().saveCustomPreset('Doomed');
+    await usePresetStore.getState().saveCustomPreset('Doomed', '');
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not save that preset');
@@ -161,12 +187,12 @@ describe('saveCustomPreset', () => {
    */
   it('updates the preset of that name rather than adding a second one', async () => {
     useSubjectStore.getState().setField('role', 'Lamplighter');
-    await usePresetStore.getState().saveCustomPreset('My Archetype');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', '');
     const [first] = usePresetStore.getState().customPresets;
     if (!first) throw new Error('the preset should have been saved.');
 
     useSubjectStore.getState().setField('role', 'Bellfounder');
-    await usePresetStore.getState().saveCustomPreset('My Archetype');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', '');
 
     const { customPresets } = usePresetStore.getState();
     expect(customPresets).toHaveLength(1);
@@ -179,16 +205,16 @@ describe('saveCustomPreset', () => {
   });
 
   it('says it saved when the name is new, and updated when it is not', async () => {
-    await usePresetStore.getState().saveCustomPreset('Fresh');
+    await usePresetStore.getState().saveCustomPreset('Fresh', '');
     expect(useUIStore.getState().toastMessage).toBe('Saved custom preset "Fresh"');
 
-    await usePresetStore.getState().saveCustomPreset('Fresh');
+    await usePresetStore.getState().saveCustomPreset('Fresh', '');
     expect(useUIStore.getState().toastMessage).toBe('Updated custom preset "Fresh"');
   });
 
   it('treats a differently-cased name as the same one, and adopts the new spelling', async () => {
-    await usePresetStore.getState().saveCustomPreset('my knight');
-    await usePresetStore.getState().saveCustomPreset('My Knight');
+    await usePresetStore.getState().saveCustomPreset('my knight', '');
+    await usePresetStore.getState().saveCustomPreset('My Knight', '');
 
     const { customPresets } = usePresetStore.getState();
     expect(customPresets).toHaveLength(1);
@@ -196,8 +222,8 @@ describe('saveCustomPreset', () => {
   });
 
   it('still creates a new preset under a name nothing holds', async () => {
-    await usePresetStore.getState().saveCustomPreset('First');
-    await usePresetStore.getState().saveCustomPreset('Second');
+    await usePresetStore.getState().saveCustomPreset('First', '');
+    await usePresetStore.getState().saveCustomPreset('Second', '');
 
     expect(
       usePresetStore
@@ -211,7 +237,7 @@ describe('saveCustomPreset', () => {
     const builtIn = PRESETS[0];
     if (!builtIn) throw new Error('PRESETS must not be empty.');
 
-    await usePresetStore.getState().saveCustomPreset(builtIn.name);
+    await usePresetStore.getState().saveCustomPreset(builtIn.name, '');
 
     // A custom preset of that name is created; the built-in constant is untouched. The library
     // tells them apart by its Built-in / Your preset badge, which is why this is not the duplicate
@@ -223,30 +249,54 @@ describe('saveCustomPreset', () => {
   });
 });
 
-describe('renameCustomPreset', () => {
+describe('updateCustomPresetDetails', () => {
   it('renames in the store and in storage, keeping the configuration', async () => {
     useSubjectStore.getState().setField('role', 'Lamplighter');
-    await usePresetStore.getState().saveCustomPreset('Before');
+    await usePresetStore.getState().saveCustomPreset('Before', 'Was this');
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
-    await expect(usePresetStore.getState().renameCustomPreset(saved.id, '  After  ')).resolves.toBe(true);
+    await expect(
+      usePresetStore.getState().updateCustomPresetDetails(saved.id, '  After  ', '  Is this now  '),
+    ).resolves.toBe(true);
 
     const stored = await backend.listPresets();
     expect(stored.map((preset) => preset.name)).toEqual(['After']);
-    // Renaming must not blank what the preset holds — `savePreset` replaces the whole row.
+    // Editing the two must not blank what the preset holds — `savePreset` replaces the whole row.
+    expect(stored[0]?.description).toBe('Is this now');
     expect(stored[0]?.subject.role).toBe('Lamplighter');
     expect(stored[0]?.id).toBe(saved.id);
-    expect(useUIStore.getState().toastMessage).toBe('Renamed to "After"');
+    expect(useUIStore.getState().toastMessage).toBe('Updated "After"');
+  });
+
+  it('changes the description alone, which nothing else in the app can do', async () => {
+    // Saving over a preset by name writes the studio as it stands, so it is no use to somebody who
+    // wants to fix a sentence and change nothing else. This is the path that exists for that.
+    useSubjectStore.getState().setField('role', 'Lamplighter');
+    await usePresetStore.getState().saveCustomPreset('Kept', 'First wording');
+    const [saved] = usePresetStore.getState().customPresets;
+    if (!saved) throw new Error('the preset should have been saved.');
+    useSubjectStore.getState().setField('role', 'Bellfounder');
+
+    await expect(
+      usePresetStore.getState().updateCustomPresetDetails(saved.id, 'Kept', 'Second wording'),
+    ).resolves.toBe(true);
+
+    const stored = await backend.listPresets();
+    expect(stored[0]?.description).toBe('Second wording');
+    // The studio moved on underneath, and the preset did not follow it.
+    expect(stored[0]?.subject.role).toBe('Lamplighter');
   });
 
   it('refuses a name another preset already holds, and changes nothing', async () => {
-    await usePresetStore.getState().saveCustomPreset('Taken');
-    await usePresetStore.getState().saveCustomPreset('Mine');
+    await usePresetStore.getState().saveCustomPreset('Taken', '');
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
     const mine = usePresetStore.getState().customPresets.find((preset) => preset.name === 'Mine');
     if (!mine) throw new Error('the preset should have been saved.');
 
-    await expect(usePresetStore.getState().renameCustomPreset(mine.id, 'Taken')).resolves.toBe(false);
+    await expect(usePresetStore.getState().updateCustomPresetDetails(mine.id, 'Taken', '')).resolves.toBe(
+      false,
+    );
 
     expect(
       usePresetStore
@@ -258,49 +308,59 @@ describe('renameCustomPreset', () => {
   });
 
   it('refuses a collision that differs only in case', async () => {
-    await usePresetStore.getState().saveCustomPreset('Taken');
-    await usePresetStore.getState().saveCustomPreset('Mine');
+    await usePresetStore.getState().saveCustomPreset('Taken', '');
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
     const mine = usePresetStore.getState().customPresets.find((preset) => preset.name === 'Mine');
     if (!mine) throw new Error('the preset should have been saved.');
 
-    await expect(usePresetStore.getState().renameCustomPreset(mine.id, 'TAKEN')).resolves.toBe(false);
+    await expect(usePresetStore.getState().updateCustomPresetDetails(mine.id, 'TAKEN', '')).resolves.toBe(
+      false,
+    );
     expect(usePresetStore.getState().customPresets).toHaveLength(2);
   });
 
   it('lets a preset be recapitalised, because it is not a collision with itself', async () => {
-    await usePresetStore.getState().saveCustomPreset('my knight');
+    await usePresetStore.getState().saveCustomPreset('my knight', '');
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
-    await expect(usePresetStore.getState().renameCustomPreset(saved.id, 'My Knight')).resolves.toBe(true);
+    await expect(
+      usePresetStore.getState().updateCustomPresetDetails(saved.id, 'My Knight', ''),
+    ).resolves.toBe(true);
     expect(usePresetStore.getState().customPresets[0]?.name).toBe('My Knight');
   });
 
   it('refuses a blank name without touching storage', async () => {
-    await usePresetStore.getState().saveCustomPreset('Kept');
+    await usePresetStore.getState().saveCustomPreset('Kept', '');
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
-    await expect(usePresetStore.getState().renameCustomPreset(saved.id, '   ')).resolves.toBe(false);
+    await expect(usePresetStore.getState().updateCustomPresetDetails(saved.id, '   ', '')).resolves.toBe(
+      false,
+    );
     await expect(backend.listPresets()).resolves.toHaveLength(1);
     expect(usePresetStore.getState().customPresets[0]?.name).toBe('Kept');
   });
 
   it('refuses an id nothing holds rather than inventing a preset', async () => {
-    await expect(usePresetStore.getState().renameCustomPreset('never-existed', 'X')).resolves.toBe(false);
+    await expect(usePresetStore.getState().updateCustomPresetDetails('never-existed', 'X', '')).resolves.toBe(
+      false,
+    );
     await expect(backend.listPresets()).resolves.toHaveLength(0);
   });
 
   it('reports a failed write and keeps showing the old name', async () => {
-    await usePresetStore.getState().saveCustomPreset('Before');
+    await usePresetStore.getState().saveCustomPreset('Before', '');
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
     backend = createFailingBackend();
-    await expect(usePresetStore.getState().renameCustomPreset(saved.id, 'After')).resolves.toBe(false);
+    await expect(usePresetStore.getState().updateCustomPresetDetails(saved.id, 'After', '')).resolves.toBe(
+      false,
+    );
 
     expect(usePresetStore.getState().customPresets[0]?.name).toBe('Before');
-    expect(useUIStore.getState().toastMessage).toBe('Could not rename that preset');
+    expect(useUIStore.getState().toastMessage).toBe('Could not update that preset');
   });
 });
 
@@ -317,7 +377,7 @@ describe('on a fallback whose storage refuses writes', () => {
   });
 
   it('reports a preset it could not save', async () => {
-    await expect(usePresetStore.getState().saveCustomPreset('Doomed')).resolves.toBe(false);
+    await expect(usePresetStore.getState().saveCustomPreset('Doomed', '')).resolves.toBe(false);
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not save that preset');
@@ -343,7 +403,7 @@ describe('on a fallback whose storage refuses writes', () => {
 
 describe('deleteCustomPreset', () => {
   it('removes it from the store and from storage', async () => {
-    await usePresetStore.getState().saveCustomPreset('Temporary');
+    await usePresetStore.getState().saveCustomPreset('Temporary', '');
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
@@ -356,7 +416,7 @@ describe('deleteCustomPreset', () => {
 
 describe('exportPresetsJSON', () => {
   it('includes the built-ins alongside the custom presets', async () => {
-    await usePresetStore.getState().saveCustomPreset('Mine');
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
 
     const parsed: unknown = JSON.parse(usePresetStore.getState().exportPresetsJSON());
     expect(Array.isArray(parsed)).toBe(true);
@@ -366,7 +426,7 @@ describe('exportPresetsJSON', () => {
 
 describe('importPresetsJSON', () => {
   it('replaces the stored collection with the pack contents', async () => {
-    await usePresetStore.getState().saveCustomPreset('Will be replaced');
+    await usePresetStore.getState().saveCustomPreset('Will be replaced', '');
     await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
 
     const { customPresets, isExporting } = usePresetStore.getState();
@@ -376,7 +436,7 @@ describe('importPresetsJSON', () => {
   });
 
   it('skips built-ins, so re-importing an export does not duplicate them', async () => {
-    await usePresetStore.getState().saveCustomPreset('Mine');
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
     const exported: unknown = JSON.parse(usePresetStore.getState().exportPresetsJSON());
     if (!Array.isArray(exported)) throw new Error('the export should be an array.');
 
@@ -388,7 +448,7 @@ describe('importPresetsJSON', () => {
   });
 
   it('refuses a pack with no custom presets rather than deleting everything', async () => {
-    await usePresetStore.getState().saveCustomPreset('Keep me');
+    await usePresetStore.getState().saveCustomPreset('Keep me', '');
     await usePresetStore.getState().importPresetsJSON(packFile(PRESETS));
 
     expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Keep me']);

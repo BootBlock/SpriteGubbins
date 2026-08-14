@@ -16,6 +16,8 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'legendary-greatsword',
     name: 'Legendary Greatsword',
+    description:
+      'An inventory icon at 64 × 64 px cells, turned through the directional core with top-left lighting. It excludes the hand, the stand and the glow trail, each of which would break the cell.',
     category: 'ITEM',
     subject: {
       species: 'Melee Weapon (Sword/Axe)',
@@ -49,6 +51,8 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'rendered-plasma-rifle',
     name: 'Rendered Plasma Rifle',
+    description:
+      'A rendered 3D gun in flat side elevation on transparency, in a wide cell rather than a square one — a rifle drawn side-on leaves most of a square cell empty.',
     category: 'ITEM',
     subject: {
       species: 'Ranged Weapon (Rifle/Bow)',
@@ -93,6 +97,8 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'cursed-prototype-waraxe',
     name: 'Cursed Prototype Waraxe',
+    description:
+      'An inked, hatched weapon on white at one facing, held to 32 colours. The item counterpart to the woodcut humanoid, and the same argument for a single pose.',
     category: 'ITEM',
     subject: {
       species: 'Melee Weapon (Sword/Axe)',
@@ -132,6 +138,8 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'retro-hunters-bow',
     name: '16-Bit Hunter’s Bow',
+    description:
+      'A 16-bit icon at 32 × 32 px cells with no interior detail and a hard black outline, turned through the directional core. What a weapon looks like at the smallest scale here.',
     category: 'ITEM',
     subject: {
       species: 'Ranged Weapon (Rifle/Bow)',

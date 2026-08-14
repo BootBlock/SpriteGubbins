@@ -39,20 +39,27 @@ export interface PresetState {
    */
   loadPreset(preset: PresetArchetype): void;
   /**
-   * Save the studio's current configuration under `name`; a blank name is ignored. Returns whether
-   * it was stored, so the caller can keep the name in the box to retry rather than clearing a field
-   * whose contents were never persisted.
+   * Save the studio's current configuration under `name`, with `description` as the sentence its
+   * card carries; a blank name is ignored, and a blank description is a preset that simply has none.
+   * Returns whether it was stored, so the caller can keep the name in the box to retry rather than
+   * clearing a field whose contents were never persisted.
    *
    * A name already in the library **updates** that preset rather than adding a second one under the
    * same name. Minting an id unconditionally is what made "load a preset, adjust a field, save it
    * again" produce two cards the user could tell apart only by which sorted newer.
    */
-  saveCustomPreset(name: string): Promise<boolean>;
+  saveCustomPreset(name: string, description: string): Promise<boolean>;
   /**
-   * Rename one custom preset. Returns whether it was stored, so the caller can keep its editor open
-   * on a refusal instead of closing over a change that did not happen.
+   * Change one custom preset's name and description, leaving the configuration behind them alone.
+   * Returns whether it was stored, so the caller can keep its editor open on a refusal instead of
+   * closing over a change that did not happen.
+   *
+   * Both at once rather than one action each, because they are one edit: they are shown in one form
+   * and a reader correcting a name is usually correcting the sentence under it in the same breath.
+   * It is also the *only* way to reach a description without touching the configuration — saving
+   * over a preset by name writes the studio as it stands, which is a different intention entirely.
    */
-  renameCustomPreset(id: string, name: string): Promise<boolean>;
+  updateCustomPresetDetails(id: string, name: string, description: string): Promise<boolean>;
   deleteCustomPreset(id: string): Promise<void>;
   /**
    * The preset pack as JSON, built-ins included, for the caller to offer as a download. Returns the
@@ -85,7 +92,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     ui.showToast(`Loaded preset: ${preset.name}`);
   },
 
-  saveCustomPreset: async (name) => {
+  saveCustomPreset: async (name, description) => {
     const trimmed = name.trim();
     if (!trimmed) return false;
 
@@ -97,6 +104,10 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       id: existing?.id ?? `custom-${crypto.randomUUID()}`,
       // The typed name wins, so re-saving "my knight" as "My Knight" fixes the capitalisation.
       name: trimmed,
+      // What the box holds, whatever the preset being updated held before. The panel shows that
+      // preset's own description the moment the name matches, so an update is editing the sentence
+      // in front of you rather than replacing one out of sight.
+      description: description.trim(),
       category,
       subject,
       // Stripped rather than stored and ignored on load: a saved preset is also an exported preset,
@@ -123,7 +134,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     }
   },
 
-  renameCustomPreset: async (id, name) => {
+  updateCustomPresetDetails: async (id, name, description) => {
     const trimmed = name.trim();
     if (!trimmed) return false;
 
@@ -141,14 +152,14 @@ export const usePresetStore = create<PresetState>((set, get) => ({
 
     try {
       const database = await getDatabase();
-      // Saved whole, not patched: `savePreset` replaces the row, so sending only the name would
-      // blank the configuration the preset exists to hold.
-      await database.savePreset({ ...preset, name: trimmed });
+      // Saved whole, not patched: `savePreset` replaces the row, so sending only the two edited
+      // fields would blank the configuration the preset exists to hold.
+      await database.savePreset({ ...preset, name: trimmed, description: description.trim() });
       set({ customPresets: await database.listPresets() });
-      useUIStore.getState().showToast(`Renamed to "${trimmed}"`);
+      useUIStore.getState().showToast(`Updated "${trimmed}"`);
       return true;
     } catch {
-      useUIStore.getState().showToast('Could not rename that preset');
+      useUIStore.getState().showToast('Could not update that preset');
       return false;
     }
   },

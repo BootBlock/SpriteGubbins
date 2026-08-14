@@ -15,6 +15,8 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'creature-drone',
     name: 'Cybernetic Attack Drone',
+    description:
+      'A four-winged machine on the single-facing pose library rather than the directional core: the wings are counted into the sheet, and the core has no headroom left to pay for them.',
     category: 'CREATURE',
     subject: {
       species: 'Mechanical Automaton',
@@ -53,6 +55,8 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'dire-wolf-alpha',
     name: 'Dire Wolf Alpha',
+    description:
+      'A quadruped on the directional core with no extra anatomy at all, which is what lets it take the full core — a winged or tailed creature has to give a facing back to pay for the appendages.',
     category: 'CREATURE',
     subject: {
       species: 'Beast / Quadruped',
@@ -84,6 +88,8 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'topdown-swarm-beetle',
     name: 'Top-Down Swarm Beetle',
+    description:
+      'An armoured insectoid seen straight down, as four sheets one per cardinal facing. The twin-stick and roguelike camera, where the top of a carapace is the whole design.',
     category: 'CREATURE',
     subject: {
       species: 'Chitinous Insectoid',
@@ -123,6 +129,8 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'magma-drake-rig',
     name: 'Magma Drake Elder',
+    description:
+      'A winged, tailed drake as a cut-out rig run eight ways. A rig sheet is a handful of pieces rather than a whole directional series, which is what makes the extra anatomy affordable.',
     category: 'CREATURE',
     subject: {
       species: 'Draconic Drake',

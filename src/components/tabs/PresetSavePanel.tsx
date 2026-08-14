@@ -18,14 +18,27 @@ export function PresetSavePanel() {
   const saveCustomPreset = usePresetStore((state) => state.saveCustomPreset);
 
   const [presetName, setPresetName] = useState('');
+  /**
+   * The description as typed, or `null` while the box is still following the preset it would update.
+   *
+   * Two states rather than one string, because a blank box means two different things. Saving writes
+   * exactly what is here, so a box that stayed empty while the name grew into one the library
+   * already holds would silently wipe that preset's sentence on the next Update. Following the
+   * target instead puts its own description in front of the user to edit or clear deliberately —
+   * and the moment they type, `null` gives way and their text is theirs, whatever the name does
+   * afterwards.
+   */
+  const [descriptionDraft, setDescriptionDraft] = useState<string | null>(null);
   // The store's save is asynchronous and its button is otherwise disabled only on a blank name, so
   // without this a double-press writes the same configuration twice.
   const [isSaving, setIsSaving] = useState(false);
   const nameId = useId();
+  const descriptionId = useId();
 
   // Derived during render, by the rule the store saves by, so the button cannot promise one thing
   // and the store do another. Saying "Update" before the press is what makes a confirm unnecessary.
   const overwrites = findPresetByName(customPresets, presetName);
+  const description = descriptionDraft ?? overwrites?.description ?? '';
 
   return (
     <section className="glass-panel flex flex-wrap items-end justify-between gap-4 rounded-2xl border border-foundry-700 p-6 shadow-xl">
@@ -65,6 +78,26 @@ export function PresetSavePanel() {
           />
         </div>
 
+        <div>
+          {/* The ⓘ again, for the same reason as the name box beside it. */}
+          <div className="mb-1 flex items-center gap-1.5">
+            <label htmlFor={descriptionId} className="text-xs font-semibold text-ink-faint">
+              Describe it (optional)
+            </label>
+            <Tooltip text={PRESET_ACTION_TOOLTIPS.savePresetDescription} hint="Describe it (optional)" />
+          </div>
+          <input
+            id={descriptionId}
+            type="text"
+            value={description}
+            placeholder="What it is for"
+            onChange={(event) => {
+              setDescriptionDraft(event.target.value);
+            }}
+            className="w-64 max-w-full rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
+          />
+        </div>
+
         <ControlTooltip hint={overwrites ? 'Update' : 'Save'} text={PRESET_ACTION_TOOLTIPS.savePreset}>
           <button
             type="button"
@@ -74,8 +107,12 @@ export function PresetSavePanel() {
               try {
                 // Cleared only when it was actually stored. The store reports a failed write with a
                 // toast and resolves normally, so emptying the box unconditionally would make the
-                // user retype the name to retry.
-                if (await saveCustomPreset(presetName)) setPresetName('');
+                // user retype the name to retry. The description goes back to following the name
+                // rather than to an empty string, which is the same distinction it draws throughout.
+                if (await saveCustomPreset(presetName, description)) {
+                  setPresetName('');
+                  setDescriptionDraft(null);
+                }
               } finally {
                 setIsSaving(false);
               }

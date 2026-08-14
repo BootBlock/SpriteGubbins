@@ -57,7 +57,14 @@ function legacyRow(): Record<string, unknown> {
 function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype {
   const base = PRESETS[0];
   if (!base) throw new Error('PRESETS must not be empty.');
-  return { ...base, id: 'custom-1', name: 'My Preset', isCustom: true, ...overrides };
+  return {
+    ...base,
+    id: 'custom-1',
+    name: 'My Preset',
+    description: 'A preset of my own.',
+    isCustom: true,
+    ...overrides,
+  };
 }
 
 let storage: WebStorageLike;
@@ -170,6 +177,7 @@ describe('LocalStorageBackend — presets', () => {
 
     const [stored] = await backend.listPresets();
     expect(stored?.name).toBe('My Preset');
+    expect(stored?.description).toBe('A preset of my own.');
     expect(stored?.subject).toEqual(preset.subject);
     expect(stored?.output).toEqual(preset.output);
     expect(stored?.isCustom).toBe(true);
@@ -301,6 +309,9 @@ describe('LocalStorageBackend — hostile storage', () => {
     // Every other field is filled from the category defaults, so the preset still compiles.
     expect(preset?.subject.materials).not.toBe('');
     expect(preset?.output.targetModel).toBeDefined();
+    // A description is optional rather than repaired from anything, so its absence is the empty
+    // string — which is exactly what a preset saved with the box left blank stores.
+    expect(preset?.description).toBe('');
   });
 
   it('rejects a preset with no usable identity', async () => {

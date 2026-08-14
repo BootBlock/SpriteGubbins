@@ -25,6 +25,8 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'pixel-explosion-flipbook',
     name: 'Pixel Explosion Flipbook',
+    description:
+      'An explosion strip in flat front elevation, keyed on magenta. Pixel art dithers its alpha rather than feathering it, so the edge stays hard enough for the key to find.',
     category: 'EFFECT',
     subject: {
       species: 'Explosion / Detonation',
@@ -69,6 +71,8 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'topdown-muzzle-flash-run',
     name: 'Top-Down Muzzle Flash Run',
+    description:
+      'Eight frame sequences of a muzzle flash seen from overhead, one per compass facing, sharing one identity lock — a directional effect needs eight animations rather than eight frozen frames.',
     category: 'EFFECT',
     subject: {
       species: 'Muzzle Flash / Discharge',
@@ -114,6 +118,8 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'sideon-impact-spark',
     name: 'Side-On Impact Spark',
+    description:
+      'A cel-shaded hit spark in flat side elevation on transparency. Cel shapes have a hard contour by definition, so the alpha is exact and needs no key colour.',
     category: 'EFFECT',
     subject: {
       species: 'Impact Hit Spark',
@@ -154,6 +160,8 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'isometric-shockwave-burst',
     name: 'Isometric Shockwave Burst',
+    description:
+      'A painted ground telegraph drawn in the isometric projection it will be laid over, as four cardinal sheets. Under any other camera its ellipse is the wrong shape.',
     category: 'EFFECT',
     subject: {
       species: 'Explosion / Detonation',

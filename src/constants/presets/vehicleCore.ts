@@ -22,6 +22,8 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'topdown-battle-tank',
     name: 'Top-Down Battle Tank',
+    description:
+      'A tank rigged and run eight ways from directly overhead, where the turret is a disc on a rectangle and the traverse is all the player reads. Eight sheets sharing one identity lock, not one image.',
     category: 'VEHICLE',
     subject: {
       species: 'Tracked Armour / Tank',
@@ -65,6 +67,8 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'three-quarter-scout-buggy',
     name: 'Three-Quarter Scout Buggy',
+    description:
+      'A buggy turned through the three-view core at the studio’s default camera. Three facings rather than five, which is what keeps its spare wheel and fuel drums inside the component ceiling.',
     category: 'VEHICLE',
     subject: {
       species: 'Wheeled Ground Vehicle',
@@ -104,6 +108,8 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'side-on-attack-gunship',
     name: 'Side-On Attack Gunship',
+    description:
+      'A painted aircraft in flat side elevation on transparency — the one view where a rotor mast, a pylon and an undercarriage can each be swapped without redrawing the fuselage.',
     category: 'VEHICLE',
     subject: {
       species: 'Rotorcraft / Gunship',
@@ -146,6 +152,8 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'isometric-hover-hauler',
     name: 'Isometric Hover Hauler',
+    description:
+      'A low-poly hauler under a true-isometric camera, as four sheets one per cardinal facing. Its working mount is a crane rather than a gun, which is what the part library asks for.',
     category: 'VEHICLE',
     subject: {
       species: 'Hover / Repulsor Craft',

@@ -6,24 +6,24 @@ import type { PresetArchetype } from '../../types/preset.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetCardSpecs } from './PresetCardSpecs.tsx';
-import { PresetRenameForm } from './PresetRenameForm.tsx';
+import { PresetDetailsForm } from './PresetDetailsForm.tsx';
 
 interface PresetCardProps {
   readonly preset: PresetArchetype;
   /** Where in the library this card sits, which is what decides its stop on the wheel. */
   readonly index: number;
   readonly onLoad: (preset: PresetArchetype) => void;
-  /** Resolves to whether the new name was stored, so a refused one keeps the editor open. */
-  readonly onRename: (preset: PresetArchetype, name: string) => Promise<boolean>;
+  /** Resolves to whether the edit was stored, so a refused one keeps the editor open. */
+  readonly onUpdateDetails: (preset: PresetArchetype, name: string, description: string) => Promise<boolean>;
   readonly onDelete: (preset: PresetArchetype) => void;
 }
 
 /**
  * One archetype in the library.
  *
- * Only the user's own presets offer a rename and a delete: a built-in is a compile-time constant
+ * Only the user's own presets offer an edit and a delete: a built-in is a compile-time constant
  * that is never stored, while a custom one is work the user did that nothing else holds a copy of —
- * which is why the delete confirms first and the rename does not need to.
+ * which is why the delete confirms first and the edit does not need to.
  *
  * **Each card re-points `--color-tab` to its own stop on the wheel**, so the library reads as a
  * spectrum rather than a grid of one colour repeated. Nothing below had to change for that: the
@@ -32,16 +32,16 @@ interface PresetCardProps {
  * passing a colour down is what keeps a card's decoration out of its props — and it is why the
  * button needs no prop either: `action-tab` picks up the card's stop, not the presets view's.
  */
-export function PresetCard({ preset, index, onLoad, onRename, onDelete }: PresetCardProps) {
+export function PresetCard({ preset, index, onLoad, onUpdateDetails, onDelete }: PresetCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const renameButtonRef = useRef<HTMLButtonElement>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Focused *before* the state change, not after: the rename button never unmounts, so it can take
+  // Focused *before* the state change, not after: the edit button never unmounts, so it can take
   // focus now and still hold it once the editor goes. Otherwise focus would fall to the document.
-  const closeRename = () => {
-    renameButtonRef.current?.focus();
-    setIsRenaming(false);
+  const closeEditor = () => {
+    editButtonRef.current?.focus();
+    setIsEditing(false);
   };
 
   return (
@@ -68,15 +68,25 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
           <Badge>{preset.isCustom === true ? 'Your preset' : 'Built-in'}</Badge>
         </div>
 
-        {isRenaming ? (
-          <PresetRenameForm preset={preset} onRename={onRename} onClose={closeRename} />
+        {isEditing ? (
+          <PresetDetailsForm preset={preset} onUpdateDetails={onUpdateDetails} onClose={closeEditor} />
         ) : (
           <h3 className="text-base font-bold text-ink transition-colors duration-585 group-hover:text-tab">
             {preset.name}
           </h3>
         )}
-        <p className="line-clamp-2 text-xs text-ink-muted">
-          {preset.subject.species} — {preset.subject.setting}
+        {/*
+          The description where there is one, and the subject where there is not.
+
+          Not both: the line is the card's one sentence, and a preset that describes itself has
+          already said the useful half of "Human — Dark Fantasy". Every built-in carries a
+          description, so the fallback is reached only by a preset of the user's own saved with the
+          box left empty — and naming its species and setting is a better answer there than a gap.
+        */}
+        <p className="line-clamp-3 text-xs text-ink-muted">
+          {preset.description === ''
+            ? `${preset.subject.species} — ${preset.subject.setting}`
+            : preset.description}
         </p>
         <PresetCardSpecs category={preset.category} output={preset.output} />
       </div>
@@ -140,14 +150,14 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
 
           {preset.isCustom === true && (
             <>
-              <ControlTooltip hint="Rename" text={PRESET_ACTION_TOOLTIPS.renamePreset}>
+              <ControlTooltip hint="Edit details" text={PRESET_ACTION_TOOLTIPS.editPresetDetails}>
                 <button
-                  ref={renameButtonRef}
+                  ref={editButtonRef}
                   type="button"
                   onClick={() => {
-                    setIsRenaming(true);
+                    setIsEditing(true);
                   }}
-                  aria-label={`Rename preset ${preset.name}`}
+                  aria-label={`Edit details for preset ${preset.name}`}
                   className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 active:translate-y-0"
                 >
                   <span aria-hidden="true">✏️</span>
@@ -158,7 +168,7 @@ export function PresetCard({ preset, index, onLoad, onRename, onDelete }: Preset
                   type="button"
                   onClick={() => {
                     // The editor would otherwise sit above a confirm asking to delete what it edits.
-                    setIsRenaming(false);
+                    setIsEditing(false);
                     setIsConfirmingDelete(true);
                   }}
                   aria-label={`Delete preset ${preset.name}`}

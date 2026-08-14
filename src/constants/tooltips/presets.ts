@@ -9,6 +9,9 @@ export const PRESET_ACTION_TOOLTIPS = {
   savePresetName:
     'The name this configuration goes into the library under. Names are what the library is searched and sorted by, so something describing the subject and the treatment — “Knight, eight-way cut-out rig” — is worth more later than “test 3”. Reusing the name of a preset you already saved updates that one rather than adding a second, and the button beside this says which of the two it is about to do.',
 
+  savePresetDescription:
+    'A sentence saying what this configuration is for, shown on its card under the name and searched alongside it — “Eight-way overworld rig for the town scenes” tells you in a month what a name on its own will not. It is optional, and a preset saved without one shows its subject and setting instead. Naming a preset the library already holds fills this in with that preset’s own description, so updating it edits what is in front of you rather than quietly replacing it.',
+
   savePreset:
     'Stores the studio exactly as it stands — the category, every subject field and every output setting — in the library under the name beside this. It reads as Update instead when the name matches a preset you already saved, and then overwrites that one. Built-in presets are never touched. Saved presets live in this browser’s own storage, so exporting the library is what gets them onto another machine.',
 
@@ -19,7 +22,7 @@ export const PRESET_ACTION_TOOLTIPS = {
     'Reads a preset pack exported from this app and replaces your saved presets with the ones it holds — anything of yours not in the file is deleted, so export the library first if you have presets you want to keep. Built-in presets in the file are skipped, since the app already ships them, and nothing in the studio changes until you load one of the presets that arrives.',
 
   searchPresets:
-    'Narrows the library to presets matching what you type, across their names, subjects and the settings on each card, so “isometric” or “cut-out” finds them as readily as a name does. It filters every collection at once, and the number beside each collection in the list says how many of its presets match. Escape clears the box.',
+    'Narrows the library to presets matching what you type, across their names, descriptions, subjects and the settings on each card, so “isometric” or “cut-out” finds them as readily as a name does. It filters every collection at once, and the number beside each collection in the list says how many of its presets match. Escape clears the box.',
 
   clearSearch:
     'Empties the search box and puts the whole library back, returning to the collection you last chose from the list — a search that found its match somewhere else moves the view while it is running, and this is what takes you back. Escape in the box does the same thing.',
@@ -27,24 +30,28 @@ export const PRESET_ACTION_TOOLTIPS = {
   loadPreset:
     'Replaces the entire studio configuration with this preset’s — the category, every subject field and every output setting — and takes you to the Studio, where the prompt has been recompiled from it. Anything currently in the studio that has not been saved as a preset or copied is gone, so save it first if you want it back. A preset is a starting point rather than a finished answer: change whatever it got wrong for your subject afterwards.',
 
-  renamePreset:
-    'Renames this preset in place. Only its label changes — the configuration behind it is untouched, and nothing in the studio moves. A name another of your presets already uses is refused, because saving under a name that exists overwrites it, and two presets with one name would make which of them a mystery.',
+  editPresetDetails:
+    'Opens the name and the description of this preset for editing, in place of its title. Only those two change — the configuration behind them is untouched, and nothing in the studio moves, which makes this the way to correct a sentence without saving over the preset with whatever you currently have open. A name another of your presets already uses is refused, because saving under a name that exists overwrites it, and two presets with one name would make which of them a mystery.',
 
   deletePreset:
     'Deletes this preset, after asking once. It is one of yours rather than a built-in, so nothing else holds a copy: unless it is in a preset pack you exported, deleting it is the end of that configuration. Nothing in the studio changes — a preset you had loaded stays loaded, so saving it again under the same name is the way back if you press this by mistake.',
 
-  renameNameBox:
-    'The preset’s new name. Enter saves it and Escape leaves the old one alone. Only the label changes — the configuration stored under it is untouched, and nothing in the studio moves.',
+  detailsNameBox:
+    'The preset’s new name. Enter saves both boxes and Escape leaves the preset as it was. Only the label changes — the configuration stored under it is untouched, and nothing in the studio moves.',
 
-  confirmRename:
-    'Stores the new name. It is refused if another of your presets already uses it, and the box stays open so you can pick a different one; the configuration behind the preset is not touched either way.',
+  detailsDescriptionBox:
+    'The sentence this preset’s card carries under its title, and one more thing the search looks through. Leaving it empty is fine — the card names the subject and the setting instead. Enter saves both boxes and Escape abandons the edit; neither the stored configuration nor the studio is affected either way.',
+
+  confirmDetails:
+    'Stores the name and the description together. It is refused if another of your presets already uses that name, and the boxes stay open so you can pick a different one; the configuration behind the preset is not touched either way.',
 
   confirmDeletePreset:
     'Deletes this preset for good. There is no undo, and no other copy of it unless you have exported the library. The configuration currently in the studio is untouched either way.',
 
   cancelDeletePreset: 'Leaves the preset where it is and puts the card back to its ordinary buttons.',
 
-  cancelRename: 'Closes the name box and keeps the preset’s existing name. Escape in the box does the same.',
+  cancelDetails:
+    'Closes the editor and keeps the preset’s existing name and description. Escape in either box does the same.',
 } as const;
 
 /**

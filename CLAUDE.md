@@ -704,7 +704,7 @@ undo the dismissal the press just latched — every button in the app answering 
 paragraph under itself. The selector answers "did the keyboard bring me here" for a control and
 **does not answer it for a value box**: it matches a text field however that field was focused. So a
 search box wrapped in `ControlTooltip` opens its card on a click and holds it over the results it is
-filtering, and a box that is focused as it appears — `PresetRenameForm`'s — opens one unasked. Put a
+filtering, and a box that is focused as it appears — `PresetDetailsForm`'s name box — opens one unasked. Put a
 value on the ⓘ and none of that arises.
 
 **Do not add a second ⓘ to a control that already reads as one thing.** The mistake this rule

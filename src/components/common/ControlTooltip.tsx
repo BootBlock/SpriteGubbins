@@ -53,7 +53,7 @@ interface ControlTooltipProps {
  * That line is also what makes the focus rule below sound, which is why it is worth stating as a
  * rule rather than as a habit: `:focus-visible` cannot answer "did the keyboard bring me here" for a
  * text field — the selector matches whenever such a field is focused, by any means — so a value box
- * wrapped in this would open its card on a click and hold it there, and `PresetRenameForm`'s box,
+ * wrapped in this would open its card on a click and hold it there, and `PresetDetailsForm`'s name box,
  * which is focused the moment it appears, would open one unasked.
  *
  * The state machine is {@link useTooltipReveal}'s, shared with the ⓘ so WCAG 1.4.13's *dismissible*,

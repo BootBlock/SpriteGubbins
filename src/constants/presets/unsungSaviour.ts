@@ -53,6 +53,8 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'us-character-rig',
     name: 'Unsung Saviour — Character rig',
+    description:
+      'A technical contract rather than a worked example — the projection, scale, palette discipline and rig geometry the Unsung Saviour project’s art requires, with the subject left for you to fill in.',
     category: 'CHARACTER',
     subject: sparseSubject('CHARACTER', {
       exclusions:
@@ -76,6 +78,8 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'us-creature-rig',
     name: 'Unsung Saviour — Creature rig',
+    description:
+      'The same technical contract with no attachment sockets, because enemies do not wear the player’s gear. Match the sheet mode to the creature’s anatomy before generating.',
     category: 'CREATURE',
     subject: sparseSubject('CREATURE', {
       exclusions:
@@ -98,6 +102,8 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'us-tileset-3q',
     name: 'Unsung Saviour — Three-quarter tileset',
+    description:
+      'The Unsung Saviour tile contract: 48 × 48 px per tile at one metre, three-quarter, with the wall face as its own tile. One view, since tiles have no facing to turn.',
     category: 'BUILDING',
     subject: sparseSubject('BUILDING', {
       anatomy: 'Modular Building Tiles',

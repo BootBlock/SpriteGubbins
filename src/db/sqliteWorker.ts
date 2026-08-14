@@ -9,6 +9,7 @@ import {
   DELETE_ALL_PRESETS_SQL,
   DELETE_HISTORY_SQL,
   DELETE_PRESET_SQL,
+  DROP_TABLE_SQL,
   INSERT_HISTORY_SQL,
   INSERT_PRESET_SQL,
   OPFS_POOL_NAME,
@@ -17,6 +18,8 @@ import {
   SELECT_PRESETS_SQL,
   SELECT_SESSION_SQL,
   SELECT_SETTINGS_SQL,
+  TABLE_COLUMNS,
+  TABLE_INFO_SQL,
   UPSERT_SESSION_SQL,
   UPSERT_SETTINGS_SQL,
 } from './schema.ts';
@@ -92,6 +95,7 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
         bind: [
           preset.id,
           preset.name,
+          preset.description,
           preset.category,
           JSON.stringify(preset.subject),
           JSON.stringify(preset.output),
@@ -120,6 +124,7 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
             bind: [
               preset.id,
               preset.name,
+              preset.description,
               preset.category,
               JSON.stringify(preset.subject),
               JSON.stringify(preset.output),
@@ -171,11 +176,40 @@ worker.addEventListener('message', (event: MessageEvent<WorkerCall>) => {
   }
 });
 
+/**
+ * Drop any stored table whose columns are not the ones the DDL now declares.
+ *
+ * This runs **before** `CREATE_TABLES_SQL` and is what makes that DDL's `IF NOT EXISTS` safe to
+ * change: on its own, adding a column leaves an existing database with the old table and every
+ * statement naming the new column failing for the life of that database. `TABLE_COLUMNS` in
+ * `schema.ts` says why this is a discard rather than a migration, and what it costs.
+ *
+ * A table that is absent is left alone — there is nothing to discard, and the DDL below is about to
+ * create it. Compared as a set both ways, so a column *removed* from the DDL is as much a mismatch
+ * as one added: a stale column would otherwise survive every future boot, still holding data the app
+ * no longer has a name for.
+ */
+function discardIncompatibleTables(database: Database): void {
+  for (const [table, columns] of Object.entries(TABLE_COLUMNS)) {
+    const stored = select(database, TABLE_INFO_SQL(table))
+      .map((row) => (row !== null && typeof row === 'object' ? (row as { name?: unknown }).name : undefined))
+      .filter((name): name is string => typeof name === 'string');
+
+    if (stored.length === 0) continue;
+
+    const present = new Set(stored);
+    if (present.size === columns.length && columns.every((column) => present.has(column))) continue;
+
+    database.exec(DROP_TABLE_SQL(table));
+  }
+}
+
 async function open(): Promise<void> {
   const sqlite3 = await sqlite3InitModule();
   // `initialCapacity` must exceed the number of database files, with room for journals.
   const pool = await sqlite3.installOpfsSAHPoolVfs({ name: OPFS_POOL_NAME, initialCapacity: 6 });
   const database = new pool.OpfsSAHPoolDb(DATABASE_FILENAME);
+  discardIncompatibleTables(database);
   database.exec(CREATE_TABLES_SQL);
   db = database;
 }

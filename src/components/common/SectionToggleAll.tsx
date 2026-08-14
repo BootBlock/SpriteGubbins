@@ -79,7 +79,7 @@ export function SectionToggleAll({ sections, panelLabel }: SectionToggleAllProps
             !allOpen,
           );
         }}
-        // The app's established secondary button — `PresetRenameForm`'s Cancel, `HistoryFooter`'s
+        // The app's established secondary button — `PresetDetailsForm`'s Cancel, `HistoryFooter`'s
         // export, the quantiser's scale candidates — with the quantiser's resting fill. The fill is
         // not decoration: unfilled, a bordered run of sentence-case text is a weak affordance, and the
         // border alone carries too little contrast against the panel to be what identifies a control.

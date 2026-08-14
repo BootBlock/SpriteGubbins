@@ -14,6 +14,8 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'prop-terminal',
     name: 'Sci-Fi Control Console',
+    description:
+      'A console the player walks up to and uses, drawn once with its screens lit from within rather than by a key light. The plainest example of how an object decomposes by housing and mount.',
     category: 'OBJECT',
     subject: {
       species: 'Interactive Terminal',
@@ -48,6 +50,8 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'defence-turret-rig',
     name: 'Modular Defence Turret',
+    description:
+      'A prop that is genuinely rigged: the base never moves, the yoke yaws and the barrel pitches, over four cardinal runs. Squared caps and no overlap, because the joints hide behind armour collars.',
     category: 'OBJECT',
     subject: {
       species: 'Defense Turret',
@@ -89,6 +93,8 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'vending-machine-front',
     name: 'Front-Elevation Vending Machine',
+    description:
+      'Dead flat on, one facing, 32 colours and a hard black outline. A front elevation draws the one interesting side of a machine without any depth cues to fight a 2D scene’s own.',
     category: 'OBJECT',
     subject: {
       species: 'Vending Machine',
@@ -128,6 +134,8 @@ export const OBJECT_MACHINE_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'portal-gate-shrine',
     name: 'Ancient Portal Gate',
+    description:
+      'A rendered 3D gate under a true-isometric camera — textured, no colour budget, delivered on transparency. The set piece to compare against the flatter object presets.',
     category: 'OBJECT',
     subject: {
       species: 'Portal Gate',

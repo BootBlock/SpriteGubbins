@@ -14,6 +14,8 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'vector-keycard-set',
     name: 'Vector Flat Keycard Set',
+    description:
+      'Flat vector shapes with one value each, so there is nothing for an outline or a light to do and the palette can be tiny without looking starved. 48 × 48 px cells, on transparency.',
     category: 'ITEM',
     subject: {
       species: 'Keycard / Quest Item',
@@ -57,6 +59,8 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'painted-potion-rack',
     name: 'Painted Potion Rack',
+    description:
+      'Painted glassware on white rather than magenta: a transparent fill picks up a cast from whatever is keyed behind it, and a light background is what stops that.',
     category: 'ITEM',
     subject: {
       species: 'Consumable Potion/Cell',
@@ -96,6 +100,8 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'emblazoned-tower-shield',
     name: 'Emblazoned Tower Shield',
+    description:
+      'A cel-shaded shield with four hanging pieces that each move independently of the face. An item sheet has the component headroom for that where a humanoid would not.',
     category: 'ITEM',
     subject: {
       species: 'Armor Piece (Helmet/Shield)',
@@ -131,6 +137,8 @@ export const ITEM_GEAR_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'arcane-focus-orb',
     name: 'Arcane Focus Orb',
+    description:
+      'Floating rings seen straight down, keyed on black, as four cardinal sheets. A ring set has no front, so what changes between facings is which ring is nearest.',
     category: 'ITEM',
     subject: {
       species: 'Magical Artefact / Orb',

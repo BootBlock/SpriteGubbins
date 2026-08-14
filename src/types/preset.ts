@@ -11,6 +11,18 @@ import type { SubjectCategory, SubjectDefinition } from './subject.ts';
 export interface PresetArchetype {
   readonly id: string;
   readonly name: string;
+  /**
+   * What this archetype is for, in the reader's own words — the sentence the card carries under its
+   * title and the search matches on.
+   *
+   * A name says what a preset is *of* and the specs line says what its sheet *is*; neither says why
+   * anyone would reach for it, which is the question a library of seventy answers badly. Every
+   * built-in ships one, and `presets.test.ts` fails a built-in that does not.
+   *
+   * Empty is a legitimate value and only a user's own preset may hold it: the box is optional when
+   * saving, and a card with nothing here falls back to naming the subject instead.
+   */
+  readonly description: string;
   readonly category: SubjectCategory;
   readonly subject: SubjectDefinition;
   /**

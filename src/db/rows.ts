@@ -76,6 +76,9 @@ export function parsePresetRow(row: unknown): PresetArchetype | null {
   return {
     id,
     name,
+    // Absent means the empty string rather than a rejected row: the box is optional, so a preset
+    // saved without one is the ordinary case and has nothing to say here.
+    description: readString(row, 'description') ?? '',
     category,
     subject: parseSubject(parseJson(subjectJson), category),
     // The image half alone. A row written by a build that stored the companion outputs still parses
@@ -146,6 +149,8 @@ export function parseImportedPreset(value: unknown): PresetArchetype | null {
   return {
     id,
     name,
+    // As in {@link parsePresetRow}: optional in the app, so optional in a hand-written pack too.
+    description: readString(value, 'description') ?? '',
     category,
     subject: parseSubject(value['subject'], category),
     output: parseImageConfig(value['output']),

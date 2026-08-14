@@ -27,7 +27,7 @@ import { PresetSearchField } from './PresetSearchField.tsx';
 export function PresetLibrary() {
   const customPresets = usePresetStore((state) => state.customPresets);
   const loadPreset = usePresetStore((state) => state.loadPreset);
-  const renameCustomPreset = usePresetStore((state) => state.renameCustomPreset);
+  const updateCustomPresetDetails = usePresetStore((state) => state.updateCustomPresetDetails);
   const deleteCustomPreset = usePresetStore((state) => state.deleteCustomPreset);
 
   const [query, setQuery] = useState('');
@@ -94,7 +94,9 @@ export function PresetLibrary() {
           entries={visible}
           narrowedBy={isFiltering ? query.trim() : null}
           onLoad={loadPreset}
-          onRename={(target, name) => renameCustomPreset(target.id, name)}
+          onUpdateDetails={(target, name, description) =>
+            updateCustomPresetDetails(target.id, name, description)
+          }
           onDelete={(target) => {
             void deleteCustomPreset(target.id);
           }}

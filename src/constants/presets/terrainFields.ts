@@ -24,6 +24,8 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'topdown-grass-dirt-blend',
     name: 'Top-Down Grass & Dirt Blend',
+    description:
+      'A grass-to-dirt blend set seen straight down at 32 × 32 px per tile. Overhead is the one camera where a boundary is a shape on a flat plane and no tile carries a vertical face.',
     category: 'TERRAIN',
     subject: {
       species: 'Grassland & Meadow',
@@ -63,6 +65,8 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'iso-snow-rock-blend',
     name: 'Isometric Snow & Rock Blend',
+    description:
+      'Snow giving way to bare rock as 64 × 32 px isometric diamonds. A blend set draws the same tiles whatever the materials are; what changes is which two of them meet.',
     category: 'TERRAIN',
     subject: {
       species: 'Snowfield & Ice Sheet',
@@ -104,6 +108,8 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'retro-shoreline-blend',
     name: '16-Bit Shoreline Blend',
+    description:
+      'Water meeting sand at 16 × 16 px in retro pixel art. A shoreline needs no plan of its own, because it is two materials meeting like any other.',
     category: 'TERRAIN',
     subject: {
       species: 'Shallow Water & Wetland',
@@ -141,6 +147,8 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'side-on-volcanic-cliff',
     name: 'Side-On Volcanic Cliff Features',
+    description:
+      'The feature library rather than the blend set: a platformer’s ground is a cliff seen from the side, and an exposed face is exactly what a flat field has nowhere to put.',
     category: 'TERRAIN',
     subject: {
       species: 'Volcanic Crust & Ash',

@@ -14,6 +14,8 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'building-ramen',
     name: 'Neo-Tokyo Ramen Kiosk',
+    description:
+      'A single structure as a module library — the bays, awning and fittings a façade is assembled from, rather than one fixed elevation.',
     category: 'BUILDING',
     subject: {
       species: 'Ramen Stand Kiosk',
@@ -53,6 +55,8 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'oblique-shopfront-row',
     name: 'Oblique Shopfront Row',
+    description:
+      'A row of separate shopfront bays under the 45° oblique camera, at 96 × 128 px per bay on an ultrawide canvas. The projection is what lets the bays sit side by side without disagreeing.',
     category: 'BUILDING',
     subject: {
       species: 'Cybernetics Clinic',
@@ -92,6 +96,8 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'gothic-watchtower',
     name: 'Gothic Watchtower',
+    description:
+      'One structure turned through the directional core under a true-isometric camera, on a portrait canvas — three storeys turned three ways waste most of a landscape one.',
     category: 'BUILDING',
     subject: {
       species: 'Modular Watchtower',
@@ -129,6 +135,8 @@ export const BUILDING_STREET_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'desert-outpost-pod',
     name: 'Desert Outpost Pod',
+    description:
+      'A rendered 3D structure at one facing on transparency, with no colour budget and no outline. The building preset to reach for when the sheet is a render rather than art.',
     category: 'BUILDING',
     subject: {
       species: 'Sci-Fi Landing Pad',

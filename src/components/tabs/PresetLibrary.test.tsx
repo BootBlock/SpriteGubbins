@@ -13,7 +13,7 @@ import { PresetLibrary } from './PresetLibrary.tsx';
  * spans the *whole* library rather than the collection on screen, and filtering **reconciles** the grid
  * rather than replacing it. The second one is the reason the assertion below compares DOM nodes by
  * identity — a rebuilt list looks identical in every other respect, and only announces itself later, as
- * cards that flicker their entrance animation on every keystroke and rename editors that close
+ * cards that flicker their entrance animation on every keystroke and details editors that close
  * themselves.
  */
 
@@ -233,6 +233,58 @@ describe('PresetLibrary', () => {
 
     expect(search).toHaveValue('');
     expect(collectionButton('ITEM')).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('puts a preset’s description on its card', () => {
+    render(<PresetLibrary />);
+
+    // The one line on a card written for a reader rather than assembled from identifiers, which is
+    // why it is what the card leads with under the title.
+    expect(within(cardFor(DEFAULT_PRESET.name)).getByText(DEFAULT_PRESET.description)).toBeInTheDocument();
+  });
+
+  it('names the subject on a card whose preset has no description', async () => {
+    const user = userEvent.setup();
+    usePresetStore.setState({
+      customPresets: [
+        { ...DEFAULT_PRESET, id: 'custom-1', name: 'Bare Knight', description: '', isCustom: true },
+      ],
+    });
+
+    render(<PresetLibrary />);
+    await user.click(collectionButton('custom'));
+
+    // The box is optional, so an empty one is ordinary — and a gap where the sentence would go says
+    // less about the preset than its species and setting do.
+    const { species, setting } = DEFAULT_PRESET.subject;
+    expect(within(cardFor('Bare Knight')).getByText(`${species} — ${setting}`)).toBeInTheDocument();
+  });
+
+  it('opens the details editor on both the name and the description', async () => {
+    const user = userEvent.setup();
+    usePresetStore.setState({
+      customPresets: [
+        {
+          ...DEFAULT_PRESET,
+          id: 'custom-1',
+          name: 'My Knight',
+          description: 'For the town scenes.',
+          isCustom: true,
+        },
+      ],
+    });
+
+    render(<PresetLibrary />);
+    await user.click(collectionButton('custom'));
+    await user.click(screen.getByRole('button', { name: 'Edit details for preset My Knight' }));
+
+    // Both boxes open on what the preset holds. The description is the half that only this editor
+    // can reach: saving over a preset by name writes the studio as it stands, which is a different
+    // intention entirely.
+    expect(screen.getByRole('textbox', { name: 'New name for My Knight' })).toHaveValue('My Knight');
+    expect(screen.getByRole('textbox', { name: 'Description for My Knight' })).toHaveValue(
+      'For the town scenes.',
+    );
   });
 
   it('files a saved preset under the user’s own collection', async () => {

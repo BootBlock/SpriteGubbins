@@ -16,6 +16,8 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'iso-cutout-rig',
     name: 'Isometric Cut-Out Rig',
+    description:
+      'A true-isometric cut-out rig with squared joint caps, four attachment sockets and four cardinal runs sharing one identity lock. The best look at how a rig sheet differs from a directional one.',
     category: 'CHARACTER',
     subject: {
       species: 'Android',
@@ -61,6 +63,8 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'five-view-turnaround-rig',
     name: 'Five-View Turnaround Rig',
+    description:
+      'Five rig runs that reach all eight facings once the turned views are flipped in-engine — three fewer generations than the eight-compass set, for the same coverage.',
     category: 'CHARACTER',
     subject: {
       species: 'Duellist',
@@ -105,6 +109,8 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'platformer-side-runner',
     name: 'Side-On Platformer Runner',
+    description:
+      'A flat side elevation at one facing, 32 colours and 32 × 48 px cells on an ultrawide canvas: the platformer contract, laid out so a run cycle reads along a row.',
     category: 'CHARACTER',
     subject: {
       species: 'Mutant Scavenger',
@@ -142,6 +148,8 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'clay-volume-study',
     name: 'Clay Volume Study',
+    description:
+      'An untextured clay pass with the palette off, the detail down and a hard key light on, so nothing but the volumes is left to look at. A design check to run before any colour is committed.',
     category: 'CHARACTER',
     subject: {
       species: 'Orc Warrior',
@@ -183,6 +191,8 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'silhouette-read-pass',
     name: 'Silhouette Readability Pass',
+    description:
+      'One flat black fill on white, drawn at every facing of the core. It answers the question most sheets never ask: whether the shape is still recognisable at target size with no interior detail at all.',
     category: 'CHARACTER',
     subject: {
       species: 'Void Stalker',

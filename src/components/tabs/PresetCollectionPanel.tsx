@@ -19,7 +19,7 @@ interface PresetCollectionPanelProps {
    */
   readonly narrowedBy: string | null;
   readonly onLoad: (preset: PresetArchetype) => void;
-  readonly onRename: (preset: PresetArchetype, name: string) => Promise<boolean>;
+  readonly onUpdateDetails: (preset: PresetArchetype, name: string, description: string) => Promise<boolean>;
   readonly onDelete: (preset: PresetArchetype) => void;
 }
 
@@ -40,7 +40,7 @@ function emptyMessage(collection: PresetCollectionId, narrowedBy: string | null)
  *
  * **The `key` is the preset's id and that is load-bearing.** It is what makes filtering a *diff*: a
  * card whose preset still matches keeps the DOM node it already had, so it does not replay its
- * entrance animation, lose an open rename editor, or drop the pointer's hover as the user types. Keyed
+ * entrance animation, lose an open details editor, or drop the pointer's hover as the user types. Keyed
  * by array position it would be the opposite — every card after a removed one would be handed a
  * different preset and re-render its entire contents, which is the "clear the list and repopulate it"
  * behaviour dressed up as reconciliation.
@@ -53,7 +53,7 @@ export function PresetCollectionPanel({
   entries,
   narrowedBy,
   onLoad,
-  onRename,
+  onUpdateDetails,
   onDelete,
 }: PresetCollectionPanelProps) {
   return (
@@ -85,7 +85,7 @@ export function PresetCollectionPanel({
               preset={entry.preset}
               index={entry.index}
               onLoad={onLoad}
-              onRename={onRename}
+              onUpdateDetails={onUpdateDetails}
               onDelete={onDelete}
             />
           ))}

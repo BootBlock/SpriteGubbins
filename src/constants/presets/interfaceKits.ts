@@ -29,6 +29,8 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'fantasy-parchment-menu',
     name: 'Fantasy Parchment Menu Kit',
+    description:
+      'A painted panel and frame kit delivered as a modular tile set, on transparency. It excludes baked-in lettering, since a quest log with the word painted into it serves one language and one verb.',
     category: 'INTERFACE',
     subject: {
       species: 'Panel & Window Frame',
@@ -70,6 +72,8 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'cyberpunk-hud-states',
     name: 'Cyberpunk HUD State Library',
+    description:
+      'A pixel-art HUD drawn state by state, emissive rather than lit, and with no drop shadow — a baked shadow arrives as a grey halo the compositor cannot remove.',
     category: 'INTERFACE',
     subject: {
       species: 'Progress & Resource Bar',
@@ -112,6 +116,8 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'flat-mobile-ui-slices',
     name: 'Flat Mobile UI Nine-Slices',
+    description:
+      'Flat vector buttons as nine-slice pieces at 96 × 48 px, on transparency. The tile-set mode is what makes them stretchable rather than fixed-size.',
     category: 'INTERFACE',
     subject: {
       species: 'Button & Key Cap',
@@ -153,6 +159,8 @@ export const INTERFACE_KIT_PRESETS: readonly PresetArchetype[] = [
   {
     id: 'retro-console-menu-chrome',
     name: 'Retro Console Menu Chrome',
+    description:
+      'Bevelled 16-bit menu chrome with empty inventory slots, lit from the top left — a raised edge only reads as raised if the highlight and the shade agree about the light.',
     category: 'INTERFACE',
     subject: {
       species: 'Inventory Slot & Icon Plate',
