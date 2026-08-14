@@ -110,7 +110,7 @@ describe('SheetSplitModal', () => {
     render(<SheetSplitModal />);
 
     const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
-    const perSheet = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 0, []);
+    const perSheet = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, []);
     const total = batchComponentCount('CHARACTER', runs, []);
 
     expect(total).toBe(perSheet * FACINGS.length);
@@ -136,20 +136,21 @@ describe('SheetSplitModal', () => {
     });
     render(<SheetSplitModal />);
 
+    // One core sheet, then the articulation run at each of the five classic facings.
     const sheets = sheetsOnScreen();
-    expect(sheets).toHaveLength(2);
+    expect(sheets).toHaveLength(6);
 
-    // The premise rather than a restatement of the arithmetic: a fixture where both sheets sat under
+    // The premise rather than a restatement of the arithmetic: a fixture where every sheet sat under
     // the budget would satisfy every assertion below while proving nothing at all.
-    expect(sheets.filter((sheet) => sheet.count > BUDGET_BETWEEN_THE_TWO_SHEETS)).toHaveLength(1);
+    expect(sheets.filter((sheet) => sheet.count > BUDGET_BETWEEN_THE_TWO_SHEETS)).toHaveLength(5);
 
     for (const sheet of sheets) {
       expect(within(sheet.row).getByText(`${String(sheet.count)} components`)).toBeInTheDocument();
     }
 
-    // Named, not counted: which sheet carries the warning is the whole point, and a test that only
-    // checked "one of them" would pass with the flag on the wrong row.
-    expect(flaggedIn(sheets)).toEqual(['Articulation']);
+    // Named, not counted: which sheets carry the warning is the whole point, and a test that only
+    // checked "some of them" would pass with the flag on the wrong row.
+    expect(flaggedIn(sheets)).toEqual(Array.from({ length: 5 }, () => 'Articulation'));
     expect(
       screen.getByText(new RegExp(`over the budget of ${String(BUDGET_BETWEEN_THE_TWO_SHEETS)}`)),
     ).toBeInTheDocument();

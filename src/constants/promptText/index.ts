@@ -11,10 +11,11 @@
  * the build rather than reaching a model as literal template text.
  *
  * `DIRECTIONS_DESCRIPTION` is the one exception, and the test names it: the compiler narrows the
- * direction set according to the sheet's mode, so the line has to describe what was actually asked
- * for rather than what the user selected. {@link describeDirections} builds it.
+ * chosen set through the category and then to the sheet's own facings — a multi-view plan's tuple,
+ * or a run's single facing — so the line has to describe what was actually asked for rather than
+ * the raw stored value. {@link describeDirections} builds it.
  */
-export { DIRECTION_COVERAGE, PRACTICAL_COMPONENT_CEILING } from './inventory.ts';
+export { PRACTICAL_COMPONENT_CEILING } from './inventory.ts';
 export {
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,

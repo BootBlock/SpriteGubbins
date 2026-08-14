@@ -87,7 +87,7 @@ export function generatePrompt(
   // Which sheet of that pairing's series this is. Resolved here for the same reason the mode is: a
   // stored index can name a second sheet on a pairing that has one, and `sheetPlanFor` answers with
   // the series' first rather than with `undefined`.
-  const plan = sheetPlanFor(category, mode, output.sheetIndex);
+  const plan = sheetPlanFor(category, mode, output.directions, output.sheetIndex);
 
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would
@@ -132,8 +132,8 @@ export function generatePrompt(
 
   const values: Record<string, string> = {
     CATEGORY: category,
-    COMPONENT_COUNT: String(componentCountFor(category, mode, output.sheetIndex, anatomy)),
-    COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, output.sheetIndex, anatomy),
+    COMPONENT_COUNT: String(componentCountFor(category, mode, output.directions, output.sheetIndex, anatomy)),
+    COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, output.directions, output.sheetIndex, anatomy),
     // Every one of these is now a function of the category as well as the mode. That is the whole
     // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
     // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
@@ -219,7 +219,7 @@ export function generatePrompt(
   //
   // Held in a local as well, because `config` below gates section 1's exception sentence on it and
   // reading it back off `values` would come out `string | undefined`.
-  const additionalAnatomyLine = sheetCarriesAnatomy(category, mode, output.sheetIndex)
+  const additionalAnatomyLine = sheetCarriesAnatomy(category, mode, output.directions, output.sheetIndex)
     ? anatomy.map(formatAnatomyComponent).join(', ')
     : '';
   values.ADDITIONAL_ANATOMY = additionalAnatomyLine;

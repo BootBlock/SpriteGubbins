@@ -1,6 +1,7 @@
 import { sheetSeriesFor } from '../sheetPlans/index.ts';
 import { planComponentCount } from '../../utils/componentSet.ts';
 import type { DirectionalMode } from '../../types/output.ts';
+import type { DirectionSet } from '../../types/rendering.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import type { OutputChoice } from './choices.ts';
 
@@ -25,8 +26,9 @@ import type { OutputChoice } from './choices.ts';
 export function sheetChoices(
   category: SubjectCategory,
   mode: DirectionalMode,
+  directions: DirectionSet,
 ): readonly OutputChoice<number>[] {
-  return sheetSeriesFor(category, mode).map((plan, index) => ({
+  return sheetSeriesFor(category, mode, directions).map((plan, index) => ({
     value: index,
     label: `${String(index + 1)}. ${plan.name} (${String(planComponentCount(plan))})`,
   }));

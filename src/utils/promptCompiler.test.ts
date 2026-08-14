@@ -284,9 +284,9 @@ describe('generatePrompt — numbered lists', () => {
     );
 
     expect(numberedRuns(prompt)).toHaveLength(2);
-    // Six in the contract — five fixed plus the pixel-grid rule — and seven in the audit, which is
-    // the run that used to end at 8 with no 7 above it.
-    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([6, 7]);
+    // Six in the contract — five fixed plus the pixel-grid rule — and eight in the audit, which is
+    // the run that used to end at 8 with no 7 above it and now carries the component-boundary check.
+    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([6, 8]);
   });
 });
 
@@ -780,20 +780,63 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(cardinal).toContain('- Primary assembly direction: south');
   });
 
-  it('pins the core directional mode to the five facings its inventory names', () => {
-    // Its directional core lists those five entry by entry, so a different set would leave section 3
-    // asking for facings section 4 never lists. Front leads, which is the point of the five-view set:
-    // 0° and 180° are their own mirror, so a three-view sheet could reach neither.
-    const prompt = generatePrompt(
+  it('steers the core directional mode by the chosen set, in section 3 and section 4 alike', () => {
+    // The control the core used to discard. Its inventory is built from the same tuple section 3
+    // lists, so the two cannot disagree about which views the sheet owes — and a four-cardinal core
+    // asks for exactly those four, not the five the old fixed set pinned.
+    const cardinal = generatePrompt(
       'CHARACTER',
       SUBJECT,
       withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' }),
     );
-    expect(prompt).toContain(
+    expect(cardinal).toContain('- Directions required: South, west, north, east');
+    expect(cardinal).toContain('- Primary assembly direction: south');
+    expect(cardinal).toContain('Heads: south, west, north, east');
+    expect(cardinal).not.toContain('front-three-quarter');
+
+    // The five-classic set stays exactly what the old fixed core drew, front leading — 0° and 180°
+    // are their own mirror, so this is the smallest set whose drawn views face the camera.
+    const classic = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FIVE_CLASSIC' }),
+    );
+    expect(classic).toContain(
       '- Directions required: Front, front-three-quarter, right side, back-three-quarter, back',
     );
-    expect(prompt).toContain('- Primary assembly direction: front');
-    expect(prompt).not.toContain('- Directions required: South, west, north, east');
+    expect(classic).toContain('- Primary assembly direction: front');
+  });
+
+  it('splits the eight-compass core into a cardinal and a diagonal sheet, each owing only its own views', () => {
+    // Eight nearly adjacent yaws on one page are what a generator blurs together, and six pieces at
+    // eight views would breach the component ceiling on half the categories — so the eight-compass
+    // core is two sheets of four orthogonal views, and each prompt asks for its own half alone.
+    const eightWay = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'EIGHT_COMPASS',
+    });
+    const cardinals = generatePrompt('CHARACTER', SUBJECT, { ...eightWay, sheetIndex: 0 });
+    expect(cardinals).toContain('- Directions required: South, west, north, east');
+    expect(cardinals).toContain('Heads: south, west, north, east');
+    expect(cardinals).toContain('### Component inventory: Directional core — cardinal facings — 12 in total');
+    // The diagonals appear only in section 6's series list, as another sheet's job — never as a
+    // view this sheet's own inventory asks for.
+    expect(cardinals).not.toContain('Heads: south, south-west');
+
+    const diagonals = generatePrompt('CHARACTER', SUBJECT, { ...eightWay, sheetIndex: 1 });
+    expect(diagonals).toContain('- Directions required: South-west, north-west, north-east, south-east');
+    expect(diagonals).toContain('Heads: south-west, north-west, north-east, south-east');
+    expect(diagonals).toContain('### Component inventory: Directional core — diagonal facings — 12 in total');
+
+    // And the articulation run behind them is steered to its facing.
+    const limbs = generatePrompt('CHARACTER', SUBJECT, {
+      ...eightWay,
+      sheetIndex: 2,
+      primaryDirection: 'north-east',
+    });
+    expect(limbs).toContain('- Directions required: North-east');
+    expect(limbs).toContain('- Primary assembly direction: north-east');
+    expect(limbs).toContain('Exactly 34 components');
   });
 
   it('puts the background key in the contract and in the self-audit', () => {

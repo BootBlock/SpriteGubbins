@@ -39,7 +39,12 @@ export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
   renderStyle: 'PIXEL_ART',
   projection: 'THREE_QUARTER_TOPDOWN',
   cameraElevation: DEFAULT_CAMERA_ELEVATIONS.THREE_QUARTER_TOPDOWN,
-  directions: 'THREE_CLASSIC',
+  // Five views is the app's standard deliverable: the chosen set steers the directional core now,
+  // and FIVE_CLASSIC is the smallest set whose drawn views reach both the facing a player looks at
+  // most and the one directly away. THREE_CLASSIC here would silently open the studio on a core
+  // that can face the camera only by engine-mirroring — the defect the five-view core was built to
+  // remove.
+  directions: 'FIVE_CLASSIC',
   // The set's own first facing. Pinning one here would be a facing to keep in step with every
   // change of direction set, for no gain — "the first" is what the studio means until a split run
   // says otherwise.

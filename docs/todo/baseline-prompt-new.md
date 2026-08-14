@@ -181,9 +181,13 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 > they buy nothing from an engine's horizontal flip while each of 45/90/135 buys a distinct second
 > facing — which makes `THREE_CLASSIC` the most efficient *three*-view set at six facings and, by the
 > same arithmetic, structurally incapable of producing a subject facing the camera. Drawing 0° and
-> 180° outright takes the classic vocabulary to all eight. `CORE_DIRECTIONAL_VARIANTS` covers this
-> set rather than `THREE_CLASSIC`; both remain selectable, since three sheets is still the cheapest
-> run list a cut-out rig can be worked through.
+> 180° outright takes the classic vocabulary to all eight. `FIVE_CLASSIC` is the studio's default
+> set; `CORE_DIRECTIONAL_VARIANTS` first pinned it as a fixed coverage, and now draws **whichever
+> set the user chooses** — the plans are built from the chosen facings, and the `EIGHT_COMPASS` core
+> splits into a cardinal and a diagonal sheet so no view is mirrored, skipped or blurred into an
+> adjacent yaw. An asymmetric subject — gear on one hip, a sidearm on one side — cannot be engine-
+> mirrored at all, which is what made drawing every chosen facing outright the correct reading of
+> the control.
 
 > A `CUSTOM` free list was specified here and has been **removed** rather than built. It needs a
 > field to hold it, no shipped preset exercises it, and a set resolving to nothing emits an empty
@@ -270,7 +274,8 @@ or a character portrait. Every rule below serves extraction.
 Satisfy this section before any aesthetic consideration.
 
 [N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
-   overlapping.
+   overlapping — and none carrying another: a component that arrives with a neighbouring piece
+   still attached to it is two entries merged, not one component.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image, and nothing
@@ -513,6 +518,17 @@ Draw every entry in full, and one separate visible component for each item it na
 marked **×N** names N of them. Do not merge entries, substitute duplicates, add filler, or omit
 entries. Do not draw an assembled figure anywhere on the sheet, including as a reference or key.
 
+### A component ends at its own boundary
+
+Every entry is drawn **in isolation, as a severed part** — never as the whole subject with the
+other parts faded, cropped or hidden, and never complete with its neighbours. A component includes
+nothing another entry names and nothing the assembled subject would attach to it: where a piece
+meets a neighbouring piece in the assembled subject, this drawing **stops at that join**, finished
+with a clean edge or socket, and the neighbouring piece appears nowhere on it — not attached, not
+sketched in, not trailing off the cell. Drawing a listed part together with the parts it connects
+to is the single most common failure of sheets like this: it merges entries the count in section 0
+lists separately, and it makes the cut-out part unusable.
+
 ### Placement is the only identity map
 
 Labels are forbidden by section 0, so **grid position is how each component is identified**. Lay
@@ -652,6 +668,8 @@ Before delivering, verify:
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 [N]. No text or labels anywhere.
 [N]. Components appear in the exact order the inventory lists them.
+[N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
+   and nothing on the sheet is an assembled or part-assembled figure.
 [N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
 [N]. [DEFINE:CATEGORY_AUDIT]

@@ -1,21 +1,24 @@
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
-import { resolveSheetIndex, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveSheetIndex, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { SheetPlan } from '../types/components.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { Direction } from '../types/rendering.ts';
 import type { SubjectCategory } from '../types/subject.ts';
-import { directionSetApplies, primaryFacing, sheetDirections } from './sheetDirections.ts';
+import { primaryFacing, sheetDirections } from './sheetDirections.ts';
 
 /**
  * The batch one studio configuration is, before a word of it is compiled — and which sheet of that
  * batch the configuration itself names.
  *
- * **A batch splits along two axes, and they multiply.** The facing axis is a run list: a mode that
- * defers to the chosen direction set draws one sheet per facing of it. The *series* axis is the
- * plan's own — a pairing whose inventory outgrew one generation arrives as more than one sheet, each
- * carrying a different part of it. Every combination is a sheet the user has to generate, so the
- * batch is their cross product rather than a choice between them.
+ * **A batch is the series with its run sheets expanded.** The series axis is the plan's own: a
+ * pairing whose inventory outgrew one generation arrives as more than one sheet, each carrying a
+ * different part of it — an eight-compass character is two core sheets and then the articulation.
+ * The facing axis belongs to the `'run'` sheets alone: each of those is generated once per facing
+ * of the chosen set, so it appears in the batch that many times, while a multi-view sheet appears
+ * exactly once — it already carries its facings inside itself. Expanding runs *in series order*
+ * keeps the trunk sheets first, which is the order the identity lock wants: the sheets every run
+ * has to match are generated before the runs that match them.
  *
  * **Separate from `sheetRuns.ts` because two of its three readers want this answer without the
  * prompts.** The studio asks the *count* on every keystroke to decide whether to offer the split at
@@ -35,7 +38,7 @@ import { directionSetApplies, primaryFacing, sheetDirections } from './sheetDire
 export interface BatchSheet {
   /**
    * What is on this sheet, and — through `plan.name` — how the split drawer and the prompt's own
-   * series list both title it: `Directional core`, `Articulation`, `Rig pieces`.
+   * series list both title it: `Directional core — cardinal facings`, `Articulation`, `Rig pieces`.
    *
    * That name is the half of a label which does not change between facings, and the half that used
    * to have nowhere to live: a row naming only its facing said nothing about what was on it, which
@@ -54,8 +57,8 @@ export interface BatchSheet {
    * Every facing this sheet draws.
    *
    * Carried beside the assembly direction because the two differ for exactly the sheet that made a
-   * series necessary: a directional core draws five facings and assembles towards the first of them,
-   * so a row labelled with the assembly alone would read identically to the single-facing
+   * series necessary: a directional core draws several facings and assembles towards the first of
+   * them, so a row labelled with the assembly alone would read identically to the single-facing
    * articulation sheet beneath it and claim the same coverage.
    */
   readonly covered: readonly [Direction, ...Direction[]];
@@ -66,76 +69,45 @@ export interface BatchSheet {
 /** Every sheet a configuration asks for, and which of them the configuration itself is. */
 export interface SheetBatch {
   /**
-   * **Facing-major**, so a batch that splits both ways is worked through one facing at a time rather
-   * than one inventory at a time. That is the order the identity lock wants — everything drawn
-   * towards one facing is the hardest thing to keep consistent, so it is generated together — and it
-   * is also the order that leaves both single-axis batches exactly as they were: a rig over eight
-   * facings is its eight sheets in set order, and a two-sheet series on a fixed set is its two
-   * sheets in plan order.
+   * **Series-major**: each sheet of the series in plan order, with every `'run'` sheet expanded to
+   * one entry per facing of the chosen set in the set's own order. The multi-view core sheets
+   * therefore lead the batch, and the runs that must match them follow.
    */
   readonly sheets: readonly BatchSheet[];
   /** Which of them the configuration names, counting from one. */
   readonly ordinal: number;
 }
 
-/**
- * Whether the chosen direction set makes this configuration more than one sheet.
- *
- * Both halves matter, and they are two different questions. The first is whether the mode defers to
- * the chosen set at all — `directionSetApplies`, which is also what decides whether the studio shows
- * the set control, so the two cannot drift apart and the panel cannot offer a split for a set it is
- * not displaying. The second is this function's own: a single-facing set is one run however the mode
- * covers it.
- *
- * This is the **facing** axis alone, which is why it is not what the split button asks. A pairing
- * whose series holds two sheets is a batch even on a single facing — see {@link sheetRunCount}.
- *
- * The category comes with the configuration for the same reason it does everywhere else the sheet's
- * mode is read: the stored mode may be one this category cannot produce, and the axis this counts
- * belongs to the mode the sheet is actually drawn in. It answers the *set* as well, and that is what
- * stops the degenerate batch — an INTERFACE or a TERRAIN can only be drawn `SINGLE_FRONT`, so
- * whatever set the configuration arrived carrying there is one run of it, not three of a button
- * turned to a yaw it does not have.
- */
-export function splitsIntoFacingRuns(category: SubjectCategory, output: OutputConfig): boolean {
-  return (
-    directionSetApplies(category, output) &&
-    DIRECTION_LISTS[resolveDirectionSet(category, output.directions)].length > 1
-  );
-}
-
 /** Every sheet this configuration asks for, and its own position among them. */
 export function sheetBatch(category: SubjectCategory, output: OutputConfig): SheetBatch {
-  // Both axes asked of the *resolved* pairing — which is now what handing each of them the category
-  // means, rather than something this function does on their behalf by resolving once and spreading
-  // the answer back over `output`. Counting the facings from the stored mode while counting the
-  // sheets from the resolved one would offer eight runs of a mode that draws its own facings and
-  // ignores every one of them, giving eight rows with the same prompt.
-  const series = sheetSeriesFor(category, output.directionalMode);
-  const splits = splitsIntoFacingRuns(category, output);
+  const mode = resolveMode(category, output.directionalMode);
+  const series = sheetSeriesFor(category, mode, output.directions);
+  const runFacings = DIRECTION_LISTS[resolveDirectionSet(category, output.directions)];
 
-  // The chosen set where the *resolved* mode reads it as a run list; otherwise the configuration's
-  // own single answer, left exactly as it stands so a sheet that ignores the facing is not rewritten
-  // by it.
-  const facings: readonly (Direction | null)[] = splits
-    ? DIRECTION_LISTS[resolveDirectionSet(category, output.directions)]
-    : [output.primaryDirection];
-
-  const sheets = facings.flatMap((primaryDirection) =>
-    series.map((plan, sheetIndex): BatchSheet => {
+  const sheets = series.flatMap((plan, sheetIndex): BatchSheet[] => {
+    // A run sheet is one generation per facing of the set; anything else is one generation, and its
+    // primaryDirection is carried through untouched because nothing in that sheet reads it.
+    const facings: readonly (Direction | null)[] =
+      plan.facings === 'run' ? runFacings : [output.primaryDirection];
+    return facings.map((primaryDirection): BatchSheet => {
       const sheetOutput: OutputConfig = { ...output, primaryDirection, sheetIndex };
       const { covered, assembly } = sheetDirections(category, sheetOutput, plan);
       return { plan, output: sheetOutput, covered, assembly };
-    }),
-  );
+    });
+  });
 
   // Found in the list that was just built rather than computed from the two axes a second time: the
   // flattening order is stated once, in the `flatMap` above, and an ordinal with its own arithmetic
-  // for it would disagree the moment that order changed.
-  const selectedFacing = splits ? primaryFacing(category, output) : output.primaryDirection;
-  const selectedSheet = resolveSheetIndex(category, output.directionalMode, output.sheetIndex);
+  // for it would disagree the moment that order changed. A run sheet is identified by its index and
+  // its facing; a multi-view sheet by its index alone, since it appears exactly once.
+  const selectedIndex = resolveSheetIndex(category, mode, output.directions, output.sheetIndex);
+  const selectedPlan = series[selectedIndex];
+  const selectedFacing =
+    selectedPlan !== undefined && selectedPlan.facings === 'run' ? primaryFacing(category, output) : null;
   const found = sheets.findIndex(
-    (sheet) => sheet.output.primaryDirection === selectedFacing && sheet.output.sheetIndex === selectedSheet,
+    (sheet) =>
+      sheet.output.sheetIndex === selectedIndex &&
+      (selectedFacing === null || sheet.output.primaryDirection === selectedFacing),
   );
 
   // Degrades to the first sheet, as every other resolution in this area does, and unreachable for

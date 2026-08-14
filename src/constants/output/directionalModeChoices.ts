@@ -2,6 +2,7 @@ import { modesFor } from '../sheetPlans/index.ts';
 import { seriesComponentCount, sheetCountFor } from '../../utils/componentSet.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { DirectionalMode } from '../../types/output.ts';
+import type { DirectionSet } from '../../types/rendering.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import type { OutputChoice } from './choices.ts';
 
@@ -28,11 +29,12 @@ import type { OutputChoice } from './choices.ts';
  */
 export function directionalModeChoices(
   category: SubjectCategory,
+  directions: DirectionSet,
   additional: readonly AnatomyComponent[],
 ): readonly OutputChoice<DirectionalMode>[] {
   return modesFor(category).map((mode) => {
-    const sheets = sheetCountFor(category, mode);
-    const total = String(seriesComponentCount(category, mode, additional));
+    const sheets = sheetCountFor(category, mode, directions);
+    const total = String(seriesComponentCount(category, mode, directions, additional));
     // The unit gives way to the sheet count rather than joining it: `CORE_DIRECTIONAL_VARIANTS`
     // leaves 22 characters inside its parenthesis against this file's 50-character budget, and a
     // four-digit total with both spelled out is 31. Which one to drop is not a close call — that a

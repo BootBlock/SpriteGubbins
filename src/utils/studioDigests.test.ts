@@ -170,19 +170,17 @@ describe('projectionDigest', () => {
     expect(projectionDigest('CHARACTER', fixed)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
   });
 
-  it('names the set the sheet is drawn to, not the one the mode discarded', () => {
-    // The regression this pair exists for, and the one every case above is blind to: each of them
-    // holds a set the mode would have chosen anyway, so reading `output.directions` raw and reading
-    // it through `effectiveDirectionSet` produce the same string. Only a *disagreeing* pair can
-    // tell them apart — eight compass points asked for, five classic yaws drawn.
-    const discarded = withOutput({
+  it('names the chosen set on the core mode too, because the core now draws it', () => {
+    // The chosen set steers every kind of sheet, so the digest echoes the choice — and the facing
+    // stays absent on the core sheet, which covers its plan's own views whatever the facing said.
+    const steered = withOutput({
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest('CHARACTER', discarded)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+    expect(projectionDigest('CHARACTER', steered)).toBe('THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS');
 
-    // The same stored set, on a mode that does defer to it: here it is the honest answer.
+    // The same stored set on a run-list mode names the facing as well.
     const deferring = withOutput({
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
       directions: 'EIGHT_COMPASS',
@@ -231,14 +229,15 @@ describe('projectionDigest', () => {
       'THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS · north-west',
     );
 
-    // And the other way about: an ITEM has no cut-out rig, so the sheet draws its own five facings
-    // and neither the set asked for nor the facing pinned reaches it.
+    // And the other way about: an ITEM has no cut-out rig, so the sheet resolves to its directional
+    // views — a multi-view sheet that draws the chosen set but reads no facing, so the digest names
+    // the set alone.
     const shown = withOutput({
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'north-west',
     });
-    expect(projectionDigest('ITEM', shown)).toBe('THREE_QUARTER_TOPDOWN · 35° · FIVE_CLASSIC');
+    expect(projectionDigest('ITEM', shown)).toBe('THREE_QUARTER_TOPDOWN · 35° · EIGHT_COMPASS');
   });
 });
 

@@ -48,6 +48,7 @@ export function AtlasCalculatorModal() {
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
+  const directions = useOutputStore((state) => state.output.directions);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
@@ -64,6 +65,7 @@ export function AtlasCalculatorModal() {
     componentCount: componentCountFor(
       category,
       directionalMode,
+      directions,
       sheetIndex,
       parseAdditionalAnatomy(additionalAnatomy),
     ),

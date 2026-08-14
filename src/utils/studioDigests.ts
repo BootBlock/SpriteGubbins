@@ -3,8 +3,8 @@ import { paletteFor } from '../constants/palettes/index.ts';
 import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
-import { effectiveDirectionSet, primaryFacing } from './sheetDirections.ts';
-import { splitsIntoFacingRuns } from './sheetBatch.ts';
+import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
+import { facingApplies, primaryFacing } from './sheetDirections.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -23,15 +23,11 @@ import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
  * control that is not there is worse than no digest, which is why these are pure functions with the
  * conditionals pinned by tests rather than strings assembled at the call site.
  *
- * **The direction set is the one entry reported rather than offered, and the distinction is the
- * point.** On a mode that names its own facings the studio shows no set control, because there is
- * nothing to choose — but the sheet still has a set, and `FIVE_CLASSIC` is a true and useful thing
- * for a folded group to say. What the rule above forbids is echoing back a *choice* the sheet
- * discarded, which is exactly what this line used to do: it read `output.directions` raw, so a
- * `CORE_DIRECTIONAL_VARIANTS` sheet covering the classic yaws announced whatever the set had last
- * been left at. It reads `effectiveDirectionSet` now, so it names the sheet's own answer. The
- * primary facing beneath it stays conditional for a different reason — a sheet covering several
- * facings has no single one to name at all.
+ * **The direction set is always named, because it now always matters.** The chosen set steers the
+ * directional core's views and every run list alike, so the digest echoes the choice — narrowed
+ * through the category, exactly as the select is, so an INTERFACE reports the `SINGLE_FRONT` it
+ * draws rather than a stored set it cannot. The primary facing beneath it stays conditional for a
+ * different reason — a sheet covering several facings has no single one to name at all.
  *
  * Controls that *do* something rather than *hold* something are deliberately absent:
  * `IdentitySubjectDigest` and `IdentityPaletteCapture` both sit inside the continuity group, but the
@@ -104,7 +100,7 @@ export function subjectGroupDigest(subject: SubjectDefinition, keys: readonly Su
  */
 export function sheetDigest(category: SubjectCategory, output: OutputConfig): string {
   const mode = resolveMode(category, output.directionalMode);
-  const series = sheetSeriesFor(category, mode);
+  const series = sheetSeriesFor(category, mode, output.directions);
 
   return join([
     mode,
@@ -113,7 +109,7 @@ export function sheetDigest(category: SubjectCategory, output: OutputConfig): st
     // that is not there. Where it *is* on screen the digest cannot be silent about it — two sheets of
     // one series differ in nothing else the header carries, so a folded group would report the same
     // four values above two entirely different inventories.
-    series.length > 1 ? sheetPlanFor(category, mode, output.sheetIndex).name : '',
+    series.length > 1 ? sheetPlanFor(category, mode, output.directions, output.sheetIndex).name : '',
     output.componentBudget === NO_COMPONENT_BUDGET ? 'uncapped' : `budget ${String(output.componentBudget)}`,
     output.backgroundKey,
     output.aspectRatio,
@@ -157,15 +153,14 @@ export function projectionDigest(category: SubjectCategory, output: OutputConfig
   return join([
     output.projection,
     `${String(output.cameraElevation)}°`,
-    // The set the sheet is drawn to, not the one stored. Reading `output.directions` here made the
-    // collapsed summary the one place still reporting a value the compiler had discarded: a
-    // `CORE_DIRECTIONAL_VARIANTS` sheet covering the classic yaws announced `EIGHT_COMPASS`. The
-    // line below already refused to name an inert facing for exactly this reason; the set it sat
-    // beside was doing what that comment forbids.
-    effectiveDirectionSet(category, output),
-    // Only when the control is on screen. Anywhere else the facing is inert — the sheet draws its
-    // own set whatever this said — so naming it would promise something the prompt does not carry.
-    splitsIntoFacingRuns(category, output) ? primaryFacing(category, output) : '',
+    // The set the sheet is drawn to: the chosen one, narrowed through the category — an INTERFACE
+    // draws SINGLE_FRONT whatever a stored THREE_CLASSIC says. The chosen set now steers every
+    // mode, so this is a choice being echoed rather than a discarded control being repeated.
+    resolveDirectionSet(category, output.directions),
+    // Only when the control is on screen. Anywhere else the facing is inert — the selected sheet
+    // draws its plan's own facings whatever this said — so naming it would promise something the
+    // prompt does not carry.
+    facingApplies(category, output) ? primaryFacing(category, output) : '',
   ]);
 }
 

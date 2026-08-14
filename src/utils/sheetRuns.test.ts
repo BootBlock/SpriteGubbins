@@ -135,24 +135,25 @@ describe('sheetRuns', () => {
     expect(runs[0]?.assembly).toBe('front');
   });
 
-  it('produces one run per sheet of the plan’s own series, on one facing', () => {
-    // The second axis. `CORE_DIRECTIONAL_VARIANTS` covers its own five facings, so the direction set
-    // buys no runs at all — and a CHARACTER's five-view core plus its thirty-four limb variants is
-    // forty-nine components, past what one generation returns, so the pairing is two sheets. The
-    // facing labels are the mode's own: reading the chosen set's first would report `south`.
+  it('produces the series with its run sheets expanded, one per facing', () => {
+    // Both axes at once. An eight-compass character pairing is two core sheets — the cardinals and
+    // the diagonals, since eight nearly adjacent views on one page is what a generator blurs — and
+    // then the articulation run at each of the eight facings, because a front-facing limb cannot
+    // hang on a side-facing trunk.
     const runs = sheetRuns('CHARACTER', SUBJECT, {
       ...EIGHT_WAY_RIG,
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
     });
 
-    expect(runs.map((run) => run.plan.name)).toEqual(['Directional core', 'Articulation']);
-    expect(runs.map((run) => run.assembly)).toEqual(['front', 'front']);
-    expect(new Set(runs.map((run) => run.promptText)).size).toBe(2);
-    expect(runs.map((run) => run.output.sheetIndex)).toEqual([0, 1]);
-    // The two sheets assemble towards the same facing and do *not* cover the same ones, which is why
-    // a row cannot be labelled from the assembly direction alone: both would read `front` while one
-    // draws five views and the other draws one.
-    expect(runs.map((run) => run.covered.length)).toEqual([5, 1]);
+    expect(runs.map((run) => run.plan.name)).toEqual([
+      'Directional core — cardinal facings',
+      'Directional core — diagonal facings',
+      ...Array.from({ length: 8 }, () => 'Articulation'),
+    ]);
+    expect(runs.map((run) => run.covered.length)).toEqual([4, 4, 1, 1, 1, 1, 1, 1, 1, 1]);
+    expect(runs.slice(2).map((run) => run.assembly)).toEqual([...DIRECTION_LISTS.EIGHT_COMPASS]);
+    expect(new Set(runs.map((run) => run.promptText)).size).toBe(runs.length);
+    expect(runs.map((run) => run.output.sheetIndex)).toEqual([0, 1, 2, 2, 2, 2, 2, 2, 2, 2]);
   });
 
   it('gives the two sheets of a series different identities, and each the config that reproduces it', () => {
@@ -167,14 +168,26 @@ describe('sheetRuns', () => {
   });
 
   it('keeps a sheet’s identity across a change the sheet never reads', () => {
-    // The false dependency that keying on the raw fields carried. `CORE_DIRECTIONAL_VARIANTS`
-    // discards both the direction set and the primary facing, so a user who visited a rig mode,
-    // changed the set and came back would have found a finished batch reported as unstarted.
+    // The false dependency that keying on the raw fields carried. A multi-view core ignores the
+    // primary facing, so a user who visited a rig mode, changed it and came back would have found a
+    // finished batch reported as unstarted. The direction *set* is a real dependency now — it
+    // decides which views the core draws — so only the facing is exercised here.
     const output = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' });
-    const moved = withOutput({ ...output, directions: 'EIGHT_COMPASS', primaryDirection: 'north-east' });
+    const moved = withOutput({ ...output, primaryDirection: 'north' });
 
     expect(generatePrompt('CHARACTER', SUBJECT, moved)).toBe(generatePrompt('CHARACTER', SUBJECT, output));
     expect(sheetIdentity('CHARACTER', SUBJECT, moved)).toBe(sheetIdentity('CHARACTER', SUBJECT, output));
+  });
+
+  it('changes a sheet’s identity when the direction set changes the views it draws', () => {
+    // The other half of the same coin: the set steers the core now, so a four-cardinal core and an
+    // eight-compass cardinal core are different sheets with different prompts — a tracker that kept
+    // ticking runs off across that change would be reporting progress on a batch that no longer
+    // exists.
+    const output = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' });
+    const moved = withOutput({ ...output, directions: 'FIVE_CLASSIC' });
+
+    expect(sheetIdentity('CHARACTER', SUBJECT, moved)).not.toBe(sheetIdentity('CHARACTER', SUBJECT, output));
   });
 
   it('tells each run which sheet of the batch it is', () => {

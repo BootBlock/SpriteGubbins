@@ -60,7 +60,8 @@ or a character portrait. Every rule below serves extraction.
 Satisfy this section before any aesthetic consideration.
 
 [N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
-   overlapping.
+   overlapping — and none carrying another: a component that arrives with a neighbouring piece
+   still attached to it is two entries merged, not one component.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
 [N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image, and nothing
@@ -303,6 +304,17 @@ Draw every entry in full, and one separate visible component for each item it na
 marked **×N** names N of them. Do not merge entries, substitute duplicates, add filler, or omit
 entries. Do not draw an assembled figure anywhere on the sheet, including as a reference or key.
 
+### A component ends at its own boundary
+
+Every entry is drawn **in isolation, as a severed part** — never as the whole subject with the
+other parts faded, cropped or hidden, and never complete with its neighbours. A component includes
+nothing another entry names and nothing the assembled subject would attach to it: where a piece
+meets a neighbouring piece in the assembled subject, this drawing **stops at that join**, finished
+with a clean edge or socket, and the neighbouring piece appears nowhere on it — not attached, not
+sketched in, not trailing off the cell. Drawing a listed part together with the parts it connects
+to is the single most common failure of sheets like this: it merges entries the count in section 0
+lists separately, and it makes the cut-out part unusable.
+
 ### Placement is the only identity map
 
 Labels are forbidden by section 0, so **grid position is how each component is identified**. Lay
@@ -442,6 +454,8 @@ Before delivering, verify:
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 [N]. No text or labels anywhere.
 [N]. Components appear in the exact order the inventory lists them.
+[N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
+   and nothing on the sheet is an assembled or part-assembled figure.
 [N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
 [N]. [DEFINE:CATEGORY_AUDIT]

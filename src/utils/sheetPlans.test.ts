@@ -11,9 +11,11 @@ import {
   sheetSeriesFor,
   supportsMode,
 } from '../constants/sheetPlans/index.ts';
-import { CATEGORY_EXCLUSION_TEXT, DIRECTION_COVERAGE } from '../constants/promptText/index.ts';
+import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
+import { CATEGORY_EXCLUSION_TEXT, DIRECTION_LISTS, OBJECT_YAW } from '../constants/promptText/index.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
+import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
@@ -86,16 +88,20 @@ const LIMB_VOCABULARY = /upper arms?:|lower arms?:|left leg|right leg|pelvis|hin
 const SHEETS: readonly {
   category: SubjectCategory;
   mode: DirectionalMode;
+  directions: DirectionSet;
   sheetIndex: number;
   sheet: string;
 }[] = SUBJECT_CATEGORIES.flatMap((category) =>
   modesFor(category).flatMap((mode) =>
-    sheetSeriesFor(category, mode).map((plan, sheetIndex) => ({
-      category,
-      mode,
-      sheetIndex,
-      sheet: plan.name,
-    })),
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+      sheetSeriesFor(category, mode, directions).map((plan, sheetIndex) => ({
+        category,
+        mode,
+        directions,
+        sheetIndex,
+        sheet: plan.name,
+      })),
+    ),
   ),
 );
 
@@ -104,6 +110,7 @@ function promptFor(
   mode: DirectionalMode,
   additional?: string,
   sheetIndex = 0,
+  directions: DirectionSet = DEFAULT_OUTPUT_CONFIG.directions,
 ): string {
   const subject = {
     ...defaultSubjectFor(category),
@@ -112,6 +119,7 @@ function promptFor(
   return generatePrompt(category, subject, {
     ...DEFAULT_OUTPUT_CONFIG,
     directionalMode: mode,
+    directions,
     sheetIndex,
   });
 }
@@ -165,10 +173,42 @@ describe('the plan table itself', () => {
     // The directional modes spend the sheet on facings, which delivers stills of a thing whose whole
     // identity is that it changes — and section 3's rotation half asks an explosion to prove it
     // turned by occluding surfaces it does not have. A rig articulates about pivots an effect has
-    // none of. What a *directional* effect needs is this mode plus a direction set, which
-    // `'primary'` coverage reads as a run list: eight frame sequences, not one sheet of eight frames.
+    // none of. What a *directional* effect needs is this mode plus a direction set, which a `'run'`
+    // sheet reads as a run list: eight frame sequences, not one sheet of eight frames.
     expect(modesFor('EFFECT')).toEqual(['SINGLE_DIRECTION_POSE_LIBRARY']);
-    expect(DIRECTION_COVERAGE.SINGLE_DIRECTION_POSE_LIBRARY).toBe('primary');
+    const [sequence] = sheetSeriesFor('EFFECT', 'SINGLE_DIRECTION_POSE_LIBRARY', 'EIGHT_COMPASS');
+    expect(sequence.facings).toBe('run');
+  });
+
+  it('splits the eight-compass core by yaw parity, and the halves partition the set', () => {
+    // Two properties in one: the cardinal sheet holds exactly the multiples of 90 and the diagonal
+    // sheet the rest, and together they draw each facing of the set exactly once — a facing drawn
+    // twice inflates the count, and one drawn nowhere is a view the game cannot show.
+    for (const category of SUBJECT_CATEGORIES) {
+      if (!supportsMode(category, 'CORE_DIRECTIONAL_VARIANTS')) continue;
+      if (!CATEGORY_DIRECTION_SETS[category].includes('EIGHT_COMPASS')) continue;
+      const series = sheetSeriesFor(category, 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS');
+      const multiView = series.filter((plan) => plan.facings !== 'run');
+      expect(multiView, category).toHaveLength(2);
+
+      const [cardinals, diagonals] = multiView;
+      if (
+        cardinals === undefined ||
+        diagonals === undefined ||
+        cardinals.facings === 'run' ||
+        diagonals.facings === 'run'
+      ) {
+        throw new Error('narrowed above');
+      }
+      for (const facing of cardinals.facings) expect(OBJECT_YAW[facing] % 90).toBe(0);
+      for (const facing of diagonals.facings) expect(OBJECT_YAW[facing] % 90).not.toBe(0);
+      expect([...cardinals.facings, ...diagonals.facings].sort(), category).toEqual(
+        [...DIRECTION_LISTS.EIGHT_COMPASS].sort(),
+      );
+      // And the two halves are tellable apart everywhere a sheet is named.
+      expect(cardinals.name).toContain('cardinal');
+      expect(diagonals.name).toContain('diagonal');
+    }
   });
 });
 
@@ -274,36 +314,39 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
 });
 
 describe('no category emits another category’s components', () => {
-  it.each(SHEETS)('$category / $mode / $sheet', ({ category, mode, sheetIndex }) => {
-    const prompt = promptFor(category, mode, undefined, sheetIndex);
-    const inventory = /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/.exec(
-      prompt,
-    );
-    expect(inventory).not.toBeNull();
-    const section = inventory?.[0] ?? '';
+  it.each(SHEETS)(
+    '$category / $mode / $directions / $sheet',
+    ({ category, mode, directions, sheetIndex }) => {
+      const prompt = promptFor(category, mode, undefined, sheetIndex, directions);
+      const inventory = /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/.exec(
+        prompt,
+      );
+      expect(inventory).not.toBeNull();
+      const section = inventory?.[0] ?? '';
 
-    // Neither half is a list of category names, and that is the fix rather than the tidy-up: the
-    // limb half used to read `category === 'OBJECT' || category === 'ITEM'`, so VEHICLE — which
-    // holds exactly OBJECT's `['structure', 'mechanism']` pair — joined this suite running only the
-    // tile half. It passed, because the vehicle plans happen to name no limbs, and nothing said the
-    // other half had stopped being asserted. A list of names cannot notice a seventh category; each
-    // half has to be answered by something the seventh category is obliged to fill in.
-    //
-    // The two halves are derived from *different* things, and the reason is above each constant: a
-    // category either admits anatomy or it does not, which the kinds table answers, while whether it
-    // may draw an environment is what its own section 8 answers — and only that second one stopped
-    // tracking the kinds table when INTERFACE took the tileset mode.
-    //
-    // `validateAllSheetPlans` does not make either redundant. `kind` is hand-assigned per entry, so
-    // `{ text: 'Left leg ×1', kind: 'structure' }` satisfies the structural check and only the prose
-    // net catches it — which is why the two run side by side.
-    if (!PERMITTED_KINDS[category].includes('anatomy')) {
-      expect(section).not.toMatch(LIMB_VOCABULARY);
-    }
-    if (BANS_AN_ENVIRONMENT.includes(category)) {
-      expect(section).not.toMatch(ENVIRONMENT_VOCABULARY);
-    }
-  });
+      // Neither half is a list of category names, and that is the fix rather than the tidy-up: the
+      // limb half used to read `category === 'OBJECT' || category === 'ITEM'`, so VEHICLE — which
+      // holds exactly OBJECT's `['structure', 'mechanism']` pair — joined this suite running only the
+      // tile half. It passed, because the vehicle plans happen to name no limbs, and nothing said the
+      // other half had stopped being asserted. A list of names cannot notice a seventh category; each
+      // half has to be answered by something the seventh category is obliged to fill in.
+      //
+      // The two halves are derived from *different* things, and the reason is above each constant: a
+      // category either admits anatomy or it does not, which the kinds table answers, while whether it
+      // may draw an environment is what its own section 8 answers — and only that second one stopped
+      // tracking the kinds table when INTERFACE took the tileset mode.
+      //
+      // `validateAllSheetPlans` does not make either redundant. `kind` is hand-assigned per entry, so
+      // `{ text: 'Left leg ×1', kind: 'structure' }` satisfies the structural check and only the prose
+      // net catches it — which is why the two run side by side.
+      if (!PERMITTED_KINDS[category].includes('anatomy')) {
+        expect(section).not.toMatch(LIMB_VOCABULARY);
+      }
+      if (BANS_AN_ENVIRONMENT.includes(category)) {
+        expect(section).not.toMatch(ENVIRONMENT_VOCABULARY);
+      }
+    },
+  );
 });
 
 describe('the reported failure: a CHARACTER asked for a tileset', () => {
@@ -311,9 +354,9 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
 
   it('cannot be configured at all — the mode is not offered to a character', () => {
     expect(supportsMode('CHARACTER', 'TILESET_MODULAR')).toBe(false);
-    expect(directionalModeChoices('CHARACTER', []).map((choice) => choice.value)).not.toContain(
-      'TILESET_MODULAR',
-    );
+    expect(
+      directionalModeChoices('CHARACTER', 'FIVE_CLASSIC', []).map((choice) => choice.value),
+    ).not.toContain('TILESET_MODULAR');
   });
 
   it('degrades to the category’s own sheet if such a pairing arrives from stored data', () => {
@@ -416,18 +459,21 @@ describe('a BUILDING tileset is still a tileset', () => {
 });
 
 describe('the declared count is the inventory’s own length', () => {
-  it.each(SHEETS)('$category / $mode / $sheet', ({ category, mode, sheetIndex, sheet }) => {
-    const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex);
-    const expected = componentCountFor(category, mode, sheetIndex, [
-      { name: 'Demon Horn', count: 2 },
-      { name: 'Tail', count: 1 },
-    ]);
+  it.each(SHEETS)(
+    '$category / $mode / $directions / $sheet',
+    ({ category, mode, directions, sheetIndex, sheet }) => {
+      const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions);
+      const expected = componentCountFor(category, mode, directions, sheetIndex, [
+        { name: 'Demon Horn', count: 2 },
+        { name: 'Tail', count: 1 },
+      ]);
 
-    // Stated four times over; all four are the same sum or the sheet is silently wrong.
-    expect(prompt).toContain(`Exactly ${String(expected)} components`);
-    expect(prompt).toContain(`### Component inventory: ${sheet} — ${String(expected)} in total`);
-    expect(prompt).toContain(`Component count is exactly ${String(expected)}.`);
-  });
+      // Stated four times over; all four are the same sum or the sheet is silently wrong.
+      expect(prompt).toContain(`Exactly ${String(expected)} components`);
+      expect(prompt).toContain(`### Component inventory: ${sheet} — ${String(expected)} in total`);
+      expect(prompt).toContain(`Component count is exactly ${String(expected)}.`);
+    },
+  );
 });
 
 describe('every mode of the union is reachable from some category', () => {

@@ -27,7 +27,7 @@ import type { SheetPlan } from '../../types/components.ts';
 
 export const INTERFACE_STATE_LIBRARY: SheetPlan = {
   name: 'State library',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'the complete interface in each state a player can put it in — a resting screen, a button under the pointer and again pressed, a bar part-filled, a toggle switched, a slot occupied — without redrawing any piece that does not change between them.',
   groups: [
@@ -62,7 +62,7 @@ shape from its resting one cannot be swapped for it at runtime.`,
 
 export const INTERFACE_NINE_SLICE: SheetPlan = {
   name: 'Nine-slice set',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'a panel at any width and height, a button at any width, and a divider run at any length — each of them with no visible join, no stretched corner and no seam where a repeat begins.',
   groups: [

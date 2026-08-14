@@ -671,6 +671,48 @@ place. Don't write a guard, a comment or a test that assumes a state mismatch th
 implements none of this, and the no-op stubs in `src/test/setup.ts` deliberately model that silence
 rather than inventing an invariant.
 
+## Prompt text is the product, and it is written to rules
+
+The app's whole output is prompt text for image-generation models, and that text is a **contract,
+not copy**: editing one sentence changes the artwork every user gets back. The reported failures
+this section exists to prevent are real ones — trunk sheets coming back wearing limbs the inventory
+never listed, and "directional" views delivered at one angle with the details moved. Every rule
+below was bought with one of those.
+
+- **Where the words live.** The template skeleton is `src/constants/promptTemplate.ts` (mirrored
+  verbatim into `docs/todo/baseline-prompt-new.md` §3 — a test compares them character for
+  character, so change both in one commit). Per-option prose lives in `src/constants/promptText/`
+  (`[DEFINE:FOO_DESCRIPTION]` is filled from `FOO_TEXT`; a test walks the pairing). What a sheet
+  *contains* lives in `src/constants/sheetPlans/`, keyed by category **and** mode. Per-target
+  wrappers live in `utils/modelWrapperText.ts`, and every wrapper line must trace to something the
+  target's **vendor documents** — a flag syntax, a negative-prompt channel, a documented rewrite —
+  never to symmetry or vibes.
+- **Derive every fact that two places state; hand-write none of them.** The component count is
+  summed from the inventory's own entries; a plan's facings, its counts and section 3's yaw list
+  are all built from the one facing tuple; the series list in section 6 is enumerated from the same
+  batch the split drawer shows. A number or facing name written twice by hand *will* drift, and the
+  generator resolves the contradiction however it likes — that is what a "silently wrong sheet" is.
+- **A setting the compiler discards is a defect, not a simplification.** Every Output Configuration
+  control must reach the compiled prompt as stated, or not be on screen. The Directions control
+  steers the directional core (the plans are functions of the chosen set) and is the run list for
+  every `'run'` sheet; `resolveMode` / `resolveDirectionSet` / `resolveSheetIndex` degrade stored
+  values a category cannot honour, and the digests report the resolved answer, never the raw field.
+- **State geometry, not adjectives.** A direction is an object yaw in degrees beneath a fixed
+  camera, plus what that yaw *occludes* — a name like "side view" is satisfiable by a three-quarter
+  view with moved details. A part is defined by where it **ends**: the trunk-termination paragraphs
+  in the character and creature plans name the joins (neck, shoulders, waist, hips) because a
+  generator's prior for "torso" includes arms, and only the named boundary stops it.
+- **One prompt must never disagree with itself.** Section 4 may not require what section 8 forbids
+  (exclusions, guards and audits are per-category for exactly this reason); an inventory may not
+  name views section 3 does not list; anatomy appears only on the sheet that counts it. When adding
+  a rule, grep for the sections that state its neighbours and check the pair under every category
+  and every direction set — `sheetPlans.test.ts` and `componentSet.test.ts` walk all of them.
+- **Respect the ceiling and the reader.** `PRACTICAL_COMPONENT_CEILING` (43) bounds one generation;
+  a multi-view sheet carries at most five views, and the eight-compass core splits into cardinals
+  and diagonals (`coreFacingChunks`) because eight adjacent yaws on one page is exactly what a
+  generator blurs together. Sections that a target cannot act on (self-audit, manifest, adherence
+  report) are gated on its declared capabilities in `constants/models.ts`, never emitted on faith.
+
 ## Architecture: the spec's structural laws
 
 These are the spec's guardrails, restated here because they govern every change, not just the

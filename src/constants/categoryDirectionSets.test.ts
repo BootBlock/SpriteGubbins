@@ -7,8 +7,8 @@ import {
   supportsDirectionSet,
 } from './categoryDirectionSets.ts';
 import { directionSetChoices } from './output/directionSetChoices.ts';
-import { DIRECTION_COVERAGE } from './promptText/index.ts';
-import { modesFor } from './sheetPlans/index.ts';
+import { DIRECTION_LISTS } from './promptText/index.ts';
+import { modesFor, sheetSeriesFor } from './sheetPlans/index.ts';
 
 /**
  * Which facings each category's subject can be drawn to.
@@ -62,18 +62,22 @@ describe('the table itself', () => {
     }
   });
 
-  it('never lets a mode draw a set its own category is not offered', () => {
+  it('never lets a sheet draw a facing outside a set its own category is offered', () => {
     // The invariant that makes the restriction total, and the one place the two tables have to
-    // agree. A mode with a *named* coverage — `CORE_DIRECTIONAL_VARIANTS` draws `FIVE_CLASSIC`
-    // whatever the control says — reaches the sheet without passing through `resolveDirectionSet`
-    // at all, so a category holding both that mode and a narrower pool would draw five facings of a
-    // subject this table says has one. It holds today because the two bound categories support only
-    // `'primary'` modes; nothing but this says it has to keep holding.
+    // agree. Every series is now built from a set resolved through the category, so a multi-view
+    // sheet's facing tuple must sit inside a set the category actually offers — a plan carrying a
+    // facing its subject cannot be turned to would be the contamination this table exists to stop,
+    // arriving through the builder instead of the control.
     for (const category of SUBJECT_CATEGORIES) {
       for (const mode of modesFor(category)) {
-        const coverage = DIRECTION_COVERAGE[mode];
-        if (coverage === 'primary') continue;
-        expect(supportsDirectionSet(category, coverage), `${category} / ${mode}`).toBe(true);
+        for (const set of CATEGORY_DIRECTION_SETS[category]) {
+          for (const plan of sheetSeriesFor(category, mode, set)) {
+            if (plan.facings === 'run') continue;
+            for (const facing of plan.facings) {
+              expect(DIRECTION_LISTS[set], `${category} / ${mode} / ${set}`).toContain(facing);
+            }
+          }
+        }
       }
     }
   });
@@ -114,9 +118,9 @@ describe('directionSetChoices', () => {
 
   it('leads with the set most sheets want, not with the table’s fallback', () => {
     // The two orders answer different questions and neither is derived from the other: the select
-    // leads with `THREE_CLASSIC` because it is the studio's opening set, while the table leads with
+    // leads with `FIVE_CLASSIC` because it is the studio's opening set, while the table leads with
     // `SINGLE_FRONT` because that is what an unhonourable stored set degrades to.
-    expect(directionSetChoices('CHARACTER')[0]?.value).toBe('THREE_CLASSIC');
+    expect(directionSetChoices('CHARACTER')[0]?.value).toBe('FIVE_CLASSIC');
     expect(CATEGORY_DIRECTION_SETS.CHARACTER[0]).toBe('SINGLE_FRONT');
   });
 });

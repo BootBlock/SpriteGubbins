@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { DIRECTION_SETS } from '../../types/rendering.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
 import { DIRECTION_LISTS } from './camera.ts';
-import { DIRECTION_COVERAGE } from './inventory.ts';
 import { OBJECT_YAW } from './rotation.ts';
 
 /**
@@ -67,17 +66,14 @@ describe('direction-set coverage', () => {
     expect(sets.filter((set) => reachableYaws(set).includes(180))).not.toHaveLength(0);
   });
 
-  it('draws the facings a sheet that fixes its own coverage cannot be steered towards', () => {
-    // The defect the five-view core was built for, as a property rather than as a story. A mode whose
-    // coverage is a fixed set discards the direction control entirely, so whatever that set cannot
-    // reach is unreachable from *anywhere* in the app — and `CORE_DIRECTIONAL_VARIANTS` is the default
-    // for more categories than any other and for the default configuration, so its set was the whole app's
-    // ceiling. On THREE_CLASSIC it drew six of eight facings and neither of the two a player looks at
-    // most, with no control anywhere that could have said otherwise.
-    for (const coverage of Object.values(DIRECTION_COVERAGE)) {
-      if (coverage === 'primary') continue;
-      expect(reachableYaws(coverage)).toStrictEqual([0, 45, 90, 135, 180, 225, 270, 315]);
-    }
+  it('offers a set that reaches all eight facings without any engine mirroring at all', () => {
+    // The property the app has to keep now that the chosen set steers every sheet: a character whose
+    // gear makes it asymmetric cannot be mirrored, so its eight facings have to be *drawable* — a
+    // set whose own list carries all eight yaws, not one that reaches them through a flip.
+    const drawnOutright = DIRECTION_SETS.filter(
+      (set) => new Set(DIRECTION_LISTS[set].map((direction) => OBJECT_YAW[direction])).size === 8,
+    );
+    expect(drawnOutright).toContain('EIGHT_COMPASS');
   });
 
   it('draws every facing it lists exactly once, so no set pays twice for one view', () => {

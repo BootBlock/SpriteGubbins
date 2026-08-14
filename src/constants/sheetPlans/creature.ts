@@ -1,16 +1,18 @@
 import type { SheetPlan, SheetSeries } from '../../types/components.ts';
-import { viewsOf } from './directionalViews.ts';
+import type { FacingTuple } from './directionalViews.ts';
+import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 import { RIG_PIECES_OUTRO } from './rigPieces.ts';
 
 /**
  * What a CREATURE sheet asks for, per sheet mode.
  *
  * Structurally parallel to CHARACTER — a quadruped decomposes into the same segment chain a biped
- * does, and outgrows a single sheet at the same five views for the same reason — but the
- * *terminology* is its own: forelimb and hindlimb rather than arm and leg, body and hindquarters
- * rather than torso and pelvis. That distinction is the point. A creature sheet asking for "hands"
- * invites a generator to draw a humanoid hand on a beast, which is the humanoid-only assumption
- * these plans exist to stop reaching a non-humanoid subject.
+ * does, its directional core is steered by the same chosen facings, and it splits at the same
+ * eight-compass set for the same reason — but the *terminology* is its own: forelimb and hindlimb
+ * rather than arm and leg, body and hindquarters rather than torso and pelvis. That distinction is
+ * the point. A creature sheet asking for "hands" invites a generator to draw a humanoid hand on a
+ * beast, which is the humanoid-only assumption these plans exist to stop reaching a non-humanoid
+ * subject.
  *
  * Limbs are named fore/hind rather than numbered, so a subject with more than four states the extra
  * ones through its additional-anatomy field, where they are counted as their own components.
@@ -23,9 +25,22 @@ const MIRRORED_HINDLIMB = 'The same nine variants as the left hindlimb, redrawn 
 const CREATURE_GAITS =
   'a neutral standing stance; an alert stance; a lowered stalking crouch; a walking gait with opposing limbs; a running gait with full limb extension; and a rearing or lunging pose';
 
+/**
+ * Where each trunk piece ends — the creature spelling of the character plans' own paragraph, and
+ * there for the same reason: a generator's prior for "body" is a body *with legs*, so trunk sheets
+ * come back wearing limbs the inventory never listed unless the joins are named.
+ */
+const TRUNK_TERMINATION = `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
+parts faded or hidden. A head ends at the neck, with no body behind it. A body ends at the neck
+join, the two forelimb shoulder joins and the join to the hindquarters, and carries **no head and no
+limbs**: each join is a clean, capped socket, never a stump trailing into a limb. A hindquarters
+ends at the body join and the two hindlimb hip joins, and carries **no limbs** — and no tail, unless
+the inventory lists a tail as its own component. A trunk piece that arrives wearing any limb has
+merged entries the inventory lists separately, and breaks the count in section 0.`;
+
 export const CREATURE_POSE_LIBRARY: SheetPlan = {
   name: 'Pose library',
-  facings: 'assembly',
+  facings: 'run',
   assembly: `${CREATURE_GAITS}.`,
   groups: [
     {
@@ -53,36 +68,40 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
           kind: 'anatomy',
         },
       ],
+      outro: TRUNK_TERMINATION,
     },
   ],
 };
 
-/** Sheet one of two: the trunk, turned. See `CHARACTER_DIRECTIONAL_CORE` for why this is a series. */
-export const CREATURE_DIRECTIONAL_CORE: SheetPlan = {
-  name: 'Directional core',
-  facings: 'every',
-  assembly:
-    'one head, one body and one hindquarters seen at each of the directions listed above, reading as one animal turned rather than several drawings of it — the trunk the articulation sheet hangs its limbs on.',
-  groups: [
-    {
-      heading: null,
-      intro: `One view of **one** head, **one** body and **one** hindquarters per facing: the same piece of
+/** One core sheet: the trunk, turned to this sheet's share of the chosen facings. */
+function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+  return {
+    name: chunkName('Directional core', chunk, chunks),
+    facings: chunk,
+    assembly:
+      'one head, one body and one hindquarters seen at each of the directions listed above, reading as one animal turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
+    groups: [
+      {
+        heading: null,
+        intro: `One view of **one** head, **one** body and **one** hindquarters per facing: the same piece of
 geometry drawn at each object yaw section 3 lists, in that order. Separate designs, mirrored copies,
 or views facing the same way are all failures of this entry, however well drawn.`,
-      entries: [
-        viewsOf('Heads', 'anatomy'),
-        viewsOf('Bodies', 'anatomy'),
-        viewsOf('Hindquarters', 'anatomy'),
-      ],
-    },
-  ],
-};
+        entries: [
+          viewsOf('Heads', 'anatomy', chunk),
+          viewsOf('Bodies', 'anatomy', chunk),
+          viewsOf('Hindquarters', 'anatomy', chunk),
+        ],
+        outro: TRUNK_TERMINATION,
+      },
+    ],
+  };
+}
 
-/** Sheet two of two: the limbs, at the one facing section 3 names. */
+/** The limbs, one facing per generation — the creature spelling of the character articulation run. */
 export const CREATURE_ARTICULATION: SheetPlan = {
   name: 'Articulation',
-  facings: 'assembly',
-  assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheet, at the single direction listed above.`,
+  facings: 'run',
+  assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, at the single direction listed above.`,
   groups: [
     {
       heading: 'Left forelimb',
@@ -113,11 +132,20 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   ],
 };
 
-export const CREATURE_DIRECTIONAL_VARIANTS: SheetSeries = [CREATURE_DIRECTIONAL_CORE, CREATURE_ARTICULATION];
+/** The directional pairing: the core sheet or sheets for the chosen facings, then the limbs. */
+export function creatureDirectionalVariants(facings: FacingTuple): SheetSeries {
+  const chunks = coreFacingChunks(facings);
+  const [first, ...rest] = chunks;
+  return [
+    creatureDirectionalCore(first, chunks),
+    ...rest.map((chunk) => creatureDirectionalCore(chunk, chunks)),
+    CREATURE_ARTICULATION,
+  ];
+}
 
 export const CREATURE_CUTOUT_RIG: SheetPlan = {
   name: 'Rig pieces',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'any gait the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.',
   groups: [
@@ -131,7 +159,9 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
         { text: 'Left hindlimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
         { text: 'Right hindlimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
       ],
-      outro: RIG_PIECES_OUTRO,
+      outro: `${TRUNK_TERMINATION}
+
+${RIG_PIECES_OUTRO}`,
     },
   ],
 };

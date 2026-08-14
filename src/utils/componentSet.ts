@@ -8,6 +8,7 @@ import {
 import type { ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode } from '../types/output.ts';
+import type { DirectionSet } from '../types/rendering.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import { countAnatomyComponents, formatAnatomyComponent } from './additionalAnatomy.ts';
 import type { BatchSheet } from './sheetBatch.ts';
@@ -66,20 +67,22 @@ export function planComponentCount(plan: SheetPlan): number {
 export function sheetCarriesAnatomy(
   category: SubjectCategory,
   mode: DirectionalMode,
+  directions: DirectionSet,
   sheetIndex: number,
 ): boolean {
-  return resolveSheetIndex(category, mode, sheetIndex) === 0;
+  return resolveSheetIndex(category, mode, directions, sheetIndex) === 0;
 }
 
 /** The count the prompt states, once the subject's own additional anatomy is included. */
 export function componentCountFor(
   category: SubjectCategory,
   mode: DirectionalMode,
+  directions: DirectionSet,
   sheetIndex: number,
   additional: readonly AnatomyComponent[],
 ): number {
-  const plan = sheetPlanFor(category, mode, sheetIndex);
-  const carries = sheetCarriesAnatomy(category, mode, sheetIndex);
+  const plan = sheetPlanFor(category, mode, directions, sheetIndex);
+  const carries = sheetCarriesAnatomy(category, mode, directions, sheetIndex);
   return planComponentCount(plan) + (carries ? countAnatomyComponents(additional) : 0);
 }
 
@@ -87,17 +90,22 @@ export function componentCountFor(
 export function seriesComponentCount(
   category: SubjectCategory,
   mode: DirectionalMode,
+  directions: DirectionSet,
   additional: readonly AnatomyComponent[],
 ): number {
-  return sheetSeriesFor(category, mode).reduce(
-    (total, _plan, index) => total + componentCountFor(category, mode, index, additional),
+  return sheetSeriesFor(category, mode, directions).reduce(
+    (total, _plan, index) => total + componentCountFor(category, mode, directions, index, additional),
     0,
   );
 }
 
-/** How many sheets the pairing takes. One for most of them; two where a five-view core outgrew one. */
-export function sheetCountFor(category: SubjectCategory, mode: DirectionalMode): number {
-  return sheetSeriesFor(category, mode).length;
+/** How many sheets the pairing takes for this direction set. One for most; up to three for an eight-compass character. */
+export function sheetCountFor(
+  category: SubjectCategory,
+  mode: DirectionalMode,
+  directions: DirectionSet,
+): number {
+  return sheetSeriesFor(category, mode, directions).length;
 }
 
 /**
@@ -122,6 +130,7 @@ export function sheetComponentCount(
   return componentCountFor(
     category,
     resolveMode(category, sheet.output.directionalMode),
+    sheet.output.directions,
     sheet.output.sheetIndex,
     additional,
   );
@@ -193,16 +202,19 @@ function renderGroup(group: ComponentGroup): string {
 export function componentBreakdownFor(
   category: SubjectCategory,
   mode: DirectionalMode,
+  directions: DirectionSet,
   sheetIndex: number,
   additional: readonly AnatomyComponent[],
 ): string {
-  const plan = sheetPlanFor(category, mode, sheetIndex);
-  const total = componentCountFor(category, mode, sheetIndex, additional);
+  const plan = sheetPlanFor(category, mode, directions, sheetIndex);
+  const total = componentCountFor(category, mode, directions, sheetIndex, additional);
 
   const inventory = `### Component inventory: ${plan.name} — ${String(total)} in total
 
 ${plan.groups.map(renderGroup).join('\n\n')}`;
-  if (!sheetCarriesAnatomy(category, mode, sheetIndex) || additional.length === 0) return inventory;
+  if (!sheetCarriesAnatomy(category, mode, directions, sheetIndex) || additional.length === 0) {
+    return inventory;
+  }
 
   const entries = additional.map((component) => `- ${formatAnatomyComponent(component)}.`).join('\n');
 

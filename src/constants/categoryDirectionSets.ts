@@ -14,11 +14,11 @@ import type { SubjectCategory } from '../types/subject.ts';
  * `object yaw 45°` — for a button.
  *
  * **The failure is degenerate rather than self-contradicting**, which is why it survived so long.
- * `DIRECTION_COVERAGE` is `'primary'` for every mode these categories support, so the chosen set is
- * read as a *run list* and each sheet narrows to one facing; §3's rotation machinery never fires and
- * nothing in the prompt disagrees with anything else in it. What the set decides here is only how
- * many sheets the batch is and which yaw its one facing takes — so the outcome is N identical kits
- * requested at angles the subject does not have, rather than a broken sheet.
+ * Every sheet these categories can produce is a `'run'` plan, so the chosen set is read as a *run
+ * list* and each sheet narrows to one facing; §3's rotation machinery never fires and nothing in
+ * the prompt disagrees with anything else in it. What the set decides here is only how many sheets
+ * the batch is and which yaw its one facing takes — so the outcome is N identical kits requested at
+ * angles the subject does not have, rather than a broken sheet.
  *
  * **Which categories this binds is the whole decision, and it is two.**
  *
@@ -29,11 +29,11 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   collapses to `SINGLE_FRONT` for both, which is the only one naming a facing they do have.
  * - **EFFECT keeps every set, and pinning it would delete a deliverable.** A radial burst has no
  *   facing, but a directional slash genuinely *is* eight runs of one frame sequence —
- *   `sheetPlans/effect.ts` argues exactly that, and it is why the category's single mode is the one
- *   whose `'primary'` coverage turns a set into a run list. "Has no facing" is a property of some
+ *   `sheetPlans/effect.ts` argues exactly that, and it is why the category's single sheet is a
+ *   `'run'` plan, which is what turns a set into a run list. "Has no facing" is a property of some
  *   effects, not of the category, and a table cannot tell them apart.
  * - **BUILDING keeps every set** even though it defaults to a tileset, because a facade is a facing:
- *   `BUILDING_DIRECTIONAL_VARIANTS` is a real plan of it. That it never surfaced this failure is a
+ *   `buildingDirectionalVariants` is a real plan of it. That it never surfaced this failure is a
  *   different fact — it also supports `CORE_DIRECTIONAL_VARIANTS`, so the app's default mode survives
  *   the category switch and a degenerate batch has to be asked for deliberately.
  *

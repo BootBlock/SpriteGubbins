@@ -34,10 +34,16 @@ describe('describeSeries', () => {
     // contracts for is this sheet's alone, and the facings say which turns are somebody else's job.
     const batch = sheetBatch('CHARACTER', { ...TWO_SHEET_SERIES, sheetIndex: 1 });
 
+    // The articulation sheet is a run now — one generation per facing of the chosen set — so the
+    // five-classic pairing is six sheets, and the selected one is the run at the set's first facing.
     expect(describeSeries('CHARACTER', batch, NO_ANATOMY)).toBe(
       [
         '- **Sheet 1 — Directional core**: 15 components, covering front, front-three-quarter, right side, back-three-quarter, back.',
         '- **Sheet 2 — Articulation** *(this sheet)*: 34 components, drawn towards front.',
+        '- **Sheet 3 — Articulation**: 34 components, drawn towards front-three-quarter.',
+        '- **Sheet 4 — Articulation**: 34 components, drawn towards right side.',
+        '- **Sheet 5 — Articulation**: 34 components, drawn towards back-three-quarter.',
+        '- **Sheet 6 — Articulation**: 34 components, drawn towards back.',
       ].join('\n'),
     );
   });

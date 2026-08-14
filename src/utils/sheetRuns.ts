@@ -63,7 +63,7 @@ export function sheetIdentity(
   output: OutputConfig,
 ): string {
   const mode = resolveMode(category, output.directionalMode);
-  const plan = sheetPlanFor(category, mode, output.sheetIndex);
+  const plan = sheetPlanFor(category, mode, output.directions, output.sheetIndex);
   const { covered } = sheetDirections(category, output, plan);
   return JSON.stringify([category, subject, mode, plan.name, covered]);
 }

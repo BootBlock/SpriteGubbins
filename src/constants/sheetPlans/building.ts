@@ -1,5 +1,6 @@
-import type { SheetPlan } from '../../types/components.ts';
-import { atEachYaw, viewsOf } from './directionalViews.ts';
+import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { FacingTuple } from './directionalViews.ts';
+import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
 /**
  * What a BUILDING sheet asks for, per sheet mode.
@@ -22,7 +23,7 @@ import { atEachYaw, viewsOf } from './directionalViews.ts';
 
 export const BUILDING_TILESET: SheetPlan = {
   name: 'Tile set',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'a continuous floor field, a straight wall run, and both outer and inner corners, with no visible join where tiles meet.',
   groups: [
@@ -53,7 +54,7 @@ carries a feature that reveals repetition when laid in a field.`,
 
 export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   name: 'Module library',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'the complete structure, and the variations its modules allow — a longer façade by repeating a wall bay, an open or closed entrance, a roof carried across either footprint.',
   groups: [
@@ -79,23 +80,42 @@ beside any other without a step in the course lines.`,
   ],
 };
 
-/** One sheet, five views — twenty components. See `OBJECT_DIRECTIONAL_VARIANTS` for why it is not a series. */
-export const BUILDING_DIRECTIONAL_VARIANTS: SheetPlan = {
-  name: 'Directional views',
-  facings: 'every',
-  assembly:
-    'the complete structure seen from each of the directions listed above, with its module courses aligning across those views.',
-  groups: [
-    {
-      heading: 'Directional core',
-      intro: `One view of **one** wall bay and **one** roof section per facing: the same piece of geometry drawn
+/**
+ * The directional views, steered by the chosen facings — four pieces per view, so one sheet holds
+ * up to five facings and the eight-compass set splits into a cardinal and a diagonal sheet, exactly
+ * as `objectDirectionalVariants` does.
+ */
+function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+  return {
+    name: chunkName('Directional views', chunk, chunks),
+    facings: chunk,
+    assembly:
+      'the complete structure seen from each of the directions listed above, with its module courses aligning across those views.',
+    groups: [
+      {
+        heading: 'Directional core',
+        intro: `One view of **one** wall bay and **one** roof section per facing: the same piece of geometry drawn
 at each object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing
 the same way are all failures of this entry.`,
-      entries: [viewsOf('Wall bays', 'structure'), viewsOf('Roof sections', 'structure')],
-    },
-    {
-      heading: 'Openings and corners',
-      entries: [atEachYaw('Entrance module', 'structure'), atEachYaw('Corner post or quoin', 'structure')],
-    },
-  ],
-};
+        entries: [viewsOf('Wall bays', 'structure', chunk), viewsOf('Roof sections', 'structure', chunk)],
+      },
+      {
+        heading: 'Openings and corners',
+        entries: [
+          atEachYaw('Entrance module', 'structure', chunk),
+          atEachYaw('Corner post or quoin', 'structure', chunk),
+        ],
+      },
+    ],
+  };
+}
+
+/** The directional pairing: one sheet for up to five facings, two for the eight-compass set. */
+export function buildingDirectionalVariants(facings: FacingTuple): SheetSeries {
+  const chunks = coreFacingChunks(facings);
+  const [first, ...rest] = chunks;
+  return [
+    buildingDirectionalSheet(first, chunks),
+    ...rest.map((chunk) => buildingDirectionalSheet(chunk, chunks)),
+  ];
+}

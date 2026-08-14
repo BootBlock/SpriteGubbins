@@ -1,5 +1,6 @@
-import type { SheetPlan } from '../../types/components.ts';
-import { atEachYaw, viewsOf } from './directionalViews.ts';
+import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { FacingTuple } from './directionalViews.ts';
+import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
 
 /**
  * What a VEHICLE sheet asks for, per sheet mode.
@@ -21,7 +22,7 @@ import { atEachYaw, viewsOf } from './directionalViews.ts';
 
 export const VEHICLE_PART_LIBRARY: SheetPlan = {
   name: 'Part library',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'the complete vehicle at rest, and in each state its moving parts allow — mount traversed or elevated, hatch open, drive at rest and at mid-travel — without redrawing any part that does not move.',
   groups: [
@@ -54,40 +55,62 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
   ],
 };
 
-/** One sheet, five views — thirty components. See `OBJECT_DIRECTIONAL_VARIANTS` for why it is not a series. */
-export const VEHICLE_DIRECTIONAL_VARIANTS: SheetPlan = {
-  name: 'Directional views',
-  facings: 'every',
-  assembly:
-    'the complete vehicle seen from each of the directions listed above, reading as one machine turned rather than several drawings of it, with its drive and mount in matching positions across those views.',
-  groups: [
-    {
-      heading: 'Directional core',
-      intro: `One view of **one** hull and **one** mount per facing: the same piece of geometry drawn at each
+/**
+ * The directional views, steered by the chosen facings — six pieces per view, so one sheet holds up
+ * to five facings (thirty components) and the eight-compass set splits into a cardinal and a
+ * diagonal sheet of twenty-four each, exactly as `objectDirectionalVariants` does.
+ */
+function vehicleDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]): SheetPlan {
+  return {
+    name: chunkName('Directional views', chunk, chunks),
+    facings: chunk,
+    assembly:
+      'the complete vehicle seen from each of the directions listed above, reading as one machine turned rather than several drawings of it, with its drive and mount in matching positions across those views.',
+    groups: [
+      {
+        heading: 'Directional core',
+        intro: `One view of **one** hull and **one** mount per facing: the same piece of geometry drawn at each
 object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing the
 same way are all failures of this entry.`,
-      entries: [
-        viewsOf('Hulls or fuselages', 'structure'),
-        viewsOf('Turret, weapon or working mounts', 'mechanism'),
-      ],
-    },
-    {
-      // Grouped by what the entries *are*, not by where they sit on the vehicle. A heading is
-      // rendered into section 4 above its own bullets, so "Running gear" over a cladding panel
-      // describes the group wrongly to the one reader that cannot ask.
-      heading: 'Moving parts',
-      entries: [atEachYaw('Drive unit', 'mechanism'), atEachYaw('Crew hatch or canopy', 'mechanism')],
-    },
-    {
-      heading: 'Fittings',
-      entries: [atEachYaw('Cladding panel or fairing', 'structure'), atEachYaw('Lamp housing', 'structure')],
-    },
-  ],
-};
+        entries: [
+          viewsOf('Hulls or fuselages', 'structure', chunk),
+          viewsOf('Turret, weapon or working mounts', 'mechanism', chunk),
+        ],
+      },
+      {
+        // Grouped by what the entries *are*, not by where they sit on the vehicle. A heading is
+        // rendered into section 4 above its own bullets, so "Running gear" over a cladding panel
+        // describes the group wrongly to the one reader that cannot ask.
+        heading: 'Moving parts',
+        entries: [
+          atEachYaw('Drive unit', 'mechanism', chunk),
+          atEachYaw('Crew hatch or canopy', 'mechanism', chunk),
+        ],
+      },
+      {
+        heading: 'Fittings',
+        entries: [
+          atEachYaw('Cladding panel or fairing', 'structure', chunk),
+          atEachYaw('Lamp housing', 'structure', chunk),
+        ],
+      },
+    ],
+  };
+}
+
+/** The directional pairing: one sheet for up to five facings, two for the eight-compass set. */
+export function vehicleDirectionalVariants(facings: FacingTuple): SheetSeries {
+  const chunks = coreFacingChunks(facings);
+  const [first, ...rest] = chunks;
+  return [
+    vehicleDirectionalSheet(first, chunks),
+    ...rest.map((chunk) => vehicleDirectionalSheet(chunk, chunks)),
+  ];
+}
 
 export const VEHICLE_CUTOUT_RIG: SheetPlan = {
   name: 'Rig pieces',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'any state the rig produces by rotating its drive and its mount about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
   groups: [

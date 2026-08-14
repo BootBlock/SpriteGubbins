@@ -3,8 +3,7 @@ import { directionSetChoices, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../
 import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { directionSetApplies, primaryFacing } from '../../utils/sheetDirections.ts';
-import { splitsIntoFacingRuns } from '../../utils/sheetBatch.ts';
+import { facingApplies, primaryFacing } from '../../utils/sheetDirections.ts';
 import { NumberField } from '../common/NumberField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
@@ -18,33 +17,20 @@ const ELEVATION = { min: 0, max: 90, step: 1 } as const;
  * the answer — a true isometric wants 30°, a pure top-down wants 90°. It stays editable for the
  * cases where a game has its own ground read.
  *
- * The primary facing appears only when the direction set is a **run list** rather than a description
- * of one sheet — a mode covering one facing at a time, over a set naming more than one. Anywhere
- * else it is inert: a `CORE_DIRECTIONAL_VARIANTS` sheet draws its own five facings whatever this
- * said, so a visible control would promise something the prompt does not carry.
+ * **The direction set is always on screen, because it now always does something.** A directional
+ * core draws the chosen set's facings — splitting into a cardinal and a diagonal sheet on the
+ * eight-compass set — and every `'run'` sheet reads the set as its run list. The one narrowing left
+ * is the category's: an interface widget or a ground tile has no facing to turn to, so those two
+ * offer `SINGLE_FRONT` alone, and the control stays on screen with its one option rather than
+ * disappearing — the value is used, and a control that vanishes between categories hides a setting
+ * the folded digest still reports.
  *
- * **That argument always applied one control higher, and the set itself did not obey it.** The modes
- * that fix their own coverage discard `directions` exactly as they discard `primaryDirection`, so
- * "Directions Covered" sat on screen offering four choices the compiler threw away — in the state
- * the app *opens* in, since `CORE_DIRECTIONAL_VARIANTS` is the default mode and the default config.
- * Picking all eight compass points changed the summary line and nothing else. Both controls now hang
- * off the same question, asked at the resolution each needs: does the mode defer to the set at all,
- * and if it does, does the set name more than one facing.
- *
- * **The category is read here because that question is about the sheet's mode, not the stored one.**
- * `SheetFields` next door has always resolved the mode before showing it; these two conditions did
- * not, so a configuration naming a pairing its category cannot produce — which is what an imported
- * preset or a hand-edited session may hold — hid or showed the wrong control. Hiding is the worse
- * way round: the compiler still reads both fields, so the sheet's own direction set and depth order
- * came from controls the panel had decided were inert.
- *
- * **The set's *options* are the category's too, which is a third question again.** Whether the sheet
- * reads the set is the mode's answer; which sets the subject can be turned to is
- * `CATEGORY_DIRECTION_SETS`, and for an interface widget or a ground tile the answer is
- * `SINGLE_FRONT` alone. The control stays on screen there with its one option rather than
- * disappearing, exactly as "Sheet Contents" does for an EFFECT: the value is used — it is the
- * "Directions required" line of the prompt — and a control that vanishes between categories hides a
- * setting the folded digest still reports.
+ * The primary facing appears only when the **selected sheet** is a run sheet over a set naming more
+ * than one facing. Anywhere else it is inert: a directional core draws its plan's own facings
+ * whatever this said, so a visible control would promise something the prompt does not carry.
+ * `facingApplies` resolves the sheet through the category first, because a stored mode or index the
+ * category cannot produce would otherwise hide or show the wrong control — hiding being the worse
+ * way round, since the compiler still reads the field.
  */
 export function ProjectionFields() {
   const output = useOutputStore((state) => state.output);
@@ -89,22 +75,22 @@ export function ProjectionFields() {
         }}
       />
 
-      {directionSetApplies(category, output) && (
-        <SelectField
-          label="Directions Covered"
-          tooltip={OUTPUT_TOOLTIPS.directions}
-          value={directions}
-          choices={setChoices}
-          onChange={(chosen) => {
-            // The facing is cleared with the set, in one write. A `north` held over into
-            // `THREE_CLASSIC` is a facing that set never turns to, and both values reaching the
-            // compiler together is what stops a render seeing the new set beside the old facing.
-            setOutputConfig({ ...output, directions: chosen, primaryDirection: null });
-          }}
-        />
-      )}
+      <SelectField
+        label="Directions Covered"
+        tooltip={OUTPUT_TOOLTIPS.directions}
+        value={directions}
+        choices={setChoices}
+        onChange={(chosen) => {
+          // The facing and the sheet go back with the set, in one write. A `north` held over into
+          // `THREE_CLASSIC` is a facing that set never turns to, and a sheet index held over from a
+          // longer series would point past the new set's own — the eight-compass pairing is the one
+          // whose series has a sheet the others do not. All three reaching the compiler together is
+          // what stops a render seeing the new set beside stale companions.
+          setOutputConfig({ ...output, directions: chosen, primaryDirection: null, sheetIndex: 0 });
+        }}
+      />
 
-      {splitsIntoFacingRuns(category, output) && (
+      {facingApplies(category, output) && (
         <SelectField
           label="Primary Facing"
           tooltip={OUTPUT_TOOLTIPS.primaryDirection}

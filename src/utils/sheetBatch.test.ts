@@ -3,7 +3,7 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
-import { sheetBatch, sheetRunCount, splitsIntoFacingRuns } from './sheetBatch.ts';
+import { sheetBatch, sheetRunCount } from './sheetBatch.ts';
 import { sheetRuns } from './sheetRuns.ts';
 
 /**
@@ -22,15 +22,18 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };
 }
 
-/** A cut-out rig over all eight compass points: the batch that splits along the facing axis. */
+/** A cut-out rig over all eight compass points: a batch that is nothing but facing runs. */
 const EIGHT_WAY_RIG = withOutput({
   directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
   rigMode: 'CUTOUT_RIG',
   directions: 'EIGHT_COMPASS',
 });
 
-/** A character's five-view core and its limbs: the batch that splits along the series axis. */
-const TWO_SHEET_SERIES = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' });
+/** A character's five-view core and its limbs: a multi-view sheet followed by a run sheet. */
+const CORE_SERIES = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS' });
+
+/** The five-classic facings, which is the set `CORE_SERIES` inherits from the default config. */
+const CORE_FACINGS = DIRECTION_LISTS.FIVE_CLASSIC;
 
 /** One whole deliverable in one generation — the case whose prompt must not change at all. */
 const SINGLE_SHEET = withOutput({
@@ -38,63 +41,59 @@ const SINGLE_SHEET = withOutput({
   directions: 'SINGLE_FRONT',
 });
 
-describe('splitsIntoFacingRuns', () => {
-  it('is true only for a run list: one facing at a time, over a set naming more than one', () => {
-    expect(splitsIntoFacingRuns('CHARACTER', EIGHT_WAY_RIG)).toBe(true);
-    expect(splitsIntoFacingRuns('CHARACTER', { ...EIGHT_WAY_RIG, directions: 'SINGLE_FRONT' })).toBe(false);
-    // The mode names its own five facings, so the chosen set buys no runs at all — whatever it says.
-    // That mode still splits, by the *other* axis: two sheets of one series, counted below.
-    expect(
-      splitsIntoFacingRuns('CHARACTER', {
-        ...EIGHT_WAY_RIG,
-        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
-      }),
-    ).toBe(false);
-  });
-
-  it('asks the mode the category resolves to, which is what the studio shows the control for', () => {
-    // The predicate `ProjectionFields` gates the facing control on, so an answer taken from the
-    // stored mode is a control the panel shows or hides against a sheet nobody is compiling.
-    // An ITEM has no cut-out rig: eight compass points buy it nothing, because the sheet it resolves
-    // to draws its own five facings.
-    expect(splitsIntoFacingRuns('ITEM', EIGHT_WAY_RIG)).toBe(false);
-    // An EFFECT has no directional core: the sheet it resolves to is a frame sequence, which reads
-    // the chosen set as a run list — so the control belongs on screen and the batch below is eight.
-    expect(
-      splitsIntoFacingRuns('EFFECT', { ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' }),
-    ).toBe(true);
-    expect(sheetRunCount('EFFECT', { ...EIGHT_WAY_RIG, directionalMode: 'CORE_DIRECTIONAL_VARIANTS' })).toBe(
-      DIRECTION_LISTS.EIGHT_COMPASS.length,
-    );
-  });
-});
-
 describe('sheetRunCount', () => {
-  it('multiplies the two axes, and counts them without compiling anything', () => {
-    // A rig is one sheet over eight facings; a character's directional core is two sheets over one.
-    // The count is what the studio's split button reads on every keystroke, so it has to agree with
-    // the list without paying to compile it.
+  it('expands each run sheet once per facing, and counts without compiling anything', () => {
+    // A rig is one run sheet over eight facings. A character's directional pairing is one core
+    // sheet plus the articulation run over each of the five classic facings — the limbs are drawn
+    // per facing now, because a front-facing limb cannot hang on a side-facing trunk.
     expect(sheetRunCount('CHARACTER', EIGHT_WAY_RIG)).toBe(DIRECTION_LISTS.EIGHT_COMPASS.length);
-    expect(sheetRunCount('CHARACTER', TWO_SHEET_SERIES)).toBe(2);
-    // An OBJECT's five views are thirty components, which fits one sheet — so the same mode is a
-    // batch for one category and a single generation for another.
-    expect(sheetRunCount('OBJECT', TWO_SHEET_SERIES)).toBe(1);
+    expect(sheetRunCount('CHARACTER', CORE_SERIES)).toBe(1 + CORE_FACINGS.length);
+    // An OBJECT's directional views have no articulation behind them, so the same mode is a single
+    // generation there.
+    expect(sheetRunCount('OBJECT', CORE_SERIES)).toBe(1);
     expect(sheetRunCount('CHARACTER', SINGLE_SHEET)).toBe(1);
+  });
+
+  it('splits the eight-compass core across a cardinal and a diagonal sheet', () => {
+    // The user's chosen set steers the core outright: two core sheets of four orthogonal views
+    // each, then the articulation run over all eight facings.
+    const eightWay = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'EIGHT_COMPASS',
+    });
+    expect(sheetRunCount('CHARACTER', eightWay)).toBe(2 + DIRECTION_LISTS.EIGHT_COMPASS.length);
+
+    const { sheets } = sheetBatch('CHARACTER', eightWay);
+    expect(sheets[0]?.covered).toEqual(['south', 'west', 'north', 'east']);
+    expect(sheets[1]?.covered).toEqual(['south-west', 'north-west', 'north-east', 'south-east']);
+    expect(sheets.slice(2).map((sheet) => sheet.covered)).toEqual(
+      DIRECTION_LISTS.EIGHT_COMPASS.map((facing) => [facing]),
+    );
   });
 
   it('resolves the mode on both axes, so an unsupported pairing cannot be split by a set it discards', () => {
     // An ITEM has no cut-out rig, so the compiler resolves the pairing to that category's default —
-    // which covers its own facings and ignores `primaryDirection` entirely. Counting the facings from
-    // the *stored* mode while counting the sheets from the resolved one offered eight runs whose
-    // prompts were byte-identical, and one copy ticked all eight off.
-    expect(sheetRunCount('ITEM', EIGHT_WAY_RIG)).toBe(1);
-    expect(sheetRuns('ITEM', SUBJECT, EIGHT_WAY_RIG)).toHaveLength(1);
+    // its directional views, a multi-view sheet that ignores `primaryDirection` entirely. Counting
+    // the facings from the *stored* mode while counting the sheets from the resolved one offered
+    // eight runs whose prompts were byte-identical, and one copy ticked all eight off.
+    // The resolved sheet is the item's directional views over the chosen eight-compass set — two
+    // multi-view sheets and no runs, never eight byte-identical rig prompts.
+    expect(sheetRunCount('ITEM', EIGHT_WAY_RIG)).toBe(2);
+    expect(sheetRuns('ITEM', SUBJECT, EIGHT_WAY_RIG)).toHaveLength(2);
     expect(sheetBatch('ITEM', EIGHT_WAY_RIG).ordinal).toBe(1);
+    // An EFFECT has no directional core: the sheet it resolves to is a frame sequence — a run sheet,
+    // so the chosen set genuinely is its run list.
+    expect(
+      sheetRunCount(
+        'EFFECT',
+        withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'EIGHT_COMPASS' }),
+      ),
+    ).toBe(DIRECTION_LISTS.EIGHT_COMPASS.length);
   });
 });
 
 describe('sheetBatch — where the configuration sits in its own batch', () => {
-  it('counts the facing axis in the order the direction set lists it', () => {
+  it('counts a run sheet’s facings in the order the direction set lists them', () => {
     for (const [index, facing] of DIRECTION_LISTS.EIGHT_COMPASS.entries()) {
       const batch = sheetBatch('CHARACTER', { ...EIGHT_WAY_RIG, primaryDirection: facing });
       expect(batch.ordinal, facing).toBe(index + 1);
@@ -102,9 +101,18 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
     }
   });
 
-  it('counts the series axis in plan order', () => {
-    expect(sheetBatch('CHARACTER', { ...TWO_SHEET_SERIES, sheetIndex: 0 }).ordinal).toBe(1);
-    expect(sheetBatch('CHARACTER', { ...TWO_SHEET_SERIES, sheetIndex: 1 }).ordinal).toBe(2);
+  it('counts the series axis in plan order, with the run sheet expanded in place', () => {
+    expect(sheetBatch('CHARACTER', { ...CORE_SERIES, sheetIndex: 0 }).ordinal).toBe(1);
+    // The articulation sheet with nothing pinned is its first run — the sheet after the core.
+    expect(sheetBatch('CHARACTER', { ...CORE_SERIES, sheetIndex: 1 }).ordinal).toBe(2);
+    // Pinning a facing selects that run of it.
+    const [, ...laterFacings] = CORE_FACINGS;
+    for (const [index, facing] of laterFacings.entries()) {
+      expect(
+        sheetBatch('CHARACTER', { ...CORE_SERIES, sheetIndex: 1, primaryDirection: facing }).ordinal,
+        facing,
+      ).toBe(3 + index);
+    }
   });
 
   it('takes an unset facing as the set’s first, exactly as the prompt does', () => {
@@ -127,7 +135,11 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
     // `sheetRuns`, and each row's prompt states an ordinal derived here from that row's own
     // configuration — so a batch whose ordering and whose lookup disagreed would print "Sheet 3 of 8"
     // above a prompt announcing itself as sheet five.
-    for (const config of [EIGHT_WAY_RIG, TWO_SHEET_SERIES, SINGLE_SHEET]) {
+    const eightWayCore = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'EIGHT_COMPASS',
+    });
+    for (const config of [EIGHT_WAY_RIG, CORE_SERIES, eightWayCore, SINGLE_SHEET]) {
       const runs = sheetRuns('CHARACTER', SUBJECT, config);
       for (const [index, run] of runs.entries()) {
         const batch = sheetBatch('CHARACTER', run.output);
@@ -148,20 +160,18 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
  * The reported failure: three sheets of a button, each turned to a yaw a button does not have.
  *
  * Switching the studio's category from a default session re-resolved the sheet mode and left
- * `directions` on `THREE_CLASSIC`, because nothing related a direction set to a category. The panel
+ * `directions` where it stood, because nothing related a direction set to a category. The panel
  * offered "Split into 3 sheets", and the first run compiled `Directions required: Front-three-quarter`
  * above `object yaw 45°`.
  *
- * The two categories here are the ones whose subject has no facing at all. They are also the ones
- * that cannot honour the app's default *mode*, which is why the degenerate batch was one click away
- * rather than something to be asked for: `resolveMode` substitutes on the first switch, and before
- * this the set beside it did not move.
+ * The two categories here are the ones whose subject has no facing at all: whatever set the
+ * configuration arrived with, `resolveDirectionSet` narrows it to `SINGLE_FRONT` and the batch is
+ * one sheet.
  */
 describe('a subject with no facing is one sheet, whatever set the configuration arrived with', () => {
   const TURNED = withOutput({ directions: 'THREE_CLASSIC', primaryDirection: 'front-three-quarter' });
 
   it.each(['INTERFACE', 'TERRAIN'] as const)('%s is not split into a run per facing', (category) => {
-    expect(splitsIntoFacingRuns(category, TURNED)).toBe(false);
     expect(sheetRunCount(category, TURNED)).toBe(1);
     expect(sheetBatch(category, TURNED).ordinal).toBe(1);
   });
@@ -191,7 +201,6 @@ describe('a subject with no facing is one sheet, whatever set the configuration 
     // meaningful wherever the subject has a front, and a rig worked through three facings is the
     // deliverable the run list exists for.
     const rig = { ...TURNED, directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' } as const;
-    expect(splitsIntoFacingRuns('CHARACTER', rig)).toBe(true);
     expect(sheetRunCount('CHARACTER', rig)).toBe(DIRECTION_LISTS.THREE_CLASSIC.length);
     // And an EFFECT, which is the case that decided the table binds two categories and not three:
     // a directional slash is genuinely one frame sequence per facing.

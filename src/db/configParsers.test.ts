@@ -108,10 +108,11 @@ describe('parseOutputConfig — sheetIndex', () => {
   });
 
   it('is bounded by the plan table rather than by a number written down here', () => {
-    // Derived, so a pairing that grows a third sheet admits one in the same edit. Two sheets is the
-    // most any pairing takes today, and an index past that is corrupt storage rather than a choice.
+    // Derived, so a pairing that grows a sheet admits one in the same edit. Three sheets is the most
+    // any pairing takes today — the eight-compass character series — and an index past that is
+    // corrupt storage rather than a choice.
     expect(SHEET_INDEX_RANGE.min).toBe(0);
-    expect(SHEET_INDEX_RANGE.max).toBe(1);
+    expect(SHEET_INDEX_RANGE.max).toBe(2);
   });
 
   it('falls back for anything outside that, fractional, or not a number', () => {
@@ -127,8 +128,8 @@ describe('parseOutputConfig — sheetIndex', () => {
     // Resolving that here would need the category, and inventing one is how a configuration would be
     // rewritten by the layer that only had to read it.
     expect(sheetFrom(1)).toBe(1);
-    expect(resolveSheetIndex('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 1)).toBe(1);
-    expect(resolveSheetIndex('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 1)).toBe(0);
+    expect(resolveSheetIndex('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1)).toBe(1);
+    expect(resolveSheetIndex('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1)).toBe(0);
   });
 });
 

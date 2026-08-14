@@ -43,6 +43,7 @@ export function QuantiseTab() {
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
+  const directions = useOutputStore((state) => state.output.directions);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
@@ -99,11 +100,12 @@ export function QuantiseTab() {
             componentCountFor(
               category,
               directionalMode,
+              directions,
               sheetIndex,
               parseAdditionalAnatomy(additionalAnatomy),
             ),
           ),
-    [source, target, category, directionalMode, sheetIndex, additionalAnatomy],
+    [source, target, category, directionalMode, directions, sheetIndex, additionalAnatomy],
   );
 
   return (

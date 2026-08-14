@@ -17,8 +17,8 @@ import type { SheetPlan } from '../../types/components.ts';
  *   anywhere, so that sheet would demand evidence of rotation the subject cannot produce. It would
  *   also spend the whole component budget on facings and leave none for time, which delivers five
  *   stills of a thing whose entire identity is that it changes. A directional effect — a slash arc, a
- *   muzzle flash in a top-down shooter — is served properly by the mode below: `'primary'` coverage
- *   makes a direction set a *run list*, so `EIGHT_COMPASS` beside it is eight frame sequences under
+ *   muzzle flash in a top-down shooter — is served properly by the mode below: its `'run'` facings
+ *   make a direction set a *run list*, so `EIGHT_COMPASS` beside it is eight frame sequences under
  *   one identity lock rather than one sheet of eight frozen frames.
  * - **No `CUTOUT_RIG_SINGLE_DIRECTION`.** A rig is pieces that rotate about pivots against each
  *   other. An effect articulates about nothing.
@@ -41,7 +41,7 @@ import type { SheetPlan } from '../../types/components.ts';
  */
 export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   name: 'Frame sequence',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'one continuous animation played in the order the inventory lists — every frame a complete state of the effect, sharing one registration point, one cell scale and one camera, and none of them a layer to be stacked on another. Where the subject asks for a loop, that same run is a cycle whose final frame reads back into its first with no visible seam.',
   groups: [

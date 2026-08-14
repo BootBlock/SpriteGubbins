@@ -36,7 +36,7 @@ import type { SheetPlan } from '../../types/components.ts';
 
 export const TERRAIN_BLEND_SET: SheetPlan = {
   name: 'Blend set',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'a continuous field of the base material with the second washing into it across any area — every straight boundary, every corner of both senses, and an isolated patch of either — with no seam where tiles meet and nothing a viewer can recognise twice.',
   groups: [
@@ -98,7 +98,7 @@ across a laid field.`,
 
 export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
   name: 'Feature library',
-  facings: 'assembly',
+  facings: 'run',
   assembly:
     'a stretch of ground standing one level above the field around it — its lip, its face, both corner senses and the foot where the face lands — with the standing features and openings placed on either level.',
   groups: [

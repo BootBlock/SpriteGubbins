@@ -33,6 +33,8 @@
  * breakdown that drifts onto an effect sheet fails the check rather than shipping an explosion with
  * a hatch and a footing.
  */
+import type { Direction } from './rendering.ts';
+
 export const COMPONENT_KINDS = ['anatomy', 'appendage', 'mechanism', 'structure', 'tile', 'frame'] as const;
 
 export type ComponentKind = (typeof COMPONENT_KINDS)[number];
@@ -62,20 +64,26 @@ export interface ComponentGroup {
 }
 
 /**
- * How many of the facings its mode covers one sheet draws.
+ * Which facings one sheet draws.
  *
- * `'every'` is a sheet whose components are *views* — the directional core draws one head at each
- * yaw, and its inventory names them entry by entry. `'assembly'` is a sheet drawn to a single facing,
- * the one the series assembles towards: a cut-out rig's pieces, a tileset, and the articulation
- * variants that share a sheet with nothing directional.
+ * A **facing tuple** is a sheet whose components are *views*: the directional core draws one head at
+ * each of exactly these yaws, and its inventory names them entry by entry. The tuple is written by
+ * the series builder from the direction set the user actually chose, which is what makes the
+ * Directions control steer the sheet rather than being discarded — and it is a tuple rather than a
+ * set name because one series can carry a *part* of a set: an eight-compass core is two sheets, the
+ * cardinals and then the diagonals, and a set name cannot say which half a sheet holds.
  *
- * It sits on the sheet rather than beside the mode because one series can hold both, which is the
- * whole reason the series exists. `CORE_DIRECTIONAL_VARIANTS` is a five-view core that no longer
- * fits on one sheet with a character's thirty-four limb variants; splitting it puts an `'every'`
- * sheet and an `'assembly'` sheet under one mode, and `DIRECTION_COVERAGE` — keyed on the mode — has
- * no way to answer for both.
+ * `'run'` is a sheet drawn to **one facing per generation**: the chosen direction set is a run list,
+ * `primaryDirection` says which run this is, and the batch holds one copy of this sheet per facing.
+ * A cut-out rig's pieces, a pose library, a tileset and the articulation variants are all runs —
+ * their inventories are written for a single facing, so a set of eight is eight generations, never
+ * one sheet asked for eight of everything.
+ *
+ * It sits on the sheet rather than beside the mode because one series holds both kinds: the
+ * character's directional pairing is a multi-view core followed by a run-list articulation sheet,
+ * and anything keyed on the mode alone has no way to answer for both.
  */
-export type SheetFacings = 'every' | 'assembly';
+export type SheetFacings = 'run' | readonly [Direction, ...Direction[]];
 
 /**
  * One sheet: what it asks for, how many facings it draws, and what its components must assemble into.

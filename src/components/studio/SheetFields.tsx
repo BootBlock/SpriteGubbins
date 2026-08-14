@@ -32,10 +32,15 @@ export function SheetFields() {
   const category = useSubjectStore((state) => state.category);
 
   // Only the modes this category can actually produce. Offering the others is what put a tileset's
-  // floors and walls one click away from a character.
+  // floors and walls one click away from a character. Both lists take the chosen direction set,
+  // because the set now decides how many sheets a directional pairing is and what each one costs.
   const mode = resolveMode(category, output.directionalMode);
-  const modeChoices = directionalModeChoices(category, parseAdditionalAnatomy(additionalAnatomy));
-  const seriesChoices = sheetChoices(category, mode);
+  const modeChoices = directionalModeChoices(
+    category,
+    output.directions,
+    parseAdditionalAnatomy(additionalAnatomy),
+  );
+  const seriesChoices = sheetChoices(category, mode, output.directions);
 
   return (
     <>
@@ -60,7 +65,7 @@ export function SheetFields() {
           tooltip={OUTPUT_TOOLTIPS.sheetIndex}
           // Resolved through the series rather than read raw, so a stored index the pairing does not
           // have shows the sheet the compiler is actually producing instead of an empty control.
-          value={resolveSheetIndex(category, mode, output.sheetIndex)}
+          value={resolveSheetIndex(category, mode, output.directions, output.sheetIndex)}
           choices={seriesChoices}
           onChange={(value) => {
             setOutputField('sheetIndex', value);

@@ -28,6 +28,7 @@ import { Badge } from '../common/Badge.tsx';
 export function ComponentBudgetNotice() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
+  const directions = useOutputStore((state) => state.output.directions);
   const componentBudget = useOutputStore((state) => state.output.componentBudget);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
   const category = useSubjectStore((state) => state.category);
@@ -47,6 +48,7 @@ export function ComponentBudgetNotice() {
   const count = componentCountFor(
     category,
     directionalMode,
+    directions,
     sheetIndex,
     parseAdditionalAnatomy(additionalAnatomy),
   );
