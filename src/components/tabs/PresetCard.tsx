@@ -82,8 +82,15 @@ export function PresetCard({ preset, index, onLoad, onUpdateDetails, onDelete }:
           already said the useful half of "Human — Dark Fantasy". Every built-in carries a
           description, so the fallback is reached only by a preset of the user's own saved with the
           box left empty — and naming its species and setting is a better answer there than a gap.
+
+          **Six lines, and that number is the copy's rather than the layout's.** The clamp is a
+          guard against a description somebody pasted a paragraph into, not a budget the built-ins
+          are written to: at the narrowest the card ever gets — three columns inside the page's
+          `max-w-7xl` cap — a line holds about forty characters, so the 220 the presets are capped
+          at needs six. It was three while the line said "species — setting", which never wrapped
+          past two, and three lines truncated every built-in description in the library mid-clause.
         */}
-        <p className="line-clamp-3 text-xs text-ink-muted">
+        <p className="line-clamp-6 text-xs text-ink-muted">
           {preset.description === ''
             ? `${preset.subject.species} — ${preset.subject.setting}`
             : preset.description}

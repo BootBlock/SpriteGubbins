@@ -35,8 +35,11 @@ function promptFor(preset: PresetArchetype): string {
  *
  * A floor rather than a target, on the same argument as the guidance in `constants/tooltips`: the
  * failure this catches is a preset added with `description: 'A knight'`, which looks covered from
- * the outside and says nothing the name did not. The ceiling is the card's own: three clamped lines
- * of `text-xs` in a grid column, past which the sentence is written but never read.
+ * the outside and says nothing the name did not.
+ *
+ * The ceiling is what `PresetCard`'s clamp was then set from — six lines of about forty characters
+ * at the narrowest the card ever gets — so the two move together and in that order. A description
+ * written past this one is not shown in full anywhere, which is worse than a shorter one.
  */
 const SHORTEST_USEFUL_DESCRIPTION = 60;
 const LONGEST_READABLE_DESCRIPTION = 220;
