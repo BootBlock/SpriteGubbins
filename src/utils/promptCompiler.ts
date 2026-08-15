@@ -441,6 +441,10 @@ export function generatePrompt(
     surface: RENDER_STYLE_SURFACE[output.renderStyle],
     limbsAreComponents: LIMBS_ARE_COMPONENTS[category],
     assembly: CATEGORY_ASSEMBLY[category],
+    // The same two answers the template's own gates were given above, so a wrapper can never name a
+    // block the prompt it wraps does not carry.
+    nativeGrid: nativeScale !== null,
+    palette: palette !== null,
   });
 }
 

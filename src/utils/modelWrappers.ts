@@ -72,11 +72,26 @@ export function wrapForModel(
      * term on a terrain sheet named a subject that sheet cannot contain.
      */
     readonly assembly: CategoryAssembly;
+    /**
+     * Whether section 2 emitted its native-grid block, from `nativeGridScale`.
+     *
+     * Only Sol reads it, and only because Sol is the one target that composes a *second* prompt from
+     * this one: a block it is not told to protect is paraphrased, and this is the block a paraphrase
+     * was measured destroying. Every other target receives section 2 itself.
+     */
+    readonly nativeGrid: boolean;
+    /**
+     * Whether section 2 pinned a palette, from `paletteFor`.
+     *
+     * Read by Sol for the same reason and on the same evidence — a list of exact colours is worth
+     * exactly as much as the grid figure once it has been summarised into a mood.
+     */
+    readonly palette: boolean;
   },
 ): string {
   switch (target) {
     case 'CHATGPT_5_6_SOL':
-      return wrapForSol(prompt);
+      return wrapForSol(prompt, { nativeGrid: options.nativeGrid, palette: options.palette });
 
     case 'MIDJOURNEY':
       return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent, options.surface);

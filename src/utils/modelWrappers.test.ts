@@ -4,6 +4,7 @@ import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { CATEGORY_ASSEMBLY, RENDER_STYLE_SURFACE } from '../constants/promptText/index.ts';
+import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
@@ -27,6 +28,21 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
 }
 
 const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
+
+/**
+ * A configuration whose section 2 carries a native grid, which is what the Sol tests below need.
+ *
+ * The four fields are `nativeGridScale`'s own gate: a pixel-art style, the `CUSTOM` profile, a size
+ * that parses, and a canvas that seats the components at a multiple above 1. These are the shipped
+ * Stardew Valley preset's, which is the configuration the traced run used.
+ */
+const NATIVE_GRID_SHEET = {
+  targetModel: 'CHATGPT_5_6_SOL',
+  renderStyle: 'PIXEL_ART',
+  resolutionProfile: 'CUSTOM',
+  spriteTargetSize: '16 × 32 px',
+  aspectRatio: 'SQUARE_1_1',
+} as const satisfies Partial<OutputConfig>;
 
 /** The wrapper alone: whatever the target added before the specification, and after it. */
 function wrapperOnly(prompt: string): string {
@@ -178,6 +194,56 @@ describe('wrapForModel', () => {
     // Naming the three parts is the point — a bare "do not summarise" gives it nothing to protect
     // when it does have to shorten something.
     expect(prompt).toContain('section 0, the object\nyaws in section 3 and the inventory in section 4');
+  });
+
+  it('adds section 2’s native grid to what Sol may not shorten, under its own heading', () => {
+    // The omission this pins was measured rather than reasoned about. Sol composes its own ~700-word
+    // prompt for the image tool, and on a traced run the three blocks this wrapper named all arrived
+    // intact while section 2's native-grid block — which it did not name — was compressed to "at
+    // least 7x" and lost both of its checkable sentences. The sheet came back with no native pixel
+    // grid in it at all.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(NATIVE_GRID_SHEET));
+
+    expect(wrapperOnly(prompt)).toContain(
+      `Shorten nothing in:\n\n- the block headed “${NATIVE_GRID_HEADING}”`,
+    );
+  });
+
+  it('quotes a heading section 2 actually carries', () => {
+    // The wrapper points Sol at a block by name, so a heading reworded in the template without the
+    // pointer following it would leave the directive naming something that is not there — which
+    // reads as an instruction rather than as a fault, and is exactly how this failed the first time.
+    // Both sides take the one constant; this is what stops the substitution being quietly undone.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(NATIVE_GRID_SHEET));
+
+    expect(prompt).toContain(`### ${NATIVE_GRID_HEADING}`);
+  });
+
+  it('adds a pinned palette to the same list, since exact colours paraphrase away too', () => {
+    // Same run, same mechanism, one step short of measured: Sol compressed section 2's colour
+    // *budget* into "Use a restrained 32-64 colour palette total", so paraphrase reaching section 2's
+    // colour material is observed. A pinned palette is a list of exact values, and a summary of one
+    // is worth nothing.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ ...NATIVE_GRID_SHEET, palette: 'SNES' }),
+    );
+
+    expect(wrapperOnly(prompt)).toContain('- the palette’s exact colours');
+  });
+
+  it('says nothing about section 2 where section 2 states no figures', () => {
+    // The clause names blocks, so it can only be written where they were emitted. A painted sheet
+    // with no palette pinned has nothing in section 2 to protect, and a sentence introducing an empty
+    // list is the "repeated statement" OpenAI's own guidance for this family says to cut.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ targetModel: 'CHATGPT_5_6_SOL', renderStyle: 'PAINTED_2D', palette: 'FREE' }),
+    );
+
+    expect(wrapperOnly(prompt)).not.toContain('Section 2 states figures as well');
   });
 
   it('does not tell a ChatGPT user about a rewrite OpenAI documents only for the API', () => {

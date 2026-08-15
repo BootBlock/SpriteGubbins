@@ -1,4 +1,20 @@
 /**
+ * The heading of section 2's native-grid block, named here because a second file has to point at it.
+ *
+ * `utils/modelWrapperText/sol.ts` tells Sol to carry that block across its hand-off to the image
+ * tool word for word, and a hand-typed copy of the heading in the wrapper would go stale the first
+ * time this one is reworded — silently, since a pointer at a heading that no longer exists reads as
+ * an instruction rather than as a fault. One constant, substituted into the template below, is what
+ * makes the two the same string rather than two strings a test has to keep level.
+ *
+ * It is the only heading extracted this way, because it is the only one another file names. A
+ * heading cited solely by the prose around it stays written where it is read. It sits above the
+ * template's own documentation rather than between it and the constant, which would leave that
+ * hundred-and-fifty-line comment attached to this three-word string.
+ */
+export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is delivered at';
+
+/**
  * The prompt, before substitution.
  *
  * Its own module so the compiler stays logic and this stays text: the template can then be diffed,
@@ -348,7 +364,7 @@ earlier in this section, the setting wins — it is what this particular sheet a
 [/IF]
 [IF:NATIVE_GRID]
 
-### The native grid, and the scale it is delivered at
+### ${NATIVE_GRID_HEADING}
 
 **The target component size above is a native pixel grid, not a count of delivered pixels.** It is
 the grid a whole subject is drawn on, with every smaller piece in proportion to it on that same
