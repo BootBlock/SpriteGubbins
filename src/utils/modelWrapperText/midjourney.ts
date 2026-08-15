@@ -15,8 +15,10 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  *
  * `--sw` is *style-reference* weight and does nothing without a `--sref`; the knob that was meant is
  * `--s`, and it wants to be low, because high stylisation fights a technical layout brief.
- * `background` is absent from `--no` on purpose: the sheet needs a *keyable* background, and
- * excluding "background" risks losing the key colour with it.
+ * `background` is absent from `--no` on purpose, and the ban is on the **word** rather than on a bare
+ * entry: the sheet is built on a keyable background, so losing the key colour is the one failure
+ * this list can cause that nothing downstream recovers from. Why it stays that wide after the flag's
+ * reading was settled is argued where the gradient term is, below.
  *
  * **Raw mode is `--raw`, not `--style raw`.** Midjourney renamed the flag with the V8 line while
  * this wrapper pins `--v 8.2`, so the two were contradicting each other. Whether V8 rejects the old
@@ -70,13 +72,35 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * entry has to be one this app is content to have read alone**, which is the trap that page exists
  * to warn about.
  *
- * `gradient` came out under the earlier reading and stays out under this one, for a reason that has
- * now moved. The qualifier it needs is `background`, and the paragraph above keeps that word out of
- * this list at any width; a phrase read whole no longer *makes* `gradient background` negate the
- * background, so what keeps it out is the standing rule itself rather than a risk of decomposition —
- * and whether that rule still wants to be about the word rather than the bare term is a decision
- * against `docs/todo/baseline-prompt-new.md` §7, not a consequence of this one. Meanwhile the
- * gradient claim is the sheet's own, spliced in from `RENDER_STYLE_SURFACE`: `smooth gradients`
+ * `gradient` came out under the earlier reading and stays out under this one, on an argument that had
+ * to be replaced rather than restated. The qualifier it needs is `background`, and decomposition is
+ * no longer what keeps `gradient background` out: read whole, it would not negate the background at
+ * all. What keeps it out is **what the wrong answer would cost**, which is the one thing that sets
+ * this entry apart from the rest of the list.
+ *
+ * The list carries four multi-word entries and none of them is safe read word by word — the rule is
+ * not that they are. `cast shadow` decomposes to the bare `shadow` it replaced, which is a wash.
+ * `blurred edges` and `anti-aliased edges` decompose to a bare `edges` at -0.5, on exactly the
+ * styles whose section 2 line asserts a hard one, and `smooth gradients` to a bare `smooth`. Those
+ * three are real, and they are all the **same kind** of wrong: a sheet that argues with its own
+ * style statement and comes back softer than it was asked for. That is a degraded sheet, and a
+ * degraded sheet can be generated again. `gradient background` decomposed puts -0.5 on the colour
+ * the whole sheet is registered against, and an unkeyable sheet is not a worse result but a useless
+ * one — the compositing step it exists for cannot be run at all.
+ *
+ * **So it is the recoverability that decides it, not the balance of evidence**, and that is
+ * deliberate. What makes an entry atomic is `::` being the divider rather than the space, which is
+ * precisely the statement the version note above finds nowhere current for `--v 8.2`, and the flag
+ * is unverifiable without a subscription — so this is a risk the repository cannot retire by
+ * testing. Where being wrong degrades a sheet, that is worth accepting for a term that earns its
+ * place; where it destroys one, it is not. The word-level ban is therefore **precautionary**, and
+ * not a claim about how `--no` reads: better evidence that entries are atomic does not on its own
+ * reopen it. What would is that evidence arriving as a page current for the pinned version, or the
+ * failure ceasing to be unrecoverable. That decision is recorded in
+ * `docs/todo/baseline-prompt-new.md` §7.
+ *
+ * What it costs is small, and worth naming rather than leaving to be rediscovered. The gradient
+ * claim is the sheet's own, spliced in from `RENDER_STYLE_SURFACE`: `smooth gradients`
  * where the style states flat fills, and nothing at all where it asks for soft blended forms. That
  * is the whole of what this channel says about a gradient, and Stable Diffusion's and Qwen's blocks
  * carry the same surface terms **plus** a `gradient background` of their own on every style — so

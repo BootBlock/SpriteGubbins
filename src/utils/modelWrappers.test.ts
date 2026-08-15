@@ -346,8 +346,18 @@ describe('what a wrapper says about the surface', () => {
         // The standing rule of this list, which no configuration may reach around: the sheet is
         // built on a keyable background, and losing it is the one failure here that cannot be
         // recovered from. Matched as a substring of each entry rather than as a whole word, because
-        // `backgrounds` and `gradient-background` carry the term as surely as the bare noun does —
-        // this is the wider of the two readings, and the one §7 of the plan document states.
+        // `backgrounds` and `gradient-background` carry the term as surely as the bare noun does.
+        //
+        // The width is precautionary and settled as such, not a reading of the flag: an entry is
+        // read whole, so `gradient background` would not negate the background — but what makes it
+        // atomic is `::` rather than the space dividing concepts, which no page current for the
+        // pinned version restates.
+        //
+        // What keeps it out is the cost of that being wrong, not a claim that the other entries are
+        // safe decomposed — none of the four multi-word entries is. `blurred edges` decomposes to a
+        // bare `edges` on the styles that assert a hard one, and that returns a sheet softer than it
+        // was asked for, which can simply be generated again. This one returns a sheet that cannot
+        // be keyed, which is the whole point of the sheet. Degraded is survivable; useless is not.
         for (const entry of entries) {
           expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
         }

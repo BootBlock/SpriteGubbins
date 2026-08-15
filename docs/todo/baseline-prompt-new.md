@@ -1638,6 +1638,53 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > three styles whose §2 lines assert nothing about a gradient's absence (`PAINTED_2D`,
 > `RENDERED_3D`, `CLAY_RENDER`) it says nothing at all.
 
+> **Settled afterwards — the `background` rule stays at the word, and it is precautionary rather
+> than a reading of the flag.** That is the decision the note above left open, and this is what it
+> now rests on, because the argument that originally produced it no longer holds: the bullet further
+> up removed a **bare** `background` entry, which is unarguable, and the width came later.
+>
+> **What keeps `gradient background` out is what a wrong answer would cost**, and that is worth
+> stating carefully, because the tempting version of it is false. The list carries four multi-word
+> entries and **not one of them is safe read word by word** — the rule is not that they are.
+> `cast shadow` decomposes to the bare `shadow` it replaced, which is a wash. `blurred edges` and
+> `anti-aliased edges` decompose to a bare `edges` at `-0.5`, on exactly the styles whose §2 line
+> asserts a hard one, and `smooth gradients` to a bare `smooth`. Those three risks are real.
+>
+> **What separates them from this one is kind, not size.** All three return a sheet that argues with
+> its own style statement and comes back softer than it was asked for — a degraded sheet, and a
+> degraded sheet can be generated again. `gradient background` decomposed puts `-0.5` on the colour
+> the whole sheet is registered against, and an unkeyable sheet is not a worse result but a useless
+> one: the compositing step it exists for cannot be run at all.
+>
+> **So it is the recoverability that decides it, not the balance of evidence**, and two further facts
+> are why that has to do the work:
+>
+> - **The atomicity half of the chain is the half nothing current states.** What makes an entry one
+>   concept is `::` being the divider rather than the space, and that is only on the multi-prompt
+>   page, which scopes itself away from the pinned `--v 8.2`. The note above records this; it is the
+>   same trap as `--style raw`.
+> - **The flag is unverifiable without a subscription**, so this is a risk the repository cannot
+>   retire by testing — no gate here will ever report it.
+>
+> Where being wrong degrades a sheet, that is worth accepting for a term that earns its place; where
+> it destroys one, it is not.
+>
+> **One correction this carries with it.** The note above says of the bullet that it "bans the word
+> rather than the bare term" — that describes the rule as it stood, not the bullet, which removed a
+> bare entry and said nothing about the word. Both statements are left where they are, per the rule
+> against rewriting a plan's history; this is where the two are reconciled.
+>
+> So the ban is on the **word**, and it is not a claim about how `--no` reads. Better evidence that
+> entries are atomic does not on its own reopen it — what would is that evidence arriving as a page
+> current for the pinned version, or the failure ceasing to be unrecoverable.
+>
+> **What it costs is one negative term, stated here so it is not rediscovered as a gap.** Midjourney
+> remains the one channel of three carrying no fixed `gradient background`: all it says about a
+> gradient is the style's own `smooth gradients`, and on `PAINTED_2D`, `RENDERED_3D` and
+> `CLAY_RENDER` it says nothing. §0's uniform key field is stated in the prompt body, which
+> Midjourney reads in full, and the `--no` list was never what carried it. No compiled prompt
+> changed.
+
 > **Corrected after shipping — that separate change, and the last fixed string in the three
 > channels.** `(assembled character:1.3), (posed figure:1.3)` opened SD's block, `assembled
 > character, posed figure, complete figure` opened Qwen's, and `no assembled figure` closed Flux's
