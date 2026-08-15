@@ -32,13 +32,16 @@ describe('the keying tolerances', () => {
     expect(FRINGE_TOLERANCE_FACTOR).toBeGreaterThan(1);
   });
 
-  it('bounds the fringe below the smallest gap the ladder has to respect', () => {
+  it('actually binds the fringe, rather than sitting where it can never be reached', () => {
     // A factor with nothing above it is a ramp, not a threshold: the top rung times the factor runs
     // past the distance between any two colours, and the pass becomes a blanket erosion of every
-    // silhouette in the sheet. The ceiling has to sit under the tightest rung it could otherwise
-    // overshoot — which is the whole ladder, since it binds from partway up it.
-    expect(FRINGE_TOLERANCE_CEILING).toBeLessThanOrEqual(Math.max(...KEY_TOLERANCES));
+    // silhouette in the sheet. So the ceiling has to be *reachable* — under what the loosest rung
+    // would otherwise produce — and above zero, which is the value that means "no fringe pass at all"
+    // and is reserved for the `exact` rung.
+    expect(FRINGE_TOLERANCE_CEILING).toBeLessThan(Math.max(...KEY_TOLERANCES) * FRINGE_TOLERANCE_FACTOR);
     expect(FRINGE_TOLERANCE_CEILING).toBeGreaterThan(0);
+    // Where it sits *between* the halo and the artwork is a fact about colours rather than about
+    // these numbers, so `keyDistance.test.ts` is what holds that half — measured, not asserted here.
   });
 
   it('reaches further along the key’s own plane than across it, or the latitude is not one', () => {

@@ -29,11 +29,14 @@ import type { Rgba } from '../types/quantiser.ts';
  * offers, because halving a distance of 441 still leaves 220. The plane says which differences are
  * cheap. It never says any of them are free.
  *
- * **It degenerates correctly for the two neutral keys, rather than needing a case for them.** White
- * and black are already on the achromatic axis, so the plane collapses to that one line: their
- * latitude is lightness alone and every trace of colour is measured at full weight, which is exactly
- * the right rule for a key that has no hue to be told apart by. Nothing here branches on which key
- * it was handed.
+ * **A key with no hue gets no latitude, and that is the same rule rather than an exception to it.**
+ * What the plane holds is the variations that keep the key's *hue* — which is what makes them cheap,
+ * because hue is what the key is being told apart by. `PURE_WHITE` and `PURE_BLACK` have none. For
+ * them the plane collapses onto the achromatic axis, and moving along that axis from white is not the
+ * field varying, it is the artwork: shading white is how you get every grey in the sheet. So the
+ * discount would run along precisely the direction that distinguishes key from art, and the answer is
+ * that there is nothing to discount. Both keys fall back to the straight distance, which is what they
+ * had before this file existed and is the right measurement for them.
  *
  * Pure, and called once or twice for every pixel of an image that may be `MAX_IMAGE_PIXELS` — which
  * is why the plane is worked out once by {@link keyBasis} and {@link keyDistanceSquared} reads a
@@ -57,12 +60,16 @@ const GREY_AXIS = 1 / Math.sqrt(3);
 /**
  * Below this, a vector is treated as having no direction at all.
  *
- * Two vectors reach it. A **black key** has zero length, so it names no direction to be shaded
- * along — mixing black toward black leaves it where it was — and the achromatic axis takes its
- * place. A **white or black key** then leaves nothing over once that axis is projected out, and the
- * exact zero the arithmetic wants arrives as a value near 1e-17 rather than as one, so the test has
- * to be a threshold. It is far below any residual a key with real colour in it produces: magenta's
- * is 0.577.
+ * Two different vectors are tested against it, on two different scales, and one threshold serves
+ * both with room to spare. The **key's own length** runs 0 to 441, and only `PURE_BLACK` reaches
+ * zero there. The **residual** — whatever is left of the achromatic axis once the key's direction is
+ * projected out — runs 0 to 1, and reaches zero for `PURE_WHITE` and for any grey. Neither arrives
+ * as an exact zero: the residual for white computes to about 1.9e-16, so the test has to be a
+ * threshold rather than an equality.
+ *
+ * The margin above is what makes one constant safe for both. The smallest *non-zero* residual any
+ * whole-numbered key produces is 0.0018, at `#FEFFFF` — three orders clear of this, and magenta's is
+ * 0.577.
  */
 const NO_DIRECTION = 1e-6;
 
@@ -83,7 +90,7 @@ export interface KeyBasis {
   readonly r: number;
   readonly g: number;
   readonly b: number;
-  /** The direction shading runs along: the key's own, or the grey axis where the key has none. */
+  /** The direction shading runs along — the key's own. Zeroes for an achromatic key. */
   readonly shadeR: number;
   readonly shadeG: number;
   readonly shadeB: number;
@@ -93,23 +100,50 @@ export interface KeyBasis {
   readonly veilB: number;
 }
 
-/** The plane a key's own variation lies in, as the orthonormal pair {@link KeyBasis} describes. */
+/**
+ * The plane a key's own variation lies in, as the orthonormal pair {@link KeyBasis} describes — or no
+ * plane at all, where the key has no hue for one to preserve.
+ *
+ * Both early returns hand back the same thing: a basis of zeroes, which contributes nothing to either
+ * dot product and leaves {@link keyDistanceSquared} computing the straight distance. They are two
+ * routes to one answer rather than two cases, because a key that is achromatic *by having no length*
+ * and a key that is achromatic *by lying on the grey axis* are the same key as far as this is
+ * concerned.
+ */
 export function keyBasis(color: Rgba): KeyBasis {
-  const length = Math.hypot(color.r, color.g, color.b);
-  const scale = length < NO_DIRECTION ? 0 : 1 / length;
-  const shadeR = length < NO_DIRECTION ? GREY_AXIS : color.r * scale;
-  const shadeG = length < NO_DIRECTION ? GREY_AXIS : color.g * scale;
-  const shadeB = length < NO_DIRECTION ? GREY_AXIS : color.b * scale;
+  const straight: KeyBasis = {
+    r: color.r,
+    g: color.g,
+    b: color.b,
+    shadeR: 0,
+    shadeG: 0,
+    shadeB: 0,
+    veilR: 0,
+    veilG: 0,
+    veilB: 0,
+  };
 
-  // Gram-Schmidt: whatever is left of the achromatic axis once the shading direction is taken out of
-  // it. For a chromatic key that is the direction the colour washes toward white along; for a key
-  // that is already grey it is nothing, which is the degenerate case below.
+  // `PURE_BLACK` names no direction to be shaded along — mixing black toward black leaves it where it
+  // was — and dividing by its length would be dividing by zero. It is achromatic besides, so it wants
+  // the same answer the second guard gives white.
+  const length = Math.hypot(color.r, color.g, color.b);
+  if (length < NO_DIRECTION) return straight;
+
+  const shadeR = color.r / length;
+  const shadeG = color.g / length;
+  const shadeB = color.b / length;
+
+  // Gram-Schmidt: whatever is left of the achromatic axis once the key's own direction is taken out
+  // of it. For a key with a hue that is the direction it washes toward white along.
   const dot = GREY_AXIS * (shadeR + shadeG + shadeB);
   const residualR = GREY_AXIS - dot * shadeR;
   const residualG = GREY_AXIS - dot * shadeG;
   const residualB = GREY_AXIS - dot * shadeB;
   const residual = Math.hypot(residualR, residualG, residualB);
-  const veil = residual < NO_DIRECTION ? 0 : 1 / residual;
+
+  // Nothing left over means the key *is* the achromatic axis — `PURE_WHITE`, or any grey. It has no
+  // hue, so it has no plane of hue-preserving variation, so it has no latitude to give.
+  if (residual < NO_DIRECTION) return straight;
 
   return {
     r: color.r,
@@ -118,9 +152,9 @@ export function keyBasis(color: Rgba): KeyBasis {
     shadeR,
     shadeG,
     shadeB,
-    veilR: residualR * veil,
-    veilG: residualG * veil,
-    veilB: residualB * veil,
+    veilR: residualR / residual,
+    veilG: residualG / residual,
+    veilB: residualB / residual,
   };
 }
 

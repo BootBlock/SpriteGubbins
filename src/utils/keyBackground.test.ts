@@ -28,9 +28,9 @@ const DRIFTED: Rgba = { r: 250, g: 5, b: 250, a: 255 };
 /**
  * A magenta field the generator **painted** rather than filled — the case that prompted the metric.
  *
- * 99 from the key in a straight line, which is further than rose and purple sit, and 50 once the
- * key's own shading and washing are discounted. So the default tolerance takes it and no tolerance
- * that took it before could have spared the artwork.
+ * 99 from the key in a straight line and 50 once the key's own shading and washing are discounted. So
+ * the default tolerance takes it — where measured straight it shared the ladder's top rung with rose
+ * and purple at 127, and no setting that reached it could have spared those.
  */
 const PAINTED: Rgba = { r: 196, g: 27, b: 180, a: 255 };
 
@@ -67,10 +67,10 @@ describe('keyBackground', () => {
 
   it('keys a field the generator painted, at the tolerance the tab opens with', () => {
     // The reported failure: a sheet whose background was *visibly* magenta throughout came back with
-    // most of the field gone and blotches of it left behind, because the blotches were further from
-    // `#FF00FF` in a straight line than rose and purple are — so the rung that would have taken them
-    // was a rung that would have taken the sprite. Nothing here is a special case for that colour;
-    // the distance simply stopped charging full price for a field being shaded and washed.
+    // most of the field gone and blotches of it left behind, because measured in a straight line the
+    // blotches sat on the same rung of the ladder as rose and purple — so the setting that would have
+    // taken them was a setting that would have taken the sprite. Nothing here is a special case for
+    // that colour; the distance simply stopped charging full price for a field shaded and washed.
     const painted = imageFrom(4, 4, () => PAINTED);
 
     const result = keyBackground(painted, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });

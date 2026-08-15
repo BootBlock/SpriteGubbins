@@ -1,21 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { KEY_TOLERANCES } from '../constants/quantiser.ts';
+import { FRINGE_TOLERANCE_CEILING, KEY_TOLERANCES } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
+import { fromHex } from './imageData.ts';
 import { keyBasis, keyDistanceSquared } from './keyDistance.ts';
 
-const MAGENTA: Rgba = { r: 255, g: 0, b: 255, a: 255 };
-const WHITE: Rgba = { r: 255, g: 255, b: 255, a: 255 };
-const BLACK: Rgba = { r: 0, g: 0, b: 0, a: 255 };
-
-/** A colour written the way the rest of the app writes one, from the `#RRGGBB` a reader recognises. */
+/**
+ * A colour from the `#RRGGBB` a reader recognises, through the app's own strict reader.
+ *
+ * `fromHex` returns `null` on anything malformed rather than a fallback colour, and every literal
+ * below is written by hand — so the throw is what stops a typo becoming a silent black that the
+ * assertions then pass against.
+ */
 function rgb(hex: string): Rgba {
-  return {
-    r: Number.parseInt(hex.slice(1, 3), 16),
-    g: Number.parseInt(hex.slice(3, 5), 16),
-    b: Number.parseInt(hex.slice(5, 7), 16),
-    a: 255,
-  };
+  const color = fromHex(hex);
+  if (color === null) throw new Error(`not a colour: ${hex}`);
+  return color;
 }
+
+const MAGENTA = rgb('#FF00FF');
+const WHITE = rgb('#FFFFFF');
+const BLACK = rgb('#000000');
 
 /** The distance the keying actually measures, unsquared so the numbers read as the ladder's do. */
 function distance(key: Rgba, color: Rgba): number {
@@ -91,23 +95,42 @@ describe('keyDistance', () => {
     expect(distance(MAGENTA, rgb('#00FF00'))).toBeGreaterThan(Math.max(...KEY_TOLERANCES));
   });
 
-  it('gives an achromatic key lightness as its latitude and nothing else', () => {
-    // White and black are already on the grey axis, so the plane collapses onto it: greys are what
-    // they vary toward, and any trace of colour is measured whole. Strong enough to *invert* the
-    // straight-line ordering — the grey below is further from white in a straight line than the pink
-    // is, and nearer once the key's own axis is discounted.
-    const grey = rgb('#636363');
-    const pink = rgb('#FF6363');
-    expect(plainDistance(WHITE, grey)).toBeGreaterThan(plainDistance(WHITE, pink));
-    expect(distance(WHITE, grey)).toBeLessThan(distance(WHITE, pink));
+  it('gives a key with no hue no latitude, so it is measured straight', () => {
+    // The case that makes the rule a rule rather than a plane applied everywhere. White and black sit
+    // *on* the achromatic axis, so the plane collapses onto it — and moving along that axis away from
+    // white is not the field varying, it is every grey in the sheet. Discounting it would discount the
+    // one direction that separates those keys from artwork, so they get no discount at all.
+    for (const key of [WHITE, BLACK]) {
+      for (const sample of ['#DBDBDB', '#808080', '#242424', '#FF6363', '#005300', '#14B43C']) {
+        expect(distance(key, rgb(sample))).toBeCloseTo(plainDistance(key, rgb(sample)), 9);
+      }
+    }
 
-    // Black is the case with no direction of its own at all — scaling it toward black leaves it where
-    // it was — so the fallback to the grey axis is what makes it behave like white's mirror rather
-    // than dividing by a zero-length vector.
-    const dark = rgb('#303030');
-    const green = rgb('#005300');
-    expect(plainDistance(BLACK, dark)).toBeCloseTo(plainDistance(BLACK, green), 0);
-    expect(distance(BLACK, dark)).toBeLessThan(distance(BLACK, green));
+    // Black is also the key with no direction of its own — scaling it toward black leaves it where it
+    // was — so it reaches that answer through a different guard than white does. Same answer, and
+    // neither divides by a zero-length vector on the way.
+    expect(keyBasis(BLACK)).toEqual(keyBasis({ ...BLACK }));
+    expect(distance(BLACK, BLACK)).toBe(0);
+  });
+
+  it('keeps the fringe ceiling between the halo it must take and the artwork it must not', () => {
+    // The ceiling's whole derivation, machine-checked, because it is stated as two numbers in a
+    // comment and both of them move if the latitude does. It has to sit ABOVE every blend that is
+    // mostly key colour — or the halo the fringe pass exists to erode survives — and BELOW every
+    // colour that is not the key's own hue, or the pass eats a pixel of the sprite's contour.
+    const worstHalo = Math.max(
+      ...ARTWORK.map((art) =>
+        distance(MAGENTA, {
+          r: 0.75 * MAGENTA.r + 0.25 * art.r,
+          g: 0.75 * MAGENTA.g + 0.25 * art.g,
+          b: 0.75 * MAGENTA.b + 0.25 * art.b,
+          a: 255,
+        }),
+      ),
+    );
+
+    expect(worstHalo).toBeLessThanOrEqual(FRINGE_TOLERANCE_CEILING);
+    expect(FRINGE_TOLERANCE_CEILING).toBeLessThan(Math.min(...ARTWORK.map((art) => distance(MAGENTA, art))));
   });
 
   it('never reports a negative distance, whatever the key and the pixel', () => {
