@@ -474,8 +474,8 @@ nothing about the second, so it never means that every component faces the same 
 Each directional set is **one** physical component, turned — not several designs of it. Hold
 constant across its views: overall dimensions and proportions · joint, socket and attachment
 geometry · colour blocking and material regions · plate, panel and armour arrangement · identifying
-markings · the number and placement of every distinctive feature. Only what the rotation reveals or
-hides may change. A feature on the component's left rear stays on its left rear: it lands somewhere
+markings · the number and placement of every distinctive feature. Only what the turn itself changes
+may change. A feature on the component's left rear stays on its left rear: it lands somewhere
 else on screen after the turn, and it must never migrate, multiply, vanish or be redrawn to make two
 views look different. The variety comes from rotation, not mutation.
 
@@ -514,16 +514,17 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   turns within the image plane, and its front and rear ends, its two flanks and every asymmetry it
   carries turn with it. **A view whose top surface points the way another's does is a failed
   rotation**, not a stylistic choice.
-- **A mirrored copy is not a rotation.** Mirroring turns nothing: it swaps the subject's own left and
-  right about a front axis that has not moved, so what it produces is a left-handed copy of a view
-  this sheet already holds rather than a view of its own.
+- **A mirrored copy is not a rotation.** Flipping a view does point its front axis where some other
+  yaw would have pointed it, which is what makes the substitution tempting — but it turns nothing.
+  The subject's own left and right come out swapped, so what it produces is a left-handed copy of a
+  view this sheet already holds rather than a view of its own.
 [IF:MIRROR_PAIRS]
 - **This sheet pairs views that are each other's reflection** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
   which is exactly where a mirrored copy is most tempting to substitute, and from directly overhead
   nothing else in the image contradicts one. The members of a pair are opposite turns of one object,
-  so a feature the subject carries on one side only stays on that side of its own body in both and
-  therefore lands on opposite sides of the frame. A member produced by flipping the other puts that
-  feature on the subject's wrong side.
+  so a feature the subject carries on one side only stays on that side of its own body in both —
+  which puts it above the middle of the frame in one member and below it in the other. Flipping one
+  to make the other leaves it on the same side of that line, on the subject's wrong side.
 [/IF]
 [/IF]
 - **Rotation never swaps the subject's own left and right.** Every view is this same subject turned
@@ -754,8 +755,9 @@ each of its views and confirm:
 [IF:PLAN_VIEW]
 - Neither member of a pair — [DEFINE:MIRROR_PAIRS_DESCRIPTION] — is the other reflected: a feature
   the subject carries on one side only lands wherever that member's own yaw in section [SEC:CAMERA] puts
-  that side of the body, which is opposite sides of the frame in the two of them. A pair identical
-  up to mirroring is a failed rotation, however correctly each member points.
+  that side of the body, which is **above the middle of the frame in one member and below it in the
+  other**. A flipped copy leaves it on the same side of that line in both, however correctly the
+  front axis ends up pointing.
 [/IF]
 [/IF]
 - Every view is the same geometry at the same scale through the same unmoved camera, differing by
@@ -815,8 +817,8 @@ used to change that template, so it reaches every prompt the tool composes — a
 which nobody will regenerate from it. Four things follow:
 
 - **Write about the instruction, not the artwork.** "Redraw the third component's rear view" cannot
-  be acted on there. "Section [SEC:CAMERA] fixes the yaw but never states that a rear view must hide what the
-  front view presented, so a second three-quarter view satisfies it" can.
+  be acted on there. "Section [SEC:CONTRACT] fixes the component count but never says a component may not
+  arrive with a neighbouring piece still attached, so two entries merged into one satisfy it" can.
 - **Write nothing specific to this subject.** The next prompt from this tool may be a building, a
   pistol or a tileset, and a change that only makes sense for this one cannot be made.
 - **Propose wording, not architecture.** Name the section, quote the sentence that let the miss

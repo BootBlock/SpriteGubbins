@@ -68,13 +68,15 @@ export function NumberField({
         // `aria-disabled` rather than `disabled`, as `CheckboxField` does and for the same reason:
         // the control keeps its place in the tab order, so a keyboard user reaches it and hears why
         // it is unavailable rather than skipping over a value the prompt still carries.
+        //
+        // `readOnly` is what actually refuses the input, and it is available here where the
+        // checkbox had to refuse in its own handler: the attribute does nothing on a checkbox and
+        // everything on a text or number field, blocking typing, the spinner, paste and autofill
+        // alike. So there is no guard below — the platform holds this one.
         aria-disabled={isDisabled}
         aria-describedby={isDisabled ? reasonId : undefined}
         readOnly={isDisabled}
         onChange={(event) => {
-          // Honoured here as well, since `aria-disabled` blocks nothing on its own and `readOnly`
-          // is the platform's own answer for an input whose value is not the user's to change.
-          if (isDisabled) return;
           const entered = event.target.value.trim();
           if (entered === '') return;
           const parsed = Number(entered);

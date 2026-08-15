@@ -54,10 +54,12 @@ export function ProjectionFields() {
   const directions = resolveDirectionSet(category, output.directions);
   const setChoices = directionSetChoices(category);
 
-  // The elevation the chosen projection can be drawn at, and the one it is holding — resolved for
-  // the same reason the set above is, so the field cannot sit on a number the prompt will not carry.
-  const elevation = cameraElevationRange(output.projection);
-  const fixedElevation = elevation.min === elevation.max;
+  // What the chosen projection leaves the elevation, which for all but one of them is a single
+  // figure. The field's own value is resolved through the same range below, for the reason the set
+  // above is resolved: a stored pairing the projection cannot be drawn at would otherwise leave the
+  // control showing a camera the prompt does not carry.
+  const elevationRange = cameraElevationRange(output.projection);
+  const elevationIsFixed = elevationRange.min === elevationRange.max;
 
   return (
     <>
@@ -81,12 +83,12 @@ export function ProjectionFields() {
         label="Camera Elevation (°)"
         tooltip={OUTPUT_TOOLTIPS.cameraElevation}
         value={resolveCameraElevation(output.projection, output.cameraElevation)}
-        min={elevation.min}
-        max={elevation.max}
+        min={elevationRange.min}
+        max={elevationRange.max}
         step={ELEVATION_STEP}
         disabledReason={
-          fixedElevation
-            ? `${output.projection} is a camera in its own right, and stands at ${String(elevation.min)}°. Choose THREE_QUARTER_TOPDOWN to set the elevation yourself.`
+          elevationIsFixed
+            ? `${output.projection} is a camera in its own right, and stands at ${String(elevationRange.min)}°. Choose THREE_QUARTER_TOPDOWN to set the elevation yourself.`
             : ''
         }
         onChange={(value) => {

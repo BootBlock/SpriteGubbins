@@ -1,4 +1,4 @@
-import { DEPTH_ORDER_TEXT } from '../../constants/promptText/index.ts';
+import { depthOrderText, resolveCameraElevation } from '../../constants/promptText/index.ts';
 import { resolveRigMode } from '../../constants/sheetPlans/index.ts';
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
@@ -63,6 +63,12 @@ interface SheetSplitRunProps {
  * through `resolveRigMode` rather than off the run, because that is what the compiler did to reach
  * the prompt in the disclosure below it.
  *
+ * **The camera is resolved for the same reason, and it decides the sentence as well as whether it
+ * appears.** Depth order is a near/far question, and directly overhead there is no near side — so
+ * the row asks `depthOrderText` rather than reading the per-facing record, exactly as the compiler
+ * does. Reading the record would put "pieces on the left render in front of the body" immediately
+ * above a prompt saying the pieces stack by height instead.
+ *
  * The prompt itself sits behind a `<details>` rather than being laid out in full. Eight prompts of
  * a thousand words each is not a list anybody can scan, and the summary is what the user is choosing
  * between; the platform's own disclosure widget is keyboard-operable and announced without help.
@@ -119,7 +125,12 @@ export function SheetSplitRun({
       </div>
 
       {resolveRigMode(category, run.output.rigMode) === 'CUTOUT_RIG' && (
-        <p className="mb-3 text-xs leading-relaxed text-ink-muted">{DEPTH_ORDER_TEXT[run.assembly]}</p>
+        <p className="mb-3 text-xs leading-relaxed text-ink-muted">
+          {depthOrderText(
+            run.assembly,
+            resolveCameraElevation(run.output.projection, run.output.cameraElevation),
+          )}
+        </p>
       )}
 
       <div className="flex flex-wrap items-center gap-3">

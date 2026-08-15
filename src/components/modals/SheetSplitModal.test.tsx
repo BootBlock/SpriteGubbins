@@ -4,7 +4,12 @@ import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { NO_COMPONENT_BUDGET } from '../../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
-import { DIRECTION_LISTS } from '../../constants/promptText/index.ts';
+import {
+  DEFAULT_CAMERA_ELEVATIONS,
+  DEPTH_ORDER_TEXT,
+  DIRECTION_LISTS,
+  PLAN_DEPTH_ORDER_TEXT,
+} from '../../constants/promptText/index.ts';
 import type { PersistenceBackend } from '../../db/backend.ts';
 import { LocalStorageBackend } from '../../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../../db/webStorage.ts';
@@ -118,6 +123,33 @@ describe('SheetSplitModal', () => {
     // Once per row and nowhere else — the eight sheets of a rig all carry the same plan, so the
     // per-sheet figure is the same eight times and is never the number in the summary.
     expect(screen.getAllByText(`${String(perSheet)} components`)).toHaveLength(FACINGS.length);
+  });
+
+  it('describes each row’s depth order the way the prompt inside that row does', () => {
+    // The row's summary sits directly above a disclosure holding the prompt it describes, so the two
+    // have to have resolved the same camera. Depth order is a near/far question and there is no near
+    // side directly overhead, so a row reading the per-facing record would state "pieces on the left
+    // render in front of the body" above a prompt saying the pieces stack by height instead.
+    useOutputStore.setState({
+      output: {
+        ...useOutputStore.getState().output,
+        projection: 'PURE_TOPDOWN',
+        cameraElevation: DEFAULT_CAMERA_ELEVATIONS.PURE_TOPDOWN,
+      },
+    });
+    render(<SheetSplitModal />);
+
+    const sheets = sheetsOnScreen();
+    const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
+
+    for (const [index, sheet] of sheets.entries()) {
+      const run = runs[index];
+      if (run === undefined) throw new Error('every row should have a run behind it.');
+      expect(within(sheet.row).getByText(PLAN_DEPTH_ORDER_TEXT)).toBeInTheDocument();
+      expect(within(sheet.row).queryByText(DEPTH_ORDER_TEXT[run.assembly])).toBeNull();
+      // The premise: the prompt this row will copy has resolved the camera the same way.
+      expect(run.promptText).toContain(PLAN_DEPTH_ORDER_TEXT);
+    }
   });
 
   it('flags the sheet of a series that is over the budget, and only that one', () => {

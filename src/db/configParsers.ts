@@ -68,7 +68,14 @@ export function parseSubject(value: unknown, category: SubjectCategory): Subject
   return subject;
 }
 
-/** Degrees above the horizon. A camera below the ground or past vertical is a corrupt value. */
+/**
+ * Degrees above the horizon. A camera below the ground or past vertical is a corrupt value.
+ *
+ * The outer bound, and deliberately not the whole answer: what a *projection* can be drawn at is
+ * narrower still — usually a single figure — and `resolveCameraElevation` in
+ * `constants/promptText/elevation.ts` is what settles that, on read, for the prompt and the studio
+ * alike. This one only asks whether the stored number is a number of degrees at all.
+ */
 const ELEVATION_RANGE = { min: 0, max: 90 } as const;
 
 /**
