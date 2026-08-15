@@ -293,8 +293,14 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
   it('still bans the source the effect plays against, which is this category’s own hazard', () => {
     // Asked for a muzzle flash, a generator draws the gun; asked for an impact spark, the thing
     // being hit. Neither is scenery, so the environment ban the other categories carry misses both.
+    //
+    // Asserted as the relation plus the nouns rather than as one phrase, because the phrase is what
+    // moved: the modifier used to trail all seven nouns and now leads them, so that four `Effect
+    // Type` options named after one of those nouns are not read as being banned themselves. Which
+    // options those are, and that the text names each, is `promptText/exclusions.test.ts`.
     const { exclusions } = sectionsOf(defaultSubjectFor('EFFECT'));
-    expect(exclusions).toContain('weapon, muzzle, projectile or object the effect plays against');
+    expect(exclusions).toContain('whatever the effect issues from or lands on');
+    expect(exclusions).toContain('weapon, muzzle, launcher, projectile or struck surface');
   });
 
   it('leaves the ban unqualified in substance for a category that names no particles', () => {

@@ -45,8 +45,23 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // were absent from the image entirely. It is now qualified — "any particle effect the inventory in
   // section 4 does not name" — which is the same repair VEHICLE's audit line took, and which leaves
   // the ban exactly as strong for the six whose inventories name none.
+  //
+  // **Every noun in the source ban is bound to its own relation, and the closing sentence names the
+  // effect types that collide with one.** The ban began as a seven-noun list with a single modifier
+  // trailing all of it — "any character, creature, hand, weapon, muzzle, projectile or object the
+  // effect plays against or issues from" — which is the weakest attachment English offers, and this
+  // is the one category where it cannot be afforded: an effect is usually *named after* what it
+  // comes out of, so four of the nine `Effect Type` options this app offers share a word with that
+  // list. `Muzzle Flash / Discharge` against "muzzle", `Slash / Weapon Trail` against "weapon",
+  // `Projectile Body & Trail` against "projectile", and `Environmental Ambience` against
+  // "environments" at the head of the line. Section 1 is the sole authority for the subject's
+  // design, so a reader matching on the noun finds the subject itself named in the exclusions —
+  // and section 8 now closes by saying an attribute above that names an excluded element is already
+  // overruled, which is the instruction that reading was previously missing.
+  // `exclusions.test.ts` derives those four from the pool rather than listing them, so a tenth
+  // option named after a banned noun fails the build until this sentence names it too.
   EFFECT:
-    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any character, creature, hand, weapon, muzzle, projectile or object the effect plays against or issues from; any damage number, health bar, cursor or other interface element; and any motion blur, speed line or lens flare drawn across a frame.',
+    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; whatever the effect issues from or lands on — character, creature, hand, weapon, muzzle, launcher, projectile or struck surface; any damage number, health bar, cursor or other interface element; and any lens flare. A muzzle flash, weapon trail, projectile body or environmental ambience is the effect itself, never its source.',
   // The lettering ban is this category's own, and it is the one exclusion here that repeats section 0
   // deliberately. Every real-world member of this category is labelled, so a generator asked for a
   // button has to be told twice that the words go on at runtime — an atlas with "CONFIRM" baked into
@@ -134,8 +149,16 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // the reader performs*, so an audit reading "every component is a frame" fails the sheet on the
   // scorch decal section 4 required — five of the eight shipped EFFECT presets name one. The
   // qualifiers throughout are load-bearing exactly as VEHICLE's are.
+  // The second half of the same repair the exclusion above took, and it matters more here: this is a
+  // check the reader *performs* before delivering, so a bare "no weapon" read against a `Slash /
+  // Weapon Trail` sheet fails the sheet on its own subject. It states the *relation* and drops the
+  // nouns entirely rather than naming them and then rescuing each one — an audit is a list of things
+  // to look for, and the exclusion above is where the vocabulary belongs. That makes this line
+  // shorter than the one it replaces, which is not incidental: `presetCoverage.test.ts` holds a
+  // shipped EFFECT preset to four fifths of QWEN_IMAGE's ceiling, and this category's text is what
+  // that preset spends its margin on.
   EFFECT:
-    'Every component is a frame of this one effect, or one of the additional elements the subject named — no anatomy, machine parts, tiles, terrain or scenery, and no character, hand, weapon or object for the effect to play against. No two frames are the same drawing at a different brightness, scale, rotation or mirroring.',
+    'Every component is a frame of this one effect, or one of the additional elements the subject named — no anatomy, machine parts, tiles, terrain or scenery, and nothing the effect issues from or lands on. No two frames are the same drawing at a different brightness, scale, rotation or mirroring.',
   // "No floor or terrain tiles" rather than "no tiles", for the same reason VEHICLE's line qualifies
   // every noun in it: a nine-slice sheet's components *are* tiles, so an audit reading "no tiles"
   // would fail a sheet on the entries section 4 required.
