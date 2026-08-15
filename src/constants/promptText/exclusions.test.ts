@@ -3,14 +3,14 @@ import { EFFECT } from '../categories/effect.ts';
 import { CATEGORY_AUDIT_TEXT, CATEGORY_EXCLUSION_TEXT } from './exclusions.ts';
 
 /**
- * The one collision a per-category exclusion list cannot design away, and the check that keeps its
+ * A category that bans the nouns its own subjects are named after, and the check that keeps the
  * repair honest.
  *
  * An effect is usually named after the thing it comes out of — a *muzzle* flash, a *weapon* trail, a
  * *projectile* body — and the thing it comes out of is exactly what an effect sheet must not draw.
- * So EFFECT is the one category whose ban list and whose `Effect Type` pool are drawn from the same
- * vocabulary, and section 1 is the sole authority for the subject's design: a reader matching on the
- * noun finds the subject itself named in the exclusions. Section 8 closes by saying an attribute
+ * EFFECT is the only category whose **own** ban line is drawn from the same vocabulary as its
+ * identity pool, and section 1 is the sole authority for the subject's design: a reader matching on
+ * the noun finds the subject itself named in the exclusions. Section 8 closes by saying an attribute
  * above that names an excluded element is already overruled, which is the instruction that reading
  * had been missing.
  *
@@ -34,16 +34,23 @@ import { CATEGORY_AUDIT_TEXT, CATEGORY_EXCLUSION_TEXT } from './exclusions.ts';
  * forbidding the subject rather than qualifying an attribute of it. That is the difference the
  * reported defect turned on, and it is the line this test can hold without a hand-kept exemption
  * list.
+ *
+ * **Two neighbouring collisions are deliberately out of this walk, and both are answered elsewhere
+ * rather than absent.** Section 8's *static* bullet bans "any particle effect the inventory in
+ * section 4 does not name", which meets OBJECT's `Weather Particle Sheet` and `Explosion Burst
+ * Effect` — but it answers itself in the same sentence, which is the whole of what was missing here.
+ * And EFFECT's own `exclusions` pool opens with `No character, hand or weapon in frame`, which a
+ * reader may hold beside `Slash / Weapon Trail`: that one is the *user's* sentence rather than the
+ * app's, and section 8's closing paragraph is the app's answer to it. Neither is a case of a rule
+ * stated with no resolution, which is what this file is named for.
  */
 
 /**
- * Words long enough to mean something on their own, stripped of a plural.
+ * Words long enough to carry a category's vocabulary, lower-cased and stripped of punctuation.
  *
  * The five-character floor is what keeps the comparison free of a stop-word list: below it the
- * overlap is `hand`, `line`, `cast` and other words that carry no category vocabulary, and above it
- * every match so far has been a real one. Prefix matching rather than equality, because the ban
- * writes `environments` where the option writes `Environmental` — the same noun, one of them
- * adjectival, and an equality test would miss it.
+ * overlap is `hand`, `line`, `cast` and other words that belong to no category in particular, and at
+ * or above it every match so far has been a real one.
  */
 function contentWords(text: string): readonly string[] {
   return text
@@ -53,8 +60,25 @@ function contentWords(text: string): readonly string[] {
     .filter((word) => word.length >= 5);
 }
 
+/**
+ * Whether two words are the same noun, allowing each to carry its own ending.
+ *
+ * Compared on how far they agree rather than on one being a prefix of the other, because the pair
+ * this suite exists for is neither: the ban writes `environments` and the option writes
+ * `Environmental`, which agree for eleven characters and then diverge — `s` against `al` — so a
+ * `startsWith` in either direction answers false and the collision the issue reported goes unseen.
+ * That was this file's own first mistake, and it survived being written *because* the comment
+ * claimed the opposite.
+ *
+ * The threshold is the same five characters `contentWords` requires, which is what lets a five-letter
+ * noun still match its own plural — `spark` against `sparks` agrees on exactly five. Today the ban
+ * and the pool produce the four terms named in the text and nothing else; the assertion below fails
+ * loudly if that set ever empties, which is what a threshold set too high would look like.
+ */
 function sharesAStem(left: string, right: string): boolean {
-  return left.startsWith(right) || right.startsWith(left);
+  let shared = 0;
+  while (shared < left.length && shared < right.length && left[shared] === right[shared]) shared += 1;
+  return shared >= 5;
 }
 
 /**
