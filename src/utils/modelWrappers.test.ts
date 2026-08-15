@@ -3,7 +3,7 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
-import { RENDER_STYLE_SURFACE } from '../constants/promptText/index.ts';
+import { CATEGORY_ASSEMBLY, RENDER_STYLE_SURFACE } from '../constants/promptText/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
@@ -23,6 +23,16 @@ const SUBJECT = DEFAULT_PRESET.subject;
 
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };
+}
+
+const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
+
+/** The wrapper alone: whatever the target added before the specification, and after it. */
+function wrapperOnly(prompt: string): string {
+  const start = prompt.indexOf(SPECIFICATION);
+  const end = prompt.lastIndexOf('Generate the sheet now.');
+  if (start === -1 || end === -1) throw new Error('the compiled prompt should carry the template.');
+  return `${prompt.slice(0, start)}\n${prompt.slice(end)}`;
 }
 
 describe('wrapForModel', () => {
@@ -208,16 +218,6 @@ describe('wrapForModel', () => {
  * being compared are both in the text the user copies — and each half was right on its own.
  */
 describe('what a wrapper says about the surface', () => {
-  const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
-
-  /** The wrapper alone: whatever the target added before the specification, and after it. */
-  function wrapperOnly(prompt: string): string {
-    const start = prompt.indexOf(SPECIFICATION);
-    const end = prompt.lastIndexOf('Generate the sheet now.');
-    if (start === -1 || end === -1) throw new Error('the compiled prompt should carry the template.');
-    return `${prompt.slice(0, start)}\n${prompt.slice(end)}`;
-  }
-
   /** Every term any style's entry can contribute, which is the pool a wrong style draws from. */
   const EVERY_SURFACE_TERM = [
     ...new Set(RENDER_STYLES.flatMap((style) => RENDER_STYLE_SURFACE[style].negatives)),
@@ -343,6 +343,112 @@ describe('what a wrapper says about the surface', () => {
           expect(prompt, where).not.toContain('extra limbs');
           expect(prompt, where).not.toContain('merged limbs');
         }
+      }
+    }
+  });
+});
+
+/**
+ * The wrapper against the *subject* of the prompt it wraps.
+ *
+ * The defect: all three channels that can state an assembly failure stated a **figure's** —
+ * `(assembled character:1.3), (posed figure:1.3)` opening Stable Diffusion's block, `assembled
+ * character, posed figure, complete figure` opening Qwen's, and `no assembled figure` closing Flux's
+ * leading sentence — on every category. Every sheet has an assembled-whole failure and only two of
+ * them have it in a figure's vocabulary, so on the other seven the highest-weighted term in the
+ * block named something the sheet could not contain and the claim it exists to make went unmade.
+ *
+ * Walked over `SUBJECT_CATEGORIES` rather than sampled, because the category is the axis this
+ * drifts on: a tenth category is a compile error in the record and would otherwise be a silent pass
+ * here.
+ */
+describe('what a wrapper says about the assembled whole', () => {
+  /** The three targets with a channel for it — two negative blocks, and Flux's leading prose. */
+  const SAYS_IT = ['STABLE_DIFFUSION', 'QWEN_IMAGE', 'FLUX'] as const;
+  const NEGATES = ['STABLE_DIFFUSION', 'QWEN_IMAGE'] as const;
+
+  /** Every term and every clause any category can contribute — the pool a wrong category draws from. */
+  const EVERY_TERM = [
+    ...new Set(SUBJECT_CATEGORIES.flatMap((category) => CATEGORY_ASSEMBLY[category].negatives)),
+  ];
+  const EVERY_STATEMENT = [
+    ...new Set(SUBJECT_CATEGORIES.map((category) => CATEGORY_ASSEMBLY[category].statement)),
+  ];
+
+  it.each(SUBJECT_CATEGORIES)('names %s’s own assembly failure and no other category’s', (category) => {
+    const { negatives, statement } = CATEGORY_ASSEMBLY[category];
+    // Shared entries are subtracted rather than assumed absent: OBJECT and VEHICLE both fail as a
+    // `product shot`, and CHARACTER and CREATURE keep the figure pair and its clause between them.
+    const foreignTerms = EVERY_TERM.filter((term) => !negatives.includes(term));
+    const foreignStatements = EVERY_STATEMENT.filter((clause) => clause !== statement);
+    const subject = defaultSubjectFor(category);
+
+    for (const targetModel of NEGATES) {
+      const wrapper = wrapperOnly(generatePrompt(category, subject, withOutput({ targetModel })));
+      for (const term of negatives) expect(wrapper, `${targetModel} / ${category}`).toContain(term);
+    }
+
+    // Flux's is prose and leads the prompt, so its clause is checked where it actually lands —
+    // closing the first sentence — rather than merely somewhere in the wrapper.
+    const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
+    expect(flux.startsWith('The sheet shows only disconnected individual parts on a'), category).toBe(true);
+    expect(flux, category).toContain(`no cast shadow, no text, and ${statement}.`);
+
+    // And nothing anywhere in any of the three says another category's failure. Both halves are
+    // walked on all three targets, because the failure being guarded against is a wrapper reading a
+    // record it was not handed the category for.
+    for (const targetModel of SAYS_IT) {
+      const wrapper = wrapperOnly(generatePrompt(category, subject, withOutput({ targetModel })));
+      const where = `${targetModel} / ${category}`;
+      for (const term of foreignTerms) expect(wrapper, `${where} / ${term}`).not.toContain(term);
+      for (const clause of foreignStatements) expect(wrapper, `${where} / ${clause}`).not.toContain(clause);
+    }
+  });
+
+  it('weights the terms for Stable Diffusion and states them flat for Qwen', () => {
+    // The one thing about these two blocks that is the *channel's* rather than the sheet's, and the
+    // reason the record holds bare terms. `(term:1.3)` is an Automatic1111/compel convention those
+    // front-ends parse before the model sees it; Qwen documents `negative_prompt` as taking a
+    // description, so a weight would arrive there as literal punctuation.
+    for (const category of SUBJECT_CATEGORIES) {
+      const subject = defaultSubjectFor(category);
+      const sd = generatePrompt(category, subject, withOutput({ targetModel: 'STABLE_DIFFUSION' }));
+      const qwen = generatePrompt(category, subject, withOutput({ targetModel: 'QWEN_IMAGE' }));
+
+      for (const term of CATEGORY_ASSEMBLY[category].negatives) {
+        expect(sd, `${category} / ${term}`).toContain(`(${term}:1.3)`);
+        expect(qwen, `${category} / ${term}`).not.toContain(`(${term}:`);
+      }
+      // Every weighted term in the block is an assembly term, which is what stops the run growing
+      // to swallow the shadow and surface terms below it.
+      expect(
+        [...sd.matchAll(/\(([^():]+):1\.3\)/g)].map((match) => match[1]),
+        category,
+      ).toEqual([...CATEGORY_ASSEMBLY[category].negatives]);
+    }
+  });
+
+  it('keeps the figure vocabulary on the two categories that have a figure', () => {
+    // The claim the whole record is for, stated in the words that shipped rather than read back out
+    // of the record under test — which would pass whatever the record said. Both directions, because
+    // a change that dropped the terms for everyone would satisfy a one-sided check, and CHARACTER
+    // and CREATURE were never the two that needed fixing.
+    const FIGURE = ['assembled character', 'posed figure', 'assembled figure'];
+    const FIGURED = ['CHARACTER', 'CREATURE'];
+
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const targetModel of SAYS_IT) {
+        const wrapper = wrapperOnly(
+          generatePrompt(category, defaultSubjectFor(category), withOutput({ targetModel })),
+        );
+        const where = `${targetModel} / ${category}`;
+        const said = FIGURE.filter((term) => wrapper.includes(term));
+
+        // Each target carries part of the vocabulary rather than all of it — Flux's clause says
+        // "assembled figure" where the two negative blocks say the other pair — so the positive half
+        // asserts that some of it survives on the two that own it.
+        if (FIGURED.includes(category)) expect(said, where).not.toEqual([]);
+        else expect(said, where).toEqual([]);
       }
     }
   });

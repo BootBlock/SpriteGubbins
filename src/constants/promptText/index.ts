@@ -16,6 +16,7 @@
  * the raw stored value. {@link describeDirections} builds it.
  */
 export { PRACTICAL_COMPONENT_CEILING } from './inventory.ts';
+export { CATEGORY_ASSEMBLY } from './categoryAssembly.ts';
 export {
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,

@@ -1,5 +1,6 @@
 import type { AspectRatio, TargetModelId } from '../types/output.ts';
 import type { RenderStyleSurface } from '../types/rendering.ts';
+import type { CategoryAssembly } from '../types/subject.ts';
 import {
   wrapForFlux,
   wrapForGptImage,
@@ -61,6 +62,15 @@ export function wrapForModel(
      * `anatomy` row answers what a plan may *name* rather than what a generator will *draw*.
      */
     readonly limbsAreComponents: boolean;
+    /**
+     * What this sheet's assembled-whole failure is called, from `CATEGORY_ASSEMBLY`.
+     *
+     * The three targets with somewhere to say it read it — Flux as the clause closing its leading
+     * sentence, Stable Diffusion and Qwen as the run opening their negative blocks. All three stated
+     * it in a figure's vocabulary on every category until this was passed, so the highest-weighted
+     * term on a terrain sheet named a subject that sheet cannot contain.
+     */
+    readonly assembly: CategoryAssembly;
   },
 ): string {
   switch (target) {
@@ -71,17 +81,17 @@ export function wrapForModel(
       return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent, options.surface);
 
     case 'STABLE_DIFFUSION':
-      return wrapForStableDiffusion(prompt, options.surface, options.limbsAreComponents);
+      return wrapForStableDiffusion(prompt, options.surface, options.limbsAreComponents, options.assembly);
 
     // One wrapper for both Flux tiers. They differ only in how much of the prompt is read, which is
     // a budget fact rather than a wrapping one — and the restatement leads for both, since Black
     // Forest Labs' word-order guidance applies to the hosted tier just as it does to the weights.
     case 'FLUX':
     case 'FLUX_API':
-      return wrapForFlux(prompt, options.backgroundKeyDescription, options.surface);
+      return wrapForFlux(prompt, options.backgroundKeyDescription, options.surface, options.assembly);
 
     case 'QWEN_IMAGE':
-      return wrapForQwen(prompt, options.surface, options.limbsAreComponents);
+      return wrapForQwen(prompt, options.surface, options.limbsAreComponents, options.assembly);
 
     case 'SEEDREAM':
       return wrapForSeedream(prompt);

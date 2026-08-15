@@ -30,6 +30,41 @@ export const SUBJECT_CATEGORIES = [
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
 
 /**
+ * What a target model's wrapper is allowed to say about *this* sheet's assembled-whole failure —
+ * exploded parts drawn as one finished thing.
+ *
+ * Both halves for the reason `RenderStyleSurface` carries both of its: the wrappers reach a
+ * generator through two channels, a positive one where Flux is told what the sheet is *not* in
+ * prose because Black Forest Labs document that Flux discards a negative prompt, and a negative one
+ * where Stable Diffusion and Qwen take bare terms. A category whose statement and whose terms were
+ * filed apart is free to name one failure in one channel and a different one in the other.
+ */
+export interface CategoryAssembly {
+  /**
+   * This sheet's assembled whole, as a clause completing "…, with no cast shadow, no text, and …".
+   *
+   * Lower case, opening "no", no closing full stop — Flux's leading sentence is prose and this is
+   * the last thing in it, so it has to read as English rather than as a term list.
+   */
+  readonly statement: string;
+  /**
+   * The same failure as bare concepts a negative prompt can carry, weighted by Stable Diffusion and
+   * stated flat by Qwen.
+   *
+   * **A term belongs here only where no component of this category's inventory answers to it, word
+   * by word.** That is the `--no` rule in `wrapForMidjourney` — a term belongs only while no subject
+   * the app can describe is made of it — applied to the two negative blocks, and it is what a
+   * generator's cross-attention makes necessary: a weighted phrase is not read as an indivisible
+   * unit. No component of a CHARACTER sheet is "a character", so `assembled character` negates the
+   * assembled whole and nothing else; every component of a TERRAIN sheet *is* landscape, so
+   * `composed landscape` would negate the subject, and BUILDING's are literally "a structural or
+   * tile component" by its own section 4 guard. Where that rule leaves a category one safe term, it
+   * gets one.
+   */
+  readonly negatives: readonly string[];
+}
+
+/**
  * The sixteen fields every category defines — the same keys throughout, with each category
  * giving them its own labels, tooltips and option pool. `CHARACTER.species` is "Species /
  * Archetype" while `BUILDING.species` is "Structure Type", but both are the subject's base

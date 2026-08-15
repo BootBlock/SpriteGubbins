@@ -1476,6 +1476,32 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > category's §8 excludes characters outright, so those two terms still negate something those sheets
 > genuinely must not contain. Saying it in each category's own words is a separate change.
 
+> **Corrected after shipping — that separate change, and the last fixed string in the three
+> channels.** `(assembled character:1.3), (posed figure:1.3)` opened SD's block, `assembled
+> character, posed figure, complete figure` opened Qwen's, and `no assembled figure` closed Flux's
+> leading sentence, on all nine categories. The note above is right that the terms were not *wrong*
+> elsewhere — what was missing is the claim they exist to make. Every sheet has an assembled-whole
+> failure and only two have it in a figure's vocabulary: a building's is the finished structure
+> instead of its modules, a terrain's a view of the ground instead of separable tiles, an interface's
+> a screenshot instead of a kit, an effect's one composited picture instead of a sequence. So the
+> highest-weighted term in the block was spent naming something seven of the nine sheets could not
+> contain, while their own failure went unnamed. `CATEGORY_ASSEMBLY` holds one entry per category —
+> bare terms for the two negative blocks, and a clause worded as English for Flux's prose — and SD
+> applies its own `(term:1.3)` at the wrapper, so the weighting stays this channel's convention
+> rather than becoming the record's.
+>
+> **What may go in a list is bounded by the same judgement `--no` is**, and it costs more here than
+> it looks: a term belongs only where no component of that category's inventory answers to it, word
+> by word. That is why BUILDING has one term and not two — every candidate for a second names what
+> its components already are, its §4 guard calling every entry "a structural or tile component" —
+> and why EFFECT may say neither "effect" nor "frame" nor "sequence", each of which its §4 requires.
+> TERRAIN loses the sharper half of its failure outright: the tiles-already-laid reading cannot be
+> stated without "tiles", "ground" or "field", and negating any of them would take either the
+> subject or §9's edge agreement with it, so what is left is the composed-*view* reading in the two
+> words §8 already uses for it. Qwen's third term went too — `complete figure` is `assembled
+> character` said again, and one record cannot hold two spellings of an entry without the categories
+> diverging by target, which is the argument that turned `blurry` into `blurred edges` above.
+
 ---
 
 ## 8. Defects fixed

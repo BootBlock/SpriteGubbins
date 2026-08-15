@@ -1,6 +1,7 @@
 import {
   ASPECT_TEXT,
   BACKGROUND_KEY_TEXT,
+  CATEGORY_ASSEMBLY,
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,
   CATEGORY_GUARD_TEXT,
@@ -392,6 +393,7 @@ export function generatePrompt(
     frameIsAComponent: FRAME_IS_A_COMPONENT[category],
     surface: RENDER_STYLE_SURFACE[output.renderStyle],
     limbsAreComponents: LIMBS_ARE_COMPONENTS[category],
+    assembly: CATEGORY_ASSEMBLY[category],
   });
 }
 

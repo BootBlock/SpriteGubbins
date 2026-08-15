@@ -1,6 +1,7 @@
 import { MIDJOURNEY_VERSION } from '../constants/models.ts';
 import type { AspectRatio } from '../types/output.ts';
 import type { RenderStyleSurface } from '../types/rendering.ts';
+import type { CategoryAssembly } from '../types/subject.ts';
 
 /**
  * The text each generator's wrapper actually adds, one function per target.
@@ -170,15 +171,21 @@ export function wrapForMidjourney(
  * reading of "blurry" overlaps with. So the claim is now the style's own `blurred edges`, which is
  * the wording Qwen's block already used for it, and it is emitted on the styles whose section 2 line
  * asserts a hard edge and withheld on the three that ask for a soft one.
+ *
+ * **The run that opens the block is the sheet's too, and it was the last fixed string here.** It
+ * read `(assembled character:1.3), (posed figure:1.3)` on every category, which spent the highest
+ * weight in the whole block naming a figure on sheets whose components are floor tiles and panel
+ * frames. `CATEGORY_ASSEMBLY` holds each category's own assembled-whole failure; the weighting is
+ * applied here rather than stored there, because it is this channel's convention and not Qwen's.
  */
 export function wrapForStableDiffusion(
   prompt: string,
   surface: RenderStyleSurface,
   limbsAreComponents: boolean,
+  assembly: CategoryAssembly,
 ): string {
   const negatives = [
-    '(assembled character:1.3)',
-    '(posed figure:1.3)',
+    ...assembly.negatives.map((term) => `(${term}:1.3)`),
     'text',
     'watermark',
     'signature',
@@ -219,13 +226,20 @@ export function wrapForStableDiffusion(
  * softening: what section 0 forbids is a cast shadow, a contact shadow and a ground plane, while a
  * form shadow is the shading that gives a component its volume — and it is `RENDERED_3D`'s and
  * `CLAY_RENDER`'s subject. The unqualified plural took both.
+ *
+ * **And the clause that closes the first sentence is the sheet's, from `CATEGORY_ASSEMBLY`.** It
+ * read "no assembled figure" whatever the subject was, which put a claim about a figure in the
+ * position Black Forest Labs' word-order guidance calls the strongest — on a terrain, building or
+ * interface sheet, ahead of everything true about it. This is prose rather than a term list, so the
+ * record carries the clause already worded as English rather than the wrapper assembling one.
  */
 export function wrapForFlux(
   prompt: string,
   backgroundKeyDescription: string,
   surface: RenderStyleSurface,
+  assembly: CategoryAssembly,
 ): string {
-  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with no cast shadow, no text, and no assembled figure. Every part is drawn ${surface.statement}.
+  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with no cast shadow, no text, and ${assembly.statement}. Every part is drawn ${surface.statement}.
 
 ${prompt}`;
 }
@@ -240,20 +254,24 @@ ${prompt}`;
  * — emitting it here would put literal parentheses and decimals into a field documented to take a
  * description.
  *
- * The surface terms and the anatomy pair are the sheet's own, exactly as in `wrapForStableDiffusion`
- * above — this block carried the pixel-art edge rules against every render style too, and the two
- * were fixed together because a wrapper that only argues with section 2 on one target is still a
- * wrapper that argues with it.
+ * The surface terms, the anatomy pair and the assembly run are the sheet's own, exactly as in
+ * `wrapForStableDiffusion` above — this block carried the pixel-art edge rules against every render
+ * style too, and the two were fixed together because a wrapper that only argues with section 2 on
+ * one target is still a wrapper that argues with it.
+ *
+ * **This block used to say the assembly claim three times and now says it however many times
+ * `CATEGORY_ASSEMBLY` does.** Its third term was `complete figure`, which is `assembled character`
+ * restated; one record cannot hold two spellings of one entry without the categories diverging by
+ * target, so the synonym went with the fixed strings.
  */
 export function wrapForQwen(
   prompt: string,
   surface: RenderStyleSurface,
   limbsAreComponents: boolean,
+  assembly: CategoryAssembly,
 ): string {
   const negatives = [
-    'assembled character',
-    'posed figure',
-    'complete figure',
+    ...assembly.negatives,
     'text',
     'labels',
     'captions',
