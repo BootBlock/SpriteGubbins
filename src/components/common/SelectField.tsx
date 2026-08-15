@@ -17,8 +17,8 @@ interface SelectFieldProps<T extends string | number> {
    *
    * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen: this is
    * for the one select whose options differ from each other in a way no single sentence can cover.
-   * Optional because every other select in the app has nothing of the kind to say, and eighteen call
-   * sites passing a permanently-empty string would bury the one that does — while empty *is* still
+   * Optional because every other select in the app has nothing of the kind to say, and twenty-three
+   * call sites passing a permanently-empty string would bury the one that does — while empty *is* still
    * accepted from the one that passes it, as `CheckboxField`'s reason is, so a caller resolving the
    * text can hand over what it found rather than choosing between a prop and no prop.
    */
@@ -27,9 +27,9 @@ interface SelectFieldProps<T extends string | number> {
    * When set, the reason the value is not yours to choose — shown in place of nothing at all, as
    * `NumberField` and `CheckboxField` both show theirs.
    *
-   * Optional here where those two require it, for the reason `description` is: one of eighteen
-   * selects has a setting above it that takes its value over, and seventeen call sites passing a
-   * permanently-empty string would bury the one that does.
+   * Optional here where those two require it, for the reason `description` is: one of the app's
+   * twenty-four selects has a setting above it that takes its value over, and the other
+   * twenty-three passing a permanently-empty string would bury the one that does.
    */
   readonly disabledReason?: string;
   readonly onChange: (value: T) => void;

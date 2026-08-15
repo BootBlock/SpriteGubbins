@@ -30,7 +30,7 @@ import { vehicleDirectionalVariants, VEHICLE_CUTOUT_RIG, VEHICLE_PART_LIBRARY } 
  * across two sheets — where every other plan ignores the argument: a run-list sheet's inventory is
  * written for one facing whichever set drives the runs.
  */
-export type SeriesFor = (facings: FacingTuple) => SheetSeries;
+type SeriesFor = (facings: FacingTuple) => SheetSeries;
 
 /** A pairing whose sheets do not vary with the chosen facings. */
 function fixed(...series: SheetSeries): SeriesFor {
