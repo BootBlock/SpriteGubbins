@@ -80,6 +80,17 @@
  * again there would be the diluting third copy `utils/modelWrapperText/sol.ts` describes, in the
  * section least able to afford it.
  *
+ * **The native grid is stated in three places, and the split is what makes each of them necessary.**
+ * Section 0's fifth item is a rule about *resampling*, and as written it read as a ban on the one
+ * enlargement pixel art is made of — so the carve-out belongs in the item it would otherwise
+ * contradict, not only where the scale is stated. Section 2 states the grid and the figure, because
+ * that is where the target component size is. The self-audit's line is the third and earns its place
+ * by asking a different question: the other two say what to draw, and it asks what the delivered
+ * sheet actually holds — which is precisely the check the reported failure walked past, a sheet
+ * returning "far more interior detail than a true 16 × 32 sprite could contain". All three are gated
+ * on `NATIVE_GRID`, the compiler's single answer to whether this configuration has a native grid at
+ * all, so they cannot appear apart or disagree about the multiple.
+ *
  * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
  * each rule lives. This constant is the one the app emits and therefore the source of the pair, so
  * a change made here is copied over that fence in the same commit —
@@ -106,7 +117,14 @@ Satisfy this section before any aesthetic consideration.
    around a component.
 [N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
-   virtual canvas and downscale, and do not upscale a smaller one.
+   virtual canvas and downscale, and do not upscale a smaller one. What this forbids is
+   **resampling** — any resize that invents intermediate values, softens a boundary or leaves a
+   pixel edge blurred.
+[IF:NATIVE_GRID]
+   A native pixel grid presented at a whole-number multiple is not resampling, and is what this sheet
+   asks for: section [SEC:STYLE] states the grid and the multiple. Multiplying by a whole number invents no
+   intermediate values, so every edge in the delivered image is an edge that was drawn on that grid.
+[/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
@@ -273,6 +291,21 @@ The look is fixed by the following. Each states something the settings above hav
 
 Treat those as measurements and work to them directly. Where one pulls against a setting stated
 earlier in this section, the setting wins — it is what this particular sheet asked for.
+[/IF]
+[IF:NATIVE_GRID]
+
+### The native grid, and the scale it is delivered at
+
+**The target component size above is a native pixel grid, not a count of delivered pixels.** It is
+the grid a whole subject is drawn on, with every smaller piece in proportion to it on that same
+grid, and it is where detail stops. Draw each component there first, then deliver the finished grid
+enlarged by a whole number — **[DEFINE:NATIVE_GRID_SCALE]× or more** — so that each native pixel becomes a solid square
+block of identical delivered pixels, with hard edges between blocks and no interpolation, blending
+or softened edge anywhere in the enlargement.
+
+The enlargement adds nothing: it multiplies pixels that were already placed, so no component carries
+a feature, an outline or a colour boundary finer than one native pixel. Interior detail beyond what
+the grid above can hold means the component was not drawn on it.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 
@@ -635,6 +668,10 @@ Before delivering, verify:
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[/IF]
+[IF:NATIVE_GRID]
+[N]. Nothing on any component is finer than one native pixel of the grid section [SEC:STYLE] states, and
+   every colour boundary falls on that grid.
 [/IF]
 [IF:PALETTE]
 [N]. Every colour on every component is one the palette in section [SEC:STYLE] permits.

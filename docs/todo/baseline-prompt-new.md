@@ -216,7 +216,7 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 | `BACKGROUND_KEY` | `MAGENTA_FF00FF` · `PURE_WHITE` · `PURE_BLACK` · `TRANSPARENT` | White is a poor extraction default (§8.6) |
 | `COMPONENT_BUDGET` | integer | Lets the app cap or split a request beyond what a model can deliver (§8.4) |
 | `IDENTITY_LOCK` | free text | Carries an identity digest into follow-up sheets (§5) |
-| `SPRITE_TARGET_SIZE` | free text, e.g. `48 × 96 px` | An explicit pixel target, which the profile names only vaguely |
+| `SPRITE_TARGET_SIZE` | free text, e.g. `48 × 96 px` | An explicit pixel target, which the profile names only vaguely. On a pixel-art sheet under `CUSTOM` it is the **native grid** the artwork is drawn on, and §0, §2 and §9 state the whole-number scale the sheet delivers that grid at — see R7 |
 
 ### `HARDWARE_PROFILE` and `PALETTE` — **NEW**, added after this document shipped
 
@@ -304,7 +304,14 @@ Satisfy this section before any aesthetic consideration.
    around a component.
 [N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
-   virtual canvas and downscale, and do not upscale a smaller one.
+   virtual canvas and downscale, and do not upscale a smaller one. What this forbids is
+   **resampling** — any resize that invents intermediate values, softens a boundary or leaves a
+   pixel edge blurred.
+[IF:NATIVE_GRID]
+   A native pixel grid presented at a whole-number multiple is not resampling, and is what this sheet
+   asks for: section [SEC:STYLE] states the grid and the multiple. Multiplying by a whole number invents no
+   intermediate values, so every edge in the delivered image is an edge that was drawn on that grid.
+[/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
@@ -471,6 +478,21 @@ The look is fixed by the following. Each states something the settings above hav
 
 Treat those as measurements and work to them directly. Where one pulls against a setting stated
 earlier in this section, the setting wins — it is what this particular sheet asked for.
+[/IF]
+[IF:NATIVE_GRID]
+
+### The native grid, and the scale it is delivered at
+
+**The target component size above is a native pixel grid, not a count of delivered pixels.** It is
+the grid a whole subject is drawn on, with every smaller piece in proportion to it on that same
+grid, and it is where detail stops. Draw each component there first, then deliver the finished grid
+enlarged by a whole number — **[DEFINE:NATIVE_GRID_SCALE]× or more** — so that each native pixel becomes a solid square
+block of identical delivered pixels, with hard edges between blocks and no interpolation, blending
+or softened edge anywhere in the enlargement.
+
+The enlargement adds nothing: it multiplies pixels that were already placed, so no component carries
+a feature, an outline or a colour boundary finer than one native pixel. Interior detail beyond what
+the grid above can hold means the component was not drawn on it.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 
@@ -833,6 +855,10 @@ Before delivering, verify:
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
+[/IF]
+[IF:NATIVE_GRID]
+[N]. Nothing on any component is finer than one native pixel of the grid section [SEC:STYLE] states, and
+   every colour boundary falls on that grid.
 [/IF]
 [IF:PALETTE]
 [N]. Every colour on every component is one the palette in section [SEC:STYLE] permits.
@@ -1834,6 +1860,52 @@ angled-overhead one *is* a camera geometry, so it now fixes the elevation — an
 not isometric — and only `THREE_QUARTER_TOPDOWN`, whose description is satisfied by any elevation
 strictly between the two extremes, leaves it open. That also makes the vertical reachable from
 exactly one projection, which is the projection that names it.
+
+**R7. §0 forbade the one enlargement pixel art is made of, and never said which of two things a
+target component size was.** ChatGPT 5.6 Sol drew an eight-way character sheet from a configuration
+stating `16 × 32 px` and reported back that the components were "visually hundreds of delivered
+pixels tall" and carried "far more interior detail than a true 16 × 32 sprite could contain", the
+image model having "treated `16 × 32` more as stylistic guidance than a measurable constraint". That
+was the only reading available to it. §0's fifth item says to render every component directly at the
+delivered output resolution and not to upscale a smaller one; §2 then states a component size of
+16 × 32 on a sheet every named target delivers somewhere between roughly 1024 and 1536 pixels wide.
+Twelve components at 16 × 32 *delivered* pixels there are specks, and twelve legible ones have been
+enlarged from a native grid — which that item appeared to forbid in as many words. With nothing
+saying which was meant, the size stopped being a constraint and became a mood.
+
+The app had already answered the question at the other end. `utils/targetSizeGrid.ts` reads a
+*returned* sheet as a native grid drawn at an integer scale, and the whole `PixelGrid` apparatus in
+the Quantise tab exists downstream of that — so the tool that reads the image back assumed exactly
+what the prompt that requested it forbade. The fix is to say which, in the prompt. §0's fifth item
+now names **resampling** as the thing it forbids and carries a carve-out for a native grid presented
+at a whole-number multiple; §2 gains a block stating that the target size *is* that grid, that the
+sheet delivers it enlarged by a whole number, and that the enlargement adds no detail; and §9's audit
+gains one check on what the finished sheet holds, which is the check the reported sheet walked past.
+
+**The figure is derived, and it is a floor.** `utils/nativeGridScale.ts` finds the largest
+whole-number scale at which the sheet still seats every component at that size — the arithmetic
+`targetSizeGrid` already performed in the other direction, now shared as `componentGridScale` so the
+tab and the prompt cannot disagree about one sheet. It reasons from a *nominal* canvas
+(`constants/sheetCanvas.ts`), because a generator decides the delivered pixel dimensions and a prompt
+only asks for a shape: the long edge is taken as 1024, under what the current models return at these
+ratios, so a figure derived there fits on the sheets that come back larger. That is also why the
+prompt says "N× or more" rather than pinning the multiple — an exact figure against a canvas the
+generator actually has would be reconciled by resampling, which is the one thing being ruled out.
+
+**Four configurations state nothing at all, and each silence is the decision.** A style that is not
+pixel art has no native grid to enlarge, and §0's rule is right there unqualified. A resolution
+profile other than `CUSTOM` *is* a scale and states its own figure — the gate `minFeatureSize` and
+`smallScaleDiscipline` already apply to this same field, and a second derived figure beside one of
+them would be two answers to one question. A size that does not parse leaves nothing to enlarge; the
+field is free prose, and a shipped preset holds *"48 × 96 px assembled (2 metres tall at 48 px per
+metre)"*. And a component already large enough to fill its share of the canvas comes back as 1,
+where the delivered pixels *are* the native ones and §0 needs no help from §2 to say so.
+
+**What the wording had to keep true.** `smallScaleDiscipline` deliberately never restates the size,
+because the target names a typical whole figure rather than a hard per-component dimension — a hand
+drawn beside a torso is in proportion to it, per §0's one-scale rule. The new block says the same:
+the grid is what a *whole subject* is drawn on, with every smaller piece in proportion to it on that
+same grid. What is uniform across the sheet is the pixel, not the cell.
 
 ---
 

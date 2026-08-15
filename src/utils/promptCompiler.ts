@@ -47,6 +47,7 @@ import { directionalRotation } from './directionalRotation.ts';
 import { leadingSideLedger } from './leadingSideLedger.ts';
 import { turntableSequence } from './turntableSequence.ts';
 import { describeMirrorPairs, mirrorPairs } from './mirrorPairs.ts';
+import { nativeGridScale } from './nativeGridScale.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 import { describeSeries } from './describeSeries.ts';
@@ -173,9 +174,27 @@ export function generatePrompt(
   // drop — from one lookup, so the prompt cannot drop a line and then say nothing in its place.
   const validationPass = validationPassFor(output.renderStyle);
 
+  // How many components this sheet asks for. Hoisted out of the values below because the scale the
+  // sheet presents its native grid at is a function of it: the canvas has to seat all of them, so a
+  // sheet of forty components is enlarged less than a sheet of twelve.
+  const componentCount = componentCountFor(category, mode, output.directions, output.sheetIndex, anatomy);
+
+  // The whole-number enlargement the native pixel grid is delivered at, or `null` where this
+  // configuration has no native grid — a style that is not pixel art, a profile that states its own
+  // scale, an unparseable size, or a component already large enough that there is nothing to
+  // enlarge. Read twice below, as the value and as the flag that gates the three places stating it,
+  // so the prompt cannot carry the carve-out without the figure it points at.
+  const nativeScale = nativeGridScale(
+    output.renderStyle,
+    output.resolutionProfile,
+    output.spriteTargetSize,
+    output.aspectRatio,
+    componentCount,
+  );
+
   const values: Record<string, string> = {
     CATEGORY: category,
-    COMPONENT_COUNT: String(componentCountFor(category, mode, output.directions, output.sheetIndex, anatomy)),
+    COMPONENT_COUNT: String(componentCount),
     COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, output.directions, output.sheetIndex, anatomy),
     // Every one of these is now a function of the category as well as the mode. That is the whole
     // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
@@ -209,6 +228,10 @@ export function generatePrompt(
     // is still there to be filled.
     VALIDATION_PASS_DESCRIPTION: VALIDATION_PASS_TEXT[output.renderStyle],
     SPRITE_TARGET_SIZE: output.spriteTargetSize,
+    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: `substitute` throws
+    // on a token it has no value for, and the template's own `[IF:NATIVE_GRID]` is what decides
+    // whether the token is still there to be filled.
+    NATIVE_GRID_SCALE: nativeScale === null ? '' : String(nativeScale),
 
     HARDWARE_NAME: hardware?.name ?? '',
     HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
@@ -312,6 +335,13 @@ export function generatePrompt(
     // render is lit — the key light is what makes its volumes readable, which is the whole of what
     // it is run to check — while a flat fill of one colour has no surface for a light to fall on.
     LIGHTING_STATED: validationPass?.withholdsLight === true ? '' : 'yes',
+    // Whether the target component size names a native pixel grid this sheet delivers enlarged.
+    // Gates three places at once: the carve-out in section 0's resampling rule, the block in
+    // section 2 that states the grid and the multiple, and the self-audit's check on what the
+    // finished sheet holds. One flag, because a sheet either has a native grid to present or does
+    // not — and the carve-out without the figure would be section 0 permitting an enlargement
+    // nothing else in the prompt asks for.
+    NATIVE_GRID: nativeScale === null ? '' : 'yes',
     // Read from the resolved profile rather than from the stored id, so a configuration naming a
     // machine this build no longer has emits no heading rather than an empty one — the same
     // reasoning that makes `resolveMode` the single answer about the sheet mode.

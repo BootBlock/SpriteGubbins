@@ -160,13 +160,27 @@ export interface TargetCapabilities {
 }
 
 /**
+ * A width and a height in pixels, for the two things this app measures that are not a component:
+ * the sheet a prompt is composed against, and the image the quantiser was given.
+ *
+ * Structurally identical to {@link TargetSize} and deliberately a separate name, because the maths
+ * that relates the two — how many components of one size a canvas of the other seats — reads as
+ * nonsense if both arguments claim to be component sizes.
+ */
+export interface PixelExtent {
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
  * A component size in art pixels, read out of the free-text `spriteTargetSize` below.
  *
- * The size the *components* were asked for, not the sheet's pixel scale. Three features read it and
+ * The size the *components* were asked for, not the sheet's pixel scale. Four features read it and
  * none owns it: the prompt compiler takes it as the scale the pixel-discipline section is written
- * against, the quantiser turns it into a candidate pixel grid for a returned sheet, and the atlas
- * calculator checks it against the cell a texture affords. It lives beside the field it is the
- * parsed form of, rather than in any of their vocabularies.
+ * against, it derives from it the whole-number scale the sheet presents that grid at, the quantiser
+ * turns it into a candidate pixel grid for a returned sheet, and the atlas calculator checks it
+ * against the cell a texture affords. It lives beside the field it is the parsed form of, rather
+ * than in any of their vocabularies.
  */
 export interface TargetSize {
   readonly width: number;

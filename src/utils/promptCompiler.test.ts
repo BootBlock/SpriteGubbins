@@ -1195,6 +1195,72 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(painted).not.toContain('Pixel discipline');
   });
 
+  it('states the native grid and the scale it is delivered at, in all three places at once', () => {
+    // The defect: section 0 forbade upscaling a smaller canvas while section 2 stated a component
+    // size a sheet over a thousand pixels wide can only satisfy by enlarging one — so the size was
+    // read as a mood, and a sheet came back carrying far more interior detail than the grid it named
+    // could hold. Nothing here re-derives the figure; `nativeGridScale.test.ts` pins the arithmetic.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        renderStyle: 'PIXEL_ART',
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '16 × 32 px',
+      }),
+    );
+
+    // Section 0 no longer forbids the one enlargement pixel art is made of.
+    expect(prompt).toContain('What this forbids is\n   **resampling**');
+    expect(prompt).toContain('A native pixel grid presented at a whole-number multiple is not resampling');
+
+    // Section 2 says which of the two things the size is, and states the multiple as a figure.
+    expect(prompt).toContain('### The native grid, and the scale it is delivered at');
+    expect(prompt).toContain('**The target component size above is a native pixel grid');
+    expect(prompt).toMatch(/\*\*[2-9]\d*× or more\*\*/u);
+    // And the enlargement is the one that adds nothing, which is what the report's sheet failed.
+    expect(prompt).toContain('The enlargement adds nothing');
+
+    // Section 9 audits what the delivered sheet holds against that grid.
+    expect(prompt).toContain('Nothing on any component is finer than one native pixel');
+  });
+
+  it('leaves section 0’s rule unqualified where there is no native grid', () => {
+    const grid = {
+      renderStyle: 'PIXEL_ART',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '16 × 32 px',
+    } as const;
+
+    // A painted sheet has no grid of placed pixels to multiply, so the carve-out would be permission
+    // to enlarge nothing in particular.
+    const painted = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...grid, renderStyle: 'PAINTED_2D' }));
+    expect(painted).toContain('do not upscale a smaller one');
+    expect(painted).not.toContain('native pixel grid presented at a whole-number multiple');
+    expect(painted).not.toContain('The native grid, and the scale');
+
+    // A profile that is a scale already states its own figure; a second one is two answers.
+    const profiled = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ ...grid, resolutionProfile: 'RETRO_16_BIT' }),
+    );
+    expect(profiled).not.toContain('The native grid, and the scale');
+
+    // A component already large enough to fill its share of the canvas is delivered at 1:1, which is
+    // what section 0 says on its own.
+    const large = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ ...grid, spriteTargetSize: '512 × 512 px' }),
+    );
+    expect(large).toContain('- Target component size: 512 × 512 px');
+    expect(large).not.toContain('The native grid, and the scale');
+
+    // And the default studio state states no size at all, so nothing is derived from one.
+    expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT)).not.toContain('The native grid, and the scale');
+  });
+
   it('names one projection and one elevation', () => {
     const prompt = generatePrompt(
       'CHARACTER',
