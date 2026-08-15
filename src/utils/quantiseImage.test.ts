@@ -32,8 +32,8 @@ const KEYING = { color: MAGENTA, tolerance: 16 };
  * condition the ordering test below turns on: each of those colours polls a single vote in the modal
  * alignment, so any colour appearing twice beats all of them.
  *
- * Blue is pinned at 255, so only two channels drift and by at most 7 each: the widest of them is 9.9
- * from the key, well inside `KEYING`. The sprite colour is 354 away, so it is outside both the field
+ * Blue is pinned at 255, so only two channels drift and by at most 7 each: the widest of them is 6.5
+ * from the key, well inside `KEYING`. The sprite colour is 179 away, so it is outside both the field
  * and the fringe threshold and cannot be eroded.
  */
 const STRADDLING_SHEET = imageFrom(32, 32, (x, y) => {

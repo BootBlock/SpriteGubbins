@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_KEY_TOLERANCE, KEY_TOLERANCES } from '../constants/quantiser.ts';
 import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { keyBackground } from './keyBackground.ts';
@@ -15,17 +16,26 @@ const MAGENTA: Rgba = { r: 255, g: 0, b: 255, a: 255 };
 /** What a keyed pixel reads as. Canonical, not the original RGB at zero alpha — see the case for it. */
 const TRANSPARENT: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 
-/** Nowhere near magenta on any channel, so it is outside both the field and the fringe threshold. */
+/** Nowhere near magenta in hue or lightness, so it is outside both the field and the fringe threshold. */
 const ART: Rgba = { r: 20, g: 180, b: 60, a: 255 };
 
 /**
- * A magenta the generator got *nearly* right: 8.7 away from the key, so tolerance 16 admits it and
+ * A magenta the generator got *nearly* right: 4.3 away from the key, so tolerance 16 admits it and
  * tolerance 0 does not. This is the ordinary case the whole feature exists for.
  */
 const DRIFTED: Rgba = { r: 250, g: 5, b: 250, a: 255 };
 
 /**
- * A pixel on an anti-aliased edge: 46.8 from the key, so it is outside any tolerance tight enough to
+ * A magenta field the generator **painted** rather than filled — the case that prompted the metric.
+ *
+ * 99 from the key in a straight line and 50 once the key's own shading and washing are discounted. So
+ * the default tolerance takes it — where measured straight it shared the ladder's top rung with rose
+ * and purple at 127, and no setting that reached it could have spared those.
+ */
+const PAINTED: Rgba = { r: 196, g: 27, b: 180, a: 255 };
+
+/**
+ * A pixel on an anti-aliased edge: 23.4 from the key, so it is outside any tolerance tight enough to
  * be safe and inside `tolerance × FRINGE_TOLERANCE_FACTOR` at 16. Only the geometry decides its fate.
  */
 const BLEND: Rgba = { r: 228, g: 27, b: 228, a: 255 };
@@ -53,6 +63,20 @@ describe('keyBackground', () => {
     const exact = keyBackground(drifted, { color: MAGENTA, tolerance: 0 });
     expect(exact.keyedPixels).toBe(0);
     expect(channels(exact.image)).toEqual(channels(drifted));
+  });
+
+  it('keys a field the generator painted, at the tolerance the tab opens with', () => {
+    // The reported failure: a sheet whose background was *visibly* magenta throughout came back with
+    // most of the field gone and blotches of it left behind, because measured in a straight line the
+    // blotches sat on the same rung of the ladder as rose and purple — so the setting that would have
+    // taken them was a setting that would have taken the sprite. Nothing here is a special case for
+    // that colour; the distance simply stopped charging full price for a field shaded and washed.
+    const painted = imageFrom(4, 4, () => PAINTED);
+
+    const result = keyBackground(painted, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
+
+    expect(result.keyedPixels).toBe(16);
+    expect(channels(result.image)).toEqual(allZero(16));
   });
 
   it('keys an exact field at tolerance 0, which is what that setting means', () => {
@@ -122,6 +146,19 @@ describe('keyBackground', () => {
 
     expect(result.keyedPixels).toBe(1);
     expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, BLEND, ART)));
+  });
+
+  it('does not erode the sprite’s contour at the top of the tolerance ladder', () => {
+    // The fringe threshold is a multiple of the tolerance, and a multiple with nothing above it runs
+    // off the end of the scale: at 128 it reached 384, where the furthest any two colours can be
+    // apart is 441. So the loosest settings quietly took a pixel off *every* silhouette touching the
+    // field, whatever colour it was, while the panel described a one-pixel edge clean-up.
+    const sheet = row(MAGENTA, ART, ART);
+
+    const result = keyBackground(sheet, { color: MAGENTA, tolerance: Math.max(...KEY_TOLERANCES) });
+
+    expect(result.keyedPixels).toBe(1);
+    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, ART, ART)));
   });
 
   it('does not let a row wrap onto the one above it when deciding adjacency', () => {

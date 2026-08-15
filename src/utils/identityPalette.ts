@@ -77,10 +77,12 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * offered keys, and anything loose enough to swallow fringing against those would eat the sheet's
  * own highlights and outlines.
  *
- * `keyBackground` does take one, and the difference is a restriction this function has nowhere to put:
- * there, the loose threshold only reaches pixels that touch the keyed field, so it can only ever admit
- * blends. A digest is a list of colours with no geometry to appeal to, and the coverage ordering below
- * is what contains the damage instead.
+ * `keyBackground` does take one, and it can afford to because it has two things this function has
+ * nowhere to put. It measures the distance with the key's own shading and washing discounted, so a
+ * generous threshold there still knows a hue apart from the key's; and its *widest* threshold, the
+ * one that erodes the halo, only reaches pixels touching the keyed field, so that one can only ever
+ * admit blends. A digest is a list of colours with neither a metric worth the extra arithmetic nor
+ * any geometry to appeal to, and the coverage ordering below is what contains the damage instead.
  *
  * The cost is real and is left to the caller: an anti-aliased edge blends the key with the colour
  * beside it, and those blends are *opaque* colours the sheet genuinely contains, so nothing here

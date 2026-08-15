@@ -1,6 +1,7 @@
-import { FRINGE_TOLERANCE_FACTOR } from '../constants/quantiser.ts';
-import type { BackgroundKeying, Rgba } from '../types/quantiser.ts';
+import { FRINGE_TOLERANCE_CEILING, FRINGE_TOLERANCE_FACTOR } from '../constants/quantiser.ts';
+import type { BackgroundKeying } from '../types/quantiser.ts';
 import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage, FULLY_TRANSPARENT } from './imageData.ts';
+import { keyBasis, keyDistanceSquared } from './keyDistance.ts';
 
 /**
  * Turning a returned sheet's background key into transparency.
@@ -10,6 +11,12 @@ import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage, FULLY_TRANSPARENT 
  * back *visibly* magenta and almost nowhere actually `#FF00FF`, the values drifting across the whole
  * field, and any lossy re-encode on the way out moves them again. So an exact match keys nothing, and
  * the field has to be matched as a neighbourhood.
+ *
+ * **A round neighbourhood was not enough on its own, which is what `keyDistance.ts` is for.** A field
+ * drifts by being shaded and washed out, and that runs a long way in plain colour distance while
+ * staying unmistakably the colour that was asked for — far enough that no radius held the field
+ * without also reaching hues that were never the key. The distance measured here discounts that one
+ * direction, so the two stop competing for the same threshold.
  *
  * That leaves the second half of the problem, which is why this is not a one-line threshold: an
  * anti-aliased silhouette **blends the key colour into the artwork beside it**, so a field removed
@@ -42,8 +49,9 @@ export interface KeyedImage {
  * 1. **The field.** A pixel within `tolerance` of the key colour, or already fully transparent, is
  *    marked. Nothing is written yet.
  * 2. **The fringe, and the output.** A marked pixel becomes transparent. An *unmarked* pixel becomes
- *    transparent too if it is 4-adjacent to a marked one and within
- *    `tolerance × FRINGE_TOLERANCE_FACTOR` of the key. Everything else is copied through untouched.
+ *    transparent too if it is 4-adjacent to a marked one and within `tolerance ×
+ *    FRINGE_TOLERANCE_FACTOR`, capped at `FRINGE_TOLERANCE_CEILING`, of the key. Everything else is
+ *    copied through untouched.
  *
  * **Pass 2 reads the mask, never its own output**, so the erosion is exactly one pixel deep and cannot
  * cascade. That bound is the point: the same rule applied to its own results is a flood fill, and it
@@ -53,7 +61,14 @@ export interface KeyedImage {
  * The adjacency requirement is what makes the wider fringe threshold safe — see
  * `FRINGE_TOLERANCE_FACTOR`. And because that threshold is scaled from `tolerance` rather than being a
  * control of its own, a tolerance of 0 makes pass 2 unreachable by construction: the only pixels
- * within a zero-radius fringe are exact matches, which pass 1 has already marked.
+ * within a zero-radius fringe are exact matches, which pass 1 has already marked. The ceiling keeps
+ * that property — capping zero leaves zero — while taking away the other end, where an unbounded
+ * multiple reached past every colour in the sheet.
+ *
+ * Past the rung where the ceiling binds, pass 2 stops finding anything: the field's own radius has
+ * overtaken the fringe's, so every pixel the second test could admit the first has already marked.
+ * That is the pass expiring rather than misbehaving — a tolerance that loose is matching the blends
+ * directly.
  *
  * **Keyed pixels are written `{0, 0, 0, 0}`, not their original RGB at zero alpha.** This is not
  * tidiness. `alignToGrid` resolves each cell to its modal *packed RGBA*, so transparent pixels that
@@ -64,9 +79,16 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
   const { width, height, data } = image;
   const pixels = width * height;
 
-  // Squared, so every comparison below stays in integers and no square root is taken 16 million times.
+  // The plane the key's own variation lies in, worked out once for the whole image — see
+  // `keyDistance.ts` for what it is and why the distance is measured against it.
+  const basis = keyBasis(color);
+
+  // Squared, so every comparison below stays clear of a square root taken 16 million times.
   const fieldRadius = tolerance * tolerance;
-  const fringeRadius = (tolerance * FRINGE_TOLERANCE_FACTOR) ** 2;
+  // Bounded, because a bare multiple is not a threshold: at the top of the ladder the product runs
+  // past the distance between any two colours, and the pass stops being an edge clean-up and becomes
+  // a blanket erosion of every silhouette in the sheet. See `FRINGE_TOLERANCE_CEILING`.
+  const fringeRadius = Math.min(tolerance * FRINGE_TOLERANCE_FACTOR, FRINGE_TOLERANCE_CEILING) ** 2;
 
   const field = new Uint8Array(pixels);
   for (let index = 0; index < pixels; index += 1) {
@@ -75,7 +97,7 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
     // an empty region however it got that way, and the fringe around one is contaminated the same way.
     if (
       alphaAt(data, offset) === FULLY_TRANSPARENT ||
-      rgbDistanceSquared(data, offset, color) <= fieldRadius
+      keyDistanceSquared(data, offset, basis) <= fieldRadius
     ) {
       field[index] = 1;
     }
@@ -90,7 +112,7 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
       field[index] === 1 ||
       // Adjacency first, and deliberately: it fails for every interior pixel, which is nearly all of
       // them, and it fails on four array reads rather than three multiplications.
-      (touchesField(field, width, height, index) && rgbDistanceSquared(data, offset, color) <= fringeRadius);
+      (touchesField(field, width, height, index) && keyDistanceSquared(data, offset, basis) <= fringeRadius);
 
     if (!isKeyed) {
       copyPixel(data, output.data, offset);
@@ -103,20 +125,6 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
   }
 
   return { image: output, keyedPixels };
-}
-
-/**
- * Squared distance from the key across RGB alone — the restriction of `nearestColor`'s metric to the
- * three channels a key field has.
- *
- * Reads the pixel's channels in place rather than taking an `Rgba`, because it is called once or
- * twice for every pixel of the image and the object would be the whole cost of the pass.
- */
-function rgbDistanceSquared(data: Uint8ClampedArray, offset: number, key: Rgba): number {
-  const r = (data[offset] ?? 0) - key.r;
-  const g = (data[offset + 1] ?? 0) - key.g;
-  const b = (data[offset + 2] ?? 0) - key.b;
-  return r * r + g * g + b * b;
 }
 
 /**

@@ -210,7 +210,7 @@ export function measurableGridCeiling(width: number, height: number): number {
 export const PREVIEW_ZOOMS = [1, 2, 4, 8] as const;
 
 /**
- * The tolerances the keying control offers, as Euclidean RGB distance from the key colour.
+ * The tolerances the keying control offers, as the distance `keyDistanceSquared` measures.
  *
  * **A ladder rather than a slider**, and the reason is the pipeline: every pass in it is linear in an
  * image that may be {@link MAX_IMAGE_PIXELS}, so a range input would recompute the whole transform on
@@ -218,32 +218,88 @@ export const PREVIEW_ZOOMS = [1, 2, 4, 8] as const;
  * this tab already does twice over — the zoom levels and the grid candidates.
  *
  * `0` is on the ladder because "exact match only" is a real request, and it is the one setting that
- * also switches the fringe pass off (which is scaled from this number). The rest roughly double: 32 is
- * about ±18 on each of the three channels, 128 about ±74, which is as loose as a colour can get and
- * still be the colour that was asked for.
+ * also switches the fringe pass off (which is scaled from this number). The rest roughly double.
+ * Against the recommended magenta they read: **32** takes a field that only re-encoding moved, **64**
+ * takes one the generator painted at varying purity, **96** takes one that was shaded to half its
+ * lightness, and **128** is past where the nearest hues that are *not* the key begin — rose and
+ * purple both measure 100 — so it is a rung to reach for once and check the sprite against, not one
+ * to sit at.
  */
 export const KEY_TOLERANCES = [0, 16, 32, 64, 96, 128] as const;
 
 /**
- * Where the tolerance starts: tight enough to be safe against `PURE_WHITE` and `PURE_BLACK`, which
- * are offered keys and share their colour with real artwork, and loose enough to catch the drift a
- * generative raster actually returns on the recommended magenta.
+ * How much further a difference may run before it counts, when it runs the way a key field's own
+ * variation runs.
+ *
+ * The whole of `keyDistance.ts` in one number: a difference lying in the plane that holds black, the
+ * key and white — shading and washing out, which is what a returned field actually does — is divided
+ * by this before it is measured, and a difference standing off that plane is not. The reasoning, and
+ * the measurements that fix it at 2 rather than 3, are in that file.
+ *
+ * Here rather than there because it is the number the tolerance ladder above is calibrated against,
+ * and the two cannot be read apart: raising it would move every rung's meaning without changing a
+ * digit of them.
  */
-export const DEFAULT_KEY_TOLERANCE = 32;
+export const KEY_SHADING_LATITUDE = 2;
+
+/**
+ * Where the tolerance starts: loose enough that the recommended magenta works on the sheets models
+ * actually return, and still clear of every colour that is not the key's own hue.
+ *
+ * 64 rather than a tighter rung because a field the generator *painted* — the ordinary case, not the
+ * bad one — measures about 50 once the shading latitude is applied, and the rung below it leaves that
+ * field on screen. The nearest artwork colours sit at 100 and above, so this keeps a rung of margin.
+ *
+ * **`PURE_WHITE` and `PURE_BLACK` get no latitude at all**, so for them this is a plain distance and
+ * 64 means what it always meant: a white key reaches greys down to `#DBDBDB`, a black key up to
+ * `#242424`. That is looser than the 32 this used to open at and still nowhere near the sheet's own
+ * midtones. Those two keys share their colour with real artwork whatever the metric, so the tab's
+ * guidance — raise it until the field goes, stop before the sprite does — is where the stopping point
+ * is judged; `keyDistance.ts` says why they are held to the straight measurement.
+ */
+export const DEFAULT_KEY_TOLERANCE = 64;
 
 /**
  * How much further than {@link KEY_TOLERANCES} the one-pixel fringe pass reaches.
  *
  * A pixel on an anti-aliased edge is a blend of the key colour and the artwork beside it, so it sits
  * *outside* any tolerance tight enough to be safe — which is why removing the field exactly leaves a
- * halo. At 3, a blend has to be roughly three-quarters key colour to be eroded: the part of the halo
- * that still reads as key colour rather than as art.
+ * halo. Reaching three times as far is what puts those blends inside it.
  *
  * It is safe to be this loose only because the fringe pass is restricted to pixels that touch the
  * keyed field. The same threshold applied everywhere would swallow a genuinely magenta-ish sprite
  * colour; applied at the boundary alone it only ever reaches pixels that are blends by construction.
+ *
+ * **The factor alone was never a bound, which is what {@link FRINGE_TOLERANCE_CEILING} is for** — and
+ * the ceiling, not this, is what decides how much of a blend the pass actually admits.
  */
 export const FRINGE_TOLERANCE_FACTOR = 3;
+
+/**
+ * The furthest the fringe pass reaches, however high the tolerance goes.
+ *
+ * A factor with nothing above it is not a threshold, it is a ramp off the end of the scale: at a
+ * tolerance of 128 the product is 384, and the greatest distance any two colours can be apart is
+ * 441. So the loosest settings on the ladder eroded a pixel of *everything* that touched the field —
+ * the sprite's whole contour, whatever colour it was — while the panel described a one-pixel edge
+ * clean-up. Nothing failed; the sheet simply came back a pixel thinner on every silhouette, which is
+ * indistinguishable from the artwork having been drawn that way.
+ *
+ * 96 is fixed by the two things the pass has to sit between, and it is the second of them that is
+ * load-bearing. Measured across every art colour it could be blending with, a pixel three-quarters
+ * key sits **at most 60** from it, so a ceiling above that admits every one — the halo goes. And the
+ * nearest colours to the recommended magenta that are *not* its own hue are rose and purple at
+ * **100**, so a ceiling below that reaches no unblended artwork. 96 is between them.
+ *
+ * **It does not, and should not, exclude the blends nearer half.** Those run from about 50 to 119
+ * depending on what the key is blending with, so this admits many of them — which is the pass working
+ * rather than overrunning: a pixel half made of the key colour and touching the field *is* halo. The
+ * bound that keeps it honest is the 100 above, not a claim about what fraction of key a pixel holds.
+ *
+ * Above the rung where this binds, the field's own radius has overtaken it and the fringe pass has
+ * nothing left to add — every pixel it could reach, pass 1 has already marked.
+ */
+export const FRINGE_TOLERANCE_CEILING = 96;
 
 /**
  * The largest image the tab will accept, in pixels.
@@ -361,7 +417,7 @@ export const QUANTISE_TOOLTIPS = {
   keying:
     'Replaces the background key with transparency, so the sheet can be imported without a colour field behind it. The colour comes from the studio, which is where the prompt stated it. Anti-aliased edges carry blends of that key, and at any tolerance above exact the pixel touching the field is eroded with it — against a black or white key that will take some of the artwork’s own contour, which is why magenta is the recommended key.',
   keyTolerance:
-    'How far a pixel may sit from the key colour and still count as background, measured across red, green and blue together. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
+    'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;
