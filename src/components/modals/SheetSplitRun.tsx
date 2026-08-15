@@ -6,6 +6,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
 import { exceedsComponentBudget } from '../../utils/componentBudget.ts';
 import { sheetComponentCount } from '../../utils/componentSet.ts';
 import { countWords } from '../../utils/promptCompiler.ts';
+import { sheetCoverage } from '../../utils/sheetCoverage.ts';
 import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -28,6 +29,13 @@ interface SheetSplitRunProps {
   /** Position in the batch, from one — what the user counts off as they work through it. */
   readonly ordinal: number;
   readonly total: number;
+  /**
+   * Whether this is the sheet the studio itself is composing — the one behind the drawer, and the
+   * one section 6 of every prompt in the batch marks *(this sheet)*. Marked here so the drawer and
+   * the studio agree about where the user is; without it the two views describe the same batch and
+   * only one of them says which sheet is in front of you.
+   */
+  readonly isCurrent: boolean;
   readonly isCopied: boolean;
   readonly onCopy: (run: SheetRun) => void;
 }
@@ -79,6 +87,7 @@ export function SheetSplitRun({
   additional,
   ordinal,
   total,
+  isCurrent,
   isCopied,
   onCopy,
 }: SheetSplitRunProps) {
@@ -92,11 +101,16 @@ export function SheetSplitRun({
           Sheet {ordinal} of {total}
         </span>
         <span className="font-mono text-xs font-bold text-ink">
-          {run.plan.name} ·{' '}
           {/* The facing, or how many of them — a sheet that draws five and a sheet that draws one
-              would otherwise both read as their assembly direction and claim the same coverage. */}
-          {run.covered.length > 1 ? `${run.covered.length} facings` : run.assembly}
+              would otherwise both read as their assembly direction and claim the same coverage. The
+              answer is `sheetCoverage`'s, shared with the studio's batch strip and the copy
+              confirmation, because three places naming a sheet is three chances to name it
+              differently. */}
+          {run.plan.name} · {sheetCoverage(run)}
         </span>
+        {/* The view's own colour, which is what the palette reserves for "this one, here" — the
+            copied chips beside it mean the same thing on every row and keep their fixed tones. */}
+        {isCurrent && <Badge tone="view">In the studio</Badge>}
         {isCopied ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
         {/* Gold rather than rose: the configuration is valid and the prompt compiles, and what is
             being reported is that a model asked for this many components will most likely merge or
