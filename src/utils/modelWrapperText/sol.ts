@@ -32,6 +32,29 @@ import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
  * native pixel grid in it at all. That is as close to a controlled result as this can get: same run,
  * four blocks of the same specification, and the one omission is the one that failed.
  *
+ * **Adding the block to the list was then confirmed to work, by asking Sol to compose its hand-off
+ * without rendering.** Both sentences that had been lost came back — "each logical native pixel must
+ * appear as one solid square block of identical delivered pixels" and "no feature, contour, marking,
+ * material detail, or colour boundary may be finer than one native pixel" — along with the self-audit's
+ * check that every colour boundary falls on that grid, and an unprompted clarification that the stated
+ * size is not the delivered size of a severed component. So the mechanism is established in both
+ * directions: what this list names survives, and what it does not name does not.
+ *
+ * **The same answer settles what the compression was.** That restatement is roughly twice the length
+ * of the one the failing run produced, from the same specification, so Sol was not up against a limit
+ * when it wrote the shorter one — it was choosing what to keep. That is the whole premise of naming
+ * blocks rather than asking for less prose, and it is why a future pass should add to this list rather
+ * than try to buy room for it.
+ *
+ * **Two things Sol reported are not built on, and the reason is the same for both.** It described the
+ * hand-off differently on the two occasions — once as a prompt string passed to the tool, once as a
+ * deprecated parameter that must be null, with the renderer reading conversation context instead — and
+ * it named tool parameters no OpenAI page this file cites documents. Both accounts leave the operative
+ * fact untouched, which is that Sol composes a restatement and the renderer works from that; the
+ * wrapper is worded against that fact alone. A self-report that contradicts an earlier self-report is
+ * not the vendor documentation this file's claims are held to, so nothing here describes a parameter,
+ * a schema or a length.
+ *
  * **What a paraphrase drops is the measurement, not the idea**, which is why the addition names the
  * block rather than trusting a general instruction to preserve meaning. Sol carried the native
  * grid's *concept* faithfully — "enlarged by a whole-number multiple (at least 7x)", "crisp
