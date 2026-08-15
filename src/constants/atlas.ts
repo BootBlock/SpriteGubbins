@@ -91,4 +91,6 @@ export const ATLAS_TOOLTIPS = {
     'Cells the grid affords that no component lands in. The grid has to be rectangular, so a component count that is not a neat product leaves a short last row — texture that is uploaded, and paid for, holding nothing.',
   usableShare:
     "How much of the texture ends up inside a filled cell's usable bounds. It prices every kind of waste at once: empty slots, the gutter around each cell, and the strip left over where the grid's shorter axis stops short of the texture edge. A low figure with a wide or tall sheet aspect ratio is that last one — a square sheet packs a square texture better.",
+  packingPlan:
+    'The same figures drawn to scale, so the waste has a shape rather than only a price. Filled cells are components, pale cells are slots the grid affords that nothing lands in, and the bare margin is texture the grid never reaches. It plans the atlas you repack the extracted artwork into — the prompt asks the generator only for a cleanly spaced exploded grid and lets it report back whatever rows and columns it drew, so this is not a picture of the sheet you will get.',
 } as const;
