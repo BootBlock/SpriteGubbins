@@ -686,8 +686,7 @@ component back towards the primary assembly direction because the rest of the sh
 Draw every entry in full, and one separate visible component for each item it names — an entry
 marked **×N** names N of them, an entry naming or referring to several facings names one drawing at
 each, and an entry carrying both names N separate components at each of those facings. Do not merge
-entries, substitute duplicates, add filler, or omit entries. Do not draw an assembled figure
-anywhere on the sheet, including as a reference or key.
+entries, substitute duplicates, add filler, or omit entries. [DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]
 
 ### A component ends at its own boundary
 
@@ -819,7 +818,7 @@ Absent from the image entirely:
 - Text, labels, numbers, captions, watermarks, signatures and legends; and anything annotating the
   sheet: arrows, callouts, colour swatches, grid lines, and frames or borders around the image or
   around a component.
-- Assembled or posed complete figures.
+- [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
@@ -851,7 +850,7 @@ Before delivering, verify:
 [N]. No text or labels anywhere.
 [N]. Components appear in the exact order the inventory lists them.
 [N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
-   and nothing on the sheet is an assembled or part-assembled figure.
+   and [DEFINE:CATEGORY_ASSEMBLY_AUDIT].
 [N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
 [N]. [DEFINE:CATEGORY_AUDIT]
@@ -1688,6 +1687,34 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > target rather than three. Giving those three lines a category is the same shape of work as
 > `[DEFINE:CATEGORY_EXCLUSIONS]` and belongs in its own change, against the template and its §3
 > mirror together.
+
+> **Done in that later change — the three body lines now take a category too, and they take three
+> defines rather than one.** `[DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]`,
+> `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]` and `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` fill §4's closing
+> sentence, §8's bullet and §9's check from three new fields on the same `CategoryAssembly` record the
+> wrappers read — one record per category, holding one claim in all five of the voices the app states
+> it in, which is what stops a category naming its failure one way in a negative prompt and another in
+> the body. **Splicing one string into all three was the option rejected**, because they are not one
+> sentence: §4 tells a generator what not to draw, §8 lists a thing absent from the image, and §9 is a
+> check a reader applies to the delivered sheet component by component. That last one is why the audit
+> form qualifies every noun — the mistake `CATEGORY_AUDIT_TEXT` records making, where "no exhaust"
+> failed a VEHICLE sheet on a component §4 required, is available again the moment a check says "no
+> laid tiles" to a category whose inventory is fourteen of them.
+>
+> **The word-by-word rule that bounds `negatives` does not reach the body forms, and the difference is
+> what a clause can say that a term cannot.** A weighted `frame` suppresses every entry on an EFFECT
+> sheet; "the frames overlaid into one composited picture" states a *relation between* them and bans
+> only that. So EFFECT may say "frames" here, BUILDING may say "modules", and TERRAIN recovers the
+> half its negative channel had to give up outright — the tiles-already-laid reading, which is now
+> stated in all three body sections and in none of the wrappers.
+>
+> **Two clauses moved rather than being written**, and both left their old homes in the same commit:
+> TERRAIN was the only category whose assembly failure had reached the body at all, in
+> `CATEGORY_EXCLUSION_TEXT`'s "any composed landscape, vista or diorama drawn in place of the
+> component grid" and `CATEGORY_AUDIT_TEXT`'s "nothing drawn as a landscape view rather than as a
+> separate piece". Each of those sat a bullet or a check away from where its replacement now lands, so
+> keeping both would have had §8 excluding one thing twice and §9 checking it twice, in two wordings
+> each — which is the duplication a per-category record exists to remove.
 
 ---
 

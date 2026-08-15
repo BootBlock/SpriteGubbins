@@ -505,6 +505,50 @@ describe('generatePrompt — the exclusion precedence, stated at both ends', () 
   });
 });
 
+describe('generatePrompt — the assembled whole, named in the category’s own words', () => {
+  /**
+   * Sections 4, 8 and 9 each state that this sheet must not show its parts drawn as one finished
+   * thing, and all three said it in a figure's vocabulary on every category — so a TERRAIN prompt
+   * carried "Do not draw an assembled figure" three times over and never once named the composed
+   * landscape it actually comes back as.
+   *
+   * Asserted per section rather than against the whole prompt, because the failure this replaced was
+   * a *placement* one as much as a wording one: one form spliced into all three would satisfy a
+   * `toContain` on the prompt while leaving section 9 with an instruction instead of a check.
+   */
+  // Every whitespace run to one space, not just the newlines: section 9's check is a numbered item,
+  // so its continuation line carries the list's own three-space indent as well as the break.
+  function unwrapped(prompt: string): string {
+    return prompt.replaceAll(/\s+/g, ' ');
+  }
+
+  it.each(SUBJECT_CATEGORIES)('gives %s its own wording in each of the three sections', (category) => {
+    const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
+    const assembly = promptText.CATEGORY_ASSEMBLY[category];
+
+    expect(unwrapped(sectionOf(prompt, 'COMPONENT INVENTORY'))).toContain(assembly.instruction);
+    expect(unwrapped(sectionOf(prompt, 'EXCLUSIONS'))).toContain(`- ${assembly.exclusion}`);
+    expect(unwrapped(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT'))).toContain(
+      `attached, and ${assembly.audit}.`,
+    );
+  });
+
+  it('leaves the figure vocabulary to the two categories that are figures', () => {
+    // The defect itself, stated as the thing that must not come back. `defaultSubjectFor` is what
+    // makes this honest for the seven: their own `exclusions` pools are free text and a preset may
+    // legitimately write "no assembled figure" into section 8 by hand, so what is checked is the
+    // wording the *template* contributes.
+    for (const category of SUBJECT_CATEGORIES) {
+      const prompt = unwrapped(generatePrompt(category, defaultSubjectFor(category), OUTPUT));
+      const isFigure = category === 'CHARACTER' || category === 'CREATURE';
+
+      expect(prompt.includes('assembled figure'), category).toBe(isFigure);
+      expect(prompt.includes('Assembled or posed complete figures'), category).toBe(isFigure);
+      expect(prompt.includes('assembled or part-assembled figure'), category).toBe(isFigure);
+    }
+  });
+});
+
 describe('generatePrompt — a render style that withholds the surface', () => {
   /**
    * The two styles that are validation passes rather than finished looks, and the eight that are not.

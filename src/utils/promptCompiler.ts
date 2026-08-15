@@ -203,6 +203,11 @@ export function generatePrompt(
     ASSEMBLY_POSES: plan.assembly,
     CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
     CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
+    // The same claim in three sections, from the record that also feeds the wrappers' two negative
+    // channels — so a category names its assembled whole the same way wherever the prompt says it.
+    CATEGORY_ASSEMBLY_INSTRUCTION: CATEGORY_ASSEMBLY[category].instruction,
+    CATEGORY_ASSEMBLY_EXCLUSION: CATEGORY_ASSEMBLY[category].exclusion,
+    CATEGORY_ASSEMBLY_AUDIT: CATEGORY_ASSEMBLY[category].audit,
     // Section 0's "one consistent scale" rule is abstract, and its worked example is what makes it
     // land — so the example names pieces this category's sheet actually holds, rather than the hand
     // and torso it named for every subject the app can describe.

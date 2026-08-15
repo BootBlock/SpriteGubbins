@@ -22,6 +22,17 @@
  * about *segments* rather than limbs. **A new rule that wants a concrete example needs one that is
  * true of a building and a pistol**, or a per-category map in `constants/promptText/` to hold six.
  *
+ * **Nothing here names this sheet's assembled whole either, and that was the last of the fixed words
+ * to go.** Sections 4, 8 and 9 each state the same failure — exploded parts drawn as one finished
+ * thing — and all three said it in a figure's vocabulary on every category, so a terrain sheet was
+ * told not to draw an assembled *figure* while the composed landscape it actually comes back as went
+ * unnamed. The three take `[DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]`, `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]`
+ * and `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` from `CATEGORY_ASSEMBLY`, which holds the same claim in the
+ * two negative channels as well. **They are three defines rather than one spliced three times**,
+ * because an instruction, an exclusion and a check the reader performs are three different jobs — the
+ * check in particular has to qualify every noun it uses, or it fails a sheet on a component section 4
+ * required, which is the mistake `CATEGORY_AUDIT_TEXT` records having made.
+ *
  * **Neither of those two lists writes its own numerals**, because both are assembled conditionally
  * and a hand-numbered list cannot survive that: the layout section's rig and pixel-art checks appear
  * independently, so numbering them 7 and 8 emitted `…6. 8.` on a pixel-art sheet without a cut-out
@@ -543,8 +554,7 @@ component back towards the primary assembly direction because the rest of the sh
 Draw every entry in full, and one separate visible component for each item it names — an entry
 marked **×N** names N of them, an entry naming or referring to several facings names one drawing at
 each, and an entry carrying both names N separate components at each of those facings. Do not merge
-entries, substitute duplicates, add filler, or omit entries. Do not draw an assembled figure
-anywhere on the sheet, including as a reference or key.
+entries, substitute duplicates, add filler, or omit entries. [DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]
 
 ### A component ends at its own boundary
 
@@ -676,7 +686,7 @@ Absent from the image entirely:
 - Text, labels, numbers, captions, watermarks, signatures and legends; and anything annotating the
   sheet: arrows, callouts, colour swatches, grid lines, and frames or borders around the image or
   around a component.
-- Assembled or posed complete figures.
+- [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
@@ -708,7 +718,7 @@ Before delivering, verify:
 [N]. No text or labels anywhere.
 [N]. Components appear in the exact order the inventory lists them.
 [N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
-   and nothing on the sheet is an assembled or part-assembled figure.
+   and [DEFINE:CATEGORY_ASSEMBLY_AUDIT].
 [N]. One camera, one scale and one light direction across every component — nothing on the sheet was
    drawn through a camera that moved.
 [N]. [DEFINE:CATEGORY_AUDIT]

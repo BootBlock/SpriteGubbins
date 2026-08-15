@@ -54,12 +54,18 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   INTERFACE:
     'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any character, creature or hand reaching for the interface; any gameplay art, portrait or map inside a frame; and any lettering, numeral, caption or legend on a component.',
   // No environment ban either, and for a sharper version of BUILDING's reason: the ground plane the
-  // other five categories forbid is this one's entire deliverable. What a terrain sheet attracts
-  // instead is a *composed landscape* — asked for terrain, a generator draws a view of it, and a view
-  // cannot be cut into tiles. The landmark clause is scoped to tiles meant to repeat, because the
-  // feature library's focal outcrop is deliberately distinctive and is placed once.
+  // other five categories forbid is this one's entire deliverable. The landmark clause is scoped to
+  // tiles meant to repeat, because the feature library's focal outcrop is deliberately distinctive
+  // and is placed once.
+  //
+  // **The composed-landscape clause used to sit in the middle of this line and has moved to
+  // `CATEGORY_ASSEMBLY`**, which now supplies the bullet directly below this one. What a terrain
+  // sheet attracts is a view of the ground instead of separable tiles, and that is this category's
+  // assembly failure rather than a second kind of scenery — it was written here only because this
+  // was the one record that had a per-category line to write it in. Leaving it in both would have
+  // section 8 excluding one thing twice, a bullet apart, in two wordings.
   TERRAIN:
-    'Characters, creatures, vehicles, buildings and their fittings; sky, horizon and distant landscape; any composed landscape, vista or diorama drawn in place of the component grid; and, on any tile meant to repeat, a landmark distinctive enough to be recognised twice across a laid field.',
+    'Characters, creatures, vehicles, buildings and their fittings; sky, horizon and distant landscape; and, on any tile meant to repeat, a landmark distinctive enough to be recognised twice across a laid field.',
 };
 
 /**
@@ -148,8 +154,13 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // VEHICLE mistake again — a transition tile carries a boundary, so it cannot meet its own copy
   // without a seam, and an audit demanding that fails the sheet on the fourteen tiles section 4
   // requires.
+  //
+  // **The landscape-view clause has moved to `CATEGORY_ASSEMBLY`**, which supplies the check two
+  // items above this one in the same list, for the reason the same clause left `CATEGORY_EXCLUSION_TEXT`:
+  // it is this category's assembly failure rather than a subject check, and this record was only ever
+  // where a per-category line existed to hold it.
   TERRAIN:
-    'Every component is a ground tile or a landform piece — no characters, creatures, anatomy, buildings or vehicles, and nothing drawn as a landscape view rather than as a separate piece. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.',
+    'Every component is a ground tile or a landform piece — no characters, creatures, anatomy, buildings or vehicles. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.',
 };
 
 /**

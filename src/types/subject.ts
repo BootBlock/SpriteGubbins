@@ -30,14 +30,24 @@ export const SUBJECT_CATEGORIES = [
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
 
 /**
- * What a target model's wrapper is allowed to say about *this* sheet's assembled-whole failure —
- * exploded parts drawn as one finished thing.
+ * How *this* sheet's assembled-whole failure — exploded parts drawn as one finished thing — is named
+ * in each of the five voices the app states it in.
  *
- * Both halves for the reason `RenderStyleSurface` carries both of its: the wrappers reach a
- * generator through two channels, a positive one where Flux is told what the sheet is *not* in
- * prose because Black Forest Labs document that Flux discards a negative prompt, and a negative one
- * where Stable Diffusion and Qwen take bare terms. A category whose statement and whose terms were
- * filed apart is free to name one failure in one channel and a different one in the other.
+ * **One record rather than five, because they are one claim.** Two of the five are the wrappers'
+ * channels, for the reason `RenderStyleSurface` carries both of its: a generator is reached through a
+ * positive channel where Flux is told what the sheet is *not* in prose, because Black Forest Labs
+ * document that Flux discards a negative prompt, and a negative one where Stable Diffusion and Qwen
+ * take bare terms. The other three are the prompt body, which reaches **every** target rather than
+ * three, and which stated all of this in a figure's vocabulary on all nine categories long after the
+ * wrappers had stopped. Filing any of the five apart from the others is what lets a category name one
+ * failure in one voice and a different one in the next.
+ *
+ * **The three body forms are not one sentence spliced three times, and that is the point of having
+ * three fields.** Section 4's is an *instruction* about what not to draw, section 8's an *exclusion*
+ * listed beside the shadows and the text, and section 9's a *check the reader performs* against the
+ * delivered image. `CATEGORY_AUDIT_TEXT` records what the third of those costs when its nouns are
+ * left unqualified — an audit reading "no exhaust" failed a VEHICLE sheet on a component section 4
+ * required — so each form is worded for the job it does and none is derived from another.
  */
 export interface CategoryAssembly {
   /**
@@ -73,6 +83,38 @@ export interface CategoryAssembly {
    * rule leaves a category one safe term, it gets one.
    */
   readonly negatives: readonly string[];
+  /**
+   * Section 4's closing instruction, filling `[DEFINE:CATEGORY_ASSEMBLY_INSTRUCTION]` — a whole
+   * sentence, ending the paragraph that has just said not to merge, substitute, pad or omit.
+   *
+   * **It names the drawing, never the capability**, because section 6 asks this same component set to
+   * assemble cleanly into the finished thing and one prompt may not disagree with itself. So the
+   * wording is what the sheet must not *depict* — the parts fitted together — and it deliberately
+   * avoids the phrase that category's own plan uses for what the set assembles *into*.
+   */
+  readonly instruction: string;
+  /**
+   * Section 8's bullet, filling `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]` — a noun phrase under
+   * "Absent from the image entirely:", sentence case and closed with a full stop like the four fixed
+   * bullets it sits among.
+   *
+   * **It may not restate `CATEGORY_EXCLUSION_TEXT`**, which is the bullet directly above it in the
+   * same list. TERRAIN's line carried this claim before this field existed and gave it up when it
+   * arrived; a category saying the same thing twice in one list in two wordings is what that move
+   * exists to prevent.
+   */
+  readonly exclusion: string;
+  /**
+   * Section 9's check, filling `[DEFINE:CATEGORY_ASSEMBLY_AUDIT]` — a lower-case clause completing
+   * "Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
+   * and …", so it carries no capital and no closing full stop.
+   *
+   * **Its nouns are qualified**, for the reason recorded on `CATEGORY_AUDIT_TEXT`: this is the one
+   * form the reader applies to the delivered sheet component by component, so a bare noun that a
+   * component answers to fails the sheet on an entry section 4 required. It may not restate
+   * `CATEGORY_AUDIT_TEXT` either — the two are consecutive checks in the same list.
+   */
+  readonly audit: string;
 }
 
 /**
