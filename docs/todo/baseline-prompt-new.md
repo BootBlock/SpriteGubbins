@@ -526,18 +526,19 @@ nothing about the second, so it never means that every component faces the same 
 
 ### The subject’s own left and right
 
-**Every “left” and “right” below is the subject’s own, never the image’s.** Its right is the side a
-quarter turn clockwise from its front axis seen from above, and its left the side a quarter turn
-anticlockwise; both turn with it. A feature on the subject’s left is still on the subject’s left
-after a turn has carried it to the other side of the picture. Where a rule means the image’s sides
-instead it says so — *screen-left*, *the frame’s right*.
+**Wherever “left” and “right” below name a side, it is the subject’s own and never the image’s.**
+Its right is the side a quarter turn clockwise from its front axis seen from above, and its left the
+side a quarter turn anticlockwise; both belong to the subject rather than to the picture, so where a
+feature lands on screen says nothing about which side of the subject it is on. Where a rule means the
+image’s sides instead, it says so by naming the screen or the frame.
 
 **A feature the subject has on one side and not the other belongs to that side, and which side it is
 gets settled before anything is drawn.** Where section [SEC:SUBJECT] names such a feature without saying which
-side carries it, choose a side once and hold it for every component and every drawing here — never
-choosing again per drawing, and never resolving it by giving the subject a matching copy on the other
-side. A one-sided feature stays one-sided, and where a turn takes it out of view, letting it be
-hidden is the correct answer.
+side carries it, **put it on the subject’s left** — a fixed default, not a choice, because a side
+each sheet picks for itself is a side they pick differently. Hold it there for every component and
+every drawing, and never resolve it by giving the subject a matching copy on the other side: a
+one-sided feature stays one-sided, and where a turn takes it out of view, letting it be hidden is the
+correct answer.
 
 ### The object yaws this sheet requires
 
@@ -681,8 +682,8 @@ lists separately, and it makes the cut-out part unusable.
 ### Placement is the only identity map
 
 Labels are forbidden by section [SEC:CONTRACT], so **grid position is how each component is identified**. Lay
-the components out in strict reading order — left to right, then top to bottom — in exactly the
-order the inventory above lists them. A reordered, merged or omitted entry silently mis-maps every
+the components out in strict reading order across the image — screen-left to screen-right, then top
+to bottom — in exactly the order the inventory above lists them. A reordered, merged or omitted entry silently mis-maps every
 component after it.
 
 ---
@@ -772,9 +773,9 @@ to sit beside one drawn on another sheet and read as the same object, and those 
 generations with nothing carried between them but the text of the specification. A sheet that is
 consistent within itself and does not match the rest of the series has failed.
 
-**Which side of the subject each one-sided feature sits on is part of what has to match.** Section [SEC:CAMERA]
-settles that before this sheet is drawn, and a side settled the other way round here from the sheet
-before it is a different subject however well the two match in everything else.
+**Which side of the subject each one-sided feature sits on is part of what has to match**, and it is
+the part nothing but this text can carry. Section [SEC:CAMERA] settles it the same way on every sheet of the
+series, which is why it settles it by rule rather than by choice.
 [IF:IDENTITY_LOCK]
 The identity lock in section [SEC:SUBJECT] is the record of what the other sheets actually drew, which is why it
 wins wherever it and the subject definition above it disagree. Where it fixes a side, that side is
@@ -964,12 +965,19 @@ part of the brief.
 Restated from section [SEC:CAMERA] because they are what a specification this long loses on the way to the
 image. All three hold of the finished sheet:
 
-[N]. “Left” and “right” are the subject’s own physical sides, never the image’s.
+[N]. “Left” and “right” name the subject’s own physical sides, never the image’s.
 [N]. Every component the inventory gives more than one direction is one unchanged object, turned
    through the yaws section [SEC:CAMERA] lists, in the order it lists them.
+[IF:PLAN_VIEW!=yes]
 [N]. A feature the subject has on one side only stays on that side and changes how much of it shows
    as the object turns — no view is another view flipped, reflected or symmetry-completed, and
    nothing is copied onto the far side to keep it in shot.
+[/IF]
+[IF:PLAN_VIEW]
+[N]. A feature the subject has on one side only stays on that side, and where it lands in the frame
+   follows from that side and the view’s own yaw — no view is another view flipped, reflected or
+   symmetry-completed, and nothing is copied onto the other side to balance it.
+[/IF]
 [/IF]
 
 Generate the sheet now.

@@ -891,7 +891,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
 
     expect(prompt).not.toContain('Neither member of a pair');
-    expect(prompt).not.toContain("each other's reflection");
+    expect(prompt).not.toContain('holds both members of an opposite-turn pair');
   });
 
   it('settles the subject’s own left and right whatever the sheet covers', () => {
@@ -904,7 +904,9 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
 
     expect(single).toContain('### The subject’s own left and right');
     expect(single).toContain('quarter turn clockwise from its front axis seen from above');
-    expect(single).toContain('choose a side once and hold it for every component and every drawing here');
+    // Kept to a phrase the template does not wrap across a line, since the assertion is about the
+    // rule reaching the prompt rather than about where the paragraph happens to break.
+    expect(single).toContain('never resolve it by giving the subject a matching copy on the other side');
     // And the half that is about *this* sheet's turns, which a one-facing sheet has none of.
     expect(single).not.toContain('### One turntable, not several drawings');
     expect(single).not.toContain('RENDER-CRITICAL INVARIANTS');
@@ -986,6 +988,26 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(overhead).toContain('### The subject’s own left and right');
     expect(overhead).toContain('### One turntable, not several drawings');
     expect(overhead).toContain('**chirality witness**');
+
+    // And the closing invariants, which are the same claim a third time in the highest-weighted
+    // position in the document — the last block before "Generate the sheet now". The ledger and the
+    // witness check were gated here from the start; the invariant restating them was not, so it
+    // reached every overhead sheet asking for a change in visibility this camera cannot produce.
+    expect(overhead).toContain('## 10. RENDER-CRITICAL INVARIANTS');
+    expect(overhead).not.toContain('changes how much of it shows');
+    expect(overhead).toContain('where it lands in the frame follows from that side');
+  });
+
+  it('settles an unstated side the same way on every sheet rather than leaving it to be chosen', () => {
+    // Section 3 telling each sheet to "choose a side" and section 6 telling every sheet in a series
+    // to agree is a pair of instructions nothing can satisfy: the sheets are separate generations
+    // that share only this text, and the text fixed no side. A default is what makes the second
+    // instruction checkable — any fixed side would do, and what matters is that it is stated rather
+    // than chosen.
+    const single = generatePrompt('CHARACTER', SUBJECT, withOutput({ directions: 'SINGLE_FRONT' }));
+
+    expect(single).toContain('**put it on the subject’s left**');
+    expect(single).not.toContain('choose a side once');
   });
 
   it('keeps the occlusion contract everywhere below the vertical', () => {

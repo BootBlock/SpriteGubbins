@@ -232,9 +232,9 @@ export function generatePrompt(
     // every cell, each view facing correctly and none of them the same object.
     TURNTABLE_SEQUENCE: turntableSequence(coveredDirections),
     // Which of the subject's own sides each of those yaws brings towards the camera. Supplied
-    // whether or not the block survives, as `PALETTE_DESCRIPTION` is: the template's own
-    // `[IF:PLAN_VIEW!=yes]` is what decides whether a token remains to be filled, and directly
-    // overhead there is no near side for this to name.
+    // whether or not the block survives, as `PALETTE_DESCRIPTION` is: the template gates it on
+    // `[IF:PLAN_VIEW!=yes]` *inside* `[IF:MULTI_DIRECTION]`, so a single-facing sheet drops it for
+    // having no second view to compare and a plan view drops it for having no near side at all.
     LEADING_SIDE_LEDGER: leadingSideLedger(coveredDirections),
     // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
     // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.

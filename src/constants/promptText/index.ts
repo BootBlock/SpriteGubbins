@@ -40,7 +40,7 @@ export { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS, describeDirections, PROJECT
 export { DEPTH_ORDER_TEXT, depthOrderText, PLAN_DEPTH_ORDER_TEXT } from './depthOrder.ts';
 export { cameraElevationRange, isPlanView, resolveCameraElevation } from './elevation.ts';
 export { FACING_TEXT, facingText, OBJECT_YAW } from './rotation.ts';
-export { leadingSide, signedObjectYaw } from './chirality.ts';
+export { leadingSide } from './chirality.ts';
 export { LANDMARK_TEXT } from './landmarks.ts';
 export { ASPECT_TEXT, BACKGROUND_KEY_TEXT } from './sheet.ts';
 export { SCALE_EXAMPLE_TEXT } from './subject.ts';
