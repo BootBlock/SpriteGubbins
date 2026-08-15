@@ -42,12 +42,31 @@ import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
  *
  * **The palette is named on the same evidence and the hardware profile is not**, and the difference
  * is worth recording because it is the line between a measurement and an inference. The same run
- * compressed section 2's colour *budget* into "Use a restrained 32-64 colour palette total" — so
- * paraphrase reaching section 2's colour material is observed, and a pinned palette is a list of
- * exact values that survives it no better than the grid did. The target hardware block states
- * figures too and would presumably go the same way, but that sheet pinned no hardware profile, so
- * nothing about it was measured. Naming it here would be the symmetry this file is not allowed to
- * argue from. A run that pins one and loses its limits is what would earn it a place.
+ * compressed section 2's colour *budget* into "Use a restrained 32-64 colour palette total" — so a
+ * shortened rendering of section 2's colour material is observed, and a pinned palette survives one
+ * no better than the grid did. The target hardware block states figures too and would presumably go
+ * the same way, but that sheet pinned no hardware profile, so nothing about it was measured. Naming
+ * it here would be the symmetry this file is not allowed to argue from. A run that pins one and
+ * loses its limits is what would earn it a place.
+ *
+ * **The palette entry names the block and not its contents, because a palette states its colours two
+ * different ways.** `PaletteSpace` is a union: a `FIXED` palette emits a list of hex entries, and a
+ * `CHANNEL_DEPTH` one emits a ladder instead — "red, green and blue each take one of 32 levels — 0,
+ * 8, 16, … 255" — because the alternative is a prompt carrying 32,768 entries. Ten of the nineteen
+ * pinned palettes are that second kind, so an entry reading *the palette's exact colours* would, on
+ * more than half of them, point at a list section 2 does not carry. That is precisely the fault the
+ * gating below exists to prevent, arrived at from the other direction: not naming a block that is
+ * absent, but naming the wrong thing inside one that is present. Every figure in either form is
+ * worth the same protection, so the entry protects the block's values rather than describing their
+ * shape.
+ *
+ * **`nativeGrid` and `palette` are passed rather than worked out here**, for the reason every other
+ * wrapper's arguments are: this file holds text and knows nothing about render styles, resolution
+ * profiles or palettes. Both are the compiler's own gate answers — the same two values that decide
+ * whether the blocks are in the prompt at all — so the directive cannot name a block that is not
+ * there, which would read as an instruction and be a fault. They are positional booleans because
+ * that is what this directory already does with a conditional flag; `wrapForMidjourney` takes
+ * `frameIsAComponent` the same way.
  *
  * **Everything else this wrapper used to say is gone.** It previously opened "High reasoning effort"
  * and then pointed at section 0 as a done-condition and section 9 as a verification pass. Reasoning
@@ -87,29 +106,18 @@ import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
  * [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6),
  * [ChatGPT image prompting](https://learn.chatgpt.com/docs/image-generation).
  */
-export function wrapForSol(
-  prompt: string,
-  /**
-   * Which of section 2's exact blocks this configuration actually emitted.
-   *
-   * Passed rather than derived, for the reason every other wrapper option is: this file holds text
-   * and knows nothing about render styles or palettes. Both flags come from the compiler's own
-   * gates — the same two that decide whether the blocks are in the prompt at all — so the wrapper
-   * cannot point at a block that is not there, which would read as an instruction and be a fault.
-   */
-  exactBlocks: { readonly nativeGrid: boolean; readonly palette: boolean },
-): string {
+export function wrapForSol(prompt: string, nativeGrid: boolean, palette: boolean): string {
   // A list rather than a clause, because the entries are conditional and their combined length is
   // not knowable here: spliced into a sentence they push one line to half again the width of every
   // other line in the directive, and the line breaks in this file are the breaks the model reads.
   const blocks = [
-    exactBlocks.nativeGrid ? `- the block headed “${NATIVE_GRID_HEADING}”` : '',
-    exactBlocks.palette ? '- the palette’s exact colours' : '',
+    nativeGrid ? `- the block headed “${NATIVE_GRID_HEADING}”` : '',
+    palette ? '- every value in the palette block' : '',
   ].filter((block) => block !== '');
 
   // Nothing at all where neither block was emitted, rather than a sentence about section 2 that
-  // names none of it: a pixel-art sheet with a free palette is the case that produces one entry, and
-  // a painted sheet with no palette pinned has no figures in section 2 to protect.
+  // names none of it — which is the studio's own opening configuration, whose `HIGH_RESOLUTION`
+  // profile states its own scale and so has no native grid to enlarge.
   const sectionTwo =
     blocks.length === 0
       ? ''
@@ -119,8 +127,8 @@ Section 2 states figures as well, and they are protected in the same way. Shorte
 
 ${blocks.join('\n')}
 
-A figure is what the delivered sheet can be held to, and a paraphrase keeps the idea while dropping
-the figure, which leaves the image nothing to be measured against.`;
+A figure is what the delivered sheet can be held to. Restating one of these in your own words keeps
+the idea and drops the figure, which leaves the image nothing to be measured against.`;
 
   return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
 You are not the model that draws this sheet: you will call an image tool, and a GPT Image model

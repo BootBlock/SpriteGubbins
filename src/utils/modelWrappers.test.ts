@@ -32,9 +32,12 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
 /**
  * A configuration whose section 2 carries a native grid, which is what the Sol tests below need.
  *
- * The four fields are `nativeGridScale`'s own gate: a pixel-art style, the `CUSTOM` profile, a size
- * that parses, and a canvas that seats the components at a multiple above 1. These are the shipped
- * Stardew Valley preset's, which is the configuration the traced run used.
+ * Four of the five fields are `nativeGridScale`'s gate — a pixel-art style, the `CUSTOM` profile and
+ * a size that parses, on a canvas that seats the components at a multiple above 1 — and
+ * `targetModel` is what puts Sol's wrapper round the result. The four are the Stardew Valley style
+ * reference's own settings, which is the look the traced run asked for; the direction set is
+ * `DEFAULT_OUTPUT_CONFIG`'s `FIVE_CLASSIC` rather than that preset's `FOUR_CARDINAL`, and the scale
+ * comes out at 7 either way.
  */
 const NATIVE_GRID_SHEET = {
   targetModel: 'CHATGPT_5_6_SOL',
@@ -219,18 +222,41 @@ describe('wrapForModel', () => {
     expect(prompt).toContain(`### ${NATIVE_GRID_HEADING}`);
   });
 
-  it('adds a pinned palette to the same list, since exact colours paraphrase away too', () => {
+  it('adds a pinned palette to the same list, whichever way that palette states its colours', () => {
     // Same run, same mechanism, one step short of measured: Sol compressed section 2's colour
-    // *budget* into "Use a restrained 32-64 colour palette total", so paraphrase reaching section 2's
-    // colour material is observed. A pinned palette is a list of exact values, and a summary of one
-    // is worth nothing.
+    // *budget* into "Use a restrained 32-64 colour palette total", so a shortened rendering of
+    // section 2's colour material is observed.
+    //
+    // Both palette kinds, because `PaletteSpace` is a union and the entry has to be true of both: a
+    // `FIXED` palette emits a list of hex entries, a `CHANNEL_DEPTH` one emits a ladder and no list
+    // at all, and ten of the nineteen are the second kind. An entry naming "the exact colours" would
+    // point at something more than half of them do not carry — the same fault as naming an absent
+    // block, reached from inside a block that is present.
+    for (const palette of ['GAME_BOY_DMG', 'SNES'] as const) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...NATIVE_GRID_SHEET, palette }));
+
+      expect(wrapperOnly(prompt), palette).toContain('- every value in the palette block');
+    }
+  });
+
+  it('names the palette on a sheet that has no native grid, so the two flags stay distinct', () => {
+    // Without this the flags are indistinguishable from one shared boolean: every other case runs
+    // with the native grid on, so wiring `palette` to `nativeGrid` by mistake would pass them all.
+    // A painted sheet pins a palette and has no grid, which is the one combination that separates
+    // them.
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ ...NATIVE_GRID_SHEET, palette: 'SNES' }),
+      withOutput({
+        targetModel: 'CHATGPT_5_6_SOL',
+        renderStyle: 'PAINTED_2D',
+        palette: 'GAME_BOY_DMG',
+      }),
     );
+    const wrapper = wrapperOnly(prompt);
 
-    expect(wrapperOnly(prompt)).toContain('- the palette’s exact colours');
+    expect(wrapper).toContain('- every value in the palette block');
+    expect(wrapper).not.toContain(NATIVE_GRID_HEADING);
   });
 
   it('says nothing about section 2 where section 2 states no figures', () => {
@@ -252,12 +278,20 @@ describe('wrapForModel', () => {
     // pasting into ChatGPT is the path this app's users are on, so an earlier draft asserted the
     // API's documented behaviour to a surface it was not documented for. The hand-off itself is
     // certain on both paths; the rewrite is not, so the wrapper claims only the hand-off.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'CHATGPT_5_6_SOL' }));
-    const wrapper = prompt.slice(0, prompt.indexOf('# MODULAR SPRITE-SHEET SPECIFICATION'));
+    //
+    // Swept over both shapes the wrapper has, because the studio's opening configuration produces
+    // the shorter one: its `HIGH_RESOLUTION` profile states its own scale, so there is no native grid
+    // and the section 2 clause never appears. Checking that alone left the guard silent on every
+    // configuration the clause is actually written into — and the first draft of that clause said
+    // "a paraphrase keeps the idea", which this would not have caught.
+    for (const overrides of [{ targetModel: 'CHATGPT_5_6_SOL' } as const, NATIVE_GRID_SHEET]) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(overrides));
+      const wrapper = prompt.slice(0, prompt.indexOf('# MODULAR SPRITE-SHEET SPECIFICATION'));
 
-    expect(wrapper).not.toMatch(/rewrite|revise|paraphrase|summaris/i);
-    // What replaces it names the mechanism both paths do share.
-    expect(wrapper).toContain('a GPT Image model');
+      expect(wrapper).not.toMatch(/rewrite|revise|paraphrase|summaris/i);
+      // What replaces it names the mechanism both paths do share.
+      expect(wrapper).toContain('a GPT Image model');
+    }
   });
 
   it('states nothing in the Sol wrapper that the template already states', () => {

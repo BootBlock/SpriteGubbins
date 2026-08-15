@@ -83,15 +83,16 @@ export function wrapForModel(
     /**
      * Whether section 2 pinned a palette, from `paletteFor`.
      *
-     * Read by Sol for the same reason and on the same evidence — a list of exact colours is worth
-     * exactly as much as the grid figure once it has been summarised into a mood.
+     * Read by Sol for the same reason and on the same evidence. Deliberately *whether* rather than
+     * which kind: ten of the nineteen palettes state a channel ladder instead of a colour list, and
+     * both forms hold figures the hand-off can shorten away.
      */
     readonly palette: boolean;
   },
 ): string {
   switch (target) {
     case 'CHATGPT_5_6_SOL':
-      return wrapForSol(prompt, { nativeGrid: options.nativeGrid, palette: options.palette });
+      return wrapForSol(prompt, options.nativeGrid, options.palette);
 
     case 'MIDJOURNEY':
       return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent, options.surface);
