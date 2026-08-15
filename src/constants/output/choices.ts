@@ -49,8 +49,8 @@ export const RENDER_STYLE_CHOICES: readonly OutputChoice<RenderStyle>[] = [
 export const PROJECTION_CHOICES: readonly OutputChoice<Projection>[] = [
   { value: 'THREE_QUARTER_TOPDOWN', label: 'THREE_QUARTER_TOPDOWN (angled overhead)' },
   { value: 'PURE_TOPDOWN', label: 'PURE_TOPDOWN (directly overhead)' },
-  { value: 'TRUE_ISOMETRIC', label: 'TRUE_ISOMETRIC (2:1 diamond, equal foreshortening)' },
-  { value: 'DIMETRIC_2_1', label: 'DIMETRIC_2_1 (unequal foreshortening)' },
+  { value: 'TRUE_ISOMETRIC', label: 'TRUE_ISOMETRIC (1.73:1 diamond, all axes equal)' },
+  { value: 'DIMETRIC_2_1', label: 'DIMETRIC_2_1 (2:1 diamond — the usual one)' },
   { value: 'OBLIQUE_45', label: 'OBLIQUE_45 (undistorted front, depth at 45°)' },
   { value: 'ORTHOGRAPHIC_SIDE', label: 'ORTHOGRAPHIC_SIDE (side elevation — platformer)' },
   { value: 'ORTHOGRAPHIC_FRONT', label: 'ORTHOGRAPHIC_FRONT (flat front elevation)' },

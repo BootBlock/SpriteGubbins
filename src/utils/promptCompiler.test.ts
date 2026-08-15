@@ -1098,10 +1098,10 @@ describe('generatePrompt — technical settings in prose', () => {
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ projection: 'TRUE_ISOMETRIC', cameraElevation: 30 }),
+      withOutput({ projection: 'TRUE_ISOMETRIC', cameraElevation: 35.26 }),
     );
-    expect(prompt).toContain('- Projection: 2:1 diamond isometric');
-    expect(prompt).toContain('- Camera elevation: 30° above the horizon');
+    expect(prompt).toContain('- Projection: True isometric.');
+    expect(prompt).toContain('- Camera elevation: 35.26° above the horizon');
     // The v1 camera named three mutually exclusive projections in one sentence.
     expect(prompt).not.toContain('dimetric/isometric');
   });

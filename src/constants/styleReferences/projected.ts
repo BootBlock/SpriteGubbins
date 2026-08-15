@@ -6,11 +6,13 @@ import type { StyleReference, StyleReferenceId } from '../../types/styleReferenc
  * **They share a projection and are distinguished by their facings**, and the second half is widely
  * got wrong. Both lay their ground out as a 2:1 diamond — a tile edge running two pixels sideways
  * for every one down, which is 26.57° on screen and a camera 30° above the horizon — and that is
- * what `TRUE_ISOMETRIC` means in this app's vocabulary. Where they genuinely differ is how many views
- * exist: one renders every facing from its own camera position, and the other draws five and flips
- * three of them. **That difference is carried by each preset's direction set and by its card**, not
- * by the characteristics below, which never speak about facings — see
- * `StyleReference.characteristics` for why.
+ * `DIMETRIC_2_1`, not `TRUE_ISOMETRIC`. Both games are routinely called isometric and neither is:
+ * measured alike on all three axes the ground would come out at 1.73:1, and a 160 × 80 or 97 × 49
+ * tile would not tessellate. Where they genuinely differ from each other is how many views exist:
+ * one renders every facing from its own camera position, and the other draws five and flips three of
+ * them. **That difference is carried by each preset's direction set and by its card**, not by the
+ * characteristics below, which never speak about facings — see `StyleReference.characteristics` for
+ * why.
  *
  * Both take a baked key light. Neither publishes the angle it was rendered from, so the setting is
  * the app's own fixed-key convention rather than a measurement, and neither characteristic list
@@ -38,7 +40,7 @@ const DIABLO_II: StyleReference = {
     // falling away at the silhouette.
     outlineStyle: 'OUTLINE_LESS_ALBEDO',
     lightingModel: 'ISOMETRIC_TOP_LEFT',
-    projection: 'TRUE_ISOMETRIC',
+    projection: 'DIMETRIC_2_1',
     cameraElevation: 30,
     hardwareProfile: 'NONE',
     palette: 'FREE',
@@ -64,7 +66,7 @@ const AGE_OF_EMPIRES_II: StyleReference = {
     spriteTargetSize: '',
     outlineStyle: 'OUTLINE_LESS_ALBEDO',
     lightingModel: 'ISOMETRIC_TOP_LEFT',
-    projection: 'TRUE_ISOMETRIC',
+    projection: 'DIMETRIC_2_1',
     cameraElevation: 30,
     hardwareProfile: 'NONE',
     palette: 'FREE',

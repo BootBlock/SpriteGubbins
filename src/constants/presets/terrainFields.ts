@@ -63,10 +63,10 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
     },
   },
   {
-    id: 'iso-snow-rock-blend',
-    name: 'Isometric Snow & Rock Blend',
+    id: 'diamond-snow-rock-blend',
+    name: '2:1 Diamond Snow & Rock Blend',
     description:
-      'Snow giving way to bare rock as 64 × 32 px isometric diamonds. A blend set draws the same tiles whatever the materials are; what changes is which two of them meet.',
+      'Snow giving way to bare rock as 64 × 32 px diamonds, on the 2:1 dimetric grid most engines call isometric. A blend set draws the same tiles whatever the materials are; what changes is which two of them meet.',
     category: 'TERRAIN',
     subject: {
       species: 'Snowfield & Ice Sheet',
@@ -89,12 +89,15 @@ export const TERRAIN_FIELD_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'TILESET_MODULAR',
-      projection: 'TRUE_ISOMETRIC',
-      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
+      // `DIMETRIC_2_1` rather than `TRUE_ISOMETRIC`, and the tile size below is why: the 2:1 diamond
+      // is a 30° camera, while a true isometric stands at 35.26° and lays a square of ground out at
+      // roughly 1.73:1. Asking a true isometric for a 64 × 32 tile asks for a grid that cannot close.
+      projection: 'DIMETRIC_2_1',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.DIMETRIC_2_1,
       directions: 'SINGLE_FRONT',
       resolutionProfile: 'CUSTOM',
-      // The 2:1 diamond, stated as a size rather than described: an isometric tile whose width is not
-      // exactly twice its height does not tessellate, and no amount of art fixes that.
+      // The 2:1 diamond, stated as a size rather than described: a tile whose width is not exactly
+      // twice its height does not tessellate, and no amount of art fixes that.
       spriteTargetSize: '64 × 32 px per tile',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',

@@ -56,7 +56,24 @@ describe('matchPresetEntries', () => {
     // the prompt is written against.
     const isometric = namesFor('isometric');
     expect(isometric).toContain('Isometric Cut-Out Rig');
-    expect(isometric).toContain('Isometric City Tileset');
+
+    // `DIMETRIC_2_1` normalises to `dimetric 2 1`, and the same query has to reach it: the two
+    // 2:1 diamond tilesets are what nearly everyone typing "isometric" is actually after.
+    expect(namesFor('dimetric')).toContain('2:1 Diamond City Tileset');
+  });
+
+  it('still reaches the 2:1 diamond presets for the word everyone calls them by', () => {
+    // These are dimetric and say so — a 64 × 32 tile does not tessellate under a true isometric
+    // camera — but "isometric" is the word the genre uses, and renaming them to be accurate took it
+    // out of every name. What this pins is the *outcome*, deliberately, and not any one route to it:
+    // the term survives in each description, and `ISOMETRIC_TOP_LEFT` reaches the haystack through
+    // the lighting model as well, so the query has two independent ways through and would have to
+    // lose both to fail. The assertion is worth having because losing both is a one-line edit to the
+    // copy, and nothing else in the suite would notice.
+    const isometric = namesFor('isometric');
+    expect(isometric).toContain('2:1 Diamond City Tileset');
+    expect(isometric).toContain('2:1 Diamond Snow & Rock Blend');
+    expect(isometric).toContain('2:1 Diamond Shockwave Burst');
   });
 
   it('accepts the underscore, the space and the hyphen as the same query', () => {
@@ -70,7 +87,10 @@ describe('matchPresetEntries', () => {
 
     expect(isoRig.length).toBeLessThan(iso.length);
     expect(isoRig).toContain('Isometric Cut-Out Rig');
-    expect(isoRig).not.toContain('Isometric City Tileset');
+    // The tileset is the case that makes this test worth having, and it only became so with the
+    // rename: it now matches "isometric" through its *description* rather than through a projection
+    // identifier, so it is genuinely in the one-term result set that the second term has to exclude.
+    expect(isoRig).not.toContain('2:1 Diamond City Tileset');
   });
 
   it('matches terms in any order', () => {

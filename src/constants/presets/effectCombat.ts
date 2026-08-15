@@ -158,10 +158,10 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
     },
   },
   {
-    id: 'isometric-shockwave-burst',
-    name: 'Isometric Shockwave Burst',
+    id: 'diamond-shockwave-burst',
+    name: '2:1 Diamond Shockwave Burst',
     description:
-      'A painted ground telegraph drawn in the isometric projection it will be laid over, as four cardinal sheets. Under any other camera its ellipse is the wrong shape.',
+      'A painted ground telegraph drawn on the 2:1 dimetric grid most engines call isometric, as four cardinal sheets. Under any other camera its ellipse is the wrong shape.',
     category: 'EFFECT',
     subject: {
       species: 'Explosion / Detonation',
@@ -186,8 +186,11 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
       renderStyle: 'PAINTED_2D',
       // A ground telegraph is drawn in the projection it will be laid over, or its ellipse is the
       // wrong shape — the one case where an effect's camera is dictated by the field beneath it.
-      projection: 'TRUE_ISOMETRIC',
-      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
+      // That makes it `DIMETRIC_2_1` and not the true isometric: the ground this is laid over is the
+      // 2:1 diamond both tileset presets and both projected style references draw, and a ring drawn
+      // for a 1.73:1 ground sits on a 2:1 one as an ellipse of visibly the wrong eccentricity.
+      projection: 'DIMETRIC_2_1',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.DIMETRIC_2_1,
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       directions: 'FOUR_CARDINAL',
       primaryDirection: 'south',
