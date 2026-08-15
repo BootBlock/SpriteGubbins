@@ -29,9 +29,11 @@ import { componentGridScale } from './componentGridScale.ts';
  * candidate to click rather than adopting it. Measuring the drawn scale properly means finding where
  * one component actually sits, and cutting the sheet into components is a separate tool.
  *
- * Clamped to what the manual control accepts, so an offered scale is always one the reader could
- * have typed and can correct in place. Clamping *down* keeps the answer true: every scale below one
- * that fits also fits.
+ * Clamped to the ceiling of what the manual control accepts, so an offered scale is always one the
+ * reader could have typed and can correct in place. Clamping *down* keeps the answer true: every
+ * scale below one that fits also fits. The range's floor needs no clamp and may not have one —
+ * `componentGridScale` bottoms out at 1, which is the smallest scale the control accepts, and
+ * clamping *up* to a higher floor would offer a scale that does not fit at all.
  */
 export function targetSizeGrid(image: ImageData, target: TargetSize, components: number): PixelGrid | null {
   const scale = componentGridScale({ width: image.width, height: image.height }, target, components);

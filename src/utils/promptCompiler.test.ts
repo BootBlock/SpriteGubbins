@@ -1217,12 +1217,37 @@ describe('generatePrompt — technical settings in prose', () => {
     // Section 2 says which of the two things the size is, and states the multiple as a figure.
     expect(prompt).toContain('### The native grid, and the scale it is delivered at');
     expect(prompt).toContain('**The target component size above is a native pixel grid');
-    expect(prompt).toMatch(/\*\*[2-9]\d*× or more\*\*/u);
+    // Fifteen components at a 16 × 32 grid, each given half its own size of clearance, seat 8 × 2 on
+    // the nominal 1024 × 576 sheet at 5× and 7 × 2 at 6× — one short. The count is asserted beside it
+    // so a change to the sheet plan fails here naming its own cause rather than the figure.
+    expect(prompt).toContain('Exactly 15 components');
+    expect(prompt).toContain('**5× or more**');
     // And the enlargement is the one that adds nothing, which is what the report's sheet failed.
     expect(prompt).toContain('The enlargement adds nothing');
 
     // Section 9 audits what the delivered sheet holds against that grid.
     expect(prompt).toContain('Nothing on any component is finer than one native pixel');
+  });
+
+  it('derives that scale from this sheet’s own shape and its own component count', () => {
+    // The two arguments the compiler has to pass and could pass wrongly without any test noticing:
+    // the sheet's aspect ratio and how many components it asks for. Both change the answer, so both
+    // are pinned by a second configuration that differs in one of them.
+    const grid = {
+      renderStyle: 'PIXEL_ART',
+      resolutionProfile: 'CUSTOM',
+      spriteTargetSize: '16 × 32 px',
+    } as const;
+
+    // A square sheet is 1024 × 1024 rather than 1024 × 576, so the same fifteen components fit at 7×.
+    const square = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...grid, aspectRatio: 'SQUARE_1_1' }));
+    expect(square).toContain('Exactly 15 components');
+    expect(square).toContain('**7× or more**');
+
+    // And a sheet asking for twice as many of them on the same canvas is enlarged less.
+    const crowded = generatePrompt('OBJECT', SUBJECT, withOutput({ ...grid, aspectRatio: 'WIDE_16_9' }));
+    expect(crowded).toContain('Exactly 30 components');
+    expect(crowded).toContain('**4× or more**');
   });
 
   it('leaves section 0’s rule unqualified where there is no native grid', () => {

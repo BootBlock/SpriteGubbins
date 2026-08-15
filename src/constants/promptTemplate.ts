@@ -89,7 +89,10 @@
  * sheet actually holds — which is precisely the check the reported failure walked past, a sheet
  * returning "far more interior detail than a true 16 × 32 sprite could contain". All three are gated
  * on `NATIVE_GRID`, the compiler's single answer to whether this configuration has a native grid at
- * all, so they cannot appear apart or disagree about the multiple.
+ * all, so none of them can appear where there is no grid and no figure to point at. The audit line
+ * carries `[IF:DELIBERATES]` above it as well, as every check in that section does — a target with no
+ * pass in which to re-read the sheet gets the two instructions and no checklist, which is that gate's
+ * own argument rather than a hole in this one.
  *
  * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
  * each rule lives. This constant is the one the app emits and therefore the source of the pair, so

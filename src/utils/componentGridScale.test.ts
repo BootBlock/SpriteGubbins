@@ -20,12 +20,14 @@ describe('componentGridScale', () => {
     expect(componentGridScale({ width: 1024, height: 1024 }, { width: 16, height: 16 }, 1)).toBe(64);
   });
 
-  it('accepts a cell that is not a whole number of pixels', () => {
-    // How a caller pays for the gutter between components: a 16 × 32 component given half its own
-    // size of clearance is a 24 × 48 cell, and at an odd component size the inflated cell lands on a
-    // half pixel. Rounding it would change the answer at exactly the sizes where one pixel matters.
-    expect(componentGridScale({ width: 1024, height: 576 }, { width: 24, height: 48 }, 12)).toBe(6);
-    expect(componentGridScale({ width: 1024, height: 576 }, { width: 22.5, height: 45 }, 12)).toBe(6);
+  it('accepts a cell that is not a whole number of pixels, and does not round it', () => {
+    // How a caller pays for the gutter between components: a component given half its own size of
+    // clearance lands on a half pixel whenever its own size is odd. A 17 × 19 component becomes a
+    // 25.5 × 28.5 cell, which seats eight components at 10× — where rounding *either* edge up to a
+    // whole number answers 9, a tenth of the scale thrown away for the convenience of an integer.
+    expect(componentGridScale({ width: 1024, height: 576 }, { width: 25.5, height: 28.5 }, 8)).toBe(10);
+    expect(componentGridScale({ width: 1024, height: 576 }, { width: 26, height: 28.5 }, 8)).toBe(9);
+    expect(componentGridScale({ width: 1024, height: 576 }, { width: 25.5, height: 29 }, 8)).toBe(9);
   });
 
   it('answers null when the sheet cannot seat the components even at 1:1', () => {

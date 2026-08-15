@@ -6,19 +6,25 @@ import type { AspectRatio, PixelExtent } from '../types/output.ts';
  * A generator decides the pixel dimensions of what it returns; the prompt only asks for a shape. So
  * when the compiler has to state a figure that depends on how much room the sheet has — the
  * whole-number scale a native pixel grid is presented at — it reasons from a *nominal* canvas rather
- * than from a measurement, and the honest way to pick one is the smallest sheet any of the named
- * targets returns. Every figure derived from it then fits on the ones that come back larger, which
- * is the direction that costs a little background rather than a cropped or resampled sheet.
+ * than from a measurement. The figure it derives is stated as a floor, so the canvas has to be small
+ * enough that a real sheet is never *smaller*: an underestimate costs a little background, and an
+ * overestimate asks for an enlargement the canvas cannot hold, which the generator would reconcile
+ * by resampling — the one thing the rule it feeds exists to rule out.
  */
 
 /**
  * The long edge of that nominal canvas.
  *
- * 1024 because it is the short edge of what the current image models return at these shapes — GPT
- * Image's landscape frame is 1536 × 1024, Midjourney's 16:9 lands near 1456 × 816 — and taking it as
- * the *long* edge leaves headroom under all of them. It is also the sheet the resolution profiles
- * are already reasoned against in `promptText/renderStyle.ts`, so the two agree about how large a
- * figure a stated scale produces.
+ * 1024 sits under what the current image models return at every shape the studio offers: GPT Image's
+ * frames are 1024 × 1024 and 1536 × 1024, Midjourney's 16:9 lands near 1456 × 816, and the Gemini and
+ * Seedream models go further again. Taken as the *long* edge it is a square sheet exactly and every
+ * other shape with room to spare — 1024 × 576 against Midjourney's own 16:9, which is smaller on both
+ * axes.
+ *
+ * **The one named target it does not fit is SD 1.5**, which draws at 512, and that is a target the
+ * whole specification already overruns: `constants/models.ts` records its documented ceiling as the
+ * 77-token CLIP context, against a prompt of some thousands. A sheet that arrives from it has been
+ * generated from a truncated brief the block this figure feeds never reached.
  */
 const NOMINAL_LONG_EDGE = 1024;
 
