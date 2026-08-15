@@ -346,8 +346,13 @@ describe('what a wrapper says about the surface', () => {
         // The standing rule of this list, which no configuration may reach around: the sheet is
         // built on a keyable background, and losing it is the one failure here that cannot be
         // recovered from. Matched as a substring of each entry rather than as a whole word, because
-        // `backgrounds` and `gradient-background` carry the term as surely as the bare noun does —
-        // this is the wider of the two readings, and the one §7 of the plan document states.
+        // `backgrounds` and `gradient-background` carry the term as surely as the bare noun does.
+        //
+        // The width is precautionary and settled as such, not a reading of the flag: an entry is
+        // read whole, so `gradient background` would not negate the background — but what makes it
+        // atomic is `::` rather than the space dividing concepts, which no page current for the
+        // pinned version restates. Every other term here is safe under both readings and this one
+        // is not, so it is the asymmetry that keeps it out rather than the evidence.
         for (const entry of entries) {
           expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
         }

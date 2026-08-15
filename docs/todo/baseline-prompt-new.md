@@ -1639,6 +1639,40 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > three styles whose §2 lines assert nothing about a gradient's absence (`PAINTED_2D`,
 > `RENDERED_3D`, `CLAY_RENDER`) it says nothing at all.
 
+> **Settled afterwards — the `background` rule stays at the word, and it is precautionary rather
+> than a reading of the flag.** That is the decision the note above left open, and this is what it
+> now rests on, because the argument that originally produced it no longer holds: the bullet further
+> up removed a **bare** `background` entry, which is unarguable, and the width came later.
+>
+> **The rule this list is actually kept to is that every term in it has to be safe under *both*
+> readings of a multi-word entry**, and `gradient background` is the only candidate that is not.
+> `cast shadow` is: read whole it qualifies, and read word by word it is no worse than the bare
+> `shadow` it replaced — so if the atomicity inference is wrong, that term costs nothing.
+> `gradient background` decomposed puts `-0.5` on the colour the whole sheet is registered against.
+>
+> **What decides it is that asymmetry, not the balance of evidence.** Three things make the two
+> outcomes incomparable rather than merely unequal:
+>
+> - **The atomicity half of the chain is the half nothing current states.** What makes an entry one
+>   concept is `::` being the divider rather than the space, and that is only on the multi-prompt
+>   page, which scopes itself away from the pinned `--v 8.2`. The note above records this; it is the
+>   same trap as `--style raw`.
+> - **The flag is unverifiable without a subscription**, so a wrong answer is not something this
+>   repository would find out about from its own tests.
+> - **The failure is unrecoverable rather than a wash.** Every other risk in this list degrades a
+>   sheet; this one returns a sheet that cannot be keyed, which is what the whole design rests on.
+>
+> So the ban is on the **word**, and it is not a claim about how `--no` reads. Better evidence that
+> entries are atomic does not on its own reopen it — what would is that evidence arriving as a page
+> current for the pinned version, or the failure ceasing to be unrecoverable.
+>
+> **What it costs is one negative term, stated here so it is not rediscovered as a gap.** Midjourney
+> remains the one channel of three carrying no fixed `gradient background`: all it says about a
+> gradient is the style's own `smooth gradients`, and on `PAINTED_2D`, `RENDERED_3D` and
+> `CLAY_RENDER` it says nothing. §0's uniform key field is stated in the prompt body, which
+> Midjourney reads in full, and the `--no` list was never what carried it. No compiled prompt
+> changed.
+
 > **Corrected after shipping — that separate change, and the last fixed string in the three
 > channels.** `(assembled character:1.3), (posed figure:1.3)` opened SD's block, `assembled
 > character, posed figure, complete figure` opened Qwen's, and `no assembled figure` closed Flux's
