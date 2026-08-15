@@ -769,6 +769,25 @@ three-word stub, prose shape, the punctuation above, and that no two controls sh
 which is the copy-paste that leaves one of them describing the other and is invisible in review.
 Whether the words are *true* is still yours.
 
+**It finds the guidance rather than listing it**, because guidance is filed in two places and a
+hand-kept walk only ever tracked one. Its imports were the six sets in `src/constants/tooltips/`,
+which left 190 entries unchecked — every setting's guidance, filed beside its options — and two
+`ATLAS_TOOLTIPS` entries reached the bundle carrying three straight apostrophes between them, past
+the assertion written to catch them. So every `*_TOOLTIPS` record under `src/constants/` is
+discovered by an `import.meta.glob`,
+and a set named that way which is *not* a record of sentences fails rather than being skipped. **A
+new set is checked the moment it is named**, wherever it is filed — but only the record shape is
+discoverable, so guidance that comes from a function or hangs off a list (`accentSwatchGuidance`,
+`APP_TAB_CHOICES`, `TARGET_MODELS`, a category's sixteen fields) is still named in that file, and a
+new shape of guidance has to be added to the walk by hand.
+
+**What counts as guidance is the surface, not the prop.** `TARGET_MODELS[].description` is walked
+because it is a control's own explanation rendered under the control instead of behind its ⓘ — the
+same words held to the same rules, shown a second way. The quantiser's `QUANTISE_SCALE_GUIDANCE` and
+`QUANTISE_RESULT_PLACEHOLDER` are not, and they read as though they should be: they describe the
+state of *the user's image* — what the scale reader found, what the empty pane is waiting for — and
+one of them is an ellipsis rather than a sentence. A control is what this suite is named for.
+
 ## Prompt text is the product, and it is written to rules
 
 The app's whole output is prompt text for image-generation models, and that text is a **contract,

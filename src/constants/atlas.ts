@@ -84,13 +84,13 @@ export const ATLAS_TOOLTIPS = {
   gridLayout:
     'Columns × rows the components are laid into. The shape follows the sheet aspect ratio, so a 16:9 sheet is biased towards columns and a 9:16 sheet towards rows; the count is always at least the component count, which is where empty slots come from.',
   cellSize:
-    "The pitch of one grid cell on the texture, before the bleed gutter. Divided by the grid's longer axis, not its width — a grid taller than it is wide has to fit the texture downwards too.",
+    'The pitch of one grid cell on the texture, before the bleed gutter. Divided by the grid’s longer axis, not its width — a grid taller than it is wide has to fit the texture downwards too.',
   usableBounds:
     'The square a component actually has to itself, once the bleed gutter is removed from both sides of the cell. This is what a sprite has to fit inside, and it is what the fit check above measures against.',
   emptySlots:
     'Cells the grid affords that no component lands in. The grid has to be rectangular, so a component count that is not a neat product leaves a short last row — texture that is uploaded, and paid for, holding nothing.',
   usableShare:
-    "How much of the texture ends up inside a filled cell's usable bounds. It prices every kind of waste at once: empty slots, the gutter around each cell, and the strip left over where the grid's shorter axis stops short of the texture edge. A low figure with a wide or tall sheet aspect ratio is that last one — a square sheet packs a square texture better.",
+    'How much of the texture ends up inside a filled cell’s usable bounds. It prices every kind of waste at once: empty slots, the gutter around each cell, and the strip left over where the grid’s shorter axis stops short of the texture edge. A low figure with a wide or tall sheet aspect ratio is that last one — a square sheet packs a square texture better.',
   packingPlan:
     'The same figures drawn to scale, so the waste has a shape rather than only a price. The bright cells are components, the dim ones are slots the grid affords that nothing lands in, and the bare margin is texture the grid never reaches. It plans the atlas you repack the extracted artwork into. The prompt fixes the order the components are drawn in but never the number of rows and columns, so treat this as the packing you can choose rather than a picture of the sheet you will get back.',
 } as const;

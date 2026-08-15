@@ -1,13 +1,71 @@
 import { describe, expect, it } from 'vitest';
 import { ACCENT_HUES } from '../../types/settings.ts';
+import { CATEGORY_OPTIONS } from '../categories/index.ts';
+import { TARGET_MODELS } from '../models.ts';
 import { accentSwatchGuidance } from '../settings.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
-import { CHROME_TOOLTIPS } from './chrome.ts';
-import { DIALOG_TOOLTIPS } from './dialogs.ts';
-import { HISTORY_ACTION_TOOLTIPS } from './history.ts';
-import { PRESET_ACTION_TOOLTIPS, presetCollectionGuidance } from './presets.ts';
-import { QUANTISE_ACTION_TOOLTIPS } from './quantise.ts';
-import { STUDIO_ACTION_TOOLTIPS } from './studio.ts';
+import { presetCollectionGuidance } from './presets.ts';
+
+/**
+ * Every module under `src/constants/`, so the guidance sets can be *found* rather than listed.
+ *
+ * This walk used to be six hand-written imports, and the six were exactly the files in this folder —
+ * so its coverage tracked a directory rather than the guidance surface. Guidance is deliberately
+ * filed in two places (see the note in `./index.ts`): an action's sits here, and a setting's sits
+ * beside the options it explains. The second group — 190 entries across four sets and the nine
+ * category definitions — was never walked, and two `ATLAS_TOOLTIPS` entries reached the bundle
+ * carrying three straight apostrophes between them, past the test written to catch exactly that.
+ *
+ * A hand-kept list of "all the guidance in the app" is that same failure one layer up, so the shape
+ * that keeps being added — a flat record of sentences, named `*_TOOLTIPS` for the surface it
+ * explains — is discovered instead. Test files are excluded because importing one registers its
+ * suites into this one.
+ */
+const CONSTANT_MODULES = import.meta.glob<Readonly<Record<string, unknown>>>(
+  ['../**/*.ts', '!../**/*.test.ts'],
+  { eager: true },
+);
+
+/**
+ * The floor under that discovery, and the only thing standing between a glob that stops matching and
+ * a suite that walks the three hand-named groups below while reporting nothing wrong.
+ *
+ * Adding guidance never touches this number — it can only be broken by deleting a set or by breaking
+ * the pattern, which are the two things worth being told about.
+ */
+const FEWEST_SETS = 10;
+
+/** Whether an export is the shape this walk understands: a flat record of sentences. */
+function isGuidanceRecord(value: unknown): value is Readonly<Record<string, string>> {
+  if (typeof value !== 'object' || value === null) return false;
+  return Object.values(value).every((entry) => typeof entry === 'string');
+}
+
+/**
+ * The `*_TOOLTIPS` sets, keyed by name so the six this folder re-exports through `./index.ts` are
+ * counted once rather than twice.
+ *
+ * A set named this way that is *not* a record of sentences throws rather than being skipped: a
+ * silent skip is how the four missing sets stayed missing, and this is the one place that could
+ * quietly reintroduce it.
+ */
+function discoverTooltipSets(): Record<string, Readonly<Record<string, string>>> {
+  const sets: Record<string, Readonly<Record<string, string>>> = {};
+
+  for (const [path, module] of Object.entries(CONSTANT_MODULES)) {
+    for (const [name, value] of Object.entries(module)) {
+      if (!name.endsWith('_TOOLTIPS')) continue;
+      if (!isGuidanceRecord(value)) {
+        throw new Error(`${path} exports ${name}, which is not a record of guidance strings.`);
+      }
+      sets[name] = value;
+    }
+  }
+
+  return sets;
+}
+
+const TOOLTIP_SETS = discoverTooltipSets();
 
 /**
  * Every piece of guidance in the app, gathered under the name a failure should report.
@@ -15,16 +73,23 @@ import { STUDIO_ACTION_TOOLTIPS } from './studio.ts';
  * The two functions are here as their arguments' worth of entries rather than as one sample: a
  * template with a name substituted into it is exactly the shape that reads fine in the abstract and
  * produces "Shows the built-in presets written for the  category" on the one input nobody tried.
+ *
+ * The groups below the sets are the shapes discovery cannot see — a function, and guidance hanging
+ * off a list rather than filed in a record of its own. Each is walked whole rather than sampled,
+ * which is what keeps *them* from drifting: a tenth category, or a seventeenth field, arrives
+ * checked.
+ *
+ * `TARGET_MODELS` earns its place here for the reason its own selector gives: the ⓘ beside that
+ * control explains what a target model *is*, in one sentence for all eleven, and the half that can
+ * only be written per target is rendered under the control instead. It is the control's own
+ * explanation shown a second way, not a label — so it is held to the same rules.
  */
 const GUIDANCE: readonly (readonly [string, string])[] = [
-  ...records({
-    CHROME_TOOLTIPS,
-    DIALOG_TOOLTIPS,
-    HISTORY_ACTION_TOOLTIPS,
-    PRESET_ACTION_TOOLTIPS,
-    QUANTISE_ACTION_TOOLTIPS,
-    STUDIO_ACTION_TOOLTIPS,
-  }),
+  ...records(TOOLTIP_SETS),
+  ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
+    definition.fields.map((field) => [`${category}.${field.key}`, field.tooltip] as const),
+  ),
+  ...TARGET_MODELS.map((model) => [`TARGET_MODELS.${model.id}`, model.description] as const),
   ...APP_TAB_CHOICES.map((tab) => [`APP_TAB_CHOICES.${tab.id}`, tab.guidance] as const),
   ...ACCENT_HUES.map((hue) => [`accentSwatchGuidance(${hue})`, accentSwatchGuidance(hue)] as const),
   ['presetCollectionGuidance(built-in)', presetCollectionGuidance('Humanoid Character', false)],
@@ -49,6 +114,10 @@ function records(sets: Record<string, Readonly<Record<string, string>>>): (reado
 const SHORTEST_USEFUL = 60;
 
 describe('control guidance', () => {
+  it('finds every set filed under src/constants/', () => {
+    expect(Object.keys(TOOLTIP_SETS).length).toBeGreaterThanOrEqual(FEWEST_SETS);
+  });
+
   it.each(GUIDANCE)('%s says enough to be worth reading', (_name, text) => {
     expect(text.length).toBeGreaterThanOrEqual(SHORTEST_USEFUL);
   });
