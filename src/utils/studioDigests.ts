@@ -1,5 +1,7 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
+import { validationPassFor } from '../constants/promptText/index.ts';
+import type { ValidationPass } from '../types/rendering.ts';
 import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
@@ -117,22 +119,40 @@ export function sheetDigest(category: SubjectCategory, output: OutputConfig): st
 }
 
 /**
+ * What decides the sheet's colour: the pinned palette, the budget it supersedes, or neither.
+ *
+ * A pinned palette **replaces** the budget rather than joining it, because that is what it does to
+ * the sheet — the compiled prompt drops the budget line and the quantiser ignores the count. A
+ * validation pass withdraws the budget without replacing it, and still leaves a pinned palette
+ * standing: one material or one fill takes its colour from the list like anything else does, so the
+ * two supersessions stack rather than collide.
+ */
+function colourDigest(output: OutputConfig, pass: ValidationPass | null): string {
+  if (paletteFor(output.palette) !== null) return output.palette;
+  return pass === null ? output.paletteLimit : '';
+}
+
+/**
  * How the sheet is drawn.
  *
- * A pinned palette **replaces** the colour budget here rather than joining it, because that is what
- * it does to the sheet: the compiled prompt drops the budget line and the quantiser ignores the
- * count, so naming both would put a setting in the header that has no effect on anything. Same
- * reasoning as `companionDigest`, which omits a deliverable its target cannot return.
+ * Naming a superseded setting would put a value in the header that has no effect on anything — the
+ * same reasoning as `companionDigest`, which omits a deliverable its target cannot return. Two
+ * things supersede here rather than one: a pinned palette takes the colour budget, and a validation
+ * pass takes the surface detail, the budget and the outline outright, plus the lighting where the
+ * pass is the silhouette. `RenderStyleFields` withdraws exactly those controls on the same two
+ * lookups, so the header reports the controls the panel is showing.
  */
 export function renderStyleDigest(output: OutputConfig): string {
+  const pass = validationPassFor(output.renderStyle);
+
   return join([
     output.renderStyle,
-    output.surfaceDetail,
+    pass === null ? output.surfaceDetail : '',
     output.resolutionProfile,
     output.spriteTargetSize,
-    paletteFor(output.palette) === null ? output.paletteLimit : output.palette,
-    output.outlineStyle,
-    output.lightingModel,
+    colourDigest(output, pass),
+    pass === null ? output.outlineStyle : '',
+    pass?.withholdsLight === true ? '' : output.lightingModel,
   ]);
 }
 

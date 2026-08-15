@@ -141,6 +141,54 @@ describe('renderStyleDigest', () => {
     expect(digest).toContain('GAME_BOY_DMG');
     expect(digest).not.toContain('STRICT_32_COLOR');
   });
+
+  it('drops the three settings a validation pass supersedes, and keeps the light a clay pass uses', () => {
+    // `RenderStyleFields` withdraws those three controls on the same lookup, so a header naming them
+    // would report a configuration the open group no longer offers — and, worse, one the prompt no
+    // longer carries. The lighting model stays: a clay render is read by the way light falls across
+    // it, which is the one surface setting this pass keeps.
+    const digest = renderStyleDigest(
+      withOutput({
+        renderStyle: 'CLAY_RENDER',
+        surfaceDetail: 'TEXTURED',
+        paletteLimit: 'STRICT_32_COLOR',
+        outlineStyle: 'PURE_BLACK_OUTLINE',
+        lightingModel: 'ISOMETRIC_TOP_LEFT',
+      }),
+    );
+
+    expect(digest).toContain('CLAY_RENDER');
+    expect(digest).toContain('ISOMETRIC_TOP_LEFT');
+    expect(digest).not.toContain('TEXTURED');
+    expect(digest).not.toContain('STRICT_32_COLOR');
+    expect(digest).not.toContain('PURE_BLACK_OUTLINE');
+  });
+
+  it('takes the light too where the pass leaves nowhere for it to land', () => {
+    // The narrower half of the same rule, and the one a single validation-pass check would miss: a
+    // flat fill of one colour has no surface for a key light, so that control goes as well.
+    const digest = renderStyleDigest(
+      withOutput({ renderStyle: 'SILHOUETTE_ONLY', lightingModel: 'ISOMETRIC_TOP_LEFT' }),
+    );
+
+    expect(digest).toContain('SILHOUETTE_ONLY');
+    expect(digest).not.toContain('ISOMETRIC_TOP_LEFT');
+  });
+
+  it('still names a pinned palette under a pass, which supersedes the budget and not the list', () => {
+    // The two supersessions stack rather than collide: one material or one fill takes its colour
+    // from the pinned list like anything else does, and the prompt still carries the palette block.
+    const digest = renderStyleDigest(
+      withOutput({
+        renderStyle: 'SILHOUETTE_ONLY',
+        palette: 'GAME_BOY_DMG',
+        paletteLimit: 'STRICT_32_COLOR',
+      }),
+    );
+
+    expect(digest).toContain('GAME_BOY_DMG');
+    expect(digest).not.toContain('STRICT_32_COLOR');
+  });
 });
 
 describe('projectionDigest', () => {

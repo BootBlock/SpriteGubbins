@@ -80,3 +80,110 @@ describe('RenderStyleFields', () => {
     );
   });
 });
+
+/**
+ * That the surface settings are offered exactly when the render style leaves them anything to
+ * decide.
+ *
+ * Two of the ten styles are validation passes: `CLAY_RENDER` states one untextured material and
+ * `SILHOUETTE_ONLY` states one flat fill, so each is already the whole answer about the surface. The
+ * compiler drops surface detail, the colour budget and the outline from section 2 behind them — and
+ * the lighting model behind the silhouette, which has nowhere for a key light to land — so a control
+ * left on screen would be offering a setting the prompt does not carry. Same three properties as the
+ * budget above: it goes, the value survives, and the page says why.
+ */
+const SURFACE = 'Surface Detail Intensity';
+const OUTLINE = 'Outline System';
+const LIGHTING = 'Lighting & Shading Model';
+
+/** Every control the render style can withdraw, by the accessible name it is found under. */
+function control(name: string): HTMLElement | null {
+  return screen.queryByRole('combobox', { name });
+}
+
+describe('RenderStyleFields — a render style that withholds the surface', () => {
+  it('offers all four while the style describes a surface', () => {
+    render(<RenderStyleFields />);
+
+    for (const name of [SURFACE, BUDGET, OUTLINE, LIGHTING]) expect(control(name)).not.toBeNull();
+  });
+
+  it('withdraws the three a clay pass supersedes, and keeps the light it reads by', () => {
+    render(<RenderStyleFields />);
+
+    act(() => {
+      useOutputStore.getState().setOutputField('renderStyle', 'CLAY_RENDER');
+    });
+
+    expect(control(SURFACE)).toBeNull();
+    expect(control(BUDGET)).toBeNull();
+    expect(control(OUTLINE)).toBeNull();
+    // The one surface setting this pass keeps: a clay model is read by the way light falls across
+    // it, so taking the key light away would hide the volumes the pass is run to judge.
+    expect(control(LIGHTING)).not.toBeNull();
+    // And the controls above the pass, which decide nothing about the surface.
+    expect(control('Resolution Profile')).not.toBeNull();
+  });
+
+  it('takes the lighting model too where the pass leaves nowhere for it to land', () => {
+    render(<RenderStyleFields />);
+
+    act(() => {
+      useOutputStore.getState().setOutputField('renderStyle', 'SILHOUETTE_ONLY');
+    });
+
+    expect(control(LIGHTING)).toBeNull();
+  });
+
+  it('keeps what it hid, and gives it back with the next finished style', () => {
+    // The workflow the whole feature is for: the tooltip tells a reader to run a pass on an
+    // otherwise-finished configuration, so the settings it withdraws have to be the ones they had.
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, surfaceDetail: 'TEXTURED', outlineStyle: 'PURE_BLACK_OUTLINE' },
+    });
+    render(<RenderStyleFields />);
+
+    act(() => {
+      useOutputStore.getState().setOutputField('renderStyle', 'SILHOUETTE_ONLY');
+    });
+    expect(control(SURFACE)).toBeNull();
+    expect(useOutputStore.getState().output.surfaceDetail).toBe('TEXTURED');
+
+    act(() => {
+      useOutputStore.getState().setOutputField('renderStyle', 'PIXEL_ART');
+    });
+    expect(control(SURFACE)).toHaveValue('TEXTURED');
+    expect(control(OUTLINE)).toHaveValue('PURE_BLACK_OUTLINE');
+  });
+
+  it('names the controls it withdrew, on the control that withdrew them', () => {
+    // The same answer `PaletteField` gives, for the same reason: four controls leaving at once with
+    // nothing on the page accounting for it reads as a bug rather than as a rule. The sentence is
+    // built from the pass, so it names the lighting model only where the lighting model has gone.
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, renderStyle: 'CLAY_RENDER' },
+    });
+    const { rerender } = render(<RenderStyleFields />);
+
+    const clay = screen.getByRole('combobox', { name: 'Render Style' });
+    expect(clay).toHaveAccessibleDescription(/A validation pass: it states the surface itself/);
+    expect(clay).toHaveAccessibleDescription(/the outline system withdraw/);
+    expect(clay).not.toHaveAccessibleDescription(/lighting model/);
+
+    act(() => {
+      useOutputStore.getState().setOutputField('renderStyle', 'SILHOUETTE_ONLY');
+    });
+    rerender(<RenderStyleFields />);
+    expect(screen.getByRole('combobox', { name: 'Render Style' })).toHaveAccessibleDescription(
+      /the lighting model withdraw/,
+    );
+  });
+
+  it('says nothing extra on a style that withdraws nothing', () => {
+    render(<RenderStyleFields />);
+
+    expect(screen.getByRole('combobox', { name: 'Render Style' })).not.toHaveAccessibleDescription(
+      /validation pass/,
+    );
+  });
+});

@@ -30,6 +30,33 @@ export const RENDER_STYLES = [
 export type RenderStyle = (typeof RENDER_STYLES)[number];
 
 /**
+ * What a render style that is a **validation pass** withholds, for the two that are.
+ *
+ * A finished style says how a surface is drawn, and the settings printed beside it — surface detail,
+ * the colour budget, the outline — say the rest. A validation pass says a surface is *not* being
+ * drawn, so those settings do not sit beside it; they contradict it. `CLAY_RENDER` states one
+ * untextured material and `SILHOUETTE_ONLY` states one flat fill, and each of those is already the
+ * whole answer about the surface.
+ *
+ * The two halves are held together here because they are read in four places — the compiler's
+ * conditionals, the prose section 2 carries, the studio controls that withdraw, and the digest that
+ * reports what is left — and a pass whose prose and whose gate disagreed would print a paragraph
+ * about a line still on the page, or drop a line nothing replaced.
+ */
+export interface ValidationPass {
+  /**
+   * Whether the pass withholds the light as well as the surface.
+   *
+   * The narrower of the two axes, and the reason this is a record of objects rather than a list of
+   * style names: a clay render is *lit*, and the light is exactly what makes its volumes readable,
+   * while a flat fill of one colour has nowhere for a key light to land.
+   */
+  readonly withholdsLight: boolean;
+  /** What section 2 states in place of the lines the pass supersedes. */
+  readonly text: string;
+}
+
+/**
  * The camera's projection.
  *
  * v1 asked for "one fixed orthographic 3/4 top-down dimetric/isometric camera" — three mutually

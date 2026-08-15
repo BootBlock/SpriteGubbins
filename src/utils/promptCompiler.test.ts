@@ -407,6 +407,153 @@ describe('generatePrompt — section 0’s exclusion precedence', () => {
   });
 });
 
+describe('generatePrompt — a render style that withholds the surface', () => {
+  /**
+   * The two styles that are validation passes rather than finished looks, and the eight that are not.
+   *
+   * Both lists are derived from `validationPassFor` rather than written out, so a third pass added to
+   * that record is checked by every assertion below on the day it is added — which is the half a
+   * hand-written pair of lists would quietly stop covering.
+   */
+  const PASSES = RENDER_STYLES.filter((style) => promptText.validationPassFor(style) !== null);
+  const FINISHED = RENDER_STYLES.filter((style) => promptText.validationPassFor(style) === null);
+
+  /**
+   * Section 0's clause, quoted whole and with the template's own straight apostrophes.
+   *
+   * The prompt is line-wrapped, so it is compared against a prompt with its breaks flattened — a
+   * rewrap would otherwise read as a deleted rule.
+   */
+  const OUTRANKS_THE_COLOURS =
+    "This sheet's render style is a validation pass, and what it states about the surface " +
+    "outranks the subject's colour and material attributes.";
+
+  /** The lines section 2 prints for a style that describes a surface rather than withholding one. */
+  const SURFACE_DETAIL = '- Surface-detail intensity: ';
+  const BUDGET = '- Palette strategy: ';
+  const OUTLINE = '- Edge / outline treatment: ';
+  const LIGHTING = '- Lighting model: ';
+
+  function withStyle(renderStyle: (typeof RENDER_STYLES)[number]): string {
+    return generatePrompt('CHARACTER', SUBJECT, withOutput({ renderStyle }));
+  }
+
+  it('drops the three lines that describe a surface it is not drawing', () => {
+    // The defect this whole feature answers, and every one of the three was reachable from a shipped
+    // preset. `STRICT_32_COLOR` is a *floor* of sixteen colours, so it contradicted "solid
+    // single-colour silhouettes" outright and no tighter setting existed to reach for; the
+    // surface-detail line asked for interior blocking on a pass defined by having none; and the
+    // outline line promised that "forms separate by value and hue contrast alone" on a sheet holding
+    // one value and one hue.
+    expect(PASSES.length).toBeGreaterThan(0);
+    for (const style of PASSES) {
+      const prompt = withStyle(style);
+
+      expect(prompt, style).not.toContain(SURFACE_DETAIL);
+      expect(prompt, style).not.toContain(BUDGET);
+      expect(prompt, style).not.toContain(OUTLINE);
+      // And the block that says the same thing in prose. "Detail serves silhouette and material
+      // read" is an instruction about a surface, on a sheet that has none.
+      expect(prompt, style).not.toContain('### Surface discipline');
+    }
+  });
+
+  it('states what it withholds in their place, rather than leaving section 2 silent', () => {
+    // Dropping the lines alone would leave the style name to carry the whole meaning, and a
+    // generator's prior for "clay render" includes exactly the material read the pass exists to
+    // remove. Each pass therefore says outright what is not drawn.
+    for (const style of PASSES) {
+      const pass = promptText.validationPassFor(style);
+      if (pass === null) throw new Error(`${style} should be a validation pass.`);
+
+      expect(withStyle(style), style).toContain(pass.text);
+    }
+  });
+
+  it('keeps every one of those lines for a style that does describe a surface', () => {
+    // The other half, and the failure a gate written one level too high would produce: eight styles
+    // whose settings still have to reach the prompt exactly as they always did.
+    for (const style of FINISHED) {
+      const prompt = withStyle(style);
+
+      expect(prompt, style).toContain(SURFACE_DETAIL);
+      expect(prompt, style).toContain(BUDGET);
+      expect(prompt, style).toContain(OUTLINE);
+      expect(prompt, style).toContain(LIGHTING);
+      expect(prompt, style).not.toContain('This render style is a validation pass');
+    }
+  });
+
+  it('takes the light only from the pass that has nowhere to put it', () => {
+    // The narrower of the two axes. A clay render is *read* by the way light falls across it, so
+    // taking the key light away would leave the volumes this pass is run to judge invisible — while
+    // every lighting option describes light on a surface, and a flat fill of one colour has none.
+    for (const style of PASSES) {
+      const pass = promptText.validationPassFor(style);
+      if (pass === null) throw new Error(`${style} should be a validation pass.`);
+
+      const prompt = withStyle(style);
+      if (pass.withholdsLight) expect(prompt, style).not.toContain(LIGHTING);
+      else expect(prompt, style).toContain(LIGHTING);
+    }
+    // Pinned rather than left to the derivation above, because "no pass states the light" would
+    // satisfy the loop while losing the distinction it is written to hold.
+    expect(withStyle('CLAY_RENDER')).toContain(LIGHTING);
+    expect(withStyle('SILHOUETTE_ONLY')).not.toContain(LIGHTING);
+  });
+
+  it('outranks the subject’s colours in section 0, where the order is stated', () => {
+    // The half the dropped lines cannot reach. Section 0 ranks subject identity *above* the render
+    // style, so a clay pass compiled beside `Deep Obsidian & Gold`, `Molten Copper` and
+    // `Etched Obsidian Plate` told the model in as many words that the finish outranked the
+    // untextured study it was being stripped out for — inverting what the pass is for.
+    const subject = {
+      ...SUBJECT,
+      primary_colours: 'Deep Obsidian & Gold',
+      materials: 'Etched Obsidian Plate',
+    };
+
+    for (const style of PASSES) {
+      const prompt = generatePrompt('CHARACTER', subject, withOutput({ renderStyle: style })).replaceAll(
+        '\n',
+        ' ',
+      );
+
+      expect(prompt, style).toContain('Deep Obsidian & Gold');
+      expect(prompt, style).toContain(OUTRANKS_THE_COLOURS);
+    }
+
+    for (const style of FINISHED) {
+      const prompt = generatePrompt('CHARACTER', subject, withOutput({ renderStyle: style }));
+      expect(prompt, style).not.toContain('is a validation pass, and what it states');
+    }
+  });
+
+  it('lets a pinned palette stand, because the two supersessions stack rather than collide', () => {
+    // A pinned palette says which colours exist; a pass says how much of a surface is drawn. One
+    // material or one fill takes its colour from the list like anything else does, so the palette
+    // block survives — while the budget line, which both of them supersede, is gone either way.
+    for (const style of PASSES) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ renderStyle: style, palette: 'NES' }));
+
+      expect(prompt, style).toContain('### Palette — ');
+      expect(prompt, style).not.toContain(BUDGET);
+    }
+  });
+
+  it('leaves the prompt free of ragged blank lines and unresolved markers', () => {
+    // Four conditionals were added across two sections, and a block whose blank line lands outside
+    // it is how a prompt grows a gap nobody wrote. Same check the series suite applies for the same
+    // reason.
+    for (const style of RENDER_STYLES) {
+      const prompt = withStyle(style);
+
+      expect(prompt, style).not.toMatch(/\n{3}/);
+      expect(prompt, style).not.toMatch(/\[(?:IF|SEC|SECTION|OPTIONAL|DEFINE):/);
+    }
+  });
+});
+
 describe('generatePrompt — the adherence report', () => {
   /** Every capability the report needs, so only the flag under test is deciding anything. */
   const CAPABLE = { emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' } as const;
