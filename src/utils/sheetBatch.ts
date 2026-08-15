@@ -20,10 +20,13 @@ import { primaryFacing, sheetDirections } from './sheetDirections.ts';
  * keeps the trunk sheets first, which is the order the identity lock wants: the sheets every run
  * has to match are generated before the runs that match them.
  *
- * **Separate from `sheetRuns.ts` because two of its three readers want this answer without the
- * prompts.** The studio asks the *count* on every keystroke to decide whether to offer the split at
- * all, and the compiler asks where in the batch the sheet it is compiling sits so the prompt can
- * say so; only the split drawer wants the compiled text. Enumerating here and compiling there is
+ * **Separate from `sheetRuns.ts` because only one of its readers wants the prompts.** The studio
+ * asks the *count* on every keystroke to decide whether to offer the split at all; the compiler asks
+ * where in the batch the sheet it is compiling sits so the prompt can say so; the studio's batch
+ * strip asks for the sheets and the position together, to name one and step to the next; the split
+ * drawer asks for the position to mark its own row; and the copy confirmation asks for both to name
+ * what just went. Only the split drawer's list wants the compiled text. Enumerating here and
+ * compiling there is
  * also what keeps the two from disagreeing: the ordinal the prompt states and the "Sheet N of M"
  * the drawer shows are the same position in the same list, rather than two counts that happen to
  * match.

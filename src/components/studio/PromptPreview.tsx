@@ -5,6 +5,7 @@ import { countWords, estimateTokens, generatePrompt } from '../../utils/promptCo
 import { Badge } from '../common/Badge.tsx';
 import { PromptActions } from './PromptActions.tsx';
 import { PromptBudgetNotice } from './PromptBudgetNotice.tsx';
+import { SheetProgress } from './SheetProgress.tsx';
 
 /**
  * The compiled prompt, and how much of it there is.
@@ -20,6 +21,8 @@ import { PromptBudgetNotice } from './PromptBudgetNotice.tsx';
  *
  * The ways of taking the prompt away are {@link PromptActions}, which reads the same state from the
  * stores itself — this panel hands it only the compiled text, so the prompt is built once.
+ * {@link SheetProgress} reads its own state for the same reason, and renders nothing at all unless
+ * the configuration is more than one generation.
  */
 export function PromptPreview() {
   const category = useSubjectStore((state) => state.category);
@@ -80,6 +83,11 @@ export function PromptPreview() {
           <Badge tone="live">Auto-Sync</Badge>
         </div>
       </div>
+
+      {/* Which sheet of the batch this prompt is, before anything said about the prompt itself —
+          the counts above and the notice below are both facts about *this* text, and they are
+          answers to the wrong question if the reader does not yet know it is one of ten. */}
+      <SheetProgress />
 
       <PromptBudgetNotice prompt={promptText} />
 

@@ -44,7 +44,7 @@ export interface QuantiseState {
    * removing a third of the sheet would contradict that.
    */
   readonly keyingEnabled: boolean;
-  /** How far a pixel may sit from the key colour, as Euclidean RGB distance. */
+  /** How far a pixel may sit from the key colour, as `keyDistanceSquared` measures that. */
   readonly keyTolerance: number;
 
   setSource(source: ImportedImage): void;

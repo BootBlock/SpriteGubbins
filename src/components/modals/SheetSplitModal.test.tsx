@@ -261,6 +261,51 @@ describe('SheetSplitModal', () => {
     });
   });
 
+  it('marks the one row the studio is composing, and only that one', async () => {
+    // The drawer is the batch laid out at once and the studio's strip is the batch as a position;
+    // a user arriving here from a prompt they were reading needs to see which of these rows made it.
+    // Both read the ordinal `sheetBatch` computes, which is also what section 6 of every prompt in
+    // the batch marks, so the three cannot disagree.
+    render(<SheetSplitModal />);
+
+    /** Which rows carry the marker, by position in the batch — named, not counted. */
+    const markedPositions = () =>
+      sheetsOnScreen()
+        .map((sheet, index) => (within(sheet.row).queryByText('In the studio') === null ? -1 : index))
+        .filter((index) => index >= 0);
+
+    // The default facing resolves to the first of the set, so the first row is the studio's.
+    expect(markedPositions()).toEqual([0]);
+
+    useOutputStore.setState({
+      output: { ...useOutputStore.getState().output, primaryDirection: FACINGS[3] ?? null },
+    });
+
+    // Exactly one row, and it moved with the studio: a marker computed from anything but the
+    // resolved ordinal would either stay put or land on more than one row.
+    await waitFor(() => {
+      expect(markedPositions()).toEqual([3]);
+    });
+  });
+
+  it('names the sheet it just copied, rather than confirming that something was', async () => {
+    // "Prompt copied to the clipboard" is no answer at all to which of eight prompts just went, and
+    // the header's Copy Prompt is reachable mid-batch too — so the confirmation is derived from the
+    // configuration being copied wherever a batch is more than one sheet.
+    const user = userEvent.setup();
+    render(<SheetSplitModal />);
+
+    const [, second] = copyButtons();
+    if (!second) throw new Error('the splitter should offer a copy button per run.');
+    await user.click(second);
+
+    await waitFor(() => {
+      expect(useUIStore.getState().toastMessage).toBe(
+        `Copied sheet 2 of ${String(FACINGS.length)} — Rig pieces · ${String(FACINGS[1])}`,
+      );
+    });
+  });
+
   it('warns when the runs are not tied to one subject', async () => {
     // §5: the hardest part is not sheet one, it is sheet two matching sheet one. Eight sheets with
     // no identity lock come back as eight different characters in similar colours.

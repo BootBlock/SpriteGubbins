@@ -125,8 +125,11 @@ export function KeyingControls({ keying, keyedShare, busy }: KeyingControlsProps
           The colour above is the studio&rsquo;s own background key, because the prompt that produced this
           sheet already stated it — change it there rather than here. A generated field is almost never
           exactly the colour that was asked for, which is what the tolerance is for: raise it until the field
-          goes, and stop before the sprite does. Above <span className="font-mono">exact</span> it also erodes
-          the pixel touching the field, which is what removes the halo an anti-aliased edge leaves behind.
+          goes, and stop before the sprite does. Where the key has a colour of its own, a field that has been
+          shaded darker or washed paler still counts as close, so the setting that clears it stays well short
+          of the settings that would reach your artwork — which is why magenta is the recommended key and
+          white and black are not. Above <span className="font-mono">exact</span> it also erodes the pixel
+          touching the field, which is what removes the halo an anti-aliased edge leaves behind.
         </p>
       )}
     </section>

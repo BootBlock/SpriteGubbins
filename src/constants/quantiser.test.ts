@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_KEY_TOLERANCE, FRINGE_TOLERANCE_FACTOR, KEY_TOLERANCES } from './quantiser.ts';
+import {
+  DEFAULT_KEY_TOLERANCE,
+  FRINGE_TOLERANCE_CEILING,
+  FRINGE_TOLERANCE_FACTOR,
+  KEY_SHADING_LATITUDE,
+  KEY_TOLERANCES,
+} from './quantiser.ts';
 
 /**
  * The invariants the keying control's numbers have to satisfy, none of which fails loudly.
@@ -24,5 +30,24 @@ describe('the keying tolerances', () => {
     // At 1 the fringe pass becomes a second copy of the field pass and every halo survives; below 1 it
     // would erode *less* than the field it is meant to clean up after. Either would be a quiet no-op.
     expect(FRINGE_TOLERANCE_FACTOR).toBeGreaterThan(1);
+  });
+
+  it('actually binds the fringe, rather than sitting where it can never be reached', () => {
+    // A factor with nothing above it is a ramp, not a threshold: the top rung times the factor runs
+    // past the distance between any two colours, and the pass becomes a blanket erosion of every
+    // silhouette in the sheet. So the ceiling has to be *reachable* — under what the loosest rung
+    // would otherwise produce — and above zero, which is the value that means "no fringe pass at all"
+    // and is reserved for the `exact` rung.
+    expect(FRINGE_TOLERANCE_CEILING).toBeLessThan(Math.max(...KEY_TOLERANCES) * FRINGE_TOLERANCE_FACTOR);
+    expect(FRINGE_TOLERANCE_CEILING).toBeGreaterThan(0);
+    // Where it sits *between* the halo and the artwork is a fact about colours rather than about
+    // these numbers, so `keyDistance.test.ts` is what holds that half — measured, not asserted here.
+  });
+
+  it('reaches further along the key’s own plane than across it, or the latitude is not one', () => {
+    // At 1 the distance collapses back to the straight Euclidean one it replaced, and the field the
+    // whole change exists to catch goes back to sitting on top of the artwork. Nothing throws — the
+    // arithmetic is still valid, it just discounts nothing.
+    expect(KEY_SHADING_LATITUDE).toBeGreaterThan(1);
   });
 });

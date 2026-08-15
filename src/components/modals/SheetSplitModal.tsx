@@ -1,14 +1,14 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { NO_COMPONENT_BUDGET } from '../../constants/componentBudget.ts';
+import { useCopiedSheets } from '../../hooks/useCopiedSheets.ts';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
-import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { batchComponentCount } from '../../utils/componentSet.ts';
-import { sheetIdentity, sheetRuns } from '../../utils/sheetRuns.ts';
-import type { SheetRun } from '../../utils/sheetRuns.ts';
+import { sheetBatch } from '../../utils/sheetBatch.ts';
+import { sheetRuns } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
 import { Modal } from '../common/Modal.tsx';
 import { SheetSplitRun } from './SheetSplitRun.tsx';
@@ -24,39 +24,32 @@ import { SheetSplitRun } from './SheetSplitRun.tsx';
  * Here the runs are derived rather than performed: `sheetRuns` is a pure function of the studio
  * state, so this component holds no copy of the prompts and cannot show one that has gone stale.
  *
- * **Which runs are done is read from the history, not tracked here.** The obvious `useState` of
- * copied facings looks right and is wrong for the workflow this exists to serve: §5 advises writing
- * the identity lock from the first sheet you accept, so the user is *expected* to close the drawer
- * mid-batch, go and set it, and come back — at which point local state has forgotten all of it.
- * "Copied" already has a durable meaning in this app, which is that the prompt is in the history.
+ * **Which runs are done is read from the history**, through `useCopiedSheets`, which states why the
+ * obvious `useState` of copied facings is wrong for the workflow this exists to serve. The studio's
+ * own batch strip asks the same hook the same question, which is what keeps the two views from
+ * disagreeing about how far through a batch the user is.
  *
- * Matching is by {@link sheetIdentity} rather than by prompt text, for the second half of the same
- * reason: adding that identity lock rewrites every run's text, so a text match would have wiped the
- * progress at exactly the moment the advice was followed.
+ * **The row the studio is on is marked**, from the ordinal `sheetBatch` already computes for section
+ * 6 of every prompt in the batch. This drawer is the batch laid out at once and the strip is the
+ * batch as a position, and a user arriving here from a prompt they were reading needs to see which
+ * of these rows produced it.
  */
 export function SheetSplitModal() {
   const category = useSubjectStore((state) => state.category);
   const subject = useSubjectStore((state) => state.subject);
   const output = useOutputStore((state) => state.output);
-  const historyLogs = useHistoryStore((state) => state.historyLogs);
-  const fetchHistory = useHistoryStore((state) => state.fetchHistory);
   const toggleSplitModal = useUIStore((state) => state.toggleSplitModal);
   const copyPrompt = useCopyPrompt();
-
-  // Read on open, as the history drawer does, so a batch begun in an earlier session comes back
-  // with its finished runs already ticked off. Failures raise a toast inside the store.
-  useEffect(() => {
-    void fetchHistory();
-  }, [fetchHistory]);
+  const isCopied = useCopiedSheets();
 
   const runs = useMemo(() => sheetRuns(category, subject, output), [category, subject, output]);
+  const copiedCount = runs.filter((run) => isCopied(run.output)).length;
 
-  const takenAway = useMemo(
-    () => new Set(historyLogs.map((log) => sheetIdentity(log.category, log.subject, log.output))),
-    [historyLogs],
-  );
-  const isCopied = (run: SheetRun) => takenAway.has(sheetIdentity(category, subject, run.output));
-  const copiedCount = runs.filter(isCopied).length;
+  // Which row the studio is on, so the drawer can mark it. Asked of `sheetBatch` rather than
+  // recovered from the runs above, because the ordinal is that module's own answer — the same one
+  // section 6 of every prompt in the batch states — and a second search for it here would be a
+  // second definition of where the user is.
+  const { ordinal } = useMemo(() => sheetBatch(category, output), [category, output]);
 
   // Parsed once for the drawer and handed down, so the total below and the per-sheet figure on every
   // row are sums over the same pieces rather than two parses of one field.
@@ -93,6 +86,13 @@ export function SheetSplitModal() {
         </p>
 
         <p className="mt-2 text-xs leading-relaxed text-ink-muted">
+          They are numbered in the order to work through them, trunk first, so that each run can be held to
+          what you accepted from the ones before it. The row marked{' '}
+          <span className="font-mono font-bold text-tab">In the studio</span> is the one the Studio tab is
+          composing behind this drawer — copy any of them from here, or step through the same list there.
+        </p>
+
+        <p className="mt-2 text-xs leading-relaxed text-ink-muted">
           Together they ask for <span className="font-mono font-bold text-ink">{batchTotal} components</span>,
           which is the sum of what each sheet below contracts for. The component budget is a cap on one
           generation, so it is not measured against that total. {budgetSentence}
@@ -125,7 +125,8 @@ export function SheetSplitModal() {
             additional={additional}
             ordinal={index + 1}
             total={runs.length}
-            isCopied={isCopied(run)}
+            isCurrent={index + 1 === ordinal}
+            isCopied={isCopied(run.output)}
             onCopy={(target) => {
               void copyPrompt(target);
             }}
