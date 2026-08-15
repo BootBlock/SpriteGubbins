@@ -4,13 +4,21 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
+import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
-import { HARDWARE_PROFILE_IDS, RENDER_STYLES, RIG_MODES, TARGET_MODEL_IDS } from '../types/output.ts';
+import {
+  HARDWARE_PROFILE_IDS,
+  RENDER_STYLES,
+  RIG_MODES,
+  STYLE_REFERENCE_IDS,
+  TARGET_MODEL_IDS,
+} from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts';
+import { styleReferencePatch } from './styleReferencePatch.ts';
 
 /**
  * The compiler is the app. Everything else is a way of choosing its arguments, so these tests assert
@@ -404,6 +412,162 @@ describe('generatePrompt — section 0’s exclusion precedence', () => {
     expect(prompt).toContain('- Integrated Worn Details: Brass shoulder pauldron');
     expect(prompt).toContain('- Subject-specific: No pauldrons');
     expect(prompt).toContain(OUTRANKS);
+  });
+});
+
+describe('generatePrompt — a render style that withholds the surface', () => {
+  /**
+   * The two styles that are validation passes rather than finished looks, and the eight that are not.
+   *
+   * Both lists are derived from `validationPassFor` rather than written out, so a third pass added to
+   * that record is checked by every assertion below on the day it is added — which is the half a
+   * hand-written pair of lists would quietly stop covering.
+   */
+  const PASSES = RENDER_STYLES.filter((style) => promptText.validationPassFor(style) !== null);
+  const FINISHED = RENDER_STYLES.filter((style) => promptText.validationPassFor(style) === null);
+
+  it('has both kinds of style to compare, so nothing below is vacuous', () => {
+    // Every assertion in this suite loops over one of those two lists, and an empty list passes a
+    // loop silently — which would leave the whole section green while checking nothing at all. The
+    // partition is asserted whole rather than by count, so a style that fell out of both is caught
+    // as well as a list that emptied.
+    expect(PASSES.length).toBeGreaterThan(0);
+    expect(FINISHED.length).toBeGreaterThan(0);
+    expect(PASSES.length + FINISHED.length).toBe(RENDER_STYLES.length);
+  });
+
+  /**
+   * Section 0's clause, quoted whole and with the template's own straight apostrophes.
+   *
+   * The prompt is line-wrapped, so it is compared against a prompt with its breaks flattened — a
+   * rewrap would otherwise read as a deleted rule.
+   */
+  const OUTRANKS_THE_COLOURS =
+    "This sheet's render style is a validation pass, and what it states about the surface " +
+    "outranks the subject's colour and material attributes.";
+
+  /** The lines section 2 prints for a style that describes a surface rather than withholding one. */
+  const SURFACE_DETAIL = '- Surface-detail intensity: ';
+  const BUDGET = '- Palette strategy: ';
+  const OUTLINE = '- Edge / outline treatment: ';
+  const LIGHTING = '- Lighting model: ';
+
+  function withStyle(renderStyle: (typeof RENDER_STYLES)[number]): string {
+    return generatePrompt('CHARACTER', SUBJECT, withOutput({ renderStyle }));
+  }
+
+  it('drops the three lines that describe a surface it is not drawing', () => {
+    // The defect this whole feature answers, and every one of the three was reachable from a shipped
+    // preset. `STRICT_32_COLOR` is a *floor* of sixteen colours, so it contradicted "solid
+    // single-colour silhouettes" outright and no tighter setting existed to reach for; the
+    // surface-detail line asked for interior blocking on a pass defined by having none; and the
+    // outline line promised that "forms separate by value and hue contrast alone" on a sheet holding
+    // one value and one hue.
+    for (const style of PASSES) {
+      const prompt = withStyle(style);
+
+      expect(prompt, style).not.toContain(SURFACE_DETAIL);
+      expect(prompt, style).not.toContain(BUDGET);
+      expect(prompt, style).not.toContain(OUTLINE);
+      // And the block that says the same thing in prose. "Detail serves silhouette and material
+      // read" is an instruction about a surface, on a sheet that has none.
+      expect(prompt, style).not.toContain('### Surface discipline');
+    }
+  });
+
+  it('states what it withholds in their place, rather than leaving section 2 silent', () => {
+    // Dropping the lines alone would leave the style name to carry the whole meaning, and a
+    // generator's prior for "clay render" includes exactly the material read the pass exists to
+    // remove. Each pass therefore says outright what is not drawn.
+    for (const style of PASSES) {
+      const pass = promptText.validationPassFor(style);
+      if (pass === null) throw new Error(`${style} should be a validation pass.`);
+
+      expect(withStyle(style), style).toContain(pass.text);
+    }
+  });
+
+  it('keeps every one of those lines for a style that does describe a surface', () => {
+    // The other half, and the failure a gate written one level too high would produce: eight styles
+    // whose settings still have to reach the prompt exactly as they always did.
+    for (const style of FINISHED) {
+      const prompt = withStyle(style);
+
+      expect(prompt, style).toContain(SURFACE_DETAIL);
+      expect(prompt, style).toContain(BUDGET);
+      expect(prompt, style).toContain(OUTLINE);
+      expect(prompt, style).toContain(LIGHTING);
+      expect(prompt, style).not.toContain('This render style is a validation pass');
+    }
+  });
+
+  it('takes the light only from the pass that has nowhere to put it', () => {
+    // The narrower of the two axes. A clay render is *read* by the way light falls across it, so
+    // taking the key light away would leave the volumes this pass is run to judge invisible — while
+    // every lighting option describes light on a surface, and a flat fill of one colour has none.
+    for (const style of PASSES) {
+      const pass = promptText.validationPassFor(style);
+      if (pass === null) throw new Error(`${style} should be a validation pass.`);
+
+      const prompt = withStyle(style);
+      if (pass.withholdsLight) expect(prompt, style).not.toContain(LIGHTING);
+      else expect(prompt, style).toContain(LIGHTING);
+    }
+    // Pinned rather than left to the derivation above, because "no pass states the light" would
+    // satisfy the loop while losing the distinction it is written to hold.
+    expect(withStyle('CLAY_RENDER')).toContain(LIGHTING);
+    expect(withStyle('SILHOUETTE_ONLY')).not.toContain(LIGHTING);
+  });
+
+  it('outranks the subject’s colours in section 0, where the order is stated', () => {
+    // The half the dropped lines cannot reach. Section 0 ranks subject identity *above* the render
+    // style, so a clay pass compiled beside `Deep Obsidian & Gold`, `Molten Copper` and
+    // `Etched Obsidian Plate` told the model in as many words that the finish outranked the
+    // untextured study it was being stripped out for — inverting what the pass is for.
+    const subject = {
+      ...SUBJECT,
+      primary_colours: 'Deep Obsidian & Gold',
+      materials: 'Etched Obsidian Plate',
+    };
+
+    for (const style of PASSES) {
+      const prompt = generatePrompt('CHARACTER', subject, withOutput({ renderStyle: style })).replaceAll(
+        '\n',
+        ' ',
+      );
+
+      expect(prompt, style).toContain('Deep Obsidian & Gold');
+      expect(prompt, style).toContain(OUTRANKS_THE_COLOURS);
+    }
+
+    for (const style of FINISHED) {
+      const prompt = generatePrompt('CHARACTER', subject, withOutput({ renderStyle: style }));
+      expect(prompt, style).not.toContain('is a validation pass, and what it states');
+    }
+  });
+
+  it('lets a pinned palette stand, because the two supersessions stack rather than collide', () => {
+    // A pinned palette says which colours exist; a pass says how much of a surface is drawn. One
+    // material or one fill takes its colour from the list like anything else does, so the palette
+    // block survives — while the budget line, which both of them supersede, is gone either way.
+    for (const style of PASSES) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ renderStyle: style, palette: 'NES' }));
+
+      expect(prompt, style).toContain('### Palette — ');
+      expect(prompt, style).not.toContain(BUDGET);
+    }
+  });
+
+  it('leaves the prompt free of ragged blank lines and unresolved markers', () => {
+    // Four conditionals were added across two sections, and a block whose blank line lands outside
+    // it is how a prompt grows a gap nobody wrote. Same check the series suite applies for the same
+    // reason.
+    for (const style of RENDER_STYLES) {
+      const prompt = withStyle(style);
+
+      expect(prompt, style).not.toMatch(/\n{3}/);
+      expect(prompt, style).not.toMatch(/\[(?:IF|SEC|SECTION|OPTIONAL|DEFINE):/);
+    }
   });
 });
 
@@ -1183,6 +1347,59 @@ describe('generatePrompt — the machine and its palette', () => {
     // number, so neither the section-2 line nor the audit that cites it may appear.
     expect(spectrum).not.toContain('No component carries more colours at once');
     expect(spectrum).not.toContain('No single component carries more than');
+  });
+
+  it.each(STYLE_REFERENCE_IDS)('compiles a whole sheet for %s with no marker left behind', (id) => {
+    // Every reference through the compiler, since each writes a different settings package and two of
+    // them pin a palette, which takes the other path through `describePalette`.
+    const reference = styleReferenceFor(id);
+    const output = withOutput(
+      reference === null ? { styleReference: id } : { styleReference: id, ...styleReferencePatch(reference) },
+    );
+    const prompt = generatePrompt('CHARACTER', SUBJECT, output);
+
+    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).toContain('Generate the sheet now.');
+  });
+
+  it('emits no art direction block until a reference is chosen', () => {
+    // Opt-in, exactly as the machine and the palette are: the default studio must not carry another
+    // game's measurements into every prompt the app composes.
+    expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT)).not.toContain('### Art direction reference');
+  });
+
+  it('states the look’s own measurements, and does not name the game', () => {
+    const reference = styleReferenceFor('DIABLO_II');
+    if (reference === null) throw new Error('the Diablo II reference should ship.');
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ styleReference: 'DIABLO_II' }));
+
+    expect(prompt).toContain('### Art direction reference');
+    for (const characteristic of reference.characteristics) expect(prompt).toContain(`- ${characteristic}`);
+    // The default, and the whole argument for the split: the sheet is fully specified unnamed.
+    expect(prompt).not.toContain(reference.name);
+  });
+
+  it('names the game only when asked to', () => {
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ styleReference: 'DIABLO_II', nameStyleReference: true }),
+    );
+
+    expect(prompt).toContain('art direction of Diablo II');
+  });
+
+  it('names nothing when the switch is on and no reference is set', () => {
+    // The state a reader reaches by ticking the box and then clearing the reference. Both the block
+    // and the sentence inside it have to go, or the prompt asks for the art direction of nothing.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ styleReference: 'NONE', nameStyleReference: true }),
+    );
+
+    expect(prompt).not.toContain('### Art direction reference');
+    expect(prompt).not.toContain('art direction of');
   });
 
   it.each(HARDWARE_PROFILE_IDS)('compiles a whole sheet for %s with no marker left behind', (id) => {

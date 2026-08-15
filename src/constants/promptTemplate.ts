@@ -121,6 +121,14 @@ and inventory · each component's identity and grid position · the object orien
 is asked for · the fixed camera, one scale and pivot compatibility · subject identity · the render
 style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
 preference never overrules a component's stated direction.
+[IF:VALIDATION_PASS]
+
+**This sheet's render style is a validation pass, and what it states about the surface outranks the
+subject's colour and material attributes.** Section [SEC:STYLE] says what the pass withholds and what
+is drawn in its place; a pass that lost to the colours named above would deliver the finished sheet
+it was run instead of. Everything else in the subject definition keeps the rank the order above
+gives it.
+[/IF]
 
 **An exclusion in section [SEC:EXCLUSIONS] outranks every attribute that asks for the same visible element.**
 Where the subject definition, the render style or any other description names something section [SEC:EXCLUSIONS]
@@ -187,14 +195,24 @@ Where this conflicts with anything above, the identity lock wins.
 ## [SECTION:STYLE]. RENDER STYLE
 
 - Style: [DEFINE:RENDER_STYLE_DESCRIPTION]
+[IF:VALIDATION_PASS!=yes]
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
+[/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
+[IF:VALIDATION_PASS!=yes]
 [IF:PALETTE!=yes]
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]
 [/IF]
 - Edge / outline treatment: [DEFINE:OUTLINE_DESCRIPTION]
+[/IF]
+[IF:LIGHTING_STATED]
 - Lighting model: [DEFINE:LIGHTING_DESCRIPTION]
+[/IF]
+[IF:VALIDATION_PASS]
+
+[DEFINE:VALIDATION_PASS_DESCRIPTION]
+[/IF]
 [IF:HARDWARE_PROFILE]
 
 ### Target hardware — [DEFINE:HARDWARE_NAME]
@@ -213,6 +231,22 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 
 [DEFINE:PALETTE_SPECIFICATION]
 [/IF]
+[IF:STYLE_REFERENCE]
+
+### Art direction reference
+[IF:STYLE_REFERENCE_NAMED]
+
+These components are drawn to match the art direction of [DEFINE:STYLE_REFERENCE_NAME]. Reproduce
+what that artwork measurably does, rather than a general impression of it.
+[/IF]
+
+The look is fixed by the following. Each states something the settings above have no way to say:
+
+[DEFINE:STYLE_REFERENCE_CHARACTERISTICS]
+
+Treat those as measurements and work to them directly. Where one pulls against a setting stated
+earlier in this section, the setting wins — it is what this particular sheet asked for.
+[/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 
 ### Pixel discipline
@@ -229,12 +263,14 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 [OPTIONAL:SMALL_SCALE_DISCIPLINE | [DEFINE:SMALL_SCALE_DISCIPLINE]]
 [/IF]
 [IF:RENDER_STYLE!=PIXEL_ART,RETRO_PIXEL_ART]
+[IF:VALIDATION_PASS!=yes]
 
 ### Surface discipline
 - Keep surface treatment consistent across every component; a technique used on one piece is used
   on all of them.
 - Detail serves silhouette and material read, not density. Preserve readable component scale
   before preserving surface detail.
+[/IF]
 [/IF]
 
 ---

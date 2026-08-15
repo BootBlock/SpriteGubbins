@@ -6,7 +6,7 @@ import { generatePrompt } from '../../utils/promptCompiler.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
-import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING } from '../promptText/index.ts';
+import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING, resolveCameraElevation } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
 
 /**
@@ -103,6 +103,17 @@ describe('every shipped preset', () => {
         `${preset.name} writes ${field.key} as "${value}", where the pool offers "${String(pooled)}"`,
       ).toBeUndefined();
     }
+  });
+
+  it.each(PRESETS)('$name stands its camera where its own projection can stand', (preset) => {
+    // A preset writes a projection and an elevation, which are two statements about one camera — and
+    // all but the angled-overhead projection fix the elevation, so a hand-written pair can name a
+    // camera that projection cannot be drawn at. Nothing would fail: `resolveCameraElevation` moves
+    // the figure on the way to the prompt, and the preset would load showing one camera and compile
+    // to another. Most of these read the figure straight off `DEFAULT_CAMERA_ELEVATIONS`, which
+    // cannot be wrong; this is for the ones that write a number.
+    const { projection, cameraElevation } = preset.output;
+    expect(resolveCameraElevation(projection, cameraElevation), preset.name).toBe(cameraElevation);
   });
 
   it.each(PRESETS)('$name compiles with no leftover marker and no placeholder token', (preset) => {

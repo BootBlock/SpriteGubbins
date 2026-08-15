@@ -149,7 +149,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
     id: 'clay-volume-study',
     name: 'Clay Volume Study',
     description:
-      'An untextured clay pass with the palette off, the detail down and a hard key light on, so nothing but the volumes is left to look at. A design check to run before any colour is committed.',
+      'An untextured single-material pass under one hard key light, so nothing but the volumes is left to look at. Colour, texture and outline are all withheld — a design check to run before any colour is committed.',
     category: 'CHARACTER',
     subject: {
       species: 'Orc Warrior',
@@ -163,21 +163,24 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       anatomy: 'Standard Humanoid',
       clothing: 'Spiked Bone Armor',
       worn_details: 'Shoulder Pauldrons & Cloak',
-      primary_colours: 'Deep Obsidian & Gold',
-      accent_colours: 'Molten Copper',
-      materials: 'Etched Obsidian Plate',
+      // The three fields the pass supersedes, written to agree with it rather than against it. They
+      // read `Deep Obsidian & Gold`, `Molten Copper` and `Etched Obsidian Plate` until the prompt
+      // gained the clause that ranks a validation pass above the subject's colours — which is what a
+      // user switching Render Style on a finished configuration now relies on, and what this preset
+      // has no reason to lean on when it ships as a clay pass from the start.
+      primary_colours: 'One clay grey throughout',
+      accent_colours: 'None — a single material',
+      materials: 'Untextured clay: volume only',
       exclusions: 'No glowing trails',
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,
-      // An untextured pass whose only question is whether the volumes read. Colour is what hides a
-      // broken form, so the palette goes away, the detail goes down, and a hard key light goes on —
-      // the three settings that leave nothing but shape to look at.
+      // An untextured pass whose only question is whether the volumes read. The style states the
+      // surface itself — one material, no colour budget, no outline — so the three settings that
+      // would have said so are withdrawn, and a hard key light is what is left to read the volumes
+      // by. It is the one surface setting a clay pass keeps, and the reason it is set here.
       renderStyle: 'CLAY_RENDER',
-      paletteLimit: 'UNRESTRICTED',
-      surfaceDetail: 'MINIMAL',
-      outlineStyle: 'OUTLINE_LESS_ALBEDO',
       lightingModel: 'ISOMETRIC_TOP_LEFT',
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
@@ -217,11 +220,12 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       // The question every sprite has to answer and most sheets never ask: at target size, with no
       // interior detail at all, is the shape still recognisable? Every facing the core draws, because
       // a silhouette that only works from the front fails the moment the character turns.
+      //
+      // Nothing about the surface is set beside it, because there is no surface: the pass states one
+      // flat fill, and surface detail, the colour budget, the outline and the lighting model are all
+      // withdrawn behind it. This preset pinned four of them, and every one compiled into the prompt
+      // as a line contradicting the style above it.
       renderStyle: 'SILHOUETTE_ONLY',
-      surfaceDetail: 'MINIMAL',
-      paletteLimit: 'STRICT_32_COLOR',
-      outlineStyle: 'OUTLINE_LESS_ALBEDO',
-      lightingModel: 'UNLIT_EMISSIVE_BAKED',
       resolutionProfile: 'MID_RESOLUTION',
       backgroundKey: 'PURE_WHITE',
       aspectRatio: 'WIDE_16_9',

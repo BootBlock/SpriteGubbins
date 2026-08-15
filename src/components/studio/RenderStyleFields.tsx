@@ -8,10 +8,33 @@ import {
   SURFACE_DETAIL_CHOICES,
 } from '../../constants/output/index.ts';
 import { paletteFor } from '../../constants/palettes/index.ts';
+import { validationPassFor } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import type { ValidationPass } from '../../types/rendering.ts';
 import { SelectField } from '../common/SelectField.tsx';
 import { TextField } from '../common/TextField.tsx';
 import { PaletteField } from './PaletteField.tsx';
+
+/**
+ * What the Render Style control says about itself once a validation pass is chosen.
+ *
+ * The counterpart of `PaletteField`'s own sentence, and there for the same reason: three controls
+ * leave the panel at once — four for the silhouette — and a disappearance the page never accounts
+ * for reads as a bug rather than as a rule. It describes the state the configuration is now in
+ * rather than explaining what the setting is, which is `OUTPUT_TOOLTIPS.renderStyle`'s job behind
+ * the ⓘ this control already carries.
+ *
+ * The list is assembled from the same `withholdsLight` the lighting control is withdrawn on, so the
+ * sentence cannot name a control that is still there or miss one that has gone.
+ */
+function supersession(pass: ValidationPass | null): string {
+  if (pass === null) return '';
+
+  const withdrawn = ['surface detail', 'the colour budget', 'the outline system'];
+  if (pass.withholdsLight) withdrawn.push('the lighting model');
+
+  return `A validation pass: it states the surface itself, so ${withdrawn.slice(0, -1).join(', ')} and ${withdrawn.at(-1) ?? ''} withdraw, and the prompt carries what the pass withholds in their place.`;
+}
 
 /**
  * How the sheet is drawn.
@@ -34,12 +57,32 @@ import { PaletteField } from './PaletteField.tsx';
  * supersession on exactly that predicate, which is what keeps the explanation and the withdrawal
  * from ever both being absent.
  *
+ * **Four controls answer to the render style in the same way**, because two of the ten styles are
+ * validation passes rather than finished looks. `CLAY_RENDER` and `SILHOUETTE_ONLY` state the
+ * surface themselves — one untextured material, one flat fill — so surface detail, the colour budget
+ * and the outline system describe a surface the sheet is not drawing, and the compiler drops all
+ * three from section 2. The silhouette takes the lighting model with them: a flat fill has nowhere
+ * for a key light to land. Left on screen they would be three or four settings the prompt no longer
+ * carries, which is exactly the failure the colour budget's own withdrawal above answers.
+ *
  * Hiding it does not discard it. `paletteLimit` is untouched in the store while the palette is
- * pinned, so the value the user chose is what the sheet falls back to the moment they clear it.
+ * pinned, and none of the four is touched while a pass is chosen, so the values the user chose are
+ * what the sheet falls back to the moment they go back to a finished style — which is the whole
+ * workflow a validation pass is for.
+ *
+ * **The two withdrawals of the colour budget are not the same withdrawal**, and the difference is
+ * worth knowing before reading `colorPlanFor`. A pinned palette supersedes the budget *everywhere* —
+ * it is the answer to "which colours may be used", so the quantiser maps onto it and stops counting.
+ * A validation pass supersedes it only *in the prompt*: it says this sheet has no colour to budget,
+ * which is a statement about one sheet rather than about the project's colour policy, and the
+ * quantiser goes on reducing whatever image it is handed to the budget the user set. So the budget
+ * is reached by leaving the pass, exactly as it is reached by clearing the palette.
  */
 export function RenderStyleFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
+
+  const pass = validationPassFor(output.renderStyle);
 
   return (
     <>
@@ -48,20 +91,23 @@ export function RenderStyleFields() {
         tooltip={OUTPUT_TOOLTIPS.renderStyle}
         value={output.renderStyle}
         choices={RENDER_STYLE_CHOICES}
+        description={supersession(pass)}
         onChange={(value) => {
           setOutputField('renderStyle', value);
         }}
       />
 
-      <SelectField
-        label="Surface Detail Intensity"
-        tooltip={OUTPUT_TOOLTIPS.surfaceDetail}
-        value={output.surfaceDetail}
-        choices={SURFACE_DETAIL_CHOICES}
-        onChange={(value) => {
-          setOutputField('surfaceDetail', value);
-        }}
-      />
+      {pass === null && (
+        <SelectField
+          label="Surface Detail Intensity"
+          tooltip={OUTPUT_TOOLTIPS.surfaceDetail}
+          value={output.surfaceDetail}
+          choices={SURFACE_DETAIL_CHOICES}
+          onChange={(value) => {
+            setOutputField('surfaceDetail', value);
+          }}
+        />
+      )}
 
       <SelectField
         label="Resolution Profile"
@@ -85,7 +131,7 @@ export function RenderStyleFields() {
 
       <PaletteField />
 
-      {paletteFor(output.palette) === null && (
+      {paletteFor(output.palette) === null && pass === null && (
         <SelectField
           label="Palette Limit"
           tooltip={OUTPUT_TOOLTIPS.paletteLimit}
@@ -97,25 +143,29 @@ export function RenderStyleFields() {
         />
       )}
 
-      <SelectField
-        label="Outline System"
-        tooltip={OUTPUT_TOOLTIPS.outlineStyle}
-        value={output.outlineStyle}
-        choices={OUTLINE_STYLE_CHOICES}
-        onChange={(value) => {
-          setOutputField('outlineStyle', value);
-        }}
-      />
+      {pass === null && (
+        <SelectField
+          label="Outline System"
+          tooltip={OUTPUT_TOOLTIPS.outlineStyle}
+          value={output.outlineStyle}
+          choices={OUTLINE_STYLE_CHOICES}
+          onChange={(value) => {
+            setOutputField('outlineStyle', value);
+          }}
+        />
+      )}
 
-      <SelectField
-        label="Lighting & Shading Model"
-        tooltip={OUTPUT_TOOLTIPS.lightingModel}
-        value={output.lightingModel}
-        choices={LIGHTING_MODEL_CHOICES}
-        onChange={(value) => {
-          setOutputField('lightingModel', value);
-        }}
-      />
+      {!pass?.withholdsLight && (
+        <SelectField
+          label="Lighting & Shading Model"
+          tooltip={OUTPUT_TOOLTIPS.lightingModel}
+          value={output.lightingModel}
+          choices={LIGHTING_MODEL_CHOICES}
+          onChange={(value) => {
+            setOutputField('lightingModel', value);
+          }}
+        />
+      )}
     </>
   );
 }

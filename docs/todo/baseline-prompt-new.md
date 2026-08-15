@@ -231,11 +231,30 @@ prompt that contradicts itself.
 | --- | --- | --- |
 | `HARDWARE_PROFILE` | `NONE` · eighteen machines, from the Atari 2600 to the Neo Geo — see `src/constants/hardware/` | `### Target hardware` in §2, with the machine's constraint list |
 | `PALETTE` | `FREE` · nineteen palettes — see `src/constants/palettes/` | `### Palette` in §2, plus a clause in §0's contract and one in §9's audit |
+| `STYLE_REFERENCE` | `NONE` · the published games in `src/constants/styleReferences/` | `### Art direction reference` in §2, with the look's characteristic list |
+| `NAME_STYLE_REFERENCE` | `false` · `true` | One sentence inside that block naming the game; the characteristics are emitted either way |
 
 Choosing a profile in the studio is a **template**: it writes the render style, surface detail,
 resolution, component size, outline, lighting and palette in one act, and every one of them stays the
 user's to change afterwards. The stored id is what makes the prompt name the machine, which steers a
 generator further than any single figure in the list does.
+
+An **art direction reference** is the third of that family and works the same way, one level up: a
+machine is what the silicon allowed, a reference is what one team did within it. It writes a wider
+settings package — the profile's seven plus the projection, the camera elevation and the machine and
+palette themselves — and then emits the facts none of those fields can hold: the tile grid, the
+resolution the art was authored at, how many facings were drawn against how many the engine mirrored.
+
+**Its characteristics may never restate a setting**, which is the rule that keeps the block safe to
+edit against. A reference is a template, so the settings it wrote are the user's the moment it is
+applied; a characteristic reading "characters are drawn in flat front elevation" would contradict the
+projection line above it as soon as anyone changed that select. So the block states only what has no
+field, and says outright that the settings win where the two ever pull apart.
+
+`NAME_STYLE_REFERENCE` is separate from the reference itself because naming a published game is a
+property of the *target*, not of the sheet: several endpoints refuse or degrade a prompt carrying a
+commercial title, and the characteristics are what actually carry the look. It defaults to off, and
+the sheet is fully specified without it.
 
 A palette is one of two kinds. A **fixed** one is a list — the Game Boy's four greens, the C64's
 sixteen, the 2600's 127 — and every entry is written into the prompt. A **channel-depth** one is a
@@ -327,6 +346,14 @@ and inventory · each component's identity and grid position · the object orien
 is asked for · the fixed camera, one scale and pivot compatibility · subject identity · the render
 style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
 preference never overrules a component's stated direction.
+[IF:VALIDATION_PASS]
+
+**This sheet's render style is a validation pass, and what it states about the surface outranks the
+subject's colour and material attributes.** Section [SEC:STYLE] says what the pass withholds and what
+is drawn in its place; a pass that lost to the colours named above would deliver the finished sheet
+it was run instead of. Everything else in the subject definition keeps the rank the order above
+gives it.
+[/IF]
 
 **An exclusion in section [SEC:EXCLUSIONS] outranks every attribute that asks for the same visible element.**
 Where the subject definition, the render style or any other description names something section [SEC:EXCLUSIONS]
@@ -393,14 +420,24 @@ Where this conflicts with anything above, the identity lock wins.
 ## [SECTION:STYLE]. RENDER STYLE
 
 - Style: [DEFINE:RENDER_STYLE_DESCRIPTION]
+[IF:VALIDATION_PASS!=yes]
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
+[/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
+[IF:VALIDATION_PASS!=yes]
 [IF:PALETTE!=yes]
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]
 [/IF]
 - Edge / outline treatment: [DEFINE:OUTLINE_DESCRIPTION]
+[/IF]
+[IF:LIGHTING_STATED]
 - Lighting model: [DEFINE:LIGHTING_DESCRIPTION]
+[/IF]
+[IF:VALIDATION_PASS]
+
+[DEFINE:VALIDATION_PASS_DESCRIPTION]
+[/IF]
 [IF:HARDWARE_PROFILE]
 
 ### Target hardware — [DEFINE:HARDWARE_NAME]
@@ -419,6 +456,22 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 
 [DEFINE:PALETTE_SPECIFICATION]
 [/IF]
+[IF:STYLE_REFERENCE]
+
+### Art direction reference
+[IF:STYLE_REFERENCE_NAMED]
+
+These components are drawn to match the art direction of [DEFINE:STYLE_REFERENCE_NAME]. Reproduce
+what that artwork measurably does, rather than a general impression of it.
+[/IF]
+
+The look is fixed by the following. Each states something the settings above have no way to say:
+
+[DEFINE:STYLE_REFERENCE_CHARACTERISTICS]
+
+Treat those as measurements and work to them directly. Where one pulls against a setting stated
+earlier in this section, the setting wins — it is what this particular sheet asked for.
+[/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 
 ### Pixel discipline
@@ -435,12 +488,14 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 [OPTIONAL:SMALL_SCALE_DISCIPLINE | [DEFINE:SMALL_SCALE_DISCIPLINE]]
 [/IF]
 [IF:RENDER_STYLE!=PIXEL_ART,RETRO_PIXEL_ART]
+[IF:VALIDATION_PASS!=yes]
 
 ### Surface discipline
 - Keep surface treatment consistent across every component; a technique used on one piece is used
   on all of them.
 - Detail serves silhouette and material read, not density. Preserve readable component scale
   before preserving surface detail.
+[/IF]
 [/IF]
 
 ---

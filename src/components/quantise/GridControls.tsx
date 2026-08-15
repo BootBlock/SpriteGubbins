@@ -45,10 +45,16 @@ interface GridControlsProps {
  * trying first.
  *
  * Colour is *not* one of them: it comes from the studio — a pinned palette, or the colour budget
- * behind it — which is where the prompt that produced this sheet stated it. A second colour control
- * here would be a second source of truth for a value the generation was made against, so it is shown
- * and changed where it is already changed. What is shown is `colorPlan`, the decision the pipeline
- * was handed, rather than the settings behind it: those two parted company once already.
+ * behind it — which is where a sheet's colour policy is set. A second colour control here would be a
+ * second source of truth for a value the generation was made against, so it is shown and changed
+ * where it is already changed. What is shown is `colorPlan`, the decision the pipeline was handed,
+ * rather than the settings behind it: those two parted company once already.
+ *
+ * **The prompt does not always state that policy**, which is why the sentence above stops at the
+ * studio rather than following it to the prompt: a validation render style withholds the sheet's
+ * surface, so section 2 carries no budget line at all. That changes nothing here — the budget still
+ * decides what this tab reduces a returned image to — but it is why a plan naming a budget can sit
+ * beside a prompt that never mentioned one.
  *
  * The grid box is a plain `<input type="number">` rather than `NumberField`, for the one reason that
  * component documents about itself: it is bound to a stored number and refuses an empty value.

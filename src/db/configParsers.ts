@@ -19,6 +19,7 @@ import {
   RENDER_STYLES,
   RESOLUTION_PROFILES,
   RIG_MODES,
+  STYLE_REFERENCE_IDS,
   SURFACE_DETAILS,
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
@@ -157,6 +158,12 @@ export function parseImageConfig(value: unknown): ImageOutputConfig {
       HARDWARE_PROFILE_IDS,
     ),
     palette: pick(source, 'palette', DEFAULT_OUTPUT_CONFIG.palette, PALETTE_IDS),
+
+    // The same fall-back to "none", for the same reason: a stored reference that no longer names a
+    // game must not become a different game. The naming switch is a plain boolean, so anything that
+    // is not one is not a truncated answer to be salvaged — it is no answer, and the default is off.
+    styleReference: pick(source, 'styleReference', DEFAULT_OUTPUT_CONFIG.styleReference, STYLE_REFERENCE_IDS),
+    nameStyleReference: pickBoolean(source, 'nameStyleReference', DEFAULT_OUTPUT_CONFIG.nameStyleReference),
 
     renderStyle: pick(source, 'renderStyle', DEFAULT_OUTPUT_CONFIG.renderStyle, RENDER_STYLES),
     projection: pick(source, 'projection', DEFAULT_OUTPUT_CONFIG.projection, PROJECTIONS),

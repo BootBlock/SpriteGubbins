@@ -36,6 +36,14 @@ export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
   hardwareProfile: 'NONE',
   palette: 'FREE',
 
+  // No reference either, on the same argument: a sheet drawn to match a published game is a specific
+  // request, and defaulting to one would put another game's measurements into every prompt. The
+  // naming switch is off beneath it and stays off — it is inert with no reference to name, and a
+  // reader who does turn it on is asking for a title several targets refuse outright, which is not a
+  // thing to be opted into by a default nobody chose.
+  styleReference: 'NONE',
+  nameStyleReference: false,
+
   renderStyle: 'PIXEL_ART',
   projection: 'THREE_QUARTER_TOPDOWN',
   cameraElevation: DEFAULT_CAMERA_ELEVATIONS.THREE_QUARTER_TOPDOWN,

@@ -8,6 +8,7 @@ import {
   describeDirections,
   describeHardware,
   describePalette,
+  describeStyleReference,
   FRAME_IS_A_COMPONENT,
   isPlanView,
   JOINT_CAP_TEXT,
@@ -25,11 +26,14 @@ import {
   SCALE_EXAMPLE_TEXT,
   smallScaleDiscipline,
   SURFACE_DETAIL_TEXT,
+  VALIDATION_PASS_TEXT,
+  validationPassFor,
 } from '../constants/promptText/index.ts';
 import { fieldLabelFor } from '../constants/categories/index.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
+import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -150,6 +154,15 @@ export function generatePrompt(
   // is a machine — the failure mode being a heading with nothing under it.
   const hardware = hardwareProfileFor(output.hardwareProfile);
   const palette = paletteFor(output.palette);
+  // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
+  // below — the two values and the flag that gates their block — so a heading with nothing under it
+  // is not expressible, exactly as it is not for the two above.
+  const reference = styleReferenceFor(output.styleReference);
+
+  // Whether the render style withholds the surface rather than describing one, and what it withholds.
+  // Read four times below — three conditionals and the paragraph that stands in for the lines they
+  // drop — from one lookup, so the prompt cannot drop a line and then say nothing in its place.
+  const validationPass = validationPassFor(output.renderStyle);
 
   const values: Record<string, string> = {
     CATEGORY: category,
@@ -182,12 +195,19 @@ export function generatePrompt(
     PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
     OUTLINE_DESCRIPTION: OUTLINE_TEXT[output.outlineStyle],
     LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
+    // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
+    // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
+    // is still there to be filled.
+    VALIDATION_PASS_DESCRIPTION: VALIDATION_PASS_TEXT[output.renderStyle],
     SPRITE_TARGET_SIZE: output.spriteTargetSize,
 
     HARDWARE_NAME: hardware?.name ?? '',
     HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
     PALETTE_NAME: palette?.name ?? '',
     PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
+
+    STYLE_REFERENCE_NAME: reference?.name ?? '',
+    STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
 
     PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
     CAMERA_ELEVATION: String(cameraElevation),
@@ -261,6 +281,18 @@ export function generatePrompt(
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
     RIG_MODE: rigMode,
+    // Gates four places at once: the precedence clause in section 0, the three surface lines and the
+    // surface-discipline block in section 2 — negated — and the paragraph that replaces them. One
+    // flag, because a style either states the surface itself or leaves those settings to state it.
+    // The two are answers to the same question, which is why they may not both be printed: a solid
+    // single-colour silhouette arrived under a sixteen-colour floor and an outline promising that
+    // "forms separate by value and hue contrast alone", and no setting a user could reach agreed
+    // with it.
+    VALIDATION_PASS: validationPass === null ? '' : 'yes',
+    // A second, narrower flag, because only one of the two passes takes the light with it. A clay
+    // render is lit — the key light is what makes its volumes readable, which is the whole of what
+    // it is run to check — while a flat fill of one colour has no surface for a light to fall on.
+    LIGHTING_STATED: validationPass?.withholdsLight === true ? '' : 'yes',
     // Read from the resolved profile rather than from the stored id, so a configuration naming a
     // machine this build no longer has emits no heading rather than an empty one — the same
     // reasoning that makes `resolveMode` the single answer about the sheet mode.
@@ -275,6 +307,15 @@ export function generatePrompt(
     // Read through `perComponentLimit` rather than off `colorsPerComponent`, so the gate answers
     // whether the line was *emitted* rather than whether the field was set.
     PALETTE_PER_COMPONENT: palette !== null && perComponentLimit(palette) !== null ? 'yes' : '',
+    // Read from the resolved reference rather than the stored id, for the reason `HARDWARE_PROFILE`
+    // is: a configuration naming a look this build no longer ships emits no heading rather than an
+    // empty one.
+    STYLE_REFERENCE: reference === null ? '' : 'yes',
+    // Nested inside that block in the template, so this only ever decides the naming *sentence* —
+    // never the characteristics, which are what actually carry the look. Conjoined here anyway, so
+    // the compiler's answer does not depend on the template's nesting: this flag means "name a game"
+    // and there is no game to name, which is true of the value whatever encloses it.
+    STYLE_REFERENCE_NAMED: reference !== null && output.nameStyleReference ? 'yes' : '',
     // The rules about views *disagreeing* — landmarks, occlusion, no mirroring, the directional
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.

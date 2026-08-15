@@ -1,9 +1,7 @@
-import { defaultSubjectFor } from '../categories/index.ts';
 import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import type { ImageOutputConfig } from '../../types/output.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
-import { SUBJECT_FIELD_KEYS } from '../../types/subject.ts';
-import type { SubjectCategory, SubjectDefinition } from '../../types/subject.ts';
+import { sparseSubject } from './sparseSubject.ts';
 
 /**
  * Presets encoding the Unsung Saviour art contract, so that project's art can be generated without
@@ -35,19 +33,6 @@ const US_SHARED: ImageOutputConfig = {
   surfaceDetail: 'CLEAN_PRODUCTION',
   aspectRatio: 'SQUARE_1_1',
 };
-
-/**
- * A subject with only the named fields set; everything else stays empty and omits its line.
- *
- * Built by blanking a real `SubjectDefinition` rather than assembling one from `Object.fromEntries`,
- * which would need a cast to claim the result is complete. Here the compiler *checks* it: the
- * starting object is the category's own defaults, so every key is present by construction.
- */
-function sparseSubject(category: SubjectCategory, stated: Partial<SubjectDefinition>): SubjectDefinition {
-  const blank = defaultSubjectFor(category);
-  for (const key of SUBJECT_FIELD_KEYS) blank[key] = '';
-  return { ...blank, ...stated };
-}
 
 export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
   {

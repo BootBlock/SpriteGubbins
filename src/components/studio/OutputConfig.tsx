@@ -16,6 +16,7 @@ import { ProjectionFields } from './ProjectionFields.tsx';
 import { RenderStyleFields } from './RenderStyleFields.tsx';
 import { RiggingFields } from './RiggingFields.tsx';
 import { SheetFields } from './SheetFields.tsx';
+import { StyleReferenceField } from './StyleReferenceField.tsx';
 import { SystemProfileField } from './SystemProfileField.tsx';
 
 /**
@@ -101,13 +102,20 @@ export function OutputConfig() {
       </div>
 
       {/*
-        Above the groups, because it writes into two of them: choosing a machine sets the render
-        style, surface detail, resolution, component size, outline, lighting and palette at once.
-        Folded away inside one group it would be a control that silently changed another group's
+        Above the groups, because both of these write into them: choosing a machine sets the render
+        style, surface detail, resolution, component size, outline, lighting and palette at once, and
+        choosing an art style reference sets those plus the projection and the camera elevation.
+        Folded away inside one group either would be a control that silently changed another group's
         header while that group was shut.
+
+        The reference goes second of the two, and not for want of a better place. It is the wider
+        template — it can write the machine and the palette themselves — so a reader who sets a
+        profile and then a reference gets the reference's answer, which is the one that knows about
+        both. The reverse order would have the narrower control quietly overrule the broader one.
       */}
-      <div className="mb-4 border-b border-foundry-700 pb-4">
+      <div className="mb-4 space-y-4 border-b border-foundry-700 pb-4">
         <SystemProfileField />
+        <StyleReferenceField />
       </div>
 
       {/*
