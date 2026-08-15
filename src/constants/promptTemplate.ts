@@ -40,6 +40,12 @@
  * the citations to be kept in step by hand regardless. **A section number is therefore never written
  * down anywhere in this file** — `promptTemplate.test.ts` fails on one that is.
  *
+ * **A line carrying one of those markers runs past this project's 110 columns, and is left that
+ * way.** The marker is a dozen characters in the source and one digit in the output, so the line
+ * breaks here are the breaks the *model* reads: re-wrapping the source to 110 would re-wrap the
+ * emitted paragraphs to something narrower and ragged, and change the prompt for every subject to
+ * tidy a file. Prettier does not reformat inside a template literal, so nothing forces the issue.
+ *
  * **The adherence report is a third mention of those checks, and it deliberately does not restate
  * them.** It points at the layout section's list instead, because the two are asking for different
  * things from the same checks — that list audits *before* delivery so the sheet can still be fixed,
