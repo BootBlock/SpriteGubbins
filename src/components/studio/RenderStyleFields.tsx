@@ -69,6 +69,14 @@ function supersession(pass: ValidationPass | null): string {
  * pinned, and none of the four is touched while a pass is chosen, so the values the user chose are
  * what the sheet falls back to the moment they go back to a finished style — which is the whole
  * workflow a validation pass is for.
+ *
+ * **The two withdrawals of the colour budget are not the same withdrawal**, and the difference is
+ * worth knowing before reading `colorPlanFor`. A pinned palette supersedes the budget *everywhere* —
+ * it is the answer to "which colours may be used", so the quantiser maps onto it and stops counting.
+ * A validation pass supersedes it only *in the prompt*: it says this sheet has no colour to budget,
+ * which is a statement about one sheet rather than about the project's colour policy, and the
+ * quantiser goes on reducing whatever image it is handed to the budget the user set. So the budget
+ * is reached by leaving the pass, exactly as it is reached by clearing the palette.
  */
 export function RenderStyleFields() {
   const output = useOutputStore((state) => state.output);

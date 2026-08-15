@@ -418,6 +418,16 @@ describe('generatePrompt — a render style that withholds the surface', () => {
   const PASSES = RENDER_STYLES.filter((style) => promptText.validationPassFor(style) !== null);
   const FINISHED = RENDER_STYLES.filter((style) => promptText.validationPassFor(style) === null);
 
+  it('has both kinds of style to compare, so nothing below is vacuous', () => {
+    // Every assertion in this suite loops over one of those two lists, and an empty list passes a
+    // loop silently — which would leave the whole section green while checking nothing at all. The
+    // partition is asserted whole rather than by count, so a style that fell out of both is caught
+    // as well as a list that emptied.
+    expect(PASSES.length).toBeGreaterThan(0);
+    expect(FINISHED.length).toBeGreaterThan(0);
+    expect(PASSES.length + FINISHED.length).toBe(RENDER_STYLES.length);
+  });
+
   /**
    * Section 0's clause, quoted whole and with the template's own straight apostrophes.
    *
@@ -445,7 +455,6 @@ describe('generatePrompt — a render style that withholds the surface', () => {
     // surface-detail line asked for interior blocking on a pass defined by having none; and the
     // outline line promised that "forms separate by value and hue contrast alone" on a sheet holding
     // one value and one hue.
-    expect(PASSES.length).toBeGreaterThan(0);
     for (const style of PASSES) {
       const prompt = withStyle(style);
 
