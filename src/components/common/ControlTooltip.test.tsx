@@ -281,6 +281,29 @@ describe('ControlTooltip', () => {
     expect(onClick).toHaveBeenCalledTimes(1);
   });
 
+  it('stays dismissed when Escape lands with a hover already waiting behind the card', async () => {
+    const user = setupUser();
+    renderControl();
+    const wrapper = screen.getByRole('button', { name: 'Copy Prompt' }).parentElement as HTMLElement;
+
+    // Both states at once, which is the combination that makes this reachable: focus reveals the
+    // card immediately, and the pointer then arriving on that same control schedules a hover behind
+    // the card already on screen.
+    await user.tab();
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    fireEvent.mouseEnter(wrapper);
+
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+    await waitOutGracePeriod();
+
+    // The pending hover must not un-dismiss what Escape just dismissed. WCAG 1.4.13 *dismissible*
+    // is about content staying gone until the user asks again, and a timer set before the dismissal
+    // is not the user asking.
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
   it('dismisses on Escape from anywhere, not only while the control is focused', async () => {
     const user = setupUser();
     render(

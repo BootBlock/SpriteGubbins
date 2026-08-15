@@ -153,8 +153,31 @@ export function useTooltipReveal(
   useEffect(() => {
     if (!isVisible) return;
 
+    /**
+     * The same dismissal `dismiss` performs, spelled again here because this effect cannot name it.
+     *
+     * **A dismissal that does not call off a pending hover is not a dismissal**, and with a card
+     * already showing there is a way to have both: focus reveals at once, so a control reached by
+     * Tab shows its guidance, and a pointer arriving on that same control then schedules a hover
+     * behind the visible card. Escape hid it and the timer put it straight back — content dismissed
+     * without a pointer or a keypress to bring it back, which is precisely what WCAG 1.4.13
+     * *dismissible* forbids. Two spellings of "dismiss" where only one cancelled is what allowed it,
+     * so both now do the same two things.
+     *
+     * Declared inside the effect, and touching only refs and the setter, so the dependency list
+     * stays `[isVisible, pressKeepsOpenRef]` — naming the outer `dismiss` would re-register these
+     * document listeners on every render.
+     */
+    const dismissAndCancelHover = () => {
+      if (pendingHoverRef.current !== null) {
+        clearTimeout(pendingHoverRef.current);
+        pendingHoverRef.current = null;
+      }
+      setIsDismissed(true);
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setIsDismissed(true);
+      if (event.key === 'Escape') dismissAndCancelHover();
     };
     // Any press the exempt element does not claim. Outside the wrapper it is plainly a dismissal;
     // *on the card* it is the click the user meant for whatever the card is covering, and standing
@@ -162,7 +185,7 @@ export function useTooltipReveal(
     const onPointerDown = (event: PointerEvent) => {
       const exempt = pressKeepsOpenRef?.current ?? null;
       const isExempt = exempt !== null && event.target instanceof Node && exempt.contains(event.target);
-      if (!isExempt) setIsDismissed(true);
+      if (!isExempt) dismissAndCancelHover();
     };
 
     document.addEventListener('keydown', onKeyDown);
