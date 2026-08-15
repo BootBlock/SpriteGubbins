@@ -1089,8 +1089,8 @@ Emit unmodified. Correct for a conversational model, and the only target that ca
 > `Frame corners ×4`, `Frame edges ×4` and a panel frame, so `--no border` suppresses the sheet's own
 > subject. §0 and §3 were reworded in the same change to ban a frame or border *around the image or
 > around a component* rather than the shapes themselves — annotation, which is what the rule always
-> meant — but `--no` takes bare concepts and cannot carry that qualifier, so the term has to be
-> present or absent rather than qualified. `wrapForMidjourney` now drops `frame, border` when
+> meant — but an entry in `--no` names a thing to avoid and never a *placement*, so the term has to
+> be present or absent rather than qualified. `wrapForMidjourney` now drops `frame, border` when
 > `FRAME_IS_A_COMPONENT[category]` is true, and emits the list above otherwise.
 >
 > This is the same judgement as the `background` bullet above, and it is worth naming as a pattern
@@ -1447,14 +1447,14 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > Four narrower corrections travelled with it, each the same shape:
 >
 > - **`--no shadow` became `--no cast shadow`, and `--no gradient` came out.** Midjourney documents
->   `--no` as a comma-separated list of things to avoid and does not document how it reads a
->   multi-word entry, so each term is chosen to be acceptable under either reading. A cast shadow is
->   the placement §0 forbids: taken whole it stops negating a form shadow, and taken word by word it
->   is no worse than the bare term it replaces. `gradient` cannot take the qualifier it needs, because
->   that word is `background` — which, read word by word, would put the one term the bullet above
->   keeps out of this list back into it, against a sheet built around a keyable background. That loss
->   is unrecoverable rather than a wash, so the gradient claim is the style's own there too, or
->   nothing.
+>   `--no` as a comma-separated list of things to avoid, and at the time this shipped it was not clear
+>   how it reads a multi-word *entry*, so each term was chosen to be acceptable under either reading.
+>   A cast shadow is the placement §0 forbids: taken whole it stops negating a form shadow, and taken
+>   word by word it is no worse than the bare term it replaces. `gradient` cannot take the qualifier
+>   it needs, because that word is `background` — which, read word by word, would put the one term the
+>   bullet above keeps out of this list back into it, against a sheet built around a keyable
+>   background. That loss is unrecoverable rather than a wash, so the gradient claim is the style's
+>   own there too, or nothing.
 > - **Flux's "no shadows" became "no cast shadow"** for a related reason: unqualified, the plural took
 >   the form shadow that gives a component its volume along with the one on the ground.
 > - **SD's `blurry` became the style's `blurred edges`.** It sat inside the run that was replaced, and
@@ -1475,6 +1475,47 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > figure's vocabulary on every category, and that is a gap rather than a contradiction — every other
 > category's §8 excludes characters outright, so those two terms still negate something those sheets
 > genuinely must not contain. Saying it in each category's own words is a separate change.
+
+> **Settled afterwards — Midjourney answers how `--no` reads a multi-word entry, for two different
+> systems: one of them outright, the other from two statements of its own.** The bullet above chose
+> its terms to be acceptable under either reading because neither answer had been found. Both were
+> available:
+>
+> - **What reads the words independently is the moderation system**, and the
+>   [No](https://docs.midjourney.com/hc/en-us/articles/32173351982093-No) page says so outright, with
+>   a multi-word example: `--no modern clothing` "will read that as `no modern` and `no clothing`".
+>   The consequence it documents is a false content warning, not a changed image.
+> - **What gets drawn takes the phrase whole** — an inference across two pages rather than a sentence
+>   to quote. The No page states that "using the `--no` parameter is the same as weighing part of a
+>   multi-prompt to `-0.5`", and
+>   [Multi-Prompts & Weights](https://docs.midjourney.com/hc/en-us/articles/32658968492557-Multi-Prompts-Weights)
+>   gives the substitution — `vibrant tulip fields --no red` is `vibrant tulip fields:: red::-0.5` —
+>   and says what divides one concept from the next, which is `::` and not the space: "if you prompt
+>   `space ship` Midjourney will consider those words together", where `space:: ship` asks it "to
+>   think about `space` and `ship` as distinct elements". An entry with no `::` in it is one segment
+>   at one weight.
+>
+> **The weak link in that chain is a version**, and it is the trap the `--raw` correction above
+> already records. The multi-prompt page scopes itself to "versions 1, 2, 3, 4, Niji 4, 5, Niji 5, 6,
+> Niji 6, and 6.1", which does not include the `--v 8.2` the wrapper pins. The No page is current for
+> that version and restates the `-0.5` equivalence itself, so that half of the chain is
+> version-current; `::` as the divider is not restated anywhere current. It belongs with the flag
+> syntax that wants re-checking when `MIDJOURNEY_VERSION` moves.
+>
+> So `cast shadow` is doing what it was written to do rather than being a wash, and the terms in this
+> list are read as concepts. The moderation reading is not a licence to ignore, though — it is the
+> standing constraint on anything added here: **every word of a multi-word entry has to be one this
+> app is content to have read alone.**
+>
+> One thing this does **not** settle is the `background` bullet further up. Read whole,
+> `gradient background` would not negate the background, so decomposition is no longer what keeps it
+> out — what keeps it out is that bullet, which bans the word rather than the bare term. Whether it
+> still wants to be that wide is a decision to argue against the bullet, and the wrapper's doc
+> comment says the same. As things stand all this channel says about a gradient is the style's own
+> `smooth gradients`, while SD's and Qwen's blocks carry that **and** a `gradient background` of
+> their own on every style — so Midjourney says less than they do in every configuration, and on the
+> three styles whose §2 lines assert nothing about a gradient's absence (`PAINTED_2D`,
+> `RENDERED_3D`, `CLAY_RENDER`) it says nothing at all.
 
 > **Corrected after shipping — that separate change, and the last fixed string in the three
 > channels.** `(assembled character:1.3), (posed figure:1.3)` opened SD's block, `assembled

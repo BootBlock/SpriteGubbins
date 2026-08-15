@@ -9,14 +9,14 @@ import {
   wrapForSeedream,
   wrapForSol,
   wrapForStableDiffusion,
-} from './modelWrapperText.ts';
+} from './modelWrapperText/index.ts';
 
 /**
  * Which wrapper each generator gets.
  *
- * Dispatch only — the text every branch returns lives in `modelWrapperText.ts`, beside the vendor
- * documentation that justifies it. Splitting them keeps this file readable as what it is: the one
- * place to see, at a glance, that every id in `TARGET_MODELS` is accounted for.
+ * Dispatch only — the text every branch returns lives in `modelWrapperText/`, one file per target
+ * beside the vendor documentation that justifies it. Splitting them keeps this file readable as
+ * what it is: the one place to see, at a glance, that every id in `TARGET_MODELS` is accounted for.
  *
  * **Two branches return the prompt unchanged, and that is a finding rather than a gap.** The Gemini
  * image models read the prompt as a specification and think over it, which the *template* adapts to
@@ -38,9 +38,10 @@ export function wrapForModel(
     /**
      * Whether a frame or a border is one of this sheet's components, from `FRAME_IS_A_COMPONENT`.
      *
-     * Only Midjourney reads it, and only because `--no` negates a bare concept where section 0
-     * negates a placement — see `wrapForMidjourney`. It is passed rather than derived here so this
-     * file stays dispatch and knows nothing about categories.
+     * Only Midjourney reads it, and only because `--no` negates a thing where section 0 negates a
+     * *placement* — a limit no entry width gets round, which is what `wrapForMidjourney` says at
+     * length. It is passed rather than derived here so this file stays dispatch and knows nothing
+     * about categories.
      */
     readonly frameIsAComponent: boolean;
     /**
