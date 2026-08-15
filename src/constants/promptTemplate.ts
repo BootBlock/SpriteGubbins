@@ -231,6 +231,22 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 
 [DEFINE:PALETTE_SPECIFICATION]
 [/IF]
+[IF:STYLE_REFERENCE]
+
+### Art direction reference
+[IF:STYLE_REFERENCE_NAMED]
+
+These components are drawn to match the art direction of [DEFINE:STYLE_REFERENCE_NAME]. Reproduce
+what that artwork measurably does, rather than a general impression of it.
+[/IF]
+
+The look is fixed by the following. Each states something the settings above have no way to say:
+
+[DEFINE:STYLE_REFERENCE_CHARACTERISTICS]
+
+Treat those as measurements and work to them directly. Where one pulls against a setting stated
+earlier in this section, the setting wins — it is what this particular sheet asked for.
+[/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 
 ### Pixel discipline

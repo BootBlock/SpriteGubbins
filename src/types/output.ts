@@ -1,5 +1,6 @@
 import type { HardwareProfileId } from './hardware.ts';
 import type { PaletteId } from './palette.ts';
+import type { StyleReferenceId } from './styleReference.ts';
 import type { BackgroundKey, Direction, DirectionSet, Projection, RenderStyle } from './rendering.ts';
 import type { JointCapStyle, OverlapMargin, RigMode } from './rigging.ts';
 
@@ -22,6 +23,8 @@ export type { HardwareProfile, HardwareProfileId, HardwareSettings } from './har
 export { HARDWARE_PROFILE_IDS } from './hardware.ts';
 export type { Palette, PaletteId, PaletteSpace } from './palette.ts';
 export { PALETTE_IDS } from './palette.ts';
+export type { StyleReference, StyleReferenceId, StyleReferenceSettings } from './styleReference.ts';
+export { STYLE_REFERENCE_IDS } from './styleReference.ts';
 
 /**
  * What kind of component set the sheet delivers. The single biggest lever on the prompt: it sets
@@ -218,6 +221,30 @@ export interface ImageOutputConfig {
    * would state a count its own inventory contradicts.
    */
   readonly componentBudget: number;
+
+  /**
+   * The published game whose art direction this sheet is drawn to match, or `NONE`.
+   *
+   * Choosing one in the studio writes the settings package it implies — see `StyleReference` — and
+   * then stays, because what the sheet is *for* outlives the act of setting it up. What it emits is
+   * the look's own measurements: the grid, the figure size, the facings, the contour, the light.
+   * Whether the game is also named is {@link nameStyleReference}'s, which is why the two are separate
+   * fields rather than one nullable name.
+   */
+  readonly styleReference: StyleReferenceId;
+  /**
+   * Whether the compiled prompt names the game {@link styleReference} refers to.
+   *
+   * **Off by default, and the sheet does not depend on it.** The reference's measurements are emitted
+   * either way; this adds the title in front of them, which helps a target that has seen the game and
+   * is refused outright by several that police named commercial properties. So it is the reader's
+   * switch, thrown per sheet against the target they are actually pasting into — not a fact about the
+   * look.
+   *
+   * Inert while {@link styleReference} is `NONE`, exactly as the joint geometry is inert outside a
+   * cut-out rig. The studio says so on the control rather than hiding it.
+   */
+  readonly nameStyleReference: boolean;
 
   /**
    * The machine this sheet is drawn for, or `NONE`.

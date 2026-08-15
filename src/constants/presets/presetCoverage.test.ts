@@ -52,6 +52,15 @@ import { PRESETS } from './index.ts';
  * the control itself. Thirty-seven archetypes to cover eighteen machines and nineteen palettes would
  * demonstrate nothing the user cannot get by opening the list. Their own libraries are held to their
  * own contracts, in `constants/hardware/hardware.test.ts` and `constants/palettes/palettes.test.ts`.
+ *
+ * **`styleReference` is excluded on exactly that argument**, being the third select of that kind: each
+ * entry names a published game, states its own characteristics under the control, and applies the
+ * settings package that goes with it. It is excluded on a second ground the other two do not have —
+ * the library ships a preset per reference already, so a rule here would assert something
+ * `styleReferences.test.ts` states directly and better: that every shipped reference is demonstrated
+ * by a preset naming it. `nameStyleReference` is a boolean the reader throws against whatever target
+ * they are pasting into, and no archetype has an opinion about it — every built-in leaves it off,
+ * which `styleReferences.test.ts` pins.
  */
 
 /** The keys whose whole union has to appear somewhere in the library, with that union. */

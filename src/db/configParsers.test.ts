@@ -186,6 +186,32 @@ describe('parseOutputConfig — the machine and its palette', () => {
     }
   });
 
+  it('keeps a stored art style reference and its naming switch', () => {
+    const parsed = parseOutputConfig({ styleReference: 'CELESTE', nameStyleReference: true });
+    expect(parsed.styleReference).toBe('CELESTE');
+    expect(parsed.nameStyleReference).toBe(true);
+  });
+
+  it('falls back to no reference rather than to some other game', () => {
+    // The same failure the machine and the palette guard against, one control along: a stored
+    // `CHRONO_TRIGGER` becoming `CELESTE` would put another game's measurements into the prompt, and
+    // would name that game to any reader who had the switch on. `NONE` adds nothing, which is the
+    // only honest answer to a value this layer cannot vouch for.
+    for (const stored of ['CHRONO_TRIGGER', 'stardew_valley', 42, null, {}]) {
+      const parsed = parseOutputConfig({ styleReference: stored });
+      expect(parsed.styleReference, `${String(stored)} should not have been accepted`).toBe('NONE');
+    }
+  });
+
+  it('reads the naming switch as off unless it is stored as a boolean', () => {
+    // Not salvaged from a truthy value: `'true'` is a string somebody hand-edited, and reading it as
+    // consent would name a commercial title in a prompt the reader never asked to have it in.
+    for (const stored of ['true', 1, 'yes', null]) {
+      const parsed = parseOutputConfig({ styleReference: 'CELESTE', nameStyleReference: stored });
+      expect(parsed.nameStyleReference, `${String(stored)} should not have been accepted`).toBe(false);
+    }
+  });
+
   it('does not require the two to agree, because the user is free to disagree', () => {
     // A machine's geometry with another machine's colours is a legitimate request the studio can
     // express, so storage must round-trip it rather than "correcting" one to match the other.

@@ -32,6 +32,7 @@ export { smallScaleDiscipline } from './smallScale.ts';
 export { VALIDATION_PASS_TEXT, validationPassFor } from './validationPass.ts';
 export { LIGHTING_TEXT, OUTLINE_TEXT, PALETTE_TEXT } from './palette.ts';
 export { describeHardware, describePalette, perComponentLimit } from './hardware.ts';
+export { describeStyleReference } from './styleReference.ts';
 export {
   DEFAULT_CAMERA_ELEVATIONS,
   DEPTH_ORDER_TEXT,
