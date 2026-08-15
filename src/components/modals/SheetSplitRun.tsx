@@ -124,7 +124,7 @@ export function SheetSplitRun({
         {isOverBudget && <Badge tone="attention">Over budget</Badge>}
       </div>
 
-      {resolveRigMode(category, run.output.rigMode) === 'CUTOUT_RIG' && (
+      {resolveRigMode(category, run.output.directionalMode, run.output.rigMode) === 'CUTOUT_RIG' && (
         <p className="mb-3 text-xs leading-relaxed text-ink-muted">
           {depthOrderText(
             run.assembly,

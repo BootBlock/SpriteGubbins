@@ -62,7 +62,10 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // about how the subject is built, so it does not survive becoming a different kind of subject.
     // `resolveRigMode` keeps a cut-out rig across CHARACTER → CREATURE and drops it to `NONE` on the
     // five categories that articulate about nothing — which is what stops a preset saved after such
-    // a switch persisting a rig its own category has no joints for.
+    // a switch persisting a rig its own category has no joints for. It reads the mode resolved on
+    // the line above rather than the stored one, because the cut-out rig *sheet* decides the rig
+    // outright: a switch that keeps that sheet keeps the rig its inventory is made of, and one that
+    // loses it hands the choice back.
     //
     // And the direction set, the third of these and the last one that used to survive untouched:
     // switching to INTERFACE re-resolved the mode and left `directions` on `THREE_CLASSIC`, so the
@@ -72,7 +75,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     const store = useOutputStore.getState();
     const { output } = store;
     const directionalMode = resolveMode(category, output.directionalMode);
-    const rigMode = resolveRigMode(category, output.rigMode);
+    const rigMode = resolveRigMode(category, directionalMode, output.rigMode);
     const directions = resolveDirectionSet(category, output.directions);
     if (
       directionalMode !== output.directionalMode ||
