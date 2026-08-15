@@ -44,6 +44,8 @@ import { resolveMode, resolveRigMode, sheetPlanFor } from '../constants/sheetPla
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { anatomyFacingsFor, componentBreakdownFor, componentCountFor } from './componentSet.ts';
 import { directionalRotation } from './directionalRotation.ts';
+import { leadingSideLedger } from './leadingSideLedger.ts';
+import { turntableSequence } from './turntableSequence.ts';
 import { describeMirrorPairs, mirrorPairs } from './mirrorPairs.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
@@ -224,6 +226,16 @@ export function generatePrompt(
     // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
     // The elevation goes with them because what a yaw reveals is a function of both.
     DIRECTIONAL_ROTATION: directionalRotation(coveredDirections, cameraElevation),
+    // The same facings related to each other rather than enumerated: cell N + 1 is cell N after a
+    // stated turn. The yaw list above is four independent descriptions, and a generator reads it as
+    // four independent pictures — which is how a sheet comes back with its asymmetries re-decided in
+    // every cell, each view facing correctly and none of them the same object.
+    TURNTABLE_SEQUENCE: turntableSequence(coveredDirections),
+    // Which of the subject's own sides each of those yaws brings towards the camera. Supplied
+    // whether or not the block survives, as `PALETTE_DESCRIPTION` is: the template's own
+    // `[IF:PLAN_VIEW!=yes]` is what decides whether a token remains to be filled, and directly
+    // overhead there is no near side for this to name.
+    LEADING_SIDE_LEDGER: leadingSideLedger(coveredDirections),
     // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
     // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
     MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),

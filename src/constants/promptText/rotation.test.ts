@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Direction } from '../../types/rendering.ts';
-import { DIRECTION_LISTS } from './camera.ts';
+import { signedObjectYaw } from './chirality.ts';
 import { PLAN_VIEW_ELEVATION } from './elevation.ts';
-import { FACING_TEXT, facingText, OBJECT_YAW, PLAN_FACING_TEXT } from './rotation.ts';
+import { FACING_TEXT, facingText, PLAN_FACING_TEXT } from './rotation.ts';
 
 /**
  * What a plan view's facings say, re-derived from the yaw rather than read back.
@@ -45,11 +45,12 @@ const NAME = '(top-left|top-right|bottom-left|bottom-right|top|bottom|left|right
  * The two direction sets turn opposite ways — `west` at 90° faces screen-left where the classic
  * `right side` at 90° faces screen-right, which `FACING_TEXT` states outright — so the sense comes
  * from which set the facing belongs to, and the compass names then land on their own compass points.
+ * {@link signedObjectYaw} is where that sense is recovered, and taking it from there rather than
+ * repeating the `× −1` keeps one statement of it: this suite still checks the *prose* against the
+ * arithmetic, so a sign that flipped in the helper would fail here rather than pass quietly.
  */
 function frontBearing(direction: Direction): string {
-  const classic = (DIRECTION_LISTS.FIVE_CLASSIC as readonly Direction[]).includes(direction);
-  const yaw = OBJECT_YAW[direction] * (classic ? -1 : 1);
-  return atBearing(yaw);
+  return atBearing(signedObjectYaw(direction));
 }
 
 /** The screen direction `degrees` clockwise from the bottom of the frame. */

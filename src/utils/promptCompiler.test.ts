@@ -295,10 +295,11 @@ describe('generatePrompt — numbered lists', () => {
       withOutput({ targetModel: 'CHATGPT_5_6_SOL', renderStyle: 'PIXEL_ART', rigMode: 'POSE_LIBRARY' }),
     );
 
-    expect(numberedRuns(prompt)).toHaveLength(2);
-    // Six in the contract — five fixed plus the pixel-grid rule — and eight in the audit, which is
-    // the run that used to end at 8 with no 7 above it and now carries the component-boundary check.
-    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([6, 8]);
+    expect(numberedRuns(prompt)).toHaveLength(3);
+    // Six in the contract — five fixed plus the pixel-grid rule — eight in the audit, which is the
+    // run that used to end at 8 with no 7 above it and now carries the component-boundary check, and
+    // three in the closing invariants, which this configuration reaches because it is multi-facing.
+    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([6, 8, 3]);
   });
 });
 
@@ -645,13 +646,18 @@ describe('generatePrompt — the adherence report', () => {
   it('numbers itself by what precedes it, so the sections never skip a number', () => {
     // A "## 11." with no 10 above it reads as an authoring error — and the report's own text cites
     // sections back, so a reader who cannot trust the numbering cannot follow the citation either.
+    // The closing invariants section follows the report and takes whatever number is left, which is
+    // what makes the pair worth checking together: two conditional sections in a row.
     const withoutManifest = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
     expect(withoutManifest).toContain('## 10. ADHERENCE REPORT');
-    expect(withoutManifest).not.toContain('## 11.');
+    expect(withoutManifest).toContain('## 11. RENDER-CRITICAL INVARIANTS');
+    expect(withoutManifest).not.toContain('## 12.');
 
     const withManifest = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...CAPABLE, emitManifest: true }));
     expect(withManifest).toContain('## 10. COMPANION MANIFEST');
     expect(withManifest).toContain('## 11. ADHERENCE REPORT');
+    expect(withManifest).toContain('## 12. RENDER-CRITICAL INVARIANTS');
+    expect(withManifest).not.toContain('## 13.');
   });
 
   it('names the second deliverable in the closing line rather than ending on the image alone', () => {
@@ -840,12 +846,17 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(prompt).toContain('### Directional audit');
   });
 
-  it('names the reflection pair a cardinal sheet holds, in section 3 and in the audit', () => {
+  it('names the opposite-turn pair a cardinal sheet holds, in section 3 and in the audit', () => {
     // The counterfeit the yaw fix cannot catch: a `west` view flipped is a counterfeit `east`,
     // facing exactly where the audit's other checks require — the reported failure being side
     // views that came back as mirror images, with the subject's one-sided features on both sides.
     // Only a sheet holding both members of such a pair can be cheated this way, so the rule names
     // the pair it carries.
+    //
+    // **It names them as opposite turns and never as reflections**, which is the second half of the
+    // same report: the old wording opened "this sheet pairs views that are each other's reflection"
+    // and then spent five lines forbidding the substitution it had just affirmed. Every surviving
+    // mention of reflecting is a prohibition, so the affirmative form is asserted absent.
     const cardinals = generatePrompt(
       'CHARACTER',
       SUBJECT,
@@ -853,9 +864,10 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     );
 
     expect(cardinals).toContain(
-      "**This sheet pairs views that are each other's reflection** — west and east —",
+      '**This sheet holds both members of an opposite-turn pair** — west and east —',
     );
     expect(cardinals).toContain('- Neither member of a pair — west and east — is the other reflected');
+    expect(cardinals).not.toMatch(/views that are each other’s reflection|are each other's reflection/);
   });
 
   it('names both diagonal pairs on the diagonal half of the eight-compass core', () => {
@@ -880,6 +892,62 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
 
     expect(prompt).not.toContain('Neither member of a pair');
     expect(prompt).not.toContain("each other's reflection");
+  });
+
+  it('settles the subject’s own left and right whatever the sheet covers', () => {
+    // The root of the reported failure, and the reason this half is ungated: the specification said
+    // an asymmetric feature must stay on the side it belongs to, and never established a side for it
+    // to stay on. A one-facing run sheet needs it as much as a directional one — a series of eight
+    // runs is eight separate generations, and an undercut nobody assigned a side lands wherever each
+    // of them found convenient.
+    const single = generatePrompt('CHARACTER', SUBJECT, withOutput({ directions: 'SINGLE_FRONT' }));
+
+    expect(single).toContain('### The subject’s own left and right');
+    expect(single).toContain('quarter turn clockwise from its front axis seen from above');
+    expect(single).toContain('choose a side once and hold it for every component and every drawing here');
+    // And the half that is about *this* sheet's turns, which a one-facing sheet has none of.
+    expect(single).not.toContain('### One turntable, not several drawings');
+    expect(single).not.toContain('RENDER-CRITICAL INVARIANTS');
+  });
+
+  it('relates each directional cell to the one before it rather than listing them', () => {
+    // Section 3's yaw list is four independent descriptions, and a generator reads four independent
+    // pictures — which is how a sheet comes back with its asymmetries re-decided in every cell, each
+    // view facing correctly and none of them the same object. The chain says the thing the list
+    // cannot: cell N + 1 is cell N after a stated turn.
+    const diagonals = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+        directions: 'EIGHT_COMPASS',
+        sheetIndex: 1,
+      }),
+    );
+
+    expect(diagonals).toContain('### One turntable, not several drawings');
+    expect(diagonals).toContain('- Start at **south-west**, object yaw 45°.');
+    expect(diagonals).toContain('- Turn that same object a further 90° for **north-west**, object yaw 135°.');
+    expect(diagonals).toContain('- Turn it a further 90° for **south-east**, object yaw 315°.');
+  });
+
+  it('names which side each yaw brings towards the camera, and audits the witness against it', () => {
+    // The mechanical half of the same fix. Naming the near side per facing is what turns "an
+    // asymmetric feature must stay put" into something checkable: the feature is exposed while its
+    // own side leads and reduced once it does not, and equal prominence in two opposite turns is the
+    // reflection the prompt had no way to catch.
+    const cardinals = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' }),
+    );
+
+    expect(cardinals).toContain('### Which side each turn brings towards the camera');
+    expect(cardinals).toContain('- **west** — the subject’s **left** side is the near one');
+    expect(cardinals).toContain('- **east** — the subject’s **right** side is the near one');
+    expect(cardinals).toContain('- **south** — neither side leads');
+    expect(cardinals).toContain('**chirality witness**');
+    expect(cardinals).toContain('Equal prominence in two views leading with opposite');
   });
 
   it('never asks a plan-view sheet for an occlusion its own camera cannot produce', () => {
@@ -907,6 +975,17 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     // And what it asks for instead: the turn is real, it is just in the image plane.
     expect(overhead).toContain('so a turn hides nothing and reveals nothing');
     expect(overhead).toContain('The rear view is the same top surface turned end for end');
+
+    // The near-side ledger is the same claim one section up, and it goes for the same reason: from
+    // the vertical there is no near side to name. What survives is the chirality the plan view still
+    // has — the side a feature belongs to, and the witness traced through the frame rather than
+    // through occlusion.
+    expect(overhead).not.toContain('### Which side each turn brings towards the camera');
+    expect(overhead).not.toContain('is the near one');
+    expect(overhead).not.toContain('Equal prominence in two views leading with opposite');
+    expect(overhead).toContain('### The subject’s own left and right');
+    expect(overhead).toContain('### One turntable, not several drawings');
+    expect(overhead).toContain('**chirality witness**');
   });
 
   it('keeps the occlusion contract everywhere below the vertical', () => {

@@ -477,8 +477,13 @@ earlier in this section, the setting wins — it is what this particular sheet a
 ### Pixel discipline
 - Build every form from deliberate, contiguous pixel clusters placed by intent.
 - No feature smaller than [DEFINE:MIN_FEATURE_SIZE] native pixels.
-- Diagonals use clean, regular staircase patterns. Equivalent edges on matching components — a
-  left-side piece and its right-side counterpart — use identical staircase patterns.
+- Diagonals use clean, regular staircase patterns. Where section [SEC:INVENTORY] lists a piece and its bilateral
+  counterpart as two separate components — a left-side piece and its right-side one — equivalent
+  edges on the two use identical staircase patterns.
+[IF:MULTI_DIRECTION]
+  That is a rule about two different parts, and it never applies to two views of one part: a
+  directional view comes from rotation and occlusion, never from reflecting another view.
+[/IF]
 - No doubled contours, overlapping outline strokes or irregular edge chatter.
 - Do not render materials as microtexture: no scratches, etched strokes, fabric weave, pores,
   grain, crosshatching, repeated reflective streaks, sparkle noise, scattered single-pixel
@@ -519,6 +524,21 @@ about its own local vertical axis beneath that fixed camera. **Camera azimuth is
 is what varies.** Those are two different quantities: "one camera" constrains the first and says
 nothing about the second, so it never means that every component faces the same way.
 
+### The subject’s own left and right
+
+**Every “left” and “right” below is the subject’s own, never the image’s.** Its right is the side a
+quarter turn clockwise from its front axis seen from above, and its left the side a quarter turn
+anticlockwise; both turn with it. A feature on the subject’s left is still on the subject’s left
+after a turn has carried it to the other side of the picture. Where a rule means the image’s sides
+instead it says so — *screen-left*, *the frame’s right*.
+
+**A feature the subject has on one side and not the other belongs to that side, and which side it is
+gets settled before anything is drawn.** Where section [SEC:SUBJECT] names such a feature without saying which
+side carries it, choose a side once and hold it for every component and every drawing here — never
+choosing again per drawing, and never resolving it by giving the subject a matching copy on the other
+side. A one-sided feature stays one-sided, and where a turn takes it out of view, letting it be
+hidden is the correct answer.
+
 ### The object yaws this sheet requires
 
 [DEFINE:DIRECTIONAL_ROTATION]
@@ -533,6 +553,31 @@ markings · the number and placement of every distinctive feature. Only what the
 may change. A feature on the component's left rear stays on its left rear: it lands somewhere
 else on screen after the turn, and it must never migrate, multiply, vanish or be redrawn to make two
 views look different. The variety comes from rotation, not mutation.
+
+### One turntable, not several drawings
+
+The yaws above are frames of **one turntable**: a starting orientation, then that same physical
+object turned further, then turned further again. Take them in that order:
+
+[DEFINE:TURNTABLE_SEQUENCE]
+
+Each drawing is the one before it after the turn stated there — not a fresh design of what its name
+describes. A view worked out from its own name instead is where a component quietly loses the
+arrangement it had one cell earlier, and it is what every check below catches only after the fact.
+[IF:PLAN_VIEW!=yes]
+
+### Which side each turn brings towards the camera
+
+[DEFINE:LEADING_SIDE_LEDGER]
+
+**A one-sided feature is at its most exposed while its own side is the near one, and foreshortened,
+partly occluded or hidden outright once that side has turned away.** That change is what separates
+two opposite turns of an asymmetric object from one drawing and its reflection — it is the whole of
+the difference, and a sheet that omits it has delivered the reflection. A feature that reads at the
+same prominence in a view leading with its side and a view leading with the other has not turned with
+the subject: it has crossed to the other side of it, which makes the second drawing a different
+subject.
+[/IF]
 
 ### Landmarks are the evidence that it rotated
 
@@ -555,12 +600,12 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
 - **A mirrored copy is not a rotation.** Mirroring flips handedness in the image without exposing a
   single surface that turning the component would reveal, so it may never stand in for a turned view.
 [IF:MIRROR_PAIRS]
-- **This sheet pairs views that are each other's reflection** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
-  which is exactly where a mirrored copy is most tempting to substitute. The members of a pair are
-  opposite turns of one object: a feature the subject carries on one side only sits at full
-  prominence in the member that turns that side towards the camera, and the other member keeps at
-  most what its own yaw above leaves visible of it — never the feature at full prominence, flipped.
-  Two views identical up to reflection are one view delivered twice, not two views.
+- **This sheet holds both members of an opposite-turn pair** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
+  whose silhouettes come out roughly complementary on screen, which is exactly where a flipped copy
+  is most tempting to substitute. They are opposite turns of one object and never one another
+  flipped: a feature the subject carries on one side only sits at full prominence in the member that
+  turns that side towards the camera, and the other member keeps at most what its own yaw above
+  leaves visible of it. Two views that match after flipping one are one view delivered twice.
 [/IF]
 [/IF]
 [IF:PLAN_VIEW]
@@ -574,18 +619,25 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   The subject's own left and right come out swapped, so what it produces is a left-handed copy of a
   view this sheet already holds rather than a view of its own.
 [IF:MIRROR_PAIRS]
-- **This sheet pairs views that are each other's reflection** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
-  which is exactly where a mirrored copy is most tempting to substitute, and from directly overhead
-  nothing else in the image contradicts one. The members of a pair are opposite turns of one object,
-  so a feature the subject carries on one side only stays on that side of its own body in both —
-  which puts it above the middle of the frame in one member and below it in the other. Flipping one
-  to make the other leaves it on the same side of that line, on the subject's wrong side.
+- **This sheet holds both members of an opposite-turn pair** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
+  which is exactly where a flipped copy is most tempting to substitute, and from directly overhead
+  nothing else in the image contradicts one. They are opposite turns of one object, so a feature the
+  subject carries on one side only stays on that side of its own body in both — which puts it above
+  the middle of the frame in one member and below it in the other. Flipping one to make the other
+  leaves it on the same side of that line, on the subject's wrong side.
 [/IF]
 [/IF]
 - **Rotation never swaps the subject's own left and right.** Every view is this same subject turned
   through the yaw stated above, so an asymmetric feature stays on the side of the subject it belongs
   to at every one of them; a view that moved one across is a different subject, not a different
   angle.
+- **No view is obtained by flipping, reflecting, symmetry-completing or mirror-redrawing another
+  one.** What each view shows is worked out from that view's own yaw and from nothing else. This is
+  a rule about how a view is *produced*, so it holds even where the result would have looked right.
+- **A one-sided feature is never kept in shot by drawing a second copy of it on the other side.**
+  Where the turn takes that feature away from the camera, occluding it is the correct answer and
+  duplicating it is not: physical continuity outranks a balanced composition, and a symmetrical
+  subject is a different subject.
 
 Each of these is the easy way out of the rules above, and each is a defect: two views of one
 component facing effectively the same way · a "side" view that is the three-quarter view with
@@ -719,9 +771,14 @@ regions · primary colour blocking · large identifying accents · material trea
 to sit beside one drawn on another sheet and read as the same object, and those sheets are separate
 generations with nothing carried between them but the text of the specification. A sheet that is
 consistent within itself and does not match the rest of the series has failed.
+
+**Which side of the subject each one-sided feature sits on is part of what has to match.** Section [SEC:CAMERA]
+settles that before this sheet is drawn, and a side settled the other way round here from the sheet
+before it is a different subject however well the two match in everything else.
 [IF:IDENTITY_LOCK]
 The identity lock in section [SEC:SUBJECT] is the record of what the other sheets actually drew, which is why it
-wins wherever it and the subject definition above it disagree.
+wins wherever it and the subject definition above it disagree. Where it fixes a side, that side is
+already settled and this sheet does not choose one.
 [/IF]
 [/IF]
 
@@ -798,6 +855,16 @@ each of its views and confirm:
 [IF:PLAN_VIEW]
 - The rear view is the same top surface turned end for end: what the front view put towards the
   bottom of the frame points towards the top, and nothing has been redrawn to tell the two apart.
+[/IF]
+- Pick one feature the subject carries on one side and not the other — its **chirality witness** —
+  and trace that one feature through every view of its component. It is on the same physical side of
+  the subject in all of them, and where it lands in the frame follows from that side and the view's
+  own yaw. A subject that is symmetrical throughout has no witness to trace, and this check does not
+  apply to it.
+[IF:PLAN_VIEW!=yes]
+- The witness is at its most visible in the views that turn its side towards the camera, and reduced
+  or gone in the views that turn that side away. Equal prominence in two views leading with opposite
+  sides is a failed rotation, however correctly each of the two faces.
 [/IF]
 [IF:MIRROR_PAIRS]
 [IF:PLAN_VIEW!=yes]
@@ -887,6 +954,22 @@ Close the brief — still inside that same block — with what only you can repo
 were hard to satisfy, which pulled against each other, and which were buried far enough down the
 specification to lose their force. None of that is visible in the image, and it is the most useful
 part of the brief.
+[/IF]
+[IF:MULTI_DIRECTION]
+
+---
+
+## [SECTION:INVARIANTS]. RENDER-CRITICAL INVARIANTS
+
+Restated from section [SEC:CAMERA] because they are what a specification this long loses on the way to the
+image. All three hold of the finished sheet:
+
+[N]. “Left” and “right” are the subject’s own physical sides, never the image’s.
+[N]. Every component the inventory gives more than one direction is one unchanged object, turned
+   through the yaws section [SEC:CAMERA] lists, in the order it lists them.
+[N]. A feature the subject has on one side only stays on that side and changes how much of it shows
+   as the object turns — no view is another view flipped, reflected or symmetry-completed, and
+   nothing is copied onto the far side to keep it in shot.
 [/IF]
 
 Generate the sheet now.
