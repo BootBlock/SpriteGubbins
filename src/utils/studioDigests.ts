@@ -1,5 +1,6 @@
 import { NO_COMPONENT_BUDGET } from '../constants/componentBudget.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
+import { resolveCameraElevation } from '../constants/promptText/index.ts';
 import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
@@ -152,7 +153,10 @@ export function renderStyleDigest(output: OutputConfig): string {
 export function projectionDigest(category: SubjectCategory, output: OutputConfig): string {
   return join([
     output.projection,
-    `${String(output.cameraElevation)}°`,
+    // Resolved through the projection, which is the same sentence again applied to the camera: all
+    // but the angled-overhead projection fix their elevation, so a stored figure outside that range
+    // is one the prompt does not carry.
+    `${String(resolveCameraElevation(output.projection, output.cameraElevation))}°`,
     // The set the sheet is drawn to: the chosen one, narrowed through the category — an INTERFACE
     // draws SINGLE_FRONT whatever a stored THREE_CLASSIC says. The chosen set now steers every
     // mode, so this is a choice being echoed rather than a discarded control being repeated.

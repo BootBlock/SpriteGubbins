@@ -15,6 +15,12 @@ export type MirrorPair = readonly [Direction, Direction];
  * subject's one-sided features sit on, which is why the template's anti-mirroring rules cite the
  * pairs this function finds rather than restating the yaws.
  *
+ * **From directly overhead it passes everything else too.** A plan view has no hidden rear and no
+ * foreshortened front to give the counterfeit away — the only thing left disagreeing with it is
+ * which side of the frame the subject's own left and right land on, so the pair rules are the whole
+ * of the defence there rather than the last of it. Both places that state them have a plan-view
+ * wording for the same reason.
+ *
  * The classic sets can never produce one — they run 0° to 180°, every view right-leading — and 0°
  * and 180° are their own reflections in any set (a mirrored front is still a front), so `front`
  * and `back` never pair. Only the compass sets put a yaw and its reflection on one sheet, and the

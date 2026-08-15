@@ -4,11 +4,12 @@ import {
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,
   CATEGORY_GUARD_TEXT,
-  DEPTH_ORDER_TEXT,
+  depthOrderText,
   describeDirections,
   describeHardware,
   describePalette,
   FRAME_IS_A_COMPONENT,
+  isPlanView,
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
   LIGHTING_TEXT,
@@ -20,6 +21,7 @@ import {
   PROJECTION_TEXT,
   RENDER_STYLE_TEXT,
   RESOLUTION_PROFILE_TEXT,
+  resolveCameraElevation,
   SCALE_EXAMPLE_TEXT,
   smallScaleDiscipline,
   SURFACE_DETAIL_TEXT,
@@ -108,6 +110,15 @@ export function generatePrompt(
   // that catches one.
   const coveredMirrorPairs = mirrorPairs(coveredDirections);
 
+  // Where the camera stands, resolved for the reason the mode above is: the projection *is* a
+  // camera, so all but the angled-overhead one fix the elevation, and a stored configuration can
+  // still be holding a number that projection cannot be drawn at. Section 3 prints the projection
+  // and the elevation as adjacent lines, so an unresolved one is two statements about one camera
+  // that disagree — and it decides section 3's occlusion contract as well, which is a good deal
+  // more than a line of prose: from directly overhead a yaw hides nothing, and the front/rear
+  // occlusions the oblique wording states are exactly what section 9 then audits for.
+  const cameraElevation = resolveCameraElevation(output.projection, output.cameraElevation);
+
   // Which sheet of which batch this configuration is. Every prompt before this one described its
   // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and
   // the assembly capability all read as statements about the finished set — so sheet three
@@ -179,18 +190,22 @@ export function generatePrompt(
     PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
 
     PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
-    CAMERA_ELEVATION: String(output.cameraElevation),
+    CAMERA_ELEVATION: String(cameraElevation),
     DIRECTIONS_DESCRIPTION: describeDirections(coveredDirections),
     // The fix for the defect that made a front-three-quarter, a right-side and a back-three-quarter
     // head come back at the same angle: the facings are stated as object *yaws* beneath a camera the
     // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
-    DIRECTIONAL_ROTATION: directionalRotation(coveredDirections),
+    // The elevation goes with them because what a yaw reveals is a function of both.
+    DIRECTIONAL_ROTATION: directionalRotation(coveredDirections, cameraElevation),
     // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
     // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
     MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),
     LANDMARK_DESCRIPTION: LANDMARK_TEXT[category],
     PRIMARY_DIRECTION: assemblyDirection,
-    DEPTH_ORDER_DESCRIPTION: DEPTH_ORDER_TEXT[assemblyDirection],
+    // A function of the elevation as well as the facing, for the same reason the yaw list is: which
+    // of a subject's pieces renders in front of its body is a near/far question, and directly
+    // overhead there is no near side to answer it with.
+    DEPTH_ORDER_DESCRIPTION: depthOrderText(assemblyDirection, cameraElevation),
 
     BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
     ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
@@ -264,6 +279,13 @@ export function generatePrompt(
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.
     MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
+    // Which of the two things a turn can be said to do. Below the vertical a yaw hides one set of
+    // surfaces and reveals another, and section 3's occlusion rules and section 9's audit of them
+    // both hold; at the vertical the same top surface faces the camera at every yaw, so the pair
+    // become an instruction to produce a difference the stated camera cannot make and a check that
+    // fails the sheet for not producing it. A generator that honours the camera fails the audit, one
+    // that honours the audit abandons the camera, and which arrives is not something the user chose.
+    PLAN_VIEW: isPlanView(cameraElevation) ? 'yes' : '',
     // Narrower than MULTI_DIRECTION for the same reason that flag exists at all: the anti-reflection
     // pair rules only bite where the sheet holds both members of a reflection pair, and on the
     // classic sets — which never do — they would be instruction about views the sheet does not hold.

@@ -1,21 +1,30 @@
 import { resolveDirectionSet } from '../../constants/categoryDirectionSets.ts';
 import { directionSetChoices, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../constants/output/index.ts';
-import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from '../../constants/promptText/index.ts';
+import {
+  cameraElevationRange,
+  DEFAULT_CAMERA_ELEVATIONS,
+  DIRECTION_LISTS,
+  resolveCameraElevation,
+} from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { facingApplies, primaryFacing } from '../../utils/sheetDirections.ts';
 import { NumberField } from '../common/NumberField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
-/** Elevation is degrees above the horizon: below the ground or past vertical is not a camera. */
-const ELEVATION = { min: 0, max: 90, step: 1 } as const;
+/** One degree at a time, over whatever span the chosen projection leaves open. */
+const ELEVATION_STEP = 1;
 
 /**
  * Where the camera stands, and which facings the sheet covers.
  *
- * Choosing a projection moves the elevation with it, because most of the time the projection *is*
- * the answer — a true isometric wants 30°, a pure top-down wants 90°. It stays editable for the
- * cases where a game has its own ground read.
+ * **Choosing a projection sets the elevation, and for all but one projection that is the end of it.**
+ * The two are printed as adjacent lines of section 3, so a free number beside them is two statements
+ * about where one camera stands and nothing checking they agree — `Directly overhead. Only the top
+ * of forms is visible` sat one line above `Camera elevation: 0° above the horizon`. A projection
+ * other than the angled-overhead one *is* a camera geometry, so its elevation is not a second
+ * setting; the angled-overhead one is where a game's own ground read goes, and it takes the span
+ * `cameraElevationRange` leaves it.
  *
  * **The direction set is always on screen, because it now always does something.** A directional
  * core draws the chosen set's facings — splitting into a cardinal and a diagonal sheet on the
@@ -45,6 +54,11 @@ export function ProjectionFields() {
   const directions = resolveDirectionSet(category, output.directions);
   const setChoices = directionSetChoices(category);
 
+  // The elevation the chosen projection can be drawn at, and the one it is holding — resolved for
+  // the same reason the set above is, so the field cannot sit on a number the prompt will not carry.
+  const elevation = cameraElevationRange(output.projection);
+  const fixedElevation = elevation.min === elevation.max;
+
   return (
     <>
       <SelectField
@@ -66,10 +80,15 @@ export function ProjectionFields() {
       <NumberField
         label="Camera Elevation (°)"
         tooltip={OUTPUT_TOOLTIPS.cameraElevation}
-        value={output.cameraElevation}
-        min={ELEVATION.min}
-        max={ELEVATION.max}
-        step={ELEVATION.step}
+        value={resolveCameraElevation(output.projection, output.cameraElevation)}
+        min={elevation.min}
+        max={elevation.max}
+        step={ELEVATION_STEP}
+        disabledReason={
+          fixedElevation
+            ? `${output.projection} is a camera in its own right, and stands at ${String(elevation.min)}°. Choose THREE_QUARTER_TOPDOWN to set the elevation yourself.`
+            : ''
+        }
         onChange={(value) => {
           setOutputField('cameraElevation', value);
         }}

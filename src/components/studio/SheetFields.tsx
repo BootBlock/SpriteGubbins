@@ -80,6 +80,9 @@ export function SheetFields() {
         min={COMPONENT_BUDGET_RANGE.min}
         max={COMPONENT_BUDGET_RANGE.max}
         step={1}
+        // Nothing else on this panel can take the budget over: it is a cap the user sets, and every
+        // configuration has one.
+        disabledReason=""
         onChange={(value) => {
           // A budget is a count of components, and `NumberField` treats `step` as a hint rather
           // than a check — so a typed `42.7` is refused here in the same way it refuses an

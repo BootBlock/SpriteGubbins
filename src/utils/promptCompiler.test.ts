@@ -718,6 +718,88 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(prompt).not.toContain("each other's reflection");
   });
 
+  it('never asks a plan-view sheet for an occlusion its own camera cannot produce', () => {
+    // The defect, reachable in one click from the studio's own defaults: `PURE_TOPDOWN` writes 90°,
+    // and from the vertical the same top surface faces the camera at every yaw. Section 3 went on
+    // promising that the rear view hid what the front presented, and section 9 audited for it — so a
+    // model that honoured the camera failed the audit and one that honoured the audit abandoned the
+    // camera. Both are a wrong sheet, and which arrived was not something the user chose.
+    const overhead = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+        directions: 'FOUR_CARDINAL',
+        projection: 'PURE_TOPDOWN',
+        cameraElevation: 90,
+      }),
+    );
+
+    expect(overhead).toContain('- Camera elevation: 90° above the horizon');
+    expect(overhead).toContain('### Directional audit');
+    expect(overhead).not.toContain('the front is fully presented');
+    expect(overhead).not.toContain('hides the front surfaces the front view presented');
+    expect(overhead).not.toContain('A side view occludes the far side');
+    // And what it asks for instead: the turn is real, it is just in the image plane.
+    expect(overhead).toContain('so a turn hides nothing and reveals nothing');
+    expect(overhead).toContain('The rear view is the same top surface turned end for end');
+  });
+
+  it('keeps the occlusion contract everywhere below the vertical', () => {
+    // One degree short, the camera still has a horizontal component: the yaw hides exactly the
+    // surfaces it hides at eye level, however foreshortened they are. Dropping the contract there
+    // would give up a check the sheet can still be held to.
+    const angled = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+        directions: 'FOUR_CARDINAL',
+        projection: 'THREE_QUARTER_TOPDOWN',
+        cameraElevation: 89,
+      }),
+    );
+
+    expect(angled).toContain('- Camera elevation: 89° above the horizon');
+    expect(angled).toContain('the front is fully presented');
+    expect(angled).toContain('hides the front surfaces the front view presented');
+    expect(angled).not.toContain('so a turn hides nothing and reveals nothing');
+  });
+
+  it('states one camera rather than two that disagree', () => {
+    // The projection and the elevation are adjacent lines of section 3 and both say where the camera
+    // stands, so a stored pairing the projection cannot be drawn at is a prompt contradicting itself.
+    const flat = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ projection: 'ORTHOGRAPHIC_SIDE', cameraElevation: 90 }),
+    );
+
+    expect(flat).toContain(`- Projection: ${promptText.PROJECTION_TEXT.ORTHOGRAPHIC_SIDE}`);
+    expect(flat).toContain('- Camera elevation: 0° above the horizon');
+    expect(flat).not.toContain('90° above the horizon');
+  });
+
+  it('settles a plan-view rig’s depth order by height rather than by facing', () => {
+    // The same defect one section further down: which pieces render in front of the body is a
+    // near/far question, and directly overhead there is no near side to answer it with.
+    const rig = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        rigMode: 'CUTOUT_RIG',
+        directions: 'FOUR_CARDINAL',
+        primaryDirection: 'south',
+        projection: 'PURE_TOPDOWN',
+        cameraElevation: 90,
+      }),
+    );
+
+    expect(rig).toContain(promptText.PLAN_DEPTH_ORDER_TEXT);
+    expect(rig).not.toContain(promptText.DEPTH_ORDER_TEXT.south);
+  });
+
   it('stops the primary assembly direction overriding a stated one', () => {
     // "Primary assembly direction: front-three-quarter" is the instruction that biased every
     // component back towards the one view the model already preferred.

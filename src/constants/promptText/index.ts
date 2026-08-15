@@ -31,14 +31,16 @@ export {
 export { smallScaleDiscipline } from './smallScale.ts';
 export { LIGHTING_TEXT, OUTLINE_TEXT, PALETTE_TEXT } from './palette.ts';
 export { describeHardware, describePalette, perComponentLimit } from './hardware.ts';
+export { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS, describeDirections, PROJECTION_TEXT } from './camera.ts';
+export { DEPTH_ORDER_TEXT, depthOrderText, PLAN_DEPTH_ORDER_TEXT } from './depthOrder.ts';
 export {
-  DEFAULT_CAMERA_ELEVATIONS,
-  DEPTH_ORDER_TEXT,
-  DIRECTION_LISTS,
-  describeDirections,
-  PROJECTION_TEXT,
-} from './camera.ts';
-export { FACING_TEXT, LANDMARK_TEXT, OBJECT_YAW } from './rotation.ts';
+  cameraElevationRange,
+  isPlanView,
+  PLAN_VIEW_ELEVATION,
+  resolveCameraElevation,
+} from './elevation.ts';
+export { FACING_TEXT, facingText, OBJECT_YAW, PLAN_FACING_TEXT } from './rotation.ts';
+export { LANDMARK_TEXT } from './landmarks.ts';
 export { ASPECT_TEXT, BACKGROUND_KEY_TEXT } from './sheet.ts';
 export { SCALE_EXAMPLE_TEXT } from './subject.ts';
 export { JOINT_CAP_TEXT, OVERLAP_MARGIN_TEXT } from './rigging.ts';

@@ -151,17 +151,19 @@ readability is the thing that actually determines whether a sprite works at 96 p
 
 Was hardcoded, and hardcoded *contradictorily* — see §8.2.
 
-| Value | Description emitted | Typical elevation |
+| Value | Description emitted | Elevation |
 | --- | --- | --- |
-| `THREE_QUARTER_TOPDOWN` | Angled overhead. Both the top and the camera-facing vertical surfaces of forms are visible; the vertical screen axis carries both height and depth | 30–45° |
+| `THREE_QUARTER_TOPDOWN` | Angled overhead. Both the top and the camera-facing vertical surfaces of forms are visible; the vertical screen axis carries both height and depth | 1–89°, default 35° |
 | `PURE_TOPDOWN` | Directly overhead. Only the top of forms is visible | 90° |
 | `TRUE_ISOMETRIC` | 2:1 diamond isometric, equal foreshortening on both ground axes | 30° |
 | `DIMETRIC_2_1` | Two-axis dimetric with unequal foreshortening | 26.57° |
-| `OBLIQUE_45` | Front face undistorted, depth projected at 45° | n/a |
+| `OBLIQUE_45` | Front face undistorted, depth projected at 45° | 0° |
 | `ORTHOGRAPHIC_SIDE` | Flat side elevation, no perspective. Platformer convention | 0° |
 | `ORTHOGRAPHIC_FRONT` | Flat front elevation, no perspective | 0° |
 
-`CAMERA_ELEVATION` is a number in degrees, defaulting per projection and overridable.
+`CAMERA_ELEVATION` is a number in degrees, and only the first row leaves it open — every other
+projection above **is** a camera geometry, so its elevation is that geometry's rather than a second
+setting beside it. Both were independent when this shipped, which is R6 in §8.
 
 ### `DIRECTIONS` — **NEW**
 
@@ -316,7 +318,7 @@ to report, never a conflict to rank.
 **A component the inventory lists in more than one direction is one component, drawn once per
 direction.** Each of those drawings is that same geometry turned to the object yaw section [SEC:CAMERA] gives
 it — never one view repeated, never a mirrored copy, never the same view with its details moved.
-Section [SEC:CAMERA] states how far each turn goes and what it must reveal; this is the contract that the turns
+Section [SEC:CAMERA] states how far each turn goes and what it must show; this is the contract that the turns
 happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
@@ -485,15 +487,16 @@ trail if it moved forward. For this subject: [DEFINE:LANDMARK_DESCRIPTION]
 Those landmarks turn with the component. **If a component's front axis still points roughly the same
 way on screen in two of its views, that pair has failed** and must be redrawn.
 
-### Silhouette and occlusion carry the direction
+### Silhouette and rotation carry the direction
 
 - Reduced to flat black silhouettes, the views would still be individually identifiable. Direction
   comes from rotated geometry, never from different highlights, markings, glow or rearranged small
   details.
+[IF:PLAN_VIEW!=yes]
 - Rotation changes what is visible. A side view occludes the far side's features and foreshortens
-  what is left of the front. A rear view hides most of what a front view presented and gives the
-  rear surfaces the room they lose there. **A rear view showing as much of the front as the front
-  view does is a failed rotation**, not a stylistic choice.
+  what is left of the front. A rear view shows the rear surfaces a front view hid and gives them the
+  room the front loses there. **A rear view still presenting the surfaces the front view presented
+  is a failed rotation**, not a stylistic choice.
 - **A mirrored copy is not a rotation.** Mirroring flips handedness in the image without exposing a
   single surface that turning the component would reveal, so it may never stand in for a turned view.
 [IF:MIRROR_PAIRS]
@@ -504,15 +507,35 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   most what its own yaw above leaves visible of it — never the feature at full prominence, flipped.
   Two views identical up to reflection are one view delivered twice, not two views.
 [/IF]
-- **Rotation never swaps the subject's own left and right.** A right-side view is this same subject
-  turned until its right side faces the camera; asymmetric features stay on the side of the subject
-  they belong to at every yaw.
+[/IF]
+[IF:PLAN_VIEW]
+- **This camera is directly overhead, so a turn hides nothing and reveals nothing.** Every view shows
+  the same top surface, and the direction is carried by where that surface points: the component
+  turns within the image plane, and its front and rear ends, its two flanks and every asymmetry it
+  carries turn with it. **A view whose top surface points the way another's does is a failed
+  rotation**, not a stylistic choice.
+- **A mirrored copy is not a rotation.** Mirroring turns nothing: it swaps the subject's own left and
+  right about a front axis that has not moved, so what it produces is a left-handed copy of a view
+  this sheet already holds rather than a view of its own.
+[IF:MIRROR_PAIRS]
+- **This sheet pairs views that are each other's reflection** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
+  which is exactly where a mirrored copy is most tempting to substitute, and from directly overhead
+  nothing else in the image contradicts one. The members of a pair are opposite turns of one object,
+  so a feature the subject carries on one side only stays on that side of its own body in both and
+  therefore lands on opposite sides of the frame. A member produced by flipping the other puts that
+  feature on the subject's wrong side.
+[/IF]
+[/IF]
+- **Rotation never swaps the subject's own left and right.** Every view is this same subject turned
+  through the yaw stated above, so an asymmetric feature stays on the side of the subject it belongs
+  to at every one of them; a view that moved one across is a different subject, not a different
+  angle.
 
 Each of these is the easy way out of the rules above, and each is a defect: two views of one
 component facing effectively the same way · a "side" view that is the three-quarter view with
-altered details · a rear view still presenting its front · a view produced by mirroring
-another · a view produced by moving the camera · direction signalled by changing details while the
-orientation stays put.
+altered details · a rear view that is the front view with its details moved · a view produced by
+mirroring another · a view produced by moving the camera · direction signalled by changing details
+while the orientation stays put.
 
 ### What "primary assembly direction" means
 
@@ -711,14 +734,29 @@ Then, for every component the inventory asks for in more than one direction, tra
 each of its views and confirm:
 
 - The front axis points a visibly different way in each view.
-- The side view reads as a side, not as a second three-quarter view.
-- The rear view hides most of what the front view presented, and shows rear surfaces in its place.
+- The side view is a full quarter turn from the front, not a second three-quarter view.
+[IF:PLAN_VIEW!=yes]
+- The rear view hides the front surfaces the front view presented, and shows rear surfaces in their
+  place.
+[/IF]
+[IF:PLAN_VIEW]
+- The rear view is the same top surface turned end for end: what the front view put towards the
+  bottom of the frame points towards the top, and nothing has been redrawn to tell the two apart.
+[/IF]
 [IF:MIRROR_PAIRS]
+[IF:PLAN_VIEW!=yes]
 - Neither member of a pair — [DEFINE:MIRROR_PAIRS_DESCRIPTION] — is the other reflected: every
   feature the subject carries on one side only sits at full prominence in the member that turns
   that side towards the camera, and appears in the other only as far as its yaw in section [SEC:CAMERA]
   allows. A pair identical up to mirroring is a failed rotation, however correctly each member
   faces.
+[/IF]
+[IF:PLAN_VIEW]
+- Neither member of a pair — [DEFINE:MIRROR_PAIRS_DESCRIPTION] — is the other reflected: a feature
+  the subject carries on one side only lands wherever that member's own yaw in section [SEC:CAMERA] puts
+  that side of the body, which is opposite sides of the frame in the two of them. A pair identical
+  up to mirroring is a failed rotation, however correctly each member points.
+[/IF]
 [/IF]
 - Every view is the same geometry at the same scale through the same unmoved camera, differing by
   rotation rather than by redesign.
@@ -1473,6 +1511,36 @@ outright that an exclusion never deletes an inventory entry — the entry is dra
 excluding one of its own components is a contradiction the *sheet* should survive rather than obey.
 It is unconditional, unlike R4's tripwire: this one asks for a drawing decision rather than a report,
 so a target with no text channel needs it just as much.
+
+**R6. R1's occlusion half is false from directly overhead, and §9 audits for it anyway.** The yaw
+list states each facing as a rotation *and* as a claim about what that rotation hides — "the front is
+fully presented", "the left side is completely hidden", "no front-facing feature is visible at all" —
+and every one of those is true at any elevation below the vertical and of none at it. From 90° the
+same top surface faces the camera at every yaw: the views differ by an in-plane rotation and nothing
+else. §3 went on promising a front/rear difference the stated camera cannot produce, and §9's
+directional audit then failed the sheet for not delivering it, so a generator honouring the camera
+failed the audit and one honouring the audit abandoned the camera. `PURE_TOPDOWN` is one click from
+the studio's own defaults and writes exactly that elevation, and the earlier note that "the
+projection decides how much apparent turn a given yaw produces" covers only the *turn*, never the
+occlusion.
+
+So the occlusion prose is now a function of the facing **and** the elevation, which is what R1's flat
+`Record<Direction, string>` could not express: `PLAN_FACING_TEXT` states where each yaw points in the
+frame and where the subject's own two sides land, the §3 rules and the §9 audit item that speak of
+hidden and presented surfaces have plan-view counterparts about in-plane rotation, and §5's depth
+order — a near/far question with no near side left to answer it — becomes one line about height above
+the ground. The area-flavoured wording went with it: "hides most of what a front view presented" is a
+claim about *how much of the image* a surface occupies, which the elevation changes continuously, so
+both halves now name the surfaces instead.
+
+**Two controls described one camera, and could disagree outright.** The second half of the same
+defect: the projection's own sentence and the elevation are adjacent lines of §3, and the number was
+free across 0–90° whatever the projection said, so `Directly overhead. Only the top of forms is
+visible` could sit one line above `Camera elevation: 0° above the horizon`. Every projection but the
+angled-overhead one *is* a camera geometry, so it now fixes the elevation — an isometric at 40° is
+not isometric — and only `THREE_QUARTER_TOPDOWN`, whose description is satisfied by any elevation
+strictly between the two extremes, leaves it open. That also makes the vertical reachable from
+exactly one projection, which is the projection that names it.
 
 ---
 
