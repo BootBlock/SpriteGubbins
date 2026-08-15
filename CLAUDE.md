@@ -769,6 +769,17 @@ three-word stub, prose shape, the punctuation above, and that no two controls sh
 which is the copy-paste that leaves one of them describing the other and is invisible in review.
 Whether the words are *true* is still yours.
 
+**It finds the guidance rather than listing it**, because guidance is filed in two places and a
+hand-kept walk only ever tracked one. Its imports were the six sets in `src/constants/tooltips/`,
+which left 190 entries unchecked — every setting's guidance, filed beside its options — and two
+straight apostrophes in `ATLAS_TOOLTIPS` reached the bundle past the assertion written to catch
+them. So every `*_TOOLTIPS` record under `src/constants/` is discovered by an `import.meta.glob`,
+and a set named that way which is *not* a record of sentences fails rather than being skipped. **A
+new set is checked the moment it is named**, wherever it is filed — but only the record shape is
+discoverable, so guidance that comes from a function or hangs off a list (`accentSwatchGuidance`,
+`APP_TAB_CHOICES`, a category's sixteen fields) is still named in that file, and a new shape of
+guidance has to be added to the walk by hand.
+
 ## Prompt text is the product, and it is written to rules
 
 The app's whole output is prompt text for image-generation models, and that text is a **contract,
