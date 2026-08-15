@@ -1644,23 +1644,36 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > now rests on, because the argument that originally produced it no longer holds: the bullet further
 > up removed a **bare** `background` entry, which is unarguable, and the width came later.
 >
-> **The rule this list is actually kept to is that every term in it has to be safe under *both*
-> readings of a multi-word entry**, and `gradient background` is the only candidate that is not.
-> `cast shadow` is: read whole it qualifies, and read word by word it is no worse than the bare
-> `shadow` it replaced — so if the atomicity inference is wrong, that term costs nothing.
-> `gradient background` decomposed puts `-0.5` on the colour the whole sheet is registered against.
+> **What keeps `gradient background` out is what a wrong answer would cost**, and that is worth
+> stating carefully, because the tempting version of it is false. The list carries four multi-word
+> entries and **not one of them is safe read word by word** — the rule is not that they are.
+> `cast shadow` decomposes to the bare `shadow` it replaced, which is a wash. `blurred edges` and
+> `anti-aliased edges` decompose to a bare `edges` at `-0.5`, on exactly the styles whose §2 line
+> asserts a hard one, and `smooth gradients` to a bare `smooth`. Those three risks are real.
 >
-> **What decides it is that asymmetry, not the balance of evidence.** Three things make the two
-> outcomes incomparable rather than merely unequal:
+> **What separates them from this one is kind, not size.** All three return a sheet that argues with
+> its own style statement and comes back softer than it was asked for — a degraded sheet, and a
+> degraded sheet can be generated again. `gradient background` decomposed puts `-0.5` on the colour
+> the whole sheet is registered against, and an unkeyable sheet is not a worse result but a useless
+> one: the compositing step it exists for cannot be run at all.
+>
+> **So it is the recoverability that decides it, not the balance of evidence**, and two further facts
+> are why that has to do the work:
 >
 > - **The atomicity half of the chain is the half nothing current states.** What makes an entry one
 >   concept is `::` being the divider rather than the space, and that is only on the multi-prompt
 >   page, which scopes itself away from the pinned `--v 8.2`. The note above records this; it is the
 >   same trap as `--style raw`.
-> - **The flag is unverifiable without a subscription**, so a wrong answer is not something this
->   repository would find out about from its own tests.
-> - **The failure is unrecoverable rather than a wash.** Every other risk in this list degrades a
->   sheet; this one returns a sheet that cannot be keyed, which is what the whole design rests on.
+> - **The flag is unverifiable without a subscription**, so this is a risk the repository cannot
+>   retire by testing — no gate here will ever report it.
+>
+> Where being wrong degrades a sheet, that is worth accepting for a term that earns its place; where
+> it destroys one, it is not.
+>
+> **One correction this carries with it.** The note above says of the bullet that it "bans the word
+> rather than the bare term" — that describes the rule as it stood, not the bullet, which removed a
+> bare entry and said nothing about the word. Both statements are left where they are, per the rule
+> against rewriting a plan's history; this is where the two are reconciled.
 >
 > So the ban is on the **word**, and it is not a claim about how `--no` reads. Better evidence that
 > entries are atomic does not on its own reopen it — what would is that evidence arriving as a page

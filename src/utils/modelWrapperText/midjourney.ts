@@ -75,19 +75,29 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * `gradient` came out under the earlier reading and stays out under this one, on an argument that had
  * to be replaced rather than restated. The qualifier it needs is `background`, and decomposition is
  * no longer what keeps `gradient background` out: read whole, it would not negate the background at
- * all. What keeps it out is that **every term here has to be safe under *both* readings**, and it is
- * the one candidate that is not. `cast shadow` is — taken whole it qualifies, and taken word by word
- * it is no worse than the bare `shadow` it replaced, so the inference costs nothing if it is wrong.
- * `gradient background` decomposed puts -0.5 on the colour the whole sheet is registered against.
+ * all. What keeps it out is **what the wrong answer would cost**, which is the one thing that sets
+ * this entry apart from the rest of the list.
  *
- * **The asymmetry is what decides it, not the balance of evidence**, and that is deliberate. What
- * makes an entry atomic is `::` being the divider rather than the space, and that is precisely the
- * statement the version note above finds nowhere current for `--v 8.2`; the flag is unverifiable
- * without a subscription; and a sheet that comes back with no key colour is not a degraded result
- * but an unusable one. So the word-level ban is **precautionary**, and it is not a claim about how
- * `--no` reads — better evidence that entries are atomic does not on its own reopen it. What would
- * is that evidence arriving as a page current for the pinned version, or the failure ceasing to be
- * unrecoverable. That decision is recorded in `docs/todo/baseline-prompt-new.md` §7.
+ * The list carries four multi-word entries and none of them is safe read word by word — the rule is
+ * not that they are. `cast shadow` decomposes to the bare `shadow` it replaced, which is a wash.
+ * `blurred edges` and `anti-aliased edges` decompose to a bare `edges` at -0.5, on exactly the
+ * styles whose section 2 line asserts a hard one, and `smooth gradients` to a bare `smooth`. Those
+ * three are real, and they are all the **same kind** of wrong: a sheet that argues with its own
+ * style statement and comes back softer than it was asked for. That is a degraded sheet, and a
+ * degraded sheet can be generated again. `gradient background` decomposed puts -0.5 on the colour
+ * the whole sheet is registered against, and an unkeyable sheet is not a worse result but a useless
+ * one — the compositing step it exists for cannot be run at all.
+ *
+ * **So it is the recoverability that decides it, not the balance of evidence**, and that is
+ * deliberate. What makes an entry atomic is `::` being the divider rather than the space, which is
+ * precisely the statement the version note above finds nowhere current for `--v 8.2`, and the flag
+ * is unverifiable without a subscription — so this is a risk the repository cannot retire by
+ * testing. Where being wrong degrades a sheet, that is worth accepting for a term that earns its
+ * place; where it destroys one, it is not. The word-level ban is therefore **precautionary**, and
+ * not a claim about how `--no` reads: better evidence that entries are atomic does not on its own
+ * reopen it. What would is that evidence arriving as a page current for the pinned version, or the
+ * failure ceasing to be unrecoverable. That decision is recorded in
+ * `docs/todo/baseline-prompt-new.md` §7.
  *
  * What it costs is small, and worth naming rather than leaving to be rediscovered. The gradient
  * claim is the sheet's own, spliced in from `RENDER_STYLE_SURFACE`: `smooth gradients`
