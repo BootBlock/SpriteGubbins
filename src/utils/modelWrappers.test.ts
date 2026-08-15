@@ -9,6 +9,7 @@ import type { OutputConfig } from '../types/output.ts';
 import { RENDER_STYLES } from '../types/rendering.ts';
 import type { RenderStyle } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
+import type { SubjectCategory } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
 
 /**
@@ -23,6 +24,24 @@ const SUBJECT = DEFAULT_PRESET.subject;
 
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };
+}
+
+/**
+ * The `--no` flag's entries, split the way Midjourney documents them — on the comma, so a two-word
+ * entry stays one entry. Asserting the flag line as a string instead is what lets `cast shadow`
+ * satisfy a check written to forbid `shadow`.
+ */
+function negatedByMidjourney(
+  renderStyle: RenderStyle,
+  category: SubjectCategory = 'CHARACTER',
+): readonly string[] {
+  const prompt = generatePrompt(
+    category,
+    defaultSubjectFor(category),
+    withOutput({ targetModel: 'MIDJOURNEY', renderStyle }),
+  );
+  const flag = /--no ([^\n]+)/.exec(prompt);
+  return flag?.[1]?.split(', ') ?? [];
 }
 
 describe('wrapForModel', () => {
@@ -43,8 +62,6 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('--s 50');
     // `--sw` is style-reference weight and does nothing without an accompanying `--sref`.
     expect(prompt).not.toContain('--sw');
-    // Excluding "background" would risk losing the key colour the sheet is built around.
-    expect(prompt).not.toMatch(/--no[^\n]*background/);
     // Raw mode beside the version that takes it: the flag is `--raw` on the V8 line this pins and
     // `--style raw` on V7, and the two were out of step until it was checked. Asserted adjacent to
     // `MIDJOURNEY_VERSION` because that is the pairing — either half moving alone is the defect.
@@ -54,7 +71,8 @@ describe('wrapForModel', () => {
 
   it('stops excluding a frame on the one category whose components are frames', () => {
     // Section 0 forbids a frame or border "around the image or around a component", which is
-    // annotation. `--no` takes bare concepts and cannot carry that qualifier, so on an INTERFACE
+    // annotation. An entry in `--no` names a thing to avoid and never a placement — a limit no
+    // entry width gets round, unlike the one `cast shadow` answers — so on an INTERFACE
     // sheet the flag would suppress the panel edges section 4 asks for — the same judgement that
     // already keeps `background` out of the list. Both directions are asserted, because a wrapper
     // that dropped the terms for everyone would pass a one-sided check.
@@ -292,18 +310,8 @@ describe('what a wrapper says about the surface', () => {
     // the form shadow and the material shading `RENDERED_3D` asks for. `shadow` qualifies to the
     // placement section 0 forbids; `gradient` cannot, because the qualifier it needs is the one word
     // this list may never carry — so it becomes the style's own claim or nothing.
-    const negatedFor = (renderStyle: RenderStyle): readonly string[] => {
-      const prompt = generatePrompt(
-        'CHARACTER',
-        SUBJECT,
-        withOutput({ targetModel: 'MIDJOURNEY', renderStyle }),
-      );
-      const flag = /--no ([^\n]+)/.exec(prompt);
-      return flag?.[1]?.split(', ') ?? [];
-    };
-
-    expect(negatedFor('RENDERED_3D')).toEqual(['text', 'labels', 'cast shadow', 'frame', 'border']);
-    expect(negatedFor('PIXEL_ART')).toEqual([
+    expect(negatedByMidjourney('RENDERED_3D')).toEqual(['text', 'labels', 'cast shadow', 'frame', 'border']);
+    expect(negatedByMidjourney('PIXEL_ART')).toEqual([
       'text',
       'labels',
       'cast shadow',
@@ -313,11 +321,36 @@ describe('what a wrapper says about the surface', () => {
       'frame',
       'border',
     ]);
-    // Term by term as well as by the whole list, because "cast shadow" contains the bare term the
-    // qualifier was added to remove — which is exactly how a check on this can pass while wrong.
-    for (const renderStyle of RENDER_STYLES) {
-      expect(negatedFor(renderStyle), renderStyle).not.toContain('shadow');
-      expect(negatedFor(renderStyle), renderStyle).not.toContain('gradient');
+  });
+
+  it('reads each Midjourney negative as one whole entry, as `--no` is documented to', () => {
+    // The resolved answer this pins, in place of the hedge it replaces: a `--no` entry is one
+    // multi-prompt segment at -0.5, and `::` rather than the space is what divides one concept from
+    // the next, so a two-word entry is read whole by the model that draws the sheet. That is what
+    // makes `cast shadow` a qualification rather than a wash — it has to survive as *one* entry,
+    // because the bare term it replaces is a substring of it and is exactly what a check on the
+    // whole flag line would miss.
+    //
+    // Swept over every render style and every category, because the list is assembled from three
+    // per-configuration sources — the style's surface terms and the frame gate either side of it —
+    // and each of the rules below is a claim about the whole configuration space rather than about
+    // the default one.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const renderStyle of RENDER_STYLES) {
+        const entries = negatedByMidjourney(renderStyle, category);
+        const where = `${category} / ${renderStyle}`;
+
+        expect(entries, where).toContain('cast shadow');
+        expect(entries, where).not.toContain('shadow');
+        expect(entries, where).not.toContain('gradient');
+        // The standing rule of this list, which no configuration may reach around: the sheet is
+        // built on a keyable background, and losing it is the one failure here that cannot be
+        // recovered from. Held against every word of every entry rather than the bare term, which
+        // is the wider of the two readings and the one §7 of the plan document states.
+        for (const entry of entries) {
+          expect(entry.split(' '), `${where} / ${entry}`).not.toContain('background');
+        }
+      }
     }
   });
 

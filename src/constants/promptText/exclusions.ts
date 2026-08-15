@@ -157,9 +157,10 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * drawn around one.
  *
  * Read in exactly one place, and it exists because that place cannot say what section 0 says.
- * Midjourney's `--no` takes bare concepts, so the wrapper cannot express "no border **around the
- * image or around a component**" — the term is either in the negative prompt and suppressing the
- * subject, or out of it. For every category but one a border is only ever the decorative surround a
+ * Midjourney's `--no` takes things to avoid — a multi-word entry is read as one of them, but never
+ * as a *placement* — so the wrapper cannot express "no border **around the image or around a
+ * component**", which is a relation to the rest of the sheet rather than a thing. The term is either
+ * in the negative prompt and suppressing the subject, or out of it. For every category but one a border is only ever the decorative surround a
  * generator adds to a reference sheet, and excluding it does real work; for INTERFACE it is the
  * panel edge the sheet exists to draw, and `--no border` would return a kit of frames with no frames
  * in it.
