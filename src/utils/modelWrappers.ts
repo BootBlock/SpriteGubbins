@@ -37,9 +37,10 @@ export function wrapForModel(
     /**
      * Whether a frame or a border is one of this sheet's components, from `FRAME_IS_A_COMPONENT`.
      *
-     * Only Midjourney reads it, and only because `--no` negates a bare concept where section 0
-     * negates a placement — see `wrapForMidjourney`. It is passed rather than derived here so this
-     * file stays dispatch and knows nothing about categories.
+     * Only Midjourney reads it, and only because `--no` negates a thing where section 0 negates a
+     * *placement* — a limit no entry width gets round, which is what `wrapForMidjourney` says at
+     * length. It is passed rather than derived here so this file stays dispatch and knows nothing
+     * about categories.
      */
     readonly frameIsAComponent: boolean;
     /**

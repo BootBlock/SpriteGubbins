@@ -123,17 +123,29 @@ ${prompt}`;
  * form shadow" is `RENDERED_3D`'s own section 2 line, and a gradient across a form is what that
  * shadow is made of.
  *
- * What decides the two differently is how `--no` reads a multi-word entry, and **Midjourney
- * documents both readings, for two different systems.** What gets *drawn* takes the phrase whole:
- * the `--no` page states that "using the `--no` parameter is the same as weighing part of a
- * multi-prompt to `-0.5`", and the multi-prompt page gives the substitution — `vibrant tulip fields
- * --no red` is `vibrant tulip fields:: red::-0.5` — along with what divides one concept from the
- * next, which is `::` and not the space: "if you prompt `space ship` Midjourney will consider those
- * words together", where `space:: ship` asks it "to think about `space` and `ship` as distinct
- * elements". An entry carrying no `::` is therefore one segment at one weight. What reads the words
- * *independently* is the moderation system, and the same page says so in as many words — `--no
- * modern clothing` "will read that as `no modern` and `no clothing`" — with the documented
- * consequence being a false content warning rather than a changed image.
+ * What decides the two differently is how `--no` reads a multi-word entry, and **Midjourney answers
+ * for two different systems — one of them outright, the other from two statements of its own.**
+ *
+ * The outright half is the moderation system, which reads the words *independently*: the `--no` page
+ * says so in as many words, with a multi-word example — `--no modern clothing` "will read that as
+ * `no modern` and `no clothing`" — and the consequence it documents is a false content warning
+ * rather than a changed image.
+ *
+ * What gets *drawn* takes the phrase whole, and that is an inference across two pages rather than a
+ * sentence to quote. The `--no` page states that "using the `--no` parameter is the same as weighing
+ * part of a multi-prompt to `-0.5`", and the multi-prompt page gives the substitution — `vibrant
+ * tulip fields --no red` is `vibrant tulip fields:: red::-0.5` — along with what divides one concept
+ * from the next, which is `::` and not the space: "if you prompt `space ship` Midjourney will
+ * consider those words together", where `space:: ship` asks it "to think about `space` and `ship` as
+ * distinct elements". An entry carrying no `::` is therefore one segment at one weight.
+ *
+ * **The weak link in that chain is a version, and it is the same trap as `--style raw` above.** The
+ * multi-prompt page scopes itself to "versions 1, 2, 3, 4, Niji 4, 5, Niji 5, 6, Niji 6, and 6.1" —
+ * which does not include the `--v 8.2` this wrapper pins. The `--no` page is current for that
+ * version and restates the `-0.5` equivalence itself, so the half of the chain that ties `--no` to a
+ * multi-prompt segment is version-current; what is not restated anywhere current is `::` as the
+ * divider. When `MIDJOURNEY_VERSION` moves, this belongs with the flag syntax that wants
+ * re-checking.
  *
  * So `shadow` becomes **`cast shadow`**, the placement section 0 actually forbids, and it does what
  * it claims: read as one concept it negates the placement without touching the form shadow beside
@@ -149,11 +161,12 @@ ${prompt}`;
  * and whether that rule still wants to be about the word rather than the bare term is a decision
  * against `docs/todo/baseline-prompt-new.md` §7, not a consequence of this one. Meanwhile the
  * gradient claim is the sheet's own, spliced in from `RENDER_STYLE_SURFACE`: `smooth gradients`
- * where the style states flat fills, and nothing at all where it asks for soft blended forms — which
- * is the same list Stable Diffusion and Qwen carry, and leaves those three soft styles the only
- * configurations where this channel says less about a gradient than theirs do. Section 0's uniform
- * key field is stated in the prompt body, which Midjourney reads in full; the `--no` list was never
- * what carried it.
+ * where the style states flat fills, and nothing at all where it asks for soft blended forms. That
+ * is the whole of what this channel says about a gradient, and Stable Diffusion's and Qwen's blocks
+ * carry the same surface terms **plus** a `gradient background` of their own on every style — so
+ * this list says less than theirs in every configuration, and on the three soft styles it says
+ * nothing. Section 0's uniform key field is stated in the prompt body, which Midjourney reads in
+ * full; the `--no` list was never what carried it.
  *
  * https://docs.midjourney.com/hc/en-us/articles/32173351982093-No
  * https://docs.midjourney.com/hc/en-us/articles/32658968492557-Multi-Prompts-Weights

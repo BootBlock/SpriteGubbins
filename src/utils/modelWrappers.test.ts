@@ -345,10 +345,11 @@ describe('what a wrapper says about the surface', () => {
         expect(entries, where).not.toContain('gradient');
         // The standing rule of this list, which no configuration may reach around: the sheet is
         // built on a keyable background, and losing it is the one failure here that cannot be
-        // recovered from. Held against every word of every entry rather than the bare term, which
-        // is the wider of the two readings and the one §7 of the plan document states.
+        // recovered from. Matched as a substring of each entry rather than as a whole word, because
+        // `backgrounds` and `gradient-background` carry the term as surely as the bare noun does —
+        // this is the wider of the two readings, and the one §7 of the plan document states.
         for (const entry of entries) {
-          expect(entry.split(' '), `${where} / ${entry}`).not.toContain('background');
+          expect(entry, `${where} / ${entry}`).not.toMatch(/background/i);
         }
       }
     }
