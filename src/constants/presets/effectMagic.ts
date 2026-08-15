@@ -152,7 +152,15 @@ export const EFFECT_MAGIC_PRESETS: readonly PresetArchetype[] = [
       outlineStyle: 'DARK_LOCAL_CONTOUR',
       backgroundKey: 'PURE_WHITE',
       aspectRatio: 'WIDE_16_9',
-      targetModel: 'QWEN_IMAGE',
+      // Moved off `QWEN_IMAGE` when EFFECT's exclusion text was corrected. Qwen documents the
+      // smallest ceiling this template fits inside at all — 4,500 tokens — and an EFFECT sheet is
+      // among the longest prompts the app compiles, so this card sat at 3,582 of the 3,600 a shipped
+      // preset may spend. That is the coverage contract's own test applied honestly: a preset's
+      // target has to leave "enough of the ceiling unspent for that reading to mean anything", and
+      // eighteen tokens is not enough for a reader to edit a field. The target is a property of
+      // whoever is generating rather than of the art being taught, so nothing this preset
+      // demonstrates moves with it.
+      targetModel: 'GEMINI_FLASH_IMAGE',
     },
   },
   {
