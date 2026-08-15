@@ -53,13 +53,12 @@ export function wrapForModel(
      */
     readonly surface: RenderStyleSurface;
     /**
-     * Whether this sheet's components are limbs, from `categoryPermits(category, 'anatomy')`.
+     * Whether this sheet's components are limbs, from `LIMBS_ARE_COMPONENTS`.
      *
      * The two negative blocks weight `extra limbs, merged limbs` against a duplication failure only
-     * a limbed subject can have, and a building, a terrain tileset or an interface kit cannot. Read
-     * off the same table the plan validation uses, rather than restated here: that table is where
-     * the app decides a walker's legs are a vehicle's mechanism and not anatomy, and a second list
-     * of category names is a second thing to keep in step.
+     * a limbed subject can have, and a building, a terrain tileset or an interface kit cannot. The
+     * record is where the judgement lives — including why it is not `PERMITTED_KINDS`, whose
+     * `anatomy` row answers what a plan may *name* rather than what a generator will *draw*.
      */
     readonly limbsAreComponents: boolean;
   },

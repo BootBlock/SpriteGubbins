@@ -10,7 +10,6 @@ import { RENDER_STYLES } from '../types/rendering.ts';
 import type { RenderStyle } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { categoryPermits } from './sheetPlanValidation.ts';
 
 /**
  * The wrappers differ in *kind*, not in wording — a reasoning contract, command flags, a negative
@@ -224,6 +223,9 @@ describe('what a wrapper says about the surface', () => {
     ...new Set(RENDER_STYLES.flatMap((style) => RENDER_STYLE_SURFACE[style].negatives)),
   ];
 
+  /** The three that take a negative channel, and therefore state every term the style permits. */
+  const NEGATES = ['MIDJOURNEY', 'STABLE_DIFFUSION', 'QWEN_IMAGE'] as const;
+
   it.each(RENDER_STYLES)('negates nothing %s requires, on any target', (renderStyle) => {
     const permitted = RENDER_STYLE_SURFACE[renderStyle].negatives;
     const forbidden = EVERY_SURFACE_TERM.filter((term) => !permitted.includes(term));
@@ -234,6 +236,15 @@ describe('what a wrapper says about the surface', () => {
       );
       for (const term of forbidden) {
         expect(wrapper, `${targetModel} / ${renderStyle}`).not.toContain(term);
+      }
+      // And the terms the style does permit are stated, on every target that has somewhere to state
+      // them. Without this half the suite would pass on an entry whose `negatives` had been emptied
+      // — the whole matrix is derived from the record, so it can only ever catch a term the record
+      // does not hold.
+      if (NEGATES.includes(targetModel as (typeof NEGATES)[number])) {
+        for (const term of permitted) {
+          expect(wrapper, `${targetModel} / ${renderStyle}`).toContain(term);
+        }
       }
       // The two the wrappers used to state unconditionally, in the wording they stated it in.
       expect(wrapper, `${targetModel} / ${renderStyle}`).not.toContain('crisp hard edges');
@@ -310,23 +321,28 @@ describe('what a wrapper says about the surface', () => {
     }
   });
 
-  it('spends the anatomy negatives on the sheets that have anatomy, and no others', () => {
+  it('spends the anatomy negatives on the sheets that have limbs, and no others', () => {
     // `extra limbs, merged limbs` names a duplication failure only a limbed subject can have. It was
-    // in both negative blocks on every category, including the four whose components are tiles,
-    // panels, structures and frames.
-    for (const targetModel of ['STABLE_DIFFUSION', 'QWEN_IMAGE'] as const) {
-      for (const category of ['CHARACTER', 'CREATURE'] as const) {
-        const prompt = generatePrompt(category, defaultSubjectFor(category), withOutput({ targetModel }));
-        expect(prompt, `${targetModel} / ${category}`).toContain('extra limbs, merged limbs');
-      }
+    // in both negative blocks on every category, including the ones whose components are floor
+    // tiles, panel frames and effect frames.
+    //
+    // The three that keep it are named here rather than read back out of `LIMBS_ARE_COMPONENTS`,
+    // because a test that derives its expectation from the record under test would pass whatever the
+    // record said. VEHICLE is the one worth stating in as many words: its pools offer `Walker / Mech`
+    // and `Articulated Walker Legs`, so a third leg is a failure that sheet really can have.
+    const LIMBED = ['CHARACTER', 'CREATURE', 'VEHICLE'];
 
-      // Every other category the app can compile, rather than a sample of them — VEHICLE included,
-      // whose walker legs are a mechanism in `PERMITTED_KINDS` and not anatomy.
+    for (const targetModel of ['STABLE_DIFFUSION', 'QWEN_IMAGE'] as const) {
       for (const category of SUBJECT_CATEGORIES) {
-        if (categoryPermits(category, 'anatomy')) continue;
         const prompt = generatePrompt(category, defaultSubjectFor(category), withOutput({ targetModel }));
-        expect(prompt, `${targetModel} / ${category}`).not.toContain('extra limbs');
-        expect(prompt, `${targetModel} / ${category}`).not.toContain('merged limbs');
+        const where = `${targetModel} / ${category}`;
+
+        if (LIMBED.includes(category)) {
+          expect(prompt, where).toContain('extra limbs, merged limbs');
+        } else {
+          expect(prompt, where).not.toContain('extra limbs');
+          expect(prompt, where).not.toContain('merged limbs');
+        }
       }
     }
   });

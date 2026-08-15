@@ -14,6 +14,7 @@ import {
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
   LIGHTING_TEXT,
+  LIMBS_ARE_COMPONENTS,
   minFeatureSize,
   OUTLINE_TEXT,
   OVERLAP_MARGIN_TEXT,
@@ -44,7 +45,6 @@ import { anatomyFacingsFor, componentBreakdownFor, componentCountFor } from './c
 import { directionalRotation } from './directionalRotation.ts';
 import { describeMirrorPairs, mirrorPairs } from './mirrorPairs.ts';
 import { wrapForModel } from './modelWrappers.ts';
-import { categoryPermits } from './sheetPlanValidation.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 import { describeSeries } from './describeSeries.ts';
 import { sheetBatch } from './sheetBatch.ts';
@@ -387,10 +387,7 @@ export function generatePrompt(
     backgroundKeyDescription: BACKGROUND_KEY_TEXT[output.backgroundKey],
     frameIsAComponent: FRAME_IS_A_COMPONENT[category],
     surface: RENDER_STYLE_SURFACE[output.renderStyle],
-    // The same table the plan validation reads, and the reason this is not a fourth list of
-    // category names: it is where the app already decides which subjects are made of anatomy, so a
-    // tenth category answers it once.
-    limbsAreComponents: categoryPermits(category, 'anatomy'),
+    limbsAreComponents: LIMBS_ARE_COMPONENTS[category],
   });
 }
 

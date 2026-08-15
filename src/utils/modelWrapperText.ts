@@ -120,13 +120,19 @@ ${prompt}`;
  * **`shadow` and `gradient` were the third instance of that judgement, and they resolve two
  * different ways.** Bare, each negates something a render style requires: "material shading and soft
  * form shadow" is `RENDERED_3D`'s own section 2 line, and a gradient across a form is what that
- * shadow is made of. `shadow` qualifies to **`cast shadow`**, which is the placement section 0
- * actually forbids and which `--no` can carry — two words are fine here, it is only the *qualifier*
- * "around a component" that this channel cannot express. `gradient` cannot take the matching
- * qualifier, because the word it would need is `background`, and the paragraph above is why that one
- * may never appear in this list at any width: the sheet is built around a keyable background, and
- * `--no` reads bare concepts. So the gradient claim becomes the sheet's own instead, spliced in from
- * `RENDER_STYLE_SURFACE` — `smooth gradients` where the style states flat fills, and nothing at all
+ * shadow is made of.
+ *
+ * What decides the two differently is that **Midjourney documents `--no` as a comma-separated list
+ * of things to avoid and does not document how it reads a multi-word entry** — so the honest
+ * position is that a phrase may be taken whole or may be taken word by word, and each term is chosen
+ * to be acceptable either way. `shadow` becomes **`cast shadow`**, the placement section 0 actually
+ * forbids: read whole it stops negating the form shadow, and read word by word it is no worse than
+ * the bare term that shipped, so it is a gain or a wash and never a loss. `gradient` cannot take the
+ * qualifier it needs, because that word is `background` — and read word by word that would put the
+ * one term the paragraph above keeps out of this list at any width straight back into it, against a
+ * sheet built around a keyable background. A loss there is unrecoverable rather than a wash, so the
+ * term comes out and the gradient claim becomes the sheet's own instead, spliced in from
+ * `RENDER_STYLE_SURFACE`: `smooth gradients` where the style states flat fills, and nothing at all
  * where it asks for soft blended forms. Section 0's uniform key field is stated in the prompt body,
  * which Midjourney reads in full; the `--no` list was never what carried it.
  */
@@ -153,9 +159,17 @@ export function wrapForMidjourney(
  * **Two runs of terms are the sheet's rather than the channel's, and both used to be fixed strings.**
  * The surface terms come from `RENDER_STYLE_SURFACE`, because `anti-aliased edges, smooth gradients`
  * is what *pixel art* forbids and the same block was negating it against a painted sheet whose
- * section 2 asks for soft blended forms. The anatomy pair is emitted only where the sheet draws
- * anatomy: a building, a terrain tileset or an interface kit has no limbs to have extras of, and a
- * negative prompt is a fixed weight spent on whatever is in it.
+ * section 2 asks for soft blended forms. The anatomy pair comes from `LIMBS_ARE_COMPONENTS`: a
+ * building, a terrain tileset or an interface kit has no limbs to have extras of, and a negative
+ * prompt is a fixed weight spent on whatever is in it.
+ *
+ * **`blurry` went with the first of those, and it is the one term that changed meaning rather than
+ * moving.** It sat in the middle of that run as this channel's stock quality negative, and unlike
+ * `motion blur` and `jpeg artifacts` beside it — which name an *artefact* whatever the style — it
+ * names the surface: a sheet drawn as "soft blended forms" is being asked for something a model's
+ * reading of "blurry" overlaps with. So the claim is now the style's own `blurred edges`, which is
+ * the wording Qwen's block already used for it, and it is emitted on the styles whose section 2 line
+ * asserts a hard edge and withheld on the three that ask for a soft one.
  */
 export function wrapForStableDiffusion(
   prompt: string,

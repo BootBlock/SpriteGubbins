@@ -1441,24 +1441,40 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > may be negated only where the style's own §2 line asserts its absence** — so `anti-aliased edges`
 > belongs to the two pixel styles alone, `smooth gradients` to the styles that state flat fills, and
 > the three that describe a soft surface negate nothing about one. Flux's leading sentence carries
-> the positive half, which is the only statement of the style that target reads at all.
+> the positive half, which on the open-weight tier is the only statement of the style that gets read
+> at all.
 >
-> Three narrower corrections travelled with it, each the same shape:
+> Four narrower corrections travelled with it, each the same shape:
 >
-> - **`--no shadow` became `--no cast shadow`, and `--no gradient` came out.** A cast shadow is the
->   placement §0 forbids, and `--no` can carry two words; `gradient` cannot take the matching
->   qualifier, because the word it needs is `background` — which the bullet above bans from this list
->   at any width. The gradient claim is the style's own there too, or nothing.
-> - **Flux's "no shadows" became "no cast shadow"** for the same reason: unqualified, the plural took
+> - **`--no shadow` became `--no cast shadow`, and `--no gradient` came out.** Midjourney documents
+>   `--no` as a comma-separated list of things to avoid and does not document how it reads a
+>   multi-word entry, so each term is chosen to be acceptable under either reading. A cast shadow is
+>   the placement §0 forbids: taken whole it stops negating a form shadow, and taken word by word it
+>   is no worse than the bare term it replaces. `gradient` cannot take the qualifier it needs, because
+>   that word is `background` — which, read word by word, would put the one term the bullet above
+>   keeps out of this list back into it, against a sheet built around a keyable background. That loss
+>   is unrecoverable rather than a wash, so the gradient claim is the style's own there too, or
+>   nothing.
+> - **Flux's "no shadows" became "no cast shadow"** for a related reason: unqualified, the plural took
 >   the form shadow that gives a component its volume along with the one on the ground.
-> - **`extra limbs, merged limbs` is emitted only where the sheet draws anatomy.** It was in both
+> - **SD's `blurry` became the style's `blurred edges`.** It sat inside the run that was replaced, and
+>   unlike `motion blur` and `jpeg artifacts` beside it — which name an artefact whatever the style —
+>   it names the surface, so a sheet asking for soft blended forms was weighting against something a
+>   reading of "blurry" overlaps with. It is now the same claim Qwen's block already spelled that way,
+>   emitted where §2 asserts a hard edge and withheld on the three styles that ask for a soft one.
+> - **`extra limbs, merged limbs` is emitted only where limbs are components.** It was in both
 >   negative blocks on every category, including the ones whose components are tiles, panels and
->   structures — weight spent on a failure those sheets cannot have. Which categories those are is
->   read from `PERMITTED_KINDS` rather than listed again, so the answer for a tenth category is given
->   once. What did **not** change is the assembly pair: `assembled character, posed figure` is stated
->   in a figure's vocabulary on every category, and that is a gap rather than a contradiction — every
->   other category's §8 excludes characters outright, so those two terms still negate something those
->   sheets genuinely must not contain. Saying it in each category's own words is a separate change.
+>   frames — weight spent on a failure those sheets cannot have. Which categories those are is a
+>   record of its own (`LIMBS_ARE_COMPONENTS`) rather than a read of `PERMITTED_KINDS`, deliberately:
+>   that table answers which kind of entry a *plan* may name, and it calls a walker's legs a vehicle's
+>   mechanism, which is right for an inventory and wrong for a negative prompt. VEHICLE offers
+>   `Walker / Mech` and `Articulated Walker Legs`, so a third leg is a failure that sheet really can
+>   have, and it keeps the pair.
+>
+> What did **not** change is the assembly pair: `assembled character, posed figure` is stated in a
+> figure's vocabulary on every category, and that is a gap rather than a contradiction — every other
+> category's §8 excludes characters outright, so those two terms still negate something those sheets
+> genuinely must not contain. Saying it in each category's own words is a separate change.
 
 ---
 

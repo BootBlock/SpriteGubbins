@@ -21,6 +21,7 @@ export {
   CATEGORY_EXCLUSION_TEXT,
   CATEGORY_GUARD_TEXT,
   FRAME_IS_A_COMPONENT,
+  LIMBS_ARE_COMPONENTS,
 } from './exclusions.ts';
 export {
   minFeatureSize,

@@ -14,28 +14,69 @@ import { validationPassFor } from './validationPass.ts';
  */
 describe('RENDER_STYLE_SURFACE', () => {
   /**
-   * What each negative term claims about the surface, as something section 2 has to say for itself.
+   * The three claims a negative channel can carry, and what section 2 must say for each to be true.
    *
-   * The vocabulary is closed on purpose: a fourth term is a fourth claim a generator will act on,
-   * and it wants a rule saying which styles it is true of before it is emitted to any of them.
+   * Asserted as an **iff**, which is the half a check written from the reported defect alone would
+   * miss: "negates only what section 2 asserts" is satisfied by negating nothing at all, so a later
+   * pass could empty five styles' entries and every test that derives its expectations from this
+   * record would still pass. The rule that holds in both directions is the one that has to be
+   * written down — a style whose own line says its edges are hard *owes* the negative channel that
+   * claim as much as a style whose line says the opposite may not make it.
+   *
+   * Aliasing belongs to the two pixel styles alone: everything else this app can ask for is
+   * rasterised with anti-aliased boundaries, and a vector or cel-shaded sheet told to avoid them
+   * comes back staircased.
    */
-  const JUSTIFICATION: Readonly<Record<string, RegExp>> = {
-    // The one term that belongs to the two pixel styles alone. Everything else this app can ask for
-    // is rasterised with anti-aliased boundaries, and a vector or cel-shaded sheet told to avoid
-    // them comes back staircased.
-    'anti-aliased edges': /pixel/i,
-    // Somewhere the style says its own edges are hard, crisp, chunky, inked, faceted or solid.
-    'blurred edges': /hard edge|hard-edged|crisp|chunky|line weight|faceted|solid/i,
-    // Somewhere it says its fills are flat, banded, palette-limited or gradient-free.
-    'smooth gradients': /flat|no gradients|value bands|small palette|solid single-colour/i,
-  };
+  const NEGATIVE_RULES: readonly { readonly term: string; readonly assertedBy: RegExp }[] = [
+    { term: 'blurred edges', assertedBy: /hard[- ]edge|crisp|chunky|faceted|solid|line weight/i },
+    { term: 'anti-aliased edges', assertedBy: /pixel/i },
+    {
+      term: 'smooth gradients',
+      assertedBy: /flat|no gradients|value bands|small palette|solid single-colour/i,
+    },
+  ];
 
-  it.each(RENDER_STYLES)('%s negates only what its own section 2 line asserts the absence of', (style) => {
+  /**
+   * What the *statement* may claim, which is the half that leads Flux's prompt.
+   *
+   * One-directional, because a clause is prose rather than a set of terms — there is no "owes" to
+   * assert. What it catches is the reported defect in the place it was loudest: a statement carrying
+   * another style's vocabulary, "with hard chunky pixel edges" under `PAINTED_2D`.
+   */
+  const STATEMENT_CLAIMS: readonly { readonly claim: RegExp; readonly requires: RegExp }[] = [
+    { claim: /pixel|anti-alias/i, requires: /pixel/i },
+    {
+      claim: /hard[- ]edge|crisp|chunky|faceted|solid/i,
+      requires: /hard[- ]edge|crisp|chunky|faceted|solid|line weight/i,
+    },
+    {
+      claim: /flat|no gradients/i,
+      requires: /flat|no gradients|value bands|small palette|solid single-colour/i,
+    },
+    // And the other direction, so a style cannot promise a soft surface its own line never mentions.
+    { claim: /soft|blended/i, requires: /soft|blended/i },
+  ];
+
+  it.each(RENDER_STYLES)('negates exactly what %s’s own section 2 line asserts the absence of', (style) => {
     const description = RENDER_STYLE_TEXT[style];
-    for (const term of RENDER_STYLE_SURFACE[style].negatives) {
-      const justification = JUSTIFICATION[term];
-      expect(justification, `${term} has no rule saying which styles it is true of`).toBeDefined();
-      expect(description, `${style} negates “${term}”`).toMatch(justification as RegExp);
+    const { negatives } = RENDER_STYLE_SURFACE[style];
+
+    for (const { term, assertedBy } of NEGATIVE_RULES) {
+      expect(negatives.includes(term), `${style} / ${term}`).toBe(assertedBy.test(description));
+    }
+    // A fourth term is a fourth claim a generator will act on, and it wants a rule above saying
+    // which styles it is true of before it is emitted to any of them.
+    const unruled = negatives.filter((term) => !NEGATIVE_RULES.some((rule) => rule.term === term));
+    expect(unruled, style).toEqual([]);
+  });
+
+  it.each(RENDER_STYLES)('states nothing about %s that its section 2 line does not support', (style) => {
+    const description = RENDER_STYLE_TEXT[style];
+    const { statement } = RENDER_STYLE_SURFACE[style];
+
+    for (const { claim, requires } of STATEMENT_CLAIMS) {
+      if (!claim.test(statement)) continue;
+      expect(description, `${style} states “${statement}”`).toMatch(requires);
     }
   });
 
@@ -51,7 +92,9 @@ describe('RENDER_STYLE_SURFACE', () => {
       (style) =>
         /soft|blended/i.test(RENDER_STYLE_TEXT[style]) || validationPassFor(style)?.withholdsLight === false,
     );
-    expect(soft.length).toBeGreaterThan(0);
+    // Named as well as derived, because a rewording that shrank this set to one style would leave a
+    // loop over it passing while saying nothing.
+    expect(soft).toEqual(['PAINTED_2D', 'RENDERED_3D', 'CLAY_RENDER']);
 
     for (const style of soft) {
       expect(RENDER_STYLE_SURFACE[style].negatives, style).toEqual([]);
@@ -60,8 +103,8 @@ describe('RENDER_STYLE_SURFACE', () => {
 
   it('gives every style a clause that completes the sentence it is spliced into', () => {
     // Flux reads `Every part is drawn ${statement}.`, so a statement that opened with a capital or
-    // closed with a full stop would arrive as two half sentences — and this is the only statement of
-    // the style that target reads at all.
+    // closed with a full stop would arrive as two half sentences — and on the open-weight tier it is
+    // the only statement of the style that gets read at all.
     for (const style of RENDER_STYLES) {
       const { statement } = RENDER_STYLE_SURFACE[style];
       expect(statement, style).toMatch(/^as [a-z0-9]/);

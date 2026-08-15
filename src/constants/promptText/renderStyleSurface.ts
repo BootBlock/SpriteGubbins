@@ -25,7 +25,13 @@ import type { RenderStyle, RenderStyleSurface } from '../../types/rendering.ts';
  * every other style is rasterised with anti-aliased boundaries, and a vector or cel-shaded sheet
  * told to avoid them comes back with staircased curves nobody asked for.
  * `renderStyleSurface.test.ts` checks both halves against `RENDER_STYLE_TEXT` rather than against a
- * copy of this list, so a style whose description is reworded takes its negatives with it.
+ * copy of this list, so a style whose description is reworded takes its terms with it.
+ *
+ * **One wording serves both channels, which is why `blurred edges` and not `blurry`.** Stable
+ * Diffusion's block said the second and Qwen's the first, for the same claim; a per-style record
+ * cannot hold two spellings of one entry without the styles quietly diverging by target. `blurry`
+ * was also the loosest of the three claims — it is read as a property of the whole image, where this
+ * record's job is to say something about *edges* that a style either does or does not assert.
  *
  * **The statement is the positive half, and it is what Flux actually reads.** Section 2's `Style:`
  * line lands around token 1,070 of a compiled prompt, past the ceiling the Flux wrapper is written

@@ -183,3 +183,41 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // the tile, never drawn round it, so a frame on one is the decorative surround this term suppresses.
   TERRAIN: false,
 };
+
+/**
+ * Whether a *limb* is one of this category's components — read by the two negative blocks, which
+ * weight `extra limbs, merged limbs` against a duplication failure only a limbed subject can have.
+ *
+ * The blocks carried the pair on every category, including the ones whose components are floor
+ * tiles, panel frames and effect frames. A negative prompt is a fixed weight spent on whatever is in
+ * it, so a term naming a failure the sheet cannot have is not free — the same argument the
+ * per-category exclusion, guard and audit records were introduced to make, applied to the one
+ * channel that had never been given a category.
+ *
+ * **This deliberately does not read `PERMITTED_KINDS`, and the reason is what the two questions
+ * are.** That table answers which *kind of entry a plan may name*, and it gives `anatomy` to
+ * CHARACTER and CREATURE alone — a walker's legs are a vehicle's `mechanism` there, correctly,
+ * because the inventory it validates is a machine's. This record answers a different question: what
+ * a *generator* will duplicate or fuse while drawing. VEHICLE offers `Walker / Mech` as a class and
+ * `Articulated Walker Legs` as a drive base, and a sheet of near-side and far-side drive units is
+ * exactly the geometry that comes back with a third leg. Deriving this from the kinds table would
+ * have been one fact stated once, and wrong for that sheet.
+ *
+ * The uncertain cases are settled by which error costs more, because the two are not symmetrical: a
+ * term the sheet cannot violate spends a little of a finite channel, while a missing one loses a
+ * guard against a wrong sheet. So a category takes the pair wherever its own pools can describe a
+ * limbed body. OBJECT's cannot — its subjects are terminals, chests, turrets and traps, and the one
+ * articulated module it offers is a named deployable drawn in isolation rather than a body plan for
+ * the model to complete.
+ */
+export const LIMBS_ARE_COMPONENTS: Readonly<Record<SubjectCategory, boolean>> = {
+  CHARACTER: true,
+  CREATURE: true,
+  OBJECT: false,
+  ITEM: false,
+  BUILDING: false,
+  VEHICLE: true,
+  EFFECT: false,
+  INTERFACE: false,
+  TERRAIN: false,
+};
