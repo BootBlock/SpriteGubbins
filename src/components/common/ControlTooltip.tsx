@@ -1,5 +1,6 @@
 import { cloneElement, useRef } from 'react';
 import type { ReactElement } from 'react';
+import { TOOLTIP_HOVER_DELAY_MS } from '../../constants/ui.ts';
 import { useTooltipReveal } from '../../hooks/useTooltipReveal.ts';
 import { TooltipCard } from './TooltipCard.tsx';
 
@@ -63,6 +64,12 @@ interface ControlTooltipProps {
  * stands aside rather than sitting under the pointer describing a button already used. The dismissal
  * is a latch, so it returns on the next fresh hover — moving away and back — and not before.
  *
+ * **The hover waits, and the ⓘ's does not** — {@link TOOLTIP_HOVER_DELAY_MS} says why. It follows
+ * from the same distinction as the press rule: this trigger is a control someone may simply be
+ * travelling across on the way to another, and answering that journey on contact put a paragraph
+ * over the control they were reaching for. Keyboard focus keeps revealing at once, because tabbing
+ * to a control is an arrival rather than a traverse.
+ *
  * **What this cannot do is reach a touchscreen**, and that is inherent rather than an oversight: a
  * tap on a control runs the control. It is the second reason a value keeps its ⓘ. Here the
  * compensation is `aria-describedby`, which a screen reader announces on focus however the pointer
@@ -82,7 +89,7 @@ export function ControlTooltip({
   children,
 }: ControlTooltipProps) {
   const wrapperRef = useRef<HTMLSpanElement>(null);
-  const guidance = useTooltipReveal(wrapperRef);
+  const guidance = useTooltipReveal(wrapperRef, { hoverDelayMs: TOOLTIP_HOVER_DELAY_MS });
 
   return (
     <span

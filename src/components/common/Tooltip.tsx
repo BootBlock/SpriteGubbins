@@ -40,7 +40,9 @@ export function Tooltip({ text, hint }: TooltipProps) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   // Anchored to the ⓘ itself rather than to the wrapper around it. The two boxes are all but
   // identical, and the button is the thing the caret has to point at.
-  const guidance = useTooltipReveal(triggerRef, triggerRef);
+  // No hover delay, deliberately: the ⓘ exists only to reveal its card, so a pointer on one is never
+  // on its way somewhere else — which is the journey `ControlTooltip`'s grace period protects.
+  const guidance = useTooltipReveal(triggerRef, { pressKeepsOpenRef: triggerRef });
 
   return (
     <span

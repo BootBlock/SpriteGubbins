@@ -10,6 +10,28 @@ import { useAnchoredSurface } from './useAnchoredSurface.ts';
  */
 type TooltipInput = 'hover' | 'focus';
 
+/** What differs between the app's two triggers, both of which are otherwise this one machine. */
+export interface TooltipRevealOptions {
+  /**
+   * A press inside this element does **not** dismiss, where one is given.
+   *
+   * The ⓘ is the only control in the app with no job but revealing its own card, so a press on it is
+   * never a press *past* the guidance — and toggling there is the one way a touchscreen has in.
+   * Every other trigger is a control the press is meant for, so the press dismisses and the guidance
+   * gets out of the way of the thing the user actually pressed.
+   */
+  readonly pressKeepsOpenRef?: RefObject<HTMLElement | null>;
+  /**
+   * How long the pointer must stay before a **hover** reveals the card. Defaults to no wait.
+   *
+   * Hover only, and that asymmetry is the point rather than an omission: the wait exists because a
+   * pointer crosses controls on its way elsewhere, and a keyboard has no equivalent — a tab landing
+   * on a control is an arrival, not a traverse, so focus reveals at once. The same goes for the tap
+   * the ⓘ answers, which reaches this hook as a focus.
+   */
+  readonly hoverDelayMs?: number;
+}
+
 /** Everything a component needs to put a `TooltipCard` on screen and take it off again. */
 export interface TooltipReveal {
   readonly isVisible: boolean;
@@ -46,6 +68,12 @@ export interface TooltipReveal {
  * **The card floats in the top layer**, because guidance half-covered by the next panel down is
  * guidance nobody can read, and that is not a `z-index` problem; {@link useAnchoredSurface} explains
  * why, makes the above/below call, and publishes it as `data-placement` for the caret.
+ *
+ * **A hover may be made to wait, and every way out of the wait has to cancel it.** A pending reveal
+ * that survives the pointer leaving, or a press, is worse than no delay at all: it puts the card on
+ * screen once the user has gone, or over the control they have just used — which is exactly what the
+ * press-dismisses rule exists to prevent. So `release`, `dismiss` and unmount all clear the timer,
+ * and the state only changes when it fires.
  */
 export function useTooltipReveal(
   /**
@@ -57,40 +85,70 @@ export function useTooltipReveal(
    * is tracked.
    */
   anchorRef: RefObject<HTMLElement | null>,
-  /**
-   * A press inside this element does **not** dismiss, where one is given.
-   *
-   * The ⓘ is the only control in the app with no job but revealing its own card, so a press on it is
-   * never a press *past* the guidance — and toggling there is the one way a touchscreen has in.
-   * Every other trigger is a control the press is meant for, so the press dismisses and the guidance
-   * gets out of the way of the thing the user actually pressed.
-   */
-  pressKeepsOpenRef?: RefObject<HTMLElement | null>,
+  { pressKeepsOpenRef, hoverDelayMs = 0 }: TooltipRevealOptions = {},
 ): TooltipReveal {
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const cardRef = useRef<HTMLSpanElement>(null);
+  /** The waiting hover, so that anything ending the hover can call it off. */
+  const pendingHoverRef = useRef<number | null>(null);
   const cardId = useId();
 
   const isVisible = (isHovered || isFocused) && !isDismissed;
   useAnchoredSurface(anchorRef, cardRef, isVisible, 'centred');
 
+  function cancelPendingHover(): void {
+    if (pendingHoverRef.current === null) return;
+    clearTimeout(pendingHoverRef.current);
+    pendingHoverRef.current = null;
+  }
+
   /** Either way in also clears a previous dismissal, or Escape would be permanent. */
-  function reveal(input: TooltipInput): void {
+  function show(input: TooltipInput): void {
     if (input === 'hover') setIsHovered(true);
     else setIsFocused(true);
     setIsDismissed(false);
   }
 
+  function reveal(input: TooltipInput): void {
+    // Focus arrives at once whatever the delay: see `hoverDelayMs`. A zero delay takes this path
+    // too, rather than scheduling a timer for the next tick — the ⓘ reveals within the same commit
+    // as the event, which is what its own press-to-toggle reads the state for.
+    if (input === 'focus' || hoverDelayMs === 0) {
+      show(input);
+      return;
+    }
+    // Re-entering before a previous wait elapsed restarts it rather than running two.
+    cancelPendingHover();
+    pendingHoverRef.current = window.setTimeout(() => {
+      pendingHoverRef.current = null;
+      show('hover');
+    }, hoverDelayMs);
+  }
+
   function release(input: TooltipInput): void {
-    if (input === 'hover') setIsHovered(false);
-    else setIsFocused(false);
+    if (input === 'hover') {
+      cancelPendingHover();
+      setIsHovered(false);
+    } else setIsFocused(false);
   }
 
   function dismiss(): void {
+    // Before the state, because a press during the wait is the case this ordering is for: the card
+    // must not arrive after the control it describes has already been used.
+    cancelPendingHover();
     setIsDismissed(true);
   }
+
+  // Written against the ref alone rather than calling `cancelPendingHover`, which is a fresh closure
+  // on every render: naming it here would put it in the dependency list, and the effect would then
+  // cancel a legitimately pending hover every time this component re-rendered.
+  useEffect(() => {
+    return () => {
+      if (pendingHoverRef.current !== null) clearTimeout(pendingHoverRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isVisible) return;

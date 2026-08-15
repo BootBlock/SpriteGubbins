@@ -27,6 +27,26 @@ export const TOAST_DURATION_MS = 3000;
  */
 export const TOAST_EXIT_MS = 2500;
 
+/**
+ * How long the pointer has to stay on a control before its guidance appears.
+ *
+ * A pointer crosses controls it has no interest in — a toolbar is a row of them, and the one being
+ * reached for is usually the far side of two others. Revealing on contact meant those two answered
+ * a journey with a paragraph, and the card landed over the control the user was actually travelling
+ * to. The grace period is what separates *pointing at* a control from *passing over* one, and 350ms
+ * is long enough that a deliberate rest clears it while a traverse does not.
+ *
+ * **The ⓘ deliberately has none**, and the difference is what each trigger is: the glyph exists only
+ * to reveal its card, so pointing at one is never on the way to something else — where a wrapped
+ * control has a job of its own, which is the journey this delay protects. `Tooltip` therefore asks
+ * for no delay at all rather than a shorter one.
+ *
+ * Not a motion token and not in `index.css`: nothing moves for this, and the reduced-motion blocks
+ * would have no declaration to carry. The card's own entrance animation is unaffected — it plays in
+ * full once the wait is over.
+ */
+export const TOOLTIP_HOVER_DELAY_MS = 350;
+
 /** One view's entry in the header's switcher. */
 export interface AppTabChoice {
   readonly id: AppTab;

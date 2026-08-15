@@ -53,6 +53,27 @@ describe('Tooltip', () => {
     expect(trigger).not.toHaveAttribute('aria-describedby');
   });
 
+  it('answers a hover at once, with none of the grace period a wrapped control gets', async () => {
+    // A frozen clock and a synchronous `fireEvent`, so that "at once" is asserted rather than
+    // merely observed before a real timer got round to firing — the same arrangement
+    // `ControlTooltip.test.tsx` explains at length.
+    vi.useFakeTimers();
+    try {
+      const trigger = renderTooltip();
+
+      fireEvent.mouseEnter(trigger.parentElement as HTMLElement);
+
+      // `ControlTooltip` makes a hover wait, because a pointer crosses controls on its way
+      // elsewhere. The ⓘ has no such journey to protect — it exists only to reveal this card, so
+      // pointing at one is always the request itself — and a delay here would put a wait in front of
+      // the affordance whose entire purpose is to answer. The assertion sits before any advance, so
+      // giving this trigger a delay fails rather than merely slowing it down.
+      expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('hides when the pointer leaves', async () => {
     const user = userEvent.setup();
     const trigger = renderTooltip();
