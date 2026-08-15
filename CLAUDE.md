@@ -801,9 +801,10 @@ below was bought with one of those.
   character, so change both in one commit). Per-option prose lives in `src/constants/promptText/`
   (`[DEFINE:FOO_DESCRIPTION]` is filled from `FOO_TEXT`; a test walks the pairing). What a sheet
   *contains* lives in `src/constants/sheetPlans/`, keyed by category **and** mode. Per-target
-  wrappers live in `utils/modelWrapperText.ts`, and every wrapper line must trace to something the
-  target's **vendor documents** — a flag syntax, a negative-prompt channel, a documented rewrite —
-  never to symmetry or vibes.
+  wrappers live in `utils/modelWrapperText/`, one file per target, and every wrapper line must trace
+  to something the target's **vendor documents** — a flag syntax, a negative-prompt channel, a
+  documented rewrite — never to symmetry or vibes. A target being re-checked touches only its own
+  file, which is what keeps the vendor citations that justify each clause readable in a diff.
 - **Derive every fact that two places state; hand-write none of them.** The component count is
   summed from the inventory's own entries; a plan's facings, its counts and section 3's yaw list
   are all built from the one facing tuple; the series list in section 6 is enumerated from the same

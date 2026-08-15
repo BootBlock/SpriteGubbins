@@ -8,14 +8,14 @@ import {
   wrapForSeedream,
   wrapForSol,
   wrapForStableDiffusion,
-} from './modelWrapperText.ts';
+} from './modelWrapperText/index.ts';
 
 /**
  * Which wrapper each generator gets.
  *
- * Dispatch only — the text every branch returns lives in `modelWrapperText.ts`, beside the vendor
- * documentation that justifies it. Splitting them keeps this file readable as what it is: the one
- * place to see, at a glance, that every id in `TARGET_MODELS` is accounted for.
+ * Dispatch only — the text every branch returns lives in `modelWrapperText/`, one file per target
+ * beside the vendor documentation that justifies it. Splitting them keeps this file readable as
+ * what it is: the one place to see, at a glance, that every id in `TARGET_MODELS` is accounted for.
  *
  * **Two branches return the prompt unchanged, and that is a finding rather than a gap.** The Gemini
  * image models read the prompt as a specification and think over it, which the *template* adapts to
