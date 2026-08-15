@@ -604,7 +604,7 @@ describe('generatePrompt — the adherence report', () => {
 
     expect(prompt).toContain("work section 9's checks");
     // Section 9's own numbered list appears exactly once. A second copy of it inside the report is
-    // the diluting third statement of the same rules that `modelWrapperText.ts` warns against.
+    // the diluting third statement of the same rules that `modelWrapperText/sol.ts` warns against.
     expect(prompt.match(/Component count is exactly/g)).toHaveLength(1);
   });
 

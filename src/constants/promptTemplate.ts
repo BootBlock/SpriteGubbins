@@ -50,8 +50,8 @@
  * them.** It points at the layout section's list instead, because the two are asking for different
  * things from the same checks — that list audits *before* delivery so the sheet can still be fixed,
  * and the report audits what was actually delivered so the *template* can be. Writing the list out
- * again there would be the diluting third copy `utils/modelWrapperText.ts` describes, in the section
- * least able to afford it.
+ * again there would be the diluting third copy `utils/modelWrapperText/sol.ts` describes, in the
+ * section least able to afford it.
  *
  * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
  * each rule lives. This constant is the one the app emits and therefore the source of the pair, so

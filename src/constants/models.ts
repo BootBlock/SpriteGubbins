@@ -52,7 +52,8 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     //
     // Both capability flags below are still about Sol and still true: it reasons over the brief, and
     // it answers in text. What they do not say is that the *picture* comes from a second model on
-    // the far side of a tool call, which is what its wrapper in `utils/modelWrapperText.ts` says.
+    // the far side of a tool call, which is what its wrapper in `utils/modelWrapperText/sol.ts`
+    // says.
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
