@@ -30,14 +30,16 @@ interface AtlasGridPreviewProps {
  * seeing; it also ran a 9:16 sheet's rows straight out of the bottom of the frame.
  *
  * **It is a picture and not a widget, deliberately.** Each cell used to answer a hover with its slot
- * number, row and column, and that read as a promise the app cannot keep: nothing asks the generator
- * for this grid. Section 9 of the prompt asks for "a clean exploded grid" and names no dimensions,
- * and section 10's manifest has the model *report back* the `cols`/`rows` it chose — "the manifest
- * describes what you actually drew" — while these come from `ceil(sqrt(count × bias))` in
- * `utils/atlasCalculator.ts`. The two are unrelated by construction, so a per-slot coordinate was
- * inviting a reader to look for part #12 at row 2, column 4 of a returned sheet that was never laid
- * out that way. What is left is the plan for the texture *you* repack the extracted artwork into,
- * which is a true statement and the only one this panel was ever making.
+ * number, row and column, and two thirds of that was a promise the app cannot keep. The *order* is
+ * real: section 9 asks for the components "in the reading order fixed by section 4", which is the
+ * row-major order these cells are filled in, so slot #12 genuinely is the twelfth part the inventory
+ * lists. What the prompt never states is the grid's **shape** — no dimensions appear anywhere in it,
+ * and where a companion manifest is emitted at all, section 10 has the model *report back* the
+ * `cols`/`rows` it chose rather than being handed them. These come from `ceil(sqrt(count × bias))`
+ * in `utils/atlasCalculator.ts`, so the row and column half of that readout was inviting a reader to
+ * look for part #12 at row 2, column 4 of a sheet whose rows were never that wide. What is left is
+ * the plan for the texture *you* repack the extracted artwork into, which is the only claim this
+ * panel was ever entitled to make.
  *
  * The grid itself is `aria-hidden`. It carries no information that is not already in the metric
  * tiles — the grid shape, the component count, the empty slots and the share of texture in use are
@@ -50,12 +52,18 @@ export function AtlasGridPreview({ metrics, canvasSize, componentCount }: AtlasG
 
   return (
     <div className="space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-xs text-ink-faint">
-        <span className="flex items-center gap-1.5">
+      {/*
+        Two rungs, as `AtlasFitSummary` sets them: the heading takes `text-xs` to match the other
+        atlas panels' headings, and the count takes `text-2xs` because it is a mono metadata chip,
+        which is the rung that sits in the same place as the `Badge` that panel puts here. Sizing
+        the whole row at once put the summary above the metric labels it is summarising.
+      */}
+      <div className="flex flex-wrap items-center justify-between gap-2 font-mono text-ink-faint">
+        <span className="flex items-center gap-1.5 text-xs">
           Atlas packing plan ({columns}×{rows})
           <Tooltip text={ATLAS_TOOLTIPS.packingPlan} hint="Atlas packing plan" />
         </span>
-        <span>
+        <span className="text-2xs">
           {componentCount} of {slots} slots filled
         </span>
       </div>

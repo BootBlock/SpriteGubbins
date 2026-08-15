@@ -5,8 +5,9 @@ import { AtlasGridPreview } from './AtlasGridPreview.tsx';
 
 /**
  * The panel's whole claim is that it draws the numbers beside it and claims nothing about the sheet
- * the generator returns. These hold the two halves of that: the legend is text rather than a
- * pointer-only readout, and the drawing itself stays out of the accessibility tree.
+ * the generator returns. These hold the three parts of that a test can check without a stylesheet:
+ * the legend is text rather than a pointer-only readout, the drawing itself stays out of the
+ * accessibility tree, and the guidance saying what the picture is not is actually reachable.
  */
 function renderPreview() {
   const metrics = calculateAtlasMetrics({

@@ -262,12 +262,13 @@ describe('Tooltip', () => {
   it('sets its own typography rather than inheriting the row the ⓘ was put in', async () => {
     const user = userEvent.setup();
     // Every one of these is on a real ancestor of a real trigger: the atlas calculator's metric
-    // labels are `uppercase tracking-wide` inside a `font-mono` list, and the quantiser's drop zone
-    // is `text-center`. The top layer moves where the card *paints*, not where it sits in the tree,
-    // so all four inherit straight into the guidance — which rendered a paragraph of prose as
-    // wide-set monospaced capitals in the atlas modal, and centred it in the quantiser.
+    // labels are `uppercase tracking-wide` inside a `font-mono` list, the quantiser's drop zone is
+    // `text-center`, and the keying tolerance's label is a `font-semibold` span the ⓘ sits inside.
+    // The top layer moves where the card *paints*, not where it sits in the tree, so all five
+    // inherit straight into the guidance — which rendered a paragraph of prose as wide-set
+    // monospaced capitals in the atlas modal, and centred and emboldened it in the quantiser.
     render(
-      <div className="font-mono tracking-wide text-center uppercase">
+      <div className="font-mono font-semibold tracking-wide text-center uppercase">
         <Tooltip text="Controls internal seam and fold complexity." hint="Surface Detail" />
       </div>,
     );
@@ -275,10 +276,11 @@ describe('Tooltip', () => {
     await user.hover(screen.getByRole('button', { name: 'Guidance: Surface Detail' }));
 
     // Asserted as classes rather than computed style: no stylesheet is loaded here, so what is
-    // checkable is that the card declares the four properties at all instead of leaving them to
+    // checkable is that the card declares the five properties at all instead of leaving them to
     // whatever it happens to hang off. A `toHaveStyle` here would pass with the reset deleted.
     expect(screen.getByRole('tooltip')).toHaveClass(
       'font-sans',
+      'font-normal',
       'normal-case',
       'tracking-normal',
       'text-left',
