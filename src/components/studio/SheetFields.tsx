@@ -6,7 +6,7 @@ import {
   OUTPUT_TOOLTIPS,
   sheetChoices,
 } from '../../constants/output/index.ts';
-import { resolveMode, resolveSheetIndex } from '../../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, resolveSheetIndex } from '../../constants/sheetPlans/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
@@ -53,7 +53,19 @@ export function SheetFields() {
           // The sheet goes back to the first in the same write. Every mode has one, and a stored
           // index left pointing at a series member the new mode does not have would put the select
           // below on a value its own options do not contain.
-          setOutputConfig({ ...output, directionalMode: value, sheetIndex: 0 });
+          //
+          // The rig travels with it for the reason `setCategory` carries the same three fields: the
+          // cut-out rig sheet draws the rig pieces themselves, so choosing it settles what they are
+          // for, and a store left holding the rig the user had before is state a saved preset would
+          // persist — a `POSE_LIBRARY` recorded against a sheet whose whole inventory is joints.
+          // The compiler resolves it either way, so this is not what makes the prompt correct; it
+          // is what stops the stored configuration disagreeing with the control showing it.
+          setOutputConfig({
+            ...output,
+            directionalMode: value,
+            rigMode: resolveRigMode(category, value, output.rigMode),
+            sheetIndex: 0,
+          });
         }}
       />
 

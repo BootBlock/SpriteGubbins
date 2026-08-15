@@ -190,13 +190,15 @@ export function projectionDigest(category: SubjectCategory, output: OutputConfig
 /**
  * What the components are for, and the geometry that makes them riggable.
  *
- * The rig is resolved through the category exactly as `sheetDigest` resolves the sheet mode, and for
- * the reason `projectionDigest` states above: a digest reading the stored field would be the one
- * place still reporting a value the compiler had discarded. A category that articulates about
- * nothing says `NONE` here whatever the configuration was left holding.
+ * The rig is resolved through the category and the sheet exactly as `sheetDigest` resolves the sheet
+ * mode, and for the reason `projectionDigest` states above: a digest reading the stored field would
+ * be the one place still reporting a value the compiler had discarded. A category that articulates
+ * about nothing says `NONE` here whatever the configuration was left holding, and the cut-out rig
+ * sheet says `CUTOUT_RIG` — with the joint, overlap and socket settings that come with it — because
+ * that is what its own inventory is.
  */
 export function riggingDigest(category: SubjectCategory, output: OutputConfig): string {
-  const rigMode = resolveRigMode(category, output.rigMode);
+  const rigMode = resolveRigMode(category, output.directionalMode, output.rigMode);
   if (rigMode !== 'CUTOUT_RIG') return rigMode;
   return join([rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
 }

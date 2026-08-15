@@ -23,6 +23,15 @@ interface SelectFieldProps<T extends string | number> {
    * text can hand over what it found rather than choosing between a prop and no prop.
    */
   readonly description?: string;
+  /**
+   * When set, the reason the value is not yours to choose — shown in place of nothing at all, as
+   * `NumberField` and `CheckboxField` both show theirs.
+   *
+   * Optional here where those two require it, for the reason `description` is: one of eighteen
+   * selects has a setting above it that takes its value over, and seventeen call sites passing a
+   * permanently-empty string would bury the one that does.
+   */
+  readonly disabledReason?: string;
   readonly onChange: (value: T) => void;
 }
 
@@ -47,16 +56,28 @@ export function SelectField<T extends string | number>({
   value,
   choices,
   description,
+  disabledReason,
   onChange,
 }: SelectFieldProps<T>) {
   const selectId = useId();
   const descriptionId = useId();
+  const reasonId = useId();
   const hasDescription = description !== undefined && description !== '';
+  const isDisabled = disabledReason !== undefined && disabledReason !== '';
+  // Both paragraphs where a control carries both, in the order they are rendered. A control with
+  // neither has to describe itself with nothing at all rather than with an empty string, which a
+  // screen reader announces as a description that failed to resolve.
+  const describedBy = [hasDescription ? descriptionId : '', isDisabled ? reasonId : '']
+    .filter((id) => id !== '')
+    .join(' ');
 
   return (
     <div>
       <div className="mb-1 flex items-center gap-1.5">
-        <label htmlFor={selectId} className="text-xs font-semibold text-ink-muted">
+        <label
+          htmlFor={selectId}
+          className={`text-xs font-semibold ${isDisabled ? 'text-ink-faint' : 'text-ink-muted'}`}
+        >
           {label}
         </label>
         <Tooltip text={tooltip} hint={label} />
@@ -67,13 +88,23 @@ export function SelectField<T extends string | number>({
         value={value}
         // Described-by rather than a paragraph merely sitting next to the control: the text changes
         // with the value, so a reader who cannot see the two together has no way to tell it is about
-        // the option currently chosen. `CheckboxField` associates its own reason the same way.
-        aria-describedby={hasDescription ? descriptionId : undefined}
+        // the option currently chosen. `CheckboxField` associates its own reason the same way, and
+        // both descriptions are named here where a control carries the two at once.
+        aria-describedby={describedBy === '' ? undefined : describedBy}
+        // `aria-disabled` rather than `disabled`, as `NumberField` and `CheckboxField` do and for the
+        // same reason: the control keeps its place in the tab order, so a keyboard user reaches it
+        // and hears why it is unavailable rather than skipping past a value the prompt still carries.
+        //
+        // The handler is what actually refuses the change. `readOnly` does nothing on a `<select>`
+        // — the attribute is defined for text-entry controls alone — so this is the checkbox's
+        // situation rather than the number field's, and the guard below is the refusal.
+        aria-disabled={isDisabled}
         onChange={(event) => {
+          if (isDisabled) return;
           const choice = choices.find((candidate) => String(candidate.value) === event.target.value);
           if (choice) onChange(choice.value);
         }}
-        className="w-full cursor-pointer rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent"
+        className={`w-full rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent aria-disabled:cursor-not-allowed aria-disabled:opacity-50 ${isDisabled ? '' : 'cursor-pointer'}`}
       >
         {choices.map((choice) => (
           <option key={choice.value} value={choice.value}>
@@ -85,6 +116,12 @@ export function SelectField<T extends string | number>({
       {hasDescription && (
         <p id={descriptionId} className="mt-2 text-xs leading-relaxed text-ink-muted">
           {description}
+        </p>
+      )}
+
+      {isDisabled && (
+        <p id={reasonId} className="mt-1 text-xs text-ink-faint">
+          {disabledReason}
         </p>
       )}
     </div>

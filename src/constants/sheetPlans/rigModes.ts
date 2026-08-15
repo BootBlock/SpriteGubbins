@@ -1,5 +1,7 @@
+import type { DirectionalMode } from '../../types/output.ts';
 import type { RigMode } from '../../types/rigging.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
+import { resolveMode } from './modes.ts';
 
 /**
  * Which rig each category can actually be asked for.
@@ -29,7 +31,9 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * than a coincidence — `CUTOUT_RIG_SINGLE_DIRECTION` is the sheet whose inventory *is* rig pieces, so
  * a category without one has already said it has no bone rig. `rigModes.test.ts` checks the two
  * tables still agree, because a category gaining one without the other would either offer a sheet of
- * rig pieces with no rig requirements or promise a rig no sheet can draw.
+ * rig pieces with no rig requirements or promise a rig no sheet can draw. {@link fixedRigMode} now
+ * rests on that agreement as well: the rig it hands back is not filtered through this table, so a
+ * category with the sheet but not the rig would be given one it does not support.
  *
  * The other five each argue their own case in their plan file, and this table is where those
  * arguments become enforceable:
@@ -64,15 +68,62 @@ export function supportsRigMode(category: SubjectCategory, rigMode: RigMode): bo
 }
 
 /**
- * The rig actually used for this category — the one asked for where it exists, `NONE` otherwise.
+ * The rig a sheet has already decided, because its inventory *is* that rig.
  *
- * The studio prevents the mismatch, exactly as it does for the sheet mode, and this exists for the
- * same reason `resolveMode` does: a preset written before this table existed, a history row from an
- * older build, or a hand-edited export can each arrive carrying a pairing that was legal when it was
- * saved. Every reader of `rigMode` goes through here — the compiler, the collapsed studio digest, the
- * split drawer's depth-order note and the control itself — so a stale value degrades to one answer
- * rather than to four.
+ * **The other half of the relation `CATEGORY_RIG_MODES` opened**, and the converse of the defect
+ * that table fixed. That one stopped section 5's pivot rules reaching a sheet with no joints;
+ * nothing stopped a sheet that is *entirely* joints reaching a prompt with no pivot rules.
+ * `CUTOUT_RIG_SINGLE_DIRECTION` draws one direction's worth of rig pieces and promises, in its
+ * plan's own assembly string, "any pose the rig produces by rotating the pieces about their
+ * pivots" — while the rig mode beside it stayed a free choice against a default of `POSE_LIBRARY`.
+ * So the studio's own defaults compiled a sheet of rig pieces with no pivot registration, no
+ * overlap margin, no depth order and no sockets: the geometry that makes those pieces rotatable,
+ * which is the whole reason such a sheet is generated. Setting the rig to `NONE` dropped section 5
+ * altogether, leaving a rig-pieces inventory above a rig assembly promise with no articulation
+ * instruction between them.
+ *
+ * A sheet mode listed here is not a free choice against the rig: it has already said what the
+ * pieces are for, so the rig mode is *reported* rather than asked for, and the joint-cap, overlap
+ * and socket settings it gates come with it. Every other mode leaves the choice open — a
+ * directional core or a pose library is drawn for either kind of rig, or for none.
+ *
+ * One entry, because one sheet mode is a rig. It is a table rather than an equality test so that a
+ * second such mode is an entry rather than a second condition to find.
  */
-export function resolveRigMode(category: SubjectCategory, rigMode: RigMode): RigMode {
-  return supportsRigMode(category, rigMode) ? rigMode : 'NONE';
+const SHEET_MODE_RIG: Readonly<Partial<Record<DirectionalMode, RigMode>>> = {
+  CUTOUT_RIG_SINGLE_DIRECTION: 'CUTOUT_RIG',
+};
+
+/**
+ * The rig this pairing fixes, or `undefined` where the sheet leaves the choice open.
+ *
+ * The sheet mode is resolved first, so a stored one this category cannot produce fixes nothing —
+ * an ITEM carrying `CUTOUT_RIG_SINGLE_DIRECTION` from an older build draws a directional core, and
+ * a rig it has no joints for may not arrive with it. That resolution is the reason this lives
+ * beside the sheet table rather than deriving the answer from the raw field.
+ *
+ * Exported because the studio needs the same answer for a different purpose: `RiggingFields` shows
+ * the rig select disabled, and says which sheet took the choice over, wherever this returns one.
+ */
+export function fixedRigMode(category: SubjectCategory, mode: DirectionalMode): RigMode | undefined {
+  return SHEET_MODE_RIG[resolveMode(category, mode)];
+}
+
+/**
+ * The rig actually used for this sheet — the one its contents demand where they demand one, the one
+ * asked for where the category can honour it, and `NONE` otherwise.
+ *
+ * The studio prevents both mismatches, exactly as it does for the sheet mode, and this exists for
+ * the same reason `resolveMode` does: a preset written before these tables existed, a history row
+ * from an older build, or a hand-edited export can each arrive carrying a pairing that was legal
+ * when it was saved. Every reader of `rigMode` goes through here — the compiler, the collapsed
+ * studio digest, the split drawer's depth-order note and the control itself — so a stale value
+ * degrades to one answer rather than to four.
+ *
+ * The two clauses are ordered, and the order is the fix: the sheet's own demand outranks the stored
+ * field, because a sheet of rig pieces is not a configuration that can be overridden into something
+ * else. Where no sheet demands one, the stored value stands or falls on the category alone.
+ */
+export function resolveRigMode(category: SubjectCategory, mode: DirectionalMode, rigMode: RigMode): RigMode {
+  return fixedRigMode(category, mode) ?? (supportsRigMode(category, rigMode) ? rigMode : 'NONE');
 }
