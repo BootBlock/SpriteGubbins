@@ -13,6 +13,7 @@ import {
 } from '../constants/sheetPlans/index.ts';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { CATEGORY_EXCLUSION_TEXT, DIRECTION_LISTS, OBJECT_YAW } from '../constants/promptText/index.ts';
+import { sectionOf } from '../test/promptSections.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
@@ -37,26 +38,6 @@ import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheet
  * What these tests pin is the property, not the example — no category may ever emit another's
  * vocabulary, whatever it is paired with.
  */
-
-/**
- * One section of a compiled prompt, found by its heading's **title** and running to the next
- * heading.
- *
- * Section numbers are computed from the headings a configuration actually carries, so a literal
- * `## 8. EXCLUSIONS` is right only for the categories that also carry a rig section — the five that
- * articulate about nothing put their exclusions at 7. Every slice here was previously written as a
- * number, and the inventory's was written as a *disjunction* over the two numbers the following
- * heading could take, which is the hand-maintained arithmetic `applySectionNumbers` removed.
- *
- * `\n## ` terminates rather than the `---` rule, because a section's own sub-headings are three
- * hashes or four and the rule is not present between every pair. The end of the *prompt* is spelled
- * `(?![\s\S])` rather than `$`, which under the `m` flag needed for `^` would mean the end of the
- * heading's own line and match every section as its heading alone.
- */
-function sectionOf(prompt: string, title: string): string {
-  const pattern = String.raw`^## \d+\. ${title}$[\s\S]*?(?=\n## |(?![\s\S]))`;
-  return new RegExp(pattern, 'm').exec(prompt)?.[0] ?? '';
-}
 
 /**
  * Vocabulary that belongs only to a sheet whose components *are* the environment.

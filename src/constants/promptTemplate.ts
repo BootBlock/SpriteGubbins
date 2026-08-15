@@ -46,10 +46,13 @@
  * emitted paragraphs to something narrower and ragged, and change the prompt for every subject to
  * tidy a file. Prettier does not reformat inside a template literal, so nothing forces the issue.
  *
- * **Section 3's chirality rules and the closing invariants are the one deliberate repetition beyond
- * that**, and they are repetition of a *derived* fact rather than of a rule. Which side a yaw leads
- * with is stated inside each facing's own paragraph by `FACING_TEXT`, three sentences deep and mixed
- * in with what the yaw hides; the ledger states the same answer as one line per facing, beside the
+ * **Three passages beyond that repeat something deliberately, and they divide by what they repeat.**
+ * Section 3's chirality rules and the closing invariants repeat a *derived* fact rather than a rule;
+ * section 8's closing paragraph repeats a rule, and the paragraph further down says what bought it.
+ *
+ * The derived fact is the leading side, and which side a yaw leads with is stated inside each
+ * facing's own paragraph by `FACING_TEXT`, three sentences deep and mixed in with what the yaw
+ * hides; the ledger states the same answer as one line per facing, beside the
  * rule that consumes it. **Only the ledger is computed** — from `leadingSide` — and `FACING_TEXT` is
  * thirteen hand-written sentences, so what stops the two drifting is `chirality.test.ts`, which
  * parses the side each of those sentences puts in bold and fails unless the arithmetic agrees. That
@@ -83,7 +86,12 @@
  * **The native grid is stated in three places, and the split is what makes each of them necessary.**
  * Section 0's fifth item is a rule about *resampling*, and as written it read as a ban on the one
  * enlargement pixel art is made of — so the carve-out belongs in the item it would otherwise
- * contradict, not only where the scale is stated. Section 2 states the grid and the figure, because
+ * contradict, not only where the scale is stated. **Both the carve-out and the sentence scoping the
+ * item to resampling sit inside the gate**, which is what keeps a prompt with no native grid word for
+ * word what it was: the scoping is only load-bearing where something has to be carved out of it, and
+ * ungated it cost every prompt the app composes some twenty tokens — enough, measured, to put the
+ * tightest shipped preset past the share `presetCoverage.test.ts` allows it. Section 2 states the
+ * grid and the figure, because
  * that is where the target component size is. The self-audit's line is the third and earns its place
  * by asking a different question: the other two say what to draw, and it asks what the delivered
  * sheet actually holds — which is precisely the check the reported failure walked past, a sheet
@@ -93,6 +101,39 @@
  * carries `[IF:DELIBERATES]` above it as well, as every check in that section does — a target with no
  * pass in which to re-read the sheet gets the two instructions and no checklist, which is that gate's
  * own argument rather than a hole in this one.
+ *
+ * **Section 8 closes by restating section 0's exclusion precedence, and the distance between the two
+ * is the argument for it.** The rule is stated where the precedence order is settled, which is the
+ * far end of the document from the list that triggers it — and a sheet came back wearing a holstered
+ * sidearm that section 1 had named and section 8 prohibited, with the model that drew it reporting
+ * the pair as a conflict it had resolved rather than one already decided. Neither side of that
+ * conflict is computable: `worn_details` and `exclusions` are two of the same sixteen free-text
+ * fields, so ruling that `No weapons` overrules a holster but not a pauldron is a judgement about
+ * English, and this app makes no outbound model call to make it with. What it can do is put the
+ * answer beside the question, so a reader meets the ranking at the point it bites rather than being
+ * expected to carry it eight sections.
+ *
+ * **The restatement carries the inventory carve-out with it, and that is not padding.** A version
+ * that stopped at "already overruled" would have section 8 telling a reader to drop a component
+ * section 4 requires — one prompt disagreeing with itself, which is the failure the repetition
+ * exists to prevent rather than a second instance of it.
+ *
+ * **The carve-out is stated as the boundary it is, not as a class of thing that is exempt**, and
+ * that phrasing is the difference between a fix and a wider hole. A draft of this paragraph opened
+ * the exception with "Components are the exception" — but every object drawn on this sheet *is* a
+ * component, so read as far as the emphasis and no further, it exempted the whole image from the
+ * ban it had just restated. Section 0's wording is what closes it: the ranking decides what a
+ * component **shows**, not which components exist, so a torso whose worn detail is excluded is
+ * drawn without the detail rather than left off the sheet. Both copies now carry that sentence, and
+ * the copy in section 8 says "leave the element out **of the image** entirely" for the neighbouring
+ * reason — the manifest and the adherence report ask for text *beside* the image, and an
+ * unqualified "leave it out" reaches them.
+ *
+ * `promptCompiler.test.ts` slices each section and asserts, under every category, that both copies
+ * carry the ranking, the ban on a compromise, and that boundary — so a half cannot be dropped from
+ * one of them, and neither can drift out of the section it belongs in. What the tests cannot hold is
+ * the *wording*: they match on fixed substrings, so a qualifying clause appended to either copy
+ * would leave them green. Read both when either changes.
  *
  * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
  * each rule lives. This constant is the one the app emits and therefore the source of the pair, so
@@ -120,13 +161,12 @@ Satisfy this section before any aesthetic consideration.
    around a component.
 [N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
-   virtual canvas and downscale, and do not upscale a smaller one. What this forbids is
-   **resampling** — any resize that invents intermediate values, softens a boundary or leaves a
-   pixel edge blurred.
+   virtual canvas and downscale, and do not upscale a smaller one.
 [IF:NATIVE_GRID]
-   A native pixel grid presented at a whole-number multiple is not resampling, and is what this sheet
-   asks for: section [SEC:STYLE] states the grid and the multiple. Multiplying by a whole number invents no
-   intermediate values, so every edge in the delivered image is an edge that was drawn on that grid.
+   What that forbids is **resampling** — any resize that invents intermediate values, softens a
+   boundary or leaves a pixel edge blurred. A native pixel grid presented at a whole-number multiple
+   does none of that, and is what this sheet asks for: section [SEC:STYLE] states the grid and the multiple,
+   and every edge in the delivered image is an edge that was drawn on that grid.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
@@ -640,6 +680,12 @@ Absent from the image entirely:
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
+
+**An attribute anywhere above that asks for one of these elements is already overruled** — the
+subject definition in section [SEC:SUBJECT] and the render style in section [SEC:STYLE] included. Leave the element out of
+the image entirely, and never satisfy both by drawing a reduced, integrated or decorative version of
+it. This decides what a component *shows*, not which components exist: where section [SEC:INVENTORY] lists an
+entry this section excludes, draw the entry, because dropping it mis-maps every component after it.
 
 ---
 

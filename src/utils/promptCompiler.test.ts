@@ -15,6 +15,7 @@ import {
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
+import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts';
@@ -363,7 +364,7 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
   });
 });
 
-describe('generatePrompt — section 0’s exclusion precedence', () => {
+describe('generatePrompt — the exclusion precedence, stated at both ends', () => {
   /**
    * The prompt with its wrapping removed, so an assertion can quote a whole sentence rather than
    * the fragment that happens to fall between two of the template's line breaks — which would make
@@ -386,10 +387,13 @@ describe('generatePrompt — section 0’s exclusion precedence', () => {
     // category tripwire above, this needs no channel to report through, so every target gets it: a
     // diffusion model meets the same contradiction and simply cannot tell anyone it did.
     for (const targetModel of TARGET_MODEL_IDS) {
-      const prompt = unwrapped(generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel })));
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
+      // Sliced rather than searched whole, because section 8 now carries the compromise ban too: an
+      // assertion against the entire prompt would go on passing with section 0's copy deleted.
+      const contract = unwrapped(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'));
 
-      expect(prompt, targetModel).toContain(OUTRANKS);
-      expect(prompt, targetModel).toContain(NO_COMPROMISE);
+      expect(contract, targetModel).toContain(OUTRANKS);
+      expect(contract, targetModel).toContain(NO_COMPROMISE);
     }
   });
 
@@ -398,9 +402,11 @@ describe('generatePrompt — section 0’s exclusion precedence', () => {
     // section 4's placement rule makes grid position the only identity map — so a component dropped
     // to honour an exclusion would mis-map every component after it. An exclusion decides what a
     // component shows; it never deletes an entry.
-    const prompt = unwrapped(generatePrompt('CHARACTER', SUBJECT, OUTPUT));
+    const contract = unwrapped(
+      sectionOf(generatePrompt('CHARACTER', SUBJECT, OUTPUT), 'NON-NEGOTIABLE OUTPUT CONTRACT'),
+    );
 
-    expect(prompt).toContain(NOT_THE_INVENTORY);
+    expect(contract).toContain(NOT_THE_INVENTORY);
   });
 
   it('carries the rule for a subject that actually states the contradiction', () => {
@@ -413,6 +419,89 @@ describe('generatePrompt — section 0’s exclusion precedence', () => {
     expect(prompt).toContain('- Integrated Worn Details: Brass shoulder pauldron');
     expect(prompt).toContain('- Subject-specific: No pauldrons');
     expect(prompt).toContain(OUTRANKS);
+  });
+
+  const ALREADY_OVERRULED =
+    'An attribute anywhere above that asks for one of these elements is already overruled';
+  /**
+   * The ranking, with the section number left out.
+   *
+   * `OUTRANKS` above names section 8, which is right for the four categories that also carry a rig
+   * section and wrong for the five that put their exclusions at 7 — so it can be asserted for one
+   * category at a time and never across the set. The clause without the citation is what every
+   * category's section 0 carries, which is what makes the per-category walk below possible at all.
+   */
+  const RANKING = 'outranks every attribute that asks for the same visible element';
+  /**
+   * The boundary both copies state, and the reason it is a shared constant rather than two.
+   *
+   * It is the sentence that keeps the exception from swallowing the rule: every object drawn on the
+   * sheet is a component, so an exception phrased as a *class* — "components are the exception" —
+   * exempts the whole image to a reader who stops at the emphasis. Phrased as a boundary it says
+   * only that the ranking governs what a component shows. The two copies differ by one word (`That`
+   * against `This`), so the shared fragment starts after it, and what discriminates the copies is
+   * the section each assertion slices rather than the wording.
+   */
+  const SHOWS_NOT_EXISTS = 'decides what a component *shows*, not which components exist';
+
+  it('states the same ranking again in the exclusions section itself, for every target', () => {
+    // The reported failure was not a missing rule, it was a distant one. Section 0 settles the
+    // precedence order at the top of the document; the list that triggers it is at the other end,
+    // and a delivered sheet came back wearing the excluded item with the model reporting the pair as
+    // a conflict it had had to resolve — rather than one the specification had already decided. So
+    // the answer is restated beside the question. Every target, for the reason section 0's own copy
+    // is: a diffusion model meets the same contradiction and cannot say that it did.
+    for (const targetModel of TARGET_MODEL_IDS) {
+      const exclusions = unwrapped(
+        sectionOf(generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel })), 'EXCLUSIONS'),
+      );
+
+      expect(exclusions, targetModel).toContain(ALREADY_OVERRULED);
+      expect(exclusions, targetModel).toContain(NO_COMPROMISE);
+    }
+  });
+
+  it('gives both copies the ranking, the compromise ban and the boundary, under every category', () => {
+    // What stops the restatement from being a new contradiction rather than a cure for one. A copy
+    // missing the boundary would have section 8 telling a reader to drop a component section 4
+    // requires; a copy missing the compromise ban would leave the reduced, integrated or decorative
+    // version that the delivered sheet actually came back with. The categories are where a half goes
+    // missing unevenly, because each has its own exclusion list and its own inventory — and they are
+    // also the two arrangements of the numbering, since five of the nine put exclusions at 7.
+    for (const category of SUBJECT_CATEGORIES) {
+      const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
+      const contract = unwrapped(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'));
+      const exclusions = unwrapped(sectionOf(prompt, 'EXCLUSIONS'));
+
+      // The ranking is the one half the copies word differently — section 0 states it as a place in
+      // the precedence order, section 8 as a verdict already reached — so each is matched by its own
+      // opening. The other two halves are shared text, and the slice is what says which copy carries
+      // them.
+      for (const [section, text, ranking] of [
+        ['section 0', contract, RANKING],
+        ['section 8', exclusions, ALREADY_OVERRULED],
+      ] as const) {
+        const where = `${category} / ${section}`;
+        expect(text, where).toContain(ranking);
+        expect(text, where).toContain(NO_COMPROMISE);
+        expect(text, where).toContain(SHOWS_NOT_EXISTS);
+      }
+    }
+  });
+
+  it('keeps each copy in its own section rather than emitting one of them twice', () => {
+    // Guards the placement rather than the words. The three sentences above are deliberately shared
+    // between the copies, so the loop that walks them cannot tell where either one sits — what tells
+    // them apart is the opening each section carries, and this is what pins those two openings to a
+    // section each. Section 0 keeps the ranking with its number; section 8 keeps the reminder.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, OUTPUT);
+    const contract = unwrapped(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'));
+    const exclusions = unwrapped(sectionOf(prompt, 'EXCLUSIONS'));
+
+    expect(contract).toContain(OUTRANKS);
+    expect(contract).not.toContain(ALREADY_OVERRULED);
+    expect(exclusions).toContain(ALREADY_OVERRULED);
+    expect(exclusions).not.toContain(OUTRANKS);
   });
 });
 
@@ -1211,8 +1300,10 @@ describe('generatePrompt — technical settings in prose', () => {
     );
 
     // Section 0 no longer forbids the one enlargement pixel art is made of.
-    expect(prompt).toContain('What this forbids is\n   **resampling**');
-    expect(prompt).toContain('A native pixel grid presented at a whole-number multiple is not resampling');
+    expect(prompt).toContain('What that forbids is **resampling**');
+    expect(prompt).toContain(
+      'A native pixel grid presented at a whole-number multiple\n   does none of that',
+    );
 
     // Section 2 says which of the two things the size is, and states the multiple as a figure.
     expect(prompt).toContain('### The native grid, and the scale it is delivered at');
@@ -1261,8 +1352,10 @@ describe('generatePrompt — technical settings in prose', () => {
     // to enlarge nothing in particular.
     const painted = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...grid, renderStyle: 'PAINTED_2D' }));
     expect(painted).toContain('do not upscale a smaller one');
-    expect(painted).not.toContain('native pixel grid presented at a whole-number multiple');
     expect(painted).not.toContain('The native grid, and the scale');
+    // Item 5 is word for word what it was, the scoping sentence included — a prompt with no grid to
+    // carve out pays nothing for one, which is what keeps the tightest preset inside its budget.
+    expect(painted).not.toContain('resampling');
 
     // A profile that is a scale already states its own figure; a second one is two answers.
     const profiled = generatePrompt(

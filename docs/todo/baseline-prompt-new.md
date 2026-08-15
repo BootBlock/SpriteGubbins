@@ -304,13 +304,12 @@ Satisfy this section before any aesthetic consideration.
    around a component.
 [N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
-   virtual canvas and downscale, and do not upscale a smaller one. What this forbids is
-   **resampling** — any resize that invents intermediate values, softens a boundary or leaves a
-   pixel edge blurred.
+   virtual canvas and downscale, and do not upscale a smaller one.
 [IF:NATIVE_GRID]
-   A native pixel grid presented at a whole-number multiple is not resampling, and is what this sheet
-   asks for: section [SEC:STYLE] states the grid and the multiple. Multiplying by a whole number invents no
-   intermediate values, so every edge in the delivered image is an edge that was drawn on that grid.
+   What that forbids is **resampling** — any resize that invents intermediate values, softens a
+   boundary or leaves a pixel edge blurred. A native pixel grid presented at a whole-number multiple
+   does none of that, and is what this sheet asks for: section [SEC:STYLE] states the grid and the multiple,
+   and every edge in the delivered image is an edge that was drawn on that grid.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 [N]. One square-pixel grid at one pixel density across the entire sheet. No anti-aliasing on
@@ -824,6 +823,12 @@ Absent from the image entirely:
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
+
+**An attribute anywhere above that asks for one of these elements is already overruled** — the
+subject definition in section [SEC:SUBJECT] and the render style in section [SEC:STYLE] included. Leave the element out of
+the image entirely, and never satisfy both by drawing a reduced, integrated or decorative version of
+it. This decides what a component *shows*, not which components exist: where section [SEC:INVENTORY] lists an
+entry this section excludes, draw the entry, because dropping it mis-maps every component after it.
 
 ---
 
@@ -1861,14 +1866,42 @@ not isometric — and only `THREE_QUARTER_TOPDOWN`, whose description is satisfi
 strictly between the two extremes, leaves it open. That also makes the vertical reachable from
 exactly one projection, which is the projection that names it.
 
-**R7. §0 forbade the one enlargement pixel art is made of, and never said which of two things a
+**R7. R5's rule was stated once, at the far end of the document from the list that triggers it.**
+The ranking R5 added went into §0, where the precedence order is settled, and a sheet still came back
+carrying the excluded item: §1 named a holstered sidearm, §8 said "No weapons", and the model that
+drew it reported the pair as a conflict it had *resolved* rather than one the specification had
+already decided. So the defect this time is distance, not absence — R5's clause is correct and
+unchanged, and §8 now closes by restating it beside the bullets that provoke it.
+
+**Restating a rule is the thing this template is otherwise careful not to do**, so what makes this
+one worth its lines is that neither side of the conflict can be computed away. `worn_details` and
+`exclusions` are two of the same sixteen free-text fields, so deciding that "No weapons" overrules a
+holster but not a pauldron is a judgement about English — and the app composes prompt text and makes
+no outbound model call, by design. A pre-resolved subject description is therefore not available at
+any price; putting the answer beside the question is. The alternatives are recorded on the issue that
+raised it: leave it, mark the overlapping field inside §1 by some conservative test, or surface the
+overlap in the studio for the person who wrote both strings. The second was rejected outright — a
+test that fired wrongly would drop a requested detail in the section the template calls the sole
+authority for the subject's design, which is a worse failure than the one being fixed.
+
+**The copy carries R5's boundary with it, and a draft that did not is the trap worth recording.**
+That draft opened the exception with "Components are the exception, because the count ranks first" —
+true, and yet every object drawn on the sheet *is* a component, so a reader stopping at the emphasis
+had just been told the whole image was exempt from the ban above it. R5's own phrasing is what closes
+that: the ranking decides what a component **shows**, not which components exist. The copy also says
+"leave the element out **of the image** entirely" rather than "leave it out", because §10's manifest
+and §11's adherence report ask for text *beside* the image, and the unqualified form reaches them.
+Both are cases of the same thing — a restatement is only as safe as the qualifiers that travelled
+with it, and the ones that get dropped are the ones the original stated in a separate sentence.
+
+**R8. §0 forbade the one enlargement pixel art is made of, and never said which of two things a
 target component size was.** ChatGPT 5.6 Sol drew an eight-way character sheet from a configuration
 stating `16 × 32 px` and reported back that the components were "visually hundreds of delivered
 pixels tall" and carried "far more interior detail than a true 16 × 32 sprite could contain", the
 image model having "treated `16 × 32` more as stylistic guidance than a measurable constraint". That
 was the only reading available to it. §0's fifth item says to render every component directly at the
 delivered output resolution and not to upscale a smaller one; §2 then states a component size of
-16 × 32 on a sheet every named target delivers somewhere between roughly 1024 and 1536 pixels wide.
+16 × 32 on a sheet the current image models deliver at something over a thousand pixels wide.
 Twelve components at 16 × 32 *delivered* pixels there are specks, and twelve legible ones have been
 enlarged from a native grid — which that item appeared to forbid in as many words. With nothing
 saying which was meant, the size stopped being a constraint and became a mood.
@@ -1878,7 +1911,9 @@ The app had already answered the question at the other end. `utils/targetSizeGri
 the Quantise tab exists downstream of that — so the tool that reads the image back assumed exactly
 what the prompt that requested it forbade. The fix is to say which, in the prompt. §0's fifth item
 now names **resampling** as the thing it forbids and carries a carve-out for a native grid presented
-at a whole-number multiple; §2 gains a block stating that the target size *is* that grid, that the
+at a whole-number multiple — both inside the gate, so a prompt with no grid is word for word what it
+was, and an ungated scoping sentence does not spend twenty tokens on every prompt the app composes
+to carve out something that sheet never asked for; §2 gains a block stating that the size *is* that grid, that the
 sheet delivers it enlarged by a whole number, and that the enlargement adds no detail; and §9's audit
 gains one check on what the finished sheet holds, which is the check the reported sheet walked past.
 
@@ -1888,9 +1923,11 @@ whole-number scale at which the sheet still seats every component at that size �
 tab and the prompt cannot disagree about one sheet. It reasons from a *nominal* canvas
 (`constants/sheetCanvas.ts`), because a generator decides the delivered pixel dimensions and a prompt
 only asks for a shape: the long edge is taken as 1024, under what the current models return at these
-ratios, so a figure derived there fits on the sheets that come back larger. That is also why the
-prompt says "N× or more" rather than pinning the multiple — an exact figure against a canvas the
-generator actually has would be reconciled by resampling, which is the one thing being ruled out.
+ratios, so a figure derived there fits on the sheets that come back larger. SD 1.5 at 512 is the one
+named target it does not fit, and that file records why the miss is affordable — its documented
+ceiling is the 77-token CLIP context, so the block this figure feeds never reaches it. That is also
+why the prompt says "N× or more" rather than pinning the multiple: an exact figure against a canvas
+the generator actually has would be reconciled by resampling, the one thing being ruled out.
 
 **Four configurations state nothing at all, and each silence is the decision.** A style that is not
 pixel art has no native grid to enlarge, and §0's rule is right there unqualified. A resolution
