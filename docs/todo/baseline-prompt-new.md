@@ -229,11 +229,30 @@ prompt that contradicts itself.
 | --- | --- | --- |
 | `HARDWARE_PROFILE` | `NONE` · eighteen machines, from the Atari 2600 to the Neo Geo — see `src/constants/hardware/` | `### Target hardware` in §2, with the machine's constraint list |
 | `PALETTE` | `FREE` · nineteen palettes — see `src/constants/palettes/` | `### Palette` in §2, plus a clause in §0's contract and one in §9's audit |
+| `STYLE_REFERENCE` | `NONE` · the published games in `src/constants/styleReferences/` | `### Art direction reference` in §2, with the look's characteristic list |
+| `NAME_STYLE_REFERENCE` | `false` · `true` | One sentence inside that block naming the game; the characteristics are emitted either way |
 
 Choosing a profile in the studio is a **template**: it writes the render style, surface detail,
 resolution, component size, outline, lighting and palette in one act, and every one of them stays the
 user's to change afterwards. The stored id is what makes the prompt name the machine, which steers a
 generator further than any single figure in the list does.
+
+An **art direction reference** is the third of that family and works the same way, one level up: a
+machine is what the silicon allowed, a reference is what one team did within it. It writes a wider
+settings package — the profile's seven plus the projection, the camera elevation and the machine and
+palette themselves — and then emits the facts none of those fields can hold: the tile grid, the
+resolution the art was authored at, how many facings were drawn against how many the engine mirrored.
+
+**Its characteristics may never restate a setting**, which is the rule that keeps the block safe to
+edit against. A reference is a template, so the settings it wrote are the user's the moment it is
+applied; a characteristic reading "characters are drawn in flat front elevation" would contradict the
+projection line above it as soon as anyone changed that select. So the block states only what has no
+field, and says outright that the settings win where the two ever pull apart.
+
+`NAME_STYLE_REFERENCE` is separate from the reference itself because naming a published game is a
+property of the *target*, not of the sheet: several endpoints refuse or degrade a prompt carrying a
+commercial title, and the characteristics are what actually carry the look. It defaults to off, and
+the sheet is fully specified without it.
 
 A palette is one of two kinds. A **fixed** one is a list — the Game Boy's four greens, the C64's
 sixteen, the 2600's 127 — and every entry is written into the prompt. A **channel-depth** one is a
@@ -416,6 +435,22 @@ aesthetic preference stated elsewhere in this section, the hardware wins.
 ### Palette — [DEFINE:PALETTE_NAME]
 
 [DEFINE:PALETTE_SPECIFICATION]
+[/IF]
+[IF:STYLE_REFERENCE]
+
+### Art direction reference
+[IF:STYLE_REFERENCE_NAMED]
+
+These components are drawn to match the art direction of [DEFINE:STYLE_REFERENCE_NAME]. Reproduce
+what that artwork measurably does, rather than a general impression of it.
+[/IF]
+
+The look is fixed by the following. Each states something the settings above have no way to say:
+
+[DEFINE:STYLE_REFERENCE_CHARACTERISTICS]
+
+Treat those as measurements and work to them directly. Where one pulls against a setting stated
+earlier in this section, the setting wins — it is what this particular sheet asked for.
 [/IF]
 [IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]
 

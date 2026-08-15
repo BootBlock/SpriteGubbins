@@ -8,6 +8,7 @@ import {
   describeDirections,
   describeHardware,
   describePalette,
+  describeStyleReference,
   FRAME_IS_A_COMPONENT,
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
@@ -28,6 +29,7 @@ import { fieldLabelFor } from '../constants/categories/index.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
+import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -138,6 +140,10 @@ export function generatePrompt(
   // is a machine — the failure mode being a heading with nothing under it.
   const hardware = hardwareProfileFor(output.hardwareProfile);
   const palette = paletteFor(output.palette);
+  // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
+  // below — the two values and the flag that gates their block — so a heading with nothing under it
+  // is not expressible, exactly as it is not for the two above.
+  const reference = styleReferenceFor(output.styleReference);
 
   const values: Record<string, string> = {
     CATEGORY: category,
@@ -176,6 +182,9 @@ export function generatePrompt(
     HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
     PALETTE_NAME: palette?.name ?? '',
     PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
+
+    STYLE_REFERENCE_NAME: reference?.name ?? '',
+    STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
 
     PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
     CAMERA_ELEVATION: String(output.cameraElevation),
@@ -259,6 +268,15 @@ export function generatePrompt(
     // Read through `perComponentLimit` rather than off `colorsPerComponent`, so the gate answers
     // whether the line was *emitted* rather than whether the field was set.
     PALETTE_PER_COMPONENT: palette !== null && perComponentLimit(palette) !== null ? 'yes' : '',
+    // Read from the resolved reference rather than the stored id, for the reason `HARDWARE_PROFILE`
+    // is: a configuration naming a look this build no longer ships emits no heading rather than an
+    // empty one.
+    STYLE_REFERENCE: reference === null ? '' : 'yes',
+    // Nested inside that block in the template, so this only ever decides the naming *sentence* —
+    // never the characteristics, which are what actually carry the look. Conjoined here rather than
+    // left to the template's nesting alone, so a `nameStyleReference` left true from a previous
+    // reference cannot name a game once the reference is back to `NONE`.
+    STYLE_REFERENCE_NAMED: reference !== null && output.nameStyleReference ? 'yes' : '',
     // The rules about views *disagreeing* — landmarks, occlusion, no mirroring, the directional
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
     // would be forty lines of instruction about a comparison the generator cannot make.

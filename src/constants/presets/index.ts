@@ -8,6 +8,7 @@ import { CREATURE_BEAST_PRESETS } from './creatureBeasts.ts';
 import { CREATURE_HORROR_PRESETS } from './creatureHorrors.ts';
 import { EFFECT_COMBAT_PRESETS } from './effectCombat.ts';
 import { EFFECT_MAGIC_PRESETS } from './effectMagic.ts';
+import { GAME_LOOK_PRESETS } from './gameLooks.ts';
 import { INTERFACE_KIT_PRESETS } from './interfaceKits.ts';
 import { ITEM_GEAR_PRESETS } from './itemGear.ts';
 import { ITEM_WEAPON_PRESETS } from './itemWeapons.ts';
@@ -44,9 +45,10 @@ export { DEFAULT_PRESET } from './characterCore.ts';
  * position of a preset in this list is the stop it takes on the hue wheel — so keeping a category's
  * presets contiguous is what makes each collection read as a sweep rather than as noise.
  *
- * The **Unsung Saviour** presets come last and are the one family that is not a worked example: they
- * are technical contracts with almost no subject, encoding one game's art requirements so its sheets
- * can be generated without re-deriving them.
+ * The last two families are the ones that are **not** worked examples: technical contracts with
+ * almost no subject. The **art style reference** presets each pair a published game's look with the
+ * deliverable it is most often wanted for, and the **Unsung Saviour** presets encode one project's
+ * own art requirements so its sheets can be generated without re-deriving them.
  */
 export const PRESETS: readonly PresetArchetype[] = [
   ...CHARACTER_CORE_PRESETS,
@@ -66,5 +68,6 @@ export const PRESETS: readonly PresetArchetype[] = [
   ...EFFECT_MAGIC_PRESETS,
   ...INTERFACE_KIT_PRESETS,
   ...TERRAIN_FIELD_PRESETS,
+  ...GAME_LOOK_PRESETS,
   ...UNSUNG_SAVIOUR_PRESETS,
 ];

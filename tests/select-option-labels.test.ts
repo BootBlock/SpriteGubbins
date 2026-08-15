@@ -7,6 +7,7 @@ import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.
 import { HARDWARE_PROFILE_CHOICES } from '../src/constants/hardware/index.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
 import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
+import { STYLE_REFERENCE_CHOICES } from '../src/constants/styleReferences/index.ts';
 import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
@@ -55,6 +56,10 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
   OPENING_VIEW_CHOICES: OPENING_VIEW_CHOICES.map((choice) => choice.label),
   PALETTE_CHOICES: PALETTE_CHOICES.map((choice) => choice.label),
+  // The third list naming a real thing rather than a stored identifier — a published game, where the
+  // two above name a machine and its colours. Same budget, same reason: the column is measured in
+  // characters and does not care what they mean.
+  STYLE_REFERENCE_CHOICES: STYLE_REFERENCE_CHOICES.map((choice) => choice.label),
   // Over every set the category offers, because the series totals in the labels move with it.
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
