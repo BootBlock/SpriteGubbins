@@ -803,6 +803,12 @@ Absent from the image entirely:
   effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
 
+**An attribute anywhere above that asks for one of these elements is already overruled** — the
+subject definition in section [SEC:SUBJECT] and the render style in section [SEC:STYLE] included. Leave the element out of
+the image entirely, and never satisfy both by drawing a reduced, integrated or decorative version of
+it. This decides what a component *shows*, not which components exist: where section [SEC:INVENTORY] lists an
+entry this section excludes, draw the entry, because dropping it mis-maps every component after it.
+
 ---
 
 [IF:DELIBERATES]
@@ -1834,6 +1840,34 @@ angled-overhead one *is* a camera geometry, so it now fixes the elevation — an
 not isometric — and only `THREE_QUARTER_TOPDOWN`, whose description is satisfied by any elevation
 strictly between the two extremes, leaves it open. That also makes the vertical reachable from
 exactly one projection, which is the projection that names it.
+
+**R7. R5's rule was stated once, at the far end of the document from the list that triggers it.**
+The ranking R5 added went into §0, where the precedence order is settled, and a sheet still came back
+carrying the excluded item: §1 named a holstered sidearm, §8 said "No weapons", and the model that
+drew it reported the pair as a conflict it had *resolved* rather than one the specification had
+already decided. So the defect this time is distance, not absence — R5's clause is correct and
+unchanged, and §8 now closes by restating it beside the bullets that provoke it.
+
+**Restating a rule is the thing this template is otherwise careful not to do**, so what makes this
+one worth its lines is that neither side of the conflict can be computed away. `worn_details` and
+`exclusions` are two of the same sixteen free-text fields, so deciding that "No weapons" overrules a
+holster but not a pauldron is a judgement about English — and the app composes prompt text and makes
+no outbound model call, by design. A pre-resolved subject description is therefore not available at
+any price; putting the answer beside the question is. The alternatives are recorded on the issue that
+raised it: leave it, mark the overlapping field inside §1 by some conservative test, or surface the
+overlap in the studio for the person who wrote both strings. The second was rejected outright — a
+test that fired wrongly would drop a requested detail in the section the template calls the sole
+authority for the subject's design, which is a worse failure than the one being fixed.
+
+**The copy carries R5's boundary with it, and a draft that did not is the trap worth recording.**
+That draft opened the exception with "Components are the exception, because the count ranks first" —
+true, and yet every object drawn on the sheet *is* a component, so a reader stopping at the emphasis
+had just been told the whole image was exempt from the ban above it. R5's own phrasing is what closes
+that: the ranking decides what a component **shows**, not which components exist. The copy also says
+"leave the element out **of the image** entirely" rather than "leave it out", because §10's manifest
+and §11's adherence report ask for text *beside* the image, and the unqualified form reaches them.
+Both are cases of the same thing — a restatement is only as safe as the qualifiers that travelled
+with it, and the ones that get dropped are the ones the original stated in a separate sentence.
 
 ---
 

@@ -46,10 +46,13 @@
  * emitted paragraphs to something narrower and ragged, and change the prompt for every subject to
  * tidy a file. Prettier does not reformat inside a template literal, so nothing forces the issue.
  *
- * **Section 3's chirality rules and the closing invariants are the one deliberate repetition beyond
- * that**, and they are repetition of a *derived* fact rather than of a rule. Which side a yaw leads
- * with is stated inside each facing's own paragraph by `FACING_TEXT`, three sentences deep and mixed
- * in with what the yaw hides; the ledger states the same answer as one line per facing, beside the
+ * **Three passages beyond that repeat something deliberately, and they divide by what they repeat.**
+ * Section 3's chirality rules and the closing invariants repeat a *derived* fact rather than a rule;
+ * section 8's closing paragraph repeats a rule, and the paragraph further down says what bought it.
+ *
+ * The derived fact is the leading side, and which side a yaw leads with is stated inside each
+ * facing's own paragraph by `FACING_TEXT`, three sentences deep and mixed in with what the yaw
+ * hides; the ledger states the same answer as one line per facing, beside the
  * rule that consumes it. **Only the ledger is computed** — from `leadingSide` — and `FACING_TEXT` is
  * thirteen hand-written sentences, so what stops the two drifting is `chirality.test.ts`, which
  * parses the side each of those sentences puts in bold and fails unless the arithmetic agrees. That
@@ -79,6 +82,39 @@
  * and the report audits what was actually delivered so the *template* can be. Writing the list out
  * again there would be the diluting third copy `utils/modelWrapperText/sol.ts` describes, in the
  * section least able to afford it.
+ *
+ * **Section 8 closes by restating section 0's exclusion precedence, and the distance between the two
+ * is the argument for it.** The rule is stated where the precedence order is settled, which is the
+ * far end of the document from the list that triggers it — and a sheet came back wearing a holstered
+ * sidearm that section 1 had named and section 8 prohibited, with the model that drew it reporting
+ * the pair as a conflict it had resolved rather than one already decided. Neither side of that
+ * conflict is computable: `worn_details` and `exclusions` are two of the same sixteen free-text
+ * fields, so ruling that `No weapons` overrules a holster but not a pauldron is a judgement about
+ * English, and this app makes no outbound model call to make it with. What it can do is put the
+ * answer beside the question, so a reader meets the ranking at the point it bites rather than being
+ * expected to carry it eight sections.
+ *
+ * **The restatement carries the inventory carve-out with it, and that is not padding.** A version
+ * that stopped at "already overruled" would have section 8 telling a reader to drop a component
+ * section 4 requires — one prompt disagreeing with itself, which is the failure the repetition
+ * exists to prevent rather than a second instance of it.
+ *
+ * **The carve-out is stated as the boundary it is, not as a class of thing that is exempt**, and
+ * that phrasing is the difference between a fix and a wider hole. A draft of this paragraph opened
+ * the exception with "Components are the exception" — but every object drawn on this sheet *is* a
+ * component, so read as far as the emphasis and no further, it exempted the whole image from the
+ * ban it had just restated. Section 0's wording is what closes it: the ranking decides what a
+ * component **shows**, not which components exist, so a torso whose worn detail is excluded is
+ * drawn without the detail rather than left off the sheet. Both copies now carry that sentence, and
+ * the copy in section 8 says "leave the element out **of the image** entirely" for the neighbouring
+ * reason — the manifest and the adherence report ask for text *beside* the image, and an
+ * unqualified "leave it out" reaches them.
+ *
+ * `promptCompiler.test.ts` slices each section and asserts, under every category, that both copies
+ * carry the ranking, the ban on a compromise, and that boundary — so a half cannot be dropped from
+ * one of them, and neither can drift out of the section it belongs in. What the tests cannot hold is
+ * the *wording*: they match on fixed substrings, so a qualifying clause appended to either copy
+ * would leave them green. Read both when either changes.
  *
  * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
  * each rule lives. This constant is the one the app emits and therefore the source of the pair, so
@@ -604,6 +640,12 @@ Absent from the image entirely:
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
+
+**An attribute anywhere above that asks for one of these elements is already overruled** — the
+subject definition in section [SEC:SUBJECT] and the render style in section [SEC:STYLE] included. Leave the element out of
+the image entirely, and never satisfy both by drawing a reduced, integrated or decorative version of
+it. This decides what a component *shows*, not which components exist: where section [SEC:INVENTORY] lists an
+entry this section excludes, draw the entry, because dropping it mis-maps every component after it.
 
 ---
 
