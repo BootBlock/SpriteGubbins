@@ -25,6 +25,16 @@ interface TooltipCardProps {
  * `Tooltip` dismisses on a press anywhere but the ⓘ. Hovering keeps it, as the guideline requires;
  * pressing gives the control underneath back. Selecting the text to copy it is what that trades
  * away, and between the two, being able to click the field you are configuring wins.
+ *
+ * **It sets its own typography, because it inherits its trigger's otherwise.** The top layer changes
+ * where a surface *paints*, not where it sits in the tree — the card is still a DOM descendant of
+ * whatever row the ⓘ was put in — so every inheritable text property on any ancestor lands on the
+ * guidance. Four were reaching it: the atlas calculator's metric labels are `uppercase tracking-wide`
+ * inside a `font-mono` list, which rendered a paragraph of prose as WIDE-SET MONOSPACED CAPITALS, and
+ * the quantiser's drop zone is `text-center`, which centred two more. None of that is a call site
+ * doing anything wrong: a label is entitled to be shouty, and a card is a surface rather than a
+ * continuation of the label it hangs off. So the reset belongs here, once, where the surface is
+ * defined — the alternative is every ancestor in the app having to remember it carries guidance.
  */
 export function TooltipCard({ id, cardRef, hint, text }: TooltipCardProps) {
   return (
@@ -40,7 +50,12 @@ export function TooltipCard({ id, cardRef, hint, text }: TooltipCardProps) {
       // user-agent popover declarations Tailwind's preflight does not already neutralise:
       // `overflow: auto`, which clips the caret hanging off the edge, and `color: CanvasText`, which
       // would take any child without a `text-*` of its own out of the palette.
-      className="glass-float animate-tooltip-in group/card absolute top-full left-1/2 z-50 mt-2.5 block w-72 -translate-x-1/2 origin-top overflow-visible rounded-xl p-3 text-xs leading-relaxed text-ink"
+      //
+      // `font-sans normal-case tracking-normal text-left` are the reset the docblock argues for —
+      // the four inheritable text properties an ancestor can reach the guidance through. The hint
+      // below re-states `uppercase tracking-wide` on itself, so it keeps the eyebrow treatment it
+      // has always had rather than being caught by its own card's reset.
+      className="glass-float animate-tooltip-in group/card absolute top-full left-1/2 z-50 mt-2.5 block w-72 -translate-x-1/2 origin-top overflow-visible rounded-xl p-3 text-left font-sans text-xs leading-relaxed tracking-normal normal-case text-ink"
     >
       <span className="mb-1.5 flex items-center gap-2">
         {/* The accent tick that ties the card back to the trigger it belongs to. */}
@@ -48,7 +63,7 @@ export function TooltipCard({ id, cardRef, hint, text }: TooltipCardProps) {
         <span className="text-2xs font-bold tracking-wide text-accent-soft uppercase">{hint}</span>
       </span>
 
-      <span className="block font-sans text-ink-muted">{text}</span>
+      <span className="block text-ink-muted">{text}</span>
 
       {/*
         The caret, pointing back at the trigger. A rotated square carrying only the two edges that
