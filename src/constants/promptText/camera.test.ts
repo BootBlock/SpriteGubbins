@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { DIRECTION_SETS } from '../../types/rendering.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
-import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS } from './camera.ts';
+import { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS, PROJECTION_TEXT } from './camera.ts';
 import { OBJECT_YAW } from './rotation.ts';
 
 /**
@@ -49,18 +49,20 @@ const COVERAGE: readonly (readonly [DirectionSet, readonly number[]])[] = [
  *
  * Written out rather than asserted against remembered figures, because the two projections that
  * carry an elevation were *both* wrong before this existed and wrong in the same way: each held a
- * number belonging to the other, and one of the two — 26.57° on `DIMETRIC_2_1` — was not an
- * elevation at all but the angle a 2:1 tile edge makes on screen. A literal cannot tell you which of
- * those it is. A derivation can.
+ * number belonging to the other, and one of the two — 26.57° on `DIMETRIC_2_1` — was the angle a 2:1
+ * tile edge makes *on screen* rather than the elevation that produces it. Both are angles, both are
+ * plausible in the field, and a literal cannot tell you which of the two it is. A derivation can.
  *
- * Taking the screen's right vector as `(−sin 45°, cos 45°, 0)` and its up vector as
- * `(sin 45° sin θ, sin 45° sin θ, cos θ)`, a unit ground axis lands at
- * `(−cos 45°, cos 45° sin θ)` and the vertical at `(0, cos θ)`. Everything below reads off that.
+ * The camera looks **along** `(cos θ cos 45°, cos θ sin 45°, −sin θ)` — downwards, hence the negative
+ * z — which fixes the screen's right vector at `(−sin 45°, cos 45°, 0)` and its up vector at
+ * `(sin 45° sin θ, sin 45° sin θ, cos θ)`. State the view direction before checking those two are
+ * perpendicular to it: taking the camera *position* direction instead flips z, and the up vector
+ * then appears to have the wrong sign in its first two components. Projecting onto that frame, a unit
+ * ground axis lands at `(−cos 45°, cos 45° sin θ)` and the vertical at `(0, cos θ)`. Everything below
+ * reads off those two, and reads off their *lengths*, so the sign convention cannot reach a result.
  */
 function screenGeometry(elevation: number): {
-  /** How far a ground axis travels down the screen for each unit it travels across. */
-  readonly groundSlope: number;
-  /** The angle that axis makes with the horizontal, on screen, in degrees. */
+  /** The angle a ground axis makes with the horizontal, on screen, in degrees. */
   readonly groundAngle: number;
   /** How much wider than tall a square of ground is drawn. */
   readonly tileRatio: number;
@@ -74,7 +76,6 @@ function screenGeometry(elevation: number): {
   const horizontal = Math.cos(Math.PI / 4);
 
   return {
-    groundSlope,
     groundAngle: (Math.atan(groundSlope) * 180) / Math.PI,
     tileRatio: 1 / groundSlope,
     groundForeshortening: Math.hypot(horizontal, horizontal * groundSlope),
@@ -113,17 +114,28 @@ describe('axonometric camera elevations', () => {
     expect(groundAngle).toBeCloseTo(26.57, 1);
   });
 
-  it('leaves DIMETRIC_2_1 genuinely dimetric rather than a second spelling of the isometric', () => {
-    // Both halves of the name: the two ground axes match each other (guaranteed by the 45° azimuth,
-    // so not restated) and the vertical does not match them. If this ever passed by accident the two
-    // options would be one camera described twice, which is what the original defect looked like.
-    const { groundForeshortening, verticalForeshortening } = screenGeometry(
-      DEFAULT_CAMERA_ELEVATIONS.DIMETRIC_2_1,
-    );
+  // No fifth case asserting that `DIMETRIC_2_1` is dimetric rather than a second isometric, though
+  // that is the property the original defect violated. The three above already carry it: pinning the
+  // ratio to 2 within a thousandth pins the elevation to 30 ± 0.02°, where the vertical and the
+  // ground differ by 0.0755 — so a "the two foreshortenings differ" case cannot fail unless one of
+  // them has failed first, and a bare `DIMETRIC_2_1 !== TRUE_ISOMETRIC` cannot fail at all.
 
-    expect(groundForeshortening).not.toBeCloseTo(verticalForeshortening, 2);
-    expect(DEFAULT_CAMERA_ELEVATIONS.DIMETRIC_2_1).not.toBe(DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC);
-  });
+  it.each(['TRUE_ISOMETRIC', 'DIMETRIC_2_1'] as const)(
+    '%s describes the screen geometry its own elevation produces',
+    (projection) => {
+      // Section 3 emits the description and the elevation on adjacent lines, so a description
+      // carrying a screen angle or a tile ratio belonging to some *other* elevation is a prompt
+      // disagreeing with itself — which is the defect this whole change exists to fix, and which
+      // came about exactly this way. `PROJECTION_TEXT` composes both figures from the elevation, and
+      // this re-derives them here to confirm the composition is the right one rather than merely
+      // consistent with itself.
+      const { groundAngle, tileRatio } = screenGeometry(DEFAULT_CAMERA_ELEVATIONS[projection]);
+      const trim = (value: number) => String(Number(value.toFixed(2)));
+
+      expect(PROJECTION_TEXT[projection]).toContain(`${trim(groundAngle)}° to the horizontal on screen`);
+      expect(PROJECTION_TEXT[projection]).toContain(`${trim(tileRatio)}× as wide as it is tall`);
+    },
+  );
 });
 
 describe('direction-set coverage', () => {
