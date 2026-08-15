@@ -1704,17 +1704,29 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > **The word-by-word rule that bounds `negatives` does not reach the body forms, and the difference is
 > what a clause can say that a term cannot.** A weighted `frame` suppresses every entry on an EFFECT
 > sheet; "the frames overlaid into one composited picture" states a *relation between* them and bans
-> only that. So EFFECT may say "frames" here, BUILDING may say "modules", and TERRAIN recovers the
-> half its negative channel had to give up outright — the tiles-already-laid reading, which is now
-> stated in all three body sections and in none of the wrappers.
+> only that. So EFFECT may say "frames" here, and the two categories whose usual deliverable is a
+> repeating field — TERRAIN and BUILDING — recover the half their negative channels had to give up
+> outright, the tiles-already-laid reading, now stated in all three body sections and in none of the
+> wrappers.
+>
+> **BUILDING is the one this nearly missed, and the reason is worth recording.** Its `negatives` hold
+> `assembled building` and nothing else, so a first draft wrote all three body forms for that reading
+> alone — "the modules fitted together into the assembled building". `TILESET_MODULAR` is this
+> category's *default and fallback* mode and its plan is sixteen entries of `kind: 'tile'`, so on the
+> sheet a BUILDING subject compiles by default those forms named a component class §4 never
+> introduces, and the failure that sheet actually returns — a room or a wall drawn instead of a grid
+> of separable tiles — went unnamed in every section. Writing a body form from the negative term is
+> the move to distrust: the term is bounded by what a weighted word would suppress, and that bound is
+> why the term is narrow.
 >
 > **Two clauses moved rather than being written**, and both left their old homes in the same commit:
 > TERRAIN was the only category whose assembly failure had reached the body at all, in
 > `CATEGORY_EXCLUSION_TEXT`'s "any composed landscape, vista or diorama drawn in place of the
 > component grid" and `CATEGORY_AUDIT_TEXT`'s "nothing drawn as a landscape view rather than as a
-> separate piece". Each of those sat a bullet or a check away from where its replacement now lands, so
-> keeping both would have had §8 excluding one thing twice and §9 checking it twice, in two wordings
-> each — which is the duplication a per-category record exists to remove.
+> separate piece". Each sat in the list its replacement now lands in — three bullets from it in §8,
+> two checks in §9 — so keeping both would have had §8 excluding one thing twice and §9 checking it
+> twice, in two wordings each, far enough apart that neither copy reads as a restatement of the other.
+> That is the duplication a per-category record exists to remove.
 
 ---
 

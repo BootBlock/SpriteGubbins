@@ -175,7 +175,7 @@ describe('CATEGORY_ASSEMBLY', () => {
     expect(instruction, category).toMatch(/^Do not draw .+\.$/);
     expect(instruction, category).toContain('anywhere on the sheet, including as a reference or key.');
 
-    // Section 8's is a bullet under "Absent from the image entirely:", beside four fixed ones — so a
+    // Section 8's is a bullet under "Absent from the image entirely:", beside three fixed ones — so a
     // noun phrase in sentence case, not an instruction and not a clause.
     expect(exclusion, category).toMatch(/^[A-Z][^.]*\.$/);
     expect(exclusion, category).not.toMatch(/^Do not /);
@@ -188,15 +188,24 @@ describe('CATEGORY_ASSEMBLY', () => {
   });
 
   it.each(SUBJECT_CATEGORIES)('does not restate the per-category line %s already carries', (category) => {
-    // Section 8 lists this category's exclusion bullet directly above its assembly one, and section 9
-    // runs the two checks two items apart — so a phrase shared between a pair is one claim made
-    // twice in one list, which is what a reader resolves as two separate demands. TERRAIN is why the
-    // check exists: it was the one category whose assembly failure had already reached the body,
-    // written into both of those records because they were the only per-category lines that could
-    // hold it, and both gave the wording up when this record gained somewhere to put it.
+    // Each pair lands in one list — section 8's exclusion bullet is the first and its assembly bullet
+    // the fourth, and section 9 runs the two checks two items apart — so a phrase shared between a
+    // pair is one claim made twice in one list, which is what a reader resolves as two separate
+    // demands. TERRAIN is why: it was the one category whose assembly failure had already reached the
+    // body, written into both of those records because they were the only per-category lines that
+    // could hold it, and both gave the wording up when this record gained somewhere to put it.
     //
     // Four words rather than three, because "on the sheet and" and its like are connective tissue
-    // every one of these lines is built from; four in a row is a phrase somebody wrote twice.
+    // every one of these lines is built from; four in a row is a phrase somebody wrote twice. The
+    // longest run anywhere in the current data is three, so the threshold is not vacuous.
+    //
+    // **It covers one of the two duplications it is named for, and the shortfall is worth knowing.**
+    // Restoring TERRAIN's old exclusion clause fails this — the replacement kept "landscape, vista or
+    // diorama" and "in place of the component grid" from it. Restoring the old *audit* clause does
+    // not: "nothing drawn as a landscape view rather than as a separate piece" and "a run of tiles
+    // drawn already laid together, or a landscape composed from them" share no run of even three
+    // words, because that one was rewritten rather than moved. A restatement in genuinely different
+    // words is a judgement no run-length can hold, which is why each entry records its own.
     const { audit, exclusion, instruction } = CATEGORY_ASSEMBLY[category];
     for (const [form, neighbour, where] of [
       [instruction, CATEGORY_GUARD_TEXT[category], 'the section 4 guard'],

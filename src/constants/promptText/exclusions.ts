@@ -59,11 +59,12 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // and is placed once.
   //
   // **The composed-landscape clause used to sit in the middle of this line and has moved to
-  // `CATEGORY_ASSEMBLY`**, which now supplies the bullet directly below this one. What a terrain
-  // sheet attracts is a view of the ground instead of separable tiles, and that is this category's
-  // assembly failure rather than a second kind of scenery — it was written here only because this
-  // was the one record that had a per-category line to write it in. Leaving it in both would have
-  // section 8 excluding one thing twice, a bullet apart, in two wordings.
+  // `CATEGORY_ASSEMBLY`**, which now supplies the fourth bullet of the list this line opens. What a
+  // terrain sheet attracts is a view of the ground instead of separable tiles, and that is this
+  // category's assembly failure rather than a second kind of scenery — it was written here only
+  // because this was the one record that had a per-category line to write it in. Leaving it in both
+  // would have section 8 excluding one thing twice in one list, in two wordings, three bullets apart
+  // — which is far enough that neither copy looks like a restatement of the other.
   TERRAIN:
     'Characters, creatures, vehicles, buildings and their fittings; sky, horizon and distant landscape; and, on any tile meant to repeat, a landmark distinctive enough to be recognised twice across a laid field.',
 };
@@ -156,9 +157,9 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // requires.
   //
   // **The landscape-view clause has moved to `CATEGORY_ASSEMBLY`**, which supplies the check two
-  // items above this one in the same list, for the reason the same clause left `CATEGORY_EXCLUSION_TEXT`:
-  // it is this category's assembly failure rather than a subject check, and this record was only ever
-  // where a per-category line existed to hold it.
+  // items above this one in the same list — the one-camera check sits between them — for the reason
+  // the same clause left `CATEGORY_EXCLUSION_TEXT`: it is this category's assembly failure rather than
+  // a subject check, and this record was only ever where a per-category line existed to hold it.
   TERRAIN:
     'Every component is a ground tile or a landform piece — no characters, creatures, anatomy, buildings or vehicles. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.',
 };

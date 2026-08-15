@@ -95,13 +95,14 @@ export interface CategoryAssembly {
   readonly instruction: string;
   /**
    * Section 8's bullet, filling `[DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]` — a noun phrase under
-   * "Absent from the image entirely:", sentence case and closed with a full stop like the four fixed
-   * bullets it sits among.
+   * "Absent from the image entirely:", sentence case and closed with a full stop like the three fixed
+   * bullets it sits among. It is the fourth of the list's six; `CATEGORY_EXCLUSION_TEXT` is the first,
+   * and the subject's own free-text exclusions are the conditional last.
    *
-   * **It may not restate `CATEGORY_EXCLUSION_TEXT`**, which is the bullet directly above it in the
-   * same list. TERRAIN's line carried this claim before this field existed and gave it up when it
-   * arrived; a category saying the same thing twice in one list in two wordings is what that move
-   * exists to prevent.
+   * **It may not restate `CATEGORY_EXCLUSION_TEXT`**, three bullets up the same list. TERRAIN's line
+   * carried this claim before this field existed and gave it up when it arrived; a category saying the
+   * same thing twice in one list in two wordings is what that move exists to prevent — and the
+   * distance between the two is what makes it easy to do rather than a reason it could not happen.
    */
   readonly exclusion: string;
   /**
@@ -112,7 +113,8 @@ export interface CategoryAssembly {
    * **Its nouns are qualified**, for the reason recorded on `CATEGORY_AUDIT_TEXT`: this is the one
    * form the reader applies to the delivered sheet component by component, so a bare noun that a
    * component answers to fails the sheet on an entry section 4 required. It may not restate
-   * `CATEGORY_AUDIT_TEXT` either — the two are consecutive checks in the same list.
+   * `CATEGORY_AUDIT_TEXT` either — that is the same list's next check but one, with the one-camera
+   * check between them.
    */
   readonly audit: string;
 }

@@ -31,8 +31,8 @@ import type { CategoryAssembly, SubjectCategory } from '../../types/subject.ts';
  * assembly failure had reached the body at all, ad hoc: `CATEGORY_EXCLUSION_TEXT` banned "any
  * composed landscape, vista or diorama drawn in place of the component grid" and `CATEGORY_AUDIT_TEXT`
  * asked for "nothing drawn as a landscape view rather than as a separate piece". Both clauses moved
- * here, and their old homes gave them up in the same change — a bullet and the bullet below it saying
- * one thing in two wordings is what a per-category record is for removing, not for creating.
+ * here, and their old homes gave them up in the same change — one list saying one thing twice in two
+ * wordings is what a per-category record is for removing, not for creating.
  *
  * **One list serves both negative channels**, as `RENDER_STYLE_SURFACE`'s does and for the same
  * reason: Stable Diffusion weighted two terms while Qwen stated three, one of which — `complete
@@ -78,17 +78,25 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   // lit and staged as a finished picture. No component of a part library is a product shot, so it
   // survives the word-by-word rule where "complete object" would not.
   //
-  // The body forms open the shape the five part-and-whole categories share — "the parts fitted
-  // together into the assembled X" — which names what the sheet must not *depict* without touching
-  // what section 6 asks the set to be *capable* of. "The complete object in its resting state" is
-  // that plan's own phrase for the capability, so this one does not borrow it.
+  // The body forms open the shape the four one-subject categories share — "the parts fitted together
+  // into the assembled X", INTERFACE saying "pieces" for what its own inventory calls them — which
+  // names what the sheet must not *depict* without touching what section 6 asks the set to be
+  // *capable* of. "The complete object in its resting state" is that plan's own phrase for the
+  // capability, so this one does not borrow it.
+  //
+  // **The last two forms say "the object itself" rather than "the object, in whole or in part", and
+  // the word is load-bearing.** This sheet's inventory lists a `Primary moving subassembly`, which is
+  // literally parts assembled — so a check reading "nothing is the object assembled, in part" invites
+  // a reader to fail the sheet on an entry section 4 required, which is the `CATEGORY_AUDIT_TEXT`
+  // "no exhaust" mistake wearing this record's clothes. "Itself" anchors both forms to the whole
+  // subject, which no component is.
   OBJECT: {
     statement: 'no assembled object',
     negatives: ['assembled object', 'product shot'],
     instruction:
       'Do not draw the parts fitted together into the assembled object anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The assembled object, whole or part-assembled, and any staged product shot of it.',
-    audit: 'nothing on the sheet is the object assembled, in whole or in part',
+    exclusion: 'The object itself, whole or partly built, and any staged product shot of it.',
+    audit: 'nothing on the sheet is the object itself, whole or partly built',
   },
   // The presentation half is OBJECT's word rather than one of its own, and the one it nearly took
   // is the reason the rule reaches past the sheet plans. `inventory icon` names exactly what an item
@@ -102,8 +110,8 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
     negatives: ['assembled item', 'product shot'],
     instruction:
       'Do not draw the parts fitted together into the assembled item anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The assembled item, whole or part-assembled, and any staged product shot of it.',
-    audit: 'nothing on the sheet is the item assembled, in whole or in part',
+    exclusion: 'The item itself, whole or partly built, and any staged product shot of it.',
+    audit: 'nothing on the sheet is the item itself, whole or partly built',
   },
   // One term, and the missing second is the rule doing its job rather than an omission. Every
   // candidate for it names what this sheet's components already are: "complete structure" is barred
@@ -113,19 +121,30 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   // the rule is the literal one; this is the judgement half. "building" is safe for the reason
   // "character" is: no component of the sheet is one.
   //
-  // The body forms say "modules" where the four beside them say "parts", because that is the word
-  // this category's own inventory uses — and they say "the assembled building" rather than "the
-  // complete structure", which is what its plans call the capability section 6 asks for. The
-  // judgement that keeps `complete structure` out of `negatives` is not needed here: a bullet reading
-  // "The assembled building, whole or part-assembled" has a head noun, where a weighted term has only
-  // its words.
+  // **This is the second category with two deliverables, and the body forms have to name both — a
+  // first draft named only the one the negative term is written for.** `TILESET_MODULAR` is this
+  // category's *default and fallback* mode and its plan is sixteen entries of `kind: 'tile'`, so a
+  // form saying "the modules fitted together" describes a component class that sheet's section 4
+  // never introduces, and leaves the failure it actually comes back as — a room or a wall drawn
+  // instead of a grid of separable tiles — named nowhere in the prompt. That is the same half TERRAIN
+  // recovers below, and this is the only other category that has it. So the forms name the standing
+  // structure and the laid stretch both, and neither noun is bare: a floor tile is not "a stretch of
+  // floor drawn with its tiles already laid", which is what keeps the audit off the sixteen entries
+  // section 4 requires.
+  //
+  // "standing complete" rather than "the complete structure", and "a stretch of floor or wall" rather
+  // than "a straight wall run": both of those are the plans' own words for the capability section 6
+  // asks the set to have, and a form that borrows them reads as forbidding the capability rather than
+  // the depiction.
   BUILDING: {
     statement: 'no assembled building',
     negatives: ['assembled building'],
     instruction:
-      'Do not draw the modules fitted together into the assembled building anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The assembled building, whole or part-assembled, with its modules joined into one structure.',
-    audit: 'nothing on the sheet is the building with its modules joined, in whole or in part',
+      'Do not draw the building standing complete, or a laid stretch of its floor or wall tiles, anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The building standing complete, and any stretch of floor or wall drawn with its tiles already laid rather than as separate pieces.',
+    audit:
+      'nothing on the sheet is the building standing complete, or a stretch of floor or wall drawn with its tiles already laid',
   },
   // "complete machine" is the term this entry cannot have — the directional plan's own assembly
   // sentence asks the views to read "as one machine turned", and the hull, drive and mount are
@@ -135,8 +154,8 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
     negatives: ['assembled vehicle', 'product shot'],
     instruction:
       'Do not draw the parts fitted together into the assembled vehicle anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The assembled vehicle, whole or part-assembled, and any staged product shot of it.',
-    audit: 'nothing on the sheet is the vehicle assembled, in whole or in part',
+    exclusion: 'The vehicle itself, whole or partly built, and any staged product shot of it.',
+    audit: 'nothing on the sheet is the vehicle itself, whole or partly built',
   },
   // The category the word-by-word rule bites hardest, and the one whose terms are easiest to get
   // catastrophically wrong. "effect" is out because each component *is* the effect at a moment;
@@ -181,8 +200,8 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
     negatives: ['assembled screen', 'game screenshot'],
     instruction:
       'Do not draw the pieces fitted together into the assembled screen anywhere on the sheet, including as a reference or key.',
-    exclusion: 'The assembled screen, whole or part-assembled, and any picture of the interface in use.',
-    audit: 'nothing on the sheet is the screen assembled, in whole or in part',
+    exclusion: 'The screen itself, whole or partly arranged, and any picture of the interface in use.',
+    audit: 'nothing on the sheet is the screen itself, whole or partly arranged',
   },
   // Every word this category's failure wants is a word its components answer to — "landscape",
   // "terrain", "ground", "tile" — and "field" is what section 0 calls the background the sheet is
