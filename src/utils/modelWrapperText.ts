@@ -68,13 +68,13 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * instruction, for the exact repetition it was tempting to cut. There is no contradiction, because
  * the two are addressed to two different readers: the lean guidance to the model *reading this
  * specification*, and the repetition guidance to the model *rendering from it*. That is what settles
- * the question this file was left holding open — section 8's exclusions restate section 0's on
+ * the question this file was left holding open — the exclusions restate section 0's on
  * purpose, and they stay. A future pass that cuts them citing the GPT-5.6 guidance would be applying
  * a text model's rules to the image model's half of the hand-off.
  *
  * The same guidance is why the self-audit stays: "Render the artifact before finalizing. Inspect
- * layout, clipping, spacing, missing content, and visual consistency" is section 9, and a
- * verification pass is not a repeated statement of a rule.
+ * layout, clipping, spacing, missing content, and visual consistency" is what that section asks for,
+ * and a verification pass is not a repeated statement of a rule.
  *
  * Sources: [model page](https://developers.openai.com/api/docs/models/gpt-5.6-sol),
  * [image generation tool](https://developers.openai.com/api/docs/guides/tools-image-generation),

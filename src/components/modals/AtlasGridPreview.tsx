@@ -31,7 +31,7 @@ interface AtlasGridPreviewProps {
  *
  * **It is a picture and not a widget, deliberately.** Each cell used to answer a hover with its slot
  * number, row and column, and two thirds of that was a promise the app cannot keep. The *order* is
- * real: section 9 asks for the components "in the reading order fixed by section 4", which is the
+ * real: the layout section asks for the components "in the reading order fixed by section 4", which is
  * row-major order these cells are filled in, so slot #12 genuinely is the twelfth part the inventory
  * lists. What the prompt never states is the grid's **shape** — no dimensions appear anywhere in it,
  * and where a companion manifest is emitted at all, section 10 has the model *report back* the

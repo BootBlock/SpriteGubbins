@@ -4,8 +4,8 @@ import { sheetComponentCount } from './componentSet.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 
 /**
- * The batch as section 6 of the prompt lists it: one line per sheet, saying what it carries, how
- * many components are on it and which facings it draws — with this one marked.
+ * The batch as the assembly-capability section lists it: one line per sheet, saying what it carries,
+ * how many components are on it and which facings it draws — with this one marked.
  *
  * **The per-sheet counts are the point of it.** Section 0 ranks the component count and the
  * inventory above everything else, so a sheet out of a batch has to be told that the number it

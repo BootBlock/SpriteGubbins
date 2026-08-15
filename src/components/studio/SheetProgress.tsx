@@ -27,7 +27,7 @@ const STEP_BUTTON =
  *
  * **The gap this closes is that a batch was invisible from the studio.** `sheetBatch` has always
  * known both which sheets a configuration asks for and which of them the configuration itself is —
- * the ordinal reaches section 6 of the compiled prompt, where `describeSeries` marks one line
+ * the ordinal reaches the series list in the compiled prompt, where `describeSeries` marks one line
  * *(this sheet)* — and none of it reached the screen. A user working an eight-facing rig saw one
  * prompt, one Copy Prompt button and a split drawer they had to open to learn that the job was eight
  * generations; there was nothing anywhere saying which of the eight this was, and no way to move on

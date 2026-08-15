@@ -31,7 +31,7 @@ function capabilitiesFor(target: TargetModelId): TargetCapabilities {
  * Whether this target works *through* the prompt as a procedure rather than conditioning on it as
  * one description.
  *
- * What it gates is instruction the target cannot carry out: section 9's self-audit tells the reader
+ * What it gates is instruction the target cannot carry out: the self-audit tells the reader
  * to check the sheet against the specification and redraw before delivering, which a single-pass
  * diffusion endpoint has no step for. Emitting it there spends tokens at the *end* of the prompt —
  * where attention is weakest — on the most rule-list-shaped block in the template, which is exactly

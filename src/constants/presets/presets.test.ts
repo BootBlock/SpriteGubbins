@@ -195,7 +195,9 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain(
       `Exactly ${String(componentCountFor('BUILDING', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, []))} components`,
     );
-    // Not articulated, so neither rig section appears.
-    expect(prompt).not.toContain('## 5.');
+    // Not articulated, so neither rig section appears — named by their headings rather than by the
+    // number, which the assembly capability takes once the rig section is dropped.
+    expect(prompt).not.toContain('CUT-OUT RIG REQUIREMENTS');
+    expect(prompt).not.toContain('RIGID SEGMENTS AND PIVOTS');
   });
 });

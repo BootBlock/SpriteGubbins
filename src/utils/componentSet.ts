@@ -131,7 +131,7 @@ export function sheetCountFor(
  * other reader does: a batch sheet carries the configuration's *stored* mode, which the category may
  * have no plan for.
  *
- * Its existence is what stops section 6's per-sheet list, the split drawer's row figures and the
+ * Its existence is what stops the assembly section's per-sheet list, the split drawer's rows and the
  * batch total below being three arithmetics over one run list — the drift this module was written to
  * make impossible, arriving one axis further out. That the row's figure and the prompt's own are one
  * sum is what makes the row's budget flag checkable: a chip reading "over budget" beside a number the
@@ -212,7 +212,7 @@ function renderGroup(group: ComponentGroup): string {
  *
  * **On a multi-view sheet each entry names the facings it is drawn at**, in the `viewsOf` shape the
  * plan's own entries use — `Demon Horn ×2: south, west, north, east` — because naming the views is
- * what engages section 3's rotation rules and section 9's directional audit, which bind any
+ * what engages section 3's rotation rules and the directional audit, which bind any
  * component "the inventory lists in more than one direction". The intro states the arithmetic
  * (×N pieces at each listed facing) in the same terms as section 4's own entry rule, and the
  * heading's total is that product, summed by {@link componentCountFor}'s own helper. The intro also

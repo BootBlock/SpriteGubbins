@@ -5,7 +5,7 @@ import type { SheetPlan } from '../../types/components.ts';
  *
  * **Two of the four modes are declined, and the absence is the answer.** `CORE_DIRECTIONAL_VARIANTS`
  * draws one piece of geometry at five object yaws, and a button has no facings to turn to — the
- * sheet it would produce is five drawings of the same flat rectangle, and section 9's directional
+ * sheet it would produce is five drawings of the same flat rectangle, and the directional
  * audit would then fail it for exactly that. `CUTOUT_RIG_SINGLE_DIRECTION` asks for rest-pose
  * segments carrying matched pivot caps at the joints they rotate about, which is a description of an
  * articulated limb rather than of a widget: a slider handle travels along a track and a bar fill
@@ -22,7 +22,7 @@ import type { SheetPlan } from '../../types/components.ts';
  * centre tiles along both, and "no visible join where pieces meet" is the same requirement a floor
  * field has. What it is *not* is an environment, so the pieces below carry the interface's own
  * vocabulary and none of BUILDING's — `sheetPlans.test.ts` checks that from the category's own
- * section 8, which bans floors and walls here exactly as it does for the other five.
+ * exclusions, which ban floors and walls here exactly as they do for the other five.
  */
 
 export const INTERFACE_STATE_LIBRARY: SheetPlan = {

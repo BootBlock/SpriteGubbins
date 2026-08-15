@@ -47,7 +47,7 @@ export function SheetSplitModal() {
 
   // Which row the studio is on, so the drawer can mark it. Asked of `sheetBatch` rather than
   // recovered from the runs above, because the ordinal is that module's own answer — the same one
-  // section 6 of every prompt in the batch states — and a second search for it here would be a
+  // the assembly-capability section of every prompt in the batch states — and a second search for it
   // second definition of where the user is.
   const { ordinal } = useMemo(() => sheetBatch(category, output), [category, output]);
 

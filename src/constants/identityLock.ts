@@ -70,7 +70,7 @@ export interface IdentitySubjectSegment {
  *   lists each named piece separately and counts it, and section 0's precedence order puts the count
  *   and inventory **above** subject identity — so the sheet already pins it harder than the lock
  *   could, and a count restated in two places is a count that can disagree with itself.
- * - `exclusions` is the one negative field. Section 8 owns it, and an absence has no place in a
+ * - `exclusions` is the one negative field. That section owns it, and an absence has no place in a
  *   block headed "reproduce exactly".
  *
  * Ten fields across three segments comes out at the scale §5's worked example is written at: 243 to
