@@ -130,7 +130,7 @@ function sheetLimit(palette: Palette): number | null {
 /**
  * The per-component cap this palette actually **states**, or `null` where it states none.
  *
- * Exported because section 9's audit cites it: *"no component carries more colours than that section
+ * Exported because the self-audit cites it: *"no component carries more colours than that section
  * allows it"* is a check the reader cannot perform when no allowance was given, and seven of the
  * nineteen palettes give none. The compiler gates that clause on this, so the two cannot disagree
  * about whether the number the audit refers to was ever printed.

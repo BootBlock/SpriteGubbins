@@ -138,7 +138,11 @@ describe('generatePrompt — conditional blocks', () => {
     expect(library).not.toContain('CUT-OUT RIG REQUIREMENTS');
 
     const none = generatePrompt('CHARACTER', SUBJECT, withOutput({ rigMode: 'NONE' }));
-    expect(none).not.toContain('## 5.');
+    expect(none).not.toContain('CUT-OUT RIG REQUIREMENTS');
+    expect(none).not.toContain('RIGID SEGMENTS AND PIVOTS');
+    // And the number the rig section vacated goes to the section that follows it rather than being
+    // left as a hole — the numbering is computed from the headings that survived.
+    expect(none).toContain('## 5. REQUIRED ASSEMBLY CAPABILITY');
   });
 
   it('drops the socket block when a pose library carries a stale socket list', () => {
@@ -1253,5 +1257,57 @@ describe('generatePrompt — the self-audit, per target', () => {
 
     expect(gemini).toContain('Before delivering, verify:');
     expect(countWords(gemini)).toBe(countWords(generic));
+  });
+});
+
+describe('the section numbering the prompt cites itself by', () => {
+  /** Every `## N.` heading in the order it appears, as the numbers alone. */
+  function headingNumbers(prompt: string): number[] {
+    return [...prompt.matchAll(/^## (\d+)\. /gm)].map((match) => Number(match[1]));
+  }
+
+  it.each(SUBJECT_CATEGORIES)('runs 0, 1, 2, … with no hole on %s, at every rig it offers', (category) => {
+    // The reported failure: the rig section is conditional, and five of the nine categories have no
+    // rig at all, so every prompt they ever compiled ran `## 4. COMPONENT INVENTORY` straight into
+    // `## 6. REQUIRED ASSEMBLY CAPABILITY`. Swept over the rig union rather than the category's own
+    // list, because `resolveRigMode` is what a stored value from an older build arrives through.
+    for (const rigMode of RIG_MODES) {
+      const numbers = headingNumbers(generatePrompt(category, SUBJECT, withOutput({ rigMode })));
+      expect(numbers.length, `${category} / ${rigMode}`).toBeGreaterThan(0);
+      expect(numbers, `${category} / ${rigMode}`).toEqual(numbers.map((_number, index) => index));
+    }
+  });
+
+  it.each(TARGET_MODEL_IDS)(
+    'runs 0, 1, 2, … with no hole for %s, with both companions asked for',
+    (target) => {
+      // The other axis that adds and removes sections: the manifest and the adherence report are each
+      // gated on what the target can do, so a target that takes one and not the other is where a
+      // hand-numbered tail went wrong before — which the template answered by writing the report's
+      // heading twice. Asking for both is what puts every combination of the two through this.
+      const output = withOutput({ targetModel: target, emitManifest: true, emitPromptFeedback: true });
+      for (const rigMode of ['CUTOUT_RIG', 'NONE'] as const) {
+        const numbers = headingNumbers(generatePrompt('CHARACTER', SUBJECT, { ...output, rigMode }));
+        expect(numbers, `${target} / ${rigMode}`).toEqual(numbers.map((_number, index) => index));
+      }
+    },
+  );
+
+  it('cites a section by the number that section actually landed on', () => {
+    // The half that a contiguity check alone would miss: the numbers could renumber correctly while
+    // the prose went on citing the old ones. CHARACTER carries a rig section and BUILDING does not,
+    // so the exclusions are section 8 on one and 7 on the other — and each prompt's own citation of
+    // them has to say so.
+    for (const [category, rigMode, exclusions] of [
+      ['CHARACTER', 'CUTOUT_RIG', 8],
+      ['BUILDING', 'CUTOUT_RIG', 7],
+    ] as const) {
+      // BUILDING articulates about nothing, so `resolveRigMode` answers `NONE` and its rig section
+      // never appears however the configuration is written — which is what moves its exclusions up.
+      const output = withOutput({ rigMode });
+      const prompt = generatePrompt(category, defaultSubjectFor(category), output);
+      expect(prompt, category).toContain(`## ${String(exclusions)}. EXCLUSIONS`);
+      expect(prompt, category).toContain(`An exclusion in section ${String(exclusions)} outranks`);
+    }
   });
 });

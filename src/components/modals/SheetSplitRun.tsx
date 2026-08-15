@@ -31,7 +31,7 @@ interface SheetSplitRunProps {
   readonly total: number;
   /**
    * Whether this is the sheet the studio itself is composing — the one behind the drawer, and the
-   * one section 6 of every prompt in the batch marks *(this sheet)*. Marked here so the drawer and
+   * one the series list in every prompt of the batch marks *(this sheet)*. Marked here so the drawer and
    * the studio agree about where the user is; without it the two views describe the same batch and
    * only one of them says which sheet is in front of you.
    */

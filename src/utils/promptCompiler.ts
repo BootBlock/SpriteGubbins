@@ -47,6 +47,7 @@ import {
   applyConditionals,
   applyNumbering,
   applyOptionals,
+  applySectionNumbers,
   assertBlocksResolved,
   substitute,
 } from './templateEngine.ts';
@@ -111,7 +112,7 @@ export function generatePrompt(
 
   // Which sheet of which batch this configuration is. Every prompt before this one described its
   // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and
-  // section 6's assembly capability all read as statements about the finished set — so sheet three
+  // the assembly capability all read as statements about the finished set — so sheet three
   // of eight arrived claiming a count and a capability belonging to something else. The batch is
   // enumerated rather than passed in because a configuration already *is* one sheet of one batch:
   // the splitter varies nothing but the facing and the sheet index, and both are fields of `output`.
@@ -124,10 +125,10 @@ export function generatePrompt(
   // The report needs *both* halves of that — a pass in which to re-read the specification against
   // the pixels, and a channel to answer through — so it is gated on the conjunction rather than on
   // either alone. The `deliberates` half is also what makes the section's wording safe: it points at
-  // section 9's checks instead of restating them, and section 9 is a bare `## 9. LAYOUT` heading on
-  // a target that does not deliberate. That meeting of two separately-computed flags is asserted on
-  // the compiled prompt across every target, since here is where they meet rather than in either
-  // gate alone.
+  // the layout section's checks instead of restating them, and that section is a bare `LAYOUT`
+  // heading on a target that does not deliberate. That meeting of two separately-computed flags is
+  // asserted on the compiled prompt across every target, since here is where they meet rather than
+  // in either gate alone.
   const emitPromptFeedback = output.emitPromptFeedback && supportsPromptFeedback(output.targetModel);
 
   // Additional anatomy is separate pieces by section 1's own rule, so it is counted and listed
@@ -259,11 +260,11 @@ export function generatePrompt(
     // reasoning that makes `resolveMode` the single answer about the sheet mode.
     HARDWARE_PROFILE: hardware === null ? '' : 'yes',
     // Gates three places at once: the colour clause in section 0, the palette block in section 2,
-    // and the audit line in section 9 — and, negated, the palette-strategy line the pinned palette
+    // and the self-audit's colour check — and, negated, the palette-strategy line the pinned palette
     // supersedes. One flag, because a pinned palette either governs the sheet's colour or does not.
     PALETTE: palette === null ? '' : 'yes',
-    // A second, narrower flag, because section 9's per-component check cites a number section 2 does
-    // not always print: seven of the nineteen palettes state no per-component cap, and an audit
+    // A second, narrower flag, because the self-audit's per-component check cites a number section 2
+    // does not always print: seven of the nineteen palettes state no per-component cap, and an audit
     // asking the reader to compare against an allowance that was never given cannot be worked.
     // Read through `perComponentLimit` rather than off `colorsPerComponent`, so the gate answers
     // whether the line was *emitted* rather than whether the field was set.
@@ -310,7 +311,7 @@ export function generatePrompt(
     // line, which names the second deliverable so the last thing the target reads is not "generate
     // the sheet now" alone.
     EMIT_PROMPT_FEEDBACK: emitPromptFeedback ? 'yes' : '',
-    // Section 9's self-audit tells the reader to check the sheet and redraw before delivering. A
+    // The self-audit tells the reader to check the sheet and redraw before delivering. A
     // single-pass diffusion endpoint has no such step, so on those targets it is the most
     // rule-list-shaped block in the template sitting where attention is weakest. Same reasoning as
     // MULTI_DIRECTION above, applied to what the *target* can do rather than what the sheet holds.
@@ -324,10 +325,13 @@ export function generatePrompt(
     RETURNS_TEXT: returnsText(output.targetModel) ? 'yes' : '',
   };
 
-  // Blocks, then optionals, then numbering, then substitution — see `templateEngine.ts` for why that
-  // order. The marker check sits *before* substitution: afterwards the text carries whatever the user
-  // typed, and a subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
-  const resolved = applyNumbering(applyOptionals(applyConditionals(PROMPT_TEMPLATE, config), values));
+  // Blocks, then sections, then optionals, then numbering, then substitution — see
+  // `templateEngine.ts` for why that order. Sections are numbered from the headings that survived the
+  // conditionals, which is what closes the gap the rig section used to leave behind it. The marker
+  // check sits *before* substitution: afterwards the text carries whatever the user typed, and a
+  // subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
+  const sections = applySectionNumbers(applyConditionals(PROMPT_TEMPLATE, config));
+  const resolved = applyNumbering(applyOptionals(sections, values));
   assertBlocksResolved(resolved);
   const prompt = substitute(resolved, values);
 

@@ -21,7 +21,7 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * `SINGLE_FRONT` is then the honest direction set rather than what makes the prompt coherent — both
  * modes here cover one facing whatever the control says, so `[IF:MULTI_DIRECTION]` drops section 3's
- * rotation rules, its landmark and occlusion clauses, section 0's turn contract and section 9's
+ * rotation rules, its landmark and occlusion clauses, section 0's turn contract and the
  * directional audit either way. What the set decides is how many *sheets* the deliverable is: any
  * wider set turns one kit into a run of identical kits at yaws a widget does not have.
  */

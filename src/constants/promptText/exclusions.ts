@@ -1,7 +1,7 @@
 import type { SubjectCategory } from '../../types/subject.ts';
 
 /**
- * What section 8 bans, per category.
+ * What the exclusions section bans, per category.
  *
  * This used to be one static line naming "backgrounds, environments, ground planes, floor tiles,
  * terrain, sky, props and scenery" for every sheet — including a building tileset, whose entire
@@ -104,7 +104,7 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
 };
 
 /**
- * The category check section 9's self-audit adds.
+ * The category check the self-audit adds.
  *
  * The audit was entirely generic — count, background, text, order, camera — so it verified that a
  * sheet was *well-formed* without ever asking whether it was the right subject. A character sheet
@@ -121,7 +121,7 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
     'Every component is a structural or tile piece — no characters, creatures, anatomy or loose props.',
   // Every noun here carries its own qualifier, and that is load-bearing rather than wordy: the part
   // library asks for an "exhaust or vent" as a component, so an audit reading "no exhaust" would
-  // fail the sheet on an entry section 4 required. Section 8 above states the same ban and gets it
+  // fail the sheet on an entry section 4 required. The exclusion above states the same ban and gets it
   // right; this line dropped the qualifiers and reintroduced the §4-requires/§9-forbids
   // contradiction these per-category records exist to remove.
   VEHICLE:

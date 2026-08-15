@@ -1,15 +1,16 @@
 /**
- * The four passes that turn the prompt template into a prompt, plus the guard that proves nothing
+ * The five passes that turn the prompt template into a prompt, plus the guard that proves nothing
  * was left behind.
  *
  * Pure functions of their arguments — no state, no DOM — which is what lets the compiler stay a
  * pure function and the preview derive its output during render.
  *
- * **Run them in this order: conditionals, optionals, numbering, then substitution.** Conditionals go
- * first so that optionals inside a dropped block are dropped with it; numbering follows both, so a
- * list item that was dropped never consumes a number; substitution goes last because an optional
- * line's text may itself contain a `[DEFINE:…]`, and substituting first would fill a token on a line
- * that is about to be removed.
+ * **Run them in this order: conditionals, sections, optionals, numbering, then substitution.**
+ * Conditionals go first so that optionals inside a dropped block are dropped with it, and so that
+ * section numbering counts only the sections this prompt actually carries; list numbering follows
+ * both, so a list item that was dropped never consumes a number; substitution goes last because an
+ * optional line's text may itself contain a `[DEFINE:…]`, and substituting first would fill a token
+ * on a line that is about to be removed.
  *
  * Every marker occupies a whole line, and removing one removes its line entirely. That is what keeps
  * a sparse subject — fifteen optional fields, most of them empty — from leaving a ladder of blank
@@ -34,14 +35,20 @@ const DEFINE_TOKEN = /\[DEFINE:([A-Z0-9_]+)\]/g;
 /** `[N].` opening a list item, with whatever indentation precedes it. */
 const NUMBERED_ITEM_LINE = /^([ \t]*)\[N\]\./;
 
+/** `[SECTION:NAME]`, standing where a section heading's own number goes. */
+const SECTION_DECLARATION = /\[SECTION:([A-Z0-9_]+)\]/g;
+
+/** `[SEC:NAME]`, standing where prose cites one. */
+const SECTION_REFERENCE = /\[SEC:([A-Z0-9_]+)\]/g;
+
 /**
- * The block markers, which the first three passes must have consumed.
+ * The block markers, which the first four passes must have consumed.
  *
  * `[DEFINE:…]` is deliberately absent: substitution runs last and rejects an unknown token itself,
  * and by then the text contains arbitrary user input. Scanning *that* for markers would make a
  * subject field of `Robot [IF:X] guard` throw out of the compiler.
  */
-const RESIDUAL_BLOCK_MARKER = /\[(?:OPTIONAL|IF):|\[\/IF\]|\[N\]/;
+const RESIDUAL_BLOCK_MARKER = /\[(?:OPTIONAL|IF|SECTION|SEC):|\[\/IF\]|\[N\]/;
 
 /** A value counts as set when it holds something other than whitespace. */
 function isSet(value: string | undefined): boolean {
@@ -66,7 +73,7 @@ function conditionHolds(
  *
  * **Blocks nest**, hence the stack: a block inside a dropped block is dropped with it whatever its
  * own condition says. That is what lets a section state its precondition once and its parts state
- * theirs beneath it — section 9's self-audit applies only to a target that can act on it, and
+ * theirs beneath it — the self-audit applies only to a target that can act on it, and
  * within it individual checks apply only to a cut-out rig or a pixel-art sheet. Flattening that
  * would mean naming each conjunction in the compiler, putting the template's logic where the
  * template cannot be read.
@@ -134,8 +141,8 @@ export function applyOptionals(template: string, values: Readonly<Record<string,
  * Number each `[N].` list item, counting from one and restarting at every blank line.
  *
  * **The template must not write the numerals itself, because its lists are assembled
- * conditionally.** Section 9's verification list carries a rig check and a pixel-art check that
- * appear independently, so hand-numbering them at 7 and 8 produced `…6. 8.` on a pixel-art sheet
+ * conditionally.** The layout section's verification list carries a rig check and a pixel-art check
+ * that appear independently, so hand-numbering them at 7 and 8 produced `…6. 8.` on a pixel-art sheet
  * without a cut-out rig — a checklist that skips a number reads as one whose seventh check went
  * missing, in the section whose whole job is to be worked through item by item. That list is itself
  * gated on the target deliberating, so the gap only ever reached a target that reads it; the same
@@ -169,6 +176,61 @@ export function applyNumbering(template: string): string {
 }
 
 /**
+ * Number each section from zero, in the order the surviving headings appear, and resolve every
+ * citation of one to the number it landed on.
+ *
+ * **The template must not write the numerals itself, for the reason {@link applyNumbering} gives
+ * about list items — and the cost of it having done so was larger here.** Section 5 is conditional
+ * on the rig mode, and five of the nine categories have no rig at all, so those prompts ran
+ * `## 4. COMPONENT INVENTORY` straight into `## 6. REQUIRED ASSEMBLY CAPABILITY` — a gap in the
+ * numbering of a document whose prose cites its own sections several hundred times. The adherence
+ * report already had the same problem one section further down and answered it by writing its
+ * heading **twice**, once behind `[IF:EMIT_MANIFEST]` and once behind the negation; that does not
+ * scale past one conditional section, and it left the citations in section 0 to be kept in step by
+ * hand regardless.
+ *
+ * So a heading declares itself, `## [SECTION:EXCLUSIONS]. EXCLUSIONS`, and prose cites it,
+ * `section [SEC:EXCLUSIONS]`. Both resolve from one walk, which means a section that is dropped
+ * takes its number with it and every citation of the sections after it moves down together.
+ *
+ * Counting **from zero** rather than one: section 0 is the output contract, deliberately, because
+ * it holds the constraints that fail most often and attention weighting favours early tokens.
+ *
+ * Two failures throw rather than emitting something that still reads as prose:
+ *
+ * - **A name declared twice.** The two headings that vary by target — section 5's rig pair and
+ *   the layout section's audit pair — each declare one name from mutually exclusive `[IF:…]` blocks, so
+ *   exactly one survives. Two survivors would mean a condition that is no longer exclusive, and the
+ *   symptom would be a second section quietly sharing the first one's number.
+ * - **A citation of a section this prompt does not carry.** Nothing cites the conditional sections
+ *   today, and a citation that started to would otherwise render as `section undefined` — the same
+ *   failure {@link substitute} refuses for a `[DEFINE:…]`, and refused for the same reason.
+ *
+ * **Run it after {@link applyConditionals}**, or a dropped section still takes a number, which is
+ * the whole defect; and before {@link assertBlocksResolved}, which is what catches a marker
+ * malformed enough to match neither pattern.
+ */
+export function applySectionNumbers(template: string): string {
+  const numbers = new Map<string, number>();
+  for (const [, name = ''] of template.matchAll(SECTION_DECLARATION)) {
+    if (numbers.has(name)) throw new Error(`Prompt template: [SECTION:${name}] was declared twice.`);
+    numbers.set(name, numbers.size);
+  }
+
+  const resolve = (marker: string, name: string): string => {
+    const number = numbers.get(name);
+    if (number === undefined) {
+      throw new Error(`Prompt template: ${marker} names no section this prompt carries.`);
+    }
+    return String(number);
+  };
+
+  return template
+    .replace(SECTION_DECLARATION, (marker, name: string) => resolve(marker, name))
+    .replace(SECTION_REFERENCE, (marker, name: string) => resolve(marker, name));
+}
+
+/**
  * Replace every `[DEFINE:NAME]` with its value.
  *
  * A token with no value **throws**. The alternative — leaving it in place — sends literal template
@@ -184,7 +246,7 @@ export function substitute(template: string, values: Readonly<Record<string, str
 }
 
 /**
- * Fail if a block marker survived the conditional, optional and numbering passes.
+ * Fail if a block marker survived the conditional, section, optional and numbering passes.
  *
  * A marker that is malformed — split across lines, mis-spelled, indented into a code fence — matches
  * no pattern at all and would otherwise travel to the model untouched. This is the check that

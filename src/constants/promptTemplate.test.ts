@@ -59,8 +59,8 @@ describe('the template itself', () => {
     // under "Head & sensory features". Every bullet in section 1 is now a token, so there is no
     // label in this file that could go stale against the studio.
     const section = PROMPT_TEMPLATE.slice(
-      PROMPT_TEMPLATE.indexOf('## 1. SUBJECT DEFINITION'),
-      PROMPT_TEMPLATE.indexOf('## 2. RENDER STYLE'),
+      PROMPT_TEMPLATE.indexOf('## [SECTION:SUBJECT]. SUBJECT DEFINITION'),
+      PROMPT_TEMPLATE.indexOf('## [SECTION:STYLE]. RENDER STYLE'),
     );
     const bullets = [
       ...section.matchAll(/^\[OPTIONAL:[A-Z0-9_]+ *\| *- (.*): \[DEFINE:[A-Z0-9_]+\]\]$/gm),
@@ -81,11 +81,41 @@ describe('the template itself', () => {
     expect(promptText.describeDirections(['south', 'west'])).toBe('South, west');
   });
 
+  it('writes no section number of its own, in a heading or in prose', () => {
+    // The rule `applySectionNumbers` exists to make keepable. The rig section is conditional, so a
+    // hand-numbered document ran `## 4.` into `## 6.` on the five categories that never articulate —
+    // and every citation of a later section was a second literal that had to agree with the first.
+    // Both halves are checked, because either one alone can go stale: a heading numbered by hand
+    // would collide with a computed neighbour, and a citation numbered by hand would point at
+    // whichever section happened to land there.
+    expect(PROMPT_TEMPLATE, 'a heading writes its own number instead of [SECTION:…]').not.toMatch(/^## \d/m);
+    expect(PROMPT_TEMPLATE, 'prose cites a section by number instead of [SEC:…]').not.toMatch(
+      /\bsections? \d/i,
+    );
+  });
+
+  it('cites only sections it also declares', () => {
+    // A `[SEC:…]` naming a section no heading declares throws at compile time rather than emitting
+    // `section undefined` — but it throws only for the configurations that reach it, and a citation
+    // inside a rarely-taken block could sit unexercised for a long time. This is the static half.
+    const declared = new Set(
+      [...PROMPT_TEMPLATE.matchAll(/\[SECTION:([A-Z0-9_]+)\]/g)].map((match) => match[1] ?? ''),
+    );
+    const cited = new Set(
+      [...PROMPT_TEMPLATE.matchAll(/\[SEC:([A-Z0-9_]+)\]/g)].map((match) => match[1] ?? ''),
+    );
+    expect(declared.size).toBeGreaterThan(0);
+    expect(cited.size).toBeGreaterThan(0);
+    for (const name of cited) {
+      expect(declared, `[SEC:${name}] names no section this template declares`).toContain(name);
+    }
+  });
+
   it('opens with the output contract rather than burying it', () => {
     // Attention weighting favours early tokens, and background, pixel density and "no text" are the
     // constraints that fail most often. v1 had them in sections 8 and 9.
-    const contractAt = PROMPT_TEMPLATE.indexOf('## 0. NON-NEGOTIABLE OUTPUT CONTRACT');
-    const subjectAt = PROMPT_TEMPLATE.indexOf('## 1. SUBJECT DEFINITION');
+    const contractAt = PROMPT_TEMPLATE.indexOf('## [SECTION:CONTRACT]. NON-NEGOTIABLE OUTPUT CONTRACT');
+    const subjectAt = PROMPT_TEMPLATE.indexOf('## [SECTION:SUBJECT]. SUBJECT DEFINITION');
     expect(contractAt).toBeGreaterThan(-1);
     expect(contractAt).toBeLessThan(subjectAt);
   });

@@ -18,10 +18,10 @@ import { generatePrompt } from './promptCompiler.ts';
  *
  * The defect: `rigMode` was a free choice, unrelated to the category, against a default of
  * `POSE_LIBRARY` — so the prompt's `[IF:RIG_MODE=POSE_LIBRARY]` block fired on any subject and
- * emitted `## 5. RIGID SEGMENTS AND PIVOTS` on sheets whose components do not articulate. Three
+ * emitted a `RIGID SEGMENTS AND PIVOTS` section on sheets whose components do not articulate. Three
  * categories reached it on the studio's own defaults with nothing selected: a BUILDING tileset, an
  * EFFECT flipbook and an INTERFACE widget kit. `CUTOUT_RIG` was worse where a category switch left it
- * behind — the whole `## 5. CUT-OUT RIG REQUIREMENTS` block, bone axes and joint caps included,
+ * behind — the whole `CUT-OUT RIG REQUIREMENTS` block, bone axes and joint caps included,
  * arriving on a sheet of floor tiles.
  *
  * What is pinned here is the property rather than those examples: a category that articulates about
@@ -29,11 +29,25 @@ import { generatePrompt } from './promptCompiler.ts';
  * switch, a stored configuration, and the compiler itself.
  */
 
-/** The section 5 each rig mode emits, and the heading that proves it did. */
+/**
+ * The rig section each mode emits, named by its heading rather than by its number.
+ *
+ * Section numbers are computed from the headings that survive, so a heading is the stable half: the
+ * rig section is number 5 whenever it appears — sections 0 to 4 are unconditional and precede it —
+ * and asserting the number as well would only restate what `promptCompiler.test.ts` pins directly.
+ * The titles are also what a negative assertion needs, since the *number* 5 belongs to whichever
+ * section lands there once the rig block is dropped.
+ */
 const RIG_SECTIONS = {
   POSE_LIBRARY: '## 5. RIGID SEGMENTS AND PIVOTS',
   CUTOUT_RIG: '## 5. CUT-OUT RIG REQUIREMENTS',
 } as const;
+
+/** Neither rig section is anywhere in this prompt, by whichever number it would have taken. */
+function expectNoRigSection(prompt: string): void {
+  expect(prompt).not.toContain('RIGID SEGMENTS AND PIVOTS');
+  expect(prompt).not.toContain('CUT-OUT RIG REQUIREMENTS');
+}
 
 const ARTICULATED = SUBJECT_CATEGORIES.filter((category) => supportsRigMode(category, 'POSE_LIBRARY'));
 const UNARTICULATED = SUBJECT_CATEGORIES.filter((category) => !supportsRigMode(category, 'POSE_LIBRARY'));
@@ -95,20 +109,21 @@ describe('a stored rig its category has no joints for', () => {
   });
 });
 
-describe('the reported failure: section 5 on a sheet with no joints', () => {
+describe('the reported failure: a rig section on a sheet with no joints', () => {
   it.each(UNARTICULATED)('%s emits neither rig section, whatever the configuration asks', (category) => {
     for (const rigMode of ['POSE_LIBRARY', 'CUTOUT_RIG'] as const) {
       const prompt = promptFor(category, rigMode);
 
-      expect(prompt).not.toContain(RIG_SECTIONS[rigMode]);
+      expectNoRigSection(prompt);
       // The exact sentences from the reported prompt, named so a revert surfaces as this test rather
       // than as a heading count.
       expect(prompt).not.toContain('flexion comes from assembling separately oriented rigid segments');
       expect(prompt).not.toContain('Matching pivots share a diameter');
       expect(prompt).not.toContain('bound to a skeleton and rotated independently at runtime');
-      // Section 6 is what section 5 sits above, so its presence is what makes the absence above a
-      // dropped block rather than a prompt that stopped early.
-      expect(prompt).toContain('## 6. REQUIRED ASSEMBLY CAPABILITY');
+      // The assembly capability is what the rig section sits above, so its presence is what makes the
+      // absence above a dropped block rather than a prompt that stopped early — and it now carries
+      // the number the rig section would have taken, which is the gap this closes.
+      expect(prompt).toContain('## 5. REQUIRED ASSEMBLY CAPABILITY');
     }
   });
 
@@ -117,9 +132,7 @@ describe('the reported failure: section 5 on a sheet with no joints', () => {
     // sheet mode — which is why this shipped rather than being a corner a user had to find.
     expect(DEFAULT_OUTPUT_CONFIG.rigMode).toBe('POSE_LIBRARY');
     for (const category of ['BUILDING', 'EFFECT', 'INTERFACE'] as const) {
-      expect(generatePrompt(category, defaultSubjectFor(category), DEFAULT_OUTPUT_CONFIG)).not.toContain(
-        '## 5.',
-      );
+      expectNoRigSection(generatePrompt(category, defaultSubjectFor(category), DEFAULT_OUTPUT_CONFIG));
     }
   });
 
@@ -128,7 +141,7 @@ describe('the reported failure: section 5 on a sheet with no joints', () => {
     for (const rigMode of ['POSE_LIBRARY', 'CUTOUT_RIG'] as const) {
       expect(promptFor(category, rigMode)).toContain(RIG_SECTIONS[rigMode]);
     }
-    expect(promptFor(category, 'NONE')).not.toContain('## 5.');
+    expectNoRigSection(promptFor(category, 'NONE'));
   });
 });
 

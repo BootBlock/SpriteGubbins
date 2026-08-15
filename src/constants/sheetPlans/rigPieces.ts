@@ -11,7 +11,7 @@
  * one, and unmoved when a subject's additional anatomy raised the per-sheet count. It was the same
  * hand-maintained arithmetic `componentCountFor` exists to have removed from the inventory headings.
  * The numbers a reader actually needs are derived and stated where they are true: section 0's
- * contract, section 6's per-sheet list, and the split drawer's batch total.
+ * contract, the assembly section's per-sheet list, and the split drawer's batch total.
  */
 export const RIG_PIECES_OUTRO = `A rig covering more than one direction is one of these sheets per direction, never a single sheet
 holding every direction at once. Run it once per direction with the same identity lock.`;

@@ -39,6 +39,26 @@ import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheet
  */
 
 /**
+ * One section of a compiled prompt, found by its heading's **title** and running to the next
+ * heading.
+ *
+ * Section numbers are computed from the headings a configuration actually carries, so a literal
+ * `## 8. EXCLUSIONS` is right only for the categories that also carry a rig section — the five that
+ * articulate about nothing put their exclusions at 7. Every slice here was previously written as a
+ * number, and the inventory's was written as a *disjunction* over the two numbers the following
+ * heading could take, which is the hand-maintained arithmetic `applySectionNumbers` removed.
+ *
+ * `\n## ` terminates rather than the `---` rule, because a section's own sub-headings are three
+ * hashes or four and the rule is not present between every pair. The end of the *prompt* is spelled
+ * `(?![\s\S])` rather than `$`, which under the `m` flag needed for `^` would mean the end of the
+ * heading's own line and match every section as its heading alone.
+ */
+function sectionOf(prompt: string, title: string): string {
+  const pattern = String.raw`^## \d+\. ${title}$[\s\S]*?(?=\n## |(?![\s\S]))`;
+  return new RegExp(pattern, 'm').exec(prompt)?.[0] ?? '';
+}
+
+/**
  * Vocabulary that belongs only to a sheet whose components *are* the environment.
  *
  * Renamed from `TILE_VOCABULARY` because tiling stopped being the distinguishing property the moment
@@ -225,10 +245,8 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
     });
     return {
       prompt,
-      inventory:
-        /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/.exec(prompt)?.[0] ??
-        '',
-      exclusions: /## 8\. EXCLUSIONS[\s\S]*?---/.exec(prompt)?.[0] ?? '',
+      inventory: sectionOf(prompt, 'COMPONENT INVENTORY'),
+      exclusions: sectionOf(prompt, 'EXCLUSIONS'),
     };
   }
 
@@ -302,10 +320,8 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
     // The repair may not have weakened section 8 for the six categories it was already right for:
     // a CHARACTER inventory names no particle effect, so nothing there is exempted by the clause.
     const prompt = generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), DEFAULT_OUTPUT_CONFIG);
-    const exclusions = /## 8\. EXCLUSIONS[\s\S]*?---/.exec(prompt)?.[0] ?? '';
-    const inventory = /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/
-      .exec(prompt)?.[0]
-      ?.toLowerCase();
+    const exclusions = sectionOf(prompt, 'EXCLUSIONS');
+    const inventory = sectionOf(prompt, 'COMPONENT INVENTORY').toLowerCase();
 
     expect(exclusions).toContain('any particle');
     expect(inventory).not.toContain('particle');
@@ -318,11 +334,8 @@ describe('no category emits another category’s components', () => {
     '$category / $mode / $directions / $sheet',
     ({ category, mode, directions, sheetIndex }) => {
       const prompt = promptFor(category, mode, undefined, sheetIndex, directions);
-      const inventory = /## 4\. COMPONENT INVENTORY[\s\S]*?## 5|## 4\. COMPONENT INVENTORY[\s\S]*?## 6/.exec(
-        prompt,
-      );
-      expect(inventory).not.toBeNull();
-      const section = inventory?.[0] ?? '';
+      const section = sectionOf(prompt, 'COMPONENT INVENTORY');
+      expect(section).not.toBe('');
 
       // Neither half is a list of category names, and that is the fix rather than the tidy-up: the
       // limb half used to read `category === 'OBJECT' || category === 'ITEM'`, so VEHICLE — which
@@ -410,8 +423,8 @@ describe('an INTERFACE sheet may draw the frames it is made of', () => {
     const prompt = promptFor('INTERFACE', 'SINGLE_DIRECTION_POSE_LIBRARY');
     expect(prompt).toContain('Panel or window frame ×1');
 
-    const contract = /## 0\. NON-NEGOTIABLE[\s\S]*?## 1\. SUBJECT/.exec(prompt)?.[0] ?? '';
-    const exclusions = /## 8\. EXCLUSIONS[\s\S]*?---/.exec(prompt)?.[0] ?? '';
+    const contract = sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT');
+    const exclusions = sectionOf(prompt, 'EXCLUSIONS');
     expect(flatten(contract)).toContain('no frame or border around the image or around a component');
     expect(flatten(exclusions)).toContain('frames or borders around the image or around a component');
 
@@ -449,15 +462,14 @@ describe('a BUILDING tileset is still a tileset', () => {
     // The contradiction that shipped: the exclusion list was static, so a tileset was told to draw
     // floor tiles and then told floor tiles were absent from the image entirely.
     const prompt = promptFor('BUILDING', 'TILESET_MODULAR');
-    const exclusions = /## 8\. EXCLUSIONS[\s\S]*?---/.exec(prompt)?.[0] ?? '';
+    const exclusions = sectionOf(prompt, 'EXCLUSIONS');
 
     expect(exclusions).not.toContain('floor tiles');
     expect(exclusions).toContain('Characters, creatures, vehicles');
   });
 
   it('still forbids scenery on a character sheet', () => {
-    const exclusions =
-      /## 8\. EXCLUSIONS[\s\S]*?---/.exec(promptFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS'))?.[0] ?? '';
+    const exclusions = sectionOf(promptFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS'), 'EXCLUSIONS');
     expect(exclusions).toContain('floor tiles');
   });
 });

@@ -23,25 +23,35 @@
  * true of a building and a pistol**, or a per-category map in `constants/promptText/` to hold six.
  *
  * **Neither of those two lists writes its own numerals**, because both are assembled conditionally
- * and a hand-numbered list cannot survive that: section 9's rig and pixel-art checks appear
+ * and a hand-numbered list cannot survive that: the layout section's rig and pixel-art checks appear
  * independently, so numbering them 7 and 8 emitted `…6. 8.` on a pixel-art sheet without a cut-out
  * rig — on the targets that see that list at all, since the whole of it sits behind
  * `[IF:DELIBERATES]`. `[N].` is numbered at render time by `applyNumbering`, so an item that is
  * dropped takes its number with it.
  *
- * **The adherence report is a third mention of those checks, and it deliberately does not restate
- * them.** It points at section 9's list instead, because the two are asking for different things
- * from the same checks — section 9 audits *before* delivery so the sheet can still be fixed, and the
- * report audits what was actually delivered so the *template* can be. Writing the list out again
- * there would be the diluting third copy `utils/modelWrapperText.ts` describes, in the section least
- * able to afford it.
+ * **No section writes its own numeral either, and for the same reason one section further out.** A
+ * heading declares itself — `## [SECTION:EXCLUSIONS]. EXCLUSIONS` — and prose cites it as
+ * `section [SEC:EXCLUSIONS]`; `applySectionNumbers` walks the surviving headings and resolves both.
+ * The rig section is conditional and five of the nine categories have no rig at all, so a
+ * hand-numbered document ran `## 4.` straight into `## 6.` on every prompt those categories ever
+ * compiled — a gap in the numbering of a document that cites its own sections several hundred times.
+ * That defect had already been met once, at the adherence report, and answered by writing its heading
+ * twice with each copy behind a gate; that does not survive a second conditional section, and it left
+ * the citations to be kept in step by hand regardless. **A section number is therefore never written
+ * down anywhere in this file** — `promptTemplate.test.ts` fails on one that is.
  *
- * The report's own number is written twice — 11 behind the manifest, 10 without it — the same way
- * section 9's heading already varies by target. Both of the sections it can follow are numbered
- * fixed; only the last one can be preceded by a section that isn't there. A "## 11." with no 10
- * above it reads as an authoring error, and a reader who cannot trust the numbering cannot follow a
- * cross-reference either — which matters here, because the report's whole job is to cite sections
- * back.
+ * **A line carrying one of those markers runs past this project's 110 columns, and is left that
+ * way.** The marker is a dozen characters in the source and one digit in the output, so the line
+ * breaks here are the breaks the *model* reads: re-wrapping the source to 110 would re-wrap the
+ * emitted paragraphs to something narrower and ragged, and change the prompt for every subject to
+ * tidy a file. Prettier does not reformat inside a template literal, so nothing forces the issue.
+ *
+ * **The adherence report is a third mention of those checks, and it deliberately does not restate
+ * them.** It points at the layout section's list instead, because the two are asking for different
+ * things from the same checks — that list audits *before* delivery so the sheet can still be fixed,
+ * and the report audits what was actually delivered so the *template* can be. Writing the list out
+ * again there would be the diluting third copy `utils/modelWrapperText.ts` describes, in the section
+ * least able to afford it.
  *
  * Mirrored verbatim in `docs/todo/baseline-prompt-new.md` §3, which is where the reasoning behind
  * each rule lives. This constant is the one the app emits and therefore the source of the pair, so
@@ -55,7 +65,7 @@ You are producing a **reference sheet for game-asset extraction**: an exploded g
 reusable components that a tool will cut apart and reassemble. It is not an illustration, a scene,
 or a character portrait. Every rule below serves extraction.
 
-## 0. NON-NEGOTIABLE OUTPUT CONTRACT
+## [SECTION:CONTRACT]. NON-NEGOTIABLE OUTPUT CONTRACT
 
 Satisfy this section before any aesthetic consideration.
 
@@ -75,7 +85,7 @@ Satisfy this section before any aesthetic consideration.
    silhouette edges, no smooth gradients, no sub-pixel blending, no vector-smooth curves.
 [/IF]
 [IF:PALETTE]
-[N]. Every colour on every component comes from the palette section 2 fixes, and no colour outside
+[N]. Every colour on every component comes from the palette section [SEC:STYLE] fixes, and no colour outside
    it appears anywhere on them. The background field is the exception and stays the key colour
    named above.
 [/IF]
@@ -83,14 +93,14 @@ Satisfy this section before any aesthetic consideration.
 
 **This is sheet [DEFINE:SERIES_POSITION] of [DEFINE:SERIES_TOTAL] of one deliverable, and the count
 above is this sheet's own.** The other sheets are generated separately, each from its own copy of
-this specification, and section 6 says what each of them carries. Draw this sheet's inventory and
+this specification, and section [SEC:ASSEMBLY] says what each of them carries. Draw this sheet's inventory and
 nothing else: never add a component because the set looks incomplete without it, and never drop one
 because another sheet carries something like it.
 [/IF]
 [IF:RETURNS_TEXT]
 
 **The subject's category decides what kind of components this sheet may contain; the inventory in
-section 4 then names the exact set within that kind.** These two can never legitimately disagree. If
+section [SEC:INVENTORY] then names the exact set within that kind.** These two can never legitimately disagree. If
 the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
 building, floor tiles on a character — this specification is malformed. Say so rather than resolving
 it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
@@ -100,9 +110,9 @@ to report, never a conflict to rank.
 [IF:MULTI_DIRECTION]
 
 **A component the inventory lists in more than one direction is one component, drawn once per
-direction.** Each of those drawings is that same geometry turned to the object yaw section 3 gives
+direction.** Each of those drawings is that same geometry turned to the object yaw section [SEC:CAMERA] gives
 it — never one view repeated, never a mirrored copy, never the same view with its details moved.
-Section 3 states how far each turn goes and what it must reveal; this is the contract that the turns
+Section [SEC:CAMERA] states how far each turn goes and what it must reveal; this is the contract that the turns
 happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
@@ -112,16 +122,16 @@ is asked for · the fixed camera, one scale and pivot compatibility · subject i
 style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
 preference never overrules a component's stated direction.
 
-**An exclusion in section 8 outranks every attribute that asks for the same visible element.**
-Where the subject definition, the render style or any other description names something section 8
+**An exclusion in section [SEC:EXCLUSIONS] outranks every attribute that asks for the same visible element.**
+Where the subject definition, the render style or any other description names something section [SEC:EXCLUSIONS]
 excludes, leave that element out of the image entirely — never satisfy both by drawing a reduced,
 integrated or decorative version of it. That decides what a component *shows*, not which components
-exist: where section 4 lists an entry section 8 excludes, draw the entry, because the count and
+exist: where section [SEC:INVENTORY] lists an entry section [SEC:EXCLUSIONS] excludes, draw the entry, because the count and
 inventory rank first and an omitted one mis-maps every component after it.
 
 ---
 
-## 1. SUBJECT DEFINITION
+## [SECTION:SUBJECT]. SUBJECT DEFINITION
 
 This section is the **sole authority** for the subject's design. Do not invent, infer or embellish
 any attribute not stated here.
@@ -151,12 +161,12 @@ Every fitted, applied and worn attribute listed above — cladding, armour, harn
 surface detail alike — is **painted onto** the component it sits on, never drawn as a separate piece.
 [IF:ADDITIONAL_ANATOMY]
 [IF:ANATOMY_PER_VIEW]
-**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section 4 lists each piece named there
+**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section [SEC:INVENTORY] lists each piece named there
 separately, drawn at every facing this sheet covers and counted once per view, like the components
 beside it.
 [/IF]
 [IF:ANATOMY_PER_VIEW!=yes]
-**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section 4 lists each piece named there
+**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section [SEC:INVENTORY] lists each piece named there
 separately and counts it as a component of its own.
 [/IF]
 [/IF]
@@ -174,7 +184,7 @@ Where this conflicts with anything above, the identity lock wins.
 
 ---
 
-## 2. RENDER STYLE
+## [SECTION:STYLE]. RENDER STYLE
 
 - Style: [DEFINE:RENDER_STYLE_DESCRIPTION]
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
@@ -245,7 +255,7 @@ earlier in this section, the setting wins — it is what this particular sheet a
 
 ---
 
-## 3. PROJECTION, CAMERA AND OBJECT ORIENTATION
+## [SECTION:CAMERA]. PROJECTION, CAMERA AND OBJECT ORIENTATION
 
 - Projection: [DEFINE:PROJECTION_DESCRIPTION]
 - Camera elevation: [DEFINE:CAMERA_ELEVATION]° above the horizon
@@ -319,14 +329,14 @@ orientation stays put.
 ### What "primary assembly direction" means
 
 It is the direction for every component the inventory does **not** give a direction of its own, and
-the direction the assembled pose faces. It is not a house style for the sheet. **Wherever section 4
+the direction the assembled pose faces. It is not a house style for the sheet. **Wherever section [SEC:INVENTORY]
 names a direction for a component, that direction wins outright** — never pull a directional
 component back towards the primary assembly direction because the rest of the sheet uses it.
 [/IF]
 
 ---
 
-## 4. COMPONENT INVENTORY
+## [SECTION:INVENTORY]. COMPONENT INVENTORY
 
 [DEFINE:CATEGORY_GUARD]
 
@@ -346,12 +356,12 @@ nothing another entry names and nothing the assembled subject would attach to it
 meets a neighbouring piece in the assembled subject, this drawing **stops at that join**, finished
 with a clean edge or socket, and the neighbouring piece appears nowhere on it — not attached, not
 sketched in, not trailing off the cell. Drawing a listed part together with the parts it connects
-to is the single most common failure of sheets like this: it merges entries the count in section 0
+to is the single most common failure of sheets like this: it merges entries the count in section [SEC:CONTRACT]
 lists separately, and it makes the cut-out part unusable.
 
 ### Placement is the only identity map
 
-Labels are forbidden by section 0, so **grid position is how each component is identified**. Lay
+Labels are forbidden by section [SEC:CONTRACT], so **grid position is how each component is identified**. Lay
 the components out in strict reading order — left to right, then top to bottom — in exactly the
 order the inventory above lists them. A reordered, merged or omitted entry silently mis-maps every
 component after it.
@@ -359,7 +369,7 @@ component after it.
 ---
 [IF:RIG_MODE=CUTOUT_RIG]
 
-## 5. CUT-OUT RIG REQUIREMENTS
+## [SECTION:RIG]. CUT-OUT RIG REQUIREMENTS
 
 These components are bound to a skeleton and rotated independently at runtime. The rig, not the
 artwork, supplies all motion.
@@ -390,7 +400,7 @@ Left and right versions are mirrored in silhouette but redrawn for their own sid
 details stay on the correct side rather than flipping with the mirror — a fitting carried on one side
 does not change sides between the left and right sets. **This is the only mirroring the sheet
 permits:** a left piece and a right piece are two different parts, whereas a direction is a rotation,
-and section 3 forbids producing one by mirroring another.
+and section [SEC:CAMERA] forbids producing one by mirroring another.
 [IF:SOCKETS]
 
 ### Attachment sockets
@@ -405,7 +415,7 @@ without fighting what is underneath: [DEFINE:SOCKETS]
 [/IF]
 [IF:RIG_MODE=POSE_LIBRARY]
 
-## 5. RIGID SEGMENTS AND PIVOTS
+## [SECTION:RIG]. RIGID SEGMENTS AND PIVOTS
 
 Every articulated part is a separate **rigid** component. Never draw a pre-bent segment —
 flexion comes from assembling separately oriented rigid segments around shared pivots. Matching
@@ -414,14 +424,14 @@ pivots share a diameter and cap geometry so segments register when assembled.
 ---
 [/IF]
 
-## 6. REQUIRED ASSEMBLY CAPABILITY
+## [SECTION:ASSEMBLY]. REQUIRED ASSEMBLY CAPABILITY
 
 The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
 [IF:SERIES]
 
 **That is the finished series' capability, and not this sheet's alone.** It is reached once every
 sheet listed below has been generated and their components are brought together, so this sheet
-supplies its own share of it and no more. Whatever the assembled set needs that section 4 does not
+supplies its own share of it and no more. Whatever the assembled set needs that section [SEC:INVENTORY] does not
 list is drawn on one of the others.
 
 ### The sheets in this series
@@ -431,7 +441,7 @@ list is drawn on one of the others.
 
 ---
 
-## 7. IDENTITY CONSISTENCY
+## [SECTION:IDENTITY]. IDENTITY CONSISTENCY
 
 Every component belongs to the **same single subject**. Hold constant across all of them:
 silhouette language and proportion · joint and attachment geometry · fitted and structural
@@ -443,18 +453,18 @@ to sit beside one drawn on another sheet and read as the same object, and those 
 generations with nothing carried between them but the text of the specification. A sheet that is
 consistent within itself and does not match the rest of the series has failed.
 [IF:IDENTITY_LOCK]
-The identity lock in section 1 is the record of what the other sheets actually drew, which is why it
+The identity lock in section [SEC:SUBJECT] is the record of what the other sheets actually drew, which is why it
 wins wherever it and the subject definition above it disagree.
 [/IF]
 [/IF]
 
 Where a component appears at more than one object yaw, it is one persistent three-dimensional form
-seen after a turn — every feature stays attached to the same physical region of it, as section 3
+seen after a turn — every feature stays attached to the same physical region of it, as section [SEC:CAMERA]
 requires.
 
 ---
 
-## 8. EXCLUSIONS
+## [SECTION:EXCLUSIONS]. EXCLUSIONS
 
 Absent from the image entirely:
 
@@ -465,20 +475,20 @@ Absent from the image entirely:
   around a component.
 - Assembled or posed complete figures.
 - Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
-  effect the inventory in section 4 does not name.
+  effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
 
 ---
 
 [IF:DELIBERATES]
-## 9. LAYOUT AND SELF-AUDIT
+## [SECTION:LAYOUT]. LAYOUT AND SELF-AUDIT
 [/IF]
 [IF:DELIBERATES!=yes]
-## 9. LAYOUT
+## [SECTION:LAYOUT]. LAYOUT
 [/IF]
 
 Arrange components in a clean exploded grid in [DEFINE:ASPECT_DESCRIPTION] format, generously and
-uniformly spaced, in the reading order fixed by section 4. Nothing touches, overlaps, or is cropped
+uniformly spaced, in the reading order fixed by section [SEC:INVENTORY]. Nothing touches, overlaps, or is cropped
 by the image edge.
 [IF:DELIBERATES]
 
@@ -500,10 +510,10 @@ Before delivering, verify:
 [N]. One pixel grid and density throughout, with no anti-aliased silhouette edges.
 [/IF]
 [IF:PALETTE]
-[N]. Every colour on every component is one the palette in section 2 permits.
+[N]. Every colour on every component is one the palette in section [SEC:STYLE] permits.
 [/IF]
 [IF:PALETTE_PER_COMPONENT]
-[N]. No component carries more colours at once than section 2 allows one.
+[N]. No component carries more colours at once than section [SEC:STYLE] allows one.
 [/IF]
 [IF:MULTI_DIRECTION]
 
@@ -518,7 +528,7 @@ each of its views and confirm:
 [IF:MIRROR_PAIRS]
 - Neither member of a pair — [DEFINE:MIRROR_PAIRS_DESCRIPTION] — is the other reflected: every
   feature the subject carries on one side only sits at full prominence in the member that turns
-  that side towards the camera, and appears in the other only as far as its yaw in section 3
+  that side towards the camera, and appears in the other only as far as its yaw in section [SEC:CAMERA]
   allows. A pair identical up to mirroring is a failed rotation, however correctly each member
   faces.
 [/IF]
@@ -526,14 +536,14 @@ each of its views and confirm:
   rotation rather than by redesign.
 
 If two views of one component still face effectively the same way, **the sheet has failed**. Redraw
-that component at the object yaw section 3 gives it rather than delivering the sheet.
+that component at the object yaw section [SEC:CAMERA] gives it rather than delivering the sheet.
 [/IF]
 [/IF]
 [IF:EMIT_MANIFEST]
 
 ---
 
-## 10. COMPANION MANIFEST
+## [SECTION:MANIFEST]. COMPANION MANIFEST
 
 Alongside the image, output a JSON manifest as text — grid position, part name, bone parent, and
 the pivot as a fraction of the component's cell:
@@ -546,14 +556,8 @@ rather than describing the ideal.
 [IF:EMIT_PROMPT_FEEDBACK]
 
 ---
-[IF:EMIT_MANIFEST]
 
-## 11. ADHERENCE REPORT
-[/IF]
-[IF:EMIT_MANIFEST!=yes]
-
-## 10. ADHERENCE REPORT
-[/IF]
+## [SECTION:REPORT]. ADHERENCE REPORT
 
 After the sheet is delivered, and as text beside it, report on what you actually produced. Nothing
 in this section changes the image — write the report from the delivered pixels, never from the plan
@@ -561,8 +565,8 @@ you drew them to.
 
 ### The audit
 
-Section 9 still stands: fix what you can before delivering. This report is about the sheet you did
-deliver, so work section 9's checks — and its directional audit, where the sheet has one — once more
+Section [SEC:LAYOUT] still stands: fix what you can before delivering. This report is about the sheet you did
+deliver, so work section [SEC:LAYOUT]'s checks — and its directional audit, where the sheet has one — once more
 against the finished image, and state for each whether it holds. Where one does not, say what the
 image contains instead, concretely: "three of the five directional views at roughly the same yaw"
 rather than "directional coverage could be improved". A check you cannot settle by looking at the
@@ -585,7 +589,7 @@ used to change that template, so it reaches every prompt the tool composes — a
 which nobody will regenerate from it. Four things follow:
 
 - **Write about the instruction, not the artwork.** "Redraw the third component's rear view" cannot
-  be acted on there. "Section 3 fixes the yaw but never states that a rear view must hide what the
+  be acted on there. "Section [SEC:CAMERA] fixes the yaw but never states that a rear view must hide what the
   front view presented, so a second three-quarter view satisfies it" can.
 - **Write nothing specific to this subject.** The next prompt from this tool may be a building, a
   pistol or a tileset, and a change that only makes sense for this one cannot be made.
