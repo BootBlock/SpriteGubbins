@@ -67,7 +67,7 @@ describe('the elevations a projection allows', () => {
 
   it('keeps an elevation the projection does allow', () => {
     expect(resolveCameraElevation('THREE_QUARTER_TOPDOWN', 35)).toBe(35);
-    expect(resolveCameraElevation('DIMETRIC_2_1', 26.57)).toBe(26.57);
+    expect(resolveCameraElevation('DIMETRIC_2_1', 30)).toBe(30);
   });
 
   it('answers with the low bound for a figure that is not a number at all', () => {

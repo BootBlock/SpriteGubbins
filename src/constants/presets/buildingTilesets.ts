@@ -9,7 +9,7 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * BUILDING is the only category the tileset plan is filed under, because it is the only one labelled
  * as an environment. All four of these therefore share a plan and differ only in *camera and scale*,
  * which is the whole decision a tileset actually asks of you: a 16 px top-down tile and a 64 × 32
- * isometric diamond are the same sixteen components drawn for incompatible grids.
+ * 2:1 diamond are the same sixteen components drawn for incompatible grids.
  *
  * Every one states its tile size outright, because a tile that does not match the engine's grid is not
  * a stylistic miss, it is unusable — and no resolution profile can say it, since every profile is
@@ -58,10 +58,10 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
     },
   },
   {
-    id: 'iso-city-tileset',
-    name: 'Isometric City Tileset',
+    id: 'diamond-city-tileset',
+    name: '2:1 Diamond City Tileset',
     description:
-      'The same sixteen tiles drawn as 64 × 32 px isometric diamonds. A tile whose width is not exactly twice its height does not tessellate, and no amount of art fixes that.',
+      'The same sixteen tiles drawn as 64 × 32 px diamonds, on the 2:1 dimetric grid most engines call isometric. A tile whose width is not exactly twice its height does not tessellate, and no amount of art fixes that.',
     category: 'BUILDING',
     subject: {
       species: 'City block tile set',
@@ -84,12 +84,15 @@ export const BUILDING_TILESET_PRESETS: readonly PresetArchetype[] = [
     output: {
       ...DEFAULT_IMAGE_CONFIG,
       directionalMode: 'TILESET_MODULAR',
-      projection: 'TRUE_ISOMETRIC',
-      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
+      // `DIMETRIC_2_1` rather than `TRUE_ISOMETRIC`, and the tile size below is why: the 2:1 diamond
+      // is a 30° camera, while a true isometric stands at 35.26° and lays a square of ground out at
+      // roughly 1.73:1. Asking a true isometric for a 64 × 32 tile asks for a grid that cannot close.
+      projection: 'DIMETRIC_2_1',
+      cameraElevation: DEFAULT_CAMERA_ELEVATIONS.DIMETRIC_2_1,
       directions: 'SINGLE_FRONT',
       resolutionProfile: 'CUSTOM',
-      // The 2:1 diamond, stated as a size rather than described: an isometric tile whose width is not
-      // exactly twice its height does not tessellate, and no amount of art fixes that.
+      // The 2:1 diamond, stated as a size rather than described: a tile whose width is not exactly
+      // twice its height does not tessellate, and no amount of art fixes that.
       spriteTargetSize: '64 × 32 px per tile',
       outlineStyle: 'OUTLINE_LESS_ALBEDO',
       lightingModel: 'ISOMETRIC_TOP_LEFT',

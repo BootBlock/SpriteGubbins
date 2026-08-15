@@ -56,7 +56,21 @@ describe('matchPresetEntries', () => {
     // the prompt is written against.
     const isometric = namesFor('isometric');
     expect(isometric).toContain('Isometric Cut-Out Rig');
-    expect(isometric).toContain('Isometric City Tileset');
+
+    // `DIMETRIC_2_1` normalises to `dimetric 2 1`, and the same query has to reach it: the two
+    // 2:1 diamond tilesets are what nearly everyone typing "isometric" is actually after.
+    expect(namesFor('dimetric')).toContain('2:1 Diamond City Tileset');
+  });
+
+  it('still reaches the 2:1 diamond presets for the word everyone calls them by', () => {
+    // These two are dimetric and say so — a 64 × 32 tile does not tessellate under a true isometric
+    // camera — but "isometric" is the word the genre uses, and renaming them to be accurate would
+    // have made them unfindable by it. Their descriptions carry the term deliberately, and the
+    // haystack indexes the description, so the query keeps working. If someone tidies that phrase out
+    // of the copy, this is what says what it cost.
+    const isometric = namesFor('isometric');
+    expect(isometric).toContain('2:1 Diamond City Tileset');
+    expect(isometric).toContain('2:1 Diamond Snow & Rock Blend');
   });
 
   it('accepts the underscore, the space and the hyphen as the same query', () => {

@@ -155,8 +155,8 @@ Was hardcoded, and hardcoded *contradictorily* — see §8.2.
 | --- | --- | --- |
 | `THREE_QUARTER_TOPDOWN` | Angled overhead. Both the top and the camera-facing vertical surfaces of forms are visible; the vertical screen axis carries both height and depth | 1–89°, default 35° |
 | `PURE_TOPDOWN` | Directly overhead. Only the top of forms is visible | 90° |
-| `TRUE_ISOMETRIC` | 2:1 diamond isometric, equal foreshortening on both ground axes | 30° |
-| `DIMETRIC_2_1` | Two-axis dimetric with unequal foreshortening | 26.57° |
+| `TRUE_ISOMETRIC` | True isometric. The two ground axes and the vertical are equally foreshortened; each ground axis runs at 30° to the horizontal on screen, so a square of ground is drawn as a diamond about 1.73 times wider than it is tall | 35.26° |
+| `DIMETRIC_2_1` | Two-axis dimetric. The two ground axes are equally foreshortened and the vertical is not; each ground axis runs at 26.57° to the horizontal on screen — two pixels across for every one down — so a square of ground is drawn as a diamond exactly twice as wide as it is tall | 30° |
 | `OBLIQUE_45` | Front face undistorted, depth projected at 45° | 0° |
 | `ORTHOGRAPHIC_SIDE` | Flat side elevation, no perspective. Platformer convention | 0° |
 | `ORTHOGRAPHIC_FRONT` | Flat front elevation, no perspective | 0° |
