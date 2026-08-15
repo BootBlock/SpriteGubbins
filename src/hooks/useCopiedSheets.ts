@@ -30,7 +30,15 @@ export function useCopiedSheets(): (output: OutputConfig) => boolean {
   const historyLogs = useHistoryStore((state) => state.historyLogs);
   const fetchHistory = useHistoryStore((state) => state.fetchHistory);
 
+  // **Read once, not on every mount.** The strip that asks this is rendered by `PromptPreview`, and
+  // `App` swaps the whole view on navigation — so an unguarded read would go to the database on
+  // every return to the studio, and a full table is two hundred rows each carrying a compiled prompt
+  // of around twenty thousand characters. The store is the cache: `addLog` keeps it current, nothing
+  // outside this tab writes the table, and a read that failed leaves the list empty so the next
+  // mount retries. `isLoading` covers the two consumers mounting together.
   useEffect(() => {
+    const { historyLogs: loaded, isLoading } = useHistoryStore.getState();
+    if (loaded.length > 0 || isLoading) return;
     void fetchHistory();
   }, [fetchHistory]);
 

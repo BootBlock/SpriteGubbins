@@ -48,8 +48,29 @@ function batch() {
   return sheetBatch('CHARACTER', useOutputStore.getState().output);
 }
 
-function stepButton(name: '← Previous' | 'Next sheet →'): HTMLElement {
+/**
+ * The step buttons by accessible name — which is the label without its arrow, because the arrows are
+ * decorative and hidden. Querying them this way is also what pins that: a glyph that leaked back
+ * into the accessible name would fail every step below rather than merely being read out.
+ */
+function stepButton(name: 'Previous' | 'Next sheet'): HTMLElement {
   return screen.getByRole('button', { name });
+}
+
+/** One sheet of the batch put into the history exactly as copying it does. */
+async function recordCopyOf(position: number): Promise<void> {
+  const { category, subject } = useSubjectStore.getState();
+  const sheet = sheetBatch(category, useOutputStore.getState().output).sheets[position - 1];
+  if (sheet === undefined) throw new Error(`the batch should have a sheet at position ${String(position)}.`);
+
+  await useHistoryStore.getState().addLog({
+    category,
+    subject,
+    output: sheet.output,
+    promptText: 'identity is keyed on the configuration, not this text',
+    wordCount: 8,
+    modelUsed: sheet.output.targetModel,
+  });
 }
 
 describe('SheetProgress', () => {
@@ -87,7 +108,7 @@ describe('SheetProgress', () => {
     const user = userEvent.setup();
     render(<SheetProgress />);
 
-    await user.click(stepButton('Next sheet →'));
+    await user.click(stepButton('Next sheet'));
 
     const { sheets, ordinal } = batch();
     expect(ordinal).toBe(2);
@@ -108,20 +129,20 @@ describe('SheetProgress', () => {
 
     // The trunk sheet is first and has nothing behind it; a step back from there would silently be a
     // wrap round to the last run.
-    expect(stepButton('← Previous')).toBeDisabled();
+    expect(stepButton('Previous')).toBeDisabled();
 
     const total = batch().sheets.length;
     for (let position = 2; position <= total; position += 1) {
-      await user.click(stepButton('Next sheet →'));
+      await user.click(stepButton('Next sheet'));
       expect(batch().ordinal).toBe(position);
-      expect(stepButton('← Previous')).toBeEnabled();
+      expect(stepButton('Previous')).toBeEnabled();
     }
 
-    expect(stepButton('Next sheet →')).toBeDisabled();
+    expect(stepButton('Next sheet')).toBeDisabled();
 
     // And back down again, landing on the sheet it started from rather than merely on sheet one.
     for (let position = total - 1; position >= 1; position -= 1) {
-      await user.click(stepButton('← Previous'));
+      await user.click(stepButton('Previous'));
       expect(batch().ordinal).toBe(position);
     }
     expect(useOutputStore.getState().output.sheetIndex).toBe(0);
@@ -136,22 +157,82 @@ describe('SheetProgress', () => {
 
     // Recorded exactly as a copy records it — the configuration travels with the prompt, which is
     // what lets a sheet be recognised again after the identity lock is written from it.
-    const { category, subject } = useSubjectStore.getState();
-    const [first] = batch().sheets;
-    if (first === undefined) throw new Error('a batch of six should have a first sheet.');
-
-    await useHistoryStore.getState().addLog({
-      category,
-      subject,
-      output: first.output,
-      promptText: 'irrelevant to identity',
-      wordCount: 3,
-      modelUsed: first.output.targetModel,
-    });
+    await recordCopyOf(1);
 
     await waitFor(() => {
       expect(screen.getByText('Copied')).toBeInTheDocument();
     });
     expect(screen.getByText(`1 of ${String(total)} copied`)).toBeInTheDocument();
+  });
+
+  it('asks the copied question of the sheet it is on, not of the first one', async () => {
+    // At ordinal 1 the sheet under test *is* `sheets[0]` and the tally is 1, so every expression in
+    // the strip is indistinguishable from a constant — two mutations survive the test above:
+    // reading `sheets[0].output` in place of `current.output`, and returning `isCopied(current) ? 1
+    // : 0` in place of the filter. Stepping is what separates them.
+    const user = userEvent.setup();
+    render(<SheetProgress />);
+    const total = batch().sheets.length;
+
+    await recordCopyOf(1);
+    await recordCopyOf(3);
+    await waitFor(() => {
+      expect(screen.getByText(`2 of ${String(total)} copied`)).toBeInTheDocument();
+    });
+
+    // Sheet 2 was never copied, and sits between two that were.
+    await user.click(stepButton('Next sheet'));
+    expect(screen.getByText('Sheet 2 of 6')).toBeInTheDocument();
+    expect(screen.getByText('Not yet copied')).toBeInTheDocument();
+    expect(screen.getByText(`2 of ${String(total)} copied`)).toBeInTheDocument();
+
+    await user.click(stepButton('Next sheet'));
+    expect(screen.getByText('Sheet 3 of 6')).toBeInTheDocument();
+    expect(screen.getByText('Copied')).toBeInTheDocument();
+    expect(screen.getByText(`2 of ${String(total)} copied`)).toBeInTheDocument();
+  });
+
+  it('picks up a batch begun in an earlier session, before anything is copied here', async () => {
+    // The hook's whole reason for reading the history on mount, and nothing else asserts it: every
+    // other fixture arrives through `addLog`, which writes the store directly, so deleting the read
+    // leaves the suite green while a user returning tomorrow sees a batch they half-finished
+    // reported as untouched until they happen to open the history drawer.
+    const { category, subject } = useSubjectStore.getState();
+    const [first] = batch().sheets;
+    if (first === undefined) throw new Error('a batch of six should have a first sheet.');
+
+    await backend.addHistoryLog({
+      id: 'from-a-previous-session',
+      createdAt: 1,
+      category,
+      subject,
+      output: first.output,
+      promptText: 'copied yesterday',
+      wordCount: 2,
+      modelUsed: first.output.targetModel,
+    });
+    // The store knows nothing about it — which is exactly the state a fresh page load is in.
+    expect(useHistoryStore.getState().historyLogs).toHaveLength(0);
+
+    render(<SheetProgress />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Copied')).toBeInTheDocument();
+    });
+    expect(screen.getByText(`1 of ${String(batch().sheets.length)} copied`)).toBeInTheDocument();
+  });
+
+  it('announces the step through a region that was already in the document', () => {
+    // Pressing a step button leaves focus on a button whose own name has not changed, so without a
+    // live region the press produces no announcement at all. The region has to pre-date the change
+    // it announces, which is why it wraps the status rather than being rendered with it.
+    const { container } = render(<SheetProgress />);
+
+    const region = container.querySelector('[aria-live="polite"]');
+    expect(region).not.toBeNull();
+    expect(region?.textContent).toContain('Sheet 1 of 6');
+    // The buttons stay outside it — a live region containing them would re-announce the control the
+    // user is operating on every change.
+    expect(region?.querySelector('button')).toBeNull();
   });
 });

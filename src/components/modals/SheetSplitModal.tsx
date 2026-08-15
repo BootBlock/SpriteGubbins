@@ -86,11 +86,10 @@ export function SheetSplitModal() {
         </p>
 
         <p className="mt-2 text-xs leading-relaxed text-ink-muted">
-          Work down the list in the order it is given: the sheets carrying the trunk come first, and every
-          later run has to match what you accepted from them. The row marked{' '}
+          They are numbered in the order to work through them, trunk first, so that each run can be held to
+          what you accepted from the ones before it. The row marked{' '}
           <span className="font-mono font-bold text-tab">In the studio</span> is the one the Studio tab is
-          composing behind this drawer — you can copy every sheet from here, or step through the same list
-          there with ← Previous and Next sheet.
+          composing behind this drawer — copy any of them from here, or step through the same list there.
         </p>
 
         <p className="mt-2 text-xs leading-relaxed text-ink-muted">

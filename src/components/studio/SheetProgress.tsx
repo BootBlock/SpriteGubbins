@@ -12,9 +12,14 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
  * The two step buttons, so the pair stays matched — they sit side by side, and a difference between
  * them reads as a mistake rather than as emphasis. The disabled case is the batch's two ends, which
  * are reached often enough that it is a state rather than an edge.
+ *
+ * Its disabled treatment is the app's, not a second one: `text-ink-faint` with the hover suppressed,
+ * as `HistoryFooter` and `PresetTransferControls` both spell it. An `opacity-50` layered on top of
+ * that ink would composite to roughly 2.4:1 against `foundry-950` — a third of the contrast every
+ * other disabled control in the app is rendered at, and on the state a user *starts* every batch in.
  */
 const STEP_BUTTON =
-  'rounded-lg border border-foundry-600 bg-foundry-950 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:border-tab/50 hover:bg-foundry-700 hover:text-ink disabled:cursor-not-allowed disabled:border-foundry-700 disabled:bg-foundry-950 disabled:text-ink-faint disabled:opacity-50';
+  'rounded-lg border border-foundry-600 bg-foundry-950 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:border-tab/50 hover:bg-foundry-700 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:border-foundry-600 disabled:hover:bg-foundry-950';
 
 /**
  * Where in the batch the prompt below is, whether it has been taken away, and the way on to the next
@@ -63,17 +68,32 @@ export function SheetProgress() {
   const copiedCount = sheets.filter((sheet) => isCopied(sheet.output)).length;
 
   return (
-    <section className="mb-3 rounded-xl border border-foundry-700 bg-foundry-950/60 p-3">
+    <section className="animate-fade-in mb-3 rounded-xl border border-foundry-700 bg-foundry-950/60 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="view">
-          Sheet {ordinal} of {sheets.length}
-        </Badge>
+        {/*
+          **A step announces itself, and nothing else in the strip can do it.** Pressing a step
+          button rewrites the position, the sheet's name, its coverage and its copied state — while
+          focus stays on a button whose own accessible name has not changed, so without this the
+          press produces no announcement at all and a screen-reader user has no way to tell whether
+          it did anything. `PromptBudgetNotice` and `ComponentBudgetNotice` both settle the same
+          pattern; the region is inside the strip rather than around it because the strip only exists
+          for a batch, and a step can only happen once it does — so the region is always in the
+          document before there is anything for it to announce.
 
-        <span className="font-mono text-xs font-bold text-ink">
-          {current.plan.name} · {sheetCoverage(current)}
-        </span>
+          The buttons are deliberately outside it. They are what the user is operating, and a live
+          region containing them would re-announce them on every change.
+        */}
+        <div aria-live="polite" aria-atomic="true" className="flex flex-wrap items-center gap-2">
+          <Badge tone="view">
+            Sheet {ordinal} of {sheets.length}
+          </Badge>
 
-        {isCopied(current.output) ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
+          <span className="font-mono text-xs font-bold text-ink">
+            {current.plan.name} · {sheetCoverage(current)}
+          </span>
+
+          {isCopied(current.output) ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
+        </div>
 
         {/* `ml-auto` on the wrapper, which is the flex item — the buttons are inside it and would
             measure it against their own box. */}
@@ -87,7 +107,10 @@ export function SheetProgress() {
               }}
               className={STEP_BUTTON}
             >
-              ← Previous
+              {/* Decorative, so hidden — the word beside it carries the whole meaning, and an
+                  unhidden glyph is read out as "left arrow" in the middle of the label. Every other
+                  glyph-bearing button in the app hides its icon the same way. */}
+              <span aria-hidden="true">←</span> Previous
             </button>
           </ControlTooltip>
 
@@ -100,7 +123,7 @@ export function SheetProgress() {
               }}
               className={STEP_BUTTON}
             >
-              Next sheet →
+              Next sheet <span aria-hidden="true">→</span>
             </button>
           </ControlTooltip>
         </span>
