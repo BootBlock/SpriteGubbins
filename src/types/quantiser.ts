@@ -105,11 +105,17 @@ export interface SheetFacts {
 export interface BackgroundKeying {
   readonly color: Rgba;
   /**
-   * Euclidean distance across RGB, alpha ignored.
+   * How far across RGB a pixel may sit, as `keyDistanceSquared` measures it — alpha ignored.
    *
-   * Euclidean because `nearestColor` already defines what "how far apart are two colours" means in
-   * this app, and a second metric would be a second answer to one question. RGB-only because a key
-   * field is opaque by definition, so a pixel's own alpha says nothing about whether it is background.
+   * **Not the plain Euclidean distance `nearestColor` uses, and the difference is the feature.** That
+   * metric answers "how far apart are these two colours", which is the right question when picking
+   * the nearest palette entry and the wrong one here: a key field varies by being shaded and washed
+   * out, and measured plainly that variation costs more than a change of hue does. So this one
+   * discounts the key's own plane of variation, and `keyDistance.ts` carries the reasoning and the
+   * measurements. Two metrics, because they are answering two questions — not two answers to one.
+   *
+   * RGB-only because a key field is opaque by definition, so a pixel's own alpha says nothing about
+   * whether it is background.
    */
   readonly tolerance: number;
 }
