@@ -54,12 +54,16 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
     statement: 'no assembled object',
     negatives: ['assembled object', 'product shot'],
   },
-  // This category's presentation failure has a name of its own, and it is the one an item sheet
-  // actually comes back as: asked for a sword, a generator draws a single glossy inventory icon.
-  // Nothing an item's part library lists is an icon.
+  // The presentation half is OBJECT's word rather than one of its own, and the one it nearly took
+  // is the reason the rule reaches past the sheet plans. `inventory icon` names exactly what an item
+  // sheet comes back as when it fails — one glossy icon instead of a part breakdown — and nothing an
+  // item's part library lists is an icon. But `inventory` is what the *template* calls the
+  // count-and-order contract: section 4 is titled COMPONENT INVENTORY and refers to "the inventory"
+  // throughout, so weighting the word at 1.3 argues with the section that decides how many
+  // components the sheet has.
   ITEM: {
     statement: 'no assembled item',
-    negatives: ['assembled item', 'inventory icon'],
+    negatives: ['assembled item', 'product shot'],
   },
   // One term, and the missing second is the rule doing its job rather than an omission. Every
   // candidate for it names what this sheet's components already are: "complete structure" is barred
@@ -83,14 +87,23 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   // catastrophically wrong. "effect" is out because each component *is* the effect at a moment;
   // "frame" is out for the reason `FRAME_IS_A_COMPONENT` exists, and here every entry in the core
   // group is one; "sequence" and "phase" are out because section 4 carries both by name, in the
-  // group heading and its intro. What is left says the failure in the plan's own terms — it states
-  // that no frame "is a layer to be stacked on another" — and says the collapsed-into-one-image
-  // reading without naming what was collapsed. Note what is deliberately absent: nothing here
-  // negates a repeated shape, which would negate the whole sheet, since an effect's frames *are* one
-  // phenomenon drawn over and over.
+  // group heading and its intro. **"layer" is out, and it is the one that got through a first
+  // draft**: `stacked layers` reads as this sheet's own failure — the plan says in as many words
+  // that no frame "is a layer to be stacked on another" — but the *Secondary Layer* field is what
+  // this category calls the smoke, debris and sparks that trail the core, it offers
+  // `Layered Multi-Core Cluster` as a focal core, a shipped preset pins that value, and section 4
+  // requires "whatever secondary layer the subject named" painted into six of the frames. A term is
+  // read word by word, and the singular is the word this sheet is built from.
+  //
+  // What is left names the collapsed-into-one-picture reading twice without naming what was
+  // collapsed: the compositing operation, and the photographic result of superimposing moments.
+  // `long exposure` was the other candidate and is a trap of the same kind — an effect's subject can
+  // *be* a smear, since the pools offer `Slash / Weapon Trail` and `Projectile Body & Trail`.
+  // Note what is deliberately absent: nothing here negates a repeated shape, which would negate the
+  // whole sheet, since an effect's frames *are* one phenomenon drawn over and over.
   EFFECT: {
-    statement: 'no stacked layers or composited picture',
-    negatives: ['stacked layers', 'composited picture'],
+    statement: 'no double exposure or composited picture',
+    negatives: ['double exposure', 'composited picture'],
   },
   // "screen" is safe where "interface", "panel" and "frame" are not: the inventory lists buttons,
   // panel frames, bars and toggles, and no component of it is a screen. The second term is what the
@@ -102,8 +115,9 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   },
   // Every word this category's failure wants is a word its components answer to — "landscape",
   // "terrain", "ground", "tile" — and "field" is what section 0 calls the background the sheet is
-  // keyed against. So the terms are the two the exclusion line already reaches for, which name a
-  // *view* rather than the material: nothing on a terrain sheet is a vista or a diorama. The
+  // keyed against. So both terms name a *view* rather than the material: nothing on a terrain sheet
+  // is a vista or a diorama. `diorama` is the exclusion line's own word and `vista` its own noun;
+  // `scenic` is this record's, chosen because the bare noun is thin in a negative channel. The
   // tiles-already-laid half of the failure is not stated at all, because a term for it would negate
   // the edge agreement section 9 audits.
   TERRAIN: {

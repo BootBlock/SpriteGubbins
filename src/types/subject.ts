@@ -51,15 +51,26 @@ export interface CategoryAssembly {
    * The same failure as bare concepts a negative prompt can carry, weighted by Stable Diffusion and
    * stated flat by Qwen.
    *
-   * **A term belongs here only where no component of this category's inventory answers to it, word
-   * by word.** That is the `--no` rule in `wrapForMidjourney` — a term belongs only while no subject
-   * the app can describe is made of it — applied to the two negative blocks, and it is what a
-   * generator's cross-attention makes necessary: a weighted phrase is not read as an indivisible
-   * unit. No component of a CHARACTER sheet is "a character", so `assembled character` negates the
-   * assembled whole and nothing else; every component of a TERRAIN sheet *is* landscape, so
-   * `composed landscape` would negate the subject, and BUILDING's are literally "a structural or
-   * tile component" by its own section 4 guard. Where that rule leaves a category one safe term, it
-   * gets one.
+   * **A term belongs here only where no word of it names something this sheet's own prompt
+   * requires.** That is the `--no` rule in `wrapForMidjourney` — a term belongs only while no
+   * subject the app can describe is made of it — applied to the two negative blocks, and it is what
+   * a generator's cross-attention makes necessary: a weighted phrase is not read as an indivisible
+   * unit.
+   *
+   * **Three places state a requirement, and a term has to clear all three.** The sheet plan, whose
+   * entries are the components — every one of a TERRAIN sheet's *is* landscape, so
+   * `composed landscape` would negate the subject, and BUILDING's are "a structural or tile
+   * component" by its own section 4 guard. The category's own **field labels and option pools**,
+   * which section 1 carries verbatim — EFFECT calls the smoke trailing its core a *Secondary Layer*,
+   * which is what put `stacked layers` in a first draft of this record and took it back out. And the
+   * **template's own section headings**, which name the contract rather than the subject — section 4
+   * is COMPONENT INVENTORY, so ITEM cannot weight `inventory icon` against the section that decides
+   * how many components it has.
+   *
+   * What a category *is* stays available, because no component is the whole of it: no component of a
+   * CHARACTER sheet is "a character". Nor is a negative statement a requirement — the `exclusions`
+   * pools are written as prohibitions, so a term sharing a word with one reinforces it. Where the
+   * rule leaves a category one safe term, it gets one.
    */
   readonly negatives: readonly string[];
 }

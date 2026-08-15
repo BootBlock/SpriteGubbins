@@ -1491,16 +1491,40 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > rather than becoming the record's.
 >
 > **What may go in a list is bounded by the same judgement `--no` is**, and it costs more here than
-> it looks: a term belongs only where no component of that category's inventory answers to it, word
-> by word. That is why BUILDING has one term and not two — every candidate for a second names what
+> it looks: a term belongs only where no word of it names something that sheet's own prompt
+> requires. That is why BUILDING has one term and not two — every candidate for a second names what
 > its components already are, its §4 guard calling every entry "a structural or tile component" —
 > and why EFFECT may say neither "effect" nor "frame" nor "sequence", each of which its §4 requires.
 > TERRAIN loses the sharper half of its failure outright: the tiles-already-laid reading cannot be
 > stated without "tiles", "ground" or "field", and negating any of them would take either the
-> subject or §9's edge agreement with it, so what is left is the composed-*view* reading in the two
-> words §8 already uses for it. Qwen's third term went too — `complete figure` is `assembled
-> character` said again, and one record cannot hold two spellings of an entry without the categories
-> diverging by target, which is the argument that turned `blurry` into `blurred edges` above.
+> subject or §9's edge agreement with it, so what is left is the composed-*view* reading, on
+> `diorama` and `vista` from §8's own line. Qwen's third term went too — `complete figure` is
+> `assembled character` said again, and one record cannot hold two spellings of an entry without the
+> categories diverging by target, which is the argument that turned `blurry` into `blurred edges`
+> above.
+>
+> **Two terms cleared §4 and were still wrong, and what they cost is the test rather than the
+> wording.** `stacked layers` reads as EFFECT's own failure — its plan says in as many words that no
+> frame "is a layer to be stacked on another" — but *Secondary Layer* is what that category calls the
+> smoke trailing its core, a shipped preset pins `Layered Multi-Core Cluster`, and §4 asks for
+> "whatever secondary layer the subject named". `inventory icon` is what an ITEM sheet comes back as
+> when it fails, and "inventory" is what the template calls the count-and-order contract, in the
+> title of §4 itself. Neither word is in a plan entry, which is all the first version of
+> `categoryAssembly.test.ts` read. It now opposes the terms with three sources — the plans, the
+> category's own field labels and option pools, which §1 carries verbatim, and the template's section
+> headings — with singular and plural counted as one word, since *Layer* against `layers` is how the
+> first of them got through. Two things stay out of that opposition on purpose: a category's **own
+> name**, because no component of a CHARACTER sheet is a character, and the **`exclusions` pools**,
+> whose options are prohibitions rather than names.
+>
+> **What this change does *not* touch is the template's own three statements of the same claim**, and
+> they are stated in a figure's vocabulary on all nine categories: §4's "Do not draw an assembled
+> figure anywhere on the sheet", §8's "Assembled or posed complete figures", and §9's "nothing on the
+> sheet is an assembled or part-assembled figure". So the note above is wrong that the negative
+> channel was the only place left — it was the last of the *wrappers*, and the body reaches every
+> target rather than three. Giving those three lines a category is the same shape of work as
+> `[DEFINE:CATEGORY_EXCLUSIONS]` and belongs in its own change, against the template and its §3
+> mirror together.
 
 ---
 
