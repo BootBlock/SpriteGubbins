@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ACCENT_HUES } from '../../types/settings.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
+import { TARGET_MODELS } from '../models.ts';
 import { accentSwatchGuidance } from '../settings.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
 import { presetCollectionGuidance } from './presets.ts';
@@ -12,8 +13,8 @@ import { presetCollectionGuidance } from './presets.ts';
  * so its coverage tracked a directory rather than the guidance surface. Guidance is deliberately
  * filed in two places (see the note in `./index.ts`): an action's sits here, and a setting's sits
  * beside the options it explains. The second group — 190 entries across four sets and the nine
- * category definitions — was never walked, and two straight apostrophes in `ATLAS_TOOLTIPS` reached
- * the bundle past the test written to catch exactly that.
+ * category definitions — was never walked, and two `ATLAS_TOOLTIPS` entries reached the bundle
+ * carrying three straight apostrophes between them, past the test written to catch exactly that.
  *
  * A hand-kept list of "all the guidance in the app" is that same failure one layer up, so the shape
  * that keeps being added — a flat record of sentences, named `*_TOOLTIPS` for the surface it
@@ -73,15 +74,22 @@ const TOOLTIP_SETS = discoverTooltipSets();
  * template with a name substituted into it is exactly the shape that reads fine in the abstract and
  * produces "Shows the built-in presets written for the  category" on the one input nobody tried.
  *
- * The three groups below the sets are the shapes discovery cannot see — a function, a choice list
- * and a field inventory — so they stay named. Each is walked whole rather than sampled, which is
- * what keeps *them* from drifting: a tenth category, or a seventeenth field, arrives checked.
+ * The groups below the sets are the shapes discovery cannot see — a function, and guidance hanging
+ * off a list rather than filed in a record of its own. Each is walked whole rather than sampled,
+ * which is what keeps *them* from drifting: a tenth category, or a seventeenth field, arrives
+ * checked.
+ *
+ * `TARGET_MODELS` earns its place here for the reason its own selector gives: the ⓘ beside that
+ * control explains what a target model *is*, in one sentence for all eleven, and the half that can
+ * only be written per target is rendered under the control instead. It is the control's own
+ * explanation shown a second way, not a label — so it is held to the same rules.
  */
 const GUIDANCE: readonly (readonly [string, string])[] = [
   ...records(TOOLTIP_SETS),
   ...Object.entries(CATEGORY_OPTIONS).flatMap(([category, definition]) =>
     definition.fields.map((field) => [`${category}.${field.key}`, field.tooltip] as const),
   ),
+  ...TARGET_MODELS.map((model) => [`TARGET_MODELS.${model.id}`, model.description] as const),
   ...APP_TAB_CHOICES.map((tab) => [`APP_TAB_CHOICES.${tab.id}`, tab.guidance] as const),
   ...ACCENT_HUES.map((hue) => [`accentSwatchGuidance(${hue})`, accentSwatchGuidance(hue)] as const),
   ['presetCollectionGuidance(built-in)', presetCollectionGuidance('Humanoid Character', false)],
