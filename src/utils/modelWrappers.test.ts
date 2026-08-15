@@ -1,10 +1,16 @@
 import { describe, expect, it } from 'vitest';
+import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
+import { RENDER_STYLE_SURFACE } from '../constants/promptText/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
+import { RENDER_STYLES } from '../types/rendering.ts';
+import type { RenderStyle } from '../types/rendering.ts';
+import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { categoryPermits } from './sheetPlanValidation.ts';
 
 /**
  * The wrappers differ in *kind*, not in wording — a reasoning contract, command flags, a negative
@@ -187,5 +193,141 @@ describe('wrapForModel', () => {
 
   it('has a selector entry for every wrapped model, and no more', () => {
     expect(TARGET_MODELS.map((model) => model.id).sort()).toEqual([...TARGET_MODEL_IDS].sort());
+  });
+});
+
+/**
+ * The wrapper against section 2 of the prompt it wraps.
+ *
+ * The defect: `wrapForFlux`, `wrapForStableDiffusion` and `wrapForQwen` stated the edge and gradient
+ * rules as fixed strings, and those are the *pixel-art* rules — the template emits them only under
+ * `[IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]`. So a painted sheet asked for "soft blended forms"
+ * in section 2 and had blending weighted against it in the same prompt, and on Flux the wrong claim
+ * led the prompt, where the vendor's own guidance says attention is highest.
+ *
+ * Driven over the compiled prompt for every render style on every target, because the two halves
+ * being compared are both in the text the user copies — and each half was right on its own.
+ */
+describe('what a wrapper says about the surface', () => {
+  const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
+
+  /** The wrapper alone: whatever the target added before the specification, and after it. */
+  function wrapperOnly(prompt: string): string {
+    const start = prompt.indexOf(SPECIFICATION);
+    const end = prompt.lastIndexOf('Generate the sheet now.');
+    if (start === -1 || end === -1) throw new Error('the compiled prompt should carry the template.');
+    return `${prompt.slice(0, start)}\n${prompt.slice(end)}`;
+  }
+
+  /** Every term any style's entry can contribute, which is the pool a wrong style draws from. */
+  const EVERY_SURFACE_TERM = [
+    ...new Set(RENDER_STYLES.flatMap((style) => RENDER_STYLE_SURFACE[style].negatives)),
+  ];
+
+  it.each(RENDER_STYLES)('negates nothing %s requires, on any target', (renderStyle) => {
+    const permitted = RENDER_STYLE_SURFACE[renderStyle].negatives;
+    const forbidden = EVERY_SURFACE_TERM.filter((term) => !permitted.includes(term));
+
+    for (const targetModel of TARGET_MODEL_IDS) {
+      const wrapper = wrapperOnly(
+        generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel, renderStyle })),
+      );
+      for (const term of forbidden) {
+        expect(wrapper, `${targetModel} / ${renderStyle}`).not.toContain(term);
+      }
+      // The two the wrappers used to state unconditionally, in the wording they stated it in.
+      expect(wrapper, `${targetModel} / ${renderStyle}`).not.toContain('crisp hard edges');
+      expect(wrapper, `${targetModel} / ${renderStyle}`).not.toContain('no shadows');
+    }
+  });
+
+  it('still carries the pixel rules where they belong, in both negative blocks', () => {
+    // The other direction, which a one-sided check would pass by dropping the terms for everyone —
+    // the failure the `frame, border` test above is written against too.
+    for (const targetModel of ['STABLE_DIFFUSION', 'QWEN_IMAGE'] as const) {
+      const pixel = generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ targetModel, renderStyle: 'PIXEL_ART' }),
+      );
+      expect(pixel, targetModel).toContain('anti-aliased edges');
+      expect(pixel, targetModel).toContain('smooth gradients');
+
+      const painted = generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ targetModel, renderStyle: 'PAINTED_2D' }),
+      );
+      expect(painted, targetModel).not.toContain('anti-aliased edges');
+      expect(painted, targetModel).not.toContain('smooth gradients');
+    }
+  });
+
+  it('tells Flux the style section 2 would have told it past its ceiling', () => {
+    // Flux's is the leading sentence and the only statement of the style an open-weight encoder
+    // reaches, so the style has to be *in* it rather than merely absent from it.
+    for (const renderStyle of RENDER_STYLES) {
+      const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'FLUX', renderStyle }));
+      expect(prompt, renderStyle).toContain(
+        `Every part is drawn ${RENDER_STYLE_SURFACE[renderStyle].statement}.`,
+      );
+      // Ahead of the specification, which is the whole reason the statement is here.
+      expect(prompt.indexOf('Every part is drawn'), renderStyle).toBeLessThan(prompt.indexOf(SPECIFICATION));
+    }
+  });
+
+  it('keeps Midjourney’s two unqualified terms off the style that requires them', () => {
+    // `--no shadow` and `--no gradient` are the same defect in the fourth wrapper: bare, they take
+    // the form shadow and the material shading `RENDERED_3D` asks for. `shadow` qualifies to the
+    // placement section 0 forbids; `gradient` cannot, because the qualifier it needs is the one word
+    // this list may never carry — so it becomes the style's own claim or nothing.
+    const negatedFor = (renderStyle: RenderStyle): readonly string[] => {
+      const prompt = generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ targetModel: 'MIDJOURNEY', renderStyle }),
+      );
+      const flag = /--no ([^\n]+)/.exec(prompt);
+      return flag?.[1]?.split(', ') ?? [];
+    };
+
+    expect(negatedFor('RENDERED_3D')).toEqual(['text', 'labels', 'cast shadow', 'frame', 'border']);
+    expect(negatedFor('PIXEL_ART')).toEqual([
+      'text',
+      'labels',
+      'cast shadow',
+      'blurred edges',
+      'anti-aliased edges',
+      'smooth gradients',
+      'frame',
+      'border',
+    ]);
+    // Term by term as well as by the whole list, because "cast shadow" contains the bare term the
+    // qualifier was added to remove — which is exactly how a check on this can pass while wrong.
+    for (const renderStyle of RENDER_STYLES) {
+      expect(negatedFor(renderStyle), renderStyle).not.toContain('shadow');
+      expect(negatedFor(renderStyle), renderStyle).not.toContain('gradient');
+    }
+  });
+
+  it('spends the anatomy negatives on the sheets that have anatomy, and no others', () => {
+    // `extra limbs, merged limbs` names a duplication failure only a limbed subject can have. It was
+    // in both negative blocks on every category, including the four whose components are tiles,
+    // panels, structures and frames.
+    for (const targetModel of ['STABLE_DIFFUSION', 'QWEN_IMAGE'] as const) {
+      for (const category of ['CHARACTER', 'CREATURE'] as const) {
+        const prompt = generatePrompt(category, defaultSubjectFor(category), withOutput({ targetModel }));
+        expect(prompt, `${targetModel} / ${category}`).toContain('extra limbs, merged limbs');
+      }
+
+      // Every other category the app can compile, rather than a sample of them — VEHICLE included,
+      // whose walker legs are a mechanism in `PERMITTED_KINDS` and not anatomy.
+      for (const category of SUBJECT_CATEGORIES) {
+        if (categoryPermits(category, 'anatomy')) continue;
+        const prompt = generatePrompt(category, defaultSubjectFor(category), withOutput({ targetModel }));
+        expect(prompt, `${targetModel} / ${category}`).not.toContain('extra limbs');
+        expect(prompt, `${targetModel} / ${category}`).not.toContain('merged limbs');
+      }
+    }
   });
 });

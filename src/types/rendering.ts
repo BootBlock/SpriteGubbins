@@ -57,6 +57,35 @@ export interface ValidationPass {
 }
 
 /**
+ * What a target model's wrapper is allowed to say about the way *this* sheet is drawn.
+ *
+ * The wrappers reach a generator through two channels and the same render style has to be
+ * expressible in both: a positive one, where Flux is told what the sheet is because Black Forest
+ * Labs document that Flux discards a negative prompt, and a negative one, where Stable Diffusion and
+ * Qwen are told what it is not. So one entry per style carries both halves, for the reason
+ * {@link ValidationPass} carries both of its: a style whose statement and whose negations were filed
+ * apart is free to assert soft blending in one channel and forbid it in the other.
+ */
+export interface RenderStyleSurface {
+  /**
+   * How every part is drawn, as a clause completing "Every part is drawn …".
+   *
+   * Lower case, no closing full stop, and built from the style's own section 2 wording — this is a
+   * restatement of that line for a target that will not read as far as section 2, not a second
+   * opinion about the style.
+   */
+  readonly statement: string;
+  /**
+   * What this style's own section 2 line asserts the *absence* of, as bare concepts a negative
+   * prompt can carry.
+   *
+   * Empty for the three styles that describe a soft surface, because there is nothing about their
+   * edges or their shading a negative channel can say without contradicting them.
+   */
+  readonly negatives: readonly string[];
+}
+
+/**
  * The camera's projection.
  *
  * v1 asked for "one fixed orthographic 3/4 top-down dimetric/isometric camera" — three mutually

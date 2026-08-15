@@ -1422,6 +1422,44 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > switch to **10 June 2026**, and it is corrected in place because it is an external fact this
 > document got wrong rather than a record of anything the project did.
 
+> **Corrected after shipping — four wrappers stated the *pixel-art* edge rules for every render
+> style.** The blocks above were written while this app was pixel-art-only, which is the same
+> starting point §2 of this document was written to fix, and the terms came through the rewrite
+> unchanged: "crisp hard edges" leading the Flux sentence, `anti-aliased edges, smooth gradients` in
+> SD's negative block, `blurred edges, anti-aliased edges` in Qwen's, and `shadow, gradient` bare in
+> Midjourney's `--no`. The template emits those rules only under
+> `[IF:RENDER_STYLE=PIXEL_ART,RETRO_PIXEL_ART]`, so on the eight other styles each wrapper argued
+> with §2 of the prompt it was wrapping: a `PAINTED_2D` sheet asked for "soft blended forms" and had
+> blending weighted against it in the same prompt, and a `RENDERED_3D` sheet asked for "material
+> shading and soft form shadow" while smooth gradients — which is what that shadow is made of — were
+> negated. On Flux it was worse than a contradiction, because that wrapper leads: the wrong claim
+> about edges got the position BFL's word-order guidance says is strongest, and the `Style:` line
+> that would have corrected it sits past the 512-token ceiling the same wrapper is written around.
+>
+> The edge and gradient clauses are now a function of the sheet, held in `RENDER_STYLE_SURFACE`
+> beside the §2 wording they have to agree with, and the rule that record is kept to is that **a term
+> may be negated only where the style's own §2 line asserts its absence** — so `anti-aliased edges`
+> belongs to the two pixel styles alone, `smooth gradients` to the styles that state flat fills, and
+> the three that describe a soft surface negate nothing about one. Flux's leading sentence carries
+> the positive half, which is the only statement of the style that target reads at all.
+>
+> Three narrower corrections travelled with it, each the same shape:
+>
+> - **`--no shadow` became `--no cast shadow`, and `--no gradient` came out.** A cast shadow is the
+>   placement §0 forbids, and `--no` can carry two words; `gradient` cannot take the matching
+>   qualifier, because the word it needs is `background` — which the bullet above bans from this list
+>   at any width. The gradient claim is the style's own there too, or nothing.
+> - **Flux's "no shadows" became "no cast shadow"** for the same reason: unqualified, the plural took
+>   the form shadow that gives a component its volume along with the one on the ground.
+> - **`extra limbs, merged limbs` is emitted only where the sheet draws anatomy.** It was in both
+>   negative blocks on every category, including the ones whose components are tiles, panels and
+>   structures — weight spent on a failure those sheets cannot have. Which categories those are is
+>   read from `PERMITTED_KINDS` rather than listed again, so the answer for a tenth category is given
+>   once. What did **not** change is the assembly pair: `assembled character, posed figure` is stated
+>   in a figure's vocabulary on every category, and that is a gap rather than a contradiction — every
+>   other category's §8 excludes characters outright, so those two terms still negate something those
+>   sheets genuinely must not contain. Saying it in each category's own words is a separate change.
+
 ---
 
 ## 8. Defects fixed

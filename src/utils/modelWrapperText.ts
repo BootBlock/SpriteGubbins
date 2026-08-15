@@ -1,5 +1,6 @@
 import { MIDJOURNEY_VERSION } from '../constants/models.ts';
 import type { AspectRatio } from '../types/output.ts';
+import type { RenderStyleSurface } from '../types/rendering.ts';
 
 /**
  * The text each generator's wrapper actually adds, one function per target.
@@ -115,24 +116,70 @@ ${prompt}`;
  * asks for. The caller answers from `FRAME_IS_A_COMPONENT`. This is the same judgement the doc
  * comment above already records for `background` — a term stays out of `--no` where excluding it
  * would take the sheet's own subject with it.
+ *
+ * **`shadow` and `gradient` were the third instance of that judgement, and they resolve two
+ * different ways.** Bare, each negates something a render style requires: "material shading and soft
+ * form shadow" is `RENDERED_3D`'s own section 2 line, and a gradient across a form is what that
+ * shadow is made of. `shadow` qualifies to **`cast shadow`**, which is the placement section 0
+ * actually forbids and which `--no` can carry — two words are fine here, it is only the *qualifier*
+ * "around a component" that this channel cannot express. `gradient` cannot take the matching
+ * qualifier, because the word it would need is `background`, and the paragraph above is why that one
+ * may never appear in this list at any width: the sheet is built around a keyable background, and
+ * `--no` reads bare concepts. So the gradient claim becomes the sheet's own instead, spliced in from
+ * `RENDER_STYLE_SURFACE` — `smooth gradients` where the style states flat fills, and nothing at all
+ * where it asks for soft blended forms. Section 0's uniform key field is stated in the prompt body,
+ * which Midjourney reads in full; the `--no` list was never what carried it.
  */
 export function wrapForMidjourney(
   prompt: string,
   aspectRatio: AspectRatio,
   frameIsAComponent: boolean,
+  surface: RenderStyleSurface,
 ): string {
-  const negatives = frameIsAComponent
-    ? 'text, labels, shadow, gradient'
-    : 'text, labels, shadow, gradient, frame, border';
-  return `${prompt}\n\n${ASPECT_FLAGS[aspectRatio]} ${MIDJOURNEY_VERSION} --raw --s 50 --no ${negatives}`;
+  const negatives = [
+    'text',
+    'labels',
+    'cast shadow',
+    ...surface.negatives,
+    ...(frameIsAComponent ? [] : ['frame', 'border']),
+  ];
+  return `${prompt}\n\n${ASPECT_FLAGS[aspectRatio]} ${MIDJOURNEY_VERSION} --raw --s 50 --no ${negatives.join(', ')}`;
 }
 
 /**
  * Stable Diffusion's negative block, weighted on the two failures that actually recur: assembling
  * the figure instead of exploding it, and adding shadows.
+ *
+ * **Two runs of terms are the sheet's rather than the channel's, and both used to be fixed strings.**
+ * The surface terms come from `RENDER_STYLE_SURFACE`, because `anti-aliased edges, smooth gradients`
+ * is what *pixel art* forbids and the same block was negating it against a painted sheet whose
+ * section 2 asks for soft blended forms. The anatomy pair is emitted only where the sheet draws
+ * anatomy: a building, a terrain tileset or an interface kit has no limbs to have extras of, and a
+ * negative prompt is a fixed weight spent on whatever is in it.
  */
-export function wrapForStableDiffusion(prompt: string): string {
-  return `${prompt}\n\nNegative prompt: (assembled character:1.3), (posed figure:1.3), text, watermark, signature, labels, floor shadow, drop shadow, gradient background, scene background, blurry, anti-aliased edges, smooth gradients, motion blur, jpeg artifacts, extra limbs, merged limbs, cropped`;
+export function wrapForStableDiffusion(
+  prompt: string,
+  surface: RenderStyleSurface,
+  limbsAreComponents: boolean,
+): string {
+  const negatives = [
+    '(assembled character:1.3)',
+    '(posed figure:1.3)',
+    'text',
+    'watermark',
+    'signature',
+    'labels',
+    'floor shadow',
+    'drop shadow',
+    'gradient background',
+    'scene background',
+    ...surface.negatives,
+    'motion blur',
+    'jpeg artifacts',
+    ...(limbsAreComponents ? ['extra limbs', 'merged limbs'] : []),
+    'cropped',
+  ];
+  return `${prompt}\n\nNegative prompt: ${negatives.join(', ')}`;
 }
 
 /**
@@ -147,9 +194,24 @@ export function wrapForStableDiffusion(prompt: string): string {
  * missing negative prompt was the one sentence guaranteed to be truncated away first. Leading also
  * matches what Black Forest Labs document about attention: "Word order matters — FLUX.2 pays more
  * attention to what comes first." https://docs.bfl.ai/guides/prompting_guide_flux2
+ *
+ * **Which is exactly why the second sentence states the style.** Section 2's `Style:` line sits
+ * around token 1,070, so on the open-weight tier it is never read — and this wrapper opened by
+ * asserting "crisp hard edges" whatever that line said, which made the one statement about the
+ * surface the model *did* read the wrong one on eight of the ten styles. `RENDER_STYLE_SURFACE`
+ * holds the clause each style completes, in section 2's own words.
+ *
+ * **"No shadows" is now "no cast shadow" for the same reason**, and it is a narrowing rather than a
+ * softening: what section 0 forbids is a cast shadow, a contact shadow and a ground plane, while a
+ * form shadow is the shading that gives a component its volume — and it is `RENDERED_3D`'s and
+ * `CLAY_RENDER`'s subject. The unqualified plural took both.
  */
-export function wrapForFlux(prompt: string, backgroundKeyDescription: string): string {
-  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with crisp hard edges, no shadows, no text, and no assembled figure.
+export function wrapForFlux(
+  prompt: string,
+  backgroundKeyDescription: string,
+  surface: RenderStyleSurface,
+): string {
+  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with no cast shadow, no text, and no assembled figure. Every part is drawn ${surface.statement}.
 
 ${prompt}`;
 }
@@ -163,11 +225,41 @@ ${prompt}`;
  * convention those front-ends parse before the model ever sees it, not something Qwen's API defines
  * — emitting it here would put literal parentheses and decimals into a field documented to take a
  * description.
+ *
+ * The surface terms and the anatomy pair are the sheet's own, exactly as in `wrapForStableDiffusion`
+ * above — this block carried the pixel-art edge rules against every render style too, and the two
+ * were fixed together because a wrapper that only argues with section 2 on one target is still a
+ * wrapper that argues with it.
  */
-export function wrapForQwen(prompt: string): string {
+export function wrapForQwen(
+  prompt: string,
+  surface: RenderStyleSurface,
+  limbsAreComponents: boolean,
+): string {
+  const negatives = [
+    'assembled character',
+    'posed figure',
+    'complete figure',
+    'text',
+    'labels',
+    'captions',
+    'watermark',
+    'signature',
+    'cast shadow',
+    'drop shadow',
+    'contact shadow',
+    'gradient background',
+    'scene background',
+    'ground plane',
+    ...surface.negatives,
+    'motion blur',
+    ...(limbsAreComponents ? ['extra limbs', 'merged limbs'] : []),
+    'overlapping components',
+    'cropped components',
+  ];
   return `${prompt}
 
-Negative prompt: assembled character, posed figure, complete figure, text, labels, captions, watermark, signature, cast shadow, drop shadow, contact shadow, gradient background, scene background, ground plane, blurred edges, anti-aliased edges, motion blur, extra limbs, merged limbs, overlapping components, cropped components.`;
+Negative prompt: ${negatives.join(', ')}.`;
 }
 
 /**

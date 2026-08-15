@@ -28,6 +28,7 @@ export {
   RESOLUTION_PROFILE_TEXT,
   SURFACE_DETAIL_TEXT,
 } from './renderStyle.ts';
+export { RENDER_STYLE_SURFACE } from './renderStyleSurface.ts';
 export { smallScaleDiscipline } from './smallScale.ts';
 export { VALIDATION_PASS_TEXT, validationPassFor } from './validationPass.ts';
 export { LIGHTING_TEXT, OUTLINE_TEXT, PALETTE_TEXT } from './palette.ts';

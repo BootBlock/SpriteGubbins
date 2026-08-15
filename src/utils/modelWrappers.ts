@@ -1,4 +1,5 @@
 import type { AspectRatio, TargetModelId } from '../types/output.ts';
+import type { RenderStyleSurface } from '../types/rendering.ts';
 import {
   wrapForFlux,
   wrapForGptImage,
@@ -41,6 +42,26 @@ export function wrapForModel(
      * file stays dispatch and knows nothing about categories.
      */
     readonly frameIsAComponent: boolean;
+    /**
+     * What this sheet's render style lets a wrapper say about the surface, from
+     * `RENDER_STYLE_SURFACE`.
+     *
+     * Every target that speaks about edges and gradients reads it — Flux positively, because it
+     * discards a negative prompt, and Midjourney, Stable Diffusion and Qwen as negations. Each of
+     * them stated the pixel-art rules as a fixed string until this was passed, so on the eight other
+     * styles the wrapper contradicted section 2 of the prompt it was wrapping.
+     */
+    readonly surface: RenderStyleSurface;
+    /**
+     * Whether this sheet's components are limbs, from `categoryPermits(category, 'anatomy')`.
+     *
+     * The two negative blocks weight `extra limbs, merged limbs` against a duplication failure only
+     * a limbed subject can have, and a building, a terrain tileset or an interface kit cannot. Read
+     * off the same table the plan validation uses, rather than restated here: that table is where
+     * the app decides a walker's legs are a vehicle's mechanism and not anatomy, and a second list
+     * of category names is a second thing to keep in step.
+     */
+    readonly limbsAreComponents: boolean;
   },
 ): string {
   switch (target) {
@@ -48,20 +69,20 @@ export function wrapForModel(
       return wrapForSol(prompt);
 
     case 'MIDJOURNEY':
-      return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent);
+      return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent, options.surface);
 
     case 'STABLE_DIFFUSION':
-      return wrapForStableDiffusion(prompt);
+      return wrapForStableDiffusion(prompt, options.surface, options.limbsAreComponents);
 
     // One wrapper for both Flux tiers. They differ only in how much of the prompt is read, which is
     // a budget fact rather than a wrapping one — and the restatement leads for both, since Black
     // Forest Labs' word-order guidance applies to the hosted tier just as it does to the weights.
     case 'FLUX':
     case 'FLUX_API':
-      return wrapForFlux(prompt, options.backgroundKeyDescription);
+      return wrapForFlux(prompt, options.backgroundKeyDescription, options.surface);
 
     case 'QWEN_IMAGE':
-      return wrapForQwen(prompt);
+      return wrapForQwen(prompt, options.surface, options.limbsAreComponents);
 
     case 'SEEDREAM':
       return wrapForSeedream(prompt);
