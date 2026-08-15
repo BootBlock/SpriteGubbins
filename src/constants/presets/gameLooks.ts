@@ -12,12 +12,13 @@ import { sparseSubject } from './sparseSubject.ts';
  * facings, whether the pieces articulate — which is the half a reference deliberately does not
  * decide.
  *
- * **The facings are the interesting half and they are not interchangeable.** Each is the facing
- * scheme that game's own art actually used, and three of them are unusual enough to be worth naming:
- * the five-view set is what Age of Empires II drew before flipping three of them, the eight-compass
- * run is what Diablo II rendered outright with nothing mirrored, and a side-on platformer covers one
- * facing because the engine flips it. Asking for eight views of a look that only ever had five is
- * how a sheet ends up with three views nobody drew.
+ * **The facings are the interesting half, and they are the sheet's rather than the game's.** Four of
+ * these games shipped three drawn facings and mirrored a fourth, and the sheet contract forbids a
+ * mirrored view outright — so those presets ask for all four to be drawn, which is a deliberate
+ * departure and is what their cards say. Where a game's own scheme *is* what the sheet should ask
+ * for, it is: the five-view set is what Age of Empires II drew before flipping three, the
+ * eight-compass run is what Diablo II rendered with nothing mirrored, and a side-on platformer covers
+ * the single facing its engine flips.
  *
  * **A card names the game; the compiled prompt does not, unless the reader asks it to.** The
  * `nameStyleReference` switch is off in every one of these, as it is in the studio's defaults —
@@ -28,7 +29,7 @@ export const GAME_LOOK_PRESETS: readonly PresetArchetype[] = [
     id: 'look-stardew-valley',
     name: 'Stardew Valley — Overworld figure',
     description:
-      'The farming-sim read: a 16 × 32 figure on a 16 px tile grid, drawn as a flat front elevation over ground that recedes as though seen from above. Four facings, so nothing is mirrored.',
+      'The farming-sim read: a 16 × 32 figure on a 16 px tile grid, drawn face-on over ground seen from above. The game mirrored one side; this draws all four, because the sheet may not repeat a view.',
     category: 'CHARACTER',
     subject: sparseSubject('CHARACTER', {
       exclusions: 'No ground tile beneath the figure, no baked shadow, no perspective on the body',
@@ -44,7 +45,7 @@ export const GAME_LOOK_PRESETS: readonly PresetArchetype[] = [
     id: 'look-a-link-to-the-past',
     name: 'A Link to the Past — Overworld figure',
     description:
-      'The 16-bit overhead adventure: a hardware palette, a 16 px map grid and a figure drawn face-on above ground seen from above. Four cardinal facings, as the original drew them.',
+      'The 16-bit overhead adventure: a hardware palette, a 16 px map grid and a 16 × 24 figure drawn face-on. The original mirrored one side; this draws all four, since a sheet may not repeat a view.',
     category: 'CHARACTER',
     subject: sparseSubject('CHARACTER', {
       exclusions: 'No ground tile beneath the figure, no baked shadow, no perspective on the body',
@@ -124,7 +125,7 @@ export const GAME_LOOK_PRESETS: readonly PresetArchetype[] = [
     id: 'look-cave-story',
     name: 'Cave Story — Side-on figure',
     description:
-      'The plainest contract here: a 320 × 240 screen, a 16 px grid and flat fills, with nothing tinted or lit as it is drawn. Black is the transparency key, so no contour may be drawn in it.',
+      'The plainest contract here: a 320 × 240 screen, a 16 px grid and flat fills, nothing tinted or lit as it is drawn, and black unusable as a colour because the engine keys transparency on it.',
     category: 'CHARACTER',
     subject: sparseSubject('CHARACTER', {
       exclusions: 'No ground beneath the figure, no baked shadow, no gradients',
@@ -214,6 +215,10 @@ export const GAME_LOOK_PRESETS: readonly PresetArchetype[] = [
     }),
     output: gameLookOutput('AGE_OF_EMPIRES_II', {
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      // The classic vocabulary on a projected ground, deliberately. Its five yaws — 0, 45, 90, 135
+      // and 180 — are exactly the five this game drew before flipping three of them, and no compass
+      // set has five members. The words describe the subject's own turn rather than a compass, which
+      // is what a unit does here whatever the ground beneath it is doing.
       directions: 'FIVE_CLASSIC',
       rigMode: 'POSE_LIBRARY',
       aspectRatio: 'WIDE_16_9',

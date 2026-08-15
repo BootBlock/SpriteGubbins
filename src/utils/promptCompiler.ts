@@ -274,9 +274,9 @@ export function generatePrompt(
     // empty one.
     STYLE_REFERENCE: reference === null ? '' : 'yes',
     // Nested inside that block in the template, so this only ever decides the naming *sentence* —
-    // never the characteristics, which are what actually carry the look. Conjoined here rather than
-    // left to the template's nesting alone, so a `nameStyleReference` left true from a previous
-    // reference cannot name a game once the reference is back to `NONE`.
+    // never the characteristics, which are what actually carry the look. Conjoined here anyway, so
+    // the compiler's answer does not depend on the template's nesting: this flag means "name a game"
+    // and there is no game to name, which is true of the value whatever encloses it.
     STYLE_REFERENCE_NAMED: reference !== null && output.nameStyleReference ? 'yes' : '',
     // The rules about views *disagreeing* — landmarks, occlusion, no mirroring, the directional
     // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they

@@ -3,12 +3,14 @@ import type { StyleReference, StyleReferenceId } from '../../types/styleReferenc
 /**
  * The two references drawn onto a projected ground grid, both pre-rendered from 3D.
  *
- * **They share a projection and are distinguished by their facings**, which is worth stating because
- * the opposite is widely assumed. Both lay their ground out as a 2:1 diamond — a tile edge running
- * two pixels sideways for every one down, which is 26.57° on screen and a camera 30° above the
- * horizon — and that is what `TRUE_ISOMETRIC` means in this app's vocabulary. Where they genuinely
- * differ is how many views exist: one renders every facing from its own camera position, and the
- * other draws five and flips three of them.
+ * **They share a projection and are distinguished by their facings**, and the second half is widely
+ * got wrong. Both lay their ground out as a 2:1 diamond — a tile edge running two pixels sideways
+ * for every one down, which is 26.57° on screen and a camera 30° above the horizon — and that is
+ * what `TRUE_ISOMETRIC` means in this app's vocabulary. Where they genuinely differ is how many views
+ * exist: one renders every facing from its own camera position, and the other draws five and flips
+ * three of them. **That difference is carried by each preset's direction set and by its card**, not
+ * by the characteristics below, which never speak about facings — see
+ * `StyleReference.characteristics` for why.
  *
  * Both take a baked key light. Neither publishes the angle it was rendered from, so the setting is
  * the app's own fixed-key convention rather than a measurement, and neither characteristic list
@@ -20,10 +22,9 @@ const DIABLO_II: StyleReference = {
   name: 'Diablo II',
   label: 'Diablo II — 2:1 diamond, pre-rendered',
   characteristics: [
-    'The ground is a 2:1 diamond grid: a floor tile spans 160 × 80 pixels, so a tile edge runs two pixels sideways for every one it drops.',
+    'A floor tile spans 160 × 80 pixels, so a tile edge runs two pixels sideways for every one it drops.',
     'The display is 640 × 480 in 256 colours, raised to 800 × 600 by the expansion. The art is drawn at actual size, so a larger screen shows more ground rather than larger figures.',
-    'Every facing is rendered from its own camera position around a scene whose light does not move, so the lit side of a figure changes as it turns and no facing is a mirrored copy of another.',
-    'Monsters are rendered at eight facings and player characters at sixteen.',
+    'Each view is rendered from its own camera position around a scene whose light does not move, so the lit side of a figure changes as it turns.',
     'A character is not one image: the body, the armour, the helm and each weapon are rendered separately and layered as the figure is drawn, so the pieces have to stay separable.',
   ],
   settings: {
@@ -50,8 +51,7 @@ const AGE_OF_EMPIRES_II: StyleReference = {
   name: 'Age of Empires II',
   label: 'Age of Empires II — 2:1 diamond, 5 facings',
   characteristics: [
-    'The ground is a 2:1 diamond grid: a terrain tile spans 97 pixels across and 49 rows down, its edge advancing two pixels sideways for every row it drops.',
-    'Five facings are drawn and the remaining three are produced by flipping them, so a faithful set is five drawn views rather than eight.',
+    'A terrain tile spans 97 pixels across and 49 rows down, its edge advancing two pixels sideways for every row it drops.',
     'Every pixel is an index into a single 256-colour palette, and each player’s colours occupy a reserved block of it that is substituted as the unit is drawn.',
     'Silhouettes are hard-edged: a pixel is either drawn or not, with no partial transparency and no softening against the background.',
     'Units are small, roughly 20 to 100 pixels in each direction, while buildings are drawn far larger.',

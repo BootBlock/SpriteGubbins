@@ -4,13 +4,21 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
+import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
-import { HARDWARE_PROFILE_IDS, RENDER_STYLES, RIG_MODES, TARGET_MODEL_IDS } from '../types/output.ts';
+import {
+  HARDWARE_PROFILE_IDS,
+  RENDER_STYLES,
+  RIG_MODES,
+  STYLE_REFERENCE_IDS,
+  TARGET_MODEL_IDS,
+} from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts';
+import { styleReferencePatch } from './styleReferencePatch.ts';
 
 /**
  * The compiler is the app. Everything else is a way of choosing its arguments, so these tests assert
@@ -1101,6 +1109,59 @@ describe('generatePrompt — the machine and its palette', () => {
     // number, so neither the section-2 line nor the audit that cites it may appear.
     expect(spectrum).not.toContain('No component carries more colours at once');
     expect(spectrum).not.toContain('No single component carries more than');
+  });
+
+  it.each(STYLE_REFERENCE_IDS)('compiles a whole sheet for %s with no marker left behind', (id) => {
+    // Every reference through the compiler, since each writes a different settings package and two of
+    // them pin a palette, which takes the other path through `describePalette`.
+    const reference = styleReferenceFor(id);
+    const output = withOutput(
+      reference === null ? { styleReference: id } : { styleReference: id, ...styleReferencePatch(reference) },
+    );
+    const prompt = generatePrompt('CHARACTER', SUBJECT, output);
+
+    expect(prompt).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+    expect(prompt).toContain('Generate the sheet now.');
+  });
+
+  it('emits no art direction block until a reference is chosen', () => {
+    // Opt-in, exactly as the machine and the palette are: the default studio must not carry another
+    // game's measurements into every prompt the app composes.
+    expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT)).not.toContain('### Art direction reference');
+  });
+
+  it('states the look’s own measurements, and does not name the game', () => {
+    const reference = styleReferenceFor('DIABLO_II');
+    if (reference === null) throw new Error('the Diablo II reference should ship.');
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ styleReference: 'DIABLO_II' }));
+
+    expect(prompt).toContain('### Art direction reference');
+    for (const characteristic of reference.characteristics) expect(prompt).toContain(`- ${characteristic}`);
+    // The default, and the whole argument for the split: the sheet is fully specified unnamed.
+    expect(prompt).not.toContain(reference.name);
+  });
+
+  it('names the game only when asked to', () => {
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ styleReference: 'DIABLO_II', nameStyleReference: true }),
+    );
+
+    expect(prompt).toContain('art direction of Diablo II');
+  });
+
+  it('names nothing when the switch is on and no reference is set', () => {
+    // The state a reader reaches by ticking the box and then clearing the reference. Both the block
+    // and the sentence inside it have to go, or the prompt asks for the art direction of nothing.
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ styleReference: 'NONE', nameStyleReference: true }),
+    );
+
+    expect(prompt).not.toContain('### Art direction reference');
+    expect(prompt).not.toContain('art direction of');
   });
 
   it.each(HARDWARE_PROFILE_IDS)('compiles a whole sheet for %s with no marker left behind', (id) => {

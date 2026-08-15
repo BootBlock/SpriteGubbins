@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { hardwareProfileFor } from '../hardware/index.ts';
 import { PRESETS } from '../presets/index.ts';
 import { STYLE_REFERENCE_IDS } from '../../types/styleReference.ts';
 import type { StyleReference } from '../../types/styleReference.ts';
@@ -9,11 +10,17 @@ import { STYLE_REFERENCE_CHOICES, STYLE_REFERENCES, styleReferenceFor } from './
 /**
  * The art style reference library's own contract.
  *
- * Two of these checks are the reason this file exists rather than the coverage rule that holds every
- * other output setting: that **a characteristic never restates a setting**, which is what keeps an
- * edited configuration from compiling to a prompt that argues with itself, and that **every shipped
- * reference is demonstrated by a preset**, which is the discoverability the coverage test provides
- * for everything else.
+ * This file exists rather than the coverage rule that holds every other output setting because two of
+ * its checks have no equivalent there: that **a characteristic never restates a setting**, which is
+ * what keeps an edited configuration from compiling to a prompt that argues with itself, and that
+ * **every shipped reference is demonstrated by a preset**, which is the discoverability the coverage
+ * test provides for everything else.
+ *
+ * **The first of those is only partly mechanical, and the file is explicit about which part.** Two
+ * spellings of a restatement can be caught — a setting identifier pasted into prose, and any mention
+ * of facings — and the general case cannot, because it is a question about meaning. The comments on
+ * each assertion say what it does and does not reach, so that nobody reads a green run here as the
+ * rule being enforced.
  */
 
 /** Every reference that is not `NONE`, which is the only member with no definition. */
@@ -26,9 +33,29 @@ const REFERENCES: readonly StyleReference[] = STYLE_REFERENCE_IDS.map(styleRefer
  *
  * Screaming-snake identifiers alone, because those are what the compiled prompt is written against
  * and what a reader compares the two blocks by. A characteristic mentioning `TRUE_ISOMETRIC` is
- * either restating the projection line above it — the failure this guards — or contradicting it.
+ * either restating the projection line above it or contradicting it.
+ *
+ * **This catches one narrow spelling of the restatement rule and no more, and saying so is the
+ * point.** The rule is about *meaning* — "the contour is the darkest shade of each area's own colour"
+ * restates `DARK_LOCAL_CONTOUR` perfectly while containing no identifier at all — and no regex reads
+ * meaning. Four references shipped exactly that sentence and this assertion passed on all four. What
+ * follows below is the half that *is* mechanical; the rest is a review responsibility, and the way to
+ * discharge it is to compile a preset and read section 2 against sections 0 and 3.
  */
 const SETTING_IDENTIFIER = /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/;
+
+/**
+ * The vocabulary of facings and mirroring, which a characteristic may never use.
+ *
+ * The one restatement that is mechanically catchable, and the one that actually shipped broken. The
+ * direction set speaks for facings, so a characteristic naming them restates a control the reader can
+ * change — and worse, it can restate it into a flat contradiction: four presets said "one side view
+ * mirrored to serve the other" in section 2 while section 3 of the same prompt said "two views
+ * identical up to reflection are one view delivered twice, not two views", because a four-cardinal
+ * sheet holds a reflection pair and the template warns about it. A look's real facing scheme belongs
+ * on the preset card, which is read by a person and never sent to a generator.
+ */
+const FACING_VOCABULARY = /\b(facing|facings|mirror|mirrored|mirroring|flipped|flipping)\b/i;
 
 describe('every art style reference', () => {
   it('defines every id but NONE, and NONE alone', () => {
@@ -63,12 +90,34 @@ describe('every art style reference', () => {
     expect(resolutionProfile === 'CUSTOM').toBe(spriteTargetSize !== '');
   });
 
-  it.each(REFERENCES)('$name writes characteristics that no setting already carries', (reference) => {
-    // The load-bearing one. A reference is a template, so the settings it writes belong to the
-    // reader the moment it is applied; a characteristic that restated one would become false as
-    // soon as they changed that control, and the prompt would carry both readings at once.
+  it.each(REFERENCES)('$name writes characteristics that name no setting identifier', (reference) => {
     const restating = reference.characteristics.filter((line) => SETTING_IDENTIFIER.test(line));
     expect(restating, `${reference.name} names a setting identifier in its own characteristics`).toEqual([]);
+  });
+
+  it.each(REFERENCES)('$name says nothing about how many ways the subject turns', (reference) => {
+    const facings = reference.characteristics.filter((line) => FACING_VOCABULARY.test(line));
+    expect(
+      facings,
+      `${reference.name} states a facing scheme, which the direction set already decides — put it on the preset card instead`,
+    ).toEqual([]);
+  });
+
+  it.each(REFERENCES)('$name does not repeat the machine it pins', (reference) => {
+    // The other half of "each states something the settings above have no way to say", which is what
+    // the template tells the generator about this block. A reference pinning a hardware profile gets
+    // that machine's constraints printed directly above its own list, so a display or a tile figure
+    // restated here arrives twice in one section — three of them did.
+    //
+    // Compared as whole stated sentences rather than as numbers, because the numbers are legitimately
+    // shared: a reference may cite the machine's 8 × 8 tile to explain the 16 × 16 grid the game built
+    // on top of it, and that sentence is doing work the profile's own line does not.
+    const profile = hardwareProfileFor(reference.settings.hardwareProfile);
+    if (profile === null) return;
+
+    const stated = new Set(profile.constraints.map((constraint) => constraint.trim()));
+    const repeated = reference.characteristics.filter((line) => stated.has(line.trim()));
+    expect(repeated, `${reference.name} repeats a constraint ${profile.name} already states`).toEqual([]);
   });
 
   it.each(REFERENCES)('$name writes characteristics as sentences, punctuated as the app is', (reference) => {

@@ -60,7 +60,7 @@ import { PRESETS } from './index.ts';
  * `styleReferences.test.ts` states directly and better: that every shipped reference is demonstrated
  * by a preset naming it. `nameStyleReference` is a boolean the reader throws against whatever target
  * they are pasting into, and no archetype has an opinion about it — every built-in leaves it off,
- * which `presets.test.ts` pins.
+ * which `styleReferences.test.ts` pins.
  */
 
 /** The keys whose whole union has to appear somewhere in the library, with that union. */
