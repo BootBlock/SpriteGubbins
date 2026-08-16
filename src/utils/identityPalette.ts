@@ -13,7 +13,7 @@ import {
   unpackColor,
   writePixel,
 } from './imageData.ts';
-import { buildPalette } from './medianCut.ts';
+import { buildPalette } from './wuQuantiser.ts';
 
 /**
  * The colours an accepted sheet is actually made of, as the hex list an identity digest carries.
@@ -91,12 +91,13 @@ export function identityPalette(image: ImageData, backgroundKey: Rgba | null): r
  * The clean answer is the Quantise tab, which exists to remove exactly this, and the control says so.
  *
  * **Opacity is flattened for the same reason the key ignores it — a colour is not a compositing
- * state, and the digest states RGB.** Leaving it alone is the subtle failure: alpha is one of the
- * four channels `buildPalette` splits on, so a soft shadow or an anti-aliased edge — one colour at a
- * dozen opacities, which is exactly what models return — is the *widest* channel on the sheet. Median
- * cut then spends the digest's six slots on opacities of a single colour, and ranks each of them by
- * its own share rather than their combined one, so a 14%-coverage colour can lead a 72% one. Flattened
- * first, every slot buys a distinct colour and coverage totals per colour by construction.
+ * state, and the digest states RGB.** Leaving it alone is the subtle failure, and it bites in the
+ * *coverage* rather than in the palette: `nearestColor` measures across all four channels, so a soft
+ * shadow or an anti-aliased edge — one colour at a dozen opacities, which is exactly what models
+ * return — can sit nearer some unrelated entry that shares its opacity than its own colour at full
+ * opacity, and its share is credited there. The ordering is the whole point of this function, so a
+ * 14%-coverage colour leading a 72% one is the failure. Flattened first, the assignment is about
+ * colour alone and coverage totals per colour by construction.
  */
 function subjectPixels(image: ImageData, exclude: Rgba | null): ImageData {
   const output = createImage(image.width, image.height);

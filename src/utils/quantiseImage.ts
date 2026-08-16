@@ -9,7 +9,7 @@ import { countColors } from './imageData.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
 import { keyBackground } from './keyBackground.ts';
-import { buildPalette } from './medianCut.ts';
+import { buildPalette } from './wuQuantiser.ts';
 
 /**
  * The whole pipeline: key, measure the mesh, read the cells down to pixels — with the colour
@@ -153,10 +153,10 @@ function meshOffset(mesh: GridMesh, grid: number): { x: number; y: number } {
 /**
  * The palette step, in whichever of its three forms the studio asked for.
  *
- * **A pinned palette is applied on its own, never after a median cut.** Reducing to N colours and
- * then mapping those onto a fixed list is two quantisations where one was asked for, and the first
- * of them throws away exactly the information the second needs — a Game Boy's four shades are much
- * better chosen from the image's own colours than from four the median cut picked first.
+ * **A pinned palette is applied on its own, never after a budget reduction.** Reducing to N colours
+ * and then mapping those onto a fixed list is two quantisations where one was asked for, and the
+ * first of them throws away exactly the information the second needs — a Game Boy's four shades are
+ * much better chosen from the image's own colours than from four the quantiser picked first.
  *
  * The *on-screen* colour limit a machine imposes is deliberately not enforced here either. It is a
  * per-frame figure, and a sprite sheet is not a frame: it is the source artwork a frame is later
@@ -164,9 +164,9 @@ function meshOffset(mesh: GridMesh, grid: number): { x: number; y: number } {
  * The prompt states it; this makes the colours legal.
  *
  * **The two palette arms take different functions, and it is not an oversight.** A budget's palette
- * comes from this very image and carries the alpha median cut split it on, so it is written whole; a
- * machine's palette is a list of colours with no fourth channel, so writing it whole would flatten
- * every soft edge to opaque. `applyPalette` and `applyRgbPalette` say which is which.
+ * comes from this very image and its entries are real pixels of it, alpha and all, so it is written
+ * whole; a machine's palette is a list of colours with no fourth channel, so writing it whole would
+ * flatten every soft edge to opaque. `applyPalette` and `applyRgbPalette` say which is which.
  */
 function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
   switch (reduction.kind) {

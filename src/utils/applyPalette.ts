@@ -5,13 +5,14 @@ import { remapColors } from './imageData.ts';
 /**
  * Redrawing an image in a fixed palette.
  *
- * Separate from `buildPalette` in ./medianCut.ts because it is a different algorithm over a
- * different input: median cut *chooses* colours from one image, this maps any image onto any
+ * Separate from `buildPalette` in ./wuQuantiser.ts because it is a different algorithm over a
+ * different input: the quantiser *chooses* colours from one image, this maps any image onto any
  * palette. The two are used together and neither needs the other to be correct.
  *
  * **Two of them, because a palette can come from two places and they are not the same object.**
- * Median cut returns entries with an alpha it split the image on, so redrawing in one means taking
- * that alpha too. A machine's palette is a list of *colours* — the Game Boy had four shades and no
+ * `buildPalette` returns entries that are real pixels of the image, each carrying the alpha it was
+ * found at, so redrawing in one means taking that alpha too. A machine's palette is a list of
+ * *colours* — the Game Boy had four shades and no
  * alpha channel at all — so redrawing in one may not touch a pixel's opacity. Both share
  * `nearestColor`, which is the half that would quietly diverge if they were written twice.
  */
@@ -20,10 +21,10 @@ import { remapColors } from './imageData.ts';
  * The image with every pixel taking its nearest palette entry, by squared distance across all four
  * channels.
  *
- * For a palette **derived from this image**, which is what `buildPalette` returns: alpha is one of
- * the four channels it split on, so an entry's opacity is as much a part of it as its hue, and the
+ * For a palette **derived from this image**, which is what `buildPalette` returns: every entry is a
+ * pixel the sheet actually holds, so an entry's opacity is as much a part of it as its hue, and the
  * entry is written whole. That is what keeps the promise the colour count makes — reduce to N and
- * exactly N distinct RGBA colours survive.
+ * at most N distinct RGBA colours survive.
  */
 export function applyPalette(image: ImageData, palette: readonly Rgba[]): ImageData {
   // An empty palette means an image with no opaque pixels, none of which reach `resolve` at all.

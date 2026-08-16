@@ -341,7 +341,7 @@ describe('quantiseImage', () => {
 
   it('lets a pinned palette overrule the colour budget rather than running both', () => {
     // The rule the studio states under the budget control, asserted where it is actually applied. A
-    // median cut to 32 followed by a map onto four would be two quantisations, and the first would
+    // reduction to 32 followed by a map onto four would be two quantisations, and the first would
     // throw away exactly the colours the second needs to choose between.
     expect(colorPlanFor('GAME_BOY_DMG', 'STRICT_32_COLOR').reduction).toEqual({
       kind: 'PALETTE',
@@ -523,7 +523,7 @@ describe('quantiseImage', () => {
       return { r: index * 16 + 8, g: 255 - index * 12, b: 128, a: 255 };
     });
 
-    // 17 exactly — the fifteen crisp block colours plus the two wobbled clouds — so the median cut
+    // 17 exactly — the fifteen crisp block colours plus the two wobbled clouds — so the reduction
     // stops with each cloud held in one box: its next split would have to carve a cloud in two, and
     // a majority split across sub-buckets is how a generous budget lets the minority win after all.
     const result = quantiseImage(sheet, {

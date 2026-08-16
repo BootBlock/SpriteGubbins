@@ -6,7 +6,7 @@ import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh, regularMesh } from './gridMesh.ts';
 import { packColor, packedColorAt, pixelOffset } from './imageData.ts';
 import { lineAwareWinner, lumaOf } from './lineVote.ts';
-import { buildPalette } from './medianCut.ts';
+import { buildPalette } from './wuQuantiser.ts';
 import { quantiseImage } from './quantiseImage.ts';
 
 /**

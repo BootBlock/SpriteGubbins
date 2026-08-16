@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { imageFrom } from '../test/images.ts';
 import { applyPalette } from './applyPalette.ts';
 import { colorHistogram, countColors, packColor, readPixel } from './imageData.ts';
-import { buildPalette } from './medianCut.ts';
+import { buildPalette } from './wuQuantiser.ts';
 
 /** 200 pixels, every one a different colour. */
 const TWO_HUNDRED_COLORS = imageFrom(20, 10, (x, y) => {

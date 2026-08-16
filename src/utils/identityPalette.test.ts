@@ -25,7 +25,7 @@ const KEYED_SHEET = imageFrom(16, 8, (x, y) => {
 
 /**
  * Seven colours painted **smallest region first**, so scan order is the near-reverse of coverage
- * order — and one more colour than the digest holds, so median cut genuinely splits boxes.
+ * order — and one more colour than the digest holds, so the quantiser genuinely splits boxes.
  *
  * Both properties are load-bearing, and the second is the one an earlier version of this fixture
  * missed. `buildPalette` short-circuits to scan order whenever an image has no more colours than the
@@ -33,10 +33,10 @@ const KEYED_SHEET = imageFrom(16, 8, (x, y) => {
  * order the same answer — and a version that dropped the sort entirely still passed. The competing
  * order this has to rule out is `buildPalette`'s own, not merely the colours' numeric order.
  *
- * `NEAR_CHARCOAL` differs from `CHARCOAL` by one in a single channel, so the two share a box: with
- * seven colours reduced to six, exactly one box keeps a pair, and the widest-channel rule always
- * splits that one last. It stands for the shading step every sprite has, and its single pixel must
- * be counted towards charcoal rather than claiming a slot of its own.
+ * `NEAR_CHARCOAL` differs from `CHARCOAL` by one in a single channel, so the two share a box —
+ * indeed the same histogram bin, which no cut can divide. It stands for the shading step every
+ * sprite has, and its single pixel must be counted towards charcoal rather than claiming a slot of
+ * its own.
  */
 const NEAR_CHARCOAL = { r: 30, g: 30, b: 37, a: 255 };
 const TEAL = { r: 13, g: 148, b: 136, a: 255 };
@@ -83,9 +83,9 @@ describe('identityPalette', () => {
 
   it('totals a colour across its opacities instead of spending slots on them', () => {
     // A soft shadow or an anti-aliased edge is one colour at many opacities — which is what models
-    // return, and the reason the Quantise tab exists. Alpha is one of the four channels median cut
-    // splits on, so left alone it is the widest channel here: the digest's slots go to opacities of
-    // charcoal, and a 14% colour leads the 72% one. Flattened, every slot buys a distinct colour.
+    // return, and the reason the Quantise tab exists. `nearestColor` measures across all four
+    // channels, so left alone those opacities are credited to whichever entry happens to share
+    // them, and a 14% colour can lead the 72% one. Flattened, coverage totals per colour.
     const softShadow = imageFrom(10, 10, (x, y) => {
       const n = y * 10 + x;
       if (n < 72) return { ...CHARCOAL, a: [40, 90, 140, 190, 240, 255][n % 6] ?? 255 };

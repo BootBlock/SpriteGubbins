@@ -265,7 +265,7 @@ not a list anybody reads.
 > **A pinned palette supersedes `PALETTE_LIMIT`.** A budget cannot express "four shades of green", so
 > where a palette is set the strategy line is dropped from §2 rather than emitted alongside it — the
 > same rule the Quantise tab applies when it maps a returned sheet onto the palette instead of
-> choosing colours by median cut. The one exception written into the palette block is the background
+> choosing colours out of the sheet itself. The one exception written into the palette block is the background
 > field, which stays the key colour §0 fixes: no palette in the library contains magenta.
 
 ---
@@ -2105,7 +2105,7 @@ underneath it.
    guarantee. No prompt wording fixes this.
 
    *Shipped* as the Quantise tab — grid detection, modal-colour alignment, exact downscale and
-   median-cut palette reduction, entirely in the tab and with nothing uploaded. The plan is
+   variance-minimising palette reduction, entirely in the tab and with nothing uploaded. The plan is
    [done/post-generation-quantisation.md](done/post-generation-quantisation.md).
 
 5. **A sheet-splitter** that takes an N-direction rig request and queues N single-direction runs
