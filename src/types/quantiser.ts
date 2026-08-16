@@ -138,17 +138,18 @@ export interface SheetFacts {
 export interface BackgroundKeying {
   readonly color: Rgba;
   /**
-   * How far across RGB a pixel may sit, as `keyDistanceSquared` measures it — alpha ignored.
+   * How far a pixel may sit in scaled OKLab, as `keyDistanceSquared` measures it — alpha ignored.
    *
    * **Not the plain Euclidean distance `nearestColor` uses, and the difference is the feature.** That
-   * metric answers "how far apart are these two colours", which is the right question when picking
-   * the nearest palette entry and the wrong one here: a key field varies by being shaded and washed
-   * out, and measured plainly that variation costs more than a change of hue does. So this one
-   * discounts the key's own plane of variation, and `keyDistance.ts` carries the reasoning and the
+   * metric answers "how far apart are these two colours" across raw RGBA, which is the right question
+   * when picking the nearest palette entry and the wrong one here: a key field varies by being shaded
+   * and washed out, and measured plainly that variation costs more than a change of hue does. So this
+   * one measures in the perceptual space every quantiser gate now shares (`oklab.ts`) and discounts
+   * the key's own plane of variation besides; `keyDistance.ts` carries the reasoning and the
    * measurements. Two metrics, because they are answering two questions — not two answers to one.
    *
-   * RGB-only because a key field is opaque by definition, so a pixel's own alpha says nothing about
-   * whether it is background.
+   * Colour-only because a key field is opaque by definition, so a pixel's own alpha says nothing
+   * about whether it is background.
    */
   readonly tolerance: number;
 }

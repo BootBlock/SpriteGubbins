@@ -1,4 +1,5 @@
 import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { type Oklab, srgbToOklab } from './oklab.ts';
 
 /**
  * The fill cleanup: each pixel snapped to its neighbourhood's most common colour, where the
@@ -13,9 +14,11 @@ import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
  *   eight in the interior, five at an image edge, three in a corner — so a lone odd pixel inside
  *   a settled region qualifies wherever it sits, and the frontier between two regions never does:
  *   a boundary pixel's neighbourhood is split, and a split is not a majority;
- * - and the pixel must sit within the caller's tolerance of that colour, measured as squared RGB
- *   distance — which is what keeps every line safe, because ink against any fill sits far past
- *   the offered tolerances however many neighbours agree.
+ * - and the pixel must sit within the caller's tolerance of that colour, measured as squared
+ *   distance in **scaled OKLab** — which is what keeps every line safe, because ink against any
+ *   fill sits far past the offered tolerances however many neighbours agree, and further in this
+ *   space than RGB ever put it: OKLab spaces dark colours as far apart as a reader sees them,
+ *   where the RGB cube crowded them together.
  *
  * **Colour here means RGB; alpha is coverage, and the pass never touches it.** Neighbours tally
  * by their RGB alone — a matte-exported sheet mixing alpha 254 with 255 is one colour, not two —
@@ -33,12 +36,25 @@ import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 export function despeckle(image: ImageData, tolerance: number, passes = 1): ImageData {
   let output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);
   if (tolerance <= 0) return output;
+  // One conversion per distinct colour for the whole run, not one per pixel: the pass judges a
+  // handful of packed colours millions of times, and a pass never invents a colour, so the cache
+  // only ever grows — later passes reuse everything the first one converted.
+  const cache = new Map<number, Oklab>();
   for (let pass = 0; pass < passes; pass += 1) {
-    const next = settleOnce(output, tolerance);
+    const next = settleOnce(output, tolerance, cache);
     if (next === null) break;
     output = next;
   }
   return output;
+}
+
+/** The colour's scaled OKLab position, converted on first sight and remembered for the run. */
+function oklabOf(cache: Map<number, Oklab>, key: number): Oklab {
+  const hit = cache.get(key);
+  if (hit !== undefined) return hit;
+  const made = srgbToOklab((key >>> 16) & 0xff, (key >>> 8) & 0xff, key & 0xff);
+  cache.set(key, made);
+  return made;
 }
 
 /**
@@ -47,7 +63,7 @@ export function despeckle(image: ImageData, tolerance: number, passes = 1): Imag
  * a pixel two deep in a speckled patch settles on the pass after its neighbour did, without any
  * within-pass cascade.
  */
-function settleOnce(image: ImageData, tolerance: number): ImageData | null {
+function settleOnce(image: ImageData, tolerance: number, cache: Map<number, Oklab>): ImageData | null {
   const output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);
   const limit = tolerance * tolerance;
   const tally = new Map<number, number>();
@@ -86,16 +102,15 @@ function settleOnce(image: ImageData, tolerance: number): ImageData | null {
       const own = ((image.data[at] ?? 0) * 256 + (image.data[at + 1] ?? 0)) * 256 + (image.data[at + 2] ?? 0);
       if (count < Math.floor(present / 2) + 1 || modal === own) continue;
 
-      const modalR = (modal >>> 16) & 0xff;
-      const modalG = (modal >>> 8) & 0xff;
-      const modalB = modal & 0xff;
-      const dr = (image.data[at] ?? 0) - modalR;
-      const dg = (image.data[at + 1] ?? 0) - modalG;
-      const db = (image.data[at + 2] ?? 0) - modalB;
-      if (dr * dr + dg * dg + db * db <= limit) {
-        output.data[at] = modalR;
-        output.data[at + 1] = modalG;
-        output.data[at + 2] = modalB;
+      const ownLab = oklabOf(cache, own);
+      const modalLab = oklabOf(cache, modal);
+      const dL = ownLab.L - modalLab.L;
+      const da = ownLab.a - modalLab.a;
+      const db = ownLab.b - modalLab.b;
+      if (dL * dL + da * da + db * db <= limit) {
+        output.data[at] = (modal >>> 16) & 0xff;
+        output.data[at + 1] = (modal >>> 8) & 0xff;
+        output.data[at + 2] = modal & 0xff;
         changed += 1;
       }
     }

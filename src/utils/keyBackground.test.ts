@@ -20,7 +20,7 @@ const TRANSPARENT: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 const ART: Rgba = { r: 20, g: 180, b: 60, a: 255 };
 
 /**
- * A magenta the generator got *nearly* right: 4.3 away from the key, so tolerance 16 admits it and
+ * A magenta the generator got *nearly* right: 1.4 away from the key, so tolerance 16 admits it and
  * tolerance 0 does not. This is the ordinary case the whole feature exists for.
  */
 const DRIFTED: Rgba = { r: 250, g: 5, b: 250, a: 255 };
@@ -28,17 +28,18 @@ const DRIFTED: Rgba = { r: 250, g: 5, b: 250, a: 255 };
 /**
  * A magenta field the generator **painted** rather than filled — the case that prompted the metric.
  *
- * 99 from the key in a straight line and 50 once the key's own shading and washing are discounted. So
- * the default tolerance takes it — where measured straight it shared the ladder's top rung with rose
- * and purple at 127, and no setting that reached it could have spared those.
+ * 39 from the key measured straight — level with rose and purple at 40 — and 20 once the key's own
+ * shading and washing are discounted. So the default tolerance takes it with a rung and a half to
+ * spare, where the straight measurement offered no setting that reached it and spared those.
  */
 const PAINTED: Rgba = { r: 196, g: 27, b: 180, a: 255 };
 
 /**
- * A pixel on an anti-aliased edge: 23.4 from the key, so it is outside any tolerance tight enough to
- * be safe and inside `tolerance × FRINGE_TOLERANCE_FACTOR` at 16. Only the geometry decides its fate.
+ * A pixel on an anti-aliased edge — three parts key to two parts the green beside it: 27 from the
+ * key, so it is outside any tolerance tight enough to be safe and inside the fringe's reach at 16.
+ * Only the geometry decides its fate.
  */
-const BLEND: Rgba = { r: 228, g: 27, b: 228, a: 255 };
+const BLEND: Rgba = { r: 161, g: 72, b: 177, a: 255 };
 
 /** Every channel of every pixel, as a keyed pixel must read: `{0, 0, 0, 0}`, not RGB at zero alpha. */
 function allZero(pixels: number): number[] {
@@ -150,9 +151,10 @@ describe('keyBackground', () => {
 
   it('does not erode the sprite’s contour at the top of the tolerance ladder', () => {
     // The fringe threshold is a multiple of the tolerance, and a multiple with nothing above it runs
-    // off the end of the scale: at 128 it reached 384, where the furthest any two colours can be
-    // apart is 441. So the loosest settings quietly took a pixel off *every* silhouette touching the
-    // field, whatever colour it was, while the panel described a one-pixel edge clean-up.
+    // off the end of the scale: at the top rung it would reach 192, past every colour a sprite could
+    // be made of — the art here sits at 67. So an uncapped fringe quietly took a pixel off *every*
+    // silhouette touching the field, whatever colour it was, while the panel described a one-pixel
+    // edge clean-up.
     const sheet = row(MAGENTA, ART, ART);
 
     const result = keyBackground(sheet, { color: MAGENTA, tolerance: Math.max(...KEY_TOLERANCES) });

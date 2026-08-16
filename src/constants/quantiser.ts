@@ -401,13 +401,19 @@ export const DEFAULT_INK_THRESHOLD = LINE_INK_CEILING;
  * The failure the pass serves: a lone pixel disagreeing with a settled fill. The cleanup snaps it
  * to its neighbourhood's most common colour when a strict majority of the neighbours it *has*
  * agree — see `despeckle` for the rule and why a region boundary can never form one — and the
- * pixel already sits within the tolerance of that colour, measured as straight-line RGB
- * distance. The tolerance is what keeps lines safe: ink against a green fill sits hundreds of
- * steps away, far past the whole range. On a densely dithered sheet the pass has little to do
- * until the colour merge has settled the fills — majorities cannot form between colours that
- * alternate everywhere — which is the pairing its guidance points at.
+ * pixel already sits within the tolerance of that colour, measured as straight-line distance in
+ * scaled OKLab (see `oklab.ts` for the space and the scale). The tolerance is what keeps lines
+ * safe: ink against a mid green measures about 109, past double the whole range — and further
+ * than RGB ever put it, because OKLab spreads dark colours apart where the RGB cube crowded
+ * them. On a densely dithered sheet the pass has little to do until the colour merge has settled
+ * the fills — majorities cannot form between colours that alternate everywhere — which is the
+ * pairing its guidance points at.
+ *
+ * Half the RGB range it replaced, and deliberately: a perceptual step is roughly two RGB steps
+ * across the mid tones, so 48 here reaches about as far as the old 96 did there — while meaning
+ * the *same* reach in the darks and the lights, which is what the RGB dial could not say.
  */
-export const FILL_CLEANUP_RANGE = { min: 0, max: 96, step: 1 } as const;
+export const FILL_CLEANUP_RANGE = { min: 0, max: 48, step: 1 } as const;
 
 /** The tolerance the tab opens with — off, so a sheet is exactly what its reading made of it. */
 export const DEFAULT_FILL_CLEANUP = 0;
@@ -430,13 +436,16 @@ export const DEFAULT_CLEANUP_PASSES = 1;
  *
  * Where the fill cleanup fixes a lone dissenting pixel, this fixes *dense* speckle — fills
  * dithered between palette entries a dozen steps apart, where no pixel is ever the lone one — by
- * folding near-duplicate colours together sheet-wide; `mergeColors` holds the rule. Calibration
- * points, measured on the armour sheet: at 24 its sixty-four colours settle to twenty-three and
- * every fill reads as one surface with its shading intact; by 48 it reaches thirteen and begins
- * to spend genuine shading. The range runs on to 96 anyway, because a flatter look is a style,
- * not a mistake, and the preview is beside the dial.
+ * folding near-duplicate colours together sheet-wide; `mergeColors` holds the rule, and the
+ * distance is scaled OKLab, as every quantiser gate measures. Calibration points, measured on
+ * the armour sheet (grid 6, ink-weighted 1.5×, a budget of 64): at 12 its sixty-four colours
+ * settle to twenty-five and every fill reads as one surface with its shading intact; by 24 it
+ * reaches thirteen and begins to spend genuine shading. The range runs on to 48 anyway — seven
+ * colours on that sheet — because a flatter look is a style, not a mistake, and the preview is
+ * beside the dial. Half the RGB range it replaced, for the reason `FILL_CLEANUP_RANGE` gives:
+ * a perceptual step is about two RGB steps, so the reach is the old dial's, said honestly.
  */
-export const COLOR_MERGE_RANGE = { min: 0, max: 96, step: 1 } as const;
+export const COLOR_MERGE_RANGE = { min: 0, max: 48, step: 1 } as const;
 
 /** The merge the tab opens with — off, as every cleanup dial opens. */
 export const DEFAULT_COLOR_MERGE = 0;
@@ -514,14 +523,17 @@ export const PREVIEW_ZOOMS = [1, 2, 4, 8] as const;
  * this tab already does twice over — the zoom levels and the grid candidates.
  *
  * `0` is on the ladder because "exact match only" is a real request, and it is the one setting that
- * also switches the fringe pass off (which is scaled from this number). The rest roughly double.
- * Against the recommended magenta they read: **32** takes a field that only re-encoding moved, **64**
- * takes one the generator painted at varying purity, **96** takes one that was shaded to half its
- * lightness, and **128** is past where the nearest hues that are *not* the key begin — rose and
- * purple both measure 100 — so it is a rung to reach for once and check the sprite against, not one
- * to sit at.
+ * also switches the fringe pass off (which is scaled from this number). The values are scaled-OKLab
+ * distances, as `keyDistance.ts` measures. Against the recommended magenta they read: **8** takes a
+ * field that only re-encoding moved (about 1.4), **16** takes most of one the generator painted at
+ * varying purity (its fixtures run 12 to 21), **24** takes the whole of it — shaded and washed to
+ * half included — with a margin, **32** is the last rung short of the artwork, and **64** is past
+ * where the nearest hues that are *not* the key begin — rose and purple measure 40 and 49 — so it
+ * is a rung to reach for once and check the sprite against, not one to sit at. The top rung is
+ * also where a black key does its work: OKLab spreads the dark greys apart, so a drifted black
+ * field that RGB called near costs more of the scale to reach — see `DEFAULT_KEY_TOLERANCE`.
  */
-export const KEY_TOLERANCES = [0, 16, 32, 64, 96, 128] as const;
+export const KEY_TOLERANCES = [0, 8, 16, 24, 32, 64] as const;
 
 /**
  * How much further a difference may run before it counts, when it runs the way a key field's own
@@ -542,18 +554,23 @@ export const KEY_SHADING_LATITUDE = 2;
  * Where the tolerance starts: loose enough that the recommended magenta works on the sheets models
  * actually return, and still clear of every colour that is not the key's own hue.
  *
- * 64 rather than a tighter rung because a field the generator *painted* — the ordinary case, not the
- * bad one — measures about 50 once the shading latitude is applied, and the rung below it leaves that
- * field on screen. The nearest artwork colours sit at 100 and above, so this keeps a rung of margin.
+ * 24 rather than a tighter rung because a field the generator *painted* — the ordinary case, not the
+ * bad one — measures up to about 21 once the shading latitude is applied, and the rung below it
+ * leaves the deepest of that drift on screen. The nearest artwork colours sit at 40 and above, so
+ * this keeps a rung of margin.
  *
- * **`PURE_WHITE` and `PURE_BLACK` get no latitude at all**, so for them this is a plain distance and
- * 64 means what it always meant: a white key reaches greys down to `#DBDBDB`, a black key up to
- * `#242424`. That is looser than the 32 this used to open at and still nowhere near the sheet's own
- * midtones. Those two keys share their colour with real artwork whatever the metric, so the tab's
- * guidance — raise it until the field goes, stop before the sprite does — is where the stopping point
- * is judged; `keyDistance.ts` says why they are held to the straight measurement.
+ * **`PURE_WHITE` and `PURE_BLACK` get no latitude at all**, so for them this is a plain distance —
+ * now the plain OKLab one: a white key reaches greys down to about `#E0E0E0`, while a black key
+ * reaches only a few steps up, because OKLab spaces the dark greys as far apart as a reader sees
+ * them where RGB crowded them together. A black key that needs to swallow a drifted dark field
+ * wants the ladder's top rung, which reaches to about `#212121` — and that asymmetry is the space
+ * telling the truth, not the ladder failing: differences near black are visible in a way the same
+ * byte distance near white is not. Those two keys share their colour with real artwork whatever
+ * the metric, so the tab's guidance — raise it until the field goes, stop before the sprite does —
+ * is where the stopping point is judged; `keyDistance.ts` says why they are held to the straight
+ * measurement.
  */
-export const DEFAULT_KEY_TOLERANCE = 64;
+export const DEFAULT_KEY_TOLERANCE = 24;
 
 /**
  * How much further than {@link KEY_TOLERANCES} the one-pixel fringe pass reaches.
@@ -574,28 +591,29 @@ export const FRINGE_TOLERANCE_FACTOR = 3;
 /**
  * The furthest the fringe pass reaches, however high the tolerance goes.
  *
- * A factor with nothing above it is not a threshold, it is a ramp off the end of the scale: at a
- * tolerance of 128 the product is 384, and the greatest distance any two colours can be apart is
- * 441. So the loosest settings on the ladder eroded a pixel of *everything* that touched the field —
- * the sprite's whole contour, whatever colour it was — while the panel described a one-pixel edge
- * clean-up. Nothing failed; the sheet simply came back a pixel thinner on every silhouette, which is
- * indistinguishable from the artwork having been drawn that way.
+ * A factor with nothing above it is not a threshold, it is a ramp off the end of the scale: at the
+ * ladder's top rung the product is 192, which against a magenta key reaches past every colour the
+ * sprite could be made of — rose and purple sit at 40. So the loosest settings on the ladder eroded
+ * a pixel of *everything* that touched the field — the sprite's whole contour, whatever colour it
+ * was — while the panel described a one-pixel edge clean-up. Nothing failed; the sheet simply came
+ * back a pixel thinner on every silhouette, which is indistinguishable from the artwork having been
+ * drawn that way.
  *
- * 96 is fixed by the two things the pass has to sit between, and it is the second of them that is
+ * 32 is fixed by the two things the pass has to sit between, and it is the second of them that is
  * load-bearing. Measured across every art colour it could be blending with, a pixel three-quarters
- * key sits **at most 60** from it, so a ceiling above that admits every one — the halo goes. And the
- * nearest colours to the recommended magenta that are *not* its own hue are rose and purple at
- * **100**, so a ceiling below that reaches no unblended artwork. 96 is between them.
+ * key sits **at most 21** from it, so a ceiling above that admits every one — the halo goes. And
+ * the nearest colours to the recommended magenta that are *not* its own hue are rose and purple at
+ * **40**, so a ceiling below that reaches no unblended artwork. 32 is between them.
  *
- * **It does not, and should not, exclude the blends nearer half.** Those run from about 50 to 119
+ * **It does not, and should not, exclude the blends nearer half.** Those run from about 13 to 40
  * depending on what the key is blending with, so this admits many of them — which is the pass working
  * rather than overrunning: a pixel half made of the key colour and touching the field *is* halo. The
- * bound that keeps it honest is the 100 above, not a claim about what fraction of key a pixel holds.
+ * bound that keeps it honest is the 40 above, not a claim about what fraction of key a pixel holds.
  *
  * Above the rung where this binds, the field's own radius has overtaken it and the fringe pass has
  * nothing left to add — every pixel it could reach, pass 1 has already marked.
  */
-export const FRINGE_TOLERANCE_CEILING = 96;
+export const FRINGE_TOLERANCE_CEILING = 32;
 
 /**
  * The largest image the tab will accept, in pixels.

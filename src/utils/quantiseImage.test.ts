@@ -40,9 +40,10 @@ const KEYING = { color: MAGENTA, tolerance: 16 };
  * condition the ordering test below turns on: each of those colours polls a single vote in the
  * modal alignment, so any colour appearing twice beats all of them.
  *
- * Blue is pinned at 255, so only two channels drift and by at most 7 each: the widest of them is 6.5
- * from the key, well inside `KEYING`. Both art colours are over a hundred away, so they are outside
- * the field and the fringe threshold alike and cannot be eroded.
+ * Blue is pinned at 255, so only two channels drift and by at most 7 each: the widest of them is 2.5
+ * from the key as the discounted OKLab metric reads it, well inside `KEYING`. The art colours
+ * measure 67 and 55, so they are outside the field and the fringe threshold alike and cannot be
+ * eroded.
  */
 const INSET_SHEET = imageFrom(32, 32, (x, y) => {
   if (x >= 6 && x < 22 && y >= 6 && y < 22) return ART;

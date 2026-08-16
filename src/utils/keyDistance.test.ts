@@ -3,6 +3,7 @@ import { FRINGE_TOLERANCE_CEILING, KEY_TOLERANCES } from '../constants/quantiser
 import type { Rgba } from '../types/quantiser.ts';
 import { fromHex } from './imageData.ts';
 import { keyBasis, keyDistanceSquared } from './keyDistance.ts';
+import { srgbToOklab } from './oklab.ts';
 
 /**
  * A colour from the `#RRGGBB` a reader recognises, through the app's own strict reader.
@@ -28,7 +29,7 @@ function distance(key: Rgba, color: Rgba): number {
 }
 
 /**
- * The straight Euclidean distance this metric replaced, kept here and nowhere else.
+ * The straight RGB Euclidean distance the keying began with, kept here and nowhere else.
  *
  * Not a second implementation of anything shipped — it is the *subject* of the first case below,
  * which states the defect the file exists to fix. Deleting it would leave that case asserting the
@@ -36,6 +37,16 @@ function distance(key: Rgba, color: Rgba): number {
  */
 function plainDistance(key: Rgba, color: Rgba): number {
   return Math.hypot(color.r - key.r, color.g - key.g, color.b - key.b);
+}
+
+/**
+ * The straight OKLab distance — the metric with its latitude removed, which is what an achromatic
+ * key is measured by and what the discount is judged against.
+ */
+function straightDistance(key: Rgba, color: Rgba): number {
+  const a = srgbToOklab(key.r, key.g, key.b);
+  const b = srgbToOklab(color.r, color.g, color.b);
+  return Math.hypot(a.L - b.L, a.a - b.a, a.b - b.b);
 }
 
 /**
@@ -80,12 +91,16 @@ describe('keyDistance', () => {
   });
 
   it('charges less for shading and washing than for the same journey into another hue', () => {
-    // Three colours the same 127 from the key in a straight line. Two of them are the key shaded and
-    // the key washed out; the third is a different colour. Only the third is measured at full weight.
+    // Two colours the same 127 from the key along a straight RGB line: one is the key washed toward
+    // white, the other is rose. The discount is what tells them apart — the wash lies in the key's
+    // own plane, so it is charged at the latitude, and the hue change is not.
     const washed = rgb('#FF7FFF');
     const rose = rgb('#FF0080');
     expect(plainDistance(MAGENTA, washed)).toBe(plainDistance(MAGENTA, rose));
     expect(distance(MAGENTA, washed)).toBeLessThan(distance(MAGENTA, rose));
+    // And the discount is genuinely the discount doing it, not OKLab alone: measured straight in
+    // OKLab the wash reads about twice what it reads discounted.
+    expect(distance(MAGENTA, washed)).toBeLessThan(straightDistance(MAGENTA, washed) / 1.9);
   });
 
   it('keeps the latitude bounded, so the key’s plane is cheap rather than free', () => {
@@ -99,10 +114,11 @@ describe('keyDistance', () => {
     // The case that makes the rule a rule rather than a plane applied everywhere. White and black sit
     // *on* the achromatic axis, so the plane collapses onto it — and moving along that axis away from
     // white is not the field varying, it is every grey in the sheet. Discounting it would discount the
-    // one direction that separates those keys from artwork, so they get no discount at all.
+    // one direction that separates those keys from artwork, so they get no discount at all: the
+    // measurement is the straight OKLab distance, undiscounted.
     for (const key of [WHITE, BLACK]) {
       for (const sample of ['#DBDBDB', '#808080', '#242424', '#FF6363', '#005300', '#14B43C']) {
-        expect(distance(key, rgb(sample))).toBeCloseTo(plainDistance(key, rgb(sample)), 9);
+        expect(distance(key, rgb(sample))).toBeCloseTo(straightDistance(key, rgb(sample)), 9);
       }
     }
 

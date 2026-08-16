@@ -5,7 +5,7 @@ import { despeckle } from './despeckle.ts';
 import { pixelOffset } from './imageData.ts';
 
 const GREEN: Rgba = { r: 40, g: 140, b: 60, a: 255 };
-/** A stray fill tone eighteen RGB steps from the green — speckle, not detail. */
+/** A stray fill tone eight steps from the green in scaled OKLab — speckle, not detail. */
 const STRAY: Rgba = { r: 50, g: 150, b: 70, a: 255 };
 const INK: Rgba = { r: 16, g: 14, b: 18, a: 255 };
 
@@ -17,15 +17,15 @@ describe('despeckle', () => {
   });
 
   it('never merges a line pixel, however settled the neighbours', () => {
-    // Ink against the green sits hundreds of steps away — past every tolerance offered.
+    // Ink against the green measures 109 — past double any tolerance offered.
     const sheet = imageFrom(5, 5, (x, y) => (x === 2 && y === 2 ? INK : GREEN));
-    expect(channels(despeckle(sheet, 64))).toEqual(channels(sheet));
+    expect(channels(despeckle(sheet, 48))).toEqual(channels(sheet));
   });
 
   it('leaves a two-region boundary alone — no strict majority ever forms across it', () => {
     const other: Rgba = { r: 55, g: 155, b: 75, a: 255 };
     const sheet = imageFrom(6, 6, (x) => (x < 3 ? GREEN : other));
-    expect(channels(despeckle(sheet, 64))).toEqual(channels(sheet));
+    expect(channels(despeckle(sheet, 48))).toEqual(channels(sheet));
   });
 
   it('merges at the border too, by a majority of the neighbours a pixel actually has', () => {
@@ -74,7 +74,7 @@ describe('despeckle', () => {
     // A translucent pixel already matching the field's RGB is genuine soft detail at distance
     // zero, and must be left exactly as it is — flattening it to opaque undoes a soft edge.
     const soft = imageFrom(5, 5, (x, y) => (x === 2 && y === 2 ? { ...GREEN, a: 128 } : GREEN));
-    expect(channels(despeckle(soft, 64))).toEqual(channels(soft));
+    expect(channels(despeckle(soft, 48))).toEqual(channels(soft));
   });
 
   it('settles a two-deep patch across passes, one layer per pass', () => {
@@ -92,7 +92,7 @@ describe('despeckle', () => {
     const clear: Rgba = { r: 0, g: 0, b: 0, a: 0 };
     const sheet = imageFrom(5, 5, (x, y) => (x === 2 && y === 2 ? clear : GREEN));
     // The keyed pixel is never painted over, and it never votes as a neighbour.
-    expect(channels(despeckle(sheet, 64))).toEqual(channels(sheet));
+    expect(channels(despeckle(sheet, 48))).toEqual(channels(sheet));
   });
 
   it('returns the input bytes unchanged at a tolerance of zero', () => {

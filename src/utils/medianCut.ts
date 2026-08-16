@@ -10,9 +10,13 @@ import { colorHistogram, packColor, unpackColor } from './imageData.ts';
  * image always yields the same sheet, which is what a user re-running a batch needs, and the tests
  * can assert an exact palette rather than a tolerance. Every tie below is broken for that reason.
  *
- * **RGB, not a perceptual colour space.** OKLab would place boundaries better on photographic input.
- * Sprite sheets after alignment are flat colour regions, where the two agree closely, and the app
- * carries no colour-space maths. A known trade-off rather than an oversight.
+ * **RGB, not a perceptual colour space.** OKLab would place boundaries better on photographic input,
+ * and the app now carries the conversion (`oklab.ts` — every tolerance *gate* measures there). This
+ * file deliberately still does not use it: sprite sheets after alignment are flat colour regions,
+ * where the two agree closely, and a perceptual median cut is half an algorithm — the moment the
+ * palette is chosen in one space and applied in another, the two disagree about "nearest". The
+ * quantiser roadmap replaces this algorithm wholesale rather than re-plumbing it. A known trade-off
+ * rather than an oversight.
  *
  * **No dithering.** The standard companion to quantisation, and wrong here: the prompt template's
  * pixel-discipline block bans exactly the sparkle noise and scattered single-pixel highlights

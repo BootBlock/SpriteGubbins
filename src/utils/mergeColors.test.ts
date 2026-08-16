@@ -5,7 +5,7 @@ import { mergeColors } from './mergeColors.ts';
 import { quantiseImage } from './quantiseImage.ts';
 
 const GREEN: Rgba = { r: 40, g: 140, b: 60, a: 255 };
-/** A near-duplicate ten steps away — a dithered fill's second entry, not a shade. */
+/** A near-duplicate five steps away in scaled OKLab — a dithered fill's second entry, not a shade. */
 const NEAR: Rgba = { r: 46, g: 146, b: 66, a: 255 };
 const INK: Rgba = { r: 16, g: 14, b: 18, a: 255 };
 
@@ -40,6 +40,8 @@ describe('mergeColors', () => {
     // K absorbs A; B is within reach of A but not of K. B stands, because folding is judged
     // against the colours that *stand*, never against a colour already folded away — a chain
     // would let the tolerance creep arbitrarily far one hop at a time.
+    // Measured in scaled OKLab: K to A is 8.2, A to B is 8.7, K to B is 17 — so a tolerance of 12
+    // reaches each link of the chain and not its ends.
     const keeperTone: Rgba = { r: 100, g: 100, b: 100, a: 255 };
     const nearTone: Rgba = { r: 120, g: 100, b: 100, a: 255 };
     const farTone: Rgba = { r: 140, g: 100, b: 100, a: 255 };
@@ -48,7 +50,7 @@ describe('mergeColors', () => {
       if (index < 20) return keeperTone;
       return index < 30 ? nearTone : farTone;
     });
-    const merged = mergeColors(sheet, 24);
+    const merged = mergeColors(sheet, 12);
     const last = (6 * 6 - 1) * 4;
     expect(merged.data[0]).toBe(keeperTone.r);
     expect(merged.data[20 * 4]).toBe(keeperTone.r);
@@ -73,8 +75,9 @@ describe('mergeColors', () => {
   });
 
   it('never folds a pinned palette’s entries — the pipeline exempts it', () => {
-    // Two hardware shades sixteen steps apart, pinned: the merge dial must not quietly un-pin
-    // them into one, so the pipeline skips the pass entirely for a pinned palette.
+    // Two hardware shades thirteen apart in scaled OKLab — inside the dial's reach at 24 — and
+    // pinned: the merge must not quietly un-pin them into one, so the pipeline skips the pass
+    // entirely for a pinned palette.
     const shadeA: Rgba = { r: 139, g: 172, b: 15, a: 255 };
     const shadeB: Rgba = { r: 155, g: 188, b: 15, a: 255 };
     const sheet = imageFrom(12, 6, (x) => (x < 6 ? shadeA : shadeB));
