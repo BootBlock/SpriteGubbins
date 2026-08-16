@@ -58,11 +58,13 @@ describe('useQuantiseStore', () => {
     store.setVote('INK_WEIGHTED');
     store.setLineStrength(2.5);
     store.setFillCleanup(48);
+    store.setColorMerge(24);
     store.setSource({ name: 'another.png', image: createImage(8, 8) });
 
     expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
     expect(useQuantiseStore.getState().lineStrength).toBe(2.5);
     expect(useQuantiseStore.getState().fillCleanup).toBe(48);
+    expect(useQuantiseStore.getState().colorMerge).toBe(24);
   });
 
   it('clears the sheet and every control with it', () => {
@@ -76,6 +78,7 @@ describe('useQuantiseStore', () => {
     store.setVote('K_CENTROID');
     store.setLineStrength(2);
     store.setFillCleanup(64);
+    store.setColorMerge(36);
 
     store.clear();
 
@@ -87,6 +90,7 @@ describe('useQuantiseStore', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
     });
   });
 

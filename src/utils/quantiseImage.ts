@@ -4,6 +4,7 @@ import { snapToChannelDepth } from './channelDepth.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { despeckle } from './despeckle.ts';
+import { mergeColors } from './mergeColors.ts';
 import { countColors } from './imageData.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
@@ -104,7 +105,9 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // Last of all, whatever the reading: speckle is a property of any reading's output, and the
   // cleanup wants to see the final colours — palette entries included — not the ones a reduction
   // is about to replace.
-  const output = despeckle(resolved, settings.fillCleanup);
+  // Merge first, then despeckle: folding near-duplicate colours sheet-wide is what lets settled
+  // fills form the majorities the per-pixel cleanup needs.
+  const output = despeckle(mergeColors(resolved, settings.colorMerge), settings.fillCleanup);
 
   return {
     image: output,

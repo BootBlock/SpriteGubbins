@@ -78,8 +78,15 @@ describe('kCentroidCells', () => {
     });
     const at = (vote: 'DOMINANT' | 'INK_WEIGHTED' | 'K_CENTROID') =>
       channels(
-        quantiseImage(sheet, { grid: 6, key: null, vote, lineStrength: 1.5, fillCleanup: 0, reduction: null })
-          .image,
+        quantiseImage(sheet, {
+          grid: 6,
+          key: null,
+          vote,
+          lineStrength: 1.5,
+          fillCleanup: 0,
+          colorMerge: 0,
+          reduction: null,
+        }).image,
       );
 
     const centroid = at('K_CENTROID');

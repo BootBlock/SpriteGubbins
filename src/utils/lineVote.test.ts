@@ -381,6 +381,7 @@ describe('quantiseImage, line-aware', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
     const composedPlain = downscaleNearest(
@@ -401,6 +402,7 @@ describe('quantiseImage, line-aware', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     });
     expect(channels(reduced.image)).not.toEqual(channels(composedWithoutRescue));
@@ -414,6 +416,7 @@ describe('quantiseImage, line-aware', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     });
     // A one-pixel cell has one bucket, so the palette alone decides — and the sheet is already
@@ -429,6 +432,7 @@ describe('quantiseImage, line-aware', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     } as const;
     expect(channels(quantiseImage(sheet, settings).image)).toEqual(

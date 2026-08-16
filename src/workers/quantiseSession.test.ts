@@ -14,6 +14,7 @@ function settingsAt(grid: number): QuantiseSettings {
     vote: 'DOMINANT',
     lineStrength: 1.5,
     fillCleanup: 0,
+    colorMerge: 0,
     reduction: { kind: 'MAX_COLORS', maxColors: 32 },
   };
 }

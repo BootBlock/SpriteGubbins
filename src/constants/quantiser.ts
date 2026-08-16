@@ -386,6 +386,22 @@ export const FILL_CLEANUP_TOLERANCES = [0, 16, 32, 48, 64] as const;
 export const DEFAULT_FILL_CLEANUP = 0;
 
 /**
+ * The colour-merge tolerances on offer, `0` meaning the pass does not run.
+ *
+ * Where the fill cleanup fixes a lone dissenting pixel, this fixes *dense* speckle — fills
+ * dithered between palette entries a dozen steps apart, where no pixel is ever the lone one — by
+ * folding near-duplicate colours together sheet-wide; `mergeColors` holds the rule. The rungs are
+ * measured on the armour sheet the dials are tuned against: at 24 its sixty-four colours settle
+ * to twenty-three and every fill reads as one surface with its shading intact, while 48 reaches
+ * thirteen and begins to spend genuine shading — offered anyway, because a flatter look is a
+ * style, not a mistake, and the preview is beside the dial.
+ */
+export const COLOR_MERGE_TOLERANCES = [0, 12, 24, 36, 48] as const;
+
+/** The merge the tab opens with — off, as every cleanup dial opens. */
+export const DEFAULT_COLOR_MERGE = 0;
+
+/**
  * How many refinement passes the k-centroid reading's two clusters take per cell.
  *
  * Two clusters over at most a few dozen pixels settle almost immediately — the seeds start at the
@@ -661,6 +677,8 @@ export const QUANTISE_TOOLTIPS = {
   vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour — and, once a colour reduction is in force, keeps a near-black outline or bright trim even as a minority. It never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce.',
   lineStrength:
     'How hard the ink-weighted reading pulls a patch toward the line crossing it. At 1× a line darkens its patch only by the share it actually holds, which reads as shading; each step up makes a qualifying line claim more of the patch, so contours come out more defined at the cost of thicker-looking darks. It appears only while the Downscale control is set to the ink-weighted reading, because the other readings do not blend. Step it up when outlines still look faint, and back down if dark areas start to swallow detail.',
+  colorMerge:
+    'How far apart two colours may sit and still be folded into one across the whole sheet. Reduced fills often dither between several near-identical palette entries — greens a dozen steps apart that read as one surface — and no pixel-level cleanup can settle that, because no pixel is ever the lone odd one out. This folds each colour into the most-used colour within the distance, everywhere at once, so a panel becomes one green while its genuinely distinct shading survives. It also makes the fill cleanup below far more effective, since settled fills can finally form majorities. Off keeps every colour the reading produced; raise it until fills read as surfaces, and back off when real shading starts to fold.',
   fillCleanup:
     'How far apart two colours may sit and still be merged when a pixel disagrees with its neighbours. Flat fills often come back speckled — neighbouring pixels land on near-identical colours with no perceptual difference — and this pass snaps such a pixel to its neighbourhood’s most common colour, but only when most of the neighbours it has already agree and the colours are within this distance. Off leaves the result exactly as the reading made it. It changes colour only, never transparency, and a line sits far outside every rung offered, so linework is never merged; raise it until the fills settle, and back off if close shades begin to fuse.',
   downloadScale:

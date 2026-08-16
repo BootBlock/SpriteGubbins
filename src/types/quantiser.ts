@@ -232,6 +232,11 @@ export interface QuantiseSettings {
    * leaving the result exactly as the reading made it. Applied to every reading's output.
    */
   readonly fillCleanup: number;
+  /**
+   * The colour merge's sheet-wide fold tolerance — a value from `COLOR_MERGE_TOLERANCES`, ` `
+   * leaving every colour the reading produced. Applied before the fill cleanup, which it feeds.
+   */
+  readonly colorMerge: number;
 }
 
 /** What came back: the transformed image, and the numbers that say what it did. */

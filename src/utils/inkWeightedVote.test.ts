@@ -102,6 +102,7 @@ describe('quantiseImage, ink-weighted', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
     const weighted = quantiseImage(ringSheet, {
@@ -110,6 +111,7 @@ describe('quantiseImage, ink-weighted', () => {
       vote: 'INK_WEIGHTED',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
     expect(channels(weighted.image)).not.toEqual(channels(dominant.image));
@@ -123,6 +125,7 @@ describe('quantiseImage, ink-weighted', () => {
       vote: 'INK_WEIGHTED',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
     });
     for (const channel of [0, 1, 2]) {

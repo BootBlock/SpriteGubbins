@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import {
+  DEFAULT_COLOR_MERGE,
   DEFAULT_FILL_CLEANUP,
   DEFAULT_KEY_TOLERANCE,
   DEFAULT_LINE_STRENGTH,
@@ -62,6 +63,8 @@ export interface QuantiseState {
   readonly lineStrength: number;
   /** The fill cleanup's merge tolerance, from `FILL_CLEANUP_TOLERANCES` — `0` is off. */
   readonly fillCleanup: number;
+  /** The colour merge's sheet-wide fold tolerance, from `COLOR_MERGE_TOLERANCES` — `0` is off. */
+  readonly colorMerge: number;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
@@ -70,6 +73,7 @@ export interface QuantiseState {
   setVote(vote: VoteMethod): void;
   setLineStrength(lineStrength: number): void;
   setFillCleanup(fillCleanup: number): void;
+  setColorMerge(colorMerge: number): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
@@ -77,7 +81,14 @@ export interface QuantiseState {
 /** What the tab opens with, and what `clear` puts back. */
 const EMPTY: Pick<
   QuantiseState,
-  'source' | 'gridOverride' | 'keyingEnabled' | 'keyTolerance' | 'vote' | 'lineStrength' | 'fillCleanup'
+  | 'source'
+  | 'gridOverride'
+  | 'keyingEnabled'
+  | 'keyTolerance'
+  | 'vote'
+  | 'lineStrength'
+  | 'fillCleanup'
+  | 'colorMerge'
 > = {
   source: null,
   gridOverride: null,
@@ -86,6 +97,7 @@ const EMPTY: Pick<
   vote: 'DOMINANT',
   lineStrength: DEFAULT_LINE_STRENGTH,
   fillCleanup: DEFAULT_FILL_CLEANUP,
+  colorMerge: DEFAULT_COLOR_MERGE,
 };
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
@@ -131,6 +143,10 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setFillCleanup: (fillCleanup) => {
     set({ fillCleanup });
+  },
+
+  setColorMerge: (colorMerge) => {
+    set({ colorMerge });
   },
 
   // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is

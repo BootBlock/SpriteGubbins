@@ -74,6 +74,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
 
@@ -89,6 +90,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
 
@@ -106,6 +108,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: colorPlanFor('FREE', 'UNRESTRICTED').reduction,
     });
 
@@ -125,6 +128,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
 
@@ -144,6 +148,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
     const cells = pixels(dilated.image);
@@ -165,6 +170,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
 
@@ -184,6 +190,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
 
@@ -202,6 +209,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
 
@@ -238,6 +246,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
 
@@ -264,6 +273,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: gameBoy,
     });
 
@@ -283,6 +293,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: megaDrive,
     });
 
@@ -323,6 +334,7 @@ describe('quantiseImage', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: colorPlanFor(palette, 'UNRESTRICTED').reduction,
       });
       expect(readPixel(result.image.data, 0).a, `${palette} flattened a soft edge`).toBe(128);
@@ -366,6 +378,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
 
@@ -413,6 +426,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 2 },
     });
 
@@ -474,6 +488,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 17 },
     });
 
@@ -493,6 +508,7 @@ describe('quantiseImage', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     });
 

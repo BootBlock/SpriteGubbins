@@ -12,6 +12,7 @@ const BASE: QuantiseSettings = {
   vote: 'DOMINANT',
   lineStrength: 1.5,
   fillCleanup: 0,
+  colorMerge: 0,
   reduction: { kind: 'MAX_COLORS', maxColors: 32 },
 };
 
@@ -33,6 +34,7 @@ describe('sameQuantiseSettings', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: { kind: 'MAX_COLORS', maxColors: 32 },
       }),
     ).toBe(true);
@@ -47,6 +49,7 @@ describe('sameQuantiseSettings', () => {
     // The two dials change the sheet too, and each alone must force a recompute.
     expect(sameQuantiseSettings(BASE, { ...BASE, lineStrength: 2.5 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, fillCleanup: 32 })).toBe(false);
+    expect(sameQuantiseSettings(BASE, { ...BASE, colorMerge: 24 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, key: { color: MAGENTA, tolerance: 64 } })).toBe(false);
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),
@@ -57,6 +60,7 @@ describe('sameQuantiseSettings', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: { kind: 'MAX_COLORS', maxColors: 64 },
       }),
     ).toBe(false);
@@ -79,6 +83,7 @@ describe('sameQuantiseSettings', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
     };
     const depth: QuantiseSettings = {
@@ -86,6 +91,7 @@ describe('sameQuantiseSettings', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
     };
     const none: QuantiseSettings = {
@@ -93,6 +99,7 @@ describe('sameQuantiseSettings', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: null,
     };
 
@@ -113,6 +120,7 @@ describe('sameQuantiseSettings', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: null,
       }),
     ).toBe(true);
@@ -122,6 +130,7 @@ describe('sameQuantiseSettings', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
       }),
     ).toBe(true);
@@ -135,6 +144,7 @@ describe('sameQuantiseSettings', () => {
       vote: 'DOMINANT',
       lineStrength: 1.5,
       fillCleanup: 0,
+      colorMerge: 0,
       reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
     };
 
@@ -144,6 +154,7 @@ describe('sameQuantiseSettings', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: { kind: 'PALETTE', entries: [{ ...BLACK }, WHITE] },
       }),
     ).toBe(true);
@@ -153,6 +164,7 @@ describe('sameQuantiseSettings', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: { kind: 'PALETTE', entries: [WHITE, BLACK] },
       }),
     ).toBe(false);
@@ -162,6 +174,7 @@ describe('sameQuantiseSettings', () => {
         vote: 'DOMINANT',
         lineStrength: 1.5,
         fillCleanup: 0,
+        colorMerge: 0,
         reduction: { kind: 'PALETTE', entries: [BLACK] },
       }),
     ).toBe(false);

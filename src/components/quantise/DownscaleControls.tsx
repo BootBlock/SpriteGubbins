@@ -1,4 +1,5 @@
 import {
+  COLOR_MERGE_TOLERANCES,
   FILL_CLEANUP_TOLERANCES,
   LINE_STRENGTHS,
   QUANTISE_TOOLTIPS,
@@ -26,9 +27,11 @@ export function DownscaleControls() {
   const vote = useQuantiseStore((state) => state.vote);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
   const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
+  const colorMerge = useQuantiseStore((state) => state.colorMerge);
   const setVote = useQuantiseStore((state) => state.setVote);
   const setLineStrength = useQuantiseStore((state) => state.setLineStrength);
   const setFillCleanup = useQuantiseStore((state) => state.setFillCleanup);
+  const setColorMerge = useQuantiseStore((state) => state.setColorMerge);
 
   return (
     <div className="mt-4 space-y-3">
@@ -57,6 +60,20 @@ export function DownscaleControls() {
           />
         </div>
       )}
+
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+          Colour merge
+          <Tooltip text={QUANTISE_TOOLTIPS.colorMerge} hint="Colour merge" />
+        </span>
+        <SegmentedChoice
+          label="Colour merge tolerance"
+          values={COLOR_MERGE_TOLERANCES}
+          value={colorMerge}
+          format={(value) => (value === 0 ? 'off' : String(value))}
+          onChange={setColorMerge}
+        />
+      </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">

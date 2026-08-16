@@ -58,6 +58,7 @@ export function QuantiseTab() {
   const vote = useQuantiseStore((state) => state.vote);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
   const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
+  const colorMerge = useQuantiseStore((state) => state.colorMerge);
   const setSource = useQuantiseStore((state) => state.setSource);
   const setGridOverride = useQuantiseStore((state) => state.setGridOverride);
   const clear = useQuantiseStore((state) => state.clear);
@@ -91,6 +92,7 @@ export function QuantiseTab() {
     vote,
     lineStrength,
     fillCleanup,
+    colorMerge,
   );
 
   // The studio's own target size, read as a second candidate. Deliberately **not** folded into
