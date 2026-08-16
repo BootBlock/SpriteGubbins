@@ -3,7 +3,7 @@ import { DIFFERENCE_PRECISION } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
 import { differenceMap } from './differenceMap.ts';
-import { createImage, writePixel } from './imageData.ts';
+import { createImage, FULLY_OPAQUE, writePixel } from './imageData.ts';
 import { srgbToOklab } from './oklab.ts';
 
 const BLACK = { r: 0, g: 0, b: 0, a: 255 };
@@ -29,20 +29,6 @@ function distanceAt(cells: Uint16Array, at: number): number {
   return (cells[at] ?? 0) / DIFFERENCE_PRECISION;
 }
 
-/** The image's mean colour in OKLab — the rejected definition, so a test can measure it too. */
-function meanColorOf(image: ImageData) {
-  const pixels = image.width * image.height;
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  for (let at = 0; at < image.data.length; at += 4) {
-    r += image.data[at] ?? 0;
-    g += image.data[at + 1] ?? 0;
-    b += image.data[at + 2] ?? 0;
-  }
-  return srgbToOklab(Math.round(r / pixels), Math.round(g / pixels), Math.round(b / pixels));
-}
-
 describe('differenceMap', () => {
   it('reports nothing where the pixel is exactly what it replaced', () => {
     const source = imageFrom(4, 4, () => WHITE);
@@ -66,13 +52,10 @@ describe('differenceMap', () => {
 
     const map = differenceMap(source, cell(middle), { x: [0], y: [0] });
 
-    // What the rejected definition would have measured, computed rather than asserted: the source's
-    // own mean colour against the colour that replaced it.
-    const mean = meanColorOf(source);
-    const replaced = srgbToOklab(middle.r, middle.g, middle.b);
-    const betweenAverages = Math.hypot(mean.L - replaced.L, mean.a - replaced.a, mean.b - replaced.b);
-
-    expect(betweenAverages).toBeLessThan(1);
+    // Half of white is what the mean of the per-pixel distances comes to, and it is the assertion
+    // that carries this test: the source averages to exactly `middle`, so the rejected definition
+    // returns zero here and fails loudly. Asserting that zero as well would be asserting arithmetic
+    // this file performs rather than anything the implementation does.
     expect(distanceAt(map.cells, 0)).toBeCloseTo(srgbToOklab(255, 255, 255).L / 2, 1);
   });
 
@@ -142,34 +125,40 @@ describe('differenceMap', () => {
   it('holds the widest distance there is with room to spare, so no cell can wrap', () => {
     // `Uint16Array` wraps rather than clamping, so a distance past 1023.98 would come back as a
     // *small* number — a dark cell exactly where the sheet was at its worst, which is the one
-    // failure a heatmap could not be read through. The widest a four-axis distance gets is a
-    // colour at one extreme of the gamut against one at the other with the coverage flipped too,
-    // and this is that measured rather than argued: the sRGB cube sampled coarsely for its OKLab
-    // bounding box, whose diagonal plus the alpha axis is the bound.
-    let widest = 0;
-    for (const from of CORNERS) {
-      for (const to of CORNERS) {
-        const a = srgbToOklab(from[0], from[1], from[2]);
-        const b = srgbToOklab(to[0], to[1], to[2]);
-        widest = Math.max(widest, Math.hypot(a.L - b.L, a.a - b.a, a.b - b.b, 255));
+    // failure a heatmap could not be read through.
+    //
+    // The bound is derived rather than asserted, and it is an **upper** bound rather than the widest
+    // pair anyone can find: OKLab's own bounding box over the sRGB cube, whose diagonal no two
+    // colours in that cube can exceed, plus the full span of the coverage axis. Sampling for the
+    // widest pair instead would measure something smaller (the cube's corners reach only 361) and
+    // would prove nothing about the colours between them.
+    const low = [Infinity, Infinity, Infinity];
+    const high = [-Infinity, -Infinity, -Infinity];
+    // A stride of 5 divides 255 exactly, so every axis reaches both ends of the cube — which is
+    // where OKLab's own extremes sit, and therefore what makes the box a box rather than a sample.
+    for (let r = 0; r <= 255; r += 5) {
+      for (let g = 0; g <= 255; g += 5) {
+        for (let b = 0; b <= 255; b += 5) {
+          const color = srgbToOklab(r, g, b);
+          for (const [axis, value] of [color.L, color.a, color.b].entries()) {
+            low[axis] = Math.min(low[axis] ?? Infinity, value);
+            high[axis] = Math.max(high[axis] ?? -Infinity, value);
+          }
+        }
       }
     }
+    const span = (axis: number) => (high[axis] ?? 0) - (low[axis] ?? 0);
+    const widest = Math.hypot(span(0), span(1), span(2), FULLY_OPAQUE);
 
+    // The box is the one this claim rests on, so a lattice that missed the gamut would be caught
+    // here rather than silently shrinking the bound it is meant to establish.
+    expect(span(0)).toBeCloseTo(255, 0);
+    expect(widest).toBeGreaterThan(400);
     expect(widest).toBeLessThan(65535 / DIFFERENCE_PRECISION);
-    // And with enough headroom that the bound is not the thing being tuned: a third of the range
-    // is unused, so a future axis or a wider gamut has somewhere to go before this has to move.
-    expect(widest).toBeLessThan((2 / 3) * (65535 / DIFFERENCE_PRECISION));
+    // And with enough headroom that the bound is not the thing being tuned: three fifths of the
+    // range is unused, so a future axis or a wider gamut has somewhere to go before this has to
+    // move. Stated as the *floor* on that headroom rather than as the figure itself, which would
+    // fail on a rounding change without anything being wrong.
+    expect(widest).toBeLessThan(0.5 * (65535 / DIFFERENCE_PRECISION));
   });
 });
-
-/** The eight corners of the sRGB cube, which is where OKLab's own extremes are found. */
-const CORNERS: readonly (readonly [number, number, number])[] = [
-  [0, 0, 0],
-  [255, 0, 0],
-  [0, 255, 0],
-  [0, 0, 255],
-  [255, 255, 0],
-  [255, 0, 255],
-  [0, 255, 255],
-  [255, 255, 255],
-];

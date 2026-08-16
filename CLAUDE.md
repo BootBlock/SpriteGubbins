@@ -544,7 +544,7 @@ in every respect *but* case is a failure. Deliberately not membership: sixty-two
 free text no pool offers, and `Domed lid over a banded body` is sentence case because it is a worked
 example's own wording rather than a name the app suggests.
 
-**Two rules of thumb**
+**Three rules of thumb**
 
 - If a token *doesn't* exist for a genuinely new semantic role, **add the token** to the
   `@theme` block in [src/index.css](src/index.css) rather than hard-coding the value at the
@@ -565,9 +565,10 @@ example's own wording rather than a name the app suggests.
   `src/constants/palettes/`, which is the colours real hardware could display.
 - **The difference heatmap's ramp is the third, and it is exempt on a different ground.** Those two
   are colours that are not the app's; `src/constants/differenceRamp.ts` holds four that **are** —
-  the page ground, `emerald`, `gold` and `rose` — because they are painted into **pixel data**,
-  inside a pure function a worker may run, where there is no element to carry a class and no
-  stylesheet to read. So the exemption is only from the *mechanism*, never from the palette: each
+  the page ground, `emerald`, `gold` and `rose` — because they are painted into **pixel data**. A
+  pixel has no element to carry a class, and the code that writes it is a pure function in
+  `src/utils/`, where reading a computed style is banned outright. So the exemption is only from
+  the *mechanism*, never from the palette: each
   stop names the token it mirrors and states the same `oklch()` triple `index.css` states, `oklab.ts`
   resolves it to bytes, and `tests/design-tokens.test.ts` reads the stylesheet and fails if the two
   part company. **A new colour chosen here rather than mirrored is the thing this row forbids.**

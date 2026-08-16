@@ -21,7 +21,7 @@ import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/
  * is now load-bearing rather than pedantry. `IdentityPaletteCapture`'s toast already spells it this
  * way.
  */
-export function colourCount(colors: number): string {
+function colourCount(colors: number): string {
   return `${String(colors)} ${colors === 1 ? 'colour' : 'colours'}`;
 }
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_DIFFERENCE_SCALE,
   DEFAULT_KEY_TOLERANCE,
+  DIFFERENCE_SCALES,
   FRINGE_TOLERANCE_CEILING,
   FRINGE_TOLERANCE_FACTOR,
   KEY_SHADING_LATITUDE,
@@ -49,5 +51,24 @@ describe('the keying tolerances', () => {
     // whole change exists to catch goes back to sitting on top of the artwork. Nothing throws — the
     // arithmetic is still valid, it just discounts nothing.
     expect(KEY_SHADING_LATITUDE).toBeGreaterThan(1);
+  });
+});
+
+/**
+ * The same invariant, for the second ladder on this tab.
+ *
+ * `DIFFERENCE_SCALES` is offered through the same `SegmentedChoice` as the keying tolerances above,
+ * so it fails the same way and just as quietly: a default that is not *on* the ladder renders a row
+ * with nothing pressed, and the reader has no way back to the value the panel opened with.
+ */
+describe('the difference scales', () => {
+  it('offers the default as one of its options, or nothing looks selected', () => {
+    expect(DIFFERENCE_SCALES).toContain(DEFAULT_DIFFERENCE_SCALE);
+  });
+
+  it('climbs, so a rung further along always means a coarser reading', () => {
+    // The control is read as "how closely am I looking", which only holds if the numbers ascend —
+    // and the tooltip explains the rungs in that order.
+    expect([...DIFFERENCE_SCALES]).toStrictEqual([...DIFFERENCE_SCALES].sort((a, b) => a - b));
   });
 });

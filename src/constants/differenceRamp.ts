@@ -2,12 +2,12 @@
  * The colours the difference heatmap paints, as the four stops of one ramp.
  *
  * **This is a colour written down outside `src/index.css`, which needs a reason, and here it is:**
- * the heatmap is painted *into pixel data*, and the pixels are produced in a pure function that a
- * worker may run. There is no element to put a class on, no computed style to read, and no CSS at
- * all on that thread — so the values have to be resolvable in code. The same argument the palette
- * library makes for `src/constants/palettes/`, arriving from the other direction: those are colours
- * a machine could display, this is a colour the app is drawing with, and neither can be a utility
- * class.
+ * the heatmap is painted *into pixel data*. A pixel has no element to carry a class, and the code
+ * that writes it is a pure function in `src/utils/`, where reading a computed style is banned
+ * outright — so the values have to be resolvable in code, with nothing to resolve them from. The
+ * same argument the palette library makes for `src/constants/palettes/`, arriving from the other
+ * direction: those are colours a machine could display, this is a colour the app is drawing with,
+ * and neither can be a utility class.
  *
  * What the exemption does **not** extend to is choosing new colours. Every stop is one of the app's
  * own tokens, stated exactly as `index.css` states it — the same `oklch()` triple, in the same

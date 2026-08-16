@@ -1,5 +1,5 @@
 import type { DifferenceMap, GridMesh } from '../types/quantiser.ts';
-import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 import { DIFFERENCE_PRECISION } from '../constants/quantiser.ts';
 import { srgbToOklabInto } from './oklab.ts';
 import type { MutableOklab } from './oklab.ts';
@@ -8,13 +8,14 @@ import type { MutableOklab } from './oklab.ts';
  * How far each output pixel sits from the patch of source it stands for, in scaled OKLab.
  *
  * The quantiser's dials are conservative by design, and that is exactly what makes them hard to
- * judge: a second cleanup pass moves 34 pixels out of thirty thousand, and thirty-four pixels a
- * shade apart are invisible in a preview at any magnification a whole sheet fits in. The result
- * pane can say *what* the sheet became and cannot say *what it cost* — so a dial that is working
- * and a dial that is doing nothing look identical, which is the reading two separate user reports
- * arrived at. This is the measurement behind that judgement: one number per output pixel, painted
- * where the pixel is, so a change of half a shade in one corner of the sheet is somewhere to look
- * rather than something to find.
+ * judge. On the reference sheet a second cleanup pass moves **404** of 44,099 pixels at the
+ * settings `DIFFERENCE_SCALES` is calibrated on, and **62** at the ink-weighted settings the report
+ * that raised it was using — and a few hundred pixels a shade apart are invisible in a preview at
+ * any magnification a whole sheet fits in. The result pane can say *what* the sheet became and
+ * cannot say *what it cost*, so a dial that is working and a dial that is doing nothing look
+ * identical, which is the reading two separate user reports arrived at. This is the measurement
+ * behind that judgement: one number per output pixel, painted where the pixel is, so a change of
+ * half a shade in one corner of the sheet is somewhere to look rather than something to find.
  *
  * **One cell, one number: the mean distance from the cell's own source pixels to the colour that
  * replaced them.** Mean rather than worst, because the question a cell answers is how well it
@@ -54,7 +55,8 @@ export function differenceMap(source: ImageData, result: ImageData, mesh: GridMe
     for (const [column, left] of mesh.x.entries()) {
       const right = Math.min(mesh.x[column + 1] ?? source.width, source.width);
 
-      const at = pixelOffset(width, column, row);
+      const cell = row * width + column;
+      const at = cell * CHANNELS_PER_PIXEL;
       const resultAlpha = result.data[at + 3] ?? 0;
       srgbToOklabInto(cellColor, result.data[at] ?? 0, result.data[at + 1] ?? 0, result.data[at + 2] ?? 0);
 
@@ -84,7 +86,7 @@ export function differenceMap(source: ImageData, result: ImageData, mesh: GridMe
       // A mesh cut can land on the image's own edge, which closes a cell over no pixels at all.
       // Nothing was replaced there, so nothing was lost there.
       const mean = counted === 0 ? 0 : sum / counted;
-      cells[at / 4] = Math.round(mean * DIFFERENCE_PRECISION);
+      cells[cell] = Math.round(mean * DIFFERENCE_PRECISION);
       if (mean > peak) peak = mean;
       // Empty on both sides is not a faithful cell, it is an absent one — averaged in, the empty
       // margin around a sprite would drag the sheet's figure towards zero in proportion to how much

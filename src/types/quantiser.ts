@@ -270,7 +270,14 @@ export interface DifferenceMap {
   /** The result's own dimensions — one cell here for one pixel there. */
   readonly width: number;
   readonly height: number;
-  /** Row-major, `distance × DIFFERENCE_PRECISION`. Read it through `differenceAt`. */
+  /**
+   * Row-major, one entry per pixel of {@link QuantiseResult.image}, holding
+   * `distance × DIFFERENCE_PRECISION`.
+   *
+   * There is deliberately no accessor. The one consumer that reads it in bulk converts its
+   * *threshold* into these units once and compares in them — which is the cheap direction at
+   * sixteen million cells — so a per-cell reader would exist only to be avoided.
+   */
   readonly cells: Uint16Array;
   /**
    * The mean distance over the cells that carry anything, in unscaled units.

@@ -34,8 +34,9 @@
  * apart, one of them can be corrected without the other, and the pair stops round-tripping — which is
  * a failure with no symptom until a colour comes back subtly wrong. {@link oklchToOklab} and
  * {@link oklabToSrgb} are the way back, and exist for the difference heatmap: it paints the app's own
- * role colours into pixel data inside a worker, where `index.css` cannot be reached and the tokens'
- * `oklch()` triples have to be resolved in code. `oklab.test.ts` pins the round trip.
+ * role colours into **pixel data**, which has no element to carry a class and no computed style to
+ * read — so the tokens' `oklch()` triples have to be resolved in code. `oklab.test.ts` pins the
+ * round trip.
  */
 
 import type { Rgba } from '../types/quantiser.ts';

@@ -1193,10 +1193,12 @@ describe('the difference heatmap’s ramp', () => {
     oklch: [Number(stop[2]), Number(stop[3]), Number(stop[4])] as [number, number, number],
   }));
 
-  it('was parsed at all, so nothing below can pass by matching nothing', () => {
-    // The guard every regex-driven assertion in this file needs: a ramp reformatted past this
-    // pattern would otherwise leave an empty list and a suite that checked no colours at all.
-    expect(stops.length).toBeGreaterThanOrEqual(3);
+  it('was parsed whole, so nothing below can pass by matching less than all of it', () => {
+    // The guard every regex-driven assertion in this file needs, pinned to the *count* rather than
+    // to a floor: only the first and last stops are checked by name below, so a middle one dropping
+    // out of the pattern would otherwise stop being compared with the stylesheet and nothing would
+    // say so. A fifth stop is meant to fail here — it needs a decision, not a silent pass.
+    expect(stops).toHaveLength(4);
   });
 
   it.each(stops.map((stop) => [stop.property, stop.oklch] as const))(

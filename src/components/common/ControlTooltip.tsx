@@ -21,8 +21,9 @@ interface ControlTooltipProps {
    * they are written in the string: they resolve by where the utilities land in the generated
    * stylesheet, which no call site can see, so adding one beside the default would be a coin toss.
    *
-   * Whatever is passed has to establish a containing block — `relative` in all but one call site,
-   * `absolute` in the other. The card is positioned inside this wrapper the ordinary way and only
+   * Whatever is passed has to establish a containing block — `relative` at most call sites, and
+   * `absolute` at the two that place the control themselves (the preset search field's clear
+   * button, and the quantiser's wipe divider). The card is positioned inside this wrapper the ordinary way and only
    * *then* lifted into the top layer, so a browser without the popover API falls back to those
    * offsets, and a static wrapper would resolve them against some arbitrary ancestor.
    */

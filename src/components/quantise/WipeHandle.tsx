@@ -54,6 +54,12 @@ export function WipeHandle({ at, onMove, frameRef }: WipeHandleProps) {
   }
 
   function beginDrag(event: ReactPointerEvent<HTMLDivElement>): void {
+    // The primary button only — which a finger and a nib also report, so the touch gesture this
+    // control deliberately claims is unaffected. `useDragPan` states the reason for the mouse: the
+    // middle button is the browser's own autoscroll and the right one opens the context menu, so
+    // answering either takes something away. Here it would also *move the divider* before the menu
+    // appeared, since the press positions it.
+    if (event.button !== 0) return;
     if (dragging.current !== null) return;
     // Suppresses the text selection the press would otherwise start across both previews, and the
     // drag image a pointer over an image would offer.
@@ -66,6 +72,15 @@ export function WipeHandle({ at, onMove, frameRef }: WipeHandleProps) {
 
   function continueDrag(event: ReactPointerEvent<HTMLDivElement>): void {
     if (dragging.current !== event.pointerId) return;
+    // A move with the primary button no longer among those held means the release happened
+    // somewhere this element never heard about. The case that makes the mask necessary rather than
+    // tidy is a **chorded** release — press left, press right, release left — where the platform
+    // fires no `pointerup` at all, because for a mouse that event arrives only on the *last* button
+    // up. Without this the divider goes on following a pointer nobody is pressing.
+    if ((event.buttons & 1) === 0) {
+      dragging.current = null;
+      return;
+    }
     moveTo(event.clientX);
   }
 

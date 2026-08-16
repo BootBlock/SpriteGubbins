@@ -519,12 +519,21 @@ export const PREVIEW_ZOOMS = [1, 2, 4, 8] as const;
  *
  * The map is one figure per pixel of a result that reaches {@link MAX_IMAGE_PIXELS} at a grid of 1,
  * so it is held as `Uint16Array` rather than as floats — two bytes instead of four, which is
- * thirty-three megabytes instead of sixty-seven on the largest sheet the tab admits. A power of two
- * so the conversion is exact in both directions, and this one because it is the largest that cannot
- * overflow: the widest distance four 0–255 axes admit is a little over 419, and 419 × 64 leaves a
- * third of the range unused. `differenceMap.test.ts` pins that headroom, because a `Uint16Array`
- * **wraps** rather than clamping — an overflow here would not be a bright cell, it would be a dark
- * one where the sheet was at its worst.
+ * thirty-three megabytes instead of sixty-seven on the largest sheet the tab admits.
+ *
+ * A power of two, so the conversion is exact in both directions, and **this** power of two because
+ * it is the smallest that cannot band at the finest rung the scale offers. `heatmapImage` resolves
+ * the ramp to 256 levels, and {@link DIFFERENCE_SCALES} opens at a ceiling of 4 — so 4 × 64 is 256
+ * stored steps spread across 256 levels, one apiece. At 32 steps to the unit that rung would have
+ * half the values it can show and every other level would be unreachable.
+ *
+ * It also cannot overflow, which matters more than the resolution does: a `Uint16Array` **wraps**
+ * rather than clamping, so a distance past 1023.98 would come back small — a dark cell exactly
+ * where the sheet was at its worst, which is the one failure a heatmap cannot be read through. No
+ * distance can exceed the diagonal of OKLab's own bounding box over the sRGB cube with the alpha
+ * axis added — L spans 255 and each chroma axis about 130, which with 255 of coverage comes to a
+ * little under **405**. That is two fifths of the range, and `differenceMap.test.ts` re-derives it
+ * from the cube rather than restating it.
  */
 export const DIFFERENCE_PRECISION = 64;
 
@@ -778,7 +787,7 @@ export const QUANTISE_TOOLTIPS = {
   previewMode:
     'Which of three ways the result is shown. Side by side is the pair of frames, each on the same part of the sheet at the same magnification. Wipe lays them over one another in a single frame under a divider you can drag, so the very same screen pixels can be seen before and after. Difference replaces the result with a map of what the reduction cost: one mark per drawn pixel, coloured by how far that pixel ended up from the patch of the sheet it stands for — dark where it is faithful, green then gold as it drifts, red where it has lost what it replaced. It changes only what this panel draws; the result, the download and everything stored are the same in all three.',
   differenceScale:
-    'How large a difference has to be to reach the top of the heatmap’s ramp, measured the way every colour tolerance on this tab is. Lower rungs grade the differences a sheet is mostly made of — on a typical sheet seven drawn pixels in ten sit under 1 — and paint everything coarser than the rung in red. Higher rungs flatten those to dark and keep the ramp for the edges, where a patch that straddled a contour never had one colour to be reduced to, and for keyed sheets, whose silhouettes score past 200 wherever transparency landed differently from the artwork. The scale is fixed rather than fitted to each sheet on purpose: a ramp that re-scaled itself when you moved a dial could not be compared with the one you were looking at a moment ago.',
+    'How large a difference has to be to reach the top of the heatmap’s ramp, measured the way every colour tolerance on this tab is. Lower rungs grade the differences a sheet is mostly made of — on a typical sheet six drawn pixels in ten sit under 1 — and paint everything coarser than the rung in red. Higher rungs flatten those to dark and keep the ramp for the edges, where a patch that straddled a contour never had one colour to be reduced to, and for keyed sheets, whose silhouettes score past 200 wherever transparency landed differently from the artwork. The scale is fixed rather than fitted to each sheet on purpose: a ramp that re-scaled itself when you moved a dial could not be compared with the one you were looking at a moment ago.',
   wipe: 'Drag this to move the divider between the sheet as it arrived, on its left, and the quantised sheet on its right. Both are drawn at the same magnification on the same part of the sheet, so the pixels immediately either side of the divider are the same pixels before and after — which is what makes a change of a single shade findable. It can also be moved with the arrow keys once it has focus, and dragging anywhere else in the frame pans both images together as usual.',
   // Where panning is named. The grab cursor only appears once a pointer is already over the image,
   // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence

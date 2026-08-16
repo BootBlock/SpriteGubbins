@@ -39,8 +39,8 @@ function show(start = 0.5) {
 }
 
 /** A press on the divider, which is what a drag is measured from. */
-function press(handle: HTMLElement, clientX: number) {
-  fireEvent.pointerDown(handle, { pointerId: 1, pointerType: 'mouse', button: 0, buttons: 1, clientX });
+function press(handle: HTMLElement, clientX: number, button = 0, buttons = 1) {
+  fireEvent.pointerDown(handle, { pointerId: 1, pointerType: 'mouse', button, buttons, clientX });
 }
 
 describe('WipeHandle', () => {
@@ -59,7 +59,7 @@ describe('WipeHandle', () => {
     press(handle, FRAME.left + 100);
     expect(at()).toBeCloseTo(0.25, 4);
 
-    fireEvent.pointerMove(handle, { pointerId: 1, clientX: FRAME.left + 300 });
+    fireEvent.pointerMove(handle, { pointerId: 1, buttons: 1, clientX: FRAME.left + 300 });
     expect(at()).toBeCloseTo(0.75, 4);
   });
 
@@ -72,7 +72,7 @@ describe('WipeHandle', () => {
     press(handle, FRAME.left - 4000);
     expect(at()).toBe(0);
 
-    fireEvent.pointerMove(handle, { pointerId: 1, clientX: FRAME.left + 9000 });
+    fireEvent.pointerMove(handle, { pointerId: 1, buttons: 1, clientX: FRAME.left + 9000 });
     expect(at()).toBe(1);
   });
 
@@ -81,12 +81,46 @@ describe('WipeHandle', () => {
     // teleport the divider to wherever that pointer happened to be.
     const { handle, at } = show(0.5);
 
-    fireEvent.pointerMove(handle, { pointerId: 9, clientX: FRAME.left + 400 });
+    fireEvent.pointerMove(handle, { pointerId: 9, buttons: 1, clientX: FRAME.left + 400 });
     expect(at()).toBeCloseTo(0.5, 4);
 
     press(handle, FRAME.left + 200);
     fireEvent.pointerUp(handle, { pointerId: 1 });
-    fireEvent.pointerMove(handle, { pointerId: 1, clientX: FRAME.left });
+    fireEvent.pointerMove(handle, { pointerId: 1, buttons: 1, clientX: FRAME.left });
+    expect(at()).toBeCloseTo(0.5, 4);
+  });
+
+  it('answers the primary button and leaves the other two to the browser', () => {
+    // The press *positions* the divider, so answering a right-click would move it before the
+    // context menu appeared — and `preventDefault` would suppress the menu that press was for.
+    // The middle button is the browser's own autoscroll across the whole handle strip.
+    const { handle, at } = show(0.5);
+
+    press(handle, FRAME.left + 40, 2, 2);
+    expect(at()).toBeCloseTo(0.5, 4);
+
+    press(handle, FRAME.left + 40, 1, 4);
+    expect(at()).toBeCloseTo(0.5, 4);
+
+    // And the primary button still works, so this is a guard rather than a control that has died.
+    press(handle, FRAME.left + 40);
+    expect(at()).toBeCloseTo(0.1, 4);
+  });
+
+  it('lets go when the button does, even where the platform sends no release', () => {
+    // A **chorded** release — press left, press right, release left — fires no `pointerup` at all,
+    // because for a mouse that arrives only on the *last* button up. The move that follows reports
+    // the other button still held, and reading `buttons` is the only thing that sees it. Without
+    // this the divider follows a pointer nobody is pressing.
+    const { handle, at } = show(0.5);
+    press(handle, FRAME.left + 200);
+    expect(at()).toBeCloseTo(0.5, 4);
+
+    fireEvent.pointerMove(handle, { pointerId: 1, buttons: 2, clientX: FRAME.left + 360 });
+    expect(at()).toBeCloseTo(0.5, 4);
+
+    // And it stays let go of: a later move with the button back down is a new gesture, not this one.
+    fireEvent.pointerMove(handle, { pointerId: 1, buttons: 1, clientX: FRAME.left + 400 });
     expect(at()).toBeCloseTo(0.5, 4);
   });
 
