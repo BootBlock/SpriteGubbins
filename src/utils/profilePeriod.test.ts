@@ -8,9 +8,10 @@ import { measureSheetScale } from './pixelGrid.ts';
 /**
  * A generated-style armour sheet in miniature: drifting ~6px cells, a dark contour ring, interior
  * detail marks — the strong off-grid edges that pollute every line-list statistic — per-pixel
- * wobble, and softening.
+ * wobble, and softening. The mark pattern is the caller's, because where the detail falls is
+ * exactly what the regression cases below vary.
  */
-function armourSheet(): ImageData {
+function armourSheet(mark: (cellX: number, cellY: number) => boolean): ImageData {
   const spacings = [6, 7, 6, 6, 7, 6, 7, 6, 6, 7, 6, 6, 7, 6, 7, 6, 6, 7, 6, 6];
   const starts = [0];
   for (const spacing of spacings) starts.push((starts[starts.length - 1] ?? 0) + spacing);
@@ -31,9 +32,9 @@ function armourSheet(): ImageData {
     const onRing =
       ((cellX === 5 || cellX === 14) && cellY >= 5 && cellY <= 14) ||
       ((cellY === 5 || cellY === 14) && cellX >= 5 && cellX <= 14);
-    // Interior detail: a hard mark through the middle of every fourth cell, off the grid entirely.
+    // Interior detail: a hard mark through the middle of the marked cells, off the grid entirely.
     const inCellX = x - (starts[cellX] ?? 0);
-    const onMark = cellX % 4 === 2 && cellY % 3 === 1 && inCellX >= 2 && inCellX < 4;
+    const onMark = mark(cellX, cellY) && inCellX >= 2 && inCellX < 4;
     const base: Rgba = onRing
       ? { r: 12, g: 12, b: 14, a: 255 }
       : onMark
@@ -54,6 +55,9 @@ function armourSheet(): ImageData {
   return soften(crisp);
 }
 
+/** The shipped armour miniature: a hard mark through every fourth-by-third cell. */
+const armourMarks = (cellX: number, cellY: number): boolean => cellX % 4 === 2 && cellY % 3 === 1;
+
 describe('estimateProfilePeriod', () => {
   it('reads a detailed drifting sheet through the pollution that defeats the line list', () => {
     // The reported failure in miniature: a real generated sheet offered no candidate at all,
@@ -61,11 +65,33 @@ describe('estimateProfilePeriod', () => {
     // boundaries, and the median-of-spacings reading demands agreement those extra gaps destroy.
     // Autocorrelation uses the whole profile unthresholded, and the pixel grid's periodic
     // component peaks at the pitch however much detail rides on top.
-    const sheet = armourSheet();
+    const sheet = armourSheet(armourMarks);
 
     expect(estimateMeshPeriod(sheet)).toBeNull();
     expect(estimateProfilePeriod(sheet)).toBe(6);
     expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'ESTIMATED' });
+  });
+
+  it('reads the same sheet wherever the marks fall, not just where the fixture put them', () => {
+    // The same sheet with its detail phase-shifted one cell each way. An estimator calibrated to
+    // the mark placement rather than the pitch would answer one of these and refuse the other,
+    // which is a coin flip wearing a threshold's clothes.
+    const shifted = armourSheet((cellX, cellY) => cellX % 4 === 3 && cellY % 3 === 0);
+    expect(estimateProfilePeriod(shifted)).toBe(6);
+  });
+
+  it('never lets one axis’s detail cancel the other’s fundamental into a doubled offer', () => {
+    // Marks in every second column-cell anticorrelate the columns profile at the true pitch. When
+    // the axes were summed before reading, that cancellation erased the rows axis's clean 6/7
+    // fundamental and the reading offered 13 — the double, which merges the art's cells for good —
+    // on a sheet the pipeline previously refused outright. Read per axis, the polluted axis
+    // disagrees or refuses, and either way no doubled offer survives; whether the answer is the
+    // true 6 or an honest refusal, it must never be the ghost.
+    const alternatingColumns = armourSheet((cellX) => cellX % 2 === 0);
+    expect(estimateProfilePeriod(alternatingColumns)).not.toBe(13);
+
+    const alternatingBoth = armourSheet((cellX, cellY) => cellX % 2 === 0 && cellY % 2 === 0);
+    expect(estimateProfilePeriod(alternatingBoth)).not.toBe(13);
   });
 
   it('settles a fractional pitch on a neighbouring integer, not on its doubled ghost', () => {
@@ -92,6 +118,31 @@ describe('estimateProfilePeriod', () => {
 
     const period = estimateProfilePeriod(sheet);
     expect(period === 6 || period === 7, `settled on ${String(period)}`).toBe(true);
+  });
+
+  it('settles a small fractional pitch off its tripled ghost, which no halving reaches', () => {
+    // Art at four and a third puts its sharpest integer-lag peak at thirteen — *three* times the
+    // truth, so a descent that only halves lands on six-and-a-half's neighbours and stops. The
+    // divisor-of-three leg is what brings it home; either neighbour of the true pitch is right.
+    const pitch = 4.35;
+    const cells = 28;
+    const size = Math.round(cells * pitch);
+    const sheet = soften(
+      imageFrom(size, size, (x, y) => {
+        const cellX = Math.floor(x / pitch);
+        const cellY = Math.floor(y / pitch);
+        const index = cellY * cells + cellX;
+        return {
+          r: (index * 71 + 40) % 200,
+          g: (index * 149 + 80) % 200,
+          b: (index * 37 + 120) % 200,
+          a: 255,
+        };
+      }),
+    );
+
+    const period = estimateProfilePeriod(sheet);
+    expect(period === 4 || period === 5, `settled on ${String(period)}`).toBe(true);
   });
 
   it('refuses smooth artwork, whose profile has no structure to correlate', () => {

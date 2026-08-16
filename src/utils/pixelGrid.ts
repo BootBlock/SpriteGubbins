@@ -24,10 +24,10 @@ import { estimateProfilePeriod } from './profilePeriod.ts';
  * `estimateProfilePeriod` covers what generators actually return: drifting blocks *with interior
  * detail* — straps and markings whose edges pollute any statistic built from detected lines, but
  * which autocorrelation of the whole profile reads through. `estimateMeshPeriod` stays behind it
- * for the sheets whose statistics are too thin for the correlation's gates — small sheets, sparse
- * art — where a clean median of a handful of boundary spacings can still speak. Every estimated
- * answer is offered under the same `ESTIMATED` hedge: a candidate to click and judge, never
- * adopted on its own.
+ * for *small* sheets: a handful of drifting cells across a few dozen pixels sits under the
+ * correlation's repeat floor, and a clean median of the boundary spacings still speaks there —
+ * `meshPeriod.test.ts` holds the sheet that proves the path. Every estimated answer is offered
+ * under the same `ESTIMATED` hedge: a candidate to click and judge, never adopted on its own.
  *
  * Running each reading only on the one before's refusal is also what keeps the survey cheap where
  * it can be: a crisp sheet pays for one pass, and only the sheets each later reading exists for
