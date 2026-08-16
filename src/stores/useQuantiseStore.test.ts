@@ -56,9 +56,13 @@ describe('useQuantiseStore', () => {
     const store = useQuantiseStore.getState();
     store.setSource(SHEET);
     store.setVote('INK_WEIGHTED');
+    store.setLineStrength(2.5);
+    store.setFillCleanup(48);
     store.setSource({ name: 'another.png', image: createImage(8, 8) });
 
     expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
+    expect(useQuantiseStore.getState().lineStrength).toBe(2.5);
+    expect(useQuantiseStore.getState().fillCleanup).toBe(48);
   });
 
   it('clears the sheet and every control with it', () => {
@@ -70,6 +74,8 @@ describe('useQuantiseStore', () => {
     store.setKeyingEnabled(true);
     store.setKeyTolerance(128);
     store.setVote('K_CENTROID');
+    store.setLineStrength(2);
+    store.setFillCleanup(64);
 
     store.clear();
 
@@ -79,6 +85,8 @@ describe('useQuantiseStore', () => {
       keyingEnabled: false,
       keyTolerance: DEFAULT_KEY_TOLERANCE,
       vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
     });
   });
 

@@ -350,16 +350,46 @@ export const LINE_INK_CEILING = 64;
 export const LINE_TRIM_FLOOR = 255 - LINE_INK_CEILING;
 
 /**
- * How much beyond its own share a cell's ink pulls the ink-weighted reading toward it.
+ * The line strengths the ink-weighted reading offers: how much beyond its own share a cell's ink
+ * pulls the blend toward it, in the order the control steps through them.
  *
- * At 1 the blend is the plain proportional mean the ink already had, and a one-third contour slice
- * darkens its cell by a third — legible as shading, not as a line. Lines are what the reading is
- * for, so a qualifying ink share pulls half again its weight, capped at a full pull: the one-third
- * slice reads as half ink, and a two-thirds slice reads as the line it is. Chosen against the
- * armour sheet the reading was built for, where 1 left contours faint and 2 blackened whole
- * panels.
+ * At 1 the blend is the plain proportional mean the ink already had, and a one-third contour
+ * slice darkens its cell by a third — legible as shading, not as a line. Each step up pulls the
+ * qualifying ink harder, capped at a full pull, so a one-third slice reads as half ink at 1.5 and
+ * as five sixths at 2.5. A range rather than one figure because the right pull is the artwork's:
+ * measured on the armour sheet the reading was built for, 1.5 kept contours present, 2 made them
+ * read as drawn, and 2.5 was the crispest without blackening a panel — three honest answers to
+ * three tastes, which is what a control is for.
  */
-export const INK_BLEND_EMPHASIS = 1.5;
+export const LINE_STRENGTHS = [1, 1.5, 2, 2.5] as const;
+
+/** The line strength the tab opens with — the middle of the range, present but not heavy. */
+export const DEFAULT_LINE_STRENGTH = 1.5;
+
+/**
+ * The speckle-merge tolerances the fill cleanup offers, `0` meaning the pass does not run.
+ *
+ * The failure the pass serves: flat fills come back speckled, because neighbouring cells of one
+ * surface resolve to near-identical-but-distinct colours — blends and palette entries a few steps
+ * apart with no perceptual meaning. The cleanup snaps a pixel to its neighbourhood's most common
+ * colour when at least {@link SPECKLE_NEIGHBOUR_MAJORITY} of its eight neighbours agree *and* the
+ * pixel already sits within the tolerance of that colour, measured as straight-line RGB distance.
+ * The tolerance is what keeps lines safe: ink against a green fill sits hundreds of steps away,
+ * far past every rung offered, so a line pixel is never merged however many neighbours agree. The
+ * rungs step by 16 because the speckle being merged is palette-adjacent — entries a median cut
+ * splits 10–40 apart — and 64 is where genuinely distinct shades begin to fuse.
+ */
+export const FILL_CLEANUP_TOLERANCES = [0, 16, 32, 48, 64] as const;
+
+/**
+ * How many of a pixel's eight neighbours must already agree before the fill cleanup may snap it.
+ *
+ * Five is the smallest strict majority: fewer, and two colours meeting along a straight boundary
+ * could each claim the other's edge pixels — four neighbours on each side — and the boundary
+ * would crawl. A majority keeps the pass to what it is for: a lone odd pixel inside a settled
+ * region, never a negotiation between two regions.
+ */
+export const SPECKLE_NEIGHBOUR_MAJORITY = 5;
 
 /**
  * How many refinement passes the k-centroid reading's two clusters take per cell.
@@ -635,6 +665,10 @@ export const QUANTISE_TOOLTIPS = {
   keyTolerance:
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
   vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour — and, once a colour reduction is in force, keeps a near-black outline or bright trim even as a minority. It never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce.',
+  lineStrength:
+    'How hard the ink-weighted reading pulls a patch toward the line crossing it. At 1× a line darkens its patch only by the share it actually holds, which reads as shading; each step up makes a qualifying line claim more of the patch, so contours come out more defined at the cost of thicker-looking darks. It appears only while the Downscale control is set to the ink-weighted reading, because the other readings do not blend. Step it up when outlines still look faint, and back down if dark areas start to swallow detail.',
+  fillCleanup:
+    'How far apart two colours may sit and still be merged when a pixel disagrees with its neighbours. Flat fills often come back speckled — neighbouring pixels land on near-identical colours with no perceptual difference — and this pass snaps such a pixel to its neighbourhood’s most common colour, but only when most of its neighbours already agree and the colours are within this distance. Off leaves the result exactly as the reading made it. Lines and genuine detail sit far outside every rung offered, so they are never merged; raise it until the fills settle, and back off if close shades begin to fuse.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

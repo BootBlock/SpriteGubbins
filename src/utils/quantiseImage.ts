@@ -3,6 +3,7 @@ import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
+import { despeckle } from './despeckle.ts';
 import { countColors } from './imageData.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
@@ -78,7 +79,7 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // cluster centre — and reducing first would collapse exactly the tones it exists to blend; so
   // those readings see the unreduced source, and the reduction runs on their output, where the
   // blended tones are real colours a palette chosen from it can keep.
-  const output =
+  const resolved =
     settings.vote === 'DOMINANT'
       ? downscaleNearest(
           alignToGrid(
@@ -94,9 +95,16 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
           mesh,
         )
       : reduceAfter(
-          settings.vote === 'INK_WEIGHTED' ? inkWeightedCells(source, mesh) : kCentroidCells(source, mesh),
+          settings.vote === 'INK_WEIGHTED'
+            ? inkWeightedCells(source, mesh, settings.lineStrength)
+            : kCentroidCells(source, mesh),
           settings.reduction,
         );
+
+  // Last of all, whatever the reading: speckle is a property of any reading's output, and the
+  // cleanup wants to see the final colours — palette entries included — not the ones a reduction
+  // is about to replace.
+  const output = despeckle(resolved, settings.fillCleanup);
 
   return {
     image: output,

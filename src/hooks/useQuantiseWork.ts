@@ -79,6 +79,8 @@ export function useQuantiseWork(
   key: BackgroundKeying | null,
   reduction: ColorReduction | null,
   vote: VoteMethod,
+  lineStrength: number,
+  fillCleanup: number,
 ): QuantiseWork {
   const survey = useQuantiseAnswerStore((state) => state.survey);
   const attempt = useQuantiseAnswerStore((state) => state.attempt);
@@ -101,8 +103,8 @@ export function useQuantiseWork(
   const grid = gridOverride ?? (facts?.scale?.measurement === 'EXACT' ? facts.scale.grid : null);
 
   const settings = useMemo<QuantiseSettings | null>(
-    () => (grid === null ? null : { grid, key, reduction, vote }),
-    [grid, key, reduction, vote],
+    () => (grid === null ? null : { grid, key, reduction, vote, lineStrength, fillCleanup }),
+    [grid, key, reduction, vote, lineStrength, fillCleanup],
   );
 
   // The one comparison the rest of this is derived from: is the answer in hand an answer to the

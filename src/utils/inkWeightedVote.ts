@@ -1,4 +1,4 @@
-import { INK_BLEND_EMPHASIS, LINE_DARK_SHARE, LINE_INK_CEILING } from '../constants/quantiser.ts';
+import { LINE_DARK_SHARE, LINE_INK_CEILING } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
 import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
@@ -12,9 +12,10 @@ import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './ima
  * colour it outlines, which is what a cell here becomes. The body pixels' mean carries the local
  * hue; where the cell's ink — its darkest-quarter pixels, the same absolute anchor the dominant
  * vote's rescue uses — holds a share no anti-aliased speckle reaches, the mean is blended toward
- * the ink's own mean by that share, amplified by {@link INK_BLEND_EMPHASIS} so a one-third slice
- * reads as a line rather than a shadow. The mechanism is the inverse-bilateral weighting of
- * detail-preserving downscaling, specialised to the one detail pixel art cannot lose.
+ * the ink's own mean by that share, amplified by the caller's `emphasis` — the Line strength
+ * control's value, from `LINE_STRENGTHS` — so a one-third slice reads as a line rather than a
+ * shadow. The mechanism is the inverse-bilateral weighting of detail-preserving downscaling,
+ * specialised to the one detail pixel art cannot lose.
  *
  * **This reading averages, deliberately** — the one thing the dominant vote never does — so it
  * runs on unreduced colours and `quantiseImage` applies the palette step to its output, where the
@@ -27,7 +28,7 @@ import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './ima
  * verbatim, where a mean merely leans, so a soft pixel that would be dangerous there is dilution
  * here. Pure, deterministic, and one pass over the image.
  */
-export function inkWeightedCells(image: ImageData, mesh: GridMesh): ImageData {
+export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: number): ImageData {
   const output = createImage(mesh.x.length, mesh.y.length);
 
   for (const [cellY, top] of mesh.y.entries()) {
@@ -78,7 +79,7 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh): ImageData {
       const baseB = bodyCount > 0 ? bodyB / bodyCount : inkB / inkCount;
       // Ink pulls only once it holds a drawn line's share, and then in proportion.
       const qualifies = inkCount > 0 && inkCount * LINE_DARK_SHARE >= opaque;
-      const pull = qualifies ? Math.min(1, (inkCount / opaque) * INK_BLEND_EMPHASIS) : 0;
+      const pull = qualifies ? Math.min(1, (inkCount / opaque) * emphasis) : 0;
       const towardR = inkCount > 0 ? inkR / inkCount : baseR;
       const towardG = inkCount > 0 ? inkG / inkCount : baseG;
       const towardB = inkCount > 0 ? inkB / inkCount : baseB;

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
+import { DEFAULT_KEY_TOLERANCE, DEFAULT_LINE_STRENGTH } from '../constants/quantiser.ts';
 import type { ImportedImage, PixelGrid, VoteMethod } from '../types/quantiser.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
@@ -54,23 +54,34 @@ export interface QuantiseState {
    * and the splitter hands back eight sheets in one style, not eight styles.
    */
   readonly vote: VoteMethod;
+  /** The ink-weighted reading's pull, from `LINE_STRENGTHS` — workflow intent, like the vote. */
+  readonly lineStrength: number;
+  /** The fill cleanup's merge tolerance, from `FILL_CLEANUP_TOLERANCES` — `0` is off. */
+  readonly fillCleanup: number;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
   setKeyingEnabled(keyingEnabled: boolean): void;
   setKeyTolerance(keyTolerance: number): void;
   setVote(vote: VoteMethod): void;
+  setLineStrength(lineStrength: number): void;
+  setFillCleanup(fillCleanup: number): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
 
 /** What the tab opens with, and what `clear` puts back. */
-const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'keyingEnabled' | 'keyTolerance' | 'vote'> = {
+const EMPTY: Pick<
+  QuantiseState,
+  'source' | 'gridOverride' | 'keyingEnabled' | 'keyTolerance' | 'vote' | 'lineStrength' | 'fillCleanup'
+> = {
   source: null,
   gridOverride: null,
   keyingEnabled: false,
   keyTolerance: DEFAULT_KEY_TOLERANCE,
   vote: 'DOMINANT',
+  lineStrength: DEFAULT_LINE_STRENGTH,
+  fillCleanup: 0,
 };
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
@@ -108,6 +119,14 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setVote: (vote) => {
     set({ vote });
+  },
+
+  setLineStrength: (lineStrength) => {
+    set({ lineStrength });
+  },
+
+  setFillCleanup: (fillCleanup) => {
+    set({ fillCleanup });
   },
 
   // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is

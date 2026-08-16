@@ -222,6 +222,16 @@ export interface QuantiseSettings {
   readonly reduction: ColorReduction | null;
   /** Which cell reading turns the mesh into pixels — see {@link VoteMethod}. */
   readonly vote: VoteMethod;
+  /**
+   * How hard the ink-weighted reading pulls a cell toward its line — a value from
+   * `LINE_STRENGTHS`. Carried whatever the vote, and read only by `INK_WEIGHTED`.
+   */
+  readonly lineStrength: number;
+  /**
+   * The fill cleanup's speckle-merge tolerance — a value from `FILL_CLEANUP_TOLERANCES`, `0`
+   * leaving the result exactly as the reading made it. Applied to every reading's output.
+   */
+  readonly fillCleanup: number;
 }
 
 /** What came back: the transformed image, and the numbers that say what it did. */

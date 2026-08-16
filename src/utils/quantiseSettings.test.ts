@@ -10,6 +10,8 @@ const BASE: QuantiseSettings = {
   grid: 8,
   key: { color: MAGENTA, tolerance: 32 },
   vote: 'DOMINANT',
+  lineStrength: 1.5,
+  fillCleanup: 0,
   reduction: { kind: 'MAX_COLORS', maxColors: 32 },
 };
 
@@ -29,6 +31,8 @@ describe('sameQuantiseSettings', () => {
         grid: 8,
         key: { color: { ...MAGENTA }, tolerance: 32 },
         vote: 'DOMINANT',
+        lineStrength: 1.5,
+        fillCleanup: 0,
         reduction: { kind: 'MAX_COLORS', maxColors: 32 },
       }),
     ).toBe(true);
@@ -40,6 +44,9 @@ describe('sameQuantiseSettings', () => {
     // the control recompute rather than re-caption a stale result.
     expect(sameQuantiseSettings(BASE, { ...BASE, vote: 'INK_WEIGHTED' })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, vote: 'K_CENTROID' })).toBe(false);
+    // The two dials change the sheet too, and each alone must force a recompute.
+    expect(sameQuantiseSettings(BASE, { ...BASE, lineStrength: 2.5 })).toBe(false);
+    expect(sameQuantiseSettings(BASE, { ...BASE, fillCleanup: 32 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, key: { color: MAGENTA, tolerance: 64 } })).toBe(false);
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),
@@ -48,6 +55,8 @@ describe('sameQuantiseSettings', () => {
       sameQuantiseSettings(BASE, {
         ...BASE,
         vote: 'DOMINANT',
+        lineStrength: 1.5,
+        fillCleanup: 0,
         reduction: { kind: 'MAX_COLORS', maxColors: 64 },
       }),
     ).toBe(false);
@@ -68,14 +77,24 @@ describe('sameQuantiseSettings', () => {
     const pinned: QuantiseSettings = {
       ...BASE,
       vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
       reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
     };
     const depth: QuantiseSettings = {
       ...BASE,
       vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
     };
-    const none: QuantiseSettings = { ...BASE, vote: 'DOMINANT', reduction: null };
+    const none: QuantiseSettings = {
+      ...BASE,
+      vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
+      reduction: null,
+    };
 
     for (const [left, right] of [
       [budget, pinned],
@@ -88,11 +107,21 @@ describe('sameQuantiseSettings', () => {
       expect(sameQuantiseSettings(left, right)).toBe(false);
     }
 
-    expect(sameQuantiseSettings(none, { ...BASE, vote: 'DOMINANT', reduction: null })).toBe(true);
+    expect(
+      sameQuantiseSettings(none, {
+        ...BASE,
+        vote: 'DOMINANT',
+        lineStrength: 1.5,
+        fillCleanup: 0,
+        reduction: null,
+      }),
+    ).toBe(true);
     expect(
       sameQuantiseSettings(depth, {
         ...BASE,
         vote: 'DOMINANT',
+        lineStrength: 1.5,
+        fillCleanup: 0,
         reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
       }),
     ).toBe(true);
@@ -104,6 +133,8 @@ describe('sameQuantiseSettings', () => {
     const pinned: QuantiseSettings = {
       ...BASE,
       vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
       reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
     };
 
@@ -111,6 +142,8 @@ describe('sameQuantiseSettings', () => {
       sameQuantiseSettings(pinned, {
         ...BASE,
         vote: 'DOMINANT',
+        lineStrength: 1.5,
+        fillCleanup: 0,
         reduction: { kind: 'PALETTE', entries: [{ ...BLACK }, WHITE] },
       }),
     ).toBe(true);
@@ -118,6 +151,8 @@ describe('sameQuantiseSettings', () => {
       sameQuantiseSettings(pinned, {
         ...BASE,
         vote: 'DOMINANT',
+        lineStrength: 1.5,
+        fillCleanup: 0,
         reduction: { kind: 'PALETTE', entries: [WHITE, BLACK] },
       }),
     ).toBe(false);
@@ -125,6 +160,8 @@ describe('sameQuantiseSettings', () => {
       sameQuantiseSettings(pinned, {
         ...BASE,
         vote: 'DOMINANT',
+        lineStrength: 1.5,
+        fillCleanup: 0,
         reduction: { kind: 'PALETTE', entries: [BLACK] },
       }),
     ).toBe(false);

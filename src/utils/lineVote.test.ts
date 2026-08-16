@@ -376,7 +376,13 @@ describe('quantiseImage, line-aware', () => {
 
     // With colours left alone there is no honest tally to read shares from, and the pipeline must
     // be byte-identical to the plain vote it has always run.
-    const unrestricted = quantiseImage(sheet, { ...mismatched, vote: 'DOMINANT', reduction: null });
+    const unrestricted = quantiseImage(sheet, {
+      ...mismatched,
+      vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
+      reduction: null,
+    });
     const composedPlain = downscaleNearest(
       alignToGrid(sheet, boundaryMesh(sheet, 5)),
       boundaryMesh(sheet, 5),
@@ -393,6 +399,8 @@ describe('quantiseImage, line-aware', () => {
     const reduced = quantiseImage(sheet, {
       ...mismatched,
       vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     });
     expect(channels(reduced.image)).not.toEqual(channels(composedWithoutRescue));
@@ -404,6 +412,8 @@ describe('quantiseImage, line-aware', () => {
       grid: 1,
       key: null,
       vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     });
     // A one-pixel cell has one bucket, so the palette alone decides — and the sheet is already
@@ -417,6 +427,8 @@ describe('quantiseImage, line-aware', () => {
       grid: 6,
       key: null,
       vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     } as const;
     expect(channels(quantiseImage(sheet, settings).image)).toEqual(
