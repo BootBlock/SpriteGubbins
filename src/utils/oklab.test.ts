@@ -69,16 +69,15 @@ describe('srgbToOklab', () => {
     expect(dark).toBeGreaterThan(3 * light);
   });
 
-  it('gives the same answer through the scratch as through the allocating form', () => {
+  it('overwrites every field of a reused scratch, leaving nothing of the previous pixel', () => {
+    // The scratch form exists to be reused millions of times, so the property that matters is that
+    // each call replaces *all three* fields: a field the conversion stopped writing would silently
+    // carry the previous pixel's value into every distance after it. Converting two very different
+    // colours through one scratch and comparing the second against a fresh conversion is what makes
+    // that failure observable — on a fresh object the unwritten field is zero, not magenta's.
     const out: MutableOklab = { L: 0, a: 0, b: 0 };
-    for (const [r, g, b] of [
-      [255, 0, 255],
-      [20, 180, 60],
-      [128, 128, 128],
-      [0, 0, 1],
-    ] as const) {
-      srgbToOklabInto(out, r, g, b);
-      expect(out).toEqual(srgbToOklab(r, g, b));
-    }
+    srgbToOklabInto(out, 255, 0, 255);
+    srgbToOklabInto(out, 20, 180, 60);
+    expect(out).toEqual(srgbToOklab(20, 180, 60));
   });
 });

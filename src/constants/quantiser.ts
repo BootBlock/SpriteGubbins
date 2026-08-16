@@ -437,7 +437,7 @@ export const DEFAULT_CLEANUP_PASSES = 1;
  * Where the fill cleanup fixes a lone dissenting pixel, this fixes *dense* speckle — fills
  * dithered between palette entries a dozen steps apart, where no pixel is ever the lone one — by
  * folding near-duplicate colours together sheet-wide; `mergeColors` holds the rule, and the
- * distance is scaled OKLab, as every quantiser gate measures. Calibration points, measured on
+ * distance is scaled OKLab, as every colour-tolerance gate measures. Calibration points, measured on
  * the armour sheet (grid 6, ink-weighted 1.5×, a budget of 64): at 12 its sixty-four colours
  * settle to twenty-five and every fill reads as one surface with its shading intact; by 24 it
  * reaches thirteen and begins to spend genuine shading. The range runs on to 48 anyway — seven

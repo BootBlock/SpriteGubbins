@@ -144,7 +144,7 @@ export interface BackgroundKeying {
    * metric answers "how far apart are these two colours" across raw RGBA, which is the right question
    * when picking the nearest palette entry and the wrong one here: a key field varies by being shaded
    * and washed out, and measured plainly that variation costs more than a change of hue does. So this
-   * one measures in the perceptual space every quantiser gate now shares (`oklab.ts`) and discounts
+   * one measures in the perceptual space every colour-tolerance gate now shares (`oklab.ts`) and discounts
    * the key's own plane of variation besides; `keyDistance.ts` carries the reasoning and the
    * measurements. Two metrics, because they are answering two questions — not two answers to one.
    *

@@ -43,11 +43,11 @@ describe('useQuantiseStore', () => {
     const store = useQuantiseStore.getState();
     store.setSource(SHEET);
     store.setKeyingEnabled(true);
-    store.setKeyTolerance(96);
+    store.setKeyTolerance(32);
     store.setSource({ name: 'another.png', image: createImage(8, 8) });
 
     expect(useQuantiseStore.getState().keyingEnabled).toBe(true);
-    expect(useQuantiseStore.getState().keyTolerance).toBe(96);
+    expect(useQuantiseStore.getState().keyTolerance).toBe(32);
   });
 
   it('carries the downscale reading across a new sheet, for the same reason', () => {
@@ -80,10 +80,10 @@ describe('useQuantiseStore', () => {
     store.setSource(SHEET);
     store.setGridOverride(16);
     store.setKeyingEnabled(true);
-    store.setKeyTolerance(128);
+    store.setKeyTolerance(64);
     store.setVote('K_CENTROID');
     store.setLineStrength(2);
-    store.setFillCleanup(64);
+    store.setFillCleanup(32);
     store.setColorMerge(36);
 
     store.clear();
