@@ -36,6 +36,10 @@ describe('sameQuantiseSettings', () => {
 
   it('separates every field that changes the sheet', () => {
     expect(sameQuantiseSettings(BASE, { ...BASE, grid: 4 })).toBe(false);
+    // The Downscale reading alone changes the sheet, and this comparison is what makes changing
+    // the control recompute rather than re-caption a stale result.
+    expect(sameQuantiseSettings(BASE, { ...BASE, vote: 'INK_WEIGHTED' })).toBe(false);
+    expect(sameQuantiseSettings(BASE, { ...BASE, vote: 'K_CENTROID' })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, key: { color: MAGENTA, tolerance: 64 } })).toBe(false);
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),

@@ -1,6 +1,6 @@
 import { INK_BLEND_EMPHASIS, LINE_DARK_SHARE, LINE_INK_CEILING } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
-import { createImage, FULLY_OPAQUE, pixelOffset } from './imageData.ts';
+import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
 /**
  * One pixel per mesh cell, as the cell's body colour pulled toward the line that crosses it — the
@@ -20,9 +20,12 @@ import { createImage, FULLY_OPAQUE, pixelOffset } from './imageData.ts';
  * runs on unreduced colours and `quantiseImage` applies the palette step to its output, where the
  * darkened line tones it exists to create are real colours a palette can keep.
  *
- * Only fully opaque pixels take part, as in every cell judgement: a keyed field stays keyed — a
- * cell more than half transparent resolves to transparency — and a translucent fringe neither
- * shifts a mean nor reads as ink. Pure, deterministic, and one pass over the image.
+ * Every pixel that carries any colour takes part: transparency here means the keyed field, and a
+ * cell more than half keyed resolves to transparency — but art is art however soft its alpha, and
+ * a matte-exported sheet sitting at 254 must not vanish. That is a broader gate than the dominant
+ * vote's line *rescue* uses, deliberately: the rescue replaces a whole cell with one colour
+ * verbatim, where a mean merely leans, so a soft pixel that would be dangerous there is dilution
+ * here. Pure, deterministic, and one pass over the image.
  */
 export function inkWeightedCells(image: ImageData, mesh: GridMesh): ImageData {
   const output = createImage(mesh.x.length, mesh.y.length);
@@ -44,7 +47,7 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh): ImageData {
       for (let y = top; y < bottom; y += 1) {
         for (let x = left; x < right; x += 1) {
           const offset = pixelOffset(image.width, x, y);
-          if ((image.data[offset + 3] ?? 0) !== FULLY_OPAQUE) continue;
+          if ((image.data[offset + 3] ?? 0) === FULLY_TRANSPARENT) continue;
           const r = image.data[offset] ?? 0;
           const g = image.data[offset + 1] ?? 0;
           const b = image.data[offset + 2] ?? 0;

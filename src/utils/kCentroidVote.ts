@@ -1,6 +1,6 @@
 import { K_CENTROID_PASSES } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
-import { createImage, FULLY_OPAQUE, pixelOffset } from './imageData.ts';
+import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
 /**
  * One pixel per mesh cell, as the centre of the cell's *dominant colour cluster* — the k-centroid
@@ -17,8 +17,9 @@ import { createImage, FULLY_OPAQUE, pixelOffset } from './imageData.ts';
  *
  * Deterministic by construction — extreme-pixel seeds, fixed passes, ties resolved to the darker
  * cluster — and an *averaging* reading, so `quantiseImage` applies the palette step to its output
- * rather than its input. Only fully opaque pixels take part; a cell more than half transparent
- * resolves to transparency, as every reading resolves it.
+ * rather than its input. Every pixel carrying any colour takes part — transparency means the
+ * keyed field, and art at a soft alpha is still art — and a cell more than half keyed resolves to
+ * transparency.
  */
 export function kCentroidCells(image: ImageData, mesh: GridMesh): ImageData {
   const output = createImage(mesh.x.length, mesh.y.length);
@@ -38,10 +39,12 @@ export function kCentroidCells(image: ImageData, mesh: GridMesh): ImageData {
       let brightest = 0;
       let darkestLuma = 256;
       let brightestLuma = -1;
+      let darkestPacked = Infinity;
+      let brightestPacked = -1;
       for (let y = top; y < bottom; y += 1) {
         for (let x = left; x < right; x += 1) {
           const offset = pixelOffset(image.width, x, y);
-          if ((image.data[offset + 3] ?? 0) !== FULLY_OPAQUE) continue;
+          if ((image.data[offset + 3] ?? 0) === FULLY_TRANSPARENT) continue;
           const r = image.data[offset] ?? 0;
           const g = image.data[offset + 1] ?? 0;
           const b = image.data[offset + 2] ?? 0;
@@ -50,12 +53,18 @@ export function kCentroidCells(image: ImageData, mesh: GridMesh): ImageData {
           greens.push(g);
           blues.push(b);
           const luma = (54 * r + 183 * g + 19 * b) >> 8;
-          if (luma < darkestLuma) {
+          // Ties on luma break by packed value, so two different colours that happen to read
+          // equally light still seed two clusters — without this a 50/50 red-and-blue cell
+          // collapsed both seeds onto its first pixel and answered a raw colour, not a centre.
+          const packed = (r * 256 + g) * 256 + b;
+          if (luma < darkestLuma || (luma === darkestLuma && packed < darkestPacked)) {
             darkestLuma = luma;
+            darkestPacked = packed;
             darkest = index;
           }
-          if (luma > brightestLuma) {
+          if (luma > brightestLuma || (luma === brightestLuma && packed > brightestPacked)) {
             brightestLuma = luma;
+            brightestPacked = packed;
             brightest = index;
           }
         }

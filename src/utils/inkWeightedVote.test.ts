@@ -58,6 +58,12 @@ describe('inkWeightedCells', () => {
     expect(luma).toBeLessThan(lumaOf(packColor(BODY)) - 16);
   });
 
+  it('reads art at a soft alpha as art — a matte-exported sheet must not vanish', () => {
+    // Exporters write 254 where they mean opaque; only true transparency is the keyed field.
+    const soft = imageFrom(6, 6, () => ({ r: 150, g: 110, b: 70, a: 254 }));
+    expect(Array.from(inkWeightedCells(soft, single).data)).toEqual([150, 110, 70, 255]);
+  });
+
   it('reads luma by the same arithmetic as the packed form, so the two cannot drift', () => {
     for (const colour of [BODY, INK, { r: 255, g: 255, b: 255, a: 255 }, { r: 63, g: 191, b: 12, a: 255 }]) {
       expect((54 * colour.r + 183 * colour.g + 19 * colour.b) >> 8).toBe(lumaOf(packColor(colour)));

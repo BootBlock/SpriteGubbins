@@ -10,12 +10,12 @@ import { keyBackground } from './keyBackground.ts';
 import { buildPalette } from './medianCut.ts';
 
 /**
- * The whole pipeline: key, reduce the colours, measure the mesh, align, downscale.
+ * The whole pipeline: key, measure the mesh, read the cells down to pixels — with the colour
+ * reduction on whichever side of the vote the chosen reading demands.
  *
  * ```
- * ImageData  →  keyBackground  →  reduceColors     →  boundaryMesh  →  alignToGrid  →  downscaleNearest
- *               (the key field    (every pixel to      (where the       (cells become    (one pixel per
- *                becomes alpha)    a target colour)     cells sit)       one colour)      cell, exact)
+ * DOMINANT:                 ImageData → keyBackground → reduceColors → boundaryMesh → alignToGrid → downscaleNearest
+ * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → boundaryMesh → cells resolved directly → reduceColors
  * ```
  *
  * Grid **detection** is not part of it. The grid is a setting because the user can overrule what
@@ -29,17 +29,19 @@ import { buildPalette } from './medianCut.ts';
  * no two of them can disagree about where a cell begins; stored anywhere, it would be the stale
  * half of a pair the moment the user overtyped the grid beside it.
  *
- * **The colours are reduced before the vote, and that order is the quality of the whole result.**
- * On generated art every pixel of a cell is subtly different, so a vote among raw colours is a tie
- * the tie-break settles — one pixel speaks for the cell, and two neighbouring cells of the same
- * flat region pick two subtly different pixels, which reads as speckle across every surface of the
- * sheet. Reducing first collapses a region's hundred near-identical shades into one colour, so the
- * cells of that region vote for *the same thing* and the anti-aliased fringe pixels fall into
- * blend-coloured minorities that lose. It is the ordering the tools this follows converged on —
- * quantised voting — and it also puts the palette where it is best chosen: from the artwork, not
- * from a downscale of it. With no reduction in force the vote runs over the raw colours, where the
- * centre tie-break is the only defence — a sheet whose colours were asked to be left alone cannot
- * have them collapsed on the way through.
+ * **Which side of the vote the reduction runs on is the chosen reading's contract, not a fixed
+ * order.** The dominant vote *selects* — a colour the cell already contains — and for it reducing
+ * first is the quality of the whole result: on generated art every pixel of a cell is subtly
+ * different, so a vote among raw colours is a tie the tie-break settles, and two neighbouring
+ * cells of one flat region pick two subtly different pixels, which reads as speckle. Reducing
+ * first collapses a region's hundred near-identical shades into one colour, so its cells vote for
+ * *the same thing* — quantised voting, the ordering the tools this follows converged on. With no
+ * reduction in force that vote runs over the raw colours, where the centre tie-break is the only
+ * defence. The two averaging readings invert the order for the mirror-image reason: an average
+ * *creates* colours — an ink-darkened gold, a settled cluster centre — and reducing first would
+ * collapse exactly the tones it exists to blend, so they see the unreduced source and the
+ * reduction runs on their output, where a budget's palette is chosen from the resolved sheet and
+ * can keep the blended line tones.
  *
  * **Keying still goes first, ahead of everything, and that is not interchangeable.** `alignToGrid`
  * resolves each cell to its modal colour, and on a drifting key field every background pixel is a

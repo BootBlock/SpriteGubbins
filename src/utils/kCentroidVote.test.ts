@@ -42,6 +42,21 @@ describe('kCentroidCells', () => {
     expect(kCentroidCells(keyed, single).data[3]).toBe(0);
   });
 
+  it('reads art at a soft alpha as art — a matte-exported sheet must not vanish', () => {
+    const soft = imageFrom(6, 6, () => ({ r: 120, g: 100, b: 80, a: 254 }));
+    expect(Array.from(kCentroidCells(soft, single).data)).toEqual([120, 100, 80, 255]);
+  });
+
+  it('separates two tones that read equally light, and still answers a cluster centre', () => {
+    // Red at (200, 0, 0) and blue at (0, 34, 240) share integer luma 42, so seeding by luma alone
+    // put both seeds on the first pixel and the cell answered a raw colour. The packed tie-break
+    // gives each tone its own cluster, and the even split resolves to the darker-seeded one.
+    const red: Rgba = { r: 200, g: 0, b: 0, a: 255 };
+    const blue: Rgba = { r: 0, g: 34, b: 240, a: 255 };
+    const sheet = imageFrom(6, 6, (x, y) => ((y * 6 + x) % 2 === 0 ? red : blue));
+    expect(Array.from(kCentroidCells(sheet, single).data)).toEqual([0, 34, 240, 255]);
+  });
+
   it('is deterministic — the same sheet resolves to the same bytes twice', () => {
     const sheet = imageFrom(24, 24, (x, y) => ({
       r: (x * 37 + y * 11) % 256,

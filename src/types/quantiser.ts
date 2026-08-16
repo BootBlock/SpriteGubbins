@@ -191,8 +191,8 @@ export interface ColorPlan {
 /**
  * How each mesh cell is read down to its one pixel — the algorithms the Downscale control offers.
  *
- * Written `as const` so the store's parser can validate a stored value against the array that
- * defines the union, as every stored union in this app is.
+ * The `as const` array is the union's single definition; nothing validates stored values against
+ * it, because the choice lives in the session's store and is never persisted.
  */
 export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
 

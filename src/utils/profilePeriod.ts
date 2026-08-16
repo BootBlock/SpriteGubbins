@@ -188,8 +188,9 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
   }
 
   if (sure) {
-    // A genuine period correlates at its double, where the range holds one to ask. Signed, because
-    // a *negative* neighbourhood at the double is evidence against the pitch, not absent evidence.
+    // A genuine period correlates at its double, where the range holds one to ask — read through
+    // the same clamped window as every gate, because a fractional pitch's echo lands beside the
+    // exact double, flanked by the troughs a signed sum would count against it.
     if (2 * settled + 1 <= highest && windowedMass(r, 2 * settled) < ACF_MULTIPLE_CONFIRMATION) {
       return null;
     }

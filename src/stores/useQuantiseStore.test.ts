@@ -50,6 +50,17 @@ describe('useQuantiseStore', () => {
     expect(useQuantiseStore.getState().keyTolerance).toBe(96);
   });
 
+  it('carries the downscale reading across a new sheet, for the same reason', () => {
+    // Which reading suits a sheet is a judgement about the artwork's style, and a split rig's
+    // eight sheets are one style — so the choice is workflow intent, exactly as the keying is.
+    const store = useQuantiseStore.getState();
+    store.setSource(SHEET);
+    store.setVote('INK_WEIGHTED');
+    store.setSource({ name: 'another.png', image: createImage(8, 8) });
+
+    expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
+  });
+
   it('clears the sheet and every control with it', () => {
     // What "Clear" has to mean, and the reason it is not `setSource(null)`: a half-clear would leave
     // the next sheet arriving already keyed by a decision made about the last one.
@@ -58,6 +69,7 @@ describe('useQuantiseStore', () => {
     store.setGridOverride(16);
     store.setKeyingEnabled(true);
     store.setKeyTolerance(128);
+    store.setVote('K_CENTROID');
 
     store.clear();
 
@@ -66,6 +78,7 @@ describe('useQuantiseStore', () => {
       gridOverride: null,
       keyingEnabled: false,
       keyTolerance: DEFAULT_KEY_TOLERANCE,
+      vote: 'DOMINANT',
     });
   });
 
