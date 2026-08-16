@@ -125,6 +125,7 @@ describe('quantiseImage', () => {
     const dilated = quantiseImage(INSET_SHEET, { grid: 8, key: null, reduction: null });
     const cells = pixels(dilated.image);
 
+    expect(dilated.offset).toEqual({ x: 6, y: 6 });
     expect(dilated.image.width).toBe(5);
     expect(cells[3]?.[3]).toEqual(TRINKET);
     // The sprite fills its four cells exactly — the offset put the lattice on its own boundaries.
@@ -176,16 +177,24 @@ describe('quantiseImage', () => {
     // to the wrong lattice — every cell resolved over a window straddling two of the art's own. The
     // offset is measured from the image, so the margin comes back as its own leading pixel and the
     // art comes back pixel for pixel.
+    //
+    // **The inset is 3, and it must stay under half the grid.** At an inset past halfway, each
+    // corner-anchored cell holds a plurality of the *previous* art cell and the modal vote
+    // reconstructs this exact expected output by accident — a mutant with the offset stubbed to the
+    // corner passed the first version of this test, which used 5. Below halfway the plurality flips
+    // to the art cell the phased lattice names, so only the offset-aware pipeline produces this
+    // sheet.
     const margin: Rgba = { r: 250, g: 250, b: 250, a: 255 };
-    const inset = imageFrom(133, 133, (x, y) => {
-      if (x < 5 || y < 5) return margin;
-      const cellX = Math.floor((x - 5) / 8);
-      const cellY = Math.floor((y - 5) / 8);
+    const inset = imageFrom(131, 131, (x, y) => {
+      if (x < 3 || y < 3) return margin;
+      const cellX = Math.floor((x - 3) / 8);
+      const cellY = Math.floor((y - 3) / 8);
       return readPixel(SPRITE.data, pixelOffset(SPRITE.width, cellX, cellY));
     });
 
     const result = quantiseImage(inset, { grid: 8, key: null, reduction: null });
 
+    expect(result.offset).toEqual({ x: 3, y: 3 });
     expect(result.image.width).toBe(17);
     expect(result.image.height).toBe(17);
     expect(readPixel(result.image.data, pixelOffset(17, 0, 0))).toEqual(margin);

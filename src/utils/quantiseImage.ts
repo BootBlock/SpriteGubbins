@@ -74,6 +74,8 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
 
   return {
     image: output,
+    // The comparison view places the result against the source with this — see `QuantiseResult`.
+    offset,
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than
     // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
     colors: countColors(output),

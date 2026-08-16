@@ -69,10 +69,22 @@ export function estimatePixelGrid(image: ImageData): PixelGrid | null {
   const profile = stepProfile(image);
   if (profile.total === 0) return null;
 
+  // Each axis's own total, computed once rather than per candidate: the qualification below reads
+  // an axis's fit against the change that axis actually holds.
+  const columnsTotal = axisTotal(profile.columns);
+  const rowsTotal = profile.total - columnsTotal;
+
   for (let grid = measurableGridCeiling(image.width, image.height); grid >= MIN_ESTIMATED_GRID; grid -= 1) {
-    if (fitsLattice(profile, grid)) return grid;
+    if (fitsLattice(profile, columnsTotal, rowsTotal, grid)) return grid;
   }
   return null;
+}
+
+/** One axis's change, summed. Index 0 is unused and holds zero, so the whole array is safe to sum. */
+function axisTotal(axis: Float64Array): number {
+  let total = 0;
+  for (const step of axis) total += step;
+  return total;
 }
 
 /**
@@ -101,16 +113,44 @@ export function estimatePixelGrid(image: ImageData): PixelGrid | null {
  * fixtures, and one three times the truth at most 0.24. Both are a long way under any threshold
  * worth having, and the gap is wider than the raw shares suggest.
  */
-function fitsLattice(profile: StepProfile, grid: PixelGrid): boolean {
-  const down = bestLatticeFit(profile.columns, grid);
-  const across = bestLatticeFit(profile.rows, grid);
+function fitsLattice(
+  profile: StepProfile,
+  columnsTotal: number,
+  rowsTotal: number,
+  grid: PixelGrid,
+): boolean {
+  const down = bestLatticeFit(profile.columns, columnsTotal, grid);
+  const across = bestLatticeFit(profile.rows, rowsTotal, grid);
   // **One axis is enough, and requiring both would be wrong**: a sheet of vertical stripes changes
   // down every column and across no row at all, and it has a scale.
-  if (!sawTheSpacing(down) && !sawTheSpacing(across)) return false;
+  //
+  // **But the qualifying axis has to be one the lattice explains**, not merely one that used the
+  // spacing. The two conditions were separable, and an image was found in the gap: a tiny sheet
+  // holding one real edge plus the ±1 noise floor every re-encode leaves. The noise put *some* mass
+  // at every position, so on the axis with no structure at all every lattice line "carried", the
+  // spacing qualified vacuously — and the share was then supplied almost entirely by the *other*
+  // axis's single edge, which no period explains. Requiring the qualifying axis to clear the same
+  // corrected threshold on its own change closes that: an axis of noise explains nothing, an axis
+  // of stripes explains everything, and the pooled check below still holds the pair to it together.
+  if (!qualifies(down, columnsTotal, grid) && !qualifies(across, rowsTotal, grid)) return false;
 
+  return correctedShare(down.within + across.within, profile.total, grid) >= GRID_ESTIMATION_THRESHOLD;
+}
+
+/** Whether one axis both used this spacing and is explained by it — see the note in `fitsLattice`. */
+function qualifies(fit: LatticeFit, total: number, grid: PixelGrid): boolean {
+  return sawTheSpacing(fit) && correctedShare(fit.within, total, grid) >= GRID_ESTIMATION_THRESHOLD;
+}
+
+/**
+ * The share of `total` sitting within the lattice's windows, less what a lattice this coarse would
+ * collect from change spread evenly — the correction `fitsLattice`'s doc derives. Zero for an axis
+ * with no change at all, which is an axis with nothing to explain rather than a perfect fit.
+ */
+function correctedShare(within: number, total: number, grid: PixelGrid): number {
+  if (total === 0) return 0;
   const chance = (2 * SOFTENED_EDGE_RAMP + 1) / grid;
-  const share = ((down.within + across.within) / profile.total - chance) / (1 - chance);
-  return share >= GRID_ESTIMATION_THRESHOLD;
+  return (within / total - chance) / (1 - chance);
 }
 
 /**
@@ -118,11 +158,22 @@ function fitsLattice(profile: StepProfile, grid: PixelGrid): boolean {
  *
  * Ties keep the earlier phase, so the answer is deterministic; an axis with no change at all keeps
  * the empty fit, whose zero lines over zero available lines is what {@link sawTheSpacing} refuses.
+ *
+ * **A line "carries" only what beats chance**, and the floor is handed down from here because it is
+ * a property of the axis rather than of any phase: a window collects `2 × ramp + 1` of the axis's
+ * positions, so change spread with no structure at all hands every line that fraction of the
+ * axis's total. A line at or below it has shown nothing — which is what lets the ±1-per-channel
+ * noise floor a re-encode leaves be *ignored* rather than counted as the spacing being used. Before
+ * the floor, that noise put token mass under every line of every candidate, `lines === available`
+ * became vacuously true on the axis holding one real edge, and a 12-pixel sheet with no period in
+ * it measured as its own ceiling.
  */
-function bestLatticeFit(axis: Float64Array, grid: PixelGrid): LatticeFit {
+function bestLatticeFit(axis: Float64Array, total: number, grid: PixelGrid): LatticeFit {
+  const usable = axis.length - 1;
+  const carryFloor = usable > 0 ? ((2 * SOFTENED_EDGE_RAMP + 1) / usable) * total : 0;
   let best: LatticeFit = { within: 0, lines: 0, available: 0, adjacent: false };
   for (let phase = 0; phase < grid; phase += 1) {
-    const fit = latticeFit(axis, grid, phase);
+    const fit = latticeFit(axis, grid, phase, carryFloor);
     if (fit.within > best.within) best = fit;
   }
   return best;
@@ -146,7 +197,7 @@ function bestLatticeFit(axis: Float64Array, grid: PixelGrid): LatticeFit {
  * Windows cannot overlap and so cannot double-count: they are `2 × ramp + 1` wide and the lines are
  * `grid` apart, and {@link MIN_ESTIMATED_GRID} is the first scale where the second exceeds the first.
  */
-function latticeFit(axis: Float64Array, grid: PixelGrid, phase: number): LatticeFit {
+function latticeFit(axis: Float64Array, grid: PixelGrid, phase: number, carryFloor: number): LatticeFit {
   let within = 0;
   let lines = 0;
   let available = 0;
@@ -160,7 +211,9 @@ function latticeFit(axis: Float64Array, grid: PixelGrid, phase: number): Lattice
       if (position >= 1 && position < axis.length) mass += axis[position] ?? 0;
     }
     within += mass;
-    if (mass > 0) {
+    // Strictly above the floor, so an axis whose change is spread perfectly evenly — the definition
+    // of structureless — has no line carrying anything. See `bestLatticeFit` for the floor itself.
+    if (mass > carryFloor) {
       lines += 1;
       if (previousCarried) adjacent = true;
       previousCarried = true;

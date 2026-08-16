@@ -34,8 +34,9 @@ describe('bestGridOffset', () => {
   it('lands within a pixel of the boundary on softened art', () => {
     // Resampling spreads each boundary's step across the pixel before it, the pixel itself and the
     // pixel after, so the heaviest single column can sit one off the truth. That is the misphase
-    // `alignToGrid`'s modal vote absorbs — a cell one pixel off still holds a (g − 1)² majority of
-    // its own art cell — so the claim tested here is a bound, not an exact answer.
+    // `alignToGrid`'s modal vote absorbs — a cell one pixel off on an axis still holds g(g − 1) of
+    // its g² pixels from its own art cell — so the claim tested here is a bound, not an exact
+    // answer.
     const offset = bestGridOffset(soften(placed(2, 2)), 4);
     expect(Math.abs(offset.x - 2)).toBeLessThanOrEqual(1);
     expect(Math.abs(offset.y - 2)).toBeLessThanOrEqual(1);

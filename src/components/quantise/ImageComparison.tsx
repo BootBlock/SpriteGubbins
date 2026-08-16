@@ -39,11 +39,19 @@ interface ImageComparisonProps {
  * The sheet as it arrived beside the sheet as it will ship, and the way to take the second one away.
  *
  * **Both panes stand at the same magnification of the same artwork, and move together.** They did
- * neither before: the result is `⌈w / grid⌉` pixels wide, so drawing it at `zoom` showed it `grid`
+ * neither before: the result is one pixel per grid cell, so drawing it at `zoom` showed it `grid`
  * times smaller than its neighbour — at a grid of 8, an eighth — and the same scroll offset in each
  * pointed at a completely different part of the sheet. Drawing it at `zoom * grid` is what makes one
  * screen pixel mean the same amount of original artwork in both, and `useLinkedPanes` then holds them
  * to the same region of it, converting through source pixels rather than copying offsets across.
+ *
+ * **The grid's offset is the second half of that placement.** The lattice sits where the art put it,
+ * so the result can open with a *leading partial cell* — one pixel standing for only `offset` source
+ * pixels — and a uniformly magnified canvas draws it a full cell wide, pushing everything after it
+ * out of register by the deficit. Each pane therefore hands `ComparisonPane` a clipping window sized
+ * to the source's extent and, for the result, the deficit to pull the canvas back by, so every cell
+ * lands on the source pixels it covers and both panes measure as the same content. The reasoning
+ * lives on `PaneContent`.
  *
  * Linking is unconditional and has no toggle: a comparison view whose halves show different places is
  * not comparing anything, so the alternative is not a preference, it is the defect.
@@ -115,7 +123,12 @@ export function ImageComparison({
           label="Pan the sheet as it arrived"
           viewportRef={sourceView}
           canvasRef={sourceCanvas}
-          content={{ image: source, magnification: zoom }}
+          content={{
+            image: source,
+            magnification: zoom,
+            window: { width: source.width * zoom, height: source.height * zoom },
+            inset: { x: 0, y: 0 },
+          }}
           alt="The sheet as it arrived"
           placeholder={null}
         />
@@ -134,12 +147,24 @@ export function ImageComparison({
           viewportRef={resultView}
           canvasRef={resultCanvas}
           busy={busy}
-          // One result pixel covers `grid` source pixels, so this is what puts the two panes at the
-          // same scale. Both halves come from the same value, so neither can go missing on its own.
+          // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts
+          // the two panes at the same scale — and a leading partial cell covers only `offset` of
+          // them, which is what the inset corrects for. Everything comes from the same value, so no
+          // half of the placement can go missing on its own.
           content={
             quantised === null
               ? null
-              : { image: quantised.result.image, magnification: zoom * quantised.grid }
+              : {
+                  image: quantised.result.image,
+                  magnification: zoom * quantised.grid,
+                  window: { width: source.width * zoom, height: source.height * zoom },
+                  inset: {
+                    x:
+                      quantised.result.offset.x > 0 ? (quantised.grid - quantised.result.offset.x) * zoom : 0,
+                    y:
+                      quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
+                  },
+                }
           }
           alt="The sheet after grid alignment and palette reduction"
           placeholder={

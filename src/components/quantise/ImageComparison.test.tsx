@@ -7,10 +7,11 @@ import { ImageComparison } from './ImageComparison.tsx';
 /**
  * The comparison's one structural promise: **both panes cover the same extent of the same artwork**.
  *
- * The result is `⌈w / grid⌉` pixels wide, so drawing it at `zoom` — as this did — showed it `grid`
+ * The result is one pixel per grid cell, so drawing it at `zoom` — as this did — showed it `grid`
  * times smaller than the sheet beside it, and no amount of linking the two scroll positions could
- * have made that a comparison. The canvases' CSS sizes are where that is decided, and they are what
- * these tests read.
+ * have made that a comparison. The canvases' CSS sizes, the windows clipping them, and the inset a
+ * measured grid offset pulls the result back by are where that is decided, and they are what these
+ * tests read.
  */
 class NoopResizeObserver {
   observe() {}
@@ -28,10 +29,14 @@ afterEach(() => {
 
 const SOURCE_SIDE = 128;
 
-/** A result as `quantiseImage` returns one: `⌈w / grid⌉` a side, per `downscaleNearest`. */
-function resultFor(grid: number, colors = 32): QuantiseResult {
-  const side = Math.ceil(SOURCE_SIDE / grid);
-  return { image: createImage(side, side), colors, keyedShare: 0 };
+/**
+ * A result as `quantiseImage` returns one: one pixel per cell of the lattice `cellStarts` places —
+ * `⌈w / grid⌉` a side at the corner, one more where a non-zero offset opens a leading partial cell.
+ */
+function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }): QuantiseResult {
+  const lead = (along: number) => (along > 0 ? 1 : 0);
+  const side = (along: number) => lead(along) + Math.ceil((SOURCE_SIDE - along) / grid);
+  return { image: createImage(side(offset.x), side(offset.y)), colors, keyedShare: 0, offset };
 }
 
 function show(
@@ -67,12 +72,45 @@ describe('ImageComparison', () => {
       const { arrived, quantised } = show(grid);
 
       // The backing stores differ by the grid — that is the transform — but the boxes they are drawn
-      // in must not, or one screen pixel means a different amount of sheet on each side.
+      // in must not, or one screen pixel means a different amount of sheet on each side. The windows
+      // around them carry the same guarantee to `useLinkedPanes`, which measures the first child.
       expect(quantised).toHaveAttribute('width', String(SOURCE_SIDE / grid));
       expect(arrived.style.width).toBe(`${String(SOURCE_SIDE)}px`);
       expect(quantised?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+      expect(arrived.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+      expect(quantised?.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
     });
   }
+
+  it('pulls an offset result back by its leading cell’s deficit, inside the source’s window', () => {
+    // A measured offset of {3, 3} at a grid of 8 opens a leading partial cell: the result is 17 a
+    // side, its canvas 136px at 1× — and drawn as-is, every cell after the first would sit 5px off
+    // the source pixels it covers, which on linked panes reads as the transform having moved the
+    // art. The canvas is pulled back by exactly that deficit and the window clips it to the source's
+    // own extent, so the two panes still measure — and mean — the same artwork.
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    render(
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={8}
+        quantised={{ result: resultFor(8, 32, { x: 3, y: 3 }), grid: 8 }}
+        busy={false}
+      />,
+    );
+    const quantised = screen.getByRole('img', {
+      name: 'The sheet after grid alignment and palette reduction',
+    });
+
+    expect(quantised).toHaveAttribute('width', '17');
+    expect(quantised.style.width).toBe('136px');
+    expect(quantised.style.marginLeft).toBe('-5px');
+    expect(quantised.style.marginTop).toBe('-5px');
+    expect(quantised.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+    expect(quantised.parentElement?.style.height).toBe(`${String(SOURCE_SIDE)}px`);
+  });
 
   it('keeps the two matched after the magnification changes', () => {
     const { arrived, quantised } = show(8);

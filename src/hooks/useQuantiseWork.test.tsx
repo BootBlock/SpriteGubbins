@@ -17,7 +17,7 @@ const NO_SCALE: SheetFacts = { scale: null, colors: 1024 };
 const ESTIMATED: SheetFacts = { scale: { grid: 8, measurement: 'ESTIMATED' }, colors: 1024 };
 
 function resultOf(side: number): QuantiseResult {
-  return { image: createImage(side, side), colors: 32, keyedShare: 0 };
+  return { image: createImage(side, side), colors: 32, keyedShare: 0, offset: { x: 0, y: 0 } };
 }
 
 function sheet(name: string): ImportedImage {

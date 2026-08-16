@@ -51,9 +51,12 @@ export type PixelGrid = number;
  *
  * `{x: 0, y: 0}` is a grid anchored at the image's own corner, which returned sheets almost never
  * are — a generator places its art wherever composition puts it. The offset is measured from the
- * image by `bestGridOffset` rather than ever being typed, so it appears in no setting and crosses
- * no worker protocol: the transform works it out for whatever grid is in force, however that grid
- * was chosen.
+ * image by `bestGridOffset` rather than ever being typed, so it appears in no **setting**: the
+ * transform works it out for whatever grid is in force, however that grid was chosen, and a stored
+ * offset would be the stale half of a pair the moment the grid beside it was overtyped. It does
+ * ride on the {@link QuantiseResult} coming back the other way, because the pane that draws the
+ * result against the source has to know where the lattice sat — a result's own facts travel with
+ * it, exactly as its colour count does.
  */
 export interface GridOffset {
   readonly x: number;
@@ -188,6 +191,15 @@ export interface QuantiseSettings {
 /** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
+  /**
+   * Where the grid sat on the source, as the transform measured it.
+   *
+   * Carried because a non-zero offset changes what the first pixel of each axis *is* — a leading
+   * partial cell covering only `offset` source pixels — and the comparison view cannot place the
+   * result against the source without knowing that. See {@link GridOffset} for why it is a fact of
+   * the result rather than a setting.
+   */
+  readonly offset: GridOffset;
   /**
    * Distinct non-transparent colours in {@link image}.
    *

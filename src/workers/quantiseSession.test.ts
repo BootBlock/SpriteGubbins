@@ -12,7 +12,7 @@ function settingsAt(grid: number): QuantiseSettings {
 }
 
 function resultOf(side: number): QuantiseResult {
-  return { image: createImage(side, side), colors: 32, keyedShare: 0 };
+  return { image: createImage(side, side), colors: 32, keyedShare: 0, offset: { x: 0, y: 0 } };
 }
 
 /** The thread the session started, which every test here has to have got one of. */

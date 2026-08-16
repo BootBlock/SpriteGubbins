@@ -224,4 +224,27 @@ describe('estimatePixelGrid', () => {
     // candidate would fit equally — the same honesty `detectPixelGrid` shows on the same image.
     expect(estimatePixelGrid(imageFrom(64, 64, () => ({ r: 10, g: 20, b: 30, a: 255 })))).toBeNull();
   });
+
+  it('refuses a lone edge on a tiny sheet, with or without a noise floor under it', () => {
+    // The gap the per-axis qualification in `fitsLattice` closes, found by an adversarial probe. A
+    // 12-pixel sheet split once holds one real boundary, and the ±1-per-channel noise every
+    // re-encode leaves puts *some* mass at every position — so on the axis with no structure at all
+    // every lattice line "carried", the spacing qualified vacuously, and the share was then supplied
+    // almost entirely by the other axis's single edge, which no period explains. The coarsest
+    // candidate the ceiling admits came back as a measurement of an image that has no period in it.
+    // The qualifying axis is now held to the same corrected share on its own change, which an axis
+    // of noise cannot reach — and the clean variant stays refused by the spacing guard alone, which
+    // is what shows the noise was the whole difference.
+    const noise = (x: number, y: number, channel: number) =>
+      (((x * 374761393 + y * 668265263 + channel * 69119) >>> 3) % 3) - 1;
+    const split = (withNoise: boolean) =>
+      imageFrom(12, 12, (x, y) => {
+        const base = x < 4 ? 40 : 200;
+        const wobble = (channel: number) => (withNoise ? noise(x, y, channel) : 0);
+        return { r: base + wobble(1), g: base + wobble(2), b: base + wobble(3), a: 255 };
+      });
+
+    expect(estimatePixelGrid(split(false))).toBeNull();
+    expect(estimatePixelGrid(split(true))).toBeNull();
+  });
 });

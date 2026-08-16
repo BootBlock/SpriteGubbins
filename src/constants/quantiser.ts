@@ -43,12 +43,12 @@ export const GRID_DETECTION_THRESHOLD = 0.9;
  *
  * `1` is therefore the whole claim the estimator makes about what happened to the image, and it is
  * a claim with a cost at both ends. Narrower and a three-tap ramp is two-thirds off-lattice again.
- * **Wider costs two things, both measured.** {@link MIN_ESTIMATED_GRID} is derived from this, so a
- * ramp of 2 raises the floor to 6 and grids of 4 and 5 stop being measurable at all — softened art
- * at both answers `null` there. And the widened window starts admitting scales that do not divide
- * the truth: crisp grid-8 art inset four pixels comes back as **6** at a ramp of 2, a lattice that
- * cuts every cell of the art in half, where at a ramp of 1 the same sheet comes back as 4 — which
- * divides 8, and is lossless.
+ * **Wider costs the floor.** {@link MIN_ESTIMATED_GRID} is derived from this, so a ramp of 2 raises
+ * it to 6 and grids of 4 and 5 stop being measurable at all — softened art at both answers `null`
+ * there. (A second cost was once measured here — a widened window admitting non-divisor scales for
+ * art inset from the corner — but that was a property of the lattice being anchored at the origin,
+ * and the phase search dissolved it: inset art now measures as its own scale at either ramp width,
+ * which `pixelPeriod.test.ts` pins across every inset of an 8-grid.)
  *
  * Softening broader than this falls short of {@link GRID_ESTIMATION_THRESHOLD} and answers `null`,
  * which is the honest outcome rather than a missed one: past a ramp this wide there is no lattice

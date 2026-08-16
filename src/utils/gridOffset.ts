@@ -21,9 +21,11 @@ import { stepProfile } from './stepProfile.ts';
  * `p` claims the image changes on the lines `p, p + g, p + 2g, …` — so the offset the art actually
  * uses is the class holding the most change, measured in magnitude rather than counts so a softened
  * boundary still votes with the full step it was before the ramp spread it. On softened art the
- * heaviest single column can sit one pixel off the true boundary; the modal vote in `alignToGrid`
- * absorbs exactly that, since a cell misphased by one still holds a `(g − 1)²` majority of its own
- * art cell.
+ * heaviest single column can sit one pixel off the true boundary, and the modal vote in
+ * `alignToGrid` absorbs exactly that: a cell misphased by one on an axis still holds `g(g − 1)` of
+ * its `g²` pixels from its own art cell, and `(g − 1)²` with both axes off — a majority at every
+ * scale the estimator offers, and at the hand-typed 2 and 3 still the plurality the centre
+ * tie-break resolves deterministically.
  *
  * Ties go to the smaller offset, so the answer is deterministic; an image with no structure at all
  * answers `{0, 0}` for the same reason. A grid of 1 has one phase class and answers `{0, 0}` without
