@@ -83,9 +83,9 @@ describe('identityPalette', () => {
 
   it('totals a colour across its opacities instead of spending slots on them', () => {
     // A soft shadow or an anti-aliased edge is one colour at many opacities — which is what models
-    // return, and the reason the Quantise tab exists. `nearestColor` measures across all four
-    // channels, so left alone those opacities are credited to whichever entry happens to share
-    // them, and a 14% colour can lead the 72% one. Flattened, coverage totals per colour.
+    // return, and the reason the Quantise tab exists. Alpha is one of the four channels a group is
+    // split across, so left alone those opacities are a dozen colours competing for the digest's
+    // six slots, and a 14% colour can lead the 72% one. Flattened, coverage totals per colour.
     const softShadow = imageFrom(10, 10, (x, y) => {
       const n = y * 10 + x;
       if (n < 72) return { ...CHARCOAL, a: [40, 90, 140, 190, 240, 255][n % 6] ?? 255 };

@@ -12,9 +12,10 @@
  * One colour, channel by channel, each 0–255 as the canvas stores it.
  *
  * Alpha is a channel like the other three rather than a separate concern: it is what the histogram
- * keys on, what a box is split by when it is the widest, and what makes two otherwise-identical
- * pixels different colours. The one place it is privileged is `FULLY_TRANSPARENT`, which is excluded
- * from the palette entirely — see `colorHistogram`.
+ * keys on, one of the four axes a group of colours is split across, and what makes two
+ * otherwise-identical pixels different colours — which is why a soft edge can hold a palette slot of
+ * its own rather than being written opaque. The one place it is privileged is `FULLY_TRANSPARENT`,
+ * which is excluded from the palette entirely — see `colorHistogram`.
  */
 export interface Rgba {
   readonly r: number;
@@ -27,8 +28,8 @@ export interface Rgba {
  * The channels a colour is measured, split and compared across, in a fixed order.
  *
  * Here rather than beside either of the two functions that walk it, because both of them do —
- * `buildPalette` splits a box across its widest channel and `applyPalette` measures distance across
- * all four, and a second copy of the tuple would be a second answer to what a colour is made of.
+ * `exactSplit` scores a cut across every one of them and `applyPalette` measures distance across all
+ * four, and a second copy of the tuple would be a second answer to what a colour is made of.
  */
 export const RGBA_CHANNELS = ['r', 'g', 'b', 'a'] as const;
 export type RgbaChannel = (typeof RGBA_CHANNELS)[number];

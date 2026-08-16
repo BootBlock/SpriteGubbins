@@ -265,8 +265,8 @@ not a list anybody reads.
 > **A pinned palette supersedes `PALETTE_LIMIT`.** A budget cannot express "four shades of green", so
 > where a palette is set the strategy line is dropped from §2 rather than emitted alongside it — the
 > same rule the Quantise tab applies when it maps a returned sheet onto the palette instead of
-> choosing colours out of the sheet itself. The one exception written into the palette block is the background
-> field, which stays the key colour §0 fixes: no palette in the library contains magenta.
+> choosing colours out of the sheet itself. The one exception written into the palette block is the
+> background field, which stays the key colour §0 fixes: no palette in the library contains magenta.
 
 ---
 
