@@ -129,7 +129,13 @@ export function QuantiseTab() {
         {statusOf(busy, facts, grid, quantised)}
       </p>
 
-      <QuantiseGuide />
+      <QuantiseGuide
+        facts={facts}
+        hasSheet={source !== null}
+        target={target}
+        suggested={suggested}
+        colorPlan={colorPlan}
+      />
 
       <ImageDropZone acceptFile={acceptFile} currentName={source?.name ?? null} onClear={clear} />
 
