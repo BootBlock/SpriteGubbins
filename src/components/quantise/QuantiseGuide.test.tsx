@@ -20,13 +20,19 @@ const COLOR_PLAN: ColorPlan = {
 
 const factsWith = (scale: SheetFacts['scale']): SheetFacts => ({ scale, colors: 1024 });
 
-function show(facts: SheetFacts | null, hasSheet: boolean, suggested: number | null = null) {
+function show(
+  facts: SheetFacts | null,
+  hasSheet: boolean,
+  suggested: number | null = null,
+  grid: number | null = null,
+) {
   render(
     <QuantiseGuide
       facts={facts}
       hasSheet={hasSheet}
       target={suggested === null ? null : { width: 16, height: 32 }}
       suggested={suggested}
+      grid={grid}
       colorPlan={COLOR_PLAN}
     />,
   );
@@ -53,8 +59,9 @@ describe('QuantiseGuide', () => {
 
   it('calls a measured sheet settled, and offers no ceiling to start from', () => {
     // The ceiling line says "start there and step downwards", which beside a scale already in force
-    // would be the panel disagreeing with itself.
-    show(factsWith({ grid: 8, measurement: 'EXACT' }), true, 13);
+    // would be the panel disagreeing with itself. A measured sheet's grid is the reading itself —
+    // `useQuantiseWork` adopts an EXACT reading — so the pair arrives together.
+    show(factsWith({ grid: 8, measurement: 'EXACT' }), true, 13, 8);
 
     expect(screen.getByText(/measured outright and is already applied/)).toBeInTheDocument();
     expect(screen.queryByText(/For this sheet that ceiling is/)).toBeNull();
@@ -65,8 +72,31 @@ describe('QuantiseGuide', () => {
 
     expect(screen.getByText(/An estimate is waiting under the grid box/)).toBeInTheDocument();
     expect(
-      screen.getByText(/For this sheet that ceiling is 13× — the coarsest scale at which 16 × 32 px/),
+      screen.getByText(/For this sheet that ceiling is 13×, derived from seating 16 × 32 px/),
     ).toBeInTheDocument();
+  });
+
+  it('stops asking for the click once a grid is in force, and asks for judgement instead', () => {
+    // The regression the review caught before it shipped: the advice keyed on the reading alone,
+    // and the reading does not change when the estimate is clicked — so the panel kept telling the
+    // reader to click an estimate that was no longer waiting, beside a box holding the number.
+    // `GridControls` drops its own paragraph at this exact moment, and the two must agree.
+    show(factsWith({ grid: 6, measurement: 'ESTIMATED' }), true, 13, 6);
+
+    expect(screen.queryByText(/An estimate is waiting under the grid box/)).toBeNull();
+    expect(screen.getByText(/A scale is in force and the right preview/)).toBeInTheDocument();
+    // The ceiling goes with it: the reader is stepping from where they are, not starting.
+    expect(screen.queryByText(/For this sheet that ceiling is/)).toBeNull();
+  });
+
+  it('withdraws the settled claim from a measured sheet the reader has overtyped', () => {
+    // The measured line says the scale "is already applied", which stops being true the moment the
+    // box holds a different number — the overtyped grid is a hand-chosen number like any other, and
+    // it is handed the judging line.
+    show(factsWith({ grid: 8, measurement: 'EXACT' }), true, null, 4);
+
+    expect(screen.queryByText(/measured outright and is already applied/)).toBeNull();
+    expect(screen.getByText(/A scale is in force and the right preview/)).toBeInTheDocument();
   });
 
   it('hands an unread sheet the whole procedure, with the ceiling where the studio names one', () => {

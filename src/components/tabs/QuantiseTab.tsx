@@ -134,6 +134,7 @@ export function QuantiseTab() {
         hasSheet={source !== null}
         target={target}
         suggested={suggested}
+        grid={grid}
         colorPlan={colorPlan}
       />
 

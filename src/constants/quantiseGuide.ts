@@ -28,14 +28,17 @@ export const QUANTISE_GUIDE_INTRO =
  * this line's job is to say whether that procedure is a check, a confirmation, or the actual work.
  */
 export const QUANTISE_SHEET_ADVICE = {
-  /** `detectPixelGrid` answered — the scale is in force and nothing needs finding. */
+  /** `detectPixelGrid` answered and its answer is the grid in force — nothing needs finding. */
   measured:
     'This sheet’s scale was measured outright and is already applied, so the procedure below is only a check: glance at a hard edge at 4× or 8×, then key the background if it has one and download at 1×.',
-  /** `estimatePixelGrid` answered — a candidate is on offer, and the preview is the judge. */
+  /** `estimatePixelGrid` answered and nothing has been applied — a candidate is on offer. */
   estimated:
     'An estimate is waiting under the grid box. Click it, then work through the procedure below rather than trusting it outright — an estimate is read through the very softening it measures, and the preview is what settles it.',
-  /** Neither reading answered — the procedure below is how the number gets found. */
+  /** Neither reading answered and nothing has been applied — the procedure is the way forward. */
   none: 'Neither reading found a scale in this sheet, so the procedure below is how to find it yourself. It is quicker than it reads: two or three tries usually settle the number.',
+  /** A grid the reading did not put there is in force — clicked, or typed — and wants judging. */
+  applied:
+    'A scale is in force and the right preview is showing what it makes of this sheet. Judge it by the procedure below, and step the number wherever the preview disagrees.',
 } as const;
 
 /**
@@ -49,7 +52,7 @@ export const SCALE_BY_EYE_STEPS = [
   {
     title: 'Start from a candidate',
     detail:
-      'click a scale offered under the grid box, or type one. The number derived from the target size is a ceiling rather than a measurement — at any coarser scale the components could not have fitted on the sheet, and a generator that left canvas empty drew finer still — so the real scale usually sits at or below it.',
+      'click a scale offered under the grid box, or type one. The number derived from the target size is a ceiling rather than a measurement — it is the coarsest scale worth trying, and a generator that leaves canvas empty draws finer rather than coarser — so the real scale usually sits at or below it.',
   },
   {
     title: 'Magnify a hard edge',
@@ -78,7 +81,7 @@ export const SCALE_BY_EYE_STEPS = [
  */
 export function targetCeilingAdvice(suggested: PixelGrid | null, target: TargetSize | null): string | null {
   if (suggested === null || target === null) return null;
-  return `For this sheet that ceiling is ${String(suggested)}× — the coarsest scale at which ${String(target.width)} × ${String(target.height)} px components could have fitted — so start there and step downwards.`;
+  return `For this sheet that ceiling is ${String(suggested)}×, derived from seating ${String(target.width)} × ${String(target.height)} px components on this canvas — so start there and step downwards.`;
 }
 
 /**

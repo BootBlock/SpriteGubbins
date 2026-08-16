@@ -142,7 +142,7 @@ export function GridControls({ facts, target, suggested, grid, colorPlan, onGrid
           <span className="font-mono text-ink-muted">
             {target.width} × {target.height} px
           </span>
-          , which this sheet can hold at no more than {suggested} px per pixel.
+          , which puts the coarsest scale worth trying at {suggested} px per pixel.
         </p>
       )}
 

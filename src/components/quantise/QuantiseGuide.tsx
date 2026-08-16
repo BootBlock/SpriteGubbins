@@ -26,6 +26,15 @@ interface QuantiseGuideProps {
   readonly target: TargetSize | null;
   /** The scale {@link target} implies for this sheet, or `null` where it implies none. */
   readonly suggested: PixelGrid | null;
+  /**
+   * The grid actually in force — the user's, or an `EXACT` reading of the sheet behind it — as
+   * `GridControls` takes it, and for its reason turned around: that panel drops its ask-for-a-click
+   * paragraph the moment a grid is in force, and advice here that kept saying “an estimate is
+   * waiting” beside a box holding the number would be this panel asking for something the reader
+   * has already done. Three surfaces read this state, and all three have to say the same thing
+   * about it.
+   */
+  readonly grid: PixelGrid | null;
   /** What the studio decided about colour, as the pipeline was handed it. */
   readonly colorPlan: ColorPlan;
 }
@@ -46,13 +55,14 @@ interface QuantiseGuideProps {
  * the numerals take `--color-tab` the way the studio's two panel headings do, which is what makes
  * them read as this view's steps rather than as decoration.
  */
-export function QuantiseGuide({ facts, hasSheet, target, suggested, colorPlan }: QuantiseGuideProps) {
-  const state = hasSheet && facts !== null ? adviceFor(facts) : null;
-  // The ceiling is procedure input, so it accompanies the procedure — and only while the procedure
-  // is the task. A measured sheet needs no candidate, and advice to "start there and step
-  // downwards" beside a scale already in force would be the panel disagreeing with itself.
+export function QuantiseGuide({ facts, hasSheet, target, suggested, grid, colorPlan }: QuantiseGuideProps) {
+  const state = hasSheet && facts !== null ? adviceFor(facts, grid) : null;
+  // The ceiling is procedure input, so it accompanies the procedure — and only while a number still
+  // needs choosing. With a scale in force the reader is stepping from where they are, and beside a
+  // measured sheet a line saying "start there and step downwards" would be the panel disagreeing
+  // with itself.
   const ceiling =
-    state !== null && state !== QUANTISE_SHEET_ADVICE.measured
+    grid === null && state !== null && state !== QUANTISE_SHEET_ADVICE.measured
       ? targetCeilingAdvice(suggested, target)
       : null;
 
@@ -102,8 +112,22 @@ export function QuantiseGuide({ facts, hasSheet, target, suggested, colorPlan }:
   );
 }
 
-/** The state line the sheet has earned — the same three-way reading `ScaleBadge` colours. */
-function adviceFor(facts: SheetFacts): string {
+/**
+ * The state line the sheet has earned, from the badge's reading of it and the grid in force.
+ *
+ * The grid decides between two pairs the reading alone cannot separate. With no grid in force the
+ * sheet is waiting — for a click where an estimate is on offer, or for a number where nothing is —
+ * and with one in force the waiting lines would be asking for what the reader has already done. The
+ * measured line keeps the narrower claim it makes: it says the scale “is already applied”, which is
+ * true only while the grid in force *is* the exact reading, so a reader who overtypes a measured
+ * sheet is handed the judging line like any other hand-chosen number.
+ */
+function adviceFor(facts: SheetFacts, grid: PixelGrid | null): string {
+  if (grid !== null) {
+    return facts.scale?.measurement === 'EXACT' && facts.scale.grid === grid
+      ? QUANTISE_SHEET_ADVICE.measured
+      : QUANTISE_SHEET_ADVICE.applied;
+  }
   if (facts.scale === null) return QUANTISE_SHEET_ADVICE.none;
   return facts.scale.measurement === 'EXACT'
     ? QUANTISE_SHEET_ADVICE.measured
