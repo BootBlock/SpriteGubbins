@@ -12,10 +12,12 @@
  * reads the plane *behind* the box's lower bound, so bin 1 needs a bin 0 holding zero. Bins are
  * `channel >> 3`, so each covers eight adjacent byte values.
  *
- * **Alpha is deliberately not an axis here**, and `wuQuantiser.ts` carries the reasoning — in short,
- * a fourth axis multiplies this table by 33 for a channel that sprite sheets use at two values, and
- * the representative colours are read from the real histogram afterwards, where each keeps its own
- * true alpha.
+ * **Alpha is not an axis here, and that is a limit of this table rather than a decision about
+ * colour.** A fourth axis would multiply it by 33 — tens of megabytes, rebuilt on every settings
+ * change — so this pass sees three channels and the table stays about 1.4 MB. Alpha is a channel
+ * like the other three everywhere it matters, and `exactSplit.ts` is where it gets its say: that
+ * pass splits across all four at full precision, which is what lets a soft edge hold a palette slot
+ * of its own instead of being folded onto the body colour behind it.
  *
  * Pure, and allocation-bounded: the five arrays are 33³ entries each whatever the image, which is
  * about 1.4 MB in total.
@@ -34,6 +36,24 @@ export function wuBin(channel: number): number {
 /** Where a bin triple sits in the flat table. */
 export function wuCell(red: number, green: number, blue: number): number {
   return (red * WU_SIDE + green) * WU_SIDE + blue;
+}
+
+/**
+ * The cell a packed colour belongs to — binning and the packing read in one place.
+ *
+ * Both sides of the search have to agree about which cell a colour is in: this table is built by
+ * one walk over the histogram and read back by another, and a colour filed under a different cell
+ * than the one whose moments it contributed to would put it in the wrong box. Stating it once is
+ * what makes that impossible rather than merely unlikely.
+ */
+export function wuCellOfKey(key: number): number {
+  // The packing is `((r * 256 + g) * 256 + b) * 256 + a` — see `packColor`. Alpha is dropped: this
+  // table has no axis for it, and `exactSplit` is where it gets its say.
+  return wuCell(
+    wuBin(Math.floor(key / 16777216) % 256),
+    wuBin(Math.floor(key / 65536) % 256),
+    wuBin(Math.floor(key / 256) % 256),
+  );
 }
 
 /**
@@ -84,12 +104,13 @@ export function buildMoments(histogram: ReadonlyMap<number, number>): WuMoments 
   };
 
   for (const [key, count] of histogram) {
-    // The packing is `((r * 256 + g) * 256 + b) * 256 + a` — see `packColor`. Alpha is dropped
-    // here and recovered from the real colour when a box picks its representative.
+    // Unpacked here rather than through `unpackColor` because the moments need the channel values
+    // themselves, not only the cell — and an object per distinct colour is an allocation this walk
+    // has no use for. The cell comes from {@link wuCellOfKey} so the binning is stated once.
     const r = Math.floor(key / 16777216) % 256;
     const g = Math.floor(key / 65536) % 256;
     const b = Math.floor(key / 256) % 256;
-    const at = wuCell(wuBin(r), wuBin(g), wuBin(b));
+    const at = wuCellOfKey(key);
     // Read-then-write rather than `+=`, which `noUncheckedIndexedAccess` will not allow on an
     // indexed element: every one of these indices is in range by construction, and the `?? 0` is
     // what the compiler asks for rather than a case that can arise.

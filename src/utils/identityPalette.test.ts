@@ -33,10 +33,10 @@ const KEYED_SHEET = imageFrom(16, 8, (x, y) => {
  * order the same answer — and a version that dropped the sort entirely still passed. The competing
  * order this has to rule out is `buildPalette`'s own, not merely the colours' numeric order.
  *
- * `NEAR_CHARCOAL` differs from `CHARCOAL` by one in a single channel, so the two share a box —
- * indeed the same histogram bin, which no cut can divide. It stands for the shading step every
- * sprite has, and its single pixel must be counted towards charcoal rather than claiming a slot of
- * its own.
+ * `NEAR_CHARCOAL` differs from `CHARCOAL` by one in a single channel, so the two share a box: seven
+ * colours into six slots leaves exactly one pair to merge, and no pair is nearer than these. It
+ * stands for the shading step every sprite has, and its single pixel must be counted towards
+ * charcoal rather than claiming a slot of its own.
  */
 const NEAR_CHARCOAL = { r: 30, g: 30, b: 37, a: 255 };
 const TEAL = { r: 13, g: 148, b: 136, a: 255 };

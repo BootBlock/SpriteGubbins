@@ -93,8 +93,12 @@ describe('buildPalette', () => {
     });
 
     expect(countColors(ramp)).toBe(200);
-    expect(buildPalette(ramp, 64)).toHaveLength(64);
-    expect(buildPalette(ramp, 128)).toHaveLength(128);
+    for (const budget of [64, 128]) {
+      const palette = buildPalette(ramp, budget);
+      expect(palette).toHaveLength(budget);
+      // Distinct, not merely numerous: padding the list with repeats would satisfy the length.
+      expect(new Set(palette.map(packColor)).size).toBe(budget);
+    }
   });
 
   it('folds the nearest pair when the budget cannot afford every colour, keeping the majority', () => {
@@ -159,18 +163,35 @@ describe('buildPalette', () => {
   it('keeps an anti-aliased edge at the opacity it was drawn at', () => {
     // The regression this pass exists to prevent, driven the way a returned sheet actually arrives:
     // one colour at a ramp of opacities, which is what a straight-alpha PNG's soft edge is. Alpha is
-    // a channel like the other three, so those are five colours and the budget can afford all of
-    // them — collapsing them onto whichever opacity carried the most pixels would have
-    // `applyPalette` write that entry whole and replace the sprite's fade-out with a hard edge.
+    // a channel like the other three, so those are five distinct colours — and collapsing them onto
+    // whichever opacity carried the most pixels would have `applyPalette` write that entry whole and
+    // replace the sprite's fade-out with a hard edge.
+    //
+    // **The sheet carries eleven colours against a budget of eight**, and that is the whole design of
+    // the fixture rather than incidental: five opacities alone would sit inside any sensible budget,
+    // take the "already inside the budget" short-circuit, and pass just as well against a search that
+    // cannot see alpha at all. The six extra are three pairs one step apart in red, which are much
+    // the nearest pairs on the sheet — so the three slots that have to give are theirs, and the five
+    // opacities are kept because separating them is what removes the most variance.
     const ALPHAS = [32, 96, 128, 200, 255];
-    const softEdge = imageFrom(10, 10, (x, y) => {
-      const n = y * 10 + x;
-      return { r: 200, g: 100, b: 50, a: ALPHAS[n % 5] ?? 255 };
+    const PAIRS = [
+      { r: 100, g: 150, b: 80 },
+      { r: 50, g: 60, b: 70 },
+      { r: 10, g: 220, b: 140 },
+    ];
+    const softEdge = imageFrom(11, 11, (x, y) => {
+      const n = (y * 11 + x) % 11;
+      const alpha = ALPHAS[n];
+      if (alpha !== undefined) return { r: 200, g: 100, b: 50, a: alpha };
+      const pair = PAIRS[Math.floor((n - 5) / 2)] ?? PAIRS[0];
+      if (pair === undefined) return { r: 0, g: 0, b: 0, a: 255 };
+      return { ...pair, r: pair.r + ((n - 5) % 2), a: 255 };
     });
 
+    expect(countColors(softEdge)).toBe(11);
     const drawn = applyPalette(softEdge, buildPalette(softEdge, 8));
     for (let index = 0; index < ALPHAS.length; index += 1) {
-      expect(readPixel(drawn.data, pixelOffset(10, index, 0)).a).toBe(ALPHAS[index]);
+      expect(readPixel(drawn.data, pixelOffset(11, index, 0)).a).toBe(ALPHAS[index]);
     }
   });
 });

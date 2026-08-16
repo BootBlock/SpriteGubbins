@@ -16,7 +16,7 @@ import { boxSum, bottomSum, topSum, WU_SIDE, type WuAxis, type WuBox, type WuMom
  */
 
 /** The bins a box spans, as `(low, high]` on each axis — the whole cube before any cut. */
-export function wholeCube(): WuBox {
+function wholeCube(): WuBox {
   return { r0: 0, r1: WU_SIDE - 1, g0: 0, g1: WU_SIDE - 1, b0: 0, b1: WU_SIDE - 1 };
 }
 

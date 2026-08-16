@@ -2,7 +2,7 @@ import type { Rgba } from '../types/quantiser.ts';
 import { refineToPalette, type ColorTally } from './exactSplit.ts';
 import { colorHistogram, unpackColor } from './imageData.ts';
 import { partition } from './wuBoxSearch.ts';
-import { buildMoments, WU_SIDE, wuBin, wuCell, type WuBox } from './wuMoments.ts';
+import { buildMoments, WU_SIDE, wuCell, wuCellOfKey, type WuBox } from './wuMoments.ts';
 
 /**
  * Choosing the colours an image reduces to: Wu's variance-minimising quantiser over a binned moment
@@ -23,11 +23,14 @@ import { buildMoments, WU_SIDE, wuBin, wuCell, type WuBox } from './wuMoments.ts
  * and at 16 it is 50%, and the gap narrows to 15% by 256, where a palette that large has room for
  * both algorithms to be nearly right. Those figures are deterministic and reproduce exactly.
  *
- * It is also **roughly an order of magnitude faster at every budget**, and the shape of the cost is
- * the part worth holding: this search's work is the moment table's, so it barely moves as the
- * palette grows, where median cut's climbed steeply with it — each of its splits re-sorted a box.
- * Absolute timings are stated nowhere here on purpose, because they move by several times between
- * runs on one machine; the ratio and the flatness are what reproduce.
+ * It is also **roughly an order of magnitude faster on that sheet at every budget**, and the shape of
+ * the cost is the part worth holding: the coarse pass's work is the moment table's, so it barely
+ * moves as the palette grows, where median cut's climbed steeply with it — each of its splits
+ * re-sorted a box. The refinement is the exception and is bounded by what it is given: a sheet whose
+ * colours crowd into fewer bins than the budget pays for exact splitting instead, which is slower
+ * than the coarse pass and still far short of what median cut cost. Absolute timings are stated
+ * nowhere here on purpose, because they move by several times between runs on one machine; the
+ * error figures above are deterministic and reproduce exactly.
  *
  * **The search is in two halves, and the second one is not optional.** `wuBoxSearch` works over the
  * 32-bin-per-channel table, which is what makes it fast and what bounds what it can see: colours
@@ -48,8 +51,9 @@ import { buildMoments, WU_SIDE, wuBin, wuCell, type WuBox } from './wuMoments.ts
  * group then contributes the colour the most pixels in it actually carry.
  *
  * **Deterministic**, which is why neither this nor its predecessor is k-means: no seeding, no
- * iteration budget, no `Math.random`. Every tie resolves to the earliest candidate in scan order, so
- * the same image always yields the same palette and the tests can assert an exact one.
+ * iteration budget, no `Math.random`. Every tie resolves to the earliest candidate in an order fixed
+ * by the image, so the same image always yields the same palette and the tests can assert an exact
+ * one.
  *
  * Drawing the image in the chosen palette is `applyPalette` in ./applyPalette.ts — a different
  * algorithm over any palette, not only one this file produced.
@@ -94,12 +98,9 @@ function groupByBox(
 
   const groups: ColorTally[][] = boxes.map(() => []);
   for (const [key, count] of histogram) {
-    const r = Math.floor(key / 16777216) % 256;
-    const g = Math.floor(key / 65536) % 256;
-    const b = Math.floor(key / 256) % 256;
-    // Iterated in the histogram's own scan order, so each group's colours stay in scan order too —
-    // which is what the representative's tie-break ultimately rests on.
-    groups[owner[wuCell(wuBin(r), wuBin(g), wuBin(b))] ?? 0]?.push({ key, count });
+    // Iterated in the histogram's own scan order, so a group the refinement never touches holds its
+    // colours in that order — see `representative`, which is where the order is finally read.
+    groups[owner[wuCellOfKey(key)] ?? 0]?.push({ key, count });
   }
   return groups;
 }

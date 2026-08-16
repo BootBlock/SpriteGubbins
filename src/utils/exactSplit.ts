@@ -55,20 +55,25 @@ function sampleOf(tally: ColorTally): Sample {
  * structure the moment table found — which is the fast, variance-optimal part — is kept and only
  * the tail is paid for at full precision.
  *
- * Returns one colour per group: the one the most pixels in it carry, earliest in scan order winning
- * a tie. That is the same rule the coarse pass uses and the same promise the whole quantiser makes —
- * every entry is a colour the image already contained, never an average of several.
+ * Returns one colour per group: the one the most pixels in it carry, the earliest of equals in
+ * whatever order the group holds them. That is the promise the whole quantiser makes — every entry
+ * is a colour the image already contained, never an average of several.
  */
 export function refineToPalette(
   groups: readonly (readonly ColorTally[])[],
   maxColors: number,
 ): readonly Rgba[] {
-  const working: Group[] = groups
-    .filter((samples) => samples.length > 0)
-    .map((samples) => {
-      const decoded = samples.map(sampleOf);
-      return { samples: decoded, variance: varianceOf(decoded) };
-    });
+  const filled = groups.filter((samples) => samples.length > 0);
+  // Nothing to refine, which is the ordinary case on a full-gamut sheet: the coarse pass filled the
+  // budget by itself. Returning here is what makes that case genuinely free — the decode below
+  // allocates per distinct colour, and on a sheet carrying two hundred thousand of them that is a
+  // great deal of work to do before discovering there is none to do.
+  if (filled.length >= maxColors) return pickAll(filled);
+
+  const working: Group[] = filled.map((samples) => {
+    const decoded = samples.map(sampleOf);
+    return { samples: decoded, variance: varianceOf(decoded) };
+  });
 
   while (working.length < maxColors) {
     let chosen = -1;
@@ -87,8 +92,10 @@ export function refineToPalette(
     if (group === undefined) break;
     const halves = splitGroup(group.samples);
     if (halves === null) {
-      // Unsplittable despite holding several colours, which only a zero-variance group can be:
-      // retire it rather than reconsidering it forever.
+      // Unreachable, and kept because the signature admits it rather than because it can arise: a
+      // group reaching here holds two or more *distinct* colours, and distinct colours always
+      // differ on some channel, so a scoring position always exists. Retiring it is the answer that
+      // could not loop if the invariant ever stopped holding.
       working[chosen] = { samples: group.samples, variance: 0 };
       continue;
     }
@@ -97,9 +104,12 @@ export function refineToPalette(
     working.push({ samples: halves[1], variance: varianceOf(halves[1]) });
   }
 
-  return working
-    .map((group) => representative(group.samples))
-    .filter((color): color is Rgba => color !== null);
+  return pickAll(working.map((group) => group.samples));
+}
+
+/** Each group's colour, skipping any group that holds none — which only an empty input can be. */
+function pickAll(groups: readonly (readonly ColorTally[])[]): readonly Rgba[] {
+  return groups.map(representative).filter((color): color is Rgba => color !== null);
 }
 
 /**
@@ -208,9 +218,16 @@ function bestPosition(sorted: readonly Sample[]): { at: number; score: number } 
   return at === -1 ? null : { at, score };
 }
 
-/** The colour a group speaks for: the one the most pixels carry, earliest in scan order on a tie. */
-function representative(samples: readonly Sample[]): Rgba | null {
-  let chosen: Sample | null = null;
+/**
+ * The colour a group speaks for: the one the most pixels carry, the earliest of equals.
+ *
+ * "Earliest" is the group's own order, which is scan order for a group the coarse pass handed over
+ * and (winning channel, then packed colour) for one a split produced — a slice of a sorted array.
+ * Both are fixed for a given image, which is all a tie-break needs; neither is scan order in
+ * general, and this is the note a maintainer would reason from.
+ */
+function representative(samples: readonly ColorTally[]): Rgba | null {
+  let chosen: ColorTally | null = null;
   for (const sample of samples) {
     if (chosen === null || sample.count > chosen.count) chosen = sample;
   }
