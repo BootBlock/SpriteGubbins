@@ -25,7 +25,9 @@ describe('upscaleNearest', () => {
   it('round-trips through the reduction it is the inverse of', () => {
     // The property the download depends on: a magnified export is still exact, because a block of
     // identical pixels downsamples back to the pixel it came from.
-    expect(channels(downscaleNearest(upscaleNearest(SOURCE, 8), 8))).toEqual(channels(SOURCE));
+    expect(channels(downscaleNearest(upscaleNearest(SOURCE, 8), 8, { x: 0, y: 0 }))).toEqual(
+      channels(SOURCE),
+    );
   });
 
   it('copies rather than aliasing at a scale of 1', () => {

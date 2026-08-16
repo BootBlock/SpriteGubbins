@@ -20,24 +20,33 @@ const TWO_HUNDRED_COLORS = imageFrom(20, 10, (x, y) => {
 const MAGENTA: Rgba = { r: 255, g: 0, b: 255, a: 255 };
 const TRANSPARENT: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 const ART: Rgba = { r: 20, g: 180, b: 60, a: 255 };
+/** A second art colour as far from the key as {@link ART} is, for the piece that is smaller than a cell. */
+const TRINKET: Rgba = { r: 200, g: 120, b: 30, a: 255 };
 
 const KEYING = { color: MAGENTA, tolerance: 16 };
 
 /**
- * A 32 × 32 sheet holding a 20 × 20 sprite, deliberately **offset by 6** so the artwork straddles the
- * cells of the grid of 8 it is quantised at, on all four sides.
+ * A 32 × 32 sheet whose art sits **six pixels in from the corner**: a 16 × 16 sprite at [6, 22), and
+ * a 4 × 4 trinket at [24, 28) — smaller than one cell of the grid of 8 the sheet is quantised at.
  *
- * The field is a *drifting* magenta — 64 distinct near-magentas, laid out so no two pixels within any
- * one 8 × 8 cell share a colour. That is exactly what a returned sheet looks like, and it is the
- * condition the ordering test below turns on: each of those colours polls a single vote in the modal
- * alignment, so any colour appearing twice beats all of them.
+ * The sprite's boundaries at 6 and 22 are the heaviest steps in the image and share a phase class,
+ * so `bestGridOffset` measures the lattice at {6, 6} on both axes — sixteen boundary rows against
+ * the trinket's four keeps that deterministic — and the cells become [0, 6), [6, 14), [14, 22),
+ * [22, 30), [30, 32) each way: five per axis, the sprite filling four cells exactly and the trinket
+ * sitting inside cell (3, 3) with three times as much field around it.
+ *
+ * The field is a *drifting* magenta — 64 distinct near-magentas, laid out so no two pixels within
+ * any 8 × 8 window share a colour. That is exactly what a returned sheet looks like, and it is the
+ * condition the ordering test below turns on: each of those colours polls a single vote in the
+ * modal alignment, so any colour appearing twice beats all of them.
  *
  * Blue is pinned at 255, so only two channels drift and by at most 7 each: the widest of them is 6.5
- * from the key, well inside `KEYING`. The sprite colour is 179 away, so it is outside both the field
- * and the fringe threshold and cannot be eroded.
+ * from the key, well inside `KEYING`. Both art colours are over a hundred away, so they are outside
+ * the field and the fringe threshold alike and cannot be eroded.
  */
-const STRADDLING_SHEET = imageFrom(32, 32, (x, y) => {
-  if (x >= 6 && x < 26 && y >= 6 && y < 26) return ART;
+const INSET_SHEET = imageFrom(32, 32, (x, y) => {
+  if (x >= 6 && x < 22 && y >= 6 && y < 22) return ART;
+  if (x >= 24 && x < 28 && y >= 24 && y < 28) return TRINKET;
   const withinCell = (y % 8) * 8 + (x % 8);
   return { r: 255 - (withinCell % 8), g: Math.floor(withinCell / 8), b: 255, a: 255 };
 });
@@ -107,52 +116,86 @@ describe('quantiseImage', () => {
     expect(result.colors).toBe(32);
   });
 
-  it('keys the field before the alignment votes, so the sprite does not dilate into it', () => {
+  it('keys the field before the alignment votes, so sub-cell art cannot dilate into it', () => {
     // The load-bearing claim about the pipeline's *order*, stated as the difference it makes.
     //
-    // Without keying, every cell that holds two or more sprite pixels resolves to the sprite, because
-    // each drifting magenta beside them polls one vote. A 20 × 20 sprite offset across an 8-grid puts
-    // at least four sprite pixels in every one of the sixteen cells — so the whole 4 × 4 result comes
-    // back as solid sprite and the background is gone entirely.
-    const dilated = quantiseImage(STRADDLING_SHEET, { grid: 8, key: null, reduction: null });
+    // Without keying, the trinket's cell resolves to the trinket: its sixteen pixels of one colour
+    // outvote forty-eight drifting magentas polling one vote each, and a 4 × 4 piece comes back as a
+    // full 8 × 8 cell of solid colour — dilated to four times its own area.
+    const dilated = quantiseImage(INSET_SHEET, { grid: 8, key: null, reduction: null });
+    const cells = pixels(dilated.image);
 
-    expect(pixels(dilated.image)).toEqual(
-      Array.from({ length: 4 }, () => Array.from({ length: 4 }, () => ART)),
-    );
+    expect(dilated.image.width).toBe(5);
+    expect(cells[3]?.[3]).toEqual(TRINKET);
+    // The sprite fills its four cells exactly — the offset put the lattice on its own boundaries.
+    expect(cells[1]?.[1]).toEqual(ART);
+    expect(cells[2]?.[2]).toEqual(ART);
 
-    // Keying first collapses those 62-odd distinct magentas into one value before the vote is taken, so
-    // they outnumber the sprite in the cells they dominate. The sprite lands on the middle 2 × 2 — the
-    // four cells it genuinely fills — and the ring around it is empty.
-    const keyed = quantiseImage(STRADDLING_SHEET, { grid: 8, key: KEYING, reduction: null });
+    // Keying first collapses those distinct magentas into one value before the vote is taken, so the
+    // field outnumbers the trinket in the cell it dominates. The sprite lands on the 2 × 2 it
+    // genuinely fills, and everything else — the trinket's cell included, which the field three
+    // quarters covers — is empty.
+    const keyed = quantiseImage(INSET_SHEET, { grid: 8, key: KEYING, reduction: null });
 
     expect(pixels(keyed.image)).toEqual([
-      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
-      [TRANSPARENT, ART, ART, TRANSPARENT],
-      [TRANSPARENT, ART, ART, TRANSPARENT],
-      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
+      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
+      [TRANSPARENT, ART, ART, TRANSPARENT, TRANSPARENT],
+      [TRANSPARENT, ART, ART, TRANSPARENT, TRANSPARENT],
+      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
+      [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
     ]);
   });
 
   it('reports the share of the sheet the key removed', () => {
-    const result = quantiseImage(STRADDLING_SHEET, { grid: 8, key: KEYING, reduction: null });
+    const result = quantiseImage(INSET_SHEET, { grid: 8, key: KEYING, reduction: null });
 
-    // 32 × 32 less the 20 × 20 sprite: 624 of 1024. The sprite is far outside the fringe threshold, so
-    // nothing is eroded off it and the figure is exactly the field.
-    expect(result.keyedShare).toBe(624 / 1024);
+    // 32 × 32 less the 16 × 16 sprite and the 4 × 4 trinket: 752 of 1024. Both art colours are far
+    // outside the fringe threshold, so nothing is eroded off them and the figure is exactly the
+    // field.
+    expect(result.keyedShare).toBe(752 / 1024);
   });
 
   it('spends no palette slots on the keyed field, and none on the colours it removed', () => {
     // `colorHistogram` excludes fully transparent pixels, which is why nothing downstream needed
     // changing: the field claims no slots, so a strict budget buys the subject's own colours.
-    const result = quantiseImage(STRADDLING_SHEET, {
+    const result = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: KEYING,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
 
-    // 64 drifting magentas plus the one sprite colour went in; one colour survives.
-    expect(countColors(STRADDLING_SHEET)).toBe(65);
+    // 64 drifting magentas plus the two art colours went in; one colour survives — the sprite's,
+    // since the trinket's cell resolved to the field around it a step earlier.
+    expect(countColors(INSET_SHEET)).toBe(66);
     expect(result.colors).toBe(1);
+  });
+
+  it('recovers inset art exactly, without the margin being cropped off first', () => {
+    // The reported failure this pairs with the ordering test above: a returned sheet's art sits
+    // wherever composition put it, and a corner-anchored alignment quantised it at the right scale
+    // to the wrong lattice — every cell resolved over a window straddling two of the art's own. The
+    // offset is measured from the image, so the margin comes back as its own leading pixel and the
+    // art comes back pixel for pixel.
+    const margin: Rgba = { r: 250, g: 250, b: 250, a: 255 };
+    const inset = imageFrom(133, 133, (x, y) => {
+      if (x < 5 || y < 5) return margin;
+      const cellX = Math.floor((x - 5) / 8);
+      const cellY = Math.floor((y - 5) / 8);
+      return readPixel(SPRITE.data, pixelOffset(SPRITE.width, cellX, cellY));
+    });
+
+    const result = quantiseImage(inset, { grid: 8, key: null, reduction: null });
+
+    expect(result.image.width).toBe(17);
+    expect(result.image.height).toBe(17);
+    expect(readPixel(result.image.data, pixelOffset(17, 0, 0))).toEqual(margin);
+    for (let y = 0; y < 16; y += 1) {
+      for (let x = 0; x < 16; x += 1) {
+        expect(readPixel(result.image.data, pixelOffset(17, x + 1, y + 1))).toEqual(
+          readPixel(SPRITE.data, pixelOffset(SPRITE.width, x, y)),
+        );
+      }
+    }
   });
 
   it('maps every pixel onto a pinned palette rather than onto colours the image chose', () => {

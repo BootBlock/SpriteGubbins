@@ -2,23 +2,33 @@ import type { ColorReduction, QuantiseResult, QuantiseSettings } from '../types/
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
+import { bestGridOffset } from './gridOffset.ts';
 import { countColors } from './imageData.ts';
 import { keyBackground } from './keyBackground.ts';
 import { buildPalette } from './medianCut.ts';
 
 /**
- * The whole pipeline: key, align, downscale, reduce.
+ * The whole pipeline: key, place the grid, align, downscale, reduce.
  *
  * ```
- * ImageData  →  keyBackground  →  alignToGrid  →  downscaleNearest  →  applyPalette  →  ImageData
- *               (the key field    (cells become    (one pixel per      (palette
- *                becomes alpha)    one colour)      cell, exact)        reduction)
+ * ImageData  →  keyBackground  →  bestGridOffset  →  alignToGrid  →  downscaleNearest  →  applyPalette
+ *               (the key field    (where the grid     (cells become    (one pixel per      (palette
+ *                becomes alpha)    sits on the art)    one colour)      cell, exact)        reduction)
  * ```
  *
  * Grid **detection** is not part of it. The grid is a setting because the user can overrule what
  * detection found — and must, when it found nothing — so resolving it belongs to the tab, and this
  * function is handed the answer. The key colour arrives the same way, from the studio setting the
  * prompt already stated it in.
+ *
+ * The grid's **offset** is the opposite: it is measured here, on the same image the alignment is
+ * about to walk, and it deliberately never becomes a setting. Measured once per transform, it is
+ * one mechanism serving all three ways a grid reaches this function — measured, clicked or typed —
+ * so no two of them can disagree about where the lattice sits; stored anywhere, it would be the
+ * stale half of a pair the moment the user overtyped the grid beside it. It is measured *after*
+ * keying for the reason the vote is: a keyed field's drifting colours are steps the profile would
+ * otherwise count, and collapsing them to one value first leaves the art's own boundaries as the
+ * only mass worth weighing.
  *
  * The order is the reason the feature works and the reason it fits on the main thread. Aligning
  * before the palette step stops anti-aliasing fringes claiming palette slots, since a downscaled smooth
@@ -53,8 +63,9 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const source = keyed?.image ?? image;
   const pixels = image.width * image.height;
 
-  const aligned = alignToGrid(source, settings.grid);
-  const reduced = downscaleNearest(aligned, settings.grid);
+  const offset = bestGridOffset(source, settings.grid);
+  const aligned = alignToGrid(source, settings.grid, offset);
+  const reduced = downscaleNearest(aligned, settings.grid, offset);
 
   // `UNRESTRICTED` with no palette pinned skips the step outright rather than reducing to some
   // generous figure. A painted or 3D-rendered sheet has no colour budget to enforce, and a high cap

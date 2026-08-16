@@ -86,10 +86,13 @@ describe('estimatePixelGrid', () => {
   it('refuses a sheet whose only change is a stray feature, however it is arranged', () => {
     // A share of change alone says the change *fits* a lattice, which one feature always does: some
     // candidate puts a line through it, collects every unit of the sheet's change and scores a
-    // perfect 1. Requiring the spacing to have been *used* is what makes it a period rather than a
-    // coincidence — and requiring it per axis rather than pooled is what closes the cross, where one
-    // line down and one across sum to two while neither axis has seen a repeat. Measured before
-    // those guards, in order: 21, 21, 25, 21.
+    // perfect 1. Requiring the spacing to have been *observed* — two neighbouring lattice lines both
+    // carrying change — is what makes it a period rather than a coincidence. The full frame is the
+    // case that fixes the guard's shape: once the reading learnt phases, a 256-pixel frame fits a
+    // lattice of 127 at phase 1 perfectly and puts change through *two* of its lines, so a bare
+    // count of used lines waves it through — but those two lines are the first and last of three,
+    // and the line between them passes through nothing. Measured before any of these guards, in
+    // order: 21, 21, 25, 21.
     const flat = { r: 40, g: 40, b: 40, a: 255 };
     const mark = { r: 200, g: 10, b: 10, a: 255 };
     const sheets = {
@@ -119,9 +122,10 @@ describe('estimatePixelGrid', () => {
   });
 
   it('reads the smallest sheet that does hold one — two cells to a side', () => {
-    // The counterpart, and why the line count is pooled across the two axes rather than required of
-    // each: art two cells a side has exactly one interior line down and one across, which together
-    // are the same spacing observed twice.
+    // The counterpart, and what the every-line-used clause in `sawTheSpacing` exists for: art two
+    // cells a side has exactly one interior boundary each way, so no adjacency can ever be observed
+    // in it — but the one line its scale offers is the one line the art used, and there is no
+    // reading of the smallest periodic sheet that could ask for more.
     expect(estimatePixelGrid(soften(upscaleNearest(variedCells(2), 32)))).toBe(32);
   });
 
@@ -178,49 +182,27 @@ describe('estimatePixelGrid', () => {
     expect(estimatePixelGrid(soften(GRADIENT))).toBeNull();
   });
 
-  it('answers null for art whose offset from the corner no scale fits', () => {
-    // `alignToGrid` snaps from the origin, so a scale measured against any other phase is one the
-    // transform cannot apply — it would resolve each cell across two of the art's own. This is the
-    // trap a comb taking its *modal* remainder falls into, and the reason the window here is fixed
-    // on remainder zero. **Both forms of the sheet are checked**: the softened one is refused far
-    // more readily, so testing it alone would hide what a crisp margin does — and a crisp margin is
-    // exactly what reaches here, since `detectPixelGrid` is origin-anchored too and fails on it.
+  it('measures inset art at its own scale, wherever it sits against the corner', () => {
+    // The reading takes each axis's best phase, so art moved in from the corner is the same period
+    // at a different phase and not a different period. For a long time this was not true: the
+    // measurement was anchored at the origin because `alignToGrid` could only snap from the corner,
+    // so these insets came back as `null` or as whatever divisor of 8 happened to sit near the
+    // corner-anchored lattice — 4 for an inset of 3, `null` for an inset of 6 — and the panel told
+    // the user to crop the margin off. `bestGridOffset` removed the constraint at its root, and the
+    // margin's own boundary sits on the phased lattice too, so every inset now reads as the scale
+    // the art was actually drawn at. **Both forms are checked** because they exercise different
+    // readers' fallbacks: a crisp margin reaches this estimator only in fixtures — `detectPixelGrid`
+    // answers it first in the app — while a softened one is the shape models return.
     const crisp = upscaleNearest(variedCells(16), 8);
-    for (const inset of [1, 2, 6]) {
+    const softened = soften(crisp);
+    for (const inset of [1, 2, 3, 4, 5, 6, 7]) {
       expect({ inset, measured: estimatePixelGrid(shifted(crisp, inset)) }).toEqual({
         inset,
-        measured: null,
+        measured: 8,
       });
-    }
-
-    const softened = soften(crisp);
-    for (const inset of [1, 2, 3, 5, 6, 7]) {
       expect({ inset, measured: estimatePixelGrid(shifted(softened, inset)) }).toEqual({
         inset,
-        measured: null,
-      });
-    }
-  });
-
-  it('offers the coarsest lattice it can apply where the offset admits one', () => {
-    // Not every inset is unreadable, and refusing one that is would be its own wrong answer. Art
-    // drawn at 8 that starts three, four or five pixels in has every boundary within a pixel of a
-    // multiple of **4**; at seven, within a pixel of a multiple of 8. Those lattices genuinely sit
-    // on the art from the corner, and `alignToGrid`'s modal vote absorbs the pixel — each cell holds
-    // `(grid - 1)²` of one art cell out of `grid²`, nine against three, three and one at the
-    // narrowest scale this considers. Under-reducing by a factor of two is a far smaller wrong than
-    // refusing to reduce at all, and a lattice that cut cells down the middle could not reach here:
-    // it would not clear the threshold.
-    const crisp = upscaleNearest(variedCells(16), 8);
-    for (const [inset, expected] of [
-      [3, 4],
-      [4, 4],
-      [5, 4],
-      [7, 8],
-    ] as const) {
-      expect({ inset, measured: estimatePixelGrid(shifted(crisp, inset)) }).toEqual({
-        inset,
-        measured: expected,
+        measured: 8,
       });
     }
   });

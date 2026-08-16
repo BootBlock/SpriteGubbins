@@ -8,7 +8,7 @@ import { estimatePixelGrid } from './pixelPeriod.ts';
  *
  * A question about an image, not a transform of one — snapping to the answer and reducing to it are
  * `alignToGrid` and `downscaleNearest` in ./gridAlignment.ts, and `quantiseImage` is what runs the
- * three in order.
+ * three in order, at the offset `bestGridOffset` measures for whatever scale is in force.
  */
 
 /**
@@ -35,10 +35,10 @@ export function measureSheetScale(image: ImageData): SheetScale | null {
  * Where one pixel differs from the neighbour above it or to its left, totalled by position.
  *
  * The whole of what detection needs to know about an image, and the reason it needs only one pass to
- * learn it: a grid of `g` is exactly the claim that **no colour changes anywhere except on the
- * `g`-lattice**, so once the transitions are counted by the row and column they fall on, every
- * candidate scale is scored by summing the entries on its lattice rather than by walking the image
- * again.
+ * learn it: a grid of `g` is exactly the claim that **no colour changes anywhere except on one of
+ * `g`'s phase classes** — the lines `p, p + g, p + 2g, …` for some offset `p` — so once the
+ * transitions are counted by the row and column they fall on, every candidate scale is scored by
+ * summing the entries on each of its classes rather than by walking the image again.
  */
 interface EdgeLattice {
   /** `columnEdges[x]` — rows in which pixel `x` differs from pixel `x - 1`. Index 0 is unused. */
@@ -53,38 +53,44 @@ interface EdgeLattice {
  * The pixel scale the image was drawn at, or `null` when it has none.
  *
  * **Scored on where the image changes, not on how much of it is flat.** The two sound equivalent and
- * are not: a sheet is a grid of `g` precisely when every colour transition in it lands on a multiple
- * of `g`, and asking the question that way weights the evidence by how much detail is at stake rather
- * than by how much canvas is. Counting *uniform blocks* instead — the obvious reading, and what this
- * did first — lets empty space vote. A 2048 × 2048 sheet holding a few small sprites drawn at 4 on a
- * flat key field is over 99% background, so at a candidate of 32 more than 90% of its blocks are
- * uniform and detection confidently answered 32: a scale that would reduce the art to a smear.
- * Measured on exactly that image, the block count returns 32 and this returns 4.
+ * are not: a sheet is a grid of `g` precisely when every colour transition in it lands on one phase
+ * class of `g`, and asking the question that way weights the evidence by how much detail is at stake
+ * rather than by how much canvas is. Counting *uniform blocks* instead — the obvious reading, and
+ * what this did first — lets empty space vote. A 2048 × 2048 sheet holding a few small sprites drawn
+ * at 4 on a flat key field is over 99% background, so at a candidate of 32 more than 90% of its
+ * blocks are uniform and detection confidently answered 32: a scale that would reduce the art to a
+ * smear. Measured on exactly that image, the block count returns 32 and this returns 4.
+ *
+ * **Each axis takes the best of its phase classes**, because a generator puts its art wherever
+ * composition does and the canvas corner is nowhere special: art drawn at 8 and delivered three
+ * pixels in from the edge changes on the lines `3, 11, 19, …`, which is the same grid at a
+ * different phase and not a different grid. The original, corner-anchored reading answered `null`
+ * for every such sheet, and the guidance told the user to crop the margin off and bring the image
+ * back — an instruction this measurement now makes unnecessary. The alignment does not need the
+ * phase found here: `bestGridOffset` re-measures it for whatever grid ends up in force, which is
+ * the one mechanism serving measured, clicked and typed grids alike.
  *
  * Largest candidate first, because a true grid of 8 also scores perfectly at 4, 2 and 1 — the
  * coarsest grid that holds is the real one. Where the count starts is a property of the image
  * rather than a constant — see `measurableGridCeiling` — and candidates stop at 2 because every
  * image is trivially uniform at 1, so a detector that considered it could never answer `null`.
  *
- * `null` is the honest answer for genuinely smooth artwork, and it is where {@link measureSheetScale}
- * hands the sheet to the estimator: this asks whether every transition falls on a lattice, which
- * resampling makes false of art that was nevertheless drawn at a scale, so the question worth asking
- * next is a different one. An image with **no** transitions at all — one flat colour, edge to edge —
- * answers `null` too, and the estimator agrees: there is no scale in it to measure, and every
- * candidate would fit equally.
- *
- * **The lattice is assumed to start at the image's own origin.** A sheet whose art is offset by a few
- * pixels from the top-left corner has a scale this cannot see, and the manual grid box will not fix
- * it either, because the transform snaps from the origin as well. Cropping the margin off is the
- * answer, and it is one the estimator is deliberately anchored the same way to preserve — it reads
- * period rather than membership, but only ever against the corner.
+ * A stray feature in the sheet's interior still defeats every candidate, phase search or none: it
+ * is *two* transition columns — where it starts and where it ends, one pixel apart — and no scale
+ * of 2 or more has a phase class holding both. `null` is likewise still the honest answer for
+ * genuinely smooth artwork, which changes everywhere and gives no class more than a fraction of the
+ * total; that is where {@link measureSheetScale} hands the sheet to the estimator, whose question —
+ * period rather than membership — is the one resampling leaves answerable. An image with **no**
+ * transitions at all answers `null` too: there is no scale in it to measure, and every candidate
+ * would fit equally.
  */
 export function detectPixelGrid(image: ImageData): PixelGrid | null {
   const lattice = edgeLattice(image);
   if (lattice.total === 0) return null;
 
   for (let grid = measurableGridCeiling(image.width, image.height); grid >= 2; grid -= 1) {
-    if (alignedShare(lattice, grid) >= GRID_DETECTION_THRESHOLD) return grid;
+    const aligned = bestPhaseCount(lattice.columnEdges, grid) + bestPhaseCount(lattice.rowEdges, grid);
+    if (aligned / lattice.total >= GRID_DETECTION_THRESHOLD) return grid;
   }
   return null;
 }
@@ -130,17 +136,24 @@ function edgeLattice(image: ImageData): EdgeLattice {
 }
 
 /**
- * The fraction of the image's transitions that fall on this scale's lattice.
+ * The most transitions any one phase class of this scale accounts for on one axis.
  *
- * `1` says the image changes nowhere but on the lattice, which is the same statement as every whole
- * block being one colour. Below that it degrades in proportion to how much of the detail the scale
- * would destroy — a grid twice as coarse as the truth misses every other lattice line and scores
- * about a half, which is why the threshold has room to allow a stray pixel without ever allowing a
- * doubled scale.
+ * Read against the image's total, the summed best of the two axes degrades in proportion to how
+ * much of the detail the scale would destroy: a grid twice as coarse as the truth misses every
+ * other line of the art's own lattice whatever phase it takes, and scores about a half — which is
+ * why the threshold has room to allow a stray pixel without ever allowing a doubled scale.
+ *
+ * Position 0 is skipped in every class: the first pixel has nothing before it to differ from, so
+ * index 0 is unused and a lattice line at the image's own edge is not evidence.
  */
-function alignedShare({ columnEdges, rowEdges, total }: EdgeLattice, grid: PixelGrid): number {
-  let aligned = 0;
-  for (let x = grid; x < columnEdges.length; x += grid) aligned += columnEdges[x] ?? 0;
-  for (let y = grid; y < rowEdges.length; y += grid) aligned += rowEdges[y] ?? 0;
-  return aligned / total;
+function bestPhaseCount(edges: Uint32Array, grid: PixelGrid): number {
+  let best = 0;
+  for (let phase = 0; phase < grid; phase += 1) {
+    let aligned = 0;
+    for (let position = phase === 0 ? grid : phase; position < edges.length; position += grid) {
+      aligned += edges[position] ?? 0;
+    }
+    if (aligned > best) best = aligned;
+  }
+  return best;
 }

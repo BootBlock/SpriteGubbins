@@ -76,35 +76,6 @@ export const SOFTENED_EDGE_RAMP = 1;
 export const MIN_ESTIMATED_GRID = 2 * SOFTENED_EDGE_RAMP + 2;
 
 /**
- * How many of a scale's lattice lines must actually carry some of the sheet's change before the
- * spacing between them counts as a period.
- *
- * Two, because **one interval is not a period**. A share of change on its own says only that the
- * change *fits* a lattice, and a single feature anywhere in an otherwise flat sheet fits one
- * perfectly: whatever position it sits at, some candidate puts a lattice line through it, collects
- * every last unit of the sheet's change, and scores 1. Measured before this existed, a 64 × 64 sheet
- * with one vertical line at x = 20 came back as a grid of 21, a one-pixel frame down two sides of a
- * 128 × 128 sheet as 21 as well, and a single separator each way on a 256 × 256 sheet as 25 — every
- * one of which `alignToGrid` then erases, because the feature is one column inside a cell of
- * hundreds of flat pixels.
- *
- * It is required **per axis rather than pooled**, and that distinction is the whole of the second
- * fix: pooling let a one-pixel *cross* through, because one line down and one across sum to two
- * while neither axis has seen the spacing twice. `sawTheSpacing` therefore asks each axis on its own
- * — and accepts an axis that used every line the scale offered it, which is what keeps the smallest
- * honest sheet readable, since art two cells to a side has exactly one interior boundary and no
- * reading of it can ask for more.
- *
- * **Two shapes remain measurable that arguably should not be, and they are the same shape.** A cross
- * at the exact midpoint of a square sheet, and two isolated marks spaced exactly one candidate apart
- * on both axes, are — in the profile this reads — indistinguishable from art two cells to a side and
- * from sparse periodic art respectively. No period measurement separates them, because there is
- * nothing there to separate: the evidence really is periodic. That is one of the reasons an estimate
- * is offered rather than adopted.
- */
-export const MIN_LATTICE_LINES = 2;
-
-/**
  * The share of a sheet's change that must sit on a scale's lattice for that scale to be *offered*.
  *
  * The same nine tenths as {@link GRID_DETECTION_THRESHOLD}, measuring the same thing about a
@@ -180,12 +151,13 @@ export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE
  * reported as **32**, a finer, lossless reading of the same lattice that reduces the sheet to twice
  * the size that was asked for, wearing the confidence of a measurement while it does. Neither
  * reader needs the small bound to stay honest: a coarser-than-true candidate collects about half an
- * image's change against thresholds of nine tenths, and the sparse shapes that could flatter a
- * coarse lattice are refused by the estimator's line-count guard, while under the exact detector a
- * stray feature in the sheet's interior is *two* transitions — where it starts and where it ends —
- * which no lattice holds both of. One touching the far edge has no end inside the image and does
- * read as a coarse two-cell sheet, but it did under the fixed ceiling too, at a smaller divisor of
- * the same lattice — and a share of 1 means every cell is uniform, so either reduction is lossless.
+ * image's change against thresholds of nine tenths whatever phase it takes, and the sparse shapes
+ * that could flatter a coarse lattice are refused by the estimator's adjacency guard — see
+ * `sawTheSpacing` — while under the exact detector a stray feature in the sheet's interior is *two*
+ * transitions, one pixel apart — where it starts and where it ends — which no phase class of any
+ * scale holds both of. One touching the far edge has no end inside the image and does read as a
+ * coarse two-cell sheet, but it did before the readers learnt phases too — and a share of 1 means
+ * every phased cell is uniform, so either reduction is lossless.
  *
  * Two bounds remain, and each is a statement rather than a tuning:
  *
@@ -370,8 +342,8 @@ export const QUANTISE_STEPS = [
  * the number already, and a third copy of it in prose is one more place for the three to disagree.
  */
 export const QUANTISE_SCALE_GUIDANCE = {
-  /** Nothing was read at all — the sheet is smooth, or its art does not start at the corner. */
-  none: 'Nothing in this image changes on a regular grid, and its edges do not soften at a regular spacing either, so neither reading of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. If the art starts a few pixels in from the top-left corner, no scale can be measured from it and none can be applied to it either — crop the margin off and bring it back.',
+  /** Nothing was read at all — the sheet is smooth, with no regular spacing left in it to measure. */
+  none: 'Nothing in this image changes on a regular grid, and its edges do not soften at a regular spacing either, so neither reading of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. The grid does not have to start at the image’s corner — where it sits on the art is measured from the image whenever a scale is applied.',
   /** The edges repeat at a spacing, which is a candidate the reader still has to check. */
   estimated:
     'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do repeat at a regular spacing, though, and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',
@@ -409,7 +381,7 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
 
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */
 export const QUANTISE_TOOLTIPS = {
-  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still repeat at is estimated instead and offered to click rather than applied. Type it yourself when neither reading found a scale, or when the one reported disagrees with the preview. A grid of 1 leaves the size alone and only reduces the palette.',
+  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still repeat at is estimated instead and offered to click rather than applied. Type it yourself when neither reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
   // Where panning is named. The grab cursor only appears once a pointer is already over the image,
   // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence
   // is the other thing nothing on screen says: the panes are linked, and moving one moves both.

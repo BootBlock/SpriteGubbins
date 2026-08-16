@@ -45,6 +45,21 @@ export type RgbaChannel = (typeof RGBA_CHANNELS)[number];
  */
 export type PixelGrid = number;
 
+/**
+ * Where a pixel grid sits against the image: how far in from the left and top its first interior
+ * lattice line falls, each in `[0, grid)`.
+ *
+ * `{x: 0, y: 0}` is a grid anchored at the image's own corner, which returned sheets almost never
+ * are — a generator places its art wherever composition puts it. The offset is measured from the
+ * image by `bestGridOffset` rather than ever being typed, so it appears in no setting and crosses
+ * no worker protocol: the transform works it out for whatever grid is in force, however that grid
+ * was chosen.
+ */
+export interface GridOffset {
+  readonly x: number;
+  readonly y: number;
+}
+
 /** An image the user has brought in, and the filename anything derived from it is named after. */
 export interface ImportedImage {
   readonly name: string;

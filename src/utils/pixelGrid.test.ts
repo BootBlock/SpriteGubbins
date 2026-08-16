@@ -54,6 +54,35 @@ describe('detectPixelGrid', () => {
     expect(detectPixelGrid(sparseSheet())).toBe(4);
   });
 
+  it('measures crisp art moved in from the corner, at its own scale', () => {
+    // Each axis takes the best of its phase classes, so an inset is a phase and not a defect: art
+    // drawn at 8 and delivered three pixels in changes on the lines 3, 11, 19, … — the same grid,
+    // sitting somewhere else. The corner-anchored reading answered `null` here and the panel told
+    // the user to crop the margin off; the margin's own boundary lands on the phased lattice too,
+    // so nothing about the sheet needs preparing any more.
+    const margin = { r: 250, g: 250, b: 250, a: 255 };
+    for (const inset of [1, 3, 7]) {
+      const sheet = imageFrom(128 + inset, 128 + inset, (x, y) => {
+        if (x < inset || y < inset) return margin;
+        const cellX = Math.floor((x - inset) / 8);
+        const cellY = Math.floor((y - inset) / 8);
+        return { r: cellX * 16 + 1, g: cellY * 16 + 1, b: 64, a: 255 };
+      });
+      expect({ inset, measured: detectPixelGrid(sheet) }).toEqual({ inset, measured: 8 });
+    }
+  });
+
+  it('still refuses an interior stray feature, phase search or none', () => {
+    // The guard the phase search could have weakened, asserted where it holds: a one-pixel line in
+    // the sheet's interior is two transition columns one pixel apart — where it starts and where it
+    // ends — and no phase class of any scale of 2 or more contains both. The corner-anchored version
+    // of this test lives above; this one moves the line to a position that is *not* a multiple of
+    // anything convenient, which is exactly where a phase would have found it.
+    const flat = { r: 40, g: 40, b: 40, a: 255 };
+    const mark = { r: 200, g: 10, b: 10, a: 255 };
+    expect(detectPixelGrid(imageFrom(256, 256, (x) => (x === 97 ? mark : flat)))).toBeNull();
+  });
+
   it('measures a sprite-scale sheet, past the old fixed ceiling', () => {
     // One 16 × 16 sprite filling a 1024-pixel canvas is a grid of 64. Under a fixed ceiling of 32
     // this came back as 32 — a finer, lossless reading of the same lattice, which reduced the sheet
