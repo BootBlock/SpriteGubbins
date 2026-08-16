@@ -372,24 +372,18 @@ export const DEFAULT_LINE_STRENGTH = 1.5;
  * The failure the pass serves: flat fills come back speckled, because neighbouring cells of one
  * surface resolve to near-identical-but-distinct colours — blends and palette entries a few steps
  * apart with no perceptual meaning. The cleanup snaps a pixel to its neighbourhood's most common
- * colour when at least {@link SPECKLE_NEIGHBOUR_MAJORITY} of its eight neighbours agree *and* the
- * pixel already sits within the tolerance of that colour, measured as straight-line RGB distance.
- * The tolerance is what keeps lines safe: ink against a green fill sits hundreds of steps away,
- * far past every rung offered, so a line pixel is never merged however many neighbours agree. The
- * rungs step by 16 because the speckle being merged is palette-adjacent — entries a median cut
- * splits 10–40 apart — and 64 is where genuinely distinct shades begin to fuse.
+ * colour when a strict majority of the neighbours it *has* agree — see `despeckle` for the rule
+ * and why a region boundary can never form one — and the pixel already sits within the tolerance
+ * of that colour, measured as straight-line RGB distance. The tolerance is what keeps lines safe:
+ * ink against a green fill sits hundreds of steps away, far past every rung offered, so a line
+ * pixel is never merged however many neighbours agree. The rungs step by 16 because the speckle
+ * being merged is palette-adjacent — entries a median cut splits 10–40 apart — and 64 is where
+ * genuinely distinct shades begin to fuse.
  */
 export const FILL_CLEANUP_TOLERANCES = [0, 16, 32, 48, 64] as const;
 
-/**
- * How many of a pixel's eight neighbours must already agree before the fill cleanup may snap it.
- *
- * Five is the smallest strict majority: fewer, and two colours meeting along a straight boundary
- * could each claim the other's edge pixels — four neighbours on each side — and the boundary
- * would crawl. A majority keeps the pass to what it is for: a lone odd pixel inside a settled
- * region, never a negotiation between two regions.
- */
-export const SPECKLE_NEIGHBOUR_MAJORITY = 5;
+/** The tolerance the tab opens with — off, so a sheet is exactly what its reading made of it. */
+export const DEFAULT_FILL_CLEANUP = 0;
 
 /**
  * How many refinement passes the k-centroid reading's two clusters take per cell.
@@ -668,7 +662,7 @@ export const QUANTISE_TOOLTIPS = {
   lineStrength:
     'How hard the ink-weighted reading pulls a patch toward the line crossing it. At 1× a line darkens its patch only by the share it actually holds, which reads as shading; each step up makes a qualifying line claim more of the patch, so contours come out more defined at the cost of thicker-looking darks. It appears only while the Downscale control is set to the ink-weighted reading, because the other readings do not blend. Step it up when outlines still look faint, and back down if dark areas start to swallow detail.',
   fillCleanup:
-    'How far apart two colours may sit and still be merged when a pixel disagrees with its neighbours. Flat fills often come back speckled — neighbouring pixels land on near-identical colours with no perceptual difference — and this pass snaps such a pixel to its neighbourhood’s most common colour, but only when most of its neighbours already agree and the colours are within this distance. Off leaves the result exactly as the reading made it. Lines and genuine detail sit far outside every rung offered, so they are never merged; raise it until the fills settle, and back off if close shades begin to fuse.',
+    'How far apart two colours may sit and still be merged when a pixel disagrees with its neighbours. Flat fills often come back speckled — neighbouring pixels land on near-identical colours with no perceptual difference — and this pass snaps such a pixel to its neighbourhood’s most common colour, but only when most of the neighbours it has already agree and the colours are within this distance. Off leaves the result exactly as the reading made it. It changes colour only, never transparency, and a line sits far outside every rung offered, so linework is never merged; raise it until the fills settle, and back off if close shades begin to fuse.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

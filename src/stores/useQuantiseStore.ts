@@ -1,5 +1,9 @@
 import { create } from 'zustand';
-import { DEFAULT_KEY_TOLERANCE, DEFAULT_LINE_STRENGTH } from '../constants/quantiser.ts';
+import {
+  DEFAULT_FILL_CLEANUP,
+  DEFAULT_KEY_TOLERANCE,
+  DEFAULT_LINE_STRENGTH,
+} from '../constants/quantiser.ts';
 import type { ImportedImage, PixelGrid, VoteMethod } from '../types/quantiser.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
@@ -81,7 +85,7 @@ const EMPTY: Pick<
   keyTolerance: DEFAULT_KEY_TOLERANCE,
   vote: 'DOMINANT',
   lineStrength: DEFAULT_LINE_STRENGTH,
-  fillCleanup: 0,
+  fillCleanup: DEFAULT_FILL_CLEANUP,
 };
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
