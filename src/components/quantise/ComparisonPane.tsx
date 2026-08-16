@@ -12,16 +12,18 @@ import { PanViewport } from './PanViewport.tsx';
  * panes. This is the other side of that identity — the two differ by exactly the factor that makes
  * the two canvases cover the same extent of the same artwork.
  *
- * **`window` and `inset` are what hold that identity once the grid has an offset.** The lattice is
- * measured from the art rather than the corner, so the quantised image's first pixel on an axis can
- * be a *leading partial cell* — one pixel standing for only `offset` source pixels — and a canvas
- * drawn at a uniform magnification renders it a full cell wide, displacing everything after it by
- * the deficit. The pane therefore draws the canvas pulled back by exactly that deficit (`inset`)
- * inside a clipping `window` sized to the source's own extent, so every full cell lands on the
- * source pixels it actually covers and the partial cells show at the width they truly have. Both
- * panes carry the same window, which is also what `useLinkedPanes` measures — two contents of
- * identical extent, exact to convert between. The source pane's inset is zero and its window is its
- * own size; the structure is shared so neither pane is a special case.
+ * **`window` and `inset` are what hold that identity once the mesh has a leading partial cell.**
+ * The cells are measured from the art rather than the corner, so the quantised image's first pixel
+ * on an axis can stand for fewer source pixels than a full cell — and a canvas drawn at a uniform
+ * magnification renders it full width, displacing everything after it by the deficit. The pane
+ * therefore draws the canvas pulled back by exactly that deficit (`inset`) inside a clipping
+ * `window` sized to the source's own extent. Both panes carry the same window, which is also what
+ * `useLinkedPanes` measures — two contents of identical extent to convert between. On regular art
+ * the placement is exact; on a drifting sheet the mesh's interior cells can sit a pixel or two off
+ * the uniform positions a single magnification can draw, so the panes agree to within the drift
+ * itself — the error a per-cell redraw would remove and a uniform canvas cannot. The source pane's
+ * inset is zero and its window is its own size; the structure is shared so neither pane is a
+ * special case.
  */
 interface PaneContent {
   readonly image: ImageData;

@@ -1,6 +1,7 @@
 import { GRID_DETECTION_THRESHOLD, measurableGridCeiling } from '../constants/quantiser.ts';
 import type { PixelGrid, SheetScale } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, packedColorAt } from './imageData.ts';
+import { estimateMeshPeriod } from './meshPeriod.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
 
 /**
@@ -12,23 +13,31 @@ import { estimatePixelGrid } from './pixelPeriod.ts';
  */
 
 /**
- * The scale in a sheet, read exactly where the sheet allows it and estimated where it does not.
+ * The scale in a sheet: read exactly where the sheet allows it, estimated as a period where
+ * resampling has softened the edges, and estimated from the boundary spacings where the art
+ * *drifts* — each reading tried only where the one before found nothing.
  *
- * The two readings are tried in this order and never both: {@link detectPixelGrid} is exact and has
- * no tolerance in it, so where it answers there is nothing an estimate could add and a second
- * opinion could only disagree. `estimatePixelGrid` is the fallback, and the case it covers —
- * artwork drawn at a scale and then resampled — is the one this tab meets most often, which is why
- * a sheet it cannot read is worth a second pass rather than an immediate `null`.
+ * {@link detectPixelGrid} is exact and has no tolerance in it, so where it answers there is nothing
+ * an estimate could add and a second opinion could only disagree. `estimatePixelGrid` covers
+ * artwork drawn at a scale and then resampled — softened edges, but a true period underneath.
+ * `estimateMeshPeriod` covers what generators actually return: blocks that repeat at *almost* a
+ * period, whose spacings wander between two neighbouring integers so that no lattice at any phase
+ * collects them — the sheets both integer readings correctly refuse, and the commonest input this
+ * tab has. Its answer is the typical spacing `boundaryMesh` will snap cells to, so it is offered
+ * under the same `ESTIMATED` hedge: a candidate to click and judge, never adopted on its own.
  *
- * Running the estimator only on that fallback is also what keeps the survey to one extra pass on the
- * sheets that need it and none on the sheets that do not.
+ * Running each reading only on the one before's refusal is also what keeps the survey to at most
+ * one extra pass on the sheets that need it and none on the sheets that do not.
  */
 export function measureSheetScale(image: ImageData): SheetScale | null {
   const detected = detectPixelGrid(image);
   if (detected !== null) return { grid: detected, measurement: 'EXACT' };
 
   const estimated = estimatePixelGrid(image);
-  return estimated === null ? null : { grid: estimated, measurement: 'ESTIMATED' };
+  if (estimated !== null) return { grid: estimated, measurement: 'ESTIMATED' };
+
+  const drifting = estimateMeshPeriod(image);
+  return drifting === null ? null : { grid: drifting, measurement: 'ESTIMATED' };
 }
 
 /**

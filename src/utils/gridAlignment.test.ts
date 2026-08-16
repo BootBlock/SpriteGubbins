@@ -3,6 +3,7 @@ import { channels, imageFrom } from '../test/images.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 import type { GridOffset, Rgba } from '../types/quantiser.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
+import { regularMesh } from './gridMesh.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
 
 /** A 16 × 16 source in which every pixel is a different colour, so no block of two is ever uniform. */
@@ -24,15 +25,15 @@ describe('alignToGrid', () => {
   it('is idempotent — aligning an aligned image changes nothing', () => {
     // The clearest single check that the step did what it claims: after it, every cell is one
     // colour, so there is nothing left for a second pass to collapse.
-    const once = alignToGrid(NOISY, 4, CORNER);
-    const twice = alignToGrid(once, 4, CORNER);
+    const once = alignToGrid(NOISY, regularMesh(20, 13, 4, CORNER));
+    const twice = alignToGrid(once, regularMesh(20, 13, 4, CORNER));
     expect(channels(twice)).toEqual(channels(once));
   });
 
   it('is idempotent at an offset too, where the cells it revisits are the partial ones', () => {
     const offset: GridOffset = { x: 3, y: 2 };
-    const once = alignToGrid(NOISY, 4, offset);
-    const twice = alignToGrid(once, 4, offset);
+    const once = alignToGrid(NOISY, regularMesh(20, 13, 4, offset));
+    const twice = alignToGrid(once, regularMesh(20, 13, 4, offset));
     expect(channels(twice)).toEqual(channels(once));
   });
 
@@ -44,7 +45,7 @@ describe('alignToGrid', () => {
     const minority: Rgba = { r: 0, g: 0, b: 255, a: 255 };
     const cell = imageFrom(2, 2, (x, y) => (x === 1 && y === 1 ? minority : majority));
 
-    const aligned = alignToGrid(cell, 2, CORNER);
+    const aligned = alignToGrid(cell, regularMesh(2, 2, 2, CORNER));
     for (let offset = 0; offset < aligned.data.length; offset += 4) {
       expect(readPixel(aligned.data, offset)).toEqual(majority);
     }
@@ -57,7 +58,7 @@ describe('alignToGrid', () => {
     // between the art's own blocks, in the anti-aliasing fringe. A whole sheet of such cells came
     // back speckled with edge-blend colours. The centre pixel is the one furthest from every
     // boundary.
-    const aligned = alignToGrid(PIXEL_SOURCE, 4, CORNER);
+    const aligned = alignToGrid(PIXEL_SOURCE, regularMesh(16, 16, 4, CORNER));
 
     for (let cellY = 0; cellY < 4; cellY += 1) {
       for (let cellX = 0; cellX < 4; cellX += 1) {
@@ -81,7 +82,7 @@ describe('alignToGrid', () => {
       x === 1 && y === 1 ? centre : x < 2 && y < 2 ? majority : { r: x * 80, g: y * 80, b: 200, a: 255 },
     );
 
-    const aligned = alignToGrid(cell, 3, CORNER);
+    const aligned = alignToGrid(cell, regularMesh(3, 3, 3, CORNER));
     expect(readPixel(aligned.data, 0)).toEqual(majority);
   });
 
@@ -96,7 +97,7 @@ describe('alignToGrid', () => {
     // tie-break resolves it: the row's centre falls between x = 1 and x = 2, and nearest-then-
     // earliest takes x = 1.
     const expected = readPixel(NOISY.data, pixelOffset(NOISY.width, 1, 12));
-    const aligned = alignToGrid(NOISY, 4, CORNER);
+    const aligned = alignToGrid(NOISY, regularMesh(20, 13, 4, CORNER));
 
     for (let x = 0; x < 4; x += 1) {
       expect(readPixel(aligned.data, pixelOffset(aligned.width, x, 12))).toEqual(expected);
@@ -118,7 +119,7 @@ describe('alignToGrid', () => {
         : readPixel(art.data, pixelOffset(art.width, x - 2, y - 2)),
     );
 
-    const aligned = alignToGrid(inset, 4, { x: 2, y: 2 });
+    const aligned = alignToGrid(inset, regularMesh(18, 18, 4, { x: 2, y: 2 }));
     expect(channels(aligned)).toEqual(channels(inset));
   });
 });
@@ -127,14 +128,17 @@ describe('downscaleNearest', () => {
   it('is lossless after alignment — upscaling reproduces the aligned image exactly', () => {
     // What makes the pair of steps a change of scale rather than a resampling: every pixel in a cell
     // is already identical, so taking the top-left one discards nothing.
-    const aligned = alignToGrid(upscaleNearest(PIXEL_SOURCE, 8), 8, CORNER);
-    const reduced = downscaleNearest(aligned, 8, CORNER);
+    const aligned = alignToGrid(upscaleNearest(PIXEL_SOURCE, 8), regularMesh(128, 128, 8, CORNER));
+    const reduced = downscaleNearest(aligned, regularMesh(128, 128, 8, CORNER));
     expect(channels(upscaleNearest(reduced, 8))).toEqual(channels(aligned));
   });
 
   it('keeps trailing partial cells instead of cropping them away', () => {
     // Cropping to a whole multiple of the grid would silently delete a column and a row of a sheet.
-    const reduced = downscaleNearest(alignToGrid(NOISY, 4, CORNER), 4, CORNER);
+    const reduced = downscaleNearest(
+      alignToGrid(NOISY, regularMesh(20, 13, 4, CORNER)),
+      regularMesh(20, 13, 4, CORNER),
+    );
     expect(reduced.width).toBe(5);
     expect(reduced.height).toBe(4);
   });
@@ -144,7 +148,10 @@ describe('downscaleNearest', () => {
     // first and last partial. Cropping the leading strip would delete the margin side of every
     // sheet whose art does not start at the corner.
     const offset: GridOffset = { x: 3, y: 2 };
-    const reduced = downscaleNearest(alignToGrid(NOISY, 4, offset), 4, offset);
+    const reduced = downscaleNearest(
+      alignToGrid(NOISY, regularMesh(20, 13, 4, offset)),
+      regularMesh(20, 13, 4, offset),
+    );
     expect(reduced.width).toBe(6);
     expect(reduced.height).toBe(4);
   });
@@ -164,7 +171,8 @@ describe('downscaleNearest', () => {
     );
     const offset: GridOffset = { x: 2, y: 2 };
 
-    const reduced = downscaleNearest(alignToGrid(inset, 4, offset), 4, offset);
+    const mesh = regularMesh(18, 18, 4, offset);
+    const reduced = downscaleNearest(alignToGrid(inset, mesh), mesh);
 
     expect(reduced.width).toBe(5);
     expect(reduced.height).toBe(5);

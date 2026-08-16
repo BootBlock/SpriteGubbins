@@ -265,6 +265,103 @@ describe('quantiseImage', () => {
     }
   });
 
+  it('recovers a drifting sheet cleanly, which no fixed lattice at any offset could', () => {
+    // The sheet a generator actually returns: block spacings wandering between 6 and 7 with the
+    // drift accumulating, and per-pixel wobble inside every block. Under a fixed pitch this
+    // quantised to a mess — every cell straddling two of the art's own the further the lattice
+    // walked — and it is the reported failure the mesh was built for. Run unreduced, so what is
+    // asserted is the mesh and the vote alone: the budget's own merging of similar colours is a
+    // different behaviour with its own test below.
+    const starts = [0, 6, 12, 19, 25, 31, 38, 44, 51];
+    const blockColor = (cell: number): Rgba => ({
+      r: (cell * 71 + 40) % 200,
+      g: (cell * 149 + 80) % 200,
+      b: (cell * 37 + 120) % 200,
+      a: 255,
+    });
+    const cellOf = (position: number): number => {
+      let cell = 0;
+      for (const [index, start] of starts.entries()) if (position >= start) cell = index;
+      return cell;
+    };
+    const wobble = (x: number, y: number, channel: number) =>
+      (((x * 374761393 + y * 668265263 + channel * 69119) >>> 3) % 7) - 3;
+    const drifting = imageFrom(57, 57, (x, y) => {
+      const base = blockColor(cellOf(y) * 10 + cellOf(x));
+      return {
+        r: Math.max(0, Math.min(255, base.r + wobble(x, y, 1))),
+        g: Math.max(0, Math.min(255, base.g + wobble(x, y, 2))),
+        b: Math.max(0, Math.min(255, base.b + wobble(x, y, 3))),
+        a: 255,
+      };
+    });
+
+    const result = quantiseImage(drifting, { grid: 6, key: null, reduction: null });
+
+    // One output pixel per drifting cell on each axis, and every interior cell resolves to a colour
+    // within the wobble of its own block — no cell inherits a neighbouring block's colour, which is
+    // what a fixed lattice's straddling cells did.
+    expect(result.image.width).toBe(starts.length);
+    expect(result.image.height).toBe(starts.length);
+    for (let cellY = 1; cellY < starts.length - 1; cellY += 1) {
+      for (let cellX = 1; cellX < starts.length - 1; cellX += 1) {
+        const got = readPixel(result.image.data, pixelOffset(result.image.width, cellX, cellY));
+        const want = blockColor(cellY * 10 + cellX);
+        const error = Math.abs(got.r - want.r) + Math.abs(got.g - want.g) + Math.abs(got.b - want.b);
+        expect(error, `cell (${String(cellX)}, ${String(cellY)}) drifted to a neighbour`).toBeLessThanOrEqual(
+          9,
+        );
+      }
+    }
+  });
+
+  it('collapses a region’s near-shades into one bucket before the vote, killing the speckle', () => {
+    // The ordering this pipeline converged on with the tools it follows: reduce first, then vote.
+    // On generated art every pixel of a flat region is subtly different, so voting first hands each
+    // cell to one arbitrary pixel and two neighbouring cells of the same region pick two subtly
+    // different shades — the speckle the reported sheet was covered in. Reduced first, the region's
+    // shades become one colour and its cells all vote for the same thing: two clean fields, one
+    // colour each, where the old order returned sixteen distinct near-shades.
+    const left: Rgba = { r: 40, g: 80, b: 120, a: 255 };
+    const right: Rgba = { r: 200, g: 60, b: 20, a: 255 };
+    const wobble = (x: number, y: number, channel: number) =>
+      (((x * 374761393 + y * 668265263 + channel * 69119) >>> 3) % 7) - 3;
+    const noisy = imageFrom(24, 24, (x, y) => {
+      const base = x < 12 ? left : right;
+      return {
+        r: Math.max(0, Math.min(255, base.r + wobble(x, y, 1))),
+        g: Math.max(0, Math.min(255, base.g + wobble(x, y, 2))),
+        b: Math.max(0, Math.min(255, base.b + wobble(x, y, 3))),
+        a: 255,
+      };
+    });
+
+    const result = quantiseImage(noisy, {
+      grid: 6,
+      key: null,
+      reduction: { kind: 'MAX_COLORS', maxColors: 2 },
+    });
+
+    expect(result.colors).toBe(2);
+    const cells = pixels(result.image);
+    for (const row of cells) {
+      // Every cell of a side is the same colour as the rest of its side — the claim speckle breaks.
+      expect(row[1]).toEqual(row[0]);
+      expect(row[3]).toEqual(row[2]);
+    }
+    // And the two buckets are the two regions, not two shades of one: each rep is a real image
+    // colour within the wobble of its own side's base.
+    const first = cells[0]?.[0];
+    const last = cells[0]?.[3];
+    if (first === undefined || last === undefined) throw new Error('cells missing');
+    expect(
+      Math.abs(first.r - left.r) + Math.abs(first.g - left.g) + Math.abs(first.b - left.b),
+    ).toBeLessThanOrEqual(9);
+    expect(
+      Math.abs(last.r - right.r) + Math.abs(last.g - right.g) + Math.abs(last.b - right.b),
+    ).toBeLessThanOrEqual(9);
+  });
+
   it('leaves every pixel where it is when keying is off', () => {
     // The regression guard for a pass inserted at the front of an existing transform: a sheet that is
     // *entirely* the key colour comes back untouched, and the share is zero rather than unreported.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
 import { downscaleNearest } from './gridAlignment.ts';
+import { regularMesh } from './gridMesh.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 
 /** Every pixel a different colour, so any block that samples the wrong source pixel is visible. */
@@ -25,9 +26,10 @@ describe('upscaleNearest', () => {
   it('round-trips through the reduction it is the inverse of', () => {
     // The property the download depends on: a magnified export is still exact, because a block of
     // identical pixels downsamples back to the pixel it came from.
-    expect(channels(downscaleNearest(upscaleNearest(SOURCE, 8), 8, { x: 0, y: 0 }))).toEqual(
-      channels(SOURCE),
-    );
+    const scaled = upscaleNearest(SOURCE, 8);
+    expect(
+      channels(downscaleNearest(scaled, regularMesh(scaled.width, scaled.height, 8, { x: 0, y: 0 }))),
+    ).toEqual(channels(SOURCE));
   });
 
   it('copies rather than aliasing at a scale of 1', () => {

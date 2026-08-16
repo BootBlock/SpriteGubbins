@@ -1,19 +1,19 @@
-import type { ColorReduction, QuantiseResult, QuantiseSettings } from '../types/quantiser.ts';
+import type { ColorReduction, GridMesh, QuantiseResult, QuantiseSettings } from '../types/quantiser.ts';
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
-import { bestGridOffset } from './gridOffset.ts';
+import { boundaryMesh } from './gridMesh.ts';
 import { countColors } from './imageData.ts';
 import { keyBackground } from './keyBackground.ts';
 import { buildPalette } from './medianCut.ts';
 
 /**
- * The whole pipeline: key, place the grid, align, downscale, reduce.
+ * The whole pipeline: key, reduce the colours, measure the mesh, align, downscale.
  *
  * ```
- * ImageData  →  keyBackground  →  bestGridOffset  →  alignToGrid  →  downscaleNearest  →  applyPalette
- *               (the key field    (where the grid     (cells become    (one pixel per      (palette
- *                becomes alpha)    sits on the art)    one colour)      cell, exact)        reduction)
+ * ImageData  →  keyBackground  →  reduceColors     →  boundaryMesh  →  alignToGrid  →  downscaleNearest
+ *               (the key field    (every pixel to      (where the       (cells become    (one pixel per
+ *                becomes alpha)    a target colour)     cells sit)       one colour)      cell, exact)
  * ```
  *
  * Grid **detection** is not part of it. The grid is a setting because the user can overrule what
@@ -21,34 +21,35 @@ import { buildPalette } from './medianCut.ts';
  * function is handed the answer. The key colour arrives the same way, from the studio setting the
  * prompt already stated it in.
  *
- * The grid's **offset** is the opposite: it is measured here, on the same image the alignment is
- * about to walk, and it deliberately never becomes a setting. Measured once per transform, it is
- * one mechanism serving all three ways a grid reaches this function — measured, clicked or typed —
- * so no two of them can disagree about where the lattice sits; stored anywhere, it would be the
- * stale half of a pair the moment the user overtyped the grid beside it. It is measured *after*
- * keying for the reason the vote is: a keyed field's drifting colours are steps the profile would
- * otherwise count, and collapsing them to one value first leaves the art's own boundaries as the
- * only mass worth weighing.
+ * The **mesh** is the opposite: it is measured here, on the very image the alignment is about to
+ * walk, and it deliberately never becomes a setting. Measured once per transform, it is one
+ * mechanism serving all three ways a grid reaches this function — measured, clicked or typed — so
+ * no two of them can disagree about where a cell begins; stored anywhere, it would be the stale
+ * half of a pair the moment the user overtyped the grid beside it.
  *
- * The order is the reason the feature works and the reason it fits on the main thread. Aligning
- * before the palette step stops anti-aliasing fringes claiming palette slots, since a downscaled smooth
- * render is mostly intermediate edge colours by pixel count; and it shrinks the image before the
- * expensive step, so the histogram-and-split runs over tens of thousands of pixels rather than millions.
+ * **The colours are reduced before the vote, and that order is the quality of the whole result.**
+ * On generated art every pixel of a cell is subtly different, so a vote among raw colours is a tie
+ * the tie-break settles — one pixel speaks for the cell, and two neighbouring cells of the same
+ * flat region pick two subtly different pixels, which reads as speckle across every surface of the
+ * sheet. Reducing first collapses a region's hundred near-identical shades into one colour, so the
+ * cells of that region vote for *the same thing* and the anti-aliased fringe pixels fall into
+ * blend-coloured minorities that lose. It is the ordering the tools this follows converged on —
+ * quantised voting — and it also puts the palette where it is best chosen: from the artwork, not
+ * from a downscale of it. With no reduction in force the vote runs over the raw colours, where the
+ * centre tie-break is the only defence — a sheet whose colours were asked to be left alone cannot
+ * have them collapsed on the way through.
  *
- * **Keying goes first, ahead of the alignment, and that is not interchangeable.** `alignToGrid`
+ * **Keying still goes first, ahead of everything, and that is not interchangeable.** `alignToGrid`
  * resolves each cell to its modal colour, and on a drifting key field every background pixel is a
- * *distinct* colour polling one vote — so an 8 × 8 cell holding 62 never-repeating magentas and 2
- * pixels of one flat sprite colour resolves entirely to the **sprite**, which dilates the artwork into
- * its own background by up to a whole cell on every side. Keying first collapses that field to one
- * value before the vote, the 62 become 62 votes for the same thing, and the cell resolves to
- * transparent. The step that got the edge wrong gets it right for the same reason.
+ * *distinct* colour polling one vote — so a cell holding 62 never-repeating magentas and 2 pixels
+ * of one flat sprite colour resolves entirely to the **sprite**, which dilates the artwork into its
+ * own background by up to a whole cell on every side. Keying first collapses that field to one
+ * value before either the palette or the vote sees it, and the mesh is measured after it for the
+ * same reason: a keyed field's drifting colours are steps the profile would otherwise count, and
+ * collapsing them leaves the art's own boundaries as the only mass worth weighing.
  *
- * It also means the alignment does most of the edge decontamination for nothing: a one-pixel fringe
- * inside an 8 × 8 cell is 12% of the vote and loses it.
- *
- * Nothing downstream needed changing to accommodate it. `colorHistogram` already excludes fully
- * transparent pixels, so the keyed field claims no palette slots, and `applyPalette` copies it through
- * untouched rather than mapping it onto a colour.
+ * `colorHistogram` excludes fully transparent pixels, so the keyed field claims no palette slots,
+ * and `applyPalette` copies it through untouched rather than mapping it onto a colour.
  *
  * Pure, and deliberately so — which is what let it move into `src/workers/quantiseWorker.ts` without
  * a line of it changing when a large sheet did stall. It no longer runs on the main thread at all:
@@ -63,19 +64,21 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const source = keyed?.image ?? image;
   const pixels = image.width * image.height;
 
-  const offset = bestGridOffset(source, settings.grid);
-  const aligned = alignToGrid(source, settings.grid, offset);
-  const reduced = downscaleNearest(aligned, settings.grid, offset);
-
   // `UNRESTRICTED` with no palette pinned skips the step outright rather than reducing to some
   // generous figure. A painted or 3D-rendered sheet has no colour budget to enforce, and a high cap
   // is still a cap.
-  const output = settings.reduction === null ? reduced : reduceColors(reduced, settings.reduction);
+  const voteSource = settings.reduction === null ? source : reduceColors(source, settings.reduction);
+
+  // Measured on the un-reduced image: the reduction can merge two adjacent regions into one colour
+  // and erase the boundary between them, and a boundary the mesh cannot see is a cut it cannot snap.
+  const mesh = boundaryMesh(source, settings.grid);
+  const aligned = alignToGrid(voteSource, mesh);
+  const output = downscaleNearest(aligned, mesh);
 
   return {
     image: output,
     // The comparison view places the result against the source with this — see `QuantiseResult`.
-    offset,
+    offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than
     // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
     colors: countColors(output),
@@ -84,6 +87,23 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // to arise. A guard against it would be a comment claiming to protect against the impossible.
     keyedShare: keyed === null ? 0 : keyed.keyedPixels / pixels,
   };
+}
+
+/**
+ * The mesh's leading-cell placement, in the terms the comparison view draws with.
+ *
+ * The panes draw the result at one uniform magnification, so what they need from the mesh is how
+ * wide its leading partial cell is on each axis — the second start, where the first is the image
+ * edge at 0. A mesh whose cells drift can put any interior cut a pixel or two off the uniform
+ * position, which a uniformly scaled canvas cannot represent; the leading cell dominates the error,
+ * and correcting it keeps the panes within the drift itself, exact whenever the art is regular.
+ */
+function meshOffset(mesh: GridMesh, grid: number): { x: number; y: number } {
+  const leading = (starts: readonly number[]): number => {
+    const second = starts[1];
+    return second !== undefined && second < grid ? second : 0;
+  };
+  return { x: leading(mesh.x), y: leading(mesh.y) };
 }
 
 /**

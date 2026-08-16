@@ -63,6 +63,22 @@ export interface GridOffset {
   readonly y: number;
 }
 
+/**
+ * Where every cell begins, per axis — each array ascending, starting at 0, each entry a cell's
+ * first pixel.
+ *
+ * A mesh rather than a pitch, because generated art **drifts**: its apparent blocks are almost a
+ * period but not quite, so a single `grid × grid` lattice — at any offset — straddles more of the
+ * art's own cells the further across the sheet it walks. `boundaryMesh` measures where the
+ * boundaries actually are and completes the gaps at the expected spacing, which degenerates to the
+ * regular lattice exactly when the art is regular. The transforms in `gridAlignment.ts` walk
+ * whatever this holds, so the two of them cannot disagree about where a cell begins.
+ */
+export interface GridMesh {
+  readonly x: readonly number[];
+  readonly y: readonly number[];
+}
+
 /** An image the user has brought in, and the filename anything derived from it is named after. */
 export interface ImportedImage {
   readonly name: string;

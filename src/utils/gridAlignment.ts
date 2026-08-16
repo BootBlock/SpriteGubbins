@@ -1,39 +1,22 @@
-import type { GridOffset, PixelGrid } from '../types/quantiser.ts';
+import type { GridMesh } from '../types/quantiser.ts';
 import { createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
 
 /**
- * Snapping an image to a pixel scale, and reducing it to one pixel per drawn pixel.
+ * Snapping an image to its cell mesh, and reducing it to one pixel per cell.
  *
- * The transforms that act on the answer `detectPixelGrid` gives, or on the one the user typed,
- * at the offset `bestGridOffset` measured for it. Both return a new `ImageData` and mutate nothing
- * they were given, and both take a `grid` of at least 1 — detection answers 2 or more, and the
- * manual control is bounded by `MANUAL_GRID_RANGE`.
+ * The transforms that act on the mesh `boundaryMesh` measures for whatever scale is in force. Both
+ * return a new `ImageData` and mutate nothing they were given, and both walk the same mesh — which
+ * is what makes it impossible for the reduction to sample a pixel the alignment never resolved.
  *
- * The two must agree about where every cell begins, or the reduction samples pixels the alignment
- * never resolved — which is why {@link cellStarts} is the one place a cell boundary is computed,
- * and both walk what it returns.
+ * A cell is `[starts[i], starts[i + 1])` on each axis, with the image's own edge closing the last
+ * one — so partial cells at either end of an axis are cells like any other, aligned over whatever
+ * they contain. Cropping either would silently delete a strip of the sheet, and the art a
+ * generator inset from the corner is no more disposable than the art it cut short at the far edge.
  */
 
 /**
- * Where each cell begins on one axis: `0`, then every lattice line `offset + k × grid` inside the
- * image.
- *
- * An offset of zero is the corner-anchored lattice and yields the familiar `0, grid, 2·grid, …`.
- * A non-zero offset adds a **leading partial cell** `[0, offset)` before the first lattice line,
- * exactly as an axis whose length is not a multiple of the grid has always had a trailing one:
- * cropping either would silently delete a strip of the sheet, and the art a generator inset from
- * the corner is no more disposable than the art it cut short at the far edge.
- */
-function cellStarts(extent: number, grid: PixelGrid, offset: number): number[] {
-  const starts: number[] = [];
-  if (offset > 0) starts.push(0);
-  for (let start = offset; start < extent; start += grid) starts.push(start);
-  return starts;
-}
-
-/**
- * The same image with every cell reduced to one colour — the cell's **modal** colour, ties going to
- * the pixel nearest the cell's centre.
+ * The same image with every mesh cell reduced to one colour — the cell's **modal** colour, ties
+ * going to the pixel nearest the cell's centre.
  *
  * Modal rather than mean, because an average **invents a colour that was not in the image** — the
  * opposite of what a palette-limited sprite wants, and the thing that makes a resized render look
@@ -48,17 +31,16 @@ function cellStarts(extent: number, grid: PixelGrid, offset: number): number[] {
  * representative of the cell means; where two colours tie on distance as well, the earlier in scan
  * order keeps the cell, so the result is deterministic on every input.
  *
- * **Idempotent at the same grid and offset**: after this each cell is already one colour, so
- * running it again changes nothing — the clearest single check that the step did what it claims,
- * and the tests pin it. Partial cells at either end of an axis are aligned too, over whatever they
- * contain; see {@link cellStarts}.
+ * **Idempotent over the same mesh**: after this each cell is already one colour, so running it
+ * again changes nothing — the clearest single check that the step did what it claims, and the
+ * tests pin it.
  *
  * **One tally is allocated for the whole image and cleared between cells**, rather than one per cell —
- * which at a grid of 1, where every pixel is its own cell, is 16.8 million `Map`s on the largest sheet
- * the app admits. Measured, that spelling costs *nothing*: V8 scalar-replaces a tally that never
- * escapes, and swapping the two moves the figure by noise in both directions. It is written this way
- * because 16.8 million allocations is not a thing to ask for on the strength of an optimisation that
- * might stop applying — not because it was where the time went.
+ * which at a mesh of single-pixel cells is 16.8 million `Map`s on the largest sheet the app admits.
+ * Measured, that spelling costs *nothing*: V8 scalar-replaces a tally that never escapes, and
+ * swapping the two moves the figure by noise in both directions. It is written this way because
+ * 16.8 million allocations is not a thing to ask for on the strength of an optimisation that might
+ * stop applying — not because it was where the time went.
  *
  * The time went on the **per-pixel colour object**, which is a different claim and a measured one: see
  * the note at the top of `imageData.ts`. Its cost is invisible to a micro-benchmark of this function
@@ -66,17 +48,15 @@ function cellStarts(extent: number, grid: PixelGrid, offset: number): number[] {
  * In the real pipeline, where detection has already run and given those helpers a second call site,
  * escape analysis stops applying and the whole transform goes from about two seconds to about thirty.
  */
-export function alignToGrid(image: ImageData, grid: PixelGrid, offset: GridOffset): ImageData {
+export function alignToGrid(image: ImageData, mesh: GridMesh): ImageData {
   const output = createImage(image.width, image.height);
   const counts = new Map<number, number>();
   const distances = new Map<number, number>();
-  const columns = cellStarts(image.width, grid, offset.x);
-  const rows = cellStarts(image.height, grid, offset.y);
 
-  for (const [rowIndex, top] of rows.entries()) {
-    const bottom = Math.min(rows[rowIndex + 1] ?? image.height, image.height);
-    for (const [columnIndex, left] of columns.entries()) {
-      const right = Math.min(columns[columnIndex + 1] ?? image.width, image.width);
+  for (const [rowIndex, top] of mesh.y.entries()) {
+    const bottom = Math.min(mesh.y[rowIndex + 1] ?? image.height, image.height);
+    for (const [columnIndex, left] of mesh.x.entries()) {
+      const right = Math.min(mesh.x[columnIndex + 1] ?? image.width, image.width);
       const color = modalColor(image, counts, distances, left, top, right, bottom);
 
       for (let y = top; y < bottom; y += 1) {
@@ -145,23 +125,20 @@ function modalColor(
 }
 
 /**
- * One pixel per cell, taken from the cell's own top-left corner as {@link cellStarts} places the
- * cells.
+ * One pixel per mesh cell, taken from the cell's own first pixel.
  *
- * After {@link alignToGrid} at the same grid and offset every pixel in a cell is identical, so this
- * is exact rather than a sampling choice — upscaling each output pixel back over its own cell
- * reproduces the aligned image. Partial cells at either end are kept: cropping them would silently
- * delete a strip of any sheet whose art does not happen to sit flush with the lattice.
+ * After {@link alignToGrid} over the same mesh every pixel in a cell is identical, so this is exact
+ * rather than a sampling choice — painting each output pixel back over its own cell reproduces the
+ * aligned image. Partial cells at either end are kept: cropping them would silently delete a strip
+ * of any sheet whose art does not happen to sit flush with the mesh.
  */
-export function downscaleNearest(image: ImageData, grid: PixelGrid, offset: GridOffset): ImageData {
-  const columns = cellStarts(image.width, grid, offset.x);
-  const rows = cellStarts(image.height, grid, offset.y);
-  const output = createImage(columns.length, rows.length);
+export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
+  const output = createImage(mesh.x.length, mesh.y.length);
 
-  for (const [y, top] of rows.entries()) {
-    for (const [x, left] of columns.entries()) {
+  for (const [y, top] of mesh.y.entries()) {
+    for (const [x, left] of mesh.x.entries()) {
       const color = packedColorAt(image.data, pixelOffset(image.width, left, top));
-      writePackedColor(output.data, pixelOffset(columns.length, x, y), color);
+      writePackedColor(output.data, pixelOffset(mesh.x.length, x, y), color);
     }
   }
 
