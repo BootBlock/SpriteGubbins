@@ -161,6 +161,74 @@ export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE
 export const BOUNDARY_THRESHOLD_OVER_CHANCE = 2;
 
 /**
+ * The prominence a correlation peak must stand above its flanking valleys to be a candidate pitch.
+ *
+ * The step profile carries a low-frequency envelope — art here, gutter there — that mean removal
+ * does not touch, and the envelope raises the whole correlation baseline at small lags. An absolute
+ * threshold read against a raised baseline believes the baseline; prominence measures the peak
+ * against its own surroundings and is immune to it.
+ */
+export const ACF_PROMINENCE = 0.2;
+
+/**
+ * How strong the settled peak's ±1 window must be for the pitch to be offered at all.
+ *
+ * Measured on the window rather than the single lag, deliberately: drift splits a fundamental
+ * between two neighbouring lags — the armour fixture peaks at 0.43 and 0.39 on lags six and seven,
+ * a window of 0.89 — so a single-lag floor under-measures exactly the sheets this reading serves.
+ * For a structureless profile the correlation at any lag sits within a few hundredths of zero and
+ * a window sums three of them, so the floor still stands far above anything noise or a gradient
+ * reaches. Calibrated the way this file's other thresholds are: against fixtures, with the margin
+ * stated rather than implied.
+ */
+export const ACF_CORRELATION_FLOOR = 0.75;
+
+/**
+ * How much of a peak's windowed mass its half-lag must carry before the reading descends to it.
+ *
+ * The harmonic question: art at a fractional pitch — six and a half pixels — puts its sharpest
+ * integer-lag peak at *twice* the true pitch, so a settled peak is asked whether its half is nearly
+ * as well supported, and descends while it is. Measured on the ±1 window rather than the single
+ * lag, because a fractional pitch splits its evidence between two neighbouring lags and the window
+ * is what lets the split fundamental still beat its own unified ghost.
+ */
+export const ACF_HARMONIC_DESCENT = 0.7;
+
+/**
+ * The confirmation a settled pitch takes from its own double's ±1 window, where the range holds
+ * one.
+ *
+ * A genuine period correlates at its multiples; a coincidence does not. Windowed for the same
+ * reason the floor above is — drift smears the echo across neighbouring lags, and on the armour
+ * fixture the double's window carries 0.72 while its centre lag alone carries 0.20 — and weaker
+ * than the floor because drift decays multiples faster than it decays the fundamental.
+ */
+export const ACF_MULTIPLE_CONFIRMATION = 0.3;
+
+/**
+ * The least structure an axis must carry — its profile's deviation against its mean — before the
+ * correlation reading may speak.
+ *
+ * A smooth gradient's profile is nearly constant, so after mean removal the correlation is a ratio
+ * of two vanishingly small numbers and can be spuriously large; this gate refuses before that ratio
+ * is ever consulted. The same instinct as {@link BOUNDARY_THRESHOLD_OVER_CHANCE}: structure is a
+ * multiple of chance, and a profile with no multiples anywhere holds no boundaries to correlate.
+ */
+export const ACF_STRUCTURE_FLOOR = 0.5;
+
+/**
+ * How many times a pitch must fit across the sheet's shorter edge before the correlation reading
+ * will consider it.
+ *
+ * Eight, where the mesh-period reading demands six spacings, and for the same reason at a stricter
+ * bar: a pitch is a habit, and the correlation reading is the one most exposed to *content*
+ * periodicity — components laid out evenly on the sheet repeat at a spacing hundreds of pixels
+ * wide, inside the manual range's ceiling. Eight repeats across the short edge is what a sprite
+ * layout never has and a pixel grid always does.
+ */
+export const ACF_FEWEST_REPEATS = 8;
+
+/**
  * The fewest boundary spacings that can call a spacing a habit rather than a coincidence, for the
  * mesh-period reading.
  *

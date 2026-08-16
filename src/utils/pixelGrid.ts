@@ -3,6 +3,7 @@ import type { PixelGrid, SheetScale } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, packedColorAt } from './imageData.ts';
 import { estimateMeshPeriod } from './meshPeriod.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
+import { estimateProfilePeriod } from './profilePeriod.ts';
 
 /**
  * Finding the scale a returned sheet's art was actually drawn at.
@@ -20,15 +21,17 @@ import { estimatePixelGrid } from './pixelPeriod.ts';
  * {@link detectPixelGrid} is exact and has no tolerance in it, so where it answers there is nothing
  * an estimate could add and a second opinion could only disagree. `estimatePixelGrid` covers
  * artwork drawn at a scale and then resampled — softened edges, but a true period underneath.
- * `estimateMeshPeriod` covers what generators actually return: blocks that repeat at *almost* a
- * period, whose spacings wander between two neighbouring integers so that no lattice at any phase
- * collects them — the sheets both integer readings correctly refuse, and the commonest input this
- * tab has. Its answer is the typical spacing `boundaryMesh` will snap cells to, so it is offered
- * under the same `ESTIMATED` hedge: a candidate to click and judge, never adopted on its own.
+ * `estimateProfilePeriod` covers what generators actually return: drifting blocks *with interior
+ * detail* — straps and markings whose edges pollute any statistic built from detected lines, but
+ * which autocorrelation of the whole profile reads through. `estimateMeshPeriod` stays behind it
+ * for the sheets whose statistics are too thin for the correlation's gates — small sheets, sparse
+ * art — where a clean median of a handful of boundary spacings can still speak. Every estimated
+ * answer is offered under the same `ESTIMATED` hedge: a candidate to click and judge, never
+ * adopted on its own.
  *
  * Running each reading only on the one before's refusal is also what keeps the survey cheap where
- * it can be: a crisp sheet pays for one pass, a resampled one for two, and only the drifting sheet
- * that needs all three readings pays for all three.
+ * it can be: a crisp sheet pays for one pass, and only the sheets each later reading exists for
+ * pay for it.
  */
 export function measureSheetScale(image: ImageData): SheetScale | null {
   const detected = detectPixelGrid(image);
@@ -36,6 +39,9 @@ export function measureSheetScale(image: ImageData): SheetScale | null {
 
   const estimated = estimatePixelGrid(image);
   if (estimated !== null) return { grid: estimated, measurement: 'ESTIMATED' };
+
+  const correlated = estimateProfilePeriod(image);
+  if (correlated !== null) return { grid: correlated, measurement: 'ESTIMATED' };
 
   const drifting = estimateMeshPeriod(image);
   return drifting === null ? null : { grid: drifting, measurement: 'ESTIMATED' };
