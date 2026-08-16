@@ -68,7 +68,7 @@ describe('GridControls', () => {
   it('asks for a number when no reading found a scale', () => {
     show(factsWith(null), null);
 
-    expect(screen.getByText(/none of the three readings of the sheet found a scale/)).toBeInTheDocument();
+    expect(screen.getByText(/none of the four readings of the sheet found a scale/)).toBeInTheDocument();
   });
 
   it('goes on asking for it after one has been typed', () => {
@@ -82,7 +82,7 @@ describe('GridControls', () => {
     // than `getAllByText` for the same reason — it throws on a duplicate, so the leak cannot hide.
     show(factsWith(null), 6);
 
-    expect(screen.getByText(/none of the three readings of the sheet found a scale/)).toBeInTheDocument();
+    expect(screen.getByText(/none of the four readings of the sheet found a scale/)).toBeInTheDocument();
   });
 
   it('says it is still looking, and offers nothing to try, before the sheet has been read', () => {

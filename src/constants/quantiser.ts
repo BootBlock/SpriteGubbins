@@ -161,6 +161,88 @@ export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE
 export const BOUNDARY_THRESHOLD_OVER_CHANCE = 2;
 
 /**
+ * The prominence a correlation peak must stand above its flanking valleys to be a candidate pitch.
+ *
+ * The step profile carries a low-frequency envelope — art here, gutter there — that mean removal
+ * does not touch, and the envelope raises the whole correlation baseline at small lags. An absolute
+ * threshold read against a raised baseline believes the baseline; prominence measures the peak
+ * against its own surroundings and is immune to it.
+ */
+export const ACF_PROMINENCE = 0.2;
+
+/**
+ * How much *support* an axis's settled peak must carry — its ±1 window, with negative neighbours
+ * held at zero — for that axis to offer the pitch.
+ *
+ * Measured on the window rather than the single lag, deliberately: drift splits a fundamental
+ * between two neighbouring lags, so a single-lag floor under-measures exactly the sheets this
+ * reading serves. Negative neighbours are clamped rather than subtracted because at a pitch of
+ * four the window spans most of a period and one neighbour sits in the anticorrelation trough *by
+ * geometry* — a trough is the shape a strong period has, not evidence against it — and subtracting
+ * it made every drifting pitch below five unreachable however strong the art.
+ *
+ * Applied per axis, against the axis's own variance. On the armour fixture the rows axis carries
+ * 1.31 of support at the pitch and answers; the columns axis, polluted by the marks drawn along
+ * it, musters 0.56 and refuses — and the one clean axis is enough. For a structureless profile
+ * the correlation at any lag sits within a few hundredths of zero, so the floor stands far above
+ * anything noise or a gradient reaches.
+ */
+export const ACF_CORRELATION_FLOOR = 0.75;
+
+/**
+ * How much of a peak's windowed mass a division of it must carry before the reading descends to
+ * it.
+ *
+ * The harmonic question: art at a fractional pitch — six and a half pixels — puts its sharpest
+ * integer-lag peak at *twice* the true pitch, and art at four and a third puts it at *three*
+ * times, so a settled peak is asked whether its half or its third is nearly as well supported, and
+ * descends while one is. Measured on the ±1 window rather than the single lag, because a
+ * fractional pitch splits its evidence between two neighbouring lags and the window is what lets
+ * the split fundamental still beat its own unified ghost. When the bar fails but the division is
+ * still a prominent peak of its own, the axis reports it as octave-ambiguous instead of keeping
+ * the coarse answer — see `estimateProfilePeriod`, which then demands the other axis corroborate.
+ */
+export const ACF_HARMONIC_DESCENT = 0.7;
+
+/**
+ * The confirmation a settled pitch takes from its own double's ±1 window, where the range holds
+ * one.
+ *
+ * A genuine period correlates at its multiples; a coincidence does not. Windowed because drift
+ * smears the echo across neighbouring lags, but *signed*, unlike the floor above: a negative
+ * neighbourhood at the double is evidence against the pitch. Weaker than the floor because drift
+ * decays multiples faster than it decays the fundamental — on the armour fixture the rows axis's
+ * double-window carries 0.86 against its fundamental's 1.31, and the refused columns axis manages
+ * only 0.16 there.
+ */
+export const ACF_MULTIPLE_CONFIRMATION = 0.3;
+
+/**
+ * The least structure an axis must carry — its profile's deviation against its mean — before that
+ * axis's correlation may speak.
+ *
+ * A smooth gradient's profile is nearly constant, so after mean removal the correlation is a ratio
+ * of two vanishingly small numbers and can be spuriously large; this gate refuses before that ratio
+ * is ever consulted. Per axis, because the axes are read apart: a sheet structured on one axis
+ * only is answered by that axis alone rather than diluted by the flat one. The same instinct as
+ * {@link BOUNDARY_THRESHOLD_OVER_CHANCE}: structure is a multiple of chance, and a profile with no
+ * multiples anywhere holds no boundaries to correlate.
+ */
+export const ACF_STRUCTURE_FLOOR = 0.5;
+
+/**
+ * How many times a pitch must fit across the sheet's shorter edge before the correlation reading
+ * will consider it.
+ *
+ * Eight, where the mesh-period reading demands six spacings, and for the same reason at a stricter
+ * bar: a pitch is a habit, and the correlation reading is the one most exposed to *content*
+ * periodicity — components laid out evenly on the sheet repeat at a spacing hundreds of pixels
+ * wide, inside the manual range's ceiling. Eight repeats across the short edge is what a sprite
+ * layout never has and a pixel grid always does.
+ */
+export const ACF_FEWEST_REPEATS = 8;
+
+/**
  * The fewest boundary spacings that can call a spacing a habit rather than a coincidence, for the
  * mesh-period reading.
  *
@@ -459,7 +541,7 @@ export const QUANTISE_STEPS = [
  */
 export const QUANTISE_SCALE_GUIDANCE = {
   /** Nothing was read at all — the sheet is smooth, with no regular spacing left in it to measure. */
-  none: 'Nothing in this image changes on a regular grid, its edges do not soften at a regular spacing, and such boundaries as it has keep to no one typical spacing either — so none of the three readings of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. The grid does not have to start at the image’s corner — where it sits on the art is measured from the image whenever a scale is applied.',
+  none: 'Nothing in this image changes on a regular grid, its edges do not soften at a regular spacing, its texture repeats at no pitch from one part of the sheet to the next, and such boundaries as it has keep to no one typical spacing either — so none of the four readings of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. The grid does not have to start at the image’s corner — where it sits on the art is measured from the image whenever a scale is applied.',
   /** The edges repeat at a spacing, which is a candidate the reader still has to check. */
   estimated:
     'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do keep to one typical spacing, though — exactly, or drifting a pixel or two about it — and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',

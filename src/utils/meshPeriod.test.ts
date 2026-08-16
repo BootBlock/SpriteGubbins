@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { imageFrom, soften } from '../test/images.ts';
 import { estimateMeshPeriod } from './meshPeriod.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
+import { estimateProfilePeriod } from './profilePeriod.ts';
 import { measureSheetScale } from './pixelGrid.ts';
 
 /** Cells of distinct colours whose column and row boundaries sit at the positions given. */
@@ -39,12 +40,16 @@ describe('estimateMeshPeriod', () => {
     expect(estimateMeshPeriod(sheet)).toBe(6);
   });
 
-  it('reaches the tab through the third reading of measureSheetScale, hedged as an estimate', () => {
-    // The reading is offered rather than adopted, exactly as the period estimate is: the mesh will
-    // snap cells to the real boundaries, but the number still wants judging against the preview.
-    const sheet = soften(sheetWithBoundaries(57, DRIFTING));
+  it('reaches the tab through the fourth reading of measureSheetScale, hedged as an estimate', () => {
+    // The sheet class this reading stays behind the correlation for: a *small* sheet — eight
+    // drifting cells of four-and-five across 35 pixels. The correlation's repeat floor caps its
+    // search at floor(35 / 8) = 4, where the drifting pitch has no local peak, so it refuses; the
+    // median of the boundary spacings is what still answers, and the offer keeps the estimate's
+    // hedge because a median carries the drift's own tolerance.
+    const small = sheetWithBoundaries(35, [0, 4, 9, 13, 17, 22, 26, 31]);
 
-    expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'ESTIMATED' });
+    expect(estimateProfilePeriod(small)).toBeNull();
+    expect(measureSheetScale(small)).toEqual({ grid: 5, measurement: 'ESTIMATED' });
   });
 
   it('offers nothing for edges at assorted spacings, which are not a drifting grid', () => {
