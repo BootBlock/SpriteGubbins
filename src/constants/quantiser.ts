@@ -182,6 +182,84 @@ export const FEWEST_SPACINGS = 6;
 export const SPACING_AGREEMENT = 0.7;
 
 /**
+ * The share of a cell a **dark** minority must hold before the vote may keep it: at least one
+ * pixel in every {@link LINE_DARK_SHARE}.
+ *
+ * The reported failure this serves is a broken outline. A one-pixel drawn contour rendered at a
+ * drifting six-ish scale lands astride the mesh as often as inside one cell, and the cell holding
+ * the thinner slice — a third of its pixels, say — loses the vote to its own body colour. The line
+ * that survives in one cell and not its neighbour reads as snapped, which no palette choice can
+ * repair later. An eighth is well under the thinnest slice a straddled line leaves (about a third)
+ * and well over what anti-aliased speckle musters in a cell it merely brushes, so it separates the
+ * two populations rather than sitting near either. `≥` rather than `>`, so a cell of exactly eight
+ * pixels still lets its single contour pixel qualify.
+ */
+export const LINE_DARK_SHARE = 8;
+
+/**
+ * The share of a cell a **bright** minority must hold — one pixel in every
+ * {@link LINE_BRIGHT_SHARE}, deliberately twice as strict as the dark side's.
+ *
+ * The asymmetry is the observed one, not a symmetry broken for effect: generators bloom highlights
+ * outward — a bright rim gains soft neighbours that inflate its count — while dark contour lines
+ * thin under the same softening. A bright speck therefore reaches a dark line's floor far more
+ * easily than a genuine trim reaches this one, and holding the bright side to a quarter keeps
+ * single-pixel glints from claiming whole cells while a real two-pixel trim on a six-pixel cell
+ * still clears it.
+ */
+export const LINE_BRIGHT_SHARE = 4;
+
+/**
+ * How far apart two lumas must sit, in 0–255 luma, for the vote to treat them as different tones
+ * rather than shades of one surface — the floor under both the modal-to-line gap and the cell's
+ * skew.
+ *
+ * Luma is the integer Rec. 601 weighting (`(54 R + 183 G + 19 B) >> 8`), the standard measure of
+ * how light a colour reads to the eye. 32 is an eighth of the range: comfortably above the spread
+ * shading and wobble put within one surface, comfortably below the gap between any body colour and
+ * the near-black a drawn outline uses. A candidate nearer the modal colour than this is shading,
+ * and keeping it would trade the surface for its own shadow.
+ */
+export const LINE_LUMA_GAP = 32;
+
+/**
+ * The luma range a cell must span before the vote looks for a line in it at all — twice
+ * {@link LINE_LUMA_GAP}, so a qualifying cell has room for a genuine line *and* the gap that
+ * separates it from the body.
+ *
+ * The anti-flatness gate, and the reason soft shading stays untouched: a cell whose colours all
+ * sit within a quarter of the luma range holds tones of one surface, and the correct answer there
+ * is the modal colour the vote already gives. Only a cell holding genuinely light and genuinely
+ * dark pixels together can be holding a drawn line over a body.
+ */
+export const LINE_LUMA_RANGE = 2 * LINE_LUMA_GAP;
+
+/**
+ * The luma below which a colour can be a drawn outline's ink — the darkest quarter of the range.
+ *
+ * The anchor that keeps the rescue's two directions apart, and it has to be absolute: a cell that
+ * is two thirds outline with a sliver of body, and a cell that is two thirds body with a sliver of
+ * trim, are the *same tally* up to a luma shift — same shares, same span, same skew — so no rule
+ * built on the cell's own statistics can tell "keep the line the vote already chose" from "keep
+ * the trim the vote lost". What separates them is where the tones actually sit: pixel-art outlines
+ * are drawn near black, and a mid tone is a surface, which the rescue exists to overrule but must
+ * never install. Without this anchor the bright pass repainted majority-ink cells with the body
+ * showing through them — the exact linework the feature exists to keep.
+ */
+export const LINE_INK_CEILING = 64;
+
+/**
+ * The luma at or above which a colour can be a bright trim — the brightest quarter, mirroring
+ * {@link LINE_INK_CEILING} from the other end of the range.
+ *
+ * The same anchor for the same reason, in the direction the mistake inverts: without it the dark
+ * pass read a majority-trim cell's body sliver as a "line" and repainted the trim with its own
+ * surface. A genuine highlight — gold trim, rim light, specular edge — sits in this quarter on any
+ * surface dark enough for the range gate to open at all.
+ */
+export const LINE_TRIM_FLOOR = 255 - LINE_INK_CEILING;
+
+/**
  * The coarsest scale the two automatic readers will consider for an image of this size.
  *
  * Derived per image rather than fixed, because the fixed version was a cap on the truth: detection

@@ -72,7 +72,9 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // Measured on the un-reduced image: the reduction can merge two adjacent regions into one colour
   // and erase the boundary between them, and a boundary the mesh cannot see is a cut it cannot snap.
   const mesh = boundaryMesh(source, settings.grid);
-  const aligned = alignToGrid(voteSource, mesh);
+  // Line-aware only where a reduction ran: the rescue reads shares out of the tally, and a share
+  // means nothing in a raw-colour vote where every pixel is its own bucket — see `alignToGrid`.
+  const aligned = alignToGrid(voteSource, mesh, settings.reduction !== null);
   const output = downscaleNearest(aligned, mesh);
 
   return {

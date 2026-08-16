@@ -1,5 +1,6 @@
 import type { GridMesh } from '../types/quantiser.ts';
 import { createImage, packedColorAt, pixelOffset, writePackedColor } from './imageData.ts';
+import { lineAwareWinner } from './lineVote.ts';
 
 /**
  * Snapping an image to its cell mesh, and reducing it to one pixel per cell.
@@ -47,8 +48,15 @@ import { createImage, packedColorAt, pixelOffset, writePackedColor } from './ima
  * alone, and that is the trap — `readPixel` is monomorphic there, so the object never escapes either.
  * In the real pipeline, where detection has already run and given those helpers a second call site,
  * escape analysis stops applying and the whole transform goes from about two seconds to about thirty.
+ *
+ * **`lineAware` lets a drawn line outvote the surface it crosses** — the luma-skew rescue
+ * `lineVote.ts` holds, applied to the tally after the modal winner is found. It is on when the vote
+ * runs over *reduced* colours, where a cell's tally is a handful of honest buckets a share means
+ * something in, and off when the vote runs raw: unreduced generated art tallies every pixel as its
+ * own colour, so no minority could ever reach a qualifying share and the pass would only cost time.
+ * The caller decides, because the caller is the one that knows whether a reduction ran.
  */
-export function alignToGrid(image: ImageData, mesh: GridMesh): ImageData {
+export function alignToGrid(image: ImageData, mesh: GridMesh, lineAware = false): ImageData {
   const output = createImage(image.width, image.height);
   const counts = new Map<number, number>();
   const distances = new Map<number, number>();
@@ -57,7 +65,7 @@ export function alignToGrid(image: ImageData, mesh: GridMesh): ImageData {
     const bottom = Math.min(mesh.y[rowIndex + 1] ?? image.height, image.height);
     for (const [columnIndex, left] of mesh.x.entries()) {
       const right = Math.min(mesh.x[columnIndex + 1] ?? image.width, image.width);
-      const color = modalColor(image, counts, distances, left, top, right, bottom);
+      const color = modalColor(image, counts, distances, left, top, right, bottom, lineAware);
 
       for (let y = top; y < bottom; y += 1) {
         for (let x = left; x < right; x += 1) {
@@ -91,6 +99,7 @@ function modalColor(
   top: number,
   right: number,
   bottom: number,
+  lineAware: boolean,
 ): number {
   counts.clear();
   distances.clear();
@@ -119,6 +128,13 @@ function modalColor(
       winningCount = count;
       winningDistance = distance;
     }
+  }
+
+  // A cell of one colour has nothing to rescue, whatever the mode — which is also what keeps a
+  // one-pixel cell, and every genuinely flat cell, byte-identical between the two modes.
+  if (lineAware && counts.size > 1) {
+    const kept = lineAwareWinner(counts, winner);
+    if (kept !== null) return kept;
   }
 
   return winner;
