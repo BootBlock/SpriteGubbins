@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
 import { channels, imageFrom } from '../test/images.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
+import { VOTE_METHODS } from '../types/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { channelLevels } from './channelLevels.ts';
 import { colorPlanFor } from './colorReduction.ts';
@@ -563,5 +564,42 @@ describe('quantiseImage', () => {
 
     expect(channels(result.image)).toEqual(channels(field));
     expect(result.keyedShare).toBe(0);
+  });
+
+  it('never rewrites the sheet it was handed, and answers the same settings identically', () => {
+    // The worker keeps one copy of the sheet and runs every settings change against it — see
+    // `quantiseWorker.ts` — so purity here is the design's load-bearing assumption, not a style
+    // point. A pass that wrote into its input would corrupt the held sheet, every later transform
+    // would start from the damage, and the preview would drift further from the source on each
+    // dial change while every run of this suite on a fresh image still passed. Every pass runs at
+    // once — keying, the mesh, each of the three readings, a budget, the sheet-wide merge and a
+    // multi-pass cleanup — because any one of them writing in place is enough.
+    const before = channels(INSET_SHEET);
+
+    for (const vote of VOTE_METHODS) {
+      const settings = {
+        grid: 8,
+        key: KEYING,
+        vote,
+        lineStrength: 1.5,
+        trimStrength: 0.5,
+        inkThreshold: 64,
+        fillCleanup: 8,
+        cleanupPasses: 2,
+        colorMerge: 8,
+        reduction: { kind: 'MAX_COLORS', maxColors: 8 } as const,
+      };
+
+      const first = quantiseImage(INSET_SHEET, settings);
+      expect(channels(INSET_SHEET), `the ${vote} pipeline rewrote its input`).toEqual(before);
+
+      const again = quantiseImage(INSET_SHEET, settings);
+      expect(channels(again.image), `the ${vote} pipeline answered the same settings differently`).toEqual(
+        channels(first.image),
+      );
+      expect(again.colors).toBe(first.colors);
+      expect(again.offset).toEqual(first.offset);
+      expect(again.keyedShare).toBe(first.keyedShare);
+    }
   });
 });
