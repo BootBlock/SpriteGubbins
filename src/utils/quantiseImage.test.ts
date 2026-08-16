@@ -571,35 +571,45 @@ describe('quantiseImage', () => {
     // `quantiseWorker.ts` — so purity here is the design's load-bearing assumption, not a style
     // point. A pass that wrote into its input would corrupt the held sheet, every later transform
     // would start from the damage, and the preview would drift further from the source on each
-    // dial change while every run of this suite on a fresh image still passed. Every pass runs at
-    // once — keying, the mesh, each of the three readings, a budget, the sheet-wide merge and a
-    // multi-pass cleanup — because any one of them writing in place is enough.
+    // dial change while every run of this suite on a fresh image still passed.
+    //
+    // **The keyless arm is the sharper half of the mutation claim.** Keying copies the sheet
+    // before anything else runs, so with a key in force only `keyBackground` ever holds the
+    // caller's buffer — with no key, `source` *is* the handed sheet, and the mesh, every reading
+    // and a dominant-side reduction read it directly. That is the whole exposure: the merge and
+    // the cleanup only ever receive intermediates, so no setting can hand them the caller's
+    // buffer. Every dial still sits past its off gate so no pass is skipped, but what a pass's
+    // deeper arms do on a busier sheet is each pass's own suite's business — this test holds the
+    // two facts about the *composition*, on both sides of the keying fork.
     const before = channels(INSET_SHEET);
 
-    for (const vote of VOTE_METHODS) {
-      const settings = {
-        grid: 8,
-        key: KEYING,
-        vote,
-        lineStrength: 1.5,
-        trimStrength: 0.5,
-        inkThreshold: 64,
-        fillCleanup: 8,
-        cleanupPasses: 2,
-        colorMerge: 8,
-        reduction: { kind: 'MAX_COLORS', maxColors: 8 } as const,
-      };
+    for (const key of [KEYING, null]) {
+      for (const vote of VOTE_METHODS) {
+        const settings = {
+          grid: 8,
+          key,
+          vote,
+          lineStrength: 1.5,
+          trimStrength: 0.5,
+          inkThreshold: 64,
+          fillCleanup: 8,
+          cleanupPasses: 2,
+          colorMerge: 8,
+          reduction: { kind: 'MAX_COLORS', maxColors: 8 } as const,
+        };
+        const arm = `the ${key === null ? 'unkeyed' : 'keyed'} ${vote} pipeline`;
 
-      const first = quantiseImage(INSET_SHEET, settings);
-      expect(channels(INSET_SHEET), `the ${vote} pipeline rewrote its input`).toEqual(before);
+        const first = quantiseImage(INSET_SHEET, settings);
+        expect(channels(INSET_SHEET), `${arm} rewrote its input`).toEqual(before);
 
-      const again = quantiseImage(INSET_SHEET, settings);
-      expect(channels(again.image), `the ${vote} pipeline answered the same settings differently`).toEqual(
-        channels(first.image),
-      );
-      expect(again.colors).toBe(first.colors);
-      expect(again.offset).toEqual(first.offset);
-      expect(again.keyedShare).toBe(first.keyedShare);
+        const again = quantiseImage(INSET_SHEET, settings);
+        expect(channels(again.image), `${arm} answered the same settings differently`).toEqual(
+          channels(first.image),
+        );
+        expect(again.colors).toBe(first.colors);
+        expect(again.offset).toEqual(first.offset);
+        expect(again.keyedShare).toBe(first.keyedShare);
+      }
     }
   });
 });
