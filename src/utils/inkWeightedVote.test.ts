@@ -41,6 +41,20 @@ describe('inkWeightedCells', () => {
     expect(Array.from(inkWeightedCells(cell(24), single, 2.5).data)).toEqual([16, 14, 18, 255]);
   });
 
+  it('never darkens shading — a dark fill under the ink ceiling is not a line', () => {
+    // A shaded fill: mid green over its own deep shadow at luma 52 — under the absolute ceiling,
+    // but only 51 below its body, half the tonal range a drawn line sits at. The reported bug:
+    // this cell darkened with every step of the line strength, so the dial changed fills. It must
+    // answer the body mean at every strength, exactly.
+    const shadow: Rgba = { r: 30, g: 70, b: 40, a: 255 };
+    const midGreen: Rgba = { r: 60, g: 130, b: 80, a: 255 };
+    const shaded = imageFrom(6, 6, (x, y) => (y * 6 + x < 12 ? shadow : midGreen));
+    const atLow = inkWeightedCells(shaded, single, 1);
+    const atHigh = inkWeightedCells(shaded, single, 2.5);
+    expect(Array.from(atLow.data)).toEqual(Array.from(atHigh.data));
+    expect(atHigh.data[1]).toBe(midGreen.g);
+  });
+
   it('ignores speckle under the drawn-line share, and answers the body mean exactly', () => {
     // Two ink pixels of thirty-six is anti-aliasing, not a line: under an eighth, no pull at all.
     const resolved = inkWeightedCells(cell(2), single, 1.5);

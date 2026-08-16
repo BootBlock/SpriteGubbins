@@ -1,4 +1,4 @@
-import { LINE_DARK_SHARE, LINE_INK_CEILING } from '../constants/quantiser.ts';
+import { LINE_DARK_SHARE, LINE_INK_CEILING, LINE_LUMA_RANGE } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
 import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
@@ -38,10 +38,12 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: num
 
       let opaque = 0;
       let inkCount = 0;
+      let inkLuma = 0;
       let inkR = 0;
       let inkG = 0;
       let inkB = 0;
       let bodyCount = 0;
+      let bodyLuma = 0;
       let bodyR = 0;
       let bodyG = 0;
       let bodyB = 0;
@@ -55,13 +57,16 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: num
           opaque += 1;
           // The same Rec. 601 integer luma `lineVote.ts` reads from a packed colour, unpacked
           // because this loop has the channels in hand — a test pins the two arithmetics equal.
-          if ((54 * r + 183 * g + 19 * b) >> 8 < LINE_INK_CEILING) {
+          const luma = (54 * r + 183 * g + 19 * b) >> 8;
+          if (luma < LINE_INK_CEILING) {
             inkCount += 1;
+            inkLuma += luma;
             inkR += r;
             inkG += g;
             inkB += b;
           } else {
             bodyCount += 1;
+            bodyLuma += luma;
             bodyR += r;
             bodyG += g;
             bodyB += b;
@@ -77,8 +82,16 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: num
       const baseR = bodyCount > 0 ? bodyR / bodyCount : inkR / inkCount;
       const baseG = bodyCount > 0 ? bodyG / bodyCount : inkG / inkCount;
       const baseB = bodyCount > 0 ? bodyB / bodyCount : inkB / inkCount;
-      // Ink pulls only once it holds a drawn line's share, and then in proportion.
-      const qualifies = inkCount > 0 && inkCount * LINE_DARK_SHARE >= opaque;
+      // Ink pulls only once it holds a drawn line's share, **and only where it is line-far from
+      // the body it crosses**. The absolute ceiling alone called any dark shading "ink" — a deep
+      // green shadow sits under it — so stepping the line strength darkened whole shaded fills,
+      // which is exactly what a *line* dial must never touch. A drawn line sits a full tonal
+      // range below its body; shading does not, and shading keeps the plain body mean.
+      const qualifies =
+        inkCount > 0 &&
+        inkCount * LINE_DARK_SHARE >= opaque &&
+        bodyCount > 0 &&
+        bodyLuma / bodyCount - inkLuma / inkCount >= LINE_LUMA_RANGE;
       const pull = qualifies ? Math.min(1, (inkCount / opaque) * emphasis) : 0;
       const towardR = inkCount > 0 ? inkR / inkCount : baseR;
       const towardG = inkCount > 0 ? inkG / inkCount : baseG;
