@@ -1,13 +1,22 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import type { RefObject } from 'react';
 import type { PixelGrid } from '../types/quantiser.ts';
 import { scrollForCentre, viewCentre } from '../utils/panGeometry.ts';
 import type { Offsets, Point, ViewMetrics } from '../utils/panGeometry.ts';
 
 /** The two scrollports to hold together, and everything that changes what they are showing. */
 interface LinkedPanes {
-  readonly first: RefObject<HTMLDivElement | null>;
-  readonly second: RefObject<HTMLDivElement | null>;
+  /**
+   * The scrollports themselves, `null` until they mount — deliberately **not** refs to them.
+   *
+   * A `RefObject`'s identity never changes, so an effect that depended on one could not tell that the
+   * element inside it had been swapped for a different one. The preview does exactly that: choosing
+   * a layout replaces both scrollports, and with refs the listeners below stayed attached to two
+   * elements no longer in the document — the panes simply stopped moving together, silently, with
+   * nothing in the DOM to show for it. Passing the elements makes the dependency the thing that
+   * actually changed, which is what the caller holds them in state for.
+   */
+  readonly first: HTMLDivElement | null;
+  readonly second: HTMLDivElement | null;
   /**
    * Screen pixels per **source** pixel — one number, because both panes stand at the same one.
    *
@@ -53,23 +62,23 @@ export function useLinkedPanes({ first, second, scale, grid, sourceWidth, source
   // is the new one, and writing the offsets before the browser paints is what turns a visible jump
   // into no jump at all. The same work in `useEffect` shows the wrong region for one frame.
   useLayoutEffect(() => {
-    const panes = bothOf(first, second);
-    if (panes === null) return;
+    if (first === null || second === null) return;
 
     const held = centre.current;
     // Nothing to restore on the first pass — there is only wherever the panes already are, which is
     // what everything after this is measured against.
     if (held === null) {
-      centre.current = viewCentre(metricsOf(panes[0]), scale);
+      centre.current = viewCentre(metricsOf(first), scale);
       return;
     }
-    for (const pane of panes) showCentre(pane, held, scale, echoed.current);
+    // Also what puts a freshly mounted pair back where the reader left the last one: a layout change
+    // hands over two scrollports at offset zero, and the centre they are owed is the one still held.
+    for (const pane of [first, second]) showCentre(pane, held, scale, echoed.current);
   }, [first, second, scale, grid, sourceWidth, sourceHeight]);
 
   useEffect(() => {
-    const panes = bothOf(first, second);
-    if (panes === null) return;
-    const [a, b] = panes;
+    if (first === null || second === null) return;
+    const [a, b] = [first, second];
 
     const listen = (moved: HTMLDivElement, other: HTMLDivElement) => {
       const onScroll = () => {
@@ -95,16 +104,6 @@ export function useLinkedPanes({ first, second, scale, grid, sourceWidth, source
       for (const stop of release) stop();
     };
   }, [first, second, scale]);
-}
-
-/** Both elements, or nothing — there is no half of this worth doing. */
-function bothOf(
-  first: RefObject<HTMLDivElement | null>,
-  second: RefObject<HTMLDivElement | null>,
-): readonly [HTMLDivElement, HTMLDivElement] | null {
-  const a = first.current;
-  const b = second.current;
-  return a === null || b === null ? null : [a, b];
 }
 
 /**

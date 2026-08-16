@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useState } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useLinkedPanes } from './useLinkedPanes.ts';
@@ -94,9 +94,19 @@ function settle(): number {
   return rounds;
 }
 
-function Harness({ scale, grid }: { readonly scale: number; readonly grid: number | null }) {
-  const first = useRef<HTMLDivElement>(null);
-  const second = useRef<HTMLDivElement>(null);
+function Harness({
+  scale,
+  grid,
+  generation = 0,
+}: {
+  readonly scale: number;
+  readonly grid: number | null;
+  /** Bump it and React throws both scrollports away for two new ones — what a layout change is. */
+  readonly generation?: number;
+}) {
+  // The elements themselves, as the hook takes them — see the note on `LinkedPanes.first`.
+  const [first, setFirst] = useState<HTMLDivElement | null>(null);
+  const [second, setSecond] = useState<HTMLDivElement | null>(null);
   useLinkedPanes({
     first,
     second,
@@ -109,19 +119,21 @@ function Harness({ scale, grid }: { readonly scale: number; readonly grid: numbe
   return (
     <>
       <div
+        key={`first-${String(generation)}`}
         data-testid="first"
         ref={(element) => {
-          first.current = element;
           if (element !== null) model(element, EXTENT.first, BOX.first);
+          setFirst(element);
         }}
       >
         <span />
       </div>
       <div
+        key={`second-${String(generation)}`}
         data-testid="second"
         ref={(element) => {
-          second.current = element;
           if (element !== null) model(element, EXTENT.second, BOX.second);
+          setSecond(element);
         }}
       >
         <span />
@@ -154,6 +166,38 @@ function expectSameRegion(a: number, b: number): void {
 }
 
 describe('useLinkedPanes', () => {
+  it('follows the panes when they are replaced, rather than the refs that once held them', () => {
+    // The preview offers three layouts, and two of them are different trees — so choosing one
+    // unmounts both scrollports and mounts two more. Keyed on a `RefObject`, whose identity survives
+    // exactly that, the listeners stayed on the pair no longer in the document: the panes simply
+    // stopped moving together, with nothing in the DOM to show for it and every other test here
+    // still passing, because they all drive the pair they were rendered with.
+    const { view } = panes();
+    view.rerender(<Harness scale={1} grid={8} generation={1} />);
+
+    const first = screen.getByTestId('first');
+    const second = screen.getByTestId('second');
+    expect(first.scrollLeft).toBe(0);
+
+    first.scrollLeft = 150;
+    settle();
+
+    expect(second.scrollLeft).toBe(152);
+    expectSameRegion(centreOf(second, BOX.second), centreOf(first, BOX.first));
+  });
+
+  it('puts a replacement pair back where the reader left the last one', () => {
+    // The new scrollports mount at offset zero, so without the anchoring pass a layout change would
+    // silently return the reader to the top-left corner of a sheet they had panned across.
+    const { first, view } = panes();
+    first.scrollLeft = 150;
+    settle();
+
+    view.rerender(<Harness scale={1} grid={8} generation={1} />);
+
+    expectSameRegion(centreOf(screen.getByTestId('first'), BOX.first), centreOf(first, BOX.first));
+  });
+
   it('moves the other pane to the same region of the source image', () => {
     const { first, second } = panes();
 

@@ -1,17 +1,19 @@
-import { useLayoutEffect, useState } from 'react';
-import type { ReactNode, RefObject } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode, RefCallback } from 'react';
 import { useDragPan } from '../../hooks/useDragPan.ts';
 
 interface PanViewportProps {
   /** Names the scrolling region for a screen reader, and only once it is one. */
   readonly label: string;
   /**
-   * The scrollport itself, owned by the caller.
+   * Told about the scrollport as it mounts, and about `null` as it goes.
    *
-   * Handed in rather than kept here because two of these panes are held to the same view of the same
-   * artwork, and the arithmetic that does it needs both elements at once — see `ImageComparison`.
+   * A callback rather than a ref object, because the caller has to *notice*: two of these panes are
+   * held to the same view of the same artwork, the arithmetic that does it needs both elements at
+   * once, and choosing a preview layout replaces both. A ref object's identity survives that, so
+   * nothing downstream could tell — see `useLinkedPanes`, which takes the elements for this reason.
    */
-  readonly viewportRef: RefObject<HTMLDivElement | null>;
+  readonly viewportRef: RefCallback<HTMLDivElement>;
   readonly children: ReactNode;
 }
 
@@ -44,6 +46,17 @@ const NO_OVERFLOW: Overflow = { x: false, y: false };
  * itself brings its own.
  */
 export function PanViewport({ label, viewportRef, children }: PanViewportProps) {
+  // This component's own handle on the box, kept beside the caller's callback rather than instead of
+  // it: the observation below needs the element every commit, and a callback only fires when it
+  // changes. Memoised, so React is not detaching and re-attaching the ref on every render.
+  const own = useRef<HTMLDivElement>(null);
+  const attach = useCallback(
+    (element: HTMLDivElement | null) => {
+      own.current = element;
+      viewportRef(element);
+    },
+    [viewportRef],
+  );
   const [overflow, setOverflow] = useState<Overflow>(NO_OVERFLOW);
   const isPannable = overflow.x || overflow.y;
   const { isPanning, panHandlers } = useDragPan(isPannable);
@@ -58,7 +71,7 @@ export function PanViewport({ label, viewportRef, children }: PanViewportProps) 
   // brings. Re-establishing covers that: a `ResizeObserver` delivers an entry as soon as it starts
   // observing, so re-observing whatever the children now are is also a re-measure of them.
   useLayoutEffect(() => {
-    const element = viewportRef.current;
+    const element = own.current;
     if (element === null) return;
 
     // The browser's own answer to "does this scroll", rather than the content's size modelled against
@@ -82,7 +95,7 @@ export function PanViewport({ label, viewportRef, children }: PanViewportProps) 
 
   return (
     <div
-      ref={viewportRef}
+      ref={attach}
       // A scrolling region is reachable by keyboard only if something makes it focusable, and
       // announced only if something names it — but a box with nothing to scroll is a tab stop that
       // does nothing, so both arrive with the overflow and leave with it (or with the focus).

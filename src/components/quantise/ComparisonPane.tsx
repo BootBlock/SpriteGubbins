@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode, RefCallback } from 'react';
 import type { PaneContent } from './PaneWindow.tsx';
 import { PaneWindow } from './PaneWindow.tsx';
 import { WorkingOverlay } from './WorkingOverlay.tsx';
@@ -8,8 +8,8 @@ export interface ComparisonPaneProps {
   readonly caption: ReactNode;
   /** Names the scrolling region — see `PaneWindow`, which is what receives it. */
   readonly label: string;
-  readonly viewportRef: RefObject<HTMLDivElement | null>;
-  readonly canvasRef: RefObject<HTMLCanvasElement | null>;
+  readonly viewportRef: RefCallback<HTMLDivElement>;
+  readonly canvasRef: RefCallback<HTMLCanvasElement>;
   /** `null` where there is nothing to draw yet, which is when {@link placeholder} takes its place. */
   readonly content: PaneContent | null;
   readonly alt: string;

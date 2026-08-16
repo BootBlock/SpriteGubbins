@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
@@ -81,10 +81,17 @@ export function ImageComparison({
   const [mode, setMode] = useState<PreviewMode>('SIDE_BY_SIDE');
   const [differenceScale, setDifferenceScale] = useState<number>(DEFAULT_DIFFERENCE_SCALE);
   const [wipeAt, setWipeAt] = useState(DEFAULT_WIPE);
-  const sourceView = useRef<HTMLDivElement>(null);
-  const resultView = useRef<HTMLDivElement>(null);
-  const sourceCanvas = useRef<HTMLCanvasElement>(null);
-  const resultCanvas = useRef<HTMLCanvasElement>(null);
+  // The four elements as **state**, not as refs, because choosing a layout replaces every one of
+  // them: the pair and the wipe are different trees, so React unmounts one and mounts the other.
+  // A ref object survives that with its identity intact, so the two effects below — which are the
+  // only things that put pixels on a canvas and hold the panes together — could not tell that what
+  // they were holding had been thrown away. Both symptoms were silent and total: a preview of two
+  // blank frames, and a pair that stopped moving as one. The setters are stable, so they are ref
+  // callbacks as they stand.
+  const [sourceView, setSourceView] = useState<HTMLDivElement | null>(null);
+  const [resultView, setResultView] = useState<HTMLDivElement | null>(null);
+  const [sourceCanvas, setSourceCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [resultCanvas, setResultCanvas] = useState<HTMLCanvasElement | null>(null);
 
   // With nothing to compare against there is nothing to wipe and nothing to have cost anything, so
   // both of those modes would draw a placeholder over the sheet and call it a comparison. Derived
@@ -116,22 +123,23 @@ export function ImageComparison({
   // has to follow the commit rather than sit in the render. Zoom is absent from the dependencies on
   // purpose: it changes the CSS box, never the pixels.
   //
-  // **The pixels, not the wrapper around them.** The `ImageData` is the thing that actually changes
-  // when there is something new to draw, and the canvas takes its size from that same value, so
-  // nothing can resize without this re-running — where depending on `quantised` would mean two
+  // **The pixels, and the canvas they go on — nothing else.** The `ImageData` is what changes when
+  // there is something new to draw, and the canvas takes its size from that same value, so nothing
+  // can resize without this re-running; depending on `quantised` instead would mean two
   // `putImageData` calls of up to 67 megabytes each, on the main thread, for every render of the
-  // panel.
+  // panel. The two elements are dependencies for the opposite reason: a canvas that has just been
+  // mounted is blank, and the image it wants may not have changed at all.
   const secondImage = heatmap ?? quantised?.result.image;
   useEffect(() => {
-    paint(sourceCanvas.current, source);
-    paint(resultCanvas.current, secondImage);
-  }, [source, secondImage]);
+    paint(sourceCanvas, source);
+    paint(resultCanvas, secondImage);
+  }, [sourceCanvas, resultCanvas, source, secondImage]);
 
   const first: ComparisonPaneProps = {
     caption: sourceCaption(source, sourceColors),
     label: 'Pan the sheet as it arrived',
-    viewportRef: sourceView,
-    canvasRef: sourceCanvas,
+    viewportRef: setSourceView,
+    canvasRef: setSourceCanvas,
     content: {
       image: source,
       magnification: zoom,
@@ -145,8 +153,8 @@ export function ImageComparison({
   const second: ComparisonPaneProps = {
     caption: secondCaption(shown, quantised, busy),
     label: shown === 'DIFFERENCE' ? 'Pan the difference heatmap' : 'Pan the quantised sheet',
-    viewportRef: resultView,
-    canvasRef: resultCanvas,
+    viewportRef: setResultView,
+    canvasRef: setResultCanvas,
     // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts the two
     // panes at the same scale — and a leading partial cell covers only `offset` of them, which is
     // what the inset corrects for. Everything comes from the same value, so no half of the placement

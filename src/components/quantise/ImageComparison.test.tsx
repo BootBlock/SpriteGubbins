@@ -374,6 +374,26 @@ describe('ImageComparison’s preview modes', () => {
     expect(clipped?.parentElement?.style.getPropertyValue('--wipe')).toBe('100%');
   });
 
+  it('repaints when a layout change hands it two fresh canvases', () => {
+    // The pair and the wipe are different trees, so choosing one unmounts both canvases and mounts
+    // two more — blank, because a canvas's backing store is created empty. The image on them has not
+    // changed, so an effect keyed on the image alone never fired and the whole preview went to two
+    // empty frames. Driven in Edge, that is exactly what it did.
+    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    show(8);
+    const paired = context.mock.calls.length;
+    expect(paired).toBeGreaterThan(0);
+
+    choose('Wipe');
+    expect(context.mock.calls.length).toBeGreaterThan(paired);
+
+    const overlaid = context.mock.calls.length;
+    choose('Side by side');
+    expect(context.mock.calls.length).toBeGreaterThan(overlaid);
+
+    context.mockRestore();
+  });
+
   it('falls back to the pair when there is no result, rather than wiping against nothing', () => {
     // Both of the other modes need something to compare with. Derived rather than corrected in
     // state, which is the call the toolbar already makes about a download rung a result has

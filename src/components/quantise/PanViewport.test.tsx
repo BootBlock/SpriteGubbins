@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
@@ -53,7 +53,7 @@ afterEach(() => {
 
 /** The scrollport is the caller's, so the tests own one too rather than reaching for the DOM parent. */
 function Harness({ children }: { readonly children: ReactNode }) {
-  const viewportRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useCallback(() => undefined, []);
   return (
     <PanViewport label="Pan the sheet as it arrived" viewportRef={viewportRef}>
       {children}

@@ -1,4 +1,4 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode, RefCallback } from 'react';
 import { PanViewport } from './PanViewport.tsx';
 
 /**
@@ -48,8 +48,8 @@ interface PaneWindowProps {
    * sighted keyboard user can actually reach.
    */
   readonly label: string;
-  readonly viewportRef: RefObject<HTMLDivElement | null>;
-  readonly canvasRef: RefObject<HTMLCanvasElement | null>;
+  readonly viewportRef: RefCallback<HTMLDivElement>;
+  readonly canvasRef: RefCallback<HTMLCanvasElement>;
   /** `null` where there is nothing to draw yet, which is when {@link placeholder} takes its place. */
   readonly content: PaneContent | null;
   readonly alt: string;
