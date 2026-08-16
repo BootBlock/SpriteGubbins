@@ -29,11 +29,11 @@ const KEYING = { color: MAGENTA, tolerance: 16 };
  * A 32 × 32 sheet whose art sits **six pixels in from the corner**: a 16 × 16 sprite at [6, 22), and
  * a 4 × 4 trinket at [24, 28) — smaller than one cell of the grid of 8 the sheet is quantised at.
  *
- * The sprite's boundaries at 6 and 22 are the heaviest steps in the image and share a phase class,
- * so `bestGridOffset` measures the lattice at {6, 6} on both axes — sixteen boundary rows against
- * the trinket's four keeps that deterministic — and the cells become [0, 6), [6, 14), [14, 22),
- * [22, 30), [30, 32) each way: five per axis, the sprite filling four cells exactly and the trinket
- * sitting inside cell (3, 3) with three times as much field around it.
+ * The sprite's boundaries at 6 and 22 are the heaviest steps in the image, so `boundaryMesh`
+ * anchors on one of them, snaps to the other, and completes the cut between at 14 — the cells
+ * become [0, 6), [6, 14), [14, 22), [22, 30), [30, 32) each way: five per axis, the sprite filling
+ * four cells exactly and the trinket sitting inside cell (3, 3) with three times as much field
+ * around it.
  *
  * The field is a *drifting* magenta — 64 distinct near-magentas, laid out so no two pixels within
  * any 8 × 8 window share a colour. That is exactly what a returned sheet looks like, and it is the
@@ -360,6 +360,49 @@ describe('quantiseImage', () => {
     expect(
       Math.abs(last.r - right.r) + Math.abs(last.g - right.g) + Math.abs(last.b - right.b),
     ).toBeLessThanOrEqual(9);
+  });
+
+  it('votes by area once the colours are buckets, not by whichever pixel holds the centre', () => {
+    // The one place the reduce-before-vote ordering is *observable*, pinned so it cannot silently
+    // revert: a cell whose area majority and centre pixel disagree. Voted raw, this cell's wobbled
+    // pixels are all distinct, the tie-break hands it to the pixel nearest the centre — a B pixel —
+    // and reducing afterwards keeps that wrong answer. Reduced first, A's twenty-four pixels and
+    // B's twelve become two buckets and the majority wins. The far-apart regions of the speckle
+    // test above cannot tell the orders apart, because a later reduction maps each cell's raw
+    // winner to the same bucket the early one would have — this fixture is the discriminator.
+    const A: Rgba = { r: 20, g: 200, b: 40, a: 255 };
+    const B: Rgba = { r: 230, g: 40, b: 220, a: 255 };
+    // A crisp regular grid-6 sheet of distinct blocks, whose boundaries anchor the mesh exactly —
+    // so the one special cell cannot pull a cut onto its own interior stripes. That cell, at
+    // (1, 1), is columns [A, A, B, B, A, A], and every one of its 36 pixels wears a provably
+    // distinct wobble — (i mod 6, ⌊i / 6⌋) is injective over the cell — so the raw vote is a
+    // 36-way tie with nothing but the centre tie-break to settle it. A hashed wobble collided,
+    // handed A an honest two-vote plurality, and quietly made the orders agree.
+    const sheet = imageFrom(24, 24, (x, y) => {
+      const cellX = Math.floor(x / 6);
+      const cellY = Math.floor(y / 6);
+      if (cellX === 1 && cellY === 1) {
+        const within = x - 6;
+        const base = within >= 2 && within < 4 ? B : A;
+        const i = (y - 6) * 6 + within;
+        return { r: base.r + (i % 6) - 2, g: base.g + Math.floor(i / 6) - 2, b: base.b, a: 255 };
+      }
+      const index = cellY * 4 + cellX;
+      return { r: index * 16 + 8, g: 255 - index * 12, b: 128, a: 255 };
+    });
+
+    // 17 exactly — the fifteen crisp block colours plus the two wobbled clouds — so the median cut
+    // stops with each cloud held in one box: its next split would have to carve a cloud in two, and
+    // a majority split across sub-buckets is how a generous budget lets the minority win after all.
+    const result = quantiseImage(sheet, {
+      grid: 6,
+      key: null,
+      reduction: { kind: 'MAX_COLORS', maxColors: 17 },
+    });
+
+    const cell = readPixel(result.image.data, pixelOffset(result.image.width, 1, 1));
+    const errorToA = Math.abs(cell.r - A.r) + Math.abs(cell.g - A.g) + Math.abs(cell.b - A.b);
+    expect(errorToA, 'the majority colour lost its own cell').toBeLessThanOrEqual(9);
   });
 
   it('leaves every pixel where it is when keying is off', () => {

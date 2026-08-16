@@ -1,4 +1,9 @@
-import { measurableGridCeiling, MIN_ESTIMATED_GRID } from '../constants/quantiser.ts';
+import {
+  FEWEST_SPACINGS,
+  measurableGridCeiling,
+  MIN_ESTIMATED_GRID,
+  SPACING_AGREEMENT,
+} from '../constants/quantiser.ts';
 import type { PixelGrid } from '../types/quantiser.ts';
 import { boundaryClusters } from './boundaryClusters.ts';
 import { stepProfile } from './stepProfile.ts';
@@ -18,14 +23,16 @@ import { stepProfile } from './stepProfile.ts';
  * the reading demands enough spacings to call a habit — and demands that most of them sit within
  * a pixel of the median, which is the drift a mesh can follow. Wider scatter than that is not a
  * drifting grid, it is an image with edges at assorted distances, and offering its median as a
- * scale would hand the user a confident number that means nothing.
+ * scale would hand the user a confident number that means nothing. Both demands are calibrated
+ * thresholds and live with the others in `constants/quantiser.ts`.
+ *
+ * **One shape can double the answer, and it is accepted rather than defended against.** A sheet
+ * whose alternate boundaries are too faint to clear the chance threshold shows this reading only
+ * every other line, and the median of those gaps is twice the true scale. The number is offered
+ * under the same hedge as every estimate — clicked and judged against the preview, never adopted —
+ * and it is arguably the honest reading of the boundaries the sheet actually shows; the period
+ * estimator before this one has the same shape when the visible lines happen to sit on a lattice.
  */
-
-/** The fewest boundary spacings that can call the spacing a habit rather than a coincidence. */
-const FEWEST_SPACINGS = 6;
-
-/** The share of spacings that must sit within a pixel of the median for it to be offered. */
-const SPACING_AGREEMENT = 0.7;
 
 /** The scale a drifting sheet's boundary spacings imply, or `null` where they imply none. */
 export function estimateMeshPeriod(image: ImageData): PixelGrid | null {

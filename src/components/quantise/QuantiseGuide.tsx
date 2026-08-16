@@ -46,7 +46,7 @@ interface QuantiseGuideProps {
  * The tab opened with a paragraph saying what quantising *is* and nothing saying what to **do**,
  * and the numbered steps answered that for the happy path only: drop a sheet, read a measurement,
  * compare, download. The path that actually needs a guide is the other one — a generated sheet
- * whose scale neither reading could find, where the number has to be judged by eye against the
+ * whose scale no reading could find, where the number has to be judged by eye against the
  * previews — and the knowledge of how to do that lived nowhere on screen. The second list below is
  * that procedure, and the panel now reads the sheet's own state so its advice is about the sheet in
  * front of the reader rather than about sheets in general.

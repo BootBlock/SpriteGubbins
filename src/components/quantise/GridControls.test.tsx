@@ -48,7 +48,7 @@ describe('GridControls', () => {
 
     expect(screen.getByText(/estimated from the spacing of its edges/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
-    expect(screen.getByText(/Its edges do repeat at a regular spacing/)).toBeInTheDocument();
+    expect(screen.getByText(/Its edges do keep to one typical spacing/)).toBeInTheDocument();
   });
 
   it('stops asking for the click once the estimate has been applied', () => {
@@ -65,10 +65,10 @@ describe('GridControls', () => {
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
   });
 
-  it('asks for a number when neither reading found a scale', () => {
+  it('asks for a number when no reading found a scale', () => {
     show(factsWith(null), null);
 
-    expect(screen.getByText(/neither reading of the sheet found a scale/)).toBeInTheDocument();
+    expect(screen.getByText(/none of the three readings of the sheet found a scale/)).toBeInTheDocument();
   });
 
   it('goes on asking for it after one has been typed', () => {
@@ -82,7 +82,7 @@ describe('GridControls', () => {
     // than `getAllByText` for the same reason — it throws on a duplicate, so the leak cannot hide.
     show(factsWith(null), 6);
 
-    expect(screen.getByText(/neither reading of the sheet found a scale/)).toBeInTheDocument();
+    expect(screen.getByText(/none of the three readings of the sheet found a scale/)).toBeInTheDocument();
   });
 
   it('says it is still looking, and offers nothing to try, before the sheet has been read', () => {

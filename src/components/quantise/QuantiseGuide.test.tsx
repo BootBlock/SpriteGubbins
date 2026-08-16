@@ -44,7 +44,7 @@ describe('QuantiseGuide', () => {
 
     expect(screen.getByText('Finding the scale by eye')).toBeInTheDocument();
     expect(screen.getByText(/Start from a candidate/)).toBeInTheDocument();
-    expect(screen.queryByText(/Neither reading found a scale/)).toBeNull();
+    expect(screen.queryByText(/No reading found a scale/)).toBeNull();
     expect(screen.queryByText(/measured outright and is already applied/)).toBeNull();
   });
 
@@ -53,7 +53,7 @@ describe('QuantiseGuide', () => {
     // sheet whose reading has not arrived would have to be retracted a moment later.
     show(null, true);
 
-    expect(screen.queryByText(/Neither reading found a scale/)).toBeNull();
+    expect(screen.queryByText(/No reading found a scale/)).toBeNull();
     expect(screen.queryByText(/An estimate is waiting/)).toBeNull();
   });
 
@@ -102,14 +102,14 @@ describe('QuantiseGuide', () => {
   it('hands an unread sheet the whole procedure, with the ceiling where the studio names one', () => {
     show(factsWith(null), true, 13);
 
-    expect(screen.getByText(/Neither reading found a scale in this sheet/)).toBeInTheDocument();
+    expect(screen.getByText(/No reading found a scale in this sheet/)).toBeInTheDocument();
     expect(screen.getByText(/For this sheet that ceiling is 13×/)).toBeInTheDocument();
   });
 
   it('omits the ceiling line where the studio names no target size', () => {
     show(factsWith(null), true, null);
 
-    expect(screen.getByText(/Neither reading found a scale in this sheet/)).toBeInTheDocument();
+    expect(screen.getByText(/No reading found a scale in this sheet/)).toBeInTheDocument();
     expect(screen.queryByText(/For this sheet that ceiling is/)).toBeNull();
   });
 

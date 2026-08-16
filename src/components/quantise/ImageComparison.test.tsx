@@ -30,8 +30,8 @@ afterEach(() => {
 const SOURCE_SIDE = 128;
 
 /**
- * A result as `quantiseImage` returns one: one pixel per cell of the lattice `cellStarts` places —
- * `⌈w / grid⌉` a side at the corner, one more where a non-zero offset opens a leading partial cell.
+ * A result as `quantiseImage` returns one: one pixel per mesh cell — `⌈w / grid⌉` a side for a
+ * corner-anchored regular mesh, one more where a non-zero offset opens a leading partial cell.
  */
 function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }): QuantiseResult {
   const lead = (along: number) => (along > 0 ? 1 : 0);

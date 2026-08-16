@@ -144,6 +144,44 @@ const SMALLEST_SPRITE_EDGE = 16;
 export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE_EDGE } as const;
 
 /**
+ * How many times chance a position's change must be before it reads as a boundary line.
+ *
+ * A structureless axis spreads its change evenly, handing every position `total / usable` of it —
+ * so a boundary is a position carrying a *multiple* of that, and 2 is the smallest multiple that
+ * separates the two populations on the sheets measured: a softened boundary's centre column carries
+ * about half its step, which is many times chance on any sheet with real cells, while noise and
+ * gradient columns sit at chance by definition. Weak genuine boundaries that fall under it are not
+ * lost — `boundaryMesh` completes a missing line at the expected spacing, which is where a boundary
+ * too faint to detect almost certainly is.
+ *
+ * Filed here with the other calibrated thresholds — `GRID_DETECTION_THRESHOLD` and its siblings —
+ * rather than beside the function that reads it, for the reason `KEY_SHADING_LATITUDE` records:
+ * these numbers are read against one another, and scattering them is how two of them drift apart.
+ */
+export const BOUNDARY_THRESHOLD_OVER_CHANCE = 2;
+
+/**
+ * The fewest boundary spacings that can call a spacing a habit rather than a coincidence, for the
+ * mesh-period reading.
+ *
+ * A median exists for any two lines, so the reading has to demand a sample: six spacings is three
+ * per axis on a square sheet, the smallest count at which "the gaps cluster" is an observation
+ * about the sheet rather than about two gaps.
+ */
+export const FEWEST_SPACINGS = 6;
+
+/**
+ * The share of boundary spacings that must sit within a pixel of their median for the mesh-period
+ * reading to offer it.
+ *
+ * Within a pixel, because that is the drift `boundaryMesh` follows cut by cut; seven tenths,
+ * because a genuine drifting grid concentrates nearly all its spacings on the two integers around
+ * its true pitch, while edges at assorted distances spread theirs — the two populations are far
+ * apart, and the threshold sits between them rather than near either.
+ */
+export const SPACING_AGREEMENT = 0.7;
+
+/**
  * The coarsest scale the two automatic readers will consider for an image of this size.
  *
  * Derived per image rather than fixed, because the fixed version was a cap on the truth: detection
@@ -315,7 +353,7 @@ export const QUANTISE_STEPS = [
   {
     title: 'Check the scale in the sheet',
     detail:
-      'the pixel grid is read from the image itself — exactly where the art is crisp, and as an estimate to click where resampling has softened it. Overrule it if the preview disagrees, and type it yourself if neither reading found one.',
+      'the pixel grid is read from the image itself — exactly where the art is crisp, and as an estimate to click where resampling has softened it. Overrule it if the preview disagrees, and type it yourself if no reading found one.',
   },
   {
     title: 'Key the background, if it has one',
@@ -343,10 +381,10 @@ export const QUANTISE_STEPS = [
  */
 export const QUANTISE_SCALE_GUIDANCE = {
   /** Nothing was read at all — the sheet is smooth, with no regular spacing left in it to measure. */
-  none: 'Nothing in this image changes on a regular grid, and its edges do not soften at a regular spacing either, so neither reading of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. The grid does not have to start at the image’s corner — where it sits on the art is measured from the image whenever a scale is applied.',
+  none: 'Nothing in this image changes on a regular grid, its edges do not soften at a regular spacing, and such boundaries as it has keep to no one typical spacing either — so none of the three readings of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. The grid does not have to start at the image’s corner — where it sits on the art is measured from the image whenever a scale is applied.',
   /** The edges repeat at a spacing, which is a candidate the reader still has to check. */
   estimated:
-    'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do repeat at a regular spacing, though, and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',
+    'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do keep to one typical spacing, though — exactly, or drifting a pixel or two about it — and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',
 } as const;
 
 /**
@@ -364,7 +402,7 @@ export const QUANTISE_SCALE_GUIDANCE = {
 export const QUANTISE_RESULT_PLACEHOLDER = {
   /** The worker is still reading the sheet, before any setting could apply. */
   reading: 'Reading the sheet and working out the scale it was drawn at…',
-  /** Neither reading found a scale, so there is nothing to align to until one is typed. */
+  /** No reading found a scale, so there is nothing to align to until one is typed. */
   none: 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one in the box above.',
   /** A scale was estimated and deliberately not applied — it is waiting to be chosen. */
   estimated:
@@ -381,7 +419,7 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
 
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */
 export const QUANTISE_TOOLTIPS = {
-  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still repeat at is estimated instead and offered to click rather than applied. Type it yourself when neither reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
+  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still keep to — exactly, or with a little drift — is estimated instead and offered to click rather than applied. Type it yourself when no reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
   // Where panning is named. The grab cursor only appears once a pointer is already over the image,
   // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence
   // is the other thing nothing on screen says: the panes are linked, and moving one moves both.

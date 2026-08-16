@@ -7,9 +7,9 @@ import { estimatePixelGrid } from './pixelPeriod.ts';
 /**
  * Finding the scale a returned sheet's art was actually drawn at.
  *
- * A question about an image, not a transform of one — snapping to the answer and reducing to it are
- * `alignToGrid` and `downscaleNearest` in ./gridAlignment.ts, and `quantiseImage` is what runs the
- * three in order, at the offset `bestGridOffset` measures for whatever scale is in force.
+ * A question about an image, not a transform of one — cutting to the answer and reducing to it are
+ * `alignToGrid` and `downscaleNearest` in ./gridAlignment.ts, walking the mesh `boundaryMesh`
+ * measures for whatever scale is in force, and `quantiseImage` is what runs the whole of it.
  */
 
 /**
@@ -26,8 +26,9 @@ import { estimatePixelGrid } from './pixelPeriod.ts';
  * tab has. Its answer is the typical spacing `boundaryMesh` will snap cells to, so it is offered
  * under the same `ESTIMATED` hedge: a candidate to click and judge, never adopted on its own.
  *
- * Running each reading only on the one before's refusal is also what keeps the survey to at most
- * one extra pass on the sheets that need it and none on the sheets that do not.
+ * Running each reading only on the one before's refusal is also what keeps the survey cheap where
+ * it can be: a crisp sheet pays for one pass, a resampled one for two, and only the drifting sheet
+ * that needs all three readings pays for all three.
  */
 export function measureSheetScale(image: ImageData): SheetScale | null {
   const detected = detectPixelGrid(image);
@@ -76,8 +77,8 @@ interface EdgeLattice {
  * different phase and not a different grid. The original, corner-anchored reading answered `null`
  * for every such sheet, and the guidance told the user to crop the margin off and bring the image
  * back — an instruction this measurement now makes unnecessary. The alignment does not need the
- * phase found here: `bestGridOffset` re-measures it for whatever grid ends up in force, which is
- * the one mechanism serving measured, clicked and typed grids alike.
+ * phase found here: `boundaryMesh` measures where the cells sit for whatever grid ends up in
+ * force, which is the one mechanism serving measured, clicked and typed grids alike.
  *
  * Largest candidate first, because a true grid of 8 also scores perfectly at 4, 2 and 1 — the
  * coarsest grid that holds is the real one. Where the count starts is a property of the image

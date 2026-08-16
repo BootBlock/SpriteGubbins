@@ -176,7 +176,7 @@ describe('measureSheetScale', () => {
     expect(measureSheetScale(spottedGrid(20))).toEqual({ grid: 4, measurement: 'EXACT' });
   });
 
-  it('answers null where neither reading finds a scale', () => {
+  it('answers null where no reading finds a scale', () => {
     // Smooth artwork with no scale in it at all, which is what the panel's "type it yourself"
     // guidance is written for.
     const gradient = imageFrom(64, 64, (x, y) => ({

@@ -1,3 +1,5 @@
+import { BOUNDARY_THRESHOLD_OVER_CHANCE } from '../constants/quantiser.ts';
+
 /**
  * The positions on one axis where the art's cell boundaries actually sit.
  *
@@ -6,7 +8,9 @@
  * ramp spreads across neighbouring positions into one line each. It is the shared first step of two
  * different questions — `boundaryMesh` asks *where the cells are* for a scale already chosen, and
  * `estimateMeshPeriod` asks *what spacing the lines imply* when no integer period fits — and one
- * implementation is what stops the two disagreeing about the same sheet.
+ * implementation is what stops the two disagreeing about the same sheet. The threshold that decides
+ * "far more than chance" is `BOUNDARY_THRESHOLD_OVER_CHANCE`, filed with the other calibrated
+ * thresholds in `constants/quantiser.ts`.
  */
 
 /** One detected boundary: where it sits, and how much of the axis's change it carries. */
@@ -14,19 +18,6 @@ export interface BoundaryLine {
   readonly position: number;
   readonly mass: number;
 }
-
-/**
- * How many times chance a position's change must be before it reads as a boundary.
- *
- * A structureless axis spreads its change evenly, handing every position `total / usable` of it —
- * so a boundary is a position carrying a *multiple* of that, and 2 is the smallest multiple that
- * separates the two populations on the sheets measured: a softened boundary's centre column carries
- * about half its step, which is many times chance on any sheet with real cells, while noise and
- * gradient columns sit at chance by definition. Weak genuine boundaries that fall under it are not
- * lost — the mesh completes a missing line at the expected spacing, which is where a boundary too
- * faint to detect almost certainly is.
- */
-export const BOUNDARY_THRESHOLD_OVER_CHANCE = 2;
 
 /**
  * The boundary lines on one axis, ascending.

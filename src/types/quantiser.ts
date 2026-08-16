@@ -47,16 +47,15 @@ export type PixelGrid = number;
 
 /**
  * Where a pixel grid sits against the image: how far in from the left and top its first interior
- * lattice line falls, each in `[0, grid)`.
+ * cut falls, each in `[0, grid)`.
  *
  * `{x: 0, y: 0}` is a grid anchored at the image's own corner, which returned sheets almost never
- * are — a generator places its art wherever composition puts it. The offset is measured from the
- * image by `bestGridOffset` rather than ever being typed, so it appears in no **setting**: the
- * transform works it out for whatever grid is in force, however that grid was chosen, and a stored
+ * are — a generator places its art wherever composition puts it. The offset is read off the mesh
+ * the transform measured rather than ever being typed, so it appears in no **setting**: a stored
  * offset would be the stale half of a pair the moment the grid beside it was overtyped. It does
  * ride on the {@link QuantiseResult} coming back the other way, because the pane that draws the
- * result against the source has to know where the lattice sat — a result's own facts travel with
- * it, exactly as its colour count does.
+ * result against the source has to know how wide the leading cell was — a result's own facts
+ * travel with it, exactly as its colour count does.
  */
 export interface GridOffset {
   readonly x: number;
