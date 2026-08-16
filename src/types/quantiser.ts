@@ -188,6 +188,25 @@ export interface ColorPlan {
   readonly effect: string;
 }
 
+/**
+ * How each mesh cell is read down to its one pixel — the algorithms the Downscale control offers.
+ *
+ * Written `as const` so the store's parser can validate a stored value against the array that
+ * defines the union, as every stored union in this app is.
+ */
+export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
+
+/**
+ * One of the three cell readings.
+ *
+ * `DOMINANT` selects — the modal colour, with the line rescue — and never invents a colour, so it
+ * votes over reduced colours. The other two *average*, deliberately: `INK_WEIGHTED` darkens a
+ * cell's body toward the line crossing it, and `K_CENTROID` takes the centre of the cell's
+ * dominant colour cluster. An average has to see the unreduced colours to have anything to blend,
+ * so for those the reduction runs after the vote — the order is `quantiseImage`'s to hold.
+ */
+export type VoteMethod = (typeof VOTE_METHODS)[number];
+
 /** Everything `quantiseImage` needs beyond the image itself. */
 export interface QuantiseSettings {
   readonly grid: PixelGrid;
@@ -201,6 +220,8 @@ export interface QuantiseSettings {
    * reducing it to some high figure anyway would still be a reduction.
    */
   readonly reduction: ColorReduction | null;
+  /** Which cell reading turns the mesh into pixels — see {@link VoteMethod}. */
+  readonly vote: VoteMethod;
 }
 
 /** What came back: the transformed image, and the numbers that say what it did. */

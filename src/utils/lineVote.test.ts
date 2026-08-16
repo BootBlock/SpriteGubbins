@@ -372,11 +372,11 @@ describe('quantiseImage, line-aware', () => {
     // Quantised at 5 — against the art's own 6-and-7 rhythm, so the mesh cannot seat a cut on
     // every edge and the ring lands astride cells whatever the walker does. (At 6 the walker
     // follows the drift exactly and nothing straddles, which is the mesh doing its job.)
-    const mismatched = { grid: 5, key: null } as const;
+    const mismatched = { grid: 5, key: null, vote: 'DOMINANT' } as const;
 
     // With colours left alone there is no honest tally to read shares from, and the pipeline must
     // be byte-identical to the plain vote it has always run.
-    const unrestricted = quantiseImage(sheet, { ...mismatched, reduction: null });
+    const unrestricted = quantiseImage(sheet, { ...mismatched, vote: 'DOMINANT', reduction: null });
     const composedPlain = downscaleNearest(
       alignToGrid(sheet, boundaryMesh(sheet, 5)),
       boundaryMesh(sheet, 5),
@@ -390,7 +390,11 @@ describe('quantiseImage, line-aware', () => {
     const voteSource = applyPalette(sheet, buildPalette(sheet, 4));
     const mesh = boundaryMesh(sheet, 5);
     const composedWithoutRescue = downscaleNearest(alignToGrid(voteSource, mesh), mesh);
-    const reduced = quantiseImage(sheet, { ...mismatched, reduction: { kind: 'MAX_COLORS', maxColors: 4 } });
+    const reduced = quantiseImage(sheet, {
+      ...mismatched,
+      vote: 'DOMINANT',
+      reduction: { kind: 'MAX_COLORS', maxColors: 4 },
+    });
     expect(channels(reduced.image)).not.toEqual(channels(composedWithoutRescue));
   });
 
@@ -399,6 +403,7 @@ describe('quantiseImage, line-aware', () => {
     const reduced = quantiseImage(sheet, {
       grid: 1,
       key: null,
+      vote: 'DOMINANT',
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     });
     // A one-pixel cell has one bucket, so the palette alone decides — and the sheet is already
@@ -408,7 +413,12 @@ describe('quantiseImage, line-aware', () => {
 
   it('is deterministic — the same sheet and settings give the same bytes twice', () => {
     const sheet = upscaleDrifting(ringArt, 10);
-    const settings = { grid: 6, key: null, reduction: { kind: 'MAX_COLORS', maxColors: 4 } } as const;
+    const settings = {
+      grid: 6,
+      key: null,
+      vote: 'DOMINANT',
+      reduction: { kind: 'MAX_COLORS', maxColors: 4 },
+    } as const;
     expect(channels(quantiseImage(sheet, settings).image)).toEqual(
       channels(quantiseImage(sheet, settings).image),
     );

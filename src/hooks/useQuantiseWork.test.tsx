@@ -45,7 +45,7 @@ function drive(initialProps: Props) {
   }
 
   const view = renderHook(
-    ({ source, gridOverride }: Props) => useQuantiseWork(source, gridOverride, null, REDUCTION),
+    ({ source, gridOverride }: Props) => useQuantiseWork(source, gridOverride, null, REDUCTION, 'DOMINANT'),
     { initialProps },
   );
   return { ...view, worker: thread() };
@@ -139,7 +139,7 @@ describe('useQuantiseWork', () => {
     expect(asked).toHaveLength(1);
     expect(asked[0]?.request).toEqual({
       kind: 'quantise',
-      settings: { grid: 16, key: null, reduction: REDUCTION },
+      settings: { grid: 16, key: null, vote: 'DOMINANT', reduction: REDUCTION },
     });
   });
 
@@ -183,7 +183,7 @@ describe('useQuantiseWork', () => {
     answer({ id: worker.lastId('quantise'), kind: 'quantised', result: resultOf(8) });
 
     unmount();
-    const returned = renderHook(() => useQuantiseWork(source, null, null, REDUCTION));
+    const returned = renderHook(() => useQuantiseWork(source, null, null, REDUCTION, 'DOMINANT'));
     settle();
 
     // Nothing was started, nothing was sent, and nothing was asked for a second time.
@@ -211,7 +211,7 @@ describe('useQuantiseWork', () => {
     expect(worker.of('quantise')).toHaveLength(1);
 
     unmount();
-    renderHook(() => useQuantiseWork(source, null, null, REDUCTION));
+    renderHook(() => useQuantiseWork(source, null, null, REDUCTION, 'DOMINANT'));
     settle();
 
     // Counted across every thread rather than on the one `drive` returned. The arrangement this

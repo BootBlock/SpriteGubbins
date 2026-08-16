@@ -145,6 +145,32 @@ describe('estimateProfilePeriod', () => {
     expect(period === 4 || period === 5, `settled on ${String(period)}`).toBe(true);
   });
 
+  it('reads sprites on a field through the envelope that buried the raw correlation', () => {
+    // The real returned sheet in miniature: most of the canvas is a flat key field, and the art
+    // sits in blocks — so the profile rides a low-frequency envelope that correlates *every* pair
+    // of nearby lags, and on the real sheet the raw correlation sat between 0.5 and 0.75
+    // everywhere while the true pitch was a bump of 0.05 on top. Differencing the profile is what
+    // lets the pitch's comb stand alone; this fixture is the class that failed without it.
+    const sheet = soften(
+      imageFrom(320, 320, (x, y) => {
+        const inSprite =
+          (x >= 20 && x < 150 && y >= 20 && y < 150) || (x >= 170 && x < 300 && y >= 170 && y < 300);
+        if (!inSprite) return { r: 250, g: 40, b: 245, a: 255 };
+        const cellX = Math.floor(x / 6);
+        const cellY = Math.floor(y / 6);
+        return {
+          r: 30 + (cellX % 3) * 70,
+          g: 60 + (cellY % 3) * 65,
+          b: 40 + ((cellX + cellY) % 4) * 45,
+          a: 255,
+        };
+      }),
+    );
+
+    expect(estimateProfilePeriod(sheet)).toBe(6);
+    expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'ESTIMATED' });
+  });
+
   it('refuses smooth artwork, whose profile has no structure to correlate', () => {
     const gradient = imageFrom(128, 128, (x, y) => ({
       r: Math.round((x / 127) * 255),

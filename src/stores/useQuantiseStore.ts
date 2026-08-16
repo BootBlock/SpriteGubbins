@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
-import type { ImportedImage, PixelGrid } from '../types/quantiser.ts';
+import type { ImportedImage, PixelGrid, VoteMethod } from '../types/quantiser.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 
@@ -46,21 +46,31 @@ export interface QuantiseState {
   readonly keyingEnabled: boolean;
   /** How far a pixel may sit from the key colour, as `keyDistanceSquared` measures that. */
   readonly keyTolerance: number;
+  /**
+   * Which cell reading turns the mesh into pixels — see `VoteMethod`.
+   *
+   * Like the keying settings, this survives `setSource` and falls only to `clear`: which reading
+   * suits a sheet is a judgement about the *artwork's style* — contour-heavy, painterly, flat —
+   * and the splitter hands back eight sheets in one style, not eight styles.
+   */
+  readonly vote: VoteMethod;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
   setKeyingEnabled(keyingEnabled: boolean): void;
   setKeyTolerance(keyTolerance: number): void;
+  setVote(vote: VoteMethod): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
 
 /** What the tab opens with, and what `clear` puts back. */
-const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'keyingEnabled' | 'keyTolerance'> = {
+const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'keyingEnabled' | 'keyTolerance' | 'vote'> = {
   source: null,
   gridOverride: null,
   keyingEnabled: false,
   keyTolerance: DEFAULT_KEY_TOLERANCE,
+  vote: 'DOMINANT',
 };
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
@@ -94,6 +104,10 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setKeyTolerance: (keyTolerance) => {
     set({ keyTolerance });
+  },
+
+  setVote: (vote) => {
+    set({ vote });
   },
 
   // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is

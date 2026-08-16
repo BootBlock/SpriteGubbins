@@ -18,6 +18,7 @@ import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '.
 export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSettings): boolean {
   return (
     left.grid === right.grid &&
+    left.vote === right.vote &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );

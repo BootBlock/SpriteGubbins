@@ -5,6 +5,7 @@ import type { ColorPlan, PixelGrid, SheetFacts, SheetScale } from '../../types/q
 import { Tooltip } from '../common/Tooltip.tsx';
 import { GridCandidates } from './GridCandidates.tsx';
 import { ScaleBadge } from './ScaleBadge.tsx';
+import { VoteMethodField } from './VoteMethodField.tsx';
 
 interface GridControlsProps {
   /**
@@ -129,6 +130,12 @@ export function GridControls({ facts, target, suggested, grid, colorPlan, onGrid
             {colorPlan.setting} — {colorPlan.effect}
           </p>
         </div>
+      </div>
+
+      {/* Below the facts row rather than in it: the row reports what is, and this is the tab's
+          second decision — which reading turns the mesh into pixels. */}
+      <div className="mt-4 max-w-md">
+        <VoteMethodField />
       </div>
 
       <GridCandidates scale={scale} suggested={suggested} onChoose={onGridChange} />

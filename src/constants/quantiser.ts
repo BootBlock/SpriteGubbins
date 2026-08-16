@@ -176,18 +176,20 @@ export const ACF_PROMINENCE = 0.2;
  *
  * Measured on the window rather than the single lag, deliberately: drift splits a fundamental
  * between two neighbouring lags, so a single-lag floor under-measures exactly the sheets this
- * reading serves. Negative neighbours are clamped rather than subtracted because at a pitch of
- * four the window spans most of a period and one neighbour sits in the anticorrelation trough *by
- * geometry* — a trough is the shape a strong period has, not evidence against it — and subtracting
- * it made every drifting pitch below five unreachable however strong the art.
+ * reading serves. Negative neighbours are clamped rather than subtracted because in the
+ * *differenced* domain the correlation is read in, a genuine peak stands between structural
+ * anticorrelation troughs at every pitch — a trough is the shape a strong period has, not
+ * evidence against the peak beside it.
  *
- * Applied per axis, against the axis's own variance. On the armour fixture the rows axis carries
- * 1.31 of support at the pitch and answers; the columns axis, polluted by the marks drawn along
- * it, musters 0.56 and refuses — and the one clean axis is enough. For a structureless profile
- * the correlation at any lag sits within a few hundredths of zero, so the floor stands far above
- * anything noise or a gradient reaches.
+ * Applied per axis, against the axis's own variance. Calibrated in the differenced domain, where
+ * the synthetic fixtures measure 0.86 to 0.99 at their true pitch and a real returned sheet —
+ * sprites on a field, whose envelope once buried the reading entirely — measures 0.58 on its
+ * clean rows axis and 0.35 on its detail-polluted columns axis. The floor sits between the real
+ * sheet's two axes: the clean axis answers and the polluted one refuses, and one axis is enough.
+ * For a structureless profile the correlation at any lag sits within a few hundredths of zero,
+ * far below it.
  */
-export const ACF_CORRELATION_FLOOR = 0.75;
+export const ACF_CORRELATION_FLOOR = 0.5;
 
 /**
  * How much of a peak's windowed mass a division of it must carry before the reading descends to
@@ -208,12 +210,11 @@ export const ACF_HARMONIC_DESCENT = 0.7;
  * The confirmation a settled pitch takes from its own double's ±1 window, where the range holds
  * one.
  *
- * A genuine period correlates at its multiples; a coincidence does not. Windowed because drift
- * smears the echo across neighbouring lags, but *signed*, unlike the floor above: a negative
- * neighbourhood at the double is evidence against the pitch. Weaker than the floor because drift
- * decays multiples faster than it decays the fundamental — on the armour fixture the rows axis's
- * double-window carries 0.86 against its fundamental's 1.31, and the refused columns axis manages
- * only 0.16 there.
+ * A genuine period correlates at its multiples; a coincidence does not. Windowed and clamped by
+ * the same measure as every other gate, because a fractional pitch's echo lands beside the exact
+ * double rather than on it — art at four and a third settled on five carries its echo at nine,
+ * inside the double's window but flanked by the troughs a signed sum would count against it.
+ * Weaker than the floor because drift decays multiples faster than it decays the fundamental.
  */
 export const ACF_MULTIPLE_CONFIRMATION = 0.3;
 
@@ -340,6 +341,44 @@ export const LINE_INK_CEILING = 64;
  * surface dark enough for the range gate to open at all.
  */
 export const LINE_TRIM_FLOOR = 255 - LINE_INK_CEILING;
+
+/**
+ * How much beyond its own share a cell's ink pulls the ink-weighted reading toward it.
+ *
+ * At 1 the blend is the plain proportional mean the ink already had, and a one-third contour slice
+ * darkens its cell by a third — legible as shading, not as a line. Lines are what the reading is
+ * for, so a qualifying ink share pulls half again its weight, capped at a full pull: the one-third
+ * slice reads as half ink, and a two-thirds slice reads as the line it is. Chosen against the
+ * armour sheet the reading was built for, where 1 left contours faint and 2 blackened whole
+ * panels.
+ */
+export const INK_BLEND_EMPHASIS = 1.5;
+
+/**
+ * How many refinement passes the k-centroid reading's two clusters take per cell.
+ *
+ * Two clusters over at most a few dozen pixels settle almost immediately — the seeds start at the
+ * cell's luma extremes, which is most of the answer — so this is a determinism bound, not a
+ * convergence hope: the same cell always takes the same passes and lands on the same centres.
+ * Eight is comfortably past where any cell this size still moves.
+ */
+export const K_CENTROID_PASSES = 8;
+
+/**
+ * The Downscale control's options, in the order offered — the identifier the pipeline stores, and
+ * the label the select shows.
+ *
+ * Three genuinely different readings rather than variants of one: the standard vote *selects* a
+ * colour the cell already contains, and the other two *average* — which is why the pipeline
+ * applies the colour reduction after them rather than before. The labels' parentheticals carry
+ * the choosing half, per the select budget's rule; what each reading is for lives in
+ * {@link QUANTISE_TOOLTIPS}.
+ */
+export const VOTE_METHOD_CHOICES = [
+  { value: 'DOMINANT', label: 'DOMINANT (standard vote)' },
+  { value: 'INK_WEIGHTED', label: 'INK_WEIGHTED (keeps outlines)' },
+  { value: 'K_CENTROID', label: 'K_CENTROID (cluster average)' },
+] as const;
 
 /**
  * The coarsest scale the two automatic readers will consider for an image of this size.
@@ -588,6 +627,7 @@ export const QUANTISE_TOOLTIPS = {
     'Replaces the background key with transparency, so the sheet can be imported without a colour field behind it. The colour comes from the studio, which is where the prompt stated it. Anti-aliased edges carry blends of that key, and at any tolerance above exact the pixel touching the field is eroded with it — against a black or white key that will take some of the artwork’s own contour, which is why magenta is the recommended key.',
   keyTolerance:
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
+  vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour and keeps a near-black outline or bright trim even as a minority — it never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

@@ -9,6 +9,7 @@ const WHITE = { r: 255, g: 255, b: 255, a: 255 };
 const BASE: QuantiseSettings = {
   grid: 8,
   key: { color: MAGENTA, tolerance: 32 },
+  vote: 'DOMINANT',
   reduction: { kind: 'MAX_COLORS', maxColors: 32 },
 };
 
@@ -27,6 +28,7 @@ describe('sameQuantiseSettings', () => {
       sameQuantiseSettings(BASE, {
         grid: 8,
         key: { color: { ...MAGENTA }, tolerance: 32 },
+        vote: 'DOMINANT',
         reduction: { kind: 'MAX_COLORS', maxColors: 32 },
       }),
     ).toBe(true);
@@ -38,9 +40,13 @@ describe('sameQuantiseSettings', () => {
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),
     ).toBe(false);
-    expect(sameQuantiseSettings(BASE, { ...BASE, reduction: { kind: 'MAX_COLORS', maxColors: 64 } })).toBe(
-      false,
-    );
+    expect(
+      sameQuantiseSettings(BASE, {
+        ...BASE,
+        vote: 'DOMINANT',
+        reduction: { kind: 'MAX_COLORS', maxColors: 64 },
+      }),
+    ).toBe(false);
   });
 
   it('separates keying that runs from keying that does not', () => {
@@ -55,9 +61,17 @@ describe('sameQuantiseSettings', () => {
     // `UNRESTRICTED` is the palette step not running at all. None of them is a variant of another, so
     // moving between any two has to count as a change.
     const budget: QuantiseSettings = BASE;
-    const pinned: QuantiseSettings = { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] } };
-    const depth: QuantiseSettings = { ...BASE, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 } };
-    const none: QuantiseSettings = { ...BASE, reduction: null };
+    const pinned: QuantiseSettings = {
+      ...BASE,
+      vote: 'DOMINANT',
+      reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
+    };
+    const depth: QuantiseSettings = {
+      ...BASE,
+      vote: 'DOMINANT',
+      reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
+    };
+    const none: QuantiseSettings = { ...BASE, vote: 'DOMINANT', reduction: null };
 
     for (const [left, right] of [
       [budget, pinned],
@@ -70,28 +84,45 @@ describe('sameQuantiseSettings', () => {
       expect(sameQuantiseSettings(left, right)).toBe(false);
     }
 
-    expect(sameQuantiseSettings(none, { ...BASE, reduction: null })).toBe(true);
+    expect(sameQuantiseSettings(none, { ...BASE, vote: 'DOMINANT', reduction: null })).toBe(true);
     expect(
-      sameQuantiseSettings(depth, { ...BASE, reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 } }),
+      sameQuantiseSettings(depth, {
+        ...BASE,
+        vote: 'DOMINANT',
+        reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
+      }),
     ).toBe(true);
   });
 
   it('compares a pinned palette by its colours, in order', () => {
     // Two palettes of the same length holding the same colours in a different order are not the same
     // palette: `nearestColor` breaks a tie on the earliest entry, so the order decides the sheet.
-    const pinned: QuantiseSettings = { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] } };
+    const pinned: QuantiseSettings = {
+      ...BASE,
+      vote: 'DOMINANT',
+      reduction: { kind: 'PALETTE', entries: [BLACK, WHITE] },
+    };
 
     expect(
       sameQuantiseSettings(pinned, {
         ...BASE,
+        vote: 'DOMINANT',
         reduction: { kind: 'PALETTE', entries: [{ ...BLACK }, WHITE] },
       }),
     ).toBe(true);
     expect(
-      sameQuantiseSettings(pinned, { ...BASE, reduction: { kind: 'PALETTE', entries: [WHITE, BLACK] } }),
+      sameQuantiseSettings(pinned, {
+        ...BASE,
+        vote: 'DOMINANT',
+        reduction: { kind: 'PALETTE', entries: [WHITE, BLACK] },
+      }),
     ).toBe(false);
-    expect(sameQuantiseSettings(pinned, { ...BASE, reduction: { kind: 'PALETTE', entries: [BLACK] } })).toBe(
-      false,
-    );
+    expect(
+      sameQuantiseSettings(pinned, {
+        ...BASE,
+        vote: 'DOMINANT',
+        reduction: { kind: 'PALETTE', entries: [BLACK] },
+      }),
+    ).toBe(false);
   });
 });

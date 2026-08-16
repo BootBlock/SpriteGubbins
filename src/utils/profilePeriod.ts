@@ -90,23 +90,41 @@ interface AxisReading {
  * half carries nearly its support — through every gate the axis can apply by itself.
  */
 function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
-  const { mean, variance, cv } = axisMoments(axis);
+  const { variance, cv } = axisMoments(axis);
   // Structure first, or the correlation below is a ratio of near-zeros.
   if (cv < ACF_STRUCTURE_FLOOR || variance <= 0) return null;
+
+  // Correlate the profile's *first difference*, not the profile. A real sheet's profile rides on a
+  // low-frequency envelope — art here, gutter there, a sprite's silhouette every few hundred
+  // pixels — and the envelope correlates every pair of nearby lags: measured on a returned sheet,
+  // the raw correlation sat between 0.5 and 0.75 at every lag from four to fourteen, and the true
+  // pitch was a bump of 0.05 on that pedestal, invisible to every prominence measure. Differencing
+  // is the high-pass that removes what the mean removal cannot: the comb the pixel grid contributes
+  // survives it — a step's *change* recurs at the pitch exactly as the step does — while the
+  // envelope, nearly constant across one position, vanishes. The structure gate above still reads
+  // the raw profile, because a differenced series is near zero-mean by construction and its
+  // coefficient of variation certifies nothing.
+  const detail = difference(axis);
+  const detailMoments = axisMoments(detail);
+  if (detailMoments.variance <= 0) return null;
 
   // r(k) for every lag the search reads: the candidates' range widened by one on each side so the
   // ±1 windows and the flanking valleys of prominence exist at the range's edges, and 2 × ceiling
   // so a settled pitch can consult its own double.
-  const highest = Math.min(2 * ceiling + 1, axis.length - 2);
+  const highest = Math.min(2 * ceiling + 1, detail.length - 2);
   const r = new Float64Array(highest + 1);
   for (let lag = Math.max(1, MIN_ESTIMATED_GRID - 1); lag <= highest; lag += 1) {
-    r[lag] = covariance(axis, mean, lag) / variance;
+    r[lag] = covariance(detail, detailMoments.mean, lag) / detailMoments.variance;
   }
 
+  // A candidate must *carry* correlation, not merely stand above its valleys: the differenced
+  // domain's baseline is zero and its anticorrelation troughs are deep, so without this floor a
+  // flat nothing between two troughs measures as prominent — the shape of no pitch at all.
   let best: number | null = null;
   let bestMass = -Infinity;
   for (let lag = MIN_ESTIMATED_GRID; lag <= ceiling; lag += 1) {
     const here = r[lag] ?? 0;
+    if (here < ACF_PROMINENCE) continue;
     if (here < (r[lag - 1] ?? 0) || here <= (r[lag + 1] ?? 0)) continue;
     if (prominence(r, lag, ceiling) < ACF_PROMINENCE) continue;
     const mass = windowedMass(r, lag);
@@ -153,6 +171,7 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
     let tentativeMass = -Infinity;
     for (const candidate of candidates) {
       const here = r[candidate] ?? 0;
+      if (here < ACF_PROMINENCE) continue;
       if (here < (r[candidate - 1] ?? 0) || here <= (r[candidate + 1] ?? 0)) continue;
       if (prominence(r, candidate, ceiling) < ACF_PROMINENCE) continue;
       const mass = windowedMass(r, candidate);
@@ -174,7 +193,7 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
     if (2 * settled + 1 <= highest && windowedMass(r, 2 * settled) < ACF_MULTIPLE_CONFIRMATION) {
       return null;
     }
-    if (windowedSupport(r, settled) < ACF_CORRELATION_FLOOR) return null;
+    if (windowedMass(r, settled) < ACF_CORRELATION_FLOOR) return null;
   }
   return { period: settled, sure };
 }
@@ -195,6 +214,15 @@ function axisMoments(axis: Float64Array): { mean: number; variance: number; cv: 
   return { mean, variance, cv: mean > 0 ? Math.sqrt(variance) / mean : 0 };
 }
 
+/** The profile's step-to-step change: position `i` holds `axis[i + 1] − axis[i]`, index 0 unused. */
+function difference(axis: Float64Array): Float64Array {
+  const detail = new Float64Array(Math.max(0, axis.length - 1));
+  for (let index = 1; index < axis.length - 1; index += 1) {
+    detail[index] = (axis[index + 1] ?? 0) - (axis[index] ?? 0);
+  }
+  return detail;
+}
+
 /** The mean-removed covariance of one axis with itself at one lag, divided by the overlap count. */
 function covariance(axis: Float64Array, mean: number, lag: number): number {
   const last = axis.length - 1 - lag;
@@ -207,25 +235,20 @@ function covariance(axis: Float64Array, mean: number, lag: number): number {
 }
 
 /**
- * The ±1 window's summed correlation, signed — what a fractional pitch splits between two lags,
- * and what peak selection, descent and the double's confirmation all weigh, because for those a
- * negative neighbour is evidence.
+ * The ±1 window's summed positive correlation — negative neighbours held at zero.
+ *
+ * The window is what a fractional pitch splits its evidence between two lags into, and every
+ * consumer — peak selection, the descent bar, the correlation floor, the double's confirmation —
+ * reads this one clamped measure. Clamping is not generosity: in the differenced domain every
+ * genuine peak stands between *structural* anticorrelation troughs — a step's change is followed
+ * by no change, then by the opposing change, at every pitch — so a signed window subtracts the
+ * shape of a strong period from its own evidence, and at small pitches the window spans so much
+ * of a period that the floor became unreachable however strong the art. The job of counting
+ * evidence *against* a candidate belongs to the gates that do it by shape: the positivity floor,
+ * the local-maximum test and prominence.
  */
 function windowedMass(r: Float64Array, lag: number): number {
-  return (r[lag - 1] ?? 0) + (r[lag] ?? 0) + (r[lag + 1] ?? 0);
-}
-
-/**
- * The window's *support*: negative neighbours held at zero.
- *
- * The correlation floor's measure, and the clamping is what admits small drifting pitches at all:
- * at a pitch of four the window spans most of a period, so one neighbour sits in the
- * anticorrelation trough *by geometry* — subtracting it made the floor unreachable below five for
- * every drifting sheet, however strong the pitch. A trough is not evidence against the peak beside
- * it; it is the shape a strong period has.
- */
-function windowedSupport(r: Float64Array, lag: number): number {
-  return Math.max(0, r[lag - 1] ?? 0) + (r[lag] ?? 0) + Math.max(0, r[lag + 1] ?? 0);
+  return Math.max(0, r[lag - 1] ?? 0) + Math.max(0, r[lag] ?? 0) + Math.max(0, r[lag + 1] ?? 0);
 }
 
 /** How far the peak stands above the higher of the two valleys flanking it. */

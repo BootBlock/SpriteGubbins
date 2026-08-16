@@ -68,7 +68,12 @@ describe('quantiseImage', () => {
   it('recovers the art a sheet was drawn at from the sheet it came back on', () => {
     // The whole feature in one assertion: 16 × 16 art returned on a 128 × 128 canvas comes back as
     // the 16 × 16 art, pixel for pixel, with nothing invented and nothing lost.
-    const result = quantiseImage(upscaleNearest(SPRITE, 8), { grid: 8, key: null, reduction: null });
+    const result = quantiseImage(upscaleNearest(SPRITE, 8), {
+      grid: 8,
+      key: null,
+      vote: 'DOMINANT',
+      reduction: null,
+    });
 
     expect(result.image.width).toBe(16);
     expect(result.image.height).toBe(16);
@@ -79,6 +84,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
+      vote: 'DOMINANT',
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
 
@@ -93,6 +99,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
+      vote: 'DOMINANT',
       reduction: colorPlanFor('FREE', 'UNRESTRICTED').reduction,
     });
 
@@ -109,6 +116,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(source, {
       grid: 8,
       key: null,
+      vote: 'DOMINANT',
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
 
@@ -122,7 +130,7 @@ describe('quantiseImage', () => {
     // Without keying, the trinket's cell resolves to the trinket: its sixteen pixels of one colour
     // outvote forty-eight drifting magentas polling one vote each, and a 4 × 4 piece comes back as a
     // full 8 × 8 cell of solid colour — dilated to four times its own area.
-    const dilated = quantiseImage(INSET_SHEET, { grid: 8, key: null, reduction: null });
+    const dilated = quantiseImage(INSET_SHEET, { grid: 8, key: null, vote: 'DOMINANT', reduction: null });
     const cells = pixels(dilated.image);
 
     expect(dilated.offset).toEqual({ x: 6, y: 6 });
@@ -136,7 +144,7 @@ describe('quantiseImage', () => {
     // field outnumbers the trinket in the cell it dominates. The sprite lands on the 2 × 2 it
     // genuinely fills, and everything else — the trinket's cell included, which the field three
     // quarters covers — is empty.
-    const keyed = quantiseImage(INSET_SHEET, { grid: 8, key: KEYING, reduction: null });
+    const keyed = quantiseImage(INSET_SHEET, { grid: 8, key: KEYING, vote: 'DOMINANT', reduction: null });
 
     expect(pixels(keyed.image)).toEqual([
       [TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT, TRANSPARENT],
@@ -148,7 +156,7 @@ describe('quantiseImage', () => {
   });
 
   it('reports the share of the sheet the key removed', () => {
-    const result = quantiseImage(INSET_SHEET, { grid: 8, key: KEYING, reduction: null });
+    const result = quantiseImage(INSET_SHEET, { grid: 8, key: KEYING, vote: 'DOMINANT', reduction: null });
 
     // 32 × 32 less the 16 × 16 sprite and the 4 × 4 trinket: 752 of 1024. Both art colours are far
     // outside the fringe threshold, so nothing is eroded off them and the figure is exactly the
@@ -162,6 +170,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: KEYING,
+      vote: 'DOMINANT',
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
 
@@ -192,7 +201,7 @@ describe('quantiseImage', () => {
       return readPixel(SPRITE.data, pixelOffset(SPRITE.width, cellX, cellY));
     });
 
-    const result = quantiseImage(inset, { grid: 8, key: null, reduction: null });
+    const result = quantiseImage(inset, { grid: 8, key: null, vote: 'DOMINANT', reduction: null });
 
     expect(result.offset).toEqual({ x: 3, y: 3 });
     expect(result.image.width).toBe(17);
@@ -211,7 +220,12 @@ describe('quantiseImage', () => {
     // The difference a pinned palette makes, stated as the thing a budget cannot do: 200 arbitrary
     // colours come back as four *named* ones, and every pixel is one of exactly those four.
     const gameBoy = colorPlanFor('GAME_BOY_DMG', 'UNRESTRICTED').reduction;
-    const result = quantiseImage(TWO_HUNDRED_COLORS, { grid: 1, key: null, reduction: gameBoy });
+    const result = quantiseImage(TWO_HUNDRED_COLORS, {
+      grid: 1,
+      key: null,
+      vote: 'DOMINANT',
+      reduction: gameBoy,
+    });
 
     expect(gameBoy?.kind).toBe('PALETTE');
     const survivors = new Set(pixels(result.image).flat().map(toHex));
@@ -223,7 +237,12 @@ describe('quantiseImage', () => {
     // counted: the Mega Drive's 512 colours barely reduce a 200-colour image, but every channel that
     // survives is a value the machine could actually output.
     const megaDrive = colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED').reduction;
-    const result = quantiseImage(TWO_HUNDRED_COLORS, { grid: 1, key: null, reduction: megaDrive });
+    const result = quantiseImage(TWO_HUNDRED_COLORS, {
+      grid: 1,
+      key: null,
+      vote: 'DOMINANT',
+      reduction: megaDrive,
+    });
 
     expect(megaDrive).toEqual({ kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 });
     const rungs = new Set(channelLevels(3));
@@ -259,6 +278,7 @@ describe('quantiseImage', () => {
       const result = quantiseImage(soft, {
         grid: 1,
         key: null,
+        vote: 'DOMINANT',
         reduction: colorPlanFor(palette, 'UNRESTRICTED').reduction,
       });
       expect(readPixel(result.image.data, 0).a, `${palette} flattened a soft edge`).toBe(128);
@@ -296,7 +316,7 @@ describe('quantiseImage', () => {
       };
     });
 
-    const result = quantiseImage(drifting, { grid: 6, key: null, reduction: null });
+    const result = quantiseImage(drifting, { grid: 6, key: null, vote: 'DOMINANT', reduction: null });
 
     // One output pixel per drifting cell on each axis, and every interior cell resolves to a colour
     // within the wobble of its own block — no cell inherits a neighbouring block's colour, which is
@@ -339,6 +359,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(noisy, {
       grid: 6,
       key: null,
+      vote: 'DOMINANT',
       reduction: { kind: 'MAX_COLORS', maxColors: 2 },
     });
 
@@ -397,6 +418,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(sheet, {
       grid: 6,
       key: null,
+      vote: 'DOMINANT',
       reduction: { kind: 'MAX_COLORS', maxColors: 17 },
     });
 
@@ -410,7 +432,7 @@ describe('quantiseImage', () => {
     // *entirely* the key colour comes back untouched, and the share is zero rather than unreported.
     const field = imageFrom(4, 4, () => MAGENTA);
 
-    const result = quantiseImage(field, { grid: 1, key: null, reduction: null });
+    const result = quantiseImage(field, { grid: 1, key: null, vote: 'DOMINANT', reduction: null });
 
     expect(channels(result.image)).toEqual(channels(field));
     expect(result.keyedShare).toBe(0);

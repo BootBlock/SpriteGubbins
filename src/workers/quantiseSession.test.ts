@@ -8,7 +8,7 @@ import { loadSheet, quantiseSheet, releaseSheet } from './quantiseSession.ts';
 const FACTS: SheetFacts = { scale: { grid: 8, measurement: 'EXACT' }, colors: 1024 };
 
 function settingsAt(grid: number): QuantiseSettings {
-  return { grid, key: null, reduction: { kind: 'MAX_COLORS', maxColors: 32 } };
+  return { grid, key: null, vote: 'DOMINANT', reduction: { kind: 'MAX_COLORS', maxColors: 32 } };
 }
 
 function resultOf(side: number): QuantiseResult {

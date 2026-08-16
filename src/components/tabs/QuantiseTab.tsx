@@ -55,6 +55,7 @@ export function QuantiseTab() {
   const gridOverride = useQuantiseStore((state) => state.gridOverride);
   const keyingEnabled = useQuantiseStore((state) => state.keyingEnabled);
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
+  const vote = useQuantiseStore((state) => state.vote);
   const setSource = useQuantiseStore((state) => state.setSource);
   const setGridOverride = useQuantiseStore((state) => state.setGridOverride);
   const clear = useQuantiseStore((state) => state.clear);
@@ -85,6 +86,7 @@ export function QuantiseTab() {
     gridOverride,
     keying,
     colorPlan.reduction,
+    vote,
   );
 
   // The studio's own target size, read as a second candidate. Deliberately **not** folded into

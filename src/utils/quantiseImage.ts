@@ -4,6 +4,8 @@ import { snapToChannelDepth } from './channelDepth.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { countColors } from './imageData.ts';
+import { inkWeightedCells } from './inkWeightedVote.ts';
+import { kCentroidCells } from './kCentroidVote.ts';
 import { keyBackground } from './keyBackground.ts';
 import { buildPalette } from './medianCut.ts';
 
@@ -64,18 +66,35 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const source = keyed?.image ?? image;
   const pixels = image.width * image.height;
 
-  // `UNRESTRICTED` with no palette pinned skips the step outright rather than reducing to some
-  // generous figure. A painted or 3D-rendered sheet has no colour budget to enforce, and a high cap
-  // is still a cap.
-  const voteSource = settings.reduction === null ? source : reduceColors(source, settings.reduction);
-
   // Measured on the un-reduced image: the reduction can merge two adjacent regions into one colour
   // and erase the boundary between them, and a boundary the mesh cannot see is a cut it cannot snap.
   const mesh = boundaryMesh(source, settings.grid);
-  // Line-aware only where a reduction ran: the rescue reads shares out of the tally, and a share
-  // means nothing in a raw-colour vote where every pixel is its own bucket — see `alignToGrid`.
-  const aligned = alignToGrid(voteSource, mesh, settings.reduction !== null);
-  const output = downscaleNearest(aligned, mesh);
+
+  // **The two averaging readings invert the pipeline's colour order, and the inversion is the
+  // point.** The dominant vote selects a colour the cell already contains, so reducing first is
+  // what makes its tally honest. An average *creates* colours — an ink-darkened gold, a settled
+  // cluster centre — and reducing first would collapse exactly the tones it exists to blend; so
+  // those readings see the unreduced source, and the reduction runs on their output, where the
+  // blended tones are real colours a palette chosen from it can keep.
+  const output =
+    settings.vote === 'DOMINANT'
+      ? downscaleNearest(
+          alignToGrid(
+            // `UNRESTRICTED` with no palette pinned skips the step outright rather than reducing
+            // to some generous figure. A painted or 3D-rendered sheet has no colour budget to
+            // enforce, and a high cap is still a cap. Line-aware only where a reduction ran: the
+            // rescue reads shares out of the tally, and a share means nothing in a raw-colour
+            // vote where every pixel is its own bucket — see `alignToGrid`.
+            settings.reduction === null ? source : reduceColors(source, settings.reduction),
+            mesh,
+            settings.reduction !== null,
+          ),
+          mesh,
+        )
+      : reduceAfter(
+          settings.vote === 'INK_WEIGHTED' ? inkWeightedCells(source, mesh) : kCentroidCells(source, mesh),
+          settings.reduction,
+        );
 
   return {
     image: output,
@@ -135,4 +154,18 @@ function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
     case 'CHANNEL_DEPTH':
       return snapToChannelDepth(image, reduction.bitsPerChannel);
   }
+}
+
+/**
+ * The palette step for an averaging reading: the same three forms, run on the reading's own
+ * output.
+ *
+ * A budget's palette is chosen from the *resolved* sheet rather than the source, deliberately —
+ * the ink-darkened tones an averaging reading creates are the detail it exists to keep, and a
+ * palette chosen from the source would hold only the colours those blends replaced, snapping every
+ * one of them back to the body it was darkened from. `null` leaves the blends untouched, exactly
+ * as it leaves an unreduced dominant vote untouched.
+ */
+function reduceAfter(cells: ImageData, reduction: ColorReduction | null): ImageData {
+  return reduction === null ? cells : reduceColors(cells, reduction);
 }
