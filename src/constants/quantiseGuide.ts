@@ -91,5 +91,5 @@ export function targetCeilingAdvice(suggested: PixelGrid | null, target: TargetS
  * `GridControls` takes the same value: two readings of one setting can disagree, and did.
  */
 export function colourAdvice(plan: ColorPlan): string {
-  return `Colour needs no decision on this tab: the studio’s ${plan.setting} setting travels with the sheet (${plan.effect}). To change it, change the studio setting and come back — the sheet stays loaded.`;
+  return `Colour policy is the studio’s: the ${plan.setting} setting travels with the sheet (${plan.effect}), and changing it means changing the studio setting and coming back — the sheet stays loaded. The cleanup dials on this tab only tidy what that policy produced, and never touch a pinned palette’s own entries.`;
 }

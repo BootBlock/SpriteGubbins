@@ -10,19 +10,29 @@ import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
  * lone dissenter a neighbourhood pass can outvote, and the fills stay dithered however hard that
  * pass runs. The redundancy is in the *palette*, and this pass removes it there: colours are
  * ranked by how many pixels carry them, each colour in rank order either stands (no keeper within
- * the tolerance) or folds into the first keeper it sits within tolerance of, and every pixel of a
- * folded colour is repainted with its keeper. One decision per colour, applied everywhere at once
- * — which is what makes a green panel become *one* green rather than a negotiation, and what
- * makes the per-pixel cleanup effective afterwards, because majorities can finally form.
+ * the tolerance) or folds into the highest-ranked keeper it sits within tolerance of, and every
+ * pixel of a folded colour is repainted with its keeper. One decision per colour, applied
+ * everywhere at once — which is what makes a green panel become *one* green rather than a
+ * negotiation, and what makes the per-pixel cleanup effective afterwards, because majorities can
+ * finally form.
  *
  * Population order is what keeps it honest: the colours that stand are the ones the sheet
  * actually uses most, so a surface's dominant shade absorbs its satellites rather than the other
  * way round — and rank ties break by packed value, so the outcome is deterministic on every
- * input. Distance is straight-line RGB against the caller's tolerance; linework survives for the
- * same reason it survives the cleanup — ink sits far past every offered rung from any fill.
- * Colour means RGB and alpha is coverage, untouched: colours tally across their alphas, and a
- * repainted pixel keeps its own. Fully transparent pixels are outside it entirely. A tolerance of
- * zero returns the input's bytes unchanged.
+ * input. Distance is straight-line RGB against the caller's tolerance. **Unlike the cleanup, the
+ * tolerance is this pass's only line defence** — there is no neighbourhood majority to protect a
+ * stroke — so the low rungs are safely under any ink-to-fill gap, while the top rungs can reach
+ * from near-black ink to a dark shadow fill and will fold whichever of the two the sheet uses
+ * less. That is offered knowingly: it is the flattening a heavy merge *is*, and the preview sits
+ * beside the dial. Colour means RGB and alpha is coverage, untouched: colours tally across their
+ * alphas, and a repainted pixel keeps its own. Fully transparent pixels are outside it entirely.
+ * A tolerance of zero returns the input's bytes unchanged.
+ *
+ * The keeper search is bucketed on a lattice of tolerance-sized cells, so each colour consults
+ * only the twenty-seven cells that could hold a keeper within reach rather than every keeper so
+ * far — which is what keeps the pass near-linear on the worst input the app admits: a sheet
+ * quantised at a grid of 1 with its colours left alone can carry *millions* of distinct colours,
+ * and the plain quadratic scan measured a quarter of a minute there.
  */
 export function mergeColors(image: ImageData, tolerance: number): ImageData {
   const output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);
@@ -40,24 +50,48 @@ export function mergeColors(image: ImageData, tolerance: number): ImageData {
   }
 
   const ranked = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([key]) => key);
-  const keepers: number[] = [];
+  // Keepers filed by the tolerance-lattice cell their colour sits in; `rank` is insertion order,
+  // which is what "the highest-ranked keeper within tolerance" is judged by across cells.
+  const cells = new Map<number, { key: number; r: number; g: number; b: number; rank: number }[]>();
+  const cellOf = (r: number, g: number, b: number): number =>
+    (Math.floor(r / tolerance) * 32 + Math.floor(g / tolerance)) * 32 + Math.floor(b / tolerance);
   const target = new Map<number, number>();
+  let standing = 0;
+
   for (const key of ranked) {
     const r = (key >>> 16) & 0xff;
     const g = (key >>> 8) & 0xff;
     const b = key & 0xff;
     let home = key;
-    for (const keeper of keepers) {
-      const dr = r - ((keeper >>> 16) & 0xff);
-      const dg = g - ((keeper >>> 8) & 0xff);
-      const db = b - (keeper & 0xff);
-      if (dr * dr + dg * dg + db * db <= limit) {
-        home = keeper;
-        break;
+    let homeRank = Infinity;
+    for (let dr = -1; dr <= 1; dr += 1) {
+      for (let dg = -1; dg <= 1; dg += 1) {
+        for (let db = -1; db <= 1; db += 1) {
+          const cell = cells.get(cellOf(r, g, b) + (dr * 32 + dg) * 32 + db);
+          if (cell === undefined) continue;
+          for (const keeper of cell) {
+            if (keeper.rank >= homeRank) continue;
+            const dR = r - keeper.r;
+            const dG = g - keeper.g;
+            const dB = b - keeper.b;
+            if (dR * dR + dG * dG + dB * dB <= limit) {
+              home = keeper.key;
+              homeRank = keeper.rank;
+            }
+          }
+        }
       }
     }
-    if (home === key) keepers.push(key);
-    else target.set(key, home);
+    if (home === key) {
+      const cellKey = cellOf(r, g, b);
+      const cell = cells.get(cellKey);
+      const entry = { key, r, g, b, rank: standing };
+      if (cell === undefined) cells.set(cellKey, [entry]);
+      else cell.push(entry);
+      standing += 1;
+    } else {
+      target.set(key, home);
+    }
   }
   if (target.size === 0) return output;
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { mergeColors } from './mergeColors.ts';
+import { quantiseImage } from './quantiseImage.ts';
 
 const GREEN: Rgba = { r: 40, g: 140, b: 60, a: 255 };
 /** A near-duplicate ten steps away — a dithered fill's second entry, not a shade. */
@@ -26,13 +27,32 @@ describe('mergeColors', () => {
   });
 
   it('folds satellites onto the most-used colour, never the other way round', () => {
-    // Twenty-eight greens and eight near-greens: population decides the keeper, so the surface's
+    // Thirty-two greens and four near-greens: population decides the keeper, so the surface's
     // dominant shade absorbs its satellite whichever was counted first.
     const sheet = imageFrom(6, 6, (x, y) => (y === 0 && x < 4 ? NEAR : GREEN));
+    const merged = mergeColors(sheet, 24);
     for (let offset = 0; offset < 6 * 6 * 4; offset += 4) {
-      const merged = mergeColors(sheet, 24);
       expect(merged.data[offset]).toBe(GREEN.r);
     }
+  });
+
+  it('stands a colour whose only in-reach colour has itself folded — one decision per colour', () => {
+    // K absorbs A; B is within reach of A but not of K. B stands, because folding is judged
+    // against the colours that *stand*, never against a colour already folded away — a chain
+    // would let the tolerance creep arbitrarily far one hop at a time.
+    const keeperTone: Rgba = { r: 100, g: 100, b: 100, a: 255 };
+    const nearTone: Rgba = { r: 120, g: 100, b: 100, a: 255 };
+    const farTone: Rgba = { r: 140, g: 100, b: 100, a: 255 };
+    const sheet = imageFrom(6, 6, (x, y) => {
+      const index = y * 6 + x;
+      if (index < 20) return keeperTone;
+      return index < 30 ? nearTone : farTone;
+    });
+    const merged = mergeColors(sheet, 24);
+    const last = (6 * 6 - 1) * 4;
+    expect(merged.data[0]).toBe(keeperTone.r);
+    expect(merged.data[20 * 4]).toBe(keeperTone.r);
+    expect(merged.data[last]).toBe(farTone.r);
   });
 
   it('leaves transparency alone and keeps a repainted pixel’s own alpha', () => {
@@ -50,6 +70,32 @@ describe('mergeColors', () => {
     // keeps the alpha it arrived with.
     const soft = (0 * 6 + 2) * 4;
     expect(merged.data[soft + 3]).toBe(254);
+  });
+
+  it('never folds a pinned palette’s entries — the pipeline exempts it', () => {
+    // Two hardware shades sixteen steps apart, pinned: the merge dial must not quietly un-pin
+    // them into one, so the pipeline skips the pass entirely for a pinned palette.
+    const shadeA: Rgba = { r: 139, g: 172, b: 15, a: 255 };
+    const shadeB: Rgba = { r: 155, g: 188, b: 15, a: 255 };
+    const sheet = imageFrom(12, 6, (x) => (x < 6 ? shadeA : shadeB));
+    const result = quantiseImage(sheet, {
+      grid: 6,
+      key: null,
+      vote: 'DOMINANT',
+      lineStrength: 1.5,
+      fillCleanup: 0,
+      colorMerge: 24,
+      reduction: { kind: 'PALETTE', entries: [shadeA, shadeB] },
+    });
+    const seen = new Set<number>();
+    for (let offset = 0; offset < result.image.data.length; offset += 4) {
+      seen.add(
+        (result.image.data[offset] ?? 0) * 65536 +
+          (result.image.data[offset + 1] ?? 0) * 256 +
+          (result.image.data[offset + 2] ?? 0),
+      );
+    }
+    expect(seen.size).toBe(2);
   });
 
   it('returns the input bytes unchanged at a tolerance of zero, and is deterministic', () => {

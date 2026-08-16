@@ -59,7 +59,7 @@ import { buildPalette } from './medianCut.ts';
  *
  * Pure, and deliberately so — which is what let it move into `src/workers/quantiseWorker.ts` without
  * a line of it changing when a large sheet did stall. It no longer runs on the main thread at all:
- * every pass is linear in a pixel count this app admits up to 16.8 million of, and a transform that
+ * every pass is linear, or near it, in a pixel count this app admits up to 16.8 million of, and a transform that
  * re-runs on each keystroke of the grid box has no business holding the one thread that could paint a
  * spinner.
  */
@@ -106,8 +106,12 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // cleanup wants to see the final colours — palette entries included — not the ones a reduction
   // is about to replace.
   // Merge first, then despeckle: folding near-duplicate colours sheet-wide is what lets settled
-  // fills form the majorities the per-pixel cleanup needs.
-  const output = despeckle(mergeColors(resolved, settings.colorMerge), settings.fillCleanup);
+  // fills form the majorities the per-pixel cleanup needs. A *pinned* palette is exempt from the
+  // merge — its entries are the user's explicit statement of which colours are distinct, and a
+  // cleanup dial must not quietly un-pin two of them into one.
+  const merged =
+    settings.reduction?.kind === 'PALETTE' ? resolved : mergeColors(resolved, settings.colorMerge);
+  const output = despeckle(merged, settings.fillCleanup);
 
   return {
     image: output,

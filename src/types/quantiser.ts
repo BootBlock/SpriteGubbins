@@ -233,7 +233,7 @@ export interface QuantiseSettings {
    */
   readonly fillCleanup: number;
   /**
-   * The colour merge's sheet-wide fold tolerance — a value from `COLOR_MERGE_TOLERANCES`, ` `
+   * The colour merge's sheet-wide fold tolerance — a value from `COLOR_MERGE_TOLERANCES`, `0`
    * leaving every colour the reading produced. Applied before the fill cleanup, which it feeds.
    */
   readonly colorMerge: number;

@@ -116,9 +116,7 @@ describe('QuantiseGuide', () => {
   it('names the colour plan actually in force, and where it is changed', () => {
     show(null, false);
 
-    expect(
-      screen.getByText(/the studio’s RESTRAINED_64_COLOR setting travels with the sheet/),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/the RESTRAINED_64_COLOR setting travels with the sheet/)).toBeInTheDocument();
     expect(screen.getByText(/reduced to 64 colours chosen from the sheet/)).toBeInTheDocument();
   });
 });
