@@ -93,8 +93,13 @@ describe('inkWeightedCells', () => {
     const trimmed = imageFrom(6, 6, (x, y) => (y * 6 + x < 12 ? gold : BODY));
     // Off by default: the plain non-ink mean, gold included — the reading before the dial.
     expect(Array.from(inkWeightedCells(trimmed, single, 1.5, 0, 64).data)).toEqual([178, 142, 77, 255]);
-    // At 1.5 the third pulls half-way toward the gold mean.
-    expect(Array.from(inkWeightedCells(trimmed, single, 1.5, 1.5, 64).data)).toEqual([193, 158, 80, 255]);
+    // At 1.5 the third pulls the whole base half-way toward the gold mean — from the base the
+    // gold is already part of, so the dial is continuous: barely on is barely different from off.
+    expect(Array.from(inkWeightedCells(trimmed, single, 1.5, 1.5, 64).data)).toEqual([207, 173, 83, 255]);
+    // Monotonic from the first notch: a whisper of strength moves a whisker from off, upward.
+    const whisper = inkWeightedCells(trimmed, single, 1.5, 0.1, 64);
+    expect(whisper.data[0]).toBeGreaterThanOrEqual(178);
+    expect(whisper.data[0]).toBeLessThanOrEqual(181);
     // Ink takes the cell first where both cross it: a qualifying ink slice beside the gold keeps
     // the pull dark, whatever the trim strength.
     const both = imageFrom(6, 6, (x, y) => {

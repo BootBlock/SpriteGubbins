@@ -21,7 +21,9 @@ import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './ima
  * mean by that share, amplified by the caller's `emphasis`, so a one-third slice reads as a line
  * rather than a shadow. `trimEmphasis` is the bright mirror for gold edging and rim light —
  * pixels at or above the trim floor, held to the stricter bright share, pulling only where a
- * qualifying ink stroke has not already taken the cell — and at zero it is fully inert. The
+ * qualifying ink stroke has not already taken the cell — at zero it is fully inert, and it leans
+ * from the same inclusive base as the ink pull, which is what keeps the dial continuous at the
+ * off end and monotonic along its whole travel. The
  * mechanism is the inverse-bilateral weighting of detail-preserving downscaling, specialised to
  * the details pixel art cannot lose.
  *
@@ -105,8 +107,8 @@ export function inkWeightedCells(
 
       // The base is the mean of everything that is not ink — bright pixels included, so a pale
       // sheet with the trim dial off reads exactly as it did before the dial existed. The
-      // trim-exclusive "rest" below exists only for the trim pull, which needs the surface
-      // *under* the trim to lean from and to judge the tonal gap against.
+      // trim-exclusive body tally exists only for the trim *gate*, which judges the tonal gap
+      // between the trim and the surface under it.
       const nonInkCount = bodyCount + trimCount;
       const baseR = nonInkCount > 0 ? (bodyR + trimR) / nonInkCount : inkR / inkCount;
       const baseG = nonInkCount > 0 ? (bodyG + trimG) / nonInkCount : inkG / inkCount;
@@ -134,18 +136,19 @@ export function inkWeightedCells(
         : trimQualifies
           ? Math.min(1, (trimCount / opaque) * trimEmphasis)
           : 0;
-      // A trim pull leans from the surface under the trim, not from a mean the trim is already
-      // half of; the ink pull leans from the whole non-ink base, as it always has.
-      const fromR = trimQualifies ? bodyR / bodyCount : baseR;
-      const fromG = trimQualifies ? bodyG / bodyCount : baseG;
-      const fromB = trimQualifies ? bodyB / bodyCount : baseB;
+      // Both pulls lean from the same inclusive base toward their line's own mean, and for the
+      // trim that is what makes the dial continuous: the base already carries the trim at its
+      // natural share, so as the strength approaches nothing the blend approaches exactly the
+      // off state, and every notch upward is more trim than the last — a pull that instead leant
+      // from the trim-free surface dimmed the trim below off for every strength under one, with
+      // a visible cliff at the first notch.
       const towardR = inkQualifies ? inkR / inkCount : trimQualifies ? trimR / trimCount : baseR;
       const towardG = inkQualifies ? inkG / inkCount : trimQualifies ? trimG / trimCount : baseG;
       const towardB = inkQualifies ? inkB / inkCount : trimQualifies ? trimB / trimCount : baseB;
 
-      output.data[out] = Math.round(fromR * (1 - pull) + towardR * pull);
-      output.data[out + 1] = Math.round(fromG * (1 - pull) + towardG * pull);
-      output.data[out + 2] = Math.round(fromB * (1 - pull) + towardB * pull);
+      output.data[out] = Math.round(baseR * (1 - pull) + towardR * pull);
+      output.data[out + 1] = Math.round(baseG * (1 - pull) + towardG * pull);
+      output.data[out + 2] = Math.round(baseB * (1 - pull) + towardB * pull);
       output.data[out + 3] = FULLY_OPAQUE;
     }
   }

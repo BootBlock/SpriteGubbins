@@ -23,10 +23,12 @@ import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
  * takes the modal RGB while keeping its own alpha. Fully transparent pixels are outside all of
  * it: they are the keyed field, they never vote as neighbours, and they are never painted over.
  *
- * Every judgement reads the *input* image and writes a copy, so the pass is one simultaneous
+ * Every judgement reads its pass's *input* and writes a copy, so each pass is one simultaneous
  * step rather than a left-to-right smear — a merged pixel cannot recruit the next one within the
- * same call — which is also what makes it deterministic and testable byte for byte. A tolerance
- * of zero returns the input's bytes unchanged.
+ * same pass, and recruiting *across* passes is exactly what the `passes` dial buys: a pixel two
+ * deep in a speckled patch settles one layer per pass, and a pass that changes nothing ends the
+ * run early. Deterministic and testable byte for byte; a tolerance of zero returns the input's
+ * bytes unchanged.
  */
 export function despeckle(image: ImageData, tolerance: number, passes = 1): ImageData {
   let output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);

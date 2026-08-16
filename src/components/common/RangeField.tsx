@@ -39,10 +39,13 @@ export function RangeField({ label, tooltip, value, min, max, step, format, onCh
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <label htmlFor={inputId} className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
-        {label}
+      {/* The Tooltip is a sibling of the label, never inside it, as every field primitive keeps
+          it: nested, the revealed card joins the slider's accessible name and a click on the
+          guidance text becomes label activation aimed at the input. */}
+      <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+        <label htmlFor={inputId}>{label}</label>
         <Tooltip text={tooltip} hint={label} />
-      </label>
+      </span>
       <input
         id={inputId}
         type="range"
