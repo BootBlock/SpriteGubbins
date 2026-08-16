@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { flatDifference } from '../../test/images.ts';
 import { createImage } from '../../utils/imageData.ts';
 import type { QuantiseResult, SheetScale } from '../../types/quantiser.ts';
 import { ImageComparison } from './ImageComparison.tsx';
@@ -33,10 +34,29 @@ const SOURCE_SIDE = 128;
  * A result as `quantiseImage` returns one: one pixel per mesh cell — `⌈w / grid⌉` a side for a
  * corner-anchored regular mesh, one more where a non-zero offset opens a leading partial cell.
  */
-function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }): QuantiseResult {
+function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance = 0): QuantiseResult {
   const lead = (along: number) => (along > 0 ? 1 : 0);
   const side = (along: number) => lead(along) + Math.ceil((SOURCE_SIDE - along) / grid);
-  return { image: createImage(side(offset.x), side(offset.y)), colors, keyedShare: 0, offset };
+  const image = createImage(side(offset.x), side(offset.y));
+  return {
+    image,
+    difference: flatDifference(image.width, image.height, distance),
+    colors,
+    keyedShare: 0,
+    offset,
+  };
+}
+
+/** The heatmap's pane, which stands where the result's does and says so in its own name. */
+const HEATMAP = 'How far each drawn pixel sits from the patch of the sheet it stands for';
+
+/** Switch the preview to one of the three layouts, by the name on its pill. */
+function choose(layout: string) {
+  fireEvent.click(
+    within(screen.getByRole('group', { name: 'Preview layout' })).getByRole('button', {
+      name: layout,
+    }),
+  );
 }
 
 function show(
@@ -45,6 +65,7 @@ function show(
   busy = false,
   scale: SheetScale | null = null,
   inForce: number | null = grid,
+  distance = 0,
 ) {
   const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
   render(
@@ -54,7 +75,7 @@ function show(
       sourceColors={200}
       scale={scale}
       grid={inForce}
-      quantised={grid === null ? null : { result: resultFor(grid, colors), grid }}
+      quantised={grid === null ? null : { result: resultFor(grid, colors, { x: 0, y: 0 }, distance), grid }}
       busy={busy}
     />,
   );
@@ -243,5 +264,129 @@ describe('ImageComparison', () => {
 
     expect(screen.queryByText('Quantising…')).toBeNull();
     expect(screen.queryByText(/updating…/)).toBeNull();
+  });
+});
+
+/**
+ * The three ways of reading one result.
+ *
+ * Two of them exist because the pair of frames cannot answer their question. Side by side says what
+ * the sheet *became*; the wipe puts the same screen pixels before and after so a change of one shade
+ * is findable at all; and the difference mode says what the reduction *cost*, which is the reading
+ * two separate reports of a working dial "doing nothing" turned out to need.
+ */
+describe('ImageComparison’s preview modes', () => {
+  it('opens on the pair, which is the reading that needs no explaining', () => {
+    show(8);
+
+    expect(screen.getByRole('img', { name: /after grid alignment/ })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: HEATMAP })).toBeNull();
+    expect(screen.queryByRole('slider')).toBeNull();
+  });
+
+  it('puts the heatmap where the result was, so the sheet stays put across the switch', () => {
+    // The left frame is deliberately unchanged by the switch: it is what the reader is comparing
+    // against, and `useLinkedPanes` is holding a pan position on it. Replacing the *pair* would
+    // move the artwork out from under them to show them a measurement of it.
+    const { arrived } = show(8);
+    choose('Difference');
+
+    expect(screen.getByRole('img', { name: 'The sheet as it arrived' })).toBe(arrived);
+    expect(screen.getByRole('img', { name: HEATMAP })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /after grid alignment/ })).toBeNull();
+  });
+
+  it('draws the heatmap at the result’s size, on the result’s own footprint', () => {
+    // The map is one mark per drawn pixel, so it inherits the whole placement — the magnification
+    // that makes one screen pixel mean the same amount of sheet in both frames, and the window that
+    // holds the two extents equal. A heatmap drawn at any other size would point at the wrong
+    // artwork while looking entirely correct.
+    show(8);
+    choose('Difference');
+    const heatmap = screen.getByRole('img', { name: HEATMAP });
+
+    expect(heatmap).toHaveAttribute('width', String(SOURCE_SIDE / 8));
+    expect(heatmap.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+    expect(heatmap.parentElement?.style.width).toBe(`${String(SOURCE_SIDE)}px`);
+  });
+
+  it('states the two figures the map cannot show, and only where they mean something', () => {
+    // The map says *where* something was lost; these say how much. The pair is what a reader
+    // compares across a change of dial — and the colour count the other modes state is not a fact
+    // about a heatmap, so it goes.
+    show(8, 32, false, null, 8, 12.5);
+    choose('Difference');
+
+    expect(screen.getByText('Difference · mean 12.50 · peak 12.5')).toBeInTheDocument();
+    expect(screen.queryByText(/32 colours/)).toBeNull();
+  });
+
+  it('offers the scale only while there is a ramp for it to be the top of', () => {
+    show(8);
+    expect(screen.queryByRole('group', { name: 'Difference scale' })).toBeNull();
+
+    choose('Difference');
+    expect(screen.getByRole('group', { name: 'Difference scale' })).toBeInTheDocument();
+
+    choose('Wipe');
+    expect(screen.queryByRole('group', { name: 'Difference scale' })).toBeNull();
+  });
+
+  it('repaints the heatmap when the scale changes, because that is all the control does', () => {
+    // The scale is applied where the map is painted rather than where it is measured, so a rung is
+    // one pass over an image the size of the result. Nothing else about the result moves — which is
+    // also why a stale repaint here would be invisible rather than obviously wrong.
+    const context = vi.spyOn(HTMLCanvasElement.prototype, 'getContext');
+    show(8, 32, false, null, 8, 20);
+    choose('Difference');
+    const painted = context.mock.calls.length;
+
+    const scale = screen.getByRole('group', { name: 'Difference scale' });
+    fireEvent.click(within(scale).getByRole('button', { name: '4' }));
+
+    expect(context.mock.calls.length).toBeGreaterThan(painted);
+    context.mockRestore();
+  });
+
+  it('lays both frames over one another under a divider, in the wipe', () => {
+    show(8);
+    choose('Wipe');
+
+    // Both pictures are still there — that is what makes it a comparison rather than a toggle — and
+    // the divider is the control that says which of them is showing where.
+    expect(screen.getByRole('img', { name: 'The sheet as it arrived' })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /after grid alignment/ })).toBeInTheDocument();
+    expect(screen.getByRole('slider')).toHaveAttribute('aria-valuenow', '50');
+  });
+
+  it('clips the upper frame at the divider, from the one value both of them read', () => {
+    // The handle's offset and the clip are one fact with two consumers. Published as a custom
+    // property on the frame, they cannot disagree; computed separately, the divider would draw in
+    // one place and cut in another, which reads as the panes being misaligned.
+    show(8);
+    choose('Wipe');
+    const clipped = document.querySelector<HTMLElement>('[style*="clip-path"]');
+
+    expect(clipped?.style.clipPath).toBe('inset(0 0 0 var(--wipe))');
+    expect(clipped?.parentElement?.style.getPropertyValue('--wipe')).toBe('50%');
+
+    fireEvent.keyDown(screen.getByRole('slider'), { key: 'End' });
+    expect(clipped?.parentElement?.style.getPropertyValue('--wipe')).toBe('100%');
+  });
+
+  it('falls back to the pair when there is no result, rather than wiping against nothing', () => {
+    // Both of the other modes need something to compare with. Derived rather than corrected in
+    // state, which is the call the toolbar already makes about a download rung a result has
+    // outgrown: what the pills show is what the panel is actually doing.
+    show(null);
+    choose('Wipe');
+
+    expect(screen.queryByRole('slider')).toBeNull();
+    expect(screen.getByText(/No pixel scale was measured/)).toBeInTheDocument();
+    const pills = screen.getByRole('group', { name: 'Preview layout' });
+    expect(within(pills).getByRole('button', { name: 'Side by side' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 });

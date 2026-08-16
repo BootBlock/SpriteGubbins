@@ -1,9 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
-import { PREVIEW_ZOOMS, QUANTISE_RESULT_PLACEHOLDER } from '../../constants/quantiser.ts';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
-import type { PixelGrid, Quantised, SheetScale } from '../../types/quantiser.ts';
+import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
+import { heatmapImage } from '../../utils/heatmapImage.ts';
+import type { ComparisonPaneProps } from './ComparisonPane.tsx';
 import { ComparisonPane } from './ComparisonPane.tsx';
 import { ComparisonToolbar } from './ComparisonToolbar.tsx';
+import { emptyReason, secondCaption, sourceCaption } from './paneCaptions.tsx';
+import { WipePanes } from './WipePanes.tsx';
 
 interface ImageComparisonProps {
   /** The dropped file's name — what the download is named after. */
@@ -36,25 +40,30 @@ interface ImageComparisonProps {
 }
 
 /**
- * The sheet as it arrived beside the sheet as it will ship, and the way to take the second one away.
+ * The sheet as it arrived beside what became of it, in whichever of three ways the reader asked for.
  *
- * **Both panes stand at the same magnification of the same artwork, and move together.** They did
+ * **Both previews stand at the same magnification of the same artwork, and move together.** They did
  * neither before: the result is one pixel per grid cell, so drawing it at `zoom` showed it `grid`
  * times smaller than its neighbour — at a grid of 8, an eighth — and the same scroll offset in each
  * pointed at a completely different part of the sheet. Drawing it at `zoom * grid` is what makes one
  * screen pixel mean the same amount of original artwork in both, and `useLinkedPanes` then holds them
  * to the same region of it, converting through source pixels rather than copying offsets across.
+ * Linking is unconditional and has no toggle: a comparison view whose halves show different places is
+ * not comparing anything, so the alternative is not a preference, it is the defect.
  *
  * **The grid's offset is the second half of that placement.** The lattice sits where the art put it,
  * so the result can open with a *leading partial cell* — one pixel standing for only `offset` source
  * pixels — and a uniformly magnified canvas draws it a full cell wide, pushing everything after it
- * out of register by the deficit. Each pane therefore hands `ComparisonPane` a clipping window sized
+ * out of register by the deficit. Each pane therefore hands `PaneWindow` a clipping window sized
  * to the source's extent and, for the result, the deficit to pull the canvas back by, so every cell
  * lands on the source pixels it covers and both panes measure as the same content. The reasoning
  * lives on `PaneContent`.
  *
- * Linking is unconditional and has no toggle: a comparison view whose halves show different places is
- * not comparing anything, so the alternative is not a preference, it is the defect.
+ * **The three modes are two layouts and two second images**, which is why there is no third pane and
+ * no third canvas. `SIDE_BY_SIDE` and `DIFFERENCE` are the same pair of frames — the second one
+ * showing the result or a heatmap of what the result cost — so the sheet stays on the left across a
+ * mode switch and the linked pan position survives it. `WIPE` is the same two frames laid over one
+ * another; every value they are drawn from is the one the pair already uses.
  */
 export function ImageComparison({
   sourceName,
@@ -66,15 +75,33 @@ export function ImageComparison({
   busy,
 }: ImageComparisonProps) {
   const [zoom, setZoom] = useState<number>(PREVIEW_ZOOMS[0]);
-  // Beside `zoom` rather than in the store, for the same reason `zoom` is: both are preferences
-  // about how this panel presents a result, not part of what the result is.
+  // Beside `zoom` rather than in the store, for the same reason `zoom` is: every one of these is a
+  // preference about how this panel presents a result, not part of what the result is.
   const [downloadScale, setDownloadScale] = useState<number>(PREVIEW_ZOOMS[0]);
+  const [mode, setMode] = useState<PreviewMode>('SIDE_BY_SIDE');
+  const [differenceScale, setDifferenceScale] = useState<number>(DEFAULT_DIFFERENCE_SCALE);
+  const [wipeAt, setWipeAt] = useState(DEFAULT_WIPE);
   const sourceView = useRef<HTMLDivElement>(null);
   const resultView = useRef<HTMLDivElement>(null);
   const sourceCanvas = useRef<HTMLCanvasElement>(null);
   const resultCanvas = useRef<HTMLCanvasElement>(null);
 
-  // `zoom` is the scale for *both* panes, because it is measured per source pixel: the result canvas
+  // With nothing to compare against there is nothing to wipe and nothing to have cost anything, so
+  // both of those modes would draw a placeholder over the sheet and call it a comparison. Derived
+  // rather than corrected in state, which is the call `ComparisonToolbar` makes about a download
+  // magnification the result has outgrown: what the pills show is what the panel is actually doing.
+  const shown: PreviewMode = quantised === null ? 'SIDE_BY_SIDE' : mode;
+
+  // Keyed on the map rather than on `quantised`, which the hook above rebuilds on every render —
+  // depending on that would repaint a full-size heatmap for a keystroke in the grid box.
+  const difference = quantised?.result.difference;
+  const heatmap = useMemo(
+    () =>
+      difference === undefined || shown !== 'DIFFERENCE' ? null : heatmapImage(difference, differenceScale),
+    [difference, shown, differenceScale],
+  );
+
+  // `zoom` is the scale for *both* panes, because it is measured per source pixel: the second canvas
   // is drawn `grid` times larger to arrive at the same number. See `src/utils/panGeometry.ts`.
   useLinkedPanes({
     first: sourceView,
@@ -89,119 +116,88 @@ export function ImageComparison({
   // has to follow the commit rather than sit in the render. Zoom is absent from the dependencies on
   // purpose: it changes the CSS box, never the pixels.
   //
-  // **The pixels, not the wrapper around them.** `quantised` is built fresh on every render of the
-  // hook above, so depending on it meant repainting both canvases on every render of this panel —
-  // two `putImageData` calls of up to 67 megabytes each, on the main thread, for a keystroke in the
-  // grid box or a zoom the paint deliberately ignores. The `ImageData` is the thing that actually
-  // changes when there is something new to draw, and the canvas takes its size from that same value,
-  // so nothing can resize without this re-running.
-  const resultImage = quantised?.result.image;
+  // **The pixels, not the wrapper around them.** The `ImageData` is the thing that actually changes
+  // when there is something new to draw, and the canvas takes its size from that same value, so
+  // nothing can resize without this re-running — where depending on `quantised` would mean two
+  // `putImageData` calls of up to 67 megabytes each, on the main thread, for every render of the
+  // panel.
+  const secondImage = heatmap ?? quantised?.result.image;
   useEffect(() => {
     paint(sourceCanvas.current, source);
-    paint(resultCanvas.current, resultImage);
-  }, [source, resultImage]);
+    paint(resultCanvas.current, secondImage);
+  }, [source, secondImage]);
+
+  const first: ComparisonPaneProps = {
+    caption: sourceCaption(source, sourceColors),
+    label: 'Pan the sheet as it arrived',
+    viewportRef: sourceView,
+    canvasRef: sourceCanvas,
+    content: {
+      image: source,
+      magnification: zoom,
+      window: { width: source.width * zoom, height: source.height * zoom },
+      inset: { x: 0, y: 0 },
+    },
+    alt: 'The sheet as it arrived',
+    placeholder: null,
+  };
+
+  const second: ComparisonPaneProps = {
+    caption: secondCaption(shown, quantised, busy),
+    label: shown === 'DIFFERENCE' ? 'Pan the difference heatmap' : 'Pan the quantised sheet',
+    viewportRef: resultView,
+    canvasRef: resultCanvas,
+    // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts the two
+    // panes at the same scale — and a leading partial cell covers only `offset` of them, which is
+    // what the inset corrects for. Everything comes from the same value, so no half of the placement
+    // can go missing on its own, and the heatmap inherits all of it by being the same size.
+    content:
+      quantised === null || secondImage === undefined
+        ? null
+        : {
+            image: secondImage,
+            magnification: zoom * quantised.grid,
+            window: { width: source.width * zoom, height: source.height * zoom },
+            inset: {
+              x: quantised.result.offset.x > 0 ? (quantised.grid - quantised.result.offset.x) * zoom : 0,
+              y: quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
+            },
+          },
+    alt:
+      shown === 'DIFFERENCE'
+        ? 'How far each drawn pixel sits from the patch of the sheet it stands for'
+        : 'The sheet after grid alignment and palette reduction',
+    placeholder: (
+      // Its own padding, because `PanViewport` carries none — see the note on its geometry.
+      <p className="p-3 text-xs leading-relaxed text-ink-muted">{emptyReason(busy, grid, scale)}</p>
+    ),
+  };
 
   return (
     <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
       <ComparisonToolbar
+        mode={shown}
+        onModeChange={setMode}
         zoom={zoom}
         onZoomChange={setZoom}
+        differenceScale={differenceScale}
+        onDifferenceScaleChange={setDifferenceScale}
         downloadScale={downloadScale}
         onDownloadScaleChange={setDownloadScale}
         sourceName={sourceName}
         resultImage={quantised?.result.image ?? null}
       />
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ComparisonPane
-          caption={
-            <>
-              As it arrived · {source.width} × {source.height}
-              {sourceColors !== null && ` · ${colourCount(sourceColors)}`}
-            </>
-          }
-          label="Pan the sheet as it arrived"
-          viewportRef={sourceView}
-          canvasRef={sourceCanvas}
-          content={{
-            image: source,
-            magnification: zoom,
-            window: { width: source.width * zoom, height: source.height * zoom },
-            inset: { x: 0, y: 0 },
-          }}
-          alt="The sheet as it arrived"
-          placeholder={null}
-        />
-
-        <ComparisonPane
-          caption={
-            quantised === null ? (
-              <span className={busy ? 'text-neon' : 'text-gold'}>
-                {busy ? 'Quantised · working…' : 'Quantised · set a pixel grid above'}
-              </span>
-            ) : (
-              `Quantised · ${String(quantised.result.image.width)} × ${String(quantised.result.image.height)} · ${colourCount(quantised.result.colors)}${busy ? ' · updating…' : ''}`
-            )
-          }
-          label="Pan the quantised sheet"
-          viewportRef={resultView}
-          canvasRef={resultCanvas}
-          busy={busy}
-          // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts
-          // the two panes at the same scale — and a leading partial cell covers only `offset` of
-          // them, which is what the inset corrects for. Everything comes from the same value, so no
-          // half of the placement can go missing on its own.
-          content={
-            quantised === null
-              ? null
-              : {
-                  image: quantised.result.image,
-                  magnification: zoom * quantised.grid,
-                  window: { width: source.width * zoom, height: source.height * zoom },
-                  inset: {
-                    x:
-                      quantised.result.offset.x > 0 ? (quantised.grid - quantised.result.offset.x) * zoom : 0,
-                    y:
-                      quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
-                  },
-                }
-          }
-          alt="The sheet after grid alignment and palette reduction"
-          placeholder={
-            // Its own padding, because `PanViewport` carries none — see the note on its geometry.
-            <p className="p-3 text-xs leading-relaxed text-ink-muted">{emptyReason(busy, grid, scale)}</p>
-          }
-        />
-      </div>
+      {shown === 'WIPE' ? (
+        <WipePanes first={first} second={second} busy={busy} at={wipeAt} onMove={setWipeAt} />
+      ) : (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <ComparisonPane {...first} />
+          <ComparisonPane {...second} busy={busy} />
+        </div>
+      )}
     </section>
   );
-}
-
-/**
- * `1 colour`, `32 colours` — the figure and its noun, agreeing.
- *
- * A count of one used to be unreachable in practice: before the key field could be removed, its own
- * colours were counted, so no real sheet reduced to a single one. Keying makes it the ordinary outcome
- * for a simple sheet — the screenshot that caught this read "1 colours" — so the agreement is now
- * load-bearing rather than pedantry. `IdentityPaletteCapture`'s toast already spells it this way.
- */
-function colourCount(colors: number): string {
-  return `${String(colors)} ${colors === 1 ? 'colour' : 'colours'}`;
-}
-
-/**
- * Why the result pane is empty, which decides what the reader is asked to do about it.
- *
- * Ordered by how much is settled. Something is still coming; then a scale **is** in force and
- * produced nothing anyway, which only a failure explains and which no instruction about choosing a
- * scale fits; then the two ways of having no scale — one estimated and waiting to be taken, or none
- * found at all.
- */
-function emptyReason(busy: boolean, grid: PixelGrid | null, scale: SheetScale | null): string {
-  if (busy) return QUANTISE_RESULT_PLACEHOLDER.reading;
-  if (grid !== null) return QUANTISE_RESULT_PLACEHOLDER.failed;
-  if (scale?.measurement === 'ESTIMATED') return QUANTISE_RESULT_PLACEHOLDER.estimated;
-  return QUANTISE_RESULT_PLACEHOLDER.none;
 }
 
 /** Put the pixels on the canvas verbatim. A missing canvas is the pane that is showing its `<p>`. */

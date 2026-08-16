@@ -1170,3 +1170,57 @@ describe('forced colours and the sticky header', () => {
     expect(stylesheet).toMatch(/scroll-padding-top: var\(--header-height, 0px\)/);
   });
 });
+
+/**
+ * The heatmap's ramp, held against the tokens it claims to be.
+ *
+ * The quantiser's difference mode paints the app's own severity colours into *pixel data*, inside a
+ * pure function a worker may run — where there is no element to put a class on and no stylesheet to
+ * read. So `src/constants/differenceRamp.ts` carries the values in code, which is a second place a
+ * colour is written down and therefore a place two definitions can part company. This is what stops
+ * them: the ramp names each token it mirrors, and the triple beside it has to be the triple the
+ * stylesheet declares, digit for digit.
+ *
+ * Read from disk rather than imported, as everything else in this file is — `tests/` is the
+ * Node-side program, whose library has no DOM in it and whose reach into `src/` is deliberately
+ * limited to modules that need none.
+ */
+describe('the difference heatmap’s ramp', () => {
+  const ramp = readFileSync(resolve(process.cwd(), 'src/constants/differenceRamp.ts'), 'utf8');
+  const declaration = /property: '(--[a-z0-9-]+)', oklch: \[([\d.]+), ([\d.]+), ([\d.]+)\]/g;
+  const stops = [...ramp.matchAll(declaration)].map((stop) => ({
+    property: stop[1] ?? '',
+    oklch: [Number(stop[2]), Number(stop[3]), Number(stop[4])] as [number, number, number],
+  }));
+
+  it('was parsed at all, so nothing below can pass by matching nothing', () => {
+    // The guard every regex-driven assertion in this file needs: a ramp reformatted past this
+    // pattern would otherwise leave an empty list and a suite that checked no colours at all.
+    expect(stops.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it.each(stops.map((stop) => [stop.property, stop.oklch] as const))(
+    'states %s exactly as the stylesheet does',
+    (property, oklch) => {
+      expect(oklchToken(property)).toStrictEqual(oklch);
+    },
+  );
+
+  it('runs from the page’s own ground to the colour this app uses for wrong', () => {
+    // The ends are the ramp's meaning, not merely two of its values: a faithful pixel has to
+    // disappear into the pane it sits in, and a lost one has to be the same red the form validation
+    // and the destructive actions already speak. A ramp reordered so that "no difference" was the
+    // loud end would render perfectly and say the opposite of what it means.
+    expect(stops.at(0)?.property).toBe('--color-foundry-950');
+    expect(stops.at(-1)?.property).toBe('--color-rose');
+  });
+
+  it('climbs out of the ground steeply, so the first mark on it is visible at all', () => {
+    // The ground is the pane's own colour, so the stop after it carries the whole of the contrast
+    // between "nothing here" and "something here". Anything close to the ground would make the low
+    // end of every map unreadable — which is exactly the end the finest rungs of the scale exist to
+    // read.
+    const [ground, first] = [stops.at(0)?.oklch, stops.at(1)?.oklch];
+    expect(first?.[0] ?? 0).toBeGreaterThan((ground?.[0] ?? 0) + 0.5);
+  });
+});

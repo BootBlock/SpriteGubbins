@@ -515,6 +515,57 @@ export function measurableGridCeiling(width: number, height: number): number {
 export const PREVIEW_ZOOMS = [1, 2, 4, 8] as const;
 
 /**
+ * How many steps of a `DifferenceMap` cell stand for one unit of scaled-OKLab distance.
+ *
+ * The map is one figure per pixel of a result that reaches {@link MAX_IMAGE_PIXELS} at a grid of 1,
+ * so it is held as `Uint16Array` rather than as floats — two bytes instead of four, which is
+ * thirty-three megabytes instead of sixty-seven on the largest sheet the tab admits. A power of two
+ * so the conversion is exact in both directions, and this one because it is the largest that cannot
+ * overflow: the widest distance four 0–255 axes admit is a little over 419, and 419 × 64 leaves a
+ * third of the range unused. `differenceMap.test.ts` pins that headroom, because a `Uint16Array`
+ * **wraps** rather than clamping — an overflow here would not be a bright cell, it would be a dark
+ * one where the sheet was at its worst.
+ */
+export const DIFFERENCE_PRECISION = 64;
+
+/**
+ * The distances the difference mode offers as the top of its ramp, in the order the control shows
+ * them.
+ *
+ * A ladder rather than a slider, as the zoom and the keying tolerance are, and for a plainer reason
+ * than either: the scale is a way of *looking*, so what it wants is a handful of settled rungs a
+ * reader can go back and forth between, not a continuum they have to re-find.
+ *
+ * The rungs are read off the reference sheet (`armour.png`, 1254², grid 6, the standard vote, a
+ * budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75 10.3, p90 54.8, p99
+ * 120.8 and peaks at 180 — roughly seven cells in ten near-exact, and a tail that is the sheet's
+ * edges. Against that: **4** grades the near-exact seventy per cent and saturates the rest, **32**
+ * is the default because it puts the whole of what a dial moves across the ramp — a second cleanup
+ * pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed* sheet needs, where a
+ * silhouette cell whose coverage flipped scores past 200 on the alpha axis alone.
+ */
+export const DIFFERENCE_SCALES = [4, 8, 16, 32, 64, 128] as const;
+
+/** Where the difference scale opens — see {@link DIFFERENCE_SCALES} for what the rung is worth. */
+export const DEFAULT_DIFFERENCE_SCALE = 32;
+
+/**
+ * Where the wipe's divider opens, and how far each key press moves it.
+ *
+ * The middle, because a comparison opens with neither side favoured — and because a divider parked
+ * at an edge shows one image and reads as a broken frame rather than as a control waiting to be
+ * dragged.
+ *
+ * The two steps are the ARIA slider pattern's fine and coarse rungs. One per cent is a pixel or two
+ * at the widths this frame takes, which is the resolution a reader wants for lining the divider up
+ * against a contour; ten is what crosses the frame in ten presses, and is what `Shift` and the page
+ * keys reach.
+ */
+export const DEFAULT_WIPE = 0.5;
+export const WIPE_STEP = 0.01;
+export const WIPE_STEP_COARSE = 0.1;
+
+/**
  * The tolerances the keying control offers, as the distance `keyDistanceSquared` measures.
  *
  * **A ladder rather than a slider**, and the reason is the pipeline: every pass in it is linear in an
@@ -667,7 +718,7 @@ export const QUANTISE_STEPS = [
   {
     title: 'Compare, then download',
     detail:
-      'the two previews stay on the same part of the sheet at the same magnification. Judge an edge at 4× or 8×.',
+      'the two previews stay on the same part of the sheet at the same magnification. Judge an edge at 4× or 8×, lay the two over one another and drag the divider to see the same pixels before and after, and switch to the difference map when a dial’s effect is too small to see.',
   },
 ] as const;
 
@@ -724,6 +775,11 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */
 export const QUANTISE_TOOLTIPS = {
   grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still keep to — exactly, or with a little drift — is estimated instead and offered to click rather than applied. Type it yourself when no reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
+  previewMode:
+    'Which of three ways the result is shown. Side by side is the pair of frames, each on the same part of the sheet at the same magnification. Wipe lays them over one another in a single frame under a divider you can drag, so the very same screen pixels can be seen before and after. Difference replaces the result with a map of what the reduction cost: one mark per drawn pixel, coloured by how far that pixel ended up from the patch of the sheet it stands for — dark where it is faithful, green then gold as it drifts, red where it has lost what it replaced. It changes only what this panel draws; the result, the download and everything stored are the same in all three.',
+  differenceScale:
+    'How large a difference has to be to reach the top of the heatmap’s ramp, measured the way every colour tolerance on this tab is. Lower rungs grade the differences a sheet is mostly made of — on a typical sheet seven drawn pixels in ten sit under 1 — and paint everything coarser than the rung in red. Higher rungs flatten those to dark and keep the ramp for the edges, where a patch that straddled a contour never had one colour to be reduced to, and for keyed sheets, whose silhouettes score past 200 wherever transparency landed differently from the artwork. The scale is fixed rather than fitted to each sheet on purpose: a ramp that re-scaled itself when you moved a dial could not be compared with the one you were looking at a moment ago.',
+  wipe: 'Drag this to move the divider between the sheet as it arrived, on its left, and the quantised sheet on its right. Both are drawn at the same magnification on the same part of the sheet, so the pixels immediately either side of the divider are the same pixels before and after — which is what makes a change of a single shade findable. It can also be moved with the arrow keys once it has focus, and dragging anywhere else in the frame pans both images together as usual.',
   // Where panning is named. The grab cursor only appears once a pointer is already over the image,
   // so it teaches nobody on a touchscreen, and nobody working from the keyboard. The middle sentence
   // is the other thing nothing on screen says: the panes are linked, and moving one moves both.

@@ -4,6 +4,7 @@ import { QUANTISE_DEBOUNCE_MS } from '../constants/quantiser.ts';
 import { useQuantiseStore } from '../stores/useQuantiseStore.ts';
 import { FakeWorker } from '../test/fakeWorker.ts';
 import type { ImportedImage, QuantiseResult, SheetFacts } from '../types/quantiser.ts';
+import { flatDifference } from '../test/images.ts';
 import { createImage } from '../utils/imageData.ts';
 import type { QuantiseReply } from '../workers/quantiseProtocol.ts';
 import { useQuantiseWork } from './useQuantiseWork.ts';
@@ -27,7 +28,13 @@ const NO_SCALE: SheetFacts = { scale: null, colors: 1024 };
 const ESTIMATED: SheetFacts = { scale: { grid: 8, measurement: 'ESTIMATED' }, colors: 1024 };
 
 function resultOf(side: number): QuantiseResult {
-  return { image: createImage(side, side), colors: 32, keyedShare: 0, offset: { x: 0, y: 0 } };
+  return {
+    image: createImage(side, side),
+    difference: flatDifference(side, side),
+    colors: 32,
+    keyedShare: 0,
+    offset: { x: 0, y: 0 },
+  };
 }
 
 function sheet(name: string): ImportedImage {

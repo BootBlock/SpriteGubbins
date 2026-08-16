@@ -562,8 +562,16 @@ example's own wording rather than a name the app suggests.
   Two constants files hold raw hex literals for the same reason — they are **domain data**, the
   vocabulary the prompt compiler understands, not app styling: `COLOR_HEX_MAP` in
   `src/constants/colors.ts`, which is the colour names a subject field may use, and
-  `src/constants/palettes/`, which is the colours real hardware could display. Nothing else gets
-  to claim either exemption.
+  `src/constants/palettes/`, which is the colours real hardware could display.
+- **The difference heatmap's ramp is the third, and it is exempt on a different ground.** Those two
+  are colours that are not the app's; `src/constants/differenceRamp.ts` holds four that **are** —
+  the page ground, `emerald`, `gold` and `rose` — because they are painted into **pixel data**,
+  inside a pure function a worker may run, where there is no element to carry a class and no
+  stylesheet to read. So the exemption is only from the *mechanism*, never from the palette: each
+  stop names the token it mirrors and states the same `oklch()` triple `index.css` states, `oklab.ts`
+  resolves it to bytes, and `tests/design-tokens.test.ts` reads the stylesheet and fails if the two
+  part company. **A new colour chosen here rather than mirrored is the thing this row forbids.**
+  Nothing else gets to claim any of the three exemptions.
 
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,

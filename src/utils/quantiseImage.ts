@@ -1,6 +1,7 @@
 import type { ColorReduction, GridMesh, QuantiseResult, QuantiseSettings } from '../types/quantiser.ts';
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
+import { differenceMap } from './differenceMap.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { despeckle } from './despeckle.ts';
@@ -121,6 +122,10 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
 
   return {
     image: output,
+    // Measured here rather than asked for later, and against `source` rather than `image`: the
+    // reduction this reports on is the one that ran, and the image it ran on is the keyed one every
+    // pass above worked from. Keying's own cost is `keyedShare`, two lines down.
+    difference: differenceMap(source, output, mesh),
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than

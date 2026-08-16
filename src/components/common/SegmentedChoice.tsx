@@ -1,4 +1,4 @@
-interface SegmentedChoiceProps {
+interface SegmentedChoiceProps<T extends string | number> {
   /**
    * The row's accessible name.
    *
@@ -8,11 +8,11 @@ interface SegmentedChoiceProps {
    * counterpart.
    */
   readonly label: string;
-  readonly values: readonly number[];
-  readonly value: number;
+  readonly values: readonly T[];
+  readonly value: T;
   /** What each value reads as on its button — `4` as `4×`, or `0` as the word it actually means. */
-  readonly format: (value: number) => string;
-  readonly onChange: (value: number) => void;
+  readonly format: (value: T) => string;
+  readonly onChange: (value: T) => void;
 }
 
 /**
@@ -36,10 +36,21 @@ interface SegmentedChoiceProps {
  *
  * **The pills carry no guidance card of their own**, and that is the same call `ComboBox` makes about
  * its options: a pill is one *value* of a setting, not a control in its own right, and the setting is
- * explained by the ⓘ beside the label both call sites put above this row. Ten cards saying "this is
+ * explained by the ⓘ beside the label each call site puts above this row. Ten cards saying "this is
  * 4×" would be ten places for the explanation of one thing to drift apart.
+ *
+ * **Generic over the value, because a rung is not always a number.** The preview's layout choice is
+ * one of three named modes, and it is the same control in every respect that matters — a small fixed
+ * set, one of them current, each reachable in a click. Writing a second pill row for it is where the
+ * `aria-pressed` above goes missing.
  */
-export function SegmentedChoice({ label, values, value, format, onChange }: SegmentedChoiceProps) {
+export function SegmentedChoice<T extends string | number>({
+  label,
+  values,
+  value,
+  format,
+  onChange,
+}: SegmentedChoiceProps<T>) {
   return (
     <div role="group" aria-label={label} className="flex flex-wrap items-center gap-1.5">
       {values.map((option) => (

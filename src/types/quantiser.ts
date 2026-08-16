@@ -250,9 +250,51 @@ export interface QuantiseSettings extends QuantiseTuning {
   readonly reduction: ColorReduction | null;
 }
 
+/**
+ * How far each output pixel sits from the patch of source it replaced, one figure per pixel of
+ * {@link QuantiseResult.image}, plus the two summaries that make a sheet's figures comparable.
+ *
+ * **Distances, not colours.** What a difference is worth looking at depends on how closely the
+ * reader is looking — a sheet whose worst cell is 8 and a sheet whose worst cell is 200 want
+ * completely different ramps — so the scale is a control in the preview and the colouring happens
+ * where that control is read. Carrying an already-painted heatmap across the boundary would fix the
+ * scale at whatever the worker guessed and make the control a second transform of the whole sheet.
+ *
+ * **Fixed point, at {@link DIFFERENCE_PRECISION} steps to the unit**, because this is per *pixel*
+ * of a result that reaches 16.8 million of them at a grid of 1, where the four bytes a float wants
+ * are another sixty-seven megabytes to allocate and to clone back. Two bytes hold the whole range a
+ * distance across four 0–255 axes can occupy with room to spare, at a resolution far below the
+ * finest rung the scale offers.
+ */
+export interface DifferenceMap {
+  /** The result's own dimensions — one cell here for one pixel there. */
+  readonly width: number;
+  readonly height: number;
+  /** Row-major, `distance × DIFFERENCE_PRECISION`. Read it through `differenceAt`. */
+  readonly cells: Uint16Array;
+  /**
+   * The mean distance over the cells that carry anything, in unscaled units.
+   *
+   * Cells empty on **both** sides are left out: they were not reduced faithfully, they were not
+   * reduced at all, and averaging them in would make the figure a measure of how much empty margin
+   * the artist left around the sprites rather than of how the sheet came through the pipeline.
+   */
+  readonly mean: number;
+  /** The largest distance any single cell reached, which is what the scale is judged against. */
+  readonly peak: number;
+}
+
 /** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
+  /**
+   * What {@link image} cost, pixel by pixel — the preview's difference mode, as data.
+   *
+   * A fact of the result rather than something asked for separately, and deliberately: a heatmap
+   * computed on its own could describe an older result than the one beside it, which is precisely
+   * the failure the mode exists to expose. Travelling with the result, it cannot.
+   */
+  readonly difference: DifferenceMap;
   /**
    * Where the grid sat on the source, as the transform measured it.
    *
@@ -283,6 +325,26 @@ export interface QuantiseResult {
    */
   readonly keyedShare: number;
 }
+
+/**
+ * The three ways the preview offers to read one result — the layouts, in the order they are offered.
+ *
+ * The `as const` array is the union's single definition. Like the vote methods, the choice lives in
+ * the panel that draws the preview and is never persisted: it is a preference about how a result is
+ * being *looked at* right now, not part of what the result is.
+ */
+export const PREVIEW_MODES = ['SIDE_BY_SIDE', 'WIPE', 'DIFFERENCE'] as const;
+
+/**
+ * One of the three.
+ *
+ * `SIDE_BY_SIDE` is the pair of linked panes, which answers "what did this become". `WIPE` overlays
+ * them in one frame under a divider, which answers "what moved" for a change large enough to see.
+ * `DIFFERENCE` replaces the result pane with a heatmap of {@link DifferenceMap}, which answers "what
+ * did it cost" — the question the other two cannot, and the reason a dial whose effect is real but
+ * small reads as a dial that does nothing.
+ */
+export type PreviewMode = (typeof PREVIEW_MODES)[number];
 
 /**
  * What the transform returned, and the pixel scale it returned it at.

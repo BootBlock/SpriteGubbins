@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type MutableOklab, srgbToOklab, srgbToOklabInto } from './oklab.ts';
+import { type MutableOklab, oklabToSrgb, oklchToOklab, srgbToOklab, srgbToOklabInto } from './oklab.ts';
 
 /**
  * The straight distance between two byte colours, as every gate that imports this module takes it.
@@ -79,5 +79,52 @@ describe('srgbToOklab', () => {
     srgbToOklabInto(out, 255, 0, 255);
     srgbToOklabInto(out, 20, 180, 60);
     expect(out).toEqual(srgbToOklab(20, 180, 60));
+  });
+});
+
+describe('oklabToSrgb', () => {
+  it('gives back the byte it started from, across the cube', () => {
+    // The round trip is the whole claim the inverse makes, and the only check that can catch a
+    // transposed digit in the second matrix: the forward direction is pinned above against
+    // published figures, so a matrix that undoes it exactly is by construction the right one.
+    // Every eleventh byte on each channel, which is 24³ colours through both directions.
+    for (let r = 0; r < 256; r += 11) {
+      for (let g = 0; g < 256; g += 11) {
+        for (let b = 0; b < 256; b += 11) {
+          expect(oklabToSrgb(srgbToOklab(r, g, b))).toEqual({ r, g, b, a: 255 });
+        }
+      }
+    }
+  });
+
+  it('clamps a colour sRGB cannot show rather than wrapping it', () => {
+    // Chroma far past the gamut on the green axis. A channel that overflowed instead of clamping
+    // would come back as a low byte — a bright colour rendered dark — which is the failure a
+    // heatmap would show as a cold cell exactly where the sheet was at its worst.
+    const beyond = oklabToSrgb(oklchToOklab(0.78, 0.6, 156));
+    expect(beyond).toEqual({ r: 0, g: 255, b: 0, a: 255 });
+  });
+});
+
+describe('oklchToOklab', () => {
+  it('reads the polar form the stylesheet writes colours in', () => {
+    // Lightness crosses scales — CSS states 0–1, this module works in 0–255 — and hue 0 puts the
+    // whole of the chroma on `a`, which is what makes the axis assignment checkable by hand.
+    const red = oklchToOklab(0.5, 0.1, 0);
+    expect(red.L).toBeCloseTo(127.5, 6);
+    expect(red.a).toBeCloseTo(25.5, 6);
+    expect(red.b).toBeCloseTo(0, 6);
+
+    const yellow = oklchToOklab(0.5, 0.1, 90);
+    expect(yellow.a).toBeCloseTo(0, 6);
+    expect(yellow.b).toBeCloseTo(25.5, 6);
+  });
+
+  it('resolves a real token to the bytes the engine paints for it', () => {
+    // `--color-rose`, exactly as `index.css` states it, through to the pixel. This is the pairing
+    // the heatmap's ramp depends on — a stylesheet colour named in the stylesheet's own terms and
+    // resolved in code — so it is pinned on a token rather than on a synthetic triple, and pinned
+    // as bytes rather than as a tolerance, because bytes are what reaches the canvas.
+    expect(oklabToSrgb(oklchToOklab(0.68, 0.2, 12))).toEqual({ r: 249, g: 85, b: 119, a: 255 });
   });
 });

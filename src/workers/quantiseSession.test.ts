@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useQuantiseAnswerStore } from '../stores/useQuantiseAnswerStore.ts';
 import { FakeWorker } from '../test/fakeWorker.ts';
 import type { QuantiseResult, QuantiseSettings, SheetFacts } from '../types/quantiser.ts';
+import { flatDifference } from '../test/images.ts';
 import { createImage } from '../utils/imageData.ts';
 import { loadSheet, quantiseSheet, releaseSheet } from './quantiseSession.ts';
 
@@ -23,7 +24,13 @@ function settingsAt(grid: number): QuantiseSettings {
 }
 
 function resultOf(side: number): QuantiseResult {
-  return { image: createImage(side, side), colors: 32, keyedShare: 0, offset: { x: 0, y: 0 } };
+  return {
+    image: createImage(side, side),
+    difference: flatDifference(side, side),
+    colors: 32,
+    keyedShare: 0,
+    offset: { x: 0, y: 0 },
+  };
 }
 
 /** The thread the session started, which every test here has to have got one of. */
