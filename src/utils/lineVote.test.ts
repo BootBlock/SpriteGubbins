@@ -159,6 +159,61 @@ describe('lineAwareWinner', () => {
     expect(lineAwareWinner(fringed, packed(BODY))).toBeNull();
   });
 
+  it('never installs a trim over an ink winner — the cell is already a line', () => {
+    // A gold emblem bordered in black: the cells along the border are majority ink with a gold
+    // sliver riding in, and the mass sits so low that the skew reads as bright. Overruling the
+    // ink here is how the emblem's border thins away cell by cell — the exact breakage the
+    // rescue exists to prevent, manufactured by the rescue itself until this guard existed.
+    const majorityInk = tally([
+      [INK, 24],
+      [GOLD, 8],
+    ]);
+    expect(lineAwareWinner(majorityInk, packed(INK))).toBeNull();
+
+    // The unambiguous case: half ink, the rest split between a mid tone and white. The winner is
+    // ink, and no bright minority may take the cell from it.
+    const white: Rgba = { r: 255, g: 255, b: 255, a: 255 };
+    const mid: Rgba = { r: 128, g: 128, b: 128, a: 255 };
+    const halfInk = tally([
+      [INK, 18],
+      [mid, 4],
+      [white, 14],
+    ]);
+    expect(lineAwareWinner(halfInk, packed(INK))).toBeNull();
+  });
+
+  it('still lets ink overrule a bright winner — a pale body carrying a line is the straddle', () => {
+    // The mirror case is kept deliberately: a winner in the brightest quarter under an ink slice
+    // is indistinguishable, from the tally, from a pale body straddled by a genuine outline — and
+    // the cost of keeping the ink when the winner was really a trim is a line drawn a cell thick,
+    // where the cost of the other choice is a line broken.
+    const paleBody = tally([
+      [GOLD, 28],
+      [INK, 4],
+    ]);
+    expect(lineAwareWinner(paleBody, packed(GOLD))).toBe(packed(INK));
+  });
+
+  it('never reads a translucent bucket as a tone, however dark its channels', () => {
+    // A soft edge a source PNG brought with it: nearly invisible, channels near black. Its luma
+    // says nothing about how it reads, so it is neither a candidate nor part of the median — and
+    // with it excluded, this cell is one opaque surface and the range gate sees nothing to do.
+    const smudge: Rgba = { r: 8, g: 8, b: 8, a: 120 };
+    const smudged = tally([
+      [BODY, 28],
+      [smudge, 4],
+    ]);
+    expect(lineAwareWinner(smudged, packed(BODY))).toBeNull();
+
+    // A translucent winner: the rescue stands aside entirely rather than judging tones it cannot
+    // read.
+    const translucentWinner = tally([
+      [smudge, 24],
+      [INK, 8],
+    ]);
+    expect(lineAwareWinner(translucentWinner, packed(smudge))).toBeNull();
+  });
+
   it('resolves an equal-luma tie to the first-counted colour, deterministically', () => {
     const inkTwin: Rgba = { r: 18, g: 14, b: 12, a: 255 };
     expect(lumaOf(packed(inkTwin))).toBe(lumaOf(packed(INK)));
@@ -265,16 +320,45 @@ describe('alignToGrid, line-aware', () => {
 
     const rescued = alignToGrid(sheet, mesh, true);
     const plain = alignToGrid(sheet, mesh);
-    // Every cell the plain vote keyed stays keyed: the rescue never resurrects colour over
-    // transparency.
-    for (const [rowIndex, top] of mesh.y.entries()) {
-      void rowIndex;
+    // Every cell the plain vote keyed stays keyed, and the line is still rescued somewhere inside
+    // the art — the two halves of "the rescue judges only the art": transparency is never
+    // resurrected into colour, and its presence in a cell does not cost that cell its line.
+    let rescuedInk = 0;
+    for (const top of mesh.y) {
       for (const left of mesh.x) {
         if (cellColour(plain, left, top) === packed(clear)) {
           expect(cellColour(rescued, left, top)).toBe(packed(clear));
         }
+        if (cellColour(plain, left, top) === packed(BODY) && cellColour(rescued, left, top) === packed(INK)) {
+          rescuedInk += 1;
+        }
       }
     }
+    expect(rescuedInk).toBeGreaterThanOrEqual(1);
+  });
+
+  it('keeps a gold emblem’s black border whole — the rescue must never thin the linework it serves', () => {
+    // A gold fill inside an ink ring, drifted astride the mesh: the border cells are majority ink
+    // with a gold sliver riding in, and an unguarded bright pass repainted three of them gold —
+    // the exact broken-line failure this feature exists to prevent, manufactured by the feature.
+    // Every cell the plain vote resolves to ink must still be ink with the rescue on.
+    const inEmblem = (x: number, y: number): boolean => x >= 5 && x <= 6 && y >= 5 && y <= 6;
+    const sheet = upscaleDrifting((x, y) => (onRing(x, y) ? INK : inEmblem(x, y) ? GOLD : BODY), 10);
+    const mesh = regularMesh(sheet.width, sheet.height, 6, { x: 0, y: 0 });
+
+    const plain = alignToGrid(sheet, mesh);
+    const rescued = alignToGrid(sheet, mesh, true);
+    let inkCells = 0;
+    for (const top of mesh.y) {
+      for (const left of mesh.x) {
+        if (cellColour(plain, left, top) === packed(INK)) {
+          inkCells += 1;
+          expect(cellColour(rescued, left, top)).toBe(packed(INK));
+        }
+      }
+    }
+    // The fixture must actually hold border cells, or the loop above asserted nothing.
+    expect(inkCells).toBeGreaterThanOrEqual(8);
   });
 });
 

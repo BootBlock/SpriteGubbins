@@ -52,9 +52,10 @@ import { lineAwareWinner } from './lineVote.ts';
  * **`lineAware` lets a drawn line outvote the surface it crosses** — the luma-skew rescue
  * `lineVote.ts` holds, applied to the tally after the modal winner is found. It is on when the vote
  * runs over *reduced* colours, where a cell's tally is a handful of honest buckets a share means
- * something in, and off when the vote runs raw: unreduced generated art tallies every pixel as its
- * own colour, so no minority could ever reach a qualifying share and the pass would only cost time.
- * The caller decides, because the caller is the one that knows whether a reduction ran.
+ * something in, and off when the vote runs raw: on the generated art this feature serves, an
+ * unreduced tally holds every pixel as its own colour, so a share there measures nothing — and a
+ * sheet whose colours were asked to be left alone has asked for the vote it always had. The caller
+ * decides, because the caller is the one that knows whether a reduction ran.
  */
 export function alignToGrid(image: ImageData, mesh: GridMesh, lineAware = false): ImageData {
   const output = createImage(image.width, image.height);

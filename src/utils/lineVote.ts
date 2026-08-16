@@ -6,7 +6,7 @@ import {
   LINE_LUMA_RANGE,
   LINE_TRIM_FLOOR,
 } from '../constants/quantiser.ts';
-import { FULLY_TRANSPARENT } from './imageData.ts';
+import { FULLY_OPAQUE } from './imageData.ts';
 
 /**
  * The luma-skew rescue: whether a cell's vote should keep a minority that is a drawn line.
@@ -20,8 +20,8 @@ import { FULLY_TRANSPARENT } from './imageData.ts';
  *
  * Everything is decided from the tally the vote already made — no second walk of the pixels — and
  * every judgement is made in **luma**, the standard measure of how light a colour reads
- * ({@link lumaOf}), because a drawn line is defined by tone against its body, not by hue. Four gates,
- * each a named constant with its reasoning:
+ * ({@link lumaOf}), because a drawn line is defined by tone against its body, not by hue. The
+ * gates, each with its reasoning:
  *
  * - the cell must **span** enough luma to be holding two tones at all ({@link LINE_LUMA_RANGE}) —
  *   the anti-flatness gate that leaves soft shading, and every flat cell, exactly as the vote left
@@ -36,25 +36,33 @@ import { FULLY_TRANSPARENT } from './imageData.ts';
  *   carrying colour, and a line's share of *that* is what says whether it was drawn;
  * - the candidate must sit at least {@link LINE_LUMA_GAP} beyond the winner it replaces, so a
  *   surface is never traded for its own shadow;
- * - and the candidate must be a line *tone* in absolute terms — ink in the darkest quarter
+ * - the candidate must be a line *tone* in absolute terms — ink in the darkest quarter
  *   ({@link LINE_INK_CEILING}), trim in the brightest ({@link LINE_TRIM_FLOOR}) — because a
  *   majority-line cell with a sliver of body is the same tally as a majority-body cell with a
- *   sliver of trim, and only where the tones actually sit can say which one the cell is.
+ *   sliver of trim, and only where the tones actually sit can say which one the cell is;
+ * - and the bright pass stands aside entirely when the **winner is itself ink**: a cell whose vote
+ *   already chose the darkest quarter is a line cell, and installing a trim over it is how a gold
+ *   emblem's black border thins away cell by cell. The dark pass keeps the mirror-image power —
+ *   overruling a bright winner — deliberately, because a *pale body* carrying an ink slice is
+ *   exactly the straddle the rescue exists for, and the cost when the bright winner was really a
+ *   trim is a line drawn a cell thick, not a line broken.
  *
  * The two directions cannot both fire — their skew conditions are negations of each other — so dark
  * takes no precedence rule; it simply has the skew that a dark line over a lighter body produces.
- * Fully transparent pixels are outside all of it: a keyed cell's winner stays keyed, and
+ * **Only fully opaque pixels take part.** A keyed cell's winner stays keyed; a translucent bucket —
+ * a soft edge a source PNG brought with it — is never a candidate and never shifts the median,
+ * because the luma of a nearly invisible pixel's channels says nothing about how it reads; and
  * transparency is never mistaken for the darkest colour in the cell, which its zero channels would
  * otherwise make it.
  */
 export function lineAwareWinner(counts: ReadonlyMap<number, number>, winner: number): number | null {
-  if (alphaOfPacked(winner) === FULLY_TRANSPARENT) return null;
+  if (alphaOfPacked(winner) !== FULLY_OPAQUE) return null;
 
   let opaqueTotal = 0;
   let lowest = 256;
   let highest = -1;
   for (const [key, count] of counts) {
-    if (alphaOfPacked(key) === FULLY_TRANSPARENT) continue;
+    if (alphaOfPacked(key) !== FULLY_OPAQUE) continue;
     opaqueTotal += count;
     const luma = lumaOf(key);
     if (luma < lowest) lowest = luma;
@@ -72,7 +80,7 @@ export function lineAwareWinner(counts: ReadonlyMap<number, number>, winner: num
     let kept: number | null = null;
     let keptLuma = 256;
     for (const [key, count] of counts) {
-      if (alphaOfPacked(key) === FULLY_TRANSPARENT || count * LINE_DARK_SHARE < opaqueTotal) continue;
+      if (alphaOfPacked(key) !== FULLY_OPAQUE || count * LINE_DARK_SHARE < opaqueTotal) continue;
       const luma = lumaOf(key);
       // Strictly nearer, so the first-counted colour keeps the cell on a luma tie — the same
       // scan-order determinism the vote itself rests on.
@@ -84,11 +92,11 @@ export function lineAwareWinner(counts: ReadonlyMap<number, number>, winner: num
     return kept;
   }
 
-  if (-skew >= LINE_LUMA_GAP) {
+  if (-skew >= LINE_LUMA_GAP && winnerLuma >= LINE_INK_CEILING) {
     let kept: number | null = null;
     let keptLuma = -1;
     for (const [key, count] of counts) {
-      if (alphaOfPacked(key) === FULLY_TRANSPARENT || count * LINE_BRIGHT_SHARE < opaqueTotal) continue;
+      if (alphaOfPacked(key) !== FULLY_OPAQUE || count * LINE_BRIGHT_SHARE < opaqueTotal) continue;
       const luma = lumaOf(key);
       if (luma >= LINE_TRIM_FLOOR && luma - winnerLuma >= LINE_LUMA_GAP && luma > keptLuma) {
         kept = key;
@@ -131,7 +139,7 @@ function alphaOfPacked(packed: number): number {
 function medianLuma(counts: ReadonlyMap<number, number>, opaqueTotal: number): number {
   const buckets: { luma: number; count: number }[] = [];
   for (const [key, count] of counts) {
-    if (alphaOfPacked(key) === FULLY_TRANSPARENT) continue;
+    if (alphaOfPacked(key) !== FULLY_OPAQUE) continue;
     buckets.push({ luma: lumaOf(key), count });
   }
   buckets.sort((a, b) => a.luma - b.luma);
