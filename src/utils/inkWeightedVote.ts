@@ -1,4 +1,9 @@
-import { LINE_DARK_SHARE, LINE_INK_CEILING, LINE_LUMA_RANGE } from '../constants/quantiser.ts';
+import {
+  LINE_BRIGHT_SHARE,
+  LINE_DARK_SHARE,
+  LINE_LUMA_RANGE,
+  LINE_TRIM_FLOOR,
+} from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
 import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
@@ -10,12 +15,15 @@ import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './ima
  * that must pick one loses the other — pure ink detaches the line from its surface, pure body
  * snaps the line. Practice resolves it the third way: an outline drawn as a darker shade of the
  * colour it outlines, which is what a cell here becomes. The body pixels' mean carries the local
- * hue; where the cell's ink — its darkest-quarter pixels, the same absolute anchor the dominant
- * vote's rescue uses — holds a share no anti-aliased speckle reaches, the mean is blended toward
- * the ink's own mean by that share, amplified by the caller's `emphasis` — the Line strength
- * control's value, from `LINE_STRENGTHS` — so a one-third slice reads as a line rather than a
- * shadow. The mechanism is the inverse-bilateral weighting of detail-preserving downscaling,
- * specialised to the one detail pixel art cannot lose.
+ * hue; where the cell's ink — the pixels under the caller's `inkCeiling`, defaulting to the same
+ * darkest-quarter anchor the dominant vote's rescue uses — holds a share no anti-aliased speckle
+ * reaches *and* sits a full tonal range below that body, the mean is blended toward the ink's own
+ * mean by that share, amplified by the caller's `emphasis`, so a one-third slice reads as a line
+ * rather than a shadow. `trimEmphasis` is the bright mirror for gold edging and rim light —
+ * pixels at or above the trim floor, held to the stricter bright share, pulling only where a
+ * qualifying ink stroke has not already taken the cell — and at zero it is fully inert. The
+ * mechanism is the inverse-bilateral weighting of detail-preserving downscaling, specialised to
+ * the details pixel art cannot lose.
  *
  * **This reading averages, deliberately** — the one thing the dominant vote never does — so it
  * runs on unreduced colours and `quantiseImage` applies the palette step to its output, where the
@@ -28,7 +36,13 @@ import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './ima
  * verbatim, where a mean merely leans, so a soft pixel that would be dangerous there is dilution
  * here. Pure, deterministic, and one pass over the image.
  */
-export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: number): ImageData {
+export function inkWeightedCells(
+  image: ImageData,
+  mesh: GridMesh,
+  emphasis: number,
+  trimEmphasis: number,
+  inkCeiling: number,
+): ImageData {
   const output = createImage(mesh.x.length, mesh.y.length);
 
   for (const [cellY, top] of mesh.y.entries()) {
@@ -47,6 +61,11 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: num
       let bodyR = 0;
       let bodyG = 0;
       let bodyB = 0;
+      let trimCount = 0;
+      let trimLuma = 0;
+      let trimR = 0;
+      let trimG = 0;
+      let trimB = 0;
       for (let y = top; y < bottom; y += 1) {
         for (let x = left; x < right; x += 1) {
           const offset = pixelOffset(image.width, x, y);
@@ -58,12 +77,18 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: num
           // The same Rec. 601 integer luma `lineVote.ts` reads from a packed colour, unpacked
           // because this loop has the channels in hand — a test pins the two arithmetics equal.
           const luma = (54 * r + 183 * g + 19 * b) >> 8;
-          if (luma < LINE_INK_CEILING) {
+          if (luma < inkCeiling) {
             inkCount += 1;
             inkLuma += luma;
             inkR += r;
             inkG += g;
             inkB += b;
+          } else if (luma >= LINE_TRIM_FLOOR) {
+            trimCount += 1;
+            trimLuma += luma;
+            trimR += r;
+            trimG += g;
+            trimB += b;
           } else {
             bodyCount += 1;
             bodyLuma += luma;
@@ -78,28 +103,49 @@ export function inkWeightedCells(image: ImageData, mesh: GridMesh, emphasis: num
       const area = (right - left) * (bottom - top);
       if (opaque * 2 < area) continue;
 
-      // The body's mean where there is one; a cell of pure ink is its own answer.
-      const baseR = bodyCount > 0 ? bodyR / bodyCount : inkR / inkCount;
-      const baseG = bodyCount > 0 ? bodyG / bodyCount : inkG / inkCount;
-      const baseB = bodyCount > 0 ? bodyB / bodyCount : inkB / inkCount;
-      // Ink pulls only once it holds a drawn line's share, **and only where it is line-far from
-      // the body it crosses**. The absolute ceiling alone called any dark shading "ink" — a deep
-      // green shadow sits under it — so stepping the line strength darkened whole shaded fills,
-      // which is exactly what a *line* dial must never touch. A drawn line sits a full tonal
-      // range below its body; shading does not, and shading keeps the plain body mean.
-      const qualifies =
+      // The base is the mean of everything that is not ink — bright pixels included, so a pale
+      // sheet with the trim dial off reads exactly as it did before the dial existed. The
+      // trim-exclusive "rest" below exists only for the trim pull, which needs the surface
+      // *under* the trim to lean from and to judge the tonal gap against.
+      const nonInkCount = bodyCount + trimCount;
+      const baseR = nonInkCount > 0 ? (bodyR + trimR) / nonInkCount : inkR / inkCount;
+      const baseG = nonInkCount > 0 ? (bodyG + trimG) / nonInkCount : inkG / inkCount;
+      const baseB = nonInkCount > 0 ? (bodyB + trimB) / nonInkCount : inkB / inkCount;
+      // A pull fires only for a genuine line: it must hold a drawn stroke's share of the cell,
+      // **and** sit line-far — a full tonal range — from the body it crosses. The absolute
+      // threshold alone called any dark shading "ink", so the line dial darkened shaded fills;
+      // the range gate is what keeps every strength dial to the lines it names. Ink takes the
+      // cell first where both a line and a trim cross it, the same precedence the dominant
+      // vote's rescue keeps.
+      const inkQualifies =
         inkCount > 0 &&
         inkCount * LINE_DARK_SHARE >= opaque &&
+        nonInkCount > 0 &&
+        (bodyLuma + trimLuma) / nonInkCount - inkLuma / inkCount >= LINE_LUMA_RANGE;
+      const trimQualifies =
+        !inkQualifies &&
+        trimEmphasis > 0 &&
+        trimCount > 0 &&
+        trimCount * LINE_BRIGHT_SHARE >= opaque &&
         bodyCount > 0 &&
-        bodyLuma / bodyCount - inkLuma / inkCount >= LINE_LUMA_RANGE;
-      const pull = qualifies ? Math.min(1, (inkCount / opaque) * emphasis) : 0;
-      const towardR = inkCount > 0 ? inkR / inkCount : baseR;
-      const towardG = inkCount > 0 ? inkG / inkCount : baseG;
-      const towardB = inkCount > 0 ? inkB / inkCount : baseB;
+        trimLuma / trimCount - bodyLuma / bodyCount >= LINE_LUMA_RANGE;
+      const pull = inkQualifies
+        ? Math.min(1, (inkCount / opaque) * emphasis)
+        : trimQualifies
+          ? Math.min(1, (trimCount / opaque) * trimEmphasis)
+          : 0;
+      // A trim pull leans from the surface under the trim, not from a mean the trim is already
+      // half of; the ink pull leans from the whole non-ink base, as it always has.
+      const fromR = trimQualifies ? bodyR / bodyCount : baseR;
+      const fromG = trimQualifies ? bodyG / bodyCount : baseG;
+      const fromB = trimQualifies ? bodyB / bodyCount : baseB;
+      const towardR = inkQualifies ? inkR / inkCount : trimQualifies ? trimR / trimCount : baseR;
+      const towardG = inkQualifies ? inkG / inkCount : trimQualifies ? trimG / trimCount : baseG;
+      const towardB = inkQualifies ? inkB / inkCount : trimQualifies ? trimB / trimCount : baseB;
 
-      output.data[out] = Math.round(baseR * (1 - pull) + towardR * pull);
-      output.data[out + 1] = Math.round(baseG * (1 - pull) + towardG * pull);
-      output.data[out + 2] = Math.round(baseB * (1 - pull) + towardB * pull);
+      output.data[out] = Math.round(fromR * (1 - pull) + towardR * pull);
+      output.data[out + 1] = Math.round(fromG * (1 - pull) + towardG * pull);
+      output.data[out + 2] = Math.round(fromB * (1 - pull) + towardB * pull);
       output.data[out + 3] = FULLY_OPAQUE;
     }
   }

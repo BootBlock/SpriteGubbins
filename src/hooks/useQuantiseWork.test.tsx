@@ -9,6 +9,16 @@ import type { QuantiseReply } from '../workers/quantiseProtocol.ts';
 import { useQuantiseWork } from './useQuantiseWork.ts';
 
 /** A stable reference, as `colorPlanFor`'s memo gives the hook — see the note on `key`. */
+const TUNING = {
+  vote: 'DOMINANT',
+  lineStrength: 1.5,
+  trimStrength: 0,
+  inkThreshold: 64,
+  colorMerge: 0,
+  fillCleanup: 0,
+  cleanupPasses: 1,
+} as const;
+
 const REDUCTION = { kind: 'MAX_COLORS', maxColors: 32 } as const;
 
 const FACTS: SheetFacts = { scale: { grid: 8, measurement: 'EXACT' }, colors: 1024 };
@@ -45,8 +55,7 @@ function drive(initialProps: Props) {
   }
 
   const view = renderHook(
-    ({ source, gridOverride }: Props) =>
-      useQuantiseWork(source, gridOverride, null, REDUCTION, 'DOMINANT', 1.5, 0, 0),
+    ({ source, gridOverride }: Props) => useQuantiseWork(source, gridOverride, null, REDUCTION, TUNING),
     { initialProps },
   );
   return { ...view, worker: thread() };
@@ -145,7 +154,10 @@ describe('useQuantiseWork', () => {
         key: null,
         vote: 'DOMINANT',
         lineStrength: 1.5,
+        trimStrength: 0,
+        inkThreshold: 64,
         fillCleanup: 0,
+        cleanupPasses: 1,
         colorMerge: 0,
         reduction: REDUCTION,
       },
@@ -192,7 +204,7 @@ describe('useQuantiseWork', () => {
     answer({ id: worker.lastId('quantise'), kind: 'quantised', result: resultOf(8) });
 
     unmount();
-    const returned = renderHook(() => useQuantiseWork(source, null, null, REDUCTION, 'DOMINANT', 1.5, 0, 0));
+    const returned = renderHook(() => useQuantiseWork(source, null, null, REDUCTION, TUNING));
     settle();
 
     // Nothing was started, nothing was sent, and nothing was asked for a second time.
@@ -220,7 +232,7 @@ describe('useQuantiseWork', () => {
     expect(worker.of('quantise')).toHaveLength(1);
 
     unmount();
-    renderHook(() => useQuantiseWork(source, null, null, REDUCTION, 'DOMINANT', 1.5, 0, 0));
+    renderHook(() => useQuantiseWork(source, null, null, REDUCTION, TUNING));
     settle();
 
     // Counted across every thread rather than on the one `drive` returned. The arrangement this

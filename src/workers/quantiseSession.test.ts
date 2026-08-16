@@ -13,7 +13,10 @@ function settingsAt(grid: number): QuantiseSettings {
     key: null,
     vote: 'DOMINANT',
     lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
     fillCleanup: 0,
+    cleanupPasses: 1,
     colorMerge: 0,
     reduction: { kind: 'MAX_COLORS', maxColors: 32 },
   };

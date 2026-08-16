@@ -83,7 +83,10 @@ describe('mergeColors', () => {
       key: null,
       vote: 'DOMINANT',
       lineStrength: 1.5,
+      trimStrength: 0,
+      inkThreshold: 64,
       fillCleanup: 0,
+      cleanupPasses: 1,
       colorMerge: 24,
       reduction: { kind: 'PALETTE', entries: [shadeA, shadeB] },
     });

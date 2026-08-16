@@ -77,6 +77,17 @@ describe('despeckle', () => {
     expect(channels(despeckle(soft, 64))).toEqual(channels(soft));
   });
 
+  it('settles a two-deep patch across passes, one layer per pass', () => {
+    // A three-by-three stray patch mid-field settles like an onion: the corners have their green
+    // majority at once, the edge-centres only after the corners settle, and the centre last of
+    // all. One pass cannot clear it; three can — the dial the single fixed pass could not offer.
+    const sheet = imageFrom(9, 9, (x, y) => (x >= 3 && x <= 5 && y >= 3 && y <= 5 ? STRAY : GREEN));
+    const flat = imageFrom(9, 9, () => GREEN);
+    expect(channels(despeckle(sheet, 32, 1))).not.toEqual(channels(flat));
+    expect(channels(despeckle(sheet, 32, 3))).toEqual(channels(flat));
+    // Extra passes past settling change nothing: the early stop makes four the price of three.
+    expect(channels(despeckle(sheet, 32, 4))).toEqual(channels(flat));
+  });
   it('leaves transparency alone in both directions', () => {
     const clear: Rgba = { r: 0, g: 0, b: 0, a: 0 };
     const sheet = imageFrom(5, 5, (x, y) => (x === 2 && y === 2 ? clear : GREEN));

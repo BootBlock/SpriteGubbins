@@ -57,12 +57,18 @@ describe('useQuantiseStore', () => {
     store.setSource(SHEET);
     store.setVote('INK_WEIGHTED');
     store.setLineStrength(2.5);
+    store.setTrimStrength(1.2);
+    store.setInkThreshold(80);
+    store.setCleanupPasses(3);
     store.setFillCleanup(48);
     store.setColorMerge(24);
     store.setSource({ name: 'another.png', image: createImage(8, 8) });
 
     expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
     expect(useQuantiseStore.getState().lineStrength).toBe(2.5);
+    expect(useQuantiseStore.getState().trimStrength).toBe(1.2);
+    expect(useQuantiseStore.getState().inkThreshold).toBe(80);
+    expect(useQuantiseStore.getState().cleanupPasses).toBe(3);
     expect(useQuantiseStore.getState().fillCleanup).toBe(48);
     expect(useQuantiseStore.getState().colorMerge).toBe(24);
   });
@@ -89,7 +95,10 @@ describe('useQuantiseStore', () => {
       keyTolerance: DEFAULT_KEY_TOLERANCE,
       vote: 'DOMINANT',
       lineStrength: 1.5,
+      trimStrength: 0,
+      inkThreshold: 64,
       fillCleanup: 0,
+      cleanupPasses: 1,
       colorMerge: 0,
     });
   });

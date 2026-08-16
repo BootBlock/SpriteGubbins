@@ -28,11 +28,28 @@ import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
  * same call — which is also what makes it deterministic and testable byte for byte. A tolerance
  * of zero returns the input's bytes unchanged.
  */
-export function despeckle(image: ImageData, tolerance: number): ImageData {
-  const output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);
+export function despeckle(image: ImageData, tolerance: number, passes = 1): ImageData {
+  let output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);
   if (tolerance <= 0) return output;
+  for (let pass = 0; pass < passes; pass += 1) {
+    const next = settleOnce(output, tolerance);
+    if (next === null) break;
+    output = next;
+  }
+  return output;
+}
+
+/**
+ * One simultaneous settling step over the whole image, or `null` when nothing changed — the
+ * signal that lets a multi-pass run stop early. Each pass judges the previous pass's output, so
+ * a pixel two deep in a speckled patch settles on the pass after its neighbour did, without any
+ * within-pass cascade.
+ */
+function settleOnce(image: ImageData, tolerance: number): ImageData | null {
+  const output = new ImageData(new Uint8ClampedArray(image.data), image.width, image.height);
   const limit = tolerance * tolerance;
   const tally = new Map<number, number>();
+  let changed = 0;
 
   for (let y = 0; y < image.height; y += 1) {
     for (let x = 0; x < image.width; x += 1) {
@@ -77,9 +94,10 @@ export function despeckle(image: ImageData, tolerance: number): ImageData {
         output.data[at] = modalR;
         output.data[at + 1] = modalG;
         output.data[at + 2] = modalB;
+        changed += 1;
       }
     }
   }
 
-  return output;
+  return changed > 0 ? output : null;
 }

@@ -97,7 +97,13 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
         )
       : reduceAfter(
           settings.vote === 'INK_WEIGHTED'
-            ? inkWeightedCells(source, mesh, settings.lineStrength)
+            ? inkWeightedCells(
+                source,
+                mesh,
+                settings.lineStrength,
+                settings.trimStrength,
+                settings.inkThreshold,
+              )
             : kCentroidCells(source, mesh),
           settings.reduction,
         );
@@ -111,7 +117,7 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // cleanup dial must not quietly un-pin two of them into one.
   const merged =
     settings.reduction?.kind === 'PALETTE' ? resolved : mergeColors(resolved, settings.colorMerge);
-  const output = despeckle(merged, settings.fillCleanup);
+  const output = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
 
   return {
     image: output,

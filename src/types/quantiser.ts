@@ -207,8 +207,34 @@ export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
  */
 export type VoteMethod = (typeof VOTE_METHODS)[number];
 
+/**
+ * The Downscale panel's dials, as one value: which reading turns the mesh into pixels, and the
+ * strengths and tolerances that shape it.
+ *
+ * A named shape rather than more fields on {@link QuantiseSettings} directly, because the dials
+ * travel together — the store holds them as workflow intent, the tab hands them to the hook as
+ * one memoised object, and the comparison that decides whether a result is stale walks all of
+ * them. Every slider's range and default lives in `constants/quantiser.ts` beside its reasoning.
+ */
+export interface QuantiseTuning {
+  /** Which cell reading turns the mesh into pixels — see {@link VoteMethod}. */
+  readonly vote: VoteMethod;
+  /** How hard `INK_WEIGHTED` pulls a cell toward its line; read only by that reading. */
+  readonly lineStrength: number;
+  /** The bright mirror of {@link lineStrength}, `0` off; read only by `INK_WEIGHTED`. */
+  readonly trimStrength: number;
+  /** The luma below which `INK_WEIGHTED` may read a pixel as line ink. */
+  readonly inkThreshold: number;
+  /** The colour merge's sheet-wide fold tolerance, `0` off; runs before the fill cleanup. */
+  readonly colorMerge: number;
+  /** The fill cleanup's speckle-merge tolerance, `0` off; applied to every reading's output. */
+  readonly fillCleanup: number;
+  /** How many times the fill cleanup runs over its own output; each pass stops early when idle. */
+  readonly cleanupPasses: number;
+}
+
 /** Everything `quantiseImage` needs beyond the image itself. */
-export interface QuantiseSettings {
+export interface QuantiseSettings extends QuantiseTuning {
   readonly grid: PixelGrid;
   /** The background to remove, or `null` to leave every pixel where it is. */
   readonly key: BackgroundKeying | null;
@@ -220,23 +246,6 @@ export interface QuantiseSettings {
    * reducing it to some high figure anyway would still be a reduction.
    */
   readonly reduction: ColorReduction | null;
-  /** Which cell reading turns the mesh into pixels — see {@link VoteMethod}. */
-  readonly vote: VoteMethod;
-  /**
-   * How hard the ink-weighted reading pulls a cell toward its line — a value from
-   * `LINE_STRENGTHS`. Carried whatever the vote, and read only by `INK_WEIGHTED`.
-   */
-  readonly lineStrength: number;
-  /**
-   * The fill cleanup's speckle-merge tolerance — a value from `FILL_CLEANUP_TOLERANCES`, `0`
-   * leaving the result exactly as the reading made it. Applied to every reading's output.
-   */
-  readonly fillCleanup: number;
-  /**
-   * The colour merge's sheet-wide fold tolerance — a value from `COLOR_MERGE_TOLERANCES`, `0`
-   * leaving every colour the reading produced. Applied before the fill cleanup, which it feeds.
-   */
-  readonly colorMerge: number;
 }
 
 /** What came back: the transformed image, and the numbers that say what it did. */

@@ -1,37 +1,47 @@
 import {
-  COLOR_MERGE_TOLERANCES,
-  FILL_CLEANUP_TOLERANCES,
-  LINE_STRENGTHS,
+  CLEANUP_PASSES_RANGE,
+  COLOR_MERGE_RANGE,
+  FILL_CLEANUP_RANGE,
+  INK_THRESHOLD_RANGE,
+  LINE_STRENGTH_RANGE,
   QUANTISE_TOOLTIPS,
+  TRIM_STRENGTH_RANGE,
   VOTE_METHOD_CHOICES,
 } from '../../constants/quantiser.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
+import { RangeField } from '../common/RangeField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
-import { Tooltip } from '../common/Tooltip.tsx';
 
 /**
- * The Downscale reading and its two dials: which algorithm turns each mesh cell into a pixel, how
- * hard the ink-weighted reading pulls toward a line, and how far the fill cleanup may merge
- * speckle.
+ * The Downscale reading and its dials: which algorithm turns each mesh cell into a pixel, and the
+ * six sliders that shape the result.
  *
- * A `SelectField` for the reading, following the field's own precedent — every tool this tab
- * learned from offers its samplers as a small enum — and the two dials as stepped pills, the shape
- * the key tolerance beside them already takes. **Line strength appears only while the ink-weighted
- * reading is chosen**, the same conditional the studio's Palette Limit uses: the other readings do
- * not blend, so a dial that changed nothing would be a lie on screen. Everything consumes the
- * store directly with atomic selectors; all three choices are per-workflow rather than per-sheet,
- * so they survive a new image and fall with Clear — the store says why.
+ * A `SelectField` for the reading — every tool this tab learned from offers its samplers as a
+ * small enum — and `RangeField` sliders for the dials, because each is a position on a continuous
+ * range judged against the live preview rather than a choice between a handful of values. **The
+ * three ink-weighted dials appear only while that reading is chosen**, the conditional the
+ * studio's Palette Limit uses: the other readings do not blend, and a dial that changed nothing
+ * would be a lie on screen. Everything consumes the store directly with atomic selectors; the
+ * choices are per-workflow rather than per-sheet, so they survive a new image and fall with
+ * Clear — the store says why.
  */
 export function DownscaleControls() {
   const vote = useQuantiseStore((state) => state.vote);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
-  const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
+  const trimStrength = useQuantiseStore((state) => state.trimStrength);
+  const inkThreshold = useQuantiseStore((state) => state.inkThreshold);
   const colorMerge = useQuantiseStore((state) => state.colorMerge);
+  const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
+  const cleanupPasses = useQuantiseStore((state) => state.cleanupPasses);
   const setVote = useQuantiseStore((state) => state.setVote);
   const setLineStrength = useQuantiseStore((state) => state.setLineStrength);
-  const setFillCleanup = useQuantiseStore((state) => state.setFillCleanup);
+  const setTrimStrength = useQuantiseStore((state) => state.setTrimStrength);
+  const setInkThreshold = useQuantiseStore((state) => state.setInkThreshold);
   const setColorMerge = useQuantiseStore((state) => state.setColorMerge);
+  const setFillCleanup = useQuantiseStore((state) => state.setFillCleanup);
+  const setCleanupPasses = useQuantiseStore((state) => state.setCleanupPasses);
+
+  const offOr = (value: number): string => (value === 0 ? 'off' : String(value));
 
   return (
     <div className="mt-4 space-y-3">
@@ -46,49 +56,70 @@ export function DownscaleControls() {
       </div>
 
       {vote === 'INK_WEIGHTED' && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-          <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
-            Line strength
-            <Tooltip text={QUANTISE_TOOLTIPS.lineStrength} hint="Line strength" />
-          </span>
-          <SegmentedChoice
-            label="Ink line strength"
-            values={LINE_STRENGTHS}
+        <>
+          <RangeField
+            label="Line strength"
+            tooltip={QUANTISE_TOOLTIPS.lineStrength}
             value={lineStrength}
-            format={(value) => `${String(value)}×`}
+            min={LINE_STRENGTH_RANGE.min}
+            max={LINE_STRENGTH_RANGE.max}
+            step={LINE_STRENGTH_RANGE.step}
+            format={(value) => `${value.toFixed(1)}×`}
             onChange={setLineStrength}
           />
-        </div>
+          <RangeField
+            label="Trim strength"
+            tooltip={QUANTISE_TOOLTIPS.trimStrength}
+            value={trimStrength}
+            min={TRIM_STRENGTH_RANGE.min}
+            max={TRIM_STRENGTH_RANGE.max}
+            step={TRIM_STRENGTH_RANGE.step}
+            format={(value) => (value === 0 ? 'off' : `${value.toFixed(1)}×`)}
+            onChange={setTrimStrength}
+          />
+          <RangeField
+            label="Ink threshold"
+            tooltip={QUANTISE_TOOLTIPS.inkThreshold}
+            value={inkThreshold}
+            min={INK_THRESHOLD_RANGE.min}
+            max={INK_THRESHOLD_RANGE.max}
+            step={INK_THRESHOLD_RANGE.step}
+            format={(value) => String(value)}
+            onChange={setInkThreshold}
+          />
+        </>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
-          Colour merge
-          <Tooltip text={QUANTISE_TOOLTIPS.colorMerge} hint="Colour merge" />
-        </span>
-        <SegmentedChoice
-          label="Colour merge tolerance"
-          values={COLOR_MERGE_TOLERANCES}
-          value={colorMerge}
-          format={(value) => (value === 0 ? 'off' : String(value))}
-          onChange={setColorMerge}
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
-          Fill cleanup
-          <Tooltip text={QUANTISE_TOOLTIPS.fillCleanup} hint="Fill cleanup" />
-        </span>
-        <SegmentedChoice
-          label="Speckle merge tolerance"
-          values={FILL_CLEANUP_TOLERANCES}
-          value={fillCleanup}
-          // `0` reads as the thing it means: the pass does not run at all.
-          format={(value) => (value === 0 ? 'off' : String(value))}
-          onChange={setFillCleanup}
-        />
-      </div>
+      <RangeField
+        label="Colour merge"
+        tooltip={QUANTISE_TOOLTIPS.colorMerge}
+        value={colorMerge}
+        min={COLOR_MERGE_RANGE.min}
+        max={COLOR_MERGE_RANGE.max}
+        step={COLOR_MERGE_RANGE.step}
+        format={offOr}
+        onChange={setColorMerge}
+      />
+      <RangeField
+        label="Fill cleanup"
+        tooltip={QUANTISE_TOOLTIPS.fillCleanup}
+        value={fillCleanup}
+        min={FILL_CLEANUP_RANGE.min}
+        max={FILL_CLEANUP_RANGE.max}
+        step={FILL_CLEANUP_RANGE.step}
+        format={offOr}
+        onChange={setFillCleanup}
+      />
+      <RangeField
+        label="Cleanup passes"
+        tooltip={QUANTISE_TOOLTIPS.cleanupPasses}
+        value={cleanupPasses}
+        min={CLEANUP_PASSES_RANGE.min}
+        max={CLEANUP_PASSES_RANGE.max}
+        step={CLEANUP_PASSES_RANGE.step}
+        format={(value) => String(value)}
+        onChange={setCleanupPasses}
+      />
     </div>
   );
 }

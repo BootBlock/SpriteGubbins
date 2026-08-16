@@ -9,7 +9,7 @@ import type {
   Quantised,
   QuantiseSettings,
   SheetFacts,
-  VoteMethod,
+  QuantiseTuning,
 } from '../types/quantiser.ts';
 import { sameQuantiseSettings } from '../utils/quantiseSettings.ts';
 import { quantiseSheet } from '../workers/quantiseSession.ts';
@@ -78,10 +78,7 @@ export function useQuantiseWork(
   gridOverride: PixelGrid | null,
   key: BackgroundKeying | null,
   reduction: ColorReduction | null,
-  vote: VoteMethod,
-  lineStrength: number,
-  fillCleanup: number,
-  colorMerge: number,
+  tuning: QuantiseTuning,
 ): QuantiseWork {
   const survey = useQuantiseAnswerStore((state) => state.survey);
   const attempt = useQuantiseAnswerStore((state) => state.attempt);
@@ -104,8 +101,8 @@ export function useQuantiseWork(
   const grid = gridOverride ?? (facts?.scale?.measurement === 'EXACT' ? facts.scale.grid : null);
 
   const settings = useMemo<QuantiseSettings | null>(
-    () => (grid === null ? null : { grid, key, reduction, vote, lineStrength, fillCleanup, colorMerge }),
-    [grid, key, reduction, vote, lineStrength, fillCleanup, colorMerge],
+    () => (grid === null ? null : { grid, key, reduction, ...tuning }),
+    [grid, key, reduction, tuning],
   );
 
   // The one comparison the rest of this is derived from: is the answer in hand an answer to the

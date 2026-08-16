@@ -57,8 +57,17 @@ export function QuantiseTab() {
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
   const vote = useQuantiseStore((state) => state.vote);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
+  const trimStrength = useQuantiseStore((state) => state.trimStrength);
+  const inkThreshold = useQuantiseStore((state) => state.inkThreshold);
   const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
+  const cleanupPasses = useQuantiseStore((state) => state.cleanupPasses);
   const colorMerge = useQuantiseStore((state) => state.colorMerge);
+  // One memoised object, because the hook keys its debounce on the tuning's identity — atomic
+  // selectors above, so an unrelated store change does not rebuild it.
+  const tuning = useMemo(
+    () => ({ vote, lineStrength, trimStrength, inkThreshold, colorMerge, fillCleanup, cleanupPasses }),
+    [vote, lineStrength, trimStrength, inkThreshold, colorMerge, fillCleanup, cleanupPasses],
+  );
   const setSource = useQuantiseStore((state) => state.setSource);
   const setGridOverride = useQuantiseStore((state) => state.setGridOverride);
   const clear = useQuantiseStore((state) => state.clear);
@@ -89,10 +98,7 @@ export function QuantiseTab() {
     gridOverride,
     keying,
     colorPlan.reduction,
-    vote,
-    lineStrength,
-    fillCleanup,
-    colorMerge,
+    tuning,
   );
 
   // The studio's own target size, read as a second candidate. Deliberately **not** folded into

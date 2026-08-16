@@ -1,0 +1,62 @@
+import { useId } from 'react';
+import { Tooltip } from './Tooltip.tsx';
+
+interface RangeFieldProps {
+  readonly label: string;
+  readonly tooltip: string;
+  readonly value: number;
+  readonly min: number;
+  readonly max: number;
+  readonly step: number;
+  /** What the current value reads as beside the slider — `1.5` as `1.5×`, or `0` as `off`. */
+  readonly format: (value: number) => string;
+  readonly onChange: (value: number) => void;
+}
+
+/**
+ * A labelled slider over a continuous range, with the value read out beside it.
+ *
+ * The quantiser's tuning dials outgrew stepped pills: a blend strength or a merge tolerance is a
+ * *position on a range*, judged against a live preview, and five pills across it force the reader
+ * to the nearest offered notch rather than the value the sheet wants. A native `input[type=range]`
+ * is keyboard-operable out of the box — arrows step, Home and End jump to the ends — and the
+ * worker's debounce is what makes a drag affordable: the intermediate positions coalesce, and only
+ * the settled value is computed.
+ *
+ * The readout is part of the control, not decoration: a slider alone answers "roughly where", and
+ * every dial here feeds an exact figure into the transform, so the figure is shown in the mono
+ * style every metric in the app wears — through `format`, because `0` on one dial means *off*
+ * while `1` on another means *plain*, and only the call site knows which. It doubles as the
+ * accessible value text via `aria-valuetext`, so a screen reader hears "off" where a sighted
+ * reader reads it.
+ *
+ * The thumb takes the `accent` token through the `accent-*` utility — interaction is the primary's
+ * colour everywhere in the app — and the value parses through `Number(...)` from the DOM's string,
+ * which for a range input is always a representable step position.
+ */
+export function RangeField({ label, tooltip, value, min, max, step, format, onChange }: RangeFieldProps) {
+  const inputId = useId();
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+      <label htmlFor={inputId} className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+        {label}
+        <Tooltip text={tooltip} hint={label} />
+      </label>
+      <input
+        id={inputId}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-valuetext={format(value)}
+        onChange={(event) => {
+          onChange(Number(event.target.value));
+        }}
+        className="accent-accent w-56 max-w-full"
+      />
+      <span className="w-12 font-mono text-xs text-ink-faint">{format(value)}</span>
+    </div>
+  );
+}

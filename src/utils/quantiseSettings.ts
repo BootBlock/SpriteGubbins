@@ -20,8 +20,11 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
     left.grid === right.grid &&
     left.vote === right.vote &&
     left.lineStrength === right.lineStrength &&
+    left.trimStrength === right.trimStrength &&
+    left.inkThreshold === right.inkThreshold &&
     left.fillCleanup === right.fillCleanup &&
     left.colorMerge === right.colorMerge &&
+    left.cleanupPasses === right.cleanupPasses &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );
