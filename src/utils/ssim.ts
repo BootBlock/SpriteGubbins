@@ -1,10 +1,10 @@
 import { integralImage, rectangleSum } from './integralImage.ts';
-import { lumaPlane } from './lumaPlane.ts';
+import { oklabPlanes } from './oklabPlanes.ts';
 
 /**
  * How alike two images are, structurally — the structural similarity index of Wang, Bovik, Sheikh
  * and Simoncelli, *Image Quality Assessment: From Error Visibility to Structural Similarity* (IEEE
- * Transactions on Image Processing, 2004), averaged over every window position.
+ * Transactions on Image Processing, 2004), measured on each OKLab axis and averaged.
  *
  * **Why a structural measure rather than a per-pixel one.** The auto-tune sweep compares a
  * candidate's result against the artwork it was read from, and a mean squared error answers that
@@ -15,19 +15,23 @@ import { lumaPlane } from './lumaPlane.ts';
  * Gross objective — keep what a viewer perceives rather than what a subtractor measures — turned
  * into a scorer.
  *
+ * **Three channels rather than one of lightness, and that is not a refinement.** The paper's index
+ * is defined on a single channel and is very often applied to luma alone; here that would make the
+ * score blind to the one thing this tab exists to change. Two hues at one lightness read as
+ * identical to a lightness-only measure, so discarding a palette costs nothing — measured on the
+ * reference sheet, a luma-only version of this took a sweep from 60 colours to 11 for a hundredth of
+ * a point of likeness, because the hue it threw away was invisible to the thing judging it. OKLab is
+ * the space every other colour gate in the app measures in, so the score and the dials it ranks
+ * speak the same units; see `oklabPlanes`, which also says why the chroma axes are offset.
+ *
  * **The window is a uniform 8 × 8, not the paper's 11 × 11 Gaussian, and the reason is cost.** With
  * a uniform window every quantity below is a rectangle sum, so five summed-area tables answer every
- * window position in constant time and the whole measurement is ten passes over the image; a
- * Gaussian window is a separable convolution over five planes and costs several times that, on a
- * sweep that runs it once per candidate per crop. What the Gaussian buys in the paper is a *map*
- * free of blocking artefacts — §III.B says so in as many words — and this returns a mean over the
- * whole image rather than a map, which is the one use that cannot see the difference. An 8 × 8
- * square is the baseline the paper states its own window against.
- *
- * **Alpha multiplies the luma rather than being ignored.** A keyed sheet is mostly transparent, and
- * a transparent pixel's colour channels are whatever happened to be under the key — so reading luma
- * alone would compare two fields of meaningless colour and report a structure neither image has.
- * Weighting by alpha makes a cleared pixel read as nothing in both images, which is what it is.
+ * window position of a channel in constant time; a Gaussian window is a separable convolution over
+ * those five planes and costs several times that, on a sweep that runs this once per candidate per
+ * crop. What the Gaussian buys in the paper is a *map* free of blocking artefacts — §III.B says so
+ * in as many words — and this returns a mean over the whole image rather than a map, which is the
+ * one use that cannot see the difference. An 8 × 8 square is the baseline the paper states its own
+ * window against.
  *
  * The two images must be the same size; a caller holding two that are not has a bug in what it
  * cropped rather than a comparison to make. Returns 1 for two identical images and falls toward 0 as
@@ -39,10 +43,38 @@ export function meanSsim(a: ImageData, b: ImageData): number {
     throw new Error('Structural similarity is only defined between two images of the same size');
   }
 
-  const { width, height } = a;
-  const left = lumaPlane(a);
-  const right = lumaPlane(b);
+  const left = oklabPlanes(a);
+  const right = oklabPlanes(b);
 
+  // Averaged rather than weighted, because the three axes are already commensurate: `oklab.ts`
+  // scales them so a step means the same distance on each, which is the property every colour dial
+  // in this tab is calibrated against.
+  return (
+    (channelSsim(left.L, right.L, a.width, a.height) +
+      channelSsim(left.a, right.a, a.width, a.height) +
+      channelSsim(left.b, right.b, a.width, a.height)) /
+    3
+  );
+}
+
+/** The square window every quantity is measured over — see the note on the Gaussian above. */
+const SSIM_WINDOW = 8;
+
+/** The range the two stabilising constants are a fraction of, which all three axes share. */
+const DYNAMIC_RANGE = 255;
+
+/**
+ * The stabilising constants, at the paper's own K1 = 0.01 and K2 = 0.03.
+ *
+ * They are what keeps the ratio finite where a window is flat in both images: with no mean and no
+ * variance the numerator and the denominator both vanish, and the paper's answer is to add a small
+ * fraction of the dynamic range to each rather than to special-case it.
+ */
+const C1 = (0.01 * DYNAMIC_RANGE) ** 2;
+const C2 = (0.03 * DYNAMIC_RANGE) ** 2;
+
+/** The index over one channel, averaged across every window position that fits. */
+function channelSsim(left: Float64Array, right: Float64Array, width: number, height: number): number {
   // The window is shrunk on an image too small to hold one rather than refused: a crop of a sheet at
   // a coarse grid can be a handful of pixels across, and "these seven rows are alike" is still the
   // question being asked.
@@ -88,19 +120,3 @@ export function meanSsim(a: ImageData, b: ImageData): number {
   // because the alternative is a silent NaN travelling into a comparison.
   return windows === 0 ? 1 : total / windows;
 }
-
-/** The square window every quantity is measured over — see the note on the Gaussian above. */
-const SSIM_WINDOW = 8;
-
-/** The range the two stabilising constants are a fraction of: an 8-bit channel. */
-const DYNAMIC_RANGE = 255;
-
-/**
- * The stabilising constants, at the paper's own K1 = 0.01 and K2 = 0.03.
- *
- * They are what keeps the ratio finite where a window is flat in both images: with no mean and no
- * variance the numerator and the denominator both vanish, and the paper's answer is to add a small
- * fraction of the dynamic range to each rather than to special-case it.
- */
-const C1 = (0.01 * DYNAMIC_RANGE) ** 2;
-const C2 = (0.03 * DYNAMIC_RANGE) ** 2;

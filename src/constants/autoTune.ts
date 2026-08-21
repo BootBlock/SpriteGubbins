@@ -11,6 +11,19 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * **Every ladder below is a subset of the dial's own range, never a second opinion about it.** The
  * ranges in `constants/quantiser.ts` say what a reader may set; these say where the sweep looks. A
  * ladder that left the range would offer the reader a position their own slider refuses.
+ *
+ * **Measured on the reference sheet** (`armour.png`, 1254², a grid of 6, no keying, no colour
+ * budget, every dial at its opening position), driven in Edge: three crops of 240 px, 35 positions
+ * run — the ink stages skip, because the reading settles on `K_CENTROID` — and **7.8 seconds** from
+ * the press to the dials moving. That is the figure the guidance's "a few seconds" is stated
+ * against, and the one a change to any ladder here has to be judged by.
+ *
+ * **The sweep chose `K_CENTROID` on that sheet where a reader would likely choose `INK_WEIGHTED`,
+ * and that is the objective doing what it says rather than a defect.** A resampled sheet has soft
+ * edges, and an average genuinely is closer to a soft edge than a hard one is — so a likeness score
+ * prefers the reading that averages, on any sheet whose contours were softened on the way back from
+ * the generator. `AUTO_TUNE_GUIDANCE.settled` says so to the reader, because the alternative is a
+ * reader taking the answer as a verdict on artwork whose whole value is in its linework.
  */
 
 /**
@@ -122,9 +135,9 @@ export const AUTO_TUNE_GUIDANCE = {
     'A pixel scale has to be settled before the dials can be swept: every candidate is judged by re-drawing the result at that scale and comparing it with the artwork it came from, and there is nothing to compare against until the scale is known. Set a grid above, then come back.',
   idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over three busy crops of it, at up to sixty combinations of the dials that decide how a cell is read and how its colours settle, and moves them to whichever came closest to the artwork for the fewest colours.',
   running:
-    'Running the pipeline over three crops of the sheet, once for each candidate. It takes a second or two, and the preview beside it keeps working throughout — the sweep is on a thread of its own.',
+    'Running the pipeline over three crops of the sheet, once for each candidate. It takes a few seconds on a large sheet, and the preview beside it keeps working throughout — the sweep is on a thread of its own.',
   settled:
-    'The dials named below have moved; every other dial on this tab is exactly where you left it. One undo puts them all back. The likeness figure is structural similarity against the crops, where 1 is the artwork reproduced exactly, and the colour figure is what the result spent to get there — the sweep chose the position where one more colour started buying least, so a higher figure was available and was not worth its cost.',
+    'The dials named below have moved; every other dial on this tab is exactly where you left it. One undo puts them all back. The likeness figure is structural similarity against the crops, where 1 is the artwork reproduced exactly, and the colour figure is what the result spent to get there — the sweep chose the position where one more colour started buying least, so a higher figure was available and was not worth its cost. One bias is worth knowing before you accept the reading it chose: on a sheet whose edges came back softened, an average genuinely sits closer to a soft edge than a hard one does, so likeness leans toward K_CENTROID even where the artwork lives on its contours. If yours does, try INK_WEIGHTED against what the sweep picked and judge the two in the preview.',
   failed:
     'The sweep produced nothing this time. The dials are untouched, so nothing about the sheet on screen has changed, and pressing Auto again is safe.',
 } as const;

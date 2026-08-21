@@ -1,7 +1,7 @@
 import { PROXY_CROP_STRIDE } from '../constants/autoTune.ts';
 import { cropImage } from './cropImage.ts';
 import { integralImage, rectangleSum } from './integralImage.ts';
-import { lumaPlane } from './lumaPlane.ts';
+import { oklabPlanes } from './oklabPlanes.ts';
 
 /** One window of the sheet, and where on the sheet it came from. */
 export interface ProxyCrop {
@@ -19,10 +19,11 @@ export interface ProxyCrop {
  * expansion has to grow it, what the merge folds and what the cleanup snaps. A window of flat field
  * answers all of those identically and would rank every candidate the same.
  *
- * Busyness is measured as the summed absolute step between neighbouring pixels, right and down, over
- * the alpha-weighted luma — the same quantity the grid readers weigh, and for the same reason: a
- * boundary is where the image changes. A summed-area table answers every window in constant time, so
- * the choice costs two passes over the sheet however many windows are considered.
+ * Busyness is measured as the summed step between neighbouring pixels, right and down, in the same
+ * OKLab the sweep's own score and every colour gate in this tab measure in — so a boundary between
+ * two hues at one lightness counts as the detail it is, rather than reading as flat field. A
+ * summed-area table answers every window in constant time, so the choice costs a handful of passes
+ * over the sheet however many windows are considered.
  *
  * **Every window starts and ends on the grid's own lattice.** The pipeline measures its mesh from
  * whatever image it is handed, so a crop cut mid-cell would hand it a sheet whose first cell is a
@@ -87,23 +88,28 @@ export function proxyCrops(
 }
 
 /**
- * How much each pixel differs from the pixel right of it and the pixel below it.
+ * How far each pixel sits from the pixel right of it and the pixel below it, across all three OKLab
+ * axes.
  *
- * The far column and the far row have no such neighbour and contribute their one available step,
+ * The far column and the far row have no such neighbour and contribute nothing in that direction,
  * which is what a forward difference does at an edge — never a wrap, which would read the opposite
  * side of the sheet as detail.
  */
 function stepPlane(image: ImageData): Float64Array {
   const { width, height } = image;
-  const luma = lumaPlane(image);
+  const planes = oklabPlanes(image);
   const steps = new Float64Array(width * height);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      const here = luma[y * width + x] ?? 0;
-      const right = x + 1 < width ? (luma[y * width + x + 1] ?? 0) : here;
-      const below = y + 1 < height ? (luma[(y + 1) * width + x] ?? 0) : here;
-      steps[y * width + x] = Math.abs(right - here) + Math.abs(below - here);
+
+  for (const plane of [planes.L, planes.a, planes.b]) {
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const here = plane[y * width + x] ?? 0;
+        const right = x + 1 < width ? (plane[y * width + x + 1] ?? 0) : here;
+        const below = y + 1 < height ? (plane[(y + 1) * width + x] ?? 0) : here;
+        steps[y * width + x] = (steps[y * width + x] ?? 0) + Math.abs(right - here) + Math.abs(below - here);
+      }
     }
   }
+
   return steps;
 }

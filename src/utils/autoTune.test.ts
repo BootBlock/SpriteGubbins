@@ -6,7 +6,7 @@ import { TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { autoTune } from './autoTune.ts';
-import { lumaPlane } from './lumaPlane.ts';
+import { oklabPlanes } from './oklabPlanes.ts';
 import { proxyCrops } from './proxyCrops.ts';
 import { quantiseImage } from './quantiseImage.ts';
 import { meanSsim } from './ssim.ts';
@@ -178,14 +178,16 @@ describe('autoTune', () => {
 
 /** The share of neighbouring-pixel change that falls anywhere but on a lattice boundary. */
 function offLatticeShare(image: ImageData, grid: number): number {
-  const luma = lumaPlane(image);
+  const planes = oklabPlanes(image);
   let total = 0;
   let off = 0;
-  for (let y = 0; y < image.height; y += 1) {
-    for (let x = 1; x < image.width; x += 1) {
-      const step = Math.abs((luma[y * image.width + x] ?? 0) - (luma[y * image.width + x - 1] ?? 0));
-      total += step;
-      if (x % grid !== 0) off += step;
+  for (const plane of [planes.L, planes.a, planes.b]) {
+    for (let y = 0; y < image.height; y += 1) {
+      for (let x = 1; x < image.width; x += 1) {
+        const step = Math.abs((plane[y * image.width + x] ?? 0) - (plane[y * image.width + x - 1] ?? 0));
+        total += step;
+        if (x % grid !== 0) off += step;
+      }
     }
   }
   return total === 0 ? 0 : off / total;

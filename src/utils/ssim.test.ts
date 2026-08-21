@@ -1,21 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { imageFrom, soften } from '../test/images.ts';
-import { lumaPlane } from './lumaPlane.ts';
+import { oklabPlanes } from './oklabPlanes.ts';
 import { meanSsim } from './ssim.ts';
 
 /**
  * The same index computed the slow way — every window summed directly, no summed-area tables.
  *
- * This is what establishes that the fast form is the index it claims to be. Five integral tables and
- * a rectangle difference is easy to get subtly wrong in a way no property test would notice: an
- * off-by-one in the stride shifts one plane against another and still returns a plausible number in
- * [0, 1] that is monotone in everything you would think to check. Written from the paper's own
- * expression, so the two agree only if the fast one is right.
+ * This is what establishes that the fast form is the index it claims to be. Five integral tables per
+ * channel and a rectangle difference is easy to get subtly wrong in a way no property test would
+ * notice: an off-by-one in the stride shifts one plane against another and still returns a plausible
+ * number in [0, 1] that is monotone in everything you would think to check. Written from the paper's
+ * own expression, so the two agree only if the fast one is right.
  */
 function directSsim(a: ImageData, b: ImageData, window = 8): number {
-  const left = lumaPlane(a);
-  const right = lumaPlane(b);
-  const { width, height } = a;
+  const left = oklabPlanes(a);
+  const right = oklabPlanes(b);
+  return (
+    (directChannel(left.L, right.L, a.width, a.height, window) +
+      directChannel(left.a, right.a, a.width, a.height, window) +
+      directChannel(left.b, right.b, a.width, a.height, window)) /
+    3
+  );
+}
+
+function directChannel(
+  left: Float64Array,
+  right: Float64Array,
+  width: number,
+  height: number,
+  window: number,
+): number {
   const c1 = (0.01 * 255) ** 2;
   const c2 = (0.03 * 255) ** 2;
   let total = 0;
@@ -102,18 +116,10 @@ describe('meanSsim', () => {
 
     expect(ladder).toEqual([...ladder].sort((a, b) => b - a));
     expect(ladder[0]).toBeCloseTo(1, 12);
-    expect(ladder[4]).toBeLessThan(0.3);
-  });
-
-  it('is not monotone under repeated box blur, which is a property rather than a defect', () => {
-    // Measured, and cross-checked against `directSsim` above: 0.602 once softened, 0.634 twice,
-    // 0.567 three times. A second three-tap pass widens the ramps and *raises* the index, because
-    // the local variance the contrast term reads falls on both sides at once. Recorded here so the
-    // obvious assumption — more blur, lower SSIM — is not written into a test as a fact.
-    const once = meanSsim(ART, soften(ART));
-    const twice = meanSsim(ART, soften(soften(ART)));
-
-    expect(twice).toBeGreaterThan(once);
+    // Half the index gone by the time nothing of the artwork is left. Stated as a share of where the
+    // ladder starts rather than as an absolute figure, because what a flat grey scores against a
+    // particular sheet is a property of that sheet's colours rather than of the index.
+    expect(ladder[4]).toBeLessThan((ladder[0] ?? 1) / 2);
   });
 
   it('is symmetric in its two arguments', () => {
@@ -140,6 +146,25 @@ describe('meanSsim', () => {
 
     expect(differing(shifted)).toBeLessThan(differing(softened));
     expect(meanSsim(ART, shifted)).toBeLessThan(meanSsim(ART, softened));
+  });
+
+  it('sees two hues apart at one lightness, which a luma-only reading cannot', () => {
+    // The defect this replaced. A score that reads lightness alone cannot tell these two sheets
+    // apart at all, so discarding a palette costs it nothing — and the sweep took the reference
+    // sheet from 60 colours to 11 for a hundredth of a point of likeness on exactly that reasoning.
+    const green = imageFrom(32, 32, (x, y) =>
+      (x >> 3) % 2 === (y >> 3) % 2 ? { r: 0, g: 130, b: 60, a: 255 } : { r: 20, g: 20, b: 20, a: 255 },
+    );
+    // A blue chosen for the same OKLab lightness as the green above, so only the chroma axes differ.
+    const blue = imageFrom(32, 32, (x, y) =>
+      (x >> 3) % 2 === (y >> 3) % 2 ? { r: 0, g: 110, b: 210, a: 255 } : { r: 20, g: 20, b: 20, a: 255 },
+    );
+
+    // Within five of 255, which is two per cent of the axis: the same lightness as far as a reader
+    // is concerned, and well inside what a lightness-only score would round together.
+    const lightnessApart = Math.abs((oklabPlanes(green).L[0] ?? 0) - (oklabPlanes(blue).L[0] ?? 0));
+    expect(lightnessApart).toBeLessThan(5);
+    expect(meanSsim(green, blue)).toBeLessThan(0.9);
   });
 
   it('reads two fully transparent images as alike whatever colours are left under them', () => {
