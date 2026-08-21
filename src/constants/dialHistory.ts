@@ -9,16 +9,17 @@
 /**
  * How long after an edit a further edit of the same dial extends it rather than starting a step.
  *
- * A slider emits a change per pixel of travel and a held arrow key repeats about thirty times a
- * second, so without coalescing one drag across `FILL_CLEANUP_RANGE` is fifty undo steps and the
- * control is useless. The window has to sit above the gap between two events of one gesture and
- * below the pause before a reader makes a second, separate decision — and the longest of those gaps
- * is a keyboard's own repeat delay, which Windows defaults to 500 ms and lets a user set as high as
- * a second. 700 ms clears the default with room to spare and is well under any deliberate pause.
+ * A slider emits a change per pixel of travel and a held arrow key repeats many times a second, so
+ * without coalescing one drag across `FILL_CLEANUP_RANGE` is fifty undo steps and the control is
+ * useless. The window has to sit above the gap between two events of one gesture and below the pause
+ * before a reader makes a second, separate decision. The longest gap inside a gesture is the wait
+ * before a held key starts repeating, which the operating system decides and a reader can usually
+ * lengthen — commonly around half a second, and up to about a second where it is settable.
  *
- * It is a judgement rather than a measurement, and it is the one figure here worth revisiting if a
- * drag ever splits into steps: a reader on a slower repeat delay would see their first auto-repeated
- * press land as a step of its own, which is a step too many rather than a lost position.
+ * 700 ms is therefore a judgement rather than a measurement, and it is the one figure here worth
+ * revisiting if a drag ever splits into steps: a reader on a long repeat delay would see the first
+ * auto-repeated press land as a step of its own, which is a step too many rather than a lost
+ * position.
  */
 export const DIAL_COALESCE_MS = 700;
 

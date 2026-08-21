@@ -77,23 +77,13 @@ export function DialHistoryControls() {
           hint="Undo"
           text={QUANTISE_ACTION_TOOLTIPS.undoDials}
         >
-          <button
-            type="button"
-            disabled={!canUndo}
-            onClick={undo}
-            className="rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <button type="button" disabled={!canUndo} onClick={undo} className={STEP_BUTTON}>
             Undo
           </button>
         </ControlTooltip>
 
         <ControlTooltip hint="Redo" text={QUANTISE_ACTION_TOOLTIPS.redoDials}>
-          <button
-            type="button"
-            disabled={!canRedo}
-            onClick={redo}
-            className="rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          >
+          <button type="button" disabled={!canRedo} onClick={redo} className={STEP_BUTTON}>
             Redo
           </button>
         </ControlTooltip>
@@ -105,6 +95,16 @@ export function DialHistoryControls() {
     </section>
   );
 }
+
+/**
+ * The two buttons' styling, written once because they are one control in two directions.
+ *
+ * The disabled state names a token rather than reaching for an opacity, and it puts the hover back
+ * where it started: a disabled button still matches `:hover`, so without the last two the greyed
+ * Redo would light up under the pointer as though it were about to do something.
+ */
+const STEP_BUTTON =
+  'rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-foundry-700 disabled:hover:text-ink-faint';
 
 /**
  * Whether a keypress landed in something with an undo stack of its own.
