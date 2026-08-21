@@ -17,9 +17,10 @@ import type { QuantiseTuning } from './quantiser.ts';
  *   looked at anything. Sweeping it would dress a foregone conclusion as a measurement.
  * - **The palette snap**, which reaches nothing unless a palette is locked, and whose whole point is
  *   that the reader has decided the previous sheet's colours are the ones they want.
- * - **The sprite gap, the two symmetry dials and the two duplicate dials.** Four of those change no
- *   pixel of the result at all — they shape what the tab *reports* — and the two that do act are
- *   acting on a reading a score cannot check. There is nothing here for fidelity to rank.
+ * - **The sprite gap, the three symmetry dials and the two duplicate dials.** Four of those six
+ *   change no pixel of the result at all — they shape what the tab *reports* — and the two that do
+ *   act, the symmetry snap and the duplicate snap, are acting on a reading a score cannot check.
+ *   There is nothing here for fidelity to rank.
  *
  * The pixel grid is not on this shape for a different reason again: it is measured rather than
  * tuned, and the tab already offers what the measurement found.
@@ -35,6 +36,35 @@ export type TunedDials = Pick<
   | 'fillCleanup'
   | 'cleanupPasses'
 >;
+
+/**
+ * Every swept dial's name as a value, written as a record whose value is its own key.
+ *
+ * The shape is what makes it safe, and it is `QUANTISE_DIAL_KEYS`' own trick: a mapped type over
+ * `keyof TunedDials` has no optional members, so a dial added to that subset fails to compile here
+ * until it is named, and each value has to be the literal its key is. `Object.values` of it is the
+ * key list, typed as the keys, with no cast and no hand-written array to fall behind.
+ */
+const TUNED_DIAL_NAMES: { readonly [K in keyof TunedDials]: K } = {
+  vote: 'vote',
+  outlineExpansion: 'outlineExpansion',
+  lineStrength: 'lineStrength',
+  trimStrength: 'trimStrength',
+  inkThreshold: 'inkThreshold',
+  colorMerge: 'colorMerge',
+  fillCleanup: 'fillCleanup',
+  cleanupPasses: 'cleanupPasses',
+};
+
+/**
+ * Every swept dial's name, for the one job that has to walk the set rather than name a member of
+ * it: deciding whether two positions are the same.
+ *
+ * A name missing from this list would fail nothing — it would quietly make two different positions
+ * compare equal, and the stage that could not tell them apart would move a dial it was promising to
+ * leave alone. Hence the record above rather than an array.
+ */
+export const TUNED_DIAL_KEYS = Object.values(TUNED_DIAL_NAMES);
 
 /**
  * How one candidate did: how faithfully its result reproduced the crops, and what it spent.
@@ -89,7 +119,13 @@ export interface TuneOutcome {
   /** How many crops were read, and the edge each one spans in source pixels. */
   readonly crops: number;
   readonly cropEdge: number;
-  /** How many candidate positions were run in total, across every stage and every crop. */
+  /**
+   * How many candidate positions were run, across every stage plus the one the reader arrived with.
+   *
+   * Positions, not runs of the pipeline: each one is read on every crop, so the pipeline ran this
+   * many times {@link crops}. The chip the panel draws states both figures side by side for that
+   * reason.
+   */
   readonly candidates: number;
   /** The winner's own reading, which is what the stages were ranked by. */
   readonly reading: TuneReading;

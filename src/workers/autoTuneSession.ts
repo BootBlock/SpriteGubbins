@@ -3,7 +3,8 @@ import type { TuneOutcome } from '../types/autoTune.ts';
 import type { AutoTuneReply, AutoTuneRequest } from './autoTuneWorker.ts';
 
 /**
- * The near side of {@link autoTuneWorker}: a thread per press, ended by its own answer.
+ * The near side of {@link autoTuneWorker}: a thread per press, ended by its own answer or by the
+ * sheet it was about being replaced.
  *
  * The same shape as `sheetWriteSession.ts` and for the same reason — a sweep is one job with one
  * caller waiting on it, so a thread that ends with the job needs no correlation ids, no map of
@@ -20,12 +21,22 @@ import type { AutoTuneReply, AutoTuneRequest } from './autoTuneWorker.ts';
  * **Every exit that started a thread terminates it, and every call settles**, and the two go
  * together: a thread left running holds a copy of the sheet, and a promise left unsettled leaves the
  * button reading "Tuning…" for the rest of the session — which a store, unlike component state, does
- * not clear by navigating away. **Five ways out have a thread to end**: an answer, a refusal from the
- * sweep itself, a reply that will not deserialise, a thread that will not evaluate, and a message
- * that will not be sent. **Two settle without ever starting one** — a browser that will not build a
- * worker, and a press arriving while the last sweep is still running, which is the only exit that
- * must not clear the flag it found set.
+ * not clear by navigating away. **Six ways out have a thread to end**: an answer, a refusal from the
+ * sweep itself, a reply that will not deserialise, a thread that will not evaluate, a message that
+ * will not be sent, and {@link abandonSweep}. **Two settle without ever starting one** — a browser
+ * that will not build a worker, and a press arriving while the last sweep is still running, which is
+ * the only exit that must not clear the flag it found set.
+ *
+ * **{@link live} is what makes the last of those six possible, and it exists because clearing the
+ * flag is not the same as stopping the work.** A reader who drops the next sheet of a series
+ * mid-sweep disowns the answer — but a disown that only moved a run number on left the old thread
+ * running for the rest of its several seconds, holding its own copy of the sheet it was given, while
+ * the button it re-enabled started a *second* one beside it. So the sheet's arrival ends the thread
+ * as well as forgetting what it was going to say.
  */
+
+/** The sweep in flight, if there is one: the thread to end, and the caller to settle. */
+let live: { readonly worker: Worker; readonly settle: (outcome: TuneOutcome | null) => void } | null = null;
 
 export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | null> {
   const tunes = useAutoTuneStore.getState();
@@ -46,16 +57,20 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
     }
 
     const run = tunes.began();
+    live = { worker, settle: resolve };
+
     /**
      * End the thread, then file the answer — but only where this sweep is still the one being
      * waited on.
      *
-     * A sheet dropped mid-sweep moves the store's run number on, and everything this thread has to
-     * say is about the sheet that was there before. Disowned, it resolves to nothing and writes
-     * nothing, which leaves the flag and the report exactly as the new sheet left them.
+     * The run check is what catches a reply that was already queued when {@link abandonSweep}
+     * terminated the thread: terminating stops the worker, not a message event this thread has
+     * already dispatched. Disowned, it resolves to nothing and writes nothing, which leaves the flag
+     * and the report exactly as the new sheet left them.
      */
     const finish = (file: () => TuneOutcome | null): void => {
       worker.terminate();
+      if (live?.worker === worker) live = null;
       if (!useAutoTuneStore.getState().owns(run)) {
         resolve(null);
         return;
@@ -74,7 +89,8 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
         return reply.outcome;
       });
     });
-    // Fires where the module will not evaluate at all, which no reply can report.
+    // Fires where the module will not evaluate at all, and where an exception escapes the worker's
+    // own listener — neither of which any reply can report.
     worker.addEventListener('error', () => {
       finish(() => {
         useAutoTuneStore.getState().failed('The thread the sweep runs on could not start');
@@ -102,4 +118,28 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
       });
     }
   });
+}
+
+/**
+ * Stop whatever sweep is running and drop what it was going to say, because the sheet it was about
+ * is being replaced.
+ *
+ * Called from `useQuantiseStore`'s `setSource` and `clear`, exactly where `releaseSheet` is called
+ * for the quantiser's own thread — and for the same reason. Ending the thread is the half a store
+ * cannot do: `useAutoTuneStore.forget()` moves the run number on so the answer is disowned, but a
+ * disowned thread that is still running holds its copy of the sheet and burns a core for the rest of
+ * its several seconds, and the flag it cleared has re-enabled the button that would start a second
+ * one beside it.
+ *
+ * Safe to call with nothing running, which is the ordinary case: dropping a first sheet, and every
+ * sheet dropped after a sweep has finished.
+ */
+export function abandonSweep(): void {
+  const abandoned = live;
+  live = null;
+  // Forgotten first, so the run number has already moved on if terminating or settling re-enters.
+  useAutoTuneStore.getState().forget();
+  if (abandoned === null) return;
+  abandoned.worker.terminate();
+  abandoned.settle(null);
 }

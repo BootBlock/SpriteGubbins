@@ -5,7 +5,7 @@ import { FakeAutoTuneWorker } from '../test/fakeAutoTuneWorker.ts';
 import type { TuneOutcome } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
 import { createImage } from '../utils/imageData.ts';
-import { tuneOffThread } from './autoTuneSession.ts';
+import { abandonSweep, tuneOffThread } from './autoTuneSession.ts';
 import type { AutoTuneRequest } from './autoTuneWorker.ts';
 
 /**
@@ -13,14 +13,16 @@ import type { AutoTuneRequest } from './autoTuneWorker.ts';
  * file exists for — that every way out ends the thread and settles the promise.
  *
  * A thread per press only stays cheap if every exit that started one ends it: an answer, a refusal
- * from the sweep itself, a reply that will not deserialise, a thread that will not evaluate, and a
- * message that will not be sent. Two more settle without a thread to end — a browser that will not
- * build a worker, and a press arriving while the last sweep is still running. Each of the seven
- * missed is a leaked thread holding a sheet, or a promise nobody settles, which leaves the button
- * reading "Tuning…" for the rest of the session — across every view, since the flag is a store.
+ * from the sweep itself, a reply that will not deserialise, a thread that will not evaluate, a
+ * message that will not be sent, and a sheet arriving to replace the one it was about. Two more
+ * settle without a thread to end — a browser that will not build a worker, and a press arriving
+ * while the last sweep is still running. Each of the eight missed is a leaked thread holding a
+ * sheet, or a promise nobody settles, which leaves the button reading "Tuning…" for the rest of the
+ * session — across every view, since the flag is a store.
  *
- * The eighth property is this file's own: a sweep whose sheet has been replaced while it ran is
- * **disowned**, so its report never captions an image it was not about.
+ * The last of those is this file's own, and it is two properties rather than one: the sweep is
+ * **disowned**, so its report never captions an image it was not about, *and* the thread is
+ * **ended**, so it is not still holding that sheet beside a button its cleared flag re-enabled.
  */
 
 function thread(): FakeAutoTuneWorker {
@@ -154,25 +156,60 @@ describe('tuneOffThread', () => {
     expect(FakeAutoTuneWorker.started).toHaveLength(2);
   });
 
-  it('disowns an answer whose sheet has been replaced while the sweep ran', async () => {
+  it('ends the thread and settles the caller when the sheet it was about is replaced', async () => {
+    // What `setSource` does. Terminating is the half a store cannot do, and the half that matters:
+    // a disowned thread left running holds its own copy of the sheet for the rest of its several
+    // seconds, and the flag it cleared has re-enabled the button beside it.
     const sweeping = tuneOffThread(request());
-    // What `setSource` does: a different sheet is being loaded, so nothing this sweep has to say is
-    // about the image on screen any more.
-    useAutoTuneStore.getState().forget();
 
-    thread().answer({ kind: 'tuned', outcome: OUTCOME });
+    abandonSweep();
 
-    await expect(sweeping).resolves.toBeNull();
     expect(thread().terminated).toBe(true);
+    await expect(sweeping).resolves.toBeNull();
     expect(useAutoTuneStore.getState().outcome).toBeNull();
     expect(useAutoTuneStore.getState().tuning).toBe(false);
   });
 
+  it('leaves the next press free to start exactly one thread', async () => {
+    // The defect this pair guards: clearing the flag without ending the thread let a second sweep
+    // start beside the first, so two threads held two sheets and burned two cores.
+    const first = tuneOffThread(request());
+    abandonSweep();
+    await first;
+
+    void tuneOffThread(request());
+
+    expect(FakeAutoTuneWorker.started).toHaveLength(2);
+    expect(FakeAutoTuneWorker.started[0]?.terminated).toBe(true);
+    expect(FakeAutoTuneWorker.started[1]?.terminated).toBe(false);
+  });
+
+  it('does nothing where no sweep is running, which is every ordinary sheet drop', () => {
+    expect(() => {
+      abandonSweep();
+    }).not.toThrow();
+    expect(FakeAutoTuneWorker.started).toHaveLength(0);
+  });
+
+  it('drops an answer that was already on its way when the sheet was replaced', async () => {
+    // Terminating stops the worker, not a message this thread has already dispatched — which is
+    // what the run number is still there to catch.
+    const sweeping = tuneOffThread(request());
+    const worker = thread();
+    abandonSweep();
+
+    worker.answer({ kind: 'tuned', outcome: OUTCOME });
+
+    await expect(sweeping).resolves.toBeNull();
+    expect(useAutoTuneStore.getState().outcome).toBeNull();
+  });
+
   it('disowns a failure the same way, rather than reporting it against the new sheet', async () => {
     const sweeping = tuneOffThread(request());
-    useAutoTuneStore.getState().forget();
+    const worker = thread();
+    abandonSweep();
 
-    thread().answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
+    worker.answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
 
     await expect(sweeping).resolves.toBeNull();
     expect(useAutoTuneStore.getState().error).toBeNull();

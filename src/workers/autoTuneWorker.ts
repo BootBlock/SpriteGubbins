@@ -6,7 +6,7 @@ import { autoTune } from '../utils/autoTune.ts';
 /**
  * The auto-tune sweep, off the thread that has to stay responsive.
  *
- * The sweep runs the whole quantiser pipeline once per candidate — up to sixty of them, over
+ * The sweep runs the whole quantiser pipeline once per candidate — up to sixty-five of them, over
  * three crops — so on the main thread it is not slow, it is a **freeze** of seconds inside a click
  * handler, where React cannot even paint the button as pressed. That is the same argument the sheet
  * writer's thread rests on, and the same argument that put the pipeline itself on a thread.
@@ -61,10 +61,12 @@ self.addEventListener('message', (event: MessageEvent<AutoTuneRequest>) => {
  * thing in this file that is not plumbing, and its guards are exactly the kind of absence a test
  * states and a reading does not.
  *
- * An exception escaping here fires no `error` event on the near side's `Worker` object once the
- * module has evaluated, so the near side would see no message, no failure and no death: its promise
- * would never settle and the button that returned it would read "Tuning…" for the rest of the
- * session. That makes the reply the only way out of this file, and every path has to reach one.
+ * An exception escaping here does reach the near side, but as the wrong thing: it fires `error` on
+ * the `Worker` object, which is the event a thread that would not *evaluate* fires, so the reader is
+ * told the sweep could not start when it started, ran, and ran out of room. A rejection would be
+ * worse still — that fires `unhandledrejection` here and nothing at all there, leaving the promise
+ * unsettled and the button reading "Tuning…" for the rest of the session. So the reply is the way
+ * out of this file, and every path has to reach one.
  *
  * The two `try` blocks cover different failures and merging them would report one of them wrongly.
  * The first covers the sweep, whose realistic causes are room — the pipeline allocates several

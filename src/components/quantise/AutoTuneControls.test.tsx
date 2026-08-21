@@ -9,6 +9,7 @@ import { FakeAutoTuneWorker } from '../../test/fakeAutoTuneWorker.ts';
 import type { TuneOutcome } from '../../types/autoTune.ts';
 import type { QuantiseSettings } from '../../types/quantiser.ts';
 import { createImage } from '../../utils/imageData.ts';
+import { abandonSweep } from '../../workers/autoTuneSession.ts';
 import { AutoTuneControls } from './AutoTuneControls.tsx';
 
 /**
@@ -202,8 +203,8 @@ describe('AutoTuneControls', () => {
     show();
 
     await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
-    // What `setSource` does while a sweep is in flight.
-    useAutoTuneStore.getState().forget();
+    // What `setSource` does while a sweep is in flight: the thread ends and the answer is dropped.
+    abandonSweep();
     thread().answer({ kind: 'tuned', outcome: OUTCOME });
 
     await waitFor(() => {
@@ -211,5 +212,70 @@ describe('AutoTuneControls', () => {
     });
     expect(useQuantiseStore.getState().vote).toBe(QUANTISE_DEFAULT_DIALS.vote);
     expect(useAutoTuneStore.getState().outcome).toBeNull();
+  });
+
+  it('retires the report the moment a dial moves, rather than leaving it asserting where they are', async () => {
+    // Every line of the report is a statement about where the dials stand, and the paragraph beside
+    // it says they have just moved and that one undo puts them back. An undo — or a hand on a
+    // slider — makes all of that false while it is still on screen.
+    FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
+    show();
+
+    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await waitFor(() => {
+      expect(screen.getByText('60 positions · 3 crops of 160 px')).toBeInTheDocument();
+    });
+
+    useQuantiseStore.getState().undo();
+
+    await waitFor(() => {
+      expect(screen.queryByText('60 positions · 3 crops of 160 px')).not.toBeInTheDocument();
+    });
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.idle)).toBeInTheDocument();
+  });
+
+  it('keeps its own report when the sweep applies it, which is the one write that must not retire it', async () => {
+    FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
+    show();
+
+    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+
+    await waitFor(() => {
+      expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
+    });
+    expect(useAutoTuneStore.getState().outcome).toEqual(OUTCOME);
+  });
+
+  it('says why the button is unavailable beside the report rather than instead of it', async () => {
+    // Reachable by clearing the grid box after a sweep: the report is still true about the dials,
+    // and the button is still unavailable, and both sentences are needed.
+    FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
+    const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={SETTINGS} />);
+
+    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await waitFor(() => {
+      expect(screen.getByText('60 positions · 3 crops of 160 px')).toBeInTheDocument();
+    });
+
+    rerender(<AutoTuneControls image={createImage(8, 8)} settings={null} />);
+
+    expect(screen.getByText('60 positions · 3 crops of 160 px')).toBeInTheDocument();
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.settled)).toBeInTheDocument();
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.waiting)).toBeInTheDocument();
+  });
+
+  it('does not repeat the failure text its alert already carries', async () => {
+    // Both regions change in one render, so a reason in each is announced twice.
+    FakeAutoTuneWorker.respond = () =>
+      Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
+    show();
+
+    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('The sweep produced nothing.');
+    expect(screen.getByRole('status')).not.toHaveTextContent('Array buffer allocation');
   });
 });

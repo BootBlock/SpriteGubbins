@@ -22,9 +22,11 @@ import type { TuneReading } from '../types/autoTune.ts';
  * way, where each extra colour buys *more* than the last, has no point of diminishing returns to
  * find: there the right answer is to spend them, which is the highest fidelity.
  *
- * Ties are settled by the earliest candidate, and every ladder in `constants/autoTune.ts` opens at
- * the dial's off or opening position — so a stage that genuinely cannot tell its candidates apart
- * leaves the dial where a reader would have left it, rather than somewhere arbitrary.
+ * Ties are settled by the earliest candidate, which is what `withIncumbent` builds on: it puts the
+ * positions already in force at the head of every stage's list, so a stage that genuinely cannot
+ * tell its candidates apart leaves each dial exactly where the reader had it. That guarantee lives
+ * there rather than here on purpose — resting it on where each ladder happens to *open* is what it
+ * used to do, and two of the seven ladders did not honour it.
  *
  * Takes a non-empty list in the type rather than checking for one, so there is no branch here
  * claiming to handle a case no caller can produce.

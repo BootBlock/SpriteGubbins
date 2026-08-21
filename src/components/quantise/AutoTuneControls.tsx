@@ -26,8 +26,8 @@ interface AutoTuneControlsProps {
  * Where this sheet's dials want to be, found by running them.
  *
  * The one panel on this tab that answers a question instead of asking one. Every other control here
- * is a position for the reader to find; this reads three busy crops of their sheet at up to
- * sixty combinations and says which came closest to the artwork for the fewest colours.
+ * is a position for the reader to find; this reads three busy crops of their sheet at around sixty
+ * combinations and says which came closest to the artwork for the fewest colours.
  *
  * **Directly under the grid, and above every dial it moves.** It cannot run without a pixel scale —
  * a candidate is judged by re-drawing its result at that scale and comparing it with the artwork it
@@ -113,9 +113,14 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
         </ul>
       )}
 
-      <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-        {guidanceFor(settings, tuning, outcome, error)}
-      </p>
+      <p className="mt-3 text-xs leading-relaxed text-ink-muted">{guidanceFor(tuning, outcome, error)}</p>
+      {/* A second sentence rather than a branch above it, because the two are independent facts and
+          both can be true at once: a report describes where the dials stand, and this describes why
+          the button is disabled. Deciding between them left a full report sitting under a paragraph
+          that said a scale had not been settled yet. */}
+      {settings === null && (
+        <p className="mt-2 text-xs leading-relaxed text-ink-muted">{AUTO_TUNE_GUIDANCE.waiting}</p>
+      )}
       {!tuning && error !== null && (
         <p role="alert" className="mt-2 text-xs leading-relaxed text-rose">
           {error}
@@ -134,20 +139,22 @@ function costLabel(outcome: TuneOutcome): string {
 /** The panel's state as one sentence, for the live region above. */
 function spokenState(tuning: boolean, outcome: TuneOutcome | null, error: string | null): string {
   if (tuning) return 'Sweeping the quantiser’s dials.';
-  if (error !== null) return `The sweep produced nothing. ${error}`;
+  // The reason is deliberately not repeated here: the paragraph below the button carries it in a
+  // `role="alert"` region, and both change in the same render — so saying it twice is heard twice.
+  // `QuantiseTab`'s own live region is built the same way.
+  if (error !== null) return 'The sweep produced nothing.';
   if (outcome === null) return '';
   return `Swept ${String(outcome.candidates)} positions and moved the dials. Likeness ${outcome.reading.fidelity.toFixed(3)} at ${String(Math.round(outcome.reading.colors))} colours, from ${outcome.baseline.fidelity.toFixed(3)} at ${String(Math.round(outcome.baseline.colors))}.`;
 }
 
-/** Which paragraph the state calls for — see `AUTO_TUNE_GUIDANCE`, which holds all five. */
-function guidanceFor(
-  settings: QuantiseSettings | null,
-  tuning: boolean,
-  outcome: TuneOutcome | null,
-  error: string | null,
-): string {
+/**
+ * Which paragraph the sweep's own state calls for — see `AUTO_TUNE_GUIDANCE`, which holds all five.
+ *
+ * `waiting` is not among them: it answers a different question — why the button is disabled — and is
+ * rendered beside whichever of these applies rather than in place of it.
+ */
+function guidanceFor(tuning: boolean, outcome: TuneOutcome | null, error: string | null): string {
   if (tuning) return AUTO_TUNE_GUIDANCE.running;
-  if (settings === null) return AUTO_TUNE_GUIDANCE.waiting;
   if (error !== null) return AUTO_TUNE_GUIDANCE.failed;
   return outcome === null ? AUTO_TUNE_GUIDANCE.idle : AUTO_TUNE_GUIDANCE.settled;
 }

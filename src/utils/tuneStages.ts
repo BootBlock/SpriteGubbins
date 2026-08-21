@@ -7,6 +7,7 @@ import {
   TUNE_OUTLINE_EXPANSIONS,
   TUNE_TRIM_STRENGTHS,
 } from '../constants/autoTune.ts';
+import { TUNED_DIAL_KEYS } from '../types/autoTune.ts';
 import type { TuneStageName, TunedDials } from '../types/autoTune.ts';
 import { VOTE_METHODS } from '../types/quantiser.ts';
 
@@ -30,7 +31,7 @@ export interface TuneStage {
  * each is 390,625 candidates, and each one runs the whole pipeline over three crops. Coordinate
  * descent is what makes the search affordable: each stage sweeps its own axes fully, from the dials
  * every earlier stage settled, so the cost is the *sum* of the stages rather than their product —
- * sixty positions at most, against a third of a million.
+ * sixty-one from the dials as they open and sixty-five at most, against a third of a million.
  *
  * **The order is the pipeline's own, and it is what makes the descent sound.** A coordinate descent
  * is only as good as the order it descends in, because a stage cannot revisit what an earlier one
@@ -43,6 +44,10 @@ export interface TuneStage {
  * The ink dials are read only by `INK_WEIGHTED`, and the passes dial only where the fill cleanup is
  * on — so on a sheet whose reading settled elsewhere those candidates would be identical to one
  * another, and the elbow would be choosing between measurements of the same image.
+ *
+ * **Where a stage's own ladder starts is not what decides a tie** — {@link withIncumbent} is. See
+ * the note there: a ladder is a set of positions worth trying, and making its *first* entry carry
+ * the tie-breaking contract as well was a coincidence that two of the seven ladders did not honour.
  */
 export const TUNE_STAGES: readonly TuneStage[] = [
   {
@@ -123,4 +128,34 @@ function grid(candidates: readonly TunedDials[]): readonly [TunedDials, ...Tuned
   const first = candidates[0];
   if (first === undefined) throw new Error('A sweep stage was given no positions to try');
   return [first, ...candidates.slice(1)];
+}
+
+/**
+ * A stage's candidates with the dials already in force at the head of them, and no duplicate of it.
+ *
+ * **This is what makes a stage unable to move a dial it cannot justify moving.** `chooseByElbow`
+ * settles a tie on the earliest candidate, so putting the incumbent first means a stage whose
+ * candidates it genuinely cannot separate leaves every dial exactly where the reader had it. Without
+ * it that guarantee rested on each ladder happening to open at the dial's own resting position — and
+ * two did not: the line strength opens at the range floor of 1 against a dial that opens at 1.5, and
+ * the ink threshold's ladder does not contain the dial's opening value of 64 at all, so a tie there
+ * moved a reader's 64 to 16.
+ *
+ * It also makes the descent honest about its own starting point: the position the reader arrived at
+ * is *in* the set being ranked at every stage rather than only at the first, so a stage can never
+ * report a choice that was never compared with the one it replaced.
+ *
+ * The filter is what keeps it from costing anything on the stages whose ladder already holds the
+ * incumbent — which is every reading stage, since the vote and expansion ladders are complete.
+ */
+export function withIncumbent(
+  candidates: readonly TunedDials[],
+  settled: TunedDials,
+): readonly [TunedDials, ...TunedDials[]] {
+  return [settled, ...candidates.filter((candidate) => !sameTunedDials(candidate, settled))];
+}
+
+/** Whether two positions are the same dial for dial — walked, never listed. See `TUNED_DIAL_KEYS`. */
+function sameTunedDials(a: TunedDials, b: TunedDials): boolean {
+  return TUNED_DIAL_KEYS.every((key) => a[key] === b[key]);
 }

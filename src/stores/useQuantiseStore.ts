@@ -12,6 +12,7 @@ import type {
   VoteMethod,
 } from '../types/quantiser.ts';
 import { currentDials, openHistory, recordDials, redoDials, undoDials } from '../utils/dialHistory.ts';
+import { abandonSweep } from '../workers/autoTuneSession.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { useAutoTuneStore } from './useAutoTuneStore.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
@@ -152,9 +153,16 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
    *
    * Every dial path below goes through this or through {@link edit}, which is what makes the
    * projection described on `history` true rather than intended.
+   *
+   * **It is also where the auto-tune report is retired**, and that is the same argument: a report is
+   * a set of statements about where the dials stand — its stage list says so literally and its
+   * paragraph says they have just moved — so a reader who presses Undo or drags a slider makes all
+   * of it false while it is still on screen. One funnel means no dial path can forget to. `bySweep`
+   * is the single exception, for the obvious reason: that write *is* the report being applied.
    */
-  const project = (history: DialHistory) => {
+  const project = (history: DialHistory, bySweep = false) => {
     set({ ...currentDials(history), history });
+    if (!bySweep) useAutoTuneStore.getState().stale();
   };
 
   /**
@@ -164,13 +172,17 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
    * the two are the same value — see `history`. Taking it from there is what lets this stay one
    * function for eighteen dials without a hand-written list of them to copy the other seventeen.
    *
+   * **A `null` key is a move that never coalesces with the gesture before it**, which is what the
+   * sweep's answer wants: it moves eight dials at once, and the positions it replaced are exactly
+   * the ones a reader wants back after seeing what it made of their sheet.
+   *
    * `performance.now()` rather than `Date.now()`, because the only thing the figure is compared
    * with is another one of its own — the gap between two events of one gesture — and a monotonic
    * clock cannot be stepped backwards by the system underneath a drag.
    */
-  const edit = (key: DialKey, patch: Partial<QuantiseDials>) => {
+  const edit = (key: DialKey | null, patch: Partial<QuantiseDials>, bySweep = false) => {
     const history = get().history;
-    project(recordDials(history, { ...currentDials(history), ...patch }, key, performance.now()));
+    project(recordDials(history, { ...currentDials(history), ...patch }, key, performance.now()), bySweep);
   };
 
   return {
@@ -200,10 +212,10 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       // replaced, so leaving one in place for the render between here and the worker's first reply
       // would caption the new sheet with the old one's colour count and detected scale.
       useQuantiseAnswerStore.getState().forget();
-      // And the sweep's report with them, for the same reason and one of its own: a sweep may still
-      // be running for the sheet being replaced, and moving the run number on is what disowns its
-      // answer rather than letting it caption the new sheet. See `useAutoTuneStore`.
-      useAutoTuneStore.getState().forget();
+      // And the sweep, thread and all, for the same reason and one of its own: a sweep may still be
+      // running for the sheet being replaced, and ending it is what stops it holding that sheet and
+      // re-enabling a button beside itself. See `abandonSweep`.
+      abandonSweep();
       loadSheet(source.image);
     },
 
@@ -291,13 +303,12 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       edit('duplicateSnap', { duplicateSnap });
     },
 
-    // Recorded under no key for the reason a preset load is: it moves eight dials at once, and the
-    // positions it replaced are exactly what a reader wants back after seeing what the sweep made of
-    // their sheet. Spread over the current position rather than replacing it, because the ten dials
-    // the sweep does not touch have to stay exactly where the reader put them.
+    // The same write every other dial makes, under no key so it never coalesces with the gesture
+    // before it, and flagged as the sweep's own so `project` keeps the report rather than retiring
+    // it. Spreading over the current position — which is what `edit` does — is what leaves the ten
+    // dials the sweep does not touch exactly where the reader put them.
     autoTuned: (dials) => {
-      const history = get().history;
-      project(recordDials(history, { ...currentDials(history), ...dials }, null, performance.now()));
+      edit(null, dials, true);
     },
 
     applyDials: (dials) => {
@@ -336,7 +347,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       // go in the same breath, or the tab reports a quantiser that could not start while one is
       // running.
       useQuantiseAnswerStore.getState().reset();
-      useAutoTuneStore.getState().forget();
+      abandonSweep();
       releaseSheet();
     },
   };

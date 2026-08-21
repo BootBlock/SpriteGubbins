@@ -879,17 +879,30 @@ initial build. They are not stylistic preferences.
   owned by a component**, and the quantiser's says why in its own file: `App` swaps the whole view on
   navigation, so a thread started by a `useEffect` is terminated and restarted on every trip, and a
   new thread holds nothing — so whatever it was given has to cross the boundary again.
-- **A thread's *lifetime* is decided by whether it has anything worth keeping**, and the two in
+- **A thread's *lifetime* is decided by whether it has anything worth keeping**, and the three in
   `src/workers/` answer that differently on purpose. The quantiser's is kept for a whole session
   because the sheet crosses once and every dial afterwards is three small numbers. The sheet writer's
   (`sheetWriteWorker.ts` / `sheetWriteSession.ts`, which writes either a PNG or an `.aseprite`
   document) is started per download and ended by its own answer, because what it writes is the
   *result*, which changes under every dial — so it would cross the boundary on
   each press whatever the thread's lifetime, and a thread that ends with the job needs no correlation
-  ids and no lifecycle to keep in step with the tab. **State that has to outlive the view it was started
+  ids and no lifecycle to keep in step with the tab. The auto-tune sweep's
+  (`autoTuneWorker.ts` / `autoTuneSession.ts`) is the same per-press shape for the same reason, and
+  it is the one that says why the quantiser's is not simply *reused* even though it already holds the
+  sheet: a sweep queued behind that thread's message loop stalls the preview the reader is watching,
+  and a second clone of the sheet per press is tens of milliseconds against a sweep of seconds.
+  **State that has to outlive the view it was started
   from belongs in `src/stores/`, never in the component that asked for the work** — `useSheetWriteStore` exists
   because a "writing" flag held in the download's own component came back false when a reader
   navigated away and back, offering a button that was already busy.
+- **A per-press thread has to be *ended* by whatever disowns it, not merely forgotten.** The flag
+  that says one is running is also what stops a second starting, so anything that clears the flag
+  from outside — a new sheet arriving, the tab being cleared — has to stop the thread in the same
+  breath, or it re-enables the button beside work that is still running and holding its own copy of
+  the sheet. `abandonSweep` in `autoTuneSession.ts` is where that pair lives, called from
+  `useQuantiseStore` exactly where `releaseSheet` is called for the quantiser's thread; the near side
+  keeps a reference to the live worker for no other reason. A correlation number that only makes the
+  answer *discardable* is the half that looks sufficient and is not.
 - **`src/hooks/` exists because `src/utils/` must stay pure.** The clipboard, file downloads and
   the combo box's keyboard state machine are all impure — they touch `navigator`, the DOM, or a
   store — so they cannot live in `src/utils/`, and they are not components. A hook belongs there

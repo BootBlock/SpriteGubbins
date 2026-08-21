@@ -68,7 +68,7 @@ describe('autoTune', () => {
 
     const swept = outcome.stages.reduce((total, stage) => total + stage.candidates, 0);
     expect(outcome.candidates).toBe(swept + 1);
-    expect(outcome.candidates).toBeLessThanOrEqual(60);
+    expect(outcome.candidates).toBeLessThanOrEqual(65);
   });
 
   it('says why a stage that could not run did not', () => {
@@ -139,10 +139,11 @@ describe('autoTune', () => {
     expect(outcome.reading.fidelity).toBeGreaterThan(againstTheField + 0.2);
   });
 
-  it('puts every candidate’s change on the grid’s own lattice, whatever the dials did', () => {
-    // Why the roadmap's third scorer is not here. A lattice score asks whether the result sits on the
-    // grid; every candidate is judged on its result magnified by that same grid, so all of them put
-    // all of their change on it and the score is 1 for each. It separates nothing.
+  it('scores every candidate alike on the lattice while their fidelities differ', () => {
+    // Why the roadmap's third scorer is not here, shown as the pair it is. A lattice score asks
+    // whether the result sits on the grid; every candidate is judged on its result magnified by that
+    // same grid, so all of them put all of their change on it by construction of the magnification.
+    // That is exactly the point: it is constant where the score the sweep does use is not.
     const [crop] = proxyCrops(SHEET, GRID, PROXY_CROP_CELLS, PROXY_CROP_COUNT);
     expect(crop).toBeDefined();
     if (crop === undefined) return;

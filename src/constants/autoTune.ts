@@ -12,6 +12,14 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * ranges in `constants/quantiser.ts` say what a reader may set; these say where the sweep looks. A
  * ladder that left the range would offer the reader a position their own slider refuses.
  *
+ * **The sweep costs sixty-one positions from the dials as they open, and at most sixty-five.** One
+ * for the position the reader arrived with, then 15 + 20 + 6 + 8 + 7 + 4 across the six stages —
+ * fewer where a stage skips, which is 35 on the reference sheet, since a reading that blends no ink
+ * takes the two ink stages with it. Every stage also ranks the positions already in force, which
+ * costs nothing where its ladder already holds them and one candidate where a reader has moved a
+ * dial off the ladder; four stages can be in that state at once. See `withIncumbent` for why the
+ * incumbent is in the set at all.
+ *
  * **Measured on the reference sheet** (`armour.png`, 1254², a grid of 6, no keying, no colour
  * budget, every dial at its opening position), driven in Edge: three crops of 240 px, 35 positions
  * run — the ink stages skip, because the reading settles on `K_CENTROID` — and **7.8 seconds** from
@@ -34,7 +42,10 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * questions being asked of it: the mesh reader wants at least {@link FEWEST_SPACINGS} boundary
  * spacings before it will call a spacing a habit, the colour merge and the fill cleanup are
  * neighbourhood passes that need a neighbourhood, and forty cells gives every one of them several
- * times what it asks for while costing 1/16 of a 1254-pixel sheet per crop.
+ * times what it asks for. What it costs depends on the grid, since the crop is forty cells of
+ * whichever one is in force: at the grid of 6 the reference sheet reads at, a crop is 240 px square,
+ * which is a twenty-seventh of that 1254 px sheet — so all three together are just over a tenth of
+ * it.
  */
 export const PROXY_CROP_CELLS = 40;
 
@@ -83,18 +94,21 @@ export const TUNE_TRIM_STRENGTHS = [0, 1, 2, 3] as const;
 /**
  * The ink thresholds the ink stage tries, spanning `INK_THRESHOLD_RANGE` end to end.
  *
- * Five positions twenty apart, which is the whole 16–96 range at the resolution the dial's own note
+ * Six positions sixteen apart, which is the whole 16–96 range at the resolution the dial's own note
  * describes it in: restrict the pull to truly black strokes at the bottom, admit darker artwork's
- * outlines at the top.
+ * outlines at the top. The spacing is chosen so `DEFAULT_INK_THRESHOLD` — 64, the darkest-quarter
+ * anchor the dominant vote's rescue shares — is one of them, which keeps the commonest sweep from
+ * carrying the dial's own position as an extra candidate beside the ladder.
  */
-export const TUNE_INK_THRESHOLDS = [16, 36, 56, 76, 96] as const;
+export const TUNE_INK_THRESHOLDS = [16, 32, 48, 64, 80, 96] as const;
 
 /**
  * The colour-merge tolerances the sweep tries, across `COLOR_MERGE_RANGE`.
  *
  * `0` first, because the merge not running is a real answer and the elbow should be able to reach
- * it. The rest are eights of the range, which is a perceptible step in the scaled OKLab the dial is
- * stated in and finer than the difference the reader is being asked to judge.
+ * it. Then sixes to 24 and eights above it: the dial is a perceptual distance, and a tolerance near
+ * zero separates colours a reader can tell apart while one near the ceiling is folding everything
+ * whatever it is set to — so the resolution is spent where the answer actually changes.
  */
 export const TUNE_COLOR_MERGES = [0, 6, 12, 18, 24, 32, 40, 48] as const;
 
@@ -133,7 +147,7 @@ export const TUNE_STAGE_LABELS: Readonly<Record<TuneStageName, string>> = {
 export const AUTO_TUNE_GUIDANCE = {
   waiting:
     'A pixel scale has to be settled before the dials can be swept: every candidate is judged by re-drawing the result at that scale and comparing it with the artwork it came from, and there is nothing to compare against until the scale is known. Set a grid above, then come back.',
-  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over three busy crops of it, at up to sixty combinations of the dials that decide how a cell is read and how its colours settle, and moves them to whichever came closest to the artwork for the fewest colours.',
+  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over three busy crops of it, at around sixty combinations of the dials that decide how a cell is read and how its colours settle, and moves them to whichever came closest to the artwork for the fewest colours.',
   running:
     'Running the pipeline over three crops of the sheet, once for each candidate. It takes a few seconds on a large sheet, and the preview beside it keeps working throughout — the sweep is on a thread of its own.',
   settled:

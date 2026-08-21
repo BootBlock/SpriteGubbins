@@ -38,7 +38,21 @@ export interface AutoTuneState {
   failed(reason: string): void;
   /** Whether the sweep that took this run number is still the one the tab is waiting on. */
   owns(run: number): boolean;
-  /** Drop the report, because it describes a sheet that is no longer loaded. */
+  /**
+   * Drop the report, because the dials have moved since it was written.
+   *
+   * Every line of a report is a statement about where the dials stand — the stage list says so
+   * literally, and the paragraph beside it says they have just moved and that one undo puts them
+   * back. A reader who presses Undo, or drags a slider, makes all of that false while it is still on
+   * screen. So any dial write that is not the sweep's own clears it; see `project` in
+   * `useQuantiseStore`, which is the one funnel every dial write goes through.
+   *
+   * Deliberately narrower than {@link forget}: the run number does not move and a sweep in flight is
+   * left alone, because moving an unrelated dial while one runs is not a reason to throw the sweep
+   * away.
+   */
+  stale(): void;
+  /** Drop the report and disown any sweep in flight, because a different sheet is being loaded. */
   forget(): void;
 }
 
@@ -66,10 +80,14 @@ export const useAutoTuneStore = create<AutoTuneState>((set, get) => ({
 
   owns: (run) => get().run === run,
 
-  // `tuning` falls with the report, and that is not tidying: the thread is disowned rather than
-  // stopped from here, so a sweep still running for the old sheet must not leave a button reading
-  // "Tuning…" for a sheet it was never about. `autoTuneSession` terminates the thread when its
-  // answer arrives and finds itself disowned.
+  stale: () => {
+    set({ outcome: null, error: null });
+  },
+
+  // `tuning` falls with the report, and the thread that flag was about is ended by `abandonSweep`
+  // in `autoTuneSession` — which is what calls this, and is the only thing that should. Clearing the
+  // flag without ending the thread re-enables the button beside a sweep that is still running, and a
+  // second press then starts a second thread beside the first.
   forget: () => {
     set({ run: get().run + 1, tuning: false, outcome: null, error: null });
   },

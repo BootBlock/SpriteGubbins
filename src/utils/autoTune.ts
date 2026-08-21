@@ -1,28 +1,12 @@
 import { PROXY_CROP_CELLS, PROXY_CROP_COUNT } from '../constants/autoTune.ts';
-import type { TuneOutcome, TuneReading, TuneStageReport, TunedDials } from '../types/autoTune.ts';
+import type { TuneOutcome, TuneStageReport, TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
-import { cropImage } from './cropImage.ts';
 import { keyBackground } from './keyBackground.ts';
 import { proxyCrops } from './proxyCrops.ts';
-import { quantiseImage } from './quantiseImage.ts';
-import { meanSsim } from './ssim.ts';
-import { TUNE_STAGES } from './tuneStages.ts';
+import { readCandidate } from './tuneCandidate.ts';
+import type { Sample } from './tuneCandidate.ts';
 import { chooseByElbow } from './tuneScore.ts';
-import { upscaleNearest } from './upscaleNearest.ts';
-
-/** One window of the sheet, and the artwork a candidate's result is judged against. */
-interface Sample {
-  readonly crop: ImageData;
-  /**
-   * The crop as the reader wants it — keyed, where keying is in force.
-   *
-   * **Not the raw crop**, and the difference is the whole comparison on a keyed sheet. A candidate's
-   * result has its background cleared, so measuring it against a crop that still carries the key
-   * field would score every candidate against a field none of them produces. Keying the reference
-   * puts both sides in the same terms.
-   */
-  readonly reference: ImageData;
-}
+import { TUNE_STAGES, withIncumbent } from './tuneStages.ts';
 
 /**
  * Where this sheet's dials want to be, found by running them.
@@ -34,23 +18,26 @@ interface Sample {
  * why each is a rule — and reports where the sheet itself says they belong.
  *
  * **It reads crops, not the sheet.** Every candidate runs the whole pipeline, and the tab admits a
- * sheet of 16.8 million pixels; three windows of forty cells is what makes the sweep a second or two
- * rather than a minute. See `proxyCrops` for how the windows are chosen and why they are aligned to
- * the grid's lattice.
+ * sheet of 16.8 million pixels; three windows of forty cells is what keeps the sweep to the few
+ * seconds `constants/autoTune.ts` measures rather than a minute. See `proxyCrops` for how the
+ * windows are chosen and why they are aligned to the grid's lattice.
  *
  * **Each candidate is scored on how faithfully its result reproduces the crop and how few colours it
- * spends doing it**, and the two are traded by the elbow rather than by a weight nobody could
- * defend — see `chooseByElbow`. Fidelity is measured on the result *re-upscaled* by the grid, which
- * is what makes a downscale comparable with the artwork it came from at all.
+ * spends doing it** — see `readCandidate` — and the two are traded by the elbow rather than by a
+ * weight nobody could defend, which is `chooseByElbow`.
+ *
+ * **Every stage ranks the positions in force alongside its own**, which is `withIncumbent`: a stage
+ * that cannot separate its candidates therefore leaves each dial exactly where the reader had it,
+ * and a stage that moves one has compared it against the one it replaced.
  *
  * **The third scorer the roadmap listed — how sharply the result sits on its lattice — is not here,
  * and the reason is that it cannot separate anything this function is choosing between.** Every
  * candidate is judged on its result magnified by the same grid, and a nearest-neighbour magnification
  * puts *all* of a result's change exactly on that lattice — which is the quantity
- * `GRID_ESTIMATION_THRESHOLD` scores, and it is 1 for every candidate however the dials moved. The
+ * `GRID_ESTIMATION_THRESHOLD` scores, so it is 1 for every candidate however the dials moved. The
  * grid is settled before this runs, by measurement or by the reader, so the question a lattice score
- * asks has already been answered. `autoTune.test.ts` pins it: candidates whose fidelity is far apart
- * put every one of their steps on the lattice alike.
+ * asks has already been answered. `autoTune.test.ts` demonstrates the pair: candidates whose
+ * fidelities are far apart put every one of their steps on the lattice alike.
  *
  * Pure, like everything else in this directory, which is what lets `autoTuneWorker.ts` run it on a
  * thread without a line of it changing.
@@ -71,9 +58,9 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
   }));
 
   let settled = tunedDialsOf(settings);
-  const baseline = read(settled, samples, settings);
+  const baseline = readCandidate(settled, samples, settings);
   let reading = baseline;
-  // The starting position counts: it was run, and it is one of the answers the elbow could return.
+  // The starting position counts: it was run, and every stage below ranks it against its own.
   let candidates = 1;
   const stages: TuneStageReport[] = [];
 
@@ -89,19 +76,20 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
       continue;
     }
 
-    const readings = plan.candidates.map((dials) => read(dials, samples, settings));
+    const tried = withIncumbent(plan.candidates, settled);
+    const readings = tried.map((dials) => readCandidate(dials, samples, settings));
     const chosenFirst = readings[0];
-    // The plan's candidates are a non-empty list by their own type, so this holds; the check is what
+    // `tried` is a non-empty list by its own type, so this holds; the check is what
     // `noUncheckedIndexedAccess` asks of an index rather than a case that arises.
     if (chosenFirst === undefined) continue;
     const chosen = chooseByElbow([chosenFirst, ...readings.slice(1)]);
-    settled = plan.candidates[chosen] ?? settled;
+    settled = tried[chosen] ?? settled;
     reading = readings[chosen] ?? reading;
-    candidates += plan.candidates.length;
+    candidates += tried.length;
 
     stages.push({
       stage: stage.name,
-      candidates: plan.candidates.length,
+      candidates: tried.length,
       skipped: null,
       settled: stage.describe(settled),
     });
@@ -116,38 +104,6 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
     baseline,
     stages,
   };
-}
-
-/**
- * How one set of positions does across the crops.
- *
- * Averaged over the crops rather than taken from the best of them, because the dials are being
- * chosen for the whole sheet: a position that is excellent on one window and poor on the other two
- * is the wrong answer, and a maximum would pick it.
- */
-function read(dials: TunedDials, samples: readonly Sample[], settings: QuantiseSettings): TuneReading {
-  let fidelity = 0;
-  let colors = 0;
-
-  for (const sample of samples) {
-    const result = quantiseImage(sample.crop, { ...settings, ...dials });
-    const magnified = upscaleNearest(result.image, settings.grid);
-    // The mesh is measured per transform and may cut a crop into a whole number of cells that is not
-    // the crop's own edge over the grid — a drifting sheet is exactly what `boundaryMesh` exists for.
-    // So the two are trimmed to what they share rather than assumed equal, and the trim is a copy
-    // only where there is something to trim.
-    const width = Math.min(magnified.width, sample.reference.width);
-    const height = Math.min(magnified.height, sample.reference.height);
-    fidelity += meanSsim(trim(sample.reference, width, height), trim(magnified, width, height));
-    colors += result.colors;
-  }
-
-  return { fidelity: fidelity / samples.length, colors: colors / samples.length };
-}
-
-/** The image itself where it is already this size, and its top-left rectangle where it is larger. */
-function trim(image: ImageData, width: number, height: number): ImageData {
-  return image.width === width && image.height === height ? image : cropImage(image, 0, 0, width, height);
 }
 
 /**

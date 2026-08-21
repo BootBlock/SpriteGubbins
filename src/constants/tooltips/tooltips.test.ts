@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ACCENT_HUES } from '../../types/settings.ts';
+import { AUTO_TUNE_GUIDANCE } from '../autoTune.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { TARGET_MODELS } from '../models.ts';
 import { accentSwatchGuidance } from '../settings.ts';
@@ -94,6 +95,13 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ...ACCENT_HUES.map((hue) => [`accentSwatchGuidance(${hue})`, accentSwatchGuidance(hue)] as const),
   ['presetCollectionGuidance(built-in)', presetCollectionGuidance('Humanoid Character', false)],
   ['presetCollectionGuidance(custom)', presetCollectionGuidance('Your presets', true)],
+  // Two of `AUTO_TUNE_GUIDANCE`'s five, and the split is the rule this suite is named for: what
+  // counts is the surface, not the filing. `idle` says what pressing Auto does and `waiting` says
+  // why it is unavailable — both are the control's own explanation rendered under it rather than
+  // behind an ⓘ, which is the standing `TARGET_MODELS.description` case. The other three report the
+  // state of *this sheet's* sweep, which is the `QUANTISE_SCALE_GUIDANCE` case and out of scope.
+  ['AUTO_TUNE_GUIDANCE.idle', AUTO_TUNE_GUIDANCE.idle],
+  ['AUTO_TUNE_GUIDANCE.waiting', AUTO_TUNE_GUIDANCE.waiting],
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */
