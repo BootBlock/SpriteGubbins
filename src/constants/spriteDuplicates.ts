@@ -17,7 +17,7 @@ export const DUPLICATE_GUIDANCE = {
    * nothing — a reader who has just raised the tolerance and seen this wants to know the sheet is
    * clean, not that the control is broken.
    */
-  none: 'Every sprite on this sheet is its own drawing at the tolerance below, so there is nothing to fold. Sprites are compared with one another cell by cell, and only ones with identical bounds are compared at all — two frames of one pose usually come back the same size once the sheet has been reduced to drawn pixels, but a silhouette that differs by a pixel at one edge is a box a pixel wider and is left alone. Raise the tolerance if two frames you can see are the same pose are not being grouped.',
+  none: 'Every sprite on this sheet is its own drawing at the tolerance in force, so there is nothing to fold. Each pair is laid over the other by its top-left corner and compared cell by cell, so where two drawings differ in size the cells only one of them covers count against the pair — which is what keeps a large sprite and a small one apart, and what lets a silhouette that gained a pixel at one edge still match the frame it came from. Raise the tolerance if two sprites you can see are the same pose are not being grouped.',
 
   /**
    * Groups were found and nothing has been done about them, which is the ordinary reading state.
@@ -27,7 +27,7 @@ export const DUPLICATE_GUIDANCE = {
    * is a judgement the reader makes by looking.
    */
   found:
-    'Some of the sprites on this sheet are the same drawing more than once. Sprites marked identical match pixel for pixel — a frame the generator handed back twice — and the rest came back close enough to count as one at the tolerance below. Nothing has been changed: this is a reading of the result, and the download is the same file as it was. Switch the preview to Sprites and compare the bounds listed here against the picture before deciding, then turn the snap on if you want the repeats written as one drawing.',
+    'Some of the sprites on this sheet are the same drawing more than once. Sprites marked identical match pixel for pixel — a frame the generator handed back twice — and the rest came back close enough to count as one at the tolerance in force. Nothing has been changed: this is a reading of the result, and the download is the same file as it was. Switch the preview to Sprites and compare the bounds listed here against the picture before deciding, then turn the snap on if you want the repeats written as one drawing.',
 
   /**
    * Groups were found and the snap has rewritten them.

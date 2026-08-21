@@ -312,15 +312,17 @@ function sameSprite(image: ImageData, left: SpriteBox | undefined, right: Sprite
  * sprawling figure with a lot of margin would pass a threshold a compact one failed.
  *
  * **The early exit is exact, not a heuristic, and it is what makes the walk above affordable.** The
- * running sum only grows, and the divisor — the cells at least one of the two sprites covers — can
- * never exceed either the union box's cell count or the two sprites' own opaque-cell counts added
- * together, since every counted cell is opaque on at least one side. So a sum already past
- * `tolerance × that smaller bound` means the final mean is past `tolerance` whatever the rest of the
- * sprites hold. Taking the tighter of the two bounds matters on real artwork, where a silhouette
- * fills perhaps half its bounding box: it halves the work a pair costs before it is rejected.
+ * running sum only grows and the divisor can never exceed the union box's cell count, so a sum
+ * already past `tolerance × those cells` means the final mean is past `tolerance` whatever the rest
+ * of the sprites hold. A pair that is not a duplicate is usually rejected within the first few rows,
+ * and at a tolerance of `0` it is rejected at the first cell that differs.
  *
- * A pair that is not a duplicate is usually rejected within the first few rows, and at a tolerance
- * of `0` it is rejected at the first cell that differs.
+ * **The box's cell count is the only sound bound available here**, and the tempting tighter one is
+ * wrong: `SpriteBox.pixels` counts the opaque pixels of the *connected region*, not of the box that
+ * bounds it, so a speck sitting in a sprite's notch is inside the box and absent from the figure.
+ * Bounding the divisor by the two sprites' `pixels` added together therefore under-counts on exactly
+ * those sheets, which would make this reject a pair whose true mean is under the tolerance — an
+ * early exit that changes the answer, which is the one thing it may not do.
  *
  * Returns `false` for a pair with no visible cell between them — two sprites both entirely
  * transparent, which the speck floor makes unreachable from a real segmentation and which is a
@@ -337,7 +339,7 @@ function withinTolerance(
   const { data } = image;
   const width = Math.max(left.width, right.width);
   const height = Math.max(left.height, right.height);
-  const budget = tolerance * Math.min(width * height, left.pixels + right.pixels);
+  const budget = tolerance * width * height;
   const leftColor: MutableOklab = { L: 0, a: 0, b: 0 };
   const rightColor: MutableOklab = { L: 0, a: 0, b: 0 };
   let sum = 0;

@@ -367,8 +367,8 @@ export interface QuantiseTuning {
    */
   readonly spriteGap: number;
   /**
-   * The mean per-cell distance under which two same-size sprites are counted as one drawing, in the
-   * scaled OKLab units every colour tolerance on this tab is stated in.
+   * The mean per-cell distance under which two sprites are counted as one drawing, in the scaled
+   * OKLab units every colour tolerance on this tab is stated in.
    *
    * `0` is not an off position, for the reason {@link spriteGap}'s is not: the reading always
    * happens, and at zero it still groups sprites whose visible pixels match outright — which is the

@@ -38,9 +38,11 @@ describe('boxSeparation', () => {
     expect(boxSeparation(...box(0, 0), ...box(9, 5))).toBe(boxSeparation(...box(9, 5), ...box(0, 0)));
   });
 
-  it('is zero for two boxes overlapping on one axis only', () => {
-    // They share columns and are separated by rows — the separation is the row gap, and a reader of
-    // only the horizontal overlap would call them touching.
+  it('measures the gap on the other axis when two boxes overlap on one', () => {
+    // They share every column and are separated by rows, so the separation is the row gap — a
+    // reader of the horizontal overlap alone would call them touching.
     expect(boxSeparation(...box(0, 0), ...box(0, 6))).toBe(2);
+    // And zero once the rows meet, which is the case that decides whether a fold may land there.
+    expect(boxSeparation(...box(0, 0), ...box(0, 4))).toBe(0);
   });
 });

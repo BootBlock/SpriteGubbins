@@ -72,7 +72,7 @@ describe('saveQuantisePreset', () => {
       },
     });
     // Asserted on what reaches the backend, not on what comes back out of it. The reader builds a
-    // fresh object holding exactly the thirteen dials, so a `saveQuantisePreset` that spread the
+    // fresh object holding exactly the fifteen dials, so a `saveQuantisePreset` that spread the
     // whole store — sheet, grid, locked palette and all — would still read back clean. This is the
     // only place the extra keys are still visible.
     const written = vi.spyOn(backend, 'saveQuantisePreset');

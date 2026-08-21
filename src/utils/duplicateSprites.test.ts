@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { Rgba, SpriteBox } from '../types/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
 import { duplicateSprites } from './duplicateSprites.ts';
-import { CHANNELS_PER_PIXEL, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { DUPLICATE_TOLERANCE_RANGE } from '../constants/quantiser.ts';
+import { FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { srgbToOklabInto } from './oklab.ts';
+import { pixelDistance } from './pixelDistance.ts';
 import { spriteSegments } from './spriteSegments.ts';
 
 const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: FULLY_TRANSPARENT };
@@ -70,6 +73,18 @@ function blockWith(width: number, height: number, color: Rgba, spot: Rgba, count
     if (row !== undefined) row[index % width] = spot;
   }
   return cells;
+}
+
+/** How many cells inside a box carry any coverage — what the comparison actually walks. */
+function visibleCells(image: ImageData, box: SpriteBox): number {
+  let count = 0;
+  for (let row = 0; row < box.height; row += 1) {
+    for (let column = 0; column < box.width; column += 1) {
+      const at = pixelOffset(image.width, box.left + column, box.top + row);
+      if ((image.data[at + 3] ?? 0) !== FULLY_TRANSPARENT) count += 1;
+    }
+  }
+  return count;
 }
 
 /** The boxes the real segmentation finds, for the cases that are about agreeing with it. */
@@ -327,6 +342,129 @@ describe('duplicateSprites', () => {
     ]);
 
     expect(duplicateSprites(image, boxes, 0)).toHaveLength(1);
-    expect(image.data).toHaveLength(20 * 8 * CHANNELS_PER_PIXEL);
+  });
+});
+
+/**
+ * The early exit against a plain reading of the same question.
+ *
+ * `withinTolerance` abandons a pair as soon as its running sum can no longer come under the
+ * tolerance, which is what makes the quadratic walk affordable — and an exit that abandons one cell
+ * too early is a pair silently not reported, with nothing on screen to say so. The bound it uses is
+ * therefore the whole of its correctness, and the way to hold it is an oracle: compute the mean the
+ * long way, with no exit at all, and require the two to agree at every rung of the dial.
+ *
+ * **The fixture is a thin sprite with isolated specks inside its bounds**, which is the case the
+ * first bound written here got wrong. That bound was `tolerance × (left.pixels + right.pixels)`
+ * where the union box's cell count was larger — tighter, and unsound, because `SpriteBox.pixels`
+ * counts a *region's* opaque pixels rather than its *box's*. A diagonal stroke has a box far larger
+ * than itself, and one-pixel fringe scattered through that box is opaque, is compared, and is absent
+ * from the figure: thirty specks against a twelve-pixel stroke make the divisor forty-two where the
+ * bound allowed twenty-four, so a pair whose true mean was under the tolerance was rejected. Every
+ * fixture above is a solid block, where the bound is generous and the fault cannot show.
+ */
+describe('duplicateSprites — the early exit agrees with a plain reading', () => {
+  /**
+   * A diagonal stroke filling a 12 × 12 box, with one-pixel specks scattered through it.
+   *
+   * The specks sit on even coordinates four or more apart in x and y, so no two of them touch each
+   * other or the stroke even diagonally — a cell's eight-connected distance to the diagonal is half
+   * its distance from it, which is why four rather than two. That is what keeps each speck its own
+   * region, under the speck floor, and therefore inside the box but outside its pixel count.
+   */
+  function speckled(shade: Rgba, differing: number): Rgba[][] {
+    const cells = Array.from({ length: 12 }, () => Array.from({ length: 12 }, () => CLEAR));
+    let left = differing;
+    for (let y = 0; y < 12; y += 1) {
+      const row = cells[y];
+      if (row === undefined) continue;
+      row[y] = INK;
+      for (let x = 0; x < 12; x += 1) {
+        if (x % 2 !== 0 || y % 2 !== 0 || Math.abs(x - y) < 4) continue;
+        // The cells that make this sprite differ from its twin, taken off the specks so the stroke —
+        // and therefore the box — is identical on both sides.
+        row[x] = left > 0 ? shade : INK;
+        if (left > 0) left -= 1;
+      }
+    }
+    return cells;
+  }
+
+  /** The mean per-cell distance over the union box, computed the long way with no early exit. */
+  function meanDistance(image: ImageData, left: SpriteBox, right: SpriteBox): number {
+    const width = Math.max(left.width, right.width);
+    const height = Math.max(left.height, right.height);
+    const leftColor = { L: 0, a: 0, b: 0 };
+    const rightColor = { L: 0, a: 0, b: 0 };
+    let sum = 0;
+    let counted = 0;
+
+    for (let row = 0; row < height; row += 1) {
+      for (let column = 0; column < width; column += 1) {
+        const inLeft = row < left.height && column < left.width;
+        const inRight = row < right.height && column < right.width;
+        const from = inLeft ? pixelOffset(image.width, left.left + column, left.top + row) : -1;
+        const to = inRight ? pixelOffset(image.width, right.left + column, right.top + row) : -1;
+        const leftAlpha = from < 0 ? 0 : (image.data[from + 3] ?? 0);
+        const rightAlpha = to < 0 ? 0 : (image.data[to + 3] ?? 0);
+        if (leftAlpha === FULLY_TRANSPARENT && rightAlpha === FULLY_TRANSPARENT) continue;
+        counted += 1;
+        if (from >= 0) {
+          srgbToOklabInto(
+            leftColor,
+            image.data[from] ?? 0,
+            image.data[from + 1] ?? 0,
+            image.data[from + 2] ?? 0,
+          );
+        }
+        if (to >= 0) {
+          srgbToOklabInto(rightColor, image.data[to] ?? 0, image.data[to + 1] ?? 0, image.data[to + 2] ?? 0);
+        }
+        sum += pixelDistance(leftColor, leftAlpha, rightColor, rightAlpha);
+      }
+    }
+    return counted === 0 ? 0 : sum / counted;
+  }
+
+  it('reports the box holding far more visible cells than the sprite it bounds', () => {
+    // The premise the case below rests on, asserted rather than assumed: if the specks ever stopped
+    // being specks — an eight-connected neighbour, or a floor that admitted them — the sweep would
+    // still pass and would have stopped testing anything.
+    const { image } = sheetOf(40, 20, [{ left: 2, top: 2, cells: speckled(INK, 0) }]);
+    const box = segmentedBoxes(image)[0];
+    if (box === undefined) throw new Error('the fixture needs its box.');
+
+    expect([box.left, box.top, box.width, box.height]).toEqual([2, 2, 12, 12]);
+    // The stroke's own pixels, which is all the segmentation counts — and the cells the comparison
+    // actually walks, which is two and a half times as many.
+    expect(box.pixels).toBe(12);
+    expect(visibleCells(image, box)).toBe(32);
+  });
+
+  it('groups a pair at exactly the rungs a plain reading says it should', () => {
+    for (const differing of [1, 3, 5, 7]) {
+      const { image } = sheetOf(40, 20, [
+        { left: 2, top: 2, cells: speckled(INK, 0) },
+        { left: 20, top: 2, cells: speckled(OTHER, differing) },
+      ]);
+      // The segmentation's own boxes, not the stamps' — a stated box would carry the specks in its
+      // pixel count, which is the very thing the real one leaves out.
+      const boxes = segmentedBoxes(image);
+      const first = boxes[0];
+      const second = boxes[1];
+      if (first === undefined || second === undefined) throw new Error('the fixture needs two boxes.');
+
+      const mean = meanDistance(image, first, second);
+      // The sweep has to straddle the answer, or it proves nothing about where the line falls.
+      expect(mean, `${String(differing)} differing cells`).toBeGreaterThan(0);
+      expect(mean, `${String(differing)} differing cells`).toBeLessThan(DUPLICATE_TOLERANCE_RANGE.max);
+
+      for (let tolerance = 0; tolerance <= DUPLICATE_TOLERANCE_RANGE.max; tolerance += 1) {
+        expect(
+          duplicateSprites(image, boxes, tolerance).length,
+          `${String(differing)} differing cells at tolerance ${String(tolerance)}, mean ${mean.toFixed(3)}`,
+        ).toBe(mean <= tolerance ? 1 : 0);
+      }
+    }
   });
 });
