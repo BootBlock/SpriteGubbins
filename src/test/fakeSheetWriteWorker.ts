@@ -1,7 +1,7 @@
-import type { PngReply, PngRequest } from '../workers/pngWorker.ts';
+import type { SheetWriteReply, SheetWriteRequest } from '../workers/sheetWriteWorker.ts';
 
 /**
- * The encoder's conversation, without the thread.
+ * The sheet writer's conversation, without the thread.
  *
  * A second fake beside `FakeWorker` rather than an extension of it, and the reason is the payload:
  * that class is written in terms of `QuantiseCall` and `QuantiseReply` and carries `of`/`lastId` for
@@ -11,34 +11,34 @@ import type { PngReply, PngRequest } from '../workers/pngWorker.ts';
  * share is `addEventListener`/`postMessage`/`terminate`, which is the `Worker` interface rather than
  * anything either of them invented.
  *
- * It is shared between `pngSession`'s tests and `useImageDownload`'s, which is the part that matters:
+ * It is shared between `sheetWriteSession`'s tests and `useImageDownload`'s, which is the part that matters:
  * those two are the ends of one bridge, and the failure `FakeWorker`'s own docblock names — two
  * copies free to drift — is between *them*.
  */
-export class FakePngWorker {
+export class FakeSheetWriteWorker {
   /** Every thread started since the last reset, in order. */
-  static started: FakePngWorker[] = [];
+  static started: FakeSheetWriteWorker[] = [];
   /** Refuse to be constructed at all, as a browser without module workers does. */
   static refuseToStart = false;
   /** Refuse the message, as a browser that will not clone a very large sheet does. */
   static refusePost = false;
   /** What to answer a request with. Left unset, the request hangs for the test to answer by hand. */
-  static respond: ((request: PngRequest) => Promise<PngReply>) | null = null;
+  static respond: ((request: SheetWriteRequest) => Promise<SheetWriteReply>) | null = null;
 
-  readonly posted: PngRequest[] = [];
+  readonly posted: SheetWriteRequest[] = [];
   terminated = false;
   private readonly listeners = new Map<string, ((event: unknown) => void)[]>();
 
   constructor() {
-    if (FakePngWorker.refuseToStart) throw new Error('no workers here');
-    FakePngWorker.started.push(this);
+    if (FakeSheetWriteWorker.refuseToStart) throw new Error('no workers here');
+    FakeSheetWriteWorker.started.push(this);
   }
 
   static reset(): void {
-    FakePngWorker.started = [];
-    FakePngWorker.refuseToStart = false;
-    FakePngWorker.refusePost = false;
-    FakePngWorker.respond = null;
+    FakeSheetWriteWorker.started = [];
+    FakeSheetWriteWorker.refuseToStart = false;
+    FakeSheetWriteWorker.refusePost = false;
+    FakeSheetWriteWorker.respond = null;
   }
 
   addEventListener(type: string, listener: (event: unknown) => void): void {
@@ -49,10 +49,10 @@ export class FakePngWorker {
     this.terminated = true;
   }
 
-  postMessage(request: PngRequest): void {
-    if (FakePngWorker.refusePost) throw new Error('the sheet would not clone');
+  postMessage(request: SheetWriteRequest): void {
+    if (FakeSheetWriteWorker.refusePost) throw new Error('the sheet would not clone');
     this.posted.push(request);
-    const answering = FakePngWorker.respond?.(request);
+    const answering = FakeSheetWriteWorker.respond?.(request);
     if (answering === undefined) return;
     void answering.then((reply) => {
       this.answer(reply);
@@ -60,7 +60,7 @@ export class FakePngWorker {
   }
 
   /** Answer as the real worker does — a `message` event carrying the reply. */
-  answer(reply: PngReply): void {
+  answer(reply: SheetWriteReply): void {
     for (const listener of this.listeners.get('message') ?? []) listener({ data: reply });
   }
 

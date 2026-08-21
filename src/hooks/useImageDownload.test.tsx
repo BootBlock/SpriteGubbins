@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import { useUIStore } from '../stores/useUIStore.ts';
 import { decodePng } from '../test/decodePng.ts';
-import { FakePngWorker } from '../test/fakePngWorker.ts';
+import { FakeSheetWriteWorker } from '../test/fakeSheetWriteWorker.ts';
 import { imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { encodePng } from '../utils/encodePng.ts';
@@ -21,7 +21,7 @@ import { useImageDownload } from './useImageDownload.ts';
  *
  * The thread is stubbed and the **encoder is not**: the fake runs the real `encodePng` over the
  * image it was posted, so what these tests decode is a genuine file. What a worker adds — a thread,
- * and the seven ways a request for one can settle — is `pngSession`'s to test, and it has its own
+ * and the seven ways a request for one can settle — is `sheetWriteSession`'s to test, and it has its own
  * suite over the same fake.
  */
 
@@ -43,13 +43,13 @@ beforeEach(() => {
     if (state.toastMessage !== null) toasts.push(state.toastMessage);
   });
   useSheetWriteStore.setState({ writing: false });
-  FakePngWorker.reset();
+  FakeSheetWriteWorker.reset();
   // The thread is stubbed and the encoder is not: what these tests decode is a genuine file.
-  FakePngWorker.respond = ({ image, scale }) =>
+  FakeSheetWriteWorker.respond = ({ image, scale }) =>
     encodePng(scale === 1 ? image : upscaleNearest(image, scale)).then(
-      (file) => ({ kind: 'encoded', file }) as const,
+      (file) => ({ kind: 'written', file }) as const,
     );
-  vi.stubGlobal('Worker', FakePngWorker);
+  vi.stubGlobal('Worker', FakeSheetWriteWorker);
   // happy-dom provides neither, and both are the point of the hook rather than incidental to it.
   URL.createObjectURL = vi.fn((blob: Blob) => {
     saved = blob;
@@ -71,7 +71,7 @@ afterEach(() => {
 async function download(name: string, image: ImageData, scale: number): Promise<Blob> {
   const { result } = renderHook(() => useImageDownload());
   act(() => {
-    result.current.save(name, image, scale);
+    result.current.save({ sourceName: name, image, scale, format: 'PNG', boxes: [] });
   });
   await waitFor(() => {
     expect(saved).not.toBeNull();
@@ -138,15 +138,17 @@ describe('useImageDownload', () => {
   });
 
   it('names the reason when the encode fails, rather than saving nothing quietly', async () => {
-    FakePngWorker.respond = () =>
+    FakeSheetWriteWorker.respond = () =>
       Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' } as const);
     const { result } = renderHook(() => useImageDownload());
     act(() => {
-      result.current.save(
-        'armour.png',
-        imageFrom(2, 2, () => CLEAR),
-        1,
-      );
+      result.current.save({
+        sourceName: 'armour.png',
+        image: imageFrom(2, 2, () => CLEAR),
+        scale: 1,
+        format: 'PNG',
+        boxes: [],
+      });
     });
 
     await waitFor(() => {
@@ -161,11 +163,11 @@ describe('useImageDownload', () => {
     const { result } = renderHook(() => useImageDownload());
     const image = imageFrom(4, 4, () => CLEAR);
     act(() => {
-      result.current.save('armour.png', image, 1);
+      result.current.save({ sourceName: 'armour.png', image, scale: 1, format: 'PNG', boxes: [] });
     });
     expect(result.current.saving).toBe(true);
     act(() => {
-      result.current.save('armour.png', image, 2);
+      result.current.save({ sourceName: 'armour.png', image, scale: 2, format: 'PNG', boxes: [] });
     });
 
     await waitFor(() => {
@@ -173,7 +175,7 @@ describe('useImageDownload', () => {
     });
     // The second press asked for `@2x` and would have overwritten the name had it been taken.
     expect(downloadName).toBe('armour-quantised.png');
-    // And it was refused *quietly*. `encodeOffThread` refuses a concurrent encode too, so without
+    // And it was refused *quietly*. `writeSheetOffThread` refuses a concurrent write too, so without
     // the hook's own guard the reader would be told a file could not be written — a failure they did
     // not cause, for a press that was never going to do anything. Every toast is collected rather
     // than the last one read, because the success that follows would hide it.
