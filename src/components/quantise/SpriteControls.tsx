@@ -11,16 +11,6 @@ interface SpriteControlsProps {
   /** What the transform found, or `null` while there is no result to have found anything in. */
   readonly sprites: SpriteSegmentation | null;
   /**
-   * Whether the background key is being removed, which decides what "one sprite" means.
-   *
-   * Taken from the tab rather than re-derived, as `KeyingControls` takes it and for the same
-   * reason: whether the pass runs is a rule over two settings, and a panel deciding it a second
-   * time can claim something the pipeline did not do. Here it separates the two readings of a
-   * single box — a sheet nobody keyed is one opaque rectangle and always will be, while a keyed
-   * sheet reporting one piece is either a single-component sheet or a key that missed.
-   */
-  readonly keyed: boolean;
-  /**
    * The component size the studio's prompt asks for, or `null` where it states none.
    *
    * The figure the measurement is worth reading against: a sheet whose sprites come back larger
@@ -36,18 +26,27 @@ interface SpriteControlsProps {
  * What the sheet broke into: how many sprites, how big the largest is, and how far apart two pieces
  * may sit before they stop being one.
  *
- * **The only panel on this tab that changes no pixel of the result.** Everything else here is a
- * dial on the transform; this is a *reading* of what the transform produced — which is why its one
- * control opens engaged rather than off, and why the guidance says outright that the download is
- * the same file whatever it says.
+ * **The one dial in the tab's control stack that changes no pixel of the result.** The grid, the
+ * keying, the downscale readings and the palette lock all transform the sheet; this dial changes a
+ * *reading* of what those produced — which is why it opens engaged rather than off, and why the
+ * guidance says outright that the download is the same file whatever it says. (The comparison
+ * panel's own controls change no pixels either, but they decide how a result is *shown* rather than
+ * sitting among the dials that make it.)
  *
  * It earns a panel rather than a line in the comparison caption because it answers a question the
  * rest of the tab cannot: the studio states how many components the prompt asked for and what size
  * each should be, and until now nothing checked either against the artwork that came back. A sheet
  * returning nine components where twelve were requested looks, in the preview, exactly like a sheet
  * returning twelve.
+ *
+ * **Every state it reports comes out of the segmentation itself, never out of the keying setting
+ * beside it.** The two are not the same question: a sheet that arrived carrying its own alpha — one
+ * this app downloaded earlier, say — separates perfectly well with keying switched off, and a sheet
+ * keyed at a tolerance that matched nothing is solid with keying switched on. A panel reading the
+ * setting would contradict its own badge in both directions, which is why `SpriteSegmentation`
+ * carries `SOLID` rather than leaving it to be inferred here.
  */
-export function SpriteControls({ sprites, keyed, target, busy }: SpriteControlsProps) {
+export function SpriteControls({ sprites, target, busy }: SpriteControlsProps) {
   const spriteGap = useQuantiseStore((state) => state.spriteGap);
   const setSpriteGap = useQuantiseStore((state) => state.setSpriteGap);
 
@@ -64,8 +63,8 @@ export function SpriteControls({ sprites, keyed, target, busy }: SpriteControlsP
           </Badge>
         ) : (
           <>
-            <Badge tone={countTone(sprites, keyed)}>{countLabel(sprites)}</Badge>
-            {sprites.specks > 0 && (
+            <Badge tone={countTone(sprites)}>{countLabel(sprites)}</Badge>
+            {sprites.kind !== 'SOLID' && sprites.specks > 0 && (
               <Badge tone="attention">
                 {sprites.specks} {sprites.specks === 1 ? 'speck ignored' : 'specks ignored'}
               </Badge>
@@ -74,7 +73,10 @@ export function SpriteControls({ sprites, keyed, target, busy }: SpriteControlsP
         )}
       </div>
 
-      {largest !== null && (
+      {/* Withdrawn while a newer result is coming, exactly as the badge above it is. The previous
+          job's answer is deliberately kept on screen for the *preview*, where a sheet beats a blank
+          frame — but a line of bare figures has nothing to say it is the old one. */}
+      {!busy && largest !== null && (
         <p className="mt-3 font-mono text-2xs text-ink-faint">
           Largest {largest.width} × {largest.height} drawn pixels
           {target !== null && ` · studio target ${target.width} × ${target.height}`}
@@ -101,13 +103,14 @@ export function SpriteControls({ sprites, keyed, target, busy }: SpriteControlsP
         />
       </div>
 
-      <p className="mt-3 text-xs leading-relaxed text-ink-muted">{guidanceFor(sprites, keyed)}</p>
+      <p className="mt-3 text-xs leading-relaxed text-ink-muted">{guidanceFor(sprites)}</p>
     </section>
   );
 }
 
 /** `1 sprite`, `12 sprites`, or what was found instead of sprites. */
 function countLabel(sprites: SpriteSegmentation): string {
+  if (sprites.kind === 'SOLID') return 'Nothing transparent to separate';
   if (sprites.kind === 'SCATTERED') return `${sprites.pieces} pieces — not read as sprites`;
   const { length } = sprites.boxes;
   return `${length} ${length === 1 ? 'sprite' : 'sprites'}`;
@@ -116,24 +119,28 @@ function countLabel(sprites: SpriteSegmentation): string {
 /**
  * Which badge the count wears.
  *
- * A count is only *good news* where it is a count of separated things. An unkeyed sheet's single
- * box, a keyed sheet that came apart into one piece, an empty sheet and a scattered one are all
- * states the paragraph below is asking the reader to act on, so none of them takes the settled
- * tone.
+ * A count is only *good news* where it is a count of separated things, so a solid sheet, a scattered
+ * one and one with nothing left on it all take the tone that asks the reader to look at the
+ * paragraph below.
+ *
+ * **One piece is neither**, and that is why there is a third tone rather than a second. It is the
+ * correct answer for a sheet holding a single component and the symptom of a key that has not quite
+ * let go on a sheet holding several, and nothing here can tell which — so the chip states the fact
+ * without judging it, and the paragraph names both readings.
  */
-function countTone(sprites: SpriteSegmentation, keyed: boolean): 'valid' | 'attention' {
-  if (sprites.kind === 'SCATTERED') return 'attention';
-  if (!keyed || sprites.boxes.length <= 1) return 'attention';
+function countTone(sprites: SpriteSegmentation): 'valid' | 'attention' | 'neutral' {
+  if (sprites.kind !== 'SEGMENTED' || sprites.boxes.length === 0) return 'attention';
+  if (sprites.boxes.length === 1) return 'neutral';
   return 'valid';
 }
 
 /** Which paragraph the state calls for — see `SPRITE_GUIDANCE`, which holds all five. */
-function guidanceFor(sprites: SpriteSegmentation | null, keyed: boolean): string {
-  if (!keyed) return SPRITE_GUIDANCE.unkeyed;
+function guidanceFor(sprites: SpriteSegmentation | null): string {
   // With nothing quantised yet the general paragraph is the right one: it says what this panel
   // does, which is what a reader waiting on a first result needs — where naming a state the sheet
   // is not in would be describing a finding nobody has made.
   if (sprites === null) return SPRITE_GUIDANCE.found;
+  if (sprites.kind === 'SOLID') return SPRITE_GUIDANCE.solid;
   if (sprites.kind === 'SCATTERED') return SPRITE_GUIDANCE.scattered;
   if (sprites.boxes.length === 0) return SPRITE_GUIDANCE.empty;
   if (sprites.boxes.length === 1) return SPRITE_GUIDANCE.single;

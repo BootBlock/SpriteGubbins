@@ -819,9 +819,13 @@ export const DEFAULT_SPRITE_GAP = 1;
  * Four, because it is far below anything drawn deliberately and far above what a fringe island is. A
  * 2 × 2 block is the smallest mark a pixel artist makes that reads as a shape rather than as noise —
  * an inventory pip, a spark, a rivet — and fringe islands are one and two pixels, since three or more
- * connected pixels of near-key colour is a run the tolerance should have taken. It cannot be zero:
- * with no floor a single stray pixel is a sprite, and the merge below would then be asked to fold
- * thousands of them.
+ * connected pixels of near-key colour is a run the tolerance should have taken.
+ *
+ * **It cannot be zero, and the reason is the ceiling below rather than the merge.** With no floor
+ * every stray pixel is a sprite, so an ordinary keyed sheet — which leaves fringe along every
+ * silhouette — would be pushed past {@link SCATTERED_SPRITE_CEILING} by its own halo and reported as
+ * scattered, when what it holds is twelve components and some fringe. The floor is what lets the
+ * ceiling mean "this sheet has not been keyed" rather than "this sheet has edges".
  */
 export const SMALLEST_SPRITE_PIXELS = 4;
 

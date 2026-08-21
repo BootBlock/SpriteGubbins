@@ -87,10 +87,15 @@ describe('outlineSprites', () => {
     expect(at(marked, 2, 0).a).toBe(FULLY_OPAQUE);
     expect(at(marked, 0, 2).a).toBe(FULLY_OPAQUE);
     expect(at(marked, 2, 2).a).toBe(FULLY_OPAQUE);
-    // The row and column that would have carried the two clipped sides are the far edges of the
-    // sheet, and nothing may have been written there.
-    expect(at(marked, 7, 7)).toEqual(CLEAR);
-    expect(at(marked, 0, 7)).toEqual(CLEAR);
+
+    // **These two are where an unclipped write would actually land**, and naming them is the whole
+    // point of the case. A channel array is flat, so `pixelOffset(width, -1, y)` is not out of range
+    // — it is `(y * width - 1) * 4`, the *last pixel of the row above*. The ring's `x = -1` column
+    // therefore wraps onto (7, 0) and (7, 1) rather than throwing or being dropped, and a typed
+    // array swallows the genuinely negative offsets from the `y = -1` row in silence. Asserting on
+    // some other empty corner would pass whether the guard existed or not.
+    expect(at(marked, 7, 0)).toEqual(CLEAR);
+    expect(at(marked, 7, 1)).toEqual(CLEAR);
   });
 
   it('returns the result untouched where nothing was found', () => {

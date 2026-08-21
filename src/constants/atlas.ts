@@ -109,7 +109,11 @@ export const MEASURED_SPRITE_GUIDANCE = {
   measured:
     'Every other figure on this panel describes the atlas your prompt asks for. This one describes the sheet you quantised — how many separate pieces of artwork were actually found on it, and how big the largest of them is. The two disagreeing is worth knowing before you pack anything: a generator that returned fewer components than were asked for leaves slots empty, and one whose artwork came back larger than the target size will not seat at 1:1 in the cell planned for it. The plan above is not changed by any of this; it stays the atlas your prompt describes.',
 
-  /** It did not, which is a fact about the keying rather than about the sheet's contents. */
+  /** Nothing on the quantised sheet is transparent, so no boundary between components exists yet. */
+  solid:
+    'The sheet you quantised has nothing transparent on it, so no boundary between one component and the next exists to be found, and there is nothing here to check the plan against. Key the background on the Quantise tab — switch keying on if it is off, or raise the tolerance if it is already on — and this becomes a count you can read against the plan above.',
+
+  /** It broke into far more pieces than a sprite sheet holds, which says the keying is not settled. */
   scattered:
-    'The sheet you quantised has not been separated into sprites, so there is nothing here to check the plan against. That is the background: until the key is removed on the Quantise tab, every component on the sheet is joined to every other one by the field between them. Switch keying on there and raise the tolerance until the field goes, and this becomes a count you can read against the plan above.',
+    'The sheet you quantised broke into far more separate pieces than a sprite sheet holds, so none of them is being counted as a sprite and there is nothing here to check the plan against. A background field that has only partly come out does this, and so does a tolerance tight enough to leave every anti-aliased edge behind as its own island. Adjust the keying tolerance on the Quantise tab until the count settles, and this becomes a figure you can read against the plan above.',
 } as const;

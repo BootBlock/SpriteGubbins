@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_KEY_TOLERANCE, DEFAULT_PALETTE_SNAP } from '../constants/quantiser.ts';
+import { DEFAULT_KEY_TOLERANCE, DEFAULT_PALETTE_SNAP, DEFAULT_SPRITE_GAP } from '../constants/quantiser.ts';
 import { FakeWorker } from '../test/fakeWorker.ts';
 import { createImage } from '../utils/imageData.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
@@ -108,6 +108,7 @@ describe('useQuantiseStore', () => {
     store.setColorMerge(36);
     store.lockPalette(LOCK);
     store.setPaletteSnap(48);
+    store.setSpriteGap(6);
 
     store.clear();
 
@@ -129,6 +130,7 @@ describe('useQuantiseStore', () => {
       // saying they have finished with this series, not moving on to the next sheet of it.
       lockedPalette: null,
       paletteSnap: DEFAULT_PALETTE_SNAP,
+      spriteGap: DEFAULT_SPRITE_GAP,
     });
   });
 

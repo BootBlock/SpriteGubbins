@@ -432,8 +432,9 @@ export interface DifferenceMap {
  * result pane. `spriteSegments` says why the segmentation runs where it does.
  *
  * A position and an extent rather than four edges, so there is no exclusive-versus-inclusive
- * convention for a consumer to get wrong — `left + width` is the first column past the box, and the
- * merge inside `spriteSegments` is the only code that needs to say so.
+ * convention for a consumer to get wrong. `left + width` is the first column past the box, and the
+ * two places that need to say so — the merge in `spriteSegments` and the ring in `spriteOutline` —
+ * each derive it where they use it rather than carrying a second pair of fields nobody else reads.
  */
 export interface SpriteBox {
   readonly left: number;
@@ -452,19 +453,27 @@ export interface SpriteBox {
 }
 
 /**
- * What the sheet broke into, or that it did not break into anything usable.
+ * What the sheet broke into, or why it did not break into anything a reader can act on.
  *
- * A union rather than a list with a flag beside it, because the two outcomes are not the same answer
- * at different sizes. `SEGMENTED` is a set of sprites a reader can act on — count them against what
- * the prompt asked for, check the largest against the target size, pack them into an atlas.
- * `SCATTERED` is the statement that this sheet holds more separate pieces than a sprite sheet has,
- * which is a fact about the *keying* rather than about sprites: a field that has not come out, or a
- * tolerance so tight that every anti-aliased edge survives as its own island. Handed back as a list,
- * it would be three thousand boxes presented in the same shape as twelve.
+ * Three outcomes rather than a list with a flag beside it, because they are not one answer at
+ * different sizes — each calls for something different from whoever is reading it, and two of them
+ * are statements about the **keying** rather than about sprites.
  *
- * An unkeyed sheet is neither of those and needs no third arm: with nothing transparent on it there
- * is one opaque region covering the whole image, which is `SEGMENTED` with a single box — the honest
- * answer, since nothing has told the pass where a sprite ends.
+ * - `SEGMENTED` is a set of sprites: count them against what the prompt asked for, check the largest
+ *   against the target size, pack them into an atlas.
+ * - `SOLID` says nothing on the sheet is transparent, so there is nothing to separate anything by.
+ *   It carries no boxes at all, and that absence is the point: one box covering the whole image
+ *   would be indistinguishable from a genuine single-component sheet, and every reader downstream
+ *   would go on to compare it with a component count and report a sprite the size of the raster.
+ * - `SCATTERED` says this sheet holds more separate pieces than a sprite sheet has — a field that
+ *   has not come out, or a tolerance so tight that every anti-aliased edge survives as its own
+ *   island. Handed back as a list it would be three thousand boxes in the same shape as twelve.
+ *
+ * **`SOLID` is a fact about the result, not about whether the keying pass ran**, and the distinction
+ * is load-bearing: a sheet that arrived carrying its own alpha — including one this app downloaded
+ * earlier — segments perfectly well with keying switched off, while a sheet keyed at a tolerance
+ * that matched nothing is fully opaque with keying switched on. A reader that inferred this from the
+ * keying setting would be wrong in both directions.
  */
 export type SpriteSegmentation =
   | {
@@ -474,6 +483,7 @@ export type SpriteSegmentation =
       /** Pieces too small to be a sprite; see {@link SMALLEST_SPRITE_PIXELS}. */
       readonly specks: number;
     }
+  | { readonly kind: 'SOLID' }
   | {
       readonly kind: 'SCATTERED';
       /** How many pieces there were, which is the figure that says how far past a sheet this is. */

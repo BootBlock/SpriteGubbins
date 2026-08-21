@@ -13,17 +13,20 @@
  */
 export const SPRITE_GUIDANCE = {
   /**
-   * Keying is not in force, so the sheet is one opaque rectangle and there is nothing to separate.
+   * Nothing on the result is transparent, so there is nothing to separate anything by.
    *
    * The commonest state this panel is read in, because keying opens off — and the one where the
-   * answer looks like a failure and is not.
+   * answer looks like a failure and is not. **Two causes, and the copy has to cover both:** keying
+   * switched off, and keying switched on at a tolerance that matched nothing. It deliberately does
+   * not say which, because the panel cannot tell them apart from the result and the setting is on
+   * screen directly above.
    */
-  unkeyed:
-    'Sprites are found by looking at what the background key left transparent, and this sheet has not been keyed — so the whole of it reads as one opaque shape. Switch keying on above and raise the tolerance until the field goes, and the components on the sheet will separate.',
+  solid:
+    'Sprites are found by looking at what is transparent on the finished sheet, and nothing on this one is — so the whole of it reads as one opaque shape and no boundary can be drawn anywhere. If keying is switched off above, switch it on; if it is already on, raise the tolerance until the background field goes. The components will separate as soon as there is space between them.',
 
   /** Keyed, and it came apart into things a reader can count. */
   found:
-    'Each separate piece of artwork on the keyed sheet is counted as a sprite, and pieces closer together than the gap below are counted as one — which is what puts a floating sword back with the hand holding it, and a shadow back under the feet it belongs to. Switch the preview to Sprites to see the bounds that were drawn. Nothing here changes the sheet: it is a reading of the result, and the download is the same file whatever it says.',
+    'Each separate piece of artwork on the sheet is counted as a sprite, and pieces no further apart than the gap below are counted as one — which is what puts a floating sword back with the hand holding it, and a shadow back under the feet it belongs to. Switch the preview to Sprites to see the bounds that were drawn. Nothing here changes the sheet: it is a reading of the result, and the download is the same file whatever it says.',
 
   /** Keyed, and one component came back — either a single-subject sheet, or a key that missed. */
   single:

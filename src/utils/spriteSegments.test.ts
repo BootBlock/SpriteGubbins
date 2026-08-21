@@ -115,9 +115,12 @@ describe('spriteSegments', () => {
     expect(boxesOf(image, 0)).toEqual([{ left: 0, top: 0, width: 10, height: 10, pixels: 40 }]);
   });
 
-  it('folds a chain of pieces in one reading rather than one link at a time', () => {
-    // Four pieces, each two clear pixels from the next and eight from the one beyond it. A merge
-    // that only ever paired the nearest two would need three rounds and could stop after one.
+  it('folds a chain transitively, so a piece reaches one it is nowhere near', () => {
+    // Four pieces, each two clear pixels from the next and seven from the one beyond it. Only the
+    // adjacent pairs are within the gap, so the first and last end up in one box purely by way of
+    // the two between them. It pins the transitive closure, not how many rounds reaching it took —
+    // that is unobservable from here, since a merger that folded one pair per round would converge
+    // on the same box; the round *count* is pinned by the fixed-point case below instead.
     const image = sheetOf(40, 10, [
       { left: 0, top: 2, width: 3, height: 3 },
       { left: 5, top: 2, width: 3, height: 3 },
@@ -182,14 +185,33 @@ describe('spriteSegments', () => {
     });
   });
 
-  it('reads an unkeyed sheet as one sprite filling it, without labelling anything', () => {
-    // Nothing has told the pass where a sprite ends, so one box covering the sheet is the honest
-    // answer — and the early-out is what keeps a full-size label array from being allocated for it.
+  it('answers SOLID for a sheet with nothing transparent on it, rather than one box covering it', () => {
+    // Nothing has told the pass where a sprite ends, so the honest answer is that it found none —
+    // not that it found one the size of the raster, which every reader downstream would go on to
+    // compare against a component count and a target size. It is also what the early-out is for: no
+    // full-size label array is allocated to reach it.
     const image = imageFrom(9, 7, () => INK);
 
-    expect(spriteSegments(image, 1)).toEqual({
+    expect(spriteSegments(image, 1)).toEqual({ kind: 'SOLID' });
+  });
+
+  it('answers SOLID on the keying setting having nothing to do with it', () => {
+    // The distinction the union exists to carry. This sheet is opaque because its pixels are opaque,
+    // and the one below is separable because its pixels are not — neither fact is reachable from
+    // whether a key pass ran, which is why nothing downstream is allowed to infer it from the
+    // setting. A sheet arriving with its own alpha is the ordinary case here: it is what this app's
+    // own Download PNG writes.
+    const alreadyTransparent = sheetOf(20, 20, [
+      { left: 2, top: 2, width: 4, height: 4 },
+      { left: 12, top: 12, width: 4, height: 4 },
+    ]);
+
+    expect(spriteSegments(alreadyTransparent, 1)).toEqual({
       kind: 'SEGMENTED',
-      boxes: [{ left: 0, top: 0, width: 9, height: 7, pixels: 63 }],
+      boxes: [
+        { left: 2, top: 2, width: 4, height: 4, pixels: 16 },
+        { left: 12, top: 12, width: 4, height: 4, pixels: 16 },
+      ],
       specks: 0,
     });
   });

@@ -13,7 +13,8 @@ import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT } from './imageData.ts';
  * labelling over what the keying left transparent: an opaque region nothing joins to another one is
  * a sprite.
  *
- * **It runs on the finished result, in drawn pixels, rather than on the keyed source.** The keyed
+ * **It runs on the finished result, in drawn pixels, rather than on the keyed source — which is a
+ * departure from the plan this was built to, and is recorded here as one.** The keyed
  * source is where the mask *comes* from, and segmenting there would cost `grid²` times the work to
  * produce bounds that then have to be divided by the mesh before anyone could act on them — which
  * rounds, because a sprite's source bounds need not land on cell edges. The result's alpha is that
@@ -34,36 +35,24 @@ import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT } from './imageData.ts';
  * which is what puts a floating sword back with the hand holding it.
  */
 export function spriteSegments(image: ImageData, gap: number): SpriteSegmentation {
-  const { width, height, data } = image;
+  const { data } = image;
 
-  // The whole pass, skipped where there is nothing for it to separate anything *by*. Keying is off
-  // by default on this tab, so a fully opaque result is the ordinary state rather than an edge —
-  // and labelling one would allocate a full-size `Int32Array`, walk it twice, and arrive at the
-  // single box this line states outright. One sprite filling the sheet is also the honest answer:
-  // nothing here has been told where a sprite ends, so it cannot invent a boundary.
-  if (!hasTransparency(data)) {
-    return {
-      kind: 'SEGMENTED',
-      boxes: [{ left: 0, top: 0, width, height, pixels: width * height }],
-      specks: 0,
-    };
-  }
+  // The whole pass, skipped where there is nothing for it to separate anything *by* — and answered
+  // with `SOLID` rather than with one box covering the sheet, because a box here would be a claim
+  // this pass has no grounds for. Nothing has told it where a sprite ends, so the honest answer is
+  // that it found none, not that it found one the size of the raster. Skipping also matters: keying
+  // opens off on this tab, so a fully opaque result is the ordinary state rather than an edge, and
+  // labelling one would allocate a full-size `Int32Array` and walk it twice to reach the same
+  // conclusion this line reaches from the alpha channel alone.
+  if (!hasTransparency(data)) return { kind: 'SOLID' };
 
-  const bounds = labelledBounds(image);
-  // A speck is fringe the keying left behind, not a sprite. Counted rather than dropped silently,
-  // because how much of it a sheet carries is a fact about the *keying* — the same question
-  // `keyedShare` answers from the other side — and a reader watching the speck count fall as the
-  // tolerance rises is watching the halo go.
-  const sprites = bounds.filter((box) => box.pixels >= SMALLEST_SPRITE_PIXELS);
-  const specks = bounds.length - sprites.length;
+  const { sprites, pieces, specks } = labelledBounds(image);
 
   // Past the ceiling the merge below is unaffordable, and the answer would mean nothing anyway: a
   // sheet that breaks into thousands of pieces has not been keyed into sprites, and a count of them
   // presented as a sprite count is a number a reader would act on. Saying it scattered is
   // information about the keying; saying "3,412 sprites" is not.
-  if (sprites.length > SCATTERED_SPRITE_CEILING) {
-    return { kind: 'SCATTERED', pieces: sprites.length, specks };
-  }
+  if (pieces > SCATTERED_SPRITE_CEILING) return { kind: 'SCATTERED', pieces, specks };
 
   return { kind: 'SEGMENTED', boxes: mergeNearby(sprites, gap), specks };
 }
@@ -118,6 +107,16 @@ interface Bounds {
   pixels: number;
 }
 
+/** What the labelling found: the regions worth calling sprites, and the count of those that were not. */
+interface Labelled {
+  /** One per region clearing {@link SMALLEST_SPRITE_PIXELS}, in scan order. */
+  readonly sprites: Bounds[];
+  /** How many of those there are — the same as `sprites.length`, except past the ceiling. */
+  readonly pieces: number;
+  /** Regions too small to be a sprite. */
+  readonly specks: number;
+}
+
 /**
  * Two-pass connected-component labelling: every opaque region's bounds, and how many pixels it holds.
  *
@@ -130,10 +129,19 @@ interface Bounds {
  * a region snakes across the sheet — a U-shape a thousand rows tall is the case that makes a naive
  * chain quadratic, and a sprite outline is a U-shape.
  *
+ * **The bounds accumulate into flat arrays indexed by label, and only the survivors are ever
+ * materialised as objects.** That is what keeps the pathological sheet affordable, and it is the
+ * reason the speck floor and the scatter ceiling are both applied *here* rather than by the caller.
+ * A keyed sheet whose tolerance left salt-and-pepper fringe can hold millions of regions; one
+ * `{left, top, right, bottom, pixels}` on the heap for each of them is the difference between a
+ * large transient allocation and running the browser out of memory. So a speck never becomes an
+ * object at all, and past the ceiling nothing is materialised — the counts are enough to say the
+ * sheet scattered, which is the only answer the caller can give from there.
+ *
  * The regions come back in scan order — topmost first, and leftmost among those — which is what
  * makes everything downstream of it deterministic without sorting anything twice.
  */
-function labelledBounds(image: ImageData): Bounds[] {
+function labelledBounds(image: ImageData): Labelled {
   const { width, height, data } = image;
   const labels = new Int32Array(width * height);
 
@@ -210,27 +218,68 @@ function labelledBounds(image: ImageData): Bounds[] {
     }
   }
 
-  const found = new Map<number, Bounds>();
+  // One slot per provisional label, indexed by the label's own number — so a root addresses its own
+  // bounds directly and nothing has to be hashed. `pixels` doubles as the occupancy flag: a label
+  // that is not a root, or that was never claimed, still reads zero after the walk.
+  const left = new Int32Array(next);
+  const top = new Int32Array(next);
+  const right = new Int32Array(next);
+  const bottom = new Int32Array(next);
+  const pixels = new Int32Array(next);
+  // Scan order, recovered from the walk rather than from the label numbers: union by size means a
+  // region's root may be a label claimed later than the one its first pixel took, so the roots
+  // cannot simply be read in ascending order.
+  const roots: number[] = [];
+
   for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < width; x += 1) {
       const label = labels[y * width + x] ?? 0;
       if (label === 0) continue;
 
       const root = find(label);
-      const box = found.get(root);
-      if (box === undefined) {
-        found.set(root, { left: x, top: y, right: x + 1, bottom: y + 1, pixels: 1 });
+      if ((pixels[root] ?? 0) === 0) {
+        roots.push(root);
+        left[root] = x;
+        top[root] = y;
+        right[root] = x + 1;
+        bottom[root] = y + 1;
+        pixels[root] = 1;
         continue;
       }
-      // No `top` case: the walk is row by row, so a region's first pixel is always its topmost.
-      if (x < box.left) box.left = x;
-      if (x >= box.right) box.right = x + 1;
-      if (y >= box.bottom) box.bottom = y + 1;
-      box.pixels += 1;
+      // No `top` case: no union happens in this pass, so the forest is frozen and every pixel of a
+      // region resolves to one root — which a row-major walk therefore meets first at the region's
+      // topmost row.
+      if (x < (left[root] ?? 0)) left[root] = x;
+      if (x >= (right[root] ?? 0)) right[root] = x + 1;
+      if (y >= (bottom[root] ?? 0)) bottom[root] = y + 1;
+      pixels[root] = (pixels[root] ?? 0) + 1;
     }
   }
 
-  return [...found.values()];
+  // Counted before anything is built, so the two states that must not allocate — a sheet of fringe,
+  // and a sheet past the ceiling — cost one walk of a number array rather than a heap object each.
+  // A speck is fringe the keying left behind, not a sprite, and how much of it a sheet carries is a
+  // fact about the *keying*: the same question `keyedShare` answers from the other side, and a
+  // reader watching this fall as the tolerance rises is watching the halo go.
+  const sprites: Bounds[] = [];
+  let pieces = 0;
+  for (const root of roots) {
+    if ((pixels[root] ?? 0) >= SMALLEST_SPRITE_PIXELS) pieces += 1;
+  }
+  if (pieces <= SCATTERED_SPRITE_CEILING) {
+    for (const root of roots) {
+      if ((pixels[root] ?? 0) < SMALLEST_SPRITE_PIXELS) continue;
+      sprites.push({
+        left: left[root] ?? 0,
+        top: top[root] ?? 0,
+        right: right[root] ?? 0,
+        bottom: bottom[root] ?? 0,
+        pixels: pixels[root] ?? 0,
+      });
+    }
+  }
+
+  return { sprites, pieces, specks: roots.length - pieces };
 }
 
 /**

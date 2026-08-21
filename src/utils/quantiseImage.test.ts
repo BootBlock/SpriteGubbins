@@ -249,9 +249,10 @@ describe('quantiseImage', () => {
     });
   });
 
-  it('reads an unkeyed result as one sprite covering it, whatever is drawn on it', () => {
+  it('reads a result with nothing transparent on it as SOLID, whatever is drawn on it', () => {
     // Nothing has been keyed, so there is no transparency to separate anything by — and the honest
-    // answer is one box filling the sheet rather than a count nobody could act on.
+    // answer is that no sprite was found, rather than one box filling the sheet that the atlas
+    // calculator would then compare against a component count.
     const result = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: null,
@@ -268,19 +269,7 @@ describe('quantiseImage', () => {
       reduction: null,
     });
 
-    expect(result.sprites).toEqual({
-      kind: 'SEGMENTED',
-      boxes: [
-        {
-          left: 0,
-          top: 0,
-          width: result.image.width,
-          height: result.image.height,
-          pixels: result.image.width * result.image.height,
-        },
-      ],
-      specks: 0,
-    });
+    expect(result.sprites).toEqual({ kind: 'SOLID' });
   });
 
   it('reports the share of the sheet the key removed', () => {

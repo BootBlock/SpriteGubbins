@@ -17,8 +17,8 @@ import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { KeyingControls } from '../quantise/KeyingControls.tsx';
 import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
-import { SpriteControls } from '../quantise/SpriteControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
+import { SpriteControls } from '../quantise/SpriteControls.tsx';
 
 /**
  * Turning a returned sheet into genuine pixel art, after the fact.
@@ -220,12 +220,7 @@ export function QuantiseTab() {
             superseded={colorPlan.superseded}
             busy={busy}
           />
-          <SpriteControls
-            sprites={quantised?.result.sprites ?? null}
-            keyed={keying !== null}
-            target={target}
-            busy={busy}
-          />
+          <SpriteControls sprites={quantised?.result.sprites ?? null} target={target} busy={busy} />
           <ImageComparison
             sourceName={source.name}
             source={source.image}

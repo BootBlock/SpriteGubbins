@@ -1,6 +1,12 @@
 import type { ReactNode } from 'react';
 import { QUANTISE_RESULT_PLACEHOLDER } from '../../constants/quantiser.ts';
-import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
+import type {
+  PixelGrid,
+  PreviewMode,
+  Quantised,
+  SheetScale,
+  SpriteSegmentation,
+} from '../../types/quantiser.ts';
 
 /**
  * What each frame says about itself, and what an empty one says instead.
@@ -64,12 +70,7 @@ export function secondCaption(mode: PreviewMode, quantised: Quantised | null, bu
     return `Difference · mean ${mean.toFixed(2)} · peak ${peak.toFixed(1)}${trailing}`;
   }
   if (mode === 'SPRITES') {
-    const { sprites } = quantised.result;
-    const found =
-      sprites.kind === 'SCATTERED'
-        ? `${String(sprites.pieces)} pieces, none read as a sprite`
-        : `${String(sprites.boxes.length)} ${sprites.boxes.length === 1 ? 'sprite' : 'sprites'}`;
-    return `Sprites · ${found}${trailing}`;
+    return `Sprites · ${spritesFound(quantised.result.sprites)}${trailing}`;
   }
 
   const { image, colors } = quantised.result;
@@ -89,4 +90,18 @@ export function emptyReason(busy: boolean, grid: PixelGrid | null, scale: SheetS
   if (grid !== null) return QUANTISE_RESULT_PLACEHOLDER.failed;
   if (scale?.measurement === 'ESTIMATED') return QUANTISE_RESULT_PLACEHOLDER.estimated;
   return QUANTISE_RESULT_PLACEHOLDER.none;
+}
+
+/**
+ * What the sprite mode found, as the clause its caption carries.
+ *
+ * Three outcomes rather than a count with two exceptions, because two of them are not counts of
+ * sprites at all — see `SpriteSegmentation`. A solid sheet reports what it is rather than "0
+ * sprites", which would read as a failed reading of a sheet that has simply not been keyed yet.
+ */
+function spritesFound(sprites: SpriteSegmentation): string {
+  if (sprites.kind === 'SOLID') return 'nothing transparent to separate';
+  if (sprites.kind === 'SCATTERED') return `${String(sprites.pieces)} pieces, none read as a sprite`;
+  const { length } = sprites.boxes;
+  return `${String(length)} ${length === 1 ? 'sprite' : 'sprites'}`;
 }

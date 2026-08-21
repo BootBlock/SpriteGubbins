@@ -211,8 +211,11 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // the cleanups, which is where a speck that would otherwise have been counted as a sprite goes.
     // It runs unconditionally for the reason the difference map does: a reading fetched separately
     // could describe an older result than the one beside it, and this one is compared against a
-    // dial that has just moved. Its own cost is a guarded early-out on any sheet with no
-    // transparency in it, which is every sheet the reader has not keyed — see `spriteSegments`.
+    // dial that has just moved. Its cost is one linear pass, and it is skipped outright wherever the
+    // result carries no transparency at all — which is the ordinary state on this tab, since keying
+    // opens off, but is a property of the *result* rather than of the keying setting: a sheet that
+    // arrived carrying its own alpha is segmented whether the key pass ran or not. See
+    // `spriteSegments` for what it does with the sheets that are not skipped.
     sprites: spriteSegments(output, settings.spriteGap),
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),

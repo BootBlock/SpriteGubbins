@@ -1,6 +1,7 @@
 import { MEASURED_SPRITE_GUIDANCE } from '../../constants/atlas.ts';
 import { useQuantiseAnswerStore } from '../../stores/useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import type { SpriteSegmentation } from '../../types/quantiser.ts';
 import { spriteFitFor } from '../../utils/atlasFit.ts';
 import { widestSprite } from '../../utils/spriteSegments.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -41,10 +42,12 @@ export function AtlasMeasuredSprites({ componentCount, usableBounds }: AtlasMeas
   if (source === null || succeeded === null) return null;
 
   const { sprites } = succeeded.result;
-  // A scattered sheet has no count worth reading against a component count, and `spriteSegments`
-  // says why. Reporting it here anyway is the point rather than an omission: a reader whose atlas
-  // plan disagrees with their sheet needs to know that the sheet has not been keyed, not to be shown
-  // a blank space where a comparison should be.
+  // **Three states, and the two that are not a count both have to say so in their own words.** A
+  // sheet that is still solid has no boundary between one component and the next, and a scattered
+  // one has thousands — neither is a figure to read against a component count, and reporting either
+  // as "1 sprite against 12 asked for" would be this panel inventing a discrepancy out of a sheet
+  // nobody has keyed yet. Reporting them at all is the point rather than an omission: a reader whose
+  // plan disagrees with their sheet needs to be told which of the three they are looking at.
   const boxes = sprites.kind === 'SEGMENTED' ? sprites.boxes : null;
   const largest = boxes === null ? null : widestSprite(boxes);
   const fit =
@@ -54,7 +57,9 @@ export function AtlasMeasuredSprites({ componentCount, usableBounds }: AtlasMeas
     <div className="space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="font-mono text-xs text-ink-faint">Measured in {source.name}</span>
-        {boxes === null ? (
+        {sprites.kind === 'SOLID' ? (
+          <Badge tone="attention">⚠ Nothing transparent to separate</Badge>
+        ) : boxes === null ? (
           <Badge tone="attention">⚠ Did not separate into sprites</Badge>
         ) : boxes.length === componentCount ? (
           <Badge tone="valid">
@@ -76,9 +81,14 @@ export function AtlasMeasuredSprites({ componentCount, usableBounds }: AtlasMeas
         </p>
       )}
 
-      <p className="text-xs leading-relaxed text-ink-muted">
-        {boxes === null ? MEASURED_SPRITE_GUIDANCE.scattered : MEASURED_SPRITE_GUIDANCE.measured}
-      </p>
+      <p className="text-xs leading-relaxed text-ink-muted">{guidanceFor(sprites.kind)}</p>
     </div>
   );
+}
+
+/** Which paragraph the state calls for — see `MEASURED_SPRITE_GUIDANCE`, which holds all three. */
+function guidanceFor(kind: SpriteSegmentation['kind']): string {
+  if (kind === 'SOLID') return MEASURED_SPRITE_GUIDANCE.solid;
+  if (kind === 'SCATTERED') return MEASURED_SPRITE_GUIDANCE.scattered;
+  return MEASURED_SPRITE_GUIDANCE.measured;
 }
