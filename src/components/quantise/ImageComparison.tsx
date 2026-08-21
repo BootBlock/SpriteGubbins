@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
+import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
+import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { heatmapImage } from '../../utils/heatmapImage.ts';
 import { outlineSprites } from '../../utils/spriteOutline.ts';
 import type { ComparisonPaneProps } from './ComparisonPane.tsx';
@@ -84,6 +86,7 @@ export function ImageComparison({
   // Beside `zoom` rather than in the store, for the same reason `zoom` is: every one of these is a
   // preference about how this panel presents a result, not part of what the result is.
   const [downloadScale, setDownloadScale] = useState<number>(PREVIEW_ZOOMS[0]);
+  const [downloadFormat, setDownloadFormat] = useState<SheetFormat>(SHEET_FORMATS[0]);
   const [mode, setMode] = useState<PreviewMode>('SIDE_BY_SIDE');
   const [differenceScale, setDifferenceScale] = useState<number>(DEFAULT_DIFFERENCE_SCALE);
   const [wipeAt, setWipeAt] = useState(DEFAULT_WIPE);
@@ -214,8 +217,11 @@ export function ImageComparison({
         onDifferenceScaleChange={setDifferenceScale}
         downloadScale={downloadScale}
         onDownloadScaleChange={setDownloadScale}
+        downloadFormat={downloadFormat}
+        onDownloadFormatChange={setDownloadFormat}
         sourceName={sourceName}
         resultImage={quantised?.result.image ?? null}
+        sprites={sprites ?? null}
       />
 
       {shown === 'WIPE' ? (

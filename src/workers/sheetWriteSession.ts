@@ -1,20 +1,20 @@
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
-import type { EncodedPng } from '../utils/encodePng.ts';
-import type { PngReply, PngRequest } from './pngWorker.ts';
+import type { WrittenSheet } from '../types/sheetFormat.ts';
+import type { SheetWriteReply, SheetWriteRequest } from './sheetWriteWorker.ts';
 
 /**
- * The near side of {@link pngWorker}: a thread per download, ended by its own answer.
+ * The near side of {@link sheetWriteWorker}: a thread per download, ended by its own answer.
  *
  * Deliberately unlike `quantiseSession.ts`, which keeps one thread and one sheet for a whole
  * session. That arrangement exists because the sheet crosses once and every settings change
  * afterwards is three small numbers — there is something worth keeping. Here there is not: what is
- * encoded is the *result*, which changes under every dial, so it would cross the boundary on each
+ * written is the *result*, which changes under every dial, so it would cross the boundary on each
  * press whatever the thread's lifetime. A thread that ends with the job needs no correlation ids, no
  * map of outstanding work, and no lifecycle to keep in step with the tab — and it releases the image
  * and the file with it.
  *
  * The magnification is a factor rather than an already-magnified image, so what crosses is the sheet
- * and not the file — see `pngWorker.ts`, which says what that is worth.
+ * and not the file — see `sheetWriteWorker.ts`, which says what that is worth.
  *
  * **Every exit that started a thread terminates it, and every call settles**, and the two go
  * together: a thread left running holds the image it was given, and a promise left unsettled leaves
@@ -23,22 +23,22 @@ import type { PngReply, PngRequest } from './pngWorker.ts';
  * answer, a refusal, a reply that will not deserialise, a thread that will not evaluate, and a
  * message that will not be sent. **Two settle without ever starting one** — a browser that will not
  * build a worker, and a press arriving while the last is still being written, which is the only exit
- * that must not clear the flag it found set. `pngSession.test.ts` walks all seven.
+ * that must not clear the flag it found set. `sheetWriteSession.test.ts` walks all seven.
  */
 
 /** Said where a press arrives while the last one is still being written; the button also refuses. */
 const ALREADY_WRITING = 'A file is already being written';
 
-export function encodeOffThread(image: ImageData, scale: number): Promise<EncodedPng> {
+export function writeSheetOffThread(request: SheetWriteRequest): Promise<WrittenSheet> {
   const writes = useSheetWriteStore.getState();
   if (writes.writing) return Promise.reject(new Error(ALREADY_WRITING));
 
   return new Promise((resolve, reject) => {
     let worker: Worker;
     try {
-      worker = new Worker(new URL('./pngWorker.ts', import.meta.url), { type: 'module' });
+      worker = new Worker(new URL('./sheetWriteWorker.ts', import.meta.url), { type: 'module' });
     } catch {
-      // A browser without module workers. Nothing is retried on the main thread: encoding there is
+      // A browser without module workers. Nothing is retried on the main thread: writing there is
       // the freeze this file exists to prevent, and a reader is better told than frozen.
       reject(new Error('This browser would not start the thread the file is written on'));
       return;
@@ -51,9 +51,9 @@ export function encodeOffThread(image: ImageData, scale: number): Promise<Encode
       settle();
     };
 
-    worker.addEventListener('message', (event: MessageEvent<PngReply>) => {
+    worker.addEventListener('message', (event: MessageEvent<SheetWriteReply>) => {
       const reply = event.data;
-      finish(() => (reply.kind === 'encoded' ? resolve(reply.file) : reject(new Error(reply.reason))));
+      finish(() => (reply.kind === 'written' ? resolve(reply.file) : reject(new Error(reply.reason))));
     });
     // Fires where the module will not evaluate at all, which no reply can report.
     worker.addEventListener('error', () => {
@@ -70,7 +70,7 @@ export function encodeOffThread(image: ImageData, scale: number): Promise<Encode
     });
 
     try {
-      worker.postMessage({ image, scale } satisfies PngRequest);
+      worker.postMessage(request);
     } catch (error: unknown) {
       // A clone the browser would not make — the realistic cause is room, since the sheet can be 67
       // megabytes. Inside the `try` because a throw here reaches no listener, so the thread would be

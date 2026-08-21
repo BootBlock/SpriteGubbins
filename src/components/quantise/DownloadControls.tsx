@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 import { MAX_IMAGE_PIXELS, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
+import { SHEET_FORMAT_FILES } from '../../constants/sheetFormats.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
+import type { SpriteSegmentation } from '../../types/quantiser.ts';
+import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
+import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
@@ -10,24 +14,44 @@ interface DownloadControlsProps {
   /** How many file pixels one drawn pixel is written as when the sheet is saved. */
   readonly downloadScale: number;
   readonly onDownloadScaleChange: (scale: number) => void;
+  /** Which file the sheet leaves as. */
+  readonly downloadFormat: SheetFormat;
+  readonly onDownloadFormatChange: (format: SheetFormat) => void;
   /** The dropped file's name — what the download is named after. */
   readonly sourceName: string;
   /** `null` until a grid is settled, which is the only state the download can be refused in. */
   readonly resultImage: ImageData | null;
+  /**
+   * What the sheet broke into, which is what an Aseprite document's frames are cut along.
+   *
+   * `null` alongside a missing result, and carrying no boxes wherever the sheet held nothing
+   * separable — see `SpriteSegmentation`, whose `SOLID` and `SCATTERED` are deliberately boxless.
+   * Both reach the writer as an empty list, which is the single-frame case rather than a refusal.
+   */
+  readonly sprites: SpriteSegmentation | null;
 }
 
 /**
- * The way the sheet leaves the app: at what magnification, and the button that writes it.
+ * The way the sheet leaves the app: at what magnification, as which file, and the button that
+ * writes it.
  *
  * Split from `ComparisonToolbar`, which is otherwise about how the result is *looked at* — the
  * layout, the zoom, the heatmap's scale. This half writes a file, holds a press that has a duration,
  * and answers what that duration does to the keyboard, none of which the other half has any part in.
+ *
+ * **The format is a setting and the download is an action**, which is why the two carry their
+ * guidance differently: the pills sit under a label with an ⓘ beside it, as every value-holding
+ * control in the app does, and the button hangs its own card off itself through `ControlTooltip`.
+ * The button's card changes with the format, because what it would do is a different thing in each.
  */
 export function DownloadControls({
   downloadScale,
   onDownloadScaleChange,
+  downloadFormat,
+  onDownloadFormatChange,
   sourceName,
   resultImage,
+  sprites,
 }: DownloadControlsProps) {
   const download = useImageDownload();
   const button = useRef<HTMLButtonElement>(null);
@@ -87,7 +111,24 @@ export function DownloadControls({
         />
       </div>
 
-      <ControlTooltip hint="Download PNG" text={QUANTISE_ACTION_TOOLTIPS.downloadPNG}>
+      <div className="flex items-center gap-1.5">
+        <span className="mr-1 flex items-center gap-1.5">
+          <span className="text-xs font-semibold text-ink-muted">Save as</span>
+          <Tooltip text={QUANTISE_TOOLTIPS.downloadFormat} hint="Save as" />
+        </span>
+        <SegmentedChoice
+          label="Download format"
+          values={SHEET_FORMATS}
+          value={downloadFormat}
+          format={(format) => SHEET_FORMAT_FILES[format].label}
+          onChange={onDownloadFormatChange}
+        />
+      </div>
+
+      <ControlTooltip
+        hint={`Download ${SHEET_FORMAT_FILES[downloadFormat].label}`}
+        text={DOWNLOAD_GUIDANCE[downloadFormat]}
+      >
         <button
           ref={button}
           type="button"
@@ -98,14 +139,34 @@ export function DownloadControls({
             heldFocus.current = document.activeElement === button.current;
             // The 1:1 sheet and the factor, never an already-magnified image: the result in memory
             // stays the sheet the previews and the store share, and the magnification happens on the
-            // encoder's own thread rather than in this handler.
-            download.save(sourceName, resultImage, effectiveScale);
+            // writer's own thread rather than in this handler. The boxes cross at 1:1 beside it and
+            // are scaled there, so the two cannot end up on different coordinates.
+            download.save({
+              sourceName,
+              image: resultImage,
+              scale: effectiveScale,
+              format: downloadFormat,
+              boxes: sprites?.kind === 'SEGMENTED' ? sprites.boxes : [],
+            });
           }}
           className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
         >
-          <span aria-hidden="true">⬇</span> {download.saving ? 'Writing…' : 'Download PNG'}
+          <span aria-hidden="true">⬇</span>{' '}
+          {download.saving ? 'Writing…' : `Download ${SHEET_FORMAT_FILES[downloadFormat].label}`}
         </button>
       </ControlTooltip>
     </div>
   );
 }
+
+/**
+ * The card behind the button, per format.
+ *
+ * A record keyed by the union rather than a ternary, so a third format fails to compile until it has
+ * been given the paragraph a reader needs — which is the property the app's other union-keyed
+ * records exist for.
+ */
+const DOWNLOAD_GUIDANCE: Readonly<Record<SheetFormat, string>> = {
+  PNG: QUANTISE_ACTION_TOOLTIPS.downloadPNG,
+  ASEPRITE: QUANTISE_ACTION_TOOLTIPS.downloadAseprite,
+};

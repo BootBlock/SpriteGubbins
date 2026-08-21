@@ -3,7 +3,9 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { FakePngWorker } from '../../test/fakePngWorker.ts';
+import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
+import type { SpriteSegmentation } from '../../types/quantiser.ts';
+import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { createImage } from '../../utils/imageData.ts';
 import { encodePng } from '../../utils/encodePng.ts';
 import { DownloadControls } from './DownloadControls.tsx';
@@ -23,16 +25,16 @@ let release: (() => void) | null = null;
 beforeEach(() => {
   useUIStore.setState({ toastMessage: null });
   useSheetWriteStore.setState({ writing: false });
-  FakePngWorker.reset();
-  FakePngWorker.respond = ({ image }) =>
+  FakeSheetWriteWorker.reset();
+  FakeSheetWriteWorker.respond = ({ image }) =>
     new Promise((resolve) => {
       release = () => {
         void encodePng(image).then((file) => {
-          resolve({ kind: 'encoded', file });
+          resolve({ kind: 'written', file });
         });
       };
     });
-  vi.stubGlobal('Worker', FakePngWorker);
+  vi.stubGlobal('Worker', FakeSheetWriteWorker);
   URL.createObjectURL = vi.fn(() => 'blob:sheet');
   URL.revokeObjectURL = vi.fn();
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
@@ -43,18 +45,25 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-function draw(resultImage: ImageData | null = createImage(4, 4)) {
+function draw(
+  resultImage: ImageData | null = createImage(4, 4),
+  downloadFormat: SheetFormat = 'PNG',
+  sprites: SpriteSegmentation | null = null,
+) {
   render(
     <DownloadControls
       downloadScale={1}
       onDownloadScaleChange={() => undefined}
+      downloadFormat={downloadFormat}
+      onDownloadFormatChange={() => undefined}
       sourceName="armour.png"
       resultImage={resultImage}
+      sprites={sprites}
     />,
   );
 }
 
-const downloadButton = () => screen.getByRole('button', { name: /download png|writing/i });
+const downloadButton = () => screen.getByRole('button', { name: /download png|download aseprite|writing/i });
 
 async function finish(): Promise<void> {
   await act(async () => {
@@ -123,6 +132,33 @@ describe('DownloadControls', () => {
 
     await finish();
     expect(elsewhere).toHaveFocus();
+  });
+
+  it('names the format it would write, and sends the sprites it would cut it into', async () => {
+    const sprites: SpriteSegmentation = {
+      kind: 'SEGMENTED',
+      boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
+      specks: 0,
+    };
+    draw(createImage(4, 4), 'ASEPRITE', sprites);
+    expect(downloadButton()).toHaveTextContent('Download Aseprite');
+
+    await userEvent.click(downloadButton());
+    // The boxes reach the writer, at 1:1 — without them the document would be one frame of the
+    // whole sheet, which is a working file that has quietly lost what the tab found on it.
+    expect(FakeSheetWriteWorker.started[0]?.posted[0]).toMatchObject({
+      format: 'ASEPRITE',
+      boxes: sprites.boxes,
+    });
+    await finish();
+  });
+
+  it('sends no boxes for a sheet nothing was separated on', async () => {
+    draw(createImage(4, 4), 'ASEPRITE', { kind: 'SOLID' });
+    await userEvent.click(downloadButton());
+
+    expect(FakeSheetWriteWorker.started[0]?.posted[0]?.boxes).toEqual([]);
+    await finish();
   });
 
   it('offers no download at all until a grid is settled', () => {

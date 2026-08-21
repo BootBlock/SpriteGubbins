@@ -16,7 +16,7 @@ import { create } from 'zustand';
  * duration to report and do not set this. Naming it for the one write that takes time is what keeps
  * a later reader from assuming it covers the others.
  *
- * One boolean rather than a queue: `pngSession` runs one encode at a time by construction, and what
+ * One boolean rather than a queue: `sheetWriteSession` runs one write at a time by construction, and what
  * the button needs to know is whether it may start another.
  */
 export interface SheetWriteState {
