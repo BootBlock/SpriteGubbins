@@ -1,4 +1,5 @@
 import type { PromptHistoryLog } from '../types/history.ts';
+import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
@@ -9,6 +10,7 @@ import {
   parseOutputConfig,
   parseSubject,
 } from './configParsers.ts';
+import { parseQuantiseTuning } from './quantiseTuningParser.ts';
 import { isRecord, parseJson, readNumber, readString } from './readers.ts';
 import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
@@ -155,5 +157,34 @@ export function parseImportedPreset(value: unknown): PresetArchetype | null {
     subject: parseSubject(value['subject'], category),
     output: parseImageConfig(value['output']),
     isCustom: true,
+  };
+}
+
+/**
+ * Parse a `quantise_presets` row.
+ *
+ * Rejected only for want of an **id or a name**, which are the two things nothing can be invented
+ * for: an id is what an update overwrites and a delete addresses, and a name is the whole of what
+ * the reader picks the preset out of a list by. Everything else is repaired — the description
+ * because a preset is allowed to have none, and the tuning field by field, so a row whose stored
+ * ink threshold is nonsense still restores the twelve dials that are not.
+ *
+ * Deliberately the same shape on both backends: the fallback stores this record verbatim, so this
+ * one parser reads a SQLite row and a localStorage entry alike and the two cannot drift in what
+ * they accept.
+ */
+export function parseQuantisePresetRow(row: unknown): QuantisePreset | null {
+  if (!isRecord(row)) return null;
+
+  const id = readString(row, 'id');
+  const name = readString(row, 'name');
+  if (id === null || name === null) return null;
+
+  const tuningJson = readString(row, 'tuning_json');
+  return {
+    id,
+    name,
+    description: readString(row, 'description') ?? '',
+    tuning: parseQuantiseTuning(tuningJson === null ? undefined : parseJson(tuningJson)),
   };
 }

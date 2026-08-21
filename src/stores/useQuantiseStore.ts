@@ -1,17 +1,6 @@
 import { create } from 'zustand';
-import {
-  DEFAULT_CLEANUP_PASSES,
-  DEFAULT_COLOR_MERGE,
-  DEFAULT_DITHER,
-  DEFAULT_FILL_CLEANUP,
-  DEFAULT_KEY_TOLERANCE,
-  DEFAULT_INK_THRESHOLD,
-  DEFAULT_LINE_STRENGTH,
-  DEFAULT_OUTLINE_EXPANSION,
-  DEFAULT_PALETTE_SNAP,
-  DEFAULT_SPRITE_GAP,
-  DEFAULT_TRIM_STRENGTH,
-} from '../constants/quantiser.ts';
+import { QUANTISE_DEFAULT_TUNING } from '../constants/quantiseTuning.ts';
+import type { QuantiseTuning } from '../types/quantisePreset.ts';
 import type {
   DitherPattern,
   ImportedImage,
@@ -41,7 +30,7 @@ import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
  * the user's, this is a transform, and keeping sheets in OPFS is a different feature with its own
  * quota questions. This survives navigation, not a reload.
  */
-export interface QuantiseState {
+export interface QuantiseState extends QuantiseTuning {
   readonly source: ImportedImage | null;
   /**
    * The scale the user asked for, or `null` to use whatever detection found.
@@ -147,46 +136,35 @@ export interface QuantiseState {
   unlockPalette(): void;
   setPaletteSnap(paletteSnap: number): void;
   setSpriteGap(spriteGap: number): void;
+  /**
+   * Put every dial where a saved preset says, in one move.
+   *
+   * One action rather than thirteen calls from the caller, and the difference is not tidiness:
+   * Zustand notifies subscribers per `set`, so thirteen would re-render the tab thirteen times and
+   * — because `useQuantiseWork` debounces on the tuning's identity — would start and abandon twelve
+   * transforms on the way to the one the reader asked for.
+   *
+   * It reaches the dials and nothing else. The sheet stays, the grid stays, and a held palette
+   * stays: see {@link QuantiseTuning} for why none of those three is a preset's to move.
+   */
+  applyTuning(tuning: QuantiseTuning): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
 
-/** What the tab opens with, and what `clear` puts back. */
-const EMPTY: Pick<
-  QuantiseState,
-  | 'source'
-  | 'gridOverride'
-  | 'keyingEnabled'
-  | 'keyTolerance'
-  | 'vote'
-  | 'outlineExpansion'
-  | 'lineStrength'
-  | 'fillCleanup'
-  | 'colorMerge'
-  | 'trimStrength'
-  | 'inkThreshold'
-  | 'cleanupPasses'
-  | 'dither'
-  | 'lockedPalette'
-  | 'paletteSnap'
-  | 'spriteGap'
-> = {
+/**
+ * What the tab opens with, and what `clear` puts back.
+ *
+ * The dials come from `QUANTISE_DEFAULT_TUNING` rather than being listed again: they are the same
+ * set a preset holds and the same set the parser falls back to, and three hand-written copies of
+ * thirteen fields is three places for one of them to be forgotten. What is written out here is only
+ * what a *tuning* is not — the sheet, the grid, and the held palette.
+ */
+const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'lockedPalette'> & QuantiseTuning = {
+  ...QUANTISE_DEFAULT_TUNING,
   source: null,
   gridOverride: null,
-  keyingEnabled: false,
-  keyTolerance: DEFAULT_KEY_TOLERANCE,
-  vote: 'DOMINANT',
-  outlineExpansion: DEFAULT_OUTLINE_EXPANSION,
-  lineStrength: DEFAULT_LINE_STRENGTH,
-  trimStrength: DEFAULT_TRIM_STRENGTH,
-  inkThreshold: DEFAULT_INK_THRESHOLD,
-  fillCleanup: DEFAULT_FILL_CLEANUP,
-  colorMerge: DEFAULT_COLOR_MERGE,
-  cleanupPasses: DEFAULT_CLEANUP_PASSES,
-  dither: DEFAULT_DITHER,
   lockedPalette: null,
-  paletteSnap: DEFAULT_PALETTE_SNAP,
-  spriteGap: DEFAULT_SPRITE_GAP,
 };
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
@@ -276,6 +254,14 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setSpriteGap: (spriteGap) => {
     set({ spriteGap });
+  },
+
+  applyTuning: (tuning) => {
+    // Spread rather than assigned as one field, because the dials are held flat: the store *is* a
+    // `QuantiseTuning` plus the three things that are not one, which is what lets every control keep
+    // its atomic selector and lets the compiler refuse a dial that has been added to the tuning and
+    // forgotten here.
+    set({ ...tuning });
   },
 
   // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is

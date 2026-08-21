@@ -1,10 +1,11 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
-import { parseHistoryRow, parseImportedPreset } from './rows.ts';
+import { parseHistoryRow, parseImportedPreset, parseQuantisePresetRow } from './rows.ts';
 import { parseJson } from './readers.ts';
 import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
@@ -137,6 +138,40 @@ export class LocalStorageBackend implements PersistenceBackend {
 
   replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
     return this.write(STORAGE_KEYS.customPresets, [...presets]);
+  }
+
+  /*
+   * The quantiser's presets are stored in the same `snake_case` row shape the SQLite table uses, as
+   * the history rows are, so `parseQuantisePresetRow` serves both backends and the two can never
+   * drift in what they accept. `updated_at` is written for the same reason it is on the other side —
+   * newest first is the order the list is shown in.
+   */
+  private static toQuantiseRow(preset: QuantisePreset): Record<string, unknown> {
+    return {
+      id: preset.id,
+      name: preset.name,
+      description: preset.description,
+      tuning_json: JSON.stringify(preset.tuning),
+      updated_at: Date.now(),
+    };
+  }
+
+  saveQuantisePreset(preset: QuantisePreset): Promise<void> {
+    const existing = this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow);
+    const next = [preset, ...existing.filter((entry) => entry.id !== preset.id)];
+    return this.write(STORAGE_KEYS.quantisePresets, next.map(LocalStorageBackend.toQuantiseRow));
+  }
+
+  listQuantisePresets(): Promise<QuantisePreset[]> {
+    return Promise.resolve(this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow));
+  }
+
+  deleteQuantisePreset(id: string): Promise<void> {
+    const existing = this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow);
+    return this.write(
+      STORAGE_KEYS.quantisePresets,
+      existing.filter((entry) => entry.id !== id).map(LocalStorageBackend.toQuantiseRow),
+    );
   }
 
   /**

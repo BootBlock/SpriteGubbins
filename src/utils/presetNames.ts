@@ -1,5 +1,3 @@
-import type { PresetArchetype } from '../types/preset.ts';
-
 /**
  * Which preset a typed name refers to, or `undefined` if it is a new one.
  *
@@ -10,12 +8,14 @@ import type { PresetArchetype } from '../types/preset.ts';
  *
  * Pure, and shared by the save and rename paths deliberately: two implementations of "is this name
  * taken?" would eventually disagree, and the first sign of that would be a duplicate the user
- * cannot tell apart.
+ * cannot tell apart. **Both libraries, too** — the studio's archetypes and the quantiser's saved
+ * dial positions are different things that are picked out of a list by name in exactly the same
+ * way, so this asks only for a name and hands back whichever kind it was given.
  */
-export function findPresetByName(
-  presets: readonly PresetArchetype[],
+export function findPresetByName<T extends { readonly name: string }>(
+  presets: readonly T[],
   name: string,
-): PresetArchetype | undefined {
+): T | undefined {
   const needle = name.trim().toLowerCase();
   if (needle === '') return undefined;
   return presets.find((preset) => preset.name.trim().toLowerCase() === needle);

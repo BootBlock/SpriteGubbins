@@ -10,7 +10,9 @@ import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
+import { QUANTISE_DEFAULT_TUNING } from '../constants/quantiseTuning.ts';
 
 /**
  * The localStorage backend is not a safety net — it is the backend the app genuinely runs on
@@ -63,6 +65,17 @@ function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype
     name: 'My Preset',
     description: 'A preset of my own.',
     isCustom: true,
+    ...overrides,
+  };
+}
+
+/** A saved set of dial positions, for the quantiser's own collection. */
+function quantisePreset(overrides: Partial<QuantisePreset> = {}): QuantisePreset {
+  return {
+    id: 'quantise-1',
+    name: 'Flat sheets',
+    description: 'Line art.',
+    tuning: QUANTISE_DEFAULT_TUNING,
     ...overrides,
   };
 }
@@ -205,6 +218,63 @@ describe('LocalStorageBackend — presets', () => {
     await backend.replacePresets([customPreset({ id: 'new', name: 'New' })]);
 
     expect((await backend.listPresets()).map((preset) => preset.id)).toEqual(['new']);
+  });
+});
+
+describe('LocalStorageBackend — quantiser presets', () => {
+  it('round-trips the dials a preset holds', async () => {
+    await backend.saveQuantisePreset(quantisePreset());
+
+    const [stored] = await backend.listQuantisePresets();
+    expect(stored?.name).toBe('Flat sheets');
+    expect(stored?.description).toBe('Line art.');
+    expect(stored?.tuning).toEqual(QUANTISE_DEFAULT_TUNING);
+  });
+
+  it('overwrites one saved under the same id', async () => {
+    await backend.saveQuantisePreset(quantisePreset({ name: 'First' }));
+    await backend.saveQuantisePreset(quantisePreset({ name: 'Second' }));
+
+    const presets = await backend.listQuantisePresets();
+    expect(presets).toHaveLength(1);
+    expect(presets[0]?.name).toBe('Second');
+  });
+
+  it('deletes one without touching the others', async () => {
+    await backend.saveQuantisePreset(quantisePreset({ id: 'a', name: 'A' }));
+    await backend.saveQuantisePreset(quantisePreset({ id: 'b', name: 'B' }));
+    await backend.deleteQuantisePreset('a');
+
+    expect((await backend.listQuantisePresets()).map((preset) => preset.id)).toEqual(['b']);
+  });
+
+  it('drops a stored entry that has no name rather than showing a nameless row', async () => {
+    // A name is the whole of what a reader picks one of these out of the list by, so a row without
+    // one is not repairable — see `parseQuantisePresetRow`.
+    storage.setItem(
+      STORAGE_KEYS.quantisePresets,
+      JSON.stringify([{ id: 'a', description: '', tuning_json: '{}', updated_at: 0 }]),
+    );
+
+    expect(await backend.listQuantisePresets()).toEqual([]);
+  });
+
+  it('repairs a dial it cannot read and keeps the rest of the preset', async () => {
+    storage.setItem(
+      STORAGE_KEYS.quantisePresets,
+      JSON.stringify([
+        {
+          id: 'a',
+          name: 'Flat sheets',
+          description: '',
+          tuning_json: JSON.stringify({ ...QUANTISE_DEFAULT_TUNING, colorMerge: 'lots' }),
+          updated_at: 0,
+        },
+      ]),
+    );
+
+    const [stored] = await backend.listQuantisePresets();
+    expect(stored?.tuning).toEqual(QUANTISE_DEFAULT_TUNING);
   });
 });
 

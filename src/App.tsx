@@ -12,6 +12,7 @@ import { QuantiseTab } from './components/tabs/QuantiseTab.tsx';
 import { SpecTab } from './components/tabs/SpecTab.tsx';
 import { StudioTab } from './components/tabs/StudioTab.tsx';
 import { usePresetStore } from './stores/usePresetStore.ts';
+import { useQuantisePresetStore } from './stores/useQuantisePresetStore.ts';
 import { useSessionStore } from './stores/useSessionStore.ts';
 import { useSettingsStore } from './stores/useSettingsStore.ts';
 import { useUIStore } from './stores/useUIStore.ts';
@@ -53,6 +54,7 @@ export function App() {
   const ambientBackdrop = useSettingsStore((state) => state.settings.ambientBackdrop);
   const fetchSettings = useSettingsStore((state) => state.fetchSettings);
   const restoreSession = useSessionStore((state) => state.restoreSession);
+  const fetchQuantisePresets = useQuantisePresetStore((state) => state.fetchQuantisePresets);
 
   // Catch the browser's install offer and hold on to it, so the app can make the offer itself at a
   // moment that makes sense rather than letting the mini-infobar interrupt.
@@ -72,6 +74,13 @@ export function App() {
   useEffect(() => {
     void fetchCustomPresets();
   }, [fetchCustomPresets]);
+
+  // …and the quantiser's, here rather than when that tab mounts: `App` swaps the whole view on
+  // navigation, so a fetch on mount would re-read the collection on every trip to the studio and
+  // back — one database round trip per navigation, for a collection that cannot have changed.
+  useEffect(() => {
+    void fetchQuantisePresets();
+  }, [fetchQuantisePresets]);
 
   // …and the interface preferences, which also decide which view this lands on. The app is on the
   // studio until this resolves — opening a database is a worker, a WebAssembly module and an OPFS

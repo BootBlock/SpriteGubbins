@@ -26,6 +26,12 @@ export const QUANTISE_ACTION_TOOLTIPS = {
   relockPalette:
     'Replaces the held palette with the colours of the sheet beside this one. Worth doing after changing the studio’s colour setting, since a palette taken under the old one is still the one being applied — and worth doing when the sheet you locked from turns out not to be the one whose colours the rest of the series should follow.',
 
+  saveQuantisePreset:
+    'Stores every dial on this tab under the name in the box, so the settings you have just found can be brought back on the next sheet without hunting for them again. The pixel scale, the sheet itself and any locked palette are left out deliberately — each describes one particular image rather than a way of reading images. Typing a name that is already in the list turns this into an update of that entry, which the button says before you press it.',
+  loadQuantisePreset:
+    'Moves every dial on this tab to the positions saved under this name. The sheet on screen stays where it is and is simply re-read at those settings, so this is a way of trying a saved recipe on the image in front of you rather than of loading anything new. Whatever the dials were set to beforehand is replaced outright, so save the current positions first if you want them back.',
+  deleteQuantisePreset:
+    'Removes this saved set of dial positions from the collection for good. It takes effect immediately and cannot be undone, so a set you may want later is worth saving under a second name before you press it. Nothing about the sheet on screen changes, and the dials stay exactly where they are.',
   candidateFromSheet:
     'Puts the scale read out of this sheet into the grid box. A measured reading is exact — the sheet’s colours genuinely change only every so many pixels — and it is already in force, so this is the way back after you have typed over it. An estimated reading is a different thing: it is inferred from the spacing the softened edges of a resampled sheet still repeat at, which is why it is offered here rather than applied for you. Judge an edge at 4× or 8× after taking it.',
 

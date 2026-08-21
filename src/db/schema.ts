@@ -18,6 +18,7 @@ export const PROMPT_HISTORY_TABLE = 'prompt_history';
 export const CUSTOM_PRESETS_TABLE = 'custom_presets';
 export const APP_SETTINGS_TABLE = 'app_settings';
 export const STUDIO_SESSION_TABLE = 'studio_session';
+export const QUANTISE_PRESETS_TABLE = 'quantise_presets';
 
 /**
  * The settings table holds exactly one row, and this is its key.
@@ -83,6 +84,14 @@ CREATE TABLE IF NOT EXISTS ${STUDIO_SESSION_TABLE} (
   output_json TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS ${QUANTISE_PRESETS_TABLE} (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  tuning_json TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
   ON ${PROMPT_HISTORY_TABLE} (created_at DESC);
 `;
@@ -130,6 +139,7 @@ export const TABLE_COLUMNS = {
   ],
   [APP_SETTINGS_TABLE]: ['id', 'settings_json'],
   [STUDIO_SESSION_TABLE]: ['id', 'category', 'subject_json', 'output_json'],
+  [QUANTISE_PRESETS_TABLE]: ['id', 'name', 'description', 'tuning_json', 'updated_at'],
 } as const satisfies Record<string, readonly string[]>;
 
 /** What the stored table's columns are read with, and what a mismatched one is dropped by. */
@@ -137,16 +147,17 @@ export const TABLE_INFO_SQL = (table: string) => `PRAGMA table_info(${table})`;
 export const DROP_TABLE_SQL = (table: string) => `DROP TABLE IF EXISTS ${table}`;
 
 /**
- * Where the localStorage fallback keeps its two collections.
+ * Where the localStorage fallback keeps each of the tables above.
  *
  * `sprite_gubbins_custom_presets` is deliberately the key the single-file application used, so a
- * user who had presets saved in the original still has them here.
+ * user who had presets saved in the original still has them here. The rest are named to match.
  */
 export const STORAGE_KEYS = {
   customPresets: 'sprite_gubbins_custom_presets',
   promptHistory: 'sprite_gubbins_prompt_history',
   appSettings: 'sprite_gubbins_app_settings',
   studioSession: 'sprite_gubbins_studio_session',
+  quantisePresets: 'sprite_gubbins_quantise_presets',
 } as const;
 
 /** Newest first — the order the history drawer lists entries in. */
@@ -214,3 +225,31 @@ export const UPSERT_SESSION_SQL = `
 INSERT OR REPLACE INTO ${STUDIO_SESSION_TABLE} (id, category, subject_json, output_json)
 VALUES (${SESSION_ROW_ID}, ?, ?, ?)
 `;
+
+/**
+ * The quantiser's saved dial positions, newest first.
+ *
+ * The same ordering the archetypes use, and the same reason: a reader who has just saved one is
+ * looking for it, and a collection that grew over months is otherwise in an order nothing on screen
+ * explains.
+ */
+export const SELECT_QUANTISE_PRESETS_SQL = `
+SELECT id, name, description, tuning_json, updated_at
+FROM ${QUANTISE_PRESETS_TABLE}
+ORDER BY updated_at DESC
+`;
+
+/**
+ * Write one, replacing whatever stood under that id.
+ *
+ * `INSERT OR REPLACE`, so saving under a name already in the library is the same statement as
+ * saving a new one — which is what lets the store decide the question by *reusing the id* rather
+ * than by asking storage whether the preset exists.
+ */
+export const INSERT_QUANTISE_PRESET_SQL = `
+INSERT OR REPLACE INTO ${QUANTISE_PRESETS_TABLE}
+  (id, name, description, tuning_json, updated_at)
+VALUES (?, ?, ?, ?, ?)
+`;
+
+export const DELETE_QUANTISE_PRESET_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE} WHERE id = ?`;

@@ -1,5 +1,6 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 
@@ -22,6 +23,9 @@ export type WorkerRequest =
   | { readonly kind: 'listPresets' }
   | { readonly kind: 'deletePreset'; readonly presetId: string }
   | { readonly kind: 'replacePresets'; readonly presets: readonly PresetArchetype[] }
+  | { readonly kind: 'saveQuantisePreset'; readonly preset: QuantisePreset }
+  | { readonly kind: 'listQuantisePresets' }
+  | { readonly kind: 'deleteQuantisePreset'; readonly presetId: string }
   | { readonly kind: 'loadSettings' }
   | { readonly kind: 'saveSettings'; readonly settings: AppSettings }
   | { readonly kind: 'loadSession' }

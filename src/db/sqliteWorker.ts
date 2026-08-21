@@ -9,13 +9,16 @@ import {
   DELETE_ALL_PRESETS_SQL,
   DELETE_HISTORY_SQL,
   DELETE_PRESET_SQL,
+  DELETE_QUANTISE_PRESET_SQL,
   DROP_TABLE_SQL,
   INSERT_HISTORY_SQL,
   INSERT_PRESET_SQL,
+  INSERT_QUANTISE_PRESET_SQL,
   OPFS_POOL_NAME,
   PROMPT_HISTORY_TABLE,
   SELECT_HISTORY_SQL,
   SELECT_PRESETS_SQL,
+  SELECT_QUANTISE_PRESETS_SQL,
   SELECT_SESSION_SQL,
   SELECT_SETTINGS_SQL,
   TABLE_COLUMNS,
@@ -139,6 +142,21 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
       }
       return undefined;
     }
+
+    case 'saveQuantisePreset': {
+      const { preset } = request;
+      database.exec(INSERT_QUANTISE_PRESET_SQL, {
+        bind: [preset.id, preset.name, preset.description, JSON.stringify(preset.tuning), Date.now()],
+      });
+      return undefined;
+    }
+
+    case 'listQuantisePresets':
+      return select(database, SELECT_QUANTISE_PRESETS_SQL);
+
+    case 'deleteQuantisePreset':
+      database.exec(DELETE_QUANTISE_PRESET_SQL, { bind: [request.presetId] });
+      return undefined;
 
     // The row itself, not a list: `db/rows.ts` on the other side turns it — or its absence — into a
     // settings object, which is where every other row shape is interpreted too.

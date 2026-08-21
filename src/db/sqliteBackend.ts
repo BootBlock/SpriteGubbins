@@ -1,9 +1,16 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import type { PersistenceBackend } from './backend.ts';
-import { parseHistoryRow, parsePresetRow, parseSessionRow, parseSettingsRow } from './rows.ts';
+import {
+  parseHistoryRow,
+  parsePresetRow,
+  parseQuantisePresetRow,
+  parseSessionRow,
+  parseSettingsRow,
+} from './rows.ts';
 import { isWorkerHandshake, isWorkerReply } from './workerProtocol.ts';
 import type { WorkerCall, WorkerRequest } from './workerProtocol.ts';
 
@@ -93,6 +100,19 @@ export class SqliteBackend implements PersistenceBackend {
 
   async replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
     await this.request({ kind: 'replacePresets', presets });
+  }
+
+  async saveQuantisePreset(preset: QuantisePreset): Promise<void> {
+    await this.request({ kind: 'saveQuantisePreset', preset });
+  }
+
+  async listQuantisePresets(): Promise<QuantisePreset[]> {
+    const rows = await this.requestRows({ kind: 'listQuantisePresets' });
+    return rows.map(parseQuantisePresetRow).filter((preset): preset is QuantisePreset => preset !== null);
+  }
+
+  async deleteQuantisePreset(id: string): Promise<void> {
+    await this.request({ kind: 'deleteQuantisePreset', presetId: id });
   }
 
   async loadSettings(): Promise<AppSettings> {

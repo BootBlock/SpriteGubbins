@@ -18,6 +18,7 @@ import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { KeyingControls } from '../quantise/KeyingControls.tsx';
 import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
+import { QuantisePresetControls } from '../quantise/QuantisePresetControls.tsx';
 import { SpriteControls } from '../quantise/SpriteControls.tsx';
 
 /**
@@ -221,6 +222,12 @@ export function QuantiseTab() {
             busy={busy}
           />
           <SpriteControls sprites={quantised?.result.sprites ?? null} target={target} busy={busy} />
+          {/* Last of the panels, and below the dials rather than above them: it is the only one
+              whose subject is the reader's own way of working rather than this sheet, so it reads as
+              a place to *put* what the controls above arrived at. Inside the sheet guard with the
+              rest — a collection of dial positions is nothing to offer someone who has not dropped
+              an image yet, and there would be no dials on screen for Save to be about. */}
+          <QuantisePresetControls />
           <ImageComparison
             sourceName={source.name}
             source={source.image}

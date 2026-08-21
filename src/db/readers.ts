@@ -21,8 +21,16 @@ export function readNumber(row: Record<string, unknown>, key: string): number | 
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
-/** Read one field, accepting it only if it is one of `allowed`. */
-export function pick<T extends string>(
+/**
+ * Read one field, accepting it only if it is one of `allowed`.
+ *
+ * Numbers as well as strings, because a setting whose control offers a **ladder** rather than a
+ * range is a membership question however its rungs are spelled: the quantiser's key tolerance
+ * offers six figures, and a stored value between two of them is one this app never wrote. Reading
+ * it with a range check would admit it and hand a slider position to a control that has no such
+ * position.
+ */
+export function pick<T extends string | number>(
   source: Record<string, unknown>,
   key: string,
   fallback: T,

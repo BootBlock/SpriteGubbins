@@ -1,5 +1,6 @@
 import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
+import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 
@@ -34,6 +35,19 @@ export interface PersistenceBackend {
   deletePreset(id: string): Promise<void>;
   /** Replace the whole custom-preset collection — what importing a preset pack does. */
   replacePresets(presets: readonly PresetArchetype[]): Promise<void>;
+
+  /**
+   * The quantiser's saved dial positions.
+   *
+   * A collection of its own rather than more of {@link savePreset}'s, because the two hold
+   * different things: an archetype describes a subject to *generate*, and one of these describes how
+   * to read a raster that came **back**. There is no `replace` beside them — a preset pack moves
+   * archetypes between installs, and the quantiser has no such transfer.
+   */
+  saveQuantisePreset(preset: QuantisePreset): Promise<void>;
+  listQuantisePresets(): Promise<QuantisePreset[]>;
+  /** Remove one. Deleting an id that is not there is a no-op, not an error. */
+  deleteQuantisePreset(id: string): Promise<void>;
 
   /**
    * The stored interface settings, or the defaults where nothing has been stored.
