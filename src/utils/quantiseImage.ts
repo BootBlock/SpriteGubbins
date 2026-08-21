@@ -29,8 +29,9 @@ import { buildPalette } from './wuQuantiser.ts';
  * function is handed the answer. The key colour arrives the same way, from the studio setting the
  * prompt already stated it in.
  *
- * The **mesh** is the opposite: it is measured here, on the very image the alignment is about to
- * walk, and it deliberately never becomes a setting. Measured once per transform, it is one
+ * The **mesh** is the opposite: it is measured here, on the keyed sheet the readings are about to
+ * walk — *before* the outline expansion moves anything, for the reason the comment beside it gives —
+ * and it deliberately never becomes a setting. Measured once per transform, it is one
  * mechanism serving all three ways a grid reaches this function — measured, clicked or typed — so
  * no two of them can disagree about where a cell begins; stored anywhere, it would be the stale
  * half of a pair the moment the user overtyped the grid beside it.
@@ -86,9 +87,16 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
 
   // The one pass that runs ahead of the vote rather than after it, because it is the only one whose
   // failure the vote cannot undo: a contour one drawn pixel wide is a minority in its own cell under
-  // every reading, and by the time a cell has been resolved the ink is already gone. `0` returns the
-  // keyed source's own bytes, so the whole pipeline is unchanged with the dial at its off position.
-  const expanded = outlineExpansion(source, settings.grid, settings.outlineExpansion);
+  // every reading, and by the time a cell has been resolved the ink is already gone.
+  //
+  // Skipped at the dial's off position rather than called and returning a copy, which is how
+  // `reduceColors` is guarded three lines down and for the same reason: the copy alone is 67MB at
+  // the ceiling this app admits, and it would be paid on every transform by every reader who never
+  // touches this control.
+  const expanded =
+    settings.outlineExpansion <= 0
+      ? source
+      : outlineExpansion(source, settings.grid, settings.outlineExpansion);
 
   // **The two averaging readings invert the pipeline's colour order, and the inversion is the
   // point.** The dominant vote selects a colour the cell already contains, so reducing first is

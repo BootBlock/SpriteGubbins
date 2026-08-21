@@ -57,9 +57,10 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * **Ported from [PixelOE](https://github.com/KohakuBlueleaf/PixelOE)** by KohakuBlueleaf, which is
  * licensed Apache-2.0 — specifically its `outline_expansion`, in both the `legacy` and `torch`
  * spellings. This is an independent TypeScript reimplementation of the published algorithm rather
- * than a translation of its source, and it departs from the reference in three ways. Each departure
- * follows from the same difference of setting: PixelOE feeds a photograph to a contrast-based
- * resampler, and this feeds a keyed sprite sheet to a vote.
+ * than a translation of its source, and it departs from the reference in five ways — the first three
+ * by argument, the last two because they were measured and the reference's choice lost. All five
+ * follow from one difference of setting: PixelOE feeds a photograph to a contrast-based resampler,
+ * and this feeds a keyed sprite sheet to a vote.
  *
  * 1. **The morphology is vector-valued, not per-channel.** OpenCV's `erode` on a colour image takes
  *    the minimum of each channel separately, so its output holds colours assembled from three
@@ -83,31 +84,19 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * 4. **The polarity has no ground term.** `outlinePolarity` records why: the reference's prior about
  *    what colour a neighbourhood is drawn on outweighs the measurement it is a prior for, and on a
  *    sprite sheet it inverts the answer.
- * 5. **There is no opening and closing afterwards.** The reference finishes with `erode`, `dilate`
- *    twice, `erode`, which clears the stray pixels left along the seam between the two regimes. It
- *    was measured here and it does not pay. Carrying it, thin-line survival falls to 39.7%, 52.5%
- *    and 53.4% at thicknesses 1, 2 and 3 against the 43.5%, 54.4% and 60.4% above — and it is
- *    dominated rather than merely traded: without it a thickness of 2 reaches 54.4% survival at
- *    2.02% false ink, where with it a thickness of 3 reaches only 53.4% at 3.10%, so the reader
- *    gives up both numbers at once. It also adds three morphological steps to a pass that otherwise
- *    takes two, which measured as two thirds again on the pass's own running time. The tab already offers a speckle cleanup of its own, after
- *    the vote, where the reader can judge it against the preview; a second one welded in here, which
- *    measurably undoes part of what this pass is for, has nothing to recommend it.
- *
- * The reference's patch size `k` is this app's **grid**, which is not a departure so much as the
- * app already knowing the number: it is the block the reduction is about to apply, and a second
- * value for it could disagree with the mesh.
- *
- * ---
- *
- * **Where it runs, and why not one step later.** After keying and before the vote — but the mesh is
- * measured on the *un-expanded* sheet, for the reason `quantiseImage` measures it on the un-reduced
- * one. A reduction can erase a boundary; this pass can **move** one, by up to its thickness and
- * asymmetrically, in whichever direction the local polarity won. A mesh measured through that shift
- * would cut against a contour the artwork does not have.
- *
- * Pure. A thickness of zero returns the input's bytes unchanged, as every dial on this tab does at
- * its off position.
+ * 5. **There is no opening and closing afterwards.** The reference finishes with `erode`, `dilate`,
+ *    `dilate`, `erode` — an opening then a closing, which clears the stray pixels left along the
+ *    seam between the two regimes, and which collapses into three passes because the two dilations
+ *    run as one at twice the radius. Measured here, it does not earn them. Carried, the pass scores
+ *    39.7% / 52.5% / 53.4% survival at 2.37% / 5.26% / 7.01% surface loss for thicknesses 1, 2 and
+ *    3, against 43.5% / 54.4% / 60.4% at 2.89% / 5.71% / 8.03% without it. **At the low end that is
+ *    close to an even trade** — interpolated to the same surface loss, dropping it is worth about a
+ *    point at a thickness of 1 and nothing at all at 2. It only clearly wins from 3 upwards, where
+ *    the same 7.01% of surface buys 57.8% survival instead of 53.4%. What settles it is the other
+ *    column: those three extra passes measured **two thirds again** on the pass's own running time,
+ *    and at the low thicknesses anyone will actually use they buy nothing. The tab already offers a
+ *    speckle cleanup after the vote, where the reader can judge it against the preview and turn it
+ *    off; one welded in here can only be paid for.
  */
 export function outlineExpansion(image: ImageData, block: number, thickness: number): ImageData {
   if (thickness <= 0 || block <= 0) {

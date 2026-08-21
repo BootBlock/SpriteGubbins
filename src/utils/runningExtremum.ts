@@ -9,10 +9,11 @@
  * depends on the window, where the naive form costs one comparison per position per window pixel.
  *
  * **Why it is here rather than a plain loop:** the outline-expansion pass morphs a sheet of up to
- * 16.8 million pixels four times over, each time in two axes, at a radius the reader sets. The
- * naive form is O(radius) per position per axis, so the cost of the whole pass would climb with a
- * dial — which is exactly the shape of thing that turns a slider into a control nobody dares move.
- * This way the radius is free.
+ * 16.8 million pixels twice over, each time in two axes, at a radius the reader sets. The naive form
+ * is O(radius) per position per axis, so the cost of the whole pass would climb with a dial — which
+ * is exactly the shape of thing that turns a slider into a control nobody dares move. This way the
+ * radius is free, which `outlineExpansion`'s own measurements confirm: the pass timed the same at a
+ * thickness of 4 as at 1.
  *
  * **The owner is the reason this is not a scalar running minimum.** The quantiser's morphology has
  * to hand back a whole *pixel* rather than a lightness, because a pixel is a colour and a colour is
@@ -45,8 +46,9 @@ export interface Line {
 /**
  * The block scans, allocated once for the longest line and reused down the whole image.
  *
- * A sheet 4096 pixels on a side is 4096 rows and 4096 columns, and allocating two arrays per line
- * would be sixteen thousand allocations per axis per morphological step. The caller makes one.
+ * A sheet 4096 pixels on a side is 4096 rows and 4096 columns, and the four arrays below allocated
+ * per line would be sixteen thousand allocations per axis per morphological step. The caller makes
+ * one set and reuses it down the whole image.
  */
 export interface ExtremumScratch {
   readonly forwardKeys: Int16Array;

@@ -46,9 +46,14 @@ export const TRANSPARENT_DILATE_KEY = -1;
  * tie" half true: a pure-white sprite pixel reads 255, and an identity of 255 would let a cleared
  * neighbour beat it on the index tie-break.
  *
- * **Cost.** Time is linear in the pixel count and flat in the radius. Memory is twelve bytes per
- * pixel of working buffers, freed on return — nineteen megabytes on a 1254² sheet, and 201 on the 4096²
- * ceiling `MAX_IMAGE_PIXELS` admits, which is the size at which the caller's own dial deserves care.
+ * **Cost.** Time is linear in the pixel count and flat in the radius — measured, the caller's pass
+ * takes the same time at a radius of 4 as at 1. Being linear in the pixels is the figure to hold on
+ * to, because it is not small: the 4096² ceiling `MAX_IMAGE_PIXELS` admits is eleven times the
+ * reference sheet, and the pass measured about twelve times as long there. Memory is twelve bytes
+ * per pixel of working buffers, freed on return — nineteen megabytes on a 1254² sheet and 201 at the
+ * ceiling. None of it hangs the page, because the whole pipeline is on a worker behind a spinner and
+ * `quantiseSession` supersedes a job nobody is waiting for; it is a reason the dial opens off, not a
+ * reason to guard it.
  *
  * Pure: it reads the keys it is handed and allocates everything else itself.
  */

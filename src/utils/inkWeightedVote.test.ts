@@ -3,7 +3,7 @@ import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { packColor } from './imageData.ts';
-import { lumaOf, lumaOfChannels } from './lineVote.ts';
+import { lumaOf } from './lineVote.ts';
 import { quantiseImage } from './quantiseImage.ts';
 import { regularMesh } from './gridMesh.ts';
 
@@ -126,12 +126,6 @@ describe('inkWeightedCells', () => {
     // And the range's floor still admits true black ink — the dial narrows, never disables.
     expect(Array.from(inkWeightedCells(cell(12), single, 2, 0, 16).data)).toEqual([61, 46, 35, 255]);
   });
-  it('reads luma by the same arithmetic as the packed form, so the two cannot drift', () => {
-    for (const colour of [BODY, INK, { r: 255, g: 255, b: 255, a: 255 }, { r: 63, g: 191, b: 12, a: 255 }]) {
-      expect(lumaOfChannels(colour.r, colour.g, colour.b)).toBe(lumaOf(packColor(colour)));
-    }
-  });
-
   it('is deterministic — the same sheet resolves to the same bytes twice', () => {
     const sheet = imageFrom(24, 24, (x, y) => ((x * 7 + y * 13) % 5 === 0 ? INK : BODY));
     const mesh = regularMesh(24, 24, 6, { x: 0, y: 0 });

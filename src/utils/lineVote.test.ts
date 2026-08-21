@@ -5,7 +5,7 @@ import { applyPalette } from './applyPalette.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh, regularMesh } from './gridMesh.ts';
 import { packColor, packedColorAt, pixelOffset } from './imageData.ts';
-import { lineAwareWinner, lumaOf } from './lineVote.ts';
+import { lineAwareWinner, lumaOf, lumaOfChannels } from './lineVote.ts';
 import { buildPalette } from './wuQuantiser.ts';
 import { quantiseImage } from './quantiseImage.ts';
 
@@ -454,5 +454,20 @@ describe('quantiseImage, line-aware', () => {
     expect(channels(quantiseImage(sheet, settings).image)).toEqual(
       channels(quantiseImage(sheet, settings).image),
     );
+  });
+  it('unpacks a packed colour to the channels packColor put in, so the two forms agree', () => {
+    // The two exported luma forms share their arithmetic by construction — `lumaOf` calls
+    // `lumaOfChannels` — so what is left to check is the half that is *not* shared: that `lumaOf`
+    // takes the packed integer apart in the same channel order `packColor` assembled it. Those are
+    // two independent shift-and-mask expressions in two files, and a red channel above 127 is
+    // exactly where a sign-handling slip in either would show.
+    for (const colour of [
+      { r: 255, g: 255, b: 255, a: 255 },
+      { r: 0, g: 0, b: 0, a: 255 },
+      { r: 200, g: 16, b: 90, a: 255 },
+      { r: 63, g: 191, b: 12, a: 0 },
+    ]) {
+      expect(lumaOf(packColor(colour))).toBe(lumaOfChannels(colour.r, colour.g, colour.b));
+    }
   });
 });

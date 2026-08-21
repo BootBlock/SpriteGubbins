@@ -5,6 +5,8 @@ import { outlineExpansion } from './outlineExpansion.ts';
 const LIGHT = { r: 240, g: 240, b: 240, a: FULLY_OPAQUE };
 const DARK = { r: 20, g: 20, b: 20, a: FULLY_OPAQUE };
 const CLEAR = { r: 0, g: 0, b: 0, a: 0 };
+/** A half-opaque edge — what an anti-aliased contour still carries after keying. */
+const SOFT = 128;
 
 /** A square of `ground` with a one-pixel vertical line of `mark` down its middle column. */
 function ruled(size: number, ground: typeof LIGHT, mark: typeof LIGHT): ImageData {
@@ -74,13 +76,24 @@ describe('outlineExpansion', () => {
     }
   });
 
-  it('leaves the silhouette exactly where the key left it', () => {
+  it('leaves the silhouette exactly where the key left it, soft edges included', () => {
     // Alpha is never morphed, so the pass cannot grow the artwork into the field the reader deleted
     // — nor erode a contour off the edge of the sprite.
+    //
+    // **The rim is deliberately half-opaque.** Keying clears what matches the key and leaves
+    // everything else alone, so a returned sheet reaches this pass still carrying its anti-aliased
+    // edges — and a fixture that is only ever 0 or 255 cannot tell "keeps its own alpha" apart from
+    // "takes the winner's". The transparency sentinels mean a cleared pixel never wins, so with
+    // binary alpha the winner is always opaque wherever the assertion looks and the test passes
+    // either way. Half-opaque pixels sitting against opaque ones is what makes the two differ.
     const image = ruled(15, LIGHT, DARK);
     for (let y = 0; y < 15; y += 1) {
       for (let x = 0; x < 15; x += 1) {
-        if (x < 4 || x > 10 || y < 4 || y > 10) writePixel(image.data, pixelOffset(15, x, y), CLEAR);
+        const offset = pixelOffset(15, x, y);
+        const outside = x < 4 || x > 10 || y < 4 || y > 10;
+        const rim = !outside && (x === 4 || x === 10 || y === 4 || y === 10);
+        if (outside) writePixel(image.data, offset, CLEAR);
+        else if (rim) image.data[offset + 3] = SOFT;
       }
     }
 
@@ -88,6 +101,10 @@ describe('outlineExpansion', () => {
     for (let offset = 3; offset < image.data.length; offset += 4) {
       expect(expanded.data[offset]).toBe(image.data[offset]);
     }
+    // And the rim really is half-opaque against opaque neighbours, or the assertion above is back to
+    // comparing 255 with 255.
+    expect(expanded.data[pixelOffset(15, 4, 7) + 3]).toBe(SOFT);
+    expect(expanded.data[pixelOffset(15, 5, 7) + 3]).toBe(FULLY_OPAQUE);
   });
 
   it('never hands a cleared pixel’s bytes to the artwork beside it', () => {
