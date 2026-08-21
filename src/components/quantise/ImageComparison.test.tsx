@@ -410,6 +410,58 @@ describe('ImageComparison’s preview modes', () => {
     expect(screen.getByText(/Onion skin · frame alignment is off/)).toBeInTheDocument();
   });
 
+  it('names the reason there is nothing to stack, and does not blame the rows for the keying', () => {
+    // Two different empties. `resultFor` segments to no boxes at all, which is a fact about the
+    // keying — the alignment panel says so, and a caption complaining about row lengths beside it
+    // would send the reader to the wrong control.
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const result = resultFor(8);
+    render(
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={8}
+        quantised={{ result: { ...result, strips: [], sprites: { kind: 'SOLID' } }, grid: 8 }}
+        busy={false}
+      />,
+    );
+    choose('Onion skin');
+
+    expect(screen.getByText(/Onion skin · no sprite to gather into rows/)).toBeInTheDocument();
+  });
+
+  it('blames the row lengths where the sheet did separate into sprites', () => {
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const result = resultFor(8);
+    render(
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={8}
+        quantised={{
+          result: {
+            ...result,
+            strips: [],
+            sprites: {
+              kind: 'SEGMENTED',
+              boxes: [{ left: 0, top: 0, width: 4, height: 4, pixels: 16 }],
+              specks: 0,
+            },
+          },
+          grid: 8,
+        }}
+        busy={false}
+      />,
+    );
+    choose('Onion skin');
+
+    expect(screen.getByText(/Onion skin · no row holds enough frames/)).toBeInTheDocument();
+  });
+
   it('stacks each strip where the result was, and counts them in the caption', () => {
     const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
     const result = resultFor(8);

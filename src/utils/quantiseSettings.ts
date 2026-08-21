@@ -14,6 +14,15 @@ import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '.
  * their identities would usually agree. `useMemo` is a performance hint the React documentation is
  * explicit about not promising to honour, and a discarded cache would make a settled result vanish
  * and be recomputed. Comparing a dozen fields costs nothing and does not depend on that promise.
+ *
+ * **A dial missing from this list is a control that silently does nothing**, and that is not a
+ * theoretical risk — it is what shipping the frame-alignment dials without adding them here actually
+ * did: the select moved, the store recorded it, the memo rebuilt, and this said the question had not
+ * changed, so no transform was ever asked for. Nothing failed; the panel simply reported the reading
+ * from before the dial was touched, for as long as the reader cared to look at it, and the whole
+ * gate was green. `quantiseSettings.test.ts` now walks `QuantiseTuning`'s own keys rather than
+ * naming them, so a dial added to that shape fails to compile until it has been given a second
+ * position to be separated by — and fails here if this list has not been given it.
  */
 export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSettings): boolean {
   return (
@@ -33,6 +42,8 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
     left.symmetryConfidence === right.symmetryConfidence &&
     left.duplicateTolerance === right.duplicateTolerance &&
     left.duplicateSnap === right.duplicateSnap &&
+    left.frameAlignment === right.frameAlignment &&
+    left.frameDriftTolerance === right.frameDriftTolerance &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );

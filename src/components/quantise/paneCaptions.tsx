@@ -77,7 +77,8 @@ export function secondCaption(mode: PreviewMode, quantised: Quantised | null, bu
     return `Sprites · ${spritesFound(quantised.result.sprites)}${trailing}`;
   }
   if (mode === 'ONION') {
-    return `Onion skin · ${stripsFound(quantised.result.strips)}${trailing}`;
+    const { strips, sprites } = quantised.result;
+    return `Onion skin · ${stripsFound(strips, sprites)}${trailing}`;
   }
 
   const { image, colors } = quantised.result;
@@ -107,15 +108,17 @@ export function emptyReason(busy: boolean, grid: PixelGrid | null, scale: SheetS
  * control, is the whole job: the frame beside it is showing the plain result, and a caption reading
  * "0 strips" would leave a reader looking for a stack that was never asked for.
  *
- * An empty array is a different statement — the pass ran and no row on the sheet holds enough frames
- * — and the panel above is where the reason for that lives, which is why this states the fact and
- * sends nobody anywhere.
+ * An empty array is a different statement, and it has **two** causes that must not be told apart by
+ * guessing: the sheet separated into sprites and none of their rows is long enough, or the sheet did
+ * not separate into sprites at all. Saying "no row holds enough frames" over a sheet that holds no
+ * sprites reads as a complaint about the layout when the answer is the keying, and it disagrees with
+ * the alignment panel, which does have the segmentation and does say so.
  */
-function stripsFound(strips: readonly SpriteStrip[] | null): string {
+function stripsFound(strips: readonly SpriteStrip[] | null, sprites: SpriteSegmentation): string {
   if (strips === null) return 'frame alignment is off';
   const { length } = strips;
-  if (length === 0) return 'no row holds enough frames';
-  return `${String(length)} ${length === 1 ? 'strip' : 'strips'} stacked`;
+  if (length > 0) return `${String(length)} ${length === 1 ? 'strip' : 'strips'} stacked`;
+  return sprites.kind === 'SEGMENTED' ? 'no row holds enough frames' : 'no sprite to gather into rows';
 }
 
 /**

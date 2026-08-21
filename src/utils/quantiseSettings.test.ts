@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { QuantiseSettings } from '../types/quantiser.ts';
+import type { QuantiseSettings, QuantiseTuning } from '../types/quantiser.ts';
 import { sameQuantiseSettings } from './quantiseSettings.ts';
 
 const MAGENTA = { r: 255, g: 0, b: 255, a: 255 };
@@ -27,6 +27,40 @@ const BASE: QuantiseSettings = {
   outlineExpansion: 0,
   colorMerge: 0,
   reduction: { kind: 'MAX_COLORS', maxColors: 32 },
+};
+
+/**
+ * A second position for every dial the pipeline is handed, as the move that reaches it.
+ *
+ * A mapped type over `keyof QuantiseTuning` has no optional members, so **a dial added to that shape
+ * fails to compile here until it has been given a move** — which is the whole point of writing it
+ * this way rather than as a list of assertions. The list is what was here before, and the two dials
+ * the frame-alignment work added were duly left off both it and the comparison itself: the select
+ * moved, the store recorded it, and the tab decided the question had not changed and never asked for
+ * a new sheet. Nothing failed. The panel simply described the reading from before the dial was
+ * touched.
+ *
+ * Functions rather than values, so each move is written where its own field's type is known and
+ * nothing has to be cast back out of a record keyed by a string.
+ */
+const MOVED: { readonly [K in keyof QuantiseTuning]: (from: QuantiseSettings) => QuantiseSettings } = {
+  vote: (from) => ({ ...from, vote: 'INK_WEIGHTED' }),
+  outlineExpansion: (from) => ({ ...from, outlineExpansion: 2 }),
+  lineStrength: (from) => ({ ...from, lineStrength: 2.5 }),
+  trimStrength: (from) => ({ ...from, trimStrength: 1 }),
+  inkThreshold: (from) => ({ ...from, inkThreshold: 80 }),
+  colorMerge: (from) => ({ ...from, colorMerge: 24 }),
+  fillCleanup: (from) => ({ ...from, fillCleanup: 32 }),
+  cleanupPasses: (from) => ({ ...from, cleanupPasses: 2 }),
+  dither: (from) => ({ ...from, dither: 'BAYER_8' }),
+  spriteGap: (from) => ({ ...from, spriteGap: 4 }),
+  symmetry: (from) => ({ ...from, symmetry: 'SNAP' }),
+  symmetryTolerance: (from) => ({ ...from, symmetryTolerance: 24 }),
+  symmetryConfidence: (from) => ({ ...from, symmetryConfidence: 75 }),
+  duplicateTolerance: (from) => ({ ...from, duplicateTolerance: 12 }),
+  duplicateSnap: (from) => ({ ...from, duplicateSnap: true }),
+  frameAlignment: (from) => ({ ...from, frameAlignment: 'SNAP' }),
+  frameDriftTolerance: (from) => ({ ...from, frameDriftTolerance: 4 }),
 };
 
 /**
@@ -64,6 +98,15 @@ describe('sameQuantiseSettings', () => {
         reduction: { kind: 'MAX_COLORS', maxColors: 32 },
       }),
     ).toBe(true);
+  });
+
+  it('separates every dial on the pipeline’s shape, by walking them rather than naming them', () => {
+    // The arm below names the fields it cares about, which is exactly how two of them came to be
+    // missing from the comparison itself. This one cannot be short: `MOVED` is a mapped type over
+    // the shape, so a dial with no move here does not compile.
+    for (const [dial, move] of Object.entries(MOVED)) {
+      expect(sameQuantiseSettings(BASE, move(BASE)), `${dial} did not separate two sheets`).toBe(false);
+    }
   });
 
   it('separates every field that changes the sheet', () => {
