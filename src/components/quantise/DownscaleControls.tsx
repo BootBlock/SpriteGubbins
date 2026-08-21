@@ -4,6 +4,7 @@ import {
   FILL_CLEANUP_RANGE,
   INK_THRESHOLD_RANGE,
   LINE_STRENGTH_RANGE,
+  OUTLINE_EXPANSION_RANGE,
   QUANTISE_TOOLTIPS,
   TRIM_STRENGTH_RANGE,
   VOTE_METHOD_CHOICES,
@@ -14,19 +15,21 @@ import { SelectField } from '../common/SelectField.tsx';
 
 /**
  * The Downscale reading and its dials: which algorithm turns each mesh cell into a pixel, and the
- * six sliders that shape the result.
+ * seven sliders that shape the result.
  *
  * A `SelectField` for the reading — every tool this tab learned from offers its samplers as a
  * small enum — and `RangeField` sliders for the dials, because each is a position on a continuous
  * range judged against the live preview rather than a choice between a handful of values. **The
  * three ink-weighted dials appear only while that reading is chosen**, the conditional the
  * studio's Palette Limit uses: the other readings do not blend, and a dial that changed nothing
- * would be a lie on screen. Everything consumes the store directly with atomic selectors; the
+ * would be a lie on screen. **Outline expansion sits above them and outside that conditional**,
+ * because it runs before the vote rather than inside one — it shapes what every reading is handed. Everything consumes the store directly with atomic selectors; the
  * choices are per-workflow rather than per-sheet, so they survive a new image and fall with
  * Clear — the store says why.
  */
 export function DownscaleControls() {
   const vote = useQuantiseStore((state) => state.vote);
+  const outlineExpansion = useQuantiseStore((state) => state.outlineExpansion);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
   const trimStrength = useQuantiseStore((state) => state.trimStrength);
   const inkThreshold = useQuantiseStore((state) => state.inkThreshold);
@@ -34,6 +37,7 @@ export function DownscaleControls() {
   const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
   const cleanupPasses = useQuantiseStore((state) => state.cleanupPasses);
   const setVote = useQuantiseStore((state) => state.setVote);
+  const setOutlineExpansion = useQuantiseStore((state) => state.setOutlineExpansion);
   const setLineStrength = useQuantiseStore((state) => state.setLineStrength);
   const setTrimStrength = useQuantiseStore((state) => state.setTrimStrength);
   const setInkThreshold = useQuantiseStore((state) => state.setInkThreshold);
@@ -54,6 +58,17 @@ export function DownscaleControls() {
           onChange={setVote}
         />
       </div>
+
+      <RangeField
+        label="Outline expansion"
+        tooltip={QUANTISE_TOOLTIPS.outlineExpansion}
+        value={outlineExpansion}
+        min={OUTLINE_EXPANSION_RANGE.min}
+        max={OUTLINE_EXPANSION_RANGE.max}
+        step={OUTLINE_EXPANSION_RANGE.step}
+        format={offOr}
+        onChange={setOutlineExpansion}
+      />
 
       {vote === 'INK_WEIGHTED' && (
         <>

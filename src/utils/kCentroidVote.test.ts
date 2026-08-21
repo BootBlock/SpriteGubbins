@@ -87,6 +87,7 @@ describe('kCentroidCells', () => {
           inkThreshold: 64,
           fillCleanup: 0,
           cleanupPasses: 1,
+          outlineExpansion: 0,
           colorMerge: 0,
           reduction: null,
         }).image,

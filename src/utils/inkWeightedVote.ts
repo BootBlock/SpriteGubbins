@@ -6,6 +6,7 @@ import {
 } from '../constants/quantiser.ts';
 import type { GridMesh } from '../types/quantiser.ts';
 import { createImage, FULLY_OPAQUE, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { lumaOfChannels } from './lineVote.ts';
 
 /**
  * One pixel per mesh cell, as the cell's body colour pulled toward the line that crosses it — the
@@ -76,9 +77,9 @@ export function inkWeightedCells(
           const g = image.data[offset + 1] ?? 0;
           const b = image.data[offset + 2] ?? 0;
           opaque += 1;
-          // The same Rec. 601 integer luma `lineVote.ts` reads from a packed colour, unpacked
-          // because this loop has the channels in hand — a test pins the two arithmetics equal.
-          const luma = (54 * r + 183 * g + 19 * b) >> 8;
+          // The same Rec. 601 integer luma `lineVote.ts` reads from a packed colour, in the form
+          // that takes the channels this loop already has in hand rather than packing them first.
+          const luma = lumaOfChannels(r, g, b);
           if (luma < inkCeiling) {
             inkCount += 1;
             inkLuma += luma;

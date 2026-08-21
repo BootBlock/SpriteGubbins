@@ -10,6 +10,7 @@ import { countColors } from './imageData.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
 import { keyBackground } from './keyBackground.ts';
+import { outlineExpansion } from './outlineExpansion.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
@@ -17,8 +18,10 @@ import { buildPalette } from './wuQuantiser.ts';
  * reduction on whichever side of the vote the chosen reading demands.
  *
  * ```
- * DOMINANT:                 ImageData → keyBackground → reduceColors → boundaryMesh → alignToGrid → downscaleNearest
- * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → boundaryMesh → cells resolved directly → reduceColors
+ * DOMINANT:                 ImageData → keyBackground → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
+ * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → outlineExpansion → cells resolved directly → reduceColors
+ *
+ * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
  *
  * Grid **detection** is not part of it. The grid is a setting because the user can overrule what
@@ -73,7 +76,19 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
 
   // Measured on the un-reduced image: the reduction can merge two adjacent regions into one colour
   // and erase the boundary between them, and a boundary the mesh cannot see is a cut it cannot snap.
+  //
+  // **And on the un-expanded one, for the mirror of that reason.** The reduction can *erase* a
+  // boundary; the outline expansion can **move** one, by up to its thickness and asymmetrically, in
+  // whichever direction the local polarity won. A mesh measured through that shift would place its
+  // cuts against a contour the artwork does not have — so the mesh reads the sheet as it arrived
+  // from the key, and every reading below walks that mesh over the expanded copy.
   const mesh = boundaryMesh(source, settings.grid);
+
+  // The one pass that runs ahead of the vote rather than after it, because it is the only one whose
+  // failure the vote cannot undo: a contour one drawn pixel wide is a minority in its own cell under
+  // every reading, and by the time a cell has been resolved the ink is already gone. `0` returns the
+  // keyed source's own bytes, so the whole pipeline is unchanged with the dial at its off position.
+  const expanded = outlineExpansion(source, settings.grid, settings.outlineExpansion);
 
   // **The two averaging readings invert the pipeline's colour order, and the inversion is the
   // point.** The dominant vote selects a colour the cell already contains, so reducing first is
@@ -90,7 +105,7 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
             // enforce, and a high cap is still a cap. Line-aware only where a reduction ran: the
             // rescue reads shares out of the tally, and a share means nothing in a raw-colour
             // vote where every pixel is its own bucket — see `alignToGrid`.
-            settings.reduction === null ? source : reduceColors(source, settings.reduction),
+            settings.reduction === null ? expanded : reduceColors(expanded, settings.reduction),
             mesh,
             settings.reduction !== null,
           ),
@@ -99,13 +114,13 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
       : reduceAfter(
           settings.vote === 'INK_WEIGHTED'
             ? inkWeightedCells(
-                source,
+                expanded,
                 mesh,
                 settings.lineStrength,
                 settings.trimStrength,
                 settings.inkThreshold,
               )
-            : kCentroidCells(source, mesh),
+            : kCentroidCells(expanded, mesh),
           settings.reduction,
         );
 
@@ -125,6 +140,11 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // Measured here rather than asked for later, and against `source` rather than `image`: the
     // reduction this reports on is the one that ran, and the image it ran on is the keyed one every
     // pass above worked from. Keying's own cost is `keyedShare`, two lines down.
+    //
+    // **`source`, not `expanded`.** The outline expansion is part of what the reduction cost, not a
+    // new baseline to measure the rest of it against — a reader turning that dial up is asking what
+    // it did to their sheet, and a heatmap that had already accepted the thickened contour as the
+    // truth would answer by going darker the harder the pass worked.
     difference: differenceMap(source, output, mesh),
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),

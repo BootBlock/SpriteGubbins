@@ -3,7 +3,7 @@ import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { packColor } from './imageData.ts';
-import { lumaOf } from './lineVote.ts';
+import { lumaOf, lumaOfChannels } from './lineVote.ts';
 import { quantiseImage } from './quantiseImage.ts';
 import { regularMesh } from './gridMesh.ts';
 
@@ -128,7 +128,7 @@ describe('inkWeightedCells', () => {
   });
   it('reads luma by the same arithmetic as the packed form, so the two cannot drift', () => {
     for (const colour of [BODY, INK, { r: 255, g: 255, b: 255, a: 255 }, { r: 63, g: 191, b: 12, a: 255 }]) {
-      expect((54 * colour.r + 183 * colour.g + 19 * colour.b) >> 8).toBe(lumaOf(packColor(colour)));
+      expect(lumaOfChannels(colour.r, colour.g, colour.b)).toBe(lumaOf(packColor(colour)));
     }
   });
 
@@ -158,6 +158,7 @@ describe('quantiseImage, ink-weighted', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -170,6 +171,7 @@ describe('quantiseImage, ink-weighted', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -187,6 +189,7 @@ describe('quantiseImage, ink-weighted', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: 3 },
     });

@@ -99,6 +99,7 @@ describe('useQuantiseStore', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
     });
   });

@@ -13,12 +13,13 @@ import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '.
  * **By value, not by reference**, although both sides are built by one `useMemo` in one hook and
  * their identities would usually agree. `useMemo` is a performance hint the React documentation is
  * explicit about not promising to honour, and a discarded cache would make a settled result vanish
- * and be recomputed. Comparing three fields costs nothing and does not depend on that promise.
+ * and be recomputed. Comparing a dozen fields costs nothing and does not depend on that promise.
  */
 export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSettings): boolean {
   return (
     left.grid === right.grid &&
     left.vote === right.vote &&
+    left.outlineExpansion === right.outlineExpansion &&
     left.lineStrength === right.lineStrength &&
     left.trimStrength === right.trimStrength &&
     left.inkThreshold === right.inkThreshold &&

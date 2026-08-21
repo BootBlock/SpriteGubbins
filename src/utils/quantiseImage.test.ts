@@ -79,6 +79,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -98,6 +99,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
@@ -119,6 +121,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: colorPlanFor('FREE', 'UNRESTRICTED').reduction,
     });
@@ -142,6 +145,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
@@ -165,6 +169,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -190,6 +195,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -213,6 +219,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -235,6 +242,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
     });
@@ -275,6 +283,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -305,6 +314,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: gameBoy,
     });
@@ -328,6 +338,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: megaDrive,
     });
@@ -372,6 +383,7 @@ describe('quantiseImage', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        outlineExpansion: 0,
         colorMerge: 0,
         reduction: colorPlanFor(palette, 'UNRESTRICTED').reduction,
       });
@@ -419,6 +431,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -470,6 +483,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 2 },
     });
@@ -535,6 +549,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 17 },
     });
@@ -558,6 +573,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -594,6 +610,7 @@ describe('quantiseImage', () => {
           inkThreshold: 64,
           fillCleanup: 8,
           cleanupPasses: 2,
+          outlineExpansion: 0,
           colorMerge: 8,
           reduction: { kind: 'MAX_COLORS', maxColors: 8 } as const,
         };

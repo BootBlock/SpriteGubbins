@@ -114,9 +114,19 @@ export function lineAwareWinner(counts: ReadonlyMap<number, number>, winner: num
  * `(54 R + 183 G + 19 B) >> 8`, in whole numbers so equal inputs are equal everywhere.
  */
 export function lumaOf(packed: number): number {
-  const r = (packed >>> 24) & 0xff;
-  const g = (packed >>> 16) & 0xff;
-  const b = (packed >>> 8) & 0xff;
+  return lumaOfChannels((packed >>> 24) & 0xff, (packed >>> 16) & 0xff, (packed >>> 8) & 0xff);
+}
+
+/**
+ * {@link lumaOf} from three loose channels, for a caller reading straight off a channel array.
+ *
+ * The same weighting and therefore the same answer — which is the point of it existing rather than
+ * being spelled a second time. The outline-expansion pass reads one luma per pixel of a sheet of up
+ * to 16.8 million, and packing four channels into an integer only to shift them apart again is work
+ * with no result; `inkWeightedVote` had already written the weighting out longhand for the same
+ * reason, and now shares this instead.
+ */
+export function lumaOfChannels(r: number, g: number, b: number): number {
   return (54 * r + 183 * g + 19 * b) >> 8;
 }
 

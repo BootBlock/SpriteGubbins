@@ -384,6 +384,7 @@ describe('quantiseImage, line-aware', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
     });
@@ -408,6 +409,7 @@ describe('quantiseImage, line-aware', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     });
@@ -425,6 +427,7 @@ describe('quantiseImage, line-aware', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     });
@@ -444,6 +447,7 @@ describe('quantiseImage, line-aware', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 4 },
     } as const;

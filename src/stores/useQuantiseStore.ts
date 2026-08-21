@@ -6,6 +6,7 @@ import {
   DEFAULT_KEY_TOLERANCE,
   DEFAULT_INK_THRESHOLD,
   DEFAULT_LINE_STRENGTH,
+  DEFAULT_OUTLINE_EXPANSION,
   DEFAULT_TRIM_STRENGTH,
 } from '../constants/quantiser.ts';
 import type { ImportedImage, PixelGrid, VoteMethod } from '../types/quantiser.ts';
@@ -62,6 +63,14 @@ export interface QuantiseState {
    * and the splitter hands back eight sheets in one style, not eight styles.
    */
   readonly vote: VoteMethod;
+  /**
+   * How far the outline-expansion pre-pass grows the local detail, from `OUTLINE_EXPANSION_RANGE`
+   * — `0` is off.
+   *
+   * Workflow intent like the vote it runs ahead of: how heavily a sheet's contours need rescuing is
+   * a fact about the artwork's style, and the splitter hands back eight sheets in one style.
+   */
+  readonly outlineExpansion: number;
   /** The ink-weighted reading's pull, from `LINE_STRENGTH_RANGE` — workflow intent, like the vote. */
   readonly lineStrength: number;
   /** The bright mirror of the line strength, from TRIM_STRENGTH_RANGE — 0 is off. */
@@ -80,6 +89,7 @@ export interface QuantiseState {
   setKeyingEnabled(keyingEnabled: boolean): void;
   setKeyTolerance(keyTolerance: number): void;
   setVote(vote: VoteMethod): void;
+  setOutlineExpansion(outlineExpansion: number): void;
   setLineStrength(lineStrength: number): void;
   setTrimStrength(trimStrength: number): void;
   setInkThreshold(inkThreshold: number): void;
@@ -98,6 +108,7 @@ const EMPTY: Pick<
   | 'keyingEnabled'
   | 'keyTolerance'
   | 'vote'
+  | 'outlineExpansion'
   | 'lineStrength'
   | 'fillCleanup'
   | 'colorMerge'
@@ -110,6 +121,7 @@ const EMPTY: Pick<
   keyingEnabled: false,
   keyTolerance: DEFAULT_KEY_TOLERANCE,
   vote: 'DOMINANT',
+  outlineExpansion: DEFAULT_OUTLINE_EXPANSION,
   lineStrength: DEFAULT_LINE_STRENGTH,
   trimStrength: DEFAULT_TRIM_STRENGTH,
   inkThreshold: DEFAULT_INK_THRESHOLD,
@@ -153,6 +165,10 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setVote: (vote) => {
     set({ vote });
+  },
+
+  setOutlineExpansion: (outlineExpansion) => {
+    set({ outlineExpansion });
   },
 
   setLineStrength: (lineStrength) => {

@@ -221,6 +221,15 @@ export type VoteMethod = (typeof VOTE_METHODS)[number];
 export interface QuantiseTuning {
   /** Which cell reading turns the mesh into pixels — see {@link VoteMethod}. */
   readonly vote: VoteMethod;
+  /**
+   * How far the outline-expansion pre-pass grows the local detail before any cell is read, in
+   * source pixels; `0` means the pass does not run.
+   *
+   * Ahead of {@link vote} in the pipeline rather than beside it, and it applies to all three
+   * readings — a contour that is a minority in its cell loses under every one of them, which is
+   * what a pass running *before* the vote is for. See `outlineExpansion`.
+   */
+  readonly outlineExpansion: number;
   /** How hard `INK_WEIGHTED` pulls a cell toward its line; read only by that reading. */
   readonly lineStrength: number;
   /** The bright mirror of {@link lineStrength}, `0` off; read only by `INK_WEIGHTED`. */
