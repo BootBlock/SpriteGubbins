@@ -1,4 +1,4 @@
-import { QUANTISE_DEFAULT_TUNING } from '../constants/quantiseTuning.ts';
+import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import {
   CLEANUP_PASSES_RANGE,
   COLOR_MERGE_RANGE,
@@ -11,12 +11,12 @@ import {
   SPRITE_GAP_RANGE,
   TRIM_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
-import type { QuantiseTuning } from '../types/quantisePreset.ts';
+import type { QuantiseDials } from '../types/quantisePreset.ts';
 import { DITHER_PATTERNS, VOTE_METHODS } from '../types/quantiser.ts';
 import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
 /**
- * Turning a stored set of dial positions back into a {@link QuantiseTuning}.
+ * Turning a stored set of dial positions back into a {@link QuantiseDials}.
  *
  * The same contract `db/settingsParser.ts` and `db/configParsers.ts` state, and for the same
  * reason: **this is not a compatibility layer and must not become one.** Nothing here translates a
@@ -37,59 +37,49 @@ import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './read
  * `pickWholeNumber`: `lineStrength` and `trimStrength` move in tenths, so 1.5 is an ordinary value
  * for them and a whole-number check would reject the default itself.
  */
-export function parseQuantiseTuning(value: unknown): QuantiseTuning {
-  if (!isRecord(value)) return QUANTISE_DEFAULT_TUNING;
+export function parseQuantiseDials(value: unknown): QuantiseDials {
+  if (!isRecord(value)) return QUANTISE_DEFAULT_DIALS;
 
   return {
-    keyingEnabled: pickBoolean(value, 'keyingEnabled', QUANTISE_DEFAULT_TUNING.keyingEnabled),
+    keyingEnabled: pickBoolean(value, 'keyingEnabled', QUANTISE_DEFAULT_DIALS.keyingEnabled),
     // A ladder rather than a range, so membership is the check: the control offers six rungs and a
     // value between two of them is one this app never wrote.
-    keyTolerance: pick(value, 'keyTolerance', QUANTISE_DEFAULT_TUNING.keyTolerance, KEY_TOLERANCES),
-    vote: pick(value, 'vote', QUANTISE_DEFAULT_TUNING.vote, VOTE_METHODS),
+    keyTolerance: pick(value, 'keyTolerance', QUANTISE_DEFAULT_DIALS.keyTolerance, KEY_TOLERANCES),
+    vote: pick(value, 'vote', QUANTISE_DEFAULT_DIALS.vote, VOTE_METHODS),
     outlineExpansion: pickWholeNumber(
       value,
       'outlineExpansion',
-      QUANTISE_DEFAULT_TUNING.outlineExpansion,
+      QUANTISE_DEFAULT_DIALS.outlineExpansion,
       OUTLINE_EXPANSION_RANGE,
     ),
-    lineStrength: pickNumber(
-      value,
-      'lineStrength',
-      QUANTISE_DEFAULT_TUNING.lineStrength,
-      LINE_STRENGTH_RANGE,
-    ),
-    trimStrength: pickNumber(
-      value,
-      'trimStrength',
-      QUANTISE_DEFAULT_TUNING.trimStrength,
-      TRIM_STRENGTH_RANGE,
-    ),
+    lineStrength: pickNumber(value, 'lineStrength', QUANTISE_DEFAULT_DIALS.lineStrength, LINE_STRENGTH_RANGE),
+    trimStrength: pickNumber(value, 'trimStrength', QUANTISE_DEFAULT_DIALS.trimStrength, TRIM_STRENGTH_RANGE),
     inkThreshold: pickWholeNumber(
       value,
       'inkThreshold',
-      QUANTISE_DEFAULT_TUNING.inkThreshold,
+      QUANTISE_DEFAULT_DIALS.inkThreshold,
       INK_THRESHOLD_RANGE,
     ),
     fillCleanup: pickWholeNumber(
       value,
       'fillCleanup',
-      QUANTISE_DEFAULT_TUNING.fillCleanup,
+      QUANTISE_DEFAULT_DIALS.fillCleanup,
       FILL_CLEANUP_RANGE,
     ),
-    colorMerge: pickWholeNumber(value, 'colorMerge', QUANTISE_DEFAULT_TUNING.colorMerge, COLOR_MERGE_RANGE),
+    colorMerge: pickWholeNumber(value, 'colorMerge', QUANTISE_DEFAULT_DIALS.colorMerge, COLOR_MERGE_RANGE),
     cleanupPasses: pickWholeNumber(
       value,
       'cleanupPasses',
-      QUANTISE_DEFAULT_TUNING.cleanupPasses,
+      QUANTISE_DEFAULT_DIALS.cleanupPasses,
       CLEANUP_PASSES_RANGE,
     ),
-    dither: pick(value, 'dither', QUANTISE_DEFAULT_TUNING.dither, DITHER_PATTERNS),
+    dither: pick(value, 'dither', QUANTISE_DEFAULT_DIALS.dither, DITHER_PATTERNS),
     paletteSnap: pickWholeNumber(
       value,
       'paletteSnap',
-      QUANTISE_DEFAULT_TUNING.paletteSnap,
+      QUANTISE_DEFAULT_DIALS.paletteSnap,
       PALETTE_SNAP_RANGE,
     ),
-    spriteGap: pickWholeNumber(value, 'spriteGap', QUANTISE_DEFAULT_TUNING.spriteGap, SPRITE_GAP_RANGE),
+    spriteGap: pickWholeNumber(value, 'spriteGap', QUANTISE_DEFAULT_DIALS.spriteGap, SPRITE_GAP_RANGE),
   };
 }

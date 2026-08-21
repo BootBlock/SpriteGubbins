@@ -31,7 +31,11 @@ export const QUANTISE_ACTION_TOOLTIPS = {
   loadQuantisePreset:
     'Moves every dial on this tab to the positions saved under this name. The sheet on screen stays where it is and is simply re-read at those settings, so this is a way of trying a saved recipe on the image in front of you rather than of loading anything new. Whatever the dials were set to beforehand is replaced outright, so save the current positions first if you want them back.',
   deleteQuantisePreset:
-    'Removes this saved set of dial positions from the collection for good. It takes effect immediately and cannot be undone, so a set you may want later is worth saving under a second name before you press it. Nothing about the sheet on screen changes, and the dials stay exactly where they are.',
+    'Offers to remove this saved set of dial positions from the collection. The row turns into a confirmation first, so a press here changes nothing on its own — and nothing about the sheet on screen changes either way, since a saved set is a record of where the dials were rather than anything the artwork depends on.',
+  confirmDeleteQuantisePreset:
+    'Removes this set of dial positions for good. There is no undo and nothing else holds a copy, so if you may want these settings again, cancel and save them under a second name first. The dials themselves stay exactly where they are — only the saved record of them goes.',
+  cancelDeleteQuantisePreset:
+    'Leaves the saved set where it is and puts the row back to its ordinary buttons. Nothing was removed, and the dials on this tab were never touched.',
   candidateFromSheet:
     'Puts the scale read out of this sheet into the grid box. A measured reading is exact — the sheet’s colours genuinely change only every so many pixels — and it is already in force, so this is the way back after you have typed over it. An estimated reading is a different thing: it is inferred from the spacing the softened edges of a resampled sheet still repeat at, which is why it is offered here rather than applied for you. Judge an edge at 4× or 8× after taking it.',
 

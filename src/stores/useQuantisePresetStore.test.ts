@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { QUANTISE_DEFAULT_TUNING } from '../constants/quantiseTuning.ts';
+import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
-import type { QuantiseTuning } from '../types/quantisePreset.ts';
+import type { QuantiseDials } from '../types/quantisePreset.ts';
 import { useQuantisePresetStore } from './useQuantisePresetStore.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 import { useUIStore } from './useUIStore.ts';
@@ -22,7 +22,7 @@ vi.mock('../db/database.ts', () => ({
 }));
 
 /** A set of dial positions that differs from the defaults in every field. */
-const TUNED: QuantiseTuning = {
+const TUNED: QuantiseDials = {
   keyingEnabled: true,
   keyTolerance: 32,
   vote: 'K_CENTROID',
@@ -41,7 +41,7 @@ const TUNED: QuantiseTuning = {
 beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
   useQuantisePresetStore.setState({ presets: [] });
-  useQuantiseStore.setState({ ...QUANTISE_DEFAULT_TUNING });
+  useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
   useUIStore.getState().dismissToast();
 });
 
@@ -56,10 +56,10 @@ describe('saveQuantisePreset', () => {
     await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
 
     const [stored] = await backend.listQuantisePresets();
-    expect(stored?.tuning).toEqual(TUNED);
+    expect(stored?.dials).toEqual(TUNED);
   });
 
-  it('leaves the sheet, the grid and a held palette out of what it stores', async () => {
+  it('leaves the sheet, the grid and a held palette out of what it hands to storage', async () => {
     useQuantiseStore.setState({
       ...TUNED,
       gridOverride: 6,
@@ -69,13 +69,17 @@ describe('saveQuantisePreset', () => {
         setting: 'STRICT_32_COLOR',
       },
     });
+    // Asserted on what reaches the backend, not on what comes back out of it. The reader builds a
+    // fresh object holding exactly the thirteen dials, so a `saveQuantisePreset` that spread the
+    // whole store — sheet, grid, locked palette and all — would still read back clean. This is the
+    // only place the extra keys are still visible.
+    const written = vi.spyOn(backend, 'saveQuantisePreset');
 
     await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
 
-    const [stored] = await backend.listQuantisePresets();
-    // Exactly the thirteen dials — `toEqual` against the tuning fails on any extra key, which is
-    // what makes this an assertion about the *set* rather than about three named absences.
-    expect(stored?.tuning).toEqual(TUNED);
+    // `toEqual` on the whole object fails on any extra key, which is what makes this an assertion
+    // about the *set* rather than about three named absences.
+    expect(written.mock.calls[0]?.[0].dials).toEqual(TUNED);
   });
 
   it('stores the description beside the name, trimmed', async () => {
@@ -109,7 +113,7 @@ describe('saveQuantisePreset', () => {
     expect(stored).toHaveLength(1);
     expect(stored[0]?.id).toBe(first?.id);
     expect(stored[0]?.description).toBe('Second');
-    expect(stored[0]?.tuning).toEqual(TUNED);
+    expect(stored[0]?.dials).toEqual(TUNED);
   });
 
   it('treats a differently-cased name as the same one, and adopts the new spelling', async () => {
@@ -142,7 +146,7 @@ describe('loadQuantisePreset', () => {
   it('moves every dial to the saved position', async () => {
     useQuantiseStore.setState({ ...TUNED });
     await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
-    useQuantiseStore.setState({ ...QUANTISE_DEFAULT_TUNING });
+    useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
 
     const preset = useQuantisePresetStore.getState().presets[0];
     if (preset === undefined) throw new Error('expected the preset to have been stored');
@@ -167,7 +171,7 @@ describe('loadQuantisePreset', () => {
 
     useQuantisePresetStore
       .getState()
-      .loadQuantisePreset({ id: 'quantise-1', name: 'Flat sheets', description: '', tuning: TUNED });
+      .loadQuantisePreset({ id: 'quantise-1', name: 'Flat sheets', description: '', dials: TUNED });
 
     expect(useQuantiseStore.getState().gridOverride).toBe(6);
     expect(useQuantiseStore.getState().lockedPalette).toBe(lockedPalette);
@@ -176,7 +180,7 @@ describe('loadQuantisePreset', () => {
   it('names the preset it loaded, so a click on the wrong row is visible', () => {
     useQuantisePresetStore
       .getState()
-      .loadQuantisePreset({ id: 'quantise-1', name: 'Flat sheets', description: '', tuning: TUNED });
+      .loadQuantisePreset({ id: 'quantise-1', name: 'Flat sheets', description: '', dials: TUNED });
 
     expect(useUIStore.getState().toastMessage).toContain('Flat sheets');
   });
@@ -213,7 +217,7 @@ describe('fetchQuantisePresets', () => {
     await useQuantisePresetStore.getState().fetchQuantisePresets();
 
     expect(useQuantisePresetStore.getState().presets).toHaveLength(1);
-    expect(useQuantisePresetStore.getState().presets[0]?.tuning).toEqual(TUNED);
+    expect(useQuantisePresetStore.getState().presets[0]?.dials).toEqual(TUNED);
   });
 
   it('reports a read it could not make rather than showing an empty collection silently', async () => {

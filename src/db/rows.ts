@@ -10,7 +10,7 @@ import {
   parseOutputConfig,
   parseSubject,
 } from './configParsers.ts';
-import { parseQuantiseTuning } from './quantiseTuningParser.ts';
+import { parseQuantiseDials } from './quantiseDialsParser.ts';
 import { isRecord, parseJson, readNumber, readString } from './readers.ts';
 import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
@@ -180,11 +180,11 @@ export function parseQuantisePresetRow(row: unknown): QuantisePreset | null {
   const name = readString(row, 'name');
   if (id === null || name === null) return null;
 
-  const tuningJson = readString(row, 'tuning_json');
+  const tuningJson = readString(row, 'dials_json');
   return {
     id,
     name,
     description: readString(row, 'description') ?? '',
-    tuning: parseQuantiseTuning(tuningJson === null ? undefined : parseJson(tuningJson)),
+    dials: parseQuantiseDials(tuningJson === null ? undefined : parseJson(tuningJson)),
   };
 }

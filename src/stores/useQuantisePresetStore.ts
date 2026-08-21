@@ -15,9 +15,9 @@ import { useUIStore } from './useUIStore.ts';
  * two kinds of member in it, and every action asking which kind it had.
  *
  * It reaches into `useQuantiseStore` exactly as `usePresetStore` reaches into the studio's three,
- * and by the same rule: through that store's own action, never by writing its shape. `applyTuning`
- * is that action, and it is a single `set` so the tab re-renders once and the worker is asked for
- * one transform rather than thirteen.
+ * and by the same rule: through that store's own action, never by writing its shape. `applyDials`
+ * is that action, and it is a single `set` — see its own docblock for why thirteen would not simply
+ * be slower.
  *
  * **Saving reads the store rather than taking an argument**, which is what makes "save these
  * settings" mean the settings on screen and not a copy the panel was holding when it last
@@ -32,7 +32,7 @@ export interface QuantisePresetState {
   /**
    * Put a preset's dials into the tab.
    *
-   * The sheet, the grid and any held palette are left exactly as they are — see `QuantiseTuning`
+   * The sheet, the grid and any held palette are left exactly as they are — see `QuantiseDials`
    * for why none of the three is a preset's to move. So loading one over a sheet you are looking at
    * re-reads *that* sheet at the saved settings, which is the whole point of having saved them.
    */
@@ -64,7 +64,7 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
   },
 
   loadQuantisePreset: (preset) => {
-    useQuantiseStore.getState().applyTuning(preset.tuning);
+    useQuantiseStore.getState().applyDials(preset.dials);
     useUIStore.getState().showToast(`Loaded quantiser preset: ${preset.name}`);
   },
 
@@ -96,9 +96,9 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       description: description.trim(),
       // Named field by field rather than spread off the store, and that is the point: the store
       // also holds a sheet, a grid and possibly a locked palette, and a spread would carry all
-      // three into storage. The compiler checks the set — a dial added to `QuantiseTuning` fails
-      // here until it is listed.
-      tuning: {
+      // three into storage. The compiler checks the set — a dial added to `QuantiseDials`, or to
+      // the pipeline's `QuantiseTuning` that it extends, fails here until it is listed.
+      dials: {
         keyingEnabled,
         keyTolerance,
         vote,
@@ -118,9 +118,9 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     try {
       const database = await getDatabase();
       await database.saveQuantisePreset(preset);
-      // Re-read rather than appending in place: the two backends order this collection themselves —
-      // SQLite by `updated_at DESC` — so an optimistic append would put the new preset where only
-      // one of them agrees it belongs.
+      // Re-read rather than appending in place: each backend decides this collection's order for
+      // itself — SQLite by `updated_at DESC`, the fallback by position — so an optimistic append
+      // would put the new preset where only one of them agrees it belongs.
       set({ presets: await database.listQuantisePresets() });
       useUIStore
         .getState()

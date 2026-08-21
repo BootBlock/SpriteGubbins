@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { QUANTISE_DEFAULT_TUNING } from '../constants/quantiseTuning.ts';
-import type { QuantiseTuning } from '../types/quantisePreset.ts';
+import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import type { QuantiseDials } from '../types/quantisePreset.ts';
 import type {
   DitherPattern,
   ImportedImage,
@@ -30,7 +30,7 @@ import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
  * the user's, this is a transform, and keeping sheets in OPFS is a different feature with its own
  * quota questions. This survives navigation, not a reload.
  */
-export interface QuantiseState extends QuantiseTuning {
+export interface QuantiseState extends QuantiseDials {
   readonly source: ImportedImage | null;
   /**
    * The scale the user asked for, or `null` to use whatever detection found.
@@ -41,55 +41,6 @@ export interface QuantiseState extends QuantiseTuning {
    */
   readonly gridOverride: PixelGrid | null;
   /**
-   * Whether the studio's background key is replaced with transparency.
-   *
-   * **Off by default, and opt-in.** Keying deletes pixels, and two of the four offered keys —
-   * `PURE_WHITE` and `PURE_BLACK` — share their colour with real artwork, so a tolerance loose enough
-   * to catch a drifting white field also takes the sheet's own highlights. Off by default means that
-   * never happens to someone who did not ask for it. It is also what keeps the panel's own promise
-   * honest: it says every colour in the result is one the image already contained, and silently
-   * removing a third of the sheet would contradict that.
-   */
-  readonly keyingEnabled: boolean;
-  /** How far a pixel may sit from the key colour, as `keyDistanceSquared` measures that. */
-  readonly keyTolerance: number;
-  /**
-   * Which cell reading turns the mesh into pixels — see `VoteMethod`.
-   *
-   * Like the keying settings, this survives `setSource` and falls only to `clear`: which reading
-   * suits a sheet is a judgement about the *artwork's style* — contour-heavy, painterly, flat —
-   * and the splitter hands back eight sheets in one style, not eight styles.
-   */
-  readonly vote: VoteMethod;
-  /**
-   * How far the outline-expansion pre-pass grows the local detail, from `OUTLINE_EXPANSION_RANGE`
-   * — `0` is off.
-   *
-   * Workflow intent like the vote it runs ahead of: how heavily a sheet's contours need rescuing is
-   * a fact about the artwork's style, and the splitter hands back eight sheets in one style.
-   */
-  readonly outlineExpansion: number;
-  /** The ink-weighted reading's pull, from `LINE_STRENGTH_RANGE` — workflow intent, like the vote. */
-  readonly lineStrength: number;
-  /** The bright mirror of the line strength, from TRIM_STRENGTH_RANGE — 0 is off. */
-  readonly trimStrength: number;
-  /** The ink-weighted reading's ink ceiling, from INK_THRESHOLD_RANGE. */
-  readonly inkThreshold: number;
-  /** The fill cleanup's merge tolerance, from `FILL_CLEANUP_RANGE` — `0` is off. */
-  readonly fillCleanup: number;
-  /** The colour merge's sheet-wide fold tolerance, from `COLOR_MERGE_RANGE` — `0` is off. */
-  readonly colorMerge: number;
-  /** How many settling passes the fill cleanup runs, from CLEANUP_PASSES_RANGE. */
-  readonly cleanupPasses: number;
-  /**
-   * Which positional pattern the palette step dithers through — `NONE` is off.
-   *
-   * Workflow intent like the vote and the expansion, and for the same reason: a dither is a
-   * decision about how a *series* should look, and the splitter hands back eight sheets in one
-   * style. Read only where the studio or a lock names a palette to dither against.
-   */
-  readonly dither: DitherPattern;
-  /**
    * The palette taken off an earlier result and held for the sheets that follow, or `null`.
    *
    * **The one setting here whose whole purpose is to outlive the sheet it was taken from.** Where
@@ -99,23 +50,6 @@ export interface QuantiseState extends QuantiseTuning {
    * other standing intent, because that is the reader saying they have finished with this workflow.
    */
   readonly lockedPalette: LockedPalette | null;
-  /**
-   * How near a locked colour a colour must sit to be taken to it, from `PALETTE_SNAP_RANGE`.
-   *
-   * `0` is the pass not running, as every other dial's zero is: the lock reaches nothing. Read only
-   * while a palette is locked.
-   */
-  readonly paletteSnap: number;
-  /**
-   * How far apart two pieces of artwork may sit and still be counted as one sprite, from
-   * `SPRITE_GAP_RANGE`.
-   *
-   * Workflow intent like the vote and the dither, and for the same reason: how far a subject's
-   * pieces drift apart is a fact about the *artwork's* construction — a rig with floating hands, a
-   * creature with a detached tail — and the splitter hands back eight sheets of one subject. `0` is
-   * not an off position; see `spriteSegments`.
-   */
-  readonly spriteGap: number;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
@@ -139,15 +73,17 @@ export interface QuantiseState extends QuantiseTuning {
   /**
    * Put every dial where a saved preset says, in one move.
    *
-   * One action rather than thirteen calls from the caller, and the difference is not tidiness:
-   * Zustand notifies subscribers per `set`, so thirteen would re-render the tab thirteen times and
-   * — because `useQuantiseWork` debounces on the tuning's identity — would start and abandon twelve
-   * transforms on the way to the one the reader asked for.
+   * One `set` rather than thirteen, and the difference is not tidiness. `useQuantiseWork` holds the
+   * transform behind a 250ms debounce keyed on the settings' identity, and `QuantiseTab` rebuilds
+   * that identity whenever any dial changes — so thirteen separate writes would restart the timer
+   * thirteen times and the transform would run once, `QUANTISE_DEBOUNCE_MS` after the *last* of
+   * them. One write starts one window. (No intermediate transform is ever *begun*: the effect's
+   * cleanup clears the pending timer, which is what the debounce is for.)
    *
    * It reaches the dials and nothing else. The sheet stays, the grid stays, and a held palette
-   * stays: see {@link QuantiseTuning} for why none of those three is a preset's to move.
+   * stays: see {@link QuantiseDials} for why none of those three is a preset's to move.
    */
-  applyTuning(tuning: QuantiseTuning): void;
+  applyDials(dials: QuantiseDials): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
@@ -155,13 +91,13 @@ export interface QuantiseState extends QuantiseTuning {
 /**
  * What the tab opens with, and what `clear` puts back.
  *
- * The dials come from `QUANTISE_DEFAULT_TUNING` rather than being listed again: they are the same
+ * The dials come from `QUANTISE_DEFAULT_DIALS` rather than being listed again: they are the same
  * set a preset holds and the same set the parser falls back to, and three hand-written copies of
- * thirteen fields is three places for one of them to be forgotten. What is written out here is only
- * what a *tuning* is not — the sheet, the grid, and the held palette.
+ * one list is three places for one of them to be forgotten. What is written out here is only what a
+ * *dial* is not — the sheet, the grid, and the held palette.
  */
-const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'lockedPalette'> & QuantiseTuning = {
-  ...QUANTISE_DEFAULT_TUNING,
+const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'lockedPalette'> & QuantiseDials = {
+  ...QUANTISE_DEFAULT_DIALS,
   source: null,
   gridOverride: null,
   lockedPalette: null,
@@ -256,12 +192,12 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
     set({ spriteGap });
   },
 
-  applyTuning: (tuning) => {
+  applyDials: (dials) => {
     // Spread rather than assigned as one field, because the dials are held flat: the store *is* a
-    // `QuantiseTuning` plus the three things that are not one, which is what lets every control keep
-    // its atomic selector and lets the compiler refuse a dial that has been added to the tuning and
+    // `QuantiseDials` plus the three things that are not one, which is what lets every control keep
+    // its atomic selector and lets the compiler refuse a dial that has been added to the set and
     // forgotten here.
-    set({ ...tuning });
+    set({ ...dials });
   },
 
   // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is

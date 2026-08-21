@@ -88,7 +88,7 @@ CREATE TABLE IF NOT EXISTS ${QUANTISE_PRESETS_TABLE} (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   description TEXT NOT NULL,
-  tuning_json TEXT NOT NULL,
+  dials_json TEXT NOT NULL,
   updated_at INTEGER NOT NULL
 );
 
@@ -139,7 +139,7 @@ export const TABLE_COLUMNS = {
   ],
   [APP_SETTINGS_TABLE]: ['id', 'settings_json'],
   [STUDIO_SESSION_TABLE]: ['id', 'category', 'subject_json', 'output_json'],
-  [QUANTISE_PRESETS_TABLE]: ['id', 'name', 'description', 'tuning_json', 'updated_at'],
+  [QUANTISE_PRESETS_TABLE]: ['id', 'name', 'description', 'dials_json', 'updated_at'],
 } as const satisfies Record<string, readonly string[]>;
 
 /** What the stored table's columns are read with, and what a mismatched one is dropped by. */
@@ -234,7 +234,7 @@ VALUES (${SESSION_ROW_ID}, ?, ?, ?)
  * explains.
  */
 export const SELECT_QUANTISE_PRESETS_SQL = `
-SELECT id, name, description, tuning_json, updated_at
+SELECT id, name, description, dials_json, updated_at
 FROM ${QUANTISE_PRESETS_TABLE}
 ORDER BY updated_at DESC
 `;
@@ -248,7 +248,7 @@ ORDER BY updated_at DESC
  */
 export const INSERT_QUANTISE_PRESET_SQL = `
 INSERT OR REPLACE INTO ${QUANTISE_PRESETS_TABLE}
-  (id, name, description, tuning_json, updated_at)
+  (id, name, description, dials_json, updated_at)
 VALUES (?, ?, ?, ?, ?)
 `;
 

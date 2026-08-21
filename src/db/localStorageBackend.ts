@@ -143,16 +143,21 @@ export class LocalStorageBackend implements PersistenceBackend {
   /*
    * The quantiser's presets are stored in the same `snake_case` row shape the SQLite table uses, as
    * the history rows are, so `parseQuantisePresetRow` serves both backends and the two can never
-   * drift in what they accept. `updated_at` is written for the same reason it is on the other side —
-   * newest first is the order the list is shown in.
+   * drift in what they accept.
+   *
+   * **No `updated_at`, and that is a real difference between the backends rather than an omission.**
+   * The column exists on the other side because SQLite orders the collection with it; here the
+   * order *is* the array's, kept newest-first by the prepend below, so a timestamp would be a
+   * number nothing reads. Writing one anyway would be worse than useless: this backend rewrites the
+   * whole collection on every operation, so each write — a delete included — would stamp every row
+   * with the same instant, destroying exactly the per-entry time the field appears to promise.
    */
   private static toQuantiseRow(preset: QuantisePreset): Record<string, unknown> {
     return {
       id: preset.id,
       name: preset.name,
       description: preset.description,
-      tuning_json: JSON.stringify(preset.tuning),
-      updated_at: Date.now(),
+      dials_json: JSON.stringify(preset.dials),
     };
   }
 
@@ -162,6 +167,7 @@ export class LocalStorageBackend implements PersistenceBackend {
     return this.write(STORAGE_KEYS.quantisePresets, next.map(LocalStorageBackend.toQuantiseRow));
   }
 
+  /** In stored order, which the prepend above keeps newest-first — see {@link toQuantiseRow}. */
   listQuantisePresets(): Promise<QuantisePreset[]> {
     return Promise.resolve(this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow));
   }

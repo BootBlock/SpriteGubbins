@@ -12,7 +12,7 @@ import type { PromptHistoryLog } from '../types/history.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
-import { QUANTISE_DEFAULT_TUNING } from '../constants/quantiseTuning.ts';
+import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 
 /**
  * The localStorage backend is not a safety net — it is the backend the app genuinely runs on
@@ -75,7 +75,7 @@ function quantisePreset(overrides: Partial<QuantisePreset> = {}): QuantisePreset
     id: 'quantise-1',
     name: 'Flat sheets',
     description: 'Line art.',
-    tuning: QUANTISE_DEFAULT_TUNING,
+    dials: QUANTISE_DEFAULT_DIALS,
     ...overrides,
   };
 }
@@ -228,7 +228,7 @@ describe('LocalStorageBackend — quantiser presets', () => {
     const [stored] = await backend.listQuantisePresets();
     expect(stored?.name).toBe('Flat sheets');
     expect(stored?.description).toBe('Line art.');
-    expect(stored?.tuning).toEqual(QUANTISE_DEFAULT_TUNING);
+    expect(stored?.dials).toEqual(QUANTISE_DEFAULT_DIALS);
   });
 
   it('overwrites one saved under the same id', async () => {
@@ -253,7 +253,7 @@ describe('LocalStorageBackend — quantiser presets', () => {
     // one is not repairable — see `parseQuantisePresetRow`.
     storage.setItem(
       STORAGE_KEYS.quantisePresets,
-      JSON.stringify([{ id: 'a', description: '', tuning_json: '{}', updated_at: 0 }]),
+      JSON.stringify([{ id: 'a', description: '', dials_json: '{}' }]),
     );
 
     expect(await backend.listQuantisePresets()).toEqual([]);
@@ -267,14 +267,13 @@ describe('LocalStorageBackend — quantiser presets', () => {
           id: 'a',
           name: 'Flat sheets',
           description: '',
-          tuning_json: JSON.stringify({ ...QUANTISE_DEFAULT_TUNING, colorMerge: 'lots' }),
-          updated_at: 0,
+          dials_json: JSON.stringify({ ...QUANTISE_DEFAULT_DIALS, colorMerge: 'lots' }),
         },
       ]),
     );
 
     const [stored] = await backend.listQuantisePresets();
-    expect(stored?.tuning).toEqual(QUANTISE_DEFAULT_TUNING);
+    expect(stored?.dials).toEqual(QUANTISE_DEFAULT_DIALS);
   });
 });
 

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QUANTISE_PRESET_GUIDANCE } from '../../constants/quantisePresets.ts';
-import { QUANTISE_DEFAULT_TUNING } from '../../constants/quantiseTuning.ts';
+import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
@@ -22,12 +22,12 @@ const saved: QuantisePreset = {
   id: 'quantise-1',
   name: 'Flat sheets',
   description: 'Line art.',
-  tuning: QUANTISE_DEFAULT_TUNING,
+  dials: QUANTISE_DEFAULT_DIALS,
 };
 
 beforeEach(() => {
   useQuantisePresetStore.setState({ presets: [] });
-  useQuantiseStore.setState({ ...QUANTISE_DEFAULT_TUNING });
+  useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
 });
 
 describe('QuantisePresetControls', () => {
@@ -102,18 +102,59 @@ describe('QuantisePresetControls', () => {
     useQuantisePresetStore.setState({ presets: [saved], loadQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Load' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Load the saved settings/ }));
 
     expect(loadQuantisePreset).toHaveBeenCalledWith(saved);
   });
 
-  it('deletes the row it was pressed on', async () => {
+  it('names the preset in every button, so a list of them is not a list of “Delete”', () => {
+    const second: QuantisePreset = { ...saved, id: 'quantise-2', name: 'Painterly sheets' };
+    useQuantisePresetStore.setState({ presets: [saved, second] });
+
+    render(<QuantisePresetControls />);
+
+    // Four buttons, four distinct accessible names — the thing a screen-reader user moves through.
+    for (const name of ['Flat sheets', 'Painterly sheets']) {
+      expect(screen.getByRole('button', { name: `Load the saved settings “${name}”` })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: `Delete the saved settings “${name}”` })).toBeInTheDocument();
+    }
+  });
+
+  it('asks before deleting, and deletes nothing on the first press', async () => {
     const deleteQuantisePreset = vi.fn().mockResolvedValue(undefined);
     useQuantisePresetStore.setState({ presets: [saved], deleteQuantisePreset });
     render(<QuantisePresetControls />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
+
+    expect(deleteQuantisePreset).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: 'Delete the saved settings “Flat sheets”, for good' }),
+    ).toBeInTheDocument();
+  });
+
+  it('deletes on the confirmation, naming the row it was pressed on', async () => {
+    const deleteQuantisePreset = vi.fn().mockResolvedValue(undefined);
+    useQuantisePresetStore.setState({ presets: [saved], deleteQuantisePreset });
+    render(<QuantisePresetControls />);
+
+    await userEvent.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Delete the saved settings “Flat sheets”, for good' }),
+    );
 
     expect(deleteQuantisePreset).toHaveBeenCalledWith('quantise-1');
+  });
+
+  it('puts the row back on Cancel, having deleted nothing', async () => {
+    const deleteQuantisePreset = vi.fn().mockResolvedValue(undefined);
+    useQuantisePresetStore.setState({ presets: [saved], deleteQuantisePreset });
+    render(<QuantisePresetControls />);
+
+    await userEvent.click(screen.getByRole('button', { name: /^Delete the saved settings “Flat sheets”$/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep the saved settings “Flat sheets”' }));
+
+    expect(deleteQuantisePreset).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Load the saved settings “Flat sheets”' })).toBeInTheDocument();
   });
 });

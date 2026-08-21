@@ -146,7 +146,7 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
     case 'saveQuantisePreset': {
       const { preset } = request;
       database.exec(INSERT_QUANTISE_PRESET_SQL, {
-        bind: [preset.id, preset.name, preset.description, JSON.stringify(preset.tuning), Date.now()],
+        bind: [preset.id, preset.name, preset.description, JSON.stringify(preset.dials), Date.now()],
       });
       return undefined;
     }
