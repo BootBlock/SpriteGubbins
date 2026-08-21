@@ -354,6 +354,18 @@ export interface QuantiseTuning {
    * itself — see `quantiseImage`, which holds that rule.
    */
   readonly dither: DitherPattern;
+  /**
+   * How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels.
+   *
+   * The one dial here that changes no pixel of the result. It shapes {@link QuantiseResult.sprites}
+   * — the reading of the sheet the tab reports and the preview's outline mode draws — and it is on
+   * this shape rather than beside it because the segmentation travels with the result, so the
+   * comparison that decides whether a result is stale has to walk it like every other dial.
+   *
+   * `0` is not an off position: the pass always runs, and at zero it still folds pieces whose boxes
+   * overlap. See `spriteSegments`.
+   */
+  readonly spriteGap: number;
 }
 
 /** Everything `quantiseImage` needs beyond the image itself. */
@@ -412,6 +424,63 @@ export interface DifferenceMap {
   readonly peak: number;
 }
 
+/**
+ * One sprite's footprint on the finished sheet, in drawn pixels.
+ *
+ * **Drawn pixels, not source pixels**, because every question a box is asked is stated in them: the
+ * studio's target component size, the cell an atlas affords, and what a reader is looking at in the
+ * result pane. `spriteSegments` says why the segmentation runs where it does.
+ *
+ * A position and an extent rather than four edges, so there is no exclusive-versus-inclusive
+ * convention for a consumer to get wrong — `left + width` is the first column past the box, and the
+ * merge inside `spriteSegments` is the only code that needs to say so.
+ */
+export interface SpriteBox {
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly height: number;
+  /**
+   * Opaque drawn pixels inside the box — the artwork it actually carries, not `width × height`.
+   *
+   * The two differ by however much empty space the sprite's own silhouette leaves in its bounding
+   * box, and by whatever a gap merge folded in: a figure with an outstretched arm fills perhaps half
+   * of its box. It is what the speck floor is measured against, because area is what separates
+   * artwork from the fringe a key left behind — a bounding box says nothing about how much is in it.
+   */
+  readonly pixels: number;
+}
+
+/**
+ * What the sheet broke into, or that it did not break into anything usable.
+ *
+ * A union rather than a list with a flag beside it, because the two outcomes are not the same answer
+ * at different sizes. `SEGMENTED` is a set of sprites a reader can act on — count them against what
+ * the prompt asked for, check the largest against the target size, pack them into an atlas.
+ * `SCATTERED` is the statement that this sheet holds more separate pieces than a sprite sheet has,
+ * which is a fact about the *keying* rather than about sprites: a field that has not come out, or a
+ * tolerance so tight that every anti-aliased edge survives as its own island. Handed back as a list,
+ * it would be three thousand boxes presented in the same shape as twelve.
+ *
+ * An unkeyed sheet is neither of those and needs no third arm: with nothing transparent on it there
+ * is one opaque region covering the whole image, which is `SEGMENTED` with a single box — the honest
+ * answer, since nothing has told the pass where a sprite ends.
+ */
+export type SpriteSegmentation =
+  | {
+      readonly kind: 'SEGMENTED';
+      /** Reading order — top to bottom, then left to right. */
+      readonly boxes: readonly SpriteBox[];
+      /** Pieces too small to be a sprite; see {@link SMALLEST_SPRITE_PIXELS}. */
+      readonly specks: number;
+    }
+  | {
+      readonly kind: 'SCATTERED';
+      /** How many pieces there were, which is the figure that says how far past a sheet this is. */
+      readonly pieces: number;
+      readonly specks: number;
+    };
+
 /** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
@@ -423,6 +492,15 @@ export interface QuantiseResult {
    * the failure the mode exists to expose. Travelling with the result, it cannot.
    */
   readonly difference: DifferenceMap;
+  /**
+   * The separate sprites on {@link image}, and how big each of them is.
+   *
+   * A fact of the result rather than something asked for separately, for the reason
+   * {@link difference} is: a segmentation computed on its own could describe an older result than
+   * the one beside it, and every consumer of this — the readout on the tab, the preview's outline
+   * mode, the atlas calculator's count — is comparing it with something a dial has just moved.
+   */
+  readonly sprites: SpriteSegmentation;
   /**
    * Where the grid sat on the source, as the transform measured it.
    *
@@ -455,22 +533,24 @@ export interface QuantiseResult {
 }
 
 /**
- * The three ways the preview offers to read one result — the layouts, in the order they are offered.
+ * The four ways the preview offers to read one result — the layouts, in the order they are offered.
  *
  * The `as const` array is the union's single definition. Like the vote methods, the choice lives in
  * the panel that draws the preview and is never persisted: it is a preference about how a result is
  * being *looked at* right now, not part of what the result is.
  */
-export const PREVIEW_MODES = ['SIDE_BY_SIDE', 'WIPE', 'DIFFERENCE'] as const;
+export const PREVIEW_MODES = ['SIDE_BY_SIDE', 'WIPE', 'DIFFERENCE', 'SPRITES'] as const;
 
 /**
- * One of the three.
+ * One of the four.
  *
  * `SIDE_BY_SIDE` is the pair of linked panes, which answers "what did this become". `WIPE` overlays
  * them in one frame under a divider, which answers "what moved" for a change large enough to see.
  * `DIFFERENCE` replaces the result pane with a heatmap of {@link DifferenceMap}, which answers "what
  * did it cost" — the question the other two cannot, and the reason a dial whose effect is real but
- * small reads as a dial that does nothing.
+ * small reads as a dial that does nothing. `SPRITES` draws the result with each of
+ * {@link SpriteSegmentation}'s boxes marked, which answers "what did it find" — a count of sprites
+ * nobody can see the extent of is the same unreadable dial in a different place.
  */
 export type PreviewMode = (typeof PREVIEW_MODES)[number];
 

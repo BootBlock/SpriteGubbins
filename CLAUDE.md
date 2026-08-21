@@ -385,6 +385,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | The ambient colour wash behind the page | `bg-aurora` | a stack of hand-written `radial-gradient()`s |
 | A loading placeholder's sheen | `shimmer-surface` + `animate-shimmer` | a bespoke gradient |
 | What a **transparent pixel** shows through — the quantiser's two preview canvases | `bg-checkerboard` | leaving the pane's `bg-foundry-950` behind it, where keyed-out reads as painted black |
+| A **measurement drawn over the reader's own artwork** — the sprite preview's bounding boxes | the two achromatic stops in `src/constants/spriteMarker.ts`, mirrored from `index.css` | any hue from the wheel, which would claim a meaning a bounding box does not have |
 | The **scrollbar** — set once in `index.css`, for both engines | `--color-scrollbar-track` / `-thumb` / `-thumb-hover` | `foundry-700` on `foundry-900`, which measures 1.19:1 |
 
 **The scrollbar's three tokens are the one row here no component reaches for.** They are consumed
@@ -563,16 +564,18 @@ example's own wording rather than a name the app suggests.
   vocabulary the prompt compiler understands, not app styling: `COLOR_HEX_MAP` in
   `src/constants/colors.ts`, which is the colour names a subject field may use, and
   `src/constants/palettes/`, which is the colours real hardware could display.
-- **The difference heatmap's ramp is the third, and it is exempt on a different ground.** Those two
-  are colours that are not the app's; `src/constants/differenceRamp.ts` holds four that **are** —
-  the page ground, `emerald`, `gold` and `rose` — because they are painted into **pixel data**. A
-  pixel has no element to carry a class, and the code that writes it is a pure function in
-  `src/utils/`, where reading a computed style is banned outright. So the exemption is only from
-  the *mechanism*, never from the palette: each
-  stop names the token it mirrors and states the same `oklch()` triple `index.css` states, `oklab.ts`
-  resolves it to bytes, and `tests/design-tokens.test.ts` reads the stylesheet and fails if the two
-  part company. **A new colour chosen here rather than mirrored is the thing this row forbids.**
-  Nothing else gets to claim any of the three exemptions.
+- **The two files that paint into pixel data are the third, and they are exempt on a different
+  ground.** The two above are colours that are not the app's; `src/constants/differenceRamp.ts` holds
+  four that **are** — the page ground, `emerald`, `gold` and `rose` — and
+  `src/constants/spriteMarker.ts` holds two more — the ground again and `ink` — because both are
+  painted into **pixel data**. A pixel has no element to carry a class, and the code that writes it
+  is a pure function in `src/utils/`, where reading a computed style is banned outright. So the
+  exemption is only from the *mechanism*, never from the palette: each stop names the token it
+  mirrors and states the same `oklch()` triple `index.css` states, `oklab.ts` resolves it to bytes,
+  and `tests/design-tokens.test.ts` reads the stylesheet and fails if the two part company. **A new
+  colour chosen here rather than mirrored is the thing this row forbids**, and so is a third file
+  claiming the exemption for something that does have an element to put a class on. Nothing else gets
+  to claim any of the three exemptions.
 
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,

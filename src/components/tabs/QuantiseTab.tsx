@@ -17,6 +17,7 @@ import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { KeyingControls } from '../quantise/KeyingControls.tsx';
 import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
+import { SpriteControls } from '../quantise/SpriteControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 
 /**
@@ -67,6 +68,7 @@ export function QuantiseTab() {
   const colorMerge = useQuantiseStore((state) => state.colorMerge);
   const lockedPalette = useQuantiseStore((state) => state.lockedPalette);
   const paletteSnap = useQuantiseStore((state) => state.paletteSnap);
+  const spriteGap = useQuantiseStore((state) => state.spriteGap);
   // One memoised object, because the hook keys its debounce on the tuning's identity — atomic
   // selectors above, so an unrelated store change does not rebuild it.
   const tuning = useMemo(
@@ -80,6 +82,7 @@ export function QuantiseTab() {
       fillCleanup,
       cleanupPasses,
       dither,
+      spriteGap,
     }),
     [
       vote,
@@ -91,6 +94,7 @@ export function QuantiseTab() {
       fillCleanup,
       cleanupPasses,
       dither,
+      spriteGap,
     ],
   );
   const setSource = useQuantiseStore((state) => state.setSource);
@@ -214,6 +218,12 @@ export function QuantiseTab() {
             sheetName={source.name}
             studioSetting={colorPlan.studioSetting}
             superseded={colorPlan.superseded}
+            busy={busy}
+          />
+          <SpriteControls
+            sprites={quantised?.result.sprites ?? null}
+            keyed={keying !== null}
+            target={target}
             busy={busy}
           />
           <ImageComparison

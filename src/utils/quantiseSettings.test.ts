@@ -15,6 +15,7 @@ const BASE: QuantiseSettings = {
   inkThreshold: 64,
   fillCleanup: 0,
   cleanupPasses: 1,
+  spriteGap: 1,
   dither: 'NONE',
   outlineExpansion: 0,
   colorMerge: 0,
@@ -42,6 +43,7 @@ describe('sameQuantiseSettings', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE',
         outlineExpansion: 0,
         colorMerge: 0,
@@ -69,6 +71,11 @@ describe('sameQuantiseSettings', () => {
     // that never clears.
     expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BAYER_8' })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BLUE_NOISE' })).toBe(false);
+    // The sprite gap is the one dial on this shape that changes no pixel of the result — it changes
+    // the *reading* of it that travels back with the pixels. So this arm is the only thing making a
+    // sheet re-read when it moves: without it the tab would keep the previous segmentation, and the
+    // count beside a gap the reader had just changed would be the count for the gap before it.
+    expect(sameQuantiseSettings(BASE, { ...BASE, spriteGap: 4 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, key: { color: MAGENTA, tolerance: 64 } })).toBe(false);
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),
@@ -82,6 +89,7 @@ describe('sameQuantiseSettings', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE',
         outlineExpansion: 0,
         colorMerge: 0,
@@ -110,6 +118,7 @@ describe('sameQuantiseSettings', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE',
       outlineExpansion: 0,
       colorMerge: 0,
@@ -123,6 +132,7 @@ describe('sameQuantiseSettings', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE',
       outlineExpansion: 0,
       colorMerge: 0,
@@ -136,6 +146,7 @@ describe('sameQuantiseSettings', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE',
       outlineExpansion: 0,
       colorMerge: 0,
@@ -162,6 +173,7 @@ describe('sameQuantiseSettings', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE',
         outlineExpansion: 0,
         colorMerge: 0,
@@ -177,6 +189,7 @@ describe('sameQuantiseSettings', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE',
         outlineExpansion: 0,
         colorMerge: 0,
@@ -196,6 +209,7 @@ describe('sameQuantiseSettings', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE',
       outlineExpansion: 0,
       colorMerge: 0,
@@ -211,6 +225,7 @@ describe('sameQuantiseSettings', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE',
         outlineExpansion: 0,
         colorMerge: 0,
@@ -226,6 +241,7 @@ describe('sameQuantiseSettings', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE',
         outlineExpansion: 0,
         colorMerge: 0,
@@ -241,6 +257,7 @@ describe('sameQuantiseSettings', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE',
         outlineExpansion: 0,
         colorMerge: 0,

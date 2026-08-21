@@ -79,6 +79,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -100,6 +101,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -123,6 +125,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -148,6 +151,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -173,6 +177,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -200,6 +205,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -215,6 +221,68 @@ describe('quantiseImage', () => {
     ]);
   });
 
+  it('reports the sprites on the keyed result, in the result’s own pixels', () => {
+    // The segmentation is read off the finished sheet rather than the source, so the box is stated
+    // in drawn pixels — the 2 × 2 the sprite resolved to above, not the 16 × 16 it occupied on the
+    // sheet. That is the whole reason it travels back with the result: the studio's target size and
+    // the atlas cell are stated in the same unit.
+    const result = quantiseImage(INSET_SHEET, {
+      grid: 8,
+      key: KEYING,
+      vote: 'DOMINANT',
+      lineStrength: 1.5,
+      trimStrength: 0,
+      inkThreshold: 64,
+      fillCleanup: 0,
+      cleanupPasses: 1,
+      spriteGap: 1,
+      dither: 'NONE' as const,
+      outlineExpansion: 0,
+      colorMerge: 0,
+      reduction: null,
+    });
+
+    expect(result.sprites).toEqual({
+      kind: 'SEGMENTED',
+      boxes: [{ left: 1, top: 1, width: 2, height: 2, pixels: 4 }],
+      specks: 0,
+    });
+  });
+
+  it('reads an unkeyed result as one sprite covering it, whatever is drawn on it', () => {
+    // Nothing has been keyed, so there is no transparency to separate anything by — and the honest
+    // answer is one box filling the sheet rather than a count nobody could act on.
+    const result = quantiseImage(INSET_SHEET, {
+      grid: 8,
+      key: null,
+      vote: 'DOMINANT',
+      lineStrength: 1.5,
+      trimStrength: 0,
+      inkThreshold: 64,
+      fillCleanup: 0,
+      cleanupPasses: 1,
+      spriteGap: 1,
+      dither: 'NONE' as const,
+      outlineExpansion: 0,
+      colorMerge: 0,
+      reduction: null,
+    });
+
+    expect(result.sprites).toEqual({
+      kind: 'SEGMENTED',
+      boxes: [
+        {
+          left: 0,
+          top: 0,
+          width: result.image.width,
+          height: result.image.height,
+          pixels: result.image.width * result.image.height,
+        },
+      ],
+      specks: 0,
+    });
+  });
+
   it('reports the share of the sheet the key removed', () => {
     const result = quantiseImage(INSET_SHEET, {
       grid: 8,
@@ -225,6 +293,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -249,6 +318,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -291,6 +361,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -323,6 +394,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -348,6 +420,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -394,6 +467,7 @@ describe('quantiseImage', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
@@ -443,6 +517,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -496,6 +571,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -563,6 +639,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -588,6 +665,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      spriteGap: 1,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -626,6 +704,7 @@ describe('quantiseImage', () => {
           inkThreshold: 64,
           fillCleanup: 8,
           cleanupPasses: 2,
+          spriteGap: 1,
           dither: 'NONE' as const,
           outlineExpansion: 0,
           colorMerge: 8,
@@ -681,6 +760,7 @@ describe('quantiseImage — a locked palette', () => {
     inkThreshold: 64,
     fillCleanup: 0,
     cleanupPasses: 1,
+    spriteGap: 1,
     dither: 'NONE' as const,
     outlineExpansion: 0,
     colorMerge,
@@ -749,6 +829,7 @@ describe('quantiseImage — a dither', () => {
     inkThreshold: 64,
     fillCleanup: cleanup,
     cleanupPasses: 4,
+    spriteGap: 1,
     colorMerge: cleanup,
     outlineExpansion: 0,
     dither,

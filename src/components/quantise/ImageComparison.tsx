@@ -3,6 +3,7 @@ import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../con
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
 import { heatmapImage } from '../../utils/heatmapImage.ts';
+import { outlineSprites } from '../../utils/spriteOutline.ts';
 import type { ComparisonPaneProps } from './ComparisonPane.tsx';
 import { ComparisonPane } from './ComparisonPane.tsx';
 import { ComparisonToolbar } from './ComparisonToolbar.tsx';
@@ -59,11 +60,16 @@ interface ImageComparisonProps {
  * lands on the source pixels it covers and both panes measure as the same content. The reasoning
  * lives on `PaneContent`.
  *
- * **The three modes are two layouts and two second images**, which is why there is no third pane and
- * no third canvas. `SIDE_BY_SIDE` and `DIFFERENCE` are the same pair of frames — the second one
- * showing the result or a heatmap of what the result cost — so the sheet stays on the left across a
- * mode switch and the linked pan position survives it. `WIPE` is the same two frames laid over one
- * another; every value they are drawn from is the one the pair already uses.
+ * **The four modes are two layouts and three second images**, which is why there is no third pane and
+ * no third canvas. `SIDE_BY_SIDE`, `DIFFERENCE` and `SPRITES` are the same pair of frames — the
+ * second one showing the result, a heatmap of what the result cost, or the result with the sprite
+ * bounds marked — so the sheet stays on the left across a mode switch and the linked pan position
+ * survives it. `WIPE` is the same two frames laid over one another; every value they are drawn from
+ * is the one the pair already uses.
+ *
+ * All three second images are one pixel per mesh cell, which is what lets them share every scrap of
+ * the placement below: the magnification, the leading-cell inset and the clipping window are
+ * computed once and none of them asks which picture it is placing.
  */
 export function ImageComparison({
   sourceName,
@@ -108,6 +114,21 @@ export function ImageComparison({
     [difference, shown, differenceScale],
   );
 
+  // The same arrangement one mode over, and keyed the same way: on the values the drawing depends
+  // on, never on `quantised`. A **scattered** sheet is marked with no boxes rather than falling back
+  // to the plain result — the frame then says "here is the result, and nothing on it was read as a
+  // sprite", which is what the panel beside it is explaining. Falling back would instead show a
+  // picture the pane's own description no longer fits.
+  const resultImage = quantised?.result.image;
+  const sprites = quantised?.result.sprites;
+  const marked = useMemo(
+    () =>
+      resultImage === undefined || sprites === undefined || shown !== 'SPRITES'
+        ? null
+        : outlineSprites(resultImage, sprites.kind === 'SEGMENTED' ? sprites.boxes : []),
+    [resultImage, sprites, shown],
+  );
+
   // `zoom` is the scale for *both* panes, because it is measured per source pixel: the second canvas
   // is drawn `grid` times larger to arrive at the same number. See `src/utils/panGeometry.ts`.
   useLinkedPanes({
@@ -129,7 +150,7 @@ export function ImageComparison({
   // `putImageData` calls of up to 67 megabytes each, on the main thread, for every render of the
   // panel. The two elements are dependencies for the opposite reason: a canvas that has just been
   // mounted is blank, and the image it wants may not have changed at all.
-  const secondImage = heatmap ?? quantised?.result.image;
+  const secondImage = heatmap ?? marked ?? resultImage;
   useEffect(() => {
     paint(sourceCanvas, source);
     paint(resultCanvas, secondImage);
@@ -152,7 +173,7 @@ export function ImageComparison({
 
   const second: ComparisonPaneProps = {
     caption: secondCaption(shown, quantised, busy),
-    label: shown === 'DIFFERENCE' ? 'Pan the difference heatmap' : 'Pan the quantised sheet',
+    label: SECOND_PANE_LABELS[shown],
     viewportRef: setResultView,
     canvasRef: setResultCanvas,
     // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts the two
@@ -171,10 +192,7 @@ export function ImageComparison({
               y: quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
             },
           },
-    alt:
-      shown === 'DIFFERENCE'
-        ? 'How far each drawn pixel sits from the patch of the sheet it stands for'
-        : 'The sheet after grid alignment and palette reduction',
+    alt: SECOND_PANE_ALT[shown],
     placeholder: (
       // Its own padding, because `PanViewport` carries none — see the note on its geometry.
       <p className="p-3 text-xs leading-relaxed text-ink-muted">{emptyReason(busy, grid, scale)}</p>
@@ -207,6 +225,28 @@ export function ImageComparison({
     </section>
   );
 }
+
+/**
+ * What the second frame is called, and what it is described as, per mode.
+ *
+ * Records keyed by the union rather than a chain of ternaries at the two call sites, so a fifth mode
+ * fails to compile until both halves have been written — which is the same property
+ * `PREVIEW_MODE_LABELS` is a separate file to keep. `WIPE` names the result because that is what the
+ * second frame holds there; the layout is what differs, not the picture.
+ */
+const SECOND_PANE_LABELS: Readonly<Record<PreviewMode, string>> = {
+  SIDE_BY_SIDE: 'Pan the quantised sheet',
+  WIPE: 'Pan the quantised sheet',
+  DIFFERENCE: 'Pan the difference heatmap',
+  SPRITES: 'Pan the quantised sheet with its sprite bounds marked',
+};
+
+const SECOND_PANE_ALT: Readonly<Record<PreviewMode, string>> = {
+  SIDE_BY_SIDE: 'The sheet after grid alignment and palette reduction',
+  WIPE: 'The sheet after grid alignment and palette reduction',
+  DIFFERENCE: 'How far each drawn pixel sits from the patch of the sheet it stands for',
+  SPRITES: 'The quantised sheet, with a box drawn around each separate sprite found on it',
+};
 
 /** Put the pixels on the canvas verbatim. A missing canvas is the pane that is showing its `<p>`. */
 function paint(canvas: HTMLCanvasElement | null, image: ImageData | undefined): void {

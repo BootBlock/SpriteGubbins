@@ -776,6 +776,72 @@ export function measurableGridCeiling(width: number, height: number): number {
 }
 
 /**
+ * The sprite-gap slider's range: how far apart two pieces of artwork may sit and still be counted
+ * as one sprite, in drawn pixels.
+ *
+ * **`0` is not an off position, which makes this the one dial on the tab whose zero does not mean
+ * "the pass does not run".** The segmentation always runs, and at zero it still folds pieces whose
+ * bounding boxes overlap — a figure with an outstretched arm passes through its own torso's box
+ * without sharing a pixel with it, and a reader would never want those counted as two sprites. What
+ * the dial adds above zero is reach into empty space.
+ *
+ * The floor of usefulness is therefore 1, which takes in a piece one clear pixel away — the ordinary
+ * result of keying an anti-aliased join, where the blend the fringe pass removed was all that
+ * connected a pauldron to its shoulder. The ceiling is 8 because the useful range ends well before
+ * it and the failure past it is silent: sprites on a returned sheet are separated by a gutter, and a
+ * gap wider than that gutter folds the whole sheet into one box while reporting "1 sprite" as
+ * confidently as it would report twelve. Eight drawn pixels is half the smallest edge anyone draws a
+ * sprite at, so a sheet whose sprites sit that close together has no gutter to speak of.
+ */
+export const SPRITE_GAP_RANGE = { min: 0, max: 8, step: 1 } as const;
+
+/**
+ * The gap the tab opens with — one drawn pixel.
+ *
+ * The one dial here that opens engaged rather than off, and it can because it changes no pixel of
+ * the sheet: it decides what a *reading* of the result counts, so an opening that is wrong costs a
+ * number a reader can correct while they watch, not artwork they have to notice was altered. One
+ * pixel is the reach that recovers a piece the keying separated by removing the blend between it and
+ * its neighbour, which is the commonest way a sprite arrives in pieces.
+ */
+export const DEFAULT_SPRITE_GAP = 1;
+
+/**
+ * The fewest drawn pixels a piece of artwork must hold to be counted as a sprite rather than a
+ * speck.
+ *
+ * Keying leaves fringe: pixels that were mostly key colour, sat just outside the tolerance, and are
+ * now islands of one or two pixels along a silhouette. Counted as sprites they would swamp the
+ * figure the whole reading exists to give — a sheet of twelve components reporting four hundred —
+ * so anything under this is reported as a speck instead, which is a fact about the keying and worth
+ * a reader seeing fall as they raise the tolerance.
+ *
+ * Four, because it is far below anything drawn deliberately and far above what a fringe island is. A
+ * 2 × 2 block is the smallest mark a pixel artist makes that reads as a shape rather than as noise —
+ * an inventory pip, a spark, a rivet — and fringe islands are one and two pixels, since three or more
+ * connected pixels of near-key colour is a run the tolerance should have taken. It cannot be zero:
+ * with no floor a single stray pixel is a sprite, and the merge below would then be asked to fold
+ * thousands of them.
+ */
+export const SMALLEST_SPRITE_PIXELS = 4;
+
+/**
+ * How many separate pieces a sheet may break into before the reading refuses to call them sprites.
+ *
+ * Two things at once, and the second is the reason for the figure. It **bounds the merge**, whose
+ * rounds are quadratic in the pieces still standing, so a pathological sheet cannot turn a keystroke
+ * in the grid box into minutes of work. And it **bounds the claim**: past some count, "sprites" is
+ * the wrong word for what was found, and a number a reader would act on — a component count, an
+ * atlas plan — must not be produced from a sheet that plainly has not been keyed into anything.
+ *
+ * 512 is far above every real sheet and far below any pathology. `PRACTICAL_COMPONENT_CEILING`
+ * bounds one generation at 43 components, and a sheet of animation frames reaches perhaps a couple
+ * of hundred; a sheet whose field survived the key runs to tens of thousands of islands. Nothing
+ * legitimate sits between.
+ */
+export const SCATTERED_SPRITE_CEILING = 512;
+
+/**
  * The preview magnifications, in the order the control offers them.
  *
  * 1:1 leads because it is the case that decides whether the result is genuine pixel art; the rest
@@ -1059,7 +1125,7 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
 export const QUANTISE_TOOLTIPS = {
   grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still keep to — exactly, or with a little drift — is estimated instead and offered to click rather than applied. Type it yourself when no reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
   previewMode:
-    'Which of three ways the result is shown. Side by side is the pair of frames, each on the same part of the sheet at the same magnification. Wipe lays them over one another in a single frame under a divider you can drag, so the very same screen pixels can be seen before and after. Difference replaces the result with a map of what the reduction cost: one mark per drawn pixel, coloured by how far that pixel ended up from the patch of the sheet it stands for — dark where it is faithful, green then gold as it drifts, red where it has lost what it replaced. It changes only what this panel draws; the result, the download and everything stored are the same in all three.',
+    'Which of four ways the result is shown. Side by side is the pair of frames, each on the same part of the sheet at the same magnification. Wipe lays them over one another in a single frame under a divider you can drag, so the very same screen pixels can be seen before and after. Difference replaces the result with a map of what the reduction cost: one mark per drawn pixel, coloured by how far that pixel ended up from the patch of the sheet it stands for — dark where it is faithful, green then gold as it drifts, red where it has lost what it replaced. Sprites draws the result with a dashed box just outside each separate piece of artwork the keyed sheet was found to hold, which is how the count and the gap in the sprite panel are checked against the picture. It changes only what this panel draws; the result, the download and everything stored are the same in all four.',
   differenceScale:
     'How large a difference has to be to reach the top of the heatmap’s ramp, measured the way every colour tolerance on this tab is. Lower rungs grade the differences a sheet is mostly made of — on a typical sheet six drawn pixels in ten sit under 1 — and paint everything coarser than the rung in red. Higher rungs flatten those to dark and keep the ramp for the edges, where a patch that straddled a contour never had one colour to be reduced to, and for keyed sheets, whose silhouettes score past 200 wherever transparency landed differently from the artwork. The scale is fixed rather than fitted to each sheet on purpose: a ramp that re-scaled itself when you moved a dial could not be compared with the one you were looking at a moment ago.',
   wipe: 'Drag this to move the divider between the sheet as it arrived, on its left, and the quantised sheet on its right. Both are drawn at the same magnification on the same part of the sheet, so the pixels immediately either side of the divider are the same pixels before and after — which is what makes a change of a single shade findable. It can also be moved with the arrow keys once it has focus, and dragging anywhere else in the frame pans both images together as usual.',
@@ -1090,6 +1156,8 @@ export const QUANTISE_TOOLTIPS = {
     'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing, and the studio’s own colour setting decides the sheet’s colours as it would with no palette held. The default sits between the two things this has to tell apart on the sheet the dials were tuned against — the drift between two readings of one subject, and a colour that is genuinely new — and those overlap, so raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
   dither:
     'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it — which is also why the merge stops standing aside for a pinned or locked palette while a pattern is in force. One thing it costs: the standard vote’s outline rescue needs a colour reduction to have run before the patches are read, and a dither is that reduction held back to the end, so choosing a pattern switches the rescue off. Raise the outline expansion above it, or take the ink-weighted reading, if contours start to break up.',
+  spriteGap:
+    'How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels. A subject rarely comes back as one connected shape — a sword is held clear of the hand, a shadow sits under the feet, and keying an anti-aliased join can cut a pauldron away from the shoulder it rests on — so pieces this close together are read as parts of one thing. Unlike every other dial on this tab, 0 is not an off position: the count is always taken, and at 0 pieces are still gathered where their boxes overlap, which is what keeps an outstretched arm from being counted apart from the body it reaches out of. Raise it when one subject is being counted as several, and lower it when two neighbouring subjects are being counted as one — past the width of the gutter between them, the whole sheet folds into a single box. It changes no pixel of the sheet, only the reading of it, so the download is the same file whatever it is set to. Switch the preview to Sprites to see where the boundaries were drawn.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

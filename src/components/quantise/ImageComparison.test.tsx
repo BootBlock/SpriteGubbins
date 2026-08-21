@@ -43,6 +43,7 @@ function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance 
     difference: flatDifference(image.width, image.height, distance),
     colors,
     keyedShare: 0,
+    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     offset,
   };
 }

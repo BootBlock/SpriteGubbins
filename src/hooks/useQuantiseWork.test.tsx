@@ -18,6 +18,7 @@ const TUNING = {
   colorMerge: 0,
   fillCleanup: 0,
   cleanupPasses: 1,
+  spriteGap: 1,
   dither: 'NONE' as const,
   outlineExpansion: 0,
 } as const;
@@ -35,6 +36,7 @@ function resultOf(side: number): QuantiseResult {
     difference: flatDifference(side, side),
     colors: 32,
     keyedShare: 0,
+    sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     offset: { x: 0, y: 0 },
   };
 }
@@ -167,6 +169,7 @@ describe('useQuantiseWork', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        spriteGap: 1,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,

@@ -8,7 +8,7 @@ import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/
  * Filed apart from the panel that arranges the frames because they are different kinds of thing:
  * that file decides *geometry* — the magnification that makes one screen pixel mean the same amount
  * of sheet on both sides, the window that holds the two extents equal, the deficit a leading partial
- * cell is pulled back by — and this decides *prose*. Three captions and four reasons for an empty
+ * cell is pulled back by — and this decides *prose*. Four captions and four reasons for an empty
  * pane is enough of the second to be worth reading on its own.
  */
 
@@ -42,8 +42,12 @@ export function sourceCaption(source: ImageData, sourceColors: number | null): R
  * The heatmap's two figures are the point of stating them: the map says *where* a reduction cost
  * something and these say *how much*, and the pair is what a reader compares across a change of dial
  * — a mean that has not moved while the map plainly has is the shape of a dial that redistributes
- * rather than improves. The colour count the other two modes state is not a fact about a heatmap, so
- * it makes way rather than sitting beside them meaning nothing.
+ * rather than improves. The colour count the plain modes state is not a fact about a heatmap, so it
+ * makes way rather than sitting beside them meaning nothing.
+ *
+ * The sprite mode does the same thing with the same reasoning: the frame shows *where* the bounds
+ * were drawn and the caption says *how many*, which is the pair a reader watches as the gap dial
+ * moves. `SIDE_BY_SIDE` and `WIPE` share the third form, because they show the same picture.
  */
 export function secondCaption(mode: PreviewMode, quantised: Quantised | null, busy: boolean): ReactNode {
   if (quantised === null) {
@@ -58,6 +62,14 @@ export function secondCaption(mode: PreviewMode, quantised: Quantised | null, bu
   if (mode === 'DIFFERENCE') {
     const { mean, peak } = quantised.result.difference;
     return `Difference · mean ${mean.toFixed(2)} · peak ${peak.toFixed(1)}${trailing}`;
+  }
+  if (mode === 'SPRITES') {
+    const { sprites } = quantised.result;
+    const found =
+      sprites.kind === 'SCATTERED'
+        ? `${String(sprites.pieces)} pieces, none read as a sprite`
+        : `${String(sprites.boxes.length)} ${sprites.boxes.length === 1 ? 'sprite' : 'sprites'}`;
+    return `Sprites · ${found}${trailing}`;
   }
 
   const { image, colors } = quantised.result;

@@ -28,6 +28,7 @@ import { SelectField } from '../common/SelectField.tsx';
 import { AtlasFitSummary } from './AtlasFitSummary.tsx';
 import { AtlasGridPreview } from './AtlasGridPreview.tsx';
 import { AtlasMemoryBudget } from './AtlasMemoryBudget.tsx';
+import { AtlasMeasuredSprites } from './AtlasMeasuredSprites.tsx';
 import { AtlasMetricGrid } from './AtlasMetricGrid.tsx';
 
 /**
@@ -44,6 +45,12 @@ import { AtlasMetricGrid } from './AtlasMetricGrid.tsx';
  * the target component size the fit is checked against. The subject's additional anatomy is read
  * here for the same reason — those pieces are components like any other, and a grid short of a cell
  * for each of them would not hold the sheet the prompt asks for.
+ *
+ * **One row does not come from the studio, and it is deliberately an aside rather than an input.**
+ * `AtlasMeasuredSprites` reports what the sheet the reader has quantised was found to hold — a
+ * measurement of one returned raster, where everything else here describes the design. It is shown
+ * beside the plan and never folded into it, so the numbers this modal computes cannot change because
+ * of an image dropped on another tab.
  */
 export function AtlasCalculatorModal() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
@@ -123,6 +130,12 @@ export function AtlasCalculatorModal() {
           canvasSize={canvasSize}
           smallestCanvas={smallestCanvas}
         />
+
+        {/* Directly under the fit, because it answers the same question about the other half of the
+            job: that row asks whether the size the prompt *requests* fits this cell, and this one
+            whether the artwork that *arrived* does. It renders nothing at all while no sheet has
+            been quantised, which is most of the time. */}
+        <AtlasMeasuredSprites componentCount={config.componentCount} usableBounds={metrics.usableBounds} />
 
         <AtlasMetricGrid metrics={metrics} componentCount={config.componentCount} />
 

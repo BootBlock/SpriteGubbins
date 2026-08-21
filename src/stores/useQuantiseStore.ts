@@ -9,6 +9,7 @@ import {
   DEFAULT_LINE_STRENGTH,
   DEFAULT_OUTLINE_EXPANSION,
   DEFAULT_PALETTE_SNAP,
+  DEFAULT_SPRITE_GAP,
   DEFAULT_TRIM_STRENGTH,
 } from '../constants/quantiser.ts';
 import type {
@@ -116,6 +117,16 @@ export interface QuantiseState {
    * while a palette is locked.
    */
   readonly paletteSnap: number;
+  /**
+   * How far apart two pieces of artwork may sit and still be counted as one sprite, from
+   * `SPRITE_GAP_RANGE`.
+   *
+   * Workflow intent like the vote and the dither, and for the same reason: how far a subject's
+   * pieces drift apart is a fact about the *artwork's* construction — a rig with floating hands, a
+   * creature with a detached tail — and the splitter hands back eight sheets of one subject. `0` is
+   * not an off position; see `spriteSegments`.
+   */
+  readonly spriteGap: number;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
@@ -135,6 +146,7 @@ export interface QuantiseState {
   /** Let the held palette go, handing the colour decision back to the studio. */
   unlockPalette(): void;
   setPaletteSnap(paletteSnap: number): void;
+  setSpriteGap(spriteGap: number): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
@@ -157,6 +169,7 @@ const EMPTY: Pick<
   | 'dither'
   | 'lockedPalette'
   | 'paletteSnap'
+  | 'spriteGap'
 > = {
   source: null,
   gridOverride: null,
@@ -173,6 +186,7 @@ const EMPTY: Pick<
   dither: DEFAULT_DITHER,
   lockedPalette: null,
   paletteSnap: DEFAULT_PALETTE_SNAP,
+  spriteGap: DEFAULT_SPRITE_GAP,
 };
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
@@ -258,6 +272,10 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setPaletteSnap: (paletteSnap) => {
     set({ paletteSnap });
+  },
+
+  setSpriteGap: (spriteGap) => {
+    set({ spriteGap });
   },
 
   // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is

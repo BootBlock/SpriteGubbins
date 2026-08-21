@@ -94,3 +94,22 @@ export const ATLAS_TOOLTIPS = {
   packingPlan:
     'The same figures drawn to scale, so the waste has a shape rather than only a price. The bright cells are components, the dim ones are slots the grid affords that nothing lands in, and the bare margin is texture the grid never reaches. It plans the atlas you repack the extracted artwork into. The prompt fixes the order the components are drawn in but never the number of rows and columns, so treat this as the packing you can choose rather than a picture of the sheet you will get back.',
 } as const;
+
+/**
+ * What the calculator says about the sheet a reader has actually quantised, keyed to what was found
+ * in it.
+ *
+ * Beside `ATLAS_TOOLTIPS` rather than inside it, and the split is the one the quantiser makes for
+ * the same reason: those explain the modal's *controls*, and these describe the state of the
+ * reader's own image — the same standing `QUANTISE_SCALE_GUIDANCE` has. Neither names a figure; the
+ * badge and the line above them state the counts.
+ */
+export const MEASURED_SPRITE_GUIDANCE = {
+  /** The sheet came apart into things that can be counted against the plan above. */
+  measured:
+    'Every other figure on this panel describes the atlas your prompt asks for. This one describes the sheet you quantised — how many separate pieces of artwork were actually found on it, and how big the largest of them is. The two disagreeing is worth knowing before you pack anything: a generator that returned fewer components than were asked for leaves slots empty, and one whose artwork came back larger than the target size will not seat at 1:1 in the cell planned for it. The plan above is not changed by any of this; it stays the atlas your prompt describes.',
+
+  /** It did not, which is a fact about the keying rather than about the sheet's contents. */
+  scattered:
+    'The sheet you quantised has not been separated into sprites, so there is nothing here to check the plan against. That is the background: until the key is removed on the Quantise tab, every component on the sheet is joined to every other one by the field between them. Switch keying on there and raise the tolerance until the field goes, and this becomes a count you can read against the plan above.',
+} as const;

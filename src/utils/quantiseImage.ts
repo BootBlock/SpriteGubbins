@@ -14,6 +14,7 @@ import { kCentroidCells } from './kCentroidVote.ts';
 import { keyBackground } from './keyBackground.ts';
 import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
+import { spriteSegments } from './spriteSegments.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
@@ -206,6 +207,13 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // it did to their sheet, and a heatmap that had already accepted the thickened contour as the
     // truth would answer by going darker the harder the pass worked.
     difference: differenceMap(source, output, mesh),
+    // Read off the finished sheet, so what it counts is what the reader is looking at — and after
+    // the cleanups, which is where a speck that would otherwise have been counted as a sprite goes.
+    // It runs unconditionally for the reason the difference map does: a reading fetched separately
+    // could describe an older result than the one beside it, and this one is compared against a
+    // dial that has just moved. Its own cost is a guarded early-out on any sheet with no
+    // transparency in it, which is every sheet the reader has not keyed — see `spriteSegments`.
+    sprites: spriteSegments(output, settings.spriteGap),
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than

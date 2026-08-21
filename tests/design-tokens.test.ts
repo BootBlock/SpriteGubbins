@@ -1226,3 +1226,43 @@ describe('the difference heatmap’s ramp', () => {
     expect(first?.[0] ?? 0).toBeGreaterThan((ground?.[0] ?? 0) + 0.5);
   });
 });
+
+/**
+ * The sprite outline's two marker colours, held against the tokens they claim to be.
+ *
+ * The same exemption the heatmap's ramp claims and therefore the same check: `spriteOutline.ts`
+ * draws into pixel data inside a pure function, where there is no element to carry a class and no
+ * stylesheet to read, so `src/constants/spriteMarker.ts` writes the values down a second time. The
+ * point of that file naming the token beside each triple is that this can compare them.
+ */
+describe('the sprite outline’s markers', () => {
+  const markers = readFileSync(resolve(process.cwd(), 'src/constants/spriteMarker.ts'), 'utf8');
+  const declaration = /property: '(--[a-z0-9-]+)', oklch: \[([\d.]+), ([\d.]+), ([\d.]+)\]/g;
+  const stops = [...markers.matchAll(declaration)].map((stop) => ({
+    property: stop[1] ?? '',
+    oklch: [Number(stop[2]), Number(stop[3]), Number(stop[4])] as [number, number, number],
+  }));
+
+  it('was parsed whole, so nothing below can pass by matching less than all of it', () => {
+    // Pinned to the count, as the ramp's guard is: a third marker is meant to fail here, because the
+    // outline alternates on a parity and a third colour would never be drawn.
+    expect(stops).toHaveLength(2);
+  });
+
+  it.each(stops.map((stop) => [stop.property, stop.oklch] as const))(
+    'states %s exactly as the stylesheet does',
+    (property, oklch) => {
+      expect(oklchToken(property)).toStrictEqual(oklch);
+    },
+  );
+
+  it('pairs the darkest surface the app owns with the lightest, and neither with a hue', () => {
+    // The mark lands on the reader's own artwork, so it has to separate from any lightness — which
+    // is what the two ends of the app's own neutral range give it — and it must not claim a meaning,
+    // which is what every chromatic token in this palette would. Both conditions are structural: a
+    // stop swapped for `gold` would still render, and would read as a warning about the sprite.
+    const [dark, light] = [stops.at(0)?.oklch, stops.at(1)?.oklch];
+    expect(light?.[0] ?? 0).toBeGreaterThan((dark?.[0] ?? 0) + 0.7);
+    for (const stop of stops) expect(stop.oklch[1]).toBeLessThan(0.05);
+  });
+});
