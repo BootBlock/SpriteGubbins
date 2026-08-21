@@ -12,10 +12,8 @@
 /**
  * How many of a held palette's colours the swatch strip shows before it counts the rest.
  *
- * A lock taken from a sheet with no colour budget can hold thousands of entries — the quantiser
- * reduces nothing under `UNRESTRICTED` — and a strip of thousands of dots is not a palette anyone
- * can read. The entries are held most-used first, so the ones shown are the ones the sheet is
- * actually made of, and the remainder is stated as a number rather than silently dropped.
+ * A figure rather than a literal in `LockedSwatches`, which is where the reasoning for capping the
+ * strip at all lives: this is the number, and that is what it is for.
  */
 export const LOCKED_SWATCHES_SHOWN = 64;
 

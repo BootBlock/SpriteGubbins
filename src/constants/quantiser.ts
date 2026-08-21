@@ -484,9 +484,9 @@ export const PALETTE_SNAP_RANGE = { min: 0, max: 64, step: 1 } as const;
  * was 20.4, and the nearest of the six colours the sheet does not contain was 20.8. No integer lies
  * between them, so the opening errs towards **keeping** rather than snapping. At 20, of the four
  * re-readings measured, the share of pixels the lock takes is 100% at a budget of 32, 99.96% at a
- * grid of 5, 99.80% under the k-centroid reading and 93.93% under the dominant one — 59 to 64 of
- * each sheet's 64 colours — while every one of the six colours the sheet does not contain is left
- * alone. What it fails to take is by definition what sits furthest from the locked palette, which is
+ * grid of 5, 99.80% under the k-centroid reading and 93.93% under the dominant one — 59, 60 and 63
+ * of each of those sheets' 64 colours, and all 32 of the 32-colour one — while every one of the six
+ * colours the sheet does not contain is left alone. What it fails to take is by definition what sits furthest from the locked palette, which is
  * what snapping would change most; keeping it costs a few extra colours and no artwork. The dominant
  * reading is the outlier of the four because it selects rather than blends, so its cells land on the
  * source's own colours instead of on tones near the locked ones.

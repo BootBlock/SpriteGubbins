@@ -1,13 +1,12 @@
 import { PALETTE_SNAP_RANGE, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
-import { LOCKED_SWATCHES_SHOWN, PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
+import { PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import { toHex } from '../../utils/imageData.ts';
 import { lockPaletteFrom } from '../../utils/lockedPalette.ts';
 import { Badge } from '../common/Badge.tsx';
-import { ColorSwatch } from '../common/ColorSwatch.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { RangeField } from '../common/RangeField.tsx';
+import { LockedSwatches } from './LockedSwatches.tsx';
 
 interface PaletteLockControlsProps {
   /** The quantised sheet a lock would be taken from, or `null` while there is no result. */
@@ -78,9 +77,6 @@ export function PaletteLockControls({
     if (taken !== null) lockPalette(taken);
   };
 
-  const shown = lock === null ? [] : lock.entries.slice(0, LOCKED_SWATCHES_SHOWN);
-  const hidden = lock === null ? 0 : lock.entries.length - shown.length;
-
   return (
     <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -114,7 +110,7 @@ export function PaletteLockControls({
             <button
               type="button"
               onClick={unlockPalette}
-              className="rounded-lg border border-foundry-600 px-3.5 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 active:scale-[0.98]"
+              className="rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98]"
             >
               Unlock
             </button>
@@ -124,14 +120,7 @@ export function PaletteLockControls({
 
       {lock !== null && (
         <>
-          {/* Decorative, as the studio's own palette strip is: the badge above states the count and
-              the sheet, which is what a reader who cannot use the swatches needs from this. */}
-          <div aria-hidden="true" className="mt-3 flex flex-wrap gap-1">
-            {shown.map((entry) => (
-              <ColorSwatch key={toHex(entry)} colorText={toHex(entry)} />
-            ))}
-            {hidden > 0 && <span className="font-mono text-2xs text-ink-faint">+{hidden} more</span>}
-          </div>
+          <LockedSwatches entries={lock.entries} />
 
           <div className="mt-4">
             <RangeField
