@@ -54,7 +54,8 @@ export interface SheetWriteRequest {
    * The sprites the segmentation found, in the 1:1 result's own coordinates.
    *
    * The frames an Aseprite document is cut into — see `sheetLayout.ts`. Empty where the sheet held
-   * nothing to cut, and empty for a PNG, which is one picture and has no frames to divide.
+   * nothing to cut. **Sent whatever the format is**, and read only by the writer that has frames:
+   * the near side does not know which formats care, which is what keeps the press from having to.
    */
   readonly boxes: readonly SpriteBox[];
 }

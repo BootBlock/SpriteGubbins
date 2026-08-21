@@ -18,8 +18,9 @@ interface SegmentedChoiceProps<T extends string | number> {
 /**
  * One value chosen from a small fixed set, as a row of pills.
  *
- * Two controls in the Quantise tab are this: the preview magnification and the keying tolerance. Both
- * are a handful of stepped numbers where a slider would be the obvious choice and the wrong one —
+ * Six controls in the Quantise tab are this — the preview layout, the preview magnification, the
+ * heatmap scale, the keying tolerance, and the download's magnification and format. Most are a
+ * handful of stepped numbers where a slider would be the obvious choice and the wrong one —
  * every one of them re-runs work proportional to the whole image, and a drag would spend a recompute
  * per pointer move on a sheet that may be sixteen megapixels. Stepped values reach the same range at
  * one recompute per click.
@@ -32,7 +33,7 @@ interface SegmentedChoiceProps<T extends string | number> {
  * The selected pill is the view's colour, painted the way `TabSwitcher` paints its own: a *selection*
  * is solid `bg-tab`, where an *action* is the translucent, outlined `action-tab`. Keeping those two
  * apart is what stops "the zoom is at 4×" and "press this to download" reading as the same offer.
- * Both call sites are in the Quantise tab, so this used to be the one indigo control in a jade panel.
+ * Every call site is in the Quantise tab, so this used to be the one indigo control in a jade panel.
  *
  * **The pills carry no guidance card of their own**, and that is the same call `ComboBox` makes about
  * its options: a pill is one *value* of a setting, not a control in its own right, and the setting is

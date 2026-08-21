@@ -157,6 +157,26 @@ describe('encodeAseprite', () => {
     expect(decoded.layers).toHaveLength(1);
     expect((decoded.layers[0]?.flags ?? 0) & 8).toBe(0);
     expect(decoded.layers[0]?.name).toBe('Sheet');
+    // An ordinary image layer at full opacity, and every cel on it — there is only one layer for a
+    // cel to belong to, and a cel naming any other index would be drawn on nothing.
+    expect(decoded.layers[0]?.type).toBe(0);
+    expect(decoded.layers[0]?.opacity).toBe(255);
+    expect(decoded.frames.map((frame) => frame.cels[0]?.layer)).toEqual([0, 0, 0]);
+  });
+
+  it('gives a background layer to a sheet whose palette holds no transparent entry', async () => {
+    // Semi-transparent and opaque pixels, and not one empty pixel. The palette therefore has
+    // non-opaque entries — so a count of those says "keyed" — while its *lowest* alpha is 160, so
+    // entry 0 is a colour the reader can see. On a normal layer the header would name it as the
+    // transparent index and every pixel of that shade would render as a hole.
+    const image = imageFrom(6, 4, (x) =>
+      x % 2 === 0 ? { r: 10, g: 20, b: 30, a: 160 } : { r: 90, g: 80, b: 70, a: 255 },
+    );
+    const decoded = await decodeAseprite((await encodeAseprite(image, boxesOf(image))).bytes);
+
+    expect(decoded.palette?.[0]?.a).toBe(160);
+    expect((decoded.layers[0]?.flags ?? 0) & 8).toBe(8);
+    expect(decoded.layers[0]?.name).toBe('Background');
   });
 
   it('states the frame duration in every frame and in the deprecated header field', async () => {
@@ -204,6 +224,29 @@ describe('encodeAseprite', () => {
     expect(decoded.palette).toBeNull();
     expect(decoded.colors).toBe(0);
     expect([...(decoded.frames[0]?.cels[0]?.pixels ?? [])]).toEqual([...image.data]);
+  });
+
+  it('states its own byte count in its first field', async () => {
+    const image = keyedSheet();
+    const written = await encodeAseprite(image, boxesOf(image));
+    // The reader refuses a file whose stated size is not its length, so this pins the figure it
+    // agreed with — the one field that can only be written after everything it measures.
+    expect((await decodeAseprite(written.bytes)).fileSize).toBe(written.bytes.length);
+  });
+
+  it('refuses a cel the format cannot place, which a canvas-sized guard would let through', async () => {
+    // Both canvas edges are `WORD`s and a cel's origin is a pair of `SHORT`s, so a canvas well
+    // inside 65535 can still be one no cel can be placed in the lower half of. Two sprites in one
+    // band, the second starting past 32767 rows below the band's top: the canvas is legal and the
+    // offset is not, and written as a `SHORT` it would wrap negative — a cel drawn off the top.
+    const tall = 32770;
+    const image = imageFrom(2, tall, () => CLEAR);
+    await expect(
+      encodeAseprite(image, [
+        { left: 0, top: 0, width: 1, height: tall, pixels: tall },
+        { left: 1, top: tall - 1, width: 1, height: 1, pixels: 1 },
+      ]),
+    ).rejects.toThrow(/cannot be placed past 32767/);
   });
 
   it('refuses a canvas the format cannot state, rather than wrapping it silently', async () => {

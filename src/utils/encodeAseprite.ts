@@ -8,7 +8,7 @@ import { aseColorProfileChunk, aseHeader, FILE_SIZE_OFFSET } from './aseHeader.t
 import { aseLayerChunk } from './aseLayer.ts';
 import { asePaletteChunk } from './asePalette.ts';
 import { aseTagChunks } from './aseTags.ts';
-import { CHANNELS_PER_PIXEL } from './imageData.ts';
+import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT } from './imageData.ts';
 import { concatBytes } from './pngChunk.ts';
 import { indexImage } from './pngPalette.ts';
 import { sheetLayout } from './sheetLayout.ts';
@@ -50,6 +50,21 @@ const RGBA_DEPTH = 32;
  */
 const MAX_CANVAS_SIDE = 65535;
 
+/**
+ * The furthest from the canvas corner a cel can be placed, since its origin is a pair of `SHORT`s.
+ *
+ * **Not the same bound as the canvas**, and that difference is the whole reason this exists: the
+ * header states the canvas in `WORD`s and the cel chunk states its position in *signed* 16-bit
+ * fields, so a canvas the header can describe perfectly well may still be one no cel can be placed
+ * in the lower half of. A frame keeps its offset within its own strip, so a strip band taller than
+ * this puts a later sprite past it — and the wrap is to a **negative** offset, which is a cel drawn
+ * off the top of the canvas rather than a refusal.
+ *
+ * Checked against the frames rather than against the canvas, so it stays true if the placement rule
+ * ever changes: what the format constrains is the number in the field, and that is what is measured.
+ */
+const MAX_CEL_ORIGIN = 32767;
+
 export async function encodeAseprite(
   image: ImageData,
   boxes: readonly SpriteBox[],
@@ -61,20 +76,38 @@ export async function encodeAseprite(
     );
   }
 
+  const placed = layout.frames.find((frame) => frame.x > MAX_CEL_ORIGIN || frame.y > MAX_CEL_ORIGIN);
+  if (placed !== undefined) {
+    throw new Error(
+      `An Aseprite cel cannot be placed past ${String(MAX_CEL_ORIGIN)} pixels from the canvas corner, and this one is at ${String(placed.x)}, ${String(placed.y)}`,
+    );
+  }
+
   const indexed = indexImage(image);
   const source: CelSource =
     indexed === null
       ? { pixels: image.data, sheetWidth: image.width, bytesPerPixel: CHANNELS_PER_PIXEL }
       : { pixels: indexed.indices, sheetWidth: image.width, bytesPerPixel: 1 };
 
+  // Whether entry 0 — the entry the header names as transparent — actually is transparent.
+  //
+  // **Fully transparent, not merely non-opaque**, which is the distinction that decides whether the
+  // file is correct. `indexImage` sorts the palette by ascending alpha, so entry 0 carries the
+  // lowest alpha there is; where that is not zero, *nothing* in the palette is transparent and the
+  // header would be naming a colour a reader can see. Its own `transparentEntries` counts every
+  // entry that is not fully opaque, which is the right question for a PNG's `tRNS` and the wrong one
+  // here: a sheet whose softest edge is alpha 160 and which carries no empty pixel at all has a
+  // non-zero count, and every pixel of that shade would render as a hole.
+  const keyed = indexed !== null && indexed.entries[0]?.a === FULLY_TRANSPARENT;
+
   // The first frame carries everything that describes the sprite; the rest carry a cel each.
   const [opening, ...later] = layout.frames;
   const first: Uint8Array[] = [
     aseColorProfileChunk(),
     ...(indexed === null ? [] : [asePaletteChunk(indexed.entries)]),
-    // A sheet with no transparent palette entry cannot name one as transparent, so it is written as
-    // a background layer instead — see `aseLayer.ts`, which is where that reasoning lives.
-    aseLayerChunk(indexed !== null && indexed.transparentEntries === 0),
+    // A palette with no transparent entry cannot have one named, so such a sheet is written as a
+    // background layer instead — see `aseLayer.ts`, which is where that reasoning lives.
+    aseLayerChunk(indexed !== null && !keyed),
     await aseCelChunk(source, opening),
     // Left out entirely where the sheet held nothing to cut. A tags chunk stating zero tags is a
     // chunk every reader has to parse to learn nothing.

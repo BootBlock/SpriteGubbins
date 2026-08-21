@@ -40,10 +40,10 @@ export interface AseHeader {
   /**
    * Which palette entry stands for transparency on a normal layer.
    *
-   * Always `0`, because `indexImage` orders the palette by ascending alpha and so puts a keyed
-   * sheet's transparent entry first. A sheet with **no** transparent entry gets a background layer
-   * instead of a normal one, where the specification states this field does not apply — see
-   * `aseLayer.ts`, which is where that decision is made and why.
+   * Always `0`, because `indexImage` orders the palette by ascending alpha and so puts a fully
+   * transparent entry, where the sheet has one, first. A palette holding **no** fully transparent
+   * entry gets a background layer instead of a normal one, where the specification states this field
+   * does not apply — see `aseLayer.ts`, which is where that decision is made and why.
    */
   readonly transparentIndex: number;
   /** The deprecated whole-sprite frame duration, kept in step with the per-frame field. */

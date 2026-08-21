@@ -7,9 +7,10 @@ import { useUIStore } from '../stores/useUIStore.ts';
  * The app has no server, so an anchor with a `download` attribute pointed at an object URL is the
  * only way anything leaves it as a file. That is six lines of browser trivia with two non-obvious
  * rules in it, and both of the app's downloads need all six — the compiled prompt, the preset pack
- * and the prompt history as text, and a quantised sheet as a PNG — so they are written once here
- * rather than once each. What differs between the two callers is what the `Blob` is made of and
- * what the confirmation says, and both of those are arguments.
+ * and the prompt history as text, and a quantised sheet as a PNG or an Aseprite document — so they
+ * are written once here rather than once each. What differs between the two callers is what the
+ * `Blob` is made of, what media type it carries and what the confirmation says, and all three of
+ * those are arguments.
  *
  * See {@link useClipboard} for why the browser-effect helpers live in this directory rather than in
  * `src/utils/`.

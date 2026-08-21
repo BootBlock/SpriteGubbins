@@ -22,8 +22,6 @@ export interface DecodedCel {
   readonly layer: number;
   readonly x: number;
   readonly y: number;
-  /** 2 for a compressed image, which is the only kind this writer produces. */
-  readonly type: number;
   readonly width: number;
   readonly height: number;
   /** Inflated: one byte per pixel indexed, four per pixel RGBA, row-major. */
@@ -236,7 +234,6 @@ async function readCel(data: Uint8Array<ArrayBuffer>, bytesPerPixel: number): Pr
     layer: view.getUint16(0, true),
     x: view.getInt16(2, true),
     y: view.getInt16(4, true),
-    type,
     width,
     height,
     pixels,

@@ -126,13 +126,19 @@ function describeWriting(written: WrittenSheet): string {
 /**
  * How the document was cut up, in words.
  *
- * A single frame is named as one rather than counted, because it is not a *reading* of the sheet —
- * it is what a sheet with nothing separable on it comes to, and "1 frame in 0 tags" reads as a
- * failure of the segmentation rather than as the whole sheet arriving intact.
+ * The uncut sheet is named rather than counted, because it is not a *reading* of the sheet — it is
+ * what a sheet with nothing separable on it comes to, and "1 frame in 0 tags" reads as a failure of
+ * the segmentation rather than as the whole sheet arriving intact.
+ *
+ * **It is the tags that say which case this is, never the frame count.** A sheet holding exactly one
+ * sprite also comes to one frame — and that frame is a *crop* of the sprite onto a canvas its own
+ * size, with the rest of the sheet gone, tagged as its row. Calling that "the whole sheet in one
+ * frame" is the very misreport this wording exists to avoid, so the boxless case is recognised by
+ * the thing that is actually absent from it.
  */
 function describeFrames(frames: number, tags: number): string {
-  if (frames === 1) return 'the whole sheet in one frame';
-  return `${String(frames)} frames in ${String(tags)} ${tags === 1 ? 'tag' : 'tags'}`;
+  if (tags === 0) return 'the whole sheet in one frame';
+  return `${String(frames)} ${frames === 1 ? 'frame' : 'frames'} in ${String(tags)} ${tags === 1 ? 'tag' : 'tags'}`;
 }
 
 /**

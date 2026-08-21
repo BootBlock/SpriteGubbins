@@ -9,16 +9,19 @@ import { ByteWriter } from './byteWriter.ts';
  * outline layer and a fill layer — so a document with more than one layer would be inventing
  * structure the artwork does not have. One layer, every frame's cel on it.
  *
- * **A sheet with no transparency is written as a *background* layer, and that is a correctness
- * matter rather than a nicety.** The file header names one palette entry as the transparent colour,
- * and this writer always names entry 0 because `indexImage` sorts the palette by ascending alpha and
- * so puts a keyed sheet's transparent entry first. On a sheet that carries no transparency at all
- * there is no such entry, and entry 0 is an ordinary colour — usually the darkest one — which a
- * normal layer would then render as holes. The specification says the transparent-index field
- * applies to "all non-background layers", so a background layer is exactly the state in which entry
- * 0 means what it says. A fully opaque sheet is also the one this can happen to: `spriteSegments`
- * reports such a sheet as `SOLID` and finds no boxes on it, so it is written as a single cel covering
- * the whole canvas, which is what a background layer is for.
+ * **A sheet whose palette holds no fully transparent entry is written as a *background* layer, and
+ * that is a correctness matter rather than a nicety.** The file header names one palette entry as
+ * the transparent colour, and this writer always names entry 0 because `indexImage` sorts the
+ * palette by ascending alpha and so puts a fully transparent entry, where there is one, first. Where
+ * there is not, entry 0 is a colour a reader can see — the darkest on an opaque sheet, or the
+ * softest edge on one whose only non-opaque pixels are partly transparent — and a normal layer would
+ * render every pixel of it as a hole. The specification says the transparent-index field applies to
+ * "all non-background layers", so a background layer is exactly the state in which entry 0 means
+ * what it says.
+ *
+ * **The test is entry 0's own alpha, not how many entries are non-opaque.** Those two answers part
+ * company on a sheet carrying semi-transparency and no empty pixel at all, which is a sheet this
+ * pipeline genuinely produces — `encodeAseprite` says so where it makes the decision.
  *
  * Pure, as everything in this directory is.
  */
