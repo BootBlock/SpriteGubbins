@@ -123,7 +123,7 @@ describe('quantiseImage', () => {
       cleanupPasses: 1,
       outlineExpansion: 0,
       colorMerge: 0,
-      reduction: colorPlanFor('FREE', 'UNRESTRICTED').reduction,
+      reduction: colorPlanFor('FREE', 'UNRESTRICTED', null, 0).reduction,
     });
 
     expect(PALETTE_COLOR_COUNTS.UNRESTRICTED).toBeNull();
@@ -304,7 +304,7 @@ describe('quantiseImage', () => {
   it('maps every pixel onto a pinned palette rather than onto colours the image chose', () => {
     // The difference a pinned palette makes, stated as the thing a budget cannot do: 200 arbitrary
     // colours come back as four *named* ones, and every pixel is one of exactly those four.
-    const gameBoy = colorPlanFor('GAME_BOY_DMG', 'UNRESTRICTED').reduction;
+    const gameBoy = colorPlanFor('GAME_BOY_DMG', 'UNRESTRICTED', null, 0).reduction;
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
@@ -328,7 +328,7 @@ describe('quantiseImage', () => {
     // The other half of a pinned palette, and the one that would look like a no-op if it were only
     // counted: the Mega Drive's 512 colours barely reduce a 200-colour image, but every channel that
     // survives is a value the machine could actually output.
-    const megaDrive = colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED').reduction;
+    const megaDrive = colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED', null, 0).reduction;
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
@@ -354,7 +354,7 @@ describe('quantiseImage', () => {
     // The rule the studio states under the budget control, asserted where it is actually applied. A
     // reduction to 32 followed by a map onto four would be two quantisations, and the first would
     // throw away exactly the colours the second needs to choose between.
-    expect(colorPlanFor('GAME_BOY_DMG', 'STRICT_32_COLOR').reduction).toEqual({
+    expect(colorPlanFor('GAME_BOY_DMG', 'STRICT_32_COLOR', null, 0).reduction).toEqual({
       kind: 'PALETTE',
       entries: [
         { r: 15, g: 56, b: 15, a: 255 },
@@ -385,7 +385,7 @@ describe('quantiseImage', () => {
         cleanupPasses: 1,
         outlineExpansion: 0,
         colorMerge: 0,
-        reduction: colorPlanFor(palette, 'UNRESTRICTED').reduction,
+        reduction: colorPlanFor(palette, 'UNRESTRICTED', null, 0).reduction,
       });
       expect(readPixel(result.image.data, 0).a, `${palette} flattened a soft edge`).toBe(128);
     }
@@ -628,5 +628,78 @@ describe('quantiseImage', () => {
         expect(again.keyedShare).toBe(first.keyedShare);
       }
     }
+  });
+});
+
+/**
+ * A palette locked off an earlier sheet, in the pipeline.
+ *
+ * Two claims that can only be made here rather than in `lockedPalette.test.ts`: that the lock is the
+ * palette step for *every* reading — the dominant vote runs it before the cells are resolved and the
+ * two averaging readings run it after — and that the sheet-wide colour merge stands aside for it, as
+ * it already does for a pinned palette. The second is a rule about two passes and is therefore
+ * invisible to a test of either one.
+ */
+describe('quantiseImage — a locked palette', () => {
+  const ENTRIES: readonly Rgba[] = [
+    { r: 12, g: 14, b: 18, a: 255 },
+    { r: 200, g: 100, b: 50, a: 255 },
+    { r: 40, g: 160, b: 60, a: 255 },
+  ];
+
+  /** 60 pixels, every one a small drift off one of the three entries — the next sheet in a series. */
+  const DRIFTED = imageFrom(20, 3, (x, y) => {
+    const entry = ENTRIES[y] ?? ENTRIES[0];
+    if (entry === undefined) throw new Error('the fixture needs its entries.');
+    const nudge = (x % 5) - 2;
+    return { r: entry.r + nudge, g: entry.g - nudge, b: entry.b + nudge, a: 255 };
+  });
+
+  const settingsFor = (vote: (typeof VOTE_METHODS)[number], colorMerge: number) => ({
+    grid: 1,
+    key: null,
+    vote,
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    cleanupPasses: 1,
+    outlineExpansion: 0,
+    colorMerge,
+    reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } as const,
+  });
+
+  it.each(VOTE_METHODS)('draws %s in the locked colours, whichever side of the vote it runs on', (vote) => {
+    const result = quantiseImage(DRIFTED, settingsFor(vote, 0));
+
+    const allowed = new Set(ENTRIES.map(toHex));
+    for (const color of new Set(pixels(result.image).flat().map(toHex))) {
+      expect(allowed.has(color), `${color} is not a locked colour`).toBe(true);
+    }
+  });
+
+  it('leaves the sheet-wide merge off, so a dial cannot fold two locked colours into one', () => {
+    // A merge wide enough to fold the whole palette into its most-used entry. With a lock in force
+    // the pass does not run at all, which is what stops a cleanup dial editing the palette the rest
+    // of the series is mapped onto — the same exemption a pinned palette has.
+    const merged = quantiseImage(DRIFTED, settingsFor('DOMINANT', 48));
+    const unmerged = quantiseImage(DRIFTED, settingsFor('DOMINANT', 0));
+
+    expect(channels(merged.image)).toEqual(channels(unmerged.image));
+    expect(merged.colors).toBe(3);
+  });
+
+  it('carries a colour the locked sheet never held through the whole pipeline', () => {
+    // The escape, end to end: the gem is 53 from its nearest entry, well outside a snap distance of
+    // 20, so it reaches the result as itself while every drifted pixel around it is taken.
+    const gem: Rgba = { r: 34, g: 211, b: 238, a: 255 };
+    const withGem = imageFrom(DRIFTED.width, DRIFTED.height, (x, y) =>
+      x === 0 && y === 0 ? gem : readPixel(DRIFTED.data, pixelOffset(DRIFTED.width, x, y)),
+    );
+
+    const result = quantiseImage(withGem, settingsFor('DOMINANT', 0));
+
+    expect(readPixel(result.image.data, 0)).toEqual(gem);
+    expect(result.colors).toBe(4);
   });
 });

@@ -231,3 +231,48 @@ describe('sameQuantiseSettings', () => {
     ).toBe(false);
   });
 });
+
+/**
+ * The locked-palette arm, which is the one reduction carrying a dial inside it.
+ *
+ * The other three are described entirely by their kind and one number or list. A lock's snap
+ * distance decides which of this sheet's colours the entries are applied to at all, so a comparison
+ * that ignored it would file the answer to one question against another — the tab would settle, and
+ * show a sheet snapped at a distance the reader had already moved off.
+ */
+describe('sameQuantiseSettings — a locked palette', () => {
+  const ENTRIES = [BLACK, WHITE];
+
+  it('holds for two separately-built copies of one lock', () => {
+    expect(
+      sameQuantiseSettings(
+        { ...BASE, reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } },
+        { ...BASE, reduction: { kind: 'LOCKED', entries: [{ ...BLACK }, { ...WHITE }], snap: 20 } },
+      ),
+    ).toBe(true);
+  });
+
+  it('fails on a moved snap distance, which is a different sheet', () => {
+    expect(
+      sameQuantiseSettings(
+        { ...BASE, reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } },
+        { ...BASE, reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 21 } },
+      ),
+    ).toBe(false);
+  });
+
+  it('fails on different colours, and on a lock against a pinned palette holding the same ones', () => {
+    expect(
+      sameQuantiseSettings(
+        { ...BASE, reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } },
+        { ...BASE, reduction: { kind: 'LOCKED', entries: [WHITE, BLACK], snap: 20 } },
+      ),
+    ).toBe(false);
+    expect(
+      sameQuantiseSettings(
+        { ...BASE, reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } },
+        { ...BASE, reduction: { kind: 'PALETTE', entries: ENTRIES } },
+      ),
+    ).toBe(false);
+  });
+});

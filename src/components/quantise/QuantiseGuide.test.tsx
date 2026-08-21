@@ -15,7 +15,9 @@ import { QuantiseGuide } from './QuantiseGuide.tsx';
 const COLOR_PLAN: ColorPlan = {
   reduction: { kind: 'MAX_COLORS', maxColors: 64 },
   setting: 'RESTRAINED_64_COLOR',
+  studioSetting: 'RESTRAINED_64_COLOR',
   effect: 'reduced to 64 colours chosen from the sheet',
+  superseded: null,
 };
 
 const factsWith = (scale: SheetFacts['scale']): SheetFacts => ({ scale, colors: 1024 });

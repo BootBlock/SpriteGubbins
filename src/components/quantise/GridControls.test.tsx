@@ -15,7 +15,9 @@ import { GridControls } from './GridControls.tsx';
 const COLOR_PLAN: ColorPlan = {
   reduction: null,
   setting: 'UNRESTRICTED',
+  studioSetting: 'UNRESTRICTED',
   effect: 'left as they are',
+  superseded: null,
 };
 
 const factsWith = (scale: SheetFacts['scale']): SheetFacts => ({ scale, colors: 1024 });

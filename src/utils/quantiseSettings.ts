@@ -54,10 +54,15 @@ function sameReduction(left: ColorReduction | null, right: ColorReduction | null
       return right.kind === 'CHANNEL_DEPTH' && left.bitsPerChannel === right.bitsPerChannel;
     case 'PALETTE':
       return right.kind === 'PALETTE' && sameEntries(left.entries, right.entries);
+    case 'LOCKED':
+      // The snap distance is part of the instruction rather than a dial beside it: it decides
+      // which colours the entries are applied to at all, so two locks holding the same colours at
+      // two distances produce two different sheets.
+      return right.kind === 'LOCKED' && left.snap === right.snap && sameEntries(left.entries, right.entries);
   }
 }
 
-/** Two pinned palettes: the same colours, in the same order, which is what `nearestColor` ties on. */
+/** Two stated palettes: the same colours, in the same order, which is what a nearest search ties on. */
 function sameEntries(left: readonly Rgba[], right: readonly Rgba[]): boolean {
   if (left.length !== right.length) return false;
   return left.every((entry, index) => {

@@ -1,11 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_KEY_TOLERANCE } from '../constants/quantiser.ts';
+import { DEFAULT_KEY_TOLERANCE, DEFAULT_PALETTE_SNAP } from '../constants/quantiser.ts';
 import { FakeWorker } from '../test/fakeWorker.ts';
 import { createImage } from '../utils/imageData.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 
 const SHEET = { name: 'returned-sheet.png', image: createImage(4, 4) };
+
+const LOCK = {
+  entries: [{ r: 40, g: 160, b: 60, a: 255 }],
+  setting: 'RESTRAINED_64_COLOR',
+  sheetName: 'returned-sheet.png',
+};
 
 /** The thread the last `setSource` started. */
 function thread(): FakeWorker {
@@ -73,6 +79,21 @@ describe('useQuantiseStore', () => {
     expect(useQuantiseStore.getState().colorMerge).toBe(24);
   });
 
+  it('carries a locked palette across a new sheet, which is the whole of what a lock is for', () => {
+    // The strongest case of the three, and the one that would be a defect rather than an
+    // inconvenience if it fell: a palette locked from sheet one exists to colour sheets two to
+    // eight, so a lock dropped by `setSource` could only ever be applied to the sheet it came from,
+    // where it does nothing.
+    const store = useQuantiseStore.getState();
+    store.setSource(SHEET);
+    store.lockPalette(LOCK);
+    store.setPaletteSnap(32);
+    store.setSource({ name: 'another.png', image: createImage(8, 8) });
+
+    expect(useQuantiseStore.getState().lockedPalette).toEqual(LOCK);
+    expect(useQuantiseStore.getState().paletteSnap).toBe(32);
+  });
+
   it('clears the sheet and every control with it', () => {
     // What "Clear" has to mean, and the reason it is not `setSource(null)`: a half-clear would leave
     // the next sheet arriving already keyed by a decision made about the last one.
@@ -85,6 +106,8 @@ describe('useQuantiseStore', () => {
     store.setLineStrength(2);
     store.setFillCleanup(32);
     store.setColorMerge(36);
+    store.lockPalette(LOCK);
+    store.setPaletteSnap(48);
 
     store.clear();
 
@@ -101,6 +124,10 @@ describe('useQuantiseStore', () => {
       cleanupPasses: 1,
       outlineExpansion: 0,
       colorMerge: 0,
+      // Including the lock, which survives a new sheet and falls only here: clearing is the reader
+      // saying they have finished with this series, not moving on to the next sheet of it.
+      lockedPalette: null,
+      paletteSnap: DEFAULT_PALETTE_SNAP,
     });
   });
 

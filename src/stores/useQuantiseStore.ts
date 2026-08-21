@@ -7,9 +7,10 @@ import {
   DEFAULT_INK_THRESHOLD,
   DEFAULT_LINE_STRENGTH,
   DEFAULT_OUTLINE_EXPANSION,
+  DEFAULT_PALETTE_SNAP,
   DEFAULT_TRIM_STRENGTH,
 } from '../constants/quantiser.ts';
-import type { ImportedImage, PixelGrid, VoteMethod } from '../types/quantiser.ts';
+import type { ImportedImage, LockedPalette, PixelGrid, VoteMethod } from '../types/quantiser.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 
@@ -83,6 +84,23 @@ export interface QuantiseState {
   readonly colorMerge: number;
   /** How many settling passes the fill cleanup runs, from CLEANUP_PASSES_RANGE. */
   readonly cleanupPasses: number;
+  /**
+   * The palette taken off an earlier result and held for the sheets that follow, or `null`.
+   *
+   * **The one setting here whose whole purpose is to outlive the sheet it was taken from.** Where
+   * the grid is a measurement of one image and falls with it, this is a statement about a *series*:
+   * it is taken from sheet one so that sheets two to eight are drawn in the same colours, and a lock
+   * that fell to `setSource` could never be applied to anything. It falls to `clear`, with every
+   * other standing intent, because that is the reader saying they have finished with this workflow.
+   */
+  readonly lockedPalette: LockedPalette | null;
+  /**
+   * How near a locked colour a colour must sit to be taken to it, from `PALETTE_SNAP_RANGE`.
+   *
+   * `0` is the pass not running, as every other dial's zero is: the lock reaches nothing. Read only
+   * while a palette is locked.
+   */
+  readonly paletteSnap: number;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
@@ -96,6 +114,11 @@ export interface QuantiseState {
   setFillCleanup(fillCleanup: number): void;
   setColorMerge(colorMerge: number): void;
   setCleanupPasses(cleanupPasses: number): void;
+  /** Hold this palette, replacing whichever one was held before. */
+  lockPalette(lockedPalette: LockedPalette): void;
+  /** Let the held palette go, handing the colour decision back to the studio. */
+  unlockPalette(): void;
+  setPaletteSnap(paletteSnap: number): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
@@ -115,6 +138,8 @@ const EMPTY: Pick<
   | 'trimStrength'
   | 'inkThreshold'
   | 'cleanupPasses'
+  | 'lockedPalette'
+  | 'paletteSnap'
 > = {
   source: null,
   gridOverride: null,
@@ -128,6 +153,8 @@ const EMPTY: Pick<
   fillCleanup: DEFAULT_FILL_CLEANUP,
   colorMerge: DEFAULT_COLOR_MERGE,
   cleanupPasses: DEFAULT_CLEANUP_PASSES,
+  lockedPalette: null,
+  paletteSnap: DEFAULT_PALETTE_SNAP,
 };
 
 export const useQuantiseStore = create<QuantiseState>((set) => ({
@@ -142,6 +169,10 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
   // standing intent about a workflow — the splitter hands back eight sheets that are eight passes at
   // the same settings — and unlike a wrong grid its effect is plainly visible in the preview, so
   // carrying it over cannot mislead anyone the way a carried-over grid would.
+  //
+  // **The locked palette survives for a stronger reason still**: carrying it to the next sheet is
+  // not a convenience but the entire feature. A lock that fell here would only ever be applied to
+  // the sheet it was taken from, where it does nothing.
   setSource: (source) => {
     set({ source, gridOverride: null });
     // In this order, and both before the load: every answer in the store is about the sheet being
@@ -193,6 +224,18 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setCleanupPasses: (cleanupPasses) => {
     set({ cleanupPasses });
+  },
+
+  lockPalette: (lockedPalette) => {
+    set({ lockedPalette });
+  },
+
+  unlockPalette: () => {
+    set({ lockedPalette: null });
+  },
+
+  setPaletteSnap: (paletteSnap) => {
+    set({ paletteSnap });
   },
 
   // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is

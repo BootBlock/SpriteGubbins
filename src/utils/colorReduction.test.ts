@@ -14,11 +14,11 @@ import { colorPlanFor } from './colorReduction.ts';
 
 describe('colorPlanFor — what happens to the colours', () => {
   it('reads the budget when no palette is pinned', () => {
-    expect(colorPlanFor('FREE', 'STRICT_32_COLOR').reduction).toEqual({
+    expect(colorPlanFor('FREE', 'STRICT_32_COLOR', null, 0).reduction).toEqual({
       kind: 'MAX_COLORS',
       maxColors: 32,
     });
-    expect(colorPlanFor('FREE', 'RESTRAINED_64_COLOR').reduction).toEqual({
+    expect(colorPlanFor('FREE', 'RESTRAINED_64_COLOR', null, 0).reduction).toEqual({
       kind: 'MAX_COLORS',
       maxColors: 64,
     });
@@ -28,21 +28,23 @@ describe('colorPlanFor — what happens to the colours', () => {
     // `null` rather than a generous cap: a painted sheet has no colour budget to enforce, and a high
     // cap is still a cap.
     expect(PALETTE_COLOR_COUNTS.UNRESTRICTED).toBeNull();
-    expect(colorPlanFor('FREE', 'UNRESTRICTED').reduction).toBeNull();
+    expect(colorPlanFor('FREE', 'UNRESTRICTED', null, 0).reduction).toBeNull();
   });
 
   it.each(PALETTE_LIMITS)('ignores the %s budget entirely once a palette is pinned', (limit) => {
     // The whole rule in one assertion, across every budget the studio offers: the answer for a
     // pinned palette does not depend on the limit, including the `UNRESTRICTED` case that would
     // otherwise reduce nothing.
-    expect(colorPlanFor('NES', limit)).toEqual(colorPlanFor('NES', 'UNRESTRICTED'));
-    expect(colorPlanFor('MEGA_DRIVE', limit)).toEqual(colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED'));
+    expect(colorPlanFor('NES', limit, null, 0)).toEqual(colorPlanFor('NES', 'UNRESTRICTED', null, 0));
+    expect(colorPlanFor('MEGA_DRIVE', limit, null, 0)).toEqual(
+      colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED', null, 0),
+    );
   });
 
   it.each(PALETTE_IDS)('resolves %s to something the quantiser can act on', (id) => {
     // Completeness: every member of the union, including the ones no shipped profile pins. A palette
     // that resolved to `null` would be one the studio says is pinned and the quantiser ignores.
-    const { reduction } = colorPlanFor(id, 'UNRESTRICTED');
+    const { reduction } = colorPlanFor(id, 'UNRESTRICTED', null, 0);
     if (id === 'FREE') {
       expect(reduction).toBeNull();
       return;
@@ -52,7 +54,7 @@ describe('colorPlanFor — what happens to the colours', () => {
   });
 
   it('hands the quantiser opaque colours, since a palette entry is a colour and not a compositing state', () => {
-    expect(colorPlanFor('CGA_MODE_4', 'UNRESTRICTED').reduction).toEqual({
+    expect(colorPlanFor('CGA_MODE_4', 'UNRESTRICTED', null, 0).reduction).toEqual({
       kind: 'PALETTE',
       entries: [
         { r: 0, g: 0, b: 0, a: 255 },
@@ -71,20 +73,20 @@ describe('colorPlanFor — what the tab says it is doing', () => {
    * pipeline mapped to four greens.
    */
   it('names the budget while the budget is what decides', () => {
-    const plan = colorPlanFor('FREE', 'STRICT_32_COLOR');
+    const plan = colorPlanFor('FREE', 'STRICT_32_COLOR', null, 0);
     expect(plan.setting).toBe('STRICT_32_COLOR');
     expect(plan.effect).toContain('32 colours');
   });
 
   it('names the palette, not the budget, the moment one is pinned', () => {
-    const plan = colorPlanFor('GAME_BOY_DMG', 'STRICT_32_COLOR');
+    const plan = colorPlanFor('GAME_BOY_DMG', 'STRICT_32_COLOR', null, 0);
     expect(plan.setting).toBe('GAME_BOY_DMG');
     expect(plan.effect).toContain('4 fixed colours');
     expect(plan.effect).not.toContain('32');
   });
 
   it('describes a colour space as a ladder rather than as a count of entries', () => {
-    const plan = colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED');
+    const plan = colorPlanFor('MEGA_DRIVE', 'UNRESTRICTED', null, 0);
     expect(plan.setting).toBe('MEGA_DRIVE');
     expect(plan.effect).toContain('8 levels');
   });
@@ -93,8 +95,72 @@ describe('colorPlanFor — what the tab says it is doing', () => {
     // The panel renders `setting — effect` unconditionally, so an empty half would print a dangling
     // dash. The `UNRESTRICTED` case is the one with no transform behind it and it still describes
     // itself.
-    const plan = colorPlanFor(id, 'UNRESTRICTED');
+    const plan = colorPlanFor(id, 'UNRESTRICTED', null, 0);
     expect(plan.setting).not.toBe('');
     expect(plan.effect).not.toBe('');
+  });
+});
+
+const LOCK = {
+  entries: [
+    { r: 10, g: 20, b: 30, a: 255 },
+    { r: 200, g: 100, b: 50, a: 255 },
+  ],
+  setting: 'RESTRAINED_64_COLOR',
+  sheetName: 'armour.png',
+} as const;
+
+/**
+ * The second half of the same rule: a palette locked on the quantiser tab supersedes both studio
+ * settings, and says so where the studio has moved on since it was taken.
+ *
+ * Pinned here rather than left to the panel, because the panel reads the plan: a component test
+ * could only ever check that it renders what this decided.
+ */
+describe('colorPlanFor — a locked palette', () => {
+  it.each(PALETTE_IDS)('supersedes %s, whatever the studio pinned', (id) => {
+    expect(colorPlanFor(id, 'STRICT_32_COLOR', LOCK, 20).reduction).toEqual({
+      kind: 'LOCKED',
+      entries: LOCK.entries,
+      snap: 20,
+    });
+  });
+
+  it('carries the snap distance into the instruction rather than beside it', () => {
+    // Two locks holding the same colours at two distances are two different transforms, so the
+    // figure has to travel with the entries — see `sameQuantiseSettings`.
+    expect(colorPlanFor('FREE', 'UNRESTRICTED', LOCK, 8).reduction).toEqual({
+      kind: 'LOCKED',
+      entries: LOCK.entries,
+      snap: 8,
+    });
+  });
+
+  it('names nothing as superseded while the studio setting is the one it was locked under', () => {
+    const plan = colorPlanFor('FREE', 'RESTRAINED_64_COLOR', LOCK, 20);
+
+    expect(plan.superseded).toBeNull();
+    expect(plan.studioSetting).toBe('RESTRAINED_64_COLOR');
+    expect(plan.setting).toBe('Locked palette');
+  });
+
+  it('names the studio setting it is overriding once the two have parted company', () => {
+    // The one state where the supersession is a surprise: a palette locked under a budget, still
+    // applied after the studio has been pinned to a machine whose colours it may not even hold.
+    const plan = colorPlanFor('GAME_BOY_DMG', 'RESTRAINED_64_COLOR', LOCK, 20);
+
+    expect(plan.superseded).toBe('GAME_BOY_DMG');
+    expect(plan.studioSetting).toBe('GAME_BOY_DMG');
+  });
+
+  it('reports the studio setting a re-lock should record, not the lock in force', () => {
+    // What `PaletteLockControls` stamps a new lock with. Reading `setting` instead would stamp it
+    // with the name of the palette it replaced, and the two could never part company again.
+    expect(colorPlanFor('FREE', 'STRICT_32_COLOR', LOCK, 20).studioSetting).toBe('STRICT_32_COLOR');
+  });
+
+  it('says that a snap distance of zero reaches nothing, rather than naming a count it does not fix', () => {
+    expect(colorPlanFor('FREE', 'UNRESTRICTED', LOCK, 0).effect).toContain('reaching nothing');
+    expect(colorPlanFor('FREE', 'UNRESTRICTED', LOCK, 20).effect).toContain('armour.png');
   });
 });

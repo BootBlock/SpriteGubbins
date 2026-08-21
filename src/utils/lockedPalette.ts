@@ -1,0 +1,118 @@
+import type { LockedPalette, Rgba } from '../types/quantiser.ts';
+import { FULLY_OPAQUE, colorHistogram, remapColors, unpackColor } from './imageData.ts';
+import { type Oklab, srgbToOklab } from './oklab.ts';
+
+/**
+ * The two halves of a sheet palette lock: taking the colours off one result, and redrawing the next
+ * sheet in them.
+ *
+ * They live together because the *entries* are the contract between them — what counts as one
+ * colour, and in what order — and a second answer to either question in the other half is how a
+ * locked palette comes to hold thirty entries the panel calls twenty-seven. Alpha is where that
+ * bites: a result carries the same green at several coverages along an anti-aliased edge, and those
+ * are one colour, not five.
+ *
+ * **Distance is measured in scaled OKLab**, as every colour gate in this tab now is — see
+ * `oklab.ts`. It is not a refinement here but the whole mechanism: the lock's job is to decide
+ * whether the green this sheet produced *is* the green the last sheet was locked at, and the RGB
+ * cube answers that question differently in the darks than in the lights, so one escape distance
+ * could never mean one thing across a sheet.
+ */
+
+/**
+ * The colours a quantised result is made of, most-used first — the palette a lock holds.
+ *
+ * **Deduplicated across alpha, and returned opaque.** A lock is a statement about colour, and a
+ * result's alpha is a statement about its silhouette: the same fill appears at full coverage inside
+ * a sprite and at a dozen partial coverages along its edge, and counting those as separate entries
+ * would fill the lock with one colour many times over and inflate every count the panel prints.
+ * {@link applyLockedPalette} keeps each pixel's own alpha for the same reason.
+ *
+ * Fully transparent pixels take no part, exactly as they take no part in `colorHistogram` — a pixel
+ * carrying no colour has no colour to lock.
+ *
+ * Population order, ties broken by packed value, so the order is deterministic on every input. It is
+ * what the panel lists and what a reader sees first, so the sheet's dominant colours lead.
+ */
+export function lockPaletteFrom(image: ImageData, sheetName: string, setting: string): LockedPalette | null {
+  const counts = new Map<number, number>();
+  for (const [packed, count] of colorHistogram(image)) {
+    // The alpha byte off the end of the packing, leaving `0xRRGGBB` — the colour without its
+    // coverage. `unpackColor` below turns it back into a full entry with `a` supplied.
+    const color = Math.floor(packed / 256);
+    counts.set(color, (counts.get(color) ?? 0) + count);
+  }
+
+  const entries = [...counts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0] - right[0])
+    .map(([color]) => unpackColor(color * 256 + FULLY_OPAQUE));
+
+  // A sheet with nothing opaque in it locks nothing rather than an empty palette: an empty lock
+  // would map every colour onto no colour at all, which `applyLockedPalette` would have to answer
+  // by returning the sheet unchanged — a lock that silently does nothing while the panel says one
+  // is held. The control that offers this refuses instead.
+  return entries.length === 0 ? null : { entries, setting, sheetName };
+}
+
+/**
+ * The image with every pixel taking its nearest locked colour, unless it sits further than `escape`
+ * from all of them.
+ *
+ * **The pixel keeps its own alpha**, as `applyRgbPalette` does and for the same reason: the entries
+ * were made opaque when they were locked, so writing one whole would flatten every anti-aliased or
+ * soft-keyed edge of *this* sheet to the coverage of a different one. What a lock fixes is colour.
+ *
+ * **`snap` is how far the lock's reach extends**, and what lies beyond it is a colour the locked
+ * sheet did not have. A series is not always the same palette twice — a later sheet introduces a
+ * gem, a flame, a faction colour — and taking that to the nearest locked entry would be the lock
+ * destroying the artwork it exists to keep consistent. So a colour further than `snap` from every
+ * entry keeps exactly the colour it arrived with, and the dial that sets it runs from `0`, where
+ * the lock reaches nothing and the sheet passes through untouched, upward. It is monotone in the
+ * obvious direction: every colour snapped at one setting is snapped at every higher one.
+ *
+ * Fully transparent pixels are copied through untouched, and the decision is taken once per distinct
+ * colour rather than once per pixel — both are `remapColors`, which every colour transform in this
+ * directory shares.
+ */
+export function applyLockedPalette(image: ImageData, entries: readonly Rgba[], snap: number): ImageData {
+  // Converted once per entry rather than once per colour looked up: a lock holds tens of entries and
+  // a sheet quantised at a grid of 1 can carry millions of distinct colours.
+  const located = entries.map((entry) => ({ entry, lab: srgbToOklab(entry.r, entry.g, entry.b) }));
+  const limit = snap * snap;
+
+  return remapColors(image, (color) => {
+    const lab = srgbToOklab(color.r, color.g, color.b);
+    const nearest = nearestOklab(lab, located);
+    if (nearest === null || nearest.distance > limit) return color;
+    return { ...nearest.entry, a: color.a };
+  });
+}
+
+/**
+ * The entry closest to a colour in scaled OKLab, with the squared distance it won at.
+ *
+ * Squared, because the caller compares it with a squared threshold: the square root would be one per
+ * distinct colour of a sheet and would change no comparison, distance being monotonic in its square.
+ * The earliest entry takes a tie, which under {@link lockPaletteFrom}'s population order means the
+ * more-used of two equidistant colours wins.
+ */
+function nearestOklab(
+  color: Oklab,
+  located: readonly { entry: Rgba; lab: Oklab }[],
+): { entry: Rgba; distance: number } | null {
+  let chosen: Rgba | null = null;
+  let shortest = Infinity;
+
+  for (const { entry, lab } of located) {
+    const dL = color.L - lab.L;
+    const dA = color.a - lab.a;
+    const dB = color.b - lab.b;
+    const distance = dL * dL + dA * dA + dB * dB;
+    if (distance < shortest) {
+      shortest = distance;
+      chosen = entry;
+    }
+  }
+
+  return chosen === null ? null : { entry: chosen, distance: shortest };
+}

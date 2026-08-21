@@ -451,6 +451,52 @@ export const COLOR_MERGE_RANGE = { min: 0, max: 48, step: 1 } as const;
 export const DEFAULT_COLOR_MERGE = 0;
 
 /**
+ * The snap-distance slider's range: how near a locked colour a colour must sit to be taken to it,
+ * anything further keeping the colour it arrived with.
+ *
+ * In scaled OKLab, as every colour tolerance on this tab is — see `oklab.ts` — and `0` is the pass
+ * not running at all, as it is on every other dial here: at zero the lock reaches nothing and the
+ * sheet passes through as its own reading made it.
+ *
+ * **The two populations this dial separates overlap, and the range is set from where.** Measured on
+ * the armour sheet (grid 6, a budget of 64, ink-weighted 1.5×): a palette locked from one reading of
+ * it and applied to four others — the k-centroid and dominant readings, a budget of 32, and a grid of
+ * 5 — puts the median colour 0.38 from its nearest locked entry, the ninetieth percentile between
+ * 3.7 and 10.3, the ninety-ninth between 9.8 and 20.4, and the furthest single colour at 38. Six
+ * colours that sheet does not contain — a saturated red, cyan, orange, violet, emerald and pink —
+ * sit between 20.8 and 54.5 from it. So the drift a lock exists to remove and the colours it must
+ * not remove are cleanly apart at the median and overlap from about 20 to about 38, which is why
+ * this is a dial and not a fixed threshold.
+ *
+ * The ceiling is 64 rather than the 48 the two cleanup dials stop at, because the useful span here
+ * runs past theirs: at 48 the reddest of those six is still snapped, and a ceiling that cannot admit
+ * a genuinely new colour would fail at the one job the gate has. It is a quarter of the 255 that
+ * black to white measures.
+ */
+export const PALETTE_SNAP_RANGE = { min: 0, max: 64, step: 1 } as const;
+
+/**
+ * The snap distance the tab opens with, and the one figure here chosen by where the two populations
+ * the range's note measures actually sit.
+ *
+ * They are 0.4 apart at the point they meet: the highest ninety-ninth percentile of drift measured
+ * was 20.4, and the nearest of the six colours the sheet does not contain was 20.8. No integer lies
+ * between them, so the opening errs towards **keeping** rather than snapping. At 20, of the four
+ * re-readings measured, the share of pixels the lock takes is 100% at a budget of 32, 99.96% at a
+ * grid of 5, 99.80% under the k-centroid reading and 93.93% under the dominant one — 59 to 64 of
+ * each sheet's 64 colours — while every one of the six colours the sheet does not contain is left
+ * alone. What it fails to take is by definition what sits furthest from the locked palette, which is
+ * what snapping would change most; keeping it costs a few extra colours and no artwork. The dominant
+ * reading is the outlier of the four because it selects rather than blends, so its cells land on the
+ * source's own colours instead of on tones near the locked ones.
+ *
+ * A lock therefore does **not** promise a colour count. Nothing but the top of the range comes close
+ * to promising one, and a setting that snapped a genuinely new colour to keep a number tidy would
+ * have the gate failing at the one job it has.
+ */
+export const DEFAULT_PALETTE_SNAP = 20;
+
+/**
  * The outline-expansion slider's range, `0` meaning the pass does not run.
  *
  * In **source pixels**, so a thickness of `n` widens a contour by `n` on each side and the drawn
@@ -761,6 +807,11 @@ export const QUANTISE_STEPS = [
     detail:
       'the two previews stay on the same part of the sheet at the same magnification. Judge an edge at 4× or 8×, lay the two over one another and drag the divider to see the same pixels before and after, and switch to the difference map when a dial’s effect is too small to see.',
   },
+  {
+    title: 'Lock the palette, if this sheet is one of a series',
+    detail:
+      'the colours of a sheet you are happy with can be held and applied to the sheets that follow, so a character’s armour is the same green on the walk sheet and the run sheet. Drop the next sheet in afterwards — the lock survives it, which is the whole point of it.',
+  },
 ] as const;
 
 /**
@@ -839,11 +890,13 @@ export const QUANTISE_TOOLTIPS = {
   inkThreshold:
     'How dark a pixel must read before the ink-weighted reading may count it as line ink. The default is the darkest quarter of the tonal range, shared with the standard vote’s line rescue. Lower it to restrict the pull to truly black strokes; raise it when the artwork outlines in dark colours rather than black. Whatever the threshold, shading is protected separately — a patch’s dark mass must also sit a full tonal range below the body it crosses before anything pulls — but past the point where a sheet’s own shadows qualify, watch the preview. It appears only while the ink-weighted reading is chosen.',
   colorMerge:
-    'How far apart two colours may sit and still be folded into one across the whole sheet. Reduced fills often dither between several near-identical palette entries — greens a dozen steps apart that read as one surface — and no pixel-level cleanup can settle that, because no pixel is ever the lone odd one out. Colours are ranked by use, and each folds into the most-used surviving colour within the distance, everywhere at once, so a panel becomes one green. It also makes the fill cleanup below far more effective, since settled fills can finally form majorities. A palette pinned in the studio is exempt — its entries are your statement of which colours are distinct. Off keeps every colour the reading produced; raise it until fills read as surfaces, and back off when real shading, or a dark outline against a dark fill, starts to fold.',
+    'How far apart two colours may sit and still be folded into one across the whole sheet. Reduced fills often dither between several near-identical palette entries — greens a dozen steps apart that read as one surface — and no pixel-level cleanup can settle that, because no pixel is ever the lone odd one out. Colours are ranked by use, and each folds into the most-used surviving colour within the distance, everywhere at once, so a panel becomes one green. It also makes the fill cleanup below far more effective, since settled fills can finally form majorities. A palette pinned in the studio, or locked from an earlier sheet, is exempt — its entries are your statement of which colours are distinct, and folding two of them here would edit the palette the rest of the series is mapped onto. Off keeps every colour the reading produced; raise it until fills read as surfaces, and back off when real shading, or a dark outline against a dark fill, starts to fold.',
   fillCleanup:
     'How far apart two colours may sit and still be merged when a pixel disagrees with its neighbours. Flat fills often come back speckled — neighbouring pixels land on near-identical colours with no perceptual difference — and this pass snaps such a pixel to its neighbourhood’s most common colour, but only when most of the neighbours it has already agree and the colours are within this distance. Off leaves the result exactly as the reading made it. It changes colour only, never transparency, and a line sits far outside the whole range, so linework is never merged. On a densely dithered sheet run the colour merge first — settled fills are what let majorities form — then raise this until stray pixels go, and back off if close shades begin to fuse.',
   cleanupPasses:
     'How many times the fill cleanup runs over its own output. One pass settles every pixel that already disagreed with a settled neighbourhood; a pixel two deep in a speckled patch only becomes the lone odd one out after its neighbour has settled, which the next pass picks up. Each pass stops early when nothing changed, so a high setting costs nothing on a sheet that settles quickly. It does nothing while the fill cleanup itself is off.',
+  paletteSnap:
+    'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing and the sheet is left as its own reading made it. The default sits between the two things this has to tell apart on the sheet the dials were tuned against — the drift between two readings of one subject, and a colour that is genuinely new — and those overlap, so raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

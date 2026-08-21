@@ -16,6 +16,7 @@ import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { KeyingControls } from '../quantise/KeyingControls.tsx';
+import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 
 /**
@@ -63,6 +64,8 @@ export function QuantiseTab() {
   const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
   const cleanupPasses = useQuantiseStore((state) => state.cleanupPasses);
   const colorMerge = useQuantiseStore((state) => state.colorMerge);
+  const lockedPalette = useQuantiseStore((state) => state.lockedPalette);
+  const paletteSnap = useQuantiseStore((state) => state.paletteSnap);
   // One memoised object, because the hook keys its debounce on the tuning's identity — atomic
   // selectors above, so an unrelated store change does not rebuild it.
   const tuning = useMemo(
@@ -110,7 +113,12 @@ export function QuantiseTab() {
   // pinned palette supersedes the budget, and `colorPlanFor` is the single place that rule is
   // applied. The panel below is handed the same answer the pipeline is, for the same reason
   // `KeyingControls` is handed the keying: two readings of one setting can disagree, and did.
-  const colorPlan = useMemo(() => colorPlanFor(palette, paletteLimit), [palette, paletteLimit]);
+  // A palette locked off an earlier result supersedes both studio settings while it is held, and
+  // this is where that rule is applied — one branch, as the pinned-over-budget rule already is.
+  const colorPlan = useMemo(
+    () => colorPlanFor(palette, paletteLimit, lockedPalette, paletteSnap),
+    [palette, paletteLimit, lockedPalette, paletteSnap],
+  );
 
   const { facts, grid, quantised, busy, error } = useQuantiseWork(
     source,
@@ -197,6 +205,13 @@ export function QuantiseTab() {
               answer, so it is `null` until there is a transform, which is the same condition the
               comparison below shows its placeholder for. */}
           <KeyingControls keying={keying} keyedShare={quantised?.result.keyedShare ?? null} busy={busy} />
+          <PaletteLockControls
+            resultImage={quantised?.result.image ?? null}
+            sheetName={source.name}
+            studioSetting={colorPlan.studioSetting}
+            superseded={colorPlan.superseded}
+            busy={busy}
+          />
           <ImageComparison
             sourceName={source.name}
             source={source.image}

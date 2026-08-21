@@ -10,6 +10,7 @@ import { countColors } from './imageData.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
 import { keyBackground } from './keyBackground.ts';
+import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
@@ -139,8 +140,12 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // fills form the majorities the per-pixel cleanup needs. A *pinned* palette is exempt from the
   // merge — its entries are the user's explicit statement of which colours are distinct, and a
   // cleanup dial must not quietly un-pin two of them into one.
-  const merged =
-    settings.reduction?.kind === 'PALETTE' ? resolved : mergeColors(resolved, settings.colorMerge);
+  //
+  // **A locked palette is exempt on the same ground**, and it is the stronger case of the two: its
+  // entries are what the next sheet in the series will be mapped onto, so a merge that folded two
+  // of them here would be the cleanup dial quietly editing the lock — and the sheets either side of
+  // this one would keep the pair it removed.
+  const merged = statedPalette(settings.reduction) ? resolved : mergeColors(resolved, settings.colorMerge);
   const output = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
 
   return {
@@ -184,7 +189,12 @@ function meshOffset(mesh: GridMesh, grid: number): { x: number; y: number } {
 }
 
 /**
- * The palette step, in whichever of its three forms the studio asked for.
+ * The palette step, in whichever of its four forms was asked for.
+ *
+ * Three of them come from the studio and the fourth from this tab: a palette locked off an earlier
+ * result supersedes the studio's setting outright while it is held, which `colorPlanFor` decides —
+ * so by the time a reduction reaches here there is exactly one of them, and no precedence left to
+ * apply. `applyLockedPalette` is the one that may leave a colour alone, beyond its snap distance.
  *
  * **A pinned palette is applied on its own, never after a budget reduction.** Reducing to N colours
  * and then mapping those onto a fixed list is two quantisations where one was asked for, and the
@@ -196,10 +206,12 @@ function meshOffset(mesh: GridMesh, grid: number): { x: number; y: number } {
  * assembled from, so nothing on this side knows which components would ever be visible together.
  * The prompt states it; this makes the colours legal.
  *
- * **The two palette arms take different functions, and it is not an oversight.** A budget's palette
+ * **The palette arms take different functions, and it is not an oversight.** A budget's palette
  * comes from this very image and its entries are real pixels of it, alpha and all, so it is written
  * whole; a machine's palette is a list of colours with no fourth channel, so writing it whole would
- * flatten every soft edge to opaque. `applyPalette` and `applyRgbPalette` say which is which.
+ * flatten every soft edge to opaque, and a locked palette holds another sheet's colours, whose
+ * coverages are facts about that sheet rather than this one. `applyPalette`, `applyRgbPalette` and
+ * `applyLockedPalette` say which is which.
  */
 function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
   switch (reduction.kind) {
@@ -207,13 +219,27 @@ function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
       return applyPalette(image, buildPalette(image, reduction.maxColors));
     case 'PALETTE':
       return applyRgbPalette(image, reduction.entries);
+    case 'LOCKED':
+      return applyLockedPalette(image, reduction.entries, reduction.snap);
     case 'CHANNEL_DEPTH':
       return snapToChannelDepth(image, reduction.bitsPerChannel);
   }
 }
 
 /**
- * The palette step for an averaging reading: the same three forms, run on the reading's own
+ * Whether the reduction's colours were *stated* rather than chosen from this sheet.
+ *
+ * The two that were — a palette pinned in the studio and a palette locked off an earlier result —
+ * are the two the sheet-wide colour merge may not touch, for the reason given where it runs. The
+ * other two chose their colours from this image, so folding two of them together takes nothing back
+ * from anybody.
+ */
+function statedPalette(reduction: ColorReduction | null): boolean {
+  return reduction?.kind === 'PALETTE' || reduction?.kind === 'LOCKED';
+}
+
+/**
+ * The palette step for an averaging reading: the same four forms, run on the reading's own
  * output.
  *
  * A budget's palette is chosen from the *resolved* sheet rather than the source, deliberately —

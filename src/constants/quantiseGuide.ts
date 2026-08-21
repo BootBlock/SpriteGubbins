@@ -19,7 +19,7 @@ import type { ColorPlan, PixelGrid } from '../types/quantiser.ts';
 
 /** What this tab does, mechanically — the paragraph the panel opens with. */
 export const QUANTISE_GUIDE_INTRO =
-  'A model asked for pixel art almost always returns a smooth painting of pixel art: the shapes are right, but every edge is anti-aliased and one drawn pixel is really an 8 × 8 patch of near-identical colours. This tab reads the scale it was actually drawn at — measured outright where the art is crisp, and estimated from the spacing of its edges where softening has destroyed them — then reads each patch down to one pixel by the reading the Downscale control has in force — the standard vote takes the patch’s most common colour, keeping a near-black outline or bright trim even as a minority once a colour reduction is in force; the ink-weighted reading darkens each patch toward the line crossing it, the way an artist outlines in a darker shade of the thing outlined; the cluster reading averages the patch’s dominant colour group — brings its colours down to what the prompt asked for, and can take the background key out to transparency. An estimate is offered rather than applied, because it carries a tolerance a measurement does not. Under the standard vote, with no palette pinned in the studio, every colour that survives is one the image already contained, and pinning one moves each pixel to its nearest entry instead; the two averaging readings blend colours deliberately, then take the studio’s colour setting over what they made. Nothing is uploaded, and no dithering is applied either way.';
+  'A model asked for pixel art almost always returns a smooth painting of pixel art: the shapes are right, but every edge is anti-aliased and one drawn pixel is really an 8 × 8 patch of near-identical colours. This tab reads the scale it was actually drawn at — measured outright where the art is crisp, and estimated from the spacing of its edges where softening has destroyed them — then reads each patch down to one pixel by the reading the Downscale control has in force — the standard vote takes the patch’s most common colour, keeping a near-black outline or bright trim even as a minority once a colour reduction is in force; the ink-weighted reading darkens each patch toward the line crossing it, the way an artist outlines in a darker shade of the thing outlined; the cluster reading averages the patch’s dominant colour group — brings its colours down to what the prompt asked for, and can take the background key out to transparency. An estimate is offered rather than applied, because it carries a tolerance a measurement does not. Under the standard vote, with no palette pinned in the studio and none locked on this tab, every colour that survives is one the image already contained, and pinning or locking one moves each pixel to its nearest entry instead; the two averaging readings blend colours deliberately, then take the studio’s colour setting over what they made. Nothing is uploaded, and no dithering is applied either way.';
 
 /**
  * What to do about the sheet on screen, keyed to how far the scale reading got.
@@ -89,7 +89,15 @@ export function targetCeilingAdvice(suggested: PixelGrid | null, target: TargetS
  *
  * Built from {@link ColorPlan} rather than from the settings behind it, for the reason
  * `GridControls` takes the same value: two readings of one setting can disagree, and did.
+ *
+ * **Two sentences rather than one, because the colour policy now has two possible authors.** It is
+ * the studio's until a palette is locked on this tab, and a paragraph that says "colour policy is
+ * the studio's" while the pipeline maps the sheet onto a held palette is the same contradiction
+ * this function was written from the plan to avoid.
  */
 export function colourAdvice(plan: ColorPlan): string {
+  if (plan.reduction?.kind === 'LOCKED') {
+    return `Colour policy is the palette locked on this tab: ${plan.effect}. It supersedes the studio’s ${plan.studioSetting} setting for as long as it is held, which is what keeps a series of sheets in one set of colours — unlock it below to hand the decision back. The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two held colours together would edit the palette the rest of the series is mapped onto.`;
+  }
   return `Colour policy is the studio’s: the ${plan.setting} setting travels with the sheet (${plan.effect}), and changing it means changing the studio setting and coming back — the sheet stays loaded. The cleanup dials on this tab only tidy what that policy produced, and never touch a pinned palette’s own entries.`;
 }

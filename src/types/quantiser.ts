@@ -171,7 +171,41 @@ export interface BackgroundKeying {
 export type ColorReduction =
   | { readonly kind: 'MAX_COLORS'; readonly maxColors: number }
   | { readonly kind: 'PALETTE'; readonly entries: readonly Rgba[] }
-  | { readonly kind: 'CHANNEL_DEPTH'; readonly bitsPerChannel: number };
+  | { readonly kind: 'CHANNEL_DEPTH'; readonly bitsPerChannel: number }
+  | {
+      readonly kind: 'LOCKED';
+      readonly entries: readonly Rgba[];
+      /** How near an entry a colour must sit to be taken to it; beyond this it keeps its own. */
+      readonly snap: number;
+    };
+
+/**
+ * A palette taken off a quantised sheet and held for the sheets that follow it.
+ *
+ * The quantiser's twin of the prompt system's identity lock, and it exists for the same failure:
+ * a series is generated one sheet at a time, and a palette chosen afresh from each of them drifts.
+ * Two sheets of one character, quantised at one budget, come back with two sets of greens that are
+ * near-identical and not the same — so the armour changes shade between the walk sheet and the run
+ * sheet, which is exactly what a fixed palette exists to stop.
+ *
+ * Locking is an explicit act on a result the reader is looking at, so it **supersedes the studio's
+ * colour setting** for as long as it is held — the newer and more specific statement of which
+ * colours this series is made of. {@link setting} records what that studio setting was at the time,
+ * which is the one thing the lock cannot re-derive later and the only way the tab can say that the
+ * two have since parted company.
+ *
+ * The entries are colours, not pixels: they are deduplicated across alpha and applied with
+ * `applyLockedPalette`, which keeps each pixel's own coverage. A previous sheet's silhouette is a
+ * fact about that sheet, not about this one's palette.
+ */
+export interface LockedPalette {
+  /** The colours, most-used first, opaque — see `lockPaletteFrom` for the order and the dedupe. */
+  readonly entries: readonly Rgba[];
+  /** The name of the studio colour setting in force when the palette was taken — a `ColorPlan.setting`. */
+  readonly setting: string;
+  /** The file the sheet it was taken from came from, so the panel can say which sheet these are. */
+  readonly sheetName: string;
+}
 
 /**
  * The reduction, and what the tab's own panel calls it.
@@ -188,6 +222,25 @@ export interface ColorPlan {
   readonly setting: string;
   /** What that does to the image, as a clause following the setting's name. */
   readonly effect: string;
+  /**
+   * The studio's own colour setting, whether or not a lock has superseded it.
+   *
+   * Carried because it is what a lock **records** when one is taken: the panel that takes it is
+   * looking at a plan that may already be a lock's, so reading {@link setting} would stamp a
+   * re-locked palette with the name of the palette it replaced. It is the same string
+   * {@link setting} carries whenever no lock is in force.
+   */
+  readonly studioSetting: string;
+  /**
+   * The studio colour setting a locked palette is overriding, or `null` where it overrides nothing.
+   *
+   * Named only when a lock is in force **and** the studio has moved to a different colour setting
+   * since it was taken. That is the one state in which the supersession is a surprise rather than
+   * the point: a palette locked under a machine's fixed colours, still applied after the studio has
+   * been pinned to a different machine, produces colours the new machine could not show. Everywhere
+   * else the lock is simply what the reader asked for, and there is nothing to report.
+   */
+  readonly superseded: string | null;
 }
 
 /**

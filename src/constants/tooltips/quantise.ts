@@ -17,6 +17,15 @@ export const QUANTISE_ACTION_TOOLTIPS = {
   downloadPNG:
     'Saves the quantised sheet as a PNG at the magnification the Save At control states, whatever the preview is showing. At 1× that is the sheet’s own true size — the sheet divided by the pixel grid, so a 1024 px sheet read at a grid of 8 is written out 128 px across, genuine pixel art with one file pixel per drawn pixel, which is what an engine wants to import. Transparency is kept where the background has been keyed out. It is unavailable until a grid is settled, since there is nothing to write until then.',
 
+  lockPalette:
+    'Takes the colours out of the quantised sheet beside this and holds them, so the next sheet you bring in is drawn in the same ones. A sprite sheet series is generated a sheet at a time, and a palette chosen afresh from each of them drifts — two sheets of one character come back with two sets of greens that are near-identical and not the same, so the armour changes shade between the walk sheet and the run sheet. A held palette supersedes the studio’s colour setting for as long as you keep it, and it survives dropping a new sheet, which is the whole point of it. It changes nothing about the prompt, the studio or anything already downloaded, and it is unavailable while a newer result is still being worked out, so the colours you hold are always the ones you are looking at.',
+
+  unlockPalette:
+    'Discards the held palette, so this sheet and the next one are coloured by the studio’s own setting again. Nothing that has already been downloaded changes, and the sheet on screen is quantised again without the lock as soon as you press it. Take a new palette from whichever result you would rather the series followed.',
+
+  relockPalette:
+    'Replaces the held palette with the colours of the sheet beside this one. Worth doing after changing the studio’s colour setting, since a palette taken under the old one is still the one being applied — and worth doing when the sheet you locked from turns out not to be the one whose colours the rest of the series should follow.',
+
   candidateFromSheet:
     'Puts the scale read out of this sheet into the grid box. A measured reading is exact — the sheet’s colours genuinely change only every so many pixels — and it is already in force, so this is the way back after you have typed over it. An estimated reading is a different thing: it is inferred from the spacing the softened edges of a resampled sheet still repeat at, which is why it is offered here rather than applied for you. Judge an edge at 4× or 8× after taking it.',
 
