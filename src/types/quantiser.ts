@@ -382,7 +382,8 @@ export interface QuantiseTuning {
   /**
    * How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels.
    *
-   * The one dial here that changes no pixel of the result. It shapes {@link QuantiseResult.sprites}
+   * A dial that changes no pixel of the result — one of three, with the symmetry mode at `CHECK`
+   * and the tolerance that shapes what `CHECK` reports. It shapes {@link QuantiseResult.sprites}
    * — the reading of the sheet the tab reports and the preview's outline mode draws — and it is on
    * this shape rather than beside it because the segmentation travels with the result, so the
    * comparison that decides whether a result is stale has to walk it like every other dial.

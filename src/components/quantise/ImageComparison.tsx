@@ -124,9 +124,11 @@ export function ImageComparison({
   // picture the pane's own description no longer fits.
   const resultImage = quantised?.result.image;
   const sprites = quantised?.result.sprites;
-  // The axes travel with the boxes because they are the same answer to the same question — what was
-  // found on this sheet — and both are drawn in one pass so the result is copied once. `null` is the
-  // symmetry pass being off, which draws boxes and no ticks.
+  // Drawn in the same pass as the boxes, so the result is copied once rather than twice. They are
+  // **not** the same reading, though, and `SpriteSymmetry` says why: under a snap the segmentation
+  // here is re-taken from the settled sheet while the axes describe the sheet the snap acted on, so
+  // the two box sets need not agree. That is why each axis carries its own box and this passes them
+  // whole rather than pairing them up by position. `null` is the pass being off — boxes, no marks.
   const symmetry = quantised?.result.symmetry;
   const marked = useMemo(
     () =>

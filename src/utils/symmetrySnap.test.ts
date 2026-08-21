@@ -146,6 +146,15 @@ describe('snapSymmetric', () => {
     expect(snapped).toBe(image);
   });
 
+  it('gives back the image it was handed where a qualifying sprite had nothing to settle', () => {
+    // A sprite that already mirrors exactly passes any floor, and every pair it holds agrees. The
+    // copy this would otherwise return carries no edit, and handing it back would cost `quantiseImage`
+    // a second labelling of the whole sheet to arrive at the boxes it already has.
+    const image = row([BODY, TRIM, TRIM, BODY]);
+
+    expect(snapSymmetric(image, [reading(box(0, 0, 4, 1, 4), 1.5)])).toBe(image);
+  });
+
   it('gives back the image it was handed where nothing qualified', () => {
     // By reference, which is what lets `quantiseImage` tell that the sheet is unchanged and reuse the
     // segmentation it already took rather than paying for a second one.

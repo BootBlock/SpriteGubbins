@@ -26,12 +26,13 @@ interface SpriteControlsProps {
  * What the sheet broke into: how many sprites, how big the largest is, and how far apart two pieces
  * may sit before they stop being one.
  *
- * **The one dial in the tab's control stack that changes no pixel of the result.** The grid, the
- * keying, the downscale readings and the palette lock all transform the sheet; this dial changes a
- * *reading* of what those produced — which is why it opens engaged rather than off, and why the
- * guidance says outright that the download is the same file whatever it says. (The comparison
- * panel's own controls change no pixels either, but they decide how a result is *shown* rather than
- * sitting among the dials that make it.)
+ * **A dial in the tab's control stack that changes no pixel of the result**, which the grid, the
+ * keying, the downscale readings and the palette lock all do. This one changes a *reading* of what
+ * those produced — which is why it opens engaged rather than off, and why the guidance says outright
+ * that the download is the same file whatever it says. The symmetry panel below it is the other
+ * reading of that kind, and only its `SNAP` position crosses back over into rewriting artwork.
+ * (The comparison panel's own controls change no pixels either, but they decide how a result is
+ * *shown* rather than sitting among the dials that make it.)
  *
  * It earns a panel rather than a line in the comparison caption because it answers a question the
  * rest of the tab cannot: the studio states how many components the prompt asked for and what size
@@ -95,9 +96,10 @@ export function SpriteControls({ sprites, target, busy }: SpriteControlsProps) {
           min={SPRITE_GAP_RANGE.min}
           max={SPRITE_GAP_RANGE.max}
           step={SPRITE_GAP_RANGE.step}
-          // No `off` spelling, unlike every other dial here: at zero this pass still gathers pieces
-          // whose boxes overlap, so calling it off would be the readout claiming something the
-          // pipeline does not do.
+          // No `off` spelling: at zero this pass still gathers pieces whose boxes overlap, so
+          // calling it off would be the readout claiming something the pipeline does not do. The
+          // symmetry tolerance spells its own zero `exact` for a different reason — that pass can be
+          // switched off, by the control above it, and zero is merely its strictest setting.
           format={(value) => String(value)}
           onChange={setSpriteGap}
         />

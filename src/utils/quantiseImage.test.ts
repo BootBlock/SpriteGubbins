@@ -944,6 +944,30 @@ const PAIR = imageFrom(24, 8, (x, y) => {
   return TRANSPARENT;
 });
 
+/**
+ * A 12 × 8 sheet holding one subject whose two halves are joined by a single pixel on one side only.
+ *
+ * Rows 2–5 carry two 4-wide blocks at columns 1–4 and 7–10, and row 3 carries one extra pixel at
+ * column 5 bridging them. Its mirror at column 6 is empty and the bridge pixel has no neighbour of
+ * its own colour inside the sprite, so the snap settles that pair on the empty side — which parts
+ * the sprite in two. The one fixture that can tell a segmentation taken after the snap from one
+ * carried over.
+ */
+const BRIDGED = imageFrom(12, 8, (x, y) => {
+  if (y < 2 || y >= 6) return TRANSPARENT;
+  if (x >= 1 && x < 5) return FILL;
+  if (x >= 7 && x < 11) return FILL;
+  return x === 5 && y === 3 ? FILL : TRANSPARENT;
+});
+
+/** What {@link BRIDGED} segments into before the snap parts it — one box over both blocks. */
+const BRIDGED_BOX = { left: 1, top: 2, width: 10, height: 4, pixels: 33 };
+
+/** One subject that mirrors exactly, so a snap admits it and finds nothing in it to change. */
+const SYMMETRIC = imageFrom(12, 8, (x, y) =>
+  y >= 2 && y < 6 && x >= 3 && x < 9 ? (x === 3 || x === 8 ? EDGE : FILL) : TRANSPARENT,
+);
+
 /** The settings the symmetry fixtures share — a grid of 1, no keying, and nothing else engaged. */
 function symmetrySettings(symmetry: 'OFF' | 'CHECK' | 'SNAP', symmetryConfidence = 90): QuantiseSettings {
   return {
@@ -1015,14 +1039,44 @@ describe('quantiseImage symmetry', () => {
     expect(snapped.image.width).toBe(untouched.image.width);
   });
 
-  it('re-reads the sprites off the sheet the snap produced', () => {
-    // The segmentation reported beside a snapped sheet describes that sheet. Here the boxes are the
-    // same either way, and the assertion that matters is that they describe the image returned —
-    // a snap that clears a pixel out of a one-pixel bridge would split a region, and a segmentation
-    // carried over from before the snap would be describing a sheet that no longer exists.
-    const snapped = quantiseImage(PAIR, symmetrySettings('SNAP', 90));
+  it('re-reads the sprites off the sheet the snap produced, when the snap split one', () => {
+    // The case the re-segmentation exists for, and the only one that can tell it apart from carrying
+    // the old answer over: the snap clears the pixel that was holding two halves of a sprite
+    // together, so what was one region becomes two. A segmentation taken before the snap would
+    // report one box for a sheet that now holds two.
+    const before = quantiseImage(BRIDGED, symmetrySettings('CHECK'));
+    const after = quantiseImage(BRIDGED, symmetrySettings('SNAP', 50));
 
-    expect(snapped.sprites).toEqual(spriteSegments(snapped.image, 1));
+    expect(before.sprites).toEqual({ kind: 'SEGMENTED', boxes: [BRIDGED_BOX], specks: 0 });
+    expect(after.sprites.kind).toBe('SEGMENTED');
+    expect(after.sprites).not.toEqual(before.sprites);
+    expect(after.sprites).toEqual(spriteSegments(after.image, 1));
+  });
+
+  it('leaves the sheet and its reading alone where a qualifying sprite had nothing to settle', () => {
+    // A sprite that already mirrors exactly passes any floor and gives the snap nothing to do. The
+    // copy it would otherwise hand back is a copy with no edit in it, and the second segmentation
+    // paid for it would arrive at the boxes already in hand.
+    const settled = quantiseImage(SYMMETRIC, symmetrySettings('SNAP', 50));
+    const untouched = quantiseImage(SYMMETRIC, symmetrySettings('OFF'));
+
+    expect(settled.symmetry?.map((reading) => reading.snapped)).toEqual([true]);
+    expect(channels(settled.image)).toEqual(channels(untouched.image));
+    expect(settled.sprites).toEqual(untouched.sprites);
+  });
+
+  it('does not claim to have settled a sprite that has no mirrored pair at all', () => {
+    // One column wide — a pole, a spear, a rope. It is symmetric about its own column and there is
+    // nothing there to rewrite, so marking it would cost a copy of the sheet and a second
+    // segmentation to change no pixel, and the panel would print "settled" on a row where nothing
+    // was.
+    const pole = imageFrom(9, 8, (x, y) => (x === 4 && y >= 2 && y < 6 ? FILL : TRANSPARENT));
+
+    const read = quantiseImage(pole, symmetrySettings('SNAP', 50));
+
+    expect(read.symmetry?.map((reading) => reading.box.width)).toEqual([1]);
+    expect(read.symmetry?.map((reading) => reading.confidence)).toEqual([1]);
+    expect(read.symmetry?.map((reading) => reading.snapped)).toEqual([false]);
   });
 
   it('has nothing to score on a sheet that did not separate into sprites', () => {

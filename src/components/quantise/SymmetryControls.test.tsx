@@ -101,9 +101,22 @@ describe('SymmetryControls', () => {
 
     expect(screen.queryByText(/% mirrored/)).not.toBeInTheDocument();
     expect(screen.getByText('Reading the sprites…')).toBeInTheDocument();
-    // The paragraph stays, and it stays the one for the mode in force: falling back to the off
-    // paragraph here told a reader to go and read the sheet before settling anything, in the middle
-    // of a snap they had just asked for.
-    expect(screen.getByText(SYMMETRY_GUIDANCE.read)).toBeInTheDocument();
+    // A paragraph about the reading being taken, rather than any of the four that report one. The
+    // off paragraph would tell a reader to go and read the sheet in the middle of a snap they had
+    // just asked for, and the three below it all point at a list that is not on screen.
+    expect(screen.getByText(SYMMETRY_GUIDANCE.pending)).toBeInTheDocument();
+  });
+
+  it('never reports a finding from the reading before the one being taken', () => {
+    // Selecting SNAP marks the answer stale on the same render, before the worker has been asked for
+    // anything. Judged against the readings still in hand — taken under CHECK, so none of them
+    // snapped — the panel would announce that no sprite reached the floor, for as long as the sheet
+    // took to come back, and then flip to a count of the ones that did.
+    useQuantiseStore.getState().setSymmetry('SNAP');
+    show({ symmetry: [reading(0.98, false), reading(0.95, false)], busy: true });
+
+    expect(screen.queryByText(SYMMETRY_GUIDANCE.refused)).not.toBeInTheDocument();
+    expect(screen.queryByText('none settled')).not.toBeInTheDocument();
+    expect(screen.getByText(SYMMETRY_GUIDANCE.pending)).toBeInTheDocument();
   });
 });

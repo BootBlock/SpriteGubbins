@@ -52,13 +52,14 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
   const setSymmetryTolerance = useQuantiseStore((state) => state.setSymmetryTolerance);
   const setSymmetryConfidence = useQuantiseStore((state) => state.setSymmetryConfidence);
 
-  // The **figures** are withdrawn while a newer result is coming and the **paragraph** is not, and
-  // the split is deliberate. A line of bare axes has nothing to say it belongs to the sheet before
-  // the last dial move, so it goes; the paragraph describes what the control is doing, which has not
-  // stopped being true because a job is in flight — and falling back to the off paragraph there told
-  // a reader to go and read the sheet before settling anything while a snap was running.
+  // Everything the panel *reports* is withdrawn while a newer result is coming — the list, the
+  // badges and the two paragraphs that state a finding — because all of it would otherwise be
+  // describing the sheet as it stood before the last dial move, with nothing on screen to say so.
+  // What stands in its place is a paragraph about the reading being taken, which is the one thing
+  // that is true in this state: `off` would tell a reader to go and read the sheet in the middle of
+  // a snap they had just asked for, and `refused` would report an outcome the pass has not reached.
   const readings = busy ? null : symmetry;
-  const settled = symmetry?.filter((reading) => reading.snapped).length ?? 0;
+  const settled = readings?.filter((reading) => reading.snapped).length ?? 0;
 
   return (
     <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
@@ -135,27 +136,27 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
       )}
 
       <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-        {guidanceFor(mode, symmetry, sprites, settled)}
+        {guidanceFor(mode, readings, sprites, settled)}
       </p>
     </section>
   );
 }
 
-/** Which paragraph the state calls for — see `SYMMETRY_GUIDANCE`, which holds all five. */
+/** Which paragraph the state calls for — see `SYMMETRY_GUIDANCE`, which holds all six. */
 function guidanceFor(
   mode: SymmetryMode,
-  symmetry: readonly SpriteSymmetry[] | null,
+  readings: readonly SpriteSymmetry[] | null,
   sprites: SpriteSegmentation | null,
   settled: number,
 ): string {
   if (mode === 'OFF') return SYMMETRY_GUIDANCE.off;
-  // Before any result has come back the general paragraph is the right one: naming a state the sheet
-  // is not yet in would be describing a finding nobody has made.
-  if (symmetry === null) return SYMMETRY_GUIDANCE.off;
+  // No reading on screen: none taken yet, or a newer one on its way. Either way what the panel can
+  // honestly say is what it is doing, not what it found.
+  if (readings === null) return SYMMETRY_GUIDANCE.pending;
   // No sprite to score, which is a fact about the *keying* — and the panel above is the one that
   // says which of its three reasons applies. `sprites` being null is the same "nothing yet" state as
   // above, reached one render earlier.
-  if (symmetry.length === 0) return sprites === null ? SYMMETRY_GUIDANCE.off : SYMMETRY_GUIDANCE.none;
+  if (readings.length === 0) return sprites === null ? SYMMETRY_GUIDANCE.pending : SYMMETRY_GUIDANCE.none;
   if (mode !== 'SNAP') return SYMMETRY_GUIDANCE.read;
   return settled > 0 ? SYMMETRY_GUIDANCE.snapped : SYMMETRY_GUIDANCE.refused;
 }

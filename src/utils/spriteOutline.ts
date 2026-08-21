@@ -26,14 +26,21 @@ import { oklabToSrgb, oklchToOklab } from './oklab.ts';
  * writes the result's own pixels whatever the preview is showing — and a mark that stopped at an
  * occupied pixel would break exactly where a reader checking the boundary is looking.
  *
- * **Each sprite's mirror axis is marked in the same pass, where one was measured**, as a solid tick
- * just outside the ring, above and below the box. It is a *tick* rather than a line down the
- * sprite because the rule this file opens with does not bend for it: an axis drawn where it actually
- * runs would replace the artwork the reader is trying to judge it against, and a column of pixels is
- * exactly what a symmetry check is being read at. Solid rather than dashed is what keeps it distinct
- * from the ring it sits against, which alternates the two stops pixel by pixel. A half-pixel axis marks the two
- * columns it runs between, so the seam the pair straddles is the answer; a whole-pixel axis marks
- * the one column it runs down. The panel carries the figure to a tenth of a pixel — this says where.
+ * **Each sprite's mirror axis is marked in the same pass, where one was measured**, as a solid
+ * pixel *in* the ring, top and bottom. It is a mark rather than a line down the sprite because the
+ * rule this file opens with does not bend for it: an axis drawn where it actually runs would replace
+ * the artwork the reader is trying to judge it against, and a column of pixels is exactly what a
+ * symmetry check is being read at. Solid rather than dashed is what makes it a mark at all, since
+ * the ring alternates the two stops pixel by pixel.
+ *
+ * **It sits on the ring rather than a row beyond it**, and that is a correction rather than a taste:
+ * two sprites may be a single pixel apart, so a mark a second row out lands on the *next sprite's
+ * artwork* — in a case the ring itself would have cleared. The concession this file makes about
+ * overlap covers a ring one pixel out and nothing wider, so the axis mark stays inside it.
+ *
+ * A half-pixel axis marks the two columns it runs between, so the seam the pair straddles is the
+ * answer; a whole-pixel axis marks the one column it runs down. The panel carries the figure to a
+ * tenth of a pixel — this says where.
  *
  * Pure, and one pass over a result that is `grid²` times smaller than the sheet — except at a grid
  * of 1, where it is the sheet. Written for that case: the copy is a single `set` of the whole
@@ -42,7 +49,7 @@ import { oklabToSrgb, oklchToOklab } from './oklab.ts';
 export function outlineSprites(
   image: ImageData,
   boxes: readonly SpriteBox[],
-  axes: readonly SpriteSymmetry[] = [],
+  axes: readonly SpriteSymmetry[],
 ): ImageData {
   const outlined = createImage(image.width, image.height);
   outlined.data.set(image.data);
@@ -75,15 +82,15 @@ export function outlineSprites(
     const doubled = Math.round(2 * axis);
     const columns = doubled % 2 === 0 ? [doubled / 2] : [(doubled - 1) / 2, (doubled + 1) / 2];
     for (const column of columns) {
-      tick(outlined, column, box.top - 2);
-      tick(outlined, column, box.top + box.height + 1);
+      tick(outlined, column, box.top - 1);
+      tick(outlined, column, box.top + box.height);
     }
   }
 
   return outlined;
 }
 
-/** One pixel of the axis tick — solid in the lighter stop, so it reads apart from the dashed ring. */
+/** One pixel of the axis mark — solid in the lighter stop, so it reads apart from the dashed ring. */
 function tick(image: ImageData, x: number, y: number): void {
   if (x < 0 || y < 0 || x >= image.width || y >= image.height) return;
   writePixel(image.data, pixelOffset(image.width, x, y), LIGHT);
@@ -108,7 +115,7 @@ const MARKERS: readonly Rgba[] = SPRITE_MARKER.map(({ oklch }) =>
   oklabToSrgb(oklchToOklab(oklch[0], oklch[1], oklch[2])),
 );
 
-/** What an unreachable index would resolve to — see the note at its one use. */
+/** What an unreachable index would resolve to — see the note where the ring reads the pair. */
 const DARK: Rgba = { r: 0, g: 0, b: 0, a: FULLY_OPAQUE };
 
 /**

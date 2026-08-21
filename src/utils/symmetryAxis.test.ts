@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SYMMETRY_AXIS_SEARCH } from '../constants/quantiser.ts';
+import { SYMMETRY_AXIS_SEARCH, SYMMETRY_SWEEP_BUDGET } from '../constants/quantiser.ts';
 import type { Rgba, SpriteBox } from '../types/quantiser.ts';
 import { imageFrom } from '../test/images.ts';
 import { FULLY_OPAQUE, FULLY_TRANSPARENT } from './imageData.ts';
@@ -65,16 +65,24 @@ describe('sheetSymmetry', () => {
     expect(reading.confidence).toBeCloseTo(15 / 16, 10);
   });
 
-  it('counts a pair inside the tolerance as agreeing', () => {
-    // The two halves differ by one step of lightness, which is a fraction of a scaled-OKLab unit —
-    // exact refuses it and any working tolerance admits it.
+  it('counts a pair inside the tolerance as agreeing, and finds the axis that pairs it', () => {
+    // Two halves a step of lightness apart — a fraction of a scaled-OKLab unit, which is the drift a
+    // reduction leaves across one flat surface. At exact the halves do not match, so the sprite's
+    // real mirror line pairs nothing and the search settles for the partial symmetry inside the left
+    // half alone: four of its columns mirror about 11.5, which is a third of the sprite. Admit the
+    // step and the true axis pairs the whole of it.
     const paler: Rgba = { ...BODY, r: BODY.r + 12, g: BODY.g + 12, b: BODY.b + 12 };
     const image = sheet(32, 8, (x, y) =>
       y >= 2 && y < 6 && x >= 10 && x < 18 ? (x < 14 ? BODY : paler) : CLEAR,
     );
 
-    expect(read(image, box(10, 2, 8, 4, 32), 0).confidence).toBe(0);
-    expect(read(image, box(10, 2, 8, 4, 32), 16).confidence).toBe(1);
+    const strict = read(image, box(10, 2, 8, 4, 32), 0);
+    expect(strict.axis).toBe(11.5);
+    expect(strict.confidence).toBeCloseTo(1 / 3, 10);
+
+    const admitting = read(image, box(10, 2, 8, 4, 32), 16);
+    expect(admitting.axis).toBe(13.5);
+    expect(admitting.confidence).toBe(1);
   });
 
   it('does not count a pair of empty pixels as evidence of symmetry', () => {
@@ -116,22 +124,52 @@ describe('sheetSymmetry', () => {
   });
 
   it('counts a pixel whose partner falls off the left of the box, as it does one off the right', () => {
-    // Eight columns: body on the left half, trim on the right. Nothing here mirrors, so the honest
-    // answer is the box centre at no confidence at all.
+    // Eight columns: body on the left half, trim on the right. Nothing mirrors across the middle, and
+    // the best the sprite can offer is the left half mirroring about its own centre at 11.5 — four of
+    // the twelve pairs that axis counts, the other eight being trim columns it cannot pair at all.
     //
-    // The obvious `partner > column` loop reaches the same pair from its left-hand member only, so a
-    // pixel whose partner falls off the *left* is never visited — and an axis pushed hard left then
-    // scores a perfect zero over the two pairs it still counts, while the four unpaired trim columns
-    // cost it nothing. That version answers 11.5 at a confidence of 1: a mirror line through a
-    // sprite that has no mirror line, stated as certain.
+    // A third is the whole point of the assertion. The obvious `partner > column` loop reaches each
+    // pair from its left-hand member only, so a pixel whose partner falls off the *left* is never
+    // visited — and this axis then counts only the four pairs it can satisfy, scoring a perfect zero
+    // over them while the four unpaired trim columns cost it nothing. That version answers the same
+    // axis at a confidence of **1**: a mirror line through a sprite that has none, stated as certain.
     const image = sheet(28, 8, (x, y) =>
       y >= 2 && y < 6 && x >= 10 && x < 18 ? (x < 14 ? BODY : TRIM) : CLEAR,
     );
 
     const reading = read(image, box(10, 2, 8, 4, 32));
 
-    expect(reading.axis).toBe(13.5);
-    expect(reading.confidence).toBe(0);
+    expect(reading.axis).toBe(11.5);
+    expect(reading.confidence).toBeCloseTo(1 / 3, 10);
+  });
+
+  it('narrows the search on a sheet whose sprites would spend more than the sweep budget', () => {
+    // The bound that stops one large subject turning a keystroke into seconds of work. The fixture is
+    // sized from the budget itself rather than from a figure typed here, so it stays true if the
+    // budget moves: an area of a sixteenth of it affords sixteen sweeps, which is a reach of three.
+    //
+    // The artwork mirrors exactly about a line **five** columns right of the box centre — inside the
+    // eight the reach would otherwise allow, and outside the three this sheet can afford. So the
+    // search cannot reach it: the best it can offer is the nearest line the reach does allow, at a
+    // confidence that says plainly it did not find symmetry. Unbounded, the same fixture answers the
+    // true axis at a confidence of 1.
+    const width = 256;
+    const height = SYMMETRY_SWEEP_BUDGET / 16 / width;
+    const axis = (width - 1) / 2 + 5;
+    // Every column of the mirrored span carries a value that repeats with a long period, so no
+    // shorter mirror line inside the span can score as well as the real one.
+    const image = sheet(width, height, (x) => {
+      if (x < 10) return CLEAR;
+      const from = Math.abs(x - axis);
+      return { r: 40 + ((from * 37) % 200), g: 90, b: 140, a: FULLY_OPAQUE };
+    });
+
+    const reading = read(image, box(0, 0, width, height, width * height));
+
+    const affordable = (Math.floor(SYMMETRY_SWEEP_BUDGET / (width * height)) - 1) / 4;
+    expect(Math.abs(reading.axis - (width - 1) / 2)).toBeLessThanOrEqual(affordable);
+    expect(reading.axis).not.toBe(axis);
+    expect(reading.confidence).toBeLessThan(0.5);
   });
 
   it('marks a sprite for the snap only once it reaches the floor', () => {
@@ -148,13 +186,18 @@ describe('sheetSymmetry', () => {
     expect(read(image, bounds).box).toEqual(bounds);
   });
 
-  it('reads a one-column sprite as symmetric about its own column', () => {
+  it('reads a one-column sprite as symmetric about its own column, and never snaps it', () => {
+    // Symmetric about itself, and with no mirrored pair anywhere in it there is nothing to settle —
+    // so the snap must not claim it however low the floor goes. Marked, it would buy a copy of the
+    // sheet and a second segmentation to rewrite no pixel, and print "settled" on a row where
+    // nothing was. A pole, a spear and a rope are all one column wide.
     const image = sheet(32, 8, (x, y) => (y >= 2 && y < 6 && x === 10 ? BODY : CLEAR));
 
-    const reading = read(image, box(10, 2, 1, 4, 4));
+    const reading = read(image, box(10, 2, 1, 4, 4), 0, 0.5);
 
     expect(reading.axis).toBe(10);
     expect(reading.confidence).toBe(1);
+    expect(reading.snapped).toBe(false);
   });
 
   it('reads every box it is given, in the order it was given them', () => {

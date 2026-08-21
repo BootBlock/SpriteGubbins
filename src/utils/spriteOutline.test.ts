@@ -30,7 +30,7 @@ describe('outlineSprites', () => {
   it('leaves every drawn pixel of the artwork exactly as it found it', () => {
     // The reason the ring is drawn outside the box rather than on it: the sprite's own edge is the
     // pixel a reader checking the bounds is looking at, and a mark on it replaces what it measures.
-    const marked = outlineSprites(SHEET, [BOX]);
+    const marked = outlineSprites(SHEET, [BOX], []);
 
     for (let y = BOX.top; y < BOX.top + BOX.height; y += 1) {
       for (let x = BOX.left; x < BOX.left + BOX.width; x += 1) {
@@ -40,7 +40,7 @@ describe('outlineSprites', () => {
   });
 
   it('draws the ring one pixel outside the box, on all four sides', () => {
-    const marked = outlineSprites(SHEET, [BOX]);
+    const marked = outlineSprites(SHEET, [BOX], []);
     const ringed = [3, 4, 5, 6, 7];
 
     for (const along of ringed) {
@@ -68,7 +68,7 @@ describe('outlineSprites', () => {
     // A dash rather than a solid line, so the mark separates from artwork of any lightness. Parity
     // on `x + y` is what makes both directions dash — one on `x` alone would draw the verticals
     // solid.
-    const marked = outlineSprites(SHEET, [BOX]);
+    const marked = outlineSprites(SHEET, [BOX], []);
 
     expect(at(marked, 3, 3)).toEqual(marker(0));
     expect(at(marked, 4, 3)).toEqual(marker(1));
@@ -82,7 +82,7 @@ describe('outlineSprites', () => {
     // them must not wrap round to the far edge or throw.
     const corner: SpriteBox = { left: 0, top: 0, width: 2, height: 2, pixels: 4 };
     const sheet = imageFrom(8, 8, (x, y) => (x < 2 && y < 2 ? ART : CLEAR));
-    const marked = outlineSprites(sheet, [corner]);
+    const marked = outlineSprites(sheet, [corner], []);
 
     expect(at(marked, 2, 0).a).toBe(FULLY_OPAQUE);
     expect(at(marked, 0, 2).a).toBe(FULLY_OPAQUE);
@@ -99,7 +99,7 @@ describe('outlineSprites', () => {
   });
 
   it('returns the result untouched where nothing was found', () => {
-    const marked = outlineSprites(SHEET, []);
+    const marked = outlineSprites(SHEET, [], []);
 
     expect(marked.data).toEqual(SHEET.data);
     expect(marked.data).not.toBe(SHEET.data);
@@ -109,18 +109,19 @@ describe('outlineSprites', () => {
     // Purity, and it is the property the preview depends on: the same `ImageData` is what the other
     // three modes draw and what the Download button writes.
     const before = new Uint8ClampedArray(SHEET.data);
-    outlineSprites(SHEET, [BOX]);
+    outlineSprites(SHEET, [BOX], []);
 
     expect(SHEET.data).toEqual(before);
   });
 
-  it('marks a whole-column axis with one tick either side of the ring', () => {
-    // The 3-wide box's own middle column. The tick sits just outside the ring, in the lighter of the
-    // two marker stops and solid — which is what separates it from the ring's alternating dash.
+  it('marks a whole-column axis in the ring above and below the box', () => {
+    // The 3-wide box's own middle column. The mark sits *in* the ring, in the lighter of the two
+    // marker stops and solid — which is what separates it from the ring's alternating dash, and what
+    // keeps it from reaching a row further out where a neighbouring sprite's artwork may be.
     const marked = outlineSprites(SHEET, [BOX], [{ box: BOX, axis: 5, confidence: 1, snapped: false }]);
 
-    expect(at(marked, 5, BOX.top - 2)).toEqual(marker(1));
-    expect(at(marked, 5, BOX.top + BOX.height + 1)).toEqual(marker(1));
+    expect(at(marked, 5, BOX.top - 1)).toEqual(marker(1));
+    expect(at(marked, 5, BOX.top + BOX.height)).toEqual(marker(1));
   });
 
   it('marks a half-pixel axis on both columns it runs between', () => {
@@ -128,8 +129,8 @@ describe('outlineSprites', () => {
     // that straddles it rather than by rounding to one side and being half a pixel wrong.
     const marked = outlineSprites(SHEET, [BOX], [{ box: BOX, axis: 4.5, confidence: 1, snapped: false }]);
 
-    expect(at(marked, 4, BOX.top - 2)).toEqual(marker(1));
-    expect(at(marked, 5, BOX.top - 2)).toEqual(marker(1));
+    expect(at(marked, 4, BOX.top - 1)).toEqual(marker(1));
+    expect(at(marked, 5, BOX.top - 1)).toEqual(marker(1));
   });
 
   it('leaves the artwork alone when it marks an axis, as it does when it marks a box', () => {
@@ -144,15 +145,35 @@ describe('outlineSprites', () => {
     }
   });
 
-  it('drops a tick that would fall off the sheet rather than wrapping it', () => {
+  it('drops a mark that would fall off the sheet rather than wrapping it', () => {
     const corner: SpriteBox = { left: 0, top: 0, width: 3, height: 3, pixels: 9 };
     const sheet = imageFrom(6, 6, () => CLEAR);
 
     const marked = outlineSprites(sheet, [corner], [{ box: corner, axis: 1, confidence: 1, snapped: false }]);
 
-    // The tick above the box is off the top edge, so it is not drawn — and it has not reappeared on
+    // The mark above the box is off the top edge, so it is not drawn — and it has not reappeared on
     // the last row, which is what an unclipped write into the flat channel array would do.
     expect(at(marked, 1, 5)).toEqual(CLEAR);
-    expect(at(marked, 1, corner.top + corner.height + 1)).toEqual(marker(1));
+    expect(at(marked, 1, corner.top + corner.height)).toEqual(marker(1));
+  });
+
+  it('keeps the axis mark inside the ring, off a neighbouring sprite one pixel away', () => {
+    // Two sprites with a single empty row between them, which a sprite gap of 0 leaves apart. A mark
+    // drawn a row beyond the ring lands on the lower sprite's own top row of artwork — in a case the
+    // ring itself clears — so it goes in the ring instead.
+    const upper: SpriteBox = { left: 2, top: 4, width: 3, height: 3, pixels: 9 };
+    const lower: SpriteBox = { left: 2, top: 8, width: 3, height: 3, pixels: 9 };
+    const twoSprites = imageFrom(12, 14, (x, y) =>
+      x >= 2 && x < 5 && ((y >= 4 && y < 7) || (y >= 8 && y < 11)) ? ART : CLEAR,
+    );
+
+    const marked = outlineSprites(
+      twoSprites,
+      [upper, lower],
+      [{ box: upper, axis: 3, confidence: 1, snapped: false }],
+    );
+
+    expect(at(marked, 3, 8)).toEqual(ART);
+    expect(at(marked, 3, upper.top + upper.height)).toEqual(marker(1));
   });
 });

@@ -20,6 +20,20 @@ export const SYMMETRY_GUIDANCE = {
   off: 'Sprites drawn facing the viewer or facing away are symmetric by convention, and a generator returns them very nearly so — the two halves agree on the silhouette and drift apart over a buckle, a highlight or a stray outline pixel. This finds the mirror line each sprite is closest to being symmetric about, and reports how much of it actually mirrors there. Plenty of subjects are asymmetric on purpose, though: a drawn weapon, a single pauldron, a strap over one shoulder. Read the sheet before settling anything.',
 
   /**
+   * The pass is on and no reading is on screen — no result yet, or a newer one on its way.
+   *
+   * Its own paragraph rather than a fall-back to one of the others, because every other paragraph
+   * here is wrong in this state. `off` tells the reader to read the sheet before settling anything,
+   * which is not advice to give somebody in the middle of a snap they have just asked for; the three
+   * below all point at a list that is not on screen; and `snapped` and `refused` are *findings*, so
+   * shown against a reading taken under the previous setting they assert an outcome the pass has not
+   * reached. That last one is the worst of the four: selecting SNAP would have said, for as long as
+   * the sheet took, that nothing had qualified.
+   */
+  pending:
+    'The sheet is being read. Each separate piece of artwork on it is scored against the candidate mirror lines within reach of its own centre, and the one its two halves agree best about is the axis reported for it. The axes and their shares appear here as soon as the reading settles.',
+
+  /**
    * Nothing was segmented, so there are no sprites to score — a statement about the *keying*.
    *
    * It points at the panel above rather than restating that panel's own diagnosis: the sheet may be

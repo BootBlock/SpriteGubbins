@@ -1,4 +1,4 @@
-import { SYMMETRY_AXIS_SEARCH } from '../constants/quantiser.ts';
+import { SYMMETRY_AXIS_SEARCH, SYMMETRY_SWEEP_BUDGET } from '../constants/quantiser.ts';
 import type { SpriteBox, SpriteSymmetry } from '../types/quantiser.ts';
 import { FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 import type { MutableOklab } from './oklab.ts';
@@ -17,23 +17,45 @@ import { pixelDistance } from './pixelDistance.ts';
  * complied.
  *
  * **Axis by exhaustive scoring, in the axis-voting lineage this is grounded in.** Every candidate
- * mirror line is scored by the mean distance between the pixels it pairs up, and the lowest score
- * wins. The distances are the same scaled-OKLab figures every colour dial on this tab is stated in,
- * measured by the shared {@link pixelDistance} — colour and coverage on four axes of one span, so a
- * limb present on one side and absent on the other scores as far apart as black is from white.
+ * mirror line is scored twice over the pixels it pairs up: by the **share of pairs agreeing** within
+ * the tolerance, and by the **mean distance** across them. The distances are the same scaled-OKLab
+ * figures every colour dial on this tab is stated in, measured by the shared {@link pixelDistance} —
+ * colour and coverage on four axes of one span, so a limb present on one side and absent on the
+ * other scores as far apart as black is from white.
+ *
+ * **The share is what the winner is chosen by, and the mean breaks its ties.** Choosing on the mean
+ * alone puts the search on a different quantity from the one the confidence floor is stated in, and
+ * the two disagree exactly where a sprite is *bimodal* — which is the shape an asymmetric appendage
+ * produces. An axis pairing 950 pixels exactly and leaving 50 unmatched across the full alpha span
+ * has a worse mean than an axis missing every pair by a hair, and a far better share; the mean would
+ * name the second, report 0% about it, and have the floor refuse a sprite that mirrors 95% about the
+ * first. Ranking on the share and settling ties on the mean keeps the reported figure, the gate and
+ * the search all describing one axis — and at a loose tolerance, where many candidates saturate at a
+ * share of 1, the mean is what decides, so the distance criterion still does the work wherever the
+ * share cannot.
  *
  * **Candidate axes step by half a pixel**, because a sprite an even number of pixels wide has no
  * centre column: its mirror line falls *between* two columns. Both are ordinary, and a search that
  * only tried whole columns would report the nearer one along with a confidence halved by the
  * half-pixel registration error it had introduced itself.
  *
- * **The search is centred on the box and bounded**, at {@link SYMMETRY_AXIS_SEARCH} drawn pixels or a
- * quarter of the box's width, whichever is smaller. A tight bounding box centres a symmetric sprite
- * exactly, so the box centre is the prior; what moves the true axis off it is an asymmetric
- * appendage, which shifts the centre by half of however far that appendage sticks out. The bound is
- * what keeps the cost linear in the sheet rather than quadratic in the widest sprite on it — and an
- * axis further out than the bound comes back as a low confidence about the centre, which is the
- * honest answer rather than a wrong axis stated confidently.
+ * **The search is centred on the box and bounded three ways.** A tight bounding box centres a
+ * symmetric sprite exactly, so the box centre is the prior; what moves the true axis off it is an
+ * asymmetric appendage, which shifts the centre by half of however far that appendage sticks out. The
+ * reach is therefore {@link SYMMETRY_AXIS_SEARCH} drawn pixels, narrowed to a quarter of the box's
+ * width — past which a candidate leaves more of the sprite unpaired than it pairs up — and narrowed
+ * again by {@link SYMMETRY_SWEEP_BUDGET}, which is what stops one very large sprite turning a
+ * keystroke into seconds of work.
+ *
+ * **That third bound costs almost nothing, because the reach is absolute and sprites are not.** Eight
+ * pixels either way is a real correction on a sprite 32 across and is four tenths of one per cent on
+ * a sprite 2048 across, where the appendage that moved the centre would have to be a thousand pixels
+ * long for the sweep to reach it. So the sheets the budget narrows are the sheets the extra
+ * candidates were never going to help, and the reference sheet — fifteen sprites at 24 to 35 pixels
+ * across — is not narrowed at all.
+ *
+ * An axis genuinely further out than the reach comes back as a **low confidence about the centre**,
+ * which is the honest answer rather than a wrong axis stated confidently.
  *
  * **Only pairs where at least one side carries coverage are counted.** A pair of empty pixels is not
  * evidence of anything, and a bounding box is mostly empty at its corners — counting those would
@@ -43,10 +65,11 @@ import { pixelDistance } from './pixelDistance.ts';
  * Pure. It runs on the finished sheet in drawn pixels, over the boxes `spriteSegments` found there,
  * so everything it says is stated in the coordinates the preview draws and the panel reports.
  *
- * **The bound is what makes it affordable**, and the reference sheet is where that was measured: a
+ * **The bounds are what make it affordable**, and the reference sheet is where that was measured: a
  * `CHECK` over its fifteen sprites costs about a **thirtieth** of the whole pipeline's work on the
- * same sheet. The result is `grid²` times smaller than the sheet, the sprites are a third of the
- * result, and each is scored by a fixed number of sweeps over its own box.
+ * same sheet. The budget is what makes that hold on sheets the reference sheet says nothing about —
+ * the sweep visits at most {@link SYMMETRY_SWEEP_BUDGET} pixels however the sprites are shaped,
+ * which is one pass over the largest sheet this tab admits.
  */
 export function sheetSymmetry(
   image: ImageData,
@@ -55,10 +78,36 @@ export function sheetSymmetry(
   /** The share a sprite must already reach before the snap may settle it, or `null` to snap none. */
   floor: number | null,
 ): SpriteSymmetry[] {
+  // One reach for the whole sheet rather than one per sprite, because the budget is a statement about
+  // the *pass*: bounded per sprite, a sheet of two hundred sprites would spend two hundred times it.
+  // Every sprite is searched to the same depth, which is also what keeps two sprites of one size on
+  // one sheet comparable with each other.
+  const reach = affordableReach(boxes);
+
   return boxes.map((box) => {
-    const { axis, confidence } = bestAxis(image, box, tolerance);
-    return { box, axis, confidence, snapped: floor !== null && confidence >= floor };
+    const { axis, confidence, paired } = bestAxis(image, box, tolerance, reach);
+    // A sprite with no pairs at all — one column wide — is symmetric about its own column and has
+    // nothing whatever to settle, so the snap must not claim it. Marked, it would cost a copy of the
+    // sheet and a second segmentation to rewrite no pixel, and the panel would print "settled" on a
+    // row where nothing was. A pole, a spear and a rope are all one column wide.
+    return { box, axis, confidence, snapped: paired && floor !== null && confidence >= floor };
   });
+}
+
+/**
+ * How far either side of centre every sprite on this sheet may be searched, in drawn pixels.
+ *
+ * The sweep is `4 × reach + 1` passes over each box, so the whole pass costs that many times the
+ * sprites' combined area — and {@link SYMMETRY_SWEEP_BUDGET} is the ceiling that product may not
+ * cross. Divided out and floored to a reach, with a floor of zero: a sheet whose sprites are large
+ * enough to exhaust the budget on their own is searched about the box centre alone, which is where a
+ * sprite that large has its axis anyway.
+ */
+function affordableReach(boxes: readonly SpriteBox[]): number {
+  const area = boxes.reduce((total, box) => total + box.width * box.height, 0);
+  if (area === 0) return SYMMETRY_AXIS_SEARCH;
+  const sweeps = Math.floor(SYMMETRY_SWEEP_BUDGET / area);
+  return Math.max(0, Math.min(SYMMETRY_AXIS_SEARCH, Math.floor((sweeps - 1) / 4)));
 }
 
 /**
@@ -70,34 +119,45 @@ export function sheetSymmetry(
  * box's own extent rather than the sheet's, so a sheet of twelve sprites allocates twelve small
  * scratches instead of one the size of the result.
  *
- * Candidates are tried **outward from the box centre** and an improvement has to be strict, so a tie
- * falls to the axis nearest the centre. That is what makes the answer stable: a flat-coloured sprite
- * scores zero about every axis its silhouette allows, and with no order to the sweep the winner
- * would be whichever candidate the loop happened to reach last.
+ * Candidates are tried **outward from the box centre** and an improvement has to be strict on both
+ * figures, so a tie falls to the axis nearest the centre. That is what makes the answer stable: a
+ * flat-coloured sprite mirrors perfectly about every axis its silhouette allows, and with no order to
+ * the sweep the winner would be whichever candidate the loop happened to reach last.
  */
-function bestAxis(image: ImageData, box: SpriteBox, tolerance: number): { axis: number; confidence: number } {
+function bestAxis(
+  image: ImageData,
+  box: SpriteBox,
+  tolerance: number,
+  sheetReach: number,
+): { axis: number; confidence: number; paired: boolean } {
   const patch = readPatch(image, box);
 
   // Doubled coordinates throughout, so a half-pixel axis is still an integer and the partner of
   // column `x` is the plain subtraction `doubled − x`. An even doubled value puts the line down a
   // column's middle; an odd one puts it on the seam between two columns.
   const centre = 2 * box.left + box.width - 1;
-  const reach = Math.min(SYMMETRY_AXIS_SEARCH, Math.floor(box.width / 4));
+  // A quarter of the width, because past that a candidate leaves more of the sprite unpaired than it
+  // pairs up — and never past what the sheet's own budget affords.
+  const reach = Math.min(sheetReach, Math.floor(box.width / SEARCH_WIDTH_SHARE));
 
   let bestDoubled = centre;
-  let bestScore = Number.POSITIVE_INFINITY;
-  let bestConfidence = 1;
+  let best = { score: Number.POSITIVE_INFINITY, confidence: -1, counted: 0 };
 
   for (const step of outward(2 * reach)) {
-    const { score, confidence } = scoreAxis(patch, box, centre + step, tolerance);
-    if (score >= bestScore) continue;
+    const scored = scoreAxis(patch, box, centre + step, tolerance);
+    const better =
+      scored.confidence > best.confidence ||
+      (scored.confidence === best.confidence && scored.score < best.score);
+    if (!better) continue;
     bestDoubled = centre + step;
-    bestScore = score;
-    bestConfidence = confidence;
+    best = scored;
   }
 
-  return { axis: bestDoubled / 2, confidence: bestConfidence };
+  return { axis: bestDoubled / 2, confidence: best.confidence, paired: best.counted > 0 };
 }
+
+/** One over the share of its own width a sprite may be searched either side of centre — see above. */
+const SEARCH_WIDTH_SHARE = 4;
 
 /** `0, −1, +1, −2, +2, …` out to `±reach` — the order that makes a tie fall to the box centre. */
 function* outward(reach: number): Generator<number> {
@@ -162,14 +222,16 @@ function readPatch(image: ImageData, box: SpriteBox): Patch {
  *
  * `score` is the mean rather than the sum, so candidates pairing different numbers of pixels stay
  * comparable. A candidate pairing none — reachable only where the box is one column wide — scores
- * zero and is perfectly confident, because a single column *is* symmetric about itself.
+ * zero and is perfectly confident, because a single column *is* symmetric about itself; `counted` is
+ * what lets the caller tell that apart from a sprite that genuinely mirrors, which matters because
+ * there is nothing there for a snap to rewrite.
  */
 function scoreAxis(
   patch: Patch,
   box: SpriteBox,
   doubled: number,
   tolerance: number,
-): { score: number; confidence: number } {
+): { score: number; confidence: number; counted: number } {
   const { left, width, height } = box;
   const first: MutableOklab = { L: 0, a: 0, b: 0 };
   const second: MutableOklab = { L: 0, a: 0, b: 0 };
@@ -207,6 +269,6 @@ function scoreAxis(
     }
   }
 
-  if (counted === 0) return { score: 0, confidence: 1 };
-  return { score: sum / counted, confidence: matched / counted };
+  if (counted === 0) return { score: 0, confidence: 1, counted };
+  return { score: sum / counted, confidence: matched / counted, counted };
 }

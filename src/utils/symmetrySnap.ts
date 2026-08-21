@@ -1,5 +1,12 @@
-import type { Rgba, SpriteBox, SpriteSymmetry } from '../types/quantiser.ts';
-import { FULLY_TRANSPARENT, createImage, pixelOffset, writePixel } from './imageData.ts';
+import type { SpriteBox, SpriteSymmetry } from '../types/quantiser.ts';
+import {
+  FULLY_TRANSPARENT,
+  alphaAt,
+  createImage,
+  packedColorAt,
+  pixelOffset,
+  writePackedColor,
+} from './imageData.ts';
 
 /**
  * The sheet with each qualifying sprite's mirrored pairs settled — the snap half of the symmetry
@@ -42,8 +49,10 @@ import { FULLY_TRANSPARENT, createImage, pixelOffset, writePixel } from './image
  * settling — the whole reason the pass ships off by default is that a held sword, a single pauldron
  * and a shoulder bag are asymmetric on purpose, and the floor is what keeps them intact.
  *
- * Returns the image it was given, by reference, where no reading is marked — so `CHECK`, and a
- * `SNAP` no sprite qualified for, cost nothing at all and the caller can tell nothing happened.
+ * Returns the image it was given, by reference, whenever no pixel actually moved — no reading
+ * marked, or every marked sprite already agreeing with itself. So `CHECK`, a `SNAP` nothing
+ * qualified for, and a `SNAP` that found nothing to correct all cost nothing, and the caller can
+ * tell from the reference alone that the sheet is the one it handed over.
  *
  * Pure, and one copy of a result that is `grid²` times smaller than the sheet. **Every reading is
  * taken from the original and every write lands on the copy**, so no pair is decided against pixels
@@ -57,11 +66,17 @@ export function snapSymmetric(image: ImageData, readings: readonly SpriteSymmetr
   const snapped = createImage(image.width, image.height);
   snapped.data.set(image.data);
 
+  let settled = 0;
   for (const reading of snapping) {
-    settle(image, snapped, reading.box, 2 * reading.axis);
+    settled += settle(image, snapped, reading.box, 2 * reading.axis);
   }
 
-  return snapped;
+  // A sprite can qualify and still have nothing to settle — every pair already agreeing is the
+  // ordinary case at a high floor — and the copy above is then a copy of the sheet with no edit in
+  // it. Handing back the original instead is what lets `quantiseImage` tell that the sheet did not
+  // move and reuse the segmentation it already took, rather than labelling the result a second time
+  // to arrive at the same boxes.
+  return settled === 0 ? image : snapped;
 }
 
 /**
@@ -71,7 +86,7 @@ export function snapSymmetric(image: ImageData, readings: readonly SpriteSymmetr
  * The tally and the coverage are taken over the whole box before any pair is decided, which costs
  * one extra walk of the sprite and is what makes the two sheet-wide tie-breaks mean what they say.
  */
-function settle(source: ImageData, target: ImageData, box: SpriteBox, doubled: number): void {
+function settle(source: ImageData, target: ImageData, box: SpriteBox, doubled: number): number {
   const { left, top, width, height } = box;
   const counts = new Map<number, number>();
   // Which half the generator drew more of, as the last-but-one tie-break. Measured in coverage
@@ -83,7 +98,7 @@ function settle(source: ImageData, target: ImageData, box: SpriteBox, doubled: n
   for (let row = 0; row < height; row += 1) {
     for (let column = 0; column < width; column += 1) {
       const here = left + column;
-      const key = packed(source, here, top + row);
+      const key = colorAt(source, here, top + row);
       counts.set(key, (counts.get(key) ?? 0) + 1);
       if (key === CLEAR) continue;
       if (2 * here < doubled) leftward += 1;
@@ -92,6 +107,7 @@ function settle(source: ImageData, target: ImageData, box: SpriteBox, doubled: n
   }
   const leftWinsTies = leftward >= rightward;
 
+  let written = 0;
   for (let row = 0; row < height; row += 1) {
     const y = top + row;
     for (let column = 0; column < width; column += 1) {
@@ -101,8 +117,8 @@ function settle(source: ImageData, target: ImageData, box: SpriteBox, doubled: n
       // no counterpart are the ones the docblock leaves alone.
       if (partner <= here || partner >= left + width) continue;
 
-      const key = packed(source, here, y);
-      const otherKey = packed(source, partner, y);
+      const key = colorAt(source, here, y);
+      const otherKey = colorAt(source, partner, y);
       if (key === otherKey) continue;
 
       const support = neighbourSupport(source, box, here, y, key);
@@ -116,11 +132,14 @@ function settle(source: ImageData, target: ImageData, box: SpriteBox, doubled: n
             ? votes > otherVotes
             : leftWinsTies;
 
-      const winner = unpack(takeLeft ? key : otherKey);
-      writePixel(target.data, pixelOffset(target.width, here, y), winner);
-      writePixel(target.data, pixelOffset(target.width, partner, y), winner);
+      const winner = takeLeft ? key : otherKey;
+      writePackedColor(target.data, pixelOffset(target.width, here, y), winner);
+      writePackedColor(target.data, pixelOffset(target.width, partner, y), winner);
+      written += 1;
     }
   }
+
+  return written;
 }
 
 /** The four orthogonal offsets a contour is drawn along — see the docblock on why not eight. */
@@ -145,39 +164,29 @@ function neighbourSupport(image: ImageData, box: SpriteBox, x: number, y: number
     const ny = y + down;
     if (nx < box.left || nx >= box.left + box.width) continue;
     if (ny < box.top || ny >= box.top + box.height) continue;
-    if (packed(image, nx, ny) === key) support += 1;
+    if (colorAt(image, nx, ny) === key) support += 1;
   }
   return support;
 }
 
 /** What a cleared pixel counts as — one value, whatever bytes happen to sit under it. */
-const CLEAR = -1;
+const CLEAR = 0;
 
 /**
- * One pixel as a single number, for the tally, the support count and the equality test above.
+ * One pixel as the single number the tally, the support count and the equality test all compare in.
  *
- * **Every fully transparent pixel packs to {@link CLEAR}**, because `ImageData` keeps whatever
- * colour a pixel had before it was cleared and none of it is visible. Left as themselves, two
- * indistinguishable empty pixels would be two candidates splitting the empty vote — and a pair of
- * them would be found to *disagree*, and settled by writing one invisible colour over another.
+ * {@link packedColorAt} does the packing — the arithmetic is not spelled out again here, because a
+ * second copy of it is exactly what `imageData.ts` says must not exist. What this adds is the
+ * transparency collapse, in the shape `pngPalette` already uses: **every fully transparent pixel
+ * answers {@link CLEAR}**, because `ImageData` keeps whatever colour a pixel carried before it was
+ * cleared and none of it is visible. Left as themselves, two indistinguishable empty pixels would be
+ * two candidates splitting the empty vote — and a pair of them would be found to *disagree*, and
+ * settled by writing one invisible colour over another.
+ *
+ * `0` is the packing of transparent black, so it is the one value a cleared pixel could honestly
+ * have, and no pixel carrying any coverage can reach it.
  */
-function packed(image: ImageData, x: number, y: number): number {
+function colorAt(image: ImageData, x: number, y: number): number {
   const at = pixelOffset(image.width, x, y);
-  const alpha = image.data[at + 3] ?? 0;
-  if (alpha === FULLY_TRANSPARENT) return CLEAR;
-  return (
-    (((image.data[at] ?? 0) * 256 + (image.data[at + 1] ?? 0)) * 256 + (image.data[at + 2] ?? 0)) * 256 +
-    alpha
-  );
-}
-
-/** The inverse of {@link packed} — {@link CLEAR} comes back as the transparent black it stands for. */
-function unpack(key: number): Rgba {
-  if (key === CLEAR) return { r: 0, g: 0, b: 0, a: FULLY_TRANSPARENT };
-  return {
-    r: Math.floor(key / (256 * 256 * 256)) % 256,
-    g: Math.floor(key / (256 * 256)) % 256,
-    b: Math.floor(key / 256) % 256,
-    a: key % 256,
-  };
+  return alphaAt(image.data, at) === FULLY_TRANSPARENT ? CLEAR : packedColorAt(image.data, at);
 }
