@@ -54,6 +54,16 @@
 > One stale pointer the plan could not have known about: §7 sends a reader to
 > [baseline-prompt-new.md](../baseline-prompt-new.md) **§10.3** for "the manifest work". §10.3 is the
 > identity-lock capture; the manifest is `EMIT_MANIFEST`, described in that document's §4.
+>
+> **§2.3's "No dithering" was later reversed, and §6 lists it out of scope.** The argument there is
+> that the template's pixel-discipline block bans the "sparkle noise, scattered single-pixel
+> highlights" ordered dithering produces — which is a rule about what a *generator* should hand back,
+> where this is a transform the reader applies afterwards and can see the result of. It ships as the
+> Downscale panel's `Dither` control: positional only, off by default, and withdrawn entirely unless
+> a palette is in force. The reasoning and the measurements are in `DITHER_CHOICES` in
+> `src/constants/quantiser.ts`; the case for offering it at all is that the block figures on a sheet
+> whose palette is genuinely too small — a machine's fixed colours, a channel-depth space — improve by
+> about three times, which §2.3 had no way to know without measuring.
 
 The one item on §10's follow-up list that **no prompt wording can fix**. Models return smooth
 artwork downscaled far more often than true pixel art however the request is phrased — the template

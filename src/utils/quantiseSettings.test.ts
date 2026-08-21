@@ -63,6 +63,12 @@ describe('sameQuantiseSettings', () => {
     expect(sameQuantiseSettings(BASE, { ...BASE, trimStrength: 1 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, inkThreshold: 80 })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, cleanupPasses: 2 })).toBe(false);
+    // The dither moves the whole palette step as well as patterning the result, so a change of
+    // pattern is as much a different sheet as a change of reading is — and without this arm nothing
+    // would catch its comparison being dropped, which presents as a stale result behind a spinner
+    // that never clears.
+    expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BAYER_8' })).toBe(false);
+    expect(sameQuantiseSettings(BASE, { ...BASE, dither: 'BLUE_NOISE' })).toBe(false);
     expect(sameQuantiseSettings(BASE, { ...BASE, key: { color: MAGENTA, tolerance: 64 } })).toBe(false);
     expect(
       sameQuantiseSettings(BASE, { ...BASE, key: { color: { ...MAGENTA, g: 40 }, tolerance: 32 } }),

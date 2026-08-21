@@ -564,7 +564,7 @@ export const VOTE_METHOD_CHOICES = [
  * position every other control on this tab spells as a zero — the pass does not run at all.
  *
  * **The colour decision is the same under all three patterns, and only the tile differs.** That is
- * not a simplification of the roadmap's two tiers but the result of measuring them: the classic
+ * not a cheap tier and a quality tier collapsed into one, but the result of measuring both: the classic
  * threshold form was defined for a palette that is a uniform lattice, and a sprite palette is a
  * list, so the arbitrary-palette search (`mixingPlan`) is what every pattern here needs. Memoised
  * per distinct colour it costs the same for all three — see the reference-sheet figures under
@@ -578,21 +578,26 @@ export const VOTE_METHOD_CHOICES = [
  *
  * ```
  * budget 64      flat 1.85 / 0.78 / 0.48   BAYER_4 2.10 / 0.72 / 0.43   BAYER_8 2.12 / 0.73 / 0.43   BLUE_NOISE 2.12 / 0.73 / 0.42
- * budget 32      flat 2.61 / 1.07 / 0.71   BAYER_4 2.94 / 1.14 / 0.72   BAYER_8 2.97 / 1.16 / 0.74   BLUE_NOISE 2.96 / 1.15 / 0.74
- * budget 8       flat 5.62 / 2.72 / 1.90   BAYER_4 6.23 / 2.54 / 1.71   BAYER_8 6.27 / 2.58 / 1.80   BLUE_NOISE 6.28 / 2.62 / 1.75
+ * budget 32      flat 2.61 / 1.07 / 0.71   BAYER_4 2.94 / 1.14 / 0.72   BAYER_8 2.97 / 1.16 / 0.74   BLUE_NOISE 2.95 / 1.14 / 0.74
+ * budget 8       flat 5.62 / 2.72 / 1.90   BAYER_4 6.23 / 2.54 / 1.71   BAYER_8 6.27 / 2.58 / 1.80   BLUE_NOISE 6.27 / 2.59 / 1.75
  * Game Boy       flat 92.3 / 89.2 / 91.1   BAYER_4 94.2 / 85.1 / 87.3   BAYER_8 94.2 / 85.1 / 87.3   BLUE_NOISE 94.2 / 85.2 / 87.3
  * Mega Drive     flat 6.59 / 4.44 / 4.11   BAYER_4 9.31 / 1.73 / 1.29   BAYER_8 9.31 / 1.76 / 1.30   BLUE_NOISE 9.29 / 1.92 / 1.22
- * Master System  flat 9.82 / 6.03 / 5.03   BAYER_4 15.0 / 2.91 / 1.91   BAYER_8 14.9 / 3.11 / 2.03   BLUE_NOISE 14.7 / 3.39 / 1.90
+ * Master System  flat 9.82 / 6.03 / 5.03   BAYER_4 15.0 / 2.91 / 1.91   BAYER_8 14.9 / 3.11 / 2.03   BLUE_NOISE 14.7 / 3.33 / 1.89
  * ```
  *
- * Three things to read out of that. The per-pixel figure always rises, because every pattern moves
- * pixels off their nearest colour on purpose. The block figures fall wherever the palette is
- * genuinely too small for the sheet, and by most on the two **channel-depth** machines — a third of
- * the flat step's error over 8 × 8 blocks — because a lattice is what ordered dithering was invented
- * for; a budget of 32 is the one measured case where they do not fall at all, at 0.71 flat against
- * 0.72 to 0.74. And the three patterns land within about 0.1 of one another on every block figure,
- * which is the useful finding: the choice between them is about what the pattern *looks* like, not
- * about how faithful it is.
+ * Three things to read out of that, and one of them is an admission. **The per-pixel figure always
+ * rises**, because every pattern moves pixels off their nearest colour on purpose. **The block
+ * figures fall on five of the six cases**, and by most on the two channel-depth machines — a third
+ * of the flat step's error over 8 × 8 blocks — which is unsurprising, since a lattice is what
+ * ordered dithering was invented for. **Budget 32 is the sixth, where they do not fall at all**
+ * (0.71 flat over 8 × 8 blocks against 0.72 to 0.74 dithered), and nothing here explains it: a
+ * budget of 64 is a *larger* palette and its figures do fall, so whatever separates the two rows it
+ * is not simply how much colour the palette is short of. It is recorded rather than reasoned about.
+ *
+ * The choice between the three patterns is about what each *looks* like rather than about fidelity.
+ * They are not identical — the Master System's 4 × 4 figure spreads 0.42 across them — but that
+ * spread is an eighth of the 3.1 between the flat step and the best of them, so it is not what a
+ * reader should be choosing on.
  *
  * The labels' parentheticals carry the choosing half, per the select budget's rule; what each
  * pattern is for lives in {@link QUANTISE_TOOLTIPS}.
@@ -637,7 +642,8 @@ export const BLUE_NOISE_TILE = 64;
  * `k / levels` ratios, so 4,096 levels would be sixty-four times the search for mixtures no palette
  * pair has that many distinguishable versions of. Folding in blocks of sixty-four leaves every level
  * holding exactly 64 of the tile's positions, which is what keeps the even spread the ranking was
- * computed for — `voidAndCluster.test.ts` pins both halves of that.
+ * computed for. `ditherMatrix.test.ts` pins the fold; `voidAndCluster.test.ts` pins the spread it
+ * carries, on both sides of the halfway point.
  */
 export const BLUE_NOISE_LEVELS = 64;
 
@@ -675,33 +681,42 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * How many of the palette's nearest colours a mixing plan may pair.
  *
  * `mixingPlan`'s one restriction on the published search, and the measurements say it is an
- * improvement rather than a compromise. Read off the reference sheet as above — blue noise, a budget
- * of 64, the three figures again per pixel and over 4 × 4 and 8 × 8 blocks:
+ * improvement rather than a compromise. Swept on the reference sheet as above — blue noise, the same
+ * three figures per pixel and over 4 × 4 and 8 × 8 blocks:
  *
  * ```
- * 2 → 1.77 / 0.73 / 0.45     3 → 2.12 / 0.73 / 0.42     4 → 2.40 / 0.80 / 0.47
- * 6 → 2.86 / 0.93 / 0.53     8 → 3.24 / 1.04 / 0.59     the whole palette → 7.03 / 2.26 / 1.12
+ *              2                    3                    4                    6                    8              unrestricted
+ * budget 64  1.76 / 0.73 / 0.45   2.12 / 0.73 / 0.42   2.40 / 0.81 / 0.47   2.86 / 0.93 / 0.53   3.24 / 1.03 / 0.58   7.06 / 2.20 / 1.14
+ * budget 16  3.59 / 1.41 / 0.92   4.27 / 1.47 / 0.94   4.73 / 1.54 / 0.99   5.52 / 1.75 / 1.09   6.21 / 2.00 / 1.22   8.39 / 2.32 / 1.30
+ * budget 8   5.61 / 2.51 / 1.71   6.27 / 2.59 / 1.75   6.98 / 2.64 / 1.77   7.97 / 2.75 / 1.82   8.64 / 2.83 / 1.87   8.63 / 2.83 / 1.88
+ * Game Boy   92.2 / 85.4 / 87.7   94.2 / 85.2 / 87.3   94.6 / 85.3 / 87.3         —                    —             94.6 / 85.3 / 87.3
  * ```
  *
- * The unrestricted search is three to four times worse on every measure, and the reason is worth
- * stating because it is not obvious: a plan is optimal for the *whole tile*, and a flat region a few
- * pixels across samples only a few of the tile's positions. So a pair drawn from opposite ends of
- * the palette — whose mixture at some extreme ratio does land nearest the target — spends most of
- * that region on one colour and puts the other down as a stray pixel of something wildly different.
- * A pair drawn from the target's own neighbourhood cannot do that, whatever ratio it takes.
+ * **The unrestricted search is the worst column wherever the palette is large enough for it to
+ * matter** — 2.7× to 3.3× worse than a shortlist of 3 on the 64-colour budget, 1.4× to 2.0× at 16,
+ * and level with it by 8 colours, where three of eight is most of the palette anyway (the Game Boy's
+ * four make the two columns the same search). The reason is worth stating because it is not obvious:
+ * a plan is optimal for the *whole tile*, and a flat region a few pixels across samples only a few
+ * of the tile's positions. So a pair drawn from opposite ends of the palette — whose mixture at some
+ * extreme ratio does land nearest the target — spends most of that region on one colour and puts the
+ * other down as a stray pixel of something wildly different. A pair drawn from the target's own
+ * neighbourhood cannot do that, whatever ratio it takes.
  *
- * 3 rather than 2, which is a genuinely close call: 2 is the better per-pixel figure and leaves no
- * search at all — the two nearest colours, one pair, no choice to make — while 3 is the better
- * 8 × 8 figure on every palette measured, and on the four-colour Game Boy it is what lets the plan
- * refuse a second colour lying in a useless direction (87.3 against 88.0).
+ * **3 rather than 2 is a genuinely close call, and the figures alone do not settle it.** 2 is the
+ * quieter per-pixel figure everywhere and the better 8 × 8 figure at budgets 16 and 8, by about 2%;
+ * 3 is the better 8 × 8 figure at budget 64 by 7% and on the four-colour Game Boy by 0.4%. What
+ * decides it is structural rather than measured: with two candidates there is exactly one pair, so a
+ * target whose two nearest entries lie the *same* side of it has no mixture that can reach it and the
+ * plan falls back to a flat colour. A third candidate is the smallest shortlist that can straddle,
+ * which is why the two palettes where 3 wins are the largest and the smallest measured.
  *
  * **What it costs is a scan of the whole ratio ladder per pair**, which for the resolved reference
  * sheet — 44,099 pixels carrying 10,031 distinct colours — is the same order as one of the cleanup
- * passes, and which grows with the *distinct colours* of a sheet rather than with its pixels. A
- * grid of 1 is where that bites: the sheet arrives with 218,978 of them, and the plan search is then
- * the most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they
- * move by several times between runs on one machine — but the shape is: three pairs, `levels` rungs
- * each, once per distinct colour.
+ * passes, and which grows with the *distinct colours* of a sheet rather than with its pixels. A grid
+ * of 1 is where that bites: the sheet arrives with 218,978 of them, and the plan search is then the
+ * most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they move by
+ * several times between runs on one machine — but the shape is: three pairs, `levels` rungs each,
+ * once per distinct colour.
  */
 export const DITHER_SHORTLIST = 3;
 
@@ -1056,7 +1071,7 @@ export const QUANTISE_TOOLTIPS = {
     'Replaces the background key with transparency, so the sheet can be imported without a colour field behind it. The colour comes from the studio, which is where the prompt stated it. Anti-aliased edges carry blends of that key, and at any tolerance above exact the pixel touching the field is eroded with it — against a black or white key that will take some of the artwork’s own contour, which is why magenta is the recommended key.',
   keyTolerance:
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
-  vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour — and, once a colour reduction is in force, keeps a near-black outline or bright trim even as a minority. It never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce.',
+  vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour — and, once a colour reduction is in force, keeps a near-black outline or bright trim even as a minority. It never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce. The outline rescue is the one part of this that a dither switches off: a dither holds the colour reduction back to the end of the pipeline, so there is none in force while the patches are being read, and DOMINANT falls back to the plain vote it takes when no reduction was asked for.',
   outlineExpansion:
     'How far a drawn line is thickened before the sheet is read down to pixels. A contour one drawn pixel wide is a minority inside the patch it crosses, so the patch resolves to the surface behind it and outlines come back broken. This pass grows whichever side of the local contrast the artwork was drawn with — dark ink where the art is dark on light, bright trim where it is light on dark, judged separately for each part of the sheet — so a line still holds enough of its patch to survive being read. It shapes what every reading is handed, so it applies whichever one the Downscale control has in force. Transparency is left exactly where the background key left it, and every colour it produces is one the sheet already contained. Off leaves the sheet as it arrived. Raise it when contours come back dashed — 1 is enough on a typical sheet, and each step past it thickens more than it rescues — and back off when fine detail starts to close up or shapes begin to look drawn rather than rescued.',
   lineStrength:
@@ -1066,7 +1081,7 @@ export const QUANTISE_TOOLTIPS = {
   inkThreshold:
     'How dark a pixel must read before the ink-weighted reading may count it as line ink. The default is the darkest quarter of the tonal range, shared with the standard vote’s line rescue. Lower it to restrict the pull to truly black strokes; raise it when the artwork outlines in dark colours rather than black. Whatever the threshold, shading is protected separately — a patch’s dark mass must also sit a full tonal range below the body it crosses before anything pulls — but past the point where a sheet’s own shadows qualify, watch the preview. It appears only while the ink-weighted reading is chosen.',
   colorMerge:
-    'How far apart two colours may sit and still be folded into one across the whole sheet. Reduced fills often dither between several near-identical palette entries — greens a dozen steps apart that read as one surface — and no pixel-level cleanup can settle that, because no pixel is ever the lone odd one out. Colours are ranked by use, and each folds into the most-used surviving colour within the distance, everywhere at once, so a panel becomes one green. It also makes the fill cleanup below far more effective, since settled fills can finally form majorities. A palette pinned in the studio, or locked from an earlier sheet, is exempt — its entries are your statement of which colours are distinct, and folding two of them here would edit the palette the rest of the series is mapped onto. Off keeps every colour the reading produced; raise it until fills read as surfaces, and back off when real shading, or a dark outline against a dark fill, starts to fold.',
+    'How far apart two colours may sit and still be folded into one across the whole sheet. Reduced fills often dither between several near-identical palette entries — greens a dozen steps apart that read as one surface — and no pixel-level cleanup can settle that, because no pixel is ever the lone odd one out. Colours are ranked by use, and each folds into the most-used surviving colour within the distance, everywhere at once, so a panel becomes one green. It also makes the fill cleanup below far more effective, since settled fills can finally form majorities. A palette pinned in the studio, or locked from an earlier sheet, is exempt — its entries are your statement of which colours are distinct, and folding two of them here would edit the palette the rest of the series is mapped onto. That exemption lifts under a dither, and for the same reason: the dither applies the palette last, so at the point this runs no pixel is a palette entry yet and there is nothing of your statement to fold. Off keeps every colour the reading produced; raise it until fills read as surfaces, and back off when real shading, or a dark outline against a dark fill, starts to fold.',
   fillCleanup:
     'How far apart two colours may sit and still be merged when a pixel disagrees with its neighbours. Flat fills often come back speckled — neighbouring pixels land on near-identical colours with no perceptual difference — and this pass snaps such a pixel to its neighbourhood’s most common colour, but only when most of the neighbours it has already agree and the colours are within this distance. Off leaves the result exactly as the reading made it. It changes colour only, never transparency, and a line sits far outside the whole range, so linework is never merged. On a densely dithered sheet run the colour merge first — settled fills are what let majorities form — then raise this until stray pixels go, and back off if close shades begin to fuse.',
   cleanupPasses:
@@ -1074,7 +1089,7 @@ export const QUANTISE_TOOLTIPS = {
   paletteSnap:
     'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing, and the studio’s own colour setting decides the sheet’s colours as it would with no palette held. The default sits between the two things this has to tell apart on the sheet the dials were tuned against — the drift between two readings of one subject, and a colour that is genuinely new — and those overlap, so raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
   dither:
-    'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it.',
+    'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it — which is also why the merge stops standing aside for a pinned or locked palette while a pattern is in force. One thing it costs: the standard vote’s outline rescue needs a colour reduction to have run before the patches are read, and a dither is that reduction held back to the end, so choosing a pattern switches the rescue off. Raise the outline expansion above it, or take the ink-weighted reading, if contours start to break up.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

@@ -104,7 +104,10 @@ const SHORTLIST_DISTANCE = new Float64Array(LONGEST_SHORTLIST);
  * back as itself with `steps` of zero rather than as a pattern of two colours that average to it.
  *
  * `pairFrom` is how many of the nearest candidates the pairs may be drawn from, and the default is
- * the one a *list* palette wants. A channel-depth lattice overrides it with the whole corner set for
+ * the one a *list* palette wants. **It is clamped to the larger of the two figures the app actually
+ * asks for**, because the shortlist is written into module-scoped scratch arrays sized once at load
+ * — so a caller asking for more silently gets that ceiling rather than overrunning them. Neither
+ * caller is clamped; a third that wanted a wider search would have to widen the arrays with it. A channel-depth lattice overrides it with the whole corner set for
  * a reason worth knowing: nearness is the wrong ordering there. The eight corners around a grey sit
  * at wildly different distances from it — the corner that raises one channel is much the nearest,
  * and the diagonal corner that raises all three is the furthest of the eight — while the diagonal is

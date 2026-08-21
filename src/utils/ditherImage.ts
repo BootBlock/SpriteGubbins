@@ -20,12 +20,21 @@ import { buildPalette } from './wuQuantiser.ts';
  * The palette step, taken positionally: every pixel written as one of the two colours its mixing
  * plan names, chosen by where the pixel sits in the threshold tile.
  *
- * The drop-in replacement for the three functions in `applyPalette.ts` and `channelDepth.ts`, and it
- * answers the same four questions they do — see {@link ColorReduction} — differing only in that a
- * colour the palette cannot hold is spread across neighbouring pixels rather than rounded away at
- * each of them. That is why `quantiseImage` runs one or the other and never both: they are the same
- * step, and mapping a sheet onto a palette and *then* dithering it would be dithering a sheet that
- * has no colours left to express.
+ * The drop-in replacement for the four functions `reduceColors` dispatches to — `applyPalette` and
+ * `applyRgbPalette` in `applyPalette.ts`, `applyLockedPalette` in `lockedPalette.ts` and
+ * `snapToChannelDepth` in `channelDepth.ts` — answering the same four questions they do; see
+ * {@link ColorReduction}. That is why `quantiseImage` runs one or the other and never both: they are
+ * the same step, and mapping a sheet onto a palette and *then* dithering it would be dithering a
+ * sheet that has no colours left to express.
+ *
+ * **It is not only those four with a pattern laid over the top, and the difference is the metric.**
+ * `nearestColor`, which `applyPalette` and `applyRgbPalette` both use, measures squared distance
+ * across raw RGBA; `snapToChannelDepth` rounds each channel independently. This measures in the
+ * scaled OKLab every colour *tolerance* on this tab now uses, with coverage as a fourth axis on the
+ * same scale — the metric `mixingPlan` needs to compare a mixture with a target at all, and the one
+ * every other colour gate in this tab already speaks. So a colour whose plan comes back flat can land
+ * on a different entry than the undithered step would have chosen. Only the locked palette is
+ * measured identically both ways, because both arms read `lockedPalette.nearestOklab`.
  *
  * **The candidate set is what the four reductions differ in.** A budget, a pinned list and a locked
  * palette are all lists, so the plan searches the whole list; a channel-depth space is a lattice with

@@ -1,31 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { meanNearest, scatter } from '../test/tiles.ts';
 import { voidAndClusterRanks } from './voidAndCluster.ts';
-
-/** Wrapped distance between two positions of a `size`-square tile, which repeats across the sheet. */
-function separation(size: number, one: number, other: number): number {
-  const dx = Math.min(
-    Math.abs((one % size) - (other % size)),
-    size - Math.abs((one % size) - (other % size)),
-  );
-  const oneY = Math.floor(one / size);
-  const otherY = Math.floor(other / size);
-  const dy = Math.min(Math.abs(oneY - otherY), size - Math.abs(oneY - otherY));
-  return Math.hypot(dx, dy);
-}
-
-/** How far each of `chosen` sits from its nearest neighbour among them, averaged. */
-function meanNearest(size: number, chosen: readonly number[]): number {
-  let total = 0;
-  for (const one of chosen) {
-    let nearest = Infinity;
-    for (const other of chosen) {
-      if (other === one) continue;
-      nearest = Math.min(nearest, separation(size, one, other));
-    }
-    total += nearest;
-  }
-  return total / chosen.length;
-}
 
 describe('voidAndClusterRanks', () => {
   const SIZE = 32;
@@ -45,28 +20,31 @@ describe('voidAndClusterRanks', () => {
     expect([...voidAndClusterRanks(SIZE)]).toEqual([...ranks]);
   });
 
-  it.each([0.05, 0.1, 0.25])('spreads the first %d of the ranks better than a scatter does', (share) => {
+  /**
+   * The property the ranking exists for, tested on **both** sides of the halfway point.
+   *
+   * A mixing plan puts `steps` of every `levels` positions on its second colour, and `steps` runs the
+   * whole ladder — so the set that has to be well spread is the *minority* at every share, which
+   * below a half is the positions holding the lowest ranks and above it the ones holding the
+   * highest. Testing only the low shares is what let an inverted second half ship: the published
+   * algorithm reverses the roles of ones and zeros past the middle, and reading that reversal as a
+   * change of sign on one energy field — rather than as no change at all, which is what a wrapped
+   * kernel makes it — fills the well-spread positions first and leaves the clumps for last.
+   */
+  it.each([0.05, 0.1, 0.25, 0.75, 0.9, 0.95])('spreads the minority at a share of %d', (share) => {
     const wanted = Math.round(SIZE * SIZE * share);
-    const chosen = [...ranks.keys()].filter((at) => (ranks[at] ?? 0) < wanted);
-    expect(chosen.length).toBe(wanted);
+    const low = share <= 0.5;
+    const chosen = [...ranks.keys()].filter((at) =>
+      low ? (ranks[at] ?? 0) < wanted : (ranks[at] ?? 0) >= wanted,
+    );
+    expect(chosen.length).toBe(low ? wanted : SIZE * SIZE - wanted);
 
-    // The comparison is a scatter of the same size rather than a fixed number, so the test says what
-    // the ranking is *for* — an even spread at every prefix, which is what lets one tile carry every
-    // ratio without a visible figure — rather than pinning a threshold nobody could re-derive. The
-    // scatter is seeded so this cannot flake.
-    let state = 12345;
-    const scattered = new Set<number>();
-    while (scattered.size < wanted) {
-      state = (state * 1664525 + 1013904223) >>> 0;
-      // The high bits, because an LCG's low bits cycle far too short to be a scatter at all.
-      scattered.add((state >>> 8) % (SIZE * SIZE));
-    }
-
-    // Measured on this tile, the ranking beats the scatter by 1.71× at a twentieth of the
-    // positions, 1.54× at a tenth and 1.18× at a quarter — the margin narrowing as the density
-    // rises simply because a crowded set has less room to be spread. The bound is below the
-    // narrowest of those and far above 1, which is where a ranking that had stopped dispersing
-    // would land.
-    expect(meanNearest(SIZE, chosen)).toBeGreaterThan(meanNearest(SIZE, [...scattered]) * 1.15);
+    // Measured against a scatter of the same size, the ranking wins by 1.71× at a twentieth of the
+    // positions, 1.54× at a tenth and 1.18× at a quarter — the margin narrowing where the set is
+    // crowded simply because it has less room to be spread. The bound sits below the narrowest of
+    // those and far above 1, which is where a ranking that had stopped dispersing would land.
+    expect(meanNearest(SIZE, chosen)).toBeGreaterThan(
+      meanNearest(SIZE, scatter(SIZE, chosen.length, 12345)) * 1.15,
+    );
   });
 });

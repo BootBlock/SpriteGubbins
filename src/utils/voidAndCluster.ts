@@ -11,10 +11,10 @@ import { BLUE_NOISE_SEED, BLUE_NOISE_SIGMA, BLUE_NOISE_MINORITY } from '../const
  * coverage with no repeating figure at any ratio, which is what "blue noise" names: energy pushed
  * into the high frequencies, where the eye is least able to organise it into a pattern.
  *
- * **Generated rather than shipped.** Christoph Peters publishes CC0 tiles and the roadmap allows
- * either, but a texture is an image blob in a repository that holds no images, plus a second
- * licence to carry, plus a number nobody can check — where this is the algorithm that made it,
- * stated in forty lines, producing the same tile on every run.
+ * **Generated rather than shipped.** Christoph Peters publishes CC0 blue-noise textures and one
+ * would have done, but a texture is an image blob in a repository that holds no images, plus a
+ * second licence to carry, plus four thousand numbers nobody can check — where this is the algorithm
+ * that made them, stated in forty lines, producing the same tile on every run.
  *
  * **Deterministic, which the published algorithm is not.** It opens from a random scatter; this one
  * opens from {@link BLUE_NOISE_SEED} through a plain linear congruential generator, so the tile is
@@ -84,13 +84,18 @@ export function voidAndClusterRanks(size: number): Uint16Array {
   field.fill(0);
   for (let at = 0; at < count; at += 1) if (pattern[at] === 1) toggle(at, true);
 
+  // The published algorithm splits this in two at the halfway point and reverses the roles of ones
+  // and zeros, because past it the *zeros* are the minority and it is their clustering that matters.
+  // **Kept as one loop, and that is a consequence rather than a shortcut.** The field is held over
+  // the ones and the kernel wraps, so every position carries the same total weight — which makes the
+  // complement's energy that constant minus this one. The tightest cluster of zeros is therefore the
+  // *minimum* of this field among them, which is the same question the largest void asks, so the
+  // reversal collapses to nothing. Reading it as this field's maximum instead inverts the second
+  // half outright: it fills the well-spread positions first and leaves the clumps for last, and the
+  // top ranks come back as one contiguous blob. Measured on the 64-square tile, the mean self-energy
+  // of the positions ranked 4000 and above is 0.0037 as written and 5.07 inverted.
   for (let rank = minority; rank < count; rank += 1) {
-    // Past the halfway point the pattern's *ones* are the majority, so the question flips to the
-    // complement's largest void. The kernel wraps, so every position's total weight is the same
-    // constant — which makes the complement's energy that constant minus this one, and its minimum
-    // this one's maximum. One field, two questions, no second pass.
-    const past = rank * 2 >= count;
-    const at = extreme(field, pattern, 0, past, size);
+    const at = extreme(field, pattern, 0, false, size);
     toggle(at, true);
     ranks[at] = rank;
   }

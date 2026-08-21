@@ -47,8 +47,11 @@ export function bayerMatrix(size: number): ThresholdMatrix {
  * What each quarter of a doubled matrix adds to the copy it holds, row-major: 0 and 2 across the
  * top, 3 and 1 across the bottom.
  *
- * The offsets are what make the four copies interleave rather than repeat. Diagonally opposite
- * quadrants differ by 1, so the two positions carrying consecutive ranks are always the two furthest
- * apart in the tile.
+ * The offsets are what make the four copies interleave rather than repeat: diagonally opposite
+ * quadrants differ by 1, so rank 0 and rank 1 land in opposite corners of the tile, as far apart as
+ * the wrap allows. That is a claim about the *first* pair only — deeper in the ladder consecutive
+ * ranks fall inside a shared quadrant and come closer, and 7 and 8 in the 4 × 4 matrix are
+ * neighbours. What holds across the whole ladder is the average, which `bayerMatrix.test.ts` pins
+ * against the per-entry expansion that would fail it.
  */
 const QUADRANTS = [0, 2, 3, 1] as const;

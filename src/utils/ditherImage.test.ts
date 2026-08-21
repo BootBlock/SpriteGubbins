@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import type { ColorReduction, Rgba, ThresholdMatrix } from '../types/quantiser.ts';
+import { DITHER_PATTERNS } from '../types/quantiser.ts';
+import type { ColorReduction, DitherPattern, Rgba, ThresholdMatrix } from '../types/quantiser.ts';
+import { imageFrom } from '../test/images.ts';
 import { channelLevels } from './channelLevels.ts';
 import { ditherImage } from './ditherImage.ts';
 import { ditherMatrix } from './ditherMatrix.ts';
-import { colorHistogram, createImage, readPixel, unpackColor, writePixel } from './imageData.ts';
+import { colorHistogram, readPixel, unpackColor } from './imageData.ts';
 import { srgbToConesInto } from './oklab.ts';
 import type { MutableCones } from './oklab.ts';
 
@@ -13,21 +15,15 @@ const MID: Rgba = { r: 128, g: 128, b: 128, a: 255 };
 
 const BAYER_4 = matrix('BAYER_4');
 
-function matrix(pattern: 'BAYER_4' | 'BAYER_8' | 'BLUE_NOISE'): ThresholdMatrix {
+/** Every pattern but the off position, derived from the union so a fifth would be tested too. */
+const TILED = DITHER_PATTERNS.filter(
+  (pattern): pattern is Exclude<DitherPattern, 'NONE'> => pattern !== 'NONE',
+);
+
+function matrix(pattern: Exclude<DitherPattern, 'NONE'>): ThresholdMatrix {
   const built = ditherMatrix(pattern);
   if (built === null) throw new Error('the pattern names a tile.');
   return built;
-}
-
-/** An image of one size filled by a function of position. */
-function imageFrom(width: number, height: number, color: (x: number, y: number) => Rgba): ImageData {
-  const image = createImage(width, height);
-  for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) {
-      writePixel(image.data, (y * width + x) * 4, color(x, y));
-    }
-  }
-  return image;
 }
 
 /** The mean linear light of an image's opaque pixels, which is what alternating pixels average to. */
@@ -75,8 +71,11 @@ describe('ditherImage', () => {
   });
 
   it('leaves a colour the palette already holds alone', () => {
+    // Which colour, not just how many: a baseline that took the *first* entry rather than the
+    // nearest would bring a white sheet back solid black and still leave one colour standing.
     const flat = imageFrom(8, 8, () => WHITE);
-    expect([...colorHistogram(ditherImage(flat, TWO_TONE, BAYER_4)).keys()].length).toBe(1);
+    const written = [...colorHistogram(ditherImage(flat, TWO_TONE, BAYER_4)).keys()].map(unpackColor);
+    expect(written).toEqual([WHITE]);
   });
 
   it('copies a fully transparent pixel through untouched', () => {
@@ -101,9 +100,17 @@ describe('ditherImage', () => {
   it('writes a budget entry whole, coverage included', () => {
     // And the mirror rule `applyPalette` states: a budget's entries are pixels of this sheet, so an
     // entry's coverage is as much a part of it as its hue.
-    const sheet = imageFrom(8, 8, (x, y) => ({ ...MID, a: (x + y) % 2 === 0 ? 40 : 255 }));
+    //
+    // **The fixture carries three coverages and the budget admits two**, which is what makes the two
+    // rules disagree: a pass that kept each pixel's own coverage would leave all three standing,
+    // where writing the entry whole leaves the two the palette chose. A fixture whose coverages the
+    // palette could hold entire cannot tell the rules apart at all.
+    const coverages = [40, 150, 255];
+    const sheet = imageFrom(9, 9, (x, y) => ({ ...MID, a: coverages[(x + y) % 3] ?? 255 }));
     const out = ditherImage(sheet, { kind: 'MAX_COLORS', maxColors: 2 }, BAYER_4);
-    expect(new Set([...out.data.filter((_, at) => at % 4 === 3)])).toEqual(new Set([40, 255]));
+    const written = new Set([...out.data.filter((_, at) => at % 4 === 3)]);
+    expect(written.size).toBe(2);
+    expect([...written].every((alpha) => coverages.includes(alpha))).toBe(true);
   });
 
   it('leaves a colour outside a lock’s reach exactly as it arrived', () => {
@@ -153,13 +160,10 @@ describe('ditherImage', () => {
     expect([...out.data]).toEqual([...sheet.data]);
   });
 
-  it.each(['BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as const)(
-    'never rewrites the sheet it was handed (%s)',
-    (pattern) => {
-      const sheet = imageFrom(16, 16, (x, y) => ({ r: x * 16, g: y * 16, b: 128, a: 255 }));
-      const before = [...sheet.data];
-      ditherImage(sheet, { kind: 'MAX_COLORS', maxColors: 4 }, matrix(pattern));
-      expect([...sheet.data]).toEqual(before);
-    },
-  );
+  it.each(TILED)('never rewrites the sheet it was handed (%s)', (pattern) => {
+    const sheet = imageFrom(16, 16, (x, y) => ({ r: x * 16, g: y * 16, b: 128, a: 255 }));
+    const before = [...sheet.data];
+    ditherImage(sheet, { kind: 'MAX_COLORS', maxColors: 4 }, matrix(pattern));
+    expect([...sheet.data]).toEqual(before);
+  });
 });

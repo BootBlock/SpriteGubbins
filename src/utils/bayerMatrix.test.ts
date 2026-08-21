@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { separation } from '../test/tiles.ts';
 import { bayerMatrix } from './bayerMatrix.ts';
 
 /**
@@ -27,32 +28,22 @@ describe('bayerMatrix', () => {
     );
   });
 
-  it.each([4, 8])('disperses consecutive ranks across the tile (%i × the same)', (size) => {
+  it.each([4, 8])('disperses consecutive ranks across the tile (%i square)', (size) => {
     const matrix = bayerMatrix(size);
-    const at = (rank: number): { x: number; y: number } => {
-      const index = matrix.ranks.indexOf(rank);
-      return { x: index % size, y: Math.floor(index / size) };
-    };
+    const between = (rank: number): number =>
+      separation(size, matrix.ranks.indexOf(rank), matrix.ranks.indexOf(rank + 1));
 
-    // Wrapped, because the tile repeats: two positions on opposite edges are neighbours on the
-    // sheet however far apart they look in the array.
-    const separation = (rank: number): number => {
-      const one = at(rank);
-      const other = at(rank + 1);
-      const dx = Math.min(Math.abs(one.x - other.x), size - Math.abs(one.x - other.x));
-      const dy = Math.min(Math.abs(one.y - other.y), size - Math.abs(one.y - other.y));
-      return Math.hypot(dx, dy);
-    };
+    // The one pair the quadrant offsets place exactly: rank 1 sits diagonally opposite rank 0
+    // whatever the tile's size. Deeper in the ladder consecutive ranks share a quadrant and come
+    // closer, which is why the rest of the claim is an average rather than a bound.
+    expect(between(0)).toBeCloseTo(Math.hypot(size / 2, size / 2), 10);
 
-    // The two positions the first quadrant offset puts furthest apart, which is exact: rank 1 sits
-    // diagonally opposite rank 0 whatever the tile's size.
-    expect(separation(0)).toBeCloseTo(Math.hypot(size / 2, size / 2), 10);
-
-    // And across the whole ladder, half the tile's edge on average. The per-entry expansion this
-    // guards against measures 1.39 at 4 and 1.59 at 8, against this construction's 2.30 and 4.49 —
-    // so the bound sits comfortably between the two rather than on either.
+    // Half the tile's edge on average across the whole ladder. The per-entry expansion this guards
+    // against — writing each entry as a 2 × 2 block instead of tiling four copies — measures 1.39 at
+    // 4 and 1.59 at 8, against this construction's 2.30 and 4.49, so the bound sits between the two
+    // rather than on either.
     let total = 0;
-    for (let rank = 0; rank + 1 < size * size; rank += 1) total += separation(rank);
+    for (let rank = 0; rank + 1 < size * size; rank += 1) total += between(rank);
     expect(total / (size * size - 1)).toBeGreaterThan(size / 2);
   });
 });

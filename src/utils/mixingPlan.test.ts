@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Rgba } from '../types/quantiser.ts';
 import { ditherCandidates, mixingPlan } from './mixingPlan.ts';
 import { conesToOklabInto, srgbToConesInto, srgbToOklab } from './oklab.ts';
-import type { MutableCones, MutableOklab } from './oklab.ts';
+import type { MutableCones, MutableOklab, Oklab } from './oklab.ts';
 
 const BLACK: Rgba = { r: 0, g: 0, b: 0, a: 255 };
 const WHITE: Rgba = { r: 255, g: 255, b: 255, a: 255 };
@@ -25,7 +25,7 @@ function mixed(first: Rgba, second: Rgba, steps: number, levels: number): Mutabl
   return out;
 }
 
-function distance(one: MutableOklab, other: MutableOklab): number {
+function distance(one: Oklab, other: Oklab): number {
   return Math.hypot(one.L - other.L, one.a - other.a, one.b - other.b);
 }
 
@@ -55,10 +55,10 @@ describe('mixingPlan', () => {
 
     // And the mixture it settles on is nearer mid grey than either the sRGB-average ratio or the
     // nearest single entry would be.
-    const want = srgbToOklab(MID.r, MID.g, MID.b) as MutableOklab;
+    const want = srgbToOklab(MID.r, MID.g, MID.b);
     const chosen = distance(mixed(plan.first, plan.second, plan.steps, 64), want);
     expect(chosen).toBeLessThan(distance(mixed(BLACK, WHITE, 32, 64), want));
-    expect(chosen).toBeLessThan(distance(srgbToOklab(0, 0, 0) as MutableOklab, want));
+    expect(chosen).toBeLessThan(distance(srgbToOklab(0, 0, 0), want));
   });
 
   it('is a pure function of the colour it is handed', () => {

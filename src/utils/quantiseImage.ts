@@ -169,9 +169,12 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
           reduction,
         );
 
-  // Last of all, whatever the reading: speckle is a property of any reading's output, and the
-  // cleanup wants to see the final colours — palette entries included — not the ones a reduction
-  // is about to replace.
+  // After the reading, whatever the reading: speckle is a property of any reading's output. With no
+  // dither in force these two come after the palette step as well, because the cleanup wants to see
+  // the final colours — palette entries included — not the ones a reduction is about to replace;
+  // with one, the palette step is behind them and there are no final colours yet to see. Both
+  // orderings are stated in the docblock above.
+  //
   // Merge first, then despeckle: folding near-duplicate colours sheet-wide is what lets settled
   // fills form the majorities the per-pixel cleanup needs. A *pinned* palette is exempt from the
   // merge — its entries are the user's explicit statement of which colours are distinct, and a
@@ -181,6 +184,10 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // entries are what the next sheet in the series will be mapped onto, so a merge that folded two
   // of them here would be the cleanup dial quietly editing the lock — and the sheets either side of
   // this one would keep the pair it removed.
+  //
+  // **Both exemptions lift under a dither**, which `statedPalette` expresses rather than checks for:
+  // the reduction it is handed is `null` there, because the palette has not been applied yet, so
+  // there is no entry of the user's for a fold to edit.
   const merged = statedPalette(reduction) ? resolved : mergeColors(resolved, settings.colorMerge);
   const cleaned = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
   // And the palette step last of all where a dither holds it — see the note above on why it cannot
