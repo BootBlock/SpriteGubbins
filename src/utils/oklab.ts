@@ -73,6 +73,65 @@ for (let byte = 0; byte < 256; byte += 1) {
 const CHANNEL_SCALE = 255;
 
 /**
+ * The scratch {@link srgbToConesInto} fills: one colour's cone responses, in **linear light**.
+ *
+ * The stage between the two matrices, exposed because a *mixture* of two colours is linear here and
+ * nowhere else downstream. What a dither asks the eye to do is average the light two alternating
+ * pixels emit, and light adds linearly — so the average of black and white is the linear-light
+ * midpoint, which is sRGB 188 rather than the 128 an sRGB midpoint gives, and the OKLab midpoint is
+ * further off still. `mixingPlan` interpolates here and converts the result with
+ * {@link conesToOklabInto}, so its penalties describe what the pattern will look like.
+ */
+export interface MutableCones {
+  long: number;
+  medium: number;
+  short: number;
+}
+
+/**
+ * The cone responses of the sRGB bytes `r`, `g`, `b`, written into `out` — linear light, before the
+ * cube root.
+ *
+ * Ottosson's first matrix, and the reason it is named rather than written twice: {@link
+ * srgbToOklabInto} is the same three rows followed by {@link conesToOklabInto}, and two copies of a
+ * colour space's defining matrix is one of them free to be corrected alone.
+ */
+export function srgbToConesInto(out: MutableCones, r: number, g: number, b: number): void {
+  const lr = SRGB_TO_LINEAR[r] ?? 0;
+  const lg = SRGB_TO_LINEAR[g] ?? 0;
+  const lb = SRGB_TO_LINEAR[b] ?? 0;
+
+  out.long = 0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb;
+  out.medium = 0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb;
+  out.short = 0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb;
+}
+
+/**
+ * Cone responses — linear light, as {@link srgbToConesInto} leaves them — as scaled OKLab, written
+ * into `out`.
+ *
+ * The cube root and Ottosson's second matrix. Split from the first half so that a colour arrived at
+ * by *mixing* can be measured on the same axes as one read from the image, without a round trip
+ * through bytes that would clamp and round the mixture before it was judged.
+ */
+export function conesToOklabInto(out: MutableOklab, long: number, medium: number, short: number): void {
+  const l = Math.cbrt(long);
+  const m = Math.cbrt(medium);
+  const s = Math.cbrt(short);
+
+  out.L = CHANNEL_SCALE * (0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s);
+  out.a = CHANNEL_SCALE * (1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s);
+  out.b = CHANNEL_SCALE * (0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s);
+}
+
+/**
+ * The module's own scratch for the composition below — one object for the life of the module, on
+ * the same terms `keyDistance.ts` states: nothing can interleave, and the alternative is an
+ * allocation per pixel of a sixteen-megapixel sheet.
+ */
+const CONES: MutableCones = { long: 0, medium: 0, short: 0 };
+
+/**
  * The OKLab colour of the sRGB bytes `r`, `g`, `b`, written into `out`.
  *
  * The two matrices are Ottosson's own, stated to the precision he published: linear sRGB into the
@@ -82,17 +141,8 @@ const CHANNEL_SCALE = 255;
  * quietly.
  */
 export function srgbToOklabInto(out: MutableOklab, r: number, g: number, b: number): void {
-  const lr = SRGB_TO_LINEAR[r] ?? 0;
-  const lg = SRGB_TO_LINEAR[g] ?? 0;
-  const lb = SRGB_TO_LINEAR[b] ?? 0;
-
-  const long = Math.cbrt(0.4122214708 * lr + 0.5363325363 * lg + 0.0514459929 * lb);
-  const medium = Math.cbrt(0.2119034982 * lr + 0.6806995451 * lg + 0.1073969566 * lb);
-  const short = Math.cbrt(0.0883024619 * lr + 0.2817188376 * lg + 0.6299787005 * lb);
-
-  out.L = CHANNEL_SCALE * (0.2104542553 * long + 0.793617785 * medium - 0.0040720468 * short);
-  out.a = CHANNEL_SCALE * (1.9779984951 * long - 2.428592205 * medium + 0.4505937099 * short);
-  out.b = CHANNEL_SCALE * (0.0259040371 * long + 0.7827717662 * medium - 0.808675766 * short);
+  srgbToConesInto(CONES, r, g, b);
+  conesToOklabInto(out, CONES.long, CONES.medium, CONES.short);
 }
 
 /**

@@ -1,6 +1,7 @@
 import {
   CLEANUP_PASSES_RANGE,
   COLOR_MERGE_RANGE,
+  DITHER_CHOICES,
   FILL_CLEANUP_RANGE,
   INK_THRESHOLD_RANGE,
   LINE_STRENGTH_RANGE,
@@ -13,6 +14,18 @@ import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { RangeField } from '../common/RangeField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
+interface DownscaleControlsProps {
+  /**
+   * Whether a palette is in force for this sheet, and therefore whether a dither has anything to
+   * express.
+   *
+   * A prop rather than a fifth store read, because the answer is the studio's colour setting resolved
+   * against a palette locked on this tab — which `colorPlanFor` decides once, and which every other
+   * panel on this tab is handed rather than re-deriving. See `GridControls`, which holds the plan.
+   */
+  readonly dithers: boolean;
+}
+
 /**
  * The Downscale reading and its dials: which algorithm turns each mesh cell into a pixel, and the
  * seven sliders that shape the result.
@@ -23,11 +36,16 @@ import { SelectField } from '../common/SelectField.tsx';
  * three ink-weighted dials appear only while that reading is chosen**, the conditional the
  * studio's Palette Limit uses: the other readings do not blend, and a dial that changed nothing
  * would be a lie on screen. **Outline expansion sits above them and outside that conditional**,
- * because it runs before the vote rather than inside one — it shapes what every reading is handed. Everything consumes the store directly with atomic selectors; the
+ * because it runs before the vote rather than inside one — it shapes what every reading is handed.
+ * **The dither sits last and is withdrawn where there is no palette**, which is the same conditional
+ * read from the other end: it is the palette step in positional form, so with the studio naming no
+ * budget and nothing pinned or locked there is no palette for it to dither against, and a control
+ * offering four patterns that would all leave the sheet alone is the lie this panel avoids
+ * elsewhere. Everything else consumes the store directly with atomic selectors; the
  * choices are per-workflow rather than per-sheet, so they survive a new image and fall with
  * Clear — the store says why.
  */
-export function DownscaleControls() {
+export function DownscaleControls({ dithers }: DownscaleControlsProps) {
   const vote = useQuantiseStore((state) => state.vote);
   const outlineExpansion = useQuantiseStore((state) => state.outlineExpansion);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
@@ -36,6 +54,7 @@ export function DownscaleControls() {
   const colorMerge = useQuantiseStore((state) => state.colorMerge);
   const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
   const cleanupPasses = useQuantiseStore((state) => state.cleanupPasses);
+  const dither = useQuantiseStore((state) => state.dither);
   const setVote = useQuantiseStore((state) => state.setVote);
   const setOutlineExpansion = useQuantiseStore((state) => state.setOutlineExpansion);
   const setLineStrength = useQuantiseStore((state) => state.setLineStrength);
@@ -44,6 +63,7 @@ export function DownscaleControls() {
   const setColorMerge = useQuantiseStore((state) => state.setColorMerge);
   const setFillCleanup = useQuantiseStore((state) => state.setFillCleanup);
   const setCleanupPasses = useQuantiseStore((state) => state.setCleanupPasses);
+  const setDither = useQuantiseStore((state) => state.setDither);
 
   const offOr = (value: number): string => (value === 0 ? 'off' : String(value));
 
@@ -135,6 +155,18 @@ export function DownscaleControls() {
         format={(value) => String(value)}
         onChange={setCleanupPasses}
       />
+
+      {dithers && (
+        <div className="max-w-md">
+          <SelectField
+            label="Dither"
+            tooltip={QUANTISE_TOOLTIPS.dither}
+            value={dither}
+            choices={DITHER_CHOICES}
+            onChange={setDither}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -75,17 +75,32 @@ export function lockPaletteFrom(image: ImageData, sheetName: string, setting: st
  * directory shares.
  */
 export function applyLockedPalette(image: ImageData, entries: readonly Rgba[], snap: number): ImageData {
-  // Converted once per entry rather than once per colour looked up: a lock holds tens of entries and
-  // a sheet quantised at a grid of 1 can carry millions of distinct colours.
-  const located = entries.map((entry) => ({ entry, lab: srgbToOklab(entry.r, entry.g, entry.b) }));
+  const located = locateEntries(entries);
   const limit = snap * snap;
 
   return remapColors(image, (color) => {
-    const lab = srgbToOklab(color.r, color.g, color.b);
-    const nearest = nearestOklab(lab, located);
+    const nearest = nearestOklab(color, located);
     if (nearest === null || nearest.distance > limit) return color;
     return { ...nearest.entry, a: color.a };
   });
+}
+
+/** One locked colour and where it sits in scaled OKLab — the form {@link nearestOklab} searches. */
+export interface LocatedEntry {
+  readonly entry: Rgba;
+  readonly lab: Oklab;
+}
+
+/**
+ * The entries converted once, rather than once per colour looked up: a lock holds tens of entries
+ * and a sheet quantised at a grid of 1 can carry millions of distinct colours.
+ *
+ * Exported alongside {@link nearestOklab} because `ditherImage` asks the same question of the same
+ * palette — is this colour inside the lock's reach — and a second conversion and a second nearest
+ * search would be a second answer to it.
+ */
+export function locateEntries(entries: readonly Rgba[]): readonly LocatedEntry[] {
+  return entries.map((entry) => ({ entry, lab: srgbToOklab(entry.r, entry.g, entry.b) }));
 }
 
 /**
@@ -95,11 +110,15 @@ export function applyLockedPalette(image: ImageData, entries: readonly Rgba[], s
  * distinct colour of a sheet and would change no comparison, distance being monotonic in its square.
  * The earliest entry takes a tie, which under {@link lockPaletteFrom}'s population order means the
  * more-used of two equidistant colours wins.
+ *
+ * **Colour only, coverage left out**, as the lock itself is: the entries were made opaque when they
+ * were taken, so a pixel's own alpha says nothing about which of them it is.
  */
-function nearestOklab(
-  color: Oklab,
-  located: readonly { entry: Rgba; lab: Oklab }[],
+export function nearestOklab(
+  source: Rgba,
+  located: readonly LocatedEntry[],
 ): { entry: Rgba; distance: number } | null {
+  const color = srgbToOklab(source.r, source.g, source.b);
   let chosen: Rgba | null = null;
   let shortest = Infinity;
 

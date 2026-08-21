@@ -122,6 +122,7 @@ describe('useQuantiseStore', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       // Including the lock, which survives a new sheet and falls only here: clearing is the reader

@@ -18,6 +18,7 @@ function settingsAt(grid: number): QuantiseSettings {
     inkThreshold: 64,
     fillCleanup: 0,
     cleanupPasses: 1,
+    dither: 'NONE',
     outlineExpansion: 0,
     colorMerge: 0,
     reduction: { kind: 'MAX_COLORS', maxColors: 32 },

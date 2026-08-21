@@ -556,6 +556,181 @@ export const VOTE_METHOD_CHOICES = [
 ] as const;
 
 /**
+ * The Dither control's options, in the order offered — the identifier the pipeline stores, and the
+ * label the select shows.
+ *
+ * Four positions rather than a dial, because a pattern is a *kind* of thing rather than a quantity:
+ * there is no position between a 4 × 4 matrix and an 8 × 8 one. `NONE` leads, and is the off
+ * position every other control on this tab spells as a zero — the pass does not run at all.
+ *
+ * **The colour decision is the same under all three patterns, and only the tile differs.** That is
+ * not a simplification of the roadmap's two tiers but the result of measuring them: the classic
+ * threshold form was defined for a palette that is a uniform lattice, and a sprite palette is a
+ * list, so the arbitrary-palette search (`mixingPlan`) is what every pattern here needs. Memoised
+ * per distinct colour it costs the same for all three — see the reference-sheet figures under
+ * {@link DITHER_SHORTLIST} — so a cheaper tier would have been a worse result at no saving.
+ *
+ * What separates the patterns is what the eye does with them, measured on the reference sheet
+ * (`armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the resolved sheet
+ * 211 × 209) as the mean scaled-OKLab distance from that resolved sheet: per pixel, then over
+ * aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a dither is
+ * *for*, since a pattern trades per-pixel accuracy for a local average.
+ *
+ * ```
+ * budget 64      flat 1.85 / 0.78 / 0.48   BAYER_4 2.10 / 0.72 / 0.43   BAYER_8 2.12 / 0.73 / 0.43   BLUE_NOISE 2.12 / 0.73 / 0.42
+ * budget 32      flat 2.61 / 1.07 / 0.71   BAYER_4 2.94 / 1.14 / 0.72   BAYER_8 2.97 / 1.16 / 0.74   BLUE_NOISE 2.96 / 1.15 / 0.74
+ * budget 8       flat 5.62 / 2.72 / 1.90   BAYER_4 6.23 / 2.54 / 1.71   BAYER_8 6.27 / 2.58 / 1.80   BLUE_NOISE 6.28 / 2.62 / 1.75
+ * Game Boy       flat 92.3 / 89.2 / 91.1   BAYER_4 94.2 / 85.1 / 87.3   BAYER_8 94.2 / 85.1 / 87.3   BLUE_NOISE 94.2 / 85.2 / 87.3
+ * Mega Drive     flat 6.59 / 4.44 / 4.11   BAYER_4 9.31 / 1.73 / 1.29   BAYER_8 9.31 / 1.76 / 1.30   BLUE_NOISE 9.29 / 1.92 / 1.22
+ * Master System  flat 9.82 / 6.03 / 5.03   BAYER_4 15.0 / 2.91 / 1.91   BAYER_8 14.9 / 3.11 / 2.03   BLUE_NOISE 14.7 / 3.39 / 1.90
+ * ```
+ *
+ * Three things to read out of that. The per-pixel figure always rises, because every pattern moves
+ * pixels off their nearest colour on purpose. The block figures fall wherever the palette is
+ * genuinely too small for the sheet, and by most on the two **channel-depth** machines — a third of
+ * the flat step's error over 8 × 8 blocks — because a lattice is what ordered dithering was invented
+ * for; a budget of 32 is the one measured case where they do not fall at all, at 0.71 flat against
+ * 0.72 to 0.74. And the three patterns land within about 0.1 of one another on every block figure,
+ * which is the useful finding: the choice between them is about what the pattern *looks* like, not
+ * about how faithful it is.
+ *
+ * The labels' parentheticals carry the choosing half, per the select budget's rule; what each
+ * pattern is for lives in {@link QUANTISE_TOOLTIPS}.
+ */
+export const DITHER_CHOICES = [
+  { value: 'NONE', label: 'NONE (no dithering)' },
+  { value: 'BAYER_4', label: 'BAYER_4 (ordered, 4 × 4)' },
+  { value: 'BAYER_8', label: 'BAYER_8 (ordered, 8 × 8)' },
+  { value: 'BLUE_NOISE', label: 'BLUE_NOISE (void-and-cluster)' },
+] as const;
+
+/**
+ * Where the dither opens — off, as every pass that changes the artwork on this tab opens.
+ *
+ * A dither is a *style*, and the figures above say so: it costs per-pixel accuracy everywhere and
+ * buys a better local average only where the palette is too small for the sheet. Nothing here can
+ * tell which sheet arrived, and the reader is the one who knows whether they want a visible pattern
+ * in their artwork at all — the same argument the outline expansion and the background keying open
+ * off on.
+ */
+export const DEFAULT_DITHER = 'NONE';
+
+/** The tile edge each Bayer pattern names, which is also the square root of its rank ladder. */
+export const BAYER_EDGES = { BAYER_4: 4, BAYER_8: 8 } as const;
+
+/**
+ * The edge of the generated blue-noise tile.
+ *
+ * 64 is what makes the pattern unfindable: the tile repeats across the sheet, so its edge is the
+ * distance at which a reader could in principle see the same arrangement twice, and the reference
+ * sheet's 211 pixels hold three of them. Smaller tiles repeat often enough to read as a texture,
+ * which is the one thing this pattern exists not to do; larger ones cost the generator time
+ * quadratically — the ranking scans the whole tile once per rank — for a repeat nobody was going to
+ * find anyway.
+ */
+export const BLUE_NOISE_TILE = 64;
+
+/**
+ * How many ratios the blue-noise tile's 4,096 ranks are folded into.
+ *
+ * The same ladder the 8 × 8 matrix has, and deliberately: a mixing plan is searched over whole
+ * `k / levels` ratios, so 4,096 levels would be sixty-four times the search for mixtures no palette
+ * pair has that many distinguishable versions of. Folding in blocks of sixty-four leaves every level
+ * holding exactly 64 of the tile's positions, which is what keeps the even spread the ranking was
+ * computed for — `voidAndCluster.test.ts` pins both halves of that.
+ */
+export const BLUE_NOISE_LEVELS = 64;
+
+/**
+ * The spread of the Gaussian the void-and-cluster ranking measures crowding with, in tile pixels.
+ *
+ * Ulichney's own figure. It is the one number in that algorithm with a free choice in it, and what
+ * it decides is the scale at which "too close together" is judged: much narrower and only immediate
+ * neighbours repel, which leaves clusters two pixels across; much wider and the field flattens, so
+ * the search for the tightest cluster stops discriminating.
+ */
+export const BLUE_NOISE_SIGMA = 1.5;
+
+/**
+ * The seed the opening scatter is drawn from.
+ *
+ * Any value gives a valid tile — the ranking moves every clustered point into the largest void until
+ * the arrangement stops changing, so the scatter it opened from is mostly forgotten. What matters is
+ * that there *is* one, fixed: a positional dither whose tile differed between two runs would put a
+ * different pattern on two sheets of one series, which is the failure the whole approach exists to
+ * avoid.
+ */
+export const BLUE_NOISE_SEED = 20260821;
+
+/**
+ * The share of the tile the opening scatter fills before the ranking begins.
+ *
+ * A tenth, as Ulichney has it. The prototype pattern the first phase settles is what both later
+ * phases grow outward from, and it wants to be sparse enough that the largest void is unambiguous
+ * and dense enough that the field has structure to read.
+ */
+export const BLUE_NOISE_MINORITY = 0.1;
+
+/**
+ * How many of the palette's nearest colours a mixing plan may pair.
+ *
+ * `mixingPlan`'s one restriction on the published search, and the measurements say it is an
+ * improvement rather than a compromise. Read off the reference sheet as above — blue noise, a budget
+ * of 64, the three figures again per pixel and over 4 × 4 and 8 × 8 blocks:
+ *
+ * ```
+ * 2 → 1.77 / 0.73 / 0.45     3 → 2.12 / 0.73 / 0.42     4 → 2.40 / 0.80 / 0.47
+ * 6 → 2.86 / 0.93 / 0.53     8 → 3.24 / 1.04 / 0.59     the whole palette → 7.03 / 2.26 / 1.12
+ * ```
+ *
+ * The unrestricted search is three to four times worse on every measure, and the reason is worth
+ * stating because it is not obvious: a plan is optimal for the *whole tile*, and a flat region a few
+ * pixels across samples only a few of the tile's positions. So a pair drawn from opposite ends of
+ * the palette — whose mixture at some extreme ratio does land nearest the target — spends most of
+ * that region on one colour and puts the other down as a stray pixel of something wildly different.
+ * A pair drawn from the target's own neighbourhood cannot do that, whatever ratio it takes.
+ *
+ * 3 rather than 2, which is a genuinely close call: 2 is the better per-pixel figure and leaves no
+ * search at all — the two nearest colours, one pair, no choice to make — while 3 is the better
+ * 8 × 8 figure on every palette measured, and on the four-colour Game Boy it is what lets the plan
+ * refuse a second colour lying in a useless direction (87.3 against 88.0).
+ *
+ * **What it costs is a scan of the whole ratio ladder per pair**, which for the resolved reference
+ * sheet — 44,099 pixels carrying 10,031 distinct colours — is the same order as one of the cleanup
+ * passes, and which grows with the *distinct colours* of a sheet rather than with its pixels. A
+ * grid of 1 is where that bites: the sheet arrives with 218,978 of them, and the plan search is then
+ * the most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they
+ * move by several times between runs on one machine — but the shape is: three pairs, `levels` rungs
+ * each, once per distinct colour.
+ */
+export const DITHER_SHORTLIST = 3;
+
+/**
+ * How many candidates a channel-depth lattice offers a mixing plan: the corners of the cell the
+ * colour falls in, which is two rungs per channel.
+ *
+ * Both a bound and an override. A lattice has hundreds of thousands of points and no list to search,
+ * so the candidates are worked out per colour rather than per palette — and these eight are the only
+ * points a mixture could usefully be made from, being exactly the pair per channel that the classic
+ * threshold dither for a bit-depth reduction chooses between.
+ *
+ * **All eight are paired, rather than the nearest {@link DITHER_SHORTLIST} of them**, because
+ * nearness is the wrong ordering on a lattice. Measured on a mid grey against the Master System's
+ * two bits: of the eight corners around it, the one raising a single channel is much the nearest and
+ * the diagonal corner raising all three is the *furthest* — and the diagonal is the only one whose
+ * mixture stays neutral. Drawn from the three nearest, a grey of 100 came back dithered between grey
+ * and *red*, which is a visible fault rather than a lost fraction of accuracy. Correcting it is what
+ * takes the two machine spaces in {@link DITHER_CHOICES}'s table from roughly the flat step's error
+ * over 8 × 8 blocks to a third of it.
+ *
+ * Eight candidates is twenty-eight pairs where a list palette's three are three, so the lattice arm
+ * costs an order more per distinct colour — which it can afford precisely because its candidate set
+ * is worked out per colour and is this small, where a list palette's is up to 128 and could not be
+ * paired exhaustively at all.
+ */
+export const DITHER_LATTICE_CORNERS = 8;
+
+/**
  * The coarsest scale the two automatic readers will consider for an image of this size.
  *
  * Derived per image rather than fixed, because the fixed version was a cap on the truth: detection
@@ -898,6 +1073,8 @@ export const QUANTISE_TOOLTIPS = {
     'How many times the fill cleanup runs over its own output. One pass settles every pixel that already disagreed with a settled neighbourhood; a pixel two deep in a speckled patch only becomes the lone odd one out after its neighbour has settled, which the next pass picks up. Each pass stops early when nothing changed, so a high setting costs nothing on a sheet that settles quickly. It does nothing while the fill cleanup itself is off.',
   paletteSnap:
     'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing, and the studio’s own colour setting decides the sheet’s colours as it would with no palette held. The default sits between the two things this has to tell apart on the sheet the dials were tuned against — the drift between two readings of one subject, and a colour that is genuinely new — and those overlap, so raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
+  dither:
+    'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

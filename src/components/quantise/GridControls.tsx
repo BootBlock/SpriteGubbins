@@ -132,7 +132,7 @@ export function GridControls({ facts, target, suggested, grid, colorPlan, onGrid
         </div>
       </div>
 
-      <DownscaleControls />
+      <DownscaleControls dithers={colorPlan.reduction !== null} />
 
       <GridCandidates scale={scale} suggested={suggested} onChoose={onGridChange} />
 

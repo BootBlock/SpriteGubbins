@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import {
   DEFAULT_CLEANUP_PASSES,
   DEFAULT_COLOR_MERGE,
+  DEFAULT_DITHER,
   DEFAULT_FILL_CLEANUP,
   DEFAULT_KEY_TOLERANCE,
   DEFAULT_INK_THRESHOLD,
@@ -10,7 +11,13 @@ import {
   DEFAULT_PALETTE_SNAP,
   DEFAULT_TRIM_STRENGTH,
 } from '../constants/quantiser.ts';
-import type { ImportedImage, LockedPalette, PixelGrid, VoteMethod } from '../types/quantiser.ts';
+import type {
+  DitherPattern,
+  ImportedImage,
+  LockedPalette,
+  PixelGrid,
+  VoteMethod,
+} from '../types/quantiser.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 
@@ -85,6 +92,14 @@ export interface QuantiseState {
   /** How many settling passes the fill cleanup runs, from CLEANUP_PASSES_RANGE. */
   readonly cleanupPasses: number;
   /**
+   * Which positional pattern the palette step dithers through — `NONE` is off.
+   *
+   * Workflow intent like the vote and the expansion, and for the same reason: a dither is a
+   * decision about how a *series* should look, and the splitter hands back eight sheets in one
+   * style. Read only where the studio or a lock names a palette to dither against.
+   */
+  readonly dither: DitherPattern;
+  /**
    * The palette taken off an earlier result and held for the sheets that follow, or `null`.
    *
    * **The one setting here whose whole purpose is to outlive the sheet it was taken from.** Where
@@ -114,6 +129,7 @@ export interface QuantiseState {
   setFillCleanup(fillCleanup: number): void;
   setColorMerge(colorMerge: number): void;
   setCleanupPasses(cleanupPasses: number): void;
+  setDither(dither: DitherPattern): void;
   /** Hold this palette, replacing whichever one was held before. */
   lockPalette(lockedPalette: LockedPalette): void;
   /** Let the held palette go, handing the colour decision back to the studio. */
@@ -138,6 +154,7 @@ const EMPTY: Pick<
   | 'trimStrength'
   | 'inkThreshold'
   | 'cleanupPasses'
+  | 'dither'
   | 'lockedPalette'
   | 'paletteSnap'
 > = {
@@ -153,6 +170,7 @@ const EMPTY: Pick<
   fillCleanup: DEFAULT_FILL_CLEANUP,
   colorMerge: DEFAULT_COLOR_MERGE,
   cleanupPasses: DEFAULT_CLEANUP_PASSES,
+  dither: DEFAULT_DITHER,
   lockedPalette: null,
   paletteSnap: DEFAULT_PALETTE_SNAP,
 };
@@ -196,6 +214,10 @@ export const useQuantiseStore = create<QuantiseState>((set) => ({
 
   setVote: (vote) => {
     set({ vote });
+  },
+
+  setDither: (dither) => {
+    set({ dither });
   },
 
   setOutlineExpansion: (outlineExpansion) => {

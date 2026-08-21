@@ -37,6 +37,13 @@ interface QuantiseGuideProps {
   readonly grid: PixelGrid | null;
   /** What the studio decided about colour, as the pipeline was handed it. */
   readonly colorPlan: ColorPlan;
+  /**
+   * Whether a dither is in force, which the plan alone cannot say.
+   *
+   * It changes where in the pipeline that plan is applied rather than what it is, and the paragraph
+   * below says so — see `colourAdvice`.
+   */
+  readonly dithered: boolean;
 }
 
 /**
@@ -55,7 +62,15 @@ interface QuantiseGuideProps {
  * the numerals take `--color-tab` the way the studio's two panel headings do, which is what makes
  * them read as this view's steps rather than as decoration.
  */
-export function QuantiseGuide({ facts, hasSheet, target, suggested, grid, colorPlan }: QuantiseGuideProps) {
+export function QuantiseGuide({
+  facts,
+  hasSheet,
+  target,
+  suggested,
+  grid,
+  colorPlan,
+  dithered,
+}: QuantiseGuideProps) {
   const state = hasSheet && facts !== null ? adviceFor(facts, grid) : null;
   // The ceiling is procedure input, so it accompanies the procedure — and only while a number still
   // needs choosing. With a scale in force the reader is stepping from where they are, and beside a
@@ -107,7 +122,9 @@ export function QuantiseGuide({ facts, hasSheet, target, suggested, grid, colorP
         ))}
       </ol>
 
-      <p className="mt-4 max-w-3xl text-xs leading-relaxed text-ink-faint">{colourAdvice(colorPlan)}</p>
+      <p className="mt-4 max-w-3xl text-xs leading-relaxed text-ink-faint">
+        {colourAdvice(colorPlan, dithered)}
+      </p>
     </section>
   );
 }

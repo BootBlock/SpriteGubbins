@@ -63,6 +63,7 @@ export function QuantiseTab() {
   const inkThreshold = useQuantiseStore((state) => state.inkThreshold);
   const fillCleanup = useQuantiseStore((state) => state.fillCleanup);
   const cleanupPasses = useQuantiseStore((state) => state.cleanupPasses);
+  const dither = useQuantiseStore((state) => state.dither);
   const colorMerge = useQuantiseStore((state) => state.colorMerge);
   const lockedPalette = useQuantiseStore((state) => state.lockedPalette);
   const paletteSnap = useQuantiseStore((state) => state.paletteSnap);
@@ -78,6 +79,7 @@ export function QuantiseTab() {
       colorMerge,
       fillCleanup,
       cleanupPasses,
+      dither,
     }),
     [
       vote,
@@ -88,6 +90,7 @@ export function QuantiseTab() {
       colorMerge,
       fillCleanup,
       cleanupPasses,
+      dither,
     ],
   );
   const setSource = useQuantiseStore((state) => state.setSource);
@@ -177,6 +180,7 @@ export function QuantiseTab() {
         suggested={suggested}
         grid={grid}
         colorPlan={colorPlan}
+        dithered={dither !== 'NONE' && colorPlan.reduction !== null}
       />
 
       <ImageDropZone acceptFile={acceptFile} currentName={source?.name ?? null} onClear={clear} />

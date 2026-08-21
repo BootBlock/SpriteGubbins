@@ -90,6 +90,7 @@ describe('mergeColors', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 24,
       reduction: { kind: 'PALETTE', entries: [shadeA, shadeB] },

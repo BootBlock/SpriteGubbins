@@ -5,6 +5,8 @@ import { differenceMap } from './differenceMap.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { despeckle } from './despeckle.ts';
+import { ditherImage } from './ditherImage.ts';
+import { ditherMatrix } from './ditherMatrix.ts';
 import { mergeColors } from './mergeColors.ts';
 import { countColors } from './imageData.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
@@ -21,6 +23,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * ```
  * DOMINANT:                 ImageData → keyBackground → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
  * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → outlineExpansion → cells resolved directly → reduceColors
+ * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
  *
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
@@ -50,6 +53,28 @@ import { buildPalette } from './wuQuantiser.ts';
  * collapse exactly the tones it exists to blend, so they see the unreduced source and the
  * reduction runs on their output, where a budget's palette is chosen from the resolved sheet and
  * can keep the blended line tones.
+ *
+ * **A dither moves the whole palette step to the end, whichever reading is in force, and that is
+ * the one ordering neither contract above survives.** A dither expresses a colour the palette does
+ * not hold as a mixture of colours it does, so it has to run where such a colour still exists — and
+ * a reduction is precisely the pass that removes them. Under the dominant vote that means the
+ * reduction can no longer run *before* the tally, which costs the quantised vote its two defences:
+ * the tie-break is again the only thing settling a cell of near-identical shades, and `alignToGrid`
+ * is asked for a raw vote, whose tally holds every pixel as its own bucket and where the line
+ * rescue's share therefore measures nothing. Both of those costs are answered by the pass that
+ * replaces them: two cells landing on near-identical shades land on near-identical mixing plans, so
+ * the speckle a raw vote leaves is folded back into one pattern. Dithering *before* the vote is the
+ * arrangement that cannot work at all — a pattern laid down at source resolution is a pattern the
+ * cell reading immediately votes away.
+ *
+ * **The sheet-wide merge and the fill cleanup then run ahead of it rather than after it**, which is
+ * the mirror of the note below on why they normally run last. Their reason for coming after the
+ * palette is that the cleanup should see the final colours; with a dither there are no final flat
+ * colours to see, and running them over the pattern would be the two speckle passes dismantling the
+ * speckle the reader asked for. Ahead of it they do exactly what they were built for, on the
+ * reading's own output — and the merge's exemption for a *stated* palette lifts with them, because
+ * at that point in the pipeline no pixel is a palette entry and there is nothing of the user's
+ * statement to fold.
  *
  * **Keying still goes first, ahead of everything, and that is not interchangeable.** `alignToGrid`
  * resolves each cell to its modal colour, and on a drifting key field every background pixel is a
@@ -105,6 +130,17 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // cluster centre — and reducing first would collapse exactly the tones it exists to blend; so
   // those readings see the unreduced source, and the reduction runs on their output, where the
   // blended tones are real colours a palette chosen from it can keep.
+  // The palette step in its positional form, where one was asked for *and* there is a palette to
+  // dither against — with no reduction in force there is no colour a mixture could express that a
+  // single colour could not. Resolving both here is what lets the rest of the function read
+  // `positional === null` as "the palette step runs in its usual place".
+  const matrix = ditherMatrix(settings.dither);
+  const positional =
+    matrix !== null && settings.reduction !== null ? { matrix, reduction: settings.reduction } : null;
+  // What the *reading* reduces with: nothing at all while a dither is holding the palette step back
+  // to the end of the pipeline.
+  const reduction = positional === null ? settings.reduction : null;
+
   const resolved =
     settings.vote === 'DOMINANT'
       ? downscaleNearest(
@@ -114,9 +150,9 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
             // enforce, and a high cap is still a cap. Line-aware only where a reduction ran: the
             // rescue reads shares out of the tally, and a share means nothing in a raw-colour
             // vote where every pixel is its own bucket — see `alignToGrid`.
-            settings.reduction === null ? expanded : reduceColors(expanded, settings.reduction),
+            reduction === null ? expanded : reduceColors(expanded, reduction),
             mesh,
-            settings.reduction !== null,
+            reduction !== null,
           ),
           mesh,
         )
@@ -130,7 +166,7 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
                 settings.inkThreshold,
               )
             : kCentroidCells(expanded, mesh),
-          settings.reduction,
+          reduction,
         );
 
   // Last of all, whatever the reading: speckle is a property of any reading's output, and the
@@ -145,8 +181,12 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // entries are what the next sheet in the series will be mapped onto, so a merge that folded two
   // of them here would be the cleanup dial quietly editing the lock — and the sheets either side of
   // this one would keep the pair it removed.
-  const merged = statedPalette(settings.reduction) ? resolved : mergeColors(resolved, settings.colorMerge);
-  const output = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
+  const merged = statedPalette(reduction) ? resolved : mergeColors(resolved, settings.colorMerge);
+  const cleaned = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
+  // And the palette step last of all where a dither holds it — see the note above on why it cannot
+  // run anywhere else, and why these two passes come before it rather than after.
+  const output =
+    positional === null ? cleaned : ditherImage(cleaned, positional.reduction, positional.matrix);
 
   return {
     image: output,

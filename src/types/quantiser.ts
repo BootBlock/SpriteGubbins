@@ -263,6 +263,55 @@ export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
 export type VoteMethod = (typeof VOTE_METHODS)[number];
 
 /**
+ * The positional dither patterns the tab offers, in the order the control shows them.
+ *
+ * The `as const` array is the union's single definition, as the vote methods' is. Nothing validates
+ * a stored value against it, because the choice lives in the session's store and is never persisted.
+ */
+export const DITHER_PATTERNS = ['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as const;
+
+/**
+ * One of the four — which threshold pattern decides, at each position, whether a pixel takes its
+ * mixing plan's first colour or its second.
+ *
+ * **Positional, never error-diffusion, and that is the constraint the whole feature rests on.** A
+ * sprite sheet is source artwork for frames that are later animated and tiled, and error diffusion
+ * makes each pixel's dither depend on the pixels before it — so a shape that moves by one pixel
+ * between two frames comes back wearing a different pattern, and the pattern crawls as the
+ * animation plays. A threshold matrix is a function of position alone, so one colour lands on one
+ * pattern in every frame of a run and on both sides of a tile seam.
+ *
+ * `NONE` is the off position: the pass does not run at all, as every dial's zero on this tab means.
+ * `BAYER_4` and `BAYER_8` are the recursive ordered matrices, whose crosshatch is what a reader
+ * recognises as a retro dither; `BLUE_NOISE` is a void-and-cluster tile, which spreads the same
+ * ratios without a repeating figure — quieter, and the choice when the crosshatch reads as texture
+ * the artwork does not have. What each is worth lives in {@link QUANTISE_TOOLTIPS}.
+ */
+export type DitherPattern = (typeof DITHER_PATTERNS)[number];
+
+/**
+ * A positional threshold pattern: one rank per position of a square tile, and how many ranks there
+ * are.
+ *
+ * **`levels` is the plan's resolution as well as the pattern's**, which is why the two travel
+ * together. A ratio finer than the tile can express is a ratio no position can act on, so a mixing
+ * plan is searched over `k / levels` for whole `k` — and a pixel takes the plan's second colour
+ * exactly when its own rank is below `k`, which puts `k` of every `levels` positions on it.
+ *
+ * The ranks are `0 … levels − 1`, each occurring equally often across the tile. For the Bayer
+ * matrices that is one position per rank; for the blue-noise tile it is sixty-four, which is what
+ * lets a 64 × 64 tile carry the same sixty-four ratios without a visible figure.
+ */
+export interface ThresholdMatrix {
+  /** The tile's edge, in pixels — it repeats across the sheet from the image's own origin. */
+  readonly size: number;
+  /** How many distinct ranks the tile holds, and the denominator every mixing ratio is stated over. */
+  readonly levels: number;
+  /** Row-major, `size × size`, each entry `0 … levels − 1`. */
+  readonly ranks: Uint16Array;
+}
+
+/**
  * The Downscale panel's dials, as one value: which reading turns the mesh into pixels, and the
  * strengths and tolerances that shape it.
  *
@@ -295,6 +344,16 @@ export interface QuantiseTuning {
   readonly fillCleanup: number;
   /** How many times the fill cleanup runs over its own output; each pass stops early when idle. */
   readonly cleanupPasses: number;
+  /**
+   * Which positional pattern the palette step dithers through, or `NONE` to map each pixel to one
+   * colour outright.
+   *
+   * Read only where {@link QuantiseSettings.reduction} names a palette to dither *against*: a dither
+   * expresses a colour the palette does not hold as a mixture of colours it does, so with no palette
+   * in force there is nothing to express and nothing to express it in. It also moves the palette step
+   * itself — see `quantiseImage`, which holds that rule.
+   */
+  readonly dither: DitherPattern;
 }
 
 /** Everything `quantiseImage` needs beyond the image itself. */

@@ -26,6 +26,7 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
     left.fillCleanup === right.fillCleanup &&
     left.colorMerge === right.colorMerge &&
     left.cleanupPasses === right.cleanupPasses &&
+    left.dither === right.dither &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );

@@ -79,6 +79,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
@@ -99,6 +100,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
@@ -121,6 +123,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: colorPlanFor('FREE', 'UNRESTRICTED', null, 0).reduction,
@@ -145,6 +148,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
@@ -169,6 +173,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
@@ -195,6 +200,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
@@ -219,6 +225,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
@@ -242,6 +249,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 32 },
@@ -283,6 +291,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
@@ -314,6 +323,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: gameBoy,
@@ -338,6 +348,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: megaDrive,
@@ -383,6 +394,7 @@ describe('quantiseImage', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
         reduction: colorPlanFor(palette, 'UNRESTRICTED', null, 0).reduction,
@@ -431,6 +443,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
@@ -483,6 +496,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 2 },
@@ -549,6 +563,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: { kind: 'MAX_COLORS', maxColors: 17 },
@@ -573,6 +588,7 @@ describe('quantiseImage', () => {
       inkThreshold: 64,
       fillCleanup: 0,
       cleanupPasses: 1,
+      dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
       reduction: null,
@@ -610,6 +626,7 @@ describe('quantiseImage', () => {
           inkThreshold: 64,
           fillCleanup: 8,
           cleanupPasses: 2,
+          dither: 'NONE' as const,
           outlineExpansion: 0,
           colorMerge: 8,
           reduction: { kind: 'MAX_COLORS', maxColors: 8 } as const,
@@ -664,6 +681,7 @@ describe('quantiseImage — a locked palette', () => {
     inkThreshold: 64,
     fillCleanup: 0,
     cleanupPasses: 1,
+    dither: 'NONE' as const,
     outlineExpansion: 0,
     colorMerge,
     reduction: { kind: 'LOCKED', entries: ENTRIES, snap: 20 } as const,
@@ -701,5 +719,72 @@ describe('quantiseImage — a locked palette', () => {
 
     expect(readPixel(result.image.data, 0)).toEqual(gem);
     expect(result.colors).toBe(4);
+  });
+});
+
+/**
+ * The ordering rule a dither imposes on the whole pipeline, which is where it lives rather than in
+ * any one pass: the palette step moves to the very end, and the two speckle passes move ahead of it.
+ *
+ * `ditherImage` has its own suite for what the pass *does*. This is about where it sits, which is a
+ * fact about the composition and therefore invisible to a test of either half.
+ */
+describe('quantiseImage — a dither', () => {
+  /** A flat mid grey at a grid of 2, which a two-colour palette cannot hold and must spread. */
+  const FLAT = imageFrom(32, 32, () => ({ r: 128, g: 128, b: 128, a: 255 }));
+  const TWO_TONE = {
+    kind: 'PALETTE',
+    entries: [
+      { r: 0, g: 0, b: 0, a: 255 },
+      { r: 255, g: 255, b: 255, a: 255 },
+    ],
+  } as const;
+
+  const settingsFor = (dither: 'NONE' | 'BAYER_4', reduction: typeof TWO_TONE | null, cleanup: number) => ({
+    grid: 2,
+    key: null,
+    vote: 'DOMINANT' as const,
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: cleanup,
+    cleanupPasses: 4,
+    colorMerge: cleanup,
+    outlineExpansion: 0,
+    dither,
+    reduction,
+  });
+
+  it('spreads a colour the palette cannot hold, where the flat step could only round it', () => {
+    expect(quantiseImage(FLAT, settingsFor('NONE', TWO_TONE, 0)).colors).toBe(1);
+    expect(quantiseImage(FLAT, settingsFor('BAYER_4', TWO_TONE, 0)).colors).toBe(2);
+  });
+
+  it('runs after the merge and the cleanup, so neither can take the pattern back out', () => {
+    // Both dials at their ceiling and every pass allowed to settle. Ahead of the dither they see the
+    // reading's own output, which is one flat colour and nothing to do; behind it they would find a
+    // sheet made entirely of lone dissenting pixels between two colours a whole tonal range apart,
+    // and the fill cleanup would put every one of them back.
+    const result = quantiseImage(FLAT, settingsFor('BAYER_4', TWO_TONE, 48));
+    expect(result.colors).toBe(2);
+  });
+
+  it('does nothing at all with no palette to dither against', () => {
+    // The control is withdrawn in that state rather than shown doing nothing — see
+    // `DownscaleControls` — but the pipeline may not depend on a panel to stay correct.
+    const off = quantiseImage(FLAT, settingsFor('NONE', null, 0));
+    const on = quantiseImage(FLAT, settingsFor('BAYER_4', null, 0));
+    expect(channels(on.image)).toEqual(channels(off.image));
+  });
+
+  it('lays the pattern at the resolution the sheet came out at, not the one it went in at', () => {
+    // The reason the palette step had to move rather than the pattern being laid earlier: at a grid
+    // of 4 a 4 × 4 tile fits inside a single cell, so a pattern laid on the source would be one the
+    // modal vote resolves straight back to one colour. Laid on the reading's output it survives,
+    // which is what these two assertions separate.
+    const coarse = imageFrom(32, 32, () => ({ r: 128, g: 128, b: 128, a: 255 }));
+    const result = quantiseImage(coarse, { ...settingsFor('BAYER_4', TWO_TONE, 0), grid: 4 });
+    expect(result.image.width).toBe(8);
+    expect(result.colors).toBe(2);
   });
 });

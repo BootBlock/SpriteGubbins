@@ -22,14 +22,14 @@ const COLOR_PLAN: ColorPlan = {
 
 const factsWith = (scale: SheetFacts['scale']): SheetFacts => ({ scale, colors: 1024 });
 
-function show(facts: SheetFacts | null, grid: number | null) {
+function show(facts: SheetFacts | null, grid: number | null, colorPlan: ColorPlan = COLOR_PLAN) {
   render(
     <GridControls
       facts={facts}
       target={null}
       suggested={null}
       grid={grid}
-      colorPlan={COLOR_PLAN}
+      colorPlan={colorPlan}
       onGridChange={() => undefined}
     />,
   );
@@ -95,5 +95,21 @@ describe('GridControls', () => {
     // a bare "Try" with no scale beside it reads as one that failed to render.
     expect(screen.queryByText('Try')).toBeNull();
     expect(screen.queryByRole('button', { name: /measured|estimated|target size/ })).toBeNull();
+  });
+
+  it('offers the dither only once there is a palette to dither against', () => {
+    // The control is the palette step in positional form, so with the studio naming no budget and
+    // nothing pinned or locked it has nothing to express. Withdrawing it is the same call the panel
+    // makes about the ink-weighted dials: a control that could change nothing is a lie on screen.
+    show(factsWith({ grid: 8, measurement: 'EXACT' }), 8);
+    expect(screen.queryByLabelText('Dither')).toBeNull();
+  });
+
+  it('offers the dither once a budget is in force', () => {
+    show(factsWith({ grid: 8, measurement: 'EXACT' }), 8, {
+      ...COLOR_PLAN,
+      reduction: { kind: 'MAX_COLORS', maxColors: 64 },
+    });
+    expect(screen.getByLabelText('Dither')).toBeInTheDocument();
   });
 });

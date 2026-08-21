@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import type { ColorPlan, SheetFacts } from '../../types/quantiser.ts';
 import { QuantiseGuide } from './QuantiseGuide.tsx';
 
@@ -27,6 +27,7 @@ function show(
   hasSheet: boolean,
   suggested: number | null = null,
   grid: number | null = null,
+  dithered = false,
 ) {
   render(
     <QuantiseGuide
@@ -36,6 +37,7 @@ function show(
       suggested={suggested}
       grid={grid}
       colorPlan={COLOR_PLAN}
+      dithered={dithered}
     />,
   );
 }
@@ -120,5 +122,18 @@ describe('QuantiseGuide', () => {
 
     expect(screen.getByText(/the RESTRAINED_64_COLOR setting travels with the sheet/)).toBeInTheDocument();
     expect(screen.getByText(/reduced to 64 colours chosen from the sheet/)).toBeInTheDocument();
+  });
+
+  it('says where the cleanup dials sit once a dither is in force', () => {
+    // The plan alone cannot say it: the policy is the same either way, and what a dither changes is
+    // where in the pipeline it is applied — which takes the two cleanup passes past it. A paragraph
+    // telling a reader those dials tidy what the policy produced would have the order backwards for
+    // exactly the sheets where the order is worth knowing.
+    show(factsWith({ grid: 8, measurement: 'EXACT' }), true, null, 8, true);
+    expect(screen.getByText(/tidying what the reading made of the sheet/)).toBeInTheDocument();
+
+    cleanup();
+    show(factsWith({ grid: 8, measurement: 'EXACT' }), true, null, 8, false);
+    expect(screen.getByText(/only tidy what that policy produced/)).toBeInTheDocument();
   });
 });

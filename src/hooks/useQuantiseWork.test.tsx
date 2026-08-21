@@ -18,6 +18,7 @@ const TUNING = {
   colorMerge: 0,
   fillCleanup: 0,
   cleanupPasses: 1,
+  dither: 'NONE' as const,
   outlineExpansion: 0,
 } as const;
 
@@ -166,6 +167,7 @@ describe('useQuantiseWork', () => {
         inkThreshold: 64,
         fillCleanup: 0,
         cleanupPasses: 1,
+        dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
         reduction: REDUCTION,
