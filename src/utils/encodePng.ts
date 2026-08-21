@@ -1,3 +1,4 @@
+import type { WrittenPng } from '../types/sheetFormat.ts';
 import { CHANNELS_PER_PIXEL } from './imageData.ts';
 import { deflate } from './deflate.ts';
 import { concatBytes, PNG_SIGNATURE, pngChunk } from './pngChunk.ts';
@@ -27,13 +28,6 @@ import { indexImage } from './pngPalette.ts';
  * times the file, for a sheet whose sixty-four colours the format was not being told about.
  */
 
-/** The bytes, and what was written — which is the one thing the reader is told about the file. */
-export interface EncodedPng {
-  readonly bytes: Uint8Array<ArrayBuffer>;
-  /** How many entries the palette holds, or `null` where the sheet was written truecolour. */
-  readonly paletteEntries: number | null;
-}
-
 /** Colour type 3: each pixel an index into `PLTE`. */
 const COLOR_TYPE_PALETTE = 3;
 /** Colour type 6: each pixel four channels of its own. */
@@ -41,7 +35,7 @@ const COLOR_TYPE_RGBA = 6;
 /** The only depth this writer uses — one byte per index, and one per channel. */
 const BIT_DEPTH = 8;
 
-export async function encodePng(image: ImageData): Promise<EncodedPng> {
+export async function encodePng(image: ImageData): Promise<WrittenPng> {
   const indexed = indexImage(image);
   const header = ihdr(image, indexed === null ? COLOR_TYPE_RGBA : COLOR_TYPE_PALETTE);
 
@@ -55,7 +49,7 @@ export async function encodePng(image: ImageData): Promise<EncodedPng> {
       bytesPerPixel: CHANNELS_PER_PIXEL,
       candidates: PNG_FILTERS,
     });
-    return { bytes: assemble([header, await idat(filtered)]), paletteEntries: null };
+    return { format: 'PNG', bytes: assemble([header, await idat(filtered)]), paletteEntries: null };
   }
 
   // Filter 0 alone, and this is measured rather than inherited from the spec's advice: a palette
@@ -85,7 +79,7 @@ export async function encodePng(image: ImageData): Promise<EncodedPng> {
   if (indexed.transparentEntries > 0) chunks.push(pngChunk('tRNS', trns));
   chunks.push(await idat(filtered));
 
-  return { bytes: assemble(chunks), paletteEntries: indexed.entries.length };
+  return { format: 'PNG', bytes: assemble(chunks), paletteEntries: indexed.entries.length };
 }
 
 /** The image's shape and how its pixels are stored — always non-interlaced, at depth 8. */

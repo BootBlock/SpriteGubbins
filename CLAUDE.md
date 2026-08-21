@@ -574,8 +574,16 @@ example's own wording rather than a name the app suggests.
   mirrors and states the same `oklch()` triple `index.css` states, `oklab.ts` resolves it to bytes,
   and `tests/design-tokens.test.ts` reads the stylesheet and fails if the two part company. **A new
   colour chosen here rather than mirrored is the thing this row forbids**, and so is a third file
-  claiming the exemption for something that does have an element to put a class on. Nothing else gets
-  to claim any of the three exemptions.
+  claiming the exemption for something that does have an element to put a class on.
+- **A colour written into another application's document is the fourth, and it is the first row's
+  ground rather than a new one.** `ASEPRITE_TAG_COLOR` in `src/constants/aseprite.ts` is the colour
+  every tag of an exported `.aseprite` file carries, and it is a colour that is **not the app's** —
+  the same footing `src/constants/palettes/` stands on. A tag bar in another editor's timeline is not
+  a surface this app is styling, and there is no element for it to be a class on, so it deliberately
+  mirrors **no** token: pinning it to the palette would make an edit to `index.css` change the
+  contents of a file somebody already exported. That is the test for anything joining this row —
+  the colour has to leave the app inside a file, and mirroring a token has to be actively wrong
+  rather than merely inconvenient. Nothing else gets to claim any of the four exemptions.
 
 **Unknown Tailwind utilities fail silently** — no CSS, no error, no warning. A typo'd
 `bg-foundy-800` simply renders unstyled. When a change introduces a token-based utility,
@@ -873,9 +881,10 @@ initial build. They are not stylistic preferences.
   new thread holds nothing — so whatever it was given has to cross the boundary again.
 - **A thread's *lifetime* is decided by whether it has anything worth keeping**, and the two in
   `src/workers/` answer that differently on purpose. The quantiser's is kept for a whole session
-  because the sheet crosses once and every dial afterwards is three small numbers. The PNG encoder's
-  (`pngWorker.ts` / `pngSession.ts`) is started per download and ended by its own answer, because
-  what it encodes is the *result*, which changes under every dial — so it would cross the boundary on
+  because the sheet crosses once and every dial afterwards is three small numbers. The sheet writer's
+  (`sheetWriteWorker.ts` / `sheetWriteSession.ts`, which writes either a PNG or an `.aseprite`
+  document) is started per download and ended by its own answer, because what it writes is the
+  *result*, which changes under every dial — so it would cross the boundary on
   each press whatever the thread's lifetime, and a thread that ends with the job needs no correlation
   ids and no lifecycle to keep in step with the tab. **State that has to outlive the view it was started
   from belongs in `src/stores/`, never in the component that asked for the work** — `useSheetWriteStore` exists

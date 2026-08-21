@@ -1,7 +1,8 @@
 import { PREVIEW_MODE_LABELS } from '../../constants/previewModes.ts';
 import { DIFFERENCE_SCALES, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { PREVIEW_MODES } from '../../types/quantiser.ts';
-import type { PreviewMode } from '../../types/quantiser.ts';
+import type { PreviewMode, SpriteSegmentation } from '../../types/quantiser.ts';
+import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { DownloadControls } from './DownloadControls.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
@@ -18,10 +19,15 @@ interface ComparisonToolbarProps {
   /** How many file pixels one drawn pixel is written as when the sheet is saved. */
   readonly downloadScale: number;
   readonly onDownloadScaleChange: (scale: number) => void;
+  /** Which file the sheet leaves as. */
+  readonly downloadFormat: SheetFormat;
+  readonly onDownloadFormatChange: (format: SheetFormat) => void;
   /** The dropped file's name — what the download is named after. */
   readonly sourceName: string;
   /** `null` until a grid is settled, which is the only state the download can be refused in. */
   readonly resultImage: ImageData | null;
+  /** What the sheet broke into, which an Aseprite document’s frames are cut along. */
+  readonly sprites: SpriteSegmentation | null;
 }
 
 /**
@@ -41,8 +47,11 @@ export function ComparisonToolbar({
   onDifferenceScaleChange,
   downloadScale,
   onDownloadScaleChange,
+  downloadFormat,
+  onDownloadFormatChange,
   sourceName,
   resultImage,
+  sprites,
 }: ComparisonToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -99,8 +108,11 @@ export function ComparisonToolbar({
       <DownloadControls
         downloadScale={downloadScale}
         onDownloadScaleChange={onDownloadScaleChange}
+        downloadFormat={downloadFormat}
+        onDownloadFormatChange={onDownloadFormatChange}
         sourceName={sourceName}
         resultImage={resultImage}
+        sprites={sprites}
       />
     </div>
   );
