@@ -53,6 +53,21 @@ describe('write', () => {
     expect(posted[0]?.kind).toBe('failed');
   });
 
+  it('does not reject when even the failure reply will not post', async () => {
+    // The one state that cannot be reported: the reply channel is how this thread says anything, so
+    // its own failure has nothing to say it with. What must not happen is a rejection escaping into
+    // `void write(…)`, which would leave the near side in the same silence with an uncaught error
+    // beside it — so this asserts the resolve, not a message.
+    listen(() => {
+      throw new Error('no room for anything');
+    });
+
+    await expect(write({ image: imageFrom(2, 2, () => OPAQUE), scale: 1 })).resolves.toBeUndefined();
+    await expect(
+      write({ image: imageFrom(2, 2, () => OPAQUE), scale: Number.MAX_SAFE_INTEGER }),
+    ).resolves.toBeUndefined();
+  });
+
   it('answers `failed` when the reply itself will not post', async () => {
     // The success post throwing — a clone the browser will not make, or no room to build the
     // message. A throw in a `.then` fulfilment arm does not reach that call's rejection arm, so

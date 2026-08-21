@@ -21,8 +21,8 @@ import { useImageDownload } from './useImageDownload.ts';
  *
  * The thread is stubbed and the **encoder is not**: the fake runs the real `encodePng` over the
  * image it was posted, so what these tests decode is a genuine file. What a worker adds — a thread,
- * and the six ways one can end — is `pngSession`'s to test, and it has its own suite over the same
- * fake.
+ * and the seven ways a request for one can settle — is `pngSession`'s to test, and it has its own
+ * suite over the same fake.
  */
 
 const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };

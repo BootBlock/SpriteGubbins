@@ -877,8 +877,8 @@ initial build. They are not stylistic preferences.
   (`pngWorker.ts` / `pngSession.ts`) is started per download and ended by its own answer, because
   what it encodes is the *result*, which changes under every dial — so it would cross the boundary on
   each press whatever the thread's lifetime, and a thread that ends with the job needs no correlation
-  ids and no lifecycle to keep in step with the tab. **State a thread outlives its view by belongs in
-  `src/stores/`, never in the component that asked for the work** — `useSheetWriteStore` exists
+  ids and no lifecycle to keep in step with the tab. **State that has to outlive the view it was started
+  from belongs in `src/stores/`, never in the component that asked for the work** — `useSheetWriteStore` exists
   because a "writing" flag held in the download's own component came back false when a reader
   navigated away and back, offering a button that was already busy.
 - **`src/hooks/` exists because `src/utils/` must stay pure.** The clipboard, file downloads and

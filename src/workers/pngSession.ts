@@ -19,10 +19,11 @@ import type { PngReply, PngRequest } from './pngWorker.ts';
  * **Every exit that started a thread terminates it, and every call settles**, and the two go
  * together: a thread left running holds the image it was given, and a promise left unsettled leaves
  * the button that returned it reading "Writing…" for the rest of the session — which a store, unlike
- * component state, does not clear by navigating away. Six ways out start a thread: an answer, a
- * refusal, a reply that will not deserialise, a thread that will not evaluate, a browser that will
- * not build one, and a message that will not be sent. A seventh settles without one — a press
- * arriving while the last is still being written. `pngSession.test.ts` walks all seven.
+ * component state, does not clear by navigating away. **Five ways out have a thread to end**: an
+ * answer, a refusal, a reply that will not deserialise, a thread that will not evaluate, and a
+ * message that will not be sent. **Two settle without ever starting one** — a browser that will not
+ * build a worker, and a press arriving while the last is still being written, which is the only exit
+ * that must not clear the flag it found set. `pngSession.test.ts` walks all seven.
  */
 
 /** Said where a press arrives while the last one is still being written; the button also refuses. */

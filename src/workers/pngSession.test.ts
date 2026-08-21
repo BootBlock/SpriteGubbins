@@ -8,10 +8,12 @@ import { encodeOffThread } from './pngSession.ts';
  * The bridge, without the thread: what is posted, which reply is believed, and — the property this
  * file exists for — that every way out ends the thread and settles the promise.
  *
- * A thread per download only stays cheap if all six exits terminate: an answer, a refusal, a reply
- * that will not deserialise, a thread that will not evaluate, a browser that will not build one, and
- * a message that will not be sent. Each one missed is a leaked thread holding a sheet, or a promise
- * nobody settles, which leaves the button reading "Writing…" for the rest of the session.
+ * A thread per download only stays cheap if every exit that started one ends it: an answer, a
+ * refusal, a reply that will not deserialise, a thread that will not evaluate, and a message that
+ * will not be sent. Two more settle without a thread to end — a browser that will not build a
+ * worker, and a press arriving while the last is still being written. Each of the seven missed is a
+ * leaked thread holding a sheet, or a promise nobody settles, which leaves the button reading
+ * "Writing…" for the rest of the session.
  */
 
 function thread(): FakePngWorker {

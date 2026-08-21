@@ -69,14 +69,15 @@ self.addEventListener('message', (event: MessageEvent<PngRequest>) => {
  * realistic cause is room — `upscaleNearest` is the single largest allocation in the app, and it is
  * synchronous, so outside a `try` its `RangeError` would escape as an uncaught exception and reach
  * the near side as "the thread could not start", which is not what happened. The second covers the
- * reply itself.
+ * reply itself. Both report through {@link fail}, which cannot throw — a `failed` post that threw
+ * would escape as the very rejection all of this is arranged to prevent.
  */
 export async function write({ image, scale }: PngRequest): Promise<void> {
   let file: EncodedPng;
   try {
     file = await encodePng(scale === 1 ? image : upscaleNearest(image, scale));
   } catch (error: unknown) {
-    post({ kind: 'failed', reason: describe(error) });
+    fail(error);
     return;
   }
 
@@ -86,8 +87,26 @@ export async function write({ image, scale }: PngRequest): Promise<void> {
     post({ kind: 'encoded', file }, [file.bytes.buffer]);
   } catch (error: unknown) {
     // The transfer may already have detached the buffer, so the fallback carries no bytes at all —
-    // which is also why it cannot fail the same way.
+    // which is also why it is unlikely to fail the same way.
+    fail(error);
+  }
+}
+
+/**
+ * Report a failure, and never throw doing it.
+ *
+ * A `failed` reply is a short string with no transfer list, so what stops a *file* crossing does not
+ * stop this. But if even this will not post there is nothing left to try: the reply channel is the
+ * only way this thread can say anything, and its own failure is the one state that cannot be
+ * reported. Letting it throw would make things strictly worse — the rejection would escape `write`,
+ * reach nobody, and leave the near side in exactly the same silence with an uncaught error beside
+ * it. So it is swallowed here, at the last hop, and nowhere else in this file.
+ */
+function fail(error: unknown): void {
+  try {
     post({ kind: 'failed', reason: describe(error) });
+  } catch {
+    // Nothing above this can hear us.
   }
 }
 
