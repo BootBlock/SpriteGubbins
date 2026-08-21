@@ -45,6 +45,8 @@ function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance 
     keyedShare: 0,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     symmetry: null,
+    duplicates: [],
+    snapped: false,
     offset,
   };
 }

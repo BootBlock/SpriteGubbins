@@ -2,6 +2,7 @@ import type { ColorReduction, GridMesh, QuantiseResult, QuantiseSettings } from 
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
 import { differenceMap } from './differenceMap.ts';
+import { duplicateSprites } from './duplicateSprites.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { despeckle } from './despeckle.ts';
@@ -16,6 +17,7 @@ import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
 import { sheetSymmetry } from './symmetryAxis.ts';
 import { snapSymmetric } from './symmetrySnap.ts';
+import { snapDuplicates } from './snapDuplicates.ts';
 import { spriteSegments } from './spriteSegments.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
@@ -27,8 +29,9 @@ import { buildPalette } from './wuQuantiser.ts';
  * DOMINANT:                 ImageData → keyBackground → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
  * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → outlineExpansion → cells resolved directly → reduceColors
  * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
+ * then, on whatever that produced:  spriteSegments → sheetSymmetry → snapSymmetric (SNAP only)
+ *                                                  → duplicateSprites → snapDuplicates (if asked)
  *
- * then, whatever ran above:  → spriteSegments → sheetSymmetry → snapSymmetric (SNAP only)
  *
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
@@ -208,18 +211,28 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const reduced =
     positional === null ? cleaned : ditherImage(cleaned, positional.reduction, positional.matrix);
 
-  // The last pass of all, and the only one that runs *over* a reading rather than over the sheet:
-  // an axis is scored inside a sprite's own bounds, so the segmentation has to exist before this can
-  // ask anything. It is therefore taken here, on the sheet as every dial above left it, and the
-  // findings describe that sheet — which is the only state they mean anything in, since a sprite
-  // that has just been made symmetric would report perfect confidence whatever it arrived as.
+  // **The last passes of all, and the two of them run *over a reading* rather than over the sheet.**
+  // Both ask a question about the sprites the sheet holds — is this one symmetric, is this one a
+  // repeat of that one — so both need the segmentation to exist before they can ask anything, and
+  // both are taken here rather than earlier for that reason.
   //
-  // `OFF` skips it outright rather than scoring and discarding, which is how the outline expansion
-  // and the reductions are guarded: the sweep converts every pixel of every sprite to OKLab, and
+  // The order between them is stated rather than incidental: **the symmetry settle runs first, and
+  // the duplicate reading is then taken over what it produced.** A settle can bring two sprites that
+  // differed only in their drift into agreement, so reading duplicates first would be reading a
+  // sheet the reader is not going to get — and the fold copies whole blocks, so it should copy the
+  // finished sprite rather than one that is about to be settled again in place.
+  //
+  // Each reading therefore describes the sheet as it stood immediately before *its own* edit, which
+  // is the only state in which either means anything: a sprite that has just been made symmetric
+  // reports perfect confidence whatever it arrived as, and a member that has just been overwritten
+  // with its canonical is an exact duplicate of it by construction.
+  const segmented = spriteSegments(reduced, settings.spriteGap);
+
+  // `OFF` skips the sweep outright rather than scoring and discarding, which is how the outline
+  // expansion and the reductions are guarded: it converts every pixel of every sprite to OKLab, and
   // that is not a cost to pay for a reader who never turns the control on. A sheet that did not
   // segment is skipped for a different reason — there are no bounds to score inside — and the empty
   // array says so, where `null` would say the reader had left the pass off.
-  const segmented = spriteSegments(reduced, settings.spriteGap);
   const symmetry =
     settings.symmetry === 'OFF'
       ? null
@@ -233,7 +246,33 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
           // already exact.
           settings.symmetry === 'SNAP' ? settings.symmetryConfidence / 100 : null,
         );
-  const output = symmetry === null ? reduced : snapSymmetric(reduced, symmetry);
+  const settled = symmetry === null ? reduced : snapSymmetric(reduced, symmetry);
+  // Re-read where the settle moved a pixel, and reused where it did not. A settle can clear a pixel
+  // whose partner was clear, and a pixel cleared out of a one-pixel bridge parts the region that ran
+  // through it — so the boxes the duplicate reading is taken over have to come from the sheet that
+  // reading is about. `snapSymmetric` hands back its argument by reference wherever nothing moved,
+  // which is what makes the comparison the cheap way to ask.
+  const settledSprites = settled === reduced ? segmented : spriteSegments(settled, settings.spriteGap);
+
+  // **The reading runs whether or not the fold does**, because it is a fact the result carries
+  // either way, and because the fold has nothing to act on until it exists. It is skipped where the
+  // segmentation found no sprites to compare: `SOLID` and `SCATTERED` carry no boxes at all, which
+  // is the honest answer rather than a shape a duplicate reading could be taken over — see
+  // `SpriteSegmentation`.
+  const boxes = settledSprites.kind === 'SEGMENTED' ? settledSprites.boxes : [];
+  const duplicates = duplicateSprites(settled, boxes, settings.duplicateTolerance);
+  // The fold is skipped where it has nothing to fold, rather than called and returning a copy: the
+  // copy alone is 67MB at the ceiling this app admits, and `reduceColors` and the outline expansion
+  // are both guarded the same way and for the same reason.
+  //
+  // **`snapped` is what the fold actually did**, not that it was asked for. A dial switched on over
+  // a sheet with no repeats folds nothing, and so does one whose every member sits too close to a
+  // neighbour to be redrawn — see `snapDuplicates`. Reporting either as a fold would have the panel
+  // announcing an edit that did not happen, and would pay a second segmentation for it.
+  const fold =
+    settings.duplicateSnap && duplicates.length > 0 ? snapDuplicates(settled, duplicates, boxes) : null;
+  const snapped = fold !== null && fold.folded > 0;
+  const output = fold !== null && snapped ? fold.image : settled;
 
   return {
     image: output,
@@ -255,13 +294,18 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // opens off, but is a property of the *result* rather than of the keying setting: a sheet that
     // arrived carrying its own alpha is segmented whether the key pass ran or not. See
     // `spriteSegments` for what it does with the sheets that are not skipped.
-    // Re-taken where the snap rewrote something, and reused where it did not. A snap can clear a
-    // pixel whose partner was clear, and a pixel cleared out of a one-pixel bridge splits the region
-    // that ran through it — so a segmentation carried over from before the snap would be describing
-    // a sheet that no longer exists. `snapSymmetric` returns its argument by reference where nothing
-    // qualified, which is what makes the comparison the cheap way to ask.
-    sprites: output === reduced ? segmented : spriteSegments(output, settings.spriteGap),
+    //
+    // **Re-read once more where the fold ran**, on top of the re-read the settle may already have
+    // cost. A folded member takes the canonical's silhouette, so its bounds and its pixel count are
+    // both the canonical's afterwards rather than the ones it arrived with — and the sheet a reader
+    // downloads is the one these figures have to describe. Each re-reading is a linear pass, and each
+    // is paid only by the reader who asked for the edit that made it necessary.
+    sprites: snapped ? spriteSegments(output, settings.spriteGap) : settledSprites,
     symmetry,
+    // The finding, always as it stood on the sheet the reading was taken from — see
+    // `QuantiseResult.duplicates` for why the fold does not get to re-take it.
+    duplicates,
+    snapped,
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than

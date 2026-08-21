@@ -16,7 +16,7 @@ import { useUIStore } from './useUIStore.ts';
  *
  * It reaches into `useQuantiseStore` exactly as `usePresetStore` reaches into the studio's three,
  * and by the same rule: through that store's own action, never by writing its shape. `applyDials`
- * is that action, and it is a single `set` — see its own docblock for why thirteen would not simply
+ * is that action, and it is a single `set` — see its own docblock for why fifteen would not simply
  * be slower.
  *
  * **Saving reads the store rather than taking an argument**, which is what makes "save these
@@ -90,6 +90,8 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       symmetry,
       symmetryTolerance,
       symmetryConfidence,
+      duplicateTolerance,
+      duplicateSnap,
     } = useQuantiseStore.getState();
 
     const preset: QuantisePreset = {
@@ -118,6 +120,8 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
         symmetry,
         symmetryTolerance,
         symmetryConfidence,
+        duplicateTolerance,
+        duplicateSnap,
       },
     };
 

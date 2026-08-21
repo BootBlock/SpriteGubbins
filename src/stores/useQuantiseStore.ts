@@ -87,13 +87,15 @@ export interface QuantiseState extends QuantiseDials {
   setSymmetry(symmetry: SymmetryMode): void;
   setSymmetryTolerance(symmetryTolerance: number): void;
   setSymmetryConfidence(symmetryConfidence: number): void;
+  setDuplicateTolerance(duplicateTolerance: number): void;
+  setDuplicateSnap(duplicateSnap: boolean): void;
   /**
    * Put every dial where a saved preset says, in one move.
    *
-   * One `set` rather than thirteen, and the difference is not tidiness. `useQuantiseWork` holds the
+   * One `set` rather than fifteen, and the difference is not tidiness. `useQuantiseWork` holds the
    * transform behind a 250ms debounce keyed on the settings' identity, and `QuantiseTab` rebuilds
-   * that identity whenever any dial changes — so thirteen separate writes would restart the timer
-   * thirteen times and the transform would run once, `QUANTISE_DEBOUNCE_MS` after the *last* of
+   * that identity whenever any dial changes — so fifteen separate writes would restart the timer
+   * fifteen times and the transform would run once, `QUANTISE_DEBOUNCE_MS` after the *last* of
    * them. One write starts one window. (No intermediate transform is ever *begun*: the effect's
    * cleanup clears the pending timer, which is what the debounce is for.)
    *
@@ -149,7 +151,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
    *
    * The patch is applied to the history's current position rather than to the store's fields, and
    * the two are the same value — see `history`. Taking it from there is what lets this stay one
-   * function for thirteen dials without a hand-written list of them to copy the other twelve.
+   * function for fifteen dials without a hand-written list of them to copy the other fourteen.
    *
    * `performance.now()` rather than `Date.now()`, because the only thing the figure is compared
    * with is another one of its own — the gap between two events of one gesture — and a monotonic
@@ -264,6 +266,14 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
 
     setSymmetryConfidence: (symmetryConfidence) => {
       edit('symmetryConfidence', { symmetryConfidence });
+    },
+
+    setDuplicateTolerance: (duplicateTolerance) => {
+      edit('duplicateTolerance', { duplicateTolerance });
+    },
+
+    setDuplicateSnap: (duplicateSnap) => {
+      edit('duplicateSnap', { duplicateSnap });
     },
 
     applyDials: (dials) => {

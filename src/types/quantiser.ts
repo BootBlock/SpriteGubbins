@@ -382,8 +382,9 @@ export interface QuantiseTuning {
   /**
    * How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels.
    *
-   * A dial that changes no pixel of the result — one of three, with the symmetry mode at `CHECK`
-   * and the tolerance that shapes what `CHECK` reports. It shapes {@link QuantiseResult.sprites}
+   * A dial that changes no pixel of the result, which several here now are: the symmetry mode at
+   * `CHECK` and the tolerance that shapes what it reports, and the duplicate tolerance, whose own
+   * reading is acted on only by the separate snap beside it. It shapes {@link QuantiseResult.sprites}
    * — the reading of the sheet the tab reports and the preview's outline mode draws — and it is on
    * this shape rather than beside it because the segmentation travels with the result, so the
    * comparison that decides whether a result is stale has to walk it like every other dial.
@@ -416,6 +417,31 @@ export interface QuantiseTuning {
    * sprite is reported and none is rewritten, so there is nothing for a floor to admit or refuse.
    */
   readonly symmetryConfidence: number;
+  /**
+   * The mean per-cell distance under which two sprites are counted as one drawing, in the scaled
+   * OKLab units every colour tolerance on this tab is stated in.
+   *
+   * `0` is not an off position, for the reason {@link spriteGap}'s is not: the reading always
+   * happens, and at zero it still groups sprites whose visible pixels match outright — which is the
+   * repeated frame a generator hands back, and the one case worth reporting whatever the dials say.
+   * What the dial adds above zero is reach to the pair that came back a shade apart.
+   *
+   * On its own it changes no pixel of the result; {@link duplicateSnap} is what acts on the finding.
+   * See `duplicateSprites`.
+   */
+  readonly duplicateTolerance: number;
+  /**
+   * Whether each near-duplicate is rewritten with the sprite its group is named after.
+   *
+   * The one dial on this shape that is a boolean rather than a strength, because it is not a
+   * strength: {@link duplicateTolerance} already decides how alike two sprites must be, and this
+   * decides only whether the finding is acted on. Off by default — it deletes artwork the reader
+   * drew nothing of, and a reader who has not looked at the finding has not agreed to that.
+   *
+   * When it is on, everything the result reports about the image is re-read from the snapped sheet.
+   * See `snapDuplicates`.
+   */
+  readonly duplicateSnap: boolean;
 }
 
 /** Everything `quantiseImage` needs beyond the image itself. */
@@ -580,6 +606,40 @@ export interface SpriteSymmetry {
   readonly snapped: boolean;
 }
 
+/**
+ * One sprite of a duplicate group, and how exactly it matches the sprite the group is named after.
+ *
+ * The flag is not a second reading of the same thing at a lower confidence — it is the difference
+ * between two frames that are the same file and two that came back a shade apart, and only the
+ * second is something the reader may want to act on. Byte-identical means the visible pixels match
+ * outright; what lies under a transparent pixel is not compared, because nothing clears it and
+ * nobody can see it. See `duplicateSprites`.
+ */
+export interface SpriteDuplicateMember {
+  readonly box: SpriteBox;
+  /** Whether this sprite's visible pixels are identical to the canonical's, byte for byte. */
+  readonly exact: boolean;
+}
+
+/**
+ * A set of sprites that are one drawing, and the one the set is named after.
+ *
+ * **Boxes rather than indices into {@link SpriteSegmentation}'s list**, which is what makes a group
+ * answerable on its own. The snap rewrites the sheet and the result's facts are then re-read from
+ * what it produced, so a group carrying positions into a list measured *before* that would be
+ * relying on the re-reading returning the same boxes in the same order — true, as it happens, and
+ * not a thing any consumer should have to know.
+ *
+ * The canonical is the group's earliest sprite in the list the reading was handed — reading order,
+ * because that is the order `spriteSegments` returns its boxes in. So it is stable across two runs
+ * at the same settings, and it is the one a reader meets first in the preview.
+ */
+export interface SpriteDuplicateGroup {
+  readonly canonical: SpriteBox;
+  /** Every other member, in the same order — never empty, since a group of one is not a group. */
+  readonly duplicates: readonly SpriteDuplicateMember[];
+}
+
 /** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
@@ -612,6 +672,32 @@ export interface QuantiseResult {
    * record of what was rewritten in producing {@link image}.
    */
   readonly symmetry: readonly SpriteSymmetry[] | null;
+  /**
+   * Which of those sprites are the same sprite drawn more than once.
+   *
+   * A fact of the result for the reason {@link sprites} and {@link difference} are, and one step
+   * further: it is a reading *of* that segmentation, so computed separately it could describe not
+   * merely an older result but an older set of boxes — a group naming artwork that is no longer
+   * where it says.
+   *
+   * **It always describes the sheet as it was read, never the sheet after a snap.** Where
+   * `duplicateSnap` is in force the members have been rewritten with the canonical by the time
+   * {@link image} is returned, so measuring again would report a set of exact groups and lose the
+   * only record of what the dial actually did. Empty where the segmentation found no sprites to
+   * compare.
+   */
+  readonly duplicates: readonly SpriteDuplicateGroup[];
+  /**
+   * Whether {@link duplicates} was acted on — every member rewritten with its group's canonical.
+   *
+   * A fact of the result rather than something read back off the dial that asked for it, because
+   * those two are not the same thing while a transform is in flight: the dial is where the reader
+   * has just put it and the result is what the *previous* position produced, so a panel reading the
+   * dial would announce a fold over a sheet nothing had yet been folded on. It is also `false` where
+   * the dial is on and {@link duplicates} is empty, which is the honest answer — a snap with nothing
+   * to fold has changed nothing.
+   */
+  readonly snapped: boolean;
   /**
    * Where the grid sat on the source, as the transform measured it.
    *

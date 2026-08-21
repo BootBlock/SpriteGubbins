@@ -31,6 +31,8 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
     left.symmetry === right.symmetry &&
     left.symmetryTolerance === right.symmetryTolerance &&
     left.symmetryConfidence === right.symmetryConfidence &&
+    left.duplicateTolerance === right.duplicateTolerance &&
+    left.duplicateSnap === right.duplicateSnap &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );

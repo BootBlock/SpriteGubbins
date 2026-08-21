@@ -28,6 +28,8 @@ const STORED: QuantiseDials = {
   symmetry: 'SNAP',
   symmetryTolerance: 20,
   symmetryConfidence: 75,
+  duplicateTolerance: 5,
+  duplicateSnap: true,
 };
 
 describe('parseQuantiseDials', () => {
@@ -45,7 +47,7 @@ describe('parseQuantiseDials', () => {
     const parsed = parseQuantiseDials({ ...STORED, inkThreshold: 'quite dark' });
 
     expect(parsed.inkThreshold).toBe(QUANTISE_DEFAULT_DIALS.inkThreshold);
-    // The other twelve survive: a preset with one unreadable dial is still the preset the reader
+    // The other fourteen survive: a preset with one unreadable dial is still the preset the reader
     // saved in every other respect.
     expect(parsed).toEqual({ ...STORED, inkThreshold: QUANTISE_DEFAULT_DIALS.inkThreshold });
   });

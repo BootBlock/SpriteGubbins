@@ -29,8 +29,9 @@ interface SpriteControlsProps {
  * **A dial in the tab's control stack that changes no pixel of the result**, which the grid, the
  * keying, the downscale readings and the palette lock all do. This one changes a *reading* of what
  * those produced — which is why it opens engaged rather than off, and why the guidance says outright
- * that the download is the same file whatever it says. The symmetry panel below it is the other
- * reading of that kind, and only its `SNAP` position crosses back over into rewriting artwork.
+ * that the download is the same file whatever it says. The symmetry and duplicate panels below it
+ * are readings of the same kind, and each has one position — `SNAP`, and the duplicate fold — that
+ * crosses back over into rewriting artwork.
  * (The comparison panel's own controls change no pixels either, but they decide how a result is
  * *shown* rather than sitting among the dials that make it.)
  *

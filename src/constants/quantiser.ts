@@ -779,9 +779,9 @@ export function measurableGridCeiling(width: number, height: number): number {
  * The sprite-gap slider's range: how far apart two pieces of artwork may sit and still be counted
  * as one sprite, in drawn pixels.
  *
- * **`0` is not an off position**, which is what most of this tab's zeros mean. The symmetry
- * tolerance is the only other exception, and it is a different one: its zero is that pass at its
- * strictest, where this is a pass with no off position at all. The segmentation always runs, and at
+ * **`0` is not an off position**, which is what most of this tab's zeros mean. Two others depart
+ * from it — the symmetry tolerance and the duplicate tolerance — and both depart differently: their
+ * zeros are their passes at their strictest, where this is a pass with no off position at all. The segmentation always runs, and at
  * zero it still folds pieces whose bounding boxes overlap — a figure with an outstretched arm passes through its own torso's box
  * without sharing a pixel with it, and a reader would never want those counted as two sprites. What
  * the dial adds above zero is reach into empty space.
@@ -899,9 +899,9 @@ export const DEFAULT_SYMMETRY = 'OFF';
  * The symmetry tolerance's range: how far two mirrored pixels may sit apart and still count as
  * agreeing, in the scaled-OKLab units every colour dial here is stated in.
  *
- * **`0` is the strictest position rather than an off position**, which it shares with the sprite gap
- * — the other dial here whose zero does not switch a pass off, though that one is always on where
- * this one is merely at its tightest. At zero a pair agrees only where the two pixels are identical,
+ * **`0` is the strictest position rather than an off position**, which the duplicate tolerance's
+ * zero also is; the sprite gap's zero is a third departure of a different kind, being a pass that
+ * has no off position at all rather than one at its tightest. At zero a pair agrees only where the two pixels are identical,
  * which is what a flat-coloured sheet from a clean generator can actually reach. The Symmetry
  * control's own `OFF` is what stops the pass running.
  *
@@ -964,6 +964,52 @@ export const SYMMETRY_CONFIDENCE_RANGE = { min: 50, max: 100, step: 1 } as const
  * across a subject it did draw symmetric, and refuses every piece on the reference sheet.
  */
 export const DEFAULT_SYMMETRY_CONFIDENCE = 90;
+
+/**
+ * The duplicate tolerance's range: the mean per-cell distance under which two sprites are counted
+ * as one drawing, in the scaled OKLab units every colour tolerance on this tab uses.
+ *
+ * **A mean over a whole sprite, which is why the numbers here are so much smaller than the merge's
+ * or the cleanup's.** Those two compare one colour with another, where a fold worth making is a
+ * dozen units. This averages a distance over every cell of a sprite, and the cells of two frames
+ * that are the same drawing are mostly identical — so what moves the figure is the share of cells
+ * that differ, multiplied by how far they differ. A pair with one cell in twenty landing a whole
+ * palette step apart — say 50 units — scores 2.5. A pair with one cell in ten *missing* on one side
+ * scores 25.5, because a cell present on one side and absent on the other is the full 255 apart.
+ *
+ * So the ceiling is 24, which sits just under that second case: at the top of the range two sprites
+ * whose silhouettes differ by a tenth are still two sprites. That is already well past any pair a
+ * reader would call one drawing, and stopping there is what keeps the last rung meaningful rather
+ * than a setting at which most of a sheet folds into itself. The step is 1 because the useful spread
+ * sits in the first handful of rungs and a finer one would be a slider nobody could land on.
+ */
+export const DUPLICATE_TOLERANCE_RANGE = { min: 0, max: 24, step: 1 } as const;
+
+/**
+ * The tolerance the tab opens at — zero, which reports only sprites whose visible pixels match.
+ *
+ * One of three dials on this tab whose zero is not the pass being switched off — the symmetry
+ * tolerance is the other of its kind, and the sprite gap the odd one, having no off position at all.
+ * It opens at zero for
+ * the reason the sprite gap opens engaged: the reading changes no pixel of the sheet, so an opening
+ * that is wrong costs a number a reader can correct while they watch. What it opens *at* is the
+ * finding nobody has to be persuaded of — a frame that came back byte-identical to another is a
+ * frame the generator repeated, whatever anyone's tolerance for near-misses is. Everything above
+ * zero is a judgement about how alike two drawings have to be, which is the reader's to make against
+ * their own sheet.
+ */
+export const DEFAULT_DUPLICATE_TOLERANCE = 0;
+
+/**
+ * Whether the snap opens engaged — it does not.
+ *
+ * The one dial in this tab's control stack that **deletes artwork**: it overwrites each
+ * near-duplicate with the sprite its group is named after, so whatever distinguished the two is
+ * gone from the download. Every other dial here transforms the whole sheet by a rule, and this one
+ * acts on a finding — a finding the reader has not necessarily looked at yet. Defaulting it on would
+ * be the tab deciding that two frames a generator drew separately were a mistake.
+ */
+export const DEFAULT_DUPLICATE_SNAP = false;
 
 /**
  * The preview magnifications, in the order the control offers them.
@@ -1314,6 +1360,10 @@ export const QUANTISE_TOOLTIPS = {
     'How far apart two mirrored pixels may sit and still be counted as agreeing, measured the way every colour distance on this tab is. It is what the reported confidence is a share of: raise it and more of a sprite counts as already symmetric, lower it and only close matches do. Unlike most dials here, 0 is not an off position — it is the strictest one, where two pixels have to be identical — and the Symmetry control above is what switches the pass off. How much it is worth depends on how flat the sheet already is: once a colour budget and the colour merge have settled it to a handful of flat colours, two mirrored pixels are either identical or a whole palette step apart, and every setting short of that step reports the same figure. On a sheet read with no colour reduction at all it matters a great deal, because almost no two pixels are exactly equal there and exact would report near-nothing about every sprite. The default sits where it does something on the second kind of sheet and nothing on the first, which is the right answer for both. It also decides which mirror line wins: candidates are ranked by the share of pairs that agree, and only where two of them tie does the distance across those pairs separate them. It reaches the sheet itself only through the floor below, since a tolerance that lifts a sprite past the floor is what lets a snap settle it.',
   symmetryConfidence:
     'How much of a sprite has to mirror already before SNAP will settle it. This is the control that keeps a snap off the subjects that are asymmetric on purpose — a figure holding a sword agrees with its own mirror across the body and disagrees across the whole arm, so it lands well below the floor and is reported without being touched. Lower it to snap sprites that have drifted further apart, and raise it to settle only the ones that were nearly there already. It appears only while SNAP is chosen, since under CHECK every sprite is reported and none is rewritten. Sprites that pass are named in the panel, so what a change to this admits or refuses can be watched rather than guessed.',
+  duplicateTolerance:
+    'How alike two sprites have to be before this reads them as one drawing. Generators repeat themselves — eight facings come back holding two of the same pose, an animation strip repeats a frame it was meant to move — and nothing else on this tab says so, because a repeated sprite is counted like any other. Each pair is laid over the other by its top-left corner and scored on the average distance between them, cell by cell, measured the way every colour distance here is — so what moves the figure is how many cells differ and by how much. Where one sprite reaches further than the other, the cells only it covers count as the widest difference there is, which is what keeps two drawings of genuinely different sizes apart. At 0 only sprites whose visible pixels match outright are grouped, which is the frame a generator handed back twice; raise it to reach the pair that came back a shade apart, and lower it when two poses that are genuinely different are being called the same. On its own it changes no pixel of the sheet — it is a reading of the result, and the download is the same file whatever it says. Switch the preview to Sprites to see the bounds it is working from.',
+  duplicateSnap:
+    'Rewrites every sprite the reading above grouped with the first sprite of its group, so a pose that came back three times slightly differently is written three times identically. That is what makes the repeats free downstream: one set of colours instead of three near-identical sets, one atlas cell where three were paid for, and no flicker when an animation plays through frames that were never quite the same. It changes the sheet, and it is the only control on this tab that does so by deleting artwork rather than transforming it — whatever made each copy different is gone from the download and from everything measured off it. Look at the count above before switching it on, and raise the tolerance slowly with it on so you can see which sprites are being folded. It has nothing to act on while the tolerance finds no groups.',
   presetName:
     'What this set of dial positions is called in the list below. Give it the name of the thing it suits rather than the settings it holds — the generator whose sheets need it, or the style of artwork — because the numbers are already on screen and the reason for them is not. A name that is already in the list updates that entry rather than adding a second one under the same name.',
   presetDescription:

@@ -94,6 +94,8 @@ describe('mergeColors', () => {
       symmetry: 'OFF' as const,
       symmetryTolerance: 8,
       symmetryConfidence: 90,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 24,

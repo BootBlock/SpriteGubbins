@@ -22,6 +22,8 @@ const TUNING = {
   symmetry: 'OFF' as const,
   symmetryTolerance: 8,
   symmetryConfidence: 90,
+  duplicateTolerance: 0,
+  duplicateSnap: false,
   dither: 'NONE' as const,
   outlineExpansion: 0,
 } as const;
@@ -41,6 +43,8 @@ function resultOf(side: number): QuantiseResult {
     keyedShare: 0,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     symmetry: null,
+    duplicates: [],
+    snapped: false,
     offset: { x: 0, y: 0 },
   };
 }
@@ -177,6 +181,8 @@ describe('useQuantiseWork', () => {
         symmetry: 'OFF' as const,
         symmetryTolerance: 8,
         symmetryConfidence: 90,
+        duplicateTolerance: 0,
+        duplicateSnap: false,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
