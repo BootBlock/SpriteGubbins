@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import type { DialHistory, DialKey } from '../types/quantiseHistory.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
 import type {
   DitherPattern,
@@ -8,6 +9,7 @@ import type {
   PixelGrid,
   VoteMethod,
 } from '../types/quantiser.ts';
+import { currentDials, openHistory, recordDials, redoDials, undoDials } from '../utils/dialHistory.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 
@@ -50,6 +52,17 @@ export interface QuantiseState extends QuantiseDials {
    * other standing intent, because that is the reader saying they have finished with this workflow.
    */
   readonly lockedPalette: LockedPalette | null;
+  /**
+   * Every position the dials have been in this session, and which of them they are at.
+   *
+   * **The dial fields above are a projection of this**, not a second copy of it: every path that
+   * writes a dial records the new position here and then spreads that entry back over the fields.
+   * They are kept flat because that is what lets each control hold an atomic selector — a panel
+   * subscribed to `state.history` would re-render on every dial in the tab — and the projection is
+   * what keeps the two from ever disagreeing. A setter that wrote a field directly would break
+   * that, and the position it wrote would be the one an undo could not reach.
+   */
+  readonly history: DialHistory;
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
@@ -84,6 +97,17 @@ export interface QuantiseState extends QuantiseDials {
    * stays: see {@link QuantiseDials} for why none of those three is a preset's to move.
    */
   applyDials(dials: QuantiseDials): void;
+  /**
+   * Put the dials back where they were before the last change, if there is one.
+   *
+   * The dials and nothing else. The sheet, the pixel grid and a held palette are not on the stack —
+   * a grid is a measurement of one image and a lock is a statement about a series, and neither is a
+   * position a reader arrived at by moving a control they can see. See {@link QuantiseDials} for
+   * the same line drawn for what a preset holds.
+   */
+  undo(): void;
+  /** Step forward again into whatever the last {@link undo} stepped out of. */
+  redo(): void;
   /** Put the tab back where it opened: no sheet, and every control at its default. */
   clear(): void;
 }
@@ -96,123 +120,172 @@ export interface QuantiseState extends QuantiseDials {
  * one list is three places for one of them to be forgotten. What is written out here is only what a
  * *dial* is not — the sheet, the grid, and the held palette.
  */
-const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'lockedPalette'> & QuantiseDials = {
+const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'lockedPalette' | 'history'> & QuantiseDials = {
   ...QUANTISE_DEFAULT_DIALS,
   source: null,
   gridOverride: null,
   lockedPalette: null,
+  history: openHistory(QUANTISE_DEFAULT_DIALS),
 };
 
-export const useQuantiseStore = create<QuantiseState>((set) => ({
-  ...EMPTY,
+export const useQuantiseStore = create<QuantiseState>((set, get) => {
+  /**
+   * The one write the dials have, in both directions: a history to project into the flat fields.
+   *
+   * Every dial path below goes through this or through {@link edit}, which is what makes the
+   * projection described on `history` true rather than intended.
+   */
+  const project = (history: DialHistory) => {
+    set({ ...currentDials(history), history });
+  };
 
-  // Clearing the override is part of taking a new image, not a separate step a caller can forget: a
-  // grid chosen for the last sheet says nothing about this one, and carrying it over would show a
-  // confident result at a scale nobody claimed applied.
-  //
-  // **The keying settings deliberately survive**, and the asymmetry is the point. A grid is a
-  // measurement of one particular image, so a stale one silently mis-scales the next. Keying is a
-  // standing intent about a workflow — the splitter hands back eight sheets that are eight passes at
-  // the same settings — and unlike a wrong grid its effect is plainly visible in the preview, so
-  // carrying it over cannot mislead anyone the way a carried-over grid would.
-  //
-  // **The locked palette survives for a stronger reason still**: carrying it to the next sheet is
-  // not a convenience but the entire feature. A lock that fell here would only ever be applied to
-  // the sheet it was taken from, where it does nothing.
-  setSource: (source) => {
-    set({ source, gridOverride: null });
-    // In this order, and both before the load: every answer in the store is about the sheet being
-    // replaced, so leaving one in place for the render between here and the worker's first reply
-    // would caption the new sheet with the old one's colour count and detected scale.
-    useQuantiseAnswerStore.getState().forget();
-    loadSheet(source.image);
-  },
+  /**
+   * Move one dial, recording where the set now stands.
+   *
+   * The patch is applied to the history's current position rather than to the store's fields, and
+   * the two are the same value — see `history`. Taking it from there is what lets this stay one
+   * function for thirteen dials without a hand-written list of them to copy the other twelve.
+   *
+   * `performance.now()` rather than `Date.now()`, because the only thing the figure is compared
+   * with is another one of its own — the gap between two events of one gesture — and a monotonic
+   * clock cannot be stepped backwards by the system underneath a drag.
+   */
+  const edit = (key: DialKey, patch: Partial<QuantiseDials>) => {
+    const history = get().history;
+    project(recordDials(history, { ...currentDials(history), ...patch }, key, performance.now()));
+  };
 
-  setGridOverride: (gridOverride) => {
-    set({ gridOverride });
-  },
+  return {
+    ...EMPTY,
 
-  setKeyingEnabled: (keyingEnabled) => {
-    set({ keyingEnabled });
-  },
+    // Clearing the override is part of taking a new image, not a separate step a caller can forget:
+    // a grid chosen for the last sheet says nothing about this one, and carrying it over would show
+    // a confident result at a scale nobody claimed applied.
+    //
+    // **The keying settings deliberately survive**, and the asymmetry is the point. A grid is a
+    // measurement of one particular image, so a stale one silently mis-scales the next. Keying is a
+    // standing intent about a workflow — the splitter hands back eight sheets that are eight passes
+    // at the same settings — and unlike a wrong grid its effect is plainly visible in the preview,
+    // so carrying it over cannot mislead anyone the way a carried-over grid would.
+    //
+    // **The locked palette survives for a stronger reason still**: carrying it to the next sheet is
+    // not a convenience but the entire feature. A lock that fell here would only ever be applied to
+    // the sheet it was taken from, where it does nothing.
+    //
+    // **The undo stack survives too**, for the same reason as the dials it is a record of: the
+    // positions a reader is stepping through are their way of reading this generator's output
+    // rather than facts about one file, and a stack emptied by the next sheet would take away the
+    // way back from a change made on the sheet before it.
+    setSource: (source) => {
+      set({ source, gridOverride: null });
+      // In this order, and both before the load: every answer in the store is about the sheet being
+      // replaced, so leaving one in place for the render between here and the worker's first reply
+      // would caption the new sheet with the old one's colour count and detected scale.
+      useQuantiseAnswerStore.getState().forget();
+      loadSheet(source.image);
+    },
 
-  setKeyTolerance: (keyTolerance) => {
-    set({ keyTolerance });
-  },
+    setGridOverride: (gridOverride) => {
+      set({ gridOverride });
+    },
 
-  setVote: (vote) => {
-    set({ vote });
-  },
+    setKeyingEnabled: (keyingEnabled) => {
+      edit('keyingEnabled', { keyingEnabled });
+    },
 
-  setDither: (dither) => {
-    set({ dither });
-  },
+    setKeyTolerance: (keyTolerance) => {
+      edit('keyTolerance', { keyTolerance });
+    },
 
-  setOutlineExpansion: (outlineExpansion) => {
-    set({ outlineExpansion });
-  },
+    setVote: (vote) => {
+      edit('vote', { vote });
+    },
 
-  setLineStrength: (lineStrength) => {
-    set({ lineStrength });
-  },
+    setDither: (dither) => {
+      edit('dither', { dither });
+    },
 
-  setTrimStrength: (trimStrength) => {
-    set({ trimStrength });
-  },
+    setOutlineExpansion: (outlineExpansion) => {
+      edit('outlineExpansion', { outlineExpansion });
+    },
 
-  setInkThreshold: (inkThreshold) => {
-    set({ inkThreshold });
-  },
+    setLineStrength: (lineStrength) => {
+      edit('lineStrength', { lineStrength });
+    },
 
-  setFillCleanup: (fillCleanup) => {
-    set({ fillCleanup });
-  },
+    setTrimStrength: (trimStrength) => {
+      edit('trimStrength', { trimStrength });
+    },
 
-  setColorMerge: (colorMerge) => {
-    set({ colorMerge });
-  },
+    setInkThreshold: (inkThreshold) => {
+      edit('inkThreshold', { inkThreshold });
+    },
 
-  setCleanupPasses: (cleanupPasses) => {
-    set({ cleanupPasses });
-  },
+    setFillCleanup: (fillCleanup) => {
+      edit('fillCleanup', { fillCleanup });
+    },
 
-  lockPalette: (lockedPalette) => {
-    set({ lockedPalette });
-  },
+    setColorMerge: (colorMerge) => {
+      edit('colorMerge', { colorMerge });
+    },
 
-  unlockPalette: () => {
-    set({ lockedPalette: null });
-  },
+    setCleanupPasses: (cleanupPasses) => {
+      edit('cleanupPasses', { cleanupPasses });
+    },
 
-  setPaletteSnap: (paletteSnap) => {
-    set({ paletteSnap });
-  },
+    lockPalette: (lockedPalette) => {
+      set({ lockedPalette });
+    },
 
-  setSpriteGap: (spriteGap) => {
-    set({ spriteGap });
-  },
+    unlockPalette: () => {
+      set({ lockedPalette: null });
+    },
 
-  applyDials: (dials) => {
-    // Spread rather than assigned as one field, because the dials are held flat: the store *is* a
-    // `QuantiseDials` plus the three things that are not one, which is what lets every control keep
-    // its atomic selector and lets the compiler refuse a dial that has been added to the set and
-    // forgotten here.
-    set({ ...dials });
-  },
+    setPaletteSnap: (paletteSnap) => {
+      edit('paletteSnap', { paletteSnap });
+    },
 
-  // Everything, including the keying settings that deliberately survive `setSource`. The asymmetry is
-  // the difference between the two actions: dropping a second sheet continues a workflow — the
-  // splitter hands back eight passes at the same settings — while clearing is the user saying they
-  // are finished with this one. A "Clear" that left a tolerance and a toggle behind would be a
-  // half-clear, and the next sheet would arrive already keyed by a decision made about the last one.
-  clear: () => {
-    set({ ...EMPTY });
-    // `reset` rather than `forget`, and the pair below is why: the thread goes with the sheet — it is
-    // holding the only other copy of the image, plus whatever a transform still running had
-    // allocated — and `releaseSheet` also lets a *new* thread be built for the next sheet. So a
-    // thread that had died is no longer a fact about this app, and the message saying it had must go
-    // in the same breath, or the tab reports a quantiser that could not start while one is running.
-    useQuantiseAnswerStore.getState().reset();
-    releaseSheet();
-  },
-}));
+    setSpriteGap: (spriteGap) => {
+      edit('spriteGap', { spriteGap });
+    },
+
+    applyDials: (dials) => {
+      // Recorded under no key, so it never coalesces with the drag that happened to precede it: a
+      // preset load moves every dial at once, and the position it replaced is exactly the one a
+      // reader wants back after trying somebody else's settings on their sheet.
+      //
+      // Projected rather than spread as one field, because the dials are held flat: the store *is* a
+      // `QuantiseDials` plus the things that are not one, which is what lets every control keep its
+      // atomic selector and lets the compiler refuse a dial that has been added to the set and
+      // forgotten here.
+      project(recordDials(get().history, dials, null, performance.now()));
+    },
+
+    undo: () => {
+      project(undoDials(get().history));
+    },
+
+    redo: () => {
+      project(redoDials(get().history));
+    },
+
+    // Everything, including the keying settings that deliberately survive `setSource`, and the undo
+    // stack that survives it for the same reason. The asymmetry is the difference between the two
+    // actions: dropping a second sheet continues a workflow — the splitter hands back eight passes
+    // at the same settings — while clearing is the user saying they are finished with this one. A
+    // "Clear" that left a tolerance and a toggle behind would be a half-clear, and the next sheet
+    // would arrive already keyed by a decision made about the last one. A stack left behind would be
+    // stranger still: a way back to positions belonging to a sheet that is no longer here.
+    clear: () => {
+      set({ ...EMPTY });
+      // `reset` rather than `forget`, and the pair below is why: the thread goes with the sheet — it
+      // is holding the only other copy of the image, plus whatever a transform still running had
+      // allocated — and `releaseSheet` also lets a *new* thread be built for the next sheet. So a
+      // thread that had died is no longer a fact about this app, and the message saying it had must
+      // go in the same breath, or the tab reports a quantiser that could not start while one is
+      // running.
+      useQuantiseAnswerStore.getState().reset();
+      releaseSheet();
+    },
+  };
+});

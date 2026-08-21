@@ -12,6 +12,7 @@ import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
+import { DialHistoryControls } from '../quantise/DialHistoryControls.tsx';
 import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
@@ -200,6 +201,11 @@ export function QuantiseTab() {
               {error}
             </p>
           )}
+
+          {/* Above every panel it governs, and inside the sheet guard with them: it steps the dials
+              back through the positions they have been in, and with no sheet loaded there are no
+              dials on screen for a step to be about. */}
+          <DialHistoryControls />
 
           <GridControls
             facts={facts}

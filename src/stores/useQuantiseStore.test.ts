@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_KEY_TOLERANCE, DEFAULT_PALETTE_SNAP, DEFAULT_SPRITE_GAP } from '../constants/quantiser.ts';
+import { QUANTISE_DEFAULT_DIALS, QUANTISE_DIAL_KEYS } from '../constants/quantiseDials.ts';
+import {
+  DEFAULT_CLEANUP_PASSES,
+  DEFAULT_COLOR_MERGE,
+  DEFAULT_KEY_TOLERANCE,
+  DEFAULT_PALETTE_SNAP,
+  DEFAULT_SPRITE_GAP,
+} from '../constants/quantiser.ts';
 import { FakeWorker } from '../test/fakeWorker.ts';
+import { canUndoDials, currentDials } from '../utils/dialHistory.ts';
 import { createImage } from '../utils/imageData.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
@@ -169,5 +177,103 @@ describe('useQuantiseStore', () => {
     store.clear();
 
     expect(started.terminated).toBe(true);
+  });
+});
+
+describe('the dial history the store keeps', () => {
+  it('steps a dial back to where it was, and forward again', () => {
+    const store = useQuantiseStore.getState();
+    store.setColorMerge(24);
+    store.setCleanupPasses(3);
+
+    store.undo();
+    expect(useQuantiseStore.getState().cleanupPasses).toBe(DEFAULT_CLEANUP_PASSES);
+    expect(useQuantiseStore.getState().colorMerge).toBe(24);
+
+    store.undo();
+    expect(useQuantiseStore.getState().colorMerge).toBe(DEFAULT_COLOR_MERGE);
+
+    store.redo();
+    expect(useQuantiseStore.getState().colorMerge).toBe(24);
+  });
+
+  it('does nothing at either end of the stack', () => {
+    const store = useQuantiseStore.getState();
+    store.undo();
+    store.redo();
+
+    expect(useQuantiseStore.getState().colorMerge).toBe(DEFAULT_COLOR_MERGE);
+  });
+
+  it('makes a preset load one step, and steps back to what it replaced', () => {
+    // The reason this is worth having at all: a saved set moves thirteen dials at once, and the
+    // positions a reader spent ten minutes finding are the ones it replaced.
+    const store = useQuantiseStore.getState();
+    store.setColorMerge(24);
+    store.applyDials({ ...QUANTISE_DEFAULT_DIALS, fillCleanup: 32, vote: 'K_CENTROID' });
+
+    store.undo();
+
+    expect(useQuantiseStore.getState()).toMatchObject({
+      colorMerge: 24,
+      fillCleanup: 0,
+      vote: 'DOMINANT',
+    });
+  });
+
+  it('keeps the stack across a new sheet, and drops it on Clear', () => {
+    // The same asymmetry the dials themselves have: dropping the next sheet of a series continues
+    // the workflow, and clearing is the reader saying they have finished with it.
+    const store = useQuantiseStore.getState();
+    store.setSource(SHEET);
+    store.setColorMerge(24);
+    store.setSource({ name: 'another.png', image: createImage(8, 8) });
+
+    store.undo();
+    expect(useQuantiseStore.getState().colorMerge).toBe(DEFAULT_COLOR_MERGE);
+
+    store.setColorMerge(36);
+    store.clear();
+    expect(useQuantiseStore.getState().history.entries).toHaveLength(1);
+    expect(canUndoDials(useQuantiseStore.getState().history)).toBe(false);
+  });
+
+  it('holds a position rather than a sheet, whatever is loaded when it is taken', () => {
+    // Every entry is thirteen primitives. An entry that reached the store object instead would pin
+    // the sheet it was taken with — up to sixty-seven megabytes a step, fifty steps deep.
+    const store = useQuantiseStore.getState();
+    store.setSource(SHEET);
+    store.lockPalette(LOCK);
+    store.setColorMerge(24);
+
+    const entry = useQuantiseStore.getState().history.entries.at(-1);
+    expect(Object.keys(entry?.dials ?? {}).sort()).toEqual([...QUANTISE_DIAL_KEYS].sort());
+  });
+
+  it('keeps every dial field equal to the position the stack is at', () => {
+    // The invariant the whole arrangement rests on: the flat fields each control selects from are a
+    // projection of the history, so a write that reached one without the other would be a position
+    // no undo could return to.
+    const store = useQuantiseStore.getState();
+    store.setKeyingEnabled(true);
+    store.setKeyTolerance(64);
+    store.setVote('INK_WEIGHTED');
+    store.setDither('BAYER_8');
+    store.setOutlineExpansion(2);
+    store.setLineStrength(2);
+    store.setTrimStrength(1);
+    store.setInkThreshold(96);
+    store.setFillCleanup(32);
+    store.setColorMerge(24);
+    store.setCleanupPasses(3);
+    store.setPaletteSnap(24);
+    store.setSpriteGap(6);
+    store.undo();
+    store.undo();
+    store.redo();
+
+    const state = useQuantiseStore.getState();
+    const held = currentDials(state.history);
+    for (const key of QUANTISE_DIAL_KEYS) expect(state[key]).toBe(held[key]);
   });
 });

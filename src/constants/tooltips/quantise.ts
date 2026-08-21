@@ -36,6 +36,10 @@ export const QUANTISE_ACTION_TOOLTIPS = {
     'Removes this set of dial positions for good. There is no undo and nothing else holds a copy, so if you may want these settings again, cancel and save them under a second name first. The dials themselves stay exactly where they are — only the saved record of them goes.',
   cancelDeleteQuantisePreset:
     'Leaves the saved set where it is and puts the row back to its ordinary buttons. Nothing was removed, and the dials on this tab were never touched.',
+  undoDials:
+    'Puts the dials back where they were before your last change to them, one change at a time. A drag counts as one change rather than one per position the slider passed through, so a single press undoes the whole of it. Only the dials move — the sheet stays loaded, the pixel grid stays where you set it and a held palette stays held — and the sheet is read again at the positions you step back to. Ctrl+Z does the same thing, except while you are typing in a box, where it undoes your typing as it always has.',
+  redoDials:
+    'Steps forward again into a position you have just stepped back from, which is the way out of an undo pressed once too often. Moving any dial after stepping back replaces what was ahead of you, so this is offered only until you do. Ctrl+Shift+Z and Ctrl+Y both do the same.',
   candidateFromSheet:
     'Puts the scale read out of this sheet into the grid box. A measured reading is exact — the sheet’s colours genuinely change only every so many pixels — and it is already in force, so this is the way back after you have typed over it. An estimated reading is a different thing: it is inferred from the spacing the softened edges of a resampled sheet still repeat at, which is why it is offered here rather than applied for you. Judge an edge at 4× or 8× after taking it.',
 
