@@ -12,6 +12,7 @@ import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
+import { AutoTuneControls } from '../quantise/AutoTuneControls.tsx';
 import { DialHistoryControls } from '../quantise/DialHistoryControls.tsx';
 import { DuplicateControls } from '../quantise/DuplicateControls.tsx';
 import { GridControls } from '../quantise/GridControls.tsx';
@@ -146,7 +147,7 @@ export function QuantiseTab() {
     [palette, paletteLimit, lockedPalette, paletteSnap],
   );
 
-  const { facts, grid, quantised, busy, error } = useQuantiseWork(
+  const { facts, grid, settings, quantised, busy, error } = useQuantiseWork(
     source,
     gridOverride,
     keying,
@@ -232,6 +233,9 @@ export function QuantiseTab() {
             colorPlan={colorPlan}
             onGridChange={setGridOverride}
           />
+          {/* Under the grid it depends on and above every dial it moves — see `AutoTuneControls`,
+              which says why both halves of that placement matter. */}
+          <AutoTuneControls image={source.image} settings={settings} />
           {/* The panel is handed the same `keying` the pipeline was, rather than working it out again
               from the two settings behind it — one rule, one place. The share is the transform's own
               answer, so it is `null` until there is a transform, which is the same condition the

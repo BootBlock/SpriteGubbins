@@ -41,6 +41,16 @@ export interface QuantiseWork {
    * drawn at the right size while the two disagree.
    */
   readonly quantised: Quantised | null;
+  /**
+   * Everything the pipeline is being asked for at this instant, or `null` with no scale in force.
+   *
+   * Published rather than kept private, because a second caller needs the same value: the auto-tune
+   * sweep holds the grid, the keying and the colour reduction fixed and varies the dials inside
+   * them, so it has to be handed the *same* settings this hook asks the worker for. Built here in
+   * one place for the reason the grid is resolved here — two constructions of one object is two
+   * answers to what the tab is currently asking for, free to disagree.
+   */
+  readonly settings: QuantiseSettings | null;
   /** Whether the worker owes an answer for the settings in force right now. */
   readonly busy: boolean;
   /** What went wrong, in a sentence the tab shows. */
@@ -138,6 +148,7 @@ export function useQuantiseWork(
   return {
     facts,
     grid,
+    settings,
     // Held against the *sheet* rather than the settings, which is what lets it outlive a settings
     // change and keep the preview up while the next one is computed — but only while there is a
     // newer one coming. With no scale in force there is nothing being computed and nothing to lag

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import type { TunedDials } from '../types/autoTune.ts';
 import type { DialHistory, DialKey } from '../types/quantiseHistory.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
 import type {
@@ -12,6 +13,7 @@ import type {
 } from '../types/quantiser.ts';
 import { currentDials, openHistory, recordDials, redoDials, undoDials } from '../utils/dialHistory.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
+import { useAutoTuneStore } from './useAutoTuneStore.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 
 /**
@@ -104,6 +106,15 @@ export interface QuantiseState extends QuantiseDials {
    */
   applyDials(dials: QuantiseDials): void;
   /**
+   * Put the dials the auto-tune sweep swept where the sweep says, in one move.
+   *
+   * Separate from {@link applyDials} because it moves a *subset* — see `TunedDials` for which dials
+   * a fidelity score may honestly rank and why the rest are excluded — and typed as that subset so a
+   * sweep cannot reach a dial it was never allowed to sweep. Like a preset load it lands as one step
+   * on the stack, which is what makes the whole answer reversible by one press.
+   */
+  autoTuned(dials: TunedDials): void;
+  /**
    * Put the dials back where they were before the last change, if there is one.
    *
    * The dials and nothing else. The sheet, the pixel grid and a held palette are not on the stack —
@@ -189,6 +200,10 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       // replaced, so leaving one in place for the render between here and the worker's first reply
       // would caption the new sheet with the old one's colour count and detected scale.
       useQuantiseAnswerStore.getState().forget();
+      // And the sweep's report with them, for the same reason and one of its own: a sweep may still
+      // be running for the sheet being replaced, and moving the run number on is what disowns its
+      // answer rather than letting it caption the new sheet. See `useAutoTuneStore`.
+      useAutoTuneStore.getState().forget();
       loadSheet(source.image);
     },
 
@@ -276,6 +291,15 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       edit('duplicateSnap', { duplicateSnap });
     },
 
+    // Recorded under no key for the reason a preset load is: it moves eight dials at once, and the
+    // positions it replaced are exactly what a reader wants back after seeing what the sweep made of
+    // their sheet. Spread over the current position rather than replacing it, because the ten dials
+    // the sweep does not touch have to stay exactly where the reader put them.
+    autoTuned: (dials) => {
+      const history = get().history;
+      project(recordDials(history, { ...currentDials(history), ...dials }, null, performance.now()));
+    },
+
     applyDials: (dials) => {
       // Recorded under no key, so it never coalesces with the drag that happened to precede it: a
       // preset load moves every dial at once, and the position it replaced is exactly the one a
@@ -312,6 +336,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       // go in the same breath, or the tab reports a quantiser that could not start while one is
       // running.
       useQuantiseAnswerStore.getState().reset();
+      useAutoTuneStore.getState().forget();
       releaseSheet();
     },
   };

@@ -1,0 +1,180 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import { useAutoTuneStore } from '../stores/useAutoTuneStore.ts';
+import { FakeAutoTuneWorker } from '../test/fakeAutoTuneWorker.ts';
+import type { TuneOutcome } from '../types/autoTune.ts';
+import type { QuantiseSettings } from '../types/quantiser.ts';
+import { createImage } from '../utils/imageData.ts';
+import { tuneOffThread } from './autoTuneSession.ts';
+import type { AutoTuneRequest } from './autoTuneWorker.ts';
+
+/**
+ * The bridge, without the thread: what is posted, which reply is believed, and — the property this
+ * file exists for — that every way out ends the thread and settles the promise.
+ *
+ * A thread per press only stays cheap if every exit that started one ends it: an answer, a refusal
+ * from the sweep itself, a reply that will not deserialise, a thread that will not evaluate, and a
+ * message that will not be sent. Two more settle without a thread to end — a browser that will not
+ * build a worker, and a press arriving while the last sweep is still running. Each of the seven
+ * missed is a leaked thread holding a sheet, or a promise nobody settles, which leaves the button
+ * reading "Tuning…" for the rest of the session — across every view, since the flag is a store.
+ *
+ * The eighth property is this file's own: a sweep whose sheet has been replaced while it ran is
+ * **disowned**, so its report never captions an image it was not about.
+ */
+
+function thread(): FakeAutoTuneWorker {
+  const started = FakeAutoTuneWorker.started.at(-1);
+  if (started === undefined) throw new Error('no thread was started');
+  return started;
+}
+
+const SETTINGS: QuantiseSettings = {
+  ...QUANTISE_DEFAULT_DIALS,
+  grid: 4,
+  key: null,
+  reduction: null,
+};
+
+const OUTCOME: TuneOutcome = {
+  dials: {
+    vote: 'INK_WEIGHTED',
+    outlineExpansion: 1,
+    lineStrength: 2,
+    trimStrength: 0,
+    inkThreshold: 64,
+    colorMerge: 12,
+    fillCleanup: 0,
+    cleanupPasses: 1,
+  },
+  crops: 3,
+  cropEdge: 160,
+  candidates: 60,
+  reading: { fidelity: 0.94, colors: 24 },
+  baseline: { fidelity: 0.81, colors: 31 },
+  stages: [],
+};
+
+function request(): AutoTuneRequest {
+  return { image: createImage(2, 2), settings: SETTINGS };
+}
+
+beforeEach(() => {
+  FakeAutoTuneWorker.reset();
+  useAutoTuneStore.setState({ run: 0, tuning: false, outcome: null, error: null });
+  vi.stubGlobal('Worker', FakeAutoTuneWorker);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('tuneOffThread', () => {
+  it('posts the sheet and the settings, and resolves with what came back', async () => {
+    const sweeping = tuneOffThread(request());
+    expect(thread().posted).toEqual([request()]);
+
+    thread().answer({ kind: 'tuned', outcome: OUTCOME });
+    await expect(sweeping).resolves.toEqual(OUTCOME);
+    expect(thread().terminated).toBe(true);
+    expect(useAutoTuneStore.getState().outcome).toEqual(OUTCOME);
+  });
+
+  it('files the reason the sweep gave, resolves with nothing, and still ends the thread', async () => {
+    const sweeping = tuneOffThread(request());
+    thread().answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
+
+    await expect(sweeping).resolves.toBeNull();
+    expect(thread().terminated).toBe(true);
+    expect(useAutoTuneStore.getState().error).toBe('Array buffer allocation failed');
+    expect(useAutoTuneStore.getState().tuning).toBe(false);
+  });
+
+  it('settles when the thread itself fails, which no reply can report', async () => {
+    const sweeping = tuneOffThread(request());
+    thread().die();
+
+    await expect(sweeping).resolves.toBeNull();
+    expect(thread().terminated).toBe(true);
+    expect(useAutoTuneStore.getState().error).toMatch(/could not start/);
+  });
+
+  it('settles when a reply arrives but will not deserialise', async () => {
+    // No `message` follows one of these, so without its own listener the promise is never settled
+    // and the flag below is never cleared — the button stays disabled for good.
+    const sweeping = tuneOffThread(request());
+    thread().garble();
+
+    await expect(sweeping).resolves.toBeNull();
+    expect(thread().terminated).toBe(true);
+    expect(useAutoTuneStore.getState().error).toMatch(/could not be read back/);
+  });
+
+  it('settles and ends the thread when the sheet will not cross the boundary', async () => {
+    FakeAutoTuneWorker.refusePost = true;
+    const sweeping = tuneOffThread(request());
+    // A clone the browser would not make. It throws where no listener can see it, so the thread is
+    // left running with nothing to answer unless the post is guarded.
+    expect(thread().terminated).toBe(true);
+    await expect(sweeping).resolves.toBeNull();
+    expect(useAutoTuneStore.getState().error).toBe('the sheet would not clone');
+  });
+
+  it('settles rather than falling back to the main thread where a browser has no workers', async () => {
+    FakeAutoTuneWorker.refuseToStart = true;
+
+    await expect(tuneOffThread(request())).resolves.toBeNull();
+    expect(FakeAutoTuneWorker.started).toHaveLength(0);
+    expect(useAutoTuneStore.getState().tuning).toBe(false);
+    expect(useAutoTuneStore.getState().error).toMatch(/would not start the thread/);
+  });
+
+  it('holds the tuning flag for exactly as long as the thread runs', async () => {
+    const sweeping = tuneOffThread(request());
+    expect(useAutoTuneStore.getState().tuning).toBe(true);
+
+    thread().answer({ kind: 'tuned', outcome: OUTCOME });
+    await sweeping;
+    expect(useAutoTuneStore.getState().tuning).toBe(false);
+  });
+
+  it('refuses a second sweep while one is running, rather than starting a second thread', async () => {
+    const first = tuneOffThread(request());
+
+    await expect(tuneOffThread(request())).resolves.toBeNull();
+    expect(FakeAutoTuneWorker.started).toHaveLength(1);
+    // And the refusal leaves the flag it found set, so the panel keeps saying a sweep is running.
+    expect(useAutoTuneStore.getState().tuning).toBe(true);
+    expect(useAutoTuneStore.getState().error).toBeNull();
+
+    thread().answer({ kind: 'tuned', outcome: OUTCOME });
+    await first;
+    // The refusal is not permanent: the next press starts a thread as the first one did.
+    void tuneOffThread(request());
+    expect(FakeAutoTuneWorker.started).toHaveLength(2);
+  });
+
+  it('disowns an answer whose sheet has been replaced while the sweep ran', async () => {
+    const sweeping = tuneOffThread(request());
+    // What `setSource` does: a different sheet is being loaded, so nothing this sweep has to say is
+    // about the image on screen any more.
+    useAutoTuneStore.getState().forget();
+
+    thread().answer({ kind: 'tuned', outcome: OUTCOME });
+
+    await expect(sweeping).resolves.toBeNull();
+    expect(thread().terminated).toBe(true);
+    expect(useAutoTuneStore.getState().outcome).toBeNull();
+    expect(useAutoTuneStore.getState().tuning).toBe(false);
+  });
+
+  it('disowns a failure the same way, rather than reporting it against the new sheet', async () => {
+    const sweeping = tuneOffThread(request());
+    useAutoTuneStore.getState().forget();
+
+    thread().answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
+
+    await expect(sweeping).resolves.toBeNull();
+    expect(useAutoTuneStore.getState().error).toBeNull();
+  });
+});
