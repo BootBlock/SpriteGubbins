@@ -21,11 +21,13 @@ export const PNG_SIGNATURE: Uint8Array<ArrayBuffer> = Uint8Array.from([137, 80, 
  * use — PNG differs only in *what* it runs over, which is the chunk's type bytes followed by its
  * data, never its length.
  *
- * `>>> 0` after every step, because JavaScript's bitwise operators work on **signed** 32-bit
- * integers: without it a table entry whose top bit is set comes back negative, and every later
- * comparison, log and test expectation is then written against a number nobody would recognise.
- * `DataView.setUint32` would in fact write the same four bytes either way, so the file survives —
- * which is exactly what makes an unsigned convention worth keeping rather than discovering.
+ * **The unsigned reads are what make this legible, not what make it correct.** JavaScript's bitwise
+ * operators work on *signed* 32-bit integers, so `0xEDB88320 ^ x` comes back negative — and yet the
+ * bits are right either way: `>>>` and `&` read the same two's-complement pattern, `Uint32Array`
+ * coerces on store, and `DataView.setUint32` writes the same four bytes for a negative value as for
+ * its unsigned twin. So the `>>> 0`s below buy no correctness at all. They are there because the
+ * intermediate values are read — in a debugger, in a failing assertion, against a published table —
+ * and a CRC that prints as `-873187034` is one nobody can check against anything.
  */
 let crcTable: Uint32Array | null = null;
 

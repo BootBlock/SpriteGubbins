@@ -12,6 +12,11 @@ import type { PngReply } from './pngWorker.ts';
  * leaves `pngSession`'s promise unsettled and the Download button reading "Writing…" for the rest of
  * the session — across every view, since the flag is a store. Both of the ways that can happen are
  * below, and both were reachable before this file carried its guards.
+ *
+ * **`write` is called directly, never through a dispatched event**, and that is not a style choice:
+ * importing `pngWorker.ts` registers its `message` listener on the window in this environment, so a
+ * test that dispatched one would have the worker's own handler answer alongside whatever the test
+ * was doing — and the symptom, a stray post nobody asked for, would point nowhere near here.
  */
 
 const OPAQUE: Rgba = { r: 40, g: 80, b: 120, a: 255 };

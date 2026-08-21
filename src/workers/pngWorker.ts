@@ -59,6 +59,11 @@ self.addEventListener('message', (event: MessageEvent<PngRequest>) => {
  * claimed and missing once already — which is exactly the kind of absence a test states and a
  * reading does not.
  *
+ * **Importing this module registers that listener**, wherever it is imported. In a worker that is
+ * the point; in a test it means the suite is holding a live `message` listener on the window for the
+ * length of the run. Harmless while nothing else dispatches one, and worth knowing before anything
+ * does — see the note in `pngWorker.test.ts`.
+ *
  * An unhandled rejection inside a worker fires `unhandledrejection` here and **no `error` event on
  * the `Worker` object**, so the near side would see no message, no failure and no death: its promise
  * would never settle and the button that returned it would read "Writing…" for the rest of the

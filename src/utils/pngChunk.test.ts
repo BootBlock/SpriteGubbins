@@ -14,10 +14,14 @@ describe('crc32', () => {
     expect(crc32(new TextEncoder().encode('123456789'))).toBe(0xcbf43926);
   });
 
-  it('is never negative, whatever the high bit does', () => {
-    for (let byte = 0; byte < 256; byte += 1) {
-      expect(crc32(Uint8Array.from([byte]))).toBeGreaterThanOrEqual(0);
-    }
+  // Two single-byte values from the published table, which is what says the *table* is right rather
+  // than only that the accumulator agrees with itself. `0x00` and `0xFF` are the two that exercise
+  // the polynomial at both ends of the byte.
+  it.each([
+    [0x00, 0xd202ef8d],
+    [0xff, 0xff000000],
+  ])('matches the published CRC of the single byte %i', (byte, expected) => {
+    expect(crc32(Uint8Array.from([byte]))).toBe(expected);
   });
 
   it('is empty-safe', () => {
