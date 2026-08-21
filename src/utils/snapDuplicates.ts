@@ -1,5 +1,5 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
-import { boxSeparation } from './boxSeparation.ts';
+import { reachesAny } from './boxClearance.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
 
 /**
@@ -60,7 +60,7 @@ export function snapDuplicates(
         pixels: 0,
       };
       if (region.left + region.width > image.width || region.top + region.height > image.height) continue;
-      if (reaches(region, boxes, member.box) || reaches(region, written, null)) continue;
+      if (reachesAny(region, boxes, member.box) || reachesAny(region, written, null)) continue;
 
       for (let row = 0; row < region.height; row += 1) {
         const to = pixelOffset(image.width, region.left, region.top + row);
@@ -89,29 +89,4 @@ export function snapDuplicates(
   }
 
   return { image: new ImageData(data, image.width, image.height), folded: written.length };
-}
-
-/**
- * Whether `region` sits against or overlaps any of `others`, ignoring `self`.
- *
- * "Against" and not merely "overlapping": two boxes a single pixel apart hold artwork that is
- * eight-connected, so a fold that landed that close could join two sprites into one region the next
- * segmentation would report as a single larger sprite. {@link boxSeparation} is the labelling's own
- * metric, which is what keeps this asking the same question the merge asks.
- */
-function reaches(region: SpriteBox, others: readonly SpriteBox[], self: SpriteBox | null): boolean {
-  return others.some(
-    (other) =>
-      other !== self &&
-      boxSeparation(
-        region.left,
-        region.top,
-        region.left + region.width,
-        region.top + region.height,
-        other.left,
-        other.top,
-        other.left + other.width,
-        other.top + other.height,
-      ) < 1,
-  );
 }

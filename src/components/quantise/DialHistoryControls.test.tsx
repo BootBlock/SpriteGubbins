@@ -79,7 +79,7 @@ describe('DialHistoryControls', () => {
   });
 
   it('keeps the shortcut for a slider, which has no undo of its own', async () => {
-    // The other half of that rule, and the half that decides it: fifteen of the eighteen dials are a
+    // The other half of that rule, and the half that decides it: seventeen of the twenty dials are a
     // slider or a select, so a guard written as "an input has focus" would turn the shortcut off
     // exactly where a reader has just used it.
     const user = userEvent.setup();

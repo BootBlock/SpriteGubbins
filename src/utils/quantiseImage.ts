@@ -17,6 +17,8 @@ import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
 import { sheetSymmetry } from './symmetryAxis.ts';
 import { snapSymmetric } from './symmetrySnap.ts';
+import { sheetStrips } from './frameAlignment.ts';
+import { snapFrames } from './frameSnap.ts';
 import { snapDuplicates } from './snapDuplicates.ts';
 import { spriteSegments } from './spriteSegments.ts';
 import { buildPalette } from './wuQuantiser.ts';
@@ -31,6 +33,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
  * then, on whatever that produced:
  *   spriteSegments → sheetSymmetry → snapSymmetric (SNAP only) → duplicateSprites → snapDuplicates
+ *                  → sheetStrips → snapFrames (SNAP only)
  *
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
@@ -99,6 +102,12 @@ import { buildPalette } from './wuQuantiser.ts';
  * point at the same place in the order: after the reading, the reduction, the two cleanups and any
  * dither. It is the one pass whose *own output* is then re-segmented, because settling a pair can
  * clear a pixel and a cleared pixel can split a region.
+ *
+ * **The frame alignment goes last of all, after even those, and it is the only pass that moves
+ * artwork rather than editing it.** It fits a lattice to each row of sprites and carries the frames
+ * that wandered off it back on, so it needs a segmentation of the sheet as it will actually be
+ * downloaded — which the fold above may have changed the silhouettes of. Its own output is then
+ * re-segmented for the same reason the settle's is: every box it moved is somewhere else afterwards.
  *
  * `colorHistogram` excludes fully transparent pixels, so the keyed field claims no palette slots,
  * and `applyPalette` copies it through untouched rather than mapping it onto a colour.
@@ -271,7 +280,38 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const fold =
     settings.duplicateSnap && duplicates.length > 0 ? snapDuplicates(settled, duplicates, boxes) : null;
   const snapped = fold !== null && fold.folded > 0;
-  const output = fold !== null && snapped ? fold.image : settled;
+  const folded = fold !== null && snapped ? fold.image : settled;
+  const foldedSprites = snapped ? spriteSegments(folded, settings.spriteGap) : settledSprites;
+
+  // **The last reading of all, and the only pass that *moves* artwork rather than editing it.** It
+  // asks a question about the rows the sprites are laid out in — does this run hold still — so it
+  // needs the segmentation, and it needs the one taken over the sheet as it will actually be
+  // downloaded: every pass above may have changed a silhouette, and a strip is fitted to where the
+  // silhouettes are. That is also why it goes after the fold rather than before it. The fold copies
+  // whole sprites between positions, so reading strips first would fit a lattice to a layout the
+  // fold is about to change.
+  //
+  // `OFF` skips it outright rather than reading and discarding, which is how the outline expansion,
+  // the reductions and the symmetry sweep are all guarded: it registers every frame of every row
+  // against that row's first frame, and that is not a cost to pay for a reader who never turns the
+  // control on.
+  const strips =
+    settings.frameAlignment === 'OFF'
+      ? null
+      : sheetStrips(
+          folded,
+          foldedSprites.kind === 'SEGMENTED' ? foldedSprites.boxes : [],
+          // `null` is the one thing that means "move nothing" — a tolerance of 0 still moves every
+          // frame that is off its slot, which is the strictest position rather than an off one.
+          settings.frameAlignment === 'SNAP' ? settings.frameDriftTolerance : null,
+        );
+  // `snapFrames` hands back its argument by reference wherever no frame was marked, which is what
+  // makes the comparison below the cheap way to ask whether the sheet moved — the same contract
+  // `snapSymmetric` keeps, and the same reason: a re-segmentation is a linear pass nobody should pay
+  // for a sheet that did not change.
+  const realignment = strips === null ? null : snapFrames(folded, strips);
+  const realigned = realignment !== null && realignment.moved > 0;
+  const output = realignment !== null && realigned ? realignment.image : folded;
 
   return {
     image: output,
@@ -295,16 +335,22 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // `spriteSegments` for what it does with the sheets that are not skipped.
     //
     // **Re-read once more where the fold ran**, on top of the re-read the settle may already have
-    // cost. A folded member takes the canonical's silhouette, so its bounds and its pixel count are
-    // both the canonical's afterwards rather than the ones it arrived with — and the sheet a reader
-    // downloads is the one these figures have to describe. Each re-reading is a linear pass, and each
-    // is paid only by the reader who asked for the edit that made it necessary.
-    sprites: snapped ? spriteSegments(output, settings.spriteGap) : settledSprites,
+    // cost, and once more again where a frame was moved. A folded member takes the canonical's
+    // silhouette, so its bounds and its pixel count are both the canonical's afterwards rather than
+    // the ones it arrived with; a moved frame keeps its silhouette and changes where it is. Either
+    // way the sheet a reader downloads is the one these figures have to describe. Each re-reading is
+    // a linear pass, and each is paid only by the reader who asked for the edit that made it
+    // necessary.
+    sprites: realigned ? spriteSegments(output, settings.spriteGap) : foldedSprites,
     symmetry,
     // The finding, always as it stood on the sheet the reading was taken from — see
     // `QuantiseResult.duplicates` for why the fold does not get to re-take it.
     duplicates,
     snapped,
+    // The reading, always as it stood on the sheet it was taken from — see `QuantiseResult.strips`,
+    // which is where the reason lives, and it is the same one `duplicates` carries.
+    strips,
+    realigned,
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than

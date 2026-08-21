@@ -5,6 +5,7 @@ import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { heatmapImage } from '../../utils/heatmapImage.ts';
+import { onionSkin } from '../../utils/onionSkin.ts';
 import { outlineSprites } from '../../utils/spriteOutline.ts';
 import type { ComparisonPaneProps } from './ComparisonPane.tsx';
 import { ComparisonPane } from './ComparisonPane.tsx';
@@ -62,14 +63,14 @@ interface ImageComparisonProps {
  * lands on the source pixels it covers and both panes measure as the same content. The reasoning
  * lives on `PaneContent`.
  *
- * **The four modes are two layouts and three second images**, which is why there is no third pane and
- * no third canvas. `SIDE_BY_SIDE`, `DIFFERENCE` and `SPRITES` are the same pair of frames — the
- * second one showing the result, a heatmap of what the result cost, or the result with the sprite
- * bounds marked — so the sheet stays on the left across a mode switch and the linked pan position
- * survives it. `WIPE` is the same two frames laid over one another; every value they are drawn from
- * is the one the pair already uses.
+ * **The five modes are two layouts and four second images**, which is why there is no third pane and
+ * no third canvas. `SIDE_BY_SIDE`, `DIFFERENCE`, `SPRITES` and `ONION` are the same pair of frames —
+ * the second one showing the result, a heatmap of what the result cost, the result with the sprite
+ * bounds marked, or the result with each strip's frames stacked on one slot — so the sheet stays on
+ * the left across a mode switch and the linked pan position survives it. `WIPE` is the same two
+ * frames laid over one another; every value they are drawn from is the one the pair already uses.
  *
- * All three second images are one pixel per mesh cell, which is what lets them share every scrap of
+ * All four second images are one pixel per mesh cell, which is what lets them share every scrap of
  * the placement below: the magnification, the leading-cell inset and the clipping window are
  * computed once and none of them asks which picture it is placing.
  */
@@ -138,6 +139,19 @@ export function ImageComparison({
     [resultImage, sprites, symmetry, shown],
   );
 
+  // The same arrangement again, one mode further on, and keyed the same way. `null` where the
+  // alignment pass is off is deliberate rather than a fallback to the plain result: the stack is
+  // made *of* that reading, so with the pass off there is nothing to stack, and the caption says so
+  // rather than the pane quietly showing an ordinary result under a mode that promises a comparison.
+  const strips = quantised?.result.strips;
+  const stacked = useMemo(
+    () =>
+      resultImage === undefined || strips === undefined || strips === null || shown !== 'ONION'
+        ? null
+        : onionSkin(resultImage, strips),
+    [resultImage, strips, shown],
+  );
+
   // `zoom` is the scale for *both* panes, because it is measured per source pixel: the second canvas
   // is drawn `grid` times larger to arrive at the same number. See `src/utils/panGeometry.ts`.
   useLinkedPanes({
@@ -159,7 +173,7 @@ export function ImageComparison({
   // `putImageData` calls of up to 67 megabytes each, on the main thread, for every render of the
   // panel. The two elements are dependencies for the opposite reason: a canvas that has just been
   // mounted is blank, and the image it wants may not have changed at all.
-  const secondImage = heatmap ?? marked ?? resultImage;
+  const secondImage = heatmap ?? marked ?? stacked ?? resultImage;
   useEffect(() => {
     paint(sourceCanvas, source);
     paint(resultCanvas, secondImage);
@@ -251,6 +265,7 @@ const SECOND_PANE_LABELS: Readonly<Record<PreviewMode, string>> = {
   WIPE: 'Pan the quantised sheet',
   DIFFERENCE: 'Pan the difference heatmap',
   SPRITES: 'Pan the quantised sheet with its sprite bounds marked',
+  ONION: 'Pan the quantised sheet with each strip’s frames stacked on its first slot',
 };
 
 const SECOND_PANE_ALT: Readonly<Record<PreviewMode, string>> = {
@@ -258,6 +273,7 @@ const SECOND_PANE_ALT: Readonly<Record<PreviewMode, string>> = {
   WIPE: 'The sheet after grid alignment and palette reduction',
   DIFFERENCE: 'How far each drawn pixel sits from the patch of the sheet it stands for',
   SPRITES: 'The quantised sheet, with a box drawn around each separate sprite found on it',
+  ONION: 'The quantised sheet, with every frame of each row of sprites laid over the first frame of that row',
 };
 
 /** Put the pixels on the canvas verbatim. A missing canvas is the pane that is showing its `<p>`. */

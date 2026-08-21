@@ -47,6 +47,8 @@ function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance 
     symmetry: null,
     duplicates: [],
     snapped: false,
+    strips: null,
+    realigned: false,
     offset,
   };
 }
@@ -54,7 +56,7 @@ function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance 
 /** The heatmap's pane, which stands where the result's does and says so in its own name. */
 const HEATMAP = 'How far each drawn pixel sits from the patch of the sheet it stands for';
 
-/** Switch the preview to one of the three layouts, by the name on its pill. */
+/** Switch the preview to one of the five layouts, by the name on its pill. */
 function choose(layout: string) {
   fireEvent.click(
     within(screen.getByRole('group', { name: 'Preview layout' })).getByRole('button', {
@@ -396,6 +398,53 @@ describe('ImageComparison’s preview modes', () => {
     expect(context.mock.calls.length).toBeGreaterThan(overlaid);
 
     context.mockRestore();
+  });
+
+  it('says the alignment pass is off rather than drawing a stack of nothing', () => {
+    // The onion mode is made *of* the alignment reading, so with the control off there is nothing to
+    // stack — and the frame beside it is showing the plain result. Saying so in the caption is what
+    // stops a reader looking for a comparison that was never asked for.
+    show(8);
+    choose('Onion skin');
+
+    expect(screen.getByText(/Onion skin · frame alignment is off/)).toBeInTheDocument();
+  });
+
+  it('stacks each strip where the result was, and counts them in the caption', () => {
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const result = resultFor(8);
+    const box = { left: 0, top: 0, width: 4, height: 4, pixels: 16 };
+    const frame = (left: number) => ({
+      box: { ...box, left },
+      drift: { x: 0, y: 0 },
+      slot: { x: left, y: 0 },
+      snapped: false,
+    });
+    render(
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={null}
+        grid={8}
+        quantised={{
+          result: {
+            ...result,
+            strips: [{ frames: [frame(0), frame(5), frame(10)], pitch: { x: 5, y: 0 } }],
+          },
+          grid: 8,
+        }}
+        busy={false}
+      />,
+    );
+    choose('Onion skin');
+
+    expect(screen.getByText(/Onion skin · 1 strip stacked/)).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'The quantised sheet, with every frame of each row of sprites laid over the first frame of that row',
+      }),
+    ).toBeInTheDocument();
   });
 
   it('falls back to the pair when there is no result, rather than wiping against nothing', () => {

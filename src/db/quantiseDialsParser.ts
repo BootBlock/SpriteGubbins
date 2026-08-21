@@ -4,6 +4,7 @@ import {
   COLOR_MERGE_RANGE,
   DUPLICATE_TOLERANCE_RANGE,
   FILL_CLEANUP_RANGE,
+  FRAME_DRIFT_RANGE,
   INK_THRESHOLD_RANGE,
   KEY_TOLERANCES,
   LINE_STRENGTH_RANGE,
@@ -15,7 +16,7 @@ import {
   TRIM_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
-import { DITHER_PATTERNS, SYMMETRY_MODES, VOTE_METHODS } from '../types/quantiser.ts';
+import { DITHER_PATTERNS, FRAME_ALIGNMENT_MODES, SYMMETRY_MODES, VOTE_METHODS } from '../types/quantiser.ts';
 import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
 /**
@@ -33,7 +34,7 @@ import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './read
  * edit alone, and a stored value the control could not have produced is refused.
  *
  * Falls back **field by field**, never wholesale: one unreadable dial costs that dial, where
- * discarding the object would silently reset the other seventeen as well — and a preset whose ink
+ * discarding the object would silently reset the other nineteen as well — and a preset whose ink
  * threshold was corrupted is still the preset the reader saved in every other respect.
  *
  * The two dials with a fractional step are read with `pickNumber` rather than
@@ -104,5 +105,17 @@ export function parseQuantiseDials(value: unknown): QuantiseDials {
       DUPLICATE_TOLERANCE_RANGE,
     ),
     duplicateSnap: pickBoolean(value, 'duplicateSnap', QUANTISE_DEFAULT_DIALS.duplicateSnap),
+    frameAlignment: pick(
+      value,
+      'frameAlignment',
+      QUANTISE_DEFAULT_DIALS.frameAlignment,
+      FRAME_ALIGNMENT_MODES,
+    ),
+    frameDriftTolerance: pickWholeNumber(
+      value,
+      'frameDriftTolerance',
+      QUANTISE_DEFAULT_DIALS.frameDriftTolerance,
+      FRAME_DRIFT_RANGE,
+    ),
   };
 }

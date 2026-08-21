@@ -6,6 +6,8 @@ import {
   DEFAULT_DUPLICATE_SNAP,
   DEFAULT_DUPLICATE_TOLERANCE,
   DEFAULT_FILL_CLEANUP,
+  DEFAULT_FRAME_ALIGNMENT,
+  DEFAULT_FRAME_DRIFT_TOLERANCE,
   DEFAULT_INK_THRESHOLD,
   DEFAULT_KEY_TOLERANCE,
   DEFAULT_LINE_STRENGTH,
@@ -56,6 +58,8 @@ export const QUANTISE_DEFAULT_DIALS: QuantiseDials = {
   symmetryConfidence: DEFAULT_SYMMETRY_CONFIDENCE,
   duplicateTolerance: DEFAULT_DUPLICATE_TOLERANCE,
   duplicateSnap: DEFAULT_DUPLICATE_SNAP,
+  frameAlignment: DEFAULT_FRAME_ALIGNMENT,
+  frameDriftTolerance: DEFAULT_FRAME_DRIFT_TOLERANCE,
 };
 
 /**
@@ -86,6 +90,8 @@ const DIAL_NAMES: { readonly [K in keyof QuantiseDials]: K } = {
   symmetryConfidence: 'symmetryConfidence',
   duplicateTolerance: 'duplicateTolerance',
   duplicateSnap: 'duplicateSnap',
+  frameAlignment: 'frameAlignment',
+  frameDriftTolerance: 'frameDriftTolerance',
 };
 
 /**

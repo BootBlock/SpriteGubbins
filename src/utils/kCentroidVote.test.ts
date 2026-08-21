@@ -93,6 +93,8 @@ describe('kCentroidCells', () => {
           symmetryConfidence: 90,
           duplicateTolerance: 0,
           duplicateSnap: false,
+          frameAlignment: 'OFF' as const,
+          frameDriftTolerance: 0,
           dither: 'NONE' as const,
           outlineExpansion: 0,
           colorMerge: 0,

@@ -110,7 +110,7 @@ const STEP_BUTTON =
  * Whether a keypress landed in something with an undo stack of its own.
  *
  * Text entry only, which is narrower than "an input": a range slider and a select are both form
- * controls and neither has a stack for the shortcut to belong to, and fifteen of this tab's eighteen
+ * controls and neither has a stack for the shortcut to belong to, and seventeen of this tab's twenty
  * dials are one or the other. A `type` a browser does not know falls back to `text`, so an unknown
  * one is treated as text entry — the safe direction, since the cost of being wrong that way is a
  * shortcut that does nothing rather than one that eats a reader's typing.

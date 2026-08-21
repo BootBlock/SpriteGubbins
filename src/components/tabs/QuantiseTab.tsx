@@ -15,6 +15,7 @@ import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
 import { AutoTuneControls } from '../quantise/AutoTuneControls.tsx';
 import { DialHistoryControls } from '../quantise/DialHistoryControls.tsx';
 import { DuplicateControls } from '../quantise/DuplicateControls.tsx';
+import { FrameAlignmentControls } from '../quantise/FrameAlignmentControls.tsx';
 import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
@@ -79,6 +80,8 @@ export function QuantiseTab() {
   const symmetryConfidence = useQuantiseStore((state) => state.symmetryConfidence);
   const duplicateTolerance = useQuantiseStore((state) => state.duplicateTolerance);
   const duplicateSnap = useQuantiseStore((state) => state.duplicateSnap);
+  const frameAlignment = useQuantiseStore((state) => state.frameAlignment);
+  const frameDriftTolerance = useQuantiseStore((state) => state.frameDriftTolerance);
   // One memoised object, because the hook keys its debounce on the tuning's identity — atomic
   // selectors above, so an unrelated store change does not rebuild it.
   const tuning = useMemo(
@@ -98,6 +101,8 @@ export function QuantiseTab() {
       symmetryConfidence,
       duplicateTolerance,
       duplicateSnap,
+      frameAlignment,
+      frameDriftTolerance,
     }),
     [
       vote,
@@ -115,6 +120,8 @@ export function QuantiseTab() {
       symmetryConfidence,
       duplicateTolerance,
       duplicateSnap,
+      frameAlignment,
+      frameDriftTolerance,
     ],
   );
   const setSource = useQuantiseStore((state) => state.setSource);
@@ -264,6 +271,14 @@ export function QuantiseTab() {
             sprites={quantised?.result.sprites ?? null}
             duplicates={quantised?.result.duplicates ?? null}
             snapped={quantised?.result.snapped ?? false}
+            busy={busy}
+          />
+          {/* Third of the readings taken over the segmentation, and last because it is the only one
+              whose subject is a *row* rather than a sprite: what it can say is decided by what the
+              three panels above found, and by the sheet those panels may already have rewritten. */}
+          <FrameAlignmentControls
+            sprites={quantised?.result.sprites ?? null}
+            strips={quantised?.result.strips ?? null}
             busy={busy}
           />
           {/* Last of the panels, and below the dials rather than above them: it is the only one

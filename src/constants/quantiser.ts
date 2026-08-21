@@ -1012,6 +1012,98 @@ export const DEFAULT_DUPLICATE_TOLERANCE = 0;
 export const DEFAULT_DUPLICATE_SNAP = false;
 
 /**
+ * The fewest frames a row must hold before it is read as a strip.
+ *
+ * **Three, and it cannot be two.** The reading fits a pitch to the frames' own positions and then
+ * reports how far each of them sits from the slot that pitch gives it. Two frames fit any pitch
+ * exactly — the pitch simply *is* the distance between them — so a reading over a pair would report
+ * a drift of zero on every sheet it was ever handed, which is a control that appears not to work.
+ * At three there is a middle frame the outer two can disagree with, which is the smallest row that
+ * can carry a finding at all.
+ *
+ * It is also what keeps two unrelated subjects that happen to share a band from being called a
+ * strip. A sheet of single figures on one line is a row of two or three, and at three the pitch is
+ * fitted from evidence rather than assumed from a pair.
+ */
+export const SMALLEST_STRIP_FRAMES = 3;
+
+/**
+ * How far either side of its bounding-box position the registration looks for a frame, in drawn
+ * pixels.
+ *
+ * The search opens on the difference between the two boxes' top-left corners, which is already
+ * within a pixel or two of the answer wherever the two frames hold similar silhouettes — a bounding
+ * box is tight, so it tracks the artwork. What the reach buys is the case that motivates the whole
+ * pass: a frame whose pose reaches further on one side has a box that moved with the pose, and the
+ * true registration is however far that reach displaced it.
+ *
+ * Eight drawn pixels is half the shortest edge anyone draws a sprite at, so a frame whose coverage
+ * best matches the reference further out than this is a frame holding a different drawing rather
+ * than the same drawing moved. It is a **bound on cost** in the same breath: the sweep is
+ * `(2 × reach + 1)²` readings of one frame's coverage, so an unbounded search would be quadratic in
+ * the widest sprite on the sheet while a bounded one is linear in the sheet.
+ */
+export const FRAME_DRIFT_SEARCH = 8;
+
+/**
+ * The Frame alignment control's options, in the order offered — the identifier the pipeline stores,
+ * and the label the select shows.
+ *
+ * Three positions rather than a checkbox, for the reason {@link SYMMETRY_MODE_CHOICES} has three:
+ * reading a sheet and rewriting it are different acts, and a single toggle would make finding out
+ * and being changed the same button.
+ */
+export const FRAME_ALIGNMENT_MODE_CHOICES = [
+  { value: 'OFF', label: 'OFF (no alignment reading)' },
+  { value: 'CHECK', label: 'CHECK (report the drift)' },
+  { value: 'SNAP', label: 'SNAP (move frames onto the pitch)' },
+] as const;
+
+/**
+ * Where the Frame alignment control opens — off, as every pass on this tab that moves artwork opens.
+ *
+ * A row of sprites is not always an animation, and that is the reason rather than the cost. Four
+ * facings in a row sit on a pitch too, and a facing drawn reaching further on one side is *supposed*
+ * to sit where it does. Nothing here can tell a frame that drifted during generation from a frame
+ * whose subject is simply wider, so the reader is the one who says whether their row was meant to
+ * hold still.
+ */
+export const DEFAULT_FRAME_ALIGNMENT = 'OFF';
+
+/**
+ * The drift tolerance's range: how far a frame may sit from its slot and still be left alone, in
+ * drawn pixels.
+ *
+ * **`0` is the strictest position rather than an off position**, as the symmetry and duplicate
+ * tolerances' zeros are; the Frame alignment control's own `OFF` is what stops the pass running. At
+ * zero every frame that is not exactly on its slot is moved onto it, which is the setting the whole
+ * feature is for — a strip that holds still is a strip whose frames all sit at whole multiples of
+ * one pitch.
+ *
+ * The ceiling is 8 for the reason {@link FRAME_DRIFT_SEARCH}'s is: it is half the shortest edge
+ * anyone draws a sprite at, so a tolerance past it admits a frame displaced by a fraction of its own
+ * width — which is not drift, it is a different drawing. The step is 1 because the quantity is a
+ * count of drawn pixels and there is nothing between two of them.
+ */
+export const FRAME_DRIFT_RANGE = { min: 0, max: 8, step: 1 } as const;
+
+/**
+ * Where the drift tolerance opens — zero, the strictest position.
+ *
+ * The opposite call from the symmetry pass's confidence floor, and the difference is what the two
+ * rewrites cost when they are wrong. A snap that settles a mirrored pair **deletes** whatever
+ * distinguished the two halves, so its floor opens high and refuses nearly everything. A move
+ * changes no pixel of a frame — it carries the same artwork to a different place — and it is refused
+ * outright wherever it would reach a neighbour, so the worst a wrong move does is put a frame one
+ * pixel from where the reader wanted it, with the whole thing reversible by one press of Undo.
+ *
+ * So the opening position is the one that does what the control is named for, and the dial exists
+ * for the row that is *meant* to breathe: a two-pixel bob on an idle animation is drift a reader may
+ * want kept, and raising this is how they keep it.
+ */
+export const DEFAULT_FRAME_DRIFT_TOLERANCE = 0;
+
+/**
  * The preview magnifications, in the order the control offers them.
  *
  * 1:1 leads because it is the case that decides whether the result is genuine pixel art; the rest
@@ -1321,7 +1413,7 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
 export const QUANTISE_TOOLTIPS = {
   grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still keep to — exactly, or with a little drift — is estimated instead and offered to click rather than applied. Type it yourself when no reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
   previewMode:
-    'Which of four ways the result is shown. Side by side is the pair of frames, each on the same part of the sheet at the same magnification. Wipe lays them over one another in a single frame under a divider you can drag, so the very same screen pixels can be seen before and after. Difference replaces the result with a map of what the reduction cost: one mark per drawn pixel, coloured by how far that pixel ended up from the patch of the sheet it stands for — dark where it is faithful, green then gold as it drifts, red where it has lost what it replaced. Sprites draws the result with a dashed box just outside each separate piece of artwork the keyed sheet was found to hold, which is how the count and the gap in the sprite panel are checked against the picture. It changes only what this panel draws; the result, the download and everything stored are the same in all four.',
+    'Which of five ways the result is shown. Side by side is the pair of frames, each on the same part of the sheet at the same magnification. Wipe lays them over one another in a single frame under a divider you can drag, so the very same screen pixels can be seen before and after. Difference replaces the result with a map of what the reduction cost: one mark per drawn pixel, coloured by how far that pixel ended up from the patch of the sheet it stands for — dark where it is faithful, green then gold as it drifts, red where it has lost what it replaced. Sprites draws the result with a dashed box just outside each separate piece of artwork the keyed sheet was found to hold, which is how the count and the gap in the sprite panel are checked against the picture. Onion skin lays every frame of each row of sprites over one another on the first frame’s slot, so a row whose frames sit at the same spacing comes out as one crisp figure and a frame that wandered shows as a ghost beside it. It changes only what this panel draws; the result, the download and everything stored are the same in all five.',
   differenceScale:
     'How large a difference has to be to reach the top of the heatmap’s ramp, measured the way every colour tolerance on this tab is. Lower rungs grade the differences a sheet is mostly made of — on a typical sheet six drawn pixels in ten sit under 1 — and paint everything coarser than the rung in red. Higher rungs flatten those to dark and keep the ramp for the edges, where a patch that straddled a contour never had one colour to be reduced to, and for keyed sheets, whose silhouettes score past 200 wherever transparency landed differently from the artwork. The scale is fixed rather than fitted to each sheet on purpose: a ramp that re-scaled itself when you moved a dial could not be compared with the one you were looking at a moment ago.',
   wipe: 'Drag this to move the divider between the sheet as it arrived, on its left, and the quantised sheet on its right. Both are drawn at the same magnification on the same part of the sheet, so the pixels immediately either side of the divider are the same pixels before and after — which is what makes a change of a single shade findable. It can also be moved with the arrow keys once it has focus, and dragging anywhere else in the frame pans both images together as usual.',
@@ -1364,6 +1456,10 @@ export const QUANTISE_TOOLTIPS = {
     'How alike two sprites have to be before this reads them as one drawing. Generators repeat themselves — eight facings come back holding two of the same pose, an animation strip repeats a frame it was meant to move — and nothing else on this tab says so, because a repeated sprite is counted like any other. Each pair is laid over the other by its top-left corner and scored on the average distance between them, cell by cell, measured the way every colour distance here is — so what moves the figure is how many cells differ and by how much. Where one sprite reaches further than the other, the cells only it covers count as the widest difference there is, which is what keeps two drawings of genuinely different sizes apart. At 0 only sprites whose visible pixels match outright are grouped, which is the frame a generator handed back twice; raise it to reach the pair that came back a shade apart, and lower it when two poses that are genuinely different are being called the same. On its own it changes no pixel of the sheet — it is a reading of the result, and the download is the same file whatever it says. Switch the preview to Sprites to see the bounds it is working from.',
   duplicateSnap:
     'Rewrites every sprite the reading above grouped with the first sprite of its group, so a pose that came back three times slightly differently is written three times identically. That is what makes the repeats free downstream: one set of colours instead of three near-identical sets, one atlas cell where three were paid for, and no flicker when an animation plays through frames that were never quite the same. It changes the sheet, and it is the only control on this tab that does so by deleting artwork rather than transforming it — whatever made each copy different is gone from the download and from everything measured off it. Look at the count above before switching it on, and raise the tolerance slowly with it on so you can see which sprites are being folded. It has nothing to act on while the tolerance finds no groups.',
+  frameAlignment:
+    'Whether each row of sprites on the sheet is checked for frames that have wandered off the spacing the row is laid out on, and whether anything is done about it. Sprites that share a horizontal band are read as one strip, the spacing between them is fitted from where they actually sit, and each frame is then registered against the first by its own coverage rather than by its bounding box — which is the part that matters, because a box is tight and follows an outstretched arm, so a pose that reaches further reads as a frame that moved. What is reported is the difference between where each frame’s artwork is and where the fitted spacing puts it. CHECK reports and changes nothing — not one pixel of the sheet, the download or anything stored. SNAP does the same and then carries each frame that drifted further than the tolerance below back onto its slot, leaving the artwork itself exactly as it was and refusing any move that would reach a neighbouring sprite. A row needs at least three frames before either does anything, because two frames fit any spacing exactly and would report no drift on any sheet. It is off by default because a row is not always an animation: four facings sit on a spacing too, and one drawn wider on one side belongs where it is. Switch the preview to Onion skin to see each strip’s frames laid over one another.',
+  frameDriftTolerance:
+    'How far a frame may sit from its slot before SNAP moves it, in drawn pixels. Unlike most dials here, 0 is not an off position — it is the strictest one, where every frame that is not exactly on the fitted spacing is carried onto it — and the Frame alignment control above is what switches the pass off. Raise it for a row that is meant to breathe: an idle animation that bobs a pixel or two is drift you drew on purpose, and this is how you keep it while still straightening the frame that landed four pixels out. It appears only while SNAP is chosen, since under CHECK every frame is reported and none is moved. Frames that pass are named in the panel, so what a change to this admits or refuses can be watched rather than guessed.',
   presetName:
     'What this set of dial positions is called in the list below. Give it the name of the thing it suits rather than the settings it holds — the generator whose sheets need it, or the style of artwork — because the numbers are already on screen and the reason for them is not. A name that is already in the list updates that entry rather than adding a second one under the same name.',
   presetDescription:

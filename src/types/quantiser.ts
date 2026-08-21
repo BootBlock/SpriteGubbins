@@ -79,6 +79,23 @@ export interface GridMesh {
   readonly y: readonly number[];
 }
 
+/**
+ * A translation in drawn pixels, on the result's own coordinates.
+ *
+ * Separate from {@link GridOffset}, which is a *placement* — where the mesh's leading partial cell
+ * begins on the source, in source pixels, and never negative. This is a **move**: how far one piece
+ * of artwork sits from another, or from where a lattice says it belongs, so either axis may run
+ * backwards. One shape carrying both would need a docblock saying two things about every use of it,
+ * and the two are measured in different units on different images.
+ *
+ * Whole numbers wherever it describes a shift that was applied to pixels, and fractional where it
+ * describes a pitch that was *fitted* — see {@link SpriteStrip.pitch}, which is the only such use.
+ */
+export interface PixelShift {
+  readonly x: number;
+  readonly y: number;
+}
+
 /** An image the user has brought in, and the filename anything derived from it is named after. */
 export interface ImportedImage {
   readonly name: string;
@@ -288,6 +305,32 @@ export const SYMMETRY_MODES = ['OFF', 'CHECK', 'SNAP'] as const;
 export type SymmetryMode = (typeof SYMMETRY_MODES)[number];
 
 /**
+ * What the frame-alignment pass does with what it finds — the three positions the Frame alignment
+ * control offers.
+ *
+ * The `as const` array is the union's single definition, and it is validated against on the way out
+ * of storage for the reason {@link SYMMETRY_MODES} is: it is a dial, so it travels in a saved
+ * quantiser preset. `parseQuantiseDials` checks membership against this array.
+ */
+export const FRAME_ALIGNMENT_MODES = ['OFF', 'CHECK', 'SNAP'] as const;
+
+/**
+ * One of the three.
+ *
+ * `OFF` is the off position every pass on this tab opens at. `CHECK` registers each row of sprites
+ * against the pitch that row is laid out on and reports how far each frame sits from it, changing
+ * no pixel. `SNAP` does that and then moves the frames that drifted further than the tolerance
+ * allows back onto the pitch.
+ *
+ * **The gap between `CHECK` and `SNAP` is the same safety the symmetry pass draws**, and for a
+ * closer reason than it may look: a row of sprites is not always an animation. Four facings in a
+ * row are laid out on a pitch too, and a facing that genuinely reaches further on one side moves its
+ * own bounding box — which is exactly what the registration is built to see past, and exactly the
+ * case a reader should look at before anything is moved.
+ */
+export type FrameAlignmentMode = (typeof FRAME_ALIGNMENT_MODES)[number];
+
+/**
  * The positional dither patterns the tab offers, in the order the control shows them.
  *
  * The `as const` array is the union's single definition, as the vote methods' is. Nothing validates
@@ -444,6 +487,22 @@ export interface QuantiseTuning {
    * See `snapDuplicates`.
    */
   readonly duplicateSnap: boolean;
+  /**
+   * What the frame-alignment pass does with the rows it reads — see {@link FrameAlignmentMode}.
+   *
+   * Downstream of {@link spriteGap} for the reason {@link symmetry} is: a strip is a row of the
+   * boxes that pass produces, so a sheet that did not segment has nothing for this to run on
+   * whatever it is set to.
+   */
+  readonly frameAlignment: FrameAlignmentMode;
+  /**
+   * How far a frame may sit from its slot and still be left alone, in drawn pixels.
+   *
+   * `0` is not an off position — it is the strictest one, where any frame off its slot is moved onto
+   * it. {@link frameAlignment} is what switches the pass off. Read only under `SNAP`; under `CHECK`
+   * every frame is reported and none is moved, so there is nothing for a floor to admit or refuse.
+   */
+  readonly frameDriftTolerance: number;
 }
 
 /** Everything `quantiseImage` needs beyond the image itself. */
@@ -642,6 +701,77 @@ export interface SpriteDuplicateGroup {
   readonly duplicates: readonly SpriteDuplicateMember[];
 }
 
+/**
+ * One frame of a strip: where it sits, how far that is from where the strip's own pitch puts it,
+ * and whether the snap moved it.
+ *
+ * **It carries its own box rather than an index into {@link SpriteSegmentation}**, for the reason
+ * {@link SpriteSymmetry} does: a snap moves artwork, and moved artwork is re-segmented, so the
+ * boxes reported beside the finished sheet need not be the ones this was measured over.
+ *
+ * The figures describe the sheet as it stood **before** the move. A frame that has just been put on
+ * the pitch carries a drift of zero whatever it arrived with, so re-measuring afterwards would
+ * report a sheet that was always aligned and lose the only record of what the dial did.
+ */
+export interface AlignedFrame {
+  /** Where the frame was when the reading was taken, in the drawn pixels `SpriteBox` is stated in. */
+  readonly box: SpriteBox;
+  /**
+   * How far this frame's artwork sits from the slot the strip's fitted pitch gives it, in drawn
+   * pixels — positive x meaning the artwork sits to the right of its slot.
+   *
+   * Measured by registering the frame's own coverage against the strip's first frame rather than by
+   * comparing bounding boxes, which is the whole method: a bounding box is tight, so it follows an
+   * outstretched arm and reports a pose change as a position change. See `registerFrame`.
+   */
+  readonly drift: PixelShift;
+  /**
+   * Where this frame's slot sits relative to the first frame's slot, in whole drawn pixels.
+   *
+   * What the onion skin translates by to stack the row on one place — and it is carried rather than
+   * recomputed from {@link SpriteStrip.pitch} because the pitch is fractional and rounding it a
+   * second time is how the stack and the drift come to disagree by a pixel. Under a regular row it
+   * is the pitch times the frame's position; under a row that is *not* regular it is still exactly
+   * the offset that leaves {@link drift} showing and nothing else.
+   */
+  readonly slot: PixelShift;
+  /** Whether the snap moved this frame onto its slot, which the tolerance and the room decide. */
+  readonly snapped: boolean;
+}
+
+/**
+ * A row of sprites read as one strip, and the pitch its frames are laid out on.
+ *
+ * **A strip here is a row of segmented sprites, not a run the app was told about.** Nothing in this
+ * pipeline knows how a returned sheet was laid out — the mesh measures the pitch of one *drawn
+ * pixel* and knows nothing of frames — so the alternative would be a frame size the reader types,
+ * against which every finding would then be reported, with a wrong number producing a confident
+ * answer about slots the artwork does not use. A row needs nothing typed: `spriteSegments` already
+ * returns the separate pieces of the sheet in reading order, and pieces sharing a horizontal band
+ * are what a sprite sheet lays a run out as.
+ *
+ * So it is honestly a *row*, and an animation strip is the case it is named for rather than the only
+ * one it catches: a row of facings is laid out on a pitch as well, and drifts off it the same way.
+ *
+ * {@link SMALLEST_STRIP_FRAMES} is why a pair is not a strip. Two frames fit any pitch exactly —
+ * the pitch is simply the distance between them — so a reading over two would report no drift on
+ * every sheet ever handed to it, which is a control that appears not to work.
+ */
+export interface SpriteStrip {
+  /** Left to right, and never fewer than {@link SMALLEST_STRIP_FRAMES}. */
+  readonly frames: readonly AlignedFrame[];
+  /**
+   * The spacing the frames were fitted to, in drawn pixels per frame — fractional, deliberately.
+   *
+   * A generated sheet laid out at 21⅓ source pixels a frame comes back at 21, 21, 22 drawn pixels,
+   * and rounding the fit to a whole number would make two frames in three report a drift of one that
+   * no move can remove — see `fitLattice`, which is where that was measured and where the estimator
+   * that answers it is stated. It is here to be *reported*: what anything acts on is
+   * {@link AlignedFrame.drift} and {@link AlignedFrame.slot}, both of which are already whole.
+   */
+  readonly pitch: PixelShift;
+}
+
 /** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
@@ -701,6 +831,30 @@ export interface QuantiseResult {
    */
   readonly snapped: boolean;
   /**
+   * Each row of sprites read as a strip, with every frame's drift from its own slot — or `null`
+   * where the pass did not run.
+   *
+   * `null` is the Frame alignment control's `OFF` position and nothing else. An empty array is a
+   * different statement: the pass ran and found no row holding {@link SMALLEST_STRIP_FRAMES} frames,
+   * which is what a sheet of single subjects gives it, and the panel says so rather than reporting
+   * that nothing drifted.
+   *
+   * A fact of the result for the reason {@link sprites} and {@link duplicates} are, and it is a
+   * reading *of* that segmentation: measured separately it could describe not merely an older result
+   * but an older set of boxes. Under `SNAP` it is also the record of what was moved, so it always
+   * describes the sheet as it was read rather than the sheet after the move.
+   */
+  readonly strips: readonly SpriteStrip[] | null;
+  /**
+   * Whether {@link strips} was acted on — at least one frame actually moved onto its slot.
+   *
+   * A fact of the result rather than the dial read back, for the reason {@link snapped} is: while a
+   * transform is in flight the dial is where the reader has just put it and the result is what the
+   * previous position produced. It is also `false` where the mode is `SNAP` and every drifting frame
+   * was refused for want of room — see `frameAlignment`, which is where that refusal is decided.
+   */
+  readonly realigned: boolean;
+  /**
    * Where the grid sat on the source, as the transform measured it.
    *
    * Carried because a non-zero offset changes what the first pixel of each axis *is* — a leading
@@ -732,16 +886,16 @@ export interface QuantiseResult {
 }
 
 /**
- * The four ways the preview offers to read one result — the layouts, in the order they are offered.
+ * The five ways the preview offers to read one result — the layouts, in the order they are offered.
  *
  * The `as const` array is the union's single definition. Like the vote methods, the choice lives in
  * the panel that draws the preview and is never persisted: it is a preference about how a result is
  * being *looked at* right now, not part of what the result is.
  */
-export const PREVIEW_MODES = ['SIDE_BY_SIDE', 'WIPE', 'DIFFERENCE', 'SPRITES'] as const;
+export const PREVIEW_MODES = ['SIDE_BY_SIDE', 'WIPE', 'DIFFERENCE', 'SPRITES', 'ONION'] as const;
 
 /**
- * One of the four.
+ * One of the five.
  *
  * `SIDE_BY_SIDE` is the pair of linked panes, which answers "what did this become". `WIPE` overlays
  * them in one frame under a divider, which answers "what moved" for a change large enough to see.
@@ -749,7 +903,9 @@ export const PREVIEW_MODES = ['SIDE_BY_SIDE', 'WIPE', 'DIFFERENCE', 'SPRITES'] a
  * did it cost" — the question the other two cannot, and the reason a dial whose effect is real but
  * small reads as a dial that does nothing. `SPRITES` draws the result with each of
  * {@link SpriteSegmentation}'s boxes marked, which answers "what did it find" — a count of sprites
- * nobody can see the extent of is the same unreadable dial in a different place.
+ * nobody can see the extent of is the same unreadable dial in a different place. `ONION` stacks each
+ * strip's frames on one slot, which answers "does this row hold still" — a drift of two drawn pixels
+ * is a figure in a list until the frames are laid over one another, and then it is a doubled edge.
  */
 export type PreviewMode = (typeof PREVIEW_MODES)[number];
 

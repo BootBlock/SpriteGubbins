@@ -10,7 +10,7 @@ interface QuantisePresetListProps {
  *
  * A list rather than the studio library's cards, and the difference is what there is to show. An
  * archetype card carries the subject it describes — a category, a render style, a camera — which is
- * worth a tile the eye can scan. A set of dial positions is eighteen small values, and a card showing
+ * worth a tile the eye can scan. A set of dial positions is twenty small values, and a card showing
  * them would be a table nobody reads: what a reader picks one of these out of the list by is the
  * *name they gave it*, which is why the name and the sentence under it are the whole row.
  *

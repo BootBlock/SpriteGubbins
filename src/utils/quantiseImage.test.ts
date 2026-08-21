@@ -89,6 +89,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -116,6 +118,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -145,6 +149,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -176,6 +182,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -207,6 +215,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -240,6 +250,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -275,6 +287,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -307,6 +321,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -332,6 +348,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -362,6 +380,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -410,6 +430,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -448,6 +470,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -479,6 +503,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -531,6 +557,8 @@ describe('quantiseImage', () => {
         symmetryConfidence: 90,
         duplicateTolerance: 0,
         duplicateSnap: false,
+        frameAlignment: 'OFF' as const,
+        frameDriftTolerance: 0,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
@@ -586,6 +614,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -645,6 +675,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -718,6 +750,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -749,6 +783,8 @@ describe('quantiseImage', () => {
       symmetryConfidence: 90,
       duplicateTolerance: 0,
       duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -793,6 +829,8 @@ describe('quantiseImage', () => {
           symmetryConfidence: 90,
           duplicateTolerance: 0,
           duplicateSnap: false,
+          frameAlignment: 'OFF' as const,
+          frameDriftTolerance: 0,
           dither: 'NONE' as const,
           outlineExpansion: 0,
           colorMerge: 8,
@@ -854,6 +892,8 @@ describe('quantiseImage — a locked palette', () => {
     symmetryConfidence: 90,
     duplicateTolerance: 0,
     duplicateSnap: false,
+    frameAlignment: 'OFF' as const,
+    frameDriftTolerance: 0,
     dither: 'NONE' as const,
     outlineExpansion: 0,
     colorMerge,
@@ -928,6 +968,8 @@ describe('quantiseImage — a dither', () => {
     symmetryConfidence: 90,
     duplicateTolerance: 0,
     duplicateSnap: false,
+    frameAlignment: 'OFF' as const,
+    frameDriftTolerance: 0,
     colorMerge: cleanup,
     outlineExpansion: 0,
     dither,
@@ -1027,6 +1069,8 @@ function symmetrySettings(symmetry: 'OFF' | 'CHECK' | 'SNAP', symmetryConfidence
     symmetryConfidence,
     duplicateTolerance: 0,
     duplicateSnap: false,
+    frameAlignment: 'OFF' as const,
+    frameDriftTolerance: 0,
     dither: 'NONE',
     outlineExpansion: 0,
     colorMerge: 0,
@@ -1179,6 +1223,8 @@ describe('quantiseImage — duplicate sprites', () => {
     symmetryConfidence: 90,
     duplicateTolerance,
     duplicateSnap,
+    frameAlignment: 'OFF' as const,
+    frameDriftTolerance: 0,
     reduction: null,
   });
 
@@ -1260,5 +1306,112 @@ describe('quantiseImage — duplicate sprites', () => {
 
     expect(read.difference.peak).toBe(0);
     expect(folded.difference.peak).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The frame-alignment pass, in the pipeline.
+ *
+ * Two claims that can only be made here rather than in `frameAlignment.test.ts`: that the reading is
+ * taken over the sheet as it will actually be downloaded — after the settle and the fold, both of
+ * which can move a silhouette — and that a move is reflected in every figure the result carries,
+ * because the segmentation is re-read from what the move produced.
+ */
+describe('quantiseImage frame alignment', () => {
+  /**
+   * A row of three 4 × 4 blocks whose middle one sits two pixels right of the pitch the outer two
+   * keep to. Keying is off and the sheet arrives with its own alpha, which is the state a sheet this
+   * app downloaded earlier comes back in.
+   */
+  const DRIFTED = imageFrom(40, 10, (x, y) => {
+    if (y < 3 || y >= 7) return TRANSPARENT;
+    return [2, 16, 26].some((left) => x >= left && x < left + 4) ? ART : TRANSPARENT;
+  });
+
+  const settingsFor = (
+    frameAlignment: 'OFF' | 'CHECK' | 'SNAP',
+    frameDriftTolerance: number,
+  ): QuantiseSettings => ({
+    grid: 1,
+    key: null,
+    vote: 'DOMINANT' as const,
+    outlineExpansion: 0,
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    colorMerge: 0,
+    cleanupPasses: 1,
+    dither: 'NONE' as const,
+    spriteGap: 1,
+    symmetry: 'OFF' as const,
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
+    duplicateTolerance: 0,
+    duplicateSnap: false,
+    frameAlignment,
+    frameDriftTolerance,
+    reduction: null,
+  });
+
+  it('reports nothing at all while the pass is off', () => {
+    // `null` is the control's OFF position and nothing else — an empty array would say the pass ran
+    // and found no row, which is a different statement the panel has its own paragraph for.
+    const result = quantiseImage(DRIFTED, settingsFor('OFF', 0));
+
+    expect(result.strips).toBeNull();
+    expect(result.realigned).toBe(false);
+  });
+
+  it('names the frame that wandered without changing a pixel under CHECK', () => {
+    const read = quantiseImage(DRIFTED, settingsFor('CHECK', 0));
+    const off = quantiseImage(DRIFTED, settingsFor('OFF', 0));
+
+    expect(read.strips?.[0]?.frames.map((frame) => frame.drift.x)).toEqual([0, 2, 0]);
+    expect(read.strips?.[0]?.frames.map((frame) => frame.snapped)).toEqual([false, false, false]);
+    expect(read.realigned).toBe(false);
+    expect(channels(read.image)).toEqual(channels(off.image));
+  });
+
+  it('carries the frame onto its slot under SNAP, and re-reads the sheet from what that produced', () => {
+    const moved = quantiseImage(DRIFTED, settingsFor('SNAP', 0));
+
+    expect(moved.realigned).toBe(true);
+    // The reading still describes the sheet as it stood *before* the move, which is the only state
+    // the figures mean anything in — re-measuring afterwards would report a row that was always
+    // aligned and lose the record of what the dial did.
+    expect(moved.strips?.[0]?.frames.map((frame) => frame.drift.x)).toEqual([0, 2, 0]);
+    expect(moved.strips?.[0]?.frames[1]?.snapped).toBe(true);
+    // And the segmentation beside it describes the sheet the reader is given.
+    const boxes = moved.sprites.kind === 'SEGMENTED' ? moved.sprites.boxes : [];
+    expect(boxes.map((box) => box.left)).toEqual([2, 14, 26]);
+  });
+
+  it('leaves a frame inside the tolerance where it is', () => {
+    const held = quantiseImage(DRIFTED, settingsFor('SNAP', 2));
+    const read = quantiseImage(DRIFTED, settingsFor('CHECK', 0));
+
+    expect(held.realigned).toBe(false);
+    expect(channels(held.image)).toEqual(channels(read.image));
+  });
+
+  it('has nothing to read on a sheet that did not segment', () => {
+    // A fully opaque sheet is `SOLID`, which carries no boxes — so there is no row to fit a spacing
+    // to, and the honest answer is that the pass ran and found no strip.
+    const solid = imageFrom(8, 8, () => ART);
+
+    const result = quantiseImage(solid, settingsFor('SNAP', 0));
+
+    expect(result.sprites.kind).toBe('SOLID');
+    expect(result.strips).toEqual([]);
+    expect(result.realigned).toBe(false);
+  });
+
+  it('measures the difference map against the sheet the reader is given', () => {
+    // The move is part of what the pipeline did, so a heatmap taken before it would report a sheet
+    // the reader can see has changed. At a grid of 1 with no reduction the unmoved pass is the
+    // source exactly, so its peak is zero — and the moved pass is not.
+    expect(quantiseImage(DRIFTED, settingsFor('CHECK', 0)).difference.peak).toBe(0);
+    expect(quantiseImage(DRIFTED, settingsFor('SNAP', 0)).difference.peak).toBeGreaterThan(0);
   });
 });

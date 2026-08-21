@@ -15,7 +15,12 @@ import { directionSetChoices } from '../src/constants/output/directionSetChoices
 import { rigModeChoices } from '../src/constants/output/rigModeChoices.ts';
 import { sheetChoices } from '../src/constants/output/sheetChoices.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
-import { DITHER_CHOICES, SYMMETRY_MODE_CHOICES, VOTE_METHOD_CHOICES } from '../src/constants/quantiser.ts';
+import {
+  DITHER_CHOICES,
+  FRAME_ALIGNMENT_MODE_CHOICES,
+  SYMMETRY_MODE_CHOICES,
+  VOTE_METHOD_CHOICES,
+} from '../src/constants/quantiser.ts';
 import { modesFor } from '../src/constants/sheetPlans/index.ts';
 import { OPENING_VIEW_CHOICES } from '../src/constants/settings.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
@@ -62,6 +67,7 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // characters and does not care what they mean.
   STYLE_REFERENCE_CHOICES: STYLE_REFERENCE_CHOICES.map((choice) => choice.label),
   DITHER_CHOICES: DITHER_CHOICES.map((choice) => choice.label),
+  FRAME_ALIGNMENT_MODE_CHOICES: FRAME_ALIGNMENT_MODE_CHOICES.map((choice) => choice.label),
   VOTE_METHOD_CHOICES: VOTE_METHOD_CHOICES.map((choice) => choice.label),
   SYMMETRY_MODE_CHOICES: SYMMETRY_MODE_CHOICES.map((choice) => choice.label),
   // Over every set the category offers, because the series totals in the labels move with it.

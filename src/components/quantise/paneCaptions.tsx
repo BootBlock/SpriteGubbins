@@ -6,6 +6,7 @@ import type {
   Quantised,
   SheetScale,
   SpriteSegmentation,
+  SpriteStrip,
 } from '../../types/quantiser.ts';
 
 /**
@@ -53,7 +54,10 @@ export function sourceCaption(source: ImageData, sourceColors: number | null): R
  *
  * The sprite mode does the same thing with the same reasoning: the frame shows *where* the bounds
  * were drawn and the caption says *how many*, which is the pair a reader watches as the gap dial
- * moves. `SIDE_BY_SIDE` and `WIPE` share the third form, because they show the same picture.
+ * moves. The onion mode's clause is a third of the same kind, and carries one thing the others do
+ * not have to: the mode draws nothing of its own while the alignment pass is off, so the caption is
+ * where a reader is told that rather than being left to wonder what they are looking at.
+ * `SIDE_BY_SIDE` and `WIPE` share the last form, because they show the same picture.
  */
 export function secondCaption(mode: PreviewMode, quantised: Quantised | null, busy: boolean): ReactNode {
   if (quantised === null) {
@@ -71,6 +75,9 @@ export function secondCaption(mode: PreviewMode, quantised: Quantised | null, bu
   }
   if (mode === 'SPRITES') {
     return `Sprites · ${spritesFound(quantised.result.sprites)}${trailing}`;
+  }
+  if (mode === 'ONION') {
+    return `Onion skin · ${stripsFound(quantised.result.strips)}${trailing}`;
   }
 
   const { image, colors } = quantised.result;
@@ -90,6 +97,25 @@ export function emptyReason(busy: boolean, grid: PixelGrid | null, scale: SheetS
   if (grid !== null) return QUANTISE_RESULT_PLACEHOLDER.failed;
   if (scale?.measurement === 'ESTIMATED') return QUANTISE_RESULT_PLACEHOLDER.estimated;
   return QUANTISE_RESULT_PLACEHOLDER.none;
+}
+
+/**
+ * What the onion mode has to stack, as the clause its caption carries.
+ *
+ * `null` is the alignment pass switched off, which is the state this mode is most often reached in —
+ * a reader opens it to see what it does before turning anything on. Saying so, and naming the
+ * control, is the whole job: the frame beside it is showing the plain result, and a caption reading
+ * "0 strips" would leave a reader looking for a stack that was never asked for.
+ *
+ * An empty array is a different statement — the pass ran and no row on the sheet holds enough frames
+ * — and the panel above is where the reason for that lives, which is why this states the fact and
+ * sends nobody anywhere.
+ */
+function stripsFound(strips: readonly SpriteStrip[] | null): string {
+  if (strips === null) return 'frame alignment is off';
+  const { length } = strips;
+  if (length === 0) return 'no row holds enough frames';
+  return `${String(length)} ${length === 1 ? 'strip' : 'strips'} stacked`;
 }
 
 /**
