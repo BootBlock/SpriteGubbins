@@ -118,7 +118,8 @@ export interface QuantiseState extends QuantiseDials {
  * The dials come from `QUANTISE_DEFAULT_DIALS` rather than being listed again: they are the same
  * set a preset holds and the same set the parser falls back to, and three hand-written copies of
  * one list is three places for one of them to be forgotten. What is written out here is only what a
- * *dial* is not — the sheet, the grid, and the held palette.
+ * *dial* is not — the sheet, the grid, the held palette, and the undo stack, which opens holding
+ * that one set of positions with nothing yet to step back from.
  */
 const EMPTY: Pick<QuantiseState, 'source' | 'gridOverride' | 'lockedPalette' | 'history'> & QuantiseDials = {
   ...QUANTISE_DEFAULT_DIALS,
