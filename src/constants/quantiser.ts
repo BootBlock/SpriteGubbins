@@ -459,24 +459,26 @@ export const DEFAULT_COLOR_MERGE = 0;
  * small integer ladder rather than a continuous slider: there is no position between one pixel and
  * two.
  *
- * The ceiling is 4 because the useful range ends before it. Measured on the reference sheet at a
- * grid of 6 — the full figures are in `outlineExpansion` — thin-line survival climbs 29.5 → 43.5 →
- * 54.4 → 60.4 → 64.1% across 0 to 4, while cells that held no ink at all and come out inked climb
- * 0 → 0.50 → 2.02 → 3.64 → 6.06%. Past 2 the second column grows faster than the first, and at 4 a
- * contour is nine source pixels wide — wider than a whole cell at most scales a returned sheet is
- * drawn at, which is the point where the pass stops rescuing lines and starts drawing them.
+ * The ceiling is 4 because the useful range ends well before it, and the floor of usefulness is 1.
+ * Measured on the reference sheet at a grid of 6 — the full figures and the two metrics are in
+ * `outlineExpansion` — thin-line survival climbs 29.5 → 43.5 → 54.4 → 60.4 → 64.1% across 0 to 4
+ * while surface loss climbs 0.39 → 2.89 → 5.71 → 8.03 → 10.70%, so the first step buys fourteen
+ * points of the first for two and a half of the second and every step after it buys less. The
+ * range runs on anyway, because a sheet drawn at a coarser scale or with thinner contours than this
+ * one will want more, and the preview is beside the dial.
  */
 export const OUTLINE_EXPANSION_RANGE = { min: 0, max: 4, step: 1 } as const;
 
 /**
  * The expansion the tab opens with — off, as every pass that changes the artwork opens.
  *
- * **Not the measured knee, which is 2, and the difference is deliberate.** This pass moves pixels
- * the reader did not ask to have moved: at 2 it thickens every contour on the sheet and inks two
- * cells in a hundred that held no ink. That is the right answer for a sheet whose outlines are
- * breaking up and the wrong one for a sheet that came back clean, and nothing here can tell which
- * arrived — the same argument the background keying opens off on. The guidance names the symptom to
- * raise it for, and the preview beside the dial is where the judgement gets made.
+ * **Not the measured knee, which is 1, and the difference is deliberate.** This pass moves pixels
+ * the reader did not ask to have moved: even at 1 it thickens every contour on the sheet, and it
+ * takes the sheet's ink share from 14.2% to 17.0% where the reduction alone had it at 15.8%. That is
+ * the right answer for a sheet whose outlines are breaking up and the wrong one for a sheet that came
+ * back clean, and nothing here can tell which arrived — the same argument the background keying opens
+ * off on. The guidance names the symptom to raise it for, and the preview beside the dial is where
+ * the judgement gets made.
  */
 export const DEFAULT_OUTLINE_EXPANSION = 0;
 
@@ -829,7 +831,7 @@ export const QUANTISE_TOOLTIPS = {
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
   vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour — and, once a colour reduction is in force, keeps a near-black outline or bright trim even as a minority. It never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce.',
   outlineExpansion:
-    'How far a drawn line is thickened before the sheet is read down to pixels. A contour one drawn pixel wide is a minority inside the patch it crosses, so the patch resolves to the surface behind it and outlines come back broken. This pass grows whichever side of the local contrast the artwork was drawn with — dark ink where the art is dark on light, bright trim where it is light on dark, judged separately for each part of the sheet — so a line still holds enough of its patch to survive being read. It shapes what every reading is handed, so it applies whichever one the Downscale control has in force. Transparency is left exactly where the background key left it, and every colour it produces is one the sheet already contained. Off leaves the sheet as it arrived. Raise it when contours come back dashed — 2 is where it stops paying for itself on a typical sheet — and back off when fine detail starts to close up or shapes begin to look drawn rather than rescued.',
+    'How far a drawn line is thickened before the sheet is read down to pixels. A contour one drawn pixel wide is a minority inside the patch it crosses, so the patch resolves to the surface behind it and outlines come back broken. This pass grows whichever side of the local contrast the artwork was drawn with — dark ink where the art is dark on light, bright trim where it is light on dark, judged separately for each part of the sheet — so a line still holds enough of its patch to survive being read. It shapes what every reading is handed, so it applies whichever one the Downscale control has in force. Transparency is left exactly where the background key left it, and every colour it produces is one the sheet already contained. Off leaves the sheet as it arrived. Raise it when contours come back dashed — 1 is enough on a typical sheet, and each step past it thickens more than it rescues — and back off when fine detail starts to close up or shapes begin to look drawn rather than rescued.',
   lineStrength:
     'How hard the ink-weighted reading pulls a patch toward the line crossing it. At 1× a line darkens its patch only by the share it actually holds, which reads as shading; sliding up makes a qualifying line claim more of the patch, so contours come out more defined at the cost of thicker-looking darks. It appears only while the Downscale control is set to the ink-weighted reading, because the other readings do not blend. Slide it up when outlines still look faint, and back when dark areas start to swallow detail.',
   trimStrength:

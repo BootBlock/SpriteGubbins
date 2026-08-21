@@ -19,21 +19,33 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * **What it does.** `outlinePolarity` says, for every part of the sheet, whether the local detail is
  * dark on a light ground or light on a dark one. Where it is dark the pass **erodes**, replacing
  * each pixel with its darkest neighbour, which grows the contour into the surface beside it; where
- * it is light it **dilates**, which grows the rim light or the gold trim the same way. An opening
- * and then a closing finish, which clears the stray pixels left along the seam where the two
- * rescuing it the same way. A contour that was one pixel wide is then `2 × thickness + 1`, and a
- * cell that straddles it is holding enough ink to win.
+ * it is light it **dilates**, which rescues the rim light or the gold trim the same way. A contour
+ * that was one pixel wide is then `2 × thickness + 1` wide, and a cell that straddles it is holding
+ * enough ink to win the vote it was losing.
  *
- * **Measured on the reference sheet** at a grid of 6, the standard vote and a budget of 64, against
- * the cells this exists to save — those holding ink as a minority of their own pixels, which is
- * every cell a one-pixel contour crosses. Of 7,135 such cells, the share resolving to ink runs
- * **29.5% with the pass off, 43.5% at a thickness of 1, 54.4% at 2, 60.4% at 3 and 64.1% at 4**.
- * The counter-metric — cells holding no source ink at all that come out inked — runs 0%, 0.50%,
- * 2.02%, 3.64% and 6.06% of 31,689. A thickness of 2 buys 25 points of survival for two cells in a
- * hundred; 3 buys six more points for another one and a half, and 4 four more for two and a half.
- * The knee is at **2**, which is where `DEFAULT_OUTLINE_EXPANSION`'s note points a reader without
- * adopting it on their behalf. The ink-weighted reading follows the same curve from a lower start:
- * 20.7%, 20.5%, 31.8%, 41.2%, 46.7%.
+ * **Measured on the reference sheet** at a grid of 6, the standard vote and a budget of 64, across
+ * the 44,099 cells its mesh lays down. Two figures, because either alone picks the wrong setting:
+ *
+ * - **survival** — of the 7,135 cells holding ink as a *minority* of their own pixels, which is
+ *   every cell a one-pixel contour crosses, the share that resolve to ink. It runs **29.5% with the
+ *   pass off, then 43.5%, 54.4%, 60.4% and 64.1%** across thicknesses 1 to 4;
+ * - **surface loss** — of the 34,240 cells the source says are under a fifth ink, which is a stray
+ *   fringe rather than a contour crossing, the share that come out ink anyway. It runs **0.39%, then
+ *   2.89%, 5.71%, 8.03% and 10.70%**. Against it, the sheet's own ink share is 14.2% of its opaque
+ *   pixels and the result's runs 15.8, 17.0, 19.2, 20.8 and 23.0%.
+ *
+ * The first step buys 14 points of survival for 2.5 of surface, and every step after it buys less
+ * for the same: 10.9 for 2.8, then 6.0 for 2.3, then 3.7 for 2.7. So the knee is at **1**, and the
+ * range runs to 4 because a sheet whose contours are thinner or whose scale is coarser will want
+ * more. The ink-weighted reading is the same shape one thickness later, from a lower start: 20.7%,
+ * 20.5%, 31.8%, 41.2%, 46.7% survival against 0.02%, 0.65%, 2.01%, 4.11% and 6.06% surface.
+ *
+ * **The second figure is here because the first one on its own chose wrongly.** Counting only cells
+ * with *no* source ink at all put the knee at 2 — and driving the tab in a browser at 2 showed
+ * helmets whose interiors had gone blotchy, the gold and green masses broken up by dark that had
+ * grown along every seam between them. Almost every cell on a sheet like this holds a pixel or two
+ * of dark, so "no ink at all" was blind to exactly the failure that matters. Any recalibration of
+ * this dial needs both numbers and a look at the preview.
  *
  * **The cost is flat in the thickness**, which is the whole reason `runningExtremum` is written the
  * way it is: the pass took the same time at a thickness of 4 as at 1 in every run of that sweep. It
