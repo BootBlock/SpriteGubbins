@@ -10,6 +10,9 @@ import {
   DEFAULT_OUTLINE_EXPANSION,
   DEFAULT_PALETTE_SNAP,
   DEFAULT_SPRITE_GAP,
+  DEFAULT_SYMMETRY,
+  DEFAULT_SYMMETRY_CONFIDENCE,
+  DEFAULT_SYMMETRY_TOLERANCE,
   DEFAULT_TRIM_STRENGTH,
 } from './quantiser.ts';
 
@@ -46,6 +49,9 @@ export const QUANTISE_DEFAULT_DIALS: QuantiseDials = {
   dither: DEFAULT_DITHER,
   paletteSnap: DEFAULT_PALETTE_SNAP,
   spriteGap: DEFAULT_SPRITE_GAP,
+  symmetry: DEFAULT_SYMMETRY,
+  symmetryTolerance: DEFAULT_SYMMETRY_TOLERANCE,
+  symmetryConfidence: DEFAULT_SYMMETRY_CONFIDENCE,
 };
 
 /**
@@ -71,6 +77,9 @@ const DIAL_NAMES: { readonly [K in keyof QuantiseDials]: K } = {
   dither: 'dither',
   paletteSnap: 'paletteSnap',
   spriteGap: 'spriteGap',
+  symmetry: 'symmetry',
+  symmetryTolerance: 'symmetryTolerance',
+  symmetryConfidence: 'symmetryConfidence',
 };
 
 /**

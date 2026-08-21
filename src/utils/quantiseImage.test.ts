@@ -3,11 +3,12 @@ import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
 import { channels, imageFrom } from '../test/images.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 import { VOTE_METHODS } from '../types/quantiser.ts';
-import type { Rgba } from '../types/quantiser.ts';
+import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { channelLevels } from './channelLevels.ts';
 import { colorPlanFor } from './colorReduction.ts';
 import { countColors, pixelOffset, readPixel, toHex } from './imageData.ts';
 import { quantiseImage } from './quantiseImage.ts';
+import { spriteSegments } from './spriteSegments.ts';
 
 /** 16 × 16 art, every pixel a different colour. */
 const SPRITE = imageFrom(16, 16, (x, y) => ({ r: x * 16 + 1, g: y * 16 + 1, b: 64, a: 255 }));
@@ -23,6 +24,9 @@ const TRANSPARENT: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 const ART: Rgba = { r: 20, g: 180, b: 60, a: 255 };
 /** A second art colour as far from the key as {@link ART} is, for the piece that is smaller than a cell. */
 const TRINKET: Rgba = { r: 200, g: 120, b: 30, a: 255 };
+/** The two colours the symmetry fixtures at the foot of this file are drawn in. */
+const FILL: Rgba = { r: 90, g: 110, b: 140, a: 255 };
+const EDGE: Rgba = { r: 210, g: 180, b: 60, a: 255 };
 
 const KEYING = { color: MAGENTA, tolerance: 16 };
 
@@ -80,6 +84,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -102,6 +109,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -126,6 +136,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -152,6 +165,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -178,6 +194,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -206,6 +225,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -236,6 +258,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -263,6 +288,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -283,6 +311,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -308,6 +339,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -351,6 +385,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -384,6 +421,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -410,6 +450,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -457,6 +500,9 @@ describe('quantiseImage', () => {
         fillCleanup: 0,
         cleanupPasses: 1,
         spriteGap: 1,
+        symmetry: 'OFF' as const,
+        symmetryTolerance: 8,
+        symmetryConfidence: 90,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
@@ -507,6 +553,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -561,6 +610,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -629,6 +681,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -655,6 +710,9 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -694,6 +752,9 @@ describe('quantiseImage', () => {
           fillCleanup: 8,
           cleanupPasses: 2,
           spriteGap: 1,
+          symmetry: 'OFF' as const,
+          symmetryTolerance: 8,
+          symmetryConfidence: 90,
           dither: 'NONE' as const,
           outlineExpansion: 0,
           colorMerge: 8,
@@ -750,6 +811,9 @@ describe('quantiseImage — a locked palette', () => {
     fillCleanup: 0,
     cleanupPasses: 1,
     spriteGap: 1,
+    symmetry: 'OFF' as const,
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
     dither: 'NONE' as const,
     outlineExpansion: 0,
     colorMerge,
@@ -819,6 +883,9 @@ describe('quantiseImage — a dither', () => {
     fillCleanup: cleanup,
     cleanupPasses: 4,
     spriteGap: 1,
+    symmetry: 'OFF' as const,
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
     colorMerge: cleanup,
     outlineExpansion: 0,
     dither,
@@ -856,5 +923,114 @@ describe('quantiseImage — a dither', () => {
     const result = quantiseImage(coarse, { ...settingsFor('BAYER_4', TWO_TONE, 0), grid: 4 });
     expect(result.image.width).toBe(8);
     expect(result.colors).toBe(2);
+  });
+});
+
+/**
+ * A 24 × 8 sheet at its own resolution, holding two keyed-apart subjects six columns wide.
+ *
+ * The left one mirrors exactly about its own seam. The right one is the same figure with one pixel
+ * knocked out of its left edge, so it is very nearly symmetric — the break in a contour a generator
+ * returns, and the case the snap exists for. Two subjects rather than one, so a test can watch a
+ * pass reach one of them and leave the other where it was.
+ */
+const PAIR = imageFrom(24, 8, (x, y) => {
+  if (y < 2 || y >= 6) return TRANSPARENT;
+  if (x >= 2 && x < 8) return x === 2 || x === 7 ? EDGE : FILL;
+  if (x >= 14 && x < 20) {
+    if (x === 14 && y === 3) return FILL;
+    return x === 14 || x === 19 ? EDGE : FILL;
+  }
+  return TRANSPARENT;
+});
+
+/** The settings the symmetry fixtures share — a grid of 1, no keying, and nothing else engaged. */
+function symmetrySettings(symmetry: 'OFF' | 'CHECK' | 'SNAP', symmetryConfidence = 90): QuantiseSettings {
+  return {
+    grid: 1,
+    key: null,
+    vote: 'DOMINANT',
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    cleanupPasses: 1,
+    spriteGap: 1,
+    symmetry,
+    symmetryTolerance: 0,
+    symmetryConfidence,
+    dither: 'NONE',
+    outlineExpansion: 0,
+    colorMerge: 0,
+    reduction: null,
+  };
+}
+
+describe('quantiseImage symmetry', () => {
+  it('reports no symmetry at all while the control is off', () => {
+    // `null` rather than an empty array, and the difference is what the panel reads: nothing was
+    // asked, as against nothing was found.
+    expect(quantiseImage(PAIR, symmetrySettings('OFF')).symmetry).toBeNull();
+  });
+
+  it('scores every sprite it found and changes no pixel under CHECK', () => {
+    const checked = quantiseImage(PAIR, symmetrySettings('CHECK'));
+    const untouched = quantiseImage(PAIR, symmetrySettings('OFF'));
+
+    expect(checked.symmetry?.map((reading) => reading.axis)).toEqual([4.5, 16.5]);
+    expect(checked.symmetry?.map((reading) => reading.confidence)).toEqual([1, 11 / 12]);
+    expect(checked.symmetry?.every((reading) => !reading.snapped)).toBe(true);
+    expect(channels(checked.image)).toEqual(channels(untouched.image));
+  });
+
+  it('settles the sprites that reach the floor and leaves the rest as they arrived', () => {
+    // The floor at 90% admits the drifted subject, and the broken edge pixel is restored from its
+    // partner rather than the partner being broken to match it — the intact side has the rest of
+    // that edge above and below it, and the broken side does not.
+    const snapped = quantiseImage(PAIR, symmetrySettings('SNAP', 90));
+
+    expect(snapped.symmetry?.map((reading) => reading.snapped)).toEqual([true, true]);
+    expect(readPixel(snapped.image.data, pixelOffset(24, 14, 3))).toEqual(EDGE);
+    expect(readPixel(snapped.image.data, pixelOffset(24, 19, 3))).toEqual(EDGE);
+  });
+
+  it('leaves a sprite the floor refused exactly as it arrived', () => {
+    // The same sheet with the floor above the drifted subject's own share. It is still reported —
+    // which is the point of reporting separately from snapping — and not one pixel of it moves.
+    const refused = quantiseImage(PAIR, symmetrySettings('SNAP', 95));
+    const untouched = quantiseImage(PAIR, symmetrySettings('OFF'));
+
+    expect(refused.symmetry?.map((reading) => reading.snapped)).toEqual([true, false]);
+    expect(channels(refused.image)).toEqual(channels(untouched.image));
+  });
+
+  it('measures what the snap cost, and counts the colours the snap left', () => {
+    // Every figure on the result describes the sheet the reader is looking at, so all of them are
+    // taken after the snap rather than before it. The drifted pixel becomes the edge colour, so the
+    // difference map has something to report where the untouched result reported nothing.
+    const snapped = quantiseImage(PAIR, symmetrySettings('SNAP', 90));
+    const untouched = quantiseImage(PAIR, symmetrySettings('OFF'));
+
+    expect(snapped.difference.peak).toBeGreaterThan(untouched.difference.peak);
+    expect(snapped.image.width).toBe(untouched.image.width);
+  });
+
+  it('re-reads the sprites off the sheet the snap produced', () => {
+    // The segmentation reported beside a snapped sheet describes that sheet. Here the boxes are the
+    // same either way, and the assertion that matters is that they describe the image returned —
+    // a snap that clears a pixel out of a one-pixel bridge would split a region, and a segmentation
+    // carried over from before the snap would be describing a sheet that no longer exists.
+    const snapped = quantiseImage(PAIR, symmetrySettings('SNAP', 90));
+
+    expect(snapped.sprites).toEqual(spriteSegments(snapped.image, 1));
+  });
+
+  it('has nothing to score on a sheet that did not separate into sprites', () => {
+    // An empty array rather than `null`: the pass ran and found no sprite to measure, which is a
+    // fact about the keying rather than about symmetry — and the panel says so.
+    const solid = quantiseImage(SPRITE, symmetrySettings('CHECK'));
+
+    expect(solid.sprites.kind).toBe('SOLID');
+    expect(solid.symmetry).toEqual([]);
   });
 });

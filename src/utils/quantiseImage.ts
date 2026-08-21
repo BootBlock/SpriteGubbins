@@ -14,6 +14,8 @@ import { kCentroidCells } from './kCentroidVote.ts';
 import { keyBackground } from './keyBackground.ts';
 import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
+import { sheetSymmetry } from './symmetryAxis.ts';
+import { snapSymmetric } from './symmetrySnap.ts';
 import { spriteSegments } from './spriteSegments.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
@@ -25,6 +27,8 @@ import { buildPalette } from './wuQuantiser.ts';
  * DOMINANT:                 ImageData → keyBackground → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
  * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → outlineExpansion → cells resolved directly → reduceColors
  * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
+ *
+ * then, whatever ran above:  → spriteSegments → sheetSymmetry → snapSymmetric (SNAP only)
  *
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
@@ -85,6 +89,14 @@ import { buildPalette } from './wuQuantiser.ts';
  * value before either the palette or the vote sees it, and the mesh is measured after it for the
  * same reason: a keyed field's drifting colours are steps the profile would otherwise count, and
  * collapsing them leaves the art's own boundaries as the only mass worth weighing.
+ *
+ * **The symmetry pass goes last, after everything, and that is not interchangeable either.** It
+ * scores a mirror axis *inside a sprite's bounds*, so it needs the segmentation — which is taken
+ * from the alpha of the finished sheet — and it compares mirrored pixels by colour, so it wants the
+ * colours the reader will actually get rather than the ones a palette step is about to replace. Both
+ * point at the same place in the order: after the reading, the reduction, the two cleanups and any
+ * dither. It is the one pass whose *own output* is then re-segmented, because settling a pair can
+ * clear a pixel and a cleared pixel can split a region.
  *
  * `colorHistogram` excludes fully transparent pixels, so the keyed field claims no palette slots,
  * and `applyPalette` copies it through untouched rather than mapping it onto a colour.
@@ -193,8 +205,35 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const cleaned = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
   // And the palette step last of all where a dither holds it — see the note above on why it cannot
   // run anywhere else, and why these two passes come before it rather than after.
-  const output =
+  const reduced =
     positional === null ? cleaned : ditherImage(cleaned, positional.reduction, positional.matrix);
+
+  // The last pass of all, and the only one that runs *over* a reading rather than over the sheet:
+  // an axis is scored inside a sprite's own bounds, so the segmentation has to exist before this can
+  // ask anything. It is therefore taken here, on the sheet as every dial above left it, and the
+  // findings describe that sheet — which is the only state they mean anything in, since a sprite
+  // that has just been made symmetric would report perfect confidence whatever it arrived as.
+  //
+  // `OFF` skips it outright rather than scoring and discarding, which is how the outline expansion
+  // and the reductions are guarded: the sweep converts every pixel of every sprite to OKLab, and
+  // that is not a cost to pay for a reader who never turns the control on. A sheet that did not
+  // segment is skipped for a different reason — there are no bounds to score inside — and the empty
+  // array says so, where `null` would say the reader had left the pass off.
+  const segmented = spriteSegments(reduced, settings.spriteGap);
+  const symmetry =
+    settings.symmetry === 'OFF'
+      ? null
+      : sheetSymmetry(
+          reduced,
+          segmented.kind === 'SEGMENTED' ? segmented.boxes : [],
+          settings.symmetryTolerance,
+          // A percentage on the dial and a share here, because the dial is a figure a reader reads
+          // and this is a figure a confidence is compared with. `CHECK` passes `null`, which is the
+          // one thing that means "settle nothing" — a floor of 100 still settles a sprite that is
+          // already exact.
+          settings.symmetry === 'SNAP' ? settings.symmetryConfidence / 100 : null,
+        );
+  const output = symmetry === null ? reduced : snapSymmetric(reduced, symmetry);
 
   return {
     image: output,
@@ -216,7 +255,13 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // opens off, but is a property of the *result* rather than of the keying setting: a sheet that
     // arrived carrying its own alpha is segmented whether the key pass ran or not. See
     // `spriteSegments` for what it does with the sheets that are not skipped.
-    sprites: spriteSegments(output, settings.spriteGap),
+    // Re-taken where the snap rewrote something, and reused where it did not. A snap can clear a
+    // pixel whose partner was clear, and a pixel cleared out of a one-pixel bridge splits the region
+    // that ran through it — so a segmentation carried over from before the snap would be describing
+    // a sheet that no longer exists. `snapSymmetric` returns its argument by reference where nothing
+    // qualified, which is what makes the comparison the cheap way to ask.
+    sprites: output === reduced ? segmented : spriteSegments(output, settings.spriteGap),
+    symmetry,
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than

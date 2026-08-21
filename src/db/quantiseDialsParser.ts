@@ -9,10 +9,12 @@ import {
   OUTLINE_EXPANSION_RANGE,
   PALETTE_SNAP_RANGE,
   SPRITE_GAP_RANGE,
+  SYMMETRY_CONFIDENCE_RANGE,
+  SYMMETRY_TOLERANCE_RANGE,
   TRIM_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
-import { DITHER_PATTERNS, VOTE_METHODS } from '../types/quantiser.ts';
+import { DITHER_PATTERNS, SYMMETRY_MODES, VOTE_METHODS } from '../types/quantiser.ts';
 import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
 /**
@@ -81,5 +83,18 @@ export function parseQuantiseDials(value: unknown): QuantiseDials {
       PALETTE_SNAP_RANGE,
     ),
     spriteGap: pickWholeNumber(value, 'spriteGap', QUANTISE_DEFAULT_DIALS.spriteGap, SPRITE_GAP_RANGE),
+    symmetry: pick(value, 'symmetry', QUANTISE_DEFAULT_DIALS.symmetry, SYMMETRY_MODES),
+    symmetryTolerance: pickWholeNumber(
+      value,
+      'symmetryTolerance',
+      QUANTISE_DEFAULT_DIALS.symmetryTolerance,
+      SYMMETRY_TOLERANCE_RANGE,
+    ),
+    symmetryConfidence: pickWholeNumber(
+      value,
+      'symmetryConfidence',
+      QUANTISE_DEFAULT_DIALS.symmetryConfidence,
+      SYMMETRY_CONFIDENCE_RANGE,
+    ),
   };
 }

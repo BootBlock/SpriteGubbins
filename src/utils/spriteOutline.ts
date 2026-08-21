@@ -1,5 +1,5 @@
 import { SPRITE_MARKER } from '../constants/spriteMarker.ts';
-import type { Rgba, SpriteBox } from '../types/quantiser.ts';
+import type { Rgba, SpriteBox, SpriteSymmetry } from '../types/quantiser.ts';
 import { FULLY_OPAQUE, createImage, pixelOffset, writePixel } from './imageData.ts';
 import { oklabToSrgb, oklchToOklab } from './oklab.ts';
 
@@ -26,11 +26,24 @@ import { oklabToSrgb, oklchToOklab } from './oklab.ts';
  * writes the result's own pixels whatever the preview is showing — and a mark that stopped at an
  * occupied pixel would break exactly where a reader checking the boundary is looking.
  *
+ * **Each sprite's mirror axis is marked in the same pass, where one was measured**, as a solid tick
+ * just outside the ring, above and below the box. It is a *tick* rather than a line down the
+ * sprite because the rule this file opens with does not bend for it: an axis drawn where it actually
+ * runs would replace the artwork the reader is trying to judge it against, and a column of pixels is
+ * exactly what a symmetry check is being read at. Solid rather than dashed is what keeps it distinct
+ * from the ring it sits against, which alternates the two stops pixel by pixel. A half-pixel axis marks the two
+ * columns it runs between, so the seam the pair straddles is the answer; a whole-pixel axis marks
+ * the one column it runs down. The panel carries the figure to a tenth of a pixel — this says where.
+ *
  * Pure, and one pass over a result that is `grid²` times smaller than the sheet — except at a grid
  * of 1, where it is the sheet. Written for that case: the copy is a single `set` of the whole
  * channel array rather than a per-pixel loop, and only the perimeters are walked after it.
  */
-export function outlineSprites(image: ImageData, boxes: readonly SpriteBox[]): ImageData {
+export function outlineSprites(
+  image: ImageData,
+  boxes: readonly SpriteBox[],
+  axes: readonly SpriteSymmetry[] = [],
+): ImageData {
   const outlined = createImage(image.width, image.height);
   outlined.data.set(image.data);
 
@@ -56,7 +69,24 @@ export function outlineSprites(image: ImageData, boxes: readonly SpriteBox[]): I
     }
   }
 
+  for (const { box, axis } of axes) {
+    // The columns the mirror line runs down, or the two it runs between. `2 × axis` is the doubled
+    // coordinate the search works in, so an odd value is a seam and marks both sides of it.
+    const doubled = Math.round(2 * axis);
+    const columns = doubled % 2 === 0 ? [doubled / 2] : [(doubled - 1) / 2, (doubled + 1) / 2];
+    for (const column of columns) {
+      tick(outlined, column, box.top - 2);
+      tick(outlined, column, box.top + box.height + 1);
+    }
+  }
+
   return outlined;
+}
+
+/** One pixel of the axis tick — solid in the lighter stop, so it reads apart from the dashed ring. */
+function tick(image: ImageData, x: number, y: number): void {
+  if (x < 0 || y < 0 || x >= image.width || y >= image.height) return;
+  writePixel(image.data, pixelOffset(image.width, x, y), LIGHT);
 }
 
 /** One pixel of the outline, in whichever of the two marker colours its position falls on. */
@@ -80,3 +110,13 @@ const MARKERS: readonly Rgba[] = SPRITE_MARKER.map(({ oklch }) =>
 
 /** What an unreachable index would resolve to — see the note at its one use. */
 const DARK: Rgba = { r: 0, g: 0, b: 0, a: FULLY_OPAQUE };
+
+/**
+ * The lighter of the two marker stops, which is what an axis tick is drawn solid in.
+ *
+ * The second entry of {@link SPRITE_MARKER} by position, and named here rather than indexed at the
+ * call site so the choice is stated once: the tick has to separate from the ring it sits beside, and
+ * the ring alternates both stops — so a tick in the darker one would be indistinguishable from a
+ * dash wherever the parity happened to agree.
+ */
+const LIGHT: Rgba = MARKERS[1] ?? DARK;

@@ -19,6 +19,9 @@ const TUNING = {
   fillCleanup: 0,
   cleanupPasses: 1,
   spriteGap: 1,
+  symmetry: 'OFF' as const,
+  symmetryTolerance: 8,
+  symmetryConfidence: 90,
   dither: 'NONE' as const,
   outlineExpansion: 0,
 } as const;
@@ -37,6 +40,7 @@ function resultOf(side: number): QuantiseResult {
     colors: 32,
     keyedShare: 0,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
+    symmetry: null,
     offset: { x: 0, y: 0 },
   };
 }
@@ -170,6 +174,9 @@ describe('useQuantiseWork', () => {
         fillCleanup: 0,
         cleanupPasses: 1,
         spriteGap: 1,
+        symmetry: 'OFF' as const,
+        symmetryTolerance: 8,
+        symmetryConfidence: 90,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,

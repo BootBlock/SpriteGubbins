@@ -113,4 +113,46 @@ describe('outlineSprites', () => {
 
     expect(SHEET.data).toEqual(before);
   });
+
+  it('marks a whole-column axis with one tick either side of the ring', () => {
+    // The 3-wide box's own middle column. The tick sits just outside the ring, in the lighter of the
+    // two marker stops and solid — which is what separates it from the ring's alternating dash.
+    const marked = outlineSprites(SHEET, [BOX], [{ box: BOX, axis: 5, confidence: 1, snapped: false }]);
+
+    expect(at(marked, 5, BOX.top - 2)).toEqual(marker(1));
+    expect(at(marked, 5, BOX.top + BOX.height + 1)).toEqual(marker(1));
+  });
+
+  it('marks a half-pixel axis on both columns it runs between', () => {
+    // A sprite an even number of pixels wide has no centre column, so the seam is named by the pair
+    // that straddles it rather than by rounding to one side and being half a pixel wrong.
+    const marked = outlineSprites(SHEET, [BOX], [{ box: BOX, axis: 4.5, confidence: 1, snapped: false }]);
+
+    expect(at(marked, 4, BOX.top - 2)).toEqual(marker(1));
+    expect(at(marked, 5, BOX.top - 2)).toEqual(marker(1));
+  });
+
+  it('leaves the artwork alone when it marks an axis, as it does when it marks a box', () => {
+    // An axis runs *through* a sprite, so drawing it where it actually falls would replace the very
+    // pixels a reader is checking it against. The tick is outside the ring for that reason.
+    const marked = outlineSprites(SHEET, [BOX], [{ box: BOX, axis: 5, confidence: 1, snapped: false }]);
+
+    for (let y = BOX.top; y < BOX.top + BOX.height; y += 1) {
+      for (let x = BOX.left; x < BOX.left + BOX.width; x += 1) {
+        expect(at(marked, x, y)).toEqual(ART);
+      }
+    }
+  });
+
+  it('drops a tick that would fall off the sheet rather than wrapping it', () => {
+    const corner: SpriteBox = { left: 0, top: 0, width: 3, height: 3, pixels: 9 };
+    const sheet = imageFrom(6, 6, () => CLEAR);
+
+    const marked = outlineSprites(sheet, [corner], [{ box: corner, axis: 1, confidence: 1, snapped: false }]);
+
+    // The tick above the box is off the top edge, so it is not drawn — and it has not reappeared on
+    // the last row, which is what an unclipped write into the flat channel array would do.
+    expect(at(marked, 1, 5)).toEqual(CLEAR);
+    expect(at(marked, 1, corner.top + corner.height + 1)).toEqual(marker(1));
+  });
 });

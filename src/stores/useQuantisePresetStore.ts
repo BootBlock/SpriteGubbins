@@ -87,6 +87,9 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       dither,
       paletteSnap,
       spriteGap,
+      symmetry,
+      symmetryTolerance,
+      symmetryConfidence,
     } = useQuantiseStore.getState();
 
     const preset: QuantisePreset = {
@@ -112,6 +115,9 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
         dither,
         paletteSnap,
         spriteGap,
+        symmetry,
+        symmetryTolerance,
+        symmetryConfidence,
       },
     };
 

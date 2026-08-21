@@ -6,6 +6,9 @@ import {
   DEFAULT_KEY_TOLERANCE,
   DEFAULT_PALETTE_SNAP,
   DEFAULT_SPRITE_GAP,
+  DEFAULT_SYMMETRY,
+  DEFAULT_SYMMETRY_CONFIDENCE,
+  DEFAULT_SYMMETRY_TOLERANCE,
 } from '../constants/quantiser.ts';
 import { FakeWorker } from '../test/fakeWorker.ts';
 import { canUndoDials, currentDials } from '../utils/dialHistory.ts';
@@ -139,6 +142,9 @@ describe('useQuantiseStore', () => {
       lockedPalette: null,
       paletteSnap: DEFAULT_PALETTE_SNAP,
       spriteGap: DEFAULT_SPRITE_GAP,
+      symmetry: DEFAULT_SYMMETRY,
+      symmetryTolerance: DEFAULT_SYMMETRY_TOLERANCE,
+      symmetryConfidence: DEFAULT_SYMMETRY_CONFIDENCE,
     });
   });
 

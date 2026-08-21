@@ -7,6 +7,7 @@ import {
   LINE_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
+import { SYMMETRY_CONFIDENCE_RANGE } from '../constants/quantiser.ts';
 import { parseQuantiseDials } from './quantiseDialsParser.ts';
 
 /** A stored tuning that differs from the defaults in every field, so a fallback cannot hide. */
@@ -24,6 +25,9 @@ const STORED: QuantiseDials = {
   dither: 'BAYER_8',
   paletteSnap: 40,
   spriteGap: 4,
+  symmetry: 'SNAP',
+  symmetryTolerance: 20,
+  symmetryConfidence: 75,
 };
 
 describe('parseQuantiseDials', () => {
@@ -51,6 +55,25 @@ describe('parseQuantiseDials', () => {
       expect(parseQuantiseDials({ colorMerge: outside }).colorMerge).toBe(QUANTISE_DEFAULT_DIALS.colorMerge);
     }
     expect(parseQuantiseDials({ colorMerge: COLOR_MERGE_RANGE.max }).colorMerge).toBe(COLOR_MERGE_RANGE.max);
+  });
+
+  it('refuses a symmetry mode this build does not have', () => {
+    // No translation into a replacement, which is what this layer is not: a mode that has been
+    // retired simply falls back to the default, and the default is the pass switched off.
+    expect(parseQuantiseDials({ ...STORED, symmetry: 'MIRROR' }).symmetry).toBe(
+      QUANTISE_DEFAULT_DIALS.symmetry,
+    );
+  });
+
+  it('refuses a confidence floor below the one its own control offers', () => {
+    // The floor under the floor: a stored 10% would be a position the slider has no notch for, and
+    // one that offers to settle a sprite whose halves agree a tenth of the time.
+    expect(
+      parseQuantiseDials({ symmetryConfidence: SYMMETRY_CONFIDENCE_RANGE.min - 1 }).symmetryConfidence,
+    ).toBe(QUANTISE_DEFAULT_DIALS.symmetryConfidence);
+    expect(parseQuantiseDials({ symmetryConfidence: SYMMETRY_CONFIDENCE_RANGE.min }).symmetryConfidence).toBe(
+      SYMMETRY_CONFIDENCE_RANGE.min,
+    );
   });
 
   it('refuses a fractional value for a dial that counts in whole steps', () => {

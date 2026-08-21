@@ -263,6 +263,31 @@ export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
 export type VoteMethod = (typeof VOTE_METHODS)[number];
 
 /**
+ * What the symmetry pass does with what it finds — the three positions the Symmetry control offers.
+ *
+ * The `as const` array is the union's single definition, and unlike the two beside it this one *is*
+ * validated against on the way out of storage: it is a dial, so it travels in a saved quantiser
+ * preset. `parseQuantiseDials` checks membership against this array rather than a list restated
+ * there.
+ */
+export const SYMMETRY_MODES = ['OFF', 'CHECK', 'SNAP'] as const;
+
+/**
+ * One of the three.
+ *
+ * `OFF` is the off position every pass on this tab opens at: nothing is measured and nothing is
+ * reported. `CHECK` scores each sprite's best vertical mirror axis and reports it, changing no pixel
+ * of the sheet. `SNAP` does that and then settles the mirrored pairs of the sprites that were
+ * already symmetric enough to qualify, which is the only one of the three that rewrites artwork.
+ *
+ * **The gap between `CHECK` and `SNAP` is deliberate and is the whole safety of the feature.** A
+ * sprite holding a sword, wearing one pauldron, or drawn with a shoulder bag is *legitimately*
+ * asymmetric, and a snap that settled it would delete the thing that made it that subject. `CHECK`
+ * is therefore where a reader finds out what their sheet actually is, before anything is rewritten.
+ */
+export type SymmetryMode = (typeof SYMMETRY_MODES)[number];
+
+/**
  * The positional dither patterns the tab offers, in the order the control shows them.
  *
  * The `as const` array is the union's single definition, as the vote methods' is. Nothing validates
@@ -366,6 +391,30 @@ export interface QuantiseTuning {
    * overlap. See `spriteSegments`.
    */
   readonly spriteGap: number;
+  /**
+   * What the vertical-symmetry pass does with what it finds — see {@link SymmetryMode}.
+   *
+   * Downstream of {@link spriteGap} rather than beside it, because it is a reading *of* the
+   * segmentation: the boxes that pass produces are the regions an axis is scored inside, so a sheet
+   * that did not segment has nothing for this to run on whatever it is set to.
+   */
+  readonly symmetry: SymmetryMode;
+  /**
+   * How far two mirrored pixels may sit apart and still be counted as agreeing, in the scaled-OKLab
+   * units every colour dial on this tab is stated in.
+   *
+   * `0` is not an off position — it is the strictest one, where a pair agrees only when the two
+   * pixels are identical. {@link symmetry} is what switches the pass off.
+   */
+  readonly symmetryTolerance: number;
+  /**
+   * The share of a sprite's mirrored pairs that must already agree before `SNAP` will rewrite it,
+   * as a percentage.
+   *
+   * The gate that stops a snap deleting a held sword. Read only under `SNAP`; under `CHECK` every
+   * sprite is reported and none is rewritten, so there is nothing for a floor to admit or refuse.
+   */
+  readonly symmetryConfidence: number;
 }
 
 /** Everything `quantiseImage` needs beyond the image itself. */
@@ -491,6 +540,45 @@ export type SpriteSegmentation =
       readonly specks: number;
     };
 
+/**
+ * One sprite's best vertical mirror axis, how well it holds, and whether the snap acted on it.
+ *
+ * **It carries its own box rather than an index into {@link SpriteSegmentation}.** A snap rewrites
+ * pixels, and rewriting pixels can split or join a connected region — so the segmentation reported
+ * beside the finished sheet is re-taken *after* the snap and need not hold the same boxes this was
+ * measured over. An index would then point at a different sprite, silently. The box is what the
+ * reading is about, so the reading holds it.
+ *
+ * The figures are the sheet as it stood **before** the snap, which is the only state in which they
+ * mean anything: a sprite that has just been made symmetric scores a confidence of 1 whatever it
+ * arrived as, and a reader deciding whether their subject is symmetric would be reading their own
+ * snap back to themselves.
+ */
+export interface SpriteSymmetry {
+  /** The sprite the axis was scored inside, in the drawn pixels `SpriteBox` is stated in. */
+  readonly box: SpriteBox;
+  /**
+   * The mirror line, as a column coordinate on the result — the partner of column `x` is
+   * `2 × axis − x`.
+   *
+   * Half-integer where the line falls between two columns, whole where it runs down the middle of
+   * one. Both are ordinary: a sprite an even number of pixels wide has no centre column to be
+   * symmetric about.
+   */
+  readonly axis: number;
+  /**
+   * How much of the sprite actually mirrors about {@link axis}, `0`–`1`.
+   *
+   * The share of its mirrored pairs agreeing within the tolerance in force, counting only pairs
+   * where at least one side carries coverage — a pair of empty pixels is not evidence of symmetry,
+   * and counting the empty corners of a bounding box would report a diagonal sword as a symmetric
+   * sprite.
+   */
+  readonly confidence: number;
+  /** Whether the snap settled this sprite's pairs, which `SNAP` and the confidence floor decide. */
+  readonly snapped: boolean;
+}
+
 /** What came back: the transformed image, and the numbers that say what it did. */
 export interface QuantiseResult {
   readonly image: ImageData;
@@ -511,6 +599,18 @@ export interface QuantiseResult {
    * mode, the atlas calculator's count — is comparing it with something a dial has just moved.
    */
   readonly sprites: SpriteSegmentation;
+  /**
+   * Each sprite's vertical mirror axis and how well it holds, or `null` where the pass did not run.
+   *
+   * `null` is the Symmetry control's `OFF` position and nothing else. An empty array is a different
+   * statement — the pass ran and had no sprites to run on, which is what a solid or scattered sheet
+   * gives it — and the panel says so rather than reporting "no symmetry found".
+   *
+   * A fact of the result for the reason {@link difference} and {@link sprites} are: measured
+   * separately it could describe an older result than the one beside it, and under `SNAP` it is the
+   * record of what was rewritten in producing {@link image}.
+   */
+  readonly symmetry: readonly SpriteSymmetry[] | null;
   /**
    * Where the grid sat on the source, as the transform measured it.
    *

@@ -121,12 +121,16 @@ export function ImageComparison({
   // picture the pane's own description no longer fits.
   const resultImage = quantised?.result.image;
   const sprites = quantised?.result.sprites;
+  // The axes travel with the boxes because they are the same answer to the same question — what was
+  // found on this sheet — and both are drawn in one pass so the result is copied once. `null` is the
+  // symmetry pass being off, which draws boxes and no ticks.
+  const symmetry = quantised?.result.symmetry;
   const marked = useMemo(
     () =>
       resultImage === undefined || sprites === undefined || shown !== 'SPRITES'
         ? null
-        : outlineSprites(resultImage, sprites.kind === 'SEGMENTED' ? sprites.boxes : []),
-    [resultImage, sprites, shown],
+        : outlineSprites(resultImage, sprites.kind === 'SEGMENTED' ? sprites.boxes : [], symmetry ?? []),
+    [resultImage, sprites, symmetry, shown],
   );
 
   // `zoom` is the scale for *both* panes, because it is measured per source pixel: the second canvas

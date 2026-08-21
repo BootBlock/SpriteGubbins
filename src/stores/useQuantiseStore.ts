@@ -7,6 +7,7 @@ import type {
   ImportedImage,
   LockedPalette,
   PixelGrid,
+  SymmetryMode,
   VoteMethod,
 } from '../types/quantiser.ts';
 import { currentDials, openHistory, recordDials, redoDials, undoDials } from '../utils/dialHistory.ts';
@@ -83,6 +84,9 @@ export interface QuantiseState extends QuantiseDials {
   unlockPalette(): void;
   setPaletteSnap(paletteSnap: number): void;
   setSpriteGap(spriteGap: number): void;
+  setSymmetry(symmetry: SymmetryMode): void;
+  setSymmetryTolerance(symmetryTolerance: number): void;
+  setSymmetryConfidence(symmetryConfidence: number): void;
   /**
    * Put every dial where a saved preset says, in one move.
    *
@@ -248,6 +252,18 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
 
     setSpriteGap: (spriteGap) => {
       edit('spriteGap', { spriteGap });
+    },
+
+    setSymmetry: (symmetry) => {
+      edit('symmetry', { symmetry });
+    },
+
+    setSymmetryTolerance: (symmetryTolerance) => {
+      edit('symmetryTolerance', { symmetryTolerance });
+    },
+
+    setSymmetryConfidence: (symmetryConfidence) => {
+      edit('symmetryConfidence', { symmetryConfidence });
     },
 
     applyDials: (dials) => {

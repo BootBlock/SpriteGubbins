@@ -21,6 +21,7 @@ import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 import { QuantisePresetControls } from '../quantise/QuantisePresetControls.tsx';
 import { SpriteControls } from '../quantise/SpriteControls.tsx';
+import { SymmetryControls } from '../quantise/SymmetryControls.tsx';
 
 /**
  * Turning a returned sheet into genuine pixel art, after the fact.
@@ -71,6 +72,9 @@ export function QuantiseTab() {
   const lockedPalette = useQuantiseStore((state) => state.lockedPalette);
   const paletteSnap = useQuantiseStore((state) => state.paletteSnap);
   const spriteGap = useQuantiseStore((state) => state.spriteGap);
+  const symmetry = useQuantiseStore((state) => state.symmetry);
+  const symmetryTolerance = useQuantiseStore((state) => state.symmetryTolerance);
+  const symmetryConfidence = useQuantiseStore((state) => state.symmetryConfidence);
   // One memoised object, because the hook keys its debounce on the tuning's identity — atomic
   // selectors above, so an unrelated store change does not rebuild it.
   const tuning = useMemo(
@@ -85,6 +89,9 @@ export function QuantiseTab() {
       cleanupPasses,
       dither,
       spriteGap,
+      symmetry,
+      symmetryTolerance,
+      symmetryConfidence,
     }),
     [
       vote,
@@ -97,6 +104,9 @@ export function QuantiseTab() {
       cleanupPasses,
       dither,
       spriteGap,
+      symmetry,
+      symmetryTolerance,
+      symmetryConfidence,
     ],
   );
   const setSource = useQuantiseStore((state) => state.setSource);
@@ -228,6 +238,14 @@ export function QuantiseTab() {
             busy={busy}
           />
           <SpriteControls sprites={quantised?.result.sprites ?? null} target={target} busy={busy} />
+          {/* Directly under the sprite panel, because it is a reading *of* that reading: an axis is
+              scored inside a sprite's own bounds, so what this panel can say is decided by what the
+              one above found. It is inside the same sheet guard for the same reason as the rest. */}
+          <SymmetryControls
+            symmetry={quantised?.result.symmetry ?? null}
+            sprites={quantised?.result.sprites ?? null}
+            busy={busy}
+          />
           {/* Last of the panels, and below the dials rather than above them: it is the only one
               whose subject is the reader's own way of working rather than this sheet, so it reads as
               a place to *put* what the controls above arrived at. Inside the sheet guard with the

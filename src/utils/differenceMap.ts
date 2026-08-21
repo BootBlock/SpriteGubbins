@@ -1,5 +1,6 @@
 import type { DifferenceMap, GridMesh } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, pixelOffset } from './imageData.ts';
+import { pixelDistance } from './pixelDistance.ts';
 import { DIFFERENCE_PRECISION } from '../constants/quantiser.ts';
 import { srgbToOklabInto } from './oklab.ts';
 import type { MutableOklab } from './oklab.ts';
@@ -99,35 +100,4 @@ export function differenceMap(source: ImageData, result: ImageData, mesh: GridMe
   }
 
   return { width, height, cells, mean: carried === 0 ? 0 : total / carried, peak };
-}
-
-/**
- * How far one source pixel sits from the colour that replaced it, across colour **and** coverage.
- *
- * Four axes rather than three, on the same scale, because a sprite sheet's most consequential
- * losses are losses of *alpha*: a keyed field eroding a contour, or a soft edge coming back opaque.
- * Scaled OKLab already runs 0–255 from black to white, so an alpha byte is a fourth axis of the
- * same span with no weight to choose — which is the same footing `applyPalette` puts it on.
- *
- * **A fully transparent pixel's colour is not compared**, on either side. `ImageData` carries
- * whatever bytes happened to sit under a cleared pixel — usually zeroes, sometimes the colour it was
- * before it was keyed — and none of it is visible, so measuring it would report a difference between
- * two things nobody can see. Where one side is clear the distance is the coverage alone, which is
- * `FULLY_OPAQUE` at its widest: a pixel that vanished is exactly as far from its source as black is
- * from white.
- */
-function pixelDistance(
-  source: MutableOklab,
-  sourceAlpha: number,
-  cell: MutableOklab,
-  cellAlpha: number,
-): number {
-  if (sourceAlpha === FULLY_TRANSPARENT || cellAlpha === FULLY_TRANSPARENT) {
-    return sourceAlpha === cellAlpha ? 0 : Math.abs(sourceAlpha - cellAlpha);
-  }
-  const dL = source.L - cell.L;
-  const dA = source.a - cell.a;
-  const dB = source.b - cell.b;
-  const dAlpha = sourceAlpha - cellAlpha;
-  return Math.sqrt(dL * dL + dA * dA + dB * dB + dAlpha * dAlpha);
 }

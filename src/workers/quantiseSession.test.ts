@@ -19,6 +19,9 @@ function settingsAt(grid: number): QuantiseSettings {
     fillCleanup: 0,
     cleanupPasses: 1,
     spriteGap: 1,
+    symmetry: 'OFF' as const,
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
     dither: 'NONE',
     outlineExpansion: 0,
     colorMerge: 0,
@@ -33,6 +36,7 @@ function resultOf(side: number): QuantiseResult {
     colors: 32,
     keyedShare: 0,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
+    symmetry: null,
     offset: { x: 0, y: 0 },
   };
 }

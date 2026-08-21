@@ -846,6 +846,123 @@ export const SMALLEST_SPRITE_PIXELS = 4;
 export const SCATTERED_SPRITE_CEILING = 512;
 
 /**
+ * How far either side of a sprite's bounding-box centre the mirror-axis search looks, in drawn
+ * pixels.
+ *
+ * A tight bounding box centres a symmetric sprite exactly, so the centre is where the answer is
+ * unless something asymmetric widened the box — and an appendage sticking `d` pixels past the
+ * silhouette's mirror moves the centre by `d / 2`. Eight pixels of reach therefore covers a limb,
+ * a weapon or a cloak extending sixteen drawn pixels past what the other side holds, which is well
+ * past anything a sprite drawn at 16 to 64 pixels a side can carry. The reference sheet
+ * (`armour.png`, 1254², grid 6) separates into fifteen pieces measuring 24 to 35 drawn pixels
+ * across, where the quarter-width bound below is the binding one on all but the widest of them.
+ *
+ * It is a **bound on cost as much as on the claim**: the sweep is `(4 × reach + 1)` scorings of a
+ * whole box, so an unbounded search would be quadratic in the widest sprite on the sheet while a
+ * bounded one is linear in the sheet. `symmetryAxis` narrows it further to a quarter of the box's
+ * own width, since a candidate further out than that pairs up less of the sprite than it leaves
+ * unpaired.
+ *
+ * An axis genuinely further out comes back as a **low confidence about the centre**, which is the
+ * honest report: the pass says it did not find symmetry, rather than naming an axis it did not test.
+ */
+export const SYMMETRY_AXIS_SEARCH = 8;
+
+/**
+ * The Symmetry control's options, in the order offered — the identifier the pipeline stores, and the
+ * label the select shows.
+ *
+ * Three positions rather than a checkbox, because measuring and rewriting are different acts and the
+ * gap between them is the safety of the whole feature: `CHECK` tells a reader what their sheet is,
+ * and `SNAP` acts on it. A single toggle would make finding out and being changed the same button.
+ */
+export const SYMMETRY_MODE_CHOICES = [
+  { value: 'OFF', label: 'OFF (no symmetry reading)' },
+  { value: 'CHECK', label: 'CHECK (report the axis)' },
+  { value: 'SNAP', label: 'SNAP (settle mirrored pairs)' },
+] as const;
+
+/**
+ * Where the Symmetry control opens — off, as every pass on this tab that changes artwork opens.
+ *
+ * It opens off for a stronger reason than the others, though, and the reason is about the subjects
+ * rather than about the cost: **held items, drawn weapons and one-sided gear are legitimately
+ * asymmetric.** A sword in the right hand, a single pauldron, a quiver over one shoulder, a bag on
+ * one hip — each is the thing that makes the subject that subject, and each is exactly what a
+ * mirror-pair vote would fold away. Nothing here can tell a drifted highlight from a deliberate
+ * asymmetry, so the reader is the one who says whether their sheet was meant to be symmetric at all.
+ */
+export const DEFAULT_SYMMETRY = 'OFF';
+
+/**
+ * The symmetry tolerance's range: how far two mirrored pixels may sit apart and still count as
+ * agreeing, in the scaled-OKLab units every colour dial here is stated in.
+ *
+ * **`0` is the strictest position rather than an off position**, which makes this the second dial on
+ * the tab whose zero does not switch a pass off — at zero a pair agrees only where the two pixels
+ * are identical, which is what a flat-coloured sheet from a clean generator can actually reach. The
+ * Symmetry control's own `OFF` is what stops the pass running.
+ *
+ * The ceiling is 64 because past it the figure stops separating anything: a quarter of the
+ * black-to-white span already admits a mid-tone against its own shadow, and a tolerance that admits
+ * a shadow admits most of what a returned sprite's two halves disagree about. Measured on the
+ * reference sheet, whose fifteen armour pieces are drawn at several angles and are asymmetric by
+ * subject, the mean share reported rises from **37%** at exact to **72%** at 64 — near-symmetry
+ * claimed for a sheet that holds none, which is what would leave the floor below nothing to refuse.
+ *
+ * **What the dial is worth depends entirely on how flat the sheet already is**, and the reference
+ * sheet measures both ends of that. Reduced to 64 colours with the colour merge at 24 it settles to
+ * eleven colours, and every rung from exact to 24 reports the identical **37%** — the merge has
+ * already folded everything within 24, so no two mirrored pixels are left sitting between. The same
+ * sheet read with no reduction and no merge holds 12,026 colours, where exact reports **0.3%** and
+ * the rungs climb smoothly: 6.7% at 2, 22.8% at 8, 34.5% at 16, 52.5% at 32.
+ */
+export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
+
+/**
+ * Where the symmetry tolerance opens — see {@link SYMMETRY_TOLERANCE_RANGE} for the units and for
+ * the sweep behind this figure.
+ *
+ * Eight is the rung that behaves sensibly at both ends of that sweep. On a **reduced** sheet it is a
+ * no-op, and rightly so: the colours are flat and far apart, so exact equality is the question worth
+ * asking and anything short of the gap between two palette entries changes no answer. On an
+ * **unreduced** one it turns a reading of 0.3% — which says nothing about the artwork and everything
+ * about the resampling — into 22.8%, without reaching the 32 and above where a surface starts
+ * matching its own shading.
+ */
+export const DEFAULT_SYMMETRY_TOLERANCE = 8;
+
+/**
+ * The confidence floor's range: the share of a sprite's mirrored pairs that must already agree
+ * before `SNAP` will settle it, as a percentage.
+ *
+ * **It starts at 50 rather than at 0, and that floor under the floor is the point of the control.**
+ * A sprite whose halves agree about half the time is not a symmetric sprite with drift in it, it is
+ * an asymmetric subject — and offering a position that would snap one is offering to delete the
+ * sword. The top of the range is 100, which settles only sprites already exactly symmetric within
+ * the tolerance; that sounds like a position that does nothing and is not, because the pass still
+ * *reports* every sprite and the reader can watch which of them reach it.
+ *
+ * The reference sheet is what this was read against, and it is the awkward case rather than the easy
+ * one: fifteen armour pieces drawn at several angles, none of them meant to be symmetric. At the
+ * default tolerance they report **17% to 68%**, so nothing is settled at 90 or at 75 — and four of
+ * them, the pieces whose best axis lands on their own box centre, are settled at 60. A sheet of
+ * front-facing subjects is the case the other way round, and the panel lists every share so which
+ * one is in front of the reader is legible rather than assumed.
+ */
+export const SYMMETRY_CONFIDENCE_RANGE = { min: 50, max: 100, step: 1 } as const;
+
+/**
+ * Where the confidence floor opens — see {@link SYMMETRY_CONFIDENCE_RANGE} for the figures behind it.
+ *
+ * High, because the cost of the two mistakes is not symmetric: a floor set too high leaves a sprite
+ * unchanged that a reader can settle by lowering it while they watch, and a floor set too low
+ * rewrites a subject that was asymmetric on purpose. Nine tenths admits the drift a generator leaves
+ * across a subject it did draw symmetric, and refuses every piece on the reference sheet.
+ */
+export const DEFAULT_SYMMETRY_CONFIDENCE = 90;
+
+/**
  * The preview magnifications, in the order the control offers them.
  *
  * 1:1 leads because it is the case that decides whether the result is genuine pixel art; the rest
@@ -1162,6 +1279,12 @@ export const QUANTISE_TOOLTIPS = {
     'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it — which is also why the merge stops standing aside for a pinned or locked palette while a pattern is in force. One thing it costs: the standard vote’s outline rescue needs a colour reduction to have run before the patches are read, and a dither is that reduction held back to the end, so choosing a pattern switches the rescue off. Raise the outline expansion above it, or take the ink-weighted reading, if contours start to break up.',
   spriteGap:
     'How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels. A subject rarely comes back as one connected shape — a sword is held clear of the hand, a shadow sits under the feet, and keying an anti-aliased join can cut a pauldron away from the shoulder it rests on — so pieces this close together are read as parts of one thing. Unlike every other dial on this tab, 0 is not an off position: the count is always taken, and at 0 pieces are still gathered where their boxes overlap, which is what keeps an outstretched arm from being counted apart from the body it reaches out of. Raise it when one subject is being counted as several, and lower it when two neighbouring subjects are being counted as one — past the width of the gutter between them, the whole sheet folds into a single box. It changes no pixel of the sheet, only the reading of it, so the download is the same file whatever it is set to. Switch the preview to Sprites to see where the boundaries were drawn.',
+  symmetry:
+    'Whether each sprite on the sheet is scored for vertical symmetry, and whether anything is done about it. Every separate piece of artwork the sheet was found to hold is scored against a range of candidate mirror lines, half a pixel apart, and the one its two halves agree best about is reported along with how much of the sprite actually mirrors around it. CHECK reports and changes nothing — not one pixel of the sheet, the download or anything stored. SNAP does the same and then settles the mirrored pairs of the sprites that already passed the confidence floor below, writing one colour across each pair so the two halves match exactly — whichever of the pair’s two colours has more of itself beside it inside that sprite, so a break in a contour is closed from the intact side rather than copied across to the other. It is off by default because a great many subjects are asymmetric on purpose: a sword in one hand, a single pauldron, a quiver over one shoulder, a bag on one hip. Nothing here can tell one of those from a half that simply drifted, so read the sheet with CHECK first and only reach for SNAP where the subject was meant to be symmetric. Switch the preview to Sprites to see where each axis was placed.',
+  symmetryTolerance:
+    'How far apart two mirrored pixels may sit and still be counted as agreeing, measured the way every colour distance on this tab is. It is what the reported confidence is a share of: raise it and more of a sprite counts as already symmetric, lower it and only close matches do. Unlike most dials here, 0 is not an off position — it is the strictest one, where two pixels have to be identical — and the Symmetry control above is what switches the pass off. How much it is worth depends on how flat the sheet already is: once a colour budget and the colour merge have settled it to a handful of flat colours, two mirrored pixels are either identical or a whole palette step apart, and every setting short of that step reports the same figure. On a sheet read with no colour reduction at all it matters a great deal, because almost no two pixels are exactly equal there and exact would report near-nothing about every sprite. The default sits where it does something on the second kind of sheet and nothing on the first, which is the right answer for both. It reaches the sheet only through the floor below: a tolerance that lifts a sprite past the floor is what lets a snap settle it.',
+  symmetryConfidence:
+    'How much of a sprite has to mirror already before SNAP will settle it. This is the control that keeps a snap off the subjects that are asymmetric on purpose — a figure holding a sword agrees with its own mirror across the body and disagrees across the whole arm, so it lands well below the floor and is reported without being touched. Lower it to snap sprites that have drifted further apart, and raise it to settle only the ones that were nearly there already. It appears only while SNAP is chosen, since under CHECK every sprite is reported and none is rewritten. Sprites that pass are named in the panel, so what a change to this admits or refuses can be watched rather than guessed.',
   presetName:
     'What this set of dial positions is called in the list below. Give it the name of the thing it suits rather than the settings it holds — the generator whose sheets need it, or the style of artwork — because the numbers are already on screen and the reason for them is not. A name that is already in the list updates that entry rather than adding a second one under the same name.',
   presetDescription:
