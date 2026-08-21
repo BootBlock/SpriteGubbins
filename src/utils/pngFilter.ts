@@ -3,8 +3,9 @@
  *
  * Every row of a PNG carries a leading byte naming one of five transforms applied to it, each
  * predicting a byte from its neighbours and storing the difference. Deflate then compresses the
- * residuals rather than the pixels, which is most of where a PNG's size comes from: a smooth ramp
- * is a run of zeroes under filter 1 and a run of unrelated bytes under filter 0.
+ * residuals rather than the pixels, which is most of where a PNG's size comes from: a ramp climbing
+ * by one across a row is 256 distinct bytes under filter 0 and 256 copies of the same byte under
+ * filter 1, and deflate has far more to work with in the second.
  *
  * **Which filters a caller offers is the caller's decision, not this file's**, which is why the
  * candidate list is an argument. The two colour types this app writes want different answers, and
@@ -100,7 +101,7 @@ export function filterScanlines({
   height,
   bytesPerPixel,
   candidates,
-}: FilterInput): Uint8Array {
+}: FilterInput): Uint8Array<ArrayBuffer> {
   const out = new Uint8Array((rowBytes + 1) * height);
   const trial = new Uint8Array(rowBytes);
   const best = new Uint8Array(rowBytes);

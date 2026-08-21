@@ -1,3 +1,4 @@
+import { concatBytes } from '../utils/pngChunk.ts';
 import { scanlineFilters, unfilterScanlines } from './pngScanlines.ts';
 
 /**
@@ -8,6 +9,11 @@ import { scanlineFilters, unfilterScanlines } from './pngScanlines.ts';
  * need to establish is that the bytes are a PNG. It walks the chunk stream, reads `IHDR`, `PLTE` and
  * `tRNS` as a decoder would, inflates `IDAT` through the platform's `DecompressionStream`, and
  * reconstructs the scanlines through `unfilterScanlines`.
+ *
+ * `concatBytes` is taken from the encoder's own file rather than restated: joining the `IDAT`
+ * fragments is not part of what this is cross-checking, and a second spelling of it would be
+ * duplication with no argument behind it. Everything that *is* a cross-check — the CRC, the filter
+ * reconstruction — is written out separately here on purpose.
  *
  * In `src/test/` rather than `src/utils/` because nothing the app ships reads a PNG — the browser
  * decodes the sheets a reader drops in.
@@ -68,32 +74,27 @@ export async function decodePng(bytes: Uint8Array): Promise<DecodedPng> {
   const bitDepth = header.getUint8(8);
   const colorType = header.getUint8(9);
   const interlace = header.getUint8(12);
-  // Depth 8 only, which is every file these tests read: the encoder writes nothing else, and the
-  // reference sheet at the repository root is colour type 2.
-  const bytesPerPixel = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 }[colorType] ?? 4;
+  // Colour types 3 and 6 at depth 8, because those are the two `encodePng` writes and every file
+  // this reads comes from it. Anything else is refused rather than guessed at: a decoder that
+  // silently misreads a format it does not know would make a wrong file look like a passing test.
+  if (bitDepth !== 8 || (colorType !== 3 && colorType !== 6)) {
+    throw new Error(`unsupported: colour type ${String(colorType)} at depth ${String(bitDepth)}`);
+  }
+  const bytesPerPixel = colorType === 3 ? 1 : 4;
 
-  const inflated = await inflate(concat(idat));
+  const inflated = await inflate(concatBytes(idat));
   const rowBytes = width * bytesPerPixel;
   const raw = unfilterScanlines(inflated, rowBytes, height, bytesPerPixel);
   const filters = scanlineFilters(inflated, rowBytes, height);
 
   const pixels = new Uint8ClampedArray(width * height * 4);
   for (let pixel = 0; pixel < width * height; pixel += 1) {
-    const at = pixel * bytesPerPixel;
     if (colorType === 3) {
       const index = raw[pixel] ?? 0;
       const entry = palette?.[index] ?? [0, 0, 0];
       pixels.set([entry[0] ?? 0, entry[1] ?? 0, entry[2] ?? 0, transparency?.[index] ?? 255], pixel * 4);
-    } else if (colorType === 2) {
-      pixels.set([raw[at] ?? 0, raw[at + 1] ?? 0, raw[at + 2] ?? 0, 255], pixel * 4);
-    } else if (colorType === 0) {
-      const grey = raw[at] ?? 0;
-      pixels.set([grey, grey, grey, 255], pixel * 4);
-    } else if (colorType === 4) {
-      const grey = raw[at] ?? 0;
-      pixels.set([grey, grey, grey, raw[at + 1] ?? 0], pixel * 4);
     } else {
-      pixels.set(raw.subarray(at, at + 4), pixel * 4);
+      pixels.set(raw.subarray(pixel * 4, pixel * 4 + 4), pixel * 4);
     }
   }
 
@@ -103,16 +104,6 @@ export async function decodePng(bytes: Uint8Array): Promise<DecodedPng> {
 async function inflate(bytes: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([bytes as BlobPart]).stream().pipeThrough(new DecompressionStream('deflate'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-
-function concat(parts: readonly Uint8Array[]): Uint8Array {
-  const out = new Uint8Array(parts.reduce((sum, part) => sum + part.length, 0));
-  let at = 0;
-  for (const part of parts) {
-    out.set(part, at);
-    at += part.length;
-  }
-  return out;
 }
 
 /** The decoder's own CRC, so a corrupt chunk fails here rather than being trusted. */

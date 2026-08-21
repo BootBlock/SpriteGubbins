@@ -12,7 +12,7 @@
  */
 
 /** The eight bytes a PNG opens with — the spec's §5.2 signature, which is how a reader knows it. */
-export const PNG_SIGNATURE = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
+export const PNG_SIGNATURE: Uint8Array<ArrayBuffer> = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
 /**
  * The CRC-32 table PNG's §5.5 check value is computed from, built once on first use.
@@ -22,8 +22,10 @@ export const PNG_SIGNATURE = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
  * data, never its length.
  *
  * `>>> 0` after every step, because JavaScript's bitwise operators work on **signed** 32-bit
- * integers: without it a table entry whose top bit is set comes back negative, and a negative CRC
- * written through `DataView.setUint32` is a file no decoder will open.
+ * integers: without it a table entry whose top bit is set comes back negative, and every later
+ * comparison, log and test expectation is then written against a number nobody would recognise.
+ * `DataView.setUint32` would in fact write the same four bytes either way, so the file survives —
+ * which is exactly what makes an unsigned convention worth keeping rather than discovering.
  */
 let crcTable: Uint32Array | null = null;
 
@@ -60,7 +62,7 @@ export function crc32(bytes: Uint8Array): number {
  * `IEND`) is spelled exactly as the spec spells it — so it is passed through verbatim rather than
  * normalised.
  */
-export function pngChunk(type: string, data: Uint8Array): Uint8Array {
+export function pngChunk(type: string, data: Uint8Array): Uint8Array<ArrayBuffer> {
   const chunk = new Uint8Array(data.length + 12);
   const view = new DataView(chunk.buffer);
   view.setUint32(0, data.length);
@@ -72,8 +74,16 @@ export function pngChunk(type: string, data: Uint8Array): Uint8Array {
   return chunk;
 }
 
-/** The signature and the chunks, end to end — the file. */
-export function concatBytes(parts: readonly Uint8Array[]): Uint8Array {
+/**
+ * The signature and the chunks, end to end — the file.
+ *
+ * The return type names its own buffer, and every byte-producing function in this feature does the
+ * same. `Uint8Array` alone is `Uint8Array<ArrayBufferLike>`, which a `Blob` and a `CompressionStream`
+ * both refuse — they take an `ArrayBuffer`-backed view, because a `SharedArrayBuffer`-backed one
+ * throws at runtime, and this app *is* cross-origin isolated so that type genuinely exists here. A
+ * cast at each call site would assert the check away rather than answer it.
+ */
+export function concatBytes(parts: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
   const total = parts.reduce((sum, part) => sum + part.length, 0);
   const out = new Uint8Array(total);
   let at = 0;

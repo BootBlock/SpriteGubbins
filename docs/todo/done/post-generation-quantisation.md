@@ -29,6 +29,14 @@
 >   hook became `useImageFile.ts` (a file to `ImageData`), `useImagePaste.ts` (the window listener,
 >   added only by this tab) and `useFileDropTarget.ts` (the drag state both drop targets share). The
 >   §4 table still names the original; this is the entry that supersedes it.
+> - **§4's `useImageDownload.ts` no longer goes through a canvas.** The table below records it as
+>   `ImageData` → `canvas.toBlob('image/png')` → download, which could only ever write truecolour —
+>   so a sheet reduced to a colour budget arrived on disk as a 32-bit file that merely happened to
+>   use that many colours, and the palette this whole feature exists to produce was stated nowhere in
+>   it. It now encodes a true indexed PNG (`PLTE` + `tRNS`) through `src/utils/encodePng.ts` and its
+>   four neighbours, on a thread of its own in `src/workers/pngWorker.ts`, falling back to truecolour
+>   only where the sheet holds more colours than a palette can name. The §4 table still names the
+>   original; this is the entry that supersedes it.
 >
 > **§2.1's `spriteTargetSize` candidate is computed**, which took a relation §2.1 did not state. The
 > field is free prose — the shipped presets hold *"48 × 96 px assembled (2 metres tall at 48 px per

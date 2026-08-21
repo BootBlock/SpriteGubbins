@@ -7,11 +7,21 @@
  * opens.) Supported in every browser this app targets, and in Node, which is what lets the encoder's
  * tests deflate and inflate for real rather than against a stub.
  *
+ * The input is fed in as a stream of one chunk rather than wrapped in a `Blob`, which would copy it:
+ * the caller's argument is the whole filtered sheet, 67 megabytes on the largest image the tab
+ * admits, and a second copy of it is worth avoiding for four lines.
+ *
  * In `src/utils/` and still pure in the sense this directory means: a function of its argument, with
  * no store, no document and no I/O. It is asynchronous because the platform's compressor is, not
  * because it is waiting on anything outside the process.
  */
-export async function deflate(bytes: Uint8Array): Promise<Uint8Array> {
-  const stream = new Blob([bytes as BlobPart]).stream().pipeThrough(new CompressionStream('deflate'));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+export async function deflate(bytes: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
+  const source = new ReadableStream<BufferSource>({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
+  const compressed = source.pipeThrough(new CompressionStream('deflate'));
+  return new Uint8Array(await new Response(compressed).arrayBuffer());
 }

@@ -1,36 +1,21 @@
 import { useCallback } from 'react';
-import { useUIStore } from '../stores/useUIStore.ts';
+import { useFileSave } from './useFileSave.ts';
 
 /**
- * Offering a generated file as a download. See {@link useClipboard} for why the browser-effect
- * helpers live in this directory rather than in `src/utils/`.
+ * Offering generated **text** as a download — the compiled prompt as Markdown, and the preset pack
+ * and the prompt history as JSON.
  *
- * The app has no server, so a download is the only way anything leaves it as a file: the compiled
- * prompt as Markdown, and the preset pack and the prompt history as JSON.
+ * The saving itself is {@link useFileSave}; what this adds is the one thing text needs and bytes do
+ * not, which is a media type to wrap the string in. A quantised sheet takes {@link useImageDownload}
+ * instead, because what it has to wrap is an encoder rather than a string.
  */
 export function useDownload(): (filename: string, text: string, mimeType: string) => void {
-  const showToast = useUIStore((state) => state.showToast);
+  const save = useFileSave();
 
   return useCallback(
     (filename, text, mimeType) => {
-      const url = URL.createObjectURL(new Blob([text], { type: mimeType }));
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = filename;
-      // Connected to the document before clicking: a detached anchor is enough in Chromium, but not
-      // historically in Firefox, and an unstyled element appended and removed within one task is
-      // never painted.
-      document.body.append(anchor);
-      anchor.click();
-      anchor.remove();
-      // Revoked on the next task, not immediately. The click only *starts* the download, and
-      // releasing the blob in the same task can leave the browser fetching a URL that no longer
-      // resolves. Not revoking at all would hold the whole prompt in memory for the session.
-      setTimeout(() => {
-        URL.revokeObjectURL(url);
-      }, 0);
-      showToast(`Downloaded ${filename}`);
+      save(filename, new Blob([text], { type: mimeType }), `Downloaded ${filename}`);
     },
-    [showToast],
+    [save],
   );
 }

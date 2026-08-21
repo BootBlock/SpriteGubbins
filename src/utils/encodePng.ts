@@ -22,14 +22,14 @@ import { indexImage } from './pngPalette.ts';
  * Pure: an `ImageData` in and bytes out, with no canvas and no document anywhere in it — which is
  * also what makes it testable, since the previous path could only be checked by opening the file.
  *
- * The reference sheet at a grid of 6 and a budget of 64 comes to 13,149 bytes indexed, against a
- * 32,777-byte `IDAT` for the same pixels written truecolour — two and a half times the file, for a
- * sheet whose sixty-four colours the format was not being told about.
+ * The reference sheet at a grid of 6 and a budget of 64 comes to 13,149 bytes indexed. The same
+ * pixels written truecolour are a 32,777-byte `IDAT`, so 32,834 bytes complete — two and a half
+ * times the file, for a sheet whose sixty-four colours the format was not being told about.
  */
 
 /** The bytes, and what was written — which is the one thing the reader is told about the file. */
 export interface EncodedPng {
-  readonly bytes: Uint8Array;
+  readonly bytes: Uint8Array<ArrayBuffer>;
   /** How many entries the palette holds, or `null` where the sheet was written truecolour. */
   readonly paletteEntries: number | null;
 }
@@ -62,7 +62,7 @@ export async function encodePng(image: ImageData): Promise<EncodedPng> {
   // index is a name, so the difference between two of them predicts nothing, and the four
   // difference filters cost four extra passes over the sheet to make the file *larger*. On the
   // reference sheet at a grid of 6 and a budget of 64, the `IDAT` is 12,888 bytes stored and 15,042
-  // adaptively filtered — 16.7% worse for four times the work.
+  // adaptively filtered — 16.7% worse for five times the filtering work.
   const filtered = filterScanlines({
     raw: indexed.indices,
     rowBytes: image.width,
@@ -89,24 +89,26 @@ export async function encodePng(image: ImageData): Promise<EncodedPng> {
 }
 
 /** The image's shape and how its pixels are stored — always non-interlaced, at depth 8. */
-function ihdr(image: ImageData, colorType: number): Uint8Array {
+function ihdr(image: ImageData, colorType: number): Uint8Array<ArrayBuffer> {
   const data = new Uint8Array(13);
   const view = new DataView(data.buffer);
   view.setUint32(0, image.width);
   view.setUint32(4, image.height);
   data[8] = BIT_DEPTH;
   data[9] = colorType;
-  // Compression 0 (deflate), filter method 0 (the five adaptive filters), interlace 0 (none). All
-  // three are the only values the spec defines, so they are constants rather than options.
+  // Compression 0 (deflate) and filter method 0 (the five adaptive filters) are the only values the
+  // spec defines, so they can only be constants. Interlace has a second — Adam7 — and this writer
+  // does not offer it: it exists to let a photograph appear progressively over a slow connection,
+  // which is nothing a sprite sheet saved to disk is doing, and it costs a larger file.
   return pngChunk('IHDR', data);
 }
 
 /** The filtered scanlines, deflated, as one `IDAT`. */
-async function idat(filtered: Uint8Array): Promise<Uint8Array> {
+async function idat(filtered: Uint8Array<ArrayBuffer>): Promise<Uint8Array<ArrayBuffer>> {
   return pngChunk('IDAT', await deflate(filtered));
 }
 
 /** Signature, chunks, and the empty `IEND` every PNG closes with. */
-function assemble(chunks: readonly Uint8Array[]): Uint8Array {
+function assemble(chunks: readonly Uint8Array[]): Uint8Array<ArrayBuffer> {
   return concatBytes([PNG_SIGNATURE, ...chunks, pngChunk('IEND', new Uint8Array(0))]);
 }

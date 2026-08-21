@@ -137,12 +137,12 @@ export function ComparisonToolbar({
         <ControlTooltip hint="Download PNG" text={QUANTISE_ACTION_TOOLTIPS.downloadPNG}>
           <button
             type="button"
-            disabled={resultImage === null}
+            disabled={resultImage === null || download.saving}
             onClick={() => {
               if (resultImage === null) return;
               // Magnified on the way out, never held magnified: the result in memory stays the
               // 1:1 sheet the previews and the store share.
-              download(
+              download.save(
                 sourceName,
                 effectiveScale === 1 ? resultImage : upscaleNearest(resultImage, effectiveScale),
                 effectiveScale,
@@ -150,7 +150,7 @@ export function ComparisonToolbar({
             }}
             className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
           >
-            <span aria-hidden="true">⬇</span> Download PNG
+            <span aria-hidden="true">⬇</span> {download.saving ? 'Writing…' : 'Download PNG'}
           </button>
         </ControlTooltip>
       </div>

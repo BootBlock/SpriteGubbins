@@ -55,7 +55,29 @@ describe('filterScanlines', () => {
     // Row 0 has nothing above it, so Sub is the only filter that flattens it; later rows are
     // identical to the one above and Up flattens them at the same cost, which ties to the lower type.
     expect(filtered[0]).toBe(1);
-    expect(filtered.subarray(1, 1 + ROW_BYTES).every((byte) => byte === 0)).toBe(false);
+    expect(filtered[1 + ROW_BYTES]).toBe(2);
+    // Under Sub, only the first pixel of row 0 has no left neighbour, so everything after it is zero.
+    expect([...filtered.subarray(1 + 4, 1 + ROW_BYTES)]).toEqual([0, 0, 0, 0, 0, 0, 0, 0]);
+  });
+
+  it('breaks a Paeth tie towards the byte above, not the one above-left', () => {
+    // The one tie the predictor can actually be observed making. A tie between `left` and `up` is
+    // unreachable: equal distances there force `left + up = 2 × upLeft`, which puts `upLeft` at
+    // distance zero and wins outright whichever way the first comparison is written. This is the
+    // second comparison — `up` at 1 and `upLeft` at 1, with `left` further out at 2 — where the
+    // spec's `pb <= pc` takes `up`. The round trip cannot catch a flip here, because the
+    // reconstruction states the same tie-break, so the residual itself is what is asserted.
+    // Row 0 is `upLeft`, `up`; row 1 is `left`, and then the byte being predicted.
+    const raw = Uint8Array.from([10, 8, 11, 0]);
+    const filtered = filterScanlines({
+      raw,
+      rowBytes: 2,
+      height: 2,
+      bytesPerPixel: 1,
+      candidates: [4],
+    });
+    // `up` is 8, so the residual is 0 − 8. Taking `upLeft` (10) would leave 246.
+    expect(filtered[5]).toBe(248);
   });
 
   it('leaves every scanline unfiltered when only filter 0 is offered', () => {
