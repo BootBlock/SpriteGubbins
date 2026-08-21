@@ -5,10 +5,12 @@ import { boxSeparation } from './boxSeparation.ts';
  * Whether a region a pass is about to write into sits against, or overlaps, anything else on the
  * sheet.
  *
- * The refusal both artwork-moving passes are built around. `snapDuplicates` writes a canonical
- * sprite over a member's box and `frameAlignment` carries a frame onto its slot, and each of those
- * regions can be larger than the box it replaces — so each can cross into a neighbour, and
- * overwriting a sprite nobody asked about is the one outcome neither pass may produce.
+ * The refusal both passes that *write artwork somewhere it was not* are built around — which is not
+ * the same thing as the two of them doing the same kind of edit. `snapDuplicates` overwrites a
+ * sprite with a different one, so it deletes what was there; `frameSnap` carries a sprite's own
+ * pixels to a different place, so it deletes nothing. What they share is the write: each one's
+ * region can be larger than the box it replaces, so each can cross into a neighbour, and
+ * overwriting a sprite nobody asked about is the one outcome neither may produce.
  *
  * **"Against" and not merely "overlapping".** Two boxes a single pixel apart hold artwork that is
  * eight-connected, so a write landing that close would join two sprites into one region the next

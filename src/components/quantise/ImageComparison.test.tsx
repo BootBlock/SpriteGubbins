@@ -48,7 +48,6 @@ function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance 
     duplicates: [],
     snapped: false,
     strips: null,
-    realigned: false,
     offset,
   };
 }
@@ -274,7 +273,7 @@ describe('ImageComparison', () => {
 });
 
 /**
- * The three ways of reading one result.
+ * The five ways of reading one result.
  *
  * Two of them exist because the pair of frames cannot answer their question. Side by side says what
  * the sheet *became*; the wipe puts the same screen pixels before and after so a change of one shade
@@ -430,6 +429,17 @@ describe('ImageComparison’s preview modes', () => {
     choose('Onion skin');
 
     expect(screen.getByText(/Onion skin · no sprite to gather into rows/)).toBeInTheDocument();
+  });
+
+  it('names the frame after the picture, not the pill, where there is no stack to draw', () => {
+    // With the alignment pass off the canvas holds the ordinary result, so announcing it as a stack
+    // of frames would tell a screen-reader user the image contains something it does not — and would
+    // contradict the caption beside it, which says the pass is off.
+    show(8);
+    choose('Onion skin');
+
+    expect(screen.getByRole('img', { name: /after grid alignment/ })).toBeInTheDocument();
+    expect(screen.queryByRole('img', { name: /laid over the first frame/ })).toBeNull();
   });
 
   it('blames the row lengths where the sheet did separate into sprites', () => {

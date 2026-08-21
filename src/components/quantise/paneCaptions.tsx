@@ -15,7 +15,7 @@ import type {
  * Filed apart from the panel that arranges the frames because they are different kinds of thing:
  * that file decides *geometry* — the magnification that makes one screen pixel mean the same amount
  * of sheet on both sides, the window that holds the two extents equal, the deficit a leading partial
- * cell is pulled back by — and this decides *prose*. Four captions and four reasons for an empty
+ * cell is pulled back by — and this decides *prose*. Five captions and four reasons for an empty
  * pane is enough of the second to be worth reading on its own.
  */
 

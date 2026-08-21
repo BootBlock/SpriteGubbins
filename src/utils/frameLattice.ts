@@ -28,12 +28,18 @@ export interface FrameLattice {
  * changed.** The obvious estimator is the median of the gaps between *neighbours*, and it is robust
  * — but it can only ever return a spacing built from whole-pixel gaps, and the spacings on a real
  * sheet are not whole. A row laid out at 128 source pixels a frame, read at a grid of 6, sits at
- * 21⅓ drawn pixels; its frames land at 0, 21, 43, 64, its neighbour gaps are 21, 22, 21, and the
- * median of those is 21 — which gives the last two frames a drift of one apiece that no move can
- * take away, and a snap at the strictest tolerance would pull an evenly spaced row *out* of true.
- * The repeated median takes, for each frame, the median of the slopes from it to every other frame,
- * and then the median of those — so the long baselines that carry the fraction are in the answer,
- * and a minority of bad frames still cannot reach it.
+ * 21⅓ drawn pixels. Five of its frames land at 0, 21, 43, 64, 85; the neighbour gaps are 21, 22,
+ * 21, 21, and the median of those is a whole 21 — a lattice that puts the first two frames a pixel
+ * from their slots when every one of them is already as close to its slot as whole pixels allow.
+ * At the strictest tolerance a snap would move two frames of an evenly spaced row, and it gets
+ * worse the longer the row: nine frames of that spacing report a drift of two at the far end. The
+ * repeated median takes, for each frame, the median of the slopes from it to every other frame, and
+ * then the median of those — so the long baselines that carry the fraction are in the answer, and a
+ * minority of bad frames still cannot reach it. It returns 21.33 on that row, and no frame drifts.
+ *
+ * **Four frames is not enough to show the difference**, which is worth knowing before anyone
+ * re-measures this: at that length the origin median lands on a half and the truncation below takes
+ * both estimators to zero. The disagreement starts at five.
  *
  * **Two medians rather than one**, because a row can be regular and still sit somewhere unexpected.
  * The first fixes the *spacing*; the second fixes where the row *starts*, from what each frame's
@@ -71,12 +77,13 @@ export function fitLattice(shifts: readonly PixelShift[]): FrameLattice {
  * pixel.
  *
  * **Truncated toward zero rather than rounded, and that is a correction rather than a taste.** A row
- * whose spacing is 21.5 has frames at 0, 21, 43, 64: each is half a pixel from its slot, which is as
- * close as a pixel grid allows a frame to get, and every one of them is *already right*. Rounding
- * that half away from zero would report alternate frames as a pixel out and a snap at the strictest
- * tolerance would then shuffle an evenly spaced row — the pass making the artwork worse in the name
- * of tidying it. Truncating says what is true: a frame less than a whole pixel from its slot has no
- * move available to it, so its drift is nothing.
+ * whose spacing is 21.5 has frames at 0, 21, 43, 64, 86, and its slots fall at 0, 21.5, 43, 64.5,
+ * 86 — so the odd-numbered frames sit half a pixel from theirs, which is as close as a pixel grid
+ * allows a frame to get, and every one of them is *already right*. Rounding that half away from zero
+ * would report those frames as a pixel out, and a snap at the strictest tolerance would then shuffle
+ * an evenly spaced row — the pass making the artwork worse in the name of tidying it. Truncating
+ * says what is true: a frame less than a whole pixel from its slot has no move available to it, so
+ * its drift is nothing.
  */
 export function driftAt(lattice: FrameLattice, index: number, measured: PixelShift): PixelShift {
   return {

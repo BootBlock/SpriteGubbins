@@ -28,8 +28,9 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * sheet and a greedy walk is enough. A piece that does not share the current band opens a new row
  * rather than being offered to an earlier one — so a sheet interleaving two rows of very different
  * heights can split a row in two. That is left as it is deliberately: the alternative is a
- * clustering pass with a second parameter nobody could tune, and a split row is reported as two
- * strips, each of which is still fitted and read honestly.
+ * clustering pass with a second parameter nobody could tune, and each half of a split row is still
+ * fitted and read honestly — or dropped, where the split leaves it under the floor below, which is
+ * the same rule every short row falls to.
  *
  * Rows shorter than {@link SMALLEST_STRIP_FRAMES} are dropped rather than returned as short strips —
  * see `SpriteStrip`, which is where the reason lives: a pitch fitted to two frames is the distance
@@ -37,6 +38,11 @@ import type { SpriteBox } from '../types/quantiser.ts';
  *
  * Sorted left to right on the way out, which is the order a run plays in and the order the panel and
  * the onion skin both count frames in.
+ *
+ * **The boxes come back by reference, and one caller depends on that.** `frameAlignment`'s room
+ * check excludes a frame's own box from the sheet's boxes by object identity, so a `.map()` here
+ * that cloned a box — rather than the array holding it — would silently make every frame refuse its
+ * own move. The rows are new arrays; the boxes in them are the ones this was handed.
  *
  * Pure, and linear in the boxes.
  */

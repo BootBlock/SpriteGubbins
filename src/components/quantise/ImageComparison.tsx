@@ -44,7 +44,7 @@ interface ImageComparisonProps {
 }
 
 /**
- * The sheet as it arrived beside what became of it, in whichever of three ways the reader asked for.
+ * The sheet as it arrived beside what became of it, in whichever of five ways the reader asked for.
  *
  * **Both previews stand at the same magnification of the same artwork, and move together.** They did
  * neither before: the result is one pixel per grid cell, so drawing it at `zoom` showed it `grid`
@@ -174,6 +174,14 @@ export function ImageComparison({
   // panel. The two elements are dependencies for the opposite reason: a canvas that has just been
   // mounted is blank, and the image it wants may not have changed at all.
   const secondImage = heatmap ?? marked ?? stacked ?? resultImage;
+  // **What the frame is *called* follows the picture, not the pill.** Every other mode always draws
+  // its own second image while it is shown, so naming the frame after the mode says the same thing
+  // as naming it after the picture. The onion is the first that can be shown with nothing to stack —
+  // the alignment pass is off, which is how the mode is most often first reached — and there the
+  // canvas is holding the ordinary result. Announcing it as a stack of frames would tell a
+  // screen-reader user the image contains something it does not, and would contradict the caption
+  // beside it, which already says the pass is off.
+  const pictured: PreviewMode = shown === 'ONION' && stacked === null ? 'SIDE_BY_SIDE' : shown;
   useEffect(() => {
     paint(sourceCanvas, source);
     paint(resultCanvas, secondImage);
@@ -196,7 +204,7 @@ export function ImageComparison({
 
   const second: ComparisonPaneProps = {
     caption: secondCaption(shown, quantised, busy),
-    label: SECOND_PANE_LABELS[shown],
+    label: SECOND_PANE_LABELS[pictured],
     viewportRef: setResultView,
     canvasRef: setResultCanvas,
     // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts the two
@@ -215,7 +223,7 @@ export function ImageComparison({
               y: quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
             },
           },
-    alt: SECOND_PANE_ALT[shown],
+    alt: SECOND_PANE_ALT[pictured],
     placeholder: (
       // Its own padding, because `PanViewport` carries none — see the note on its geometry.
       <p className="p-3 text-xs leading-relaxed text-ink-muted">{emptyReason(busy, grid, scale)}</p>
@@ -255,7 +263,11 @@ export function ImageComparison({
 /**
  * What the second frame is called, and what it is described as, per mode.
  *
- * Records keyed by the union rather than a chain of ternaries at the two call sites, so a fifth mode
+ * **Keyed by what the frame is showing rather than by the mode chosen**, which are the same thing in
+ * four of the five cases and are not in the fifth — see `pictured`, above, for the onion mode that
+ * can be selected with nothing to stack.
+ *
+ * Records keyed by the union rather than a chain of ternaries at the two call sites, so a sixth mode
  * fails to compile until both halves have been written — which is the same property
  * `PREVIEW_MODE_LABELS` is a separate file to keep. `WIPE` names the result because that is what the
  * second frame holds there; the layout is what differs, not the picture.

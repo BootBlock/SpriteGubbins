@@ -44,7 +44,6 @@ function resultOf(side: number): QuantiseResult {
     duplicates: [],
     snapped: false,
     strips: null,
-    realigned: false,
     offset: { x: 0, y: 0 },
   };
 }

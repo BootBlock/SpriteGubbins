@@ -56,15 +56,26 @@ describe('registerFrame', () => {
   });
 
   it('never reads a pixel outside the frame it is registering', () => {
-    // The frame's neighbour sits four pixels to its right and holds far more coverage than the frame
-    // does. A search that scored on the whole sheet would slide the frame onto the neighbour and
-    // report that as the answer; bounding the reads to the frame's own box is what refuses it.
-    const reference = { left: 2, top: 2, width: 4, height: 4 };
-    const frame = { left: 20, top: 2, width: 4, height: 4 };
-    const neighbour = { left: 26, top: 2, width: 10, height: 4 };
-    const sheet = sheetOf(48, 10, [reference, frame, neighbour]);
+    // The frame is a sparse drawing — a diagonal, four opaque pixels in a box of sixteen — and eight
+    // pixels to its right stands a solid neighbour. A search reading the whole sheet would score the
+    // seed at 4 and the shift that buries the reference in the neighbour at 16, and would report the
+    // neighbour's position as where this frame is. Bounding the reads to the frame's own box is what
+    // refuses it, so the sparse-and-correct answer wins.
+    //
+    // **The sparsity is what makes this case bite.** Two solid frames score the same at the seed as
+    // at the neighbour, and the tie-break hands it back to the seed — so the bound could be deleted
+    // and nothing would notice.
+    const reference = { left: 0, top: 2, width: 4, height: 4 };
+    const neighbour = { left: 28, top: 2, width: 8, height: 4 };
+    const sheet = imageFrom(48, 10, (x, y) => {
+      if (covers(reference, x, y) || covers(neighbour, x, y)) return INK;
+      // The frame at [20, 24): its own box, drawn as a diagonal.
+      return x >= 20 && x < 24 && y >= 2 && y < 6 && x - 20 === y - 2 ? INK : CLEAR;
+    });
 
-    expect(registerFrame(sheet, boxOf(reference), boxOf(frame), 8)).toEqual({ x: 18, y: 0 });
+    expect(
+      registerFrame(sheet, boxOf(reference), boxOf({ left: 20, top: 2, width: 4, height: 4 }), 8),
+    ).toEqual({ x: 20, y: 0 });
   });
 
   it('answers with the corner difference where the coverage cannot separate two candidates', () => {

@@ -42,8 +42,11 @@ export function snapFrames(image: ImageData, strips: readonly SpriteStrip[]): Sn
 export interface SnappedFrames {
   readonly image: ImageData;
   /**
-   * How many frames moved — which is what the result reports as a fact rather than reading the dial
-   * back, for the reason `QuantiseResult.realigned` gives.
+   * How many frames moved, which is what decides whether the sheet has to be segmented again.
+   *
+   * Not reported on the result: every frame carries its own {@link AlignedFrame.snapped}, and this
+   * is the count of exactly those — see `QuantiseResult.strips` for why a second statement of one
+   * fact is one more thing that can be wrong about it.
    */
   readonly moved: number;
 }

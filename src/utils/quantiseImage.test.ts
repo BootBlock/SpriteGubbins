@@ -1360,7 +1360,6 @@ describe('quantiseImage frame alignment', () => {
     const result = quantiseImage(DRIFTED, settingsFor('OFF', 0));
 
     expect(result.strips).toBeNull();
-    expect(result.realigned).toBe(false);
   });
 
   it('names the frame that wandered without changing a pixel under CHECK', () => {
@@ -1369,14 +1368,12 @@ describe('quantiseImage frame alignment', () => {
 
     expect(read.strips?.[0]?.frames.map((frame) => frame.drift.x)).toEqual([0, 2, 0]);
     expect(read.strips?.[0]?.frames.map((frame) => frame.snapped)).toEqual([false, false, false]);
-    expect(read.realigned).toBe(false);
     expect(channels(read.image)).toEqual(channels(off.image));
   });
 
   it('carries the frame onto its slot under SNAP, and re-reads the sheet from what that produced', () => {
     const moved = quantiseImage(DRIFTED, settingsFor('SNAP', 0));
 
-    expect(moved.realigned).toBe(true);
     // The reading still describes the sheet as it stood *before* the move, which is the only state
     // the figures mean anything in — re-measuring afterwards would report a row that was always
     // aligned and lose the record of what the dial did.
@@ -1391,7 +1388,7 @@ describe('quantiseImage frame alignment', () => {
     const held = quantiseImage(DRIFTED, settingsFor('SNAP', 2));
     const read = quantiseImage(DRIFTED, settingsFor('CHECK', 0));
 
-    expect(held.realigned).toBe(false);
+    expect(held.strips?.[0]?.frames.map((frame) => frame.snapped)).toEqual([false, false, false]);
     expect(channels(held.image)).toEqual(channels(read.image));
   });
 
@@ -1404,7 +1401,6 @@ describe('quantiseImage frame alignment', () => {
 
     expect(result.sprites.kind).toBe('SOLID');
     expect(result.strips).toEqual([]);
-    expect(result.realigned).toBe(false);
   });
 
   it('measures the difference map against the sheet the reader is given', () => {

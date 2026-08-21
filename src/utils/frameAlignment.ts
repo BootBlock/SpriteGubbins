@@ -130,6 +130,9 @@ function makesRoom(
 
   if (region.left < 0 || region.top < 0) return false;
   if (region.left + region.width > image.width || region.top + region.height > image.height) return false;
+  // `box` excludes the frame's own entry by **object identity**, which holds because `spriteStrips`
+  // copies the row array and not the boxes in it — see the note there, which is the other end of
+  // this. Excluding it by value would need a comparison this has no reason to invent.
   if (reachesAny(region, boxes, box) || reachesAny(region, claimed, null)) return false;
 
   claimed.push(region);

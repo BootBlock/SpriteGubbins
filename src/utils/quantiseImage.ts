@@ -350,7 +350,6 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // The reading, always as it stood on the sheet it was taken from — see `QuantiseResult.strips`,
     // which is where the reason lives, and it is the same one `duplicates` carries.
     strips,
-    realigned,
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than

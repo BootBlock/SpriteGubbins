@@ -26,19 +26,31 @@ describe('fitLattice', () => {
   });
 
   it('recovers a fractional pitch from a row that can only sit on whole pixels', () => {
-    // 128 source pixels a frame read at a grid of 6 is 21⅓ drawn pixels, and the frames land at 0,
-    // 21, 43, 64. A pitch built from the gaps between neighbours would be the median of 21, 22, 21 —
-    // a whole 21, which gives the last two frames a drift apiece and would have a snap at the
-    // strictest tolerance pull an evenly spaced row out of true.
-    const row = along(0, 21, 43, 64);
+    // 128 source pixels a frame read at a grid of 6 is 21⅓ drawn pixels, and five frames land at 0,
+    // 21, 43, 64, 85. The rejected estimator — the median of the gaps between neighbours — is the
+    // median of 21, 22, 21, 21, which is a whole 21; fitted against the same origin median and read
+    // through `driftAt`, that lattice reports the first two frames as a pixel out and a snap at the
+    // strictest tolerance would move two frames of an evenly spaced row.
+    //
+    // **Five frames, not four**: at four the origin median lands on a half and the truncation takes
+    // both estimators to zero, so a four-frame row cannot tell them apart.
+    const row = along(0, 21, 43, 64, 85);
 
-    // The estimator lands within half a pixel of the true 21⅓ — which is all a whole-pixel row can
-    // ever pin down, and is what matters: every frame is then inside a pixel of its own slot, so the
-    // row reports as the evenly spaced row it is.
+    // Strictly between 21 and 22, so it is not the whole-pixel spacing the gaps would have given.
     expect(fitLattice(row).pitch.x).toBeGreaterThan(21);
-    expect(fitLattice(row).pitch.x).toBeLessThan(21.5);
-    expect(slots(row)).toEqual([0, 21, 43, 64]);
-    expect(drifts(row)).toEqual([0, 0, 0, 0]);
+    expect(fitLattice(row).pitch.x).toBeLessThan(22);
+    expect(slots(row)).toEqual([0, 21, 43, 64, 85]);
+    expect(drifts(row)).toEqual([0, 0, 0, 0, 0]);
+  });
+
+  it('keeps a long fractional row still, where the neighbour gaps would drift it further and further', () => {
+    // Nine frames of the same 21⅓ spacing. The gap median stays a whole 21, so its lattice falls a
+    // pixel behind every three frames and the far end reports a drift of two — a snap would spread
+    // the row out. The fitted pitch tracks the fraction and nothing drifts at all.
+    const row = along(0, 21, 43, 64, 85, 107, 128, 149, 171);
+
+    expect(fitLattice(row).pitch.x).toBeCloseTo(64 / 3, 3);
+    expect(drifts(row)).toEqual([0, 0, 0, 0, 0, 0, 0, 0, 0]);
   });
 
   it('is unmoved by one frame that wandered, which least squares would not be', () => {
@@ -80,10 +92,10 @@ describe('fitLattice', () => {
 
 describe('driftAt', () => {
   it('truncates toward zero, so a frame as close to its slot as pixels allow has no drift', () => {
-    // A row spaced 21.5 apart sits at 0, 21, 43, 64: each frame is half a pixel from its slot, which
-    // is the closest a whole-pixel grid lets it get. Rounding that half away from zero would report
-    // alternate frames as a pixel out and a snap at the strictest tolerance would shuffle a row that
-    // was already as even as it can be.
+    // A row spaced 21.5 apart sits at 0, 21, 43, 64, 86 and its slots fall at 0, 21.5, 43, 64.5, 86:
+    // the odd-numbered frames are half a pixel from theirs, which is the closest a whole-pixel grid
+    // lets them get. Rounding that half away from zero would report them as a pixel out, and a snap
+    // at the strictest tolerance would shuffle a row that was already as even as it can be.
     expect(drifts(along(0, 21, 43, 64, 86))).toEqual([0, 0, 0, 0, 0]);
     expect(slots(along(0, 21, 43, 64, 86))).toEqual([0, 21, 43, 64, 86]);
   });

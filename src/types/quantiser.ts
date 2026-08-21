@@ -843,17 +843,15 @@ export interface QuantiseResult {
    * reading *of* that segmentation: measured separately it could describe not merely an older result
    * but an older set of boxes. Under `SNAP` it is also the record of what was moved, so it always
    * describes the sheet as it was read rather than the sheet after the move.
+   *
+   * **There is deliberately no flag beside this saying whether the move happened**, where
+   * {@link snapped} is exactly that flag for the duplicate fold. The difference is what the two
+   * readings carry: a duplicate group names its members and nothing more, so only a separate flag
+   * can say whether they were rewritten, while every frame here carries its own
+   * {@link AlignedFrame.snapped}. A second statement of the same fact is a second thing that can be
+   * wrong about it.
    */
   readonly strips: readonly SpriteStrip[] | null;
-  /**
-   * Whether {@link strips} was acted on — at least one frame actually moved onto its slot.
-   *
-   * A fact of the result rather than the dial read back, for the reason {@link snapped} is: while a
-   * transform is in flight the dial is where the reader has just put it and the result is what the
-   * previous position produced. It is also `false` where the mode is `SNAP` and every drifting frame
-   * was refused for want of room — see `frameAlignment`, which is where that refusal is decided.
-   */
-  readonly realigned: boolean;
   /**
    * Where the grid sat on the source, as the transform measured it.
    *
