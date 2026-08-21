@@ -455,8 +455,9 @@ export const DEFAULT_COLOR_MERGE = 0;
  * anything further keeping the colour it arrived with.
  *
  * In scaled OKLab, as every colour tolerance on this tab is — see `oklab.ts` — and `0` is the pass
- * not running at all, as it is on every other dial here: at zero the lock reaches nothing and the
- * sheet passes through as its own reading made it.
+ * not running at all, as it is on every other dial here: at zero the lock reaches nothing, so it
+ * supersedes nothing either and the studio's own colour setting stands. `colorPlanFor` holds that
+ * rule and says what the alternative cost.
  *
  * **The two populations this dial separates overlap, and the range is set from where.** Measured on
  * the armour sheet (grid 6, a budget of 64, ink-weighted 1.5×): a palette locked from one reading of
@@ -896,7 +897,7 @@ export const QUANTISE_TOOLTIPS = {
   cleanupPasses:
     'How many times the fill cleanup runs over its own output. One pass settles every pixel that already disagreed with a settled neighbourhood; a pixel two deep in a speckled patch only becomes the lone odd one out after its neighbour has settled, which the next pass picks up. Each pass stops early when nothing changed, so a high setting costs nothing on a sheet that settles quickly. It does nothing while the fill cleanup itself is off.',
   paletteSnap:
-    'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing and the sheet is left as its own reading made it. The default sits between the two things this has to tell apart on the sheet the dials were tuned against — the drift between two readings of one subject, and a colour that is genuinely new — and those overlap, so raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
+    'How near a held colour a colour in this sheet has to sit to be taken to it. Anything further away keeps the colour it arrived with, which is what stops the lock flattening a gem, a flame or a faction trim the sheet you locked from never had. Measured the way every colour distance on this tab is. Off means the lock reaches nothing, and the studio’s own colour setting decides the sheet’s colours as it would with no palette held. The default sits between the two things this has to tell apart on the sheet the dials were tuned against — the drift between two readings of one subject, and a colour that is genuinely new — and those overlap, so raise it when a shade that should have matched comes through as its own, and lower it when a new colour is swallowed by the palette.',
   downloadScale:
     'How many file pixels one drawn pixel is written as when the sheet is saved. 1× is the sheet’s own size — one file pixel per drawn pixel, which is what an engine imports. The larger rungs write the same pixels as solid squares, never resampled, for a copy a reader can see without magnifying it first; reducing such a file by the same factor gives back the 1× sheet exactly. It changes only the saved file — the previews, the prompt and everything stored stay as they are — and a rung whose file would outgrow the largest image this tab accepts is not offered for that sheet.',
 } as const;

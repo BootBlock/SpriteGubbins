@@ -159,8 +159,15 @@ describe('colorPlanFor — a locked palette', () => {
     expect(colorPlanFor('FREE', 'STRICT_32_COLOR', LOCK, 20).studioSetting).toBe('STRICT_32_COLOR');
   });
 
-  it('says that a snap distance of zero reaches nothing, rather than naming a count it does not fix', () => {
-    expect(colorPlanFor('FREE', 'UNRESTRICTED', LOCK, 0).effect).toContain('reaching nothing');
+  it('supersedes nothing at a snap distance of zero, where it reaches nothing', () => {
+    // The cliff this avoids, measured on the reference sheet: a lock that superseded the budget
+    // while taking no colour at all left the sheet unreduced, so dragging one dial to its off
+    // position took a 64-colour sheet to 10,031. A dial's off position means its own pass does not
+    // run, never that another one stops running with it.
+    expect(colorPlanFor('FREE', 'STRICT_32_COLOR', LOCK, 0)).toEqual(
+      colorPlanFor('FREE', 'STRICT_32_COLOR', null, 0),
+    );
+    expect(colorPlanFor('GAME_BOY_DMG', 'UNRESTRICTED', LOCK, 0).superseded).toBeNull();
     expect(colorPlanFor('FREE', 'UNRESTRICTED', LOCK, 20).effect).toContain('armour.png');
   });
 });

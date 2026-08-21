@@ -20,12 +20,19 @@ import { fromHex } from './imageData.ts';
  * to four greens — a readout and a result on one screen contradicting each other. One branch cannot
  * disagree with itself.
  *
- * **A locked palette supersedes both**, and it is the only one of the three the reader states on
- * this tab rather than in the studio. Locking is an explicit act on a result they are looking at,
- * which makes it the newer and more specific statement of which colours the series is made of — so
- * while a lock is held it decides the palette outright, and the studio's setting is reported as
+ * **A locked palette supersedes both, where it applies.** It is the only one of the three the
+ * reader states on this tab rather than in the studio, and locking is an explicit act on a result
+ * they are looking at — the newer and more specific statement of which colours the series is made
+ * of — so a lock in reach decides the palette outright, and the studio's setting is reported as
  * {@link ColorPlan.superseded} whenever it has moved on since. Nothing is silently resolved: the
  * one case where the supersession could surprise is the one case the plan names.
+ *
+ * **At a snap distance of zero the lock reaches nothing, so it supersedes nothing** and the studio's
+ * setting stands exactly as it would with no palette held. The alternative was measured on the
+ * reference sheet and is a cliff: a lock that superseded the budget while taking no colour at all
+ * left the sheet unreduced, and dragging one dial to its off position took it from 64 colours to
+ * 10,031. A dial's off position has to mean the pass does not run, not that a different pass stops
+ * running with it.
  *
  * Pure, so it can be asserted on directly rather than through a rendered tab.
  */
@@ -36,17 +43,14 @@ export function colorPlanFor(
   snap: number,
 ): ColorPlan {
   const studio = studioPlan(palette, limit);
-  if (lock === null) return studio;
+  if (lock === null || snap <= 0) return studio;
 
   const count = lock.entries.length;
   return {
     reduction: { kind: 'LOCKED', entries: lock.entries, snap },
     setting: 'Locked palette',
     studioSetting: studio.setting,
-    effect:
-      snap <= 0
-        ? `held, but reaching nothing at a snap distance of zero`
-        : `every colour within ${String(snap)} of the ${String(count)} colours locked from ${lock.sheetName} taken to it, the rest kept as they are`,
+    effect: `every colour within ${String(snap)} of the ${String(count)} colours locked from ${lock.sheetName} taken to it, the rest kept as they are`,
     // Named only where the studio has moved since the lock was taken. A lock taken under the
     // setting still in force is not overriding anything a reader would want told about it.
     superseded: studio.setting === lock.setting ? null : studio.setting,
