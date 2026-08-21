@@ -8,16 +8,12 @@ import type { QuantiseTuning } from './quantiser.ts';
  * already names the fifteen dials `quantiseImage` is handed; the tab has three more — the two keying
  * settings, which reach the pipeline as a `BackgroundKeying` rather than as fields, and the palette
  * snap, which reaches it inside a `ColorReduction`. Listing those fifteen again here would be two lists
- * already names the twelve dials `quantiseImage` is handed; the tab has three more — the two keying
- * settings, which reach the pipeline as a `BackgroundKeying` rather than as fields, and the palette
- * snap, which reaches it inside a `ColorReduction`. Listing those twelve again here would be two lists
  * of the same dials free to drift, and a dial added to the pipeline's set — which is where a new
  * pipeline dial naturally lands — would silently not be saved. Extending means it is: the compiler
  * refuses it here, in `QUANTISE_DEFAULT_DIALS`, in `parseQuantiseDials` and in what
  * `saveQuantisePreset` stores, until each has been given an answer.
  *
  * **The whole set is workflow intent**, which is why `useQuantiseStore` carries all eighteen across
- * **The whole set is workflow intent**, which is why `useQuantiseStore` carries all fifteen across
  * `setSource` and drops them only on `clear`. Which reading suits a sheet, how hard its contours
  * need rescuing, whether the background comes out and from how far — each is a judgement about the
  * *artwork's style*, and the sheet splitter hands back eight sheets in one style rather than eight

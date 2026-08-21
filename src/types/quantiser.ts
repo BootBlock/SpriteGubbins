@@ -306,7 +306,9 @@ export const DITHER_PATTERNS = ['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as c
  * animation plays. A threshold matrix is a function of position alone, so one colour lands on one
  * pattern in every frame of a run and on both sides of a tile seam.
  *
- * `NONE` is the off position: the pass does not run at all, as every dial's zero on this tab means.
+ * `NONE` is the off position: the pass does not run at all, which is what most of this tab's zeros
+ * mean — the sprite gap, the symmetry tolerance and the duplicate tolerance are the three that do
+ * not, and each says so where it is defined.
  * `BAYER_4` and `BAYER_8` are the recursive ordered matrices, whose crosshatch is what a reader
  * recognises as a retro dither; `BLUE_NOISE` is a void-and-cluster tile, which spreads the same
  * ratios without a repeating figure — quieter, and the choice when the crosshatch reads as texture

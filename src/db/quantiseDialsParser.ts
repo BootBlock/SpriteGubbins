@@ -33,7 +33,7 @@ import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './read
  * edit alone, and a stored value the control could not have produced is refused.
  *
  * Falls back **field by field**, never wholesale: one unreadable dial costs that dial, where
- * discarding the object would silently reset the other fourteen as well — and a preset whose ink
+ * discarding the object would silently reset the other seventeen as well — and a preset whose ink
  * threshold was corrupted is still the preset the reader saved in every other respect.
  *
  * The two dials with a fractional step are read with `pickNumber` rather than

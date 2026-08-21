@@ -27,7 +27,6 @@ export const DIAL_COALESCE_MS = 700;
  * How many positions the stack keeps before the oldest fall off the front.
  *
  * An entry is eighteen primitives, so the cap is not about memory — it is about what an undo stack
- * An entry is fifteen primitives, so the cap is not about memory — it is about what an undo stack
  * is for. Fifty steps back is further than anyone tunes in one sitting, and an uncapped stack in a
  * tab that is left open all day is a promise to return to a position from a sheet three files ago.
  * The opening position falls off with the rest once fifty steps have been taken past it; the way

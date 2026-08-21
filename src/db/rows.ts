@@ -167,7 +167,7 @@ export function parseImportedPreset(value: unknown): PresetArchetype | null {
  * for: an id is what an update overwrites and a delete addresses, and a name is the whole of what
  * the reader picks the preset out of a list by. Everything else is repaired — the description
  * because a preset is allowed to have none, and the tuning field by field, so a row whose stored
- * ink threshold is nonsense still restores the fourteen dials that are not.
+ * ink threshold is nonsense still restores the seventeen dials that are not.
  *
  * Deliberately the same shape on both backends: the fallback stores this record verbatim, so this
  * one parser reads a SQLite row and a localStorage entry alike and the two cannot drift in what

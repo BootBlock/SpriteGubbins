@@ -92,10 +92,10 @@ export interface QuantiseState extends QuantiseDials {
   /**
    * Put every dial where a saved preset says, in one move.
    *
-   * One `set` rather than fifteen, and the difference is not tidiness. `useQuantiseWork` holds the
+   * One `set` rather than eighteen, and the difference is not tidiness. `useQuantiseWork` holds the
    * transform behind a 250ms debounce keyed on the settings' identity, and `QuantiseTab` rebuilds
-   * that identity whenever any dial changes — so fifteen separate writes would restart the timer
-   * fifteen times and the transform would run once, `QUANTISE_DEBOUNCE_MS` after the *last* of
+   * that identity whenever any dial changes — so eighteen separate writes would restart the timer
+   * eighteen times and the transform would run once, `QUANTISE_DEBOUNCE_MS` after the *last* of
    * them. One write starts one window. (No intermediate transform is ever *begun*: the effect's
    * cleanup clears the pending timer, which is what the debounce is for.)
    *
@@ -151,7 +151,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
    *
    * The patch is applied to the history's current position rather than to the store's fields, and
    * the two are the same value — see `history`. Taking it from there is what lets this stay one
-   * function for fifteen dials without a hand-written list of them to copy the other fourteen.
+   * function for eighteen dials without a hand-written list of them to copy the other seventeen.
    *
    * `performance.now()` rather than `Date.now()`, because the only thing the figure is compared
    * with is another one of its own — the gap between two events of one gesture — and a monotonic

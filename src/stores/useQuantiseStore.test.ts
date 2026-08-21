@@ -218,7 +218,7 @@ describe('the dial history the store keeps', () => {
   });
 
   it('makes a preset load one step, and steps back to what it replaced', () => {
-    // The reason this is worth having at all: a saved set moves fifteen dials at once, and the
+    // The reason this is worth having at all: a saved set moves eighteen dials at once, and the
     // positions a reader spent ten minutes finding are the ones it replaced.
     const store = useQuantiseStore.getState();
     store.setColorMerge(24);
@@ -251,7 +251,7 @@ describe('the dial history the store keeps', () => {
   });
 
   it('holds a position rather than a sheet, whatever is loaded when it is taken', () => {
-    // Every entry is fifteen primitives. An entry that reached the store object instead would pin
+    // Every entry is eighteen primitives. An entry that reached the store object instead would pin
     // the sheet it was taken with — up to sixty-seven megabytes a step, fifty steps deep.
     const store = useQuantiseStore.getState();
     store.setSource(SHEET);

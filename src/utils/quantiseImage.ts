@@ -29,9 +29,8 @@ import { buildPalette } from './wuQuantiser.ts';
  * DOMINANT:                 ImageData → keyBackground → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
  * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → outlineExpansion → cells resolved directly → reduceColors
  * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
- * then, on whatever that produced:  spriteSegments → sheetSymmetry → snapSymmetric (SNAP only)
- *                                                  → duplicateSprites → snapDuplicates (if asked)
- *
+ * then, on whatever that produced:
+ *   spriteSegments → sheetSymmetry → snapSymmetric (SNAP only) → duplicateSprites → snapDuplicates
  *
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
