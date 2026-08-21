@@ -1,5 +1,7 @@
 import { useCallback } from 'react';
 import { useUIStore } from '../stores/useUIStore.ts';
+import { encodePng } from '../utils/encodePng.ts';
+import { MAX_PALETTE_ENTRIES } from '../utils/pngPalette.ts';
 
 /**
  * Offering a quantised image back as a PNG.
@@ -7,52 +9,59 @@ import { useUIStore } from '../stores/useUIStore.ts';
  * Separate from {@link useDownload} rather than an extension of it, and the difference is real:
  * that hook builds a `Blob` from a **string**, and a PNG is binary. Widening its signature to
  * `string | Blob` would make its two existing callers pass a type neither of them uses, and the
- * encoding step here — `ImageData` through a canvas — has nothing to do with a text download.
+ * encoding step here has nothing to do with a text download.
  *
  * The anchor protocol below is the same in both, deliberately duplicated rather than extracted:
  * it is six lines of browser trivia, and `useDownload` carries the full explanation of each one.
  *
- * PNG, not JPEG or WebP. The result is flat colour regions with hard edges and, often, real
- * transparency — every one of which a lossy encoder would undo at the last step.
+ * **The file is written by `encodePng`, not by a canvas**, which is the whole of item 10 of the
+ * quantiser roadmap: `canvas.toBlob` can only produce truecolour, so a sheet reduced to sixty-four
+ * colours arrived on disk as a 32-bit file that merely happened to use sixty-four of them. What is
+ * downloaded now is a true indexed PNG wherever the sheet's colours fit a palette, carrying that
+ * palette in the file where a game pipeline reads it.
  */
 export function useImageDownload(): (sourceName: string, image: ImageData, scale: number) => void {
   const showToast = useUIStore((state) => state.showToast);
 
   return useCallback(
     (sourceName, image, scale) => {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.width;
-      canvas.height = image.height;
-      const context = canvas.getContext('2d');
-      if (context === null) {
-        showToast('This browser would not provide a 2D canvas');
-        return;
-      }
-      // `putImageData`, not `drawImage`: it writes the pixels verbatim, ignoring any smoothing or
-      // transform the context might otherwise apply to a nearest-neighbour result.
-      context.putImageData(image, 0, 0);
-
       const filename = quantisedName(sourceName, scale);
-      canvas.toBlob((blob) => {
-        if (blob === null) {
+      void encodePng(image).then(
+        (encoded) => {
+          const url = URL.createObjectURL(new Blob([encoded.bytes as BlobPart], { type: 'image/png' }));
+          const anchor = document.createElement('a');
+          anchor.href = url;
+          anchor.download = filename;
+          document.body.append(anchor);
+          anchor.click();
+          anchor.remove();
+          setTimeout(() => {
+            URL.revokeObjectURL(url);
+          }, 0);
+          showToast(`Downloaded ${filename} — ${describeEncoding(encoded.paletteEntries)}`);
+        },
+        () => {
           showToast(`Could not encode ${filename}`);
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
-        anchor.href = url;
-        anchor.download = filename;
-        document.body.append(anchor);
-        anchor.click();
-        anchor.remove();
-        setTimeout(() => {
-          URL.revokeObjectURL(url);
-        }, 0);
-        showToast(`Downloaded ${filename}`);
-      }, 'image/png');
+        },
+      );
     },
     [showToast],
   );
+}
+
+/**
+ * What the file turned out to be, as a clause after its name.
+ *
+ * Reported because it is the one thing about the download a reader cannot see from the preview, and
+ * because the two outcomes call for different things from them: an indexed file is the palette claim
+ * honoured in the format itself, while a truecolour one says the sheet holds more colours than a
+ * palette can name — which is a reason to reach for the colour budget, and the figure to judge that
+ * against is already on the panel beside the preview.
+ */
+function describeEncoding(paletteEntries: number | null): string {
+  return paletteEntries === null
+    ? `more colours than the ${String(MAX_PALETTE_ENTRIES)} a palette can name, so it is written truecolour`
+    : `indexed, ${String(paletteEntries)}-colour palette`;
 }
 
 /**
