@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakePngWorker } from '../test/fakePngWorker.ts';
-import { useFileWriteStore } from '../stores/useFileWriteStore.ts';
+import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import { createImage } from '../utils/imageData.ts';
 import { encodeOffThread } from './pngSession.ts';
 
@@ -24,7 +24,7 @@ const FILE = { bytes: new Uint8Array([137, 80]) as Uint8Array<ArrayBuffer>, pale
 
 beforeEach(() => {
   FakePngWorker.reset();
-  useFileWriteStore.setState({ writing: false });
+  useSheetWriteStore.setState({ writing: false });
   vi.stubGlobal('Worker', FakePngWorker);
 });
 
@@ -84,16 +84,16 @@ describe('encodeOffThread', () => {
     FakePngWorker.refuseToStart = true;
     await expect(encodeOffThread(createImage(2, 2), 1)).rejects.toThrow(/would not start the thread/);
     expect(FakePngWorker.started).toHaveLength(0);
-    expect(useFileWriteStore.getState().writing).toBe(false);
+    expect(useSheetWriteStore.getState().writing).toBe(false);
   });
 
   it('holds the writing flag for exactly as long as the thread runs', async () => {
     const encoding = encodeOffThread(createImage(2, 2), 1);
-    expect(useFileWriteStore.getState().writing).toBe(true);
+    expect(useSheetWriteStore.getState().writing).toBe(true);
 
     thread().answer({ kind: 'encoded', file: FILE });
     await encoding;
-    expect(useFileWriteStore.getState().writing).toBe(false);
+    expect(useSheetWriteStore.getState().writing).toBe(false);
   });
 
   it('refuses a second encode while one is running, rather than starting a second thread', async () => {

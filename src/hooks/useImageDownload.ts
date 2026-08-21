@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useFileWriteStore } from '../stores/useFileWriteStore.ts';
+import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import { useUIStore } from '../stores/useUIStore.ts';
 import { encodeOffThread } from '../workers/pngSession.ts';
 import { useFileSave } from './useFileSave.ts';
@@ -33,15 +33,15 @@ export function useImageDownload(): ImageDownload {
   const saveFile = useFileSave();
   // From the store rather than from this component, because the thread outlives the view: `App`
   // swaps the whole tab on navigation, and a flag held here would come back `false` with an encode
-  // still running. See `useFileWriteStore`.
-  const saving = useFileWriteStore((state) => state.writing);
+  // still running. See `useSheetWriteStore`.
+  const saving = useSheetWriteStore((state) => state.writing);
 
   const save = useCallback(
     (sourceName: string, image: ImageData, scale: number) => {
       // Read at the press rather than closed over, so the guard cannot go stale behind a render.
       // `encodeOffThread` refuses a second encode as well; this is what keeps a refused press from
       // reporting a failure the reader did not cause.
-      if (useFileWriteStore.getState().writing) return;
+      if (useSheetWriteStore.getState().writing) return;
       const filename = quantisedName(sourceName, scale);
 
       encodeOffThread(image, scale)

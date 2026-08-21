@@ -101,7 +101,7 @@ export function ImageComparison({
 
   // With nothing to compare against there is nothing to wipe and nothing to have cost anything, so
   // both of those modes would draw a placeholder over the sheet and call it a comparison. Derived
-  // rather than corrected in state, which is the call `ComparisonToolbar` makes about a download
+  // rather than corrected in state, which is the call `DownloadControls` makes about a download
   // magnification the result has outgrown: what the pills show is what the panel is actually doing.
   const shown: PreviewMode = quantised === null ? 'SIDE_BY_SIDE' : mode;
 

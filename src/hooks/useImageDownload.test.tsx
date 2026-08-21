@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useFileWriteStore } from '../stores/useFileWriteStore.ts';
+import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import { useUIStore } from '../stores/useUIStore.ts';
 import { decodePng } from '../test/decodePng.ts';
 import { FakePngWorker } from '../test/fakePngWorker.ts';
@@ -27,6 +27,10 @@ import { useImageDownload } from './useImageDownload.ts';
 
 const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 
+/** Every toast raised during a test, in order — a single final reading hides an intermediate one. */
+let toasts: string[] = [];
+let unsubscribe: (() => void) | null = null;
+
 /** The blob handed to `createObjectURL`, which is the file the browser would have saved. */
 let saved: Blob | null = null;
 let downloadName: string | null = null;
@@ -34,7 +38,11 @@ beforeEach(() => {
   saved = null;
   downloadName = null;
   useUIStore.setState({ toastMessage: null });
-  useFileWriteStore.setState({ writing: false });
+  toasts = [];
+  unsubscribe = useUIStore.subscribe((state) => {
+    if (state.toastMessage !== null) toasts.push(state.toastMessage);
+  });
+  useSheetWriteStore.setState({ writing: false });
   FakePngWorker.reset();
   // The thread is stubbed and the encoder is not: what these tests decode is a genuine file.
   FakePngWorker.respond = ({ image, scale }) =>
@@ -54,6 +62,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  unsubscribe?.();
+  unsubscribe = null;
   vi.unstubAllGlobals();
 });
 
@@ -163,5 +173,10 @@ describe('useImageDownload', () => {
     });
     // The second press asked for `@2x` and would have overwritten the name had it been taken.
     expect(downloadName).toBe('armour-quantised.png');
+    // And it was refused *quietly*. `encodeOffThread` refuses a concurrent encode too, so without
+    // the hook's own guard the reader would be told a file could not be written — a failure they did
+    // not cause, for a press that was never going to do anything. Every toast is collected rather
+    // than the last one read, because the success that follows would hide it.
+    expect(toasts).toEqual(['Downloaded armour-quantised.png — indexed, 1-entry palette']);
   });
 });

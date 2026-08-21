@@ -22,8 +22,8 @@ export class FakePngWorker {
   static refuseToStart = false;
   /** Refuse the message, as a browser that will not clone a very large sheet does. */
   static refusePost = false;
-  /** What to answer a request with, or `null` to leave it hanging for the test to answer by hand. */
-  static respond: ((request: PngRequest) => Promise<PngReply> | null) | null = null;
+  /** What to answer a request with. Left unset, the request hangs for the test to answer by hand. */
+  static respond: ((request: PngRequest) => Promise<PngReply>) | null = null;
 
   readonly posted: PngRequest[] = [];
   terminated = false;
@@ -53,7 +53,7 @@ export class FakePngWorker {
     if (FakePngWorker.refusePost) throw new Error('the sheet would not clone');
     this.posted.push(request);
     const answering = FakePngWorker.respond?.(request);
-    if (answering === undefined || answering === null) return;
+    if (answering === undefined) return;
     void answering.then((reply) => {
       this.answer(reply);
     });

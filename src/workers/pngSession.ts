@@ -1,4 +1,4 @@
-import { useFileWriteStore } from '../stores/useFileWriteStore.ts';
+import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import type { EncodedPng } from '../utils/encodePng.ts';
 import type { PngReply, PngRequest } from './pngWorker.ts';
 
@@ -16,18 +16,20 @@ import type { PngReply, PngRequest } from './pngWorker.ts';
  * The magnification is a factor rather than an already-magnified image, so what crosses is the sheet
  * and not the file — see `pngWorker.ts`, which says what that is worth.
  *
- * **Every exit terminates the thread and settles the promise**, and the two go together: a thread
- * left running holds the image it was given, and a promise left unsettled leaves the button that
- * returned it reading "Writing…" for the rest of the session. There are six ways out — an answer, a
+ * **Every exit that started a thread terminates it, and every call settles**, and the two go
+ * together: a thread left running holds the image it was given, and a promise left unsettled leaves
+ * the button that returned it reading "Writing…" for the rest of the session — which a store, unlike
+ * component state, does not clear by navigating away. Six ways out start a thread: an answer, a
  * refusal, a reply that will not deserialise, a thread that will not evaluate, a browser that will
- * not build one, and a message that will not be sent — and `pngSession.test.ts` walks each.
+ * not build one, and a message that will not be sent. A seventh settles without one — a press
+ * arriving while the last is still being written. `pngSession.test.ts` walks all seven.
  */
 
 /** Said where a press arrives while the last one is still being written; the button also refuses. */
 const ALREADY_WRITING = 'A file is already being written';
 
 export function encodeOffThread(image: ImageData, scale: number): Promise<EncodedPng> {
-  const writes = useFileWriteStore.getState();
+  const writes = useSheetWriteStore.getState();
   if (writes.writing) return Promise.reject(new Error(ALREADY_WRITING));
 
   return new Promise((resolve, reject) => {
@@ -44,7 +46,7 @@ export function encodeOffThread(image: ImageData, scale: number): Promise<Encode
     writes.began();
     const finish = (settle: () => void): void => {
       worker.terminate();
-      useFileWriteStore.getState().ended();
+      useSheetWriteStore.getState().ended();
       settle();
     };
 

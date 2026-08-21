@@ -15,11 +15,12 @@ import { upscaleNearest } from '../utils/upscaleNearest.ts';
  * property is kept.
  *
  * **The magnification happens here too**, and that is the same argument rather than a second one.
- * `upscaleNearest` is a loop over the *output*, so at the top rung it is 16.8 million iterations and
- * a 67-megabyte allocation — on the main thread that is the first half of the freeze, and it would
- * run before the button could be painted as pressed. Sending the 1:1 result and the factor also
- * makes the structured clone the size of the sheet rather than the size of the file: four megabytes
- * instead of sixty-seven.
+ * `upscaleNearest` is a loop over the *output*, which the Save At ladder caps at 16.8 million
+ * pixels — 16.8 million iterations and a 67-megabyte allocation — so on the main thread it is the
+ * first half of the freeze, and it would run before the button could be painted as pressed.
+ * Sending the 1:1 result and the factor also makes the structured clone the size of the *sheet*
+ * rather than of the file: at the 8× rung the largest sheet that ladder will accept is a megabyte,
+ * against the sixty-seven the magnified image would have cost.
  *
  * **One image, one thread, one reply**, which is why there is no correlation id and no protocol file
  * beside this one. A download is a single job with a caller waiting on it, so `pngSession.ts` starts
@@ -46,20 +47,55 @@ export type PngReply =
   | { readonly kind: 'failed'; readonly reason: string };
 
 self.addEventListener('message', (event: MessageEvent<PngRequest>) => {
-  const { image, scale } = event.data;
-  encodePng(scale === 1 ? image : upscaleNearest(image, scale)).then(
-    (file) => {
-      // The bytes are transferred rather than copied. They are this thread's only product and it is
-      // about to end, so nothing here can be left holding a detached buffer.
-      self.postMessage({ kind: 'encoded', file } satisfies PngReply, [file.bytes.buffer]);
-    },
-    (error: unknown) => {
-      // The realistic failures are memory on a magnified sheet and a browser without
-      // `CompressionStream`. The tab shows this, so it has to read as a sentence.
-      self.postMessage({
-        kind: 'failed',
-        reason: error instanceof Error ? error.message : String(error),
-      } satisfies PngReply);
-    },
-  );
+  void write(event.data);
 });
+
+/**
+ * Magnify, encode, and answer — with **both** halves guarded, because a rejection this thread does
+ * not handle reaches nobody.
+ *
+ * Exported for its own test rather than only reachable through the listener above. It is the one
+ * thing in this file that is not a line of plumbing, and the guard it carries is one that was
+ * claimed and missing once already — which is exactly the kind of absence a test states and a
+ * reading does not.
+ *
+ * An unhandled rejection inside a worker fires `unhandledrejection` here and **no `error` event on
+ * the `Worker` object**, so the near side would see no message, no failure and no death: its promise
+ * would never settle and the button that returned it would read "Writing…" for the rest of the
+ * session. That makes the reply the only way out of this file, and every path has to reach one.
+ *
+ * The two `try` blocks are separate because they fail for different reasons and one of them is
+ * reported wrongly if they are merged. The first covers the magnification and the encode, where the
+ * realistic cause is room — `upscaleNearest` is the single largest allocation in the app, and it is
+ * synchronous, so outside a `try` its `RangeError` would escape as an uncaught exception and reach
+ * the near side as "the thread could not start", which is not what happened. The second covers the
+ * reply itself.
+ */
+export async function write({ image, scale }: PngRequest): Promise<void> {
+  let file: EncodedPng;
+  try {
+    file = await encodePng(scale === 1 ? image : upscaleNearest(image, scale));
+  } catch (error: unknown) {
+    post({ kind: 'failed', reason: describe(error) });
+    return;
+  }
+
+  try {
+    // The bytes are transferred rather than copied. They are this thread's only product and it is
+    // about to end, so nothing here can be left holding a detached buffer.
+    post({ kind: 'encoded', file }, [file.bytes.buffer]);
+  } catch (error: unknown) {
+    // The transfer may already have detached the buffer, so the fallback carries no bytes at all —
+    // which is also why it cannot fail the same way.
+    post({ kind: 'failed', reason: describe(error) });
+  }
+}
+
+function post(reply: PngReply, transfer: Transferable[] = []): void {
+  self.postMessage(reply, transfer);
+}
+
+/** A thrown value as a sentence, since the tab shows it. */
+function describe(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
