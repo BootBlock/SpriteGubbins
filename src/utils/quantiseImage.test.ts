@@ -80,6 +80,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -102,6 +104,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -126,6 +130,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -152,6 +158,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -178,6 +186,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -206,6 +216,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -236,6 +248,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -263,6 +277,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -283,6 +299,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -308,6 +326,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -351,6 +371,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -384,6 +406,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -410,6 +434,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -457,6 +483,8 @@ describe('quantiseImage', () => {
         fillCleanup: 0,
         cleanupPasses: 1,
         spriteGap: 1,
+        duplicateTolerance: 0,
+        duplicateSnap: false,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
@@ -507,6 +535,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -561,6 +591,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -629,6 +661,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -655,6 +689,8 @@ describe('quantiseImage', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -694,6 +730,8 @@ describe('quantiseImage', () => {
           fillCleanup: 8,
           cleanupPasses: 2,
           spriteGap: 1,
+          duplicateTolerance: 0,
+          duplicateSnap: false,
           dither: 'NONE' as const,
           outlineExpansion: 0,
           colorMerge: 8,
@@ -750,6 +788,8 @@ describe('quantiseImage — a locked palette', () => {
     fillCleanup: 0,
     cleanupPasses: 1,
     spriteGap: 1,
+    duplicateTolerance: 0,
+    duplicateSnap: false,
     dither: 'NONE' as const,
     outlineExpansion: 0,
     colorMerge,
@@ -819,6 +859,8 @@ describe('quantiseImage — a dither', () => {
     fillCleanup: cleanup,
     cleanupPasses: 4,
     spriteGap: 1,
+    duplicateTolerance: 0,
+    duplicateSnap: false,
     colorMerge: cleanup,
     outlineExpansion: 0,
     dither,
@@ -856,5 +898,132 @@ describe('quantiseImage — a dither', () => {
     const result = quantiseImage(coarse, { ...settingsFor('BAYER_4', TWO_TONE, 0), grid: 4 });
     expect(result.image.width).toBe(8);
     expect(result.colors).toBe(2);
+  });
+});
+
+/**
+ * The duplicate reading, and the fold it feeds, inside the pipeline.
+ *
+ * The reading itself is pinned in `duplicateSprites.test.ts` and the block copy in
+ * `snapDuplicates.test.ts`. What only this level can establish is the ordering the whole feature
+ * rests on: that the reading runs on the finished sheet whether or not the fold does, that the fold
+ * lands *before* the colour count and the difference map are taken, and that the finding handed back
+ * describes the sheet the reading was taken from rather than the one the fold produced.
+ */
+describe('quantiseImage — duplicate sprites', () => {
+  const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
+  const INK: Rgba = { r: 20, g: 30, b: 40, a: 255 };
+  const SPOT: Rgba = { r: 26, g: 36, b: 46, a: 255 };
+
+  /**
+   * Two 4 × 4 blocks a clear gutter apart, the second carrying one cell of a slightly different ink.
+   *
+   * Keying is off and the sheet arrives with its own alpha, which is the state a sheet this app
+   * downloaded earlier comes back in — so the segmentation runs on what the file already says is
+   * transparent, exactly as `spriteSegments` describes.
+   */
+  const PAIR = imageFrom(20, 8, (x, y) => {
+    if (y < 2 || y >= 6) return CLEAR;
+    if (x >= 2 && x < 6) return INK;
+    if (x >= 12 && x < 16) return x === 12 && y === 2 ? SPOT : INK;
+    return CLEAR;
+  });
+
+  const settingsFor = (duplicateTolerance: number, duplicateSnap: boolean) => ({
+    grid: 1,
+    key: null,
+    vote: 'DOMINANT' as const,
+    outlineExpansion: 0,
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    colorMerge: 0,
+    cleanupPasses: 1,
+    dither: 'NONE' as const,
+    spriteGap: 0,
+    duplicateTolerance,
+    duplicateSnap,
+    reduction: null,
+  });
+
+  it('reports the finding whether or not the fold is asked for', () => {
+    const read = quantiseImage(PAIR, settingsFor(24, false));
+    const folded = quantiseImage(PAIR, settingsFor(24, true));
+
+    expect(read.duplicates).toHaveLength(1);
+    expect(folded.duplicates).toEqual(read.duplicates);
+  });
+
+  it('changes no pixel while only the tolerance is moved', () => {
+    // The half of this feature that is a reading. A dial that quietly edited the sheet on the way to
+    // producing a count would be the one thing its guidance promises it does not do.
+    const off = quantiseImage(PAIR, settingsFor(0, false));
+    const on = quantiseImage(PAIR, settingsFor(24, false));
+
+    expect(channels(on.image)).toEqual(channels(off.image));
+    expect(off.duplicates).toEqual([]);
+    expect(on.duplicates).toHaveLength(1);
+  });
+
+  it('folds the repeats into the delivered image when the snap is on', () => {
+    const folded = quantiseImage(PAIR, settingsFor(24, true));
+
+    expect(folded.snapped).toBe(true);
+    // The spot that told the two sprites apart is gone, so the sheet is down to one ink.
+    expect(folded.colors).toBe(1);
+  });
+
+  it('counts the colours of the folded sheet, not of the one the reading was taken from', () => {
+    // The ordering claim in one assertion: the fold has to land before the colour count, or the
+    // figure beside the preview describes a sheet the reader was never shown.
+    const read = quantiseImage(PAIR, settingsFor(24, false));
+    const folded = quantiseImage(PAIR, settingsFor(24, true));
+
+    expect(read.colors).toBe(2);
+    expect(folded.colors).toBe(1);
+  });
+
+  it('re-reads the sprite bounds off the folded sheet, and finds the same ones', () => {
+    // Every member has the canonical's extent, so the block copied into it keeps its box tight.
+    // Only the pixel counts move — and here they do not, since both blocks were already solid.
+    const read = quantiseImage(PAIR, settingsFor(24, false));
+    const folded = quantiseImage(PAIR, settingsFor(24, true));
+
+    expect(folded.sprites).toEqual(read.sprites);
+  });
+
+  it('reports nothing folded where the snap has nothing to act on', () => {
+    // The dial is on and the tolerance reaches nothing, which is a state the panel has to be able to
+    // describe honestly — a snap that folded nothing has changed nothing.
+    const result = quantiseImage(PAIR, settingsFor(0, true));
+
+    expect(result.duplicates).toEqual([]);
+    expect(result.snapped).toBe(false);
+    expect(channels(result.image)).toEqual(channels(quantiseImage(PAIR, settingsFor(0, false)).image));
+  });
+
+  it('reports no duplicates on a sheet that did not segment', () => {
+    // A fully opaque sheet is `SOLID`, which carries no boxes — so there is nothing to compare, and
+    // the honest answer is an empty finding rather than one group covering the raster.
+    const solid = imageFrom(8, 8, () => INK);
+
+    const result = quantiseImage(solid, settingsFor(24, true));
+
+    expect(result.sprites.kind).toBe('SOLID');
+    expect(result.duplicates).toEqual([]);
+    expect(result.snapped).toBe(false);
+  });
+
+  it('measures the difference map against the sheet the reader is given', () => {
+    // The fold is part of what the pipeline cost, so a heatmap taken before it would report a
+    // faithful sprite the reader can see has been replaced. At a grid of 1 with no reduction the
+    // unfolded pass is the source exactly, so its peak is zero — and the folded pass is not, by the
+    // one cell the fold overwrote. A map measured on the wrong side would give the same figure twice.
+    const read = quantiseImage(PAIR, settingsFor(24, false));
+    const folded = quantiseImage(PAIR, settingsFor(24, true));
+
+    expect(read.difference.peak).toBe(0);
+    expect(folded.difference.peak).toBeGreaterThan(0);
   });
 });

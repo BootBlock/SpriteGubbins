@@ -36,6 +36,8 @@ const TUNED: QuantiseDials = {
   dither: 'BLUE_NOISE',
   paletteSnap: 36,
   spriteGap: 3,
+  duplicateTolerance: 5,
+  duplicateSnap: true,
 };
 
 beforeEach(() => {

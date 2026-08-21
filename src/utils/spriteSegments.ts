@@ -1,4 +1,5 @@
 import { SCATTERED_SPRITE_CEILING, SMALLEST_SPRITE_PIXELS } from '../constants/quantiser.ts';
+import { boxSeparation } from './boxSeparation.ts';
 import type { SpriteBox, SpriteSegmentation } from '../types/quantiser.ts';
 import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT } from './imageData.ts';
 
@@ -291,6 +292,10 @@ function labelledBounds(image: ImageData): Labelled {
  * within `gap` drawn pixels of one another — measured the same eight-connected way the labelling
  * measures adjacency — become one.
  *
+ * Distance is `boxSeparation` — the eight-connected metric the labelling itself uses, kept in one
+ * place because the duplicate snap measures against these same boxes and the two must not disagree
+ * about what "next to" means.
+ *
  * **Boxes rather than pixels, which is what makes it a merge rather than a dilation.** Two regions
  * whose boxes overlap belong together however far apart their nearest pixels are: an outstretched
  * arm passes through the torso's box without touching a pixel of it. That is also why `gap` has no
@@ -352,7 +357,18 @@ function foldOnce(boxes: readonly Bounds[], gap: number): Bounds[] {
   for (const [left, first] of boxes.entries()) {
     for (let right = left + 1; right < boxes.length; right += 1) {
       const second = boxes[right];
-      if (second === undefined || separation(first, second) > gap) continue;
+      if (second === undefined) continue;
+      const apart = boxSeparation(
+        first.left,
+        first.top,
+        first.right,
+        first.bottom,
+        second.left,
+        second.top,
+        second.right,
+        second.bottom,
+      );
+      if (apart > gap) continue;
       const rootLeft = find(left);
       const rootRight = find(right);
       if (rootLeft !== rootRight) parent[rootRight] = rootLeft;
@@ -377,18 +393,4 @@ function foldOnce(boxes: readonly Bounds[], gap: number): Bounds[] {
   }
 
   return [...groups.values()];
-}
-
-/**
- * How far apart two boxes sit, in drawn pixels — `0` where they touch or overlap.
- *
- * The Chebyshev separation, which is the eight-connected metric the labelling itself uses: a box
- * three pixels away diagonally is three away, not four and a bit. Measuring it any other way would
- * put the merge and the labelling on two different definitions of "next to", and a gap of 1 would
- * then mean something different depending on which direction the piece had drifted.
- */
-function separation(first: Bounds, second: Bounds): number {
-  const across = Math.max(first.left - second.right, second.left - first.right, 0);
-  const down = Math.max(first.top - second.bottom, second.top - first.bottom, 0);
-  return Math.max(across, down);
 }

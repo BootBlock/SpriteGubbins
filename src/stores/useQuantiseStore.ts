@@ -83,6 +83,8 @@ export interface QuantiseState extends QuantiseDials {
   unlockPalette(): void;
   setPaletteSnap(paletteSnap: number): void;
   setSpriteGap(spriteGap: number): void;
+  setDuplicateTolerance(duplicateTolerance: number): void;
+  setDuplicateSnap(duplicateSnap: boolean): void;
   /**
    * Put every dial where a saved preset says, in one move.
    *
@@ -248,6 +250,14 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
 
     setSpriteGap: (spriteGap) => {
       edit('spriteGap', { spriteGap });
+    },
+
+    setDuplicateTolerance: (duplicateTolerance) => {
+      edit('duplicateTolerance', { duplicateTolerance });
+    },
+
+    setDuplicateSnap: (duplicateSnap) => {
+      edit('duplicateSnap', { duplicateSnap });
     },
 
     applyDials: (dials) => {

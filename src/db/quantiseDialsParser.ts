@@ -2,6 +2,7 @@ import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import {
   CLEANUP_PASSES_RANGE,
   COLOR_MERGE_RANGE,
+  DUPLICATE_TOLERANCE_RANGE,
   FILL_CLEANUP_RANGE,
   INK_THRESHOLD_RANGE,
   KEY_TOLERANCES,
@@ -81,5 +82,12 @@ export function parseQuantiseDials(value: unknown): QuantiseDials {
       PALETTE_SNAP_RANGE,
     ),
     spriteGap: pickWholeNumber(value, 'spriteGap', QUANTISE_DEFAULT_DIALS.spriteGap, SPRITE_GAP_RANGE),
+    duplicateTolerance: pickWholeNumber(
+      value,
+      'duplicateTolerance',
+      QUANTISE_DEFAULT_DIALS.duplicateTolerance,
+      DUPLICATE_TOLERANCE_RANGE,
+    ),
+    duplicateSnap: pickBoolean(value, 'duplicateSnap', QUANTISE_DEFAULT_DIALS.duplicateSnap),
   };
 }

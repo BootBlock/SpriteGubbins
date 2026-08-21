@@ -3,6 +3,8 @@ import {
   DEFAULT_CLEANUP_PASSES,
   DEFAULT_COLOR_MERGE,
   DEFAULT_DITHER,
+  DEFAULT_DUPLICATE_SNAP,
+  DEFAULT_DUPLICATE_TOLERANCE,
   DEFAULT_FILL_CLEANUP,
   DEFAULT_INK_THRESHOLD,
   DEFAULT_KEY_TOLERANCE,
@@ -46,6 +48,8 @@ export const QUANTISE_DEFAULT_DIALS: QuantiseDials = {
   dither: DEFAULT_DITHER,
   paletteSnap: DEFAULT_PALETTE_SNAP,
   spriteGap: DEFAULT_SPRITE_GAP,
+  duplicateTolerance: DEFAULT_DUPLICATE_TOLERANCE,
+  duplicateSnap: DEFAULT_DUPLICATE_SNAP,
 };
 
 /**
@@ -71,6 +75,8 @@ const DIAL_NAMES: { readonly [K in keyof QuantiseDials]: K } = {
   dither: 'dither',
   paletteSnap: 'paletteSnap',
   spriteGap: 'spriteGap',
+  duplicateTolerance: 'duplicateTolerance',
+  duplicateSnap: 'duplicateSnap',
 };
 
 /**

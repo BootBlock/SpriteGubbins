@@ -24,6 +24,8 @@ const STORED: QuantiseDials = {
   dither: 'BAYER_8',
   paletteSnap: 40,
   spriteGap: 4,
+  duplicateTolerance: 5,
+  duplicateSnap: true,
 };
 
 describe('parseQuantiseDials', () => {

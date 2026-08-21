@@ -28,6 +28,8 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
     left.cleanupPasses === right.cleanupPasses &&
     left.dither === right.dither &&
     left.spriteGap === right.spriteGap &&
+    left.duplicateTolerance === right.duplicateTolerance &&
+    left.duplicateSnap === right.duplicateSnap &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );

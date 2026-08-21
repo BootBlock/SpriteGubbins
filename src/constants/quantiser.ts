@@ -846,6 +846,50 @@ export const SMALLEST_SPRITE_PIXELS = 4;
 export const SCATTERED_SPRITE_CEILING = 512;
 
 /**
+ * The duplicate tolerance's range: the mean per-cell distance under which two same-size sprites are
+ * counted as one drawing, in the scaled OKLab units every colour tolerance on this tab uses.
+ *
+ * **A mean over a whole sprite, which is why the numbers here are so much smaller than the merge's
+ * or the cleanup's.** Those two compare one colour with another, where a fold worth making is a
+ * dozen units. This averages a distance over every cell of a sprite, and the cells of two frames
+ * that are the same drawing are mostly identical — so what moves the figure is the share of cells
+ * that differ, multiplied by how far they differ. A pair with one cell in twenty landing a whole
+ * palette step apart — say 50 units — scores 2.5. A pair with one cell in ten *missing* on one side
+ * scores 25.5, because a cell present on one side and absent on the other is the full 255 apart.
+ *
+ * So the ceiling is 24, which sits just under that second case: at the top of the range two sprites
+ * whose silhouettes differ by a tenth are still two sprites. That is already well past any pair a
+ * reader would call one drawing, and stopping there is what keeps the last rung meaningful rather
+ * than a setting at which most of a sheet folds into itself. The step is 1 because the useful spread
+ * sits in the first handful of rungs and a finer one would be a slider nobody could land on.
+ */
+export const DUPLICATE_TOLERANCE_RANGE = { min: 0, max: 24, step: 1 } as const;
+
+/**
+ * The tolerance the tab opens at — zero, which reports only sprites whose visible pixels match.
+ *
+ * The second dial on this tab whose zero is not the pass being switched off, and it opens there for
+ * the reason the sprite gap opens engaged: the reading changes no pixel of the sheet, so an opening
+ * that is wrong costs a number a reader can correct while they watch. What it opens *at* is the
+ * finding nobody has to be persuaded of — a frame that came back byte-identical to another is a
+ * frame the generator repeated, whatever anyone's tolerance for near-misses is. Everything above
+ * zero is a judgement about how alike two drawings have to be, which is the reader's to make against
+ * their own sheet.
+ */
+export const DEFAULT_DUPLICATE_TOLERANCE = 0;
+
+/**
+ * Whether the snap opens engaged — it does not.
+ *
+ * The one dial in this tab's control stack that **deletes artwork**: it overwrites each
+ * near-duplicate with the sprite its group is named after, so whatever distinguished the two is
+ * gone from the download. Every other dial here transforms the whole sheet by a rule, and this one
+ * acts on a finding — a finding the reader has not necessarily looked at yet. Defaulting it on would
+ * be the tab deciding that two frames a generator drew separately were a mistake.
+ */
+export const DEFAULT_DUPLICATE_SNAP = false;
+
+/**
  * The preview magnifications, in the order the control offers them.
  *
  * 1:1 leads because it is the case that decides whether the result is genuine pixel art; the rest
@@ -1162,6 +1206,10 @@ export const QUANTISE_TOOLTIPS = {
     'How the palette step spreads a colour the palette cannot hold across neighbouring pixels, instead of rounding every one of those pixels to the nearest entry on its own. Each pixel is written as one of two palette colours, and which of the two is decided by where the pixel sits in a small repeating tile — so one colour always lands on one pattern, in every frame of an animation and on both sides of a tile seam. That is why the pattern is positional rather than an error-diffusion dither, where each pixel’s choice depends on the pixels already drawn: a shape that moves by a pixel between two frames would come back wearing a different pattern, and the dither would crawl as the animation played. BAYER_4 and BAYER_8 are the classic ordered tiles, whose crosshatch is what reads as a retro dither — the smaller is coarser and more obvious, the larger carries four times as many mixing ratios. BLUE_NOISE spreads the same ratios with no repeating figure at all, which is the quieter choice where a crosshatch would read as texture the artwork does not have. It is offered only while a colour budget, a pinned palette or a locked palette is in force, since without a palette there is nothing for a mixture to express. Turning it on also moves the colour merge and the fill cleanup ahead of it, so those dials tidy what the reading made of the sheet rather than the pattern drawn from it — which is also why the merge stops standing aside for a pinned or locked palette while a pattern is in force. One thing it costs: the standard vote’s outline rescue needs a colour reduction to have run before the patches are read, and a dither is that reduction held back to the end, so choosing a pattern switches the rescue off. Raise the outline expansion above it, or take the ink-weighted reading, if contours start to break up.',
   spriteGap:
     'How far apart two pieces of artwork may sit and still be counted as one sprite, in drawn pixels. A subject rarely comes back as one connected shape — a sword is held clear of the hand, a shadow sits under the feet, and keying an anti-aliased join can cut a pauldron away from the shoulder it rests on — so pieces this close together are read as parts of one thing. Unlike every other dial on this tab, 0 is not an off position: the count is always taken, and at 0 pieces are still gathered where their boxes overlap, which is what keeps an outstretched arm from being counted apart from the body it reaches out of. Raise it when one subject is being counted as several, and lower it when two neighbouring subjects are being counted as one — past the width of the gutter between them, the whole sheet folds into a single box. It changes no pixel of the sheet, only the reading of it, so the download is the same file whatever it is set to. Switch the preview to Sprites to see where the boundaries were drawn.',
+  duplicateTolerance:
+    'How alike two sprites of the same size have to be before this reads them as one drawing. Generators repeat themselves — eight facings come back holding two of the same pose, an animation strip repeats a frame it was meant to move — and nothing else on this tab says so, because a repeated sprite is counted like any other. Each pair is compared cell by cell and scored on the average distance between them, measured the way every colour distance here is, so what moves the figure is how many cells differ and by how much. At 0 only sprites whose visible pixels match outright are grouped, which is the frame a generator handed back twice; raise it to reach the pair that came back a shade apart, and lower it when two poses that are genuinely different are being called the same. Only sprites with identical bounds are compared at all, since artwork of two different sizes has no common ground to be read against. On its own it changes no pixel of the sheet — it is a reading of the result, and the download is the same file whatever it says. Switch the preview to Sprites to see the bounds it is working from.',
+  duplicateSnap:
+    'Rewrites every sprite the reading above grouped with the first sprite of its group, so a pose that came back three times slightly differently is written three times identically. That is what makes the repeats free downstream: one set of colours instead of three near-identical sets, one atlas cell where three were paid for, and no flicker when an animation plays through frames that were never quite the same. It changes the sheet, and it is the only control on this tab that does so by deleting artwork rather than transforming it — whatever made each copy different is gone from the download and from everything measured off it. Look at the count above before switching it on, and raise the tolerance slowly with it on so you can see which sprites are being folded. It has nothing to act on while the tolerance finds no groups.',
   presetName:
     'What this set of dial positions is called in the list below. Give it the name of the thing it suits rather than the settings it holds — the generator whose sheets need it, or the style of artwork — because the numbers are already on screen and the reason for them is not. A name that is already in the list updates that entry rather than adding a second one under the same name.',
   presetDescription:

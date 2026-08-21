@@ -2,6 +2,7 @@ import type { ColorReduction, GridMesh, QuantiseResult, QuantiseSettings } from 
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
 import { differenceMap } from './differenceMap.ts';
+import { duplicateSprites } from './duplicateSprites.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
 import { boundaryMesh } from './gridMesh.ts';
 import { despeckle } from './despeckle.ts';
@@ -14,6 +15,7 @@ import { kCentroidCells } from './kCentroidVote.ts';
 import { keyBackground } from './keyBackground.ts';
 import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
+import { snapDuplicates } from './snapDuplicates.ts';
 import { spriteSegments } from './spriteSegments.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
@@ -25,6 +27,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * DOMINANT:                 ImageData → keyBackground → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
  * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → outlineExpansion → cells resolved directly → reduceColors
  * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
+ * then, on whatever that produced:  spriteSegments → duplicateSprites → snapDuplicates (only if asked)
  *
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
@@ -193,8 +196,32 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const cleaned = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
   // And the palette step last of all where a dither holds it — see the note above on why it cannot
   // run anywhere else, and why these two passes come before it rather than after.
-  const output =
+  const reduced =
     positional === null ? cleaned : ditherImage(cleaned, positional.reduction, positional.matrix);
+
+  // The last two passes, and they are one pass in two halves: the reading of what the sheet holds,
+  // and — where the reader asked for it — the edit that answers it.
+  //
+  // **The reading runs on the reduced sheet whether or not the snap does**, because it is a fact the
+  // result carries either way, and because the snap has nothing to act on until it exists. It is
+  // skipped where the segmentation found no sprites to compare: `SOLID` and `SCATTERED` carry no
+  // boxes at all, which is the honest answer rather than a shape a duplicate reading could be taken
+  // over — see `SpriteSegmentation`.
+  const segmented = spriteSegments(reduced, settings.spriteGap);
+  const boxes = segmented.kind === 'SEGMENTED' ? segmented.boxes : [];
+  const duplicates = duplicateSprites(reduced, boxes, settings.duplicateTolerance);
+  // The snap is skipped where it has nothing to fold, rather than called and returning a copy: the
+  // copy alone is 67MB at the ceiling this app admits, and `reduceColors` and the outline expansion
+  // are both guarded the same way and for the same reason.
+  //
+  // **`snapped` is what the fold actually did**, not that it was asked for. A dial switched on over
+  // a sheet with no repeats folds nothing, and so does one whose every member sits too close to a
+  // neighbour to be redrawn — see `snapDuplicates`. Reporting either as a fold would have the panel
+  // announcing an edit that did not happen, and would pay a second segmentation for it.
+  const fold =
+    settings.duplicateSnap && duplicates.length > 0 ? snapDuplicates(reduced, duplicates, boxes) : null;
+  const snapped = fold !== null && fold.folded > 0;
+  const output = fold !== null && snapped ? fold.image : reduced;
 
   return {
     image: output,
@@ -216,7 +243,17 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // opens off, but is a property of the *result* rather than of the keying setting: a sheet that
     // arrived carrying its own alpha is segmented whether the key pass ran or not. See
     // `spriteSegments` for what it does with the sheets that are not skipped.
-    sprites: spriteSegments(output, settings.spriteGap),
+    //
+    // **A second reading, and only where the snap ran.** A folded member takes the canonical's
+    // silhouette, so its bounds and its pixel count are both the canonical's afterwards rather than
+    // the ones it arrived with — and the sheet a reader downloads is the one these figures have to
+    // describe. Re-reading is a linear pass, paid only by the reader who asked for the edit; carrying
+    // the old reading over would be cheaper and would name a sprite that is no longer there.
+    sprites: snapped ? spriteSegments(output, settings.spriteGap) : segmented,
+    // The finding, always as it stood on the sheet the reading was taken from — see
+    // `QuantiseResult.duplicates` for why the snap does not get to re-take it.
+    duplicates,
+    snapped,
     // The comparison view places the result against the source with this — see `QuantiseResult`.
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than

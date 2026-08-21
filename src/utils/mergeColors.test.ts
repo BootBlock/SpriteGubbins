@@ -91,6 +91,8 @@ describe('mergeColors', () => {
       fillCleanup: 0,
       cleanupPasses: 1,
       spriteGap: 1,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 24,

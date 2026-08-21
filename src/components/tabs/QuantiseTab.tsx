@@ -13,6 +13,7 @@ import { componentCountFor } from '../../utils/componentSet.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
 import { DialHistoryControls } from '../quantise/DialHistoryControls.tsx';
+import { DuplicateControls } from '../quantise/DuplicateControls.tsx';
 import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
@@ -71,6 +72,8 @@ export function QuantiseTab() {
   const lockedPalette = useQuantiseStore((state) => state.lockedPalette);
   const paletteSnap = useQuantiseStore((state) => state.paletteSnap);
   const spriteGap = useQuantiseStore((state) => state.spriteGap);
+  const duplicateTolerance = useQuantiseStore((state) => state.duplicateTolerance);
+  const duplicateSnap = useQuantiseStore((state) => state.duplicateSnap);
   // One memoised object, because the hook keys its debounce on the tuning's identity — atomic
   // selectors above, so an unrelated store change does not rebuild it.
   const tuning = useMemo(
@@ -85,6 +88,8 @@ export function QuantiseTab() {
       cleanupPasses,
       dither,
       spriteGap,
+      duplicateTolerance,
+      duplicateSnap,
     }),
     [
       vote,
@@ -97,6 +102,8 @@ export function QuantiseTab() {
       cleanupPasses,
       dither,
       spriteGap,
+      duplicateTolerance,
+      duplicateSnap,
     ],
   );
   const setSource = useQuantiseStore((state) => state.setSource);
@@ -228,6 +235,15 @@ export function QuantiseTab() {
             busy={busy}
           />
           <SpriteControls sprites={quantised?.result.sprites ?? null} target={target} busy={busy} />
+          {/* Directly under the sprite panel, because it is a reading *of* that reading: it has
+              nothing to say until sprites have been separated, and its guidance sends a reader back
+              up to the panel above when they have not been. */}
+          <DuplicateControls
+            sprites={quantised?.result.sprites ?? null}
+            duplicates={quantised?.result.duplicates ?? null}
+            snapped={quantised?.result.snapped ?? false}
+            busy={busy}
+          />
           {/* Last of the panels, and below the dials rather than above them: it is the only one
               whose subject is the reader's own way of working rather than this sheet, so it reads as
               a place to *put* what the controls above arrived at. Inside the sheet guard with the
