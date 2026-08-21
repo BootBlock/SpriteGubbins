@@ -52,8 +52,13 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
   const setSymmetryTolerance = useQuantiseStore((state) => state.setSymmetryTolerance);
   const setSymmetryConfidence = useQuantiseStore((state) => state.setSymmetryConfidence);
 
+  // The **figures** are withdrawn while a newer result is coming and the **paragraph** is not, and
+  // the split is deliberate. A line of bare axes has nothing to say it belongs to the sheet before
+  // the last dial move, so it goes; the paragraph describes what the control is doing, which has not
+  // stopped being true because a job is in flight — and falling back to the off paragraph there told
+  // a reader to go and read the sheet before settling anything while a snap was running.
   const readings = busy ? null : symmetry;
-  const snapped = readings?.filter((reading) => reading.snapped).length ?? 0;
+  const settled = symmetry?.filter((reading) => reading.snapped).length ?? 0;
 
   return (
     <section className="glass-panel rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
@@ -66,8 +71,8 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
               {readings.length} {readings.length === 1 ? 'sprite scored' : 'sprites scored'}
             </Badge>
             {mode === 'SNAP' && (
-              <Badge tone={snapped > 0 ? 'valid' : 'attention'}>
-                {snapped === 0 ? 'none settled' : `${snapped} settled`}
+              <Badge tone={settled > 0 ? 'valid' : 'attention'}>
+                {settled === 0 ? 'none settled' : `${settled} settled`}
               </Badge>
             )}
           </>
@@ -130,7 +135,7 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
       )}
 
       <p className="mt-3 text-xs leading-relaxed text-ink-muted">
-        {guidanceFor(mode, readings, sprites, snapped)}
+        {guidanceFor(mode, symmetry, sprites, settled)}
       </p>
     </section>
   );
@@ -139,16 +144,18 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
 /** Which paragraph the state calls for — see `SYMMETRY_GUIDANCE`, which holds all five. */
 function guidanceFor(
   mode: SymmetryMode,
-  readings: readonly SpriteSymmetry[] | null,
+  symmetry: readonly SpriteSymmetry[] | null,
   sprites: SpriteSegmentation | null,
-  snapped: number,
+  settled: number,
 ): string {
   if (mode === 'OFF') return SYMMETRY_GUIDANCE.off;
   // Before any result has come back the general paragraph is the right one: naming a state the sheet
-  // is not yet in would be describing a finding nobody has made. It is also what a solid or scattered
-  // sheet gets, since `sprites` is what says why there was nothing to score.
-  if (readings === null) return SYMMETRY_GUIDANCE.off;
-  if (readings.length === 0) return sprites === null ? SYMMETRY_GUIDANCE.off : SYMMETRY_GUIDANCE.none;
+  // is not yet in would be describing a finding nobody has made.
+  if (symmetry === null) return SYMMETRY_GUIDANCE.off;
+  // No sprite to score, which is a fact about the *keying* — and the panel above is the one that
+  // says which of its three reasons applies. `sprites` being null is the same "nothing yet" state as
+  // above, reached one render earlier.
+  if (symmetry.length === 0) return sprites === null ? SYMMETRY_GUIDANCE.off : SYMMETRY_GUIDANCE.none;
   if (mode !== 'SNAP') return SYMMETRY_GUIDANCE.read;
-  return snapped > 0 ? SYMMETRY_GUIDANCE.snapped : SYMMETRY_GUIDANCE.refused;
+  return settled > 0 ? SYMMETRY_GUIDANCE.snapped : SYMMETRY_GUIDANCE.refused;
 }

@@ -101,5 +101,9 @@ describe('SymmetryControls', () => {
 
     expect(screen.queryByText(/% mirrored/)).not.toBeInTheDocument();
     expect(screen.getByText('Reading the sprites…')).toBeInTheDocument();
+    // The paragraph stays, and it stays the one for the mode in force: falling back to the off
+    // paragraph here told a reader to go and read the sheet before settling anything, in the middle
+    // of a snap they had just asked for.
+    expect(screen.getByText(SYMMETRY_GUIDANCE.read)).toBeInTheDocument();
   });
 });
