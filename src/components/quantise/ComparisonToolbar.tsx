@@ -1,16 +1,8 @@
 import { PREVIEW_MODE_LABELS } from '../../constants/previewModes.ts';
-import {
-  DIFFERENCE_SCALES,
-  MAX_IMAGE_PIXELS,
-  PREVIEW_ZOOMS,
-  QUANTISE_TOOLTIPS,
-} from '../../constants/quantiser.ts';
-import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
-import { useImageDownload } from '../../hooks/useImageDownload.ts';
+import { DIFFERENCE_SCALES, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { PREVIEW_MODES } from '../../types/quantiser.ts';
 import type { PreviewMode } from '../../types/quantiser.ts';
-import { upscaleNearest } from '../../utils/upscaleNearest.ts';
-import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { DownloadControls } from './DownloadControls.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
@@ -33,7 +25,8 @@ interface ComparisonToolbarProps {
 }
 
 /**
- * How the result is shown, how far it is magnified, and the way to take it away.
+ * How the result is shown and how far it is magnified, with `DownloadControls` beside it for the
+ * way to take it away.
  *
  * **The difference scale appears only while the difference mode does**, which is the conditional
  * `DownscaleControls` uses for the ink-weighted dials and for the same reason: a control that
@@ -51,22 +44,6 @@ export function ComparisonToolbar({
   sourceName,
   resultImage,
 }: ComparisonToolbarProps) {
-  const download = useImageDownload();
-
-  // The same ladder the preview offers, cut to what this result can afford: a magnification whose
-  // file would outgrow the largest image the tab itself accepts is not offered for this sheet. The
-  // full ladder stands in while there is no result, so the row does not jump as one arrives.
-  const available: readonly number[] =
-    resultImage === null
-      ? PREVIEW_ZOOMS
-      : PREVIEW_ZOOMS.filter(
-          (scale) => resultImage.width * scale * (resultImage.height * scale) <= MAX_IMAGE_PIXELS,
-        );
-  // Derived rather than clamped in state: a new, larger result can strand the chosen rung, and the
-  // honest answer is to save at 1× and show 1× pressed — not to show a selection the download
-  // would silently ignore.
-  const effectiveScale = available.includes(downloadScale) ? downloadScale : PREVIEW_ZOOMS[0];
-
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap items-center gap-3">
@@ -119,41 +96,12 @@ export function ComparisonToolbar({
         )}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <span className="mr-1 flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-ink-muted">Save at</span>
-            <Tooltip text={QUANTISE_TOOLTIPS.downloadScale} hint="Save at" />
-          </span>
-          <SegmentedChoice
-            label="Download magnification"
-            values={available}
-            value={effectiveScale}
-            format={(level) => `${String(level)}×`}
-            onChange={onDownloadScaleChange}
-          />
-        </div>
-
-        <ControlTooltip hint="Download PNG" text={QUANTISE_ACTION_TOOLTIPS.downloadPNG}>
-          <button
-            type="button"
-            disabled={resultImage === null || download.saving}
-            onClick={() => {
-              if (resultImage === null) return;
-              // Magnified on the way out, never held magnified: the result in memory stays the
-              // 1:1 sheet the previews and the store share.
-              download.save(
-                sourceName,
-                effectiveScale === 1 ? resultImage : upscaleNearest(resultImage, effectiveScale),
-                effectiveScale,
-              );
-            }}
-            className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
-          >
-            <span aria-hidden="true">⬇</span> {download.saving ? 'Writing…' : 'Download PNG'}
-          </button>
-        </ControlTooltip>
-      </div>
+      <DownloadControls
+        downloadScale={downloadScale}
+        onDownloadScaleChange={onDownloadScaleChange}
+        sourceName={sourceName}
+        resultImage={resultImage}
+      />
     </div>
   );
 }

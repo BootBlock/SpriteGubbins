@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback } from 'react';
+import { useFileWriteStore } from '../stores/useFileWriteStore.ts';
 import { useUIStore } from '../stores/useUIStore.ts';
 import { encodeOffThread } from '../workers/pngSession.ts';
 import { useFileSave } from './useFileSave.ts';
@@ -14,13 +15,15 @@ import { useFileSave } from './useFileSave.ts';
  * game pipeline reads it.
  *
  * **The encode runs on a thread of its own**, because the canvas encoder it replaced was
- * asynchronous and this one is a long synchronous walk over every byte — see `pngWorker.ts`. That is
- * also why {@link ImageDownload.saving} exists: the press now has a duration a reader can see, so it
- * has to be one the control can show, and a second press during it would write the same file twice.
+ * asynchronous and this one is a long synchronous walk over every byte — see `pngWorker.ts`, which
+ * magnifies as well as encodes so that neither pass lands in the click handler. That is also why
+ * {@link ImageDownload.saving} exists: the press now has a duration a reader can see, so it has to
+ * be one the control can show, and a second press during it would write the same file twice.
  */
 
 /** The press, and whether one is still being answered. */
 export interface ImageDownload {
+  /** The sheet at its own size, and the magnification the file is written at. */
   readonly save: (sourceName: string, image: ImageData, scale: number) => void;
   readonly saving: boolean;
 }
@@ -28,24 +31,20 @@ export interface ImageDownload {
 export function useImageDownload(): ImageDownload {
   const showToast = useUIStore((state) => state.showToast);
   const saveFile = useFileSave();
-  const [saving, setSaving] = useState(false);
-  // Whether this hook's component is still on screen. The quantise view unmounts on navigation, and
-  // an encode outlives the trip: without this, the reply lands on a component that no longer exists.
-  const onScreen = useRef(true);
-  useEffect(() => {
-    onScreen.current = true;
-    return () => {
-      onScreen.current = false;
-    };
-  }, []);
+  // From the store rather than from this component, because the thread outlives the view: `App`
+  // swaps the whole tab on navigation, and a flag held here would come back `false` with an encode
+  // still running. See `useFileWriteStore`.
+  const saving = useFileWriteStore((state) => state.writing);
 
   const save = useCallback(
     (sourceName: string, image: ImageData, scale: number) => {
-      if (saving) return;
-      setSaving(true);
+      // Read at the press rather than closed over, so the guard cannot go stale behind a render.
+      // `encodeOffThread` refuses a second encode as well; this is what keeps a refused press from
+      // reporting a failure the reader did not cause.
+      if (useFileWriteStore.getState().writing) return;
       const filename = quantisedName(sourceName, scale);
 
-      encodeOffThread(image)
+      encodeOffThread(image, scale)
         .then((encoded) => {
           saveFile(
             filename,
@@ -58,12 +57,9 @@ export function useImageDownload(): ImageDownload {
           // the thread, and memory on a magnified sheet — are nothing alike, and a reader who is
           // told which can act on it.
           showToast(`Could not write ${filename}: ${reason(error)}`);
-        })
-        .finally(() => {
-          if (onScreen.current) setSaving(false);
         });
     },
-    [saveFile, saving, showToast],
+    [saveFile, showToast],
   );
 
   return { save, saving };

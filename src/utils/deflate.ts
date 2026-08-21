@@ -8,8 +8,10 @@
  * tests deflate and inflate for real rather than against a stub.
  *
  * The input is fed in as a stream of one chunk rather than wrapped in a `Blob`, which would copy it:
- * the caller's argument is the whole filtered sheet, 67 megabytes on the largest image the tab
- * admits, and a second copy of it is worth avoiding for four lines.
+ * the caller's argument is the whole filtered sheet — 67 megabytes for a truecolour image at the
+ * largest size the tab will magnify to — and a second copy of it is worth avoiding for four lines.
+ * This runs inside `pngWorker`, so the copy avoided is one the encoder's thread would have had to
+ * find room for on top of the image and the filtered buffer it is already holding.
  *
  * In `src/utils/` and still pure in the sense this directory means: a function of its argument, with
  * no store, no document and no I/O. It is asynchronous because the platform's compressor is, not

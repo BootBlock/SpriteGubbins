@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook, waitFor } from '@testing-library/react';
+import { useFileWriteStore } from '../stores/useFileWriteStore.ts';
 import { useUIStore } from '../stores/useUIStore.ts';
 import { decodePng } from '../test/decodePng.ts';
+import { FakePngWorker } from '../test/fakePngWorker.ts';
 import { imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { encodePng } from '../utils/encodePng.ts';
+import { upscaleNearest } from '../utils/upscaleNearest.ts';
 import { MAX_PALETTE_ENTRIES } from '../utils/pngPalette.ts';
-import type { PngReply } from '../workers/pngWorker.ts';
 import { useImageDownload } from './useImageDownload.ts';
 
 /**
@@ -18,8 +20,9 @@ import { useImageDownload } from './useImageDownload.ts';
  * thread is reported rather than swallowed.
  *
  * The thread is stubbed and the **encoder is not**: the fake runs the real `encodePng` over the
- * image it was posted, so what these tests decode is a genuine file. What a worker adds — a thread —
- * is `pngSession`'s to test, and it has its own suite.
+ * image it was posted, so what these tests decode is a genuine file. What a worker adds — a thread,
+ * and the six ways one can end — is `pngSession`'s to test, and it has its own suite over the same
+ * fake.
  */
 
 const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
@@ -27,41 +30,17 @@ const CLEAR: Rgba = { r: 0, g: 0, b: 0, a: 0 };
 /** The blob handed to `createObjectURL`, which is the file the browser would have saved. */
 let saved: Blob | null = null;
 let downloadName: string | null = null;
-/** Set by a test that wants the thread to fail instead of answering. */
-let refuse: string | null = null;
-
-/** The encoder's thread, without the thread. */
-class FakePngWorker {
-  private readonly listeners = new Map<string, ((event: unknown) => void)[]>();
-  terminated = false;
-
-  addEventListener(type: string, listener: (event: unknown) => void): void {
-    this.listeners.set(type, [...(this.listeners.get(type) ?? []), listener]);
-  }
-
-  terminate(): void {
-    this.terminated = true;
-  }
-
-  postMessage(image: ImageData): void {
-    const answer = (reply: PngReply): void => {
-      for (const listener of this.listeners.get('message') ?? []) listener({ data: reply });
-    };
-    if (refuse !== null) {
-      answer({ kind: 'failed', reason: refuse });
-      return;
-    }
-    void encodePng(image).then((file) => {
-      answer({ kind: 'encoded', file });
-    });
-  }
-}
-
 beforeEach(() => {
   saved = null;
   downloadName = null;
-  refuse = null;
   useUIStore.setState({ toastMessage: null });
+  useFileWriteStore.setState({ writing: false });
+  FakePngWorker.reset();
+  // The thread is stubbed and the encoder is not: what these tests decode is a genuine file.
+  FakePngWorker.respond = ({ image, scale }) =>
+    encodePng(scale === 1 ? image : upscaleNearest(image, scale)).then(
+      (file) => ({ kind: 'encoded', file }) as const,
+    );
   vi.stubGlobal('Worker', FakePngWorker);
   // happy-dom provides neither, and both are the point of the hook rather than incidental to it.
   URL.createObjectURL = vi.fn((blob: Blob) => {
@@ -149,7 +128,8 @@ describe('useImageDownload', () => {
   });
 
   it('names the reason when the encode fails, rather than saving nothing quietly', async () => {
-    refuse = 'Array buffer allocation failed';
+    FakePngWorker.respond = () =>
+      Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' } as const);
     const { result } = renderHook(() => useImageDownload());
     act(() => {
       result.current.save(

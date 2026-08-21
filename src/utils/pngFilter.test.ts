@@ -62,8 +62,11 @@ describe('filterScanlines', () => {
 
   it('breaks a Paeth tie towards the byte above, not the one above-left', () => {
     // The one tie the predictor can actually be observed making. A tie between `left` and `up` is
-    // unreachable: equal distances there force `left + up = 2 × upLeft`, which puts `upLeft` at
-    // distance zero and wins outright whichever way the first comparison is written. This is the
+    // unobservable, though not unreachable: equal distances there mean either `left = up`, where
+    // both answers are the same byte, or `left + up = 2 × upLeft`, which puts `upLeft` at distance
+    // zero and wins outright whichever way the first comparison is written. (Checked over all 16.7
+    // million byte triples: 98,048 tie there, and every one falls into one of those two — 65,536
+    // with equal values, 32,768 with `upLeft` at zero, 256 of them both.) This is the
     // second comparison — `up` at 1 and `upLeft` at 1, with `left` further out at 2 — where the
     // spec's `pb <= pc` takes `up`. The round trip cannot catch a flip here, because the
     // reconstruction states the same tie-break, so the residual itself is what is asserted.

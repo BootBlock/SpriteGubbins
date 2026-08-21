@@ -1,6 +1,7 @@
 /// <reference lib="webworker" />
 import { encodePng } from '../utils/encodePng.ts';
 import type { EncodedPng } from '../utils/encodePng.ts';
+import { upscaleNearest } from '../utils/upscaleNearest.ts';
 
 /**
  * Writing one PNG, off the thread that has to stay responsive.
@@ -12,6 +13,13 @@ import type { EncodedPng } from '../utils/encodePng.ts';
  * button as pressed, so the first thing the reader sees is the finished file, seconds later. The
  * canvas encoder this replaced was asynchronous and never blocked the handler; this is how that
  * property is kept.
+ *
+ * **The magnification happens here too**, and that is the same argument rather than a second one.
+ * `upscaleNearest` is a loop over the *output*, so at the top rung it is 16.8 million iterations and
+ * a 67-megabyte allocation — on the main thread that is the first half of the freeze, and it would
+ * run before the button could be painted as pressed. Sending the 1:1 result and the factor also
+ * makes the structured clone the size of the sheet rather than the size of the file: four megabytes
+ * instead of sixty-seven.
  *
  * **One image, one thread, one reply**, which is why there is no correlation id and no protocol file
  * beside this one. A download is a single job with a caller waiting on it, so `pngSession.ts` starts
@@ -26,13 +34,20 @@ import type { EncodedPng } from '../utils/encodePng.ts';
 
 declare const self: DedicatedWorkerGlobalScope;
 
+/** An image to write, and how far to magnify it on the way — `1` for the sheet at its own size. */
+export interface PngRequest {
+  readonly image: ImageData;
+  readonly scale: number;
+}
+
 /** What comes back: the file, or the sentence explaining why there isn't one. */
 export type PngReply =
   | { readonly kind: 'encoded'; readonly file: EncodedPng }
   | { readonly kind: 'failed'; readonly reason: string };
 
-self.addEventListener('message', (event: MessageEvent<ImageData>) => {
-  encodePng(event.data).then(
+self.addEventListener('message', (event: MessageEvent<PngRequest>) => {
+  const { image, scale } = event.data;
+  encodePng(scale === 1 ? image : upscaleNearest(image, scale)).then(
     (file) => {
       // The bytes are transferred rather than copied. They are this thread's only product and it is
       // about to end, so nothing here can be left holding a detached buffer.

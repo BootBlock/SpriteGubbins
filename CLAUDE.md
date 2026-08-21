@@ -867,11 +867,20 @@ initial build. They are not stylistic preferences.
   worker has answered is state in `src/stores/`, and `quantiseWorker.ts` and `quantiseSession.ts` are
   the two ends of the wire between them. (The database's worker is the exception that predates the
   directory and stays in `src/db/` with the rest of the persistence layer — near side and all —
-  because it *is* that layer rather than a thread something else was moved onto.) **Neither of the
-  app's two threads is owned by a component**, and the quantiser's says why in its own file: `App`
-  swaps the whole view on navigation, so a thread started by a `useEffect` is terminated and
-  restarted on every trip, and a new thread holds nothing — so whatever it was given has to cross
-  the boundary again.
+  because it *is* that layer rather than a thread something else was moved onto.) **No thread is
+  owned by a component**, and the quantiser's says why in its own file: `App` swaps the whole view on
+  navigation, so a thread started by a `useEffect` is terminated and restarted on every trip, and a
+  new thread holds nothing — so whatever it was given has to cross the boundary again.
+- **A thread's *lifetime* is decided by whether it has anything worth keeping**, and the two in
+  `src/workers/` answer that differently on purpose. The quantiser's is kept for a whole session
+  because the sheet crosses once and every dial afterwards is three small numbers. The PNG encoder's
+  (`pngWorker.ts` / `pngSession.ts`) is started per download and ended by its own answer, because
+  what it encodes is the *result*, which changes under every dial — so it would cross the boundary on
+  each press whatever the thread's lifetime, and a thread that ends with the job needs no correlation
+  ids and no lifecycle to keep in step with the tab. **Anything a thread's own state outlives a view
+  by belongs in `src/stores/`, not in the component that asked** — `useFileWriteStore` exists because
+  a "writing" flag held in `ComparisonToolbar` came back false when a reader navigated away and back,
+  offering a button that was already busy.
 - **`src/hooks/` exists because `src/utils/` must stay pure.** The clipboard, file downloads and
   the combo box's keyboard state machine are all impure — they touch `navigator`, the DOM, or a
   store — so they cannot live in `src/utils/`, and they are not components. A hook belongs there
