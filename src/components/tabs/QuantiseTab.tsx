@@ -349,12 +349,12 @@ export function QuantiseTab() {
             those dials change, a screen and a half further down. Tuning meant scrolling away from
             the only thing that says whether the tuning helped.
 
-            The offsets are the studio's, and they are two pairs that each have to agree — the top
-            clears the chrome, and the height cap gives that offset back plus room at the bottom.
-            The chrome is not one height: the header wraps to two rows below `xl`, so an offset
-            written once would tuck the toolbar under the header in the 1224–1279px band and leave a
-            hole above it everywhere else. `xl` sits above this tab's own breakpoint, so both bands
-            exist here exactly as they do in the studio.
+            The offsets are the studio's, and they name no height: `--sticky-column-top` and
+            `--sticky-column-height` are derived from what `Header` measures, so the top clears the
+            chrome and the cap gives it back at whatever height the bar happens to be. Both used to
+            be written down here in two pairs, the second of each on `xl` to approximate the width at
+            which the bar stops wrapping — which left the toolbar tucked under the header or a hole
+            above it either side of that guess. See the two properties in `index.css`.
 
             `overflow-y-auto` is what makes the cap safe rather than tidy. A sticky element taller
             than its cap keeps its top pinned, so whatever hangs past the bottom cannot be scrolled
@@ -364,7 +364,7 @@ export function QuantiseTab() {
             `useAnchoredSurface` listens for `scroll` on the document in the capture phase precisely
             because an anchor may sit inside a scrolling panel.
             */}
-          <div className="quantise:sticky quantise:top-34 quantise:col-span-7 quantise:max-h-[calc(100dvh-10rem)] quantise:overflow-y-auto xl:top-24 xl:max-h-[calc(100dvh-7rem)]">
+          <div className="quantise:sticky quantise:top-[var(--sticky-column-top)] quantise:col-span-7 quantise:max-h-[var(--sticky-column-height)] quantise:overflow-y-auto">
             <ImageComparison
               sourceName={source.name}
               source={source.image}

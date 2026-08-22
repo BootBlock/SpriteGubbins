@@ -35,7 +35,18 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Generic / Baseline Prompt',
     description:
       'Standard un-wrapped prompt suitable for ChatGPT, Claude, Gemini, or general LLM text-to-image workflows.',
-    capabilities: { deliberates: true, emitsText: true, promptBudget: null },
+    capabilities: {
+      deliberates: true,
+      emitsText: true,
+      // The one entry with nobody to cite. It names no model, so there is no vendor page to hold a
+      // figure and no product a figure would be about — which is a different answer from Midjourney
+      // below, where a vendor exists and publishes none, and the reason the two are separate states
+      // rather than one absent value.
+      promptBudget: {
+        kind: 'NO_VENDOR',
+        note: 'Names no particular model, so there is no vendor to publish a length for.',
+      },
+    },
   },
   {
     // **The only target here that cannot draw.** Its model page gives `text` as the sole output
@@ -69,7 +80,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // be recorded here: what reaches the renderer is whatever Sol's tool call carries, which this
       // app never composes and no OpenAI page gives a length for on the ChatGPT path. Borrowing the
       // GPT Image ceiling from `GPT_IMAGE` below would measure somebody else's text with our field.
-      promptBudget: { limit: 922_000, unit: 'tokens', note: 'Maximum input tokens.' },
+      promptBudget: {
+        kind: 'CEILING',
+        limit: 922_000,
+        unit: 'tokens',
+        note: 'Maximum input tokens — the context window, less the output tokens reserved against it.',
+      },
     },
   },
   {
@@ -87,7 +103,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       emitsText: true,
       // "Input token limit: 131,072", and Outputs "Image and Text" — which is what earns the
       // manifest. https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image
-      promptBudget: { limit: 131_072, unit: 'tokens', note: 'Model input token limit.' },
+      promptBudget: {
+        kind: 'CEILING',
+        limit: 131_072,
+        unit: 'tokens',
+        note: 'Model input token limit.',
+      },
     },
   },
   {
@@ -102,7 +123,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: true,
       emitsText: true,
       // https://ai.google.dev/gemini-api/docs/models/gemini-3-pro-image
-      promptBudget: { limit: 65_536, unit: 'tokens', note: 'Model input token limit.' },
+      promptBudget: {
+        kind: 'CEILING',
+        limit: 65_536,
+        unit: 'tokens',
+        note: 'Model input token limit.',
+      },
     },
   },
   {
@@ -127,17 +153,33 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'SEEDREAM',
     name: 'Seedream 5.0 (ByteDance)',
     description:
-      'ByteDance’s reasoning image model — it plans the layout before rendering, so it receives the full specification including the self-audit. Returns images only, so it cannot return a manifest. Its prompt is led by a planning directive, because long briefs here are documented to lose instructions.',
+      'ByteDance’s reasoning image model — it plans the layout before rendering, so it receives the full specification including the self-audit. Returns images only, so it cannot return a manifest. Its prompt is led by a planning directive, because long briefs here are documented to lose instructions — ByteDance advise 600 English words, and the notice under the prompt says how far past that yours is.',
     capabilities: {
       deliberates: true,
       emitsText: false,
-      // **`null` is the researched answer, not a gap.** ByteDance's own platform documentation
-      // publishes guidance rather than a ceiling: keep prompts under roughly 600 English words (300
-      // Chinese characters). Hosts do impose hard caps of their own — Runware 3,000 characters,
-      // EvoLink 2,000 tokens on 5.0 Lite — but a reseller's cap is not the model's, and recording
-      // one here would attribute somebody else's limit to ByteDance. Advice is not a documented
-      // ceiling on what is read, and this field records only the latter. Same call as Midjourney.
-      promptBudget: null,
+      // **Guidance, and it is published — which is why it is no longer silence.** ByteDance state
+      // it on the `prompt` parameter itself: “Use no more than 300 Chinese characters or 600 English
+      // words. Excessively long prompts may scatter information, causing the model to overlook
+      // details and focus only on major elements, which can result in missing details in the
+      // generated image.” That is degradation rather than truncation, so it is `GUIDANCE` and not a
+      // `CEILING`, and the studio words it as a trade-off rather than as a prompt that will not
+      // arrive. https://docs.byteplus.com/en/docs/ModelArk/1541523
+      //
+      // **This entry is why the four states exist.** Carrying `null` made the one target whose own
+      // description says long briefs lose instructions the one target that could never tell a reader
+      // their brief was long — the notice keys off the budget, and `null` switches it off.
+      //
+      // The English half of the pair is what is recorded, because that is the language this app
+      // composes in; the 300-character figure is the same advice for Chinese and would measure a
+      // prompt the app never writes. Hosts impose hard caps of their own — Runware 3,000 characters,
+      // EvoLink 2,000 tokens on 5.0 Lite — and none is recorded here: a reseller's cap is not the
+      // model's, and it would be attributed to ByteDance by anyone reading this field.
+      promptBudget: {
+        kind: 'GUIDANCE',
+        limit: 600,
+        unit: 'words',
+        note: 'ByteDance advise no more than 600 English words. Past that they document the model scattering information and dropping details, not truncating the brief.',
+      },
     },
   },
   {
@@ -169,19 +211,39 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // not carry it; this is the page that does. No multiplier is claimed against 2.0 here, because
       // Alibaba's own figure for the 2.0 series is 1,300 tokens, which makes the widely-repeated
       // "4.5× longer" wrong. https://help.aliyun.com/en/model-studio/qwen-image-3-0-pro
-      promptBudget: { limit: 4_500, unit: 'tokens', note: 'Model input token limit.' },
+      promptBudget: {
+        kind: 'CEILING',
+        limit: 4_500,
+        unit: 'tokens',
+        note: 'Model input token limit.',
+      },
     },
   },
   {
-    // No prompt ceiling is documented. Midjourney's own guidance is the opposite of a limit and
-    // worth heeding anyway: "short and simple prompts typically generate the best images", and
-    // "avoid making long lists or detailed instructions; these can confuse the process".
+    // **No figure, and how far that goes is worth stating.** Midjourney's public help centre carries
+    // no prompt length in any of its 105 articles, and the only lengths it publishes anywhere are a
+    // 21-second video and a 1,000-character profile bio. The widely-repeated “6,000 characters”
+    // traces to third parties and to a Discord forum post, never to Midjourney, so it is not
+    // recorded: the studio's opening configuration compiles to roughly 24,000 characters here, and a
+    // wrong ceiling would be worse than none.
+    //
+    // What Midjourney do publish is qualitative, and it is the opposite of a limit: “Short and
+    // simple prompts typically generate the best images with Midjourney”, and “Avoid making long
+    // lists or detailed instructions; these can confuse the process”. There is no number in it to
+    // measure a prompt against, which is exactly what separates this entry from Seedream's above.
     // https://docs.midjourney.com/hc/en-us/articles/32023408776205-Prompt-Basics
     id: 'MIDJOURNEY',
     name: 'Midjourney',
     description:
       'Appends Midjourney flags: aspect ratio, version, --raw, and a low stylisation value, because high stylisation fights a technical layout brief. The background is deliberately not excluded — the sheet needs a keyable one.',
-    capabilities: { deliberates: false, emitsText: false, promptBudget: null },
+    capabilities: {
+      deliberates: false,
+      emitsText: false,
+      promptBudget: {
+        kind: 'UNPUBLISHED',
+        note: 'Midjourney publish no prompt length anywhere in their documentation, only advice to keep prompts short.',
+      },
+    },
   },
   {
     id: 'STABLE_DIFFUSION',
@@ -192,6 +254,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       emitsText: false,
       promptBudget: {
+        kind: 'CEILING',
         limit: 77,
         unit: 'tokens',
         note: 'CLIP text-encoder context. A base pipeline truncates past it; front-ends that chunk the prompt read further, with weaker attention.',
@@ -218,6 +281,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       emitsText: false,
       promptBudget: {
+        kind: 'CEILING',
         limit: 512,
         unit: 'tokens',
         // Deliberately sourced from Black Forest Labs' own inference code rather than a model card:
@@ -239,7 +303,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     capabilities: {
       deliberates: false,
       emitsText: false,
-      promptBudget: { limit: 32_000, unit: 'tokens', note: 'Advertised FLUX.2 text input limit.' },
+      promptBudget: {
+        kind: 'CEILING',
+        limit: 32_000,
+        unit: 'tokens',
+        note: 'Advertised FLUX.2 text input limit.',
+      },
     },
   },
   {
@@ -254,11 +323,19 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: false,
       emitsText: false,
       // "The maximum length is 32000 characters for the GPT image models." Recorded in characters
-      // because that is the unit OpenAI states it in. Note the same reference's `model` enum has
-      // not been updated for `gpt-image-2`, so two OpenAI pages disagree about which models exist;
-      // the ceiling is taken as applying to the family the model page puts it in.
+      // because that is the unit OpenAI states it in, and taken from OpenAI's own published OpenAPI
+      // description of the `prompt` field rather than from the rendered reference page, which draws
+      // from it. The same reference's `model` enum lists `gpt-image-2` and `gpt-image-2-2026-04-21`
+      // beside `gpt-image-1.5`, so the family the ceiling is stated for and the family the enum
+      // offers are the same one — the two OpenAI surfaces agreed when this was last checked, which
+      // they had not always done.
       // https://developers.openai.com/api/docs/api-reference/images/create
-      promptBudget: { limit: 32_000, unit: 'characters', note: 'Images API prompt-length limit.' },
+      promptBudget: {
+        kind: 'CEILING',
+        limit: 32_000,
+        unit: 'characters',
+        note: 'Images API prompt-length limit.',
+      },
     },
   },
 ];

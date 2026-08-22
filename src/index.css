@@ -251,7 +251,7 @@
    * - the panel's 42px (`p-5` either side and its 1px border) → a **484px** column;
    * - `grid-cols-12` with `gap-6` gives a `col-span-6` child `C/2 − 12` of the page's content width
    *   `C`, so C ≥ 992px;
-   * - `main` is `max-w-7xl` with `md:p-6`, so C is the viewport less 48px → **1040px**.
+   * - `main` is `max-w-7xl` padded with `--page-gutter`, 1.5rem here, so C is the viewport less 48px → **1040px**.
    *
    * Both columns carry a `SelectField` — the form's fifteen and the target-model select — so the
    * even split is what has to clear this, not the form column alone. The figure is exact rather than
@@ -287,7 +287,7 @@
    * - the panel's 34px (`p-4` either side and its 1px border) → a **476px** column;
    * - `grid-cols-12` with `gap-6` gives a `col-span-5` child `(5C − 168)/12` of the page's content
    *   width `C`, so C ≥ 1176px;
-   * - `main` is `max-w-7xl` with `md:p-6`, so C is the viewport less 48px → **1224px**.
+   * - `main` is `max-w-7xl` padded with `--page-gutter`, 1.5rem here, so C is the viewport less 48px → **1224px**.
    *
    * The tab therefore spends the whole of `main`'s cap rather than the `max-w-6xl` it used to hold
    * itself to: at 6xl the content tops out at 1104px, and a 5/7 split could never reach the budget
@@ -712,6 +712,51 @@
     color-scheme: dark;
 
     /*
+     * The page's own gutter, written once and read by everything that has to leave room for it.
+     *
+     * `<main>` in `App` spends it as padding; each of the three sticky columns spends it above, to
+     * stand clear of the chrome, and the two that are capped spend it again below, so the cap stops
+     * short of the viewport's bottom edge rather than running into it; and `DetachedPreview` pads
+     * its own window with it. A figure stated at that many call sites is that many figures the
+     * moment one of them is nudged, and nothing renders wrong enough to notice: the column simply
+     * sits a little too high or a little too low.
+     *
+     * It is the one part of the sticky arithmetic that legitimately varies by viewport, because it
+     * is the page's padding and the page pads itself less on a phone. The narrowest of the three
+     * columns engages at `lg`, and the other two at `--breakpoint-studio` / `--breakpoint-quantise`
+     * — all far above `md`, so in practice they always see the wider figure. Deriving from a value
+     * that is right at every width costs nothing and survives a fourth arriving somewhere narrower.
+     */
+    --page-gutter: 1rem;
+
+    /*
+     * Where a sticky preview column stands, and how tall it may be — both measured off the header
+     * rather than written down.
+     *
+     * The header is `sticky top-0` and it is `flex-wrap`, so its height is not one number: it is
+     * two or three rows tall on a narrow viewport and one row on a wide one, and it changes again
+     * the first time a control is added to it. `Header` publishes what it actually measures to
+     * `--header-height`, and these two derive from that — which is why neither tab carries a figure
+     * of its own any more. They used to carry four between them, prefixed `xl:` to approximate the
+     * width at which the bar stops wrapping; the measurement reports that directly, so the
+     * approximation is gone with them.
+     *
+     * **The fallback is chosen to err large.** It applies only for the frame before the first
+     * measurement lands — the `ResizeObserver` delivers before paint, so in practice there is no
+     * such frame — but the two directions of error are not equal: too small pins the column
+     * underneath the chrome, where its top is unreachable, while too large opens a gap that closes
+     * itself. Measured in Edge, the bar is 78px on one row and 130px on two, so `9rem` clears the
+     * taller of them.
+     *
+     * The cap gives back the offset *and* a second gutter, so the column ends where the page's
+     * bottom padding would have put it. `overflow-y-auto` at each call site is what makes the cap
+     * safe: a sticky element taller than its cap keeps its top pinned, so anything past the bottom
+     * could not be scrolled to at all.
+     */
+    --sticky-column-top: calc(var(--header-height, 9rem) + var(--page-gutter));
+    --sticky-column-height: calc(100dvh - var(--sticky-column-top) - var(--page-gutter));
+
+    /*
      * The wheel as an image, written once and composed twice.
      *
      * `bg-spectrum` pours it out neat and `heading-spectrum` puts it behind a veil of ink, and
@@ -742,6 +787,18 @@
       var(--color-spectrum-magenta) 90%,
       var(--color-spectrum-rose) 100%
     );
+  }
+
+  /*
+   * The wider gutter, which is the page's padding above `md` said once for everything measuring
+   * against it. `tests/sticky-column-offset.test.ts` fails if `<main>` ever pads itself with a
+   * spacing utility again, and `tests/columnSplit.ts` reads this figure — not a class — for the
+   * room the two split columns have.
+   */
+  @media (min-width: 48rem) {
+    :root {
+      --page-gutter: 1.5rem;
+    }
   }
 
   /*

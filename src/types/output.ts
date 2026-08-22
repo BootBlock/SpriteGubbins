@@ -127,22 +127,57 @@ export type TargetModelId = (typeof TARGET_MODEL_IDS)[number];
  * `targetCapabilities.test.ts` pins that half instead.
  */
 /**
- * A documented ceiling on how much prompt a target will actually read.
+ * What a vendor publishes about how much prompt a target actually reads.
  *
- * Only recorded where the vendor or the model's own architecture states one. `null` means *nobody
- * published a figure*, which is not the same as "unlimited" — so the interface says nothing rather
- * than inventing a number, and the preview shows nothing rather than a reassuring tick.
+ * **Four states, because one `null` was doing two jobs and hid the contradiction between them.** It
+ * was both “this target has no ceiling worth warning about” and “nobody went and found a figure”,
+ * and the studio’s notice keys off it — so the one entry whose own description says long briefs lose
+ * instructions was also the one entry that could never say so. A budget is a checkable claim about
+ * somebody else’s product, exactly as a wrapper line is, so each state now records *what was found*.
+ *
+ * - `CEILING` — a figure past which the target stops reading. It truncates, or it refuses.
+ * - `GUIDANCE` — a figure the vendor publishes as advice. Nothing is cut; what is documented past it
+ *   is *degradation*, which is a different warning and earns different words.
+ * - `UNPUBLISHED` — the vendor states no figure. Never “unlimited”: nobody said so.
+ * - `NO_VENDOR` — there is no vendor to have stated one, which is `GENERIC` and nothing else.
+ *
+ * **There is deliberately no “unbounded” state.** No target documents itself that way, and a variant
+ * with no member is a claim nobody made.
+ *
+ * `note` is on all four. On the two carrying a figure it is shown to the user, because a limit with
+ * no stated cause is not actionable. On the two that carry none it is the record of the search, and
+ * it is what stops an absent figure reading as a decision nobody took — `models.test.ts` requires
+ * one of every entry.
  */
-export interface PromptBudget {
+export type PromptBudget =
+  | (PublishedPromptFigure & { readonly kind: 'CEILING' })
+  | (PublishedPromptFigure & { readonly kind: 'GUIDANCE' })
+  | { readonly kind: 'UNPUBLISHED'; readonly note: string }
+  | { readonly kind: 'NO_VENDOR'; readonly note: string };
+
+/** A published figure, whether it is a ceiling or advice — the shape the two share. */
+interface PublishedPromptFigure {
   readonly limit: number;
   /**
-   * Characters are counted exactly; tokens are compared against the app's ~4-characters-per-token
-   * estimate, because no tokeniser ships with the app and each target uses a different one.
+   * Characters and words are counted exactly; tokens are compared against the app’s
+   * ~4-characters-per-token estimate, because no tokeniser ships with the app and each target uses a
+   * different one. `utils/promptBudget.ts` decides both halves — how a unit is counted, and whether
+   * the answer may be presented as exact — from one table, so a unit added here cannot be measured
+   * without saying which it is.
    */
-  readonly unit: 'characters' | 'tokens';
-  /** What imposes the ceiling, shown to the user — a limit with no stated cause is not actionable. */
+  readonly unit: 'characters' | 'tokens' | 'words';
+  /** What imposes the figure, shown to the user — a limit with no stated cause is not actionable. */
   readonly note: string;
 }
+
+/**
+ * The two states that carry a figure, which are the only ones a prompt can be measured against.
+ *
+ * Derived rather than declared, so that a fifth state cannot be added without deciding whether it is
+ * measurable: adding one that carries a `limit` widens this on its own, and adding one that does not
+ * leaves it alone.
+ */
+export type PromptBudgetFigure = Extract<PromptBudget, { readonly limit: number }>;
 
 export interface TargetCapabilities {
   /**
@@ -155,8 +190,8 @@ export interface TargetCapabilities {
   readonly deliberates: boolean;
   /** Returns text alongside the image, which is what a companion manifest needs. */
   readonly emitsText: boolean;
-  /** The documented ceiling on prompt length, or `null` where none is published. */
-  readonly promptBudget: PromptBudget | null;
+  /** What the vendor publishes about prompt length, including that they publish nothing. */
+  readonly promptBudget: PromptBudget;
 }
 
 /**
