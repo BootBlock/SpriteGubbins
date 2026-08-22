@@ -34,6 +34,20 @@ interface DetachedPreviewProps {
  * capped at 24rem there because they sit in a column beside ten panels of controls; here the window
  * holds nothing else, and a preview that could not grow past 24rem on a second display would be the
  * whole reason for detaching, undone.
+ *
+ * **What that cap subtracts is not the page's arithmetic, however close it once looked.** It was
+ * `100dvh - 10rem`, which is the figure the two sticky columns carried, and the resemblance was a
+ * coincidence: this window has no header to clear. What it does have is this element's own padding
+ * on both edges — `--page-gutter`, the same gutter the page spends, which is why it is written the
+ * same way — and the preview panel's own chrome above and below the panes: the panel's padding, the
+ * toolbar row, and the caption under each frame.
+ *
+ * **That chrome is measured, and the old figure was 16px short of it.** In a 950px-tall detached
+ * window the panel measures 918px against panes of 774px, so the chrome is 144px — `9rem`, where
+ * subtracting the old `10rem` less two 1rem gutters left 8rem. The window scrolled by exactly that
+ * 16px, in both the old arithmetic and the first version of this one. It is the only figure here
+ * that is not derived, and it holds while the toolbar is one row; a window narrow enough to wrap it
+ * grows the chrome, and the window scrolls, which is what the `max()` floor is for as well.
  */
 export function DetachedPreview({ target, children }: DetachedPreviewProps) {
   const activeTab = useUIStore((state) => state.activeTab);
@@ -54,7 +68,7 @@ export function DetachedPreview({ target, children }: DetachedPreviewProps) {
       // `min-h-dvh` and the ground colour, because the document behind this has neither: an opened
       // window starts white, and a preview panel floating on white is the one backdrop the artwork
       // must not be judged against.
-      className="min-h-dvh bg-foundry-900 p-4 text-ink [--pane-height:max(16rem,calc(100dvh-10rem))]"
+      className="min-h-dvh bg-foundry-900 p-[var(--page-gutter)] text-ink [--pane-height:max(16rem,calc(100dvh_-_2_*_var(--page-gutter)_-_9rem))]"
     >
       {children}
     </main>,

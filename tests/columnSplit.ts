@@ -120,7 +120,26 @@ export function readColumnSplit({ tabFile, panelFiles, columns }: ColumnSplitOpt
   const capToken = capture(mainClasses, /\bmax-w-([\w-]+)\b/, "the page's width cap");
   const pageCapPx = MAX_WIDTHS_PX[capToken];
   if (pageCapPx === undefined) throw new Error(`unrecognised page cap \`max-w-${capToken}\``);
-  const pagePadPx = spacing(capture(mainClasses, /\bmd:p-(\d+)\b/, "the page's padding"));
+  /*
+    The page's padding is `--page-gutter`, not a spacing utility: `<main>` spends it, and so do the
+    two sticky preview columns, which leave that much room above and below themselves. It is read
+    from the stylesheet's `md` override, because that is the figure in force wherever a split
+    engages — both breakpoints sit far above `md`, which each tab asserts about its own.
+  */
+  if (!/\bp-\[var\(--page-gutter\)\]/.test(mainClasses)) {
+    throw new Error(
+      'the page container no longer pads itself with `--page-gutter` — this derivation reads that ' +
+        'token for the room a column has, so a padding written any other way is unmeasured here',
+    );
+  }
+  const pagePadPx =
+    Number(
+      capture(
+        css,
+        /@media \(min-width: 48rem\) \{\s*:root \{\s*--page-gutter:\s*([\d.]+)rem/,
+        "the page gutter's `md` value",
+      ),
+    ) * ROOT_FONT_PX;
 
   /*
     The page cap is only the grid's cap while nothing between them narrows it. A `max-w-*` anywhere

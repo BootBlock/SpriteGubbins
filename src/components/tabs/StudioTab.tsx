@@ -57,11 +57,13 @@ export function StudioTab() {
       </div>
 
       {/*
-        Two pairs of numbers, and each pair has to agree: the sticky offset clears the chrome, and
-        the height cap gives back that offset plus a little breathing room at the bottom. The chrome
-        is not one height — the header wraps to two rows below `xl`, measuring 127px there against
-        77px above it — so an offset written once would either tuck the target-model select under
-        the header at 1040–1279 or leave a 60px hole above it everywhere else.
+        The offset clears the chrome and the cap gives it back, and neither states how tall the
+        chrome is: `--sticky-column-top` and `--sticky-column-height` derive both from the height
+        `Header` measures and publishes. This column used to carry four figures instead — 8.5rem and
+        6rem for the offset, 10rem and 7rem for the cap — with the second of each pair on `xl`, to
+        approximate the width at which the bar stops wrapping. That is a page width standing in for
+        a header height, so it is right at two widths and wrong between them, and it goes stale the
+        first time a control joins the bar. See the two properties in `index.css`.
 
         Sticky and its cap are prefixed `studio:` for the same reason the grid is, and not merely to
         match: below that width the columns stack, and a cap left on `lg` would spend those 16px
@@ -76,7 +78,7 @@ export function StudioTab() {
         `scroll` on the document in the capture phase precisely because an anchor may sit inside a
         scrolling panel, so they re-pin against this one exactly as they do the atlas calculator's.
       */}
-      <div className="flex flex-col studio:sticky studio:top-34 studio:col-span-6 studio:max-h-[calc(100dvh-10rem)] studio:overflow-y-auto xl:top-24 xl:max-h-[calc(100dvh-7rem)]">
+      <div className="flex flex-col studio:sticky studio:top-[var(--sticky-column-top)] studio:col-span-6 studio:max-h-[var(--sticky-column-height)] studio:overflow-y-auto">
         <TargetModelSelector />
         {/* Above the preview, so a sheet that has outgrown its budget is read before it is copied. */}
         <ComponentBudgetNotice />
