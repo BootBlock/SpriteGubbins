@@ -37,8 +37,8 @@ interface DetachedPreviewProps {
  * download the toolbar offers answers with a toast — what was written and how, or why nothing was —
  * and the panel's toolbar travels here whole, so those presses happen in this document. The page's
  * `<Toast />` cannot paint here, and a second unaddressed one would show the page's notifications
- * too: the store holds one message, so both surfaces would announce every one of them and both
- * timers would drain the same state. So `ToastSurface` tells everything below where it is, the
+ * too: the store holds one message and one timer, so every notification would be shown and announced
+ * twice, once in a document nobody raised it from. So `ToastSurface` tells everything below where it is, the
  * `<Toast />` here shows only what is addressed to it, and `recallToast` brings a notification that
  * is still up back into the page when this window goes — which it can do at any moment, since the
  * reader may close it themselves.

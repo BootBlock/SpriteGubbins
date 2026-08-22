@@ -72,9 +72,9 @@ export interface UIState {
    * `target` says which document it belongs in, and defaults to the page. React components take it
    * from {@link useShowToast}, which reads the surface they are rendered in rather than asking each
    * call site to know — so a control moved into the detached preview is addressed correctly without
-   * being told. The default is what the stores themselves rely on: `usePresetStore` and
-   * `useHistoryStore` raise theirs from outside React entirely, and there is no surface but the page
-   * they could be raised from.
+   * being told. The default is what the stores themselves rely on: four of them raise their own
+   * failures from outside React entirely, and there is no surface but the page they could be raised
+   * from.
    */
   showToast(message: string, target?: ToastTarget): void;
   /**

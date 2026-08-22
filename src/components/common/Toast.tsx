@@ -6,9 +6,9 @@ interface ToastProps {
   /**
    * Which document this one serves. Messages addressed anywhere else are not its to show.
    *
-   * Defaults to the page, which is where three of the four mounts are: `AppOverlays` renders one
+   * Defaults to the page, which is where two of the three mounts are: `AppOverlays` renders one
    * while no overlay is open, and `Modal` renders one inside the `<dialog>` — mutually exclusive by
-   * construction, and both of them the page's. The fourth is `DetachedPreview`, which is the only
+   * construction, and both of them the page's. The third is `DetachedPreview`, which is the only
    * surface that can be on screen *beside* the page rather than instead of it, and the only reason
    * this prop exists.
    */
@@ -16,7 +16,7 @@ interface ToastProps {
 }
 
 /**
- * The app's one notification surface, reading straight from the store.
+ * The app's notification surface, reading straight from the store.
  *
  * The live region is rendered **always**, with only its contents conditional. A region added to the
  * document at the same moment as its text is not reliably announced — assistive technology has to be
@@ -61,10 +61,11 @@ interface ToastProps {
  *
  * **A message it is not addressed to is not its to show.** More than one of these can be mounted at
  * once — the comparison panel's window has its own, because the panel's download button travels
- * there — and the store holds one message, so both would otherwise announce it and both timers would
- * be draining the same piece of state. The live region is still rendered here either way, for the
- * reason above: a region that appears with its text is not reliably announced, and a document that
- * only ever renders one when it has something to say never announces anything.
+ * there — and the store holds one message and one timer, so an ungated second surface would show and
+ * announce every notification a second time, in a document nobody raised it from. The live region is
+ * still rendered here either way, for the reason above: a region that appears with its text is not
+ * reliably announced, and a document that only ever renders one when it has something to say never
+ * announces anything.
  */
 export function Toast({ target = 'page' }: ToastProps) {
   const addressed = useUIStore((state) => state.toastTarget === target);

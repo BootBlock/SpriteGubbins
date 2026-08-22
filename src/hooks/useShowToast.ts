@@ -20,9 +20,9 @@ export const ToastSurface = createContext<ToastTarget>('page');
  *
  * This is what a React component uses in place of reading `showToast` off the store: the store's
  * action takes a destination and this is what knows which one, so the two together mean a control
- * cannot report its result into a document nobody is looking at. Code outside React — the preset and
- * history stores — calls `useUIStore.getState().showToast(...)` still, and gets the page by default,
- * which is the only surface it can be running for.
+ * cannot report its result into a document nobody is looking at. Code outside React — the four stores
+ * that report their own failures — calls `useUIStore.getState().showToast(...)` still, and gets the
+ * page by default, which is the only surface it can be running for.
  */
 export function useShowToast(): (message: string) => void {
   const surface = useContext(ToastSurface);
