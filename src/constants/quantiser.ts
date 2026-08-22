@@ -709,13 +709,15 @@ export const VOTE_METHOD_CHOICES = [
  * because a pattern moves pixels off their nearest colour on purpose. **The block figures fall on
  * five of the six**, and by most on the two channel-depth machines — a little over half the flat
  * step's error over 8 × 8 blocks — which is unsurprising, since a lattice is what ordered dithering
- * was invented for. **The two exceptions are the ends of the budget ladder, and they are one fact
- * stated twice**: at 64 the palette is ample, so no colour of the sheet needs expressing as a
- * mixture and the pattern is cost on all three figures; at 8 the palette is so far short of the
- * sheet that a mixture lands nearer the truth than the nearest single colour does, and the pattern
- * wins on all three, the per-pixel figure included. What a dither buys is a function of how much
- * colour the palette is short of, and the three machine spaces sit where their own shortfall puts
- * them.
+ * was invented for. **Both exceptions are on the budget ladder, and they are one fact stated
+ * twice**: at 64 the palette is ample, so no colour of the sheet needs expressing as a mixture and
+ * the pattern is cost on all three figures; at 8 it is short enough that a mixture lands nearer the
+ * truth than the nearest single colour does, and the pattern wins on all three, the per-pixel
+ * figure included. A budget's colours are chosen *from this sheet*, so shortening it leaves entries
+ * spread through the sheet's own gamut for a mixture to interpolate between — which is why the
+ * three machine spaces do not join that second exception however few colours they hold. Their
+ * entries are stated rather than chosen, the Game Boy's four greens sit outside the sheet's colours
+ * altogether, and all three land on the ordinary reading: per-pixel cost, block gain.
  *
  * The choice between the three patterns is about what each *looks* like rather than about fidelity.
  * They are not identical — the Master System's 4 × 4 figure spreads 0.38 across them — but that
@@ -836,9 +838,9 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * What decides it is structural rather than measured: with two candidates there is exactly one pair,
  * so a target whose two nearest entries lie the *same* side of it has no mixture that can reach it
  * and the plan falls back to a flat colour. A third candidate is the smallest shortlist that can
- * straddle, which is why 2 keeps only the budget in the middle of the four measured: at either end
- * of the range, and on the smallest palette of all, a pair that cannot straddle is the one that
- * costs.
+ * straddle, and 3 takes the 8 × 8 figure at every palette measured but one. Budget 16 is that one,
+ * and nothing here explains it — so it is recorded rather than reasoned about, and it is 8% rather
+ * than a rout.
  *
  * **What it costs is a scan of the whole ratio ladder per pair**, which for the resolved reference
  * sheet — 43,890 pixels carrying 9,980 distinct colours — is the same order as one of the cleanup
