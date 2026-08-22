@@ -119,11 +119,13 @@ export default defineConfig({
         // **It cannot be kept out of `dist/` from here, and it is not for want of trying.** Vite's
         // worker plugin rewrites that expression at *transform* time and emits the chunk with
         // `emitFile`, which happens before tree-shaking has any say and writes the file whether or
-        // not a reference to it survives. Verified: telling Rolldown the whole package is
-        // side-effect-free (`worker.rolldownOptions.treeshake.moduleSideEffects` returning false
-        // for `sqlite-wasm`) produced a byte-identical `dist/`, same chunk hashes included. An
-        // alias is no use either — the factory sits in the same `dist/index.mjs` that the
-        // `sqlite3InitModule` this app *does* import comes from.
+        // not a reference to it survives. Verified by telling Rolldown the whole package is
+        // side-effect-free — `treeshake.moduleSideEffects` returning false for `sqlite-wasm`, set
+        // on `build.rolldownOptions` (which governs whether the parent graph keeps the reference)
+        // and on `worker.rolldownOptions` (which governs the worker chunk itself), separately. Each
+        // produced a byte-identical `dist/`, same chunk hashes included. An alias is no use either
+        // — the factory sits in the same `dist/index.mjs` that the `sqlite3InitModule` this app
+        // *does* import comes from.
         //
         // So the chunk stays on the host, unreferenced and never fetched, and what is fixed is the
         // download: it is out of the precache, and `scripts/precacheContract.ts` is what stops the

@@ -23,7 +23,7 @@
  * under it describe the globbed precache — 15 of the shipped worker's 18 entries — and the three
  * they miss are fixed, small and not what a stray chunk arrives as.
  */
-const PRECACHE_SHAPES: readonly string[] = [
+export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
   'assets/autoTuneWorker-*.js',
   'assets/index-*.css',
@@ -52,10 +52,16 @@ const PRECACHE_SHAPES: readonly string[] = [
  * rather than turning up later in a page-load waterfall. Raising the ceiling is a normal thing to
  * do, and it is a line a reviewer sees.
  */
-const PRECACHE_CEILING_KIB = 2160;
+export const PRECACHE_CEILING_KIB = 2160;
 
-/** `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters. */
-function precacheShape(url: string): string {
+/**
+ * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
+ *
+ * The hash alphabet includes `-`, and it has to: `assets/sqlite3-BVKGSWc-.wasm` is a real built
+ * name whose eighth hash character *is* a hyphen, and narrowing the class to `[A-Za-z0-9_]` would
+ * leave that one entry un-stripped and its shape drifting on every rebuild.
+ */
+export function precacheShape(url: string): string {
   return url.replace(/-[A-Za-z0-9_-]{8}(\.[a-z0-9]+)$/, '-*$1');
 }
 
@@ -72,6 +78,12 @@ interface SizedManifestEntry {
  * A `manifestTransforms` step is the one place the entries and their sizes are both in hand
  * before the worker is written: no parsing of `dist/sw.js`, and no guessing at the order plugin
  * `closeBundle` hooks run in. The caller passes the manifest on untouched.
+ *
+ * Throwing here stops the injection midway, so **a failed build leaves a `dist/` that must not be
+ * served**: measured, `npm run build` exits 1 and `dist/sw.js` still carries the literal
+ * `self.__WB_MANIFEST`, which would throw on install if it reached a host. The deploy workflow
+ * fails on the exit code, so this only reaches a developer who serves `dist/` after a build they
+ * did not watch. Fix the contract and build again rather than reaching for the directory.
  */
 export function assertPrecacheContract(entries: readonly SizedManifestEntry[]): void {
   const found = [...new Set(entries.map((entry) => precacheShape(entry.url)))].sort();
