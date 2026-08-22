@@ -1292,6 +1292,70 @@ function subtreeAt(source: string, index: string | number): string | null {
 }
 
 /**
+ * The ink ramp on the foundry ramp — the pairing that carries every word in the app.
+ *
+ * The tones are chosen against the *lightest* surface text ever sits on, and `index.css` says so at
+ * the declaration. Nothing measured it. That is a gap of a particular kind: the figures were right,
+ * they were only written down in prose, and prose is what a reader has to take on trust — which is
+ * how a report arrived claiming `ink-muted` runs at 3.94:1 and `ink-faint` at 2.33:1 on the page,
+ * against the 8.75:1 and 6.25:1 they actually measure. A wrong number in an issue costs a morning;
+ * the same number believed would have lifted the whole ramp for nothing and flattened its three
+ * rungs into two.
+ *
+ * So the sweep is total rather than illustrative: every tone against every surface, including the
+ * pairings no component writes today, because what it guards is the *next* palette change and that
+ * change does not know which pairings exist. `foundry-600` is the worst of them — a border or a
+ * hover state, the lightest ground the ramp lands on — and `ink-faint` there is the tightest fit in
+ * the app at 4.59:1.
+ *
+ * **The bar is 4.5:1 for all three, and the type scale is why.** WCAG 1.4.3 drops to 3:1 for large
+ * text, which is 18.66px bold or 24px regular; this app's body rung is `text-xs` at 13px and its
+ * floor is `text-2xs` at 11px, so nothing painted in these tones is ever large text. `ink-faint`
+ * also dresses a disabled control, which 1.4.3 exempts — but it dresses a timestamp and a measured
+ * dimension in the same breath, and a token cannot be exempt at one call site and not another.
+ *
+ * Translucent grounds are deliberately outside this. `glass-panel` and `glass-float` composite with
+ * whatever is behind them, so their effective ground is not a ramp tone at all; what that costs, and
+ * what the quantiser's raised `--glass-float-opacity` buys back, is measured at the utilities
+ * themselves.
+ */
+describe('the ink ramp on the foundry ramp', () => {
+  /** Every tone a component reaches for by default, faintest last. */
+  const RAMP = ['--color-ink', '--color-ink-muted', '--color-ink-faint'];
+
+  /** Every opaque surface the app paints under text, lightest last. */
+  const SURFACES = [
+    '--color-foundry-950',
+    '--color-foundry-900',
+    '--color-foundry-800',
+    '--color-foundry-700',
+    '--color-foundry-600',
+  ];
+
+  it('clears 4.5:1 at every tone on every surface', () => {
+    for (const tone of RAMP) {
+      for (const surface of SURFACES) {
+        expect([tone, surface, contrastBetween(tone, surface) >= 4.5]).toStrictEqual([tone, surface, true]);
+      }
+    }
+  });
+
+  it('stays a ramp — three tones a reader can tell apart, in order', () => {
+    // The floor above is satisfiable by three tokens holding one value, which would pass every
+    // assertion in this file and leave the app with a single text colour spelled three ways. Order
+    // is half of it; separation is the other half, and 1.15 is what the two closest rungs hold
+    // today (`ink-muted` and `ink-faint`, 8.75:1 and 6.25:1 on the page).
+    const onPage = RAMP.map((tone) => contrastBetween(tone, '--color-foundry-900'));
+    for (let index = 1; index < onPage.length; index++) {
+      const brighter = onPage[index - 1] ?? 0;
+      const dimmer = onPage[index] ?? 0;
+      expect(dimmer).toBeLessThan(brighter);
+      expect(brighter / dimmer).toBeGreaterThanOrEqual(1.15);
+    }
+  });
+});
+
+/**
  * A role colour used as a **ground** — the case the ink ramp cannot sit on.
  *
  * The defect this suite was written for: the toast paints its card `accent-strong → accent` and put

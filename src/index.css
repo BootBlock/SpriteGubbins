@@ -141,8 +141,23 @@
 
   /*
    * Text tones, layered on the foundry ramp. Lightness is chosen against the *lightest* surface
-   * text ever sits on (`foundry-600`), not the page, so the faintest tone still clears WCAG AA
-   * there: 4.6:1 on a border-toned row, 6.3:1 on the page itself.
+   * text ever sits on (`foundry-600`), not the page, so **all three clear WCAG 1.4.3 AA there** and
+   * therefore everywhere on the ramp. Measured, worst ground first:
+   *
+   *                  600     700     800     900     950
+   *   ink           11.56   13.20   14.65   15.74   16.41
+   *   ink-muted      6.42    7.34    8.15    8.75    9.12
+   *   ink-faint      4.59    5.24    5.82    6.25    6.52
+   *
+   * The bar is 4.5:1 rather than the large-text 3:1 because none of this is large text: the body
+   * rung is 13px and the floor is 11px, against the 24px regular / 18.66px bold the exemption asks
+   * for. So `ink-faint` on a border-toned row is the tightest fit in the app, and the 0.66 lightness
+   * it holds is a floor rather than a preference.
+   *
+   * `tests/design-tokens.test.ts` recomputes every cell of that table from these declarations and
+   * fails below 4.5:1 — and fails again if the three rungs stop being far enough apart to read as
+   * three. The figures had been prose alone, which is how a report claiming the ramp fails came to
+   * be believed as far as an issue.
    */
   --color-ink: oklch(0.927 0.012 281);
   --color-ink-muted: oklch(0.75 0.028 281);
