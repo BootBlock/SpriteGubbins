@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FakeSheetWriteWorker } from '../test/fakeSheetWriteWorker.ts';
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import { createImage } from '../utils/imageData.ts';
-import type { SheetWriteRequest } from './sheetWriteWorker.ts';
+import { sheetWriteJob } from '../test/sheetWriteJob.ts';
+import type { SheetWriteJob } from '../utils/writeSheet.ts';
 import { writeSheetOffThread } from './sheetWriteSession.ts';
 
 /**
@@ -30,8 +31,8 @@ const FILE = {
 } as const;
 
 /** One request, since what the seven exits are being walked over is the settling, not the payload. */
-function request(scale = 1): SheetWriteRequest {
-  return { image: createImage(2, 2), scale, format: 'PNG', boxes: [] };
+function request(scale = 1): SheetWriteJob {
+  return sheetWriteJob({ scale });
 }
 
 beforeEach(() => {
@@ -48,11 +49,12 @@ describe('writeSheetOffThread', () => {
   it('posts the sheet, the magnification and the format, and resolves with the file', async () => {
     const image = createImage(4, 4);
     const boxes = [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }];
-    const encoding = writeSheetOffThread({ image, scale: 8, format: 'ASEPRITE', boxes });
+    const job = sheetWriteJob({ image, scale: 8, format: 'ASEPRITE', boxes });
+    const encoding = writeSheetOffThread(job);
     // The sheet at its own size and the factor, never an already-magnified image: the magnification
     // is the expensive half, and it belongs on the far side of this boundary. The boxes cross at 1:1
     // beside it for the same reason, and are scaled there.
-    expect(thread().posted).toEqual([{ image, scale: 8, format: 'ASEPRITE', boxes }]);
+    expect(thread().posted).toEqual([job]);
 
     thread().answer({ kind: 'written', file: FILE });
     await expect(encoding).resolves.toEqual(FILE);

@@ -2,7 +2,8 @@ import { useCallback } from 'react';
 import { SHEET_FORMAT_FILES } from '../constants/sheetFormats.ts';
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import { useUIStore } from '../stores/useUIStore.ts';
-import type { SpriteBox } from '../types/quantiser.ts';
+import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
 import { writeSheetOffThread } from '../workers/sheetWriteSession.ts';
 import { useFileSave } from './useFileSave.ts';
@@ -33,13 +34,20 @@ export interface SheetDownload {
   readonly scale: number;
   readonly format: SheetFormat;
   /**
-   * The sprites the segmentation found, which an Aseprite document is cut into frames along.
+   * The sprites the segmentation found, which an Aseprite document is cut into frames along, a pack
+   * is cut into files along, and a manifest states the rects of.
    *
    * Empty where the sheet held nothing to cut, and ignored by the PNG writer, which produces one
-   * picture. Passed in every case rather than only for the format that reads it, so the press does
+   * picture. Passed in every case rather than only for the formats that read it, so the press does
    * not have to know which formats care.
    */
   readonly boxes: readonly SpriteBox[];
+  /** The duplicate reading over those sprites, which a manifest turns into links between them. */
+  readonly duplicates: readonly SpriteDuplicateGroup[];
+  /** One name per component the studio's prompt asks for, in the order section 4 lays them out. */
+  readonly names: readonly string[];
+  /** Which sheet of which deliverable the studio is composing, or `null` where it names none. */
+  readonly sheet: ManifestSheet | null;
 }
 
 /** The press, and whether one is still being answered. */
@@ -57,7 +65,7 @@ export function useImageDownload(): ImageDownload {
   const saving = useSheetWriteStore((state) => state.writing);
 
   const save = useCallback(
-    ({ sourceName, image, scale, format, boxes }: SheetDownload) => {
+    ({ sourceName, image, scale, format, boxes, duplicates, names, sheet }: SheetDownload) => {
       // Read at the press rather than closed over, so the guard cannot go stale behind a render.
       // `writeSheetOffThread` refuses a second write as well; this is what keeps a refused press
       // from reporting a failure the reader did not cause.
@@ -65,7 +73,19 @@ export function useImageDownload(): ImageDownload {
       const file = SHEET_FORMAT_FILES[format];
       const filename = quantisedName(sourceName, scale, file.extension);
 
-      writeSheetOffThread({ image, scale, format, boxes })
+      writeSheetOffThread({
+        image,
+        scale,
+        format,
+        boxes,
+        duplicates,
+        names,
+        // What a manifest downloaded on its own says its rects are into: the PNG this same press
+        // would have written, at this same magnification, rather than the dropped file — which is
+        // the sheet as it arrived and not as the tab has since read it.
+        imageName: quantisedName(sourceName, scale, SHEET_FORMAT_FILES.PNG.extension),
+        sheet,
+      })
         .then((written) => {
           saveFile(
             filename,
@@ -110,6 +130,8 @@ function reason(error: unknown): string {
  * behind the button is where the two are reconciled; a toast is not.
  */
 function describeWriting(written: WrittenSheet): string {
+  if (written.format === 'MANIFEST') return describeSprites(written.sprites, written.named);
+
   if (written.format === 'PNG') {
     return written.paletteEntries === null
       ? 'more colours than a palette can hold, so it is written truecolour'
@@ -120,7 +142,27 @@ function describeWriting(written: WrittenSheet): string {
     written.paletteEntries === null
       ? 'more colours than a palette can hold, so it is written in RGB colour mode'
       : `indexed, ${String(written.paletteEntries)}-entry palette`;
+
+  if (written.format === 'SPRITE_PACK') {
+    return `${colours}, ${describeSprites(written.sprites, written.named)}`;
+  }
   return `${colours}, ${describeFrames(written.frames, written.tags)}`;
+}
+
+/**
+ * What was described, and whether the descriptions carry the inventory's own names.
+ *
+ * The naming half is reported at the download rather than left to be discovered in the file, because
+ * it says something about the *artwork*: names are attached only where the sheet came back with the
+ * number of components the prompt asked for, so positional names are the tab telling a reader their
+ * generator returned a different set from the one it was asked for.
+ */
+function describeSprites(sprites: number, named: boolean): string {
+  if (sprites === 0) return 'no separated sprites, so it describes the sheet alone';
+  const counted = `${String(sprites)} ${sprites === 1 ? 'sprite' : 'sprites'}`;
+  return named
+    ? `${counted}, named from the inventory`
+    : `${counted}, numbered rather than named — the count does not match the inventory`;
 }
 
 /**

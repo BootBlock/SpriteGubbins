@@ -3,7 +3,8 @@ import { MAX_IMAGE_PIXELS, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../consta
 import { SHEET_FORMAT_FILES } from '../../constants/sheetFormats.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
-import type { SpriteSegmentation } from '../../types/quantiser.ts';
+import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
+import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -29,6 +30,13 @@ interface DownloadControlsProps {
    * Both reach the writer as an empty list, which is the single-frame case rather than a refusal.
    */
   readonly sprites: SpriteSegmentation | null;
+  /**
+   * The duplicate reading over those sprites, which the manifest turns into links between them.
+   *
+   * Empty where nothing was compared, which is every sheet that produced no sprites — the reading is
+   * of the segmentation, so a sheet with nothing separable has nothing to group.
+   */
+  readonly duplicates: readonly SpriteDuplicateGroup[];
 }
 
 /**
@@ -52,8 +60,12 @@ export function DownloadControls({
   sourceName,
   resultImage,
   sprites,
+  duplicates,
 }: DownloadControlsProps) {
   const download = useImageDownload();
+  // The studio's own answer about what this sheet is, read here rather than drilled through two
+  // panels that have nothing to do with it — see `useSheetIdentity`, which says why it is a hook.
+  const { names, sheet } = useSheetIdentity();
   const button = useRef<HTMLButtonElement>(null);
   // Whether the button held the keyboard's focus at the moment it was pressed — see the effect.
   const heldFocus = useRef(false);
@@ -150,6 +162,9 @@ export function DownloadControls({
               scale: effectiveScale,
               format: downloadFormat,
               boxes: sprites?.kind === 'SEGMENTED' ? sprites.boxes : [],
+              duplicates,
+              names,
+              sheet,
             });
           }}
           className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
@@ -172,4 +187,6 @@ export function DownloadControls({
 const DOWNLOAD_GUIDANCE: Readonly<Record<SheetFormat, string>> = {
   PNG: QUANTISE_ACTION_TOOLTIPS.downloadPNG,
   ASEPRITE: QUANTISE_ACTION_TOOLTIPS.downloadAseprite,
+  SPRITE_PACK: QUANTISE_ACTION_TOOLTIPS.downloadSpritePack,
+  MANIFEST: QUANTISE_ACTION_TOOLTIPS.downloadManifest,
 };

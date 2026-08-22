@@ -51,15 +51,16 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
 frame is a **complete state** of the effect and not a layer to be stacked on another: a frame that
 only makes sense composited over its neighbour is a failure of this group.`,
       entries: [
-        { text: 'Onset: first visible frame, building frame', count: 2, kind: 'frame' },
-        { text: 'Expansion: early, mid, late', count: 3, kind: 'frame' },
+        { label: 'onset', text: 'Onset: first visible frame, building frame', count: 2, kind: 'frame' },
+        { label: 'expansion', text: 'Expansion: early, mid, late', count: 3, kind: 'frame' },
         {
+          label: 'peak-frame',
           text: 'Peak frame ×1, at the widest extent and brightest core the sequence reaches',
           count: 1,
           kind: 'frame',
         },
-        { text: 'Decay: early, mid, late', count: 3, kind: 'frame' },
-        { text: 'Dissipation: final visible frame', count: 1, kind: 'frame' },
+        { label: 'decay', text: 'Decay: early, mid, late', count: 3, kind: 'frame' },
+        { label: 'dissipation', text: 'Dissipation: final visible frame', count: 1, kind: 'frame' },
       ],
       outro: `Consecutive frames must differ in **shape**, not only in brightness or opacity: two frames
 separated by a fade are one frame drawn twice, and the engine can produce that fade itself for free.
@@ -76,12 +77,13 @@ This is a stretch of time, not a second layer to composite: the effect simply ou
 which is what the trailing smoke, debris or sparks are for.`,
       entries: [
         {
+          label: 'core-spent',
           text: 'Core spent: the last frame the core is visible in, and the first without it',
           count: 2,
           kind: 'frame',
         },
-        { text: 'Residue at full extent ×1', count: 1, kind: 'frame' },
-        { text: 'Clearing: early, mid, late', count: 3, kind: 'frame' },
+        { label: 'residue-at-full-extent', text: 'Residue at full extent ×1', count: 1, kind: 'frame' },
+        { label: 'clearing', text: 'Clearing: early, mid, late', count: 3, kind: 'frame' },
       ],
       outro: `Where the subject names no secondary layer, these frames carry the core's own lingering residue
 instead — the last of the glow, the settling motes — rather than being dropped: the count section 0

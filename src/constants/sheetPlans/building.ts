@@ -32,19 +32,26 @@ export const BUILDING_TILESET: SheetPlan = {
       intro: `A floor tile, a wall *top* and a wall *face* are three distinct tiles; it is the face that produces
 the angled read.`,
       entries: [
-        { text: 'Floor ×4: one base tile and three low-frequency variants', count: 4, kind: 'tile' },
-        { text: 'Wall top ×1, wall face ×1', count: 2, kind: 'tile' },
         {
+          label: 'floor',
+          text: 'Floor ×4: one base tile and three low-frequency variants',
+          count: 4,
+          kind: 'tile',
+        },
+        { label: 'wall-top-and-face', text: 'Wall top ×1, wall face ×1', count: 2, kind: 'tile' },
+        {
+          label: 'wall-top-corners',
           text: 'Wall top corners ×4: outer-left, outer-right, inner-left, inner-right',
           count: 4,
           kind: 'tile',
         },
         {
+          label: 'wall-face-corners',
           text: 'Wall face corners ×4: outer-left, outer-right, inner-left, inner-right',
           count: 4,
           kind: 'tile',
         },
-        { text: 'Floor edge trim ×2', count: 2, kind: 'tile' },
+        { label: 'floor-edge-trim', text: 'Floor edge trim ×2', count: 2, kind: 'tile' },
       ],
       outro: `Every tile is seamless: opposite edges match so tiles butt without a visible join, and no tile
 carries a feature that reveals repetition when laid in a field.`,
@@ -62,13 +69,34 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
       heading: null,
       intro: "One direction's worth of structural modules, each drawn once:",
       entries: [
-        { text: 'Ground-floor wall bay: blank, windowed', count: 2, kind: 'structure' },
-        { text: 'Upper-floor wall bay: blank, windowed', count: 2, kind: 'structure' },
-        { text: 'Entrance module: closed, open', count: 2, kind: 'structure' },
-        { text: 'Roof section ×1, roof ridge or cap ×1', count: 2, kind: 'structure' },
-        { text: 'Corner post or quoin ×1', count: 1, kind: 'structure' },
-        { text: 'Foundation or plinth course ×1', count: 1, kind: 'structure' },
         {
+          label: 'ground-floor-wall-bay',
+          text: 'Ground-floor wall bay: blank, windowed',
+          count: 2,
+          kind: 'structure',
+        },
+        {
+          label: 'upper-floor-wall-bay',
+          text: 'Upper-floor wall bay: blank, windowed',
+          count: 2,
+          kind: 'structure',
+        },
+        { label: 'entrance-module', text: 'Entrance module: closed, open', count: 2, kind: 'structure' },
+        {
+          label: 'roof-section-and-ridge',
+          text: 'Roof section ×1, roof ridge or cap ×1',
+          count: 2,
+          kind: 'structure',
+        },
+        { label: 'corner-post-or-quoin', text: 'Corner post or quoin ×1', count: 1, kind: 'structure' },
+        {
+          label: 'foundation-or-plinth-course',
+          text: 'Foundation or plinth course ×1',
+          count: 1,
+          kind: 'structure',
+        },
+        {
+          label: 'facade-fittings',
           text: 'Façade fittings: awning ×1, sign board ×1, projecting fixture ×1',
           count: 3,
           kind: 'structure',

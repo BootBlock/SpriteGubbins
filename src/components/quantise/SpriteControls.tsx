@@ -18,6 +18,20 @@ interface SpriteControlsProps {
    * before the artwork reaches an atlas cell sized from the same number.
    */
   readonly target: TargetSize | null;
+  /**
+   * How many components the studio's prompt for this sheet contracts for.
+   *
+   * **The other half of what this panel is for, and the half that was missing.** The size reading
+   * below says whether the artwork came back at the scale that was asked for; this says whether it
+   * came back in the pieces that were asked for — and until the two sat together, a sheet returning
+   * nine components where twelve were requested looked, here and in the preview, exactly like a
+   * sheet returning twelve.
+   *
+   * It is a statement about the *studio*, not about the image: nothing can check that the sheet on
+   * this tab is the one the studio is composing. So a mismatch is reported as something to look at
+   * rather than as an error, in the same voice as the target-size clause beside it.
+   */
+  readonly expected: number;
   /** Whether a newer result is on its way, which is what {@link sprites} may be lagging behind. */
   readonly busy: boolean;
 }
@@ -48,7 +62,7 @@ interface SpriteControlsProps {
  * setting would contradict its own badge in both directions, which is why `SpriteSegmentation`
  * carries `SOLID` rather than leaving it to be inferred here.
  */
-export function SpriteControls({ sprites, target, busy }: SpriteControlsProps) {
+export function SpriteControls({ sprites, target, expected, busy }: SpriteControlsProps) {
   const spriteGap = useQuantiseStore((state) => state.spriteGap);
   const setSpriteGap = useQuantiseStore((state) => state.setSpriteGap);
 
@@ -66,6 +80,14 @@ export function SpriteControls({ sprites, target, busy }: SpriteControlsProps) {
         ) : (
           <>
             <Badge tone={countTone(sprites)}>{countLabel(sprites)}</Badge>
+            {/* Only where there is a count to compare with one: a solid or scattered sheet has no
+                number of its own, and saying "12 asked for" beside "nothing transparent to separate"
+                would read as a judgement on a reading nobody made. */}
+            {sprites.kind === 'SEGMENTED' && sprites.boxes.length > 0 && (
+              <Badge tone={sprites.boxes.length === expected ? 'valid' : 'attention'}>
+                {expectedLabel(sprites.boxes.length, expected)}
+              </Badge>
+            )}
             {sprites.kind !== 'SOLID' && sprites.specks > 0 && (
               <Badge tone="attention">
                 {sprites.specks} {sprites.specks === 1 ? 'speck ignored' : 'specks ignored'}
@@ -106,7 +128,7 @@ export function SpriteControls({ sprites, target, busy }: SpriteControlsProps) {
         />
       </div>
 
-      <p className="mt-3 text-xs leading-relaxed text-ink-muted">{guidanceFor(sprites)}</p>
+      <p className="mt-3 text-xs leading-relaxed text-ink-muted">{guidanceFor(sprites, expected)}</p>
     </section>
   );
 }
@@ -137,8 +159,21 @@ function countTone(sprites: SpriteSegmentation): 'valid' | 'attention' | 'neutra
   return 'valid';
 }
 
-/** Which paragraph the state calls for — see `SPRITE_GUIDANCE`, which holds all five. */
-function guidanceFor(sprites: SpriteSegmentation | null): string {
+/**
+ * How the count sits against the inventory, in the few words a chip has room for.
+ *
+ * The figure asked for is named in both branches rather than only in the mismatch, because the
+ * agreeing case is the one a reader wants to be able to see at a glance and trust.
+ */
+function expectedLabel(found: number, expected: number): string {
+  if (found === expected) return `matches the ${String(expected)} asked for`;
+  const difference = Math.abs(found - expected);
+  const direction = found > expected ? 'over' : 'short of';
+  return `${String(difference)} ${direction} the ${String(expected)} asked for`;
+}
+
+/** Which paragraph the state calls for — see `SPRITE_GUIDANCE`, which holds all six. */
+function guidanceFor(sprites: SpriteSegmentation | null, expected: number): string {
   // With nothing quantised yet the general paragraph is the right one: it says what this panel
   // does, which is what a reader waiting on a first result needs — where naming a state the sheet
   // is not in would be describing a finding nobody has made.
@@ -147,5 +182,8 @@ function guidanceFor(sprites: SpriteSegmentation | null): string {
   if (sprites.kind === 'SCATTERED') return SPRITE_GUIDANCE.scattered;
   if (sprites.boxes.length === 0) return SPRITE_GUIDANCE.empty;
   if (sprites.boxes.length === 1) return SPRITE_GUIDANCE.single;
+  // The mismatch outranks the ordinary paragraph: both describe a sheet that came apart, and only
+  // one of them names something the reader has to act on before the artwork is any use.
+  if (sprites.boxes.length !== expected) return SPRITE_GUIDANCE.miscount;
   return SPRITE_GUIDANCE.found;
 }

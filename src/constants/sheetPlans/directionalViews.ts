@@ -1,5 +1,6 @@
 import type { ComponentEntry, ComponentKind } from '../../types/components.ts';
 import type { Direction } from '../../types/rendering.ts';
+import { slugify } from '../../utils/slugify.ts';
 import { OBJECT_YAW } from '../promptText/rotation.ts';
 
 /** The facings one directional sheet draws, in the order its inventory and section 3 list them. */
@@ -25,7 +26,7 @@ export type FacingTuple = readonly [Direction, ...Direction[]];
  * generator returning the same drawing several times over with the details moved.
  */
 export function viewsOf(label: string, kind: ComponentKind, facings: FacingTuple): ComponentEntry {
-  return { text: `${label}: ${facings.join(', ')}`, count: facings.length, kind };
+  return { label: slugify(label), text: `${label}: ${facings.join(', ')}`, count: facings.length, kind };
 }
 
 /**
@@ -36,7 +37,12 @@ export function viewsOf(label: string, kind: ComponentKind, facings: FacingTuple
  * the section a model is already reading as a list.
  */
 export function atEachYaw(label: string, kind: ComponentKind, facings: FacingTuple): ComponentEntry {
-  return { text: `${label}, at each of the yaws section 3 lists`, count: facings.length, kind };
+  return {
+    label: slugify(label),
+    text: `${label}, at each of the yaws section 3 lists`,
+    count: facings.length,
+    kind,
+  };
 }
 
 /**

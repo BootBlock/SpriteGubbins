@@ -270,6 +270,7 @@ export function ImageComparison({
         sourceName={sourceName}
         resultImage={quantised?.result.image ?? null}
         sprites={sprites ?? null}
+        duplicates={quantised?.result.duplicates ?? []}
         isDetached={isDetached}
         onDetachToggle={() => {
           if (isDetached) detached.reattach();

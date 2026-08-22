@@ -906,8 +906,9 @@ initial build. They are not stylistic preferences.
 - **A thread's *lifetime* is decided by whether it has anything worth keeping**, and the three in
   `src/workers/` answer that differently on purpose. The quantiser's is kept for a whole session
   because the sheet crosses once and every dial afterwards is three small numbers. The sheet writer's
-  (`sheetWriteWorker.ts` / `sheetWriteSession.ts`, which writes either a PNG or an `.aseprite`
-  document) is started per download and ended by its own answer, because what it writes is the
+  (`sheetWriteWorker.ts` / `sheetWriteSession.ts`, which runs `utils/writeSheet.ts` — a PNG, an
+  `.aseprite` document, a sprite pack or a manifest) is started per download and ended by its own
+  answer, because what it writes is the
   *result*, which changes under every dial — so it would cross the boundary on
   each press whatever the thread's lifetime, and a thread that ends with the job needs no correlation
   ids and no lifecycle to keep in step with the tab. The auto-tune sweep's

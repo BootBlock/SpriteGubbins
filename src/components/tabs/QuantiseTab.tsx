@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
+import { KEY_OFFER_BORDER_SHARE } from '../../constants/keyOffer.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
@@ -8,6 +9,7 @@ import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import type { PixelGrid, Quantised, SheetFacts } from '../../types/quantiser.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
+import { borderKeyShare } from '../../utils/borderKeyShare.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
@@ -159,6 +161,21 @@ export function QuantiseTab() {
     [keyingEnabled, keyColor, keyTolerance],
   );
 
+  // Whether this sheet arrived with its field still on it, which is what the keying panel offers to
+  // take out. Measured here beside the keying it is about, on the *source* rather than the result:
+  // it is a fact about what was dropped, and it must not move as the dials do. It costs a walk of
+  // the border alone — a few thousand pixels — so it stays on this thread rather than joining the
+  // worker's answers, and it is skipped entirely once keying is on, where the offer has nothing to
+  // add. The tolerance is the one the pass would run at, so the share is measured at the setting the
+  // press would actually use.
+  const keyOffered = useMemo(
+    () =>
+      source === null || keyColor === null || keyingEnabled
+        ? false
+        : borderKeyShare(source.image, keyColor, keyTolerance) >= KEY_OFFER_BORDER_SHARE,
+    [source, keyColor, keyingEnabled, keyTolerance],
+  );
+
   // The studio's two colour settings resolved to one instruction *and* one description of it — a
   // pinned palette supersedes the budget, and `colorPlanFor` is the single place that rule is
   // applied. The panel below is handed the same answer the pipeline is, for the same reason
@@ -182,22 +199,23 @@ export function QuantiseTab() {
   // `grid`: it is an upper bound derived from how many components the sheet has to seat, not a
   // measurement of this image, so it is offered to click and never silently preferred.
   const target = useMemo(() => parseTargetSize(spriteTargetSize), [spriteTargetSize]);
-  const suggested = useMemo(
+  // How many components this sheet's own prompt contracts for — the figure the sprite panel holds
+  // the segmentation against, and the ceiling the grid suggestion seats. One derivation for both,
+  // because two would be two answers to "what did the prompt ask for" on one screen.
+  const expected = useMemo(
     () =>
-      source === null || target === null
-        ? null
-        : targetSizeGrid(
-            source.image,
-            target,
-            componentCountFor(
-              category,
-              directionalMode,
-              directions,
-              sheetIndex,
-              parseAdditionalAnatomy(additionalAnatomy),
-            ),
-          ),
-    [source, target, category, directionalMode, directions, sheetIndex, additionalAnatomy],
+      componentCountFor(
+        category,
+        directionalMode,
+        directions,
+        sheetIndex,
+        parseAdditionalAnatomy(additionalAnatomy),
+      ),
+    [category, directionalMode, directions, sheetIndex, additionalAnatomy],
+  );
+  const suggested = useMemo(
+    () => (source === null || target === null ? null : targetSizeGrid(source.image, target, expected)),
+    [source, target, expected],
   );
 
   return (
@@ -273,7 +291,12 @@ export function QuantiseTab() {
                 from the two settings behind it — one rule, one place. The share is the transform's own
                 answer, so it is `null` until there is a transform, which is the same condition the
                 comparison beside it shows its placeholder for. */}
-            <KeyingControls keying={keying} keyedShare={quantised?.result.keyedShare ?? null} busy={busy} />
+            <KeyingControls
+              keying={keying}
+              keyedShare={quantised?.result.keyedShare ?? null}
+              busy={busy}
+              offered={keyOffered}
+            />
             <PaletteLockControls
               resultImage={quantised?.result.image ?? null}
               sheetName={source.name}
@@ -281,7 +304,12 @@ export function QuantiseTab() {
               superseded={colorPlan.superseded}
               busy={busy}
             />
-            <SpriteControls sprites={quantised?.result.sprites ?? null} target={target} busy={busy} />
+            <SpriteControls
+              sprites={quantised?.result.sprites ?? null}
+              target={target}
+              expected={expected}
+              busy={busy}
+            />
             {/* Directly under the sprite panel, because it is a reading *of* that reading: an axis is
                 scored inside a sprite's own bounds, so what this panel can say is decided by what the
                 one above found. It is inside the same sheet guard for the same reason as the rest. */}

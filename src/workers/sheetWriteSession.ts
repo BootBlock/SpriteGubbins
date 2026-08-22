@@ -1,6 +1,7 @@
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import type { WrittenSheet } from '../types/sheetFormat.ts';
-import type { SheetWriteReply, SheetWriteRequest } from './sheetWriteWorker.ts';
+import type { SheetWriteJob } from '../utils/writeSheet.ts';
+import type { SheetWriteReply } from './sheetWriteWorker.ts';
 
 /**
  * The near side of {@link sheetWriteWorker}: a thread per download, ended by its own answer.
@@ -29,7 +30,7 @@ import type { SheetWriteReply, SheetWriteRequest } from './sheetWriteWorker.ts';
 /** Said where a press arrives while the last one is still being written; the button also refuses. */
 const ALREADY_WRITING = 'A file is already being written';
 
-export function writeSheetOffThread(request: SheetWriteRequest): Promise<WrittenSheet> {
+export function writeSheetOffThread(request: SheetWriteJob): Promise<WrittenSheet> {
   const writes = useSheetWriteStore.getState();
   if (writes.writing) return Promise.reject(new Error(ALREADY_WRITING));
 

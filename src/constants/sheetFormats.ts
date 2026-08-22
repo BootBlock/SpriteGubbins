@@ -31,4 +31,8 @@ export interface SheetFormatFile {
 export const SHEET_FORMAT_FILES: Readonly<Record<SheetFormat, SheetFormatFile>> = {
   PNG: { label: 'PNG', extension: 'png', mediaType: 'image/png' },
   ASEPRITE: { label: 'Aseprite', extension: 'aseprite', mediaType: 'application/octet-stream' },
+  // `Sprite pack` rather than `ZIP`: the extension says what the container is, and the label is for
+  // the reader choosing between a picture and a picture cut into pieces.
+  SPRITE_PACK: { label: 'Sprite pack', extension: 'zip', mediaType: 'application/zip' },
+  MANIFEST: { label: 'Manifest', extension: 'json', mediaType: 'application/json' },
 };

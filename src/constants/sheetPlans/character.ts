@@ -48,19 +48,36 @@ export const CHARACTER_POSE_LIBRARY: SheetPlan = {
     {
       heading: null,
       entries: [
-        { text: '1 head, 1 torso, 1 pelvis, in the primary direction', count: 3, kind: 'anatomy' },
         {
+          label: 'trunk',
+          text: '1 head, 1 torso, 1 pelvis, in the primary direction',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-arm',
           text: '8 left-arm articulation variants: upper arm ×3, lower arm ×3, hand ×2',
           count: 8,
           kind: 'anatomy',
         },
-        { text: '8 right-arm articulation variants, redrawn for the right side', count: 8, kind: 'anatomy' },
         {
+          label: 'right-arm',
+          text: '8 right-arm articulation variants, redrawn for the right side',
+          count: 8,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-leg',
           text: '9 left-leg articulation variants: upper leg ×3, lower leg ×3, foot ×3',
           count: 9,
           kind: 'anatomy',
         },
-        { text: '9 right-leg articulation variants, redrawn for the right side', count: 9, kind: 'anatomy' },
+        {
+          label: 'right-leg',
+          text: '9 right-leg articulation variants, redrawn for the right side',
+          count: 9,
+          kind: 'anatomy',
+        },
       ],
       outro: TRUNK_TERMINATION,
     },
@@ -114,33 +131,57 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
     {
       heading: 'Left arm',
       entries: [
-        { text: 'Upper arms: neutral lowered, forward-diagonal, raised', count: 3, kind: 'anatomy' },
         {
+          label: 'left-upper-arms',
+          text: 'Upper arms: neutral lowered, forward-diagonal, raised',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-lower-arms',
           text: 'Lower arms: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
           count: 3,
           kind: 'anatomy',
         },
-        { text: 'Hands: relaxed empty, closed/grip-ready empty', count: 2, kind: 'anatomy' },
+        {
+          label: 'left-hands',
+          text: 'Hands: relaxed empty, closed/grip-ready empty',
+          count: 2,
+          kind: 'anatomy',
+        },
       ],
     },
-    { heading: 'Right arm', entries: [{ text: MIRRORED_ARM, count: 8, kind: 'anatomy' }] },
+    {
+      heading: 'Right arm',
+      entries: [{ label: 'right-arm', text: MIRRORED_ARM, count: 8, kind: 'anatomy' }],
+    },
     {
       heading: 'Left leg',
       entries: [
-        { text: 'Upper legs: neutral vertical, forward, backward', count: 3, kind: 'anatomy' },
         {
+          label: 'left-upper-legs',
+          text: 'Upper legs: neutral vertical, forward, backward',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-lower-legs',
           text: 'Lower legs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
           count: 3,
           kind: 'anatomy',
         },
         {
+          label: 'left-feet',
           text: 'Feet: flat planted, forward-step/heel-strike, rear-step/toe-off',
           count: 3,
           kind: 'anatomy',
         },
       ],
     },
-    { heading: 'Right leg', entries: [{ text: MIRRORED_LEG, count: 9, kind: 'anatomy' }] },
+    {
+      heading: 'Right leg',
+      entries: [{ label: 'right-leg', text: MIRRORED_LEG, count: 9, kind: 'anatomy' }],
+    },
   ],
 };
 
@@ -165,11 +206,11 @@ export const CHARACTER_CUTOUT_RIG: SheetPlan = {
       heading: null,
       intro: "One direction's worth of rig pieces, each drawn once in rest orientation:",
       entries: [
-        { text: 'Head ×1, torso ×1, pelvis ×1', count: 3, kind: 'anatomy' },
-        { text: 'Left arm: upper arm, lower arm, hand', count: 3, kind: 'anatomy' },
-        { text: 'Right arm: upper arm, lower arm, hand', count: 3, kind: 'anatomy' },
-        { text: 'Left leg: upper leg, lower leg, foot', count: 3, kind: 'anatomy' },
-        { text: 'Right leg: upper leg, lower leg, foot', count: 3, kind: 'anatomy' },
+        { label: 'trunk', text: 'Head ×1, torso ×1, pelvis ×1', count: 3, kind: 'anatomy' },
+        { label: 'left-arm', text: 'Left arm: upper arm, lower arm, hand', count: 3, kind: 'anatomy' },
+        { label: 'right-arm', text: 'Right arm: upper arm, lower arm, hand', count: 3, kind: 'anatomy' },
+        { label: 'left-leg', text: 'Left leg: upper leg, lower leg, foot', count: 3, kind: 'anatomy' },
+        { label: 'right-leg', text: 'Right leg: upper leg, lower leg, foot', count: 3, kind: 'anatomy' },
       ],
       outro: `${TRUNK_TERMINATION}
 

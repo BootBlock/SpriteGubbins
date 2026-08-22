@@ -47,11 +47,13 @@ and drift that keep a field of one material from reading as a single tile stampe
 differ in what is scattered across them and in nothing else:`,
       entries: [
         {
+          label: 'base-material-tile',
           text: 'Base material tile ×6: the primary, and five variants differing only in surface scatter',
           count: 6,
           kind: 'tile',
         },
         {
+          label: 'second-material-tile',
           text: 'Second material tile ×3: the primary, and two variants',
           count: 3,
           kind: 'tile',
@@ -65,21 +67,25 @@ above complete the sixteen an autotiler indexes. Each is that same boundary at a
 in the tile, never a different boundary:`,
       entries: [
         {
+          label: 'straight-transitions',
           text: 'Straight transitions ×4: the boundary crossing the tile from the north, east, south and west edge',
           count: 4,
           kind: 'tile',
         },
         {
+          label: 'outer-corner-transitions',
           text: 'Outer corner transitions ×4: the second material turning a convex corner, once per corner',
           count: 4,
           kind: 'tile',
         },
         {
+          label: 'inner-corner-transitions',
           text: 'Inner corner transitions ×4: the second material turning a concave corner, once per corner',
           count: 4,
           kind: 'tile',
         },
         {
+          label: 'enclosed-transitions',
           text: 'Enclosed transitions ×2: an isolated patch of the second material, and an isolated patch of the base within it',
           count: 2,
           kind: 'tile',
@@ -108,10 +114,25 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
 flat field has nowhere to put an exposed face. These are the pieces that give the field an upper
 level, and they repeat along a run the way the blend set's tiles do.`,
       entries: [
-        { text: 'Lip ×2: a straight run, and a variant that breaks the line', count: 2, kind: 'tile' },
-        { text: 'Exposed face ×2: one full drop, one half-height ledge', count: 2, kind: 'tile' },
-        { text: 'Lip corners ×2: one convex, one concave', count: 2, kind: 'tile' },
-        { text: 'Foot strip ×1, where the face lands on the field below', count: 1, kind: 'tile' },
+        {
+          label: 'lip',
+          text: 'Lip ×2: a straight run, and a variant that breaks the line',
+          count: 2,
+          kind: 'tile',
+        },
+        {
+          label: 'exposed-face',
+          text: 'Exposed face ×2: one full drop, one half-height ledge',
+          count: 2,
+          kind: 'tile',
+        },
+        { label: 'lip-corners', text: 'Lip corners ×2: one convex, one concave', count: 2, kind: 'tile' },
+        {
+          label: 'foot-strip',
+          text: 'Foot strip ×1, where the face lands on the field below',
+          count: 1,
+          kind: 'tile',
+        },
       ],
       outro: `The lip, the face and the foot stack into one edge and repeat along it, so each matches its
 neighbours left and right and the three meet without a step where they stack.`,
@@ -121,13 +142,24 @@ neighbours left and right and the three meet without a step where they stack.`,
       intro: 'Placed once rather than tiled, and the only pieces in the set allowed to be distinctive:',
       entries: [
         {
+          label: 'focal-feature',
           text: 'Focal feature ×1 — the one piece the field is composed around',
           count: 1,
           kind: 'structure',
         },
-        { text: 'Boulder or outcrop ×3: large, medium and small', count: 3, kind: 'structure' },
-        { text: 'Rooted feature ×2: what the ground has grown or heaved up', count: 2, kind: 'structure' },
-        { text: 'Debris or spoil heap ×1', count: 1, kind: 'structure' },
+        {
+          label: 'boulder-or-outcrop',
+          text: 'Boulder or outcrop ×3: large, medium and small',
+          count: 3,
+          kind: 'structure',
+        },
+        {
+          label: 'rooted-feature',
+          text: 'Rooted feature ×2: what the ground has grown or heaved up',
+          count: 2,
+          kind: 'structure',
+        },
+        { label: 'debris-or-spoil-heap', text: 'Debris or spoil heap ×1', count: 1, kind: 'structure' },
       ],
     },
     {
@@ -135,8 +167,18 @@ neighbours left and right and the three meet without a step where they stack.`,
       intro:
         'Where the field gives way rather than rises, each drawn with the ground it interrupts left clear:',
       entries: [
-        { text: 'Pit or sinkhole ×1, and its raised rim ×1', count: 2, kind: 'structure' },
-        { text: 'Fissure ×2: one straight run, one branching', count: 2, kind: 'structure' },
+        {
+          label: 'pit-and-rim',
+          text: 'Pit or sinkhole ×1, and its raised rim ×1',
+          count: 2,
+          kind: 'structure',
+        },
+        {
+          label: 'fissure',
+          text: 'Fissure ×2: one straight run, one branching',
+          count: 2,
+          kind: 'structure',
+        },
       ],
     },
   ],

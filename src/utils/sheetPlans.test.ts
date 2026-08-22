@@ -497,3 +497,36 @@ describe('every mode of the union is reachable from some category', () => {
     }
   });
 });
+
+describe('every inventory line carries an identifier the manifest can use', () => {
+  /** Every plan the table holds, whatever direction set produces it, with the facings it was built for. */
+  const everyPlan = SUBJECT_CATEGORIES.flatMap((category) =>
+    modesFor(category).flatMap((mode) =>
+      (CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]).flatMap((directions) =>
+        sheetSeriesFor(category, mode, directions).map((plan) => ({ category, mode, directions, plan })),
+      ),
+    ),
+  );
+
+  it('spells every label as a slug', () => {
+    for (const { category, mode, plan } of everyPlan) {
+      for (const entry of plan.groups.flatMap((group) => group.entries)) {
+        expect(entry.label, `${category}/${mode}/${plan.name}: ${entry.text}`).toMatch(
+          /^[a-z0-9]+(-[a-z0-9]+)*$/,
+        );
+      }
+    }
+  });
+
+  it('never names two lines of one plan the same thing', () => {
+    // Within a plan a label is an identity: `componentSlots` suffixes it with a facing or an ordinal,
+    // so two lines sharing one label produce two runs of the same names for different components.
+    // Across plans they may repeat freely — a vehicle's `fittings` and an item's are not related.
+    for (const { category, mode, plan } of everyPlan) {
+      const labels = plan.groups.flatMap((group) => group.entries.map((entry) => entry.label));
+      expect(new Set(labels).size, `${category}/${mode}/${plan.name}: ${labels.join(', ')}`).toBe(
+        labels.length,
+      );
+    }
+  });
+});

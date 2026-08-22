@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { decodeAseprite } from '../test/decodeAseprite.ts';
 import { imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
+import { sheetWriteJob } from '../test/sheetWriteJob.ts';
 import { write } from './sheetWriteWorker.ts';
 import type { SheetWriteReply } from './sheetWriteWorker.ts';
 
@@ -40,24 +41,26 @@ afterEach(() => {
 describe('write', () => {
   it('answers with the file, magnified by the factor it was given', async () => {
     const { posted } = listen();
-    await write({ image: imageFrom(3, 2, () => OPAQUE), scale: 4, format: 'PNG', boxes: [] });
+    await write(sheetWriteJob({ image: imageFrom(3, 2, () => OPAQUE), scale: 4 }));
 
     expect(posted).toHaveLength(1);
     const reply = posted[0];
     expect(reply?.kind).toBe('written');
     // 3 × 2 at a factor of 4 is 12 × 8, and one colour is one palette entry whatever the size.
-    expect(reply?.kind === 'written' && reply.file.paletteEntries).toBe(1);
+    expect(reply?.kind === 'written' && reply.file.format === 'PNG' && reply.file.paletteEntries).toBe(1);
   });
 
   it('writes the format it was asked for, with the boxes magnified beside the sheet', async () => {
     const { posted } = listen();
-    await write({
-      // One 2 × 2 sprite in the corner of a keyed sheet, at a factor of 2.
-      image: imageFrom(4, 4, (x, y) => (x < 2 && y < 2 ? OPAQUE : CLEAR)),
-      scale: 2,
-      format: 'ASEPRITE',
-      boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
-    });
+    await write(
+      sheetWriteJob({
+        // One 2 × 2 sprite in the corner of a keyed sheet, at a factor of 2.
+        image: imageFrom(4, 4, (x, y) => (x < 2 && y < 2 ? OPAQUE : CLEAR)),
+        scale: 2,
+        format: 'ASEPRITE',
+        boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
+      }),
+    );
 
     const reply = posted[0];
     expect(reply?.kind === 'written' && reply.file.format).toBe('ASEPRITE');
@@ -74,12 +77,7 @@ describe('write', () => {
     // A scale the magnification cannot allocate for. `upscaleNearest` is synchronous, so without a
     // guard around it this throw escapes as an uncaught exception — which reaches the near side as
     // the thread having failed to *start*, which is not what happened.
-    await write({
-      image: imageFrom(2, 2, () => OPAQUE),
-      scale: Number.MAX_SAFE_INTEGER,
-      format: 'PNG',
-      boxes: [],
-    });
+    await write(sheetWriteJob({ image: imageFrom(2, 2, () => OPAQUE), scale: Number.MAX_SAFE_INTEGER }));
 
     expect(posted).toHaveLength(1);
     expect(posted[0]?.kind).toBe('failed');
@@ -94,16 +92,9 @@ describe('write', () => {
       throw new Error('no room for anything');
     });
 
+    await expect(write(sheetWriteJob({ image: imageFrom(2, 2, () => OPAQUE) }))).resolves.toBeUndefined();
     await expect(
-      write({ image: imageFrom(2, 2, () => OPAQUE), scale: 1, format: 'PNG', boxes: [] }),
-    ).resolves.toBeUndefined();
-    await expect(
-      write({
-        image: imageFrom(2, 2, () => OPAQUE),
-        scale: Number.MAX_SAFE_INTEGER,
-        format: 'PNG',
-        boxes: [],
-      }),
+      write(sheetWriteJob({ image: imageFrom(2, 2, () => OPAQUE), scale: Number.MAX_SAFE_INTEGER })),
     ).resolves.toBeUndefined();
   });
 
@@ -118,7 +109,7 @@ describe('write', () => {
       throw new Error('the file would not cross');
     });
 
-    await write({ image: imageFrom(2, 2, () => OPAQUE), scale: 1, format: 'PNG', boxes: [] });
+    await write(sheetWriteJob({ image: imageFrom(2, 2, () => OPAQUE) }));
 
     expect(posted).toHaveLength(1);
     expect(posted[0]).toEqual({ kind: 'failed', reason: 'the file would not cross' });

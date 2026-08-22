@@ -38,6 +38,18 @@ export const SPRITE_GUIDANCE = {
   scattered:
     'This sheet broke into more separate pieces than a sprite sheet holds, so none of them is being called a sprite. That is almost always the background: a field that has not come out leaves every gap between the components joined, and a tolerance so tight that anti-aliased edges survive leaves each of those edges as its own island. Raise the keying tolerance above, and this becomes a count you can use.',
 
+  /**
+   * Keyed, counted, and the count is not the one the prompt contracted for.
+   *
+   * The reading this panel exists for and could not previously state: the studio knows how many
+   * components its prompt asked for, and until the count was compared, a sheet returning nine where
+   * twelve were requested looked exactly like a sheet returning twelve. It names both directions
+   * because they are different faults — short means the generator dropped entries, over means it
+   * added one or the key has left two pieces of one component apart.
+   */
+  miscount:
+    'This sheet holds a different number of sprites from the number the studio’s prompt asked for. A count that is short means the generator dropped entries from the inventory, which mis-maps every component after the gap; a count that is over means it added something, or that two pieces of one component are being read apart. Check the preview’s Sprites mode against the inventory before you take the artwork away — and note that a manifest written from this sheet numbers its sprites rather than naming them, because the positions no longer line up with what was asked for.',
+
   /** Nothing opaque survived at all — the tolerance has taken the artwork with the field. */
   empty:
     'Nothing opaque is left on this sheet, so there is nothing to count. The keying tolerance has reached past the background and taken the artwork with it — lower it until the sprites come back.',

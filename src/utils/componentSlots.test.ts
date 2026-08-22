@@ -1,0 +1,110 @@
+import { describe, expect, it } from 'vitest';
+import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
+import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import type { DirectionSet } from '../types/rendering.ts';
+import { SUBJECT_CATEGORIES } from '../types/subject.ts';
+import { componentCountFor } from './componentSet.ts';
+import { componentSlots } from './componentSlots.ts';
+
+/** A tail and a pair of horns, so every walk below carries anatomy as well as the plan's own. */
+const ANATOMY = [
+  { name: 'Demon Horn', count: 2 },
+  { name: 'Tail', count: 1 },
+] as const;
+
+/** Every sheet the studio can reach, which is the set both counts have to agree over. */
+const SHEETS = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).flatMap((mode) =>
+    (CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]).flatMap((directions) =>
+      sheetSeriesFor(category, mode, directions).map((plan, sheetIndex) => ({
+        category,
+        mode,
+        directions,
+        sheetIndex,
+        sheet: plan.name,
+      })),
+    ),
+  ),
+);
+
+describe('one name per component the sheet asks for', () => {
+  it.each(SHEETS)(
+    '$category / $mode / $directions / $sheet',
+    ({ category, mode, directions, sheetIndex }) => {
+      const slots = componentSlots(category, mode, directions, sheetIndex, ANATOMY);
+
+      // The property the manifest rests on: the nth sprite in reading order is the nth component, so a
+      // name list of a different length maps every sprite after the divergence onto the wrong one.
+      expect(slots).toHaveLength(componentCountFor(category, mode, directions, sheetIndex, ANATOMY));
+      expect(new Set(slots).size).toBe(slots.length);
+      for (const slot of slots) expect(slot).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+    },
+  );
+});
+
+describe('what a name says', () => {
+  it('names a directional core by its facing, in the order the inventory lists them', () => {
+    const slots = componentSlots('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FOUR_CARDINAL', 0, []);
+
+    expect(slots).toStrictEqual([
+      'heads-south',
+      'heads-west',
+      'heads-north',
+      'heads-east',
+      'torsos-south',
+      'torsos-west',
+      'torsos-north',
+      'torsos-east',
+      'pelvises-south',
+      'pelvises-west',
+      'pelvises-north',
+      'pelvises-east',
+    ]);
+  });
+
+  it('numbers a line the sheet draws several of at one facing', () => {
+    const slots = componentSlots('CHARACTER', 'SINGLE_DIRECTION_POSE_LIBRARY', 'FOUR_CARDINAL', 0, []);
+
+    // The trunk is three components on one line, then eight arm variants — which of the eight is the
+    // hand is in the prompt's own text, deliberately not in the name.
+    expect(slots.slice(0, 5)).toStrictEqual(['trunk-1', 'trunk-2', 'trunk-3', 'left-arm-1', 'left-arm-2']);
+  });
+
+  it('appends the subject’s own anatomy last, once per facing where the sheet turns it', () => {
+    const slots = componentSlots('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FOUR_CARDINAL', 0, ANATOMY);
+
+    // Last because grid position is the only thing identifying a component: interleaving would
+    // renumber every entry the plan promised. The facing is the outer axis, the ×2 copies together.
+    expect(slots.slice(12)).toStrictEqual([
+      'demon-horn-1-south',
+      'demon-horn-2-south',
+      'demon-horn-1-west',
+      'demon-horn-2-west',
+      'demon-horn-1-north',
+      'demon-horn-2-north',
+      'demon-horn-1-east',
+      'demon-horn-2-east',
+      'tail-south',
+      'tail-west',
+      'tail-north',
+      'tail-east',
+    ]);
+  });
+
+  it('carries no anatomy on a sheet whose inventory does not', () => {
+    // The articulation sheets are runs that are not the series' trunk, so a tail beside them would
+    // hang on nothing — the same answer `anatomyFacingsFor` gives the prompt.
+    const slots = componentSlots('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FOUR_CARDINAL', 1, ANATOMY);
+
+    expect(slots.some((slot) => slot.startsWith('tail'))).toBe(false);
+  });
+
+  it('separates two components a subject named the same thing', () => {
+    const slots = componentSlots('CHARACTER', 'SINGLE_DIRECTION_POSE_LIBRARY', 'FOUR_CARDINAL', 0, [
+      { name: 'Tail', count: 1 },
+      { name: 'tail', count: 1 },
+    ]);
+
+    expect(slots.slice(-2)).toStrictEqual(['tail', 'tail-2']);
+  });
+});

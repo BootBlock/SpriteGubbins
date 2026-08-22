@@ -1,11 +1,14 @@
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
+import { KEY_OFFER_NOTICE } from '../../constants/keyOffer.ts';
 import { KEY_TOLERANCES, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
+import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { BackgroundKeying } from '../../types/quantiser.ts';
 import { toHex } from '../../utils/imageData.ts';
 import { Badge } from '../common/Badge.tsx';
 import { CheckboxField } from '../common/CheckboxField.tsx';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { ColorSwatch } from '../common/ColorSwatch.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
@@ -38,6 +41,14 @@ interface KeyingControlsProps {
    * "Nothing matched the key colour" about a pass that had not run.
    */
   readonly busy: boolean;
+  /**
+   * Whether this sheet arrived with the studio's key still on its border — see `borderKeyShare`.
+   *
+   * Measured by the tab rather than here, for the reason {@link keying} is derived there: the image
+   * belongs to the tab, and a panel that measured it would be a second reading of the same sheet.
+   * `false` whenever keying is already on, since an offer to do what is being done is noise.
+   */
+  readonly offered: boolean;
 }
 
 /**
@@ -52,7 +63,7 @@ interface KeyingControlsProps {
  * how far this particular generation drifted from the colour it was asked for. That makes it the pixel
  * grid's sibling rather than the palette limit's, and it lives beside the grid in `useQuantiseStore`.
  */
-export function KeyingControls({ keying, keyedShare, busy }: KeyingControlsProps) {
+export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingControlsProps) {
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
   const setKeyingEnabled = useQuantiseStore((state) => state.setKeyingEnabled);
@@ -91,6 +102,23 @@ export function KeyingControls({ keying, keyedShare, busy }: KeyingControlsProps
           </p>
         </div>
       </div>
+
+      {!isKeying && offered && (
+        <div className="mt-4">
+          <ControlTooltip hint="Key the background" text={QUANTISE_ACTION_TOOLTIPS.keyTheBackground}>
+            <button
+              type="button"
+              onClick={() => {
+                setKeyingEnabled(true);
+              }}
+              className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
+            >
+              Key the background
+            </button>
+          </ControlTooltip>
+          <p className="mt-3 text-xs leading-relaxed text-ink-muted">{KEY_OFFER_NOTICE}</p>
+        </div>
+      )}
 
       {isKeying && (
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">

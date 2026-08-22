@@ -30,22 +30,44 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
       heading: null,
       intro: "One direction's worth of parts, with a separate component for each state a part has:",
       entries: [
-        { text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
+        { label: 'hull-or-fuselage', text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
         // Split near from far, and each into a state pair, because this group's own intro promises
         // "a separate component for each state a part has" — and a drive with only two *sides* and
         // no second state is the one entry that would not have kept that promise, leaving the
         // assembly sentence above naming a travel the sheet never draws. The rig plan splits the
         // sides the same way, so the two modes describe one vehicle rather than two.
-        { text: 'Near-side drive unit: at rest, at mid-travel', count: 2, kind: 'mechanism' },
-        { text: 'Far-side drive unit: at rest, at mid-travel', count: 2, kind: 'mechanism' },
         {
+          label: 'near-side-drive-unit',
+          text: 'Near-side drive unit: at rest, at mid-travel',
+          count: 2,
+          kind: 'mechanism',
+        },
+        {
+          label: 'far-side-drive-unit',
+          text: 'Far-side drive unit: at rest, at mid-travel',
+          count: 2,
+          kind: 'mechanism',
+        },
+        {
+          label: 'turret',
           text: 'Turret, weapon or working mount: stowed, traversed, elevated',
           count: 3,
           kind: 'mechanism',
         },
-        { text: 'Crew hatch or canopy: closed, open', count: 2, kind: 'mechanism' },
-        { text: 'Cladding panel or fairing ×1', count: 1, kind: 'structure' },
         {
+          label: 'crew-hatch-or-canopy',
+          text: 'Crew hatch or canopy: closed, open',
+          count: 2,
+          kind: 'mechanism',
+        },
+        {
+          label: 'cladding-panel-or-fairing',
+          text: 'Cladding panel or fairing ×1',
+          count: 1,
+          kind: 'structure',
+        },
+        {
+          label: 'fittings',
           text: 'Fittings: lamp housing ×1, exhaust or vent ×1, tow or hard point ×2',
           count: 4,
           kind: 'structure',
@@ -118,16 +140,37 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
       heading: null,
       intro: "One direction's worth of rig pieces, each drawn once in rest position:",
       entries: [
-        { text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
+        { label: 'hull-or-fuselage', text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
         {
+          label: 'turret',
           text: 'Turret, weapon or working mount: base ring ×1, traversing body ×1',
           count: 2,
           kind: 'mechanism',
         },
-        { text: 'Near-side drive unit: root segment, travelling segment', count: 2, kind: 'mechanism' },
-        { text: 'Far-side drive unit: root segment, travelling segment', count: 2, kind: 'mechanism' },
-        { text: 'Crew hatch or canopy ×1, drawn closed', count: 1, kind: 'mechanism' },
-        { text: 'Fittings: cladding panel ×1, lamp housing ×1', count: 2, kind: 'structure' },
+        {
+          label: 'near-side-drive-unit',
+          text: 'Near-side drive unit: root segment, travelling segment',
+          count: 2,
+          kind: 'mechanism',
+        },
+        {
+          label: 'far-side-drive-unit',
+          text: 'Far-side drive unit: root segment, travelling segment',
+          count: 2,
+          kind: 'mechanism',
+        },
+        {
+          label: 'crew-hatch-or-canopy',
+          text: 'Crew hatch or canopy ×1, drawn closed',
+          count: 1,
+          kind: 'mechanism',
+        },
+        {
+          label: 'fittings',
+          text: 'Fittings: cladding panel ×1, lamp housing ×1',
+          count: 2,
+          kind: 'structure',
+        },
       ],
       outro: `Each moving piece carries its pivot at the joint it turns about, matched in diameter to the piece
 it turns against, exactly as any other articulated segment on a rigged sheet would. Where a drive has

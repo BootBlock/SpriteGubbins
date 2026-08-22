@@ -46,23 +46,32 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
     {
       heading: null,
       entries: [
-        { text: '1 head, 1 body, 1 hindquarters, in the primary direction', count: 3, kind: 'anatomy' },
         {
+          label: 'trunk',
+          text: '1 head, 1 body, 1 hindquarters, in the primary direction',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-forelimb',
           text: '8 left-forelimb articulation variants: upper limb ×3, lower limb ×3, foot or claw ×2',
           count: 8,
           kind: 'anatomy',
         },
         {
+          label: 'right-forelimb',
           text: '8 right-forelimb articulation variants, redrawn for the right side',
           count: 8,
           kind: 'anatomy',
         },
         {
+          label: 'left-hindlimb',
           text: '9 left-hindlimb articulation variants: upper limb ×3, lower limb ×3, foot or claw ×3',
           count: 9,
           kind: 'anatomy',
         },
         {
+          label: 'right-hindlimb',
           text: '9 right-hindlimb articulation variants, redrawn for the right side',
           count: 9,
           kind: 'anatomy',
@@ -106,29 +115,57 @@ export const CREATURE_ARTICULATION: SheetPlan = {
     {
       heading: 'Left forelimb',
       entries: [
-        { text: 'Upper limbs: neutral lowered, forward-diagonal, raised', count: 3, kind: 'anatomy' },
         {
+          label: 'left-fore-upper-limbs',
+          text: 'Upper limbs: neutral lowered, forward-diagonal, raised',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-fore-lower-limbs',
           text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
           count: 3,
           kind: 'anatomy',
         },
-        { text: 'Feet or claws: relaxed, spread/grip-ready', count: 2, kind: 'anatomy' },
+        {
+          label: 'left-fore-feet',
+          text: 'Feet or claws: relaxed, spread/grip-ready',
+          count: 2,
+          kind: 'anatomy',
+        },
       ],
     },
-    { heading: 'Right forelimb', entries: [{ text: MIRRORED_FORELIMB, count: 8, kind: 'anatomy' }] },
+    {
+      heading: 'Right forelimb',
+      entries: [{ label: 'right-forelimb', text: MIRRORED_FORELIMB, count: 8, kind: 'anatomy' }],
+    },
     {
       heading: 'Left hindlimb',
       entries: [
-        { text: 'Upper limbs: neutral vertical, forward, backward', count: 3, kind: 'anatomy' },
         {
+          label: 'left-hind-upper-limbs',
+          text: 'Upper limbs: neutral vertical, forward, backward',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-hind-lower-limbs',
           text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
           count: 3,
           kind: 'anatomy',
         },
-        { text: 'Feet or claws: flat planted, forward-step, rear-step/push-off', count: 3, kind: 'anatomy' },
+        {
+          label: 'left-hind-feet',
+          text: 'Feet or claws: flat planted, forward-step, rear-step/push-off',
+          count: 3,
+          kind: 'anatomy',
+        },
       ],
     },
-    { heading: 'Right hindlimb', entries: [{ text: MIRRORED_HINDLIMB, count: 9, kind: 'anatomy' }] },
+    {
+      heading: 'Right hindlimb',
+      entries: [{ label: 'right-hindlimb', text: MIRRORED_HINDLIMB, count: 9, kind: 'anatomy' }],
+    },
   ],
 };
 
@@ -153,11 +190,31 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
       heading: null,
       intro: "One direction's worth of rig pieces, each drawn once in rest orientation:",
       entries: [
-        { text: 'Head ×1, body ×1, hindquarters ×1', count: 3, kind: 'anatomy' },
-        { text: 'Left forelimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
-        { text: 'Right forelimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
-        { text: 'Left hindlimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
-        { text: 'Right hindlimb: upper limb, lower limb, foot or claw', count: 3, kind: 'anatomy' },
+        { label: 'trunk', text: 'Head ×1, body ×1, hindquarters ×1', count: 3, kind: 'anatomy' },
+        {
+          label: 'left-forelimb',
+          text: 'Left forelimb: upper limb, lower limb, foot or claw',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'right-forelimb',
+          text: 'Right forelimb: upper limb, lower limb, foot or claw',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'left-hindlimb',
+          text: 'Left hindlimb: upper limb, lower limb, foot or claw',
+          count: 3,
+          kind: 'anatomy',
+        },
+        {
+          label: 'right-hindlimb',
+          text: 'Right hindlimb: upper limb, lower limb, foot or claw',
+          count: 3,
+          kind: 'anatomy',
+        },
       ],
       outro: `${TRUNK_TERMINATION}
 

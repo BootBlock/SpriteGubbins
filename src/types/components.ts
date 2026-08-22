@@ -47,6 +47,20 @@ export type ComponentKind = (typeof COMPONENT_KINDS)[number];
  * that used to be done twice and disagree.
  */
 export interface ComponentEntry {
+  /**
+   * What this line's components are called outside the prompt — `heads`, `left-arm`, `wall-top`.
+   *
+   * `text` is written for the generator and reads as prose; this is written for a *file*, and the
+   * two cannot be one field. The sprite manifest names each cut-out sprite from the entry it belongs
+   * to, and an identifier derived by slugging the prose would be at the mercy of its wording:
+   * `the-same-eight-variants-as-the` is what "The same eight variants as the left arm, redrawn for
+   * the right side" comes to, and rewording the sentence would silently rename the file.
+   *
+   * Lower-case, hyphen-separated and unique within its plan — `sheetPlans.test.ts` holds all three.
+   * Where an entry is worth more than one component, `componentSlots` suffixes it with the facing or
+   * the ordinal, so this names the line rather than any one component of it.
+   */
+  readonly label: string;
   readonly text: string;
   readonly count: number;
   readonly kind: ComponentKind;

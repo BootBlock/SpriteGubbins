@@ -1,4 +1,5 @@
-import type { SheetWriteReply, SheetWriteRequest } from '../workers/sheetWriteWorker.ts';
+import type { SheetWriteJob } from '../utils/writeSheet.ts';
+import type { SheetWriteReply } from '../workers/sheetWriteWorker.ts';
 
 /**
  * The sheet writer's conversation, without the thread.
@@ -23,9 +24,9 @@ export class FakeSheetWriteWorker {
   /** Refuse the message, as a browser that will not clone a very large sheet does. */
   static refusePost = false;
   /** What to answer a request with. Left unset, the request hangs for the test to answer by hand. */
-  static respond: ((request: SheetWriteRequest) => Promise<SheetWriteReply>) | null = null;
+  static respond: ((request: SheetWriteJob) => Promise<SheetWriteReply>) | null = null;
 
-  readonly posted: SheetWriteRequest[] = [];
+  readonly posted: SheetWriteJob[] = [];
   terminated = false;
   private readonly listeners = new Map<string, ((event: unknown) => void)[]>();
 
@@ -49,7 +50,7 @@ export class FakeSheetWriteWorker {
     this.terminated = true;
   }
 
-  postMessage(request: SheetWriteRequest): void {
+  postMessage(request: SheetWriteJob): void {
     if (FakeSheetWriteWorker.refusePost) throw new Error('the sheet would not clone');
     this.posted.push(request);
     const answering = FakeSheetWriteWorker.respond?.(request);

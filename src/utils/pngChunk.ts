@@ -1,3 +1,5 @@
+import { crc32 } from './crc32.ts';
+
 /**
  * The PNG container, as bytes: the signature every file opens with, and the frame every chunk of it
  * is wrapped in.
@@ -13,47 +15,6 @@
 
 /** The eight bytes a PNG opens with — the spec's §5.2 signature, which is how a reader knows it. */
 export const PNG_SIGNATURE: Uint8Array<ArrayBuffer> = Uint8Array.from([137, 80, 78, 71, 13, 10, 26, 10]);
-
-/**
- * The CRC-32 table PNG's §5.5 check value is computed from, built once on first use.
- *
- * The polynomial is the ordinary reflected `0xEDB88320`, which is the same one `zlib` and `gzip`
- * use — PNG differs only in *what* it runs over, which is the chunk's type bytes followed by its
- * data, never its length.
- *
- * **The unsigned reads are what make this legible, not what make it correct.** JavaScript's bitwise
- * operators work on *signed* 32-bit integers, so `0xEDB88320 ^ x` comes back negative — and yet the
- * bits are right either way: `>>>` and `&` read the same two's-complement pattern, `Uint32Array`
- * coerces on store, and `DataView.setUint32` writes the same four bytes for a negative value as for
- * its unsigned twin. So the `>>> 0`s below buy no correctness at all. They are there because the
- * intermediate values are read — in a debugger, in a failing assertion, against a published table —
- * and a CRC that prints as `-873187034` is one nobody can check against anything.
- */
-let crcTable: Uint32Array | null = null;
-
-function crc32Table(): Uint32Array {
-  if (crcTable !== null) return crcTable;
-  const table = new Uint32Array(256);
-  for (let index = 0; index < 256; index += 1) {
-    let value = index;
-    for (let bit = 0; bit < 8; bit += 1) {
-      value = (value & 1) === 1 ? (0xedb88320 ^ (value >>> 1)) >>> 0 : value >>> 1;
-    }
-    table[index] = value;
-  }
-  crcTable = table;
-  return table;
-}
-
-/** The CRC-32 of a run of bytes, as PNG computes it. */
-export function crc32(bytes: Uint8Array): number {
-  const table = crc32Table();
-  let crc = 0xffffffff;
-  for (const byte of bytes) {
-    crc = ((table[(crc ^ byte) & 0xff] ?? 0) ^ (crc >>> 8)) >>> 0;
-  }
-  return (crc ^ 0xffffffff) >>> 0;
-}
 
 /**
  * One chunk, framed: a big-endian length, the four type bytes, the payload, and the CRC of the two

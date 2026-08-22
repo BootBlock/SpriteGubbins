@@ -58,6 +58,7 @@ function draw(
       onDownloadFormatChange={() => undefined}
       sourceName="armour.png"
       resultImage={resultImage}
+      duplicates={[]}
       sprites={sprites}
     />,
   );

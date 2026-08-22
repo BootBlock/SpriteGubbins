@@ -72,6 +72,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/**
+ * The three fields a manifest is built from, empty — the state of a sheet nothing has been read off
+ * and no studio configuration stands behind. Every test here is about the *file*, so this is the
+ * default and the manifest suites are where those fields carry anything.
+ */
+const NOTHING_READ = { duplicates: [], names: [], sheet: null } as const;
+
 /** Runs the download and hands back the file it produced, once the encode has settled. */
 async function download(
   name: string,
@@ -82,7 +89,7 @@ async function download(
 ): Promise<Blob> {
   const { result } = renderHook(() => useImageDownload());
   act(() => {
-    result.current.save({ sourceName: name, image, scale, format, boxes });
+    result.current.save({ sourceName: name, image, scale, format, boxes, ...NOTHING_READ });
   });
   await waitFor(() => {
     expect(saved).not.toBeNull();
@@ -165,6 +172,7 @@ describe('useImageDownload', () => {
         scale: 1,
         format: 'PNG',
         boxes: [],
+        ...NOTHING_READ,
       });
     });
 
@@ -239,11 +247,25 @@ describe('useImageDownload', () => {
     const { result } = renderHook(() => useImageDownload());
     const image = imageFrom(4, 4, () => CLEAR);
     act(() => {
-      result.current.save({ sourceName: 'armour.png', image, scale: 1, format: 'PNG', boxes: [] });
+      result.current.save({
+        sourceName: 'armour.png',
+        image,
+        scale: 1,
+        format: 'PNG',
+        boxes: [],
+        ...NOTHING_READ,
+      });
     });
     expect(result.current.saving).toBe(true);
     act(() => {
-      result.current.save({ sourceName: 'armour.png', image, scale: 2, format: 'PNG', boxes: [] });
+      result.current.save({
+        sourceName: 'armour.png',
+        image,
+        scale: 2,
+        format: 'PNG',
+        boxes: [],
+        ...NOTHING_READ,
+      });
     });
 
     await waitFor(() => {
