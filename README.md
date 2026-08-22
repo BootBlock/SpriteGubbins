@@ -10,6 +10,11 @@ directive, a Seedream planning note, or plain text for the Gemini image models, 
 It also warns when a prompt has outgrown what the chosen target is documented to read. It works
 out atlas grid layouts and VRAM budgets, and exports engine metadata for Godot, Unity and PixiJS.
 
+When the sheet comes back, the Quantise tab finishes the job the prompt cannot. No wording makes
+a model return genuine pixel art, so the app does it to the returned image instead: it keys out
+the background, snaps the artwork to a pixel grid, reduces it to a palette you can lock, and
+writes the result out as a PNG, an Aseprite document, a sprite pack or a manifest.
+
 Everything runs in the browser. There is no server, no account, and **no model API key** —
 the app produces prompt *text* for you to paste wherever you like. Prompt history, custom
 presets and your interface settings are stored locally in SQLite (WebAssembly, persisted to
@@ -23,13 +28,22 @@ where you are.
 
 ## Status
 
-**Phase 1 of 5 complete** — build system, PWA shell, design tokens and linting are in place
-and verified. The domain layer, state stores and studio UI (Phases 2–4) are next. The
-implementation blueprint is [docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-gubbins-spec.md).
+**All five phases have shipped.** The build system and PWA shell, the design tokens, the domain
+types and option pools, the prompt compiler, SQLite-on-OPFS persistence with its localStorage
+fallback, the Zustand stores and the full component tree are all in place and verified. The app
+carries the Studio, Quantise, Presets and Architecture tabs, the bundled preset library, the
+atlas calculator, the prompt history and the sheet-splitting drawer.
+
+The version is still `0.x`, which means exactly what it says: **any release may break anything**,
+including stored history, saved presets, option identifiers and the wording of a compiled prompt.
+The implementation blueprint is
+[docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-gubbins-spec.md), kept as the durable
+reference the code is held to rather than as open work.
 
 ## Getting started
 
-Requires Node 24 or newer (see [.nvmrc](.nvmrc)).
+Requires Node 24 or newer (`engines.node` in [package.json](package.json)). The version
+pinned in [.nvmrc](.nvmrc), and installed by CI, is 25.
 
 **Quick start (Windows):** double-click **`Run.bat`**, or run **`.\Run.ps1`** in PowerShell.
 Either installs dependencies on first use, starts the app, and opens a browser at
