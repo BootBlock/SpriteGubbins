@@ -49,8 +49,8 @@ export const UNSUNG_SAVIOUR_PRESETS: readonly PresetArchetype[] = [
       ...US_SHARED,
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
-      // Run once per compass direction with a shared identity lock: eight sheets of fifteen pieces
-      // is the 120-piece rig in units a model actually delivers.
+      // Run once per compass direction: eight sheets of fifteen pieces is the 120-piece rig in
+      // units a model actually delivers.
       directions: 'EIGHT_COMPASS',
       spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       jointCapStyle: 'ROUNDED',

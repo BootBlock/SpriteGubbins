@@ -21,6 +21,8 @@ export class FakeWorker {
 
   readonly calls: QuantiseCall[] = [];
   terminated = false;
+  /** Set to make the next {@link postMessage} throw, as a structured clone the browser refuses does. */
+  refuseToClone: Error | null = null;
   private readonly listeners = new Map<string, ((event: unknown) => void)[]>();
 
   constructor() {
@@ -32,6 +34,7 @@ export class FakeWorker {
   }
 
   postMessage(call: QuantiseCall): void {
+    if (this.refuseToClone !== null) throw this.refuseToClone;
     this.calls.push(call);
   }
 

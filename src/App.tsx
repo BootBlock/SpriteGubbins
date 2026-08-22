@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { Toast } from './components/common/Toast.tsx';
 import { Header } from './components/layout/Header.tsx';
 import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
+import { SkipLink } from './components/layout/SkipLink.tsx';
 import { AtlasCalculatorModal } from './components/modals/AtlasCalculatorModal.tsx';
 import { HistoryModal } from './components/modals/HistoryModal.tsx';
 import { SettingsModal } from './components/modals/SettingsModal.tsx';
@@ -11,6 +12,7 @@ import { PresetsTab } from './components/tabs/PresetsTab.tsx';
 import { QuantiseTab } from './components/tabs/QuantiseTab.tsx';
 import { SpecTab } from './components/tabs/SpecTab.tsx';
 import { StudioTab } from './components/tabs/StudioTab.tsx';
+import { APP_TAB_CHOICE_BY_ID } from './constants/ui.ts';
 import { usePresetStore } from './stores/usePresetStore.ts';
 import { useQuantisePresetStore } from './stores/useQuantisePresetStore.ts';
 import { useSessionStore } from './stores/useSessionStore.ts';
@@ -153,10 +155,37 @@ export function App() {
       )}
 
       <div className="relative flex min-h-dvh flex-col">
+        {/* First in the document, because a bypass reached after the chrome bypasses nothing. */}
+        <SkipLink />
+
         <Header />
         <PWAInstallBanner />
 
-        <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">
+        {/*
+          `tabIndex={-1}` is what makes the link above move *focus* and not merely the viewport. A
+          fragment jump scrolls to any element, but it only hands focus to one that can hold it — so
+          without this, the next Tab carries on from the link and lands back in the chrome.
+        */}
+        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">
+          {/*
+            The page's only `<h1>`, and the top of an outline every view then continues at `<h2>`.
+            It is here rather than in the four views for two reasons: it is the one place that can
+            guarantee exactly one of them exists, so a view added later cannot arrive without one;
+            and the heading has to say *where the reader is*, which is a fact the shell holds and a
+            view does not — the switcher already claims `aria-current="page"` for these, and this is
+            the heading that claim implies.
+
+            Screen-reader-only, because it is not a title the layout is missing. Three of the four
+            views already paint their own title, and the studio deliberately opens straight on its
+            two panels; a visible heading above them would be a design change smuggled in behind an
+            accessibility fix. What is repaired is the outline and the heading-navigation shortcut,
+            neither of which is painted.
+
+            The name in the header is not this heading and must not become it: `Wordmark` is a link
+            that leaves the site, so wrapping it would announce the page's title as an external
+            destination.
+          */}
+          <h1 className="sr-only">{APP_TAB_CHOICE_BY_ID[activeTab].label}</h1>
           <ActiveView />
         </main>
       </div>

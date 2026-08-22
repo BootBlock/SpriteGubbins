@@ -13,9 +13,9 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * have demonstrated the option pool and none of the machinery.
  *
  * **The eight-way sheet is a run list, not one image.** `CUTOUT_RIG_SINGLE_DIRECTION` covers the
- * primary facing alone, so `EIGHT_COMPASS` beside it means eight sheets sharing one identity lock —
- * which is what the top-down preset below is asking for, and why its component count is ten rather
- * than eighty. Asking one generation for eighty isolated pieces is the failure mode that got v1's
+ * primary facing alone, so `EIGHT_COMPASS` beside it means eight sheets rather than one — which is
+ * what the top-down preset below is asking for, and why its component count is ten rather than
+ * eighty. Asking one generation for eighty isolated pieces is the failure mode that got v1's
  * 111-component mode deleted.
  */
 export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
@@ -23,7 +23,7 @@ export const VEHICLE_CORE_PRESETS: readonly PresetArchetype[] = [
     id: 'topdown-battle-tank',
     name: 'Top-Down Battle Tank',
     description:
-      'A tank rigged and run eight ways from directly overhead, where the turret is a disc on a rectangle and the traverse is all the player reads. Eight sheets sharing one identity lock, not one image.',
+      'A tank rigged and run eight ways from directly overhead, where the turret is a disc on a rectangle and the traverse is all the player reads. Eight sheets, not one image.',
     category: 'VEHICLE',
     subject: {
       species: 'Tracked Armour / Tank',
