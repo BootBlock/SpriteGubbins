@@ -24,7 +24,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of parts, with a separate component for each state a part has:",
+      intro: 'One direction’s worth of parts, with a separate component for each state a part has:',
       entries: [
         {
           label: 'main-housing-or-body-shell',
@@ -119,7 +119,7 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of rig pieces, each drawn once in rest position:",
+      intro: 'One direction’s worth of rig pieces, each drawn once in rest position:',
       entries: [
         {
           label: 'main-housing-or-body-shell',

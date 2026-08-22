@@ -5,13 +5,17 @@ import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
-import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
 import {
+  DIRECTION_SETS,
+  DIRECTIONAL_MODES,
   HARDWARE_PROFILE_IDS,
   RENDER_STYLES,
+  RESOLUTION_PROFILES,
   RIG_MODES,
   STYLE_REFERENCE_IDS,
+  SURFACE_DETAILS,
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -1937,5 +1941,90 @@ describe('the section numbering the prompt cites itself by', () => {
       expect(prompt, category).toContain(`## ${String(exclusions)}. EXCLUSIONS`);
       expect(prompt, category).toContain(`An exclusion in section ${String(exclusions)} outranks`);
     }
+  });
+});
+
+describe('generatePrompt — the punctuation the prompt ships with', () => {
+  /**
+   * The manifest schema line, which is the one place a straight quote is correct.
+   *
+   * Section [SECTION:MANIFEST] asks a model to reproduce the JSON, and a curly quote in a key
+   * produces a document that does not parse. Matched by shape rather than by position, so that
+   * reordering the sections cannot turn the exclusion into a hole somewhere else.
+   */
+  const MANIFEST_EXAMPLE = /^\{".*"[^"]*\}$/;
+
+  it('writes every configuration’s prose with typographic marks', () => {
+    // CLAUDE.md asks the shipped copy for `’` and `“ ”`, and `constants/tooltips/tooltips.test.ts`
+    // holds the guidance to it. The prompt is the larger surface and had nothing: the template
+    // carried both spellings, and so did nine of the sheet plans, whose `intro` and `outro` prose
+    // `renderGroup` pushes into section 4 verbatim.
+    //
+    // Asserted on the *compiled* prompt rather than on each file that contributes to it, because
+    // that is the one place all of them meet — the template, the per-option prose in
+    // `constants/promptText/`, the plans in `constants/sheetPlans/` and the wrappers in
+    // `modelWrapperText/` — and a per-file check is a list somebody has to remember to extend,
+    // which is how the sheet plans went unchecked while the template was being fixed. Every axis
+    // that selects different prose is swept for the same reason.
+    const offenders = new Set<string>();
+    let sawManifestExample = false;
+    const collect = (prompt: string) => {
+      for (const raw of prompt.split('\n')) {
+        const line = raw.trim();
+        if (MANIFEST_EXAMPLE.test(line)) {
+          sawManifestExample = true;
+          continue;
+        }
+        if (/['"]/.test(line)) offenders.add(line);
+      }
+    };
+
+    // The axes are swept independently rather than as one product. Each selects its own prose —
+    // the plans read the category, mode, set and index; section 2 reads the style and detail; the
+    // wrapper reads only the target — so the cross terms add fifteen thousand prompts and no new
+    // line of text. Both emit flags stay on, because the manifest section is where the one
+    // legitimately straight-quoted line lives.
+    const EMITTING = { emitManifest: true, emitPromptFeedback: true } as const;
+
+    for (const category of SUBJECT_CATEGORIES) {
+      const subject = defaultSubjectFor(category);
+      for (const directionalMode of DIRECTIONAL_MODES) {
+        for (const directions of DIRECTION_SETS) {
+          // Eight covers the longest series any category has, and an index past the end resolves
+          // back to its first sheet rather than throwing.
+          for (let sheetIndex = 0; sheetIndex < 8; sheetIndex += 1) {
+            collect(
+              generatePrompt(
+                category,
+                subject,
+                withOutput({ ...EMITTING, directionalMode, directions, sheetIndex }),
+              ),
+            );
+          }
+        }
+      }
+      for (const renderStyle of RENDER_STYLES) {
+        for (const surfaceDetail of SURFACE_DETAILS) {
+          collect(generatePrompt(category, subject, withOutput({ renderStyle, surfaceDetail })));
+        }
+      }
+      for (const rigMode of RIG_MODES) {
+        for (const resolutionProfile of RESOLUTION_PROFILES) {
+          collect(generatePrompt(category, subject, withOutput({ rigMode, resolutionProfile })));
+        }
+      }
+    }
+    for (const targetModel of TARGET_MODEL_IDS) {
+      collect(generatePrompt('CHARACTER', SUBJECT, withOutput({ ...EMITTING, targetModel })));
+    }
+    // The presets as well: their subject values are app-authored copy that reaches section 1.
+    for (const preset of PRESETS) {
+      collect(generatePrompt(preset.category, preset.subject, withOutput(preset.output)));
+    }
+
+    // Without this the exclusion above could be silently vacuous — a manifest section the sweep
+    // never reached would make the whole assertion pass for the wrong reason.
+    expect(sawManifestExample, 'the sweep never reached the JSON manifest example').toBe(true);
+    expect([...offenders], `the prompt writes a straight quote:\n${[...offenders].join('\n')}`).toEqual([]);
   });
 });

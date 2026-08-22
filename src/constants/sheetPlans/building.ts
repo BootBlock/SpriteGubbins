@@ -67,7 +67,7 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of structural modules, each drawn once:",
+      intro: 'One direction’s worth of structural modules, each drawn once:',
       entries: [
         {
           label: 'ground-floor-wall-bay',

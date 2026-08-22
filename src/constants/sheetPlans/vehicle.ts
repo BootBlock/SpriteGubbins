@@ -28,7 +28,7 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of parts, with a separate component for each state a part has:",
+      intro: 'One direction’s worth of parts, with a separate component for each state a part has:',
       entries: [
         { label: 'hull-or-fuselage', text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
         // Split near from far, and each into a state pair, because this group's own intro promises
@@ -138,7 +138,7 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of rig pieces, each drawn once in rest position:",
+      intro: 'One direction’s worth of rig pieces, each drawn once in rest position:',
       entries: [
         { label: 'hull-or-fuselage', text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
         {

@@ -47,7 +47,7 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   groups: [
     {
       heading: 'Core sequence',
-      intro: `The effect's own body, one component per phase of its life, read left to right as time. Every
+      intro: `The effect’s own body, one component per phase of its life, read left to right as time. Every
 frame is a **complete state** of the effect and not a layer to be stacked on another: a frame that
 only makes sense composited over its neighbour is a failure of this group.`,
       entries: [
@@ -85,7 +85,7 @@ which is what the trailing smoke, debris or sparks are for.`,
         { label: 'residue-at-full-extent', text: 'Residue at full extent ×1', count: 1, kind: 'frame' },
         { label: 'clearing', text: 'Clearing: early, mid, late', count: 3, kind: 'frame' },
       ],
-      outro: `Where the subject names no secondary layer, these frames carry the core's own lingering residue
+      outro: `Where the subject names no secondary layer, these frames carry the core’s own lingering residue
 instead — the last of the glow, the settling motes — rather than being dropped: the count section 0
 contracts for is exact, and a sheet returning six fewer components than it promised fails that
 contract whatever the subject said. A looping effect has no residue to clear, so these are the frames

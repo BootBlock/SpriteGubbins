@@ -204,7 +204,7 @@ export const CHARACTER_CUTOUT_RIG: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of rig pieces, each drawn once in rest orientation:",
+      intro: 'One direction’s worth of rig pieces, each drawn once in rest orientation:',
       entries: [
         { label: 'trunk', text: 'Head ×1, torso ×1, pelvis ×1', count: 3, kind: 'anatomy' },
         { label: 'left-arm', text: 'Left arm: upper arm, lower arm, hand', count: 3, kind: 'anatomy' },

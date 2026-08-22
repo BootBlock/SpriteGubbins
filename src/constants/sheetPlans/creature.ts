@@ -188,7 +188,7 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of rig pieces, each drawn once in rest orientation:",
+      intro: 'One direction’s worth of rig pieces, each drawn once in rest orientation:',
       entries: [
         { label: 'trunk', text: 'Head ×1, body ×1, hindquarters ×1', count: 3, kind: 'anatomy' },
         {

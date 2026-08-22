@@ -849,10 +849,16 @@ below was bought with one of those.
   to something the target's **vendor documents** — a flag syntax, a negative-prompt channel, a
   documented rewrite — never to symmetry or vibes. A target being re-checked touches only its own
   file, which is what keeps the vendor citations that justify each clause readable in a diff.
-  **All of it is written with typographic punctuation** — `’` and `“ ”`, the same rule the guidance
-  copy follows — and `promptTemplate.test.ts` and `modelWrappers.test.ts` fail on a straight
-  apostrophe or double quote. The one exception is section [SECTION:MANIFEST]'s JSON example, which a
-  model is asked to reproduce: a curly quote in a key produces a document that does not parse.
+  **Every one of those four writes typographic punctuation** — `’` and `“ ”`, the same rule the
+  guidance copy follows. The one exception is the JSON manifest example, which a model is asked to
+  reproduce rather than to read: a curly quote in a key produces a document that does not parse.
+  **The check is on the compiled prompt, not on the four files**, because that is the one place all
+  of them meet — `promptCompiler.test.ts` sweeps every category, target, mode, direction set, sheet
+  index, render style, rig mode, resolution profile and surface detail, plus the presets, and fails
+  on a straight apostrophe or double quote anywhere but that example. A per-file check is a list
+  somebody has to remember to extend, which is exactly how the sheet plans went unchecked while the
+  template was being fixed. `promptTemplate.test.ts` keeps a static half beside it, because the
+  template holds conditional blocks no configuration in that sweep necessarily reaches.
 - **Derive every fact that two places state; hand-write none of them.** The component count is
   summed from the inventory's own entries; a plan's facings, its counts and section 3's yaw list
   are all built from the one facing tuple; the series list in section 6 is enumerated from the same

@@ -42,7 +42,7 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `The two materials the set joins. The variants carry the subject's scatter layer — the pebbles, tufts
+      intro: `The two materials the set joins. The variants carry the subject’s scatter layer — the pebbles, tufts
 and drift that keep a field of one material from reading as a single tile stamped in rows — so they
 differ in what is scattered across them and in nothing else:`,
       entries: [
@@ -112,7 +112,7 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
       heading: 'Elevation edge',
       intro: `A cliff is a change in height rather than in material, so a blend set has no way to express it: a
 flat field has nowhere to put an exposed face. These are the pieces that give the field an upper
-level, and they repeat along a run the way the blend set's tiles do.`,
+level, and they repeat along a run the way the blend set’s tiles do.`,
       entries: [
         {
           label: 'lip',

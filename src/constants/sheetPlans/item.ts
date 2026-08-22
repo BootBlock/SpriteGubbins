@@ -22,7 +22,7 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One direction's worth of parts, with a separate component for each state a part has:",
+      intro: 'One direction’s worth of parts, with a separate component for each state a part has:',
       entries: [
         { label: 'grip', text: 'Grip, handle or hold ×1', count: 1, kind: 'structure' },
         { label: 'main-body-or-shaft', text: 'Main body or shaft ×1', count: 1, kind: 'structure' },

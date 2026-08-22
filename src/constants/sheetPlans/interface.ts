@@ -33,7 +33,7 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: "One theme's worth of widgets, with a separate component for each state a widget has:",
+      intro: 'One theme’s worth of widgets, with a separate component for each state a widget has:',
       entries: [
         // Four states rather than the three a button obviously has: `disabled` is the one every
         // generated kit omits and every real interface needs, because it is the only state that has
