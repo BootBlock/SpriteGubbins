@@ -572,6 +572,21 @@ describe('what a wrapper says about the assembled whole', () => {
     }
   });
 
+  it('writes every wrapper’s prose with typographic punctuation', () => {
+    // The same rule `constants/promptTemplate.test.ts` holds the template to, applied where the other
+    // half of the shipped prompt prose is written. A wrapper is short enough that a straight
+    // apostrophe in it reads as a typo rather than as a house style, which is exactly how one got in.
+    //
+    // The flag and negative-prompt lines are covered too, deliberately: none of the terms this app
+    // emits carries a quote, and a target that ever needed a literal one in a flag would be stating
+    // a vendor’s syntax — a decision to record here, not to leave to whoever writes it.
+    for (const targetModel of TARGET_MODEL_IDS) {
+      const wrapper = wrapperOnly(generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel })));
+      const offenders = wrapper.split('\n').filter((line) => /['"]/.test(line));
+      expect(offenders, `${targetModel} writes a straight quote:\n${offenders.join('\n')}`).toEqual([]);
+    }
+  });
+
   it('keeps the figure vocabulary on the two categories that have a figure', () => {
     // The claim the whole record is for, stated in the words that shipped rather than read back out
     // of the record under test — which would pass whatever the record said. Both directions, because

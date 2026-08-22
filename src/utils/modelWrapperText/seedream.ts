@@ -15,7 +15,7 @@ export function wrapForSeedream(prompt: string): string {
   return `Plan the grid and the per-component cells before rendering: this is a layout brief, not a scene.
 It is longer than one image can hold every detail of. If anything must be dropped, keep the
 precedence order stated in section 0 and drop surface detail first — never the component count,
-the background, or a component's stated direction.
+the background, or a component’s stated direction.
 
 ${prompt}`;
 }

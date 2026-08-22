@@ -571,14 +571,14 @@ describe('generatePrompt — a render style that withholds the surface', () => {
   });
 
   /**
-   * Section 0's clause, quoted whole and with the template's own straight apostrophes.
+   * Section 0's clause, quoted whole and with the template's own typographic apostrophes.
    *
    * The prompt is line-wrapped, so it is compared against a prompt with its breaks flattened — a
    * rewrap would otherwise read as a deleted rule.
    */
   const OUTRANKS_THE_COLOURS =
-    "This sheet's render style is a validation pass, and what it states about the surface " +
-    "outranks the subject's colour and material attributes.";
+    'This sheet’s render style is a validation pass, and what it states about the surface ' +
+    'outranks the subject’s colour and material attributes.';
 
   /** The lines section 2 prints for a style that describes a surface rather than withholding one. */
   const SURFACE_DETAIL = '- Surface-detail intensity: ';
@@ -736,14 +736,14 @@ describe('generatePrompt — the adherence report', () => {
   it('cites section 9 rather than restating its checks', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
 
-    expect(prompt).toContain("work section 9's checks");
+    expect(prompt).toContain('work section 9’s checks');
     // Section 9's own numbered list appears exactly once. A second copy of it inside the report is
     // the diluting third statement of the same rules that `modelWrapperText/sol.ts` warns against.
     expect(prompt.match(/Component count is exactly/g)).toHaveLength(1);
   });
 
   it('never emits the report onto a prompt whose section 9 has no checks to cite', () => {
-    // The implication the report's wording depends on: it says "work section 9's checks", and
+    // The implication the report's wording depends on: it says "work section 9’s checks", and
     // section 9 is a bare `## 9. LAYOUT` heading on a target that does not deliberate. Asserted
     // across the whole target list against the *compiled prompt*, because that is where the two
     // gates actually meet — `EMIT_PROMPT_FEEDBACK` and `DELIBERATES` are computed separately in the
@@ -861,7 +861,7 @@ describe('generatePrompt — a sheet that is one of a series', () => {
     // precedence order ranks the count and inventory first, so a reader told the number is the
     // deliverable's works the ranking against the batch.
     expect(contract).toMatch(
-      /\*\*This is sheet 3 of 8 of one deliverable, and the count\s+above is this sheet's own\.\*\*/,
+      /\*\*This is sheet 3 of 8 of one deliverable, and the count\s+above is this sheet’s own\.\*\*/,
     );
     expect(contract).toContain('never add a component because the set looks incomplete');
   });
@@ -885,7 +885,7 @@ describe('generatePrompt — a sheet that is one of a series', () => {
     // the whole rig's capability delivered by a sheet holding an eighth of it.
     const prompt = generatePrompt('CHARACTER', SUBJECT, RIG);
 
-    expect(prompt).toContain("**That is the finished series' capability, and not this sheet's alone.**");
+    expect(prompt).toContain('**That is the finished series’ capability, and not this sheet’s alone.**');
     expect(prompt).toMatch(/It is reached once every\s+sheet listed below has been generated/);
   });
 
@@ -974,8 +974,8 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
 
     expect(prompt).toContain('**A mirrored copy is not a rotation.**');
-    expect(prompt).toContain("**Rotation never swaps the subject's own left and right.**");
-    expect(prompt).toContain('a "side" view that is the three-quarter view with');
+    expect(prompt).toContain('**Rotation never swaps the subject’s own left and right.**');
+    expect(prompt).toContain('a “side” view that is the three-quarter view with');
     expect(prompt).toContain('### Directional audit');
   });
 

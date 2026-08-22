@@ -12,6 +12,15 @@ import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
  * §10.1's follow-up, and the cheapest place to catch it is the naming convention the two sides share.
  */
 
+/**
+ * The JSON manifest example, which is the one line that keeps its straight quotes.
+ *
+ * Section [SECTION:MANIFEST] asks a model to reproduce the schema, and a curly quote in a JSON key
+ * produces a document that does not parse. It is excluded by shape rather than by line number so
+ * that reordering the sections cannot quietly turn the exclusion into a hole somewhere else.
+ */
+const MANIFEST_EXAMPLE = /^\{".*"[^"]*\}$/;
+
 /** Tokens the compiler computes rather than looking up. See the test that pins each one. */
 const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION', 'MIRROR_PAIRS_DESCRIPTION']);
 
@@ -109,6 +118,17 @@ describe('the template itself', () => {
     for (const name of cited) {
       expect(declared, `[SEC:${name}] names no section this template declares`).toContain(name);
     }
+  });
+
+  it('writes its prose with typographic punctuation', () => {
+    // CLAUDE.md asks the shipped copy for `’` and `“ ”`, and `constants/tooltips/tooltips.test.ts`
+    // holds the guidance to it. This is the largest block of shipped text in the bundle and nothing
+    // checked it, so it carried both spellings — 26 straight apostrophes against 8 typographic ones,
+    // and the typographic ones all in the newest passages, which is the direction this drifts.
+    const offenders = PROMPT_TEMPLATE.split('\n')
+      .filter((line) => !MANIFEST_EXAMPLE.test(line))
+      .filter((line) => /['"]/.test(line));
+    expect(offenders, `the template writes a straight quote in prose:\n${offenders.join('\n')}`).toEqual([]);
   });
 
   it('opens with the output contract rather than burying it', () => {

@@ -207,14 +207,14 @@ Satisfy this section before any aesthetic consideration.
 [IF:SERIES]
 
 **This is sheet [DEFINE:SERIES_POSITION] of [DEFINE:SERIES_TOTAL] of one deliverable, and the count
-above is this sheet's own.** The other sheets are generated separately, each from its own copy of
-this specification, and section [SEC:ASSEMBLY] says what each of them carries. Draw this sheet's inventory and
+above is this sheet’s own.** The other sheets are generated separately, each from its own copy of
+this specification, and section [SEC:ASSEMBLY] says what each of them carries. Draw this sheet’s inventory and
 nothing else: never add a component because the set looks incomplete without it, and never drop one
 because another sheet carries something like it.
 [/IF]
 [IF:RETURNS_TEXT]
 
-**The subject's category decides what kind of components this sheet may contain; the inventory in
+**The subject’s category decides what kind of components this sheet may contain; the inventory in
 section [SEC:INVENTORY] then names the exact set within that kind.** These two can never legitimately disagree. If
 the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
 building, floor tiles on a character — this specification is malformed. Say so rather than resolving
@@ -232,14 +232,14 @@ happen at all, and it is the clause a directional sheet misses most often.
 [/IF]
 
 **Where two instructions pull against each other**, satisfy them in this order: the component count
-and inventory · each component's identity and grid position · the object orientation each component
+and inventory · each component’s identity and grid position · the object orientation each component
 is asked for · the fixed camera, one scale and pivot compatibility · subject identity · the render
 style · surface aesthetics. Nothing later overrides anything earlier, so a general aesthetic
-preference never overrules a component's stated direction.
+preference never overrules a component’s stated direction.
 [IF:VALIDATION_PASS]
 
-**This sheet's render style is a validation pass, and what it states about the surface outranks the
-subject's colour and material attributes.** Section [SEC:STYLE] says what the pass withholds and what
+**This sheet’s render style is a validation pass, and what it states about the surface outranks the
+subject’s colour and material attributes.** Section [SEC:STYLE] says what the pass withholds and what
 is drawn in its place; a pass that lost to the colours named above would deliver the finished sheet
 it was run instead of. Everything else in the subject definition keeps the rank the order above
 gives it.
@@ -256,7 +256,7 @@ inventory rank first and an omitted one mis-maps every component after it.
 
 ## [SECTION:SUBJECT]. SUBJECT DEFINITION
 
-This section is the **sole authority** for the subject's design. Do not invent, infer or embellish
+This section is the **sole authority** for the subject’s design. Do not invent, infer or embellish
 any attribute not stated here.
 
 **An attribute that is absent from this list is yours to decide** — choose the plainest option
@@ -426,7 +426,7 @@ projection, scale or key-light direction — is a defect.
 
 **A direction is never produced by moving the camera.** It is produced by rotating the *component*
 about its own local vertical axis beneath that fixed camera. **Camera azimuth is fixed; object yaw
-is what varies.** Those are two different quantities: "one camera" constrains the first and says
+is what varies.** Those are two different quantities: “one camera” constrains the first and says
 nothing about the second, so it never means that every component faces the same way.
 
 ### The subject’s own left and right
@@ -456,7 +456,7 @@ Each directional set is **one** physical component, turned — not several desig
 constant across its views: overall dimensions and proportions · joint, socket and attachment
 geometry · colour blocking and material regions · plate, panel and armour arrangement · identifying
 markings · the number and placement of every distinctive feature. Only what the turn itself changes
-may change. A feature on the component's left rear stays on its left rear: it lands somewhere
+may change. A feature on the component’s left rear stays on its left rear: it lands somewhere
 else on screen after the turn, and it must never migrate, multiply, vanish or be redrawn to make two
 views look different. The variety comes from rotation, not mutation.
 
@@ -490,7 +490,7 @@ subject.
 Every directional component has a **front axis** and a **rear axis** — the ends that would lead and
 trail if it moved forward. For this subject: [DEFINE:LANDMARK_DESCRIPTION]
 
-Those landmarks turn with the component. **If a component's front axis still points roughly the same
+Those landmarks turn with the component. **If a component’s front axis still points roughly the same
 way on screen in two of its views, that pair has failed** and must be redrawn.
 
 ### Silhouette and rotation carry the direction
@@ -499,7 +499,7 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   comes from rotated geometry, never from different highlights, markings, glow or rearranged small
   details.
 [IF:PLAN_VIEW!=yes]
-- Rotation changes what is visible. A side view occludes the far side's features and foreshortens
+- Rotation changes what is visible. A side view occludes the far side’s features and foreshortens
   what is left of the front. A rear view shows the rear surfaces a front view hid and gives them the
   room the front loses there. **A rear view still presenting the surfaces the front view presented
   is a failed rotation**, not a stylistic choice.
@@ -518,11 +518,11 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
 - **This camera is directly overhead, so a turn hides nothing and reveals nothing.** Every view shows
   the same top surface, and the direction is carried by where that surface points: the component
   turns within the image plane, and its front and rear ends, its two flanks and every asymmetry it
-  carries turn with it. **A view whose top surface points the way another's does is a failed
+  carries turn with it. **A view whose top surface points the way another’s does is a failed
   rotation**, not a stylistic choice.
 - **A mirrored copy is not a rotation.** Flipping a view does point its front axis where some other
   yaw would have pointed it, which is what makes the substitution tempting — but it turns nothing.
-  The subject's own left and right come out swapped, so what it produces is a left-handed copy of a
+  The subject’s own left and right come out swapped, so what it produces is a left-handed copy of a
   view this sheet already holds rather than a view of its own.
 [IF:MIRROR_PAIRS]
 - **This sheet holds both members of an opposite-turn pair** — [DEFINE:MIRROR_PAIRS_DESCRIPTION] —
@@ -530,15 +530,15 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   nothing else in the image contradicts one. They are opposite turns of one object, so a feature the
   subject carries on one side only stays on that side of its own body in both — which puts it above
   the middle of the frame in one member and below it in the other. Flipping one to make the other
-  leaves it on the same side of that line, on the subject's wrong side.
+  leaves it on the same side of that line, on the subject’s wrong side.
 [/IF]
 [/IF]
-- **Rotation never swaps the subject's own left and right.** Every view is this same subject turned
+- **Rotation never swaps the subject’s own left and right.** Every view is this same subject turned
   through the yaw stated above, so an asymmetric feature stays on the side of the subject it belongs
   to at every one of them; a view that moved one across is a different subject, not a different
   angle.
 - **No view is obtained by flipping, reflecting, symmetry-completing or mirror-redrawing another
-  one.** What each view shows is worked out from that view's own yaw and from nothing else. This is
+  one.** What each view shows is worked out from that view’s own yaw and from nothing else. This is
   a rule about how a view is *produced*, so it holds even where the result would have looked right.
 - **A one-sided feature is never kept in shot by drawing a second copy of it on the other side.**
   Where the turn takes that feature away from the camera, occluding it is the correct answer and
@@ -546,12 +546,12 @@ way on screen in two of its views, that pair has failed** and must be redrawn.
   subject is a different subject.
 
 Each of these is the easy way out of the rules above, and each is a defect: two views of one
-component facing effectively the same way · a "side" view that is the three-quarter view with
+component facing effectively the same way · a “side” view that is the three-quarter view with
 altered details · a rear view that is the front view with its details moved · a view produced by
 mirroring another · a view produced by moving the camera · direction signalled by changing details
 while the orientation stays put.
 
-### What "primary assembly direction" means
+### What “primary assembly direction” means
 
 It is the direction for every component the inventory does **not** give a direction of its own, and
 the direction the assembled pose faces. It is not a house style for the sheet. **Wherever section [SEC:INVENTORY]
@@ -604,9 +604,9 @@ along its own long axis, and every articulation left at its neutral angle. Never
 segment — flexion comes from the rig rotating separate rigid segments.
 
 ### Pivot registration
-- Each piece's joint end carries a consistent [DEFINE:JOINT_CAP_DESCRIPTION] cap, and **the pivot
+- Each piece’s joint end carries a consistent [DEFINE:JOINT_CAP_DESCRIPTION] cap, and **the pivot
   is the centre of that cap**.
-- Matching pivots share a diameter: the cap on one segment's joint end matches the cap on the
+- Matching pivots share a diameter: the cap on one segment’s joint end matches the cap on the
   segment it meets there exactly, so the two rotate about one point.
 - Cap diameter stays consistent across the sheet for joints of the same kind.
 
@@ -653,7 +653,7 @@ pivots share a diameter and cap geometry so segments register when assembled.
 The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
 [IF:SERIES]
 
-**That is the finished series' capability, and not this sheet's alone.** It is reached once every
+**That is the finished series’ capability, and not this sheet’s alone.** It is reached once every
 sheet listed below has been generated and their components are brought together, so this sheet
 supplies its own share of it and no more. Whatever the assembled set needs that section [SEC:INVENTORY] does not
 list is drawn on one of the others.
@@ -703,7 +703,7 @@ Absent from the image entirely:
   sheet: arrows, callouts, colour swatches, grid lines, and frames or borders around the image or
   around a component.
 - [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
-- Motion blur, speed lines, glow bleeding beyond a component's silhouette, and any particle
+- Motion blur, speed lines, glow bleeding beyond a component’s silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
 [OPTIONAL:EXCLUSIONS | - Subject-specific: [DEFINE:EXCLUSIONS]]
 
@@ -773,7 +773,7 @@ each of its views and confirm:
 [/IF]
 - Pick one feature the subject carries on one side and not the other — its **chirality witness** —
   and trace that one feature through every view of its component. It is on the same physical side of
-  the subject in all of them, and where it lands in the frame follows from that side and the view's
+  the subject in all of them, and where it lands in the frame follows from that side and the view’s
   own yaw. A subject that is symmetrical throughout has no witness to trace, and this check does not
   apply to it.
 [IF:PLAN_VIEW!=yes]
@@ -791,7 +791,7 @@ each of its views and confirm:
 [/IF]
 [IF:PLAN_VIEW]
 - Neither member of a pair — [DEFINE:MIRROR_PAIRS_DESCRIPTION] — is the other reflected: a feature
-  the subject carries on one side only lands wherever that member's own yaw in section [SEC:CAMERA] puts
+  the subject carries on one side only lands wherever that member’s own yaw in section [SEC:CAMERA] puts
   that side of the body, which is **above the middle of the frame in one member and below it in the
   other**. A flipped copy leaves it on the same side of that line in both, however correctly the
   front axis ends up pointing.
@@ -811,7 +811,7 @@ that component at the object yaw section [SEC:CAMERA] gives it rather than deliv
 ## [SECTION:MANIFEST]. COMPANION MANIFEST
 
 Alongside the image, output a JSON manifest as text — grid position, part name, bone parent, and
-the pivot as a fraction of the component's cell:
+the pivot as a fraction of the component’s cell:
 
 {"grid":{"cols":0,"rows":0},"pieces":[{"index":0,"name":"","parent":null,"pivot":[0.5,0.1]}]}
 
@@ -831,10 +831,10 @@ you drew them to.
 ### The audit
 
 Section [SEC:LAYOUT] still stands: fix what you can before delivering. This report is about the sheet you did
-deliver, so work section [SEC:LAYOUT]'s checks — and its directional audit, where the sheet has one — once more
+deliver, so work section [SEC:LAYOUT]’s checks — and its directional audit, where the sheet has one — once more
 against the finished image, and state for each whether it holds. Where one does not, say what the
-image contains instead, concretely: "three of the five directional views at roughly the same yaw"
-rather than "directional coverage could be improved". A check you cannot settle by looking at the
+image contains instead, concretely: “three of the five directional views at roughly the same yaw”
+rather than “directional coverage could be improved”. A check you cannot settle by looking at the
 image is reported as unverified rather than as passed.
 
 ### The feedback block
@@ -853,9 +853,9 @@ modes. What you received is one rendering of a template shared by all of them. Y
 used to change that template, so it reaches every prompt the tool composes — and not this sheet,
 which nobody will regenerate from it. Four things follow:
 
-- **Write about the instruction, not the artwork.** "Redraw the third component's rear view" cannot
-  be acted on there. "Section [SEC:CONTRACT] fixes the component count but never says a component may not
-  arrive with a neighbouring piece still attached, so two entries merged into one satisfy it" can.
+- **Write about the instruction, not the artwork.** “Redraw the third component’s rear view” cannot
+  be acted on there. “Section [SEC:CONTRACT] fixes the component count but never says a component may not
+  arrive with a neighbouring piece still attached, so two entries merged into one satisfy it” can.
 - **Write nothing specific to this subject.** The next prompt from this tool may be a building, a
   pistol or a tileset, and a change that only makes sense for this one cannot be made.
 - **Propose wording, not architecture.** Name the section, quote the sentence that let the miss
