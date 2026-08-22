@@ -8,7 +8,7 @@ import {
 import { spriteFitFor } from './atlasFit.ts';
 import { ATLAS_CANVAS_SIZES, ATLAS_PADDING_SIZES } from '../types/atlas.ts';
 import type { AtlasConfig } from '../types/atlas.ts';
-import type { AspectRatio } from '../types/output.ts';
+import { ASPECT_RATIOS } from '../types/output.ts';
 
 /** A sheet at the practical ceiling: 43 components on a 2048 texture with a standard 4px gutter. */
 const BASE: AtlasConfig = {
@@ -18,17 +18,63 @@ const BASE: AtlasConfig = {
   widthBias: widthBiasFor('WIDE_16_9'),
 };
 
-const ASPECT_RATIOS: readonly AspectRatio[] = ['WIDE_16_9', 'TALL_9_16', 'SQUARE_1_1', 'ULTRAWIDE_21_9'];
+/**
+ * Each sheet shape with the ratio its own identifier names, narrowest first.
+ *
+ * Read back out of the name rather than out of {@link NOMINAL_SHEET_SIZE}, which is where
+ * `widthBiasFor` reads it from — a test that recomputes the implementation's own expression cannot
+ * fail, whatever the expression is, and would pass just as happily for a square root of it. The name
+ * is the one statement of a sheet's shape that is not an input to the answer.
+ */
+const BY_NAMED_ASPECT = [...ASPECT_RATIOS]
+  .map((aspectRatio) => {
+    const named = /_(\d+)_(\d+)$/u.exec(aspectRatio);
+    return { aspectRatio, namedAspect: Number(named?.[1]) / Number(named?.[2]) };
+  })
+  .sort((a, b) => a.namedAspect - b.namedAspect);
 
+/**
+ * A pinned number per aspect only ever says the bias is what somebody wrote down, which is as true
+ * of a bias that contradicts the shape it belongs to as of one that matches. These state what the
+ * bias is a function *of* instead, and every case is driven from {@link ASPECT_RATIOS}, so a shape
+ * added to the union and left out of the derivation fails here rather than waiting for someone to
+ * remember it.
+ */
 describe('widthBiasFor', () => {
-  it('biases a 16:9 sheet towards more columns and a 9:16 sheet towards fewer', () => {
-    expect(widthBiasFor('WIDE_16_9')).toBeGreaterThan(1);
-    expect(widthBiasFor('TALL_9_16')).toBeLessThan(1);
+  it('is the ratio each sheet shape’s own name states', () => {
+    for (const { aspectRatio, namedAspect } of BY_NAMED_ASPECT) {
+      // Within a fraction of a percent rather than exactly, because the extent it reads has its
+      // short edge floored — `sheetCanvas.ts` would rather promise a sheet slightly narrower than
+      // the name than one a generator cannot fill. 438 px stands for 21:9’s 438.857, which is the
+      // widest that slack gets across the four shapes, at 0.2%.
+      expect(widthBiasFor(aspectRatio) / namedAspect, `${aspectRatio}`).toBeCloseTo(1, 2);
+    }
   });
 
-  it('treats square and ultrawide alike, because the texture itself is always square', () => {
-    expect(widthBiasFor('SQUARE_1_1')).toBe(1);
-    expect(widthBiasFor('ULTRAWIDE_21_9')).toBe(1);
+  it('rises with the sheet’s own aspect ratio, across every shape offered', () => {
+    const biases = BY_NAMED_ASPECT.map(({ aspectRatio }) => widthBiasFor(aspectRatio));
+
+    expect(
+      biases,
+      `${BY_NAMED_ASPECT.map(({ aspectRatio }) => aspectRatio).join(' < ')} by named aspect`,
+    ).toEqual([...biases].sort((a, b) => a - b));
+    expect(new Set(biases).size, 'two shapes cannot share a bias').toBe(biases.length);
+  });
+
+  it('turns over at the square, which is the only shape with no bias either way', () => {
+    for (const { aspectRatio, namedAspect } of BY_NAMED_ASPECT) {
+      const bias = widthBiasFor(aspectRatio);
+      if (namedAspect > 1) expect(bias, `${aspectRatio} is wide`).toBeGreaterThan(1);
+      else if (namedAspect < 1) expect(bias, `${aspectRatio} is tall`).toBeLessThan(1);
+      else expect(bias, `${aspectRatio} is square`).toBe(1);
+    }
+  });
+
+  it('gives a shape and its transpose reciprocal biases', () => {
+    // A 16:9 sheet turned on its side is a 9:16 sheet, so whatever bias the one earns, the other
+    // earns the inverse of. Two independently chosen figures need not be inverses of each other,
+    // and a pair that is not says the widest and tallest sheets disagree about how far a bias goes.
+    expect(widthBiasFor('WIDE_16_9') * widthBiasFor('TALL_9_16')).toBeCloseTo(1, 10);
   });
 });
 
