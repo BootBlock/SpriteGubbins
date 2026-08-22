@@ -120,8 +120,8 @@ export default defineConfig({
     themeColorPlugin(),
     VitePWA({
       // `injectManifest`, not `generateSW`: the worker has to add the cross-origin isolation
-      // headers to every response, which needs custom fetch logic a generated worker cannot
-      // express. It handles precaching itself — see src/sw.ts.
+      // headers to the responses this origin serves, which needs custom fetch logic a generated
+      // worker cannot express. It handles precaching itself — see src/sw.ts.
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.ts',
