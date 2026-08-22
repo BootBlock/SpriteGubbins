@@ -25,6 +25,9 @@ type Job = { readonly kind: 'load' } | { readonly kind: 'quantise'; readonly set
 /** Said for both ways the thread can be unavailable, because they are one thing to a reader. */
 const THREAD_LOST = 'The quantiser could not start in this browser';
 
+/** Said where a reply was sent but would not deserialise, so nobody can tell what it answered. */
+const REPLY_UNREADABLE = 'The quantiser’s answer could not be read back from its thread';
+
 /** The thread, or `null` before the first sheet, after the tab is cleared, and after {@link lose}. */
 let thread: Worker | null = null;
 
@@ -75,6 +78,43 @@ function receive(event: MessageEvent<unknown>): void {
 }
 
 /**
+ * Fail everything outstanding, because a reply arrived that will not deserialise.
+ *
+ * `messageerror` carries no data, so there is no correlation id and no way to tell which question was
+ * being answered — every job in flight is therefore a job whose answer may never come, and the only
+ * honest reading is that all of them failed. Filing a reason against each is what settles the wait:
+ * `useQuantiseWork` derives `busy` from whether an answer matches the question in force, so a job
+ * merely dropped from {@link jobs} would leave the tab reporting work that nothing is doing.
+ *
+ * **The thread stays**, unlike {@link lose}. This is not a browser that cannot run the worker; it is
+ * one reply that would not come back across, and the realistic cause is room on a very large result
+ * — the same cause the worker's own `failed` replies have, which this file already treats as saying
+ * nothing about the next question. Clearing {@link jobs} is what lets that next question be asked:
+ * {@link quantiseSheet}'s guard suppresses anything it still believes is outstanding.
+ */
+function unreadable(): void {
+  const outstanding = [...jobs.values()];
+  jobs.clear();
+  for (const job of outstanding) fail(job, REPLY_UNREADABLE);
+}
+
+/**
+ * File a failure against what a job was a failure *of*, which is what settles the wait for it.
+ *
+ * The same filing the worker's own `failed` replies get, and for the same reason: `useQuantiseWork`
+ * derives `busy` from whether an answer matches the question in force, so a job that leaves
+ * {@link jobs} without one leaves the tab reporting work that nothing is doing.
+ */
+function fail(job: Job, reason: string): void {
+  const answers = useQuantiseAnswerStore.getState();
+  if (job.kind === 'quantise') {
+    answers.attempted({ kind: 'failed', settings: job.settings, reason });
+  } else {
+    answers.surveyed({ kind: 'failed', reason });
+  }
+}
+
+/**
  * Give up on the thread, and stay given up until the session ends.
  *
  * Both causes are properties of the browser rather than of the sheet — `new Worker` throws where
@@ -109,17 +149,37 @@ function connect(): Worker | null {
 
   started.addEventListener('message', receive);
   started.addEventListener('error', lose);
+  started.addEventListener('messageerror', unreadable);
   thread = started;
   return started;
 }
 
+/**
+ * Post a call, and record it only once the browser has taken it.
+ *
+ * **The order is the point.** A clone the browser will not make throws here — the realistic cause is
+ * room, since `load` carries the whole sheet and that reaches 67 megabytes — and a job recorded
+ * before the throw is one no reply will ever remove: {@link quantiseSheet}'s guard would suppress
+ * that configuration for the rest of the session, and the tab would go on reporting work nothing is
+ * doing. Recording afterwards is safe because a reply cannot arrive first; it is delivered as an
+ * event, and this function has returned before the loop can run one.
+ *
+ * The throw is caught rather than propagated because there is nowhere for it to go: `loadSheet` is
+ * called straight out of a drop handler with no error boundary above it, and `quantiseSheet` from a
+ * timer, where it would be an uncaught exception. Filing it is what a reader can act on.
+ */
 function send(request: QuantiseRequest, job: Job): void {
   const worker = connect();
   if (worker === null) return;
   const id = nextId++;
-  jobs.set(id, job);
   const call: QuantiseCall = { id, request };
-  worker.postMessage(call);
+  try {
+    worker.postMessage(call);
+  } catch (error: unknown) {
+    fail(job, error instanceof Error ? error.message : String(error));
+    return;
+  }
+  jobs.set(id, job);
 }
 
 /**

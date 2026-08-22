@@ -21,6 +21,8 @@ export class FakeWorker {
 
   readonly calls: QuantiseCall[] = [];
   terminated = false;
+  /** Set to make the next {@link postMessage} throw, as a structured clone the browser refuses does. */
+  refuseToClone: Error | null = null;
   private readonly listeners = new Map<string, ((event: unknown) => void)[]>();
 
   constructor() {
@@ -32,6 +34,7 @@ export class FakeWorker {
   }
 
   postMessage(call: QuantiseCall): void {
+    if (this.refuseToClone !== null) throw this.refuseToClone;
     this.calls.push(call);
   }
 
@@ -47,6 +50,11 @@ export class FakeWorker {
   /** The thread itself failing, which is the one thing no later sheet recovers from. */
   die(): void {
     for (const listener of this.listeners.get('error') ?? []) listener(new Event('error'));
+  }
+
+  /** A reply that arrived but would not deserialise, which carries no id and so answers nothing. */
+  garble(): void {
+    for (const listener of this.listeners.get('messageerror') ?? []) listener(new Event('messageerror'));
   }
 
   of(kind: QuantiseRequest['kind']): QuantiseCall[] {

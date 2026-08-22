@@ -157,6 +157,68 @@ describe('quantiseSession', () => {
     expect(useQuantiseAnswerStore.getState().succeeded?.settings).toEqual(settingsAt(8));
   });
 
+  it('fails what was outstanding when a reply will not deserialise', () => {
+    // `messageerror` carries no data, so there is no correlation id and no way to tell which question
+    // it was an answer to. Every job in flight is one whose answer may never come, and a job merely
+    // dropped would leave `useQuantiseWork` deriving `busy` from a question nothing is working on.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+
+    thread().garble();
+
+    const unreadable = 'The quantiser’s answer could not be read back from its thread';
+    expect(useQuantiseAnswerStore.getState().survey).toEqual({ kind: 'failed', reason: unreadable });
+    expect(useQuantiseAnswerStore.getState().attempt).toEqual({
+      kind: 'failed',
+      settings: settingsAt(8),
+      reason: unreadable,
+    });
+  });
+
+  it('keeps the thread after an unreadable reply, and asks the same question again', () => {
+    // The consequence that outlasts the stuck spinner. `quantiseSheet`'s guard refuses anything it
+    // still believes is outstanding, so a job left in the map would make that exact configuration
+    // unaskable for the rest of the session — even after the reader moves a dial away and back.
+    //
+    // Not terminal, unlike the thread dying: this is one reply that would not come back across, and
+    // the realistic cause is room on a very large result, which says nothing about the next question.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+    const first = thread();
+    first.garble();
+
+    quantiseSheet(settingsAt(8));
+
+    expect(FakeWorker.started).toHaveLength(1);
+    expect(first.terminated).toBe(false);
+    expect(first.of('quantise')).toHaveLength(2);
+    expect(useQuantiseAnswerStore.getState().fatal).toBeNull();
+  });
+
+  it('settles and forgets a call the browser would not clone', () => {
+    // The other way a job can be recorded and never answered, and the one this bridge posts the whole
+    // sheet through. A job recorded before the throw would leave the tab busy for ever and put that
+    // configuration behind `quantiseSheet`'s guard for the rest of the session.
+    loadSheet(createImage(64, 64));
+    const refusing = thread();
+    refusing.refuseToClone = new Error('The sheet could not be cloned');
+
+    quantiseSheet(settingsAt(8));
+
+    expect(useQuantiseAnswerStore.getState().attempt).toEqual({
+      kind: 'failed',
+      settings: settingsAt(8),
+      reason: 'The sheet could not be cloned',
+    });
+
+    // The refused call never reached the worker at all, so the question is asked afresh rather than
+    // suppressed by a guard that still believes it is outstanding.
+    expect(refusing.of('quantise')).toHaveLength(0);
+    refusing.refuseToClone = null;
+    quantiseSheet(settingsAt(8));
+    expect(refusing.of('quantise')).toHaveLength(1);
+  });
+
   it('reports the thread dying as the one failure nothing recovers from', () => {
     loadSheet(createImage(64, 64));
     thread().die();

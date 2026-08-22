@@ -14,6 +14,12 @@ import {
 import { isWorkerHandshake, isWorkerReply } from './workerProtocol.ts';
 import type { WorkerCall, WorkerRequest } from './workerProtocol.ts';
 
+/** Said where the thread stopped answering, which is terminal for this backend and so for the app. */
+const THREAD_DIED = 'The database thread stopped answering';
+
+/** Said where a reply was sent but would not deserialise, so nobody can tell what it answered. */
+const REPLY_UNREADABLE = 'A database reply could not be read back from its thread';
+
 /**
  * SQLite (WebAssembly) persisted to the Origin Private File System, reached through a worker.
  *
@@ -29,6 +35,13 @@ import type { WorkerCall, WorkerRequest } from './workerProtocol.ts';
  *
  * Construction is via {@link openSqliteBackend}, which resolves to `null` rather than throwing when
  * the database cannot be opened, so `database.ts` can fall back.
+ *
+ * **Every call settles, by whichever of five routes it takes**: the worker's answer, the worker's
+ * refusal, a reply that would not deserialise, the thread dying, and a call made after it died. The
+ * middle two are what the listeners below are for, and neither can be reported as a reply — one
+ * carries no correlation id and the other arrives with the thread already gone. A call left
+ * unsettled is invisible rather than loud, which is the failure {@link SqliteBackend.die} describes
+ * at length. {@link openSqliteBackend} owes the same of the handshake, and says so there.
  */
 export class SqliteBackend implements PersistenceBackend {
   readonly kind = 'sqlite-opfs' as const;
@@ -39,6 +52,9 @@ export class SqliteBackend implements PersistenceBackend {
   private readonly pending = new Map<number, { resolve(value: unknown): void; reject(error: Error): void }>();
 
   private nextId = 0;
+
+  /** Set once the thread has died. Every later call is refused rather than posted into the void. */
+  private lost = false;
 
   constructor(worker: Worker) {
     this.worker = worker;
@@ -51,9 +67,52 @@ export class SqliteBackend implements PersistenceBackend {
       if (reply.ok) waiting.resolve(reply.value);
       else waiting.reject(new Error(reply.error));
     });
+    // Fires where an exception escaped the worker's own listener, or the module stopped evaluating —
+    // an out-of-memory in the WebAssembly heap on a large `replacePresets` is the realistic one. The
+    // worker answers every call it takes, so nothing that reaches here can be reported as a reply,
+    // and the database's state after it is unknowable from this side.
+    this.worker.addEventListener('error', () => {
+      this.die();
+    });
+    // And where a reply was sent but would not deserialise on arrival. No `message` follows one of
+    // these and it carries no correlation id, so every call in flight is one whose answer may never
+    // come — but the thread is still there and still holds an open database, so it is not given up.
+    this.worker.addEventListener('messageerror', () => {
+      this.settleOutstanding(new Error(REPLY_UNREADABLE));
+    });
+  }
+
+  /**
+   * Give up on the thread: settle everything waiting, end it, and refuse everything after.
+   *
+   * The refusal is the half that is easy to leave out and the half that matters most. Every caller
+   * `await`s {@link request} — but a promise that never settles reaches neither the `catch` around
+   * that `await` nor the `finally` beside it, so `usePresetStore` holds `isExporting` true and
+   * freezes its transfer controls behind a spinner nothing stops, and `useHistoryStore.addLog`
+   * records nothing and says nothing. A rejection is what turns both back into the failures they
+   * were written to report. `useSessionStore` is unaffected either way, and deliberately: its write
+   * catches in silence and re-arms on the next change, so it neither reports this nor stops saving.
+   *
+   * There is no reconnection, deliberately: `getDatabase` memoises the promise it resolved on boot,
+   * so the app has one backend for the session and swapping it underneath the stores that already
+   * hold data from it would be a second source of truth, not a repair.
+   */
+  private die(): void {
+    if (this.lost) return;
+    this.lost = true;
+    this.worker.terminate();
+    this.settleOutstanding(new Error(THREAD_DIED));
+  }
+
+  /** Reject every call in flight. Separate from {@link die} because one cause does not end the thread. */
+  private settleOutstanding(error: Error): void {
+    const waiting = [...this.pending.values()];
+    this.pending.clear();
+    for (const call of waiting) call.reject(error);
   }
 
   private request(request: WorkerRequest): Promise<unknown> {
+    if (this.lost) return Promise.reject(new Error(THREAD_DIED));
     const id = this.nextId++;
     const call: WorkerCall = { id, request };
     return new Promise((resolve, reject) => {
@@ -164,7 +223,8 @@ export function openSqliteBackend(): Promise<SqliteBackend | null> {
   return new Promise((resolve) => {
     const settle = (backend: SqliteBackend | null) => {
       worker.removeEventListener('message', onMessage);
-      worker.removeEventListener('error', onError);
+      worker.removeEventListener('error', onFailure);
+      worker.removeEventListener('messageerror', onFailure);
       if (backend === null) worker.terminate();
       resolve(backend);
     };
@@ -174,11 +234,16 @@ export function openSqliteBackend(): Promise<SqliteBackend | null> {
       settle(event.data.ready ? new SqliteBackend(worker) : null);
     }
 
-    function onError() {
+    // Both non-replies settle to `null`, which is the answer every other failure here gets: use
+    // localStorage instead. `messageerror` matters more than its likelihood suggests — `getDatabase`
+    // memoises *this* promise, so one left unsettled hangs every store's hydration for the session,
+    // and never reaches the fallback this whole function exists to make possible.
+    function onFailure() {
       settle(null);
     }
 
     worker.addEventListener('message', onMessage);
-    worker.addEventListener('error', onError);
+    worker.addEventListener('error', onFailure);
+    worker.addEventListener('messageerror', onFailure);
   });
 }
