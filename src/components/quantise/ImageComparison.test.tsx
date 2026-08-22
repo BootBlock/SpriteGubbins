@@ -238,8 +238,8 @@ describe('ImageComparison', () => {
     // The chip used to arrive under a `shimmer-surface` sheen spanning the whole frame, which is
     // white at 8% through its middle — so both preview layouts lightened the reader's sprites for as
     // long as the worker ran, and the before-and-after this tab exists for was being read off a
-    // washed copy of one side of it. The sheen is the app's loading treatment for space that holds
-    // nothing yet, and neither of these frames is that: each is showing the previous result.
+    // washed copy of one side of it. That sheen is the treatment for space that holds nothing yet,
+    // and neither of these frames is that: each is still showing the previous result.
     show(8, 32, true);
     expect(document.querySelectorAll('.shimmer-surface')).toHaveLength(0);
 
