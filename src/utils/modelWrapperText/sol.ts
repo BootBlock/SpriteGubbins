@@ -1,4 +1,6 @@
 import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
+import { citeSection } from '../templateEngine.ts';
+import type { SectionNumbers } from '../templateEngine.ts';
 
 /**
  * ChatGPT 5.6 Sol, which is the one target here that **cannot draw**.
@@ -83,6 +85,15 @@ import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
  * worth the same protection, so the entry protects the block's values rather than describing their
  * shape.
  *
+ * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
+ * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
+ * citations out by hand — `section 0`, `section 2`, `section 3` and `section 4`. The numbers were
+ * right, and nothing held them there: a section inserted before the inventory re-points every
+ * citation in the prompt body and leaves these four behind, in the wrapper whose whole job is naming
+ * the blocks that may not be shortened. `sections` comes from `sectionNumbers`, the walk
+ * `applySectionNumbers` numbers the headings by, so the two move together — see `citeSection` for
+ * what that does and does not reach.
+ *
  * **`nativeGrid` and `palette` are passed rather than worked out here**, for the reason every other
  * wrapper's arguments are: this file holds text and knows nothing about render styles, resolution
  * profiles or palettes. Both are the compiler's own gate answers — the same two values that decide
@@ -129,7 +140,12 @@ import { NATIVE_GRID_HEADING } from '../../constants/promptTemplate.ts';
  * [GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/prompt-guidance-gpt-5p6),
  * [ChatGPT image prompting](https://learn.chatgpt.com/docs/image-generation).
  */
-export function wrapForSol(prompt: string, nativeGrid: boolean, palette: boolean): string {
+export function wrapForSol(
+  prompt: string,
+  nativeGrid: boolean,
+  palette: boolean,
+  sections: SectionNumbers,
+): string {
   // A list rather than a clause, because the entries are conditional and their combined length is
   // not knowable here: spliced into a sentence they push one line to half again the width of every
   // other line in the directive, and the line breaks in this file are the breaks the model reads.
@@ -146,7 +162,7 @@ export function wrapForSol(prompt: string, nativeGrid: boolean, palette: boolean
       ? ''
       : `
 
-Section 2 states figures as well, and they are protected in the same way. Shorten nothing in:
+Section ${citeSection(sections, 'STYLE')} states figures as well, and they are protected in the same way. Shorten nothing in:
 
 ${blocks.join('\n')}
 
@@ -156,8 +172,8 @@ the idea and drops the figure, which leaves the image nothing to be measured aga
   return `[DIRECTIVE — HAND-OFF TO THE IMAGE TOOL]
 You are not the model that draws this sheet: you will call an image tool, and a GPT Image model
 renders whatever that call carries. So the call is where a sheet loses its component count, its
-background or its per-component directions. Whatever you send must still carry section 0, the object
-yaws in section 3 and the inventory in section 4 as they are written here. If it has to be
+background or its per-component directions. Whatever you send must still carry section ${citeSection(sections, 'CONTRACT')}, the object
+yaws in section ${citeSection(sections, 'CAMERA')} and the inventory in section ${citeSection(sections, 'INVENTORY')} as they are written here. If it has to be
 shortened, shorten the prose elsewhere — never those three.${sectionTwo}
 
 ${prompt}`;
