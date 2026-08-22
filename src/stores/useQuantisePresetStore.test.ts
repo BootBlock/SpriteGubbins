@@ -45,9 +45,16 @@ const TUNED: QuantiseDials = {
   frameDriftTolerance: 0,
 };
 
+/** A pack of saved settings, as the file a reader would hand back to the app. */
+function packFile(presets: readonly unknown[]): File {
+  return new File([JSON.stringify(presets)], 'sprite-gubbins-quantiser-settings.json', {
+    type: 'application/json',
+  });
+}
+
 beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
-  useQuantisePresetStore.setState({ presets: [] });
+  useQuantisePresetStore.setState({ presets: [], isTransferring: false });
   useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
   useUIStore.getState().dismissToast();
 });
@@ -233,5 +240,111 @@ describe('fetchQuantisePresets', () => {
     await useQuantisePresetStore.getState().fetchQuantisePresets();
 
     expect(useUIStore.getState().toastMessage).toBe('Could not load your saved quantiser settings');
+  });
+});
+
+describe('exportQuantisePresetsJSON', () => {
+  it('writes the collection as it stands, so what is downloaded is what is on screen', async () => {
+    useQuantiseStore.setState({ ...TUNED });
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', 'For armour.');
+
+    const parsed: unknown = JSON.parse(useQuantisePresetStore.getState().exportQuantisePresetsJSON());
+
+    expect(Array.isArray(parsed) && parsed).toHaveLength(1);
+  });
+});
+
+describe('importQuantisePresetsJSON', () => {
+  it('replaces the stored collection with the pack contents', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Will be replaced', '');
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    const { presets, isTransferring } = useQuantisePresetStore.getState();
+    expect(presets.map((preset) => preset.name)).toEqual(['Arrived']);
+    expect(isTransferring).toBe(false);
+    await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
+  });
+
+  it('round-trips its own export, dials and all', async () => {
+    useQuantiseStore.setState({ ...TUNED });
+    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', 'Kept.');
+    const exported: unknown = JSON.parse(useQuantisePresetStore.getState().exportQuantisePresetsJSON());
+    if (!Array.isArray(exported)) throw new Error('the export should be an array.');
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile(exported));
+
+    const [reimported] = useQuantisePresetStore.getState().presets;
+    expect(reimported?.name).toBe('Mine');
+    expect(reimported?.description).toBe('Kept.');
+    expect(reimported?.dials).toEqual(TUNED);
+  });
+
+  it('leaves the dials on the tab exactly where they are', async () => {
+    // Importing changes the collection, never the tab: the sheet on screen is still being read at
+    // the positions the reader chose until they load one of the sets that arrived.
+    useQuantiseStore.setState({ ...TUNED });
+    const arriving = {
+      id: 'quantise-imported',
+      name: 'Arrived',
+      description: '',
+      dials: QUANTISE_DEFAULT_DIALS,
+    };
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    expect(useQuantiseStore.getState().colorMerge).toBe(TUNED.colorMerge);
+    expect(useQuantiseStore.getState().vote).toBe(TUNED.vote);
+  });
+
+  it('refuses an empty pack rather than deleting everything', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Keep me', '');
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([]));
+
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Keep me']);
+    expect(useUIStore.getState().toastMessage).toBe('No saved settings found in that file');
+  });
+
+  it('refuses a pack of studio archetypes rather than importing twenty defaulted dials', async () => {
+    // The two files land in the same folder and look alike. An archetype carries no `dials`, which
+    // is what the parser requires — see `parseImportedQuantisePreset`.
+    await useQuantisePresetStore.getState().saveQuantisePreset('Keep me', '');
+    const archetype = { id: 'custom-1', name: 'My Knight', description: '', category: 'CHARACTER' };
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([archetype]));
+
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Keep me']);
+    expect(useUIStore.getState().toastMessage).toBe('That file is not a Sprite Gubbins quantiser pack');
+  });
+
+  it('rejects a file that is not JSON at all, and clears the busy flag', async () => {
+    const notJson = new File(['<html>not a pack</html>'], 'page.html', { type: 'text/html' });
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(notJson);
+
+    expect(useUIStore.getState().toastMessage).toBe('That file is not a Sprite Gubbins quantiser pack');
+    expect(useQuantisePresetStore.getState().isTransferring).toBe(false);
+  });
+
+  it('drops entries it cannot vouch for and keeps the rest', async () => {
+    const pack = [{ id: 'quantise-good', name: 'Good', description: '', dials: TUNED }, { id: 42 }, null];
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile(pack));
+
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Good']);
+  });
+
+  it('reports a pack it could not store, and clears the busy flag', async () => {
+    backend = createFailingBackend();
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    expect(useQuantisePresetStore.getState().presets).toHaveLength(0);
+    expect(useUIStore.getState().toastMessage).toBe('Could not import that quantiser pack');
+    // The flag has to come back down, or both transfer controls stay disabled for the session.
+    expect(useQuantisePresetStore.getState().isTransferring).toBe(false);
   });
 });

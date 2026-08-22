@@ -8,6 +8,7 @@ import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { TextField } from '../common/TextField.tsx';
 import { QuantisePresetList } from './QuantisePresetList.tsx';
+import { QuantisePresetTransferControls } from './QuantisePresetTransferControls.tsx';
 
 /**
  * Saving the tab's dials under a name, and the collection of names already saved.
@@ -65,6 +66,17 @@ export function QuantisePresetControls() {
             {presets.length} {presets.length === 1 ? 'set' : 'sets'} saved
           </Badge>
         )}
+
+        {/*
+          In the heading row rather than beside Save, and pushed to the far end of it. Import is
+          reachable on a collection that is empty — which is the visit where somebody arriving with
+          a colleague's file most needs it — while the save row below is about the dials the tab is
+          currently at, and two more buttons on the end of two text fields and a Save would wrap on
+          the first narrow viewport.
+        */}
+        <div className="ml-auto flex flex-wrap items-center gap-2">
+          <QuantisePresetTransferControls />
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-3">

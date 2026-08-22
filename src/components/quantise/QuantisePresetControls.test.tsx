@@ -38,6 +38,13 @@ describe('QuantisePresetControls', () => {
     expect(screen.getByText(QUANTISE_PRESET_GUIDANCE.empty)).toBeInTheDocument();
   });
 
+  it('offers the transfer controls, so the collection can leave this browser', () => {
+    render(<QuantisePresetControls />);
+
+    expect(screen.getByRole('button', { name: /Export JSON/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Import JSON/ })).toBeInTheDocument();
+  });
+
   it('counts what is saved, and lists it by name', () => {
     useQuantisePresetStore.setState({ presets: [saved] });
 

@@ -46,6 +46,17 @@ describe('parsePresetPack', () => {
     expect(parsePresetPack('{"not":"an array"}')).toBeNull();
     expect(parsePresetPack(JSON.stringify(PRESETS))).toEqual([]);
   });
+
+  it('refuses an array of records that are not archetypes', () => {
+    // A pack of quantiser presets is exactly that: an array of objects with an id, a name and a
+    // description, and no `category`. Reported as "not a pack" rather than as an empty one, which
+    // would tell a reader who picked the wrong file that their own library held nothing.
+    const quantisePack = JSON.stringify([
+      { id: 'quantise-1', name: 'Flat sheets', description: '', dials: {} },
+    ]);
+
+    expect(parsePresetPack(quantisePack)).toBeNull();
+  });
 });
 
 describe('the two halves agree about the built-ins', () => {

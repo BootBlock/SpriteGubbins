@@ -7,8 +7,22 @@
  * assertion.
  */
 
+/**
+ * Whether this is a JSON **object** — the shape every parser here means by "a record".
+ *
+ * **An array is excluded, and that is the whole reason this is not a bare `typeof` test.**
+ * `typeof [] === 'object'` and an array is not null, so without the last clause every caller
+ * treats `[]` as a record with no keys — and a parser that repairs field by field then returns a
+ * complete set of defaults for it. That is how `parseImportedQuantisePreset` came to accept
+ * `{ dials: [] }` as a preset carrying twenty settings nobody chose: the check meant to refuse a
+ * foreign file passed, because the foreign value happened to be an array.
+ *
+ * Every caller wants an object and none of them wants an array — the rows, the session, the
+ * settings and the two config parsers all read named fields — so the exclusion belongs here rather
+ * than beside one call.
+ */
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function readString(row: Record<string, unknown>, key: string): string | null {

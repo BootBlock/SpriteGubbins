@@ -41,13 +41,16 @@ export interface PersistenceBackend {
    *
    * A collection of its own rather than more of {@link savePreset}'s, because the two hold
    * different things: an archetype describes a subject to *generate*, and one of these describes how
-   * to read a raster that came **back**. There is no `replace` beside them — a preset pack moves
-   * archetypes between installs, and the quantiser has no such transfer.
+   * to read a raster that came **back**. They are moved between installs by two separate packs for
+   * that same reason — see `utils/quantisePresetPack.ts`, which states why one file holding both
+   * would make every import a decision about the collection it was not for.
    */
   saveQuantisePreset(preset: QuantisePreset): Promise<void>;
   listQuantisePresets(): Promise<QuantisePreset[]>;
   /** Remove one. Deleting an id that is not there is a no-op, not an error. */
   deleteQuantisePreset(id: string): Promise<void>;
+  /** Replace the whole collection — what importing a pack of dial positions does. */
+  replaceQuantisePresets(presets: readonly QuantisePreset[]): Promise<void>;
 
   /**
    * The stored interface settings, or the defaults where nothing has been stored.

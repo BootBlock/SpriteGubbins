@@ -115,6 +115,10 @@ export class SqliteBackend implements PersistenceBackend {
     await this.request({ kind: 'deleteQuantisePreset', presetId: id });
   }
 
+  async replaceQuantisePresets(presets: readonly QuantisePreset[]): Promise<void> {
+    await this.request({ kind: 'replaceQuantisePresets', presets });
+  }
+
   async loadSettings(): Promise<AppSettings> {
     // No `requestRows` here: this reply is one row or `undefined`, and `parseSettingsRow` reads
     // both as "nothing stored", which is the defaults.

@@ -181,6 +181,15 @@ export class LocalStorageBackend implements PersistenceBackend {
   }
 
   /**
+   * In the file's own order, which is the whole of what a pack says about order — see the
+   * `replaceQuantisePresets` case in `sqliteWorker.ts`, which reaches the same answer by stamping
+   * every imported row with one instant.
+   */
+  replaceQuantisePresets(presets: readonly QuantisePreset[]): Promise<void> {
+    return this.write(STORAGE_KEYS.quantisePresets, presets.map(LocalStorageBackend.toQuantiseRow));
+  }
+
+  /**
    * The settings, stored as the object itself rather than as a row.
    *
    * The two collections above keep the SQLite table's `snake_case` shape so one parser can read

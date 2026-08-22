@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { getDatabase } from '../db/database.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import { findPresetByName } from '../utils/presetNames.ts';
+import { parseQuantisePresetPack, serialiseQuantisePresetPack } from '../utils/quantisePresetPack.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 import { useUIStore } from './useUIStore.ts';
 
@@ -26,6 +27,16 @@ import { useUIStore } from './useUIStore.ts';
  */
 export interface QuantisePresetState {
   readonly presets: readonly QuantisePreset[];
+  /**
+   * Whether a transfer is in flight, which is what both transfer controls disable on.
+   *
+   * Only the import direction can actually be in flight — `exportQuantisePresetsJSON` serialises
+   * synchronously — and the flag covers both anyway, which is what stops an export racing a
+   * half-replaced collection. The studio's library keeps the same flag under its older name
+   * `isExporting`, and the two are separate flags rather than one because the two collections are
+   * replaced independently.
+   */
+  readonly isTransferring: boolean;
 
   /** Load the stored presets. Called once on boot, beside the studio's. */
   fetchQuantisePresets(): Promise<void>;
@@ -49,10 +60,15 @@ export interface QuantisePresetState {
    */
   saveQuantisePreset(name: string, description: string): Promise<boolean>;
   deleteQuantisePreset(id: string): Promise<void>;
+  /** The whole collection as a pack file's text. */
+  exportQuantisePresetsJSON(): string;
+  /** Replace the stored collection with the pack in `file`. */
+  importQuantisePresetsJSON(file: File): Promise<void>;
 }
 
 export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => ({
   presets: [],
+  isTransferring: false,
 
   fetchQuantisePresets: async () => {
     try {
@@ -156,6 +172,37 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       useUIStore.getState().showToast('Deleted quantiser preset');
     } catch {
       useUIStore.getState().showToast('Could not delete that preset');
+    }
+  },
+
+  exportQuantisePresetsJSON: () => serialiseQuantisePresetPack(get().presets),
+
+  importQuantisePresetsJSON: async (file) => {
+    const { showToast } = useUIStore.getState();
+    set({ isTransferring: true });
+    try {
+      const imported = parseQuantisePresetPack(await file.text());
+      if (imported === null) {
+        showToast('That file is not a Sprite Gubbins quantiser pack');
+        return;
+      }
+
+      // Importing replaces the collection, so an empty pack is refused rather than obeyed: a file
+      // exported from an install that had saved nothing would otherwise delete every set of dial
+      // positions this one holds.
+      if (imported.length === 0) {
+        showToast('No saved settings found in that file');
+        return;
+      }
+
+      const database = await getDatabase();
+      await database.replaceQuantisePresets(imported);
+      set({ presets: imported });
+      showToast(`Imported ${imported.length} saved setting${imported.length === 1 ? '' : 's'}`);
+    } catch {
+      showToast('Could not import that quantiser pack');
+    } finally {
+      set({ isTransferring: false });
     }
   },
 }));

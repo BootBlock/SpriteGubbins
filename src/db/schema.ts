@@ -253,3 +253,12 @@ VALUES (?, ?, ?, ?, ?)
 `;
 
 export const DELETE_QUANTISE_PRESET_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE} WHERE id = ?`;
+
+/**
+ * Empty the collection — the first half of importing a pack of dial positions.
+ *
+ * Beside {@link DELETE_ALL_PRESETS_SQL} and for the same reason: an import *replaces* what is
+ * stored rather than merging into it, so the delete and the inserts that follow are one
+ * transaction. See the `replaceQuantisePresets` case in `sqliteWorker.ts`.
+ */
+export const DELETE_ALL_QUANTISE_PRESETS_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE}`;

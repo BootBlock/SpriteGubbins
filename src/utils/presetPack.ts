@@ -1,6 +1,7 @@
 import { PRESETS } from '../constants/presets/index.ts';
 import { parseJson } from '../db/readers.ts';
 import { parseImportedPreset } from '../db/rows.ts';
+import { firstOfEachId } from './firstOfEachId.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 
 /**
@@ -32,15 +33,26 @@ export function serialisePresetPack(customPresets: readonly PresetArchetype[]): 
  * which may be treated as "import nothing successfully": importing *replaces* the collection, so
  * obeying an empty result would silently delete every preset the user has.
  *
+ * **"Not a pack at all" includes an array of records that are not archetypes**, which is what a
+ * pack of quantiser presets is — none of them carries a `category`, so none survives
+ * {@link parseImportedPreset}. Without that test the reader who picked the wrong file would be
+ * told their library held no presets, which is a statement about their library rather than about
+ * the file. The test is on what *parsed*, deliberately, and not on what is returned: a pack of
+ * nothing but built-ins parses in full and is then filtered to nothing, and that genuinely is an
+ * empty pack.
+ *
  * Entries that cannot be vouched for are dropped rather than repaired into nonsense, which is the
- * same rule `db/rows.ts` applies to storage.
+ * same rule `db/rows.ts` applies to storage, and a repeated id keeps its first entry — see
+ * {@link firstOfEachId}.
  */
 export function parsePresetPack(text: string): PresetArchetype[] | null {
   const parsed = parseJson(text);
   if (!Array.isArray(parsed)) return null;
 
-  return parsed
+  const presets = parsed
     .map(parseImportedPreset)
-    .filter((preset): preset is PresetArchetype => preset !== null)
-    .filter((preset) => !BUILT_IN_IDS.has(preset.id));
+    .filter((preset): preset is PresetArchetype => preset !== null);
+  if (presets.length === 0 && parsed.length > 0) return null;
+
+  return firstOfEachId(presets.filter((preset) => !BUILT_IN_IDS.has(preset.id)));
 }

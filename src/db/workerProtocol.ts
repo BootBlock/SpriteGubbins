@@ -26,6 +26,7 @@ export type WorkerRequest =
   | { readonly kind: 'saveQuantisePreset'; readonly preset: QuantisePreset }
   | { readonly kind: 'listQuantisePresets' }
   | { readonly kind: 'deleteQuantisePreset'; readonly presetId: string }
+  | { readonly kind: 'replaceQuantisePresets'; readonly presets: readonly QuantisePreset[] }
   | { readonly kind: 'loadSettings' }
   | { readonly kind: 'saveSettings'; readonly settings: AppSettings }
   | { readonly kind: 'loadSession' }

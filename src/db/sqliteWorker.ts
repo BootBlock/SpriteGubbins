@@ -7,6 +7,7 @@ import {
   DATABASE_FILENAME,
   DELETE_ALL_HISTORY_SQL,
   DELETE_ALL_PRESETS_SQL,
+  DELETE_ALL_QUANTISE_PRESETS_SQL,
   DELETE_HISTORY_SQL,
   DELETE_PRESET_SQL,
   DELETE_QUANTISE_PRESET_SQL,
@@ -157,6 +158,31 @@ function handle(database: Database, request: WorkerCall['request']): unknown {
     case 'deleteQuantisePreset':
       database.exec(DELETE_QUANTISE_PRESET_SQL, { bind: [request.presetId] });
       return undefined;
+
+    case 'replaceQuantisePresets': {
+      // One transaction, as `replacePresets` above is and for the same reason: an import that
+      // failed halfway would leave part of the old collection and part of the new, with nothing to
+      // say which rows were which.
+      database.exec('BEGIN');
+      try {
+        database.exec(DELETE_ALL_QUANTISE_PRESETS_SQL);
+        // One instant for every row, so an imported collection arrives in the order the file lists
+        // it rather than in one the clock decided between inserts. `SELECT … ORDER BY updated_at
+        // DESC` then leaves that order to SQLite's own tie-breaking, which is the same answer the
+        // fallback gives: a pack is a collection, not a sequence of saves.
+        const updatedAt = Date.now();
+        for (const preset of request.presets) {
+          database.exec(INSERT_QUANTISE_PRESET_SQL, {
+            bind: [preset.id, preset.name, preset.description, JSON.stringify(preset.dials), updatedAt],
+          });
+        }
+        database.exec('COMMIT');
+      } catch (error) {
+        database.exec('ROLLBACK');
+        throw error;
+      }
+      return undefined;
+    }
 
     // The row itself, not a list: `db/rows.ts` on the other side turns it — or its absence — into a
     // settings object, which is where every other row shape is interpreted too.
