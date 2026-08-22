@@ -22,6 +22,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  */
 export const TERRAIN: CategoryDefinition = {
   label: 'Terrain / Ground Tile',
+  article: 'a',
   fields: [
     {
       key: 'species',

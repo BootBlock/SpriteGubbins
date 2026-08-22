@@ -32,7 +32,7 @@ import {
   VALIDATION_PASS_TEXT,
   validationPassFor,
 } from '../constants/promptText/index.ts';
-import { fieldLabelFor } from '../constants/categories/index.ts';
+import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
@@ -194,6 +194,10 @@ export function generatePrompt(
 
   const values: Record<string, string> = {
     CATEGORY: category,
+    // The article belongs to the category rather than to the sentence, and is written down in
+    // `CATEGORY_OPTIONS` rather than derived from the identifier's first letter — English picks it
+    // by sound. See `CategoryDefinition.article`.
+    CATEGORY_ARTICLE: CATEGORY_OPTIONS[category].article,
     COMPONENT_COUNT: String(componentCount),
     COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, output.directions, output.sheetIndex, anatomy),
     // Every one of these is now a function of the category as well as the mode. That is the whole

@@ -332,7 +332,7 @@ because another sheet carries something like it.
 
 **The subject's category decides what kind of components this sheet may contain; the inventory in
 section [SEC:INVENTORY] then names the exact set within that kind.** These two can never legitimately disagree. If
-the inventory below describes components that do not belong to a [DEFINE:CATEGORY] — anatomy on a
+the inventory below describes components that do not belong to [DEFINE:CATEGORY_ARTICLE] [DEFINE:CATEGORY] — anatomy on a
 building, floor tiles on a character — this specification is malformed. Say so rather than resolving
 it: drawing what the inventory asks for is how a sheet ends up being the wrong subject entirely.
 **That settles before the precedence order below is reached** — a category disagreement is a fault

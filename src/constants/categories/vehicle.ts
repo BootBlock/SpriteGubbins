@@ -13,6 +13,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  */
 export const VEHICLE: CategoryDefinition = {
   label: 'Vehicle / Craft',
+  article: 'a',
   fields: [
     {
       key: 'species',

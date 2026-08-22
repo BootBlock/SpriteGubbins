@@ -4,6 +4,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
 /** Humanoid characters — the default category, and the one the component-count model was built around. */
 export const CHARACTER: CategoryDefinition = {
   label: 'Humanoid Character',
+  article: 'a',
   fields: [
     {
       key: 'species',

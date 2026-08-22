@@ -10,6 +10,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  */
 export const ITEM: CategoryDefinition = {
   label: 'Loot Item / Equipment',
+  article: 'an',
   fields: [
     {
       key: 'species',
