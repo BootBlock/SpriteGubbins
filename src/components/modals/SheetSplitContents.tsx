@@ -4,13 +4,11 @@ import { useCopiedSheets } from '../../hooks/useCopiedSheets.ts';
 import { useCopyPrompt } from '../../hooks/useCopyPrompt.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { batchComponentCount } from '../../utils/componentSet.ts';
 import { sheetBatch } from '../../utils/sheetBatch.ts';
 import { sheetRuns } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
-import { Modal } from '../common/Modal.tsx';
 import { SheetSplitRun } from './SheetSplitRun.tsx';
 
 /**
@@ -33,12 +31,15 @@ import { SheetSplitRun } from './SheetSplitRun.tsx';
  * 6 of every prompt in the batch. This drawer is the batch laid out at once and the strip is the
  * batch as a position, and a user arriving here from a prompt they were reading needs to see which
  * of these rows produced it.
+ *
+ * **The contents alone — the dialog frame is `AppOverlays`'.** This file is loaded on demand,
+ * so the frame has to be somewhere that is already parsed when the reader presses the control
+ * that opens it; `LazyOverlay` there explains what goes wrong when it is not.
  */
-export function SheetSplitModal() {
+export function SheetSplitContents() {
   const category = useSubjectStore((state) => state.category);
   const subject = useSubjectStore((state) => state.subject);
   const output = useOutputStore((state) => state.output);
-  const toggleSplitModal = useUIStore((state) => state.toggleSplitModal);
   const copyPrompt = useCopyPrompt();
   const isCopied = useCopiedSheets();
 
@@ -71,12 +72,7 @@ export function SheetSplitModal() {
       : `Each sheet below states what it asks for, and is flagged where that is over the budget of ${String(output.componentBudget)}.`;
 
   return (
-    <Modal
-      title="Split into separate sheets"
-      icon="🧩"
-      onClose={toggleSplitModal}
-      panelClassName="glass-panel flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-foundry-700 shadow-2xl"
-    >
+    <>
       <div className="border-b border-foundry-700 px-6 py-4">
         <p className="text-xs leading-relaxed text-ink-muted">
           Each sheet below is one generation, and together they are the deliverable — some batches repeat one
@@ -139,6 +135,6 @@ export function SheetSplitModal() {
           {copiedCount} of {runs.length} copied
         </span>
       </div>
-    </Modal>
+    </>
   );
 }

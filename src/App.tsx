@@ -1,17 +1,11 @@
-import { useEffect } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import type { ComponentType } from 'react';
-import { Toast } from './components/common/Toast.tsx';
+import { ErrorBoundary } from './components/common/ErrorBoundary.tsx';
+import { LoadingPlaceholder } from './components/common/LoadingPlaceholder.tsx';
+import { AppOverlays } from './components/layout/AppOverlays.tsx';
 import { Header } from './components/layout/Header.tsx';
 import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
 import { SkipLink } from './components/layout/SkipLink.tsx';
-import { AtlasCalculatorModal } from './components/modals/AtlasCalculatorModal.tsx';
-import { HistoryModal } from './components/modals/HistoryModal.tsx';
-import { SettingsModal } from './components/modals/SettingsModal.tsx';
-import { SheetSplitModal } from './components/modals/SheetSplitModal.tsx';
-import { PresetsTab } from './components/tabs/PresetsTab.tsx';
-import { QuantiseTab } from './components/tabs/QuantiseTab.tsx';
-import { SpecTab } from './components/tabs/SpecTab.tsx';
-import { StudioTab } from './components/tabs/StudioTab.tsx';
 import { APP_TAB_CHOICE_BY_ID } from './constants/ui.ts';
 import { usePresetStore } from './stores/usePresetStore.ts';
 import { useQuantisePresetStore } from './stores/useQuantisePresetStore.ts';
@@ -22,17 +16,27 @@ import type { BeforeInstallPromptEvent } from './types/pwa.ts';
 import type { AppTab } from './types/ui.ts';
 
 /**
- * Which component each view is.
+ * Which component each view is, and each one in a chunk of its own.
  *
  * A record rather than a chain of conditionals, so `satisfies Record<AppTab, …>` makes the mapping
  * exhaustive: adding a view to `AppTab` without a component here is a compile error, rather than a
  * tab that navigates to nothing.
+ *
+ * `lazy` is what splits them. The shell mounts exactly one of these at a time, so a reader opening
+ * the app to compose one prompt was parsing all four before the studio painted — the quantiser's
+ * whole image pipeline included, which the studio never calls. Each `lazy` here is a dynamic import,
+ * which is the seam the bundler splits on, and the service worker precaches every chunk it emits —
+ * so the split costs a network request on a first visit and nothing at all after it.
+ *
+ * The mapping is written out rather than built from a template literal: a bundler can only follow
+ * an `import()` whose specifier it can read, and `import(`./components/tabs/${id}Tab.tsx`)` emits a
+ * chunk per matching file with no way to tell which one a tab wants.
  */
 const VIEWS = {
-  studio: StudioTab,
-  quantise: QuantiseTab,
-  presets: PresetsTab,
-  spec: SpecTab,
+  studio: lazy(() => import('./components/tabs/StudioTab.tsx').then((m) => ({ default: m.StudioTab }))),
+  quantise: lazy(() => import('./components/tabs/QuantiseTab.tsx').then((m) => ({ default: m.QuantiseTab }))),
+  presets: lazy(() => import('./components/tabs/PresetsTab.tsx').then((m) => ({ default: m.PresetsTab }))),
+  spec: lazy(() => import('./components/tabs/SpecTab.tsx').then((m) => ({ default: m.SpecTab }))),
 } satisfies Record<AppTab, ComponentType>;
 
 /**
@@ -45,10 +49,6 @@ const VIEWS = {
  */
 export function App() {
   const activeTab = useUIStore((state) => state.activeTab);
-  const isAtlasModalOpen = useUIStore((state) => state.isAtlasModalOpen);
-  const isHistoryModalOpen = useUIStore((state) => state.isHistoryModalOpen);
-  const isSplitModalOpen = useUIStore((state) => state.isSplitModalOpen);
-  const isSettingsModalOpen = useUIStore((state) => state.isSettingsModalOpen);
   const setInstallPrompt = useUIStore((state) => state.setInstallPrompt);
   const fetchCustomPresets = usePresetStore((state) => state.fetchCustomPresets);
   const accentHue = useSettingsStore((state) => state.settings.accentHue);
@@ -186,22 +186,36 @@ export function App() {
             destination.
           */}
           <h1 className="sr-only">{APP_TAB_CHOICE_BY_ID[activeTab].label}</h1>
-          <ActiveView />
+
+          {/*
+            One Suspense boundary for all four, rather than one per view: navigating is a synchronous
+            update rather than a transition, so React shows this fallback for whichever view is
+            arriving — driven in Edge, with and without a `key` on the boundary, and the placeholder
+            appears either way. The label is read from the tab being navigated *to*, which is what
+            makes the wait belong to the press.
+
+            The error boundary *is* keyed, and for the opposite reason: a caught error latches until
+            the boundary is replaced, so an unkeyed one would answer the next tab's press with the
+            failure notice for the tab before it.
+          */}
+          <ErrorBoundary key={activeTab} what={`the ${APP_TAB_CHOICE_BY_ID[activeTab].label} view`}>
+            <Suspense
+              fallback={
+                <LoadingPlaceholder
+                  label={`Loading ${APP_TAB_CHOICE_BY_ID[activeTab].label}`}
+                  className="glass-panel h-96 rounded-2xl border border-foundry-700"
+                />
+              }
+            >
+              <ActiveView />
+            </Suspense>
+          </ErrorBoundary>
         </main>
       </div>
 
-      {isAtlasModalOpen && <AtlasCalculatorModal />}
-      {isHistoryModalOpen && <HistoryModal />}
-      {isSplitModalOpen && <SheetSplitModal />}
-      {isSettingsModalOpen && <SettingsModal />}
-
-      {/*
-        Exactly one toast is ever mounted. While an overlay is open it belongs inside the dialog —
-        see `Modal` — because a modal dialog paints above the whole document and makes the rest of
-        it inert, so a toast out here would be neither visible nor announced. The store guarantees
-        the overlays are never open at once, so these cases are mutually exclusive.
-      */}
-      {!isAtlasModalOpen && !isHistoryModalOpen && !isSplitModalOpen && !isSettingsModalOpen && <Toast />}
+      {/* Whichever overlay is open — each in its own chunk — or the notification region when none
+          is. The two are one decision, which is why they are one component; `AppOverlays` says why. */}
+      <AppOverlays />
     </div>
   );
 }

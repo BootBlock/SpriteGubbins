@@ -11,7 +11,7 @@ interface AtlasMetricGridProps {
  * The six figures the atlas works out, and the guidance that makes each one mean something.
  *
  * Split from the modal rather than written inline in it: pairing six metrics with six tooltips is a
- * responsibility of its own, and it was the block that pushed `AtlasCalculatorModal` past the file
+ * responsibility of its own, and it was the block that pushed `AtlasCalculatorContents` past the file
  * length the structural laws set. The modal now chooses the inputs and composes the panels; which
  * derived figures are worth a tile, and what each one is called, is decided here.
  *
