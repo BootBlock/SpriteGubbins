@@ -1292,6 +1292,15 @@ function subtreeAt(source: string, index: string | number): string | null {
 }
 
 /**
+ * Every tone on the ink ramp, faintest last — the tones a component reaches for by default.
+ *
+ * Module-scope because the two suites below both enumerate it, for opposite reasons: one measures
+ * the ramp against the grounds it is *for*, the other bans it from the grounds it cannot sit on. A
+ * copy in each is a fourth tone added to one of them.
+ */
+const INK_RAMP = ['--color-ink', '--color-ink-muted', '--color-ink-faint'];
+
+/**
  * The ink ramp on the foundry ramp — the pairing that carries every word in the app.
  *
  * The tones are chosen against the *lightest* surface text ever sits on, and `index.css` says so at
@@ -1320,9 +1329,6 @@ function subtreeAt(source: string, index: string | number): string | null {
  * themselves.
  */
 describe('the ink ramp on the foundry ramp', () => {
-  /** Every tone a component reaches for by default, faintest last. */
-  const RAMP = ['--color-ink', '--color-ink-muted', '--color-ink-faint'];
-
   /** Every opaque surface the app paints under text, lightest last. */
   const SURFACES = [
     '--color-foundry-950',
@@ -1333,7 +1339,7 @@ describe('the ink ramp on the foundry ramp', () => {
   ];
 
   it('clears 4.5:1 at every tone on every surface', () => {
-    for (const tone of RAMP) {
+    for (const tone of INK_RAMP) {
       for (const surface of SURFACES) {
         expect([tone, surface, contrastBetween(tone, surface) >= 4.5]).toStrictEqual([tone, surface, true]);
       }
@@ -1343,14 +1349,16 @@ describe('the ink ramp on the foundry ramp', () => {
   it('stays a ramp — three tones a reader can tell apart, in order', () => {
     // The floor above is satisfiable by three tokens holding one value, which would pass every
     // assertion in this file and leave the app with a single text colour spelled three ways. Order
-    // is half of it; separation is the other half, and 1.15 is what the two closest rungs hold
-    // today (`ink-muted` and `ink-faint`, 8.75:1 and 6.25:1 on the page).
-    const onPage = RAMP.map((tone) => contrastBetween(tone, '--color-foundry-900'));
+    // is half of it; separation is the other half. The two closest rungs are `ink-muted` and
+    // `ink-faint`, which measure 8.75:1 and 6.25:1 on the page and so stand **1.40** apart; the
+    // floor sits just under that, at 1.35, which is the whole of the margin. A re-tune is free to
+    // move a rung within it and a ramp collapsing towards one tone is not.
+    const onPage = INK_RAMP.map((tone) => contrastBetween(tone, '--color-foundry-900'));
     for (let index = 1; index < onPage.length; index++) {
       const brighter = onPage[index - 1] ?? 0;
       const dimmer = onPage[index] ?? 0;
       expect(dimmer).toBeLessThan(brighter);
-      expect(brighter / dimmer).toBeGreaterThanOrEqual(1.15);
+      expect(brighter / dimmer).toBeGreaterThanOrEqual(1.35);
     }
   });
 });
@@ -1388,9 +1396,6 @@ describe('a role colour used as a ground', () => {
     ...SPECTRUM_STOPS.map((stop) => `--color-spectrum-${stop}`),
   ];
 
-  /** Every tone on the ink ramp, which is what a component reaches for by default. */
-  const RAMP = ['--color-ink', '--color-ink-muted', '--color-ink-faint'];
-
   /**
    * The same stops as class names, at **full strength**: the negative lookahead is what keeps
    * `bg-accent/15` — a tint over a panel — out of a sweep that would otherwise fail it.
@@ -1412,7 +1417,7 @@ describe('a role colour used as a ground', () => {
     // below a rule instead of a preference: if a later palette change lifted the ramp clear of these
     // stops, the ban would be the thing to revisit, and this is what would say so.
     for (const ground of GROUNDS) {
-      for (const tone of RAMP) expect(contrastBetween(tone, ground)).toBeLessThan(4.5);
+      for (const tone of INK_RAMP) expect(contrastBetween(tone, ground)).toBeLessThan(4.5);
     }
   });
 
