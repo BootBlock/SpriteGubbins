@@ -28,7 +28,7 @@ export const PRESET_ACTION_TOOLTIPS = {
     'Empties the search box and puts the whole library back, returning to the collection you last chose from the list — a search that found its match somewhere else moves the view while it is running, and this is what takes you back. Escape in the box does the same thing.',
 
   loadPreset:
-    'Replaces the entire studio configuration with this preset’s — the category, every subject field and every output setting — and takes you to the Studio, where the prompt has been recompiled from it. Anything currently in the studio that has not been saved as a preset or copied is gone, so save it first if you want it back. A preset is a starting point rather than a finished answer: change whatever it got wrong for your subject afterwards.',
+    'Replaces the entire studio configuration with this preset’s — the category, every subject field and every output setting — and takes you to the Studio, where the prompt has been recompiled from it. What was in the studio is recorded in the Subject history panel on that tab first, so one Undo brings the whole of it back. A preset is a starting point rather than a finished answer: change whatever it got wrong for your subject afterwards.',
 
   editPresetDetails:
     'Opens the name and the description of this preset for editing, in place of its title. Only those two change — the configuration behind them is untouched, and nothing in the studio moves, which makes this the way to correct a sentence without saving over the preset with whatever you currently have open. A name another of your presets already uses is refused, because saving under a name that exists overwrites it, and two presets with one name would make which of them a mystery.',

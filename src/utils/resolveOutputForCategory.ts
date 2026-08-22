@@ -11,9 +11,10 @@ import type { SubjectCategory } from '../types/subject.ts';
  * honour, resolved against what it can.
  *
  * Returns the configuration it was handed, unchanged and by identity, where the new category can
- * honour all of it. Callers rely on that — writing a structurally identical configuration back into
- * the store would replace the object and make every selector re-render for a switch that decided
- * nothing.
+ * honour all of it *and* the series is already on its first sheet — the sheet index travels with a
+ * switch whether or not anything else moved, and the reason is at the guard below. Callers rely on
+ * that identity: writing a structurally identical configuration back into the store would replace
+ * the object and make every selector re-render for a switch that decided nothing.
  *
  * A pure function rather than a step inside `useSubjectStore.setCategory`, because it is a fact
  * about the category table rather than about the store: the compiler resolves the same pairings

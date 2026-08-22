@@ -15,7 +15,7 @@ import { ControlTooltip } from './ControlTooltip.tsx';
  * stack's shape. Each caller derives them from its own store during render, which is the app's rule
  * for anything a `useState` and an effect would otherwise chase.
  */
-export interface HistoryControlsProps {
+interface HistoryControlsProps {
   /** What the stack is called, which is the panel's own heading. */
   readonly label: string;
   /** How many positions are behind the current one. Zero is the empty state. */

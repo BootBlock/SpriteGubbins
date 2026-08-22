@@ -44,7 +44,9 @@ beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
   resetSessionForTests();
   useSessionStore.setState({ isRestored: false });
-  useSubjectStore.getState().setSubject(DEFAULT_PRESET.category, DEFAULT_PRESET.subject);
+  useSubjectStore.getState().setStudio(DEFAULT_PRESET.category, DEFAULT_PRESET.subject, () => {
+    useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
+  });
   useOutputStore.getState().setOutputConfig(DEFAULT_OUTPUT_CONFIG);
 });
 
@@ -102,9 +104,10 @@ describe('useSessionStore — restoring', () => {
   });
 
   it('restores the category and subject together', async () => {
-    // Through `setSubject`, in one call: a subject only means anything against its category, so a
-    // restore that set them separately would leave a frame in which the wrong pool was in force.
-    const setSubject = vi.spyOn(useSubjectStore.getState(), 'setSubject');
+    // Through `setStudio`, in one call: a subject only means anything against its category, so a
+    // restore that set them separately would leave a frame in which the wrong pool was in force —
+    // and the output has to land inside the same call, or the undo stack records half a studio.
+    const setStudio = vi.spyOn(useSubjectStore.getState(), 'setStudio');
     await backend.saveSession({
       category: 'BUILDING',
       subject: defaultSubjectFor('BUILDING'),
@@ -115,9 +118,9 @@ describe('useSessionStore — restoring', () => {
 
     // Both arguments pinned: `expect.objectContaining({})` would match any object at all, so it
     // would pass even if the subject arrived empty — which is the failure this case is here for.
-    expect(setSubject).toHaveBeenCalledTimes(1);
-    expect(setSubject).toHaveBeenCalledWith('BUILDING', defaultSubjectFor('BUILDING'));
-    setSubject.mockRestore();
+    expect(setStudio).toHaveBeenCalledTimes(1);
+    expect(setStudio).toHaveBeenCalledWith('BUILDING', defaultSubjectFor('BUILDING'), expect.any(Function));
+    setStudio.mockRestore();
   });
 
   it('still finishes, and still arms the writes, when the read fails', async () => {
@@ -174,10 +177,7 @@ describe('useSessionStore — saving', () => {
 
     // Five edits inside the debounce window — a typed word, in effect.
     for (const species of ['A', 'Ax', 'Axe', 'Axe ', 'Axe H']) {
-      useSubjectStore.getState().setSubject('ITEM', {
-        ...defaultSubjectFor('ITEM'),
-        species,
-      });
+      useSubjectStore.getState().setStudio('ITEM', { ...defaultSubjectFor('ITEM'), species }, () => {});
     }
     await flushSave();
 

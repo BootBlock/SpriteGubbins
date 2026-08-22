@@ -12,7 +12,7 @@ export const HISTORY_ACTION_TOOLTIPS = {
     'Puts this recorded prompt back on the clipboard exactly as it was copied, without touching the studio. Use it to run the same sheet again through a generator; use Restore instead when you want to change something first.',
 
   restoreEntry:
-    'Puts the studio state this prompt was compiled from back into the studio — the category, every subject field and every output setting — so you can change something and recompile rather than editing prompt text by hand. Whatever is in the studio now is replaced, so save it as a preset first if you want it back. An entry recorded before the app kept that state restores to its category’s defaults instead.',
+    'Puts the studio state this prompt was compiled from back into the studio — the category, every subject field and every output setting — so you can change something and recompile rather than editing prompt text by hand. Whatever is in the studio now is replaced, and recorded in the Subject history panel on that tab first, so one Undo brings it back. An entry recorded before the app kept that state restores to its category’s defaults instead.',
 
   deleteEntry:
     'Removes this one entry from the history, after asking once. The prompt itself is not lost if you have already used it — this is the app’s record of it, not the sheet — but nothing here is recoverable, and the studio state stored alongside it goes with it.',

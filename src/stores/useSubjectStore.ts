@@ -21,9 +21,8 @@ import { useOutputStore } from './useOutputStore.ts';
  * them into a store would be the same "syncing derived state" defect the specification bans, only
  * moved out of a component where the lint rules can no longer see it.
  *
- * It does hold the studio's undo stack, because the four acts that fill it are the four methods
- * below. A stack kept anywhere else would be a stack a new call site could forget to record into,
- * and the whole point of it is that nothing discards sixteen answers without leaving a way back.
+ * It does hold the studio's undo stack, because the four acts that fill it are four of the methods
+ * below — a stack kept anywhere else is one a new call site can forget to record into.
  */
 export interface SubjectState {
   readonly category: SubjectCategory;
@@ -35,14 +34,18 @@ export interface SubjectState {
   setCategory(category: SubjectCategory): void;
   setField(key: SubjectFieldKey, value: string): void;
   /**
-   * Replace both at once — what loading a preset does.
+   * Replace the whole studio at once — what loading a preset, restoring a prompt and restoring a
+   * session all do. The three parts are not separable.
    *
-   * The two arguments are not separable: a subject only means anything against the category whose
-   * labels and pools it was written for, so setting them in two steps would leave the store briefly
-   * describing a creature with a building's answers. The output store's `setOutputConfig` is the
-   * same idea for the technical half.
+   * A subject only means anything against the category whose labels and pools it was written for, so
+   * setting those in two steps would leave the store briefly describing a creature with a building's
+   * answers. The output has to land inside the same act for a different reason: a load that happens
+   * to leave the sixteen answers alone would otherwise record nothing while replacing every output
+   * setting, which is the loss this stack exists to prevent. It arrives as a *write* rather than a
+   * value because the callers want different halves — a preset keeps the reader's companion outputs,
+   * where a history entry is the configuration that produced its prompt and takes the lot.
    */
-  setSubject(category: SubjectCategory, subject: SubjectDefinition): void;
+  setStudio(category: SubjectCategory, subject: SubjectDefinition, writeOutput: () => void): void;
   /** Reroll every field from the current category's option pool. */
   randomizeSubject(): void;
   /** Back to the current category's defaults, without changing category. */
@@ -87,9 +90,10 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     set((state) => ({ subject: { ...state.subject, [key]: value } }));
   },
 
-  setSubject: (category, subject) => {
+  setStudio: (category, subject, writeOutput) => {
     act(() => {
       set({ category, subject });
+      writeOutput();
     });
   },
 
@@ -136,8 +140,8 @@ function livePosition(): StudioPosition {
  * Perform one of the acts that replaces the whole subject, with the position before it recorded.
  *
  * A wrapper round all four rather than two lines inside each: what makes this stack trustworthy is
- * that no route into the store can discard sixteen answers without leaving a step behind, and a
- * fifth method added later is likelier to reach for a wrapper than to remember the two lines.
+ * that no route into the store discards sixteen answers without leaving a step behind, and a fifth
+ * method added later is likelier to reach for a wrapper than to remember the two lines.
  */
 function act(perform: () => void): void {
   const before = livePosition();

@@ -112,8 +112,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
   exportHistoryJSON: () => JSON.stringify(get().historyLogs, null, 2),
 
   restoreLog: (log) => {
-    useSubjectStore.getState().setSubject(log.category, log.subject);
-    useOutputStore.getState().setOutputConfig(log.output);
+    // One action, so the undo stack records the whole studio this replaces. `setOutputConfig` takes
+    // the lot, companion outputs included: this entry *is* the configuration that produced its
+    // prompt, which is the distinction `applyImageConfig` exists on the other side of.
+    useSubjectStore.getState().setStudio(log.category, log.subject, () => {
+      useOutputStore.getState().setOutputConfig(log.output);
+    });
     const ui = useUIStore.getState();
     ui.toggleHistoryModal();
     ui.setActiveTab('studio');

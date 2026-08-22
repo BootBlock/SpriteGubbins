@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { ACCENT_HUES } from '../../types/settings.ts';
 import { AUTO_TUNE_GUIDANCE } from '../autoTune.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
+import { DIAL_HISTORY_GUIDANCE } from '../dialHistory.ts';
 import { TARGET_MODELS } from '../models.ts';
 import { accentSwatchGuidance } from '../settings.ts';
+import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
 import { presetCollectionGuidance } from './presets.ts';
 
@@ -102,6 +104,15 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // state of *this sheet's* sweep, which is the `QUANTISE_SCALE_GUIDANCE` case and out of scope.
   ['AUTO_TUNE_GUIDANCE.idle', AUTO_TUNE_GUIDANCE.idle],
   ['AUTO_TUNE_GUIDANCE.waiting', AUTO_TUNE_GUIDANCE.waiting],
+  // Both entries of both undo panels, on the same footing as the two above: each says what the two
+  // buttons beside it do — what a step back restores, and what performing another act costs — which
+  // is a control's own explanation rendered under it rather than behind an ⓘ. Neither record is
+  // named `*_TOOLTIPS`, so neither is discovered, and the studio's arrived as the second instance
+  // of a shape the quantiser's had already been missing from this walk.
+  ['DIAL_HISTORY_GUIDANCE.open', DIAL_HISTORY_GUIDANCE.open],
+  ['DIAL_HISTORY_GUIDANCE.available', DIAL_HISTORY_GUIDANCE.available],
+  ['STUDIO_HISTORY_GUIDANCE.open', STUDIO_HISTORY_GUIDANCE.open],
+  ['STUDIO_HISTORY_GUIDANCE.available', STUDIO_HISTORY_GUIDANCE.available],
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */

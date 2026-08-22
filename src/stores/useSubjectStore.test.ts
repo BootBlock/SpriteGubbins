@@ -113,7 +113,7 @@ describe('useSubjectStore', () => {
 
   it('sets a category and subject together', () => {
     const creature = defaultSubjectFor('CREATURE');
-    useSubjectStore.getState().setSubject('CREATURE', creature);
+    useSubjectStore.getState().setStudio('CREATURE', creature, () => {});
 
     const { category, subject } = useSubjectStore.getState();
     expect(category).toBe('CREATURE');
@@ -434,7 +434,7 @@ describe('useSubjectStore', () => {
 
     it('puts the subject back after a preset load', () => {
       useSubjectStore.getState().setField('role', 'Bartender');
-      useSubjectStore.getState().setSubject('CREATURE', defaultSubjectFor('CREATURE'));
+      useSubjectStore.getState().setStudio('CREATURE', defaultSubjectFor('CREATURE'), () => {});
 
       useSubjectStore.getState().undoStudio();
 

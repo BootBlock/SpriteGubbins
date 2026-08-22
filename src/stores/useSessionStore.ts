@@ -16,7 +16,7 @@ import { useSubjectStore } from './useSubjectStore.ts';
  * **The second store that reaches into others**, and for the same reason `usePresetStore` does: a
  * session *is* the subject, its category and the output configuration together, so restoring one is
  * writing all three. It goes through each store's own actions rather than their internals, so their
- * invariants hold — the category and subject arrive in a single `setSubject` call, because a subject
+ * invariants hold — the category, subject and output arrive in a single `setStudio` call, because a subject
  * only means anything against the category it was written for.
  *
  * Restoring raises no toast. It is not a preset load and not a merge: it is the studio being put
@@ -152,13 +152,13 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         // A first visit has no row, and the studio's own boot state is already the right answer for
         // it — the default preset, which is what it opens on.
         if (stored !== null) {
-          useSubjectStore.getState().setSubject(stored.category, stored.subject);
-          useOutputStore.getState().setOutputConfig(stored.output);
+          useSubjectStore.getState().setStudio(stored.category, stored.subject, () => {
+            useOutputStore.getState().setOutputConfig(stored.output);
+          });
           // The restored studio is the position this visit *starts* from, so the stack opens there
-          // rather than recording a step into it. Without this the two writes above would leave one
-          // step behind, and the reader's first Undo would take them to a default studio they had
-          // never seen — the opposite of what the control is for. After both writes, because an
-          // opening position is the pair and not the subject half of it.
+          // rather than keeping the step the write above recorded. Without this the reader's first
+          // Undo would take them to a default studio they had never seen — the opposite of what the
+          // control is for.
           useSubjectStore.getState().openStudio();
         }
       } catch {

@@ -12,12 +12,20 @@ import { useEffect } from 'react';
  * name field and the combo boxes have a native stack of their own, and a reader pressing the
  * shortcut inside one means that one. A slider or a select is not that case — neither has any undo
  * of its own — so the test is what kind of control has focus rather than whether a control has it.
+ *
+ * **An open overlay is the second case, and it is the one a window listener creates.** `Modal` opens
+ * a native `<dialog>` with `showModal()`, which makes the whole page behind it inert — so the tab is
+ * still mounted, still holds this listener, and is the only thing back there that still answers. A
+ * reader on the settings dialog's accent select, or part-way through the split drawer, would press
+ * Ctrl+Z at that dialog and silently rewrite the studio underneath it, with nothing on screen to say
+ * so. The four overlays are all opened from the studio's own chrome, which is where the reach is.
  */
 export function useUndoShortcut(undo: () => void, redo: () => void): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
       if (isTextEntry(event.target)) return;
+      if (document.querySelector('dialog[open]') !== null) return;
 
       const key = event.key.toLowerCase();
       if (key === 'z') {

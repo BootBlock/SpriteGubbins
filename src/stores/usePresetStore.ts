@@ -85,8 +85,12 @@ export const usePresetStore = create<PresetState>((set, get) => ({
   },
 
   loadPreset: (preset) => {
-    useSubjectStore.getState().setSubject(preset.category, preset.subject);
-    useOutputStore.getState().applyImageConfig(preset.output);
+    // Both stores written inside one action, so the undo stack records the studio this leaves
+    // behind rather than half of it. `applyImageConfig` rather than `setOutputConfig`: a preset
+    // describes an archetype and has no business deciding whether this reader wants a JSON manifest.
+    useSubjectStore.getState().setStudio(preset.category, preset.subject, () => {
+      useOutputStore.getState().applyImageConfig(preset.output);
+    });
     const ui = useUIStore.getState();
     ui.setActiveTab('studio');
     ui.showToast(`Loaded preset: ${preset.name}`);

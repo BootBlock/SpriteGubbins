@@ -9,6 +9,7 @@ import { createFailingBackend } from '../test/backendDoubles.ts';
 import { createRefusingStorage } from '../test/storageDoubles.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { withCompanionOutputs } from '../utils/imageConfig.ts';
+import { canUndoStudio } from '../utils/studioHistory.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { usePresetStore } from './usePresetStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
@@ -79,6 +80,26 @@ describe('loadPreset', () => {
     );
     expect(useUIStore.getState().activeTab).toBe('studio');
     expect(useUIStore.getState().toastMessage).toContain(marine.name);
+  });
+
+  it('records a step even when the preset leaves the sixteen answers alone', () => {
+    // The case a subject-only comparison misses. Load a preset, hand-tune the output, then load the
+    // same preset again — which is what a reader does to put those settings back. The category and
+    // the sixteen answers are unchanged by that second load, so the act looks like a no-op until the
+    // output write is counted; without it inside the same act, the reader's tuning is replaced with
+    // nothing on the stack to return to.
+    const marine = PRESETS[1];
+    if (!marine) throw new Error('PRESETS must hold more than one archetype.');
+    usePresetStore.getState().loadPreset(marine);
+    useSubjectStore.getState().openStudio();
+    useOutputStore.getState().setOutputField('targetModel', 'MIDJOURNEY');
+
+    usePresetStore.getState().loadPreset(marine);
+
+    expect(useOutputStore.getState().output.targetModel).toBe(marine.output.targetModel);
+    expect(canUndoStudio(useSubjectStore.getState().history)).toBe(true);
+    useSubjectStore.getState().undoStudio();
+    expect(useOutputStore.getState().output.targetModel).toBe('MIDJOURNEY');
   });
 
   it('leaves the companion outputs exactly as the user set them', () => {

@@ -69,6 +69,29 @@ describe('SubjectHistoryControls', () => {
     expect(useSubjectStore.getState().category).toBe(DEFAULT_PRESET.category);
   });
 
+  it('leaves Ctrl+Z alone while an overlay is open', async () => {
+    // A modal `<dialog>` makes the page behind it inert, so this listener is the only thing back
+    // there that still answers. A reader on the settings dialog's accent select — not a text box —
+    // would otherwise rewrite the studio underneath a surface that cannot show it happening.
+    const user = userEvent.setup();
+    useSubjectStore.getState().setCategory('BUILDING');
+    render(
+      <>
+        <SubjectHistoryControls />
+        <dialog open aria-label="An overlay">
+          <select aria-label="A setting">
+            <option>One</option>
+          </select>
+        </dialog>
+      </>,
+    );
+
+    await user.click(screen.getByRole('combobox', { name: 'A setting' }));
+    await user.keyboard('{Control>}z{/Control}');
+
+    expect(useSubjectStore.getState().category).toBe('BUILDING');
+  });
+
   it('leaves Ctrl+Z alone inside a text box, which has an undo of its own', async () => {
     const user = userEvent.setup();
     useSubjectStore.getState().setCategory('BUILDING');
