@@ -584,6 +584,17 @@ describe('ImageComparison, detached', () => {
     expect(screen.getByRole('heading', { name: 'The preview is in its own window' })).toBeInTheDocument();
   });
 
+  it('gives the detached document a landmark to navigate by', () => {
+    const opened = watchOpen();
+    show(8);
+
+    press('Detach preview');
+
+    // The window holds one panel and no chrome, so without this a screen reader there has nothing
+    // to jump to at all.
+    expect(within(bodyOf(opened)).getByRole('main')).toBeInTheDocument();
+  });
+
   it('brings the panel back from the notice left in its place', () => {
     const opened = watchOpen();
     show(8);

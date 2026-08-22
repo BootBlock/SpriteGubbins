@@ -43,7 +43,11 @@ export function DetachedPreview({ target, children }: DetachedPreviewProps) {
   useAdoptedStyles(target.document);
 
   return createPortal(
-    <div
+    // A `<main>`, because this document has no other content and no chrome to navigate: without a
+    // landmark a screen reader in the detached window has nothing to jump to, and the app's rule
+    // that every screen keeps one applies to a screen it has opened itself. It carries no
+    // `id="main-content"` — that is the opener's skip-link target, and there is no skip link here.
+    <main
       data-tab={activeTab}
       data-accent={accentHue}
       data-motion={motion === 'reduced' ? 'reduced' : undefined}
@@ -53,7 +57,7 @@ export function DetachedPreview({ target, children }: DetachedPreviewProps) {
       className="min-h-dvh bg-foundry-900 p-4 text-ink [--pane-height:max(16rem,calc(100dvh-10rem))]"
     >
       {children}
-    </div>,
+    </main>,
     target.document.body,
   );
 }

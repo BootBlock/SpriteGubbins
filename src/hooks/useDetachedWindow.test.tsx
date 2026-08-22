@@ -88,6 +88,17 @@ describe('useDetachedWindow', () => {
     expect(result.current.target?.document.doctype?.name).toBe('html');
   });
 
+  it('gives the window the opener’s language, which it opens with none of', () => {
+    document.documentElement.lang = 'en-GB';
+    const { result } = renderHook(() => useDetachedWindow('Preview'));
+
+    act(() => {
+      result.current.detach(anchorOf(900, 600));
+    });
+
+    expect(result.current.target?.document.documentElement.lang).toBe('en-GB');
+  });
+
   it('says so when the browser refuses, rather than leaving a control that does nothing', () => {
     vi.spyOn(window, 'open').mockReturnValue(null);
     const { result } = renderHook(() => useDetachedWindow('Preview'));

@@ -68,6 +68,10 @@ export function useDetachedWindow(title: string): DetachedWindow {
   const opened = useRef<Window | null>(null);
 
   const adopt = useCallback((view: Window) => {
+    // A window opened from script carries no language, by either route, so a screen reader in it has
+    // nothing to choose a voice or a pronunciation from. Mirrored from the opener rather than
+    // written down a second time — `index.html` is where the app states what language it is in.
+    view.document.documentElement.lang = document.documentElement.lang;
     opened.current = view;
     setRefused(false);
     setTarget(view);
@@ -119,8 +123,8 @@ export function useDetachedWindow(title: string): DetachedWindow {
     if (target === null) return;
 
     // The reader closing the window is the same instruction as pressing Return, and it is the only
-    // one the page never hears about otherwise. `pagehide` fires for both routes and for every way
-    // out of them — the window's own close button, the picture-in-picture control, the opener going.
+    // one the page never hears about otherwise. `pagehide` is the event a document is unloaded with,
+    // whatever closed it, which is why it is the one listened for rather than a per-route signal.
     const onHide = () => {
       setTarget(null);
     };
