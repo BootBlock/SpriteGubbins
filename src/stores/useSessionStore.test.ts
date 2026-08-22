@@ -9,6 +9,7 @@ import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
 import { resetSessionForTests, useSessionStore } from './useSessionStore.ts';
 import { useOutputStore } from './useOutputStore.ts';
+import { canUndoStudio } from '../utils/studioHistory.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
 
 /**
@@ -70,6 +71,24 @@ describe('useSessionStore — restoring', () => {
     expect(useSubjectStore.getState().subject.species).toBe('Direwolf');
     expect(useOutputStore.getState().output.targetModel).toBe('MIDJOURNEY');
     expect(useSessionStore.getState().isRestored).toBe(true);
+  });
+
+  it('opens the undo stack on the restored studio rather than recording a step into it', async () => {
+    // The restored session is the position this visit starts from. The two writes that apply it
+    // would otherwise leave a step behind, and the reader's first Undo would take them to a default
+    // studio they had never seen — the opposite of what the control is for.
+    await backend.saveSession({
+      category: 'CREATURE',
+      subject: defaultSubjectFor('CREATURE'),
+      output: { ...DEFAULT_OUTPUT_CONFIG, targetModel: 'MIDJOURNEY' },
+    });
+
+    await useSessionStore.getState().restoreSession();
+
+    expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+    useSubjectStore.getState().undoStudio();
+    expect(useSubjectStore.getState().category).toBe('CREATURE');
+    expect(useOutputStore.getState().output.targetModel).toBe('MIDJOURNEY');
   });
 
   it('leaves the studio alone on a first visit', async () => {

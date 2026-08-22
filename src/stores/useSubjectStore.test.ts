@@ -6,6 +6,7 @@ import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
+import { canRedoStudio, canUndoStudio, studioUndoDepth } from '../utils/studioHistory.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
 
 /**
@@ -15,10 +16,15 @@ import { useSubjectStore } from './useSubjectStore.ts';
  */
 
 beforeEach(() => {
+  // Both stores, and then the stack opened on the pair: the undo stack spans them, so a case that
+  // began from a subject reset beside an output configuration the previous case had moved would be
+  // recording steps out of a studio that never existed.
+  useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useSubjectStore.setState({
     category: DEFAULT_PRESET.category,
     subject: DEFAULT_PRESET.subject,
   });
+  useSubjectStore.getState().openStudio();
 });
 
 afterEach(() => {
@@ -351,6 +357,133 @@ describe('useSubjectStore', () => {
       useSubjectStore.getState().setCategory('TERRAIN');
 
       expect(useOutputStore.getState().output.styleReference).toBe('DIABLO_II');
+    });
+  });
+  /**
+   * The way back, which is what makes the resets above safe to hand a reader.
+   *
+   * Switching category is one click and one arrow key from the top of the form, and it replaces all
+   * sixteen answers plus six settings in the other store. The stack's own rules are pinned in
+   * `utils/studioHistory.test.ts`; what can only be checked here is that the four acts reach it, and
+   * that stepping back writes *both* stores.
+   */
+  describe('the undo stack', () => {
+    it('opens with nothing to step back to', () => {
+      const { history } = useSubjectStore.getState();
+      expect(canUndoStudio(history)).toBe(false);
+      expect(canRedoStudio(history)).toBe(false);
+    });
+
+    it('puts the subject back after a category switch', () => {
+      useSubjectStore.getState().setField('role', 'Bartender');
+      useSubjectStore.getState().setCategory('BUILDING');
+
+      useSubjectStore.getState().undoStudio();
+
+      const { category, subject } = useSubjectStore.getState();
+      expect(category).toBe(DEFAULT_PRESET.category);
+      expect(subject.role).toBe('Bartender');
+    });
+
+    it('puts the output settings the switch moved back with it', () => {
+      // The half a subject-only stack would leave behind: switching to INTERFACE re-resolves the
+      // direction set, and an undo that restored the answers alone would leave the tab in a state
+      // it had never been in.
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, directions: 'THREE_CLASSIC' } });
+      useSubjectStore.getState().setCategory('INTERFACE');
+      expect(useOutputStore.getState().output.directions).toBe('SINGLE_FRONT');
+
+      useSubjectStore.getState().undoStudio();
+
+      expect(useOutputStore.getState().output.directions).toBe('THREE_CLASSIC');
+      expect(useSubjectStore.getState().category).toBe(DEFAULT_PRESET.category);
+    });
+
+    it('does not re-resolve the output against the category it restores', () => {
+      // Replayed rather than recomputed: putting INTERFACE's answers back through `setCategory`
+      // would resolve `THREE_CLASSIC` away again and hand back a studio nobody ever had.
+      useSubjectStore.getState().setCategory('INTERFACE');
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, directions: 'THREE_CLASSIC' } });
+      useSubjectStore.getState().setCategory('CHARACTER');
+
+      useSubjectStore.getState().undoStudio();
+
+      expect(useSubjectStore.getState().category).toBe('INTERFACE');
+      expect(useOutputStore.getState().output.directions).toBe('THREE_CLASSIC');
+    });
+
+    it('puts the subject back after a randomise', () => {
+      useSubjectStore.getState().setField('role', 'Bartender');
+      vi.spyOn(Math, 'random').mockReturnValue(0.999);
+      useSubjectStore.getState().randomizeSubject();
+      expect(useSubjectStore.getState().subject.role).not.toBe('Bartender');
+
+      useSubjectStore.getState().undoStudio();
+
+      expect(useSubjectStore.getState().subject.role).toBe('Bartender');
+    });
+
+    it('puts the subject back after a reset', () => {
+      useSubjectStore.getState().setField('role', 'Bartender');
+      useSubjectStore.getState().resetSubject();
+
+      useSubjectStore.getState().undoStudio();
+
+      expect(useSubjectStore.getState().subject.role).toBe('Bartender');
+    });
+
+    it('puts the subject back after a preset load', () => {
+      useSubjectStore.getState().setField('role', 'Bartender');
+      useSubjectStore.getState().setSubject('CREATURE', defaultSubjectFor('CREATURE'));
+
+      useSubjectStore.getState().undoStudio();
+
+      const { category, subject } = useSubjectStore.getState();
+      expect(category).toBe(DEFAULT_PRESET.category);
+      expect(subject.role).toBe('Bartender');
+    });
+
+    it('keeps the fields edited after an act, in both directions', () => {
+      // Field edits are never recorded, and must never be what an undo throws away either.
+      useSubjectStore.getState().setCategory('BUILDING');
+      useSubjectStore.getState().setField('species', 'Lighthouse');
+
+      useSubjectStore.getState().undoStudio();
+      expect(useSubjectStore.getState().category).toBe(DEFAULT_PRESET.category);
+
+      useSubjectStore.getState().redoStudio();
+      expect(useSubjectStore.getState().subject.species).toBe('Lighthouse');
+    });
+
+    it('records nothing for an act that changed nothing', () => {
+      // A second Reset from an already-reset subject, and a re-selection of the category that is
+      // already chosen — one arrow key in the select. Neither moves anything, so neither may leave
+      // an Undo press that visibly does nothing.
+      useSubjectStore.getState().resetSubject();
+      const depth = studioUndoDepth(useSubjectStore.getState().history);
+
+      useSubjectStore.getState().resetSubject();
+      useSubjectStore.getState().setCategory(DEFAULT_PRESET.category);
+
+      expect(studioUndoDepth(useSubjectStore.getState().history)).toBe(depth);
+    });
+
+    it('drops the branch ahead once another act is performed', () => {
+      useSubjectStore.getState().setCategory('BUILDING');
+      useSubjectStore.getState().undoStudio();
+      expect(canRedoStudio(useSubjectStore.getState().history)).toBe(true);
+
+      useSubjectStore.getState().setCategory('CREATURE');
+
+      expect(canRedoStudio(useSubjectStore.getState().history)).toBe(false);
+    });
+
+    it('starts the stack again where openStudio is called', () => {
+      useSubjectStore.getState().setCategory('BUILDING');
+      useSubjectStore.getState().openStudio();
+
+      expect(canUndoStudio(useSubjectStore.getState().history)).toBe(false);
+      expect(useSubjectStore.getState().category).toBe('BUILDING');
     });
   });
 });

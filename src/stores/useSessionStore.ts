@@ -154,6 +154,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         if (stored !== null) {
           useSubjectStore.getState().setSubject(stored.category, stored.subject);
           useOutputStore.getState().setOutputConfig(stored.output);
+          // The restored studio is the position this visit *starts* from, so the stack opens there
+          // rather than recording a step into it. Without this the two writes above would leave one
+          // step behind, and the reader's first Undo would take them to a default studio they had
+          // never seen — the opposite of what the control is for. After both writes, because an
+          // opening position is the pair and not the subject half of it.
+          useSubjectStore.getState().openStudio();
         }
       } catch {
         // An unreadable database costs this visit its restore and nothing else.

@@ -1,12 +1,16 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
-import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
-import { resolveProjection } from '../constants/categoryProjections.ts';
-import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import { resolveCameraElevation } from '../constants/promptText/index.ts';
-import { resolveMode, resolveRigMode } from '../constants/sheetPlans/index.ts';
+import type { StudioHistory, StudioPosition } from '../types/studioHistory.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
+import { resolveOutputForCategory } from '../utils/resolveOutputForCategory.ts';
+import {
+  currentStudioPosition,
+  openStudioHistory,
+  recordStudio,
+  redoStudio,
+  undoStudio,
+} from '../utils/studioHistory.ts';
 import { useOutputStore } from './useOutputStore.ts';
 
 /**
@@ -16,10 +20,16 @@ import { useOutputStore } from './useOutputStore.ts';
  * this state and the output configuration, so they are derived where they are displayed — mirroring
  * them into a store would be the same "syncing derived state" defect the specification bans, only
  * moved out of a component where the lint rules can no longer see it.
+ *
+ * It does hold the studio's undo stack, because the four acts that fill it are the four methods
+ * below. A stack kept anywhere else would be a stack a new call site could forget to record into,
+ * and the whole point of it is that nothing discards sixteen answers without leaving a way back.
  */
 export interface SubjectState {
   readonly category: SubjectCategory;
   readonly subject: SubjectDefinition;
+  /** Every position the studio has been in, and which of them it is at. */
+  readonly history: StudioHistory;
 
   /** Switch category. Resets the subject: the field *pools* differ, so the answers cannot carry over. */
   setCategory(category: SubjectCategory): void;
@@ -37,115 +47,114 @@ export interface SubjectState {
   randomizeSubject(): void;
   /** Back to the current category's defaults, without changing category. */
   resetSubject(): void;
+  /**
+   * Start the stack again at the position the studio is in now, recording nothing — what restoring
+   * a saved session does. That position is the one the reader is *starting* from, and recording it
+   * as a step would offer them an undo back to a default studio they never saw.
+   */
+  openStudio(): void;
+  /** Step back to the position before the last act, subject and output settings together. */
+  undoStudio(): void;
+  /** Step forward into a position stepped back from. */
+  redoStudio(): void;
 }
 
 export const useSubjectStore = create<SubjectState>((set, get) => ({
   category: DEFAULT_PRESET.category,
   subject: DEFAULT_PRESET.subject,
+  history: openStudioHistory({
+    category: DEFAULT_PRESET.category,
+    subject: DEFAULT_PRESET.subject,
+    output: useOutputStore.getState().output,
+  }),
 
   setCategory: (category) => {
-    set({ category, subject: defaultSubjectFor(category) });
-    // Carry the sheet mode across too, because it does not survive a category change unchanged: the
-    // modes are category-scoped, and a stale one is how a character came to be described by a
-    // tileset's inventory. `resolveMode` keeps the current mode wherever the new category also
-    // supports it — switching CHARACTER → CREATURE should not silently reset a cut-out rig — and
-    // falls back to that category's default only where it genuinely cannot be honoured.
-    //
-    // Reaching into the other store rather than deriving this: the compiler resolves the pairing
-    // again on every compile, so the *prompt* is safe either way, but a store left holding a mode
-    // its own category cannot produce is state that a saved preset would then persist.
-    // The sheet of the series goes back to the first whether or not the mode survives, because the
-    // series is keyed on the *pairing*: a category the mode still supports can have a shorter series,
-    // so a CHARACTER left on sheet two and switched to an OBJECT would hold an index that pairing does
-    // not have. The compiler resolves such an index rather than trusting it, so this is not what makes
-    // the prompt correct — it is what stops a saved preset persisting a sheet nobody can select, since
-    // the sheet control is hidden for a single-sheet series and could not put it back.
-    //
-    // The rig travels with it, for the same reason and against the same table: a rig is a claim
-    // about how the subject is built, so it does not survive becoming a different kind of subject.
-    // `resolveRigMode` keeps a cut-out rig across CHARACTER → CREATURE and drops it to `NONE` on the
-    // five categories that articulate about nothing — which is what stops a preset saved after such
-    // a switch persisting a rig its own category has no joints for. It reads the mode resolved on
-    // the line above rather than the stored one, because the cut-out rig *sheet* decides the rig
-    // outright: a switch that keeps that sheet keeps the rig its inventory is made of, and one that
-    // loses it hands the choice back.
-    //
-    // And the direction set, the third of these and the last one that used to survive untouched:
-    // switching to INTERFACE re-resolved the mode and left `directions` on `THREE_CLASSIC`, so the
-    // panel offered "Split into 3 sheets" and the first of those asked for a button at object yaw
-    // 45°. `resolveDirectionSet` keeps the set wherever the new subject can be turned to it — seven
-    // of the nine categories can be turned to all of them — and falls back only where it cannot.
-    //
-    // And the projection, the fourth and last of the claims a category can refuse. It is the one
-    // that failed loudest: an INTERFACE arriving from a default session kept `THREE_QUARTER_TOPDOWN`
-    // and compiled `Angled overhead … the vertical screen axis carries both height and depth` above
-    // an inventory of button states, which is a prompt contradicting itself rather than merely
-    // asking for a degenerate batch. `resolveProjection` keeps the camera wherever the new subject
-    // can be drawn under it — eight of the nine categories can be drawn under all of them — and
-    // falls back only where it cannot.
-    //
-    // The elevation follows the *resolved* projection rather than the stored one, because the two
-    // are one statement about one camera: a projection narrowed to `ORTHOGRAPHIC_FRONT` beside a
-    // stored 35° is exactly the disagreement `elevation.ts` exists to end, and re-resolving it here
-    // is what stops a preset saved from this category persisting it.
-    const store = useOutputStore.getState();
-    const { output } = store;
-    const directionalMode = resolveMode(category, output.directionalMode);
-    const rigMode = resolveRigMode(category, directionalMode, output.rigMode);
-    const directions = resolveDirectionSet(category, output.directions);
-    const projection = resolveProjection(category, output.projection);
-    const cameraElevation = resolveCameraElevation(projection, output.cameraElevation);
-    // And the art style reference, which is the projection's second door: a reference states the
-    // camera it was rendered under and carries it into section 2 as a measurement, so a look the new
-    // subject cannot be drawn to goes rather than standing over a camera that contradicts it.
-    const styleReference = resolveStyleReference(category, output.styleReference);
-    if (
-      directionalMode !== output.directionalMode ||
-      rigMode !== output.rigMode ||
-      directions !== output.directions ||
-      projection !== output.projection ||
-      cameraElevation !== output.cameraElevation ||
-      styleReference !== output.styleReference ||
-      output.sheetIndex !== 0
-    ) {
-      store.setOutputConfig({
-        ...output,
-        directionalMode,
-        rigMode,
-        directions,
-        projection,
-        cameraElevation,
-        styleReference,
-        // Cleared with the set exactly as the control clears it, and only then: a facing pinned
-        // against `THREE_CLASSIC` is one `SINGLE_FRONT` never turns to, and leaving it behind would
-        // let a preset saved from here persist a facing its own set does not contain.
-        primaryDirection: directions === output.directions ? output.primaryDirection : null,
-        sheetIndex: 0,
-      });
-    }
+    act(() => {
+      set({ category, subject: defaultSubjectFor(category) });
+      // A category switch is the one act that also invalidates the technical half;
+      // `resolveOutputForCategory` settles the six claims a category can refuse. Written back only
+      // where something moved, so a switch that decides nothing leaves that object alone.
+      const store = useOutputStore.getState();
+      const resolved = resolveOutputForCategory(category, store.output);
+      if (resolved !== store.output) store.setOutputConfig(resolved);
+    });
   },
 
   setField: (key, value) => {
+    // Records nothing. A single field is reversible by typing the old value back, and a step per
+    // keystroke is a stack nobody can get back through — see `types/studioHistory.ts`, which also
+    // says why an edit made after an act is not lost by an undo despite never being recorded.
     set((state) => ({ subject: { ...state.subject, [key]: value } }));
   },
 
   setSubject: (category, subject) => {
-    set({ category, subject });
+    act(() => {
+      set({ category, subject });
+    });
   },
 
   randomizeSubject: () => {
-    const { fields } = CATEGORY_OPTIONS[get().category];
-    const subject = { ...get().subject };
-    for (const field of fields) {
-      const choice = field.options[Math.floor(Math.random() * field.options.length)];
-      // A field with an empty pool keeps its current value rather than being blanked. No pool in
-      // `src/constants/categories/` is empty, but `noUncheckedIndexedAccess` is right to ask.
-      if (choice !== undefined) subject[field.key] = choice;
-    }
-    set({ subject });
+    act(() => {
+      const { fields } = CATEGORY_OPTIONS[get().category];
+      const subject = { ...get().subject };
+      for (const field of fields) {
+        const choice = field.options[Math.floor(Math.random() * field.options.length)];
+        // A field with an empty pool keeps its current value rather than being blanked. No pool in
+        // `src/constants/categories/` is empty, but `noUncheckedIndexedAccess` is right to ask.
+        if (choice !== undefined) subject[field.key] = choice;
+      }
+      set({ subject });
+    });
   },
 
   resetSubject: () => {
-    set({ subject: defaultSubjectFor(get().category) });
+    act(() => {
+      set({ subject: defaultSubjectFor(get().category) });
+    });
+  },
+
+  openStudio: () => {
+    set({ history: openStudioHistory(livePosition()) });
+  },
+
+  undoStudio: () => {
+    step(undoStudio(get().history, livePosition()));
+  },
+
+  redoStudio: () => {
+    step(redoStudio(get().history, livePosition()));
   },
 }));
+
+/** The studio as it stands, across both stores — one entry's worth of state. */
+function livePosition(): StudioPosition {
+  const { category, subject } = useSubjectStore.getState();
+  return { category, subject, output: useOutputStore.getState().output };
+}
+
+/**
+ * Perform one of the acts that replaces the whole subject, with the position before it recorded.
+ *
+ * A wrapper round all four rather than two lines inside each: what makes this stack trustworthy is
+ * that no route into the store can discard sixteen answers without leaving a step behind, and a
+ * fifth method added later is likelier to reach for a wrapper than to remember the two lines.
+ */
+function act(perform: () => void): void {
+  const before = livePosition();
+  perform();
+  const { history } = useSubjectStore.getState();
+  useSubjectStore.setState({ history: recordStudio(history, before, livePosition()) });
+}
+
+/**
+ * Move the cursor, and put the studio back into the position it lands on.
+ *
+ * Written straight into both stores rather than through `setCategory`, which would re-resolve the
+ * output against the category being restored and hand back a configuration nobody ever had. A
+ * position on the stack is a studio that existed: it is replayed, never recomputed.
+ */
+function step(history: StudioHistory): void {
+  const { category, subject, output } = currentStudioPosition(history);
+  useSubjectStore.setState({ category, subject, history });
+  useOutputStore.getState().setOutputConfig(output);
+}

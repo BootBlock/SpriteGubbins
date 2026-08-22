@@ -8,7 +8,13 @@
  */
 export const STUDIO_ACTION_TOOLTIPS = {
   randomise:
-    'Fills every field in this panel with a value drawn from the current category’s own option pools, leaving the category itself and everything in Output Configuration alone. It is a way of finding a subject rather than a way of finishing one: a random draw makes combinations nobody would have typed, and any field it lands badly on is still yours to overwrite. There is no undo, so save a configuration you want to keep as a preset first.',
+    'Fills every field in this panel with a value drawn from the current category’s own option pools, leaving the category itself and everything in Output Configuration alone. It is a way of finding a subject rather than a way of finishing one: a random draw makes combinations nobody would have typed, and any field it lands badly on is still yours to overwrite. The subject you had is recorded in the history above the panel first, so one Undo brings the whole of it back.',
+
+  undoSubject:
+    'Puts the subject back the way it was before your last category switch, Randomise, Reset or preset load — the category, all sixteen answers, and the output settings that act changed with them. Those four are the only things recorded, because each replaces the whole subject at once; editing a single field records nothing, and an edit you made after one of them is kept rather than thrown away. Nothing outside the Studio tab moves. Ctrl+Z does the same thing, except while you are typing in a box, where it undoes your typing as it always has.',
+
+  redoSubject:
+    'Steps forward again into a subject you have just stepped back from, which is the way out of an undo pressed once too often. Switching category, randomising, resetting or loading a preset after stepping back replaces what was ahead of you, so this is offered only until you do. Ctrl+Shift+Z and Ctrl+Y both do the same.',
 
   expandAll:
     'Opens or shuts every group in this panel at once. Folding hides the controls and never the configuration — a shut group states its current values in its own header — so this is about how much of the form you want to look at, and changes nothing that reaches the prompt.',

@@ -2,6 +2,7 @@ import { ComponentBudgetNotice } from '../studio/ComponentBudgetNotice.tsx';
 import { OutputConfig } from '../studio/OutputConfig.tsx';
 import { PromptPreview } from '../studio/PromptPreview.tsx';
 import { SubjectForm } from '../studio/SubjectForm.tsx';
+import { SubjectHistoryControls } from '../studio/SubjectHistoryControls.tsx';
 import { TargetModelSelector } from '../studio/TargetModelSelector.tsx';
 
 /**
@@ -45,6 +46,12 @@ export function StudioTab() {
   return (
     <div className="grid grid-cols-1 items-start gap-6 studio:grid-cols-12">
       <div className="space-y-6 studio:col-span-6">
+        {/*
+          Above both numbered panels, because what it steps back spans them: a category switch
+          replaces the sixteen answers in the first and re-resolves six settings in the second, and
+          an undo that governed only the panel it sat in would be lying about half of that.
+        */}
+        <SubjectHistoryControls />
         <SubjectForm />
         <OutputConfig />
       </div>
