@@ -54,7 +54,7 @@ function packFile(presets: readonly unknown[]): File {
 
 beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
-  useQuantisePresetStore.setState({ presets: [], isTransferring: false });
+  useQuantisePresetStore.setState({ presets: [], isTransferring: false, pendingImport: null });
   useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
   useUIStore.getState().dismissToast();
 });
@@ -255,15 +255,17 @@ describe('exportQuantisePresetsJSON', () => {
 });
 
 describe('importQuantisePresetsJSON', () => {
-  it('replaces the stored collection with the pack contents', async () => {
+  it('replaces the stored collection once the replacement is confirmed', async () => {
     await useQuantisePresetStore.getState().saveQuantisePreset('Will be replaced', '');
     const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
 
     await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
 
-    const { presets, isTransferring } = useQuantisePresetStore.getState();
+    const { presets, isTransferring, pendingImport } = useQuantisePresetStore.getState();
     expect(presets.map((preset) => preset.name)).toEqual(['Arrived']);
     expect(isTransferring).toBe(false);
+    expect(pendingImport).toBeNull();
     await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
   });
 
@@ -274,6 +276,7 @@ describe('importQuantisePresetsJSON', () => {
     if (!Array.isArray(exported)) throw new Error('the export should be an array.');
 
     await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile(exported));
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
 
     const [reimported] = useQuantisePresetStore.getState().presets;
     expect(reimported?.name).toBe('Mine');
@@ -293,6 +296,7 @@ describe('importQuantisePresetsJSON', () => {
     };
 
     await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
 
     expect(useQuantiseStore.getState().colorMerge).toBe(TUNED.colorMerge);
     expect(useQuantiseStore.getState().vote).toBe(TUNED.vote);
@@ -332,6 +336,7 @@ describe('importQuantisePresetsJSON', () => {
     const pack = [{ id: 'quantise-good', name: 'Good', description: '', dials: TUNED }, { id: 42 }, null];
 
     await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile(pack));
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
 
     expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Good']);
   });
@@ -341,10 +346,101 @@ describe('importQuantisePresetsJSON', () => {
     const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
 
     await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
 
     expect(useQuantisePresetStore.getState().presets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not import that quantiser pack');
     // The flag has to come back down, or both transfer controls stay disabled for the session.
     expect(useQuantisePresetStore.getState().isTransferring).toBe(false);
+    expect(useQuantisePresetStore.getState().pendingImport).toBeNull();
+  });
+
+  /*
+   * The same defect the studio's library had, in the tab that shares the control: one press, one
+   * file, and every set of dial positions the reader had found was gone with no way back.
+   */
+  it('stages the pack and deletes nothing until the reader agrees', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    expect(useQuantisePresetStore.getState().pendingImport?.map((preset) => preset.name)).toEqual([
+      'Arrived',
+    ]);
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Mine']);
+    await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
+  });
+
+  it('leaves the stored rows exactly as they were when the replacement is declined', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
+    const before = await backend.listQuantisePresets();
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    useQuantisePresetStore.getState().cancelQuantisePresetImport();
+
+    expect(useQuantisePresetStore.getState().pendingImport).toBeNull();
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Mine']);
+    await expect(backend.listQuantisePresets()).resolves.toEqual(before);
+    expect(useUIStore.getState().toastMessage).toBe('Import cancelled, and nothing you saved was deleted');
+  });
+
+  it('replaces nothing when nothing is staged', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
+
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
+
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Mine']);
+    await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
+  });
+
+  it('closes the question before the write, so a second press cannot replace twice', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('First', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Second', '');
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    const writing = useQuantisePresetStore.getState().confirmQuantisePresetImport();
+    expect(useQuantisePresetStore.getState().pendingImport).toBeNull();
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
+    await writing;
+
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Arrived']);
+    expect(useUIStore.getState().toastMessage).toBe('Imported 1 saved setting, replacing 2');
+  });
+
+  it('says nothing when there is no question left to cancel', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+    const writing = useQuantisePresetStore.getState().confirmQuantisePresetImport();
+    useUIStore.getState().dismissToast();
+
+    useQuantisePresetStore.getState().cancelQuantisePresetImport();
+
+    expect(useUIStore.getState().toastMessage).toBeNull();
+    await writing;
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Arrived']);
+  });
+
+  it('says how many it deleted as well as how many arrived', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('First', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Second', '');
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
+
+    expect(useUIStore.getState().toastMessage).toBe('Imported 1 saved setting, replacing 2');
+  });
+
+  it('reports the arrival alone when there was nothing saved to replace', async () => {
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
+
+    expect(useUIStore.getState().toastMessage).toBe('Imported 1 saved setting');
   });
 });

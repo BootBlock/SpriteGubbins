@@ -1,6 +1,8 @@
 import { create } from 'zustand';
+import { QUANTISE_PACK_ITEMS } from '../constants/packImport.ts';
 import { getDatabase } from '../db/database.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
+import { describePackImported } from '../utils/packImportSummary.ts';
 import { findPresetByName } from '../utils/presetNames.ts';
 import { parseQuantisePresetPack, serialiseQuantisePresetPack } from '../utils/quantisePresetPack.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
@@ -37,6 +39,13 @@ export interface QuantisePresetState {
    * replaced independently.
    */
   readonly isTransferring: boolean;
+  /**
+   * The sets a parsed pack holds, waiting for the reader to agree to the replacement — `null`
+   * whenever no import is being asked about. The studio's library stages its own the same way, and
+   * for the reason given there: the answer decides what happens to stored rows, and a pack that
+   * fails to parse never reaches here.
+   */
+  readonly pendingImport: readonly QuantisePreset[] | null;
 
   /** Load the stored presets. Called once on boot, beside the studio's. */
   fetchQuantisePresets(): Promise<void>;
@@ -62,13 +71,21 @@ export interface QuantisePresetState {
   deleteQuantisePreset(id: string): Promise<void>;
   /** The whole collection as a pack file's text. */
   exportQuantisePresetsJSON(): string;
-  /** Replace the stored collection with the pack in `file`. */
+  /**
+   * Read the pack in `file` and stage it for confirmation. Nothing stored changes here — the
+   * replacement itself is {@link QuantisePresetState.confirmQuantisePresetImport}.
+   */
   importQuantisePresetsJSON(file: File): Promise<void>;
+  /** Replace the stored collection with the staged pack. */
+  confirmQuantisePresetImport(): Promise<void>;
+  /** Discard the staged pack, leaving the stored collection exactly as it is. */
+  cancelQuantisePresetImport(): void;
 }
 
 export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => ({
   presets: [],
   isTransferring: false,
+  pendingImport: null,
 
   fetchQuantisePresets: async () => {
     try {
@@ -195,14 +212,42 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
         return;
       }
 
-      const database = await getDatabase();
-      await database.replaceQuantisePresets(imported);
-      set({ presets: imported });
-      showToast(`Imported ${imported.length} saved setting${imported.length === 1 ? '' : 's'}`);
+      // Staged, not applied — the studio's library does the same, and this is one flow written
+      // twice rather than two decisions. Whichever tab the reader is on, replacing a collection
+      // they built is asked on screen.
+      set({ pendingImport: imported });
     } catch {
       showToast('Could not import that quantiser pack');
     } finally {
       set({ isTransferring: false });
     }
+  },
+
+  confirmQuantisePresetImport: async () => {
+    const imported = get().pendingImport;
+    if (imported === null) return;
+
+    const { showToast } = useUIStore.getState();
+    const replacing = get().presets.length;
+    // Cleared before the first await, for the reason `confirmPresetImport` gives: the staged pack
+    // is this action's guard, and leaving it open across the write let a second press replace
+    // twice and let Cancel report a deletion as though it had not happened.
+    set({ isTransferring: true, pendingImport: null });
+    try {
+      const database = await getDatabase();
+      await database.replaceQuantisePresets(imported);
+      set({ presets: imported });
+      showToast(describePackImported(imported.length, replacing, QUANTISE_PACK_ITEMS));
+    } catch {
+      showToast('Could not import that quantiser pack');
+    } finally {
+      set({ isTransferring: false });
+    }
+  },
+
+  cancelQuantisePresetImport: () => {
+    if (get().pendingImport === null) return;
+    set({ pendingImport: null });
+    useUIStore.getState().showToast('Import cancelled, and nothing you saved was deleted');
   },
 }));

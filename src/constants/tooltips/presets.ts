@@ -19,7 +19,13 @@ export const PRESET_ACTION_TOOLTIPS = {
     'Downloads the whole library as a single JSON file — the built-in presets as well as your own, so the file makes sense on its own to somebody who opens it. It is the way to move a library between browsers or machines, to keep a copy that survives clearing this browser’s storage, and to hand a set of configurations to somebody else. Importing it back skips the built-ins, so they never arrive twice.',
 
   importPresets:
-    'Reads a preset pack exported from this app and replaces your saved presets with the ones it holds — anything of yours not in the file is deleted, so export the library first if you have presets you want to keep. Built-in presets in the file are skipped, since the app already ships them, and nothing in the studio changes until you load one of the presets that arrives.',
+    'Reads a preset pack exported from this app and offers to put the presets it holds in place of your saved ones. It says how many the file carries and how many of yours would go, and nothing is deleted until you agree to it. Built-in presets in the file are skipped, since the app already ships them, and nothing in the studio changes until you load one of the presets that arrives.',
+
+  confirmImportPresets:
+    'Replaces your saved presets with the ones in the file, for good. Everything you have saved goes from this browser’s storage and there is no undo, so cancel and export your library first if any of it is worth keeping. Built-in presets are untouched, and nothing in the studio moves until you load one of the presets that arrives.',
+
+  cancelImportPresets:
+    'Discards the file and asks nothing further. Your saved presets stay exactly as they are, none of the file was read into the library, and the two transfer buttons come back so you can pick a different file.',
 
   searchPresets:
     'Narrows the library to presets matching what you type, across their names, descriptions, subjects and the settings on each card, so “isometric” or “cut-out” finds them as readily as a name does. It filters every collection at once, and the number beside each collection in the list says how many of its presets match. Escape clears the box.',
