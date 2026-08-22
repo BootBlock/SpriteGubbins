@@ -680,32 +680,48 @@ export const VOTE_METHOD_CHOICES = [
  * {@link DITHER_SHORTLIST} — so a cheaper tier would have been a worse result at no saving.
  *
  * What separates the patterns is what the eye does with them, measured on the reference sheet
- * (`test_sprites/armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the
- * resolved sheet 211 × 209) as the mean scaled-OKLab distance from that resolved sheet: per pixel,
- * then over aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a
- * dither is *for*, since a pattern trades per-pixel accuracy for a local average.
+ * (`test_sprites/armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the mesh
+ * 210 × 209) as the mean scaled-OKLab distance from **the sheet's own cell means**: per pixel, then
+ * over aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a dither is
+ * *for*, since a pattern trades per-pixel accuracy for a local average.
+ *
+ * **The reference is the source's cell means rather than any sheet the pipeline produces, and it
+ * has to be**, because the flat step and a dithered one are not the same reading of the sheet. A
+ * dither moves the palette step to the end, so its vote runs over raw colours; `NONE` under a
+ * reduction reduces first and votes over the reduced ones. Scoring both against a sheet resolved
+ * *one* of those two ways charges the other for a difference that is not the palette step at all —
+ * which is what these figures used to do, and it left the flat step reading five times further out
+ * than any pattern. The mean of each mesh cell's pixels, taken in linear light, is what every
+ * configuration here is approximating and belongs to none of them. It carries the downscale's own
+ * error, which is common to every row, so what these figures are for is the differences down a
+ * column rather than their size.
  *
  * ```
- * budget 64      flat 1.85 / 0.78 / 0.48   BAYER_4 2.10 / 0.72 / 0.43   BAYER_8 2.12 / 0.73 / 0.43   BLUE_NOISE 2.12 / 0.73 / 0.42
- * budget 32      flat 2.61 / 1.07 / 0.71   BAYER_4 2.94 / 1.14 / 0.72   BAYER_8 2.97 / 1.16 / 0.74   BLUE_NOISE 2.95 / 1.14 / 0.74
- * budget 8       flat 5.62 / 2.72 / 1.90   BAYER_4 6.23 / 2.54 / 1.71   BAYER_8 6.27 / 2.58 / 1.80   BLUE_NOISE 6.27 / 2.59 / 1.75
- * Game Boy       flat 92.3 / 89.2 / 91.1   BAYER_4 94.2 / 85.1 / 87.3   BAYER_8 94.2 / 85.1 / 87.3   BLUE_NOISE 94.2 / 85.2 / 87.3
- * Mega Drive     flat 6.59 / 4.44 / 4.11   BAYER_4 9.31 / 1.73 / 1.29   BAYER_8 9.31 / 1.76 / 1.30   BLUE_NOISE 9.29 / 1.92 / 1.22
- * Master System  flat 9.82 / 6.03 / 5.03   BAYER_4 15.0 / 2.91 / 1.91   BAYER_8 14.9 / 3.11 / 2.03   BLUE_NOISE 14.7 / 3.33 / 1.89
+ * budget 64      flat 13.3 / 3.92 / 2.58   BAYER_4 15.3 / 4.32 / 2.99   BAYER_8 15.3 / 4.31 / 2.98   BLUE_NOISE 15.3 / 4.35 / 3.02
+ * budget 32      flat 14.3 / 4.75 / 3.38   BAYER_4 15.7 / 4.46 / 3.12   BAYER_8 15.8 / 4.49 / 3.17   BLUE_NOISE 15.7 / 4.49 / 3.15
+ * budget 8       flat 21.0 / 7.74 / 6.11   BAYER_4 18.0 / 5.33 / 3.81   BAYER_8 18.1 / 5.35 / 3.83   BLUE_NOISE 18.1 / 5.29 / 3.72
+ * Game Boy       flat 92.3 / 90.2 / 92.0   BAYER_4 93.5 / 85.7 / 87.8   BAYER_8 93.5 / 85.7 / 87.8   BLUE_NOISE 93.5 / 85.8 / 87.7
+ * Mega Drive     flat 20.1 / 8.02 / 6.37   BAYER_4 21.9 / 4.97 / 3.55   BAYER_8 22.0 / 5.02 / 3.53   BLUE_NOISE 22.0 / 5.16 / 3.51
+ * Master System  flat 23.9 / 9.56 / 7.10   BAYER_4 27.1 / 5.66 / 3.81   BAYER_8 27.1 / 5.87 / 3.93   BLUE_NOISE 27.0 / 6.04 / 3.83
  * ```
  *
- * Three things to read out of that, and one of them is an admission. **The per-pixel figure always
- * rises**, because every pattern moves pixels off their nearest colour on purpose. **The block
- * figures fall on five of the six cases**, and by most on the two channel-depth machines — a third
- * of the flat step's error over 8 × 8 blocks — which is unsurprising, since a lattice is what
- * ordered dithering was invented for. **Budget 32 is the sixth, where they do not fall at all**
- * (0.71 flat over 8 × 8 blocks against 0.72 to 0.74 dithered), and nothing here explains it: a
- * budget of 64 is a *larger* palette and its figures do fall, so whatever separates the two rows it
- * is not simply how much colour the palette is short of. It is recorded rather than reasoned about.
+ * Three things to read out of that. **The per-pixel figure rises on five of the six cases**,
+ * because a pattern moves pixels off their nearest colour on purpose. **The block figures fall on
+ * five of the six**, and by most on the two channel-depth machines — a little over half the flat
+ * step's error over 8 × 8 blocks — which is unsurprising, since a lattice is what ordered dithering
+ * was invented for. **Both exceptions are on the budget ladder, and they are one fact stated
+ * twice**: at 64 the palette is ample, so no colour of the sheet needs expressing as a mixture and
+ * the pattern is cost on all three figures; at 8 it is short enough that a mixture lands nearer the
+ * truth than the nearest single colour does, and the pattern wins on all three, the per-pixel
+ * figure included. A budget's colours are chosen *from this sheet*, so shortening it leaves entries
+ * spread through the sheet's own gamut for a mixture to interpolate between — which is why the
+ * three machine spaces do not join that second exception however few colours they hold. Their
+ * entries are stated rather than chosen, the Game Boy's four greens sit outside the sheet's colours
+ * altogether, and all three land on the ordinary reading: per-pixel cost, block gain.
  *
  * The choice between the three patterns is about what each *looks* like rather than about fidelity.
- * They are not identical — the Master System's 4 × 4 figure spreads 0.42 across them — but that
- * spread is an eighth of the 3.1 between the flat step and the best of them, so it is not what a
+ * They are not identical — the Master System's 4 × 4 figure spreads 0.38 across them — but that
+ * spread is a tenth of the 3.90 between the flat step and the best of them, so it is not what a
  * reader should be choosing on.
  *
  * The labels' parentheticals carry the choosing half, per the select budget's rule; what each
@@ -721,11 +737,11 @@ export const DITHER_CHOICES = [
 /**
  * Where the dither opens — off, as every pass that changes the artwork on this tab opens.
  *
- * A dither is a *style*, and the figures above say so: it costs per-pixel accuracy everywhere and
- * buys a better local average only where the palette is too small for the sheet. Nothing here can
- * tell which sheet arrived, and the reader is the one who knows whether they want a visible pattern
- * in their artwork at all — the same argument the outline expansion and the background keying open
- * off on.
+ * A dither is a *style*, and the figures above say so: it costs per-pixel accuracy at every budget
+ * but the shortest, and buys a better local average only where the palette is short of the sheet.
+ * Nothing here can tell which sheet arrived, and the reader is the one who knows whether they want a
+ * visible pattern in their artwork at all — the same argument the outline expansion and the
+ * background keying open off on.
  */
 export const DEFAULT_DITHER = 'NONE';
 
@@ -737,7 +753,7 @@ export const BAYER_EDGES = { BAYER_4: 4, BAYER_8: 8 } as const;
  *
  * 64 is what makes the pattern unfindable: the tile repeats across the sheet, so its edge is the
  * distance at which a reader could in principle see the same arrangement twice, and the reference
- * sheet's 211 pixels hold three of them. Smaller tiles repeat often enough to read as a texture,
+ * sheet's 210 pixels hold three of them. Smaller tiles repeat often enough to read as a texture,
  * which is the one thing this pattern exists not to do; larger ones cost the generator time
  * quadratically — the ranking scans the whole tile once per rank — for a repeat nobody was going to
  * find anyway.
@@ -790,20 +806,25 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * How many of the palette's nearest colours a mixing plan may pair.
  *
  * `mixingPlan`'s one restriction on the published search, and the measurements say it is an
- * improvement rather than a compromise. Swept on the reference sheet as above — blue noise, the same
- * three figures per pixel and over 4 × 4 and 8 × 8 blocks:
+ * improvement rather than a compromise. Swept on the reference sheet under the conditions
+ * {@link DITHER_CHOICES}'s table names — blue noise, the same three figures per pixel and over
+ * 4 × 4 and 8 × 8 blocks — but against a **different reference, and deliberately**: every row here
+ * is one reading of the sheet under one dither, so the sheet resolved with no palette step at all
+ * is exactly what the dither was handed, and measuring against it isolates the one pass the
+ * shortlist governs. The table above cannot take that reference, because the flat step it compares
+ * is a different reading; this one has no flat step in it.
  *
  * ```
  *              2                    3                    4                    6                    8              unrestricted
- * budget 64  1.76 / 0.73 / 0.45   2.12 / 0.73 / 0.42   2.40 / 0.81 / 0.47   2.86 / 0.93 / 0.53   3.24 / 1.03 / 0.58   7.06 / 2.20 / 1.14
- * budget 16  3.59 / 1.41 / 0.92   4.27 / 1.47 / 0.94   4.73 / 1.54 / 0.99   5.52 / 1.75 / 1.09   6.21 / 2.00 / 1.22   8.39 / 2.32 / 1.30
- * budget 8   5.61 / 2.51 / 1.71   6.27 / 2.59 / 1.75   6.98 / 2.64 / 1.77   7.97 / 2.75 / 1.82   8.64 / 2.83 / 1.87   8.63 / 2.83 / 1.88
- * Game Boy   92.2 / 85.4 / 87.7   94.2 / 85.2 / 87.3   94.6 / 85.3 / 87.3         —                    —             94.6 / 85.3 / 87.3
+ * budget 64  1.81 / 0.79 / 0.50   2.19 / 0.80 / 0.49   2.69 / 0.82 / 0.47   3.34 / 1.02 / 0.58   3.73 / 1.11 / 0.62   7.30 / 2.24 / 1.21
+ * budget 16  3.38 / 1.28 / 0.81   4.25 / 1.44 / 0.88   4.57 / 1.59 / 0.93   5.33 / 1.78 / 1.04   6.04 / 2.02 / 1.13   8.63 / 2.44 / 1.33
+ * budget 8   5.38 / 2.47 / 1.69   6.08 / 2.52 / 1.64   6.84 / 2.62 / 1.69   7.70 / 2.75 / 1.72   8.44 / 2.84 / 1.79   8.44 / 2.84 / 1.79
+ * Game Boy   92.1 / 85.2 / 87.9   94.1 / 85.0 / 87.5   94.5 / 85.0 / 87.5         —                    —             94.5 / 85.0 / 87.5
  * ```
  *
  * **The unrestricted search is the worst column wherever the palette is large enough for it to
- * matter** — 2.7× to 3.3× worse than a shortlist of 3 on the 64-colour budget, 1.4× to 2.0× at 16,
- * and level with it by 8 colours, where three of eight is most of the palette anyway (the Game Boy's
+ * matter** — 2.5× to 3.3× worse than a shortlist of 3 on the 64-colour budget, 1.5× to 2.0× at 16,
+ * and 1.1× to 1.4× by 8 colours, where three of eight is most of the palette anyway (the Game Boy's
  * four make the two columns the same search). The reason is worth stating because it is not obvious:
  * a plan is optimal for the *whole tile*, and a flat region a few pixels across samples only a few
  * of the tile's positions. So a pair drawn from opposite ends of the palette — whose mixture at some
@@ -812,15 +833,17 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * neighbourhood cannot do that, whatever ratio it takes.
  *
  * **3 rather than 2 is a genuinely close call, and the figures alone do not settle it.** 2 is the
- * quieter per-pixel figure everywhere and the better 8 × 8 figure at budgets 16 and 8, by about 2%;
- * 3 is the better 8 × 8 figure at budget 64 by 7% and on the four-colour Game Boy by 0.4%. What
- * decides it is structural rather than measured: with two candidates there is exactly one pair, so a
- * target whose two nearest entries lie the *same* side of it has no mixture that can reach it and the
- * plan falls back to a flat colour. A third candidate is the smallest shortlist that can straddle,
- * which is why the two palettes where 3 wins are the largest and the smallest measured.
+ * quieter per-pixel figure everywhere and the better 8 × 8 figure at budget 16, by 8%; 3 is the
+ * better 8 × 8 figure at budget 64 by 2%, at budget 8 by 3% and on the four-colour Game Boy by 0.5%.
+ * What decides it is structural rather than measured: with two candidates there is exactly one pair,
+ * so a target whose two nearest entries lie the *same* side of it has no mixture that can reach it
+ * and the plan falls back to a flat colour. A third candidate is the smallest shortlist that can
+ * straddle, and 3 takes the 8 × 8 figure at every palette measured but one. Budget 16 is that one,
+ * and nothing here explains it — so it is recorded rather than reasoned about, and it is 8% rather
+ * than a rout.
  *
  * **What it costs is a scan of the whole ratio ladder per pair**, which for the resolved reference
- * sheet — 44,099 pixels carrying 10,031 distinct colours — is the same order as one of the cleanup
+ * sheet — 43,890 pixels carrying 9,980 distinct colours — is the same order as one of the cleanup
  * passes, and which grows with the *distinct colours* of a sheet rather than with its pixels. A grid
  * of 1 is where that bites: the sheet arrives with 218,978 of them, and the plan search is then the
  * most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they move by
@@ -844,8 +867,8 @@ export const DITHER_SHORTLIST = 3;
  * the diagonal corner raising all three is the *furthest* — and the diagonal is the only one whose
  * mixture stays neutral. Drawn from the three nearest, a grey of 100 came back dithered between grey
  * and *red*, which is a visible fault rather than a lost fraction of accuracy. Correcting it is what
- * takes the two machine spaces in {@link DITHER_CHOICES}'s table from roughly the flat step's error
- * over 8 × 8 blocks to a third of it.
+ * takes the two machine spaces in {@link DITHER_CHOICES}'s table from about four fifths of the flat
+ * step's error over 8 × 8 blocks to a little over half of it.
  *
  * Eight candidates is twenty-eight pairs where a list palette's three are three, so the lattice arm
  * costs an order more per distinct colour — which it can afford precisely because its candidate set
