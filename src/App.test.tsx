@@ -23,6 +23,18 @@ describe('App', () => {
     });
   }
 
+  // The class rather than a computed style, because the tests render without the stylesheet — and
+  // the class *is* the mechanism, so this is the assertion that would catch the heading being turned
+  // into a visible title. It is deliberately not one: three of the four views already paint their
+  // own, and the studio opens straight on its two panels, so painting this would be a design change
+  // riding in behind an accessibility fix.
+  it('leaves the heading unpainted, so no view gains a title it was not designed with', () => {
+    useUIStore.setState({ activeTab: 'studio' });
+    render(<App />);
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveClass('sr-only');
+  });
+
   it('keeps the heading inside the main landmark, where heading navigation lands', () => {
     useUIStore.setState({ activeTab: 'studio' });
     render(<App />);
