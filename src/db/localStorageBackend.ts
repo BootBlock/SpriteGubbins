@@ -79,8 +79,13 @@ export class LocalStorageBackend implements PersistenceBackend {
       this.storage.setItem(key, JSON.stringify(value));
       return Promise.resolve();
     } catch (error) {
-      return Promise.reject(new Error(`Storage refused the write to "${key}".`, { cause: error }));
+      return Promise.reject(LocalStorageBackend.refusal(key, error));
     }
+  }
+
+  /** One spelling of the refusal, so {@link write} and {@link writeHistory} cannot drift. */
+  private static refusal(key: string, cause: unknown): Error {
+    return new Error(`Storage refused the write to "${key}".`, { cause });
   }
 
   /*
@@ -118,7 +123,7 @@ export class LocalStorageBackend implements PersistenceBackend {
     if (affordable.length === 0) {
       return Promise.reject(
         new Error(
-          `A single prompt is larger than the ${HISTORY_STORAGE_BUDGET} characters the history may occupy.`,
+          `A single prompt exceeds the ${HISTORY_STORAGE_BUDGET}-character budget the history may occupy.`,
         ),
       );
     }
@@ -133,9 +138,7 @@ export class LocalStorageBackend implements PersistenceBackend {
       }
     }
 
-    return Promise.reject(
-      new Error(`Storage refused the write to "${STORAGE_KEYS.promptHistory}".`, { cause: refusal }),
-    );
+    return Promise.reject(LocalStorageBackend.refusal(STORAGE_KEYS.promptHistory, refusal));
   }
 
   addHistoryLog(log: PromptHistoryLog): Promise<void> {

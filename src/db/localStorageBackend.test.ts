@@ -249,7 +249,7 @@ describe('LocalStorageBackend — a full store', () => {
     await backend.addHistoryLog(log({ id: 'kept' }));
 
     const promise = backend.addHistoryLog(bigLog('vast', 2, HISTORY_STORAGE_BUDGET + 1_000));
-    await expect(promise).rejects.toThrow(/larger than/i);
+    await expect(promise).rejects.toThrow(/exceeds the .*budget/i);
 
     expect((await backend.listHistoryLogs()).map((entry) => entry.id)).toEqual(['kept']);
   });
