@@ -4,10 +4,11 @@
  *
  * One worker, two responsibilities:
  *   1. Offline-first precaching of the app shell.
- *   2. Injecting COOP/COEP (+ CORP) headers on every response, so the page is cross-origin
- *      isolated on a static host that cannot set response headers — GitHub Pages being the one
- *      this app deploys to. This replaces a standalone coi-serviceworker, which would otherwise
- *      fight this worker for control of the scope.
+ *   2. Injecting the cross-origin isolation headers onto the responses **this origin** serves, so
+ *      the page is isolated on a static host that cannot set response headers — GitHub Pages being
+ *      the one this app deploys to. This replaces a standalone coi-serviceworker, which would
+ *      otherwise fight this worker for control of the scope. The same-origin gate and the reason
+ *      it is not optional are in `src/utils/isolationHeaders.ts`.
  *
  * `injectManifest` rather than `generateSW` for exactly that second point: header injection
  * needs custom fetch logic, which the generated worker cannot express.
@@ -17,6 +18,8 @@
  * waiting on that.** SQLite's SAH-pool VFS needs a dedicated worker, not `SharedArrayBuffer`, so
  * it is available from the first load; see the note in CLAUDE.md.
  */
+
+import { withIsolationHeaders } from './utils/isolationHeaders.ts';
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
 
@@ -114,14 +117,14 @@ async function respond(request: Request): Promise<Response> {
   // carrying query parameters still matches the one cached shell.
   if (request.mode === 'navigate') {
     const shell = await cache.match(INDEX_URL, { ignoreSearch: true });
-    if (shell) return withIsolationHeaders(shell);
+    if (shell) return isolate(shell, request);
   }
 
   const cached = await cache.match(request, { ignoreSearch: true });
-  if (cached) return withIsolationHeaders(cached);
+  if (cached) return isolate(cached, request);
 
   try {
-    return withIsolationHeaders(await fetch(request));
+    return isolate(await fetch(request), request);
   } catch {
     // Offline with nothing cached. This can only be a *subresource* — a navigation was already
     // answered from the precached shell above, and had that shell been missing this lookup
@@ -132,21 +135,11 @@ async function respond(request: Request): Promise<Response> {
 }
 
 /**
- * Clone a response with the cross-origin isolation headers added.
+ * {@link withIsolationHeaders} bound to this worker's own origin.
  *
- * `Cross-Origin-Resource-Policy: cross-origin` goes on too: under COEP `require-corp` every
- * subresource must state that it may be embedded, and the app's own assets are served by this
- * worker rather than by a host that could label them.
+ * The gate is on the **request** URL rather than the response's, because a cached response and a
+ * `Response.error()` both report a URL this decision cannot be made from.
  */
-function withIsolationHeaders(response: Response): Response {
-  if (response.status === 0) return response; // opaque or error — leave untouched
-  const headers = new Headers(response.headers);
-  headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
-  headers.set('Cross-Origin-Opener-Policy', 'same-origin');
-  headers.set('Cross-Origin-Resource-Policy', 'cross-origin');
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
+function isolate(response: Response, request: Request): Response {
+  return withIsolationHeaders(response, request.url, sw.location.origin);
 }

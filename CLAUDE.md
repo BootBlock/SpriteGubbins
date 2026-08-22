@@ -1139,9 +1139,9 @@ The app makes itself cross-origin isolated, **two different ways**:
 - **Dev and preview** — `server.headers` / `preview.headers` in `vite.config.ts` send
   `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp`.
 - **Production** — GitHub Pages sends no custom headers, so [src/sw.ts](src/sw.ts) injects them
-  onto every response instead, and [public/coi-bootstrap.js](public/coi-bootstrap.js) reloads
-  the page once after that worker first takes control. **The first visit is never isolated**;
-  it becomes so on the reload.
+  instead, onto **the responses this origin serves and no others**, and
+  [public/coi-bootstrap.js](public/coi-bootstrap.js) reloads the page once after that worker first
+  takes control. **The first visit is never isolated**; it becomes so on the reload.
 
 That apparatus was built on the understanding that the database needed it. It does not — see the
 first point below — so isolation is a property this app maintains rather than one it currently
@@ -1172,7 +1172,18 @@ Four consequences to hold on to:
   fallback is the path nobody exercises by accident, which is why it has its own tests.
 - **The app must not load a cross-origin subresource.** Under COEP `require-corp` anything from
   another origin that doesn't opt in is blocked outright — which is why the fonts fall back to
-  system faces rather than fetching a webfont, as the original single-file app did.
+  system faces rather than fetching a webfont, as the original single-file app did. **The worker
+  must never hand out that opt-in**, and for a while it wrote
+  `Cross-Origin-Resource-Policy: cross-origin` onto everything it proxied, including a live network
+  response from a host that had set no CORP at all — the page's own worker answering a question
+  that was asked of somebody else. **Measured, it granted nothing**: driven in Chromium against a
+  host sending no COOP/COEP, a plain `<script src>` is blocked and a `crossorigin` one loads, both
+  before and after the fix, because a no-cors response reaches the worker *opaque* (`status === 0`,
+  already returned untouched) and a CORS-mode one is exempt from the CORP check altogether. So what
+  the same-origin gate in [src/utils/isolationHeaders.ts](src/utils/isolationHeaders.ts) corrects is
+  the posture, not a live hole — and it is one line of `respond()` away from mattering, because a
+  fallback that re-fetched a no-cors request in CORS mode would hand the opt-in out for real. The
+  app's own assets take `same-origin`, which is what a missing CORP already means for them.
 - **`sw.ts` is not a generated file.** The build uses vite-plugin-pwa's `injectManifest`
   strategy precisely so the worker can carry this custom fetch logic; a `generateSW` worker
   cannot express it. Treat it as app code.
