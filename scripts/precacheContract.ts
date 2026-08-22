@@ -18,6 +18,16 @@
  * edit, the shape does not. Adding a chunk, an icon or a font means adding a line here, in the
  * same commit, where a reviewer can see it.
  *
+ *
+ * **Most of this list is now bundler-chosen, and that is a cost worth naming.** The app is split
+ * into a chunk per view and per overlay, and rolldown emits a further chunk for whatever two of
+ * them share — naming each after one module inside it, which is a name no source file chose. So a
+ * refactor that moves a shared component between views renames a chunk and fails this build, with
+ * a `+`/`-` pair that reads like a stray file and is not one. The entries a reader can reason
+ * about are the ones above the split: the workers, the SQLite binary, the entry chunk and the
+ * icons. Whether the split's own chunks belong here as names, as a pattern, or not at all is a
+ * decision about this contract rather than about the split, and is left to whoever owns it.
+ *
  * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
  * icons a second time, *after* the `manifestTransforms` step runs. So this list and the ceiling
  * under it describe the globbed precache — 15 of the shipped worker's 18 entries — and the three
@@ -26,6 +36,34 @@
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
   'assets/autoTuneWorker-*.js',
+  'assets/AtlasCalculatorContents-*.js',
+  'assets/Badge-*.js',
+  'assets/CheckboxField-*.js',
+  'assets/JsonPackTransfer-*.js',
+  'assets/PresetsTab-*.js',
+  'assets/PromptHistoryContents-*.js',
+  'assets/QuantiseTab-*.js',
+  'assets/SelectField-*.js',
+  'assets/SettingsContents-*.js',
+  'assets/SheetSplitContents-*.js',
+  'assets/SpecTab-*.js',
+  'assets/StudioTab-*.js',
+  'assets/TextField-*.js',
+  'assets/Tooltip-*.js',
+  'assets/componentBudget-*.js',
+  'assets/componentGridScale-*.js',
+  'assets/database-*.js',
+  'assets/firstOfEachId-*.js',
+  'assets/models-*.js',
+  'assets/quantiseDials-*.js',
+  'assets/rolldown-runtime-*.js',
+  'assets/spriteSegments-*.js',
+  'assets/targetSize-*.js',
+  'assets/useClipboard-*.js',
+  'assets/useCopyPrompt-*.js',
+  'assets/useDownload-*.js',
+  'assets/useSubjectStore-*.js',
+  'assets/useUIStore-*.js',
   'assets/index-*.css',
   'assets/index-*.js',
   'assets/quantiseWorker-*.js',
