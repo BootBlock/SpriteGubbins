@@ -57,6 +57,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/models-*.js',
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',
+  'assets/sheetCanvas-*.js',
   'assets/spriteSegments-*.js',
   'assets/targetSize-*.js',
   'assets/useClipboard-*.js',
