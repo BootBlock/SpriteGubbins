@@ -165,9 +165,19 @@ describe('downscaleNearest', () => {
     expect(reduced.height).toBe(4);
   });
 
+  it('keeps one cell on an axis whose offset leaves no cut on it at all', () => {
+    // An offset at or past the extent puts no cut on the axis, and an axis of no cells is a
+    // zero-dimension image rather than a small one — `ImageData`'s constructor throws on it. The
+    // image's own edge bounds one cell whatever the phase, so that is what comes back.
+    const mesh = regularMesh(4, 4, 6, { x: 5, y: 5 });
+
+    expect(mesh.x).toEqual([0]);
+    expect(mesh.y).toEqual([0]);
+  });
+
   it('merges an end band too narrow to be a cell into the cell beside it', () => {
     // The defect this bound exists for: `downscaleNearest` emits one output pixel per cell, so a
-    // leading band of one pixel would stand in the result exactly as wide as a full cell — which is
+    // band of one or two pixels would stand in the result exactly as wide as a full cell — which is
     // how a 1254 × 1254 sheet came back 210 × 209 at a grid of 6. An end cell holds three source
     // pixels at least, so an offset of 1 merges into the cell after it, and the 15-pixel axis's
     // one-row tail merges into the cell before it. Nothing is cropped: the merged bands are still

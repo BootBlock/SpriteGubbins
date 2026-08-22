@@ -183,6 +183,23 @@ describe('boundaryMesh', () => {
     expect(mesh.y).toEqual([0, 6, 12, 18, 24, 30, 36, 42]);
   });
 
+  it('gives a whole short axis to one cell when both its end bands are too narrow', () => {
+    // The bound compounds where there is only one full cell to merge into: a 8-pixel axis at a grid
+    // of 4 with the art inset two pixels has bands of two at each end, and both join the cell
+    // between them. One output pixel for the axis is the honest answer — the alternative is three,
+    // two of which would stand for two source pixels each, which is the defect this exists to stop.
+    // It needs an axis under `grid + 2 × shortest` to arise, so no sheet in `test_sprites/` does.
+    const starts = [2, 6];
+    const sheet = sheetWithBoundaries(8, starts, starts);
+
+    const mesh = boundaryMesh(sheet, 4);
+
+    expect(mesh.x).toEqual([0]);
+    expect(mesh.y).toEqual([0]);
+    // The upper bound the pitch invariant states: a cell plus a band at each end, never `2 × grid`.
+    expect(8).toBeLessThanOrEqual(4 + Math.max(1, Math.floor(4 / 3)) + 2 * (Math.min(3, 4 - 1) - 1));
+  });
+
   it('degenerates to one cell per pixel at a grid of 1', () => {
     const sheet = sheetWithBoundaries(8, [0, 4], [0, 4]);
     const mesh = boundaryMesh(sheet, 1);

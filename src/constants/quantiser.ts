@@ -814,7 +814,7 @@ export const BAYER_EDGES = { BAYER_4: 4, BAYER_8: 8 } as const;
  *
  * 64 is what makes the pattern unfindable: the tile repeats across the sheet, so its edge is the
  * distance at which a reader could in principle see the same arrangement twice, and the reference
- * sheet's 210 pixels hold three of them. Smaller tiles repeat often enough to read as a texture,
+ * sheet's 209 pixels hold three of them. Smaller tiles repeat often enough to read as a texture,
  * which is the one thing this pattern exists not to do; larger ones cost the generator time
  * quadratically — the ranking scans the whole tile once per rank — for a repeat nobody was going to
  * find anyway.
@@ -904,7 +904,7 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * than a rout.
  *
  * **What it costs is a scan of the whole ratio ladder per pair**, which for the resolved reference
- * sheet — 43,890 pixels carrying 9,980 distinct colours — is the same order as one of the cleanup
+ * sheet — 43,681 pixels carrying 9,975 distinct colours — is the same order as one of the cleanup
  * passes, and which grows with the *distinct colours* of a sheet rather than with its pixels. A grid
  * of 1 is where that bites: the sheet arrives with 218,978 of them, and the plan search is then the
  * most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they move by
@@ -1346,7 +1346,7 @@ export const DIFFERENCE_PRECISION = 64;
  *
  * The rungs are read off the reference sheet (`test_sprites/armour.png`, 1254², grid 6, the
  * standard vote, a budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75
- * 10.3, p90 54.8, p99 120.8 and peaks at 180 — roughly seven cells in ten near-exact, and a tail
+ * 10.2, p90 55.0, p99 117.9 and peaks at 177 — roughly seven cells in ten near-exact, and a tail
  * that is the sheet's edges. Against that: **4** grades the near-exact seventy per cent and
  * saturates the rest, **32** is the default because it puts the whole of what a dial moves across
  * the ramp — a second cleanup pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed*

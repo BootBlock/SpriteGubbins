@@ -15,8 +15,9 @@ import type { PixelGrid, QuantiseSettings } from '../src/types/quantiser.ts';
  * result stops being a reduction at one scale. That is what made `test_sprites/armour.png` — a
  * square sheet — quantise to 210 × 209 at a grid of 6, and to 209 × 212 with the keying on: the walk
  * stopped between 1 and `grid − 1`, a leading 0 was prepended in front of it, and the far edge closed
- * a one-pixel cell at the other end. Five of the sixteen sheet-and-keying combinations produced a
- * leading band of one or two pixels, and `cyborg_monk.png` keyed produced one on both axes.
+ * a short cell at the other end. Thirteen of the sixteen sheet-and-keying combinations carried such a
+ * band at one end or the other, eight of them at the leading end — and two, `cyborg_monk.png` keyed
+ * and `three-quarter-view_tiles1.png` unkeyed, on both axes at once.
  *
  * Nothing asserted the pitch. `gridMesh.test.ts` asserts where the cuts *land* — the ordering its
  * docblock argues for — which a one-pixel leading cell satisfies perfectly.
@@ -24,7 +25,9 @@ import type { PixelGrid, QuantiseSettings } from '../src/types/quantiser.ts';
  * **What is asserted here is what a drifting mesh can honestly promise, and no more.** Interior cells
  * sit within `axisTolerance` of the grid because each accepted cut re-anchors the next; the two end
  * cells hold at least three source pixels because `boundEndCells` merges anything shorter into its
- * neighbour, and no more than a full cell plus what merged into it. The result's dimensions are
+ * neighbour, and no more than a full cell plus a band at each end — a single cell can absorb both,
+ * on an axis short enough to hold only one, which `gridMesh.test.ts` covers and no sheet this size
+ * reaches. The result's dimensions are
  * deliberately **not** asserted to be a function of the source and the grid alone: each cut may move
  * within tolerance, so a keyed sheet honestly resolves a different number of cells from the same
  * sheet unkeyed. That difference is the measurement following the art; a one-pixel band was not.
@@ -83,10 +86,11 @@ describe('mesh cell pitch', () => {
                 width,
                 `${where}: cell ${String(index)} is ${String(width)} wide`,
               ).toBeGreaterThanOrEqual(floor);
-              // An end cell is the one that may exceed the pitch, and only by the band merged into
-              // it — which is shorter than the floor, so the pair stays inside a cell plus two.
+              // An end cell is the one that may exceed the pitch, and only by the bands merged into
+              // it — each shorter than the floor. A cell can absorb one at each end, so the bound is
+              // stated for two even though only a one-cell axis collects both.
               const interior = index > 0 && index < starts.length - 1;
-              const widest = grid + tolerance(grid) + (interior ? 0 : floor - 1);
+              const widest = grid + tolerance(grid) + (interior ? 0 : 2 * (floor - 1));
               expect(width, `${where}: cell ${String(index)} is ${String(width)} wide`).toBeLessThanOrEqual(
                 widest,
               );
@@ -97,7 +101,7 @@ describe('mesh cell pitch', () => {
     }
   }, 300_000);
 
-  it('reduces the square reference sheet to a square result, keyed or not', () => {
+  it('reduces the square reference sheet to a square result, and to one row more when keyed', () => {
     const sheet = corpus.get('armour.png');
     expect(sheet).toBeDefined();
     if (sheet === undefined) return;

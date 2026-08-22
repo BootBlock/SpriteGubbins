@@ -23,12 +23,13 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * **Measured on the reference sheet** (`test_sprites/armour.png`, 1254², a grid of 6, no keying, no
  * colour budget, every dial at its opening position), by running `autoTune` over it directly: three
  * crops of 240 px and 35 positions run — the ink stages skip, because the reading settles on
- * `DOMINANT`, which blends no ink — ending at a likeness of 0.6089 for 55 colours where the
- * opening position it started from scored the same 0.6089 for 1030. That last pair is the elbow's whole job in one figure:
- * a nineteenth of the colours for a likeness that does not move in the fourth decimal. **The count of positions is what
- * a change to any ladder here has to be judged by**, not a wall clock — the same code over the same
- * sheet takes several times longer on one host than another, so the guidance's "a few seconds" is
- * stated against the 35 rather than against any figure a stopwatch produced.
+ * `DOMINANT`, which blends no ink — ending at a likeness of 0.6089 for 55 colours where the opening
+ * position it started from scored the same 0.6089 for 1030. That last pair is the elbow's whole job
+ * in one figure: a nineteenth of the colours for a likeness that does not move in the fourth
+ * decimal. **The count of positions is what a change to any ladder here has to be judged by**, not
+ * a wall clock — the same code over the same sheet takes several times longer on one host than
+ * another, so the guidance's "a few seconds" is stated against the 35 rather than against any figure
+ * a stopwatch produced.
  *
  * **The sweep chose the *cheapest* of the three readings on that sheet rather than the most faithful,
  * and that is the elbow doing what it says rather than a defect.** Of the fifteen positions the
@@ -43,12 +44,13 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * genuinely is closer to a soft edge than a hard one is — which is why both averaging readings
  * out-score `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back
  * from the generator. On `test_sprites/cyborg_healer.png` (a grid of 4, 35 positions, and again a
- * grid the run was given rather than one the sheet reads at) `K_CENTROID` at expansion 0 leads the
- * fifteen on **both** counts — 0.6649 for 1416 colours against `INK_WEIGHTED`'s 0.6571 for 1435 —
- * and the elbow still settles on `DOMINANT`, at 0.6478 for 1298, because it is cheaper than either.
- * So on that sheet a reader who wants what the likeness column says is best has to ask for it, which
- * is the warning stated at its sharpest: the bias is a reason to check the reading, and the elbow is
- * a separate reason not to read the settled position as "the most faithful one".
+ * grid the run was given rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the
+ * other averaging reading on **both** counts — 0.6649 for 1416 colours against `INK_WEIGHTED`'s
+ * 0.6571 for 1435 — and the elbow still settles on `DOMINANT`, at 0.6478 for 1298, because it is
+ * cheaper than either. So on that sheet a reader who wants what the likeness column says is best
+ * has to ask for it, which is the warning stated at its sharpest: the bias is a reason to check the
+ * reading, and the elbow is a separate reason not to read the settled position as "the most faithful
+ * one".
  */
 
 /**

@@ -71,7 +71,10 @@ export function regularMesh(
 function regularStarts(extent: number, grid: PixelGrid, offset: number): number[] {
   const starts: number[] = [];
   for (let start = offset; start < extent; start += grid) starts.push(start);
-  return boundEndCells(starts, extent, grid);
+  // An offset at or past the extent puts no cut on the axis at all, and an axis of no cells is a
+  // zero-dimension result rather than a small one — `ImageData` throws on it. The image's own edge
+  // bounds one cell whatever the phase, so that is the floor.
+  return starts.length === 0 ? [0] : boundEndCells(starts, extent, grid);
 }
 
 /**
@@ -91,8 +94,7 @@ function axisTolerance(grid: PixelGrid): number {
  * end band is absolute. `downscaleNearest` gives every cell one output pixel, so a band of one or
  * two source pixels stands in the result exactly as wide as a full cell — and one or two pixels is
  * not a band of anything: it is the backward walk stopping short of the edge, or the extent failing
- * to divide by the pitch. Measured on the eight sheets in `test_sprites/`, every end band the mesh
- * produced too narrow to be a cell was one or other of those two widths.
+ * to divide by the pitch.
  *
  * **A proportional floor would take content with it, and that is the mistake this number avoids.** A
  * margin the generator inset deliberately is content the reader paid for, at any width — art three
@@ -119,10 +121,12 @@ const SHORTEST_END_BAND = 3;
  * emits **one output pixel per cell**, so a band of one or two source pixels would carry the same
  * weight in the result as a full cell, and the result would no longer be a reduction at one scale.
  * Both ends can produce one: the walk's backward loop stops at a position between 1 and `grid − 1`,
- * and the far edge closes the last cell wherever the extent happens to fall. On the eight sheets in
- * `test_sprites/`, five of the sixteen sheet-and-keying combinations produced a leading band of one
- * or two pixels, and `armour.png` unkeyed produced a one-pixel band at *both* ends of its x axis —
- * which is how a 1254 × 1254 sheet came back 210 × 209 at a grid of 6.
+ * and the far edge closes the last cell wherever the extent happens to fall. Measured over the eight
+ * sheets in `test_sprites/` at a grid of 6, **thirteen of the sixteen** sheet-and-keying combinations
+ * had a band of one or two pixels at one end or the other, and eight of them had one at the *leading*
+ * end. `armour.png` shows both ends doing it separately: unkeyed, its x axis ended on a two-pixel
+ * band, which is the whole of why a 1254 × 1254 sheet came back 210 × 209; keyed, its y axis carried
+ * a one-pixel band at *each* end, which is the 212.
  *
  * So a short end band is **merged** into the cell beside it rather than kept or dropped: its pixels
  * stay in the sheet and vote in that cell's tally, weighted by the area they actually cover. The
@@ -131,11 +135,16 @@ const SHORTEST_END_BAND = 3;
  * band narrower than {@link shortestEndCell} — which is where the line is drawn, and why.
  *
  * **What this buys is an invariant the whole pipeline can be read against**: every interior cell is
- * within tolerance of the grid, and an end cell holds at least three source pixels and fewer than
- * `2 × grid`. It does *not* make the result's dimensions a function of the source and the grid alone
- * — a mesh that follows drift honestly resolves a different number of cells on a keyed sheet than on
- * the same sheet unkeyed, because each cut may move within tolerance and re-anchor there. That
- * difference is the measurement working; a one-pixel band was not.
+ * within tolerance of the grid, and an end cell holds at least {@link shortestEndCell} source pixels
+ * — three at every grid from 4 up, and the whole cell at a grid of 2 or 3, where nothing can be
+ * merged without swallowing one. Its upper bound is `grid + tolerance + 2 × (shortest − 1)`, because
+ * on an axis short enough to hold a single full cell **both** bands merge into that one cell; the
+ * corpus never reaches it, and `regularMesh(8, 8, 4, { x: 2, y: 2 })` does.
+ *
+ * It does *not* make the result's dimensions a function of the source and the grid alone — a mesh
+ * that follows drift honestly resolves a different number of cells on a keyed sheet than on the same
+ * sheet unkeyed, because each cut may move within tolerance and re-anchor there. That difference is
+ * the measurement working; a one-pixel band was not.
  */
 function boundEndCells(starts: readonly number[], extent: number, grid: PixelGrid): number[] {
   const first = starts[0];
