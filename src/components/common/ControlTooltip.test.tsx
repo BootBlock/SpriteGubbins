@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TOOLTIP_HOVER_DELAY_MS } from '../../constants/ui.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
@@ -326,5 +326,72 @@ describe('ControlTooltip', () => {
 
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
     expect(elsewhere).toHaveFocus();
+  });
+
+  it('stays dismissed when the pointer is re-announced without ever having left', () => {
+    // A card can be placed over the control it explains — in a window too short to fit it either
+    // side of its anchor, the clamp puts it there. Dismissing it then changes what sits under the
+    // pointer, and the browser answers with a fresh `mouseenter` on a wrapper the pointer never
+    // left. Treating that as the user asking again put the guidance back one hover delay after
+    // Escape, with nothing having moved.
+    const { wrapper } = renderControl();
+    fireEvent.mouseEnter(wrapper);
+    act(() => {
+      vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
+    });
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+    // No `mouseLeave` in between: the pointer is where it always was.
+    fireEvent.mouseEnter(wrapper);
+    act(() => {
+      vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
+    });
+
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
+  it('comes back when the pointer genuinely leaves and returns after a dismissal', () => {
+    // The other half of the rule above, and what keeps Escape from being permanent.
+    const { wrapper } = renderControl();
+    fireEvent.mouseEnter(wrapper);
+    act(() => {
+      vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
+    });
+    fireEvent.keyDown(document, { key: 'Escape' });
+
+    fireEvent.mouseLeave(wrapper);
+    fireEvent.mouseEnter(wrapper);
+    act(() => {
+      vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
+    });
+
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+  });
+
+  it('dismisses from the document the control is actually in, not this module’s', () => {
+    // The quantiser's comparison panel can be portalled into a window of its own, and every control
+    // in its toolbar carries one of these. An Escape there is delivered to *that* document, so a
+    // listener on the global one leaves the card with no way out at all — WCAG 1.4.13 *dismissible*,
+    // lost in the one place a reader cannot get around it.
+    const view = window.open('', '_blank');
+    if (view === null) throw new Error('happy-dom refused a window this test needs.');
+
+    render(
+      <ControlTooltip hint="Copy Prompt" text={GUIDANCE}>
+        <button type="button">Copy Prompt</button>
+      </ControlTooltip>,
+      { container: view.document.body },
+    );
+    const inside = within(view.document.body);
+    fireEvent.mouseEnter(inside.getByRole('button', { name: 'Copy Prompt' }).parentElement as HTMLElement);
+    act(() => {
+      vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
+    });
+    expect(inside.getByRole('tooltip')).toBeInTheDocument();
+
+    fireEvent.keyDown(view.document, { key: 'Escape' });
+
+    expect(inside.queryByRole('tooltip')).not.toBeInTheDocument();
   });
 });

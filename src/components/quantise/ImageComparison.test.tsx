@@ -525,3 +525,148 @@ describe('ImageComparison’s preview modes', () => {
     );
   });
 });
+
+/**
+ * Moving the whole panel into a window of its own, and back.
+ *
+ * The claim under test is that this is a change of *where* the preview is, and of nothing else: the
+ * same subtree, carrying the same zoom, the same layout and the same wipe position, built in another
+ * document. So each of these looks for the panel in the detached window and for the way back in the
+ * page — and the last of them holds the preview's state across the round trip.
+ */
+describe('ImageComparison, detached', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  /** Press the toolbar's control, wherever the toolbar currently is. */
+  function press(name: string, inside: HTMLElement = document.body) {
+    fireEvent.click(within(inside).getByRole('button', { name }));
+  }
+
+  /**
+   * Keep hold of the window the panel is opened into, which the test otherwise has no handle on.
+   *
+   * happy-dom opens a real second `Window`, so this passes the call straight through rather than
+   * standing in for it: what the tests below then query is the document the portal actually built
+   * its elements in.
+   */
+  function watchOpen(): { last: Window | null } {
+    const seen: { last: Window | null } = { last: null };
+    const open = window.open.bind(window);
+    vi.spyOn(window, 'open').mockImplementation((...args) => {
+      seen.last = open(...args);
+      return seen.last;
+    });
+    return seen;
+  }
+
+  /** Where the panel has gone, or a failure naming the reason the rest of the test would not. */
+  function bodyOf(opened: { last: Window | null }): HTMLElement {
+    if (opened.last === null) throw new Error('No window was opened.');
+    return opened.last.document.body;
+  }
+
+  it('moves the panel out of the page and leaves the way back behind', () => {
+    const opened = watchOpen();
+    show(8);
+
+    press('Detach preview');
+
+    // Gone from the page — both panes and the toolbar with them…
+    expect(screen.queryByRole('img', { name: 'The sheet as it arrived' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Preview magnification' })).toBeNull();
+    // …and standing in the other document, whole.
+    const detached = bodyOf(opened);
+    expect(within(detached).getByRole('img', { name: 'The sheet as it arrived' })).toBeInTheDocument();
+    expect(within(detached).getByRole('group', { name: 'Preview magnification' })).toBeInTheDocument();
+    // The page says where it went rather than simply losing a panel.
+    expect(screen.getByRole('heading', { name: 'The preview is in its own window' })).toBeInTheDocument();
+  });
+
+  it('gives the detached document a landmark to navigate by', () => {
+    const opened = watchOpen();
+    show(8);
+
+    press('Detach preview');
+
+    // The window holds one panel and no chrome, so without this a screen reader there has nothing
+    // to jump to at all.
+    expect(within(bodyOf(opened)).getByRole('main')).toBeInTheDocument();
+  });
+
+  it('brings the panel back from the notice left in its place', () => {
+    const opened = watchOpen();
+    show(8);
+    press('Detach preview');
+    const view = opened.last;
+
+    press('Bring the preview back');
+
+    expect(screen.getByRole('img', { name: 'The sheet as it arrived' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'The preview is in its own window' })).toBeNull();
+    expect(view?.closed).toBe(true);
+  });
+
+  it('brings the panel back from the control that travelled with it', () => {
+    const opened = watchOpen();
+    show(8);
+    press('Detach preview');
+
+    press('Return to the page', bodyOf(opened));
+
+    expect(screen.getByRole('img', { name: 'The sheet as it arrived' })).toBeInTheDocument();
+  });
+
+  it('brings the panel back when the reader closes the window themselves', () => {
+    const opened = watchOpen();
+    show(8);
+    press('Detach preview');
+
+    fireEvent(bodyOf(opened).ownerDocument.defaultView as Window, new Event('pagehide'));
+
+    expect(screen.getByRole('img', { name: 'The sheet as it arrived' })).toBeInTheDocument();
+  });
+
+  it('puts the focus on the way back, which the press that detached took with it', () => {
+    watchOpen();
+    show(8);
+
+    press('Detach preview');
+
+    expect(document.activeElement).toHaveAccessibleName('Bring the preview back');
+  });
+
+  it('says so when the browser refuses, rather than leaving a control that does nothing', () => {
+    vi.spyOn(window, 'open').mockReturnValue(null);
+    show(8);
+
+    press('Detach preview');
+
+    expect(screen.getByRole('alert')).toHaveTextContent(/would not open a window/);
+    // Still here, still working — the refusal costs the reader the window and nothing else.
+    expect(screen.getByRole('img', { name: 'The sheet as it arrived' })).toBeInTheDocument();
+  });
+
+  it('keeps the zoom and the layout the reader chose across the move', () => {
+    const opened = watchOpen();
+    show(8);
+    choose('Difference');
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Preview magnification' })).getByRole('button', {
+        name: '4×',
+      }),
+    );
+
+    press('Detach preview');
+
+    // The state lives in a component that never unmounted; only the elements were built elsewhere.
+    const detached = bodyOf(opened);
+    expect(within(detached).getByRole('img', { name: HEATMAP })).toBeInTheDocument();
+    expect(
+      within(within(detached).getByRole('group', { name: 'Preview magnification' })).getByRole('button', {
+        name: '4×',
+      }),
+    ).toHaveAttribute('aria-pressed', 'true');
+  });
+});

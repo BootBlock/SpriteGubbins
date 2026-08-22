@@ -92,7 +92,10 @@ export function DownloadControls({
     heldFocus.current = false;
     // And only where nothing has claimed focus since. A reader who tabbed elsewhere during the write
     // has said where they want to be, and the body is what is left when nobody has.
-    if (document.activeElement === document.body) button.current?.focus();
+    // The button's own document, not this module's: detached, this toolbar is in a window of its
+    // own, where the main document's `activeElement` says nothing about who holds focus here.
+    const reached = button.current?.ownerDocument;
+    if (reached !== undefined && reached.activeElement === reached.body) button.current?.focus();
   }, [unavailable]);
 
   return (
@@ -136,7 +139,7 @@ export function DownloadControls({
           onClick={() => {
             if (resultImage === null) return;
             // Read while the button still has it; a moment later the disable will have taken it.
-            heldFocus.current = document.activeElement === button.current;
+            heldFocus.current = button.current?.ownerDocument.activeElement === button.current;
             // The 1:1 sheet and the factor, never an already-magnified image: the result in memory
             // stays the sheet the previews and the store share, and the magnification happens on the
             // writer's own thread rather than in this handler. The boxes cross at 1:1 beside it and

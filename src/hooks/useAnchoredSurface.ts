@@ -77,6 +77,18 @@ export function useAnchoredSurface(
     if (anchor === null || surface === null) return;
     if (typeof surface.showPopover !== 'function') return;
 
+    // **Every measurement below is against the surface's *own* document, never this module's.** The
+    // quantiser's comparison panel can be portalled into a window of its own, and React builds a
+    // portalled subtree with the container's `ownerDocument` — so the anchor, the surface and the
+    // viewport they have to stay inside are all in a document that is not the one this file's bare
+    // `document` refers to. Reading the global there clamps a card in the detached window against
+    // the *main* window's viewport and listens for scrolls that will never reach it, which puts the
+    // guidance somewhere unreachable in that window and nowhere else. In the page the two are the
+    // same object, so nothing changes for every other call site.
+    const surfaceDocument = surface.ownerDocument;
+    const surfaceWindow = surfaceDocument.defaultView;
+    if (surfaceWindow === null) return;
+
     // The attribute is set here rather than in the markup so that it, the top layer and the
     // viewport coordinates below arrive together or not at all — a `popover` attribute on an
     // element that is never shown is `display: none` in the user-agent stylesheet.
@@ -92,7 +104,7 @@ export function useAnchoredSurface(
     // The browser adds it on top of whatever `top` says, which is why `place` takes it back off.
     // Read once, outside `place`: it is set by a class and never changes, and re-reading it would
     // force a style recalculation on every scroll event.
-    const gap = Number.parseFloat(getComputedStyle(surface).marginTop) || 0;
+    const gap = Number.parseFloat(surfaceWindow.getComputedStyle(surface).marginTop) || 0;
 
     // An arrow assigned to a `const`, not a `function` declaration: a hoisted declaration could be
     // called before the null checks above, so TypeScript declines to narrow `anchor`/`surface`
@@ -105,8 +117,8 @@ export function useAnchoredSurface(
       // surface resolves `top`/`left` against — excludes it. Clamping to `innerWidth` leaves the
       // last ~15px of a surface underneath the scrollbar on Windows, which is unreachable rather
       // than merely off-centre. It costs nothing where scrollbars are overlays and the two agree.
-      const viewportHeight = document.documentElement.clientHeight;
-      const viewportWidth = document.documentElement.clientWidth;
+      const viewportHeight = surfaceDocument.documentElement.clientHeight;
+      const viewportWidth = surfaceDocument.documentElement.clientWidth;
 
       // Downwards by preference — that is where the form continues, and it is what both surfaces
       // read as. Upwards only where the surface genuinely does not fit below *and* there is more
@@ -152,12 +164,12 @@ export function useAnchoredSurface(
     // Capture phase, and on the document rather than the window: `scroll` does not bubble, and the
     // anchor may sit inside a scrolling panel — the atlas calculator's — rather than in the page.
     // A surface in the top layer is positioned against the viewport, so nothing moves it but this.
-    document.addEventListener('scroll', place, { capture: true, passive: true });
-    window.addEventListener('resize', place);
+    surfaceDocument.addEventListener('scroll', place, { capture: true, passive: true });
+    surfaceWindow.addEventListener('resize', place);
 
     return () => {
-      document.removeEventListener('scroll', place, { capture: true });
-      window.removeEventListener('resize', place);
+      surfaceDocument.removeEventListener('scroll', place, { capture: true });
+      surfaceWindow.removeEventListener('resize', place);
       // Symmetric teardown, not crash avoidance: on a surface that carries the attribute — which
       // this one does, from the lift above — `hidePopover()` returns silently whether it is showing,
       // never shown, or already removed from the document. It matters only where the node outlives

@@ -104,11 +104,28 @@ export function useTooltipReveal(
     pendingHoverRef.current = null;
   }
 
-  /** Either way in also clears a previous dismissal, or Escape would be permanent. */
+  /**
+   * Either way in also clears a previous dismissal, or Escape would be permanent — but only where
+   * the input is genuinely arriving rather than being re-announced.
+   *
+   * **A reveal for an input already held is not the user asking again.** A card can be placed over
+   * the control it explains — the placement clamps into the viewport, and in a window too short to
+   * fit the card either side of its anchor that is where it lands — so dismissing it changes what
+   * sits under the pointer, and the browser re-notifies the wrapper with a fresh `mouseenter` it
+   * never left. Clearing the dismissal there put the guidance back one hover delay after Escape,
+   * with the pointer never having moved: content dismissed and then undismissed without the user
+   * doing anything, which is exactly what WCAG 1.4.13 *dismissible* forbids. Measured in the
+   * quantiser's detached preview window, where the short viewport makes the overlap the ordinary
+   * case rather than the awkward one.
+   *
+   * A genuine return is still a return, and needs no special case: the pointer leaving fires
+   * `release`, so the input is no longer held and the next arrival clears the dismissal as before.
+   */
   function show(input: TooltipInput): void {
+    const wasHeld = input === 'hover' ? isHovered : isFocused;
     if (input === 'hover') setIsHovered(true);
     else setIsFocused(true);
-    setIsDismissed(false);
+    if (!wasHeld) setIsDismissed(false);
   }
 
   function reveal(input: TooltipInput): void {
@@ -153,6 +170,13 @@ export function useTooltipReveal(
   useEffect(() => {
     if (!isVisible) return;
 
+    // **The document the trigger is actually in**, which is not always this module's `document`: the
+    // quantiser's comparison panel can be portalled into a window of its own, and a press or an
+    // Escape in that window is delivered to *its* document. Listening on the global one there leaves
+    // the card with no way out at all — neither dismissible nor light-dismissed — which is the WCAG
+    // 1.4.13 obligation this hook exists to hold. In the page the two are the same object.
+    const reached = anchorRef.current?.ownerDocument ?? document;
+
     /**
      * The same dismissal `dismiss` performs, spelled again here because this effect cannot name it.
      *
@@ -188,13 +212,13 @@ export function useTooltipReveal(
       if (!isExempt) dismissAndCancelHover();
     };
 
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('pointerdown', onPointerDown);
+    reached.addEventListener('keydown', onKeyDown);
+    reached.addEventListener('pointerdown', onPointerDown);
     return () => {
-      document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('pointerdown', onPointerDown);
+      reached.removeEventListener('keydown', onKeyDown);
+      reached.removeEventListener('pointerdown', onPointerDown);
     };
-  }, [isVisible, pressKeepsOpenRef]);
+  }, [anchorRef, isVisible, pressKeepsOpenRef]);
 
   return { isVisible, cardId, cardRef, reveal, release, dismiss };
 }

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
+import { useDetachedWindow } from '../../hooks/useDetachedWindow.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
@@ -10,6 +11,8 @@ import { outlineSprites } from '../../utils/spriteOutline.ts';
 import type { ComparisonPaneProps } from './ComparisonPane.tsx';
 import { ComparisonPane } from './ComparisonPane.tsx';
 import { ComparisonToolbar } from './ComparisonToolbar.tsx';
+import { DetachedNotice } from './DetachedNotice.tsx';
+import { DetachedPreview } from './DetachedPreview.tsx';
 import { emptyReason, secondCaption, sourceCaption } from './paneCaptions.tsx';
 import { WipePanes } from './WipePanes.tsx';
 
@@ -102,6 +105,10 @@ export function ImageComparison({
   const [resultView, setResultView] = useState<HTMLDivElement | null>(null);
   const [sourceCanvas, setSourceCanvas] = useState<HTMLCanvasElement | null>(null);
   const [resultCanvas, setResultCanvas] = useState<HTMLCanvasElement | null>(null);
+  // The panel's own box, read only at the moment it is given up: the detached window opens at the
+  // size the preview already had, which is what makes the move read as one panel in two places.
+  const panel = useRef<HTMLElement>(null);
+  const detached = useDetachedWindow(`Sprite Gubbins — ${sourceName}`);
 
   // With nothing to compare against there is nothing to wipe and nothing to have cost anything, so
   // both of those modes would draw a placeholder over the sheet and call it a comparison. Derived
@@ -230,8 +237,25 @@ export function ImageComparison({
     ),
   };
 
-  return (
-    <section className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40">
+  const isDetached = detached.target !== null;
+  const surface = (
+    <section
+      ref={panel}
+      className="animate-fade-in glass-panel space-y-4 rounded-2xl border border-foundry-700 p-4 shadow-lg transition-colors duration-585 hover:border-tab/40"
+    >
+      {/* A blocked popup is the one failure that otherwise leaves a control appearing to do nothing,
+          so it is said out loud rather than logged. It stands until an attempt succeeds, because
+          what refused it is a browser setting rather than a passing condition. */}
+      {detached.refused && (
+        <p
+          role="alert"
+          className="rounded-xl border border-gold/40 bg-gold/10 p-3 text-xs leading-relaxed text-gold"
+        >
+          The browser would not open a window for the preview. Allow popups for this site, or leave the
+          preview here — everything on this panel works either way.
+        </p>
+      )}
+
       <ComparisonToolbar
         mode={shown}
         onModeChange={setMode}
@@ -246,6 +270,11 @@ export function ImageComparison({
         sourceName={sourceName}
         resultImage={quantised?.result.image ?? null}
         sprites={sprites ?? null}
+        isDetached={isDetached}
+        onDetachToggle={() => {
+          if (isDetached) detached.reattach();
+          else detached.detach(panel.current);
+        }}
       />
 
       {shown === 'WIPE' ? (
@@ -272,6 +301,18 @@ export function ImageComparison({
         </div>
       )}
     </section>
+  );
+
+  // Detached, the page keeps the panel's place and says where it went — see `DetachedNotice`, which
+  // is the only route back for a reader whose window opened behind this one or on a display they are
+  // not looking at. `surface` itself is one subtree either way, so nothing about the preview is
+  // rebuilt by the move except the elements.
+  if (detached.target === null) return surface;
+  return (
+    <>
+      <DetachedNotice onReturn={detached.reattach} />
+      <DetachedPreview target={detached.target}>{surface}</DetachedPreview>
+    </>
   );
 }
 
