@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FRINGE_TOLERANCE_CEILING, KEY_TOLERANCES } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { fromHex } from './imageData.ts';
-import { keyBasis, keyDistanceSquared } from './keyDistance.ts';
+import { carriesKeyTint, keyBasis, keyDistanceSquared } from './keyDistance.ts';
 import { srgbToOklab } from './oklab.ts';
 
 /**
@@ -59,12 +59,35 @@ function straightDistance(key: Rgba, color: Rgba): number {
 const FIELD = ['#FA05FA', '#E754D8', '#C41BB4', '#FF33CC', '#E020B0', '#FF7FFF'].map(rgb);
 
 /**
- * Colours a sprite is made of, including the two that sit nearest the recommended key.
+ * Colours a sprite is made of, including the two that sit nearest the recommended key and the one
+ * that sits furthest from it.
  *
- * Rose and purple are the pair that matters: both are exactly 127 from `#FF00FF` in a straight line,
- * which is where a washed-out field sits too.
+ * Rose and purple are the pair that matters for the *radius*: both are exactly 127 from `#FF00FF` in
+ * a straight line, which is where a washed-out field sits too.
+ *
+ * **`#101010` is the one that matters for everything else**, and it was missing while the fringe pass
+ * was believed to work. A blend is measured from the key, so how far one sits is decided mostly by how
+ * far the colour it blends *with* sits — and this list's darkest entry was `#4A3B33`, where the
+ * reference sheet's armour is near-black. The ceiling's own derivation is taken at three parts key and
+ * survives the addition unchanged: the worst blend at that share is still 21. **It is at half and
+ * below that the omission told.** Half the key into `#101010` measures 37 and a quarter measures 57,
+ * both past the 40 where unblended artwork begins — while the same halves against every colour that
+ * *was* on this list stay at 40 or nearer. So the set held no case where a blend outran the radius,
+ * the derivation looked complete, and the halo survived on the sheet.
  */
-const ARTWORK = ['#FFFFFF', '#C0C0C0', '#808080', '#FF0080', '#8000FF', '#FF0000', '#14B43C', '#D9A07A', '#4A3B33'].map(rgb); // prettier-ignore
+const ARTWORK = ['#FFFFFF', '#C0C0C0', '#808080', '#FF0080', '#8000FF', '#FF0000', '#14B43C', '#D9A07A', '#4A3B33', '#101010'].map(rgb); // prettier-ignore
+
+/** Whether the fringe pass's hue test claims the colour as a blend of the key. */
+function tint(key: Rgba, color: Rgba): boolean {
+  const pixel = Uint8ClampedArray.from([color.r, color.g, color.b, color.a]);
+  return carriesKeyTint(pixel, 0, keyBasis(key));
+}
+
+/** A blend of the key and an artwork colour, in the share of key an anti-aliased edge lays down. */
+function blend(key: Rgba, art: Rgba, keyShare: number): Rgba {
+  const mix = (a: number, b: number): number => Math.round(keyShare * a + (1 - keyShare) * b);
+  return { r: mix(key.r, art.r), g: mix(key.g, art.g), b: mix(key.b, art.b), a: 255 };
+}
 
 describe('keyDistance', () => {
   it('separates a painted field from the artwork, where a straight distance cannot', () => {
@@ -131,22 +154,100 @@ describe('keyDistance', () => {
 
   it('keeps the fringe ceiling between the halo it must take and the artwork it must not', () => {
     // The ceiling's whole derivation, machine-checked, because it is stated as two numbers in a
-    // comment and both of them move if the latitude does. It has to sit ABOVE every blend that is
-    // mostly key colour — or the halo the fringe pass exists to erode survives — and BELOW every
-    // colour that is not the key's own hue, or the pass eats a pixel of the sprite's contour.
-    const worstHalo = Math.max(
-      ...ARTWORK.map((art) =>
-        distance(MAGENTA, {
-          r: 0.75 * MAGENTA.r + 0.25 * art.r,
-          g: 0.75 * MAGENTA.g + 0.25 * art.g,
-          b: 0.75 * MAGENTA.b + 0.25 * art.b,
-          a: 255,
-        }),
-      ),
-    );
+    // comment and both of them move if the latitude does. Asserted on the *radius alone*, and
+    // deliberately not as `radius || tint`: the disjunction is satisfied by the radius for every
+    // element here, so it would stop checking the ceiling the moment the ceiling stopped being right.
+    const worstHalo = Math.max(...ARTWORK.map((art) => distance(MAGENTA, blend(MAGENTA, art, 0.75))));
 
     expect(worstHalo).toBeLessThanOrEqual(FRINGE_TOLERANCE_CEILING);
     expect(FRINGE_TOLERANCE_CEILING).toBeLessThan(Math.min(...ARTWORK.map((art) => distance(MAGENTA, art))));
+  });
+
+  it('claims a blend with an achromatic colour all the way down to a quarter key', () => {
+    // What the hue test buys that a radius cannot, stated as the property rather than as a figure. A
+    // mixture with something achromatic keeps the key's hue at every share, so the pass can follow it
+    // down — while the distance runs away with whatever the key is mixed into, which is how the halo
+    // against near-black came to sit further from the key than the artwork does.
+    for (const art of ['#FFFFFF', '#C0C0C0', '#808080', '#101010'].map(rgb)) {
+      for (const share of [0.75, 0.5, 0.25]) {
+        const halo = blend(MAGENTA, art, share);
+        const taken = distance(MAGENTA, halo) <= FRINGE_TOLERANCE_CEILING || tint(MAGENTA, halo);
+        expect({ art, share, taken }).toEqual({ art, share, taken: true });
+      }
+    }
+  });
+
+  it('claims no unblended artwork colour, by either test', () => {
+    // The other side of the same contract, and the one that keeps the pass an edge clean-up: a pixel
+    // that is none of the key must survive touching the field, or every silhouette on the sheet comes
+    // back a pixel thinner and nothing says so.
+    for (const art of ARTWORK) {
+      const taken = distance(MAGENTA, art) <= FRINGE_TOLERANCE_CEILING || tint(MAGENTA, art);
+      expect({ art, taken }).toEqual({ art, taken: false });
+    }
+  });
+
+  it('reads a blend with something achromatic as the key’s own hue, however dark it is', () => {
+    // Why the hue test exists. Mixing the key with a grey scales its chroma and turns it nowhere, so
+    // the pixel keeps the key's hue all the way down — while the distance the radius measures runs
+    // away with the grey. At a quarter key against near-black the distance is 57, which is further
+    // from the key than the *nearest artwork colour* is — so no radius separates that blend from the
+    // sprite — and the hue is still magenta's. At three parts key the radius does reach it, at 18;
+    // this is about what happens below that, which is where the pass was failing.
+    for (const share of [0.75, 0.5, 0.25]) {
+      const halo = blend(MAGENTA, rgb('#101010'), share);
+      expect({ share, tinted: tint(MAGENTA, halo) }).toEqual({ share, tinted: true });
+    }
+    expect(distance(MAGENTA, blend(MAGENTA, rgb('#101010'), 0.25))).toBeGreaterThan(
+      Math.min(...ARTWORK.map((art) => distance(MAGENTA, art))),
+    );
+  });
+
+  it('reads a blend with a colour of its own as that colour, not as the key', () => {
+    // The bound on the hue test, and the reason it measures the chroma standing off the key's axis
+    // rather than only the chroma along it. Red projects 0.49 of its chroma onto magenta's axis, so a
+    // share test alone would call the armour plate a blend of the background.
+    expect(tint(MAGENTA, rgb('#FF0000'))).toBe(false);
+    expect(tint(MAGENTA, rgb('#14B43C'))).toBe(false);
+  });
+
+  it('refuses a desaturated colour the key’s chroma would otherwise swamp', () => {
+    // Why the off-hue ceiling is a ratio to the pixel's *own* on-axis chroma and not to the key's.
+    // Measured against the key's, the threshold is one length — so it binds a saturated pixel tightly
+    // and a faint one barely at all, opening a cone past 60° at the bottom of the share range. These
+    // are the entries of this app's own fixed palettes that fell into it: a sprite outlined in any of
+    // them lost a ring of silhouette to a pass that is supposed to remove halo.
+    for (const hex of ['#F8A4C0', '#B8B8F8', '#7E2553', '#83769C', '#202040', '#504860', '#D8B8F8']) {
+      const art = rgb(hex);
+      const taken = distance(MAGENTA, art) <= FRINGE_TOLERANCE_CEILING || tint(MAGENTA, art);
+      expect({ hex, taken }).toEqual({ hex, taken: false });
+    }
+  });
+
+  it('cannot refuse a colour that sits on the key’s hue, and the limit is recorded rather than hidden', () => {
+    // The honest boundary of a colour-only test. These three are magenta at reduced chroma, which is
+    // exactly what the key mixed with white *is* — the same colour, so no measurement separates a
+    // sprite painted in them from a halo over one. The pass takes them, `KEY_TINT_OFF_HUE` says so,
+    // and the reader's escape is the ladder's `exact` rung. Pinned so that a later change which
+    // *does* separate them is noticed rather than absorbed.
+    for (const hex of ['#F8B8F8', '#F8D8F8', '#A057A3']) {
+      const art = rgb(hex);
+      const taken = distance(MAGENTA, art) <= FRINGE_TOLERANCE_CEILING || tint(MAGENTA, art);
+      expect({ hex, taken }).toEqual({ hex, taken: true });
+    }
+  });
+
+  it('gives a key with no hue no tint test either, which is the same rule as the latitude', () => {
+    // `PURE_WHITE` and `PURE_BLACK` have no hue for a blend to keep, so there is nothing to measure —
+    // and the answer must be a refusal rather than a direction read out of arithmetic noise. Their
+    // chroma is not exactly zero (about 9.5e-6 for white), so a threshold below that noise floor
+    // hands back a random hue, against which every grey in the sheet reads as a perfect blend.
+    for (const key of [WHITE, BLACK]) {
+      for (const art of ARTWORK) {
+        expect({ key, art, tinted: tint(key, art) }).toEqual({ key, art, tinted: false });
+      }
+      expect(tint(key, rgb('#870887'))).toBe(false);
+    }
   });
 
   it('never reports a negative distance, whatever the key and the pixel', () => {

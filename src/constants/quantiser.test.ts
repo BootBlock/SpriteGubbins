@@ -23,8 +23,10 @@ describe('the keying tolerances', () => {
   });
 
   it('starts at 0, which is the only setting that switches the fringe pass off', () => {
-    // The fringe threshold is `tolerance × FRINGE_TOLERANCE_FACTOR`, so 0 is what makes "exact match
-    // only" mean it — reachable from the control rather than merely representable.
+    // `keyBackground` gates the whole of pass 2 on the tolerance being above zero, so 0 is what makes
+    // "exact match only" mean it — reachable from the control rather than merely representable. It
+    // used to follow from the radius being `tolerance × FRINGE_TOLERANCE_FACTOR`; the hue test beside
+    // that radius is scaled from nothing, so the rung is stated rather than derived.
     expect(KEY_TOLERANCES).toContain(0);
   });
 
