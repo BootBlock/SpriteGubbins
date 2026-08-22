@@ -16,8 +16,8 @@
  * A wrapper exists only where a vendor documents something the template cannot say: a flag syntax, a
  * negative-prompt channel, a rewrite to survive. The Gemini image models have no file here because
  * they need none — they read the prompt as a specification and think over it, which the *template*
- * adapts to by giving them the self-audit and the manifest. Adding a sentence for symmetry would be
- * inventing a behaviour.
+ * adapts to by giving them the self-audit and the component map. Adding a sentence for symmetry
+ * would be inventing a behaviour.
  */
 
 export { wrapForFlux } from './flux.ts';

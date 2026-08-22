@@ -4,6 +4,8 @@
 >
 > Both departures this banner used to record are closed, each in the direction that made the two agree. §6's tile list was two short of the "sixteen" its own prose claimed, so it now names the wall-face inner corners it was missing and the implementation follows at **16**. `CUSTOM` has been **removed** from §2's `DIRECTIONS` table rather than built, so the table matches the code. §10's follow-up list is closed too: four of its five items shipped, and §10.3 shipped by a route it did not name — its palette line *is* read from an accepted sheet, on-device, while the prose half was removed **as that item framed it**, because describing what a sheet depicts needs an outbound vision-model call this app does not make. The studio derives those lines from the subject definition instead, which needs no image at all. Each item records its outcome in place.
 >
+> The flag §1 and §4 call `EMIT_COMPONENT_MAP` was named `EMIT_MANIFEST` when this document was written, and §6 and §7 still argue for it under that name. It was renamed by [issue #118](https://github.com/BootBlock/SpriteGubbins/issues/118), which found that the document the prompt asked for and the manifest the Quantise tab downloads were two unrelated formats sharing one word. Only the two tables are corrected here, for the reason §2's `DIRECTIONS` table was — they describe the surface the compiler offers, so a reader consults them for a flag name. §6 and §7 are records of why the capability exists and are left as they were written.
+>
 > §3 is revised in place — it is a mirror of what the compiler emits, so it tracks the code rather than recording a moment, and it is now **pinned by [tests/prompt-template-mirror.test.ts](../../tests/prompt-template-mirror.test.ts)**, which compares the fence against `PROMPT_TEMPLATE` character for character. It needed to be, because a banner asserting §3 is current is worth nothing while nothing checks it — and checking showed the two had **never** agreed. They diverged the moment the template was transcribed into code: blank lines placed differently around the `[IF:…]` markers, and, in §5, a `---` sitting outside a `[/IF]` where the code puts it inside, which is a rule an unrigged sheet emits twice in the document's version and once in the app's. Then the document fell further behind twice — the category system (§0's guard paragraph, the precedence sentence rewritten so the category comparison settles *before* precedence applies, and `[DEFINE:CATEGORY_GUARD]`, `[DEFINE:CATEGORY_EXCLUSIONS]` and `[DEFINE:CATEGORY_AUDIT]` in §4, §8 and §9), and the `[IF:DELIBERATES]` gating of the self-audit, which §3 described in an italic aside citing a `GOOGLE_IMAGEN` target §7 has since removed. All of it is closed against the constant, and the aside is gone: an editorial annotation cannot survive inside a block that is checked verbatim, and §7 already carries what it said. Its earlier revisions, which the mirror did carry: the camera-versus-object-orientation rewrite recorded in **§8's "Found after shipping"**, which is where the reasoning for it lives, and a rewording of §2's `THREE_QUARTER_TOPDOWN` row, whose "the front of forms are visible" was false for any component turned away from the camera.
 
 A replacement for the template compiled by `src/utils/promptCompiler.ts`. Same job, same
@@ -60,7 +62,7 @@ Three forms:
 | --- | --- |
 | `[IF:KEY=A,B]` | `KEY` is `A` or `B` |
 | `[IF:KEY!=A,B]` | `KEY` is neither |
-| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_MANIFEST`, `EMIT_PROMPT_FEEDBACK`, `DELIBERATES`, `RETURNS_TEXT`)* |
+| `[IF:KEY]` | `KEY` is set and non-empty *(truthiness; used by `IDENTITY_LOCK`, `SOCKETS`, `EMIT_COMPONENT_MAP`, `EMIT_PROMPT_FEEDBACK`, `DELIBERATES`, `RETURNS_TEXT`)* |
 
 **Blocks nest.** A block inside a dropped block is dropped with it, whatever its own condition says.
 That is what lets a section state its precondition once and its parts state theirs beneath it — §9's
@@ -206,7 +208,7 @@ a cut-out rig for a top-down game needs — could not be requested at all.
 | `JOINT_CAP_STYLE` | `ROUNDED` · `SQUARED` · `TAPERED` |
 | `OVERLAP_MARGIN` | `NONE` · `HALF_CAP` · `FULL_CAP` |
 | `SOCKETS` | list, e.g. `head, chest, back, hand_left, hand_right` |
-| `EMIT_MANIFEST` | boolean — request a companion JSON manifest (text targets only) |
+| `EMIT_COMPONENT_MAP` | boolean — request a companion component map (text targets only) |
 | `EMIT_PROMPT_FEEDBACK` | boolean — ask the target to audit its own sheet and report back on this template's wording (targets that both deliberate *and* return text) |
 
 ### Other — **NEW**
@@ -281,9 +283,15 @@ build when the two disagree. The constant is the one the app emits, so a change 
 copied over this fence in the same commit — editing the fence alone changes nothing a model ever
 reads, and the test will say so.
 
+**The fence is four backticks, not three.** The template's component-map section fences the JSON
+example it asks a model to reproduce, so a three-backtick fence here closes on that example and this
+§ stops short of the constant — which the mirror test then fails on, with no wording of the block
+able to fix it. CommonMark closes a fence only on a run at least as long as the opener, which is what
+keeps the inner one content.
+
 ---
 
-```
+````
 # MODULAR SPRITE-SHEET SPECIFICATION — [DEFINE:CATEGORY]
 
 You are producing a **reference sheet for game-asset extraction**: an exploded grid of isolated,
@@ -942,19 +950,32 @@ If two views of one component still face effectively the same way, **the sheet h
 that component at the object yaw section [SEC:CAMERA] gives it rather than delivering the sheet.
 [/IF]
 [/IF]
-[IF:EMIT_MANIFEST]
+[IF:EMIT_COMPONENT_MAP]
 
 ---
 
-## [SECTION:MANIFEST]. COMPANION MANIFEST
+## [SECTION:COMPONENT_MAP]. COMPANION COMPONENT MAP
 
-Alongside the image, output a JSON manifest as text — grid position, part name, bone parent, and
-the pivot as a fraction of the component’s cell:
+Alongside the image, output a component map as text: one JSON document of exactly the shape below,
+carrying these key names and no others, with its straight quotes reproduced as written.
 
-{"grid":{"cols":0,"rows":0},"pieces":[{"index":0,"name":"","parent":null,"pivot":[0.5,0.1]}]}
+```json
+{"grid":{"cols":0,"rows":0},"components":[{"index":1,"name":"","parent":null,"pivot":[0.5,1]}]}
+```
 
-The manifest describes what you actually drew. If a component moved or was omitted, say so there
-rather than describing the ideal.
+**grid** states how many columns and how many rows the components are laid out in. **components**
+carries one entry per component, in the reading order section [SEC:INVENTORY] fixes, and each entry
+states four things:
+
+- **index** — this component’s place in that reading order, counting from one.
+- **name** — what the inventory in section [SEC:INVENTORY] calls this component.
+- **parent** — the **name** of the component this one attaches to in the assembled subject, or null
+  where it attaches to nothing.
+- **pivot** — where this component turns or stands, as a fraction of its own cell: two numbers from
+  0 to 1, across the cell and then down it, so 0.5 and 1 is the foot of the cell, centred.
+
+The map describes what you actually drew. If a component moved or was omitted, say so there rather
+than describing the ideal.
 [/IF]
 [IF:EMIT_PROMPT_FEEDBACK]
 
@@ -1037,7 +1058,7 @@ Generate the sheet now.
 
 Then write the adherence report — after the image has been delivered, never in place of it.
 [/IF]
-```
+````
 
 ---
 

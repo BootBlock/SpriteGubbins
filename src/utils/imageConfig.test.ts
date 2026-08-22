@@ -16,12 +16,12 @@ describe('toImageConfig', () => {
   it('drops the companion outputs and keeps everything else', () => {
     const image = toImageConfig({
       ...DEFAULT_OUTPUT_CONFIG,
-      emitManifest: true,
+      emitComponentMap: true,
       emitPromptFeedback: true,
       renderStyle: 'CEL_SHADED',
     });
 
-    expect(Object.keys(image)).not.toContain('emitManifest');
+    expect(Object.keys(image)).not.toContain('emitComponentMap');
     expect(Object.keys(image)).not.toContain('emitPromptFeedback');
     expect(image.renderStyle).toBe('CEL_SHADED');
   });
@@ -33,10 +33,10 @@ describe('toImageConfig', () => {
   });
 
   it('does not mutate what it was given', () => {
-    const output = { ...DEFAULT_OUTPUT_CONFIG, emitManifest: true };
+    const output = { ...DEFAULT_OUTPUT_CONFIG, emitComponentMap: true };
     toImageConfig(output);
 
-    expect(output.emitManifest).toBe(true);
+    expect(output.emitComponentMap).toBe(true);
   });
 });
 
@@ -44,12 +44,12 @@ describe('withCompanionOutputs', () => {
   it('takes the companions from the studio and everything else from the image', () => {
     const whole = withCompanionOutputs(
       { ...DEFAULT_IMAGE_CONFIG, renderStyle: 'CEL_SHADED', targetModel: 'GEMINI_PRO_IMAGE' },
-      { ...DEFAULT_OUTPUT_CONFIG, emitManifest: true, emitPromptFeedback: true },
+      { ...DEFAULT_OUTPUT_CONFIG, emitComponentMap: true, emitPromptFeedback: true },
     );
 
     expect(whole.renderStyle).toBe('CEL_SHADED');
     expect(whole.targetModel).toBe('GEMINI_PRO_IMAGE');
-    expect(whole.emitManifest).toBe(true);
+    expect(whole.emitComponentMap).toBe(true);
     expect(whole.emitPromptFeedback).toBe(true);
   });
 
@@ -60,13 +60,13 @@ describe('withCompanionOutputs', () => {
     // by the ones from `from`, so a preset that somehow held them could not decide them either.
     const carriesBoth: OutputConfig = {
       ...DEFAULT_OUTPUT_CONFIG,
-      emitManifest: true,
+      emitComponentMap: true,
       emitPromptFeedback: true,
     };
 
     const whole = withCompanionOutputs(carriesBoth, DEFAULT_OUTPUT_CONFIG);
 
-    expect(whole.emitManifest).toBe(false);
+    expect(whole.emitComponentMap).toBe(false);
     expect(whole.emitPromptFeedback).toBe(false);
   });
 

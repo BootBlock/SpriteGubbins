@@ -48,9 +48,10 @@ export function deliberates(target: TargetModelId): boolean {
  * tokens on an instruction it can only drop — which is why both companion outputs are gated rather
  * than emitted and silently ignored.
  *
- * Named for the capability rather than for the manifest it was first added to gate: the adherence
- * report needs the same channel, and a predicate called `supportsManifest` answering "may this
- * target write a report?" would be the loose seam where the two quietly stop meaning the same thing.
+ * Named for the capability rather than for the component map it was first added to gate: the
+ * adherence report needs the same channel, and a predicate called `supportsComponentMap` answering
+ * "may this target write a report?" would be the loose seam where the two quietly stop meaning the
+ * same thing.
  */
 export function returnsText(target: TargetModelId): boolean {
   return capabilitiesFor(target).emitsText;

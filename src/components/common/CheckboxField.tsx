@@ -14,7 +14,7 @@ interface CheckboxFieldProps {
  * A labelled on/off setting.
  *
  * `disabledReason` is a string rather than a boolean because a control that is simply greyed out
- * tells the user nothing about why. Both options this carries — the companion manifest and the
+ * tells the user nothing about why. Both options this carries — the component map and the
  * adherence report — are unavailable on most targets, and *which* capability the target is missing
  * is the part worth saying: a string lets the caller name it, where a boolean could only hide the
  * control and leave the user guessing.
