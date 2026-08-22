@@ -1,6 +1,7 @@
 import type { Rgba } from '../types/quantiser.ts';
+import { blendWeightedHistogram } from './blendHistogram.ts';
 import { refineToPalette, type ColorTally } from './exactSplit.ts';
-import { colorHistogram, unpackColor } from './imageData.ts';
+import { unpackColor } from './imageData.ts';
 import { partition } from './wuBoxSearch.ts';
 import { buildMoments, WU_SIDE, wuCell, wuCellOfKey, type WuBox } from './wuMoments.ts';
 
@@ -55,6 +56,14 @@ import { buildMoments, WU_SIDE, wuCell, wuCellOfKey, type WuBox } from './wuMome
  * by the image, so the same image always yields the same palette and the tests can assert an exact
  * one.
  *
+ * **The histogram it reads is weighted, and the weighting is part of the answer.** A generated
+ * sheet's anti-aliased fringes are a large population of colours that exist only where two regions
+ * meet, and counted pixel for pixel with the art's own flat colours they claim slots the art needed:
+ * on a fixture whose art uses 24 colours, a budget of 24 kept 21 of them and spent three slots on
+ * blends. `blendWeightedHistogram` is what a pixel partway between the two beside it is worth
+ * instead. It removes no colour — every one the image holds is still a candidate — so the short
+ * circuit below and every ordering guarantee above are exactly as they were.
+ *
  * Drawing the image in the chosen palette is `applyPalette` in ./applyPalette.ts — a different
  * algorithm over any palette, not only one this file produced.
  */
@@ -64,9 +73,10 @@ import { buildMoments, WU_SIDE, wuCell, wuCellOfKey, type WuBox } from './wuMome
  * already contained, or every colour it holds where it holds fewer than that.
  */
 export function buildPalette(image: ImageData, maxColors: number): readonly Rgba[] {
-  const histogram = colorHistogram(image);
+  const histogram = blendWeightedHistogram(image);
   // Already inside the budget: reducing further would discard colours nothing asked to lose, and
-  // scan order is what `identityPalette` documents it is re-sorting away from.
+  // scan order is what `identityPalette` documents it is re-sorting away from. The weighting cannot
+  // reach this branch — it changes what a colour is worth, never whether the image contains it.
   if (histogram.size <= maxColors) return [...histogram.keys()].map(unpackColor);
 
   const boxes = partition(buildMoments(histogram), maxColors);

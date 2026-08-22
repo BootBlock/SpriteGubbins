@@ -22,6 +22,109 @@ export const PALETTE_COLOR_COUNTS: Readonly<Record<PaletteLimit, number | null>>
 };
 
 /**
+ * How far apart a pixel's two opposite neighbours must sit before the pixel between them can be read
+ * as a blend of the pair — in scaled OKLab, as every colour tolerance on this tab is.
+ *
+ * The pass this opens is `blendWeightedHistogram`, and what it protects is the palette a *budget*
+ * chooses. A generated sheet's anti-aliased fringes are a large, high-variance population of colours
+ * that exist only where two regions meet, and `buildPalette` counted every one of their pixels
+ * exactly as it counted a pixel of the art's own flat colours — so a budget could spend slots on
+ * blends and then merge genuine art tones onto shared entries. Measured on softened fixtures at a
+ * budget equal to the art's own colour count, the palette held 7 of 8, 8 of 12, 10 of 16 and 14 of
+ * 24 of the colours the art was drawn in.
+ *
+ * **A gap is what makes the reading a boundary rather than a gradient.** Soft shading has every pixel
+ * partway between the two beside it, and taking those as blends would down-weight the whole of a
+ * shaded surface; a threshold on the *span* leaves them, because a shading step between adjacent
+ * pixels is small and a region boundary is not. 16 was chosen from where the answer stops moving: 8
+ * and 16 give the same palette on both softened fixtures, while 32 is strict enough to miss most of
+ * the fringes and gives back most of the defect — 17 of 24 art colours where 16 gives 22.
+ */
+export const BLEND_EDGE_GAP = 16;
+
+/**
+ * How far a pixel must sit from **both** of the neighbours it lies between before it counts as a
+ * blend of them, in the same units.
+ *
+ * Without it the test takes the ends of its own run: a pixel identical to one neighbour is trivially
+ * "between" the pair, so a flat colour beside a boundary would be read as a blend of itself and
+ * whatever is on the other side. The floor is what makes the reading mean *partway along*.
+ *
+ * It also decides what the pass declines to touch, and declining is the safe direction. A pixel a
+ * tenth of the way across a boundary is nearly the art colour it sits beside, so a slot spent on it
+ * costs almost nothing; the blends worth suppressing are the ones near the middle, and they are far
+ * from both ends by construction. 4 and 8 give the same palette on both softened fixtures; 0 gives up
+ * one art colour of sixteen, which is the ends being taken.
+ */
+export const BLEND_END_GAP = 4;
+
+/**
+ * How far off the straight run between its two neighbours a pixel may sit and still be read as a
+ * blend of them, in the same units.
+ *
+ * The test is the triangle inequality — the distances to the two neighbours sum to the distance
+ * between them when the pixel lies on the run joining the pair — and the slack is not a refinement of
+ * it but the whole of what makes it fire. A real softening kernel is separable and two-dimensional,
+ * so a pixel on a vertical edge carries a little of what was above and below it as well, and lands
+ * *near* the run rather than on it: at zero slack the pass detects nothing at all and both softened
+ * fixtures come back at their unweighted figures. 4, 8 and 16 are indistinguishable on both, so this
+ * sits at the bottom of the plateau, which is the value that reads the fewest pixels as blends.
+ *
+ * **What it cannot see, and why that is left alone.** An sRGB blend is a straight run in sRGB and a
+ * slightly curved one in OKLab, and how far it bends depends on the two hues — the midpoint of a
+ * saturated red and a saturated blue sits 5.3 off the run joining them. That only arises where a
+ * boundary is softened over a *single* pixel, because the reading asks about a pixel's immediate
+ * neighbours: across the three-tap kernel a resampler actually leaves, each step's neighbours are the
+ * steps beside it and the run is short enough to be straight. Widening the slack to cover the
+ * one-pixel case changed no palette on any fixture, so it is not widened, and the cost of the miss is
+ * that such a colour keeps the vote it always had.
+ */
+export const BLEND_STRAIGHTNESS = 4;
+
+/**
+ * What a blend pixel's vote is worth, as a fraction of a flat pixel's, when a budget's palette is
+ * chosen.
+ *
+ * **A fraction rather than nothing**, and the difference is what keeps the pass safe on the sheets it
+ * has no opinion about. Every colour stays in the histogram, so the set a palette is chosen *from* is
+ * exactly the set the image contains, and `buildPalette`'s "already inside the budget" answer is the
+ * same one it always gave. And because Wu's criterion and the representative's tally are both
+ * scale-invariant, a sheet that is nothing but transitions — a soft gradient with no flat region
+ * anywhere — has every weight scaled by the same constant and is quantised exactly as it was before
+ * this pass existed. Zero would make that sheet's whole histogram vanish.
+ *
+ * **A power of two, which is what keeps the palette exactly reproducible.** `wuQuantiser` promises
+ * the same image always yields the same palette, and it rests on every tie resolving the same way.
+ * A weight of 1/64 makes each colour's total a multiple of 1/64, and 16,777,216 pixels — the tab's
+ * ceiling — is 2³⁰ of those, comfortably inside the 2⁵³ where a `Float64Array` still counts exactly.
+ * So no sum here rounds, and two colours that weigh the same weigh *exactly* the same. A weight that
+ * was not a binary fraction would put that promise on the ordering of a floating-point sum.
+ *
+ * **1/64 is where the answer stops moving.** On both softened fixtures every value from 1/64 down to
+ * 10⁻⁶ chooses the same palette; 1/16 recovers part of the loss and 1/4 recovers little. At the
+ * budgets equal to the art's own colour count quoted at {@link BLEND_EDGE_GAP}, this takes 7 of 8 to
+ * 8, 8 of 12 to 11, 10 of 16 to 15 and 14 of 24 to 22 — and on a fixture whose 24 colours meet at
+ * one-pixel seams it takes the palette from 21 art colours and 3 blends to all 24, and the mean error
+ * at the art's own colours from 1.83 to nothing.
+ *
+ * **What it costs, on a sheet with no flat colour to protect.** End to end on the reference armour
+ * sheet — grid 6, budgets of 16 and 64, under all three vote readings — structural similarity moves
+ * by less than 0.005 either way, which is inside the run-to-run noise of the measurement. The pass
+ * makes the histogram about five times the cost of a plain one and the whole pipeline about five per
+ * cent more; absolute timings are stated nowhere here, because they move by several times between
+ * runs on one machine.
+ *
+ * **The one thing it cannot tell apart, said plainly.** A deliberate one-pixel shading band drawn
+ * between a light body and a dark one is geometrically a blend of the two, and no local reading
+ * separates it from a fringe. On native-scale art at a budget below the art's colour count, this pass
+ * gives such a band up before it gives up a drawn contour — which is the trade this app makes
+ * everywhere else, and is why `lineVote` and `outlineExpansion` exist. Art drawn at a scale is not
+ * affected: a band two pixels wide or more has interior pixels whose neighbours match, and those are
+ * never read as blends.
+ */
+export const BLEND_VOTE_WEIGHT = 1 / 64;
+
+/**
  * The fraction of an image's colour transitions that must fall on a scale's lattice for that scale to
  * be believed.
  *
@@ -144,15 +247,21 @@ const SMALLEST_SPRITE_EDGE = 16;
 export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE_EDGE } as const;
 
 /**
- * How many times chance a position's change must be before it reads as a boundary line.
+ * How many times the background a position's change must be before it reads as a boundary line.
  *
- * A structureless axis spreads its change evenly, handing every position `total / usable` of it —
- * so a boundary is a position carrying a *multiple* of that, and 2 is the smallest multiple that
- * separates the two populations on the sheets measured: a softened boundary's centre column carries
- * about half its step, which is many times chance on any sheet with real cells, while noise and
- * gradient columns sit at chance by definition. Weak genuine boundaries that fall under it are not
- * lost — `boundaryMesh` completes a missing line at the expected spacing, which is where a boundary
- * too faint to detect almost certainly is.
+ * The background is what a position carries when it is *not* a boundary, which `boundaryClusters`
+ * separates out rather than taking the axis mean for — a mean is the background and the structure
+ * averaged together, so on a detailed sheet the interior marks lift the very level the boundaries
+ * are measured against. Against the background proper, 2 is the smallest multiple that separates
+ * the two populations on the sheets measured: a softened boundary's centre column carries about
+ * half its step, which is many times the background on any sheet with real cells, while noise and
+ * gradient columns sit at the background by definition. Weak genuine boundaries that fall under it
+ * are not lost — `boundaryMesh` completes a missing line at the expected spacing, which is where a
+ * boundary too faint to detect almost certainly is.
+ *
+ * It is also the multiple the background is *found* by, because the same question is being asked at
+ * every pass of that search: a sample worth more than twice the level so far is structure and does
+ * not belong in the level. One figure, read twice, rather than two that could drift apart.
  *
  * Filed here with the other calibrated thresholds — `GRID_DETECTION_THRESHOLD` and its siblings —
  * rather than beside the function that reads it, for the reason `KEY_SHADING_LATITUDE` records:
@@ -439,7 +548,7 @@ export const DEFAULT_CLEANUP_PASSES = 1;
  * folding near-duplicate colours together sheet-wide; `mergeColors` holds the rule, and the
  * distance is scaled OKLab, as every colour-tolerance gate measures. Calibration points, measured on
  * the armour sheet (grid 6, ink-weighted 1.5×, a budget of 64): at 12 its sixty-four colours
- * settle to thirty and every fill reads as one surface with its shading intact; by 24 it
+ * settle to twenty-seven and every fill reads as one surface with its shading intact; by 24 it
  * reaches fourteen and begins to spend genuine shading. The range runs on to 48 anyway — six
  * colours on that sheet — because a flatter look is a style, not a mistake, and the preview is
  * beside the dial. Half the RGB range it replaced, for the reason `FILL_CLEANUP_RANGE` gives:
@@ -571,10 +680,10 @@ export const VOTE_METHOD_CHOICES = [
  * {@link DITHER_SHORTLIST} — so a cheaper tier would have been a worse result at no saving.
  *
  * What separates the patterns is what the eye does with them, measured on the reference sheet
- * (`armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the resolved sheet
- * 211 × 209) as the mean scaled-OKLab distance from that resolved sheet: per pixel, then over
- * aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a dither is
- * *for*, since a pattern trades per-pixel accuracy for a local average.
+ * (`test_sprites/armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the
+ * resolved sheet 211 × 209) as the mean scaled-OKLab distance from that resolved sheet: per pixel,
+ * then over aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a
+ * dither is *for*, since a pattern trades per-pixel accuracy for a local average.
  *
  * ```
  * budget 64      flat 1.85 / 0.78 / 0.48   BAYER_4 2.10 / 0.72 / 0.43   BAYER_8 2.12 / 0.73 / 0.43   BLUE_NOISE 2.12 / 0.73 / 0.42
@@ -855,8 +964,9 @@ export const SCATTERED_SPRITE_CEILING = 512;
  * silhouette's mirror moves the centre by `d / 2`. Eight pixels of reach therefore covers a limb,
  * a weapon or a cloak extending sixteen drawn pixels past what the other side holds, which is well
  * past anything a sprite drawn at 16 to 64 pixels a side can carry. The reference sheet
- * (`armour.png`, 1254², grid 6) separates into fifteen pieces measuring 24 to 35 drawn pixels
- * across, where the quarter-width bound below is the binding one on all but the widest of them.
+ * (`test_sprites/armour.png`, 1254², grid 6) separates into fifteen pieces measuring 25 to 34 drawn
+ * pixels across, where the quarter-width bound below is the binding one on all but the four widest
+ * of them.
  *
  * It is a **bound on cost as much as on the claim**: the sweep is `(4 × reach + 1)` scorings of a
  * whole box, so an unbounded search would be quadratic in the widest sprite on the sheet while a
@@ -905,20 +1015,26 @@ export const DEFAULT_SYMMETRY = 'OFF';
  * which is what a flat-coloured sheet from a clean generator can actually reach. The Symmetry
  * control's own `OFF` is what stops the pass running.
  *
+ * **Every figure below is measured on the reference sheet under stated conditions**, because a
+ * share is meaningless without them: `test_sprites/armour.png` at grid 6, the ink-weighted reading
+ * at its defaults (line 1.5×, trim 0, ink threshold 64), the magenta key at tolerance 24, the
+ * Symmetry control on `CHECK`, and every other dial where it opens. The sheet segments into fifteen
+ * armour pieces there, and each figure is the mean of the fifteen shares the panel reports.
+ *
  * The ceiling is 64 because past it the figure stops separating anything: a quarter of the
  * black-to-white span already admits a mid-tone against its own shadow, and a tolerance that admits
- * a shadow admits most of what a returned sprite's two halves disagree about. Measured on the
- * reference sheet, whose fifteen armour pieces are drawn at several angles and are asymmetric by
- * subject, the mean share reported rises from **39%** at exact to **72%** at 64 — near-symmetry
+ * a shadow admits most of what a returned sprite's two halves disagree about. Those fifteen pieces
+ * are drawn at several angles and are asymmetric by subject, and with the colour dials left where
+ * they open the mean share rises from **0.7%** at exact to **77.1%** at 64 — near-symmetry
  * claimed for a sheet that holds none, which is what would leave the floor below nothing to refuse.
  *
  * **What the dial is worth depends entirely on how flat the sheet already is**, and the reference
  * sheet measures both ends of that. Reduced to 64 colours with the colour merge at 24 it settles to
- * eleven colours, and every rung from exact to 24 reports the identical **38.6%** — the merge has
+ * eleven colours, and every rung from exact to 24 reports the identical **36.9%** — the merge has
  * already folded everything within 24, so no two mirrored pixels are left sitting between it and
- * exact. The same sheet read with no reduction and no merge holds 12,026 colours, where exact
- * reports **0.6%** and the rungs climb smoothly: 8.0% at 2, 15.1% at 4, 24.4% at 8, 35.8% at 16,
- * 53.2% at 32.
+ * exact, and the reading first moves at 25. The same sheet read with no reduction and no merge holds
+ * 11,912 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.8% at 4,
+ * 24.2% at 8, 35.6% at 16, 52.7% at 32.
  */
 export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
 
@@ -929,9 +1045,9 @@ export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
  * Eight is the rung that behaves sensibly at both ends of that sweep. On a **reduced** sheet it is a
  * no-op, and rightly so: the colours are flat and far apart, so exact equality is the question worth
  * asking and anything short of the gap between two palette entries changes no answer. On an
- * **unreduced** one it turns a reading of 0.6% — which says nothing about the artwork and everything
- * about the resampling — into 24.4%, without reaching the 32 and above where a surface starts
- * matching its own shading.
+ * **unreduced** one it turns a reading of 0.7% — which says nothing about the artwork and everything
+ * about the resampling — into 24.2%, without reaching the 32 and above where a surface starts
+ * matching its own shading, which is 52.7% by that rung.
  */
 export const DEFAULT_SYMMETRY_TOLERANCE = 8;
 
@@ -947,11 +1063,13 @@ export const DEFAULT_SYMMETRY_TOLERANCE = 8;
  * *reports* every sprite and the reader can watch which of them reach it.
  *
  * The reference sheet is what this was read against, and it is the awkward case rather than the easy
- * one: fifteen armour pieces drawn at several angles, none of them meant to be symmetric. At the
- * default tolerance they report **20% to 68%**, so nothing is settled at 90 or at 75; two are
- * settled at 65 and four at 60, those four being the pieces whose best axis lands on or beside their
- * own box centre. A sheet of front-facing subjects is the case the other way round, and the panel
- * lists every share so which one is in front of the reader is legible rather than assumed.
+ * one: fifteen armour pieces drawn at several angles, none of them meant to be symmetric. Read under
+ * the conditions {@link SYMMETRY_TOLERANCE_RANGE} states, reduced to 64 colours with the colour
+ * merge at 24, and at the default tolerance, they report **18% to 68%** — so nothing is settled at
+ * 90 or at 75; one is settled at 65, two at 60 and four at 55, and each of those four places its
+ * best axis within a pixel of its own box centre. A sheet of front-facing subjects is the case the
+ * other way round, and the panel lists every share so which one is in front of the reader is
+ * legible rather than assumed.
  */
 export const SYMMETRY_CONFIDENCE_RANGE = { min: 50, max: 100, step: 1 } as const;
 
@@ -1142,13 +1260,14 @@ export const DIFFERENCE_PRECISION = 64;
  * than either: the scale is a way of *looking*, so what it wants is a handful of settled rungs a
  * reader can go back and forth between, not a continuum they have to re-find.
  *
- * The rungs are read off the reference sheet (`armour.png`, 1254², grid 6, the standard vote, a
- * budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75 10.3, p90 54.8, p99
- * 120.8 and peaks at 180 — roughly seven cells in ten near-exact, and a tail that is the sheet's
- * edges. Against that: **4** grades the near-exact seventy per cent and saturates the rest, **32**
- * is the default because it puts the whole of what a dial moves across the ramp — a second cleanup
- * pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed* sheet needs, where a
- * silhouette cell whose coverage flipped scores past 200 on the alpha axis alone.
+ * The rungs are read off the reference sheet (`test_sprites/armour.png`, 1254², grid 6, the
+ * standard vote, a budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75
+ * 10.3, p90 54.8, p99 120.8 and peaks at 180 — roughly seven cells in ten near-exact, and a tail
+ * that is the sheet's edges. Against that: **4** grades the near-exact seventy per cent and
+ * saturates the rest, **32** is the default because it puts the whole of what a dial moves across
+ * the ramp — a second cleanup pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed*
+ * sheet needs, where a silhouette cell whose coverage flipped scores past 200 on the alpha axis
+ * alone.
  */
 export const DIFFERENCE_SCALES = [4, 8, 16, 32, 64, 128] as const;
 

@@ -14,13 +14,15 @@ import { stepProfile } from './stepProfile.ts';
 /**
  * The scale of a sheet read from the *whole* step profile, by autocorrelation — one axis at a time.
  *
- * The reading that serves real generated sheets, whose interior detail defeats every line-list
- * approach: straps, crosses and rivets put strong edges between the cell boundaries, polluting any
- * statistic built from detected lines — and inflating the chance floor those lines are detected
- * against, so genuine boundaries can drop out of the list while detail stays in. Correlating a
- * profile against a shifted copy of itself uses all of the mass, unthresholded: the periodic
- * component the pixel grid contributes still peaks at multiples of the pitch however much broadband
- * detail rides on top of it.
+ * The reading that serves real generated sheets, whose interior detail is hardest on every line-list
+ * approach: straps, crosses and rivets put strong edges between the cell boundaries, and a line list
+ * can only separate those from the boundaries while the two populations are still separable at all.
+ * `boundaryClusters` measures against the axis's background rather than its mean for exactly that
+ * reason, and it holds the lattice on the sheets this file's fixtures carry — but detail dense
+ * enough to sit in every second cell overlaps the boundaries whatever the floor is. Correlating a
+ * profile against a shifted copy of itself needs no separation at all: it uses all of the mass,
+ * unthresholded, and the periodic component the pixel grid contributes still peaks at multiples of
+ * the pitch however much broadband detail rides on top of it.
  *
  * **Each axis is read alone, and the two answers are reconciled afterwards.** Summing the axes'
  * covariances first read as one number, and that was its defect: detail patterned along one axis

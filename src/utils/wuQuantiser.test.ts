@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { imageFrom } from '../test/images.ts';
 import { applyPalette } from './applyPalette.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { colorHistogram, countColors, packColor, pixelOffset, readPixel } from './imageData.ts';
+import { imageFrom, soften } from '../test/images.ts';
+import { upscaleNearest } from './upscaleNearest.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /** 200 pixels, every one a different colour — `r` alone is injective for the first 256 of them. */
@@ -193,5 +194,37 @@ describe('buildPalette', () => {
     for (let index = 0; index < ALPHAS.length; index += 1) {
       expect(readPixel(drawn.data, pixelOffset(11, index, 0)).a).toBe(ALPHAS[index]);
     }
+  });
+  it('spends its budget on the art rather than on the fringes between it', () => {
+    // The reported defect, as a fixture. Eight flat colours drawn at a scale of four and then
+    // resampled — which is what a model hands back — leave 156 blend colours around the art's own
+    // eight, and they carry a fifth of the sheet between them. Counted pixel for pixel with the art,
+    // that population claimed a slot at a budget of exactly eight and one of the art's colours was
+    // merged away; `blendWeightedHistogram` is what the palette is chosen from instead, and the
+    // whole budget now goes to the art. Neither the sheet nor the budget is contrived: the art is
+    // eight colours and the budget is eight.
+    const ART: readonly Rgba[] = [
+      { r: 220, g: 200, b: 150, a: 255 },
+      { r: 60, g: 50, b: 35, a: 255 },
+      { r: 70, g: 100, b: 190, a: 255 },
+      { r: 20, g: 30, b: 60, a: 255 },
+      { r: 200, g: 60, b: 60, a: 255 },
+      { r: 90, g: 170, b: 90, a: 255 },
+      { r: 240, g: 240, b: 235, a: 255 },
+      { r: 12, g: 10, b: 16, a: 255 },
+    ];
+    const blocks = imageFrom(32, 32, (x, y) => {
+      // Scattered rather than striped, so every pair of art colours meets somewhere and the blends
+      // are the wide, high-variance population a real sheet's edges are, not a handful of midpoints.
+      const scatter = (Math.floor(x / 4) * 73856093) ^ (Math.floor(y / 4) * 19349663);
+      return ART[((scatter ^ (scatter >>> 13)) >>> 0) % ART.length] ?? ART[0]!;
+    });
+    const sheet = soften(upscaleNearest(blocks, 4));
+
+    expect(countColors(sheet)).toBe(160);
+    const palette = buildPalette(sheet, ART.length);
+    expect([...palette].sort((left, right) => packColor(left) - packColor(right))).toEqual(
+      [...ART].sort((left, right) => packColor(left) - packColor(right)),
+    );
   });
 });
