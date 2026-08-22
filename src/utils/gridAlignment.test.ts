@@ -9,8 +9,12 @@ import { pixelOffset, readPixel } from './imageData.ts';
 /** A 16 × 16 source in which every pixel is a different colour, so no block of two is ever uniform. */
 const PIXEL_SOURCE = imageFrom(16, 16, (x, y) => ({ r: x * 16 + 1, g: y * 16 + 1, b: 64, a: 255 }));
 
-/** Awkward on purpose: neither dimension is a multiple of 4, so trailing partial cells are covered. */
-const NOISY = imageFrom(20, 13, (x, y) => ({
+/**
+ * Awkward on purpose: 15 is not a multiple of 4, so a trailing partial cell is covered — and it is
+ * three rows rather than one, because the mesh merges an end band of fewer than three pixels into
+ * the cell beside it and a one-row strip would no longer be a cell at all.
+ */
+const NOISY = imageFrom(20, 15, (x, y) => ({
   r: (x * 37 + y * 11) % 256,
   g: (x * 5 + y * 29) % 256,
   b: (x * y) % 256,
@@ -25,15 +29,15 @@ describe('alignToGrid', () => {
   it('is idempotent — aligning an aligned image changes nothing', () => {
     // The clearest single check that the step did what it claims: after it, every cell is one
     // colour, so there is nothing left for a second pass to collapse.
-    const once = alignToGrid(NOISY, regularMesh(20, 13, 4, CORNER));
-    const twice = alignToGrid(once, regularMesh(20, 13, 4, CORNER));
+    const once = alignToGrid(NOISY, regularMesh(20, 15, 4, CORNER));
+    const twice = alignToGrid(once, regularMesh(20, 15, 4, CORNER));
     expect(channels(twice)).toEqual(channels(once));
   });
 
   it('is idempotent at an offset too, where the cells it revisits are the partial ones', () => {
     const offset: GridOffset = { x: 3, y: 2 };
-    const once = alignToGrid(NOISY, regularMesh(20, 13, 4, offset));
-    const twice = alignToGrid(once, regularMesh(20, 13, 4, offset));
+    const once = alignToGrid(NOISY, regularMesh(20, 15, 4, offset));
+    const twice = alignToGrid(once, regularMesh(20, 15, 4, offset));
     expect(channels(twice)).toEqual(channels(once));
   });
 
@@ -87,39 +91,44 @@ describe('alignToGrid', () => {
   });
 
   it('aligns the partial cells a sheet cuts short, rather than leaving a ragged edge', () => {
-    // 20 × 13 at a grid of 4 leaves a one-row strip at the bottom. Skipping it would leave the only
-    // unaligned part of the image exactly where a sprite sheet's last row of components sits.
+    // 20 × 15 at a grid of 4 leaves a three-row strip at the bottom. Skipping it would leave the
+    // only unaligned part of the image exactly where a sprite sheet's last row of components sits.
     //
     // Asserted against the colour the strip should actually hold, not merely against itself: the
-    // output buffer starts zero-filled, so "every pixel in the row matches" is equally true of a
-    // row that was never written at all — which is precisely the implementation this test rules out.
-    // The strip is one row of four all-distinct pixels, so its modal vote ties and the centre
-    // tie-break resolves it: the row's centre falls between x = 1 and x = 2, and nearest-then-
-    // earliest takes x = 1.
-    const expected = readPixel(NOISY.data, pixelOffset(NOISY.width, 1, 12));
-    const aligned = alignToGrid(NOISY, regularMesh(20, 13, 4, CORNER));
+    // output buffer starts zero-filled, so "every pixel in the cell matches" is equally true of a
+    // cell that was never written at all — which is precisely the implementation this test rules
+    // out. The strip's first cell is 4 × 3 all-distinct pixels, so its modal vote ties and the
+    // centre tie-break resolves it: the cell's centre is (1.5, 13), and nearest-then-earliest takes
+    // the pixel at x = 1, y = 13.
+    const expected = readPixel(NOISY.data, pixelOffset(NOISY.width, 1, 13));
+    const aligned = alignToGrid(NOISY, regularMesh(20, 15, 4, CORNER));
 
-    for (let x = 0; x < 4; x += 1) {
-      expect(readPixel(aligned.data, pixelOffset(aligned.width, x, 12))).toEqual(expected);
+    for (let y = 12; y < 15; y += 1) {
+      for (let x = 0; x < 4; x += 1) {
+        expect(readPixel(aligned.data, pixelOffset(aligned.width, x, y))).toEqual(expected);
+      }
     }
   });
 
   it('snaps to the art’s own boundaries when the offset says where they are', () => {
-    // The whole point of the offset: art drawn at 4 but delivered two pixels in from the corner has
-    // its boundaries at 2, 6, 10, … — and a corner-anchored alignment resolves every cell over a
-    // window straddling two of the art's own, reducing the sheet to mush. At the art's phase every
+    // The whole point of the offset: art drawn at 4 but delivered three pixels in from the corner
+    // has its boundaries at 3, 7, 11, … — and a corner-anchored alignment resolves every cell over
+    // a window straddling two of the art's own, reducing the sheet to mush. At the art's phase every
     // cell is already uniform, so aligning is the identity.
+    //
+    // Three pixels of margin rather than two, because the mesh merges a shorter end band into the
+    // cell beside it: three source pixels is the narrowest leading cell any lattice can express.
     const art = upscaleNearest(
       imageFrom(4, 4, (x, y) => ({ r: x * 60 + 10, g: y * 60 + 10, b: 120, a: 255 })),
       4,
     );
-    const inset = imageFrom(18, 18, (x, y) =>
-      x < 2 || y < 2
+    const inset = imageFrom(19, 19, (x, y) =>
+      x < 3 || y < 3
         ? { r: 250, g: 250, b: 250, a: 255 }
-        : readPixel(art.data, pixelOffset(art.width, x - 2, y - 2)),
+        : readPixel(art.data, pixelOffset(art.width, x - 3, y - 3)),
     );
 
-    const aligned = alignToGrid(inset, regularMesh(18, 18, 4, { x: 2, y: 2 }));
+    const aligned = alignToGrid(inset, regularMesh(19, 19, 4, { x: 3, y: 3 }));
     expect(channels(aligned)).toEqual(channels(inset));
   });
 });
@@ -134,44 +143,72 @@ describe('downscaleNearest', () => {
   });
 
   it('keeps trailing partial cells instead of cropping them away', () => {
-    // Cropping to a whole multiple of the grid would silently delete a column and a row of a sheet.
+    // Cropping to a whole multiple of the grid would silently delete a row of a sheet.
     const reduced = downscaleNearest(
-      alignToGrid(NOISY, regularMesh(20, 13, 4, CORNER)),
-      regularMesh(20, 13, 4, CORNER),
+      alignToGrid(NOISY, regularMesh(20, 15, 4, CORNER)),
+      regularMesh(20, 15, 4, CORNER),
     );
     expect(reduced.width).toBe(5);
     expect(reduced.height).toBe(4);
   });
 
   it('keeps the leading partial cells an offset creates, for the same reason', () => {
-    // At an offset of 3 on a 20-pixel axis the cells are [0,3), [3,7), … [19,20): six of them, the
-    // first and last partial. Cropping the leading strip would delete the margin side of every
-    // sheet whose art does not start at the corner.
-    const offset: GridOffset = { x: 3, y: 2 };
+    // At an offset of 3 on a 20-pixel axis the cells are [0,3), [3,7), [7,11), [11,15), [15,20):
+    // five of them, the first and last partial. Cropping the leading strip would delete the margin
+    // side of every sheet whose art does not start at the corner.
+    const offset: GridOffset = { x: 3, y: 3 };
     const reduced = downscaleNearest(
-      alignToGrid(NOISY, regularMesh(20, 13, 4, offset)),
-      regularMesh(20, 13, 4, offset),
+      alignToGrid(NOISY, regularMesh(20, 15, 4, offset)),
+      regularMesh(20, 15, 4, offset),
     );
-    expect(reduced.width).toBe(6);
+    expect(reduced.width).toBe(5);
     expect(reduced.height).toBe(4);
+  });
+
+  it('keeps one cell on an axis whose offset leaves no cut on it at all', () => {
+    // An offset at or past the extent puts no cut on the axis, and an axis of no cells is a
+    // zero-dimension image rather than a small one — `ImageData`'s constructor throws on it. The
+    // image's own edge bounds one cell whatever the phase, so that is what comes back.
+    const mesh = regularMesh(4, 4, 6, { x: 5, y: 5 });
+
+    expect(mesh.x).toEqual([0]);
+    expect(mesh.y).toEqual([0]);
+  });
+
+  it('merges an end band too narrow to be a cell into the cell beside it', () => {
+    // The defect this bound exists for: `downscaleNearest` emits one output pixel per cell, so a
+    // band of one or two pixels would stand in the result exactly as wide as a full cell — which is
+    // how a 1254 × 1254 sheet came back 210 × 209 at a grid of 6. An end cell holds three source
+    // pixels at least, so an offset of 1 merges into the cell after it, and the 15-pixel axis's
+    // one-row tail merges into the cell before it. Nothing is cropped: the merged bands are still
+    // in the sheet, voting in those cells by the area they cover.
+    const offset: GridOffset = { x: 1, y: 2 };
+    const mesh = regularMesh(20, 15, 4, offset);
+
+    expect(mesh.x).toEqual([0, 5, 9, 13, 17]);
+    expect(mesh.y).toEqual([0, 6, 10]);
+
+    const reduced = downscaleNearest(alignToGrid(NOISY, mesh), mesh);
+    expect(reduced.width).toBe(5);
+    expect(reduced.height).toBe(3);
   });
 
   it('samples the cells the alignment resolved, not corner-anchored ones', () => {
     // The two transforms must agree about where every cell begins, or the reduction reads pixels
-    // the alignment never wrote. A 2-offset lattice on an 18-pixel axis is cells [0,2), [2,6), …:
-    // the reduced image's second pixel must be the aligned image's pixel at x = 2, not at x = 4.
+    // the alignment never wrote. A 3-offset lattice on a 19-pixel axis is cells [0,3), [3,7), …:
+    // the reduced image's second pixel must be the aligned image's pixel at x = 3, not at x = 4.
     const art = upscaleNearest(
       imageFrom(4, 4, (x, y) => ({ r: x * 60 + 10, g: y * 60 + 10, b: 120, a: 255 })),
       4,
     );
-    const inset = imageFrom(18, 18, (x, y) =>
-      x < 2 || y < 2
+    const inset = imageFrom(19, 19, (x, y) =>
+      x < 3 || y < 3
         ? { r: 250, g: 250, b: 250, a: 255 }
-        : readPixel(art.data, pixelOffset(art.width, x - 2, y - 2)),
+        : readPixel(art.data, pixelOffset(art.width, x - 3, y - 3)),
     );
-    const offset: GridOffset = { x: 2, y: 2 };
+    const offset: GridOffset = { x: 3, y: 3 };
 
-    const mesh = regularMesh(18, 18, 4, offset);
+    const mesh = regularMesh(19, 19, 4, offset);
     const reduced = downscaleNearest(alignToGrid(inset, mesh), mesh);
 
     expect(reduced.width).toBe(5);

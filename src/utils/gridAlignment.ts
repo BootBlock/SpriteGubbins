@@ -13,6 +13,12 @@ import { lineAwareWinner } from './lineVote.ts';
  * one — so partial cells at either end of an axis are cells like any other, aligned over whatever
  * they contain. Cropping either would silently delete a strip of the sheet, and the art a
  * generator inset from the corner is no more disposable than the art it cut short at the far edge.
+ *
+ * **How partial an end cell may be is the mesh's business, not these transforms'.** `boundEndCells`
+ * in `gridMesh.ts` merges an end band of fewer than three source pixels into the cell beside it, so
+ * nothing here has to ask whether the cell it is reducing to one pixel stands for a real band or a
+ * one-pixel sliver. Neither transform may start deciding that for itself: they walk the mesh they
+ * are given, which is the whole of what keeps them agreeing about where a cell begins.
  */
 
 /**
@@ -148,6 +154,12 @@ function modalColor(
  * rather than a sampling choice — painting each output pixel back over its own cell reproduces the
  * aligned image. Partial cells at either end are kept: cropping them would silently delete a strip
  * of any sheet whose art does not happen to sit flush with the mesh.
+ *
+ * **One output pixel per cell is what makes the mesh's end-cell bound load-bearing.** A band of one
+ * or two source pixels reduced here would stand in the result exactly as wide as a full cell, so a
+ * square sheet came back rectangular and the file disagreed with the comparison view about it. The
+ * mesh no longer offers one — `boundEndCells` merges it — which is why this can keep every cell it
+ * is handed without qualifying any of them.
  */
 export function downscaleNearest(image: ImageData, mesh: GridMesh): ImageData {
   const output = createImage(mesh.x.length, mesh.y.length);

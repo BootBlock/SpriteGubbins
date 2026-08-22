@@ -370,6 +370,12 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
  * edge at 0. A mesh whose cells drift can put any interior cut a pixel or two off the uniform
  * position, which a uniformly scaled canvas cannot represent; the leading cell dominates the error,
  * and correcting it keeps the panes within the drift itself, exact whenever the art is regular.
+ *
+ * **It reads a bound cell, not an arbitrary one**, and that is what keeps the inset a rendering
+ * correction rather than a compensation for the result itself. `boundEndCells` in `gridMesh.ts`
+ * merges an end band of fewer than three source pixels into the cell beside it, so what this reports
+ * is a cell that genuinely holds a band of the sheet — never the one-pixel band that used to reach
+ * here, which this view nudged the pane for while the exported file carried it as an ordinary row.
  */
 function meshOffset(mesh: GridMesh, grid: number): { x: number; y: number } {
   const leading = (starts: readonly number[]): number => {

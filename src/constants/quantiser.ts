@@ -741,8 +741,9 @@ export const VOTE_METHOD_CHOICES = [
  *
  * What separates the patterns is what the eye does with them, measured on the reference sheet
  * (`test_sprites/armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the mesh
- * 210 × 209) as the mean scaled-OKLab distance from **the sheet's own cell means**: per pixel, then
- * over aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a dither is
+ * 209 × 209) as the mean scaled-OKLab distance from **the sheet's own cell means**: per pixel, then
+ * over aligned 4 × 4 and 8 × 8 blocks averaged in linear light, each block over whatever it holds
+ * where the sheet's own edge cuts it short. The second pair is what a dither is
  * *for*, since a pattern trades per-pixel accuracy for a local average.
  *
  * **The reference is the source's cell means rather than any sheet the pipeline produces, and it
@@ -757,12 +758,12 @@ export const VOTE_METHOD_CHOICES = [
  * column rather than their size.
  *
  * ```
- * budget 64      flat 13.3 / 3.92 / 2.58   BAYER_4 15.3 / 4.32 / 2.99   BAYER_8 15.3 / 4.31 / 2.98   BLUE_NOISE 15.3 / 4.35 / 3.02
- * budget 32      flat 14.3 / 4.75 / 3.38   BAYER_4 15.7 / 4.46 / 3.12   BAYER_8 15.8 / 4.49 / 3.17   BLUE_NOISE 15.7 / 4.49 / 3.15
- * budget 8       flat 21.0 / 7.74 / 6.11   BAYER_4 18.0 / 5.33 / 3.81   BAYER_8 18.1 / 5.35 / 3.83   BLUE_NOISE 18.1 / 5.29 / 3.72
- * Game Boy       flat 92.3 / 90.2 / 92.0   BAYER_4 93.5 / 85.7 / 87.8   BAYER_8 93.5 / 85.7 / 87.8   BLUE_NOISE 93.5 / 85.8 / 87.7
- * Mega Drive     flat 20.1 / 8.02 / 6.37   BAYER_4 21.9 / 4.97 / 3.55   BAYER_8 22.0 / 5.02 / 3.53   BLUE_NOISE 22.0 / 5.16 / 3.51
- * Master System  flat 23.9 / 9.56 / 7.10   BAYER_4 27.1 / 5.66 / 3.81   BAYER_8 27.1 / 5.87 / 3.93   BLUE_NOISE 27.0 / 6.04 / 3.83
+ * budget 64      flat 13.4 / 3.89 / 2.55   BAYER_4 15.4 / 4.27 / 2.95   BAYER_8 15.4 / 4.26 / 2.95   BLUE_NOISE 15.4 / 4.31 / 2.98
+ * budget 32      flat 14.3 / 4.73 / 3.38   BAYER_4 15.8 / 4.44 / 3.12   BAYER_8 15.8 / 4.47 / 3.16   BLUE_NOISE 15.8 / 4.48 / 3.13
+ * budget 8       flat 21.1 / 7.72 / 6.10   BAYER_4 18.1 / 5.32 / 3.79   BAYER_8 18.1 / 5.34 / 3.82   BLUE_NOISE 18.1 / 5.27 / 3.72
+ * Game Boy       flat 92.2 / 90.2 / 92.0   BAYER_4 93.3 / 85.7 / 87.8   BAYER_8 93.4 / 85.7 / 87.8   BLUE_NOISE 93.4 / 85.8 / 87.7
+ * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.0 / 4.94 / 3.56   BAYER_8 22.1 / 5.01 / 3.62   BLUE_NOISE 22.0 / 5.13 / 3.56
+ * Master System  flat 24.0 / 9.56 / 7.10   BAYER_4 27.2 / 5.71 / 3.98   BAYER_8 27.2 / 5.93 / 4.10   BLUE_NOISE 27.1 / 6.06 / 3.81
  * ```
  *
  * Three things to read out of that. **The per-pixel figure rises on five of the six cases**,
@@ -780,8 +781,8 @@ export const VOTE_METHOD_CHOICES = [
  * altogether, and all three land on the ordinary reading: per-pixel cost, block gain.
  *
  * The choice between the three patterns is about what each *looks* like rather than about fidelity.
- * They are not identical — the Master System's 4 × 4 figure spreads 0.38 across them — but that
- * spread is a tenth of the 3.90 between the flat step and the best of them, so it is not what a
+ * They are not identical — the Master System's 4 × 4 figure spreads 0.35 across them — but that
+ * spread is a tenth of the 3.85 between the flat step and the best of them, so it is not what a
  * reader should be choosing on.
  *
  * The labels' parentheticals carry the choosing half, per the select budget's rule; what each
@@ -813,7 +814,7 @@ export const BAYER_EDGES = { BAYER_4: 4, BAYER_8: 8 } as const;
  *
  * 64 is what makes the pattern unfindable: the tile repeats across the sheet, so its edge is the
  * distance at which a reader could in principle see the same arrangement twice, and the reference
- * sheet's 210 pixels hold three of them. Smaller tiles repeat often enough to read as a texture,
+ * sheet's 209 pixels hold three of them. Smaller tiles repeat often enough to read as a texture,
  * which is the one thing this pattern exists not to do; larger ones cost the generator time
  * quadratically — the ranking scans the whole tile once per rank — for a repeat nobody was going to
  * find anyway.
@@ -903,7 +904,7 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * than a rout.
  *
  * **What it costs is a scan of the whole ratio ladder per pair**, which for the resolved reference
- * sheet — 43,890 pixels carrying 9,980 distinct colours — is the same order as one of the cleanup
+ * sheet — 43,681 pixels carrying 9,975 distinct colours — is the same order as one of the cleanup
  * passes, and which grows with the *distinct colours* of a sheet rather than with its pixels. A grid
  * of 1 is where that bites: the sheet arrives with 218,978 of them, and the plan search is then the
  * most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they move by
@@ -1345,7 +1346,7 @@ export const DIFFERENCE_PRECISION = 64;
  *
  * The rungs are read off the reference sheet (`test_sprites/armour.png`, 1254², grid 6, the
  * standard vote, a budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75
- * 10.3, p90 54.8, p99 120.8 and peaks at 180 — roughly seven cells in ten near-exact, and a tail
+ * 10.2, p90 55.0, p99 117.9 and peaks at 177 — roughly seven cells in ten near-exact, and a tail
  * that is the sheet's edges. Against that: **4** grades the near-exact seventy per cent and
  * saturates the rest, **32** is the default because it puts the whole of what a dial moves across
  * the ramp — a second cleanup pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed*
