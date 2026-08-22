@@ -448,13 +448,16 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
     EFFECT: 'an',
     INTERFACE: 'an',
     TERRAIN: 'a',
+    PORTRAIT: 'a',
+    ICON: 'an',
+    BACKGROUND: 'a',
   };
 
   it('gives every category the indefinite article its own identifier takes', () => {
     // The template used to fix `a` in this sentence, so four of the nine identifiers arrived as
     // `a EFFECT`, `a INTERFACE`, `a ITEM` and `a OBJECT` — in the one paragraph written for the four
-    // targets that can quote it back. The article now comes from the category, so this walks all
-    // nine rather than the one the fixture happens to use.
+    // targets that can quote it back. The article now comes from the category, so this walks every
+    // category rather than the one the fixture happens to use.
     for (const category of SUBJECT_CATEGORIES) {
       const output = withOutput({ targetModel: 'GENERIC' });
       const contract = sectionOf(
@@ -574,7 +577,8 @@ describe('generatePrompt — the exclusion precedence, stated at both ends', () 
     // requires; a copy missing the compromise ban would leave the reduced, integrated or decorative
     // version that the delivered sheet actually came back with. The categories are where a half goes
     // missing unevenly, because each has its own exclusion list and its own inventory — and they are
-    // also the two arrangements of the numbering, since five of the nine put exclusions at 7.
+    // also the two arrangements of the numbering, since a category with no rig at all puts
+    // exclusions at 7 where a rigged one puts it at 8.
     for (const category of SUBJECT_CATEGORIES) {
       const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
       const contract = unwrapped(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'));
@@ -2192,7 +2196,7 @@ describe('the section numbering the prompt cites itself by', () => {
   }
 
   it.each(SUBJECT_CATEGORIES)('runs 0, 1, 2, … with no hole on %s, at every rig it offers', (category) => {
-    // The reported failure: the rig section is conditional, and five of the nine categories have no
+    // The reported failure: the rig section is conditional, and eight of the twelve categories have no
     // rig at all, so every prompt they ever compiled ran `## 4. COMPONENT INVENTORY` straight into
     // `## 6. REQUIRED ASSEMBLY CAPABILITY`. Swept over the rig union rather than the category's own
     // list, because `resolveRigMode` is what a stored value from an older build arrives through.
@@ -2265,6 +2269,17 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
    */
   const TARGET_SIZES = ['', '16 × 32 px', '512 × 512 px', 'as big as it needs to be'];
 
+  /**
+   * 30 seconds, because this is the one test in the suite whose cost is a *product* of four closed
+   * unions and the category list — and the category list grew by a third when PORTRAIT, ICON and
+   * BACKGROUND were added.
+   *
+   * Measured on that change: 2,947ms of the 5,000ms default when the file runs alone, and past the
+   * default under full-suite contention — so it failed on roughly one run in two, at random, which
+   * is worse than failing outright. The budget is stated here rather than raised for the whole suite
+   * because every other test in it is cheap, and a global default of 30s would stop a genuine hang
+   * being reported as one.
+   */
   it('never names a native pixel without carrying the block that defines one', () => {
     const offenders = new Set<string>();
     // Per term rather than one flag for the sweep, because a second entry in the table would
@@ -2327,7 +2342,7 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
     expect([...offenders], `the prompt names a term it never defines:\n${[...offenders].join('\n')}`).toEqual(
       [],
     );
-  });
+  }, 30_000);
 });
 
 describe('generatePrompt — the companion component map', () => {
@@ -2434,7 +2449,8 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       }
     };
 
-    // The axes are grouped rather than swept as one product: a full cross of all nine is fifteen
+    // The axes are grouped rather than swept as one product: a full cross of every category is
+    // fifteen
     // thousand prompts, and most of the pairs select nothing new. Which pairs *do* matter is a
     // property of the code, not a guess — the plans read the category, the mode, the set and the
     // index together, so those four are crossed; section 2 reads the style with the detail; and the

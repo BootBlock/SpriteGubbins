@@ -233,7 +233,7 @@ describe('useSubjectStore', () => {
     });
 
     it('keeps a set the new subject can be turned to, rather than resetting for its own sake', () => {
-      // Seven of the nine categories can be turned to all five, so this is most switches — and an
+      // Seven of the twelve categories can be turned to all five, so this is most switches — and an
       // EFFECT is the one worth naming: a directional slash genuinely is eight runs.
       useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, directions: 'EIGHT_COMPASS' } });
       useSubjectStore.getState().setCategory('EFFECT');
@@ -298,7 +298,7 @@ describe('useSubjectStore', () => {
     });
 
     it('keeps a camera the new subject can be drawn under, rather than resetting for its own sake', () => {
-      // Eight of the nine categories are offered every projection, so this is most switches — and
+      // Nine of the twelve categories are offered every projection, so this is most switches — and
       // TERRAIN is the one worth naming: a cliff face is a landform seen from the side, which is
       // what the `side-on-volcanic-cliff` preset draws.
       useOutputStore.setState({

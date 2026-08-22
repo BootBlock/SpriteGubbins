@@ -60,4 +60,11 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   // no resolvable word at all. Adding it changes nothing that already resolved — `violet` still wins
   // that option, being earlier in the text.
   ochre: '#cc7722',
+  // The two hair colours, which arrived with PORTRAIT. That category is the first in the app whose
+  // primary colours are a *person* rather than a made thing, and hair is half of what a face is
+  // recognised by — so its two commonest words had no swatch, where every stone, metal and hide the
+  // other categories name already did. Neither is a fragment of a common English word, which is the
+  // one rule this map has about what may be added.
+  blonde: '#d9b36c',
+  auburn: '#8c3b1b',
 };

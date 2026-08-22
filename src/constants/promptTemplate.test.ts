@@ -92,7 +92,7 @@ describe('the template itself', () => {
 
   it('writes no section number of its own, in a heading or in prose', () => {
     // The rule `applySectionNumbers` exists to make keepable. The rig section is conditional, so a
-    // hand-numbered document ran `## 4.` into `## 6.` on the five categories that never articulate —
+    // hand-numbered document ran `## 4.` into `## 6.` on the eight categories that never articulate —
     // and every citation of a later section was a second literal that had to agree with the first.
     // Both halves are checked, because either one alone can go stale: a heading numbered by hand
     // would collide with a computed neighbour, and a citation numbered by hand would point at

@@ -59,6 +59,23 @@ export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly Componen
   EFFECT: ['frame'],
   INTERFACE: ['structure', 'tile'],
   TERRAIN: ['tile', 'structure'],
+  // A portrait's components are the same head drawn twelve times, which is anatomy by any reading of
+  // this union. It takes CHARACTER's pair rather than `anatomy` alone for the reason that pair exists
+  // at all: `appendage` covers what is attached to the head rather than part of it — a horn, an ear
+  // fin, a mane — and an entry for one of those is not a misfiling.
+  PORTRAIT: ['anatomy', 'appendage'],
+  // The one row that admits `structure` alone, and the narrowness is the claim. An icon is a mark in
+  // a cell: it has no anatomy, no mechanism to drive, no frame that belongs to it (the plate is
+  // INTERFACE's) and it never butts against a copy of itself, so a `tile` entry here would be a
+  // background band or a nine-slice filed under a symbol set. `structure` is what the union already
+  // means by "a piece of the subject", and every entry in `ICON_SYMBOL_SET` is one.
+  ICON: ['structure'],
+  // BUILDING's pair, and for the reason INTERFACE shares it: the bands of a parallax set repeat and
+  // butt against copies of themselves along one axis, which is the whole of what this union means by
+  // a tile, while the loose pieces placed over them are `structure`. What separates the three is
+  // which pieces their plans name — a wall run, a panel edge, a horizon band — and that is a
+  // difference between inventories rather than between kinds.
+  BACKGROUND: ['tile', 'structure'],
 };
 
 /** Whether this category may contain a component of this kind at all. */

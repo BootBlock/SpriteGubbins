@@ -30,15 +30,17 @@ describe('the table itself', () => {
     expect(directionSetChoices(category).length).toBeGreaterThan(0);
   });
 
-  it('binds exactly the two categories whose subject has no front', () => {
+  it('binds exactly the five categories whose subject has no front', () => {
     // INTERFACE is a flat widget read straight on; a TERRAIN tile is laid flat and read from above,
-    // and `LANDMARK_TEXT.TERRAIN` says it has no front in as many words. Both are the *unambiguous*
+    // and `LANDMARK_TEXT.TERRAIN` says it has no front in as many words. An ICON is a mark drawn
+    // into a cell; a BACKGROUND band is a plane the player never reaches; and a PORTRAIT's turn is
+    // the sitter's own pose inside a frame the camera never leaves. All five are the *unambiguous*
     // cases, which is what makes naming them here worth more than deriving them: the interesting
     // half of the decision is who is left out.
     const bound = SUBJECT_CATEGORIES.filter(
       (category) => CATEGORY_DIRECTION_SETS[category].length < DIRECTION_SETS.length,
     );
-    expect(bound).toEqual(['INTERFACE', 'TERRAIN']);
+    expect(bound).toEqual(['INTERFACE', 'TERRAIN', 'PORTRAIT', 'ICON', 'BACKGROUND']);
     for (const category of bound) {
       expect(CATEGORY_DIRECTION_SETS[category]).toEqual(['SINGLE_FRONT']);
     }
@@ -85,7 +87,7 @@ describe('the table itself', () => {
 
 describe('resolveDirectionSet', () => {
   it('keeps a set the subject can be turned to', () => {
-    // Seven of the nine categories can be turned to all of them, so for those this is every case.
+    // Seven of the twelve categories can be turned to all of them, so for those this is every case.
     expect(resolveDirectionSet('CHARACTER', 'EIGHT_COMPASS')).toBe('EIGHT_COMPASS');
     expect(resolveDirectionSet('EFFECT', 'FOUR_CARDINAL')).toBe('FOUR_CARDINAL');
     expect(resolveDirectionSet('INTERFACE', 'SINGLE_FRONT')).toBe('SINGLE_FRONT');

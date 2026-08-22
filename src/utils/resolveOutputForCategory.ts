@@ -42,14 +42,14 @@ export function resolveOutputForCategory(category: SubjectCategory, output: Outp
   // switching to INTERFACE re-resolved the mode and left `directions` on `THREE_CLASSIC`, so the
   // panel offered "Split into 3 sheets" and the first of those asked for a button at object yaw 45°.
   // `resolveDirectionSet` keeps the set wherever the new subject can be turned to it — seven of the
-  // nine categories can be turned to all of them — and falls back only where it cannot.
+  // twelve categories can be turned to all of them — and falls back only where it cannot.
   const directions = resolveDirectionSet(category, output.directions);
   // And the projection, the fourth and last of the claims a category can refuse. It is the one that
   // failed loudest: an INTERFACE arriving from a default session kept `THREE_QUARTER_TOPDOWN` and
   // compiled `Angled overhead … the vertical screen axis carries both height and depth` above an
   // inventory of button states, which is a prompt contradicting itself rather than merely asking for
   // a degenerate batch. `resolveProjection` keeps the camera wherever the new subject can be drawn
-  // under it — eight of the nine categories can be drawn under all of them — and falls back only
+  // under it — nine of the twelve categories can be drawn under all of them — and falls back only
   // where it cannot.
   const projection = resolveProjection(category, output.projection);
   // The elevation follows the *resolved* projection rather than the stored one, because the two are

@@ -90,8 +90,16 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * over it is deliberately small, so a 200 kB addition fails here and is argued for in a diff
  * rather than turning up later in a page-load waterfall. Raising the ceiling is a normal thing to
  * do, and it is a line a reviewer sees.
+ *
+ * **Raised from 2160 by the three subject categories PORTRAIT, ICON and BACKGROUND.** Each ships
+ * sixteen option pools with their tooltips, one or two sheet plans, five per-category prompt-text
+ * entries and four presets — all of it constant data the entry chunk reaches, so all of it lands in
+ * the precache. Measured against the build immediately before them, the three cost 56.84 KiB, which
+ * is nearly three times the headroom the old ceiling had left. The new figure restores that headroom
+ * rather than widening it: a category is a large addition and the next one should have to say so
+ * here, which is the whole point of the small margin.
  */
-export const PRECACHE_CEILING_KIB = 2160;
+export const PRECACHE_CEILING_KIB = 2220;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

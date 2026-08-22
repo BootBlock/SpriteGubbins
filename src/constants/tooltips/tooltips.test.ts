@@ -16,8 +16,9 @@ import { presetCollectionGuidance } from './presets.ts';
  * This walk used to be six hand-written imports, and the six were exactly the files in this folder —
  * so its coverage tracked a directory rather than the guidance surface. Guidance is deliberately
  * filed in two places (see the note in `./index.ts`): an action's sits here, and a setting's sits
- * beside the options it explains. The second group — 190 entries across four sets and the nine
- * category definitions — was never walked, and two `ATLAS_TOOLTIPS` entries reached the bundle
+ * beside the options it explains. The second group — 190 entries when this was written, across
+ * four sets and every category definition — was never walked, and two `ATLAS_TOOLTIPS` entries
+ * reached the bundle
  * carrying three straight apostrophes between them, past the test written to catch exactly that.
  *
  * A hand-kept list of "all the guidance in the app" is that same failure one layer up, so the shape

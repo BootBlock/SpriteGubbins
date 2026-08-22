@@ -77,7 +77,7 @@ describe('PresetCardSpecs', () => {
   });
 
   it('keeps a stored camera the category can be drawn under', () => {
-    // The resolution only ever narrows: eight of the nine categories are offered every camera, so a
+    // The resolution only ever narrows: nine of the twelve categories are offered every camera, so a
     // side-on terrain preset — which the library ships — must print the camera it stored.
     render(
       <PresetCardSpecs

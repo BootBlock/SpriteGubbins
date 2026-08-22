@@ -47,7 +47,7 @@ import { CATEGORY_AUDIT_TEXT, CATEGORY_EXCLUSION_TEXT, CATEGORY_GUARD_TEXT } fro
  * per-category line it sits beside.
  */
 describe('CATEGORY_ASSEMBLY', () => {
-  /** The contract's own nouns, which belong to no category and are required by all nine. */
+  /** The contract's own nouns, which belong to no category and are required by every one of them. */
   const HEADING_WORDS = wordsIn((PROMPT_TEMPLATE.match(/^#+ .*$/gm) ?? []).join(' '));
 
   function wordsIn(text: string): ReadonlySet<string> {

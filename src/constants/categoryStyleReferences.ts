@@ -33,7 +33,8 @@ import { styleReferenceFor } from './styleReferences/library.ts';
  * can be drawn in any of them — and the fields a reference deliberately does *not* write are the
  * deliverable's, listed on `StyleReferenceSettings` itself.
  *
- * In practice this narrows exactly one category: INTERFACE keeps the four references rendered under
+ * In practice this narrows three categories, and they are exactly the three bound to one camera:
+ * INTERFACE, PORTRAIT and BACKGROUND each keep the four references rendered under
  * `ORTHOGRAPHIC_FRONT` and is not offered the six side-on or the two dimetric ones. Every other
  * category is offered the whole library.
  */

@@ -1,4 +1,5 @@
 import type { PresetArchetype } from '../../types/preset.ts';
+import { BACKGROUND_LAYER_PRESETS } from './backgroundLayers.ts';
 import { BUILDING_STREET_PRESETS } from './buildingStreet.ts';
 import { BUILDING_TILESET_PRESETS } from './buildingTilesets.ts';
 import { CHARACTER_CORE_PRESETS } from './characterCore.ts';
@@ -10,9 +11,11 @@ import { EFFECT_COMBAT_PRESETS } from './effectCombat.ts';
 import { EFFECT_MAGIC_PRESETS } from './effectMagic.ts';
 import { GAME_LOOK_PRESETS } from './gameLooks.ts';
 import { INTERFACE_KIT_PRESETS } from './interfaceKits.ts';
+import { ICON_SET_PRESETS } from './iconSets.ts';
 import { ITEM_GEAR_PRESETS } from './itemGear.ts';
 import { ITEM_WEAPON_PRESETS } from './itemWeapons.ts';
 import { OBJECT_MACHINE_PRESETS } from './objectMachines.ts';
+import { PORTRAIT_BUST_PRESETS } from './portraitBusts.ts';
 import { OBJECT_WORLD_PRESETS } from './objectWorld.ts';
 import { TERRAIN_FIELD_PRESETS } from './terrainFields.ts';
 import { UNSUNG_SAVIOUR_PRESETS } from './unsungSaviour.ts';
@@ -68,6 +71,9 @@ export const PRESETS: readonly PresetArchetype[] = [
   ...EFFECT_MAGIC_PRESETS,
   ...INTERFACE_KIT_PRESETS,
   ...TERRAIN_FIELD_PRESETS,
+  ...PORTRAIT_BUST_PRESETS,
+  ...ICON_SET_PRESETS,
+  ...BACKGROUND_LAYER_PRESETS,
   ...GAME_LOOK_PRESETS,
   ...UNSUNG_SAVIOUR_PRESETS,
 ];

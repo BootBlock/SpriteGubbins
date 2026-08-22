@@ -30,16 +30,18 @@ const ELEVATION_STEP = 1;
  * **The camera is narrowed by the category as well, and for the same reason the set below is.** An
  * interface widget is screen-space art with no top surface and no depth axis, so a
  * `THREE_QUARTER_TOPDOWN` held over from a default session asked for a button under a 35° overhead
- * camera — a prompt disagreeing with itself rather than merely a degenerate one. INTERFACE is
- * offered `ORTHOGRAPHIC_FRONT` alone; the other eight categories are offered every camera, TERRAIN
- * included, because a cliff face is a landform seen from the side and one of the shipped presets is
- * exactly that.
+ * camera — a prompt disagreeing with itself rather than merely a degenerate one. INTERFACE,
+ * PORTRAIT and BACKGROUND are each offered `ORTHOGRAPHIC_FRONT` alone — a bust is read at eye level
+ * and a backdrop is a plane standing at a distance — and the other nine are offered every camera,
+ * TERRAIN included, because a cliff face is a landform seen from the side and one of the shipped
+ * presets is exactly that.
  *
  * **The direction set is always on screen, because it now always does something.** A directional
  * core draws the chosen set's facings — splitting into a cardinal and a diagonal sheet on the
  * eight-compass set — and every `'run'` sheet reads the set as its run list. The one narrowing left
- * is the category's: an interface widget or a ground tile has no facing to turn to, so those two
- * offer `SINGLE_FRONT` alone, and the control stays on screen with its one option rather than
+ * is the category's: an interface widget, a ground tile, an icon, a backdrop band and a portrait
+ * have no facing to turn to, so those five offer `SINGLE_FRONT` alone, and the control stays on
+ * screen with its one option rather than
  * disappearing — the value is used, and a control that vanishes between categories hides a setting
  * the folded digest still reports.
  *

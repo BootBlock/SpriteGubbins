@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
-import { CATEGORY_DIRECTION_SETS, resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
+import {
+  CATEGORY_DIRECTION_SETS,
+  resolveDirectionSet,
+  supportsDirectionSet,
+} from '../constants/categoryDirectionSets.ts';
 import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -167,25 +171,43 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
  * offered "Split into 3 sheets", and the first run compiled `Directions required: Front-three-quarter`
  * above `object yaw 45°`.
  *
- * The two categories here are the ones whose subject has no facing at all: whatever set the
+ * The categories here are the ones whose subject has no facing at all: whatever set the
  * configuration arrived with, `resolveDirectionSet` narrows it to `SINGLE_FRONT` and the batch is
  * one sheet.
+ *
+ * **Derived rather than listed**, because the list was written when there were two of them and the
+ * next three arrived without it. `CATEGORY_DIRECTION_SETS` is the table that decides this, and a
+ * category bound there is one whose batch has to collapse — so reading it is what keeps the two
+ * halves from parting company, as they had by the time PORTRAIT, ICON and BACKGROUND joined
+ * INTERFACE and TERRAIN. `categoryDirectionSets.test.ts` is where the *membership* of that set is
+ * pinned by hand; what this suite owes is the behaviour, for whoever is in it.
  */
 describe('a subject with no facing is one sheet, whatever set the configuration arrived with', () => {
   const TURNED = withOutput({ directions: 'THREE_CLASSIC', primaryDirection: 'front-three-quarter' });
 
-  it.each(['INTERFACE', 'TERRAIN'] as const)('%s is not split into a run per facing', (category) => {
+  const UNTURNABLE = SUBJECT_CATEGORIES.filter(
+    (category) => !supportsDirectionSet(category, 'THREE_CLASSIC'),
+  );
+
+  it('finds the categories to check at all', () => {
+    // Guards the three assertions below against the table emptying: derived membership means a
+    // reworded or relaxed `CATEGORY_DIRECTION_SETS` would leave every `it.each` with nothing to run
+    // and the suite green, which is the failure a hand-written list cannot have and this one can.
+    expect(UNTURNABLE.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it.each(UNTURNABLE)('%s is not split into a run per facing', (category) => {
     expect(sheetRunCount(category, TURNED)).toBe(1);
     expect(sheetBatch(category, TURNED).ordinal).toBe(1);
   });
 
-  it.each(['INTERFACE', 'TERRAIN'] as const)('%s draws its one sheet front on', (category) => {
+  it.each(UNTURNABLE)('%s draws its one sheet front on', (category) => {
     const [sheet] = sheetBatch(category, TURNED).sheets;
     expect(sheet?.covered).toEqual(['front']);
     expect(sheet?.assembly).toBe('front');
   });
 
-  it.each(['INTERFACE', 'TERRAIN'] as const)('%s asks for no yaw it does not have', (category) => {
+  it.each(UNTURNABLE)('%s asks for no yaw it does not have', (category) => {
     const [run, ...rest] = sheetRuns(category, defaultSubjectFor(category), TURNED);
     expect(rest).toEqual([]);
 

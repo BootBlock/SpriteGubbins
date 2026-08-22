@@ -28,4 +28,10 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // A terrain's tiles are all one size by construction, so the scale that can actually go wrong is
   // between a tile and the loose features standing on it.
   TERRAIN: 'a boulder drawn beside the ground tile it stands on is in proportion to it',
+  // EFFECT's shape rather than the others', and for EFFECT's reason: this sheet's components are one
+  // subject drawn repeatedly rather than the parts of one, so there is no pair of pieces to be in
+  // proportion to each other. What has to hold instead is that the repeats agree.
+  PORTRAIT: 'the resting portrait and every expression beside it are the same head drawn at the same scale',
+  ICON: 'every icon fills the same cell to the same margin, so none arrives at half the weight of the one beside it',
+  BACKGROUND: 'a tree on a band and the rooftops on that same band are in proportion to each other',
 };

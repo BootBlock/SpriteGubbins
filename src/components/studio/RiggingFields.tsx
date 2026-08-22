@@ -73,8 +73,8 @@ export function RiggingFields() {
           }}
         />
       ) : (
-        // Plural and article-free on purpose: three of the five categories that reach this begin
-        // with a vowel, so "a {category} sheet" would render "a ITEM sheet" for most of them.
+        // Plural and article-free on purpose: four of the eight categories that reach this begin
+        // with a vowel, so "a {category} sheet" would render "a ITEM sheet" for half of them.
         <p className="text-xs leading-relaxed text-ink-muted">
           {category} sheets carry nothing that turns about a pivot, so there is no rig to choose. Their
           components are drawn as they assemble, and the prompt carries no articulation section.

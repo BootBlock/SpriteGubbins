@@ -527,11 +527,13 @@ describe('what a wrapper says about the surface', () => {
     // in both negative blocks on every category, including the ones whose components are floor
     // tiles, panel frames and effect frames.
     //
-    // The three that keep it are named here rather than read back out of `LIMBS_ARE_COMPONENTS`,
+    // The four that keep it are named here rather than read back out of `LIMBS_ARE_COMPONENTS`,
     // because a test that derives its expectation from the record under test would pass whatever the
-    // record said. VEHICLE is the one worth stating in as many words: its pools offer `Walker / Mech`
-    // and `Articulated Walker Legs`, so a third leg is a failure that sheet really can have.
-    const LIMBED = ['CHARACTER', 'CREATURE', 'VEHICLE'];
+    // record said. Two are worth stating in as many words. VEHICLE's pools offer `Walker / Mech` and
+    // `Articulated Walker Legs`, so a third leg is a failure that sheet really can have. PORTRAIT's
+    // `Framing & Crop` reaches `Full Body Standing`, and even its shortest crop carries shoulders —
+    // a half-body bust with three hands is the same duplication wearing a different subject.
+    const LIMBED = ['CHARACTER', 'CREATURE', 'VEHICLE', 'PORTRAIT'];
 
     for (const targetModel of ['STABLE_DIFFUSION', 'QWEN_IMAGE'] as const) {
       for (const category of SUBJECT_CATEGORIES) {

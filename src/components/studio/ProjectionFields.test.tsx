@@ -91,7 +91,7 @@ describe('ProjectionFields', () => {
     expect(screen.getByText(/ORTHOGRAPHIC_FRONT is a camera in its own right/)).toBeInTheDocument();
     expect(screen.queryByText(/Choose THREE_QUARTER_TOPDOWN/)).toBeNull();
 
-    // And still offered wherever it is reachable, which is the other eight categories.
+    // And still offered wherever it is reachable, which is the other nine categories.
     useSubjectStore.setState({ category: 'TERRAIN', subject: defaultSubjectFor('TERRAIN') });
     useOutputStore.setState({
       output: { ...DEFAULT_OUTPUT_CONFIG, projection: 'PURE_TOPDOWN', cameraElevation: 90 },
