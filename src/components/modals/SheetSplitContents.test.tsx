@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { NO_COMPONENT_BUDGET } from '../../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
+import { describeDirections } from '../../constants/promptText/index.ts';
 import {
   DEFAULT_CAMERA_ELEVATIONS,
   DEPTH_ORDER_TEXT,
@@ -226,7 +227,7 @@ describe('SheetSplitContents', () => {
     for (const log of logs) {
       const facing = log.output.primaryDirection;
       if (facing === null) throw new Error('a split run should have pinned its facing.');
-      expect(log.promptText).toContain(`- Primary assembly direction: ${facing}`);
+      expect(log.promptText).toContain(`- Primary assembly direction: ${describeDirections([facing])}`);
     }
 
     // And they are in storage, not merely in the store.
