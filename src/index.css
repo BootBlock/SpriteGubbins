@@ -288,8 +288,8 @@
    * previews they are changing, so tuning a dial means scrolling away from the thing the dial does.
    * The answer is the studio's — a scrolling control column beside a sticky preview column — but
    * the split is **5/7 rather than even**, because only one of the two columns holds a
-   * `SelectField`. Three panels do (`DownscaleControls` inside `GridControls`, `SymmetryControls`
-   * and `FrameAlignmentControls`), and all three are in the control column; the preview column
+   * `SelectField`. Four panels do (`DownscaleControls` inside `GridControls`, `SymmetryControls`,
+   * `FrameAlignmentControls` and `AntiAliasControls`), and all four are in the control column; the preview column
    * holds one panel of canvases, a wrapping toolbar and no select at all. So the budget binds the
    * narrower column here, where in the studio it binds both — and 5/7 is what that buys. Splitting
    * a page always costs the previews width, and they end up narrower than the full-width panel they

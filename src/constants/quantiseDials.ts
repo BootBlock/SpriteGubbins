@@ -1,5 +1,10 @@
 import type { QuantiseDials } from '../types/quantisePreset.ts';
 import {
+  DEFAULT_ANTI_ALIAS,
+  DEFAULT_ANTI_ALIAS_PALETTE,
+  DEFAULT_ANTI_ALIAS_RUN,
+  DEFAULT_ANTI_ALIAS_STRENGTH,
+  DEFAULT_ANTI_ALIAS_THRESHOLD,
   DEFAULT_CLEANUP_PASSES,
   DEFAULT_COLOR_MERGE,
   DEFAULT_DITHER,
@@ -60,6 +65,11 @@ export const QUANTISE_DEFAULT_DIALS: QuantiseDials = {
   duplicateSnap: DEFAULT_DUPLICATE_SNAP,
   frameAlignment: DEFAULT_FRAME_ALIGNMENT,
   frameDriftTolerance: DEFAULT_FRAME_DRIFT_TOLERANCE,
+  antiAlias: DEFAULT_ANTI_ALIAS,
+  antiAliasThreshold: DEFAULT_ANTI_ALIAS_THRESHOLD,
+  antiAliasStrength: DEFAULT_ANTI_ALIAS_STRENGTH,
+  antiAliasRun: DEFAULT_ANTI_ALIAS_RUN,
+  antiAliasPalette: DEFAULT_ANTI_ALIAS_PALETTE,
 };
 
 /**
@@ -92,6 +102,11 @@ const DIAL_NAMES: { readonly [K in keyof QuantiseDials]: K } = {
   duplicateSnap: 'duplicateSnap',
   frameAlignment: 'frameAlignment',
   frameDriftTolerance: 'frameDriftTolerance',
+  antiAlias: 'antiAlias',
+  antiAliasThreshold: 'antiAliasThreshold',
+  antiAliasStrength: 'antiAliasStrength',
+  antiAliasRun: 'antiAliasRun',
+  antiAliasPalette: 'antiAliasPalette',
 };
 
 /**

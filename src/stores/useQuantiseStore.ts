@@ -4,6 +4,8 @@ import type { TunedDials } from '../types/autoTune.ts';
 import type { DialHistory, DialKey } from '../types/quantiseHistory.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
 import type {
+  AntiAliasMode,
+  AntiAliasPalette,
   DitherPattern,
   FrameAlignmentMode,
   ImportedImage,
@@ -95,6 +97,11 @@ export interface QuantiseState extends QuantiseDials {
   setDuplicateSnap(duplicateSnap: boolean): void;
   setFrameAlignment(frameAlignment: FrameAlignmentMode): void;
   setFrameDriftTolerance(frameDriftTolerance: number): void;
+  setAntiAlias(antiAlias: AntiAliasMode): void;
+  setAntiAliasThreshold(antiAliasThreshold: number): void;
+  setAntiAliasStrength(antiAliasStrength: number): void;
+  setAntiAliasRun(antiAliasRun: number): void;
+  setAntiAliasPalette(antiAliasPalette: AntiAliasPalette): void;
   /**
    * Put every dial where a saved preset says, in one move.
    *
@@ -312,6 +319,26 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
 
     setFrameDriftTolerance: (frameDriftTolerance) => {
       edit('frameDriftTolerance', { frameDriftTolerance });
+    },
+
+    setAntiAlias: (antiAlias) => {
+      edit('antiAlias', { antiAlias });
+    },
+
+    setAntiAliasThreshold: (antiAliasThreshold) => {
+      edit('antiAliasThreshold', { antiAliasThreshold });
+    },
+
+    setAntiAliasStrength: (antiAliasStrength) => {
+      edit('antiAliasStrength', { antiAliasStrength });
+    },
+
+    setAntiAliasRun: (antiAliasRun) => {
+      edit('antiAliasRun', { antiAliasRun });
+    },
+
+    setAntiAliasPalette: (antiAliasPalette) => {
+      edit('antiAliasPalette', { antiAliasPalette });
     },
 
     // The same write every other dial makes, under no key so it never coalesces with the gesture

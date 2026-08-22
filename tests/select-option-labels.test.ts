@@ -18,6 +18,8 @@ import { rigModeChoices } from '../src/constants/output/rigModeChoices.ts';
 import { sheetChoices } from '../src/constants/output/sheetChoices.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
 import {
+  ANTI_ALIAS_MODE_CHOICES,
+  ANTI_ALIAS_PALETTE_CHOICES,
   DITHER_CHOICES,
   FRAME_ALIGNMENT_MODE_CHOICES,
   SYMMETRY_MODE_CHOICES,
@@ -73,6 +75,8 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   styleReferenceChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     styleReferenceChoices(category).map((choice) => choice.label),
   ),
+  ANTI_ALIAS_MODE_CHOICES: ANTI_ALIAS_MODE_CHOICES.map((choice) => choice.label),
+  ANTI_ALIAS_PALETTE_CHOICES: ANTI_ALIAS_PALETTE_CHOICES.map((choice) => choice.label),
   DITHER_CHOICES: DITHER_CHOICES.map((choice) => choice.label),
   FRAME_ALIGNMENT_MODE_CHOICES: FRAME_ALIGNMENT_MODE_CHOICES.map((choice) => choice.label),
   VOTE_METHOD_CHOICES: VOTE_METHOD_CHOICES.map((choice) => choice.label),

@@ -69,6 +69,21 @@ for (let byte = 0; byte < 256; byte += 1) {
   SRGB_TO_LINEAR[byte] = value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
 }
 
+/**
+ * The linear light one sRGB byte carries, from the table above.
+ *
+ * The accessor rather than the array, because the array is indexed in the hot paths inside this
+ * file and reached from outside it exactly once — {@link linearToByte}'s partner, for the mix in
+ * `coverageBlend.ts`. Handing out the `Float64Array` would hand out something a caller could write
+ * to, and every read of it would need the `?? 0` that the indexed-access rule demands.
+ *
+ * Off the end of the table is `0`, which is the same answer an out-of-range channel gets from every
+ * other reader in this file — a fractional or negative channel is a caller error, not a colour.
+ */
+export function srgbToLinear(byte: number): number {
+  return SRGB_TO_LINEAR[byte] ?? 0;
+}
+
 /** How far the unit OKLab axes are stretched, so black to white reads 255 — see the module note. */
 const CHANNEL_SCALE = 255;
 
@@ -205,9 +220,9 @@ export function oklabToSrgb(color: Oklab): Rgba {
   const short = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
 
   return {
-    r: toByte(4.0767416621 * long - 3.3077115913 * medium + 0.2309699292 * short),
-    g: toByte(-1.2684380046 * long + 2.6097574011 * medium - 0.3413193965 * short),
-    b: toByte(-0.0041960863 * long - 0.7034186147 * medium + 1.707614701 * short),
+    r: linearToByte(4.0767416621 * long - 3.3077115913 * medium + 0.2309699292 * short),
+    g: linearToByte(-1.2684380046 * long + 2.6097574011 * medium - 0.3413193965 * short),
+    b: linearToByte(-0.0041960863 * long - 0.7034186147 * medium + 1.707614701 * short),
     a: FULLY_OPAQUE,
   };
 }
@@ -215,10 +230,15 @@ export function oklabToSrgb(color: Oklab): Rgba {
 /**
  * One linear-light channel as the byte an image carries: gamma-encoded, clamped, rounded.
  *
- * The encode is the exact inverse of the decode {@link SRGB_TO_LINEAR} tabulates — same split, same
+ * The encode is the exact inverse of the decode {@link srgbToLinear} tabulates — same split, same
  * exponent — which is what makes `oklabToSrgb(srgbToOklab(…))` give back the byte it started with.
+ *
+ * **Exported for the same reason the matrices are in one file**: `coverageBlend.ts` mixes two
+ * colours in linear light, which needs this half of the transfer function and {@link srgbToLinear}
+ * for the other. A second spelling of either is one of them free to be corrected alone, and the
+ * pair stops round-tripping — a failure with no symptom until a colour comes back subtly wrong.
  */
-function toByte(linear: number): number {
+export function linearToByte(linear: number): number {
   const clamped = Math.min(Math.max(linear, 0), 1);
   const encoded = clamped <= 0.0031308 ? 12.92 * clamped : 1.055 * clamped ** (1 / 2.4) - 0.055;
   return Math.round(encoded * 255);

@@ -1,4 +1,5 @@
 import type { ColorReduction, GridMesh, QuantiseResult, QuantiseSettings } from '../types/quantiser.ts';
+import { antiAlias } from './antiAlias.ts';
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
 import { differenceMap } from './differenceMap.ts';
@@ -33,7 +34,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
  * then, on whatever that produced:
  *   spriteSegments → sheetSymmetry → snapSymmetric (SNAP only) → duplicateSprites → snapDuplicates
- *                  → sheetStrips → snapFrames (SNAP only)
+ *                  → sheetStrips → snapFrames (SNAP only) → antiAlias (last of all)
  *
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
@@ -103,11 +104,19 @@ import { buildPalette } from './wuQuantiser.ts';
  * dither. It is the one pass whose *own output* is then re-segmented, because settling a pair can
  * clear a pixel and a cleared pixel can split a region.
  *
- * **The frame alignment goes last of all, after even those, and it is the only pass that moves
- * artwork rather than editing it.** It fits a lattice to each row of sprites and carries the frames
- * that wandered off it back on, so it needs a segmentation of the sheet as it will actually be
- * downloaded — which the fold above may have changed the silhouettes of. Its own output is then
- * re-segmented for the same reason the settle's is: every box it moved is somewhere else afterwards.
+ * **The frame alignment goes after even those, and it is the only pass that moves artwork rather
+ * than editing it.** It fits a lattice to each row of sprites and carries the frames that wandered
+ * off it back on, so it needs a segmentation of the sheet as it will actually be downloaded — which
+ * the fold above may have changed the silhouettes of. Its own output is then re-segmented for the
+ * same reason the settle's is: every box it moved is somewhere else afterwards.
+ *
+ * **The anti-aliasing goes last of all, and it is the only pass that puts smooth colour back.**
+ * Everything above exists to take a resampled render apart into flat cells, which is what leaves
+ * every contour a staircase of axis-aligned steps; this reads those steps back into the sub-pixel
+ * coverage they imply. It has to be behind every pass that assumes flat colour — the fill cleanup is
+ * built to remove exactly the lone intermediate pixel it writes — and behind the three readings
+ * taken over the segmentation, which compare colours a softened contour would have moved. The
+ * comment at the call site carries the rest of the argument.
  *
  * `colorHistogram` excludes fully transparent pixels, so the keyed field claims no palette slots,
  * and `applyPalette` copies it through untouched rather than mapping it onto a colour.
@@ -311,7 +320,33 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // for a sheet that did not change.
   const realignment = strips === null ? null : snapFrames(folded, strips);
   const realigned = realignment !== null && realignment.moved > 0;
-  const output = realignment !== null && realigned ? realignment.image : folded;
+  const aligned = realignment !== null && realigned ? realignment.image : folded;
+
+  // **The last pass of all, and the only one that puts smooth colour back.** Everything above takes
+  // a resampled render apart into flat cells, which is what turns a returned sheet into pixel art
+  // and what leaves every contour a staircase of axis-aligned steps; this reads those steps back
+  // into the sub-pixel coverage they imply and writes it. See `antiAlias` for the geometry and its
+  // grounding.
+  //
+  // **Nothing may run after it, and the order is not interchangeable.** It is the one pass that
+  // deliberately creates colours between the palette's, so every pass that assumes flat colour has
+  // to be behind it — the fill cleanup most of all, which is built to remove exactly the lone
+  // intermediate pixel this writes. The three readings taken over the segmentation compare
+  // *colours*, so two frames that are exact duplicates before it differ afterwards wherever their
+  // contours sit differently against the mesh. And the frame alignment moves whole frames, so a
+  // fringe computed against a neighbour a frame no longer has is a fringe against nothing.
+  //
+  // The strength is a percentage on the dial and a fraction here, as the symmetry confidence is:
+  // one is a figure a reader reads, the other is a figure a coverage is multiplied by. The snap is
+  // gated on a reduction being in force for the reason `AntiAliasPalette` gives — with no palette
+  // stated there is nothing for a blend to be kept to — which is the same gate the dither keeps.
+  const output = antiAlias(aligned, {
+    mode: settings.antiAlias,
+    threshold: settings.antiAliasThreshold,
+    strength: settings.antiAliasStrength / 100,
+    shortestRun: settings.antiAliasRun,
+    snap: settings.antiAliasPalette === 'SNAP' && settings.reduction !== null,
+  });
 
   return {
     image: output,
@@ -341,7 +376,14 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // way the sheet a reader downloads is the one these figures have to describe. Each re-reading is
     // a linear pass, and each is paid only by the reader who asked for the edit that made it
     // necessary.
-    sprites: realigned ? spriteSegments(output, settings.spriteGap) : foldedSprites,
+    //
+    // **Re-read once more where the anti-aliasing softened a silhouette**, which is why the
+    // condition is now the image's own identity rather than a flag per pass: `snapFrames` and
+    // `antiAlias` both hand back their argument by reference wherever they changed nothing, so
+    // comparing with the sheet the fold left is the one question that covers both of them at once.
+    // A soft fringe is drawn artwork — `spriteSegments` counts a pixel unless its alpha is exactly
+    // zero — so it grows each box by a pixel, and that box is what an atlas cell has to seat.
+    sprites: output === folded ? foldedSprites : spriteSegments(output, settings.spriteGap),
     symmetry,
     // The finding, always as it stood on the sheet the reading was taken from — see
     // `QuantiseResult.duplicates` for why the fold does not get to re-take it.

@@ -1,5 +1,8 @@
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import {
+  ANTI_ALIAS_RUN_RANGE,
+  ANTI_ALIAS_STRENGTH_RANGE,
+  ANTI_ALIAS_THRESHOLD_RANGE,
   CLEANUP_PASSES_RANGE,
   COLOR_MERGE_RANGE,
   DUPLICATE_TOLERANCE_RANGE,
@@ -16,7 +19,14 @@ import {
   TRIM_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
-import { DITHER_PATTERNS, FRAME_ALIGNMENT_MODES, SYMMETRY_MODES, VOTE_METHODS } from '../types/quantiser.ts';
+import {
+  ANTI_ALIAS_MODES,
+  ANTI_ALIAS_PALETTES,
+  DITHER_PATTERNS,
+  FRAME_ALIGNMENT_MODES,
+  SYMMETRY_MODES,
+  VOTE_METHODS,
+} from '../types/quantiser.ts';
 import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
 
 /**
@@ -116,6 +126,31 @@ export function parseQuantiseDials(value: unknown): QuantiseDials {
       'frameDriftTolerance',
       QUANTISE_DEFAULT_DIALS.frameDriftTolerance,
       FRAME_DRIFT_RANGE,
+    ),
+    antiAlias: pick(value, 'antiAlias', QUANTISE_DEFAULT_DIALS.antiAlias, ANTI_ALIAS_MODES),
+    antiAliasThreshold: pickWholeNumber(
+      value,
+      'antiAliasThreshold',
+      QUANTISE_DEFAULT_DIALS.antiAliasThreshold,
+      ANTI_ALIAS_THRESHOLD_RANGE,
+    ),
+    antiAliasStrength: pickWholeNumber(
+      value,
+      'antiAliasStrength',
+      QUANTISE_DEFAULT_DIALS.antiAliasStrength,
+      ANTI_ALIAS_STRENGTH_RANGE,
+    ),
+    antiAliasRun: pickWholeNumber(
+      value,
+      'antiAliasRun',
+      QUANTISE_DEFAULT_DIALS.antiAliasRun,
+      ANTI_ALIAS_RUN_RANGE,
+    ),
+    antiAliasPalette: pick(
+      value,
+      'antiAliasPalette',
+      QUANTISE_DEFAULT_DIALS.antiAliasPalette,
+      ANTI_ALIAS_PALETTES,
     ),
   };
 }

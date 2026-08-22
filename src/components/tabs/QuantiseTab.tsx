@@ -15,6 +15,7 @@ import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
+import { AntiAliasControls } from '../quantise/AntiAliasControls.tsx';
 import { AutoTuneControls } from '../quantise/AutoTuneControls.tsx';
 import { DialHistoryControls } from '../quantise/DialHistoryControls.tsx';
 import { DuplicateControls } from '../quantise/DuplicateControls.tsx';
@@ -101,6 +102,11 @@ export function QuantiseTab() {
   const duplicateSnap = useQuantiseStore((state) => state.duplicateSnap);
   const frameAlignment = useQuantiseStore((state) => state.frameAlignment);
   const frameDriftTolerance = useQuantiseStore((state) => state.frameDriftTolerance);
+  const antiAlias = useQuantiseStore((state) => state.antiAlias);
+  const antiAliasThreshold = useQuantiseStore((state) => state.antiAliasThreshold);
+  const antiAliasStrength = useQuantiseStore((state) => state.antiAliasStrength);
+  const antiAliasRun = useQuantiseStore((state) => state.antiAliasRun);
+  const antiAliasPalette = useQuantiseStore((state) => state.antiAliasPalette);
   // One memoised object, because the hook keys its debounce on the tuning's identity — atomic
   // selectors above, so an unrelated store change does not rebuild it.
   const tuning = useMemo(
@@ -122,6 +128,11 @@ export function QuantiseTab() {
       duplicateSnap,
       frameAlignment,
       frameDriftTolerance,
+      antiAlias,
+      antiAliasThreshold,
+      antiAliasStrength,
+      antiAliasRun,
+      antiAliasPalette,
     }),
     [
       vote,
@@ -141,6 +152,11 @@ export function QuantiseTab() {
       duplicateSnap,
       frameAlignment,
       frameDriftTolerance,
+      antiAlias,
+      antiAliasThreshold,
+      antiAliasStrength,
+      antiAliasRun,
+      antiAliasPalette,
     ],
   );
   const setSource = useQuantiseStore((state) => state.setSource);
@@ -336,6 +352,11 @@ export function QuantiseTab() {
               strips={quantised?.result.strips ?? null}
               busy={busy}
             />
+            {/* Last of the dial panels, because its pass is last in the pipeline — see
+                `quantiseImage`, which says why nothing may run after it. It is also the only pass on
+                this tab that puts smooth colour back, so it belongs after every panel whose dials
+                work toward the flat result it softens. */}
+            <AntiAliasControls constrained={colorPlan.reduction !== null} />
             {/* Last of the panels, and below the dials rather than above them: it is the only one
                 whose subject is the reader's own way of working rather than this sheet, so it reads as
                 a place to *put* what the controls above arrived at. Inside the sheet guard with the

@@ -1318,6 +1318,137 @@ export const FRAME_DRIFT_RANGE = { min: 0, max: 8, step: 1 } as const;
 export const DEFAULT_FRAME_DRIFT_TOLERANCE = 0;
 
 /**
+ * The Anti-aliasing control's options, in the order offered — the identifier the pipeline stores,
+ * and the label the select shows.
+ *
+ * Four positions rather than a checkbox and a scope dial, for the reason
+ * {@link SYMMETRY_MODE_CHOICES} has three: the two halves of the pass are different decisions and a
+ * reader picks one of them, not a switch and then a qualifier. `INTERIOR` softens the colour
+ * boundaries inside a sprite and touches no alpha at all; `SILHOUETTE` softens the outer edge, which
+ * means writing partial transparency; `BOTH` does the two.
+ */
+export const ANTI_ALIAS_MODE_CHOICES = [
+  { value: 'OFF', label: 'OFF (no anti-aliasing)' },
+  { value: 'INTERIOR', label: 'INTERIOR (inside a sprite only)' },
+  { value: 'SILHOUETTE', label: 'SILHOUETTE (the outer edge only)' },
+  { value: 'BOTH', label: 'BOTH (inside and the outer edge)' },
+] as const;
+
+/**
+ * Where the Anti-aliasing control opens — off, as every pass on this tab that rewrites artwork opens.
+ *
+ * This one is the strongest case for it. Every other pass here undoes something a generator did to
+ * the sheet; this one *adds* pixels the reader drew nothing of, in a style that is a deliberate
+ * choice rather than a correction — a great deal of pixel art is aliased on purpose, and the
+ * template this app writes asks a model for exactly that. Softening a contour is also the one edit
+ * on this tab that a reader is most likely to want on some sheets and never on others, which is a
+ * decision rather than a default.
+ */
+export const DEFAULT_ANTI_ALIAS = 'OFF';
+
+/**
+ * The contrast floor's range: how far two pixels must sit apart to count as a contour worth
+ * reconstructing, in the scaled OKLab every colour tolerance on this tab is stated in.
+ *
+ * **`0` is the loosest position rather than an off position**, which is the opposite of the symmetry
+ * and drift tolerances beside it: there, zero is strictest. Here a floor of nothing admits every
+ * boundary the sheet holds, including the one-step shading gradations a colour budget leaves behind,
+ * and the Anti-aliasing control's own `OFF` is what stops the pass running.
+ *
+ * The ceiling is 96, which it shares with nothing here by coincidence: it is
+ * {@link SYMMETRY_TOLERANCE_RANGE}'s ceiling and a half, and it is where a floor stops separating
+ * anything on a quantised sheet — past it the only boundaries left are silhouettes and hard
+ * outlines, so the pass would be running on those alone. The step is 1 for the reason every other
+ * distance dial's is: the quantity is compared with a distance, not read as a proportion.
+ */
+export const ANTI_ALIAS_THRESHOLD_RANGE = { min: 0, max: 96, step: 1 } as const;
+
+/**
+ * Where the contrast floor opens — see {@link ANTI_ALIAS_THRESHOLD_RANGE} for the units, and
+ * `tests/anti-alias-corpus.test.ts` for what this figure does to all eight reference sheets.
+ *
+ * Measured on `test_sprites/armour.png`, quantised at the grid the app reads for it and at the dials
+ * as they open. The ladder it was chosen from is in that test.
+ */
+export const DEFAULT_ANTI_ALIAS_THRESHOLD = 24;
+
+/**
+ * The strength's range: what share of each reconstructed coverage is applied, as a percentage.
+ *
+ * It cannot reach zero, because zero is the Anti-aliasing control's own `OFF` and a dial with two
+ * ways to switch a pass off is two things to check when it does nothing. The floor is 10 rather than
+ * 1 because a tenth of a coverage that is itself below a half is already under a twentieth of the
+ * way between two colours, which on a quantised sheet rounds to the colour the pixel already had.
+ * The step is 5 because the quantity is a judgement about how much softening a shape wants, and a
+ * reader dragging it is looking at the preview rather than at the number.
+ */
+export const ANTI_ALIAS_STRENGTH_RANGE = { min: 10, max: 100, step: 5 } as const;
+
+/**
+ * Where the strength opens — the full reconstructed coverage.
+ *
+ * The geometry is an *answer*, not a suggestion: the area the reconstructed boundary cuts off a
+ * pixel is what that pixel would have been had the artwork been drawn at a finer scale and
+ * area-sampled down. Opening below it would mean shipping a default that is knowingly wrong about
+ * the shape, so the dial exists to be turned *down* — which is what pixel-art practice's one
+ * standing rule about anti-aliasing asks for, on the sheets where a full fringe reads as noise.
+ */
+export const DEFAULT_ANTI_ALIAS_STRENGTH = 100;
+
+/**
+ * The shortest run's range: the shortest step of a contour the pass will reconstruct, in drawn
+ * pixels.
+ *
+ * The floor is 2 rather than 1 because a run one pixel long reconstructs to no coverage at all —
+ * its only pixel centre sits exactly where the reconstructed boundary crosses, so the areas either
+ * side of the crossing cancel. `walkEdgeRuns` carries the geometry and why that is the right answer
+ * for a 45° staircase. Offering 1 would be offering a position identical to 2.
+ *
+ * The ceiling is 12, which is the longest run worth excluding: at the pixel scales this tab resolves
+ * a sheet to, a step twelve pixels long is most of a sprite's edge, and a floor above it would leave
+ * the pass with nothing to do on any sheet.
+ */
+export const ANTI_ALIAS_RUN_RANGE = { min: 2, max: 12, step: 1 } as const;
+
+/**
+ * Where the shortest run opens — the neutral position, where every run the geometry blends is kept.
+ *
+ * It is the floor of its own range, and that is deliberate rather than an oversight: the dial exists
+ * to *remove* work from the pass, so its opening position is the one that removes none. A reader on
+ * a small sprite raises it, which leaves the long shallow contours softened and the short steps
+ * crisp — the case pixel-art practice warns about, where a fringe on a small shape reads as noise
+ * rather than as a slope.
+ */
+export const DEFAULT_ANTI_ALIAS_RUN = 2;
+
+/**
+ * The Blended shades control's options, in the order offered.
+ *
+ * Two positions and not a checkbox, because neither is the absence of the other: both write a pixel,
+ * and what separates them is which colours the sheet is allowed to end up holding.
+ */
+export const ANTI_ALIAS_PALETTE_CHOICES = [
+  { value: 'SNAP', label: 'SNAP (keep to the sheet’s own colours)' },
+  { value: 'BLEND', label: 'BLEND (write the mixed shade)' },
+] as const;
+
+/**
+ * Where the Blended shades control opens — keeping to the colours the sheet already holds.
+ *
+ * It is read only where a colour reduction is in force, and in that state the reader has already
+ * said what colours this sheet is made of: a machine's fixed list, a budget, or a palette locked off
+ * an earlier sheet in the series. A pass that quietly added shades outside any of those would undo
+ * the setting that produced them — a Game Boy sheet is four shades because four is the whole point,
+ * and a fringe in a fifth is not a Game Boy sheet. `BLEND` is there for the reader who wants the
+ * softer contour more than the palette, and who can see both figures in the panel above.
+ *
+ * What it holds is the set of hues; a softened *silhouette* still writes partial coverage, which the
+ * colour count reports as its own entry. See {@link AntiAliasPalette}, which carries that
+ * distinction.
+ */
+export const DEFAULT_ANTI_ALIAS_PALETTE = 'SNAP';
+
+/**
  * The preview magnifications, in the order the control offers them.
  *
  * 1:1 leads because it is the case that decides whether the result is genuine pixel art; the rest
@@ -1828,6 +1959,16 @@ export const QUANTISE_TOOLTIPS = {
     'Whether each row of sprites on the sheet is checked for frames that have wandered off the spacing the row is laid out on, and whether anything is done about it. Sprites that share a horizontal band are read as one strip, the spacing between them is fitted from where they actually sit, and each frame is then registered against the first by its own coverage rather than by its bounding box — which is the part that matters, because a box is tight and follows an outstretched arm, so a pose that reaches further reads as a frame that moved. What is reported is the difference between where each frame’s artwork is and where the fitted spacing puts it. CHECK reports and changes nothing — not one pixel of the sheet, the download or anything stored. SNAP does the same and then carries each frame that drifted further than the tolerance below back onto its slot, leaving the artwork itself exactly as it was and refusing any move that would reach a neighbouring sprite. A row needs at least three frames before either does anything, because two frames fit any spacing exactly and would report no drift on any sheet. It is off by default because a row is not always an animation: four facings sit on a spacing too, and one drawn wider on one side belongs where it is. Switch the preview to Onion skin to see each strip’s frames laid over one another.',
   frameDriftTolerance:
     'How far a frame may sit from its slot before SNAP moves it, in drawn pixels. Unlike most dials here, 0 is not an off position — it is the strictest one, where every frame that is not exactly on the fitted spacing is carried onto it — and the Frame alignment control above is what switches the pass off. Raise it for a row that is meant to breathe: an idle animation that bobs a pixel or two is drift you drew on purpose, and this is how you keep it while still straightening the frame that landed four pixels out. It appears only while SNAP is chosen, since under CHECK every frame is reported and none is moved. Frames that pass are named in the panel, so what a change to this admits or refuses can be watched rather than guessed.',
+  antiAlias:
+    'Whether the staircase edges this tab produces are softened with anti-aliasing, and how much of the sheet that reaches. Every pass ahead of this one exists to turn a smooth resampled render back into flat pixels, which leaves each contour a run of square steps, and a shallow slope drawn that way reads as a staircase rather than as a line. This pass reads the step pattern back, works out where the intended edge really ran and how much of each pixel it covered, and writes that coverage as a blended pixel — the same thing a pixel artist does by hand with a few intermediate shades. A clean 45° line is left alone, because the reconstruction cuts exactly as much off one side of those pixels as the other, and that is the one contour hand pixel art does not soften either. INTERIOR keeps the softening to boundaries between two solid pixels, so no silhouette moves and nothing gains partial transparency. SILHOUETTE softens the outer edge instead, which does write partial transparency and changes the bounds every sprite reading and every atlas cell is measured from. BOTH does the two. It is off by default because it adds pixels you drew nothing of, and because how a soft outer edge reads depends on a background this sheet does not contain. Nothing here touches the prompt or anything stored — it changes the result and the file you download.',
+  antiAliasThreshold:
+    'How different two neighbouring pixels have to be before the edge between them is treated as a contour worth softening, measured the way every colour distance on this tab is. Below it a boundary is taken to be two shades of one region rather than an edge, and it is left alone. Raise it where the pass is following the shading steps a colour budget left inside a fill and smearing them together, and lower it where a contour you can see is being left as a staircase. Unlike most dials here, 0 is not an off position — it is the loosest one, where every boundary on the sheet counts — and the Anti-aliasing control above is what switches the pass off. How much it matters depends on how flat the sheet already is: once a budget and the colour merge have settled it to a handful of colours, almost every boundary is a full palette step and most settings admit the same ones.',
+  antiAliasStrength:
+    'How much of the reconstructed coverage is actually written, as a percentage. At 100 each pixel is blended by exactly the fraction of it the intended edge covered, which is what that pixel would have been had the artwork been drawn finer and sampled down. Below that the fringe is still in the right places and fainter, which is the setting for a small sprite — the standing advice in pixel art is to use as little anti-aliasing as the shape needs, because a fringe that is heavy for the size it sits on reads as noise rather than as a slope. It cannot be turned down to nothing, since that is what the Anti-aliasing control above is for.',
+  antiAliasRun:
+    'The shortest step of a contour worth softening, in drawn pixels. A contour that is really a slope comes back as a series of straight runs, and the length of each says how shallow the slope is: long runs are a gentle diagonal, short ones are close to 45°. Raising this leaves the short steps exactly as they are and softens only the long shallow stretches, which is what a small sprite wants. The lowest position keeps every run the reconstruction has anything to say about, and it is where the dial opens. There is no position below it because a run one pixel long already blends to nothing — the intended edge crosses the middle of that pixel, so it covers as much of one side as the other, which is why a clean 45° line comes through untouched however this is set.',
+  antiAliasPalette:
+    'What happens to a blended shade the sheet’s colours do not already hold. SNAP takes each blend to the nearest colour already on the sheet, so a sheet reduced to a machine’s fixed shades keeps exactly those — which is what an artist working to a fixed palette does, reaching for the intermediate tone that already exists rather than mixing a new one. On a sheet with few colours that means some contours are softened and others are not, because no shade between their two colours exists to soften them with. BLEND writes the mixed shade as computed, which softens every contour and adds shades the palette does not hold. Either way, softening the outer edge writes partial transparency, and the colour count above rises when it does — a held shade at a new coverage is still a new entry in that count. It appears only while a colour setting is constraining the sheet, since with none there is no statement of which colours this sheet is made of for a blend to be kept to.',
   presetName:
     'What this set of dial positions is called in the list below. Give it the name of the thing it suits rather than the settings it holds — the generator whose sheets need it, or the style of artwork — because the numbers are already on screen and the reason for them is not. A name that is already in the list updates that entry rather than adding a second one under the same name.',
   presetDescription:

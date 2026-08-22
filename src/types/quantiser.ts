@@ -373,6 +373,65 @@ export const DITHER_PATTERNS = ['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as c
 export type DitherPattern = (typeof DITHER_PATTERNS)[number];
 
 /**
+ * How much of the sheet the anti-aliasing pass is allowed to soften, in the order the control shows
+ * them.
+ *
+ * The `as const` array is the union's single definition, and it *is* validated on the way out of
+ * storage for the reason {@link SYMMETRY_MODES} is: it is a dial, so it travels in a saved quantiser
+ * preset.
+ */
+export const ANTI_ALIAS_MODES = ['OFF', 'INTERIOR', 'SILHOUETTE', 'BOTH'] as const;
+
+/**
+ * What the anti-aliasing pass is pointed at — the four positions the control offers.
+ *
+ * **The one pass in this pipeline that deliberately puts smooth colour back.** Everything ahead of
+ * it exists to take a resampled render apart into flat cells, which leaves every contour a staircase
+ * of axis-aligned steps; a hand pixel artist answers a shallow one of those with a few intermediate
+ * pixels, and nothing in the app did. The pass reconstructs the sub-pixel coverage the steps imply
+ * and writes it — see `antiAlias`, which holds the geometry and its grounding.
+ *
+ * **The scope is a position rather than a second dial, because the two halves are different
+ * decisions.** `INTERIOR` softens the colour boundaries *inside* a sprite and touches no alpha at
+ * all, so the silhouette that every downstream reading and every atlas cell is measured from does
+ * not move. `SILHOUETTE` softens the outer edge, which means writing partial alpha — and how that
+ * reads depends on a background this sheet does not contain, which is why pixel-art practice is
+ * split on it and why it is a choice rather than an assumption. `BOTH` does the two.
+ *
+ * `OFF` is the off position: the pass does not run at all. Every dial beside it is a strength or a
+ * floor, and none of their zeros switch it off.
+ */
+export type AntiAliasMode = (typeof ANTI_ALIAS_MODES)[number];
+
+/**
+ * What becomes of a blended shade the sheet's colours do not already hold — the two positions the
+ * control offers.
+ *
+ * Validated out of storage like {@link ANTI_ALIAS_MODES}, and for the same reason.
+ */
+export const ANTI_ALIAS_PALETTES = ['SNAP', 'BLEND'] as const;
+
+/**
+ * Whether an anti-aliased pixel may be a colour the sheet did not already have.
+ *
+ * `SNAP` takes each blend to the nearest colour the sheet holds, so a sheet reduced to a machine's
+ * four shades keeps exactly those four — which is what an artist working to a fixed palette does,
+ * reaching for the intermediate tone that already exists rather than mixing a new one. `BLEND`
+ * writes the mixed shade as computed.
+ *
+ * **It bounds the hues, not the count**, and the two part company under
+ * {@link AntiAliasMode}'s silhouette positions: a coverage is an *alpha*, and `countColors` keys on
+ * all four channels, so a softened outer edge adds pixels that are a held hue at a new coverage. A
+ * stated palette is a statement about which colours the artwork is drawn in, and it says nothing
+ * about how much of a pixel is covered.
+ *
+ * **Read only where a colour reduction is in force**, which is the contract {@link DitherPattern}
+ * already keeps and for the same reason: with no palette stated there is no statement of which
+ * colours this sheet is made of, so there is nothing for a blend to be kept to.
+ */
+export type AntiAliasPalette = (typeof ANTI_ALIAS_PALETTES)[number];
+
+/**
  * A positional threshold pattern: one rank per position of a square tile, and how many ranks there
  * are.
  *
@@ -516,6 +575,46 @@ export interface QuantiseTuning {
    * every frame is reported and none is moved, so there is nothing for a floor to admit or refuse.
    */
   readonly frameDriftTolerance: number;
+  /**
+   * What the anti-aliasing pass is pointed at, or `OFF` — see {@link AntiAliasMode}.
+   *
+   * **Last of everything on this shape, because the pass is last in the pipeline.** It is the only
+   * one that deliberately creates colours between the palette's, so every pass that assumes flat
+   * colour has to be behind it — the fill cleanup most of all, which is built to remove exactly the
+   * lone intermediate pixel this writes.
+   */
+  readonly antiAlias: AntiAliasMode;
+  /**
+   * How far two pixels must sit apart to count as a contour worth reconstructing, in the
+   * scaled-OKLab units every colour dial on this tab is stated in.
+   *
+   * `0` is not an off position — it is the loosest reading, where any difference at all is a
+   * contour. {@link antiAlias} is what switches the pass off.
+   */
+  readonly antiAliasThreshold: number;
+  /**
+   * What share of each reconstructed coverage is actually applied, as a percentage.
+   *
+   * The dial behind pixel-art practice's one universal rule about anti-aliasing, which is to use as
+   * little of it as the shape needs. It cannot reach zero, because zero is {@link antiAlias}'s `OFF`.
+   */
+  readonly antiAliasStrength: number;
+  /**
+   * The shortest step run the pass will reconstruct, in drawn pixels.
+   *
+   * `2` is the neutral position rather than an exclusion: a one-pixel run — the whole of a 45°
+   * staircase — already reconstructs to no coverage at all, for the reason `walkEdgeRuns` gives.
+   * The dial does its work from `3` up, where only the long shallow contours are softened and the
+   * short steps stay crisp, which is what a small sprite wants.
+   */
+  readonly antiAliasRun: number;
+  /**
+   * Whether a blended shade is kept to the colours the sheet already holds — see
+   * {@link AntiAliasPalette}.
+   *
+   * Read only where {@link QuantiseSettings.reduction} states a palette to keep to.
+   */
+  readonly antiAliasPalette: AntiAliasPalette;
 }
 
 /** Everything `quantiseImage` needs beyond the image itself. */

@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { type MutableOklab, oklabToSrgb, oklchToOklab, srgbToOklab, srgbToOklabInto } from './oklab.ts';
+import {
+  linearToByte,
+  srgbToLinear,
+  type MutableOklab,
+  oklabToSrgb,
+  oklchToOklab,
+  srgbToOklab,
+  srgbToOklabInto,
+} from './oklab.ts';
 
 /**
  * The straight distance between two byte colours, as every gate that imports this module takes it.
@@ -126,5 +134,38 @@ describe('oklchToOklab', () => {
     // resolved in code — so it is pinned on a token rather than on a synthetic triple, and pinned
     // as bytes rather than as a tolerance, because bytes are what reaches the canvas.
     expect(oklabToSrgb(oklchToOklab(0.68, 0.2, 12))).toEqual({ r: 249, g: 85, b: 119, a: 255 });
+  });
+});
+
+/**
+ * The transfer function on its own, both ways — the half of this module `coverageBlend` reaches for.
+ *
+ * Exported rather than duplicated, so these two are the same split and the same exponent the
+ * matrices above are written against. What is worth pinning is the round trip and the one figure
+ * that separates a linear-light mix from a byte average.
+ */
+describe('the sRGB transfer function', () => {
+  it('round-trips every byte', () => {
+    for (let byte = 0; byte < 256; byte += 1) {
+      expect(linearToByte(srgbToLinear(byte))).toBe(byte);
+    }
+  });
+
+  it('puts the linear midpoint of black and white at 188, not at 128', () => {
+    // The figure the module note states for the dither's mixing plan, and the one `coverageBlend`
+    // rests on: light adds linearly, and averaging the gamma-encoded bytes lands somewhere else.
+    expect(linearToByte((srgbToLinear(0) + srgbToLinear(255)) / 2)).toBe(188);
+  });
+
+  it('clamps rather than throwing on a value outside the unit range', () => {
+    // The same clamp `oklabToSrgb` relies on, which is what a browser does with an out-of-gamut
+    // colour — so a mix that overshoots by a rounding step is a byte rather than an exception.
+    expect(linearToByte(-0.5)).toBe(0);
+    expect(linearToByte(1.5)).toBe(255);
+  });
+
+  it('answers zero for a channel outside the byte range, as every other reader here does', () => {
+    expect(srgbToLinear(-1)).toBe(0);
+    expect(srgbToLinear(256)).toBe(0);
   });
 });

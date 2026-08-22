@@ -43,6 +43,11 @@ const TUNED: QuantiseDials = {
   duplicateSnap: true,
   frameAlignment: 'OFF' as const,
   frameDriftTolerance: 0,
+  antiAlias: 'OFF' as const,
+  antiAliasThreshold: 24,
+  antiAliasStrength: 100,
+  antiAliasRun: 2,
+  antiAliasPalette: 'SNAP' as const,
 };
 
 /** A pack of saved settings, as the file a reader would hand back to the app. */

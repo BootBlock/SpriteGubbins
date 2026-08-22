@@ -91,6 +91,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -120,6 +125,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -151,6 +161,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -184,6 +199,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -217,6 +237,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -252,6 +277,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -289,6 +319,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -323,6 +358,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -350,6 +390,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -382,6 +427,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -432,6 +482,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -472,6 +527,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -505,6 +565,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -559,6 +624,11 @@ describe('quantiseImage', () => {
         duplicateSnap: false,
         frameAlignment: 'OFF' as const,
         frameDriftTolerance: 0,
+        antiAlias: 'OFF' as const,
+        antiAliasThreshold: 24,
+        antiAliasStrength: 100,
+        antiAliasRun: 2,
+        antiAliasPalette: 'SNAP' as const,
         dither: 'NONE' as const,
         outlineExpansion: 0,
         colorMerge: 0,
@@ -616,6 +686,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -677,6 +752,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -752,6 +832,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -785,6 +870,11 @@ describe('quantiseImage', () => {
       duplicateSnap: false,
       frameAlignment: 'OFF' as const,
       frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
       dither: 'NONE' as const,
       outlineExpansion: 0,
       colorMerge: 0,
@@ -831,6 +921,11 @@ describe('quantiseImage', () => {
           duplicateSnap: false,
           frameAlignment: 'OFF' as const,
           frameDriftTolerance: 0,
+          antiAlias: 'OFF' as const,
+          antiAliasThreshold: 24,
+          antiAliasStrength: 100,
+          antiAliasRun: 2,
+          antiAliasPalette: 'SNAP' as const,
           dither: 'NONE' as const,
           outlineExpansion: 0,
           colorMerge: 8,
@@ -894,6 +989,11 @@ describe('quantiseImage — a locked palette', () => {
     duplicateSnap: false,
     frameAlignment: 'OFF' as const,
     frameDriftTolerance: 0,
+    antiAlias: 'OFF' as const,
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP' as const,
     dither: 'NONE' as const,
     outlineExpansion: 0,
     colorMerge,
@@ -970,6 +1070,11 @@ describe('quantiseImage — a dither', () => {
     duplicateSnap: false,
     frameAlignment: 'OFF' as const,
     frameDriftTolerance: 0,
+    antiAlias: 'OFF' as const,
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP' as const,
     colorMerge: cleanup,
     outlineExpansion: 0,
     dither,
@@ -1071,6 +1176,11 @@ function symmetrySettings(symmetry: 'OFF' | 'CHECK' | 'SNAP', symmetryConfidence
     duplicateSnap: false,
     frameAlignment: 'OFF' as const,
     frameDriftTolerance: 0,
+    antiAlias: 'OFF' as const,
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP' as const,
     dither: 'NONE',
     outlineExpansion: 0,
     colorMerge: 0,
@@ -1225,6 +1335,11 @@ describe('quantiseImage — duplicate sprites', () => {
     duplicateSnap,
     frameAlignment: 'OFF' as const,
     frameDriftTolerance: 0,
+    antiAlias: 'OFF' as const,
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP' as const,
     reduction: null,
   });
 
@@ -1351,6 +1466,11 @@ describe('quantiseImage frame alignment', () => {
     duplicateSnap: false,
     frameAlignment,
     frameDriftTolerance,
+    antiAlias: 'OFF' as const,
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP' as const,
     reduction: null,
   });
 
@@ -1409,5 +1529,124 @@ describe('quantiseImage frame alignment', () => {
     // source exactly, so its peak is zero — and the moved pass is not.
     expect(quantiseImage(DRIFTED, settingsFor('CHECK', 0)).difference.peak).toBe(0);
     expect(quantiseImage(DRIFTED, settingsFor('SNAP', 0)).difference.peak).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * The anti-aliasing pass, from the pipeline's end rather than from its own.
+ *
+ * Two claims that can only be made here: that it runs **last**, over everything the readings, the
+ * cleanups, the palette and the three segmentation passes produced, and that every figure the result
+ * carries is re-read from what it wrote. `antiAlias.test.ts` holds the pass's own behaviour.
+ */
+describe('quantiseImage anti-aliasing', () => {
+  /**
+   * A stepped wedge on a keyed field, at the sheet's own resolution.
+   *
+   * The step is four pixels wide, so each run is long enough to reconstruct from, and the wedge
+   * reaches the keyed field on both sides — which is what gives the pass an interior contour and a
+   * silhouette to be pointed at separately.
+   */
+  const WEDGE = imageFrom(32, 20, (x, y) => {
+    if (x < 4 || x >= 28) return MAGENTA;
+    const top = 4 + Math.floor((x - 4) / 4);
+    if (y < top || y >= 16) return MAGENTA;
+    return y < top + 5 ? ART : TRINKET;
+  });
+
+  const settingsFor = (antiAlias: 'OFF' | 'INTERIOR' | 'SILHOUETTE' | 'BOTH'): QuantiseSettings => ({
+    grid: 1,
+    key: KEYING,
+    vote: 'DOMINANT' as const,
+    outlineExpansion: 0,
+    lineStrength: 1.5,
+    trimStrength: 0,
+    inkThreshold: 64,
+    fillCleanup: 0,
+    colorMerge: 0,
+    cleanupPasses: 1,
+    dither: 'NONE' as const,
+    spriteGap: 1,
+    symmetry: 'OFF' as const,
+    symmetryTolerance: 8,
+    symmetryConfidence: 90,
+    duplicateTolerance: 0,
+    duplicateSnap: false,
+    frameAlignment: 'OFF' as const,
+    frameDriftTolerance: 0,
+    antiAlias,
+    antiAliasThreshold: 24,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'SNAP' as const,
+    reduction: null,
+  });
+
+  it('changes nothing at all while the pass is off', () => {
+    const off = quantiseImage(WEDGE, settingsFor('OFF'));
+    const on = quantiseImage(WEDGE, settingsFor('BOTH'));
+    expect(channels(on.image)).not.toEqual(channels(off.image));
+  });
+
+  it('reports the colours of the sheet it produced, not of the one it was handed', () => {
+    // With no reduction in force the snap is not applied — `quantiseImage` gates it on one — so the
+    // blends are new colours, and the count has to be the softened sheet's.
+    const off = quantiseImage(WEDGE, settingsFor('INTERIOR'));
+    expect(off.colors).toBeGreaterThan(quantiseImage(WEDGE, settingsFor('OFF')).colors);
+  });
+
+  it('re-reads the segmentation where a silhouette was softened', () => {
+    const off = quantiseImage(WEDGE, settingsFor('OFF'));
+    const soft = quantiseImage(WEDGE, settingsFor('SILHOUETTE'));
+    expect(off.sprites.kind).toBe('SEGMENTED');
+    expect(soft.sprites.kind).toBe('SEGMENTED');
+    if (off.sprites.kind !== 'SEGMENTED' || soft.sprites.kind !== 'SEGMENTED') return;
+    // A soft fringe is drawn artwork — `spriteSegments` counts a pixel unless its alpha is exactly
+    // zero — so the box the atlas has to seat is a pixel wider than the one the hard sheet gave.
+    const [before] = off.sprites.boxes;
+    const [after] = soft.sprites.boxes;
+    expect(before).toBeDefined();
+    expect(after).toBeDefined();
+    expect(after?.pixels ?? 0).toBeGreaterThan(before?.pixels ?? 0);
+  });
+
+  it('leaves the segmentation exactly as it was where only the interior was softened', () => {
+    // The promise `INTERIOR` makes: no alpha moves, so nothing measured off the silhouette does
+    // either — the sprite bounds, and the atlas cell they decide.
+    const off = quantiseImage(WEDGE, settingsFor('OFF'));
+    const soft = quantiseImage(WEDGE, settingsFor('INTERIOR'));
+    expect(soft.sprites).toEqual(off.sprites);
+  });
+
+  it('keeps a reduced sheet to the colours the reduction chose', () => {
+    // The gate `quantiseImage` applies: the blended-shades control is read only where a palette has
+    // been stated. Here one has — eight colours, of which this fixture uses two — so every blend is
+    // taken back to one of them, and on a two-colour sheet with no shade between them that means
+    // every blend lands on the colour the pixel already had. Nothing changes, which is the honest
+    // answer rather than a defect: a palette that holds no intermediate tone has nothing to soften a
+    // contour with, and the panel's guidance says so.
+    //
+    // **`INTERIOR` rather than `BOTH`, and the distinction is the honest one.** A coverage is an
+    // alpha, and `countColors` keys on all four channels — so softening a silhouette adds pixels
+    // that are a held hue at a new coverage, which is a new colour by that count whatever the snap
+    // does. What the snap bounds is the set of *hues*, which is what a stated palette states.
+    const reduced = (
+      antiAlias: 'OFF' | 'INTERIOR',
+      antiAliasPalette: 'SNAP' | 'BLEND',
+    ): QuantiseSettings => ({
+      ...settingsFor(antiAlias),
+      antiAliasPalette,
+      reduction: { kind: 'MAX_COLORS', maxColors: 8 },
+    });
+    const off = quantiseImage(WEDGE, reduced('OFF', 'SNAP'));
+    const snapped = quantiseImage(WEDGE, reduced('INTERIOR', 'SNAP'));
+    expect(snapped.colors).toBe(off.colors);
+    expect(channels(snapped.image)).toEqual(channels(off.image));
+
+    // The other position on the same sheet, which is what says the snap is doing the work above
+    // rather than the pass having found nothing to soften.
+    const blended = quantiseImage(WEDGE, reduced('INTERIOR', 'BLEND'));
+    expect(blended.colors).toBeGreaterThan(off.colors);
+    expect(channels(blended.image)).not.toEqual(channels(off.image));
   });
 });

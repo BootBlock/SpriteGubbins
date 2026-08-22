@@ -32,6 +32,11 @@ const STORED: QuantiseDials = {
   duplicateSnap: true,
   frameAlignment: 'OFF',
   frameDriftTolerance: 0,
+  antiAlias: 'OFF' as const,
+  antiAliasThreshold: 24,
+  antiAliasStrength: 100,
+  antiAliasRun: 2,
+  antiAliasPalette: 'SNAP' as const,
 };
 
 describe('parseQuantiseDials', () => {

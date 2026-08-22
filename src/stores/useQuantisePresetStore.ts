@@ -127,6 +127,11 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       duplicateSnap,
       frameAlignment,
       frameDriftTolerance,
+      antiAlias,
+      antiAliasThreshold,
+      antiAliasStrength,
+      antiAliasRun,
+      antiAliasPalette,
     } = useQuantiseStore.getState();
 
     const preset: QuantisePreset = {
@@ -159,6 +164,11 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
         duplicateSnap,
         frameAlignment,
         frameDriftTolerance,
+        antiAlias,
+        antiAliasThreshold,
+        antiAliasStrength,
+        antiAliasRun,
+        antiAliasPalette,
       },
     };
 

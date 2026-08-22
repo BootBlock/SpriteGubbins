@@ -44,6 +44,11 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
     left.duplicateSnap === right.duplicateSnap &&
     left.frameAlignment === right.frameAlignment &&
     left.frameDriftTolerance === right.frameDriftTolerance &&
+    left.antiAlias === right.antiAlias &&
+    left.antiAliasThreshold === right.antiAliasThreshold &&
+    left.antiAliasStrength === right.antiAliasStrength &&
+    left.antiAliasRun === right.antiAliasRun &&
+    left.antiAliasPalette === right.antiAliasPalette &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );
