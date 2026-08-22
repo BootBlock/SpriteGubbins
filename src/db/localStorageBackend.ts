@@ -85,7 +85,7 @@ export class LocalStorageBackend implements PersistenceBackend {
 
   /** One spelling of the refusal, so {@link write} and {@link writeHistory} cannot drift. */
   private static refusal(key: string, cause: unknown): Error {
-    return new Error(`Storage refused the write to "${key}".`, { cause });
+    return new Error(`Storage refused the write to “${key}”.`, { cause });
   }
 
   /*

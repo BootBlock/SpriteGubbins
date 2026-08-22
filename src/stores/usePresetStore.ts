@@ -150,7 +150,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       set({ customPresets: await database.listPresets() });
       useUIStore
         .getState()
-        .showToast(existing ? `Updated custom preset "${trimmed}"` : `Saved custom preset "${trimmed}"`);
+        .showToast(existing ? `Updated custom preset “${trimmed}”` : `Saved custom preset “${trimmed}”`);
       return true;
     } catch {
       useUIStore.getState().showToast('Could not save that preset');
@@ -170,7 +170,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     // capitalisation is not a collision.
     const clash = findPresetByName(get().customPresets, trimmed);
     if (clash !== undefined && clash.id !== id) {
-      useUIStore.getState().showToast(`A preset named "${clash.name}" already exists`);
+      useUIStore.getState().showToast(`A preset named “${clash.name}” already exists`);
       return false;
     }
 
@@ -180,7 +180,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       // fields would blank the configuration the preset exists to hold.
       await database.savePreset({ ...preset, name: trimmed, description: description.trim() });
       set({ customPresets: await database.listPresets() });
-      useUIStore.getState().showToast(`Updated "${trimmed}"`);
+      useUIStore.getState().showToast(`Updated “${trimmed}”`);
       return true;
     } catch {
       useUIStore.getState().showToast('Could not update that preset');

@@ -87,7 +87,7 @@ export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingCont
           checked={isKeying}
           disabledReason={
             hex === null
-              ? `The studio's background key is ${backgroundKey}, so the space between components is already alpha — there is no colour to match.`
+              ? `The studio’s background key is ${backgroundKey}, so the space between components is already alpha — there is no colour to match.`
               : ''
           }
           onChange={setKeyingEnabled}
