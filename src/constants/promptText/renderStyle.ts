@@ -89,7 +89,7 @@ const LARGEST_MIN_FEATURE = '3 × 3';
 const UNSTATED_MIN_FEATURE = '2 × 2';
 
 /**
- * The smallest feature the pixel-discipline section permits.
+ * The figure, without the unit it is counted in.
  *
  * **Three of the four profiles *are* a scale, and `CUSTOM` is not** — which is what makes this a
  * function rather than the record it began as. `CUSTOM` means "work to the target component size",
@@ -99,7 +99,7 @@ const UNSTATED_MIN_FEATURE = '2 × 2';
  * the generator resolves by discarding one half of it — silently, and in whichever direction it
  * likes.
  */
-export function minFeatureSize(profile: ResolutionProfile, spriteTargetSize: string): string {
+function minFeatureFigure(profile: ResolutionProfile, spriteTargetSize: string): string {
   if (profile !== 'CUSTOM') return PROFILE_MIN_FEATURE[profile];
 
   const target = parseTargetSize(spriteTargetSize);
@@ -107,4 +107,35 @@ export function minFeatureSize(profile: ResolutionProfile, spriteTargetSize: str
 
   const edge = Math.min(target.width, target.height);
   return CUSTOM_MIN_FEATURE.find((rung) => edge <= rung.upTo)?.size ?? LARGEST_MIN_FEATURE;
+}
+
+/**
+ * The smallest feature the pixel-discipline section permits, **with the unit it is counted in**.
+ *
+ * The unit is the whole reason this is one function and not two values the template pairs up. The
+ * bullet used to say *native pixels* unconditionally, while the block defining a native pixel is
+ * gated on `NATIVE_GRID` — a different and much narrower condition, since `nativeGridScale`
+ * additionally wants the `CUSTOM` profile, a size that parses and an enlargement of at least 2. So
+ * every pixel-art prompt on a stock profile — the default configuration among them, which is the
+ * first prompt the app ever shows anybody — stated a measurement in a unit the document never
+ * established. A generator reading *3 × 3 native pixels* with no grid stated has to guess
+ * between three pixels of a thousand-pixel image and three cells of a grid eight times coarser, and
+ * the rule is supposed to be the floor on interior detail.
+ *
+ * **`hasNativeGrid` is the compiler's `NATIVE_GRID` answer itself, not a second reading of the same
+ * inputs.** That is what makes the pairing hold: the figure and the unit leave this function
+ * together, and the template has no unit of its own to write beside the figure.
+ *
+ * **Where there is no native grid the unit is the delivered pixel**, which the output contract's
+ * render-at-the-delivered-resolution rule already establishes for every sheet, and which the
+ * native-grid block's own carve-out is the only exception to. It is the correct answer
+ * rather than a fallback: with nothing to enlarge, the pixels drawn are the pixels delivered — the
+ * same reasoning that has `nativeGridScale` return `null` at a scale of 1.
+ */
+export function minFeatureSize(
+  profile: ResolutionProfile,
+  spriteTargetSize: string,
+  hasNativeGrid: boolean,
+): string {
+  return `${minFeatureFigure(profile, spriteTargetSize)} ${hasNativeGrid ? 'native' : 'delivered'} pixels`;
 }

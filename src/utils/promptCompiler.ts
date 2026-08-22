@@ -199,8 +199,10 @@ export function generatePrompt(
   // The whole-number enlargement the native pixel grid is delivered at, or `null` where this
   // configuration has no native grid — a style that is not pixel art, a profile that states its own
   // scale, an unparseable size, or a component already large enough that there is nothing to
-  // enlarge. Read twice below, as the value and as the flag that gates the three places stating it,
-  // so the prompt cannot carry the carve-out without the figure it points at.
+  // enlarge. Read three times below — as the value, as the flag that gates the three places stating
+  // it, and as the unit the pixel-discipline section counts its minimum feature in — so the prompt
+  // cannot carry the carve-out without the figure it points at, nor name a native pixel where
+  // nothing defines one.
   const nativeScale = nativeGridScale(
     output.renderStyle,
     output.resolutionProfile,
@@ -248,7 +250,9 @@ export function generatePrompt(
     // section 2 that states the grid and the multiple, and the self-audit's check on what the
     // finished sheet holds. One flag, because a sheet either has a native grid to present or does
     // not — and the carve-out without the figure would be section 0 permitting an enlargement
-    // nothing else in the prompt asks for.
+    // nothing else in the prompt asks for. The pixel-discipline minimum is a fourth mention and is
+    // deliberately not gated: it changes its unit rather than disappearing, which is why it reads
+    // the same `nativeScale` instead of this flag.
     NATIVE_GRID: nativeScale === null ? '' : 'yes',
     // Read from the resolved profile rather than from the stored id, so a configuration naming a
     // machine this build no longer has emits no heading rather than an empty one — the same
@@ -371,8 +375,13 @@ export function generatePrompt(
     SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
     RESOLUTION_PROFILE_DESCRIPTION: RESOLUTION_PROFILE_TEXT[output.resolutionProfile],
     // A function of the target size as well as the profile, because `CUSTOM` is the one profile
-    // that carries no scale of its own — see `minFeatureSize`.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize),
+    // that carries no scale of its own — see `minFeatureSize`. It carries its own unit, from the
+    // same `nativeScale` answer `NATIVE_GRID` is: the figure counts native pixels only where the
+    // block defining a native pixel is emitted, and delivered pixels everywhere else. The bullet
+    // stated *native* unconditionally for as long as the two were separate, so every pixel-art
+    // prompt on a stock profile — the default among them — measured against a unit it never
+    // defined.
+    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize, nativeScale !== null),
     // Sprite-scale bullets join the pixel discipline only when the stated component is small
     // enough that silhouette carries the identity; `''` is what drops the optional line.
     SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, output.spriteTargetSize),

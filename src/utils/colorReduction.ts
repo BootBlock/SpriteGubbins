@@ -93,7 +93,7 @@ function studioPlan(palette: PaletteId, limit: PaletteLimit): ColorPlan {
       reduction: { kind: 'CHANNEL_DEPTH', bitsPerChannel: pinned.space.bitsPerChannel },
       setting: palette,
       studioSetting: palette,
-      effect: `every channel snapped to the machine's ${String(levels)} levels`,
+      effect: `every channel snapped to the machine’s ${String(levels)} levels`,
       superseded: null,
     };
   }

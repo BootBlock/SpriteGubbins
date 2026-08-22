@@ -110,7 +110,7 @@ export function validateAllSheetPlans(): readonly PlanViolation[] {
               violations.push({
                 category,
                 mode,
-                message: `asks for a component of kind "${kind}", which ${category} does not admit`,
+                message: `asks for a component of kind “${kind}”, which ${category} does not admit`,
               });
             }
           }
@@ -123,13 +123,13 @@ export function validateAllSheetPlans(): readonly PlanViolation[] {
                 violations.push({
                   category,
                   mode,
-                  message: `sheet "${plan.name}" draws "${facing}", which ${directions} does not contain`,
+                  message: `sheet “${plan.name}” draws “${facing}”, which ${directions} does not contain`,
                 });
               }
             }
           }
           if (plan.groups.length === 0) {
-            violations.push({ category, mode, message: `sheet "${plan.name}" has no component groups` });
+            violations.push({ category, mode, message: `sheet “${plan.name}” has no component groups` });
           }
           for (const group of plan.groups) {
             if (group.entries.length === 0) {
@@ -144,7 +144,7 @@ export function validateAllSheetPlans(): readonly PlanViolation[] {
                 violations.push({
                   category,
                   mode,
-                  message: `entry "${entry.text}" contributes ${String(entry.count)} components`,
+                  message: `entry “${entry.text}” contributes ${String(entry.count)} components`,
                 });
               }
             }

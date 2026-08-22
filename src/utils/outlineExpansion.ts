@@ -23,29 +23,49 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * that was one pixel wide is then `2 × thickness + 1` wide, and a cell that straddles it is holding
  * enough ink to win the vote it was losing.
  *
- * **Measured on the reference sheet** at a grid of 6, the standard vote and a budget of 64, across
- * the 44,099 cells its mesh lays down. Two figures, because either alone picks the wrong setting:
+ * **Measured on the reference sheet** (`test_sprites/armour.png`, grid 6, the standard vote, a
+ * budget of 64, no keying, every other dial at its opening position), across the 43,681 cells its
+ * mesh lays down. **Ink** here is a pixel whose luma is below `LINE_INK_CEILING`, the darkest
+ * quarter, and every share a cell is sorted by is read off the sheet **as it arrived** — before the
+ * pass runs, because the whole question is what the pass does to cells the artist drew a contour
+ * through. A cell "resolves to ink" when the one pixel it became is ink by that same test. Two
+ * figures, because either alone picks the wrong setting:
  *
- * - **survival** — of the 7,135 cells holding ink as a *minority* of their own pixels, which is
- *   every cell a one-pixel contour crosses, the share that resolve to ink. It runs **29.5% with the
- *   pass off, then 43.5%, 54.4%, 60.4% and 64.1%** across thicknesses 1 to 4;
- * - **surface loss** — of the 34,240 cells the source says are under a fifth ink, which is a stray
+ * - **survival** — of the 6,433 cells holding ink as a *minority* of their own pixels, which is
+ *   every cell a one-pixel contour crosses, the share that resolve to ink. It runs **29.6% with the
+ *   pass off, then 42.7%, 54.1%, 61.4% and 65.4%** across thicknesses 1 to 4;
+ * - **surface loss** — of the 33,575 cells the source says are under a fifth ink, which is a stray
  *   fringe rather than a contour crossing, the share that come out ink anyway. It runs **0.39%, then
- *   2.89%, 5.71%, 8.03% and 10.70%**. Against it, the sheet's own ink share is 14.2% of its opaque
- *   pixels and the result's runs 15.8, 17.0, 19.2, 20.8 and 23.0%.
+ *   2.70%, 5.12%, 7.81% and 10.51%**. Against it, the sheet's own ink share is 14.2% of its opaque
+ *   pixels and the result's runs 16.5, 17.2, 18.9, 20.8 and 22.9%.
  *
- * The first step buys 14 points of survival for 2.5 of surface, and every step after it buys less
- * for the same: 10.9 for 2.8, then 6.0 for 2.3, then 3.7 for 2.7. So the knee is at **1**, and the
+ * The first step buys 13.1 points of survival for 2.3 of surface, and every step after it buys less
+ * for the same: 11.4 for 2.4, then 7.3 for 2.7, then 4.0 for 2.7. So the knee is at **1**, and the
  * range runs to 4 because a sheet whose contours are thinner or whose scale is coarser will want
- * more. The ink-weighted reading is the same shape one thickness later, from a lower start: 20.7%,
- * 20.5%, 31.8%, 41.2%, 46.7% survival against 0.02%, 0.65%, 2.01%, 4.11% and 6.06% surface.
+ * more. **The ink-weighted reading climbs the same ladder from far lower down**, and that is the
+ * argument for the pass rather than against it: 8.4% survival with the pass off, then 18.0%, 32.5%,
+ * 40.5% and 48.5%, against 0.00%, 0.47%, 2.32%, 3.97% and 6.08% surface, and a result ink share of
+ * 10.2, 9.8, 12.8, 14.3 and 16.1%. A vote that exists to keep outlines still loses nine cells in ten
+ * of them until this pass runs, because it can only *darken* a cell ink is losing rather than hand
+ * it the cell — and each of its steps buys survival more cheaply than the standard vote's does, 20
+ * points per point of surface at the first step against the standard vote's 6.
  *
- * **The second figure is here because the first one on its own chose wrongly.** Counting only cells
- * with *no* source ink at all put the knee at 2 — and driving the tab in a browser at 2 showed
- * helmets whose interiors had gone blotchy, the gold and green masses broken up by dark that had
- * grown along every seam between them. Almost every cell on a sheet like this holds a pixel or two
- * of dark, so "no ink at all" was blind to exactly the failure that matters. Any recalibration of
- * this dial needs both numbers and a look at the preview.
+ * **The second figure is here because the first one on its own chose wrongly.** The obvious cheap
+ * reading of surface loss is to count only the 31,268 cells with *no* source ink at all, and that
+ * one puts the cost of a thickness of 2 at 1.73% where the under-a-fifth set puts it at 5.12% —
+ * three times smaller, and small enough to look like a free step. Driving the tab in a browser at 2
+ * showed helmets whose interiors had gone blotchy, the gold and green masses broken up by dark that
+ * had grown along every seam between them. Almost every cell on a sheet like this holds a pixel or
+ * two of dark, so "no ink at all" was blind to exactly the failure that matters. Any recalibration
+ * of this dial needs both numbers and a look at the preview.
+ *
+ * Every ladder in the three paragraphs above is re-derived by
+ * `tests/quantiser-docblock-figures.test.ts`, the no-ink reading included, and the per-step figures
+ * are subtractions of them. It fails when a pass upstream of this one moves one — so a
+ * recalibration is told to come back here rather than leaving the ladder stale. Point 5 below is
+ * the exception, and cannot be covered: its *carried* half is a variant this app does not ship, so
+ * it says how that half was reconstructed instead. (Its other half is this ladder's own t1, t2 and
+ * t3.)
  *
  * **The cost is flat in the thickness**, which is the whole reason `runningExtremum` is written the
  * way it is: the pass took the same time at a thickness of 4 as at 1 in every run of that sweep. It
@@ -87,16 +107,19 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * 5. **There is no opening and closing afterwards.** The reference finishes with `erode`, `dilate`,
  *    `dilate`, `erode` — an opening then a closing, which clears the stray pixels left along the
  *    seam between the two regimes, and which collapses into three passes because the two dilations
- *    run as one at twice the radius. Measured here, it does not earn them. Carried, the pass scores
- *    39.7% / 52.5% / 53.4% survival at 2.37% / 5.26% / 7.01% surface loss for thicknesses 1, 2 and
- *    3, against 43.5% / 54.4% / 60.4% at 2.89% / 5.71% / 8.03% without it. **At the low end that is
- *    close to an even trade** — interpolated to the same surface loss, dropping it is worth about a
- *    point at a thickness of 1 and nothing at all at 2. It only clearly wins from 3 upwards, where
- *    the same 7.01% of surface buys 57.8% survival instead of 53.4%. What settles it is the other
- *    column: those three extra passes measured **two thirds again** on the pass's own running time,
- *    and at the low thicknesses anyone will actually use they buy nothing. The tab already offers a
- *    speckle cleanup after the vote, where the reader can judge it against the preview and turn it
- *    off; one welded in here can only be paid for.
+ *    run as one at twice the radius. Measured here — the tail reconstructed as `erode(t)`,
+ *    `dilate(2t)`, `erode(t)` over this pass's own output, on the two populations the docblock above
+ *    defines — it does not earn them. Carried, the pass scores 40.6% / 44.7% / 52.5% survival at
+ *    2.34% / 4.21% / 6.92% surface loss for thicknesses 1, 2 and 3, against 42.7% / 54.1% / 61.4% at
+ *    2.70% / 5.12% / 7.81% without it. It is buying a little less surface for rather less survival.
+ *    **At a thickness of 1 that is an even trade** — interpolated to the same surface loss, dropping
+ *    it is worth a tenth of a point. From 2 upwards it is not close: at the carried pass's own 4.21%
+ *    of surface, dropping it buys 49.8% survival against 44.7%, and at 6.92% it buys 59.0% against
+ *    52.5%. What settles the low end, where the trade is even, is the other column: those three
+ *    extra passes measured **two thirds again** on the pass's own running time, and at the low
+ *    thicknesses anyone will actually use they buy nothing. The tab already offers a speckle cleanup
+ *    after the vote, where the reader can judge it against the preview and turn it off; one welded
+ *    in here can only be paid for.
  */
 export function outlineExpansion(image: ImageData, block: number, thickness: number): ImageData {
   if (thickness <= 0 || block <= 0) {

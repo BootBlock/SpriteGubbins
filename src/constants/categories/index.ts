@@ -51,7 +51,7 @@ export const CATEGORY_OPTIONS: Readonly<Record<SubjectCategory, CategoryDefiniti
  */
 export function fieldLabelFor(category: SubjectCategory, key: SubjectFieldKey): string {
   const field = CATEGORY_OPTIONS[category].fields.find((candidate) => candidate.key === key);
-  if (field === undefined) throw new Error(`Category ${category} defines no "${key}" field.`);
+  if (field === undefined) throw new Error(`Category ${category} defines no “${key}” field.`);
   return field.label;
 }
 

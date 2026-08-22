@@ -18,12 +18,17 @@ function filesUnder(root: string): string[] {
  * leave the one place a size could hide from the guard: `src/constants/`, which is exactly where
  * CLAUDE.md's directory rule sends a hoisted constant.
  *
- * Three guards walk the tree this way — `design-tokens.test.ts` for a bracketed font size and for a
- * `duration-` off the motion ladder, and `raw-colour-literals.test.ts` for a hex a component wrote
- * instead of taking a token — which is why the walk is a module rather than a function inside one of
- * them. A second copy would be a second answer to "what counts as source", and the one that went
- * stale would fail open: a directory the copy never learned about is a directory its guard silently
- * stops covering.
+ * Four suites walk the tree this way — `design-tokens.test.ts` for a bracketed font size and for a
+ * `duration-` off the motion ladder, `raw-colour-literals.test.ts` for a hex a component wrote
+ * instead of taking a token, `sticky-column-offset.test.ts` for a sticky column that clears the
+ * wrong height, and `interface-punctuation.test.ts` for a straight quote in a string a reader sees —
+ * which is why the walk is a module rather than a function inside one of them. A second copy would
+ * be a second answer to "what counts as source", and the one that went stale would fail open: a
+ * directory the copy never learned about is a directory its guard silently stops covering.
+ *
+ * The last of them filters this list down itself, to the `.ts` and `.tsx` that carry authored
+ * strings: `.css` holds none of the app's prose, and its own floors are counted per extension, since
+ * one total cannot notice the `.tsx` half going missing.
  */
 export function scannableSources(): string[] {
   return filesUnder('src');
