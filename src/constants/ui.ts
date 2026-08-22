@@ -68,38 +68,57 @@ export interface AppTabChoice {
 }
 
 /**
- * The four views, in the order the switcher shows them.
+ * Each view's entry, keyed by the view it describes.
  *
- * Quantise sits beside the studio rather than at the end, because it is the second half of the same
- * job: compose the prompt here, and bring what the model returned back to the tab next door.
+ * `satisfies Record<AppTab, AppTabChoice>` is what makes a lookup by id total: a view added to
+ * `APP_TABS` without an entry here is a compile error, rather than a shell that renders the page's
+ * only `<h1>` with nothing inside it. The shell wants this shape rather than the ordered list
+ * below, because it knows *which* view is active and not where that view sits in the switcher.
  */
-export const APP_TAB_CHOICES: readonly AppTabChoice[] = [
-  {
+export const APP_TAB_CHOICE_BY_ID = {
+  studio: {
     id: 'studio',
     label: 'Studio',
     icon: '🛠️',
     guidance:
       'Where the prompt is built: the subject on the left, the output configuration under it, and the compiled text on the right, recompiled as you type. Everything that reaches the generator is set here, and nothing in the other three views changes a word of it.',
   },
-  {
+  quantise: {
     id: 'quantise',
     label: 'Quantise',
     icon: '🔲',
     guidance:
       'The second half of the job, for a sheet a generator has already returned: snap it back to the pixel scale it was meant to be drawn at, bring its colours down to what the prompt asked for, and turn the background key into transparency. It is the one follow-up no wording can replace — the prompt already forbids smooth downscaled artwork, and models hand it back anyway. Nothing is uploaded; the image is decoded and transformed in the tab.',
   },
-  {
+  presets: {
     id: 'presets',
     label: 'Presets',
     icon: '⚡',
     guidance:
       'The archetype library: built-in configurations covering every subject category, plus anything you have saved yourself. Loading one replaces the whole studio setup, so it is a starting point to work from rather than a finished answer. The count beside the label is how many the library holds.',
   },
-  {
+  spec: {
     id: 'spec',
     label: 'Architecture',
     icon: '📜',
     guidance:
       'How the app is built and where your work is kept — the storage it is using in this browser, what it does and does not send anywhere, the version and the source. Documentation rather than a control panel: nothing here changes the prompt or the configuration.',
   },
+} satisfies Record<AppTab, AppTabChoice>;
+
+/**
+ * The four views, in the order the switcher shows them.
+ *
+ * Quantise sits beside the studio rather than at the end, because it is the second half of the same
+ * job: compose the prompt here, and bring what the model returned back to the tab next door.
+ *
+ * Assembled from the record above rather than restating it, so a view cannot be called one thing in
+ * the switcher and another in the heading. Order is the only thing this list contributes — the
+ * union in `APP_TABS` declares the same four in a different one, and says so.
+ */
+export const APP_TAB_CHOICES: readonly AppTabChoice[] = [
+  APP_TAB_CHOICE_BY_ID.studio,
+  APP_TAB_CHOICE_BY_ID.quantise,
+  APP_TAB_CHOICE_BY_ID.presets,
+  APP_TAB_CHOICE_BY_ID.spec,
 ];

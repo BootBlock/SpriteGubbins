@@ -58,7 +58,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       ...DEFAULT_IMAGE_CONFIG,
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
-      // Three runs sharing one identity, started from the middle of the set rather than its first
+      // Three runs of one subject, started from the middle of the set rather than its first
       // entry: legs are what a walker rig is judged on, and the side elevation is the only facing
       // where a hip, a knee and an ankle are all unambiguous. Getting them right there is what the
       // other two runs are then matched against.

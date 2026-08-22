@@ -161,15 +161,24 @@ function settle(): void {
  * come back says nothing about the next one. So the reader moves a dial and is asked again.
  */
 function unreadable(): void {
-  const answers = useQuantiseAnswerStore.getState();
-  for (const job of jobs.values()) {
-    if (job.kind === 'quantise') {
-      answers.attempted({ kind: 'failed', settings: job.settings, reason: REPLY_LOST });
-    } else {
-      answers.surveyed({ kind: 'failed', reason: REPLY_LOST });
-    }
-  }
+  for (const job of jobs.values()) fail(job, REPLY_LOST);
   forget();
+}
+
+/**
+ * File a failure against what a job was a failure *of*, which is what settles the wait for it.
+ *
+ * The same filing {@link file} gives the worker's own `failed` replies, and for the same reason:
+ * `useQuantiseWork` derives `busy` from whether an answer matches the question in force, so a job
+ * that leaves {@link jobs} without one leaves the tab reporting work that nothing is doing.
+ */
+function fail(job: Job, reason: string): void {
+  const answers = useQuantiseAnswerStore.getState();
+  if (job.kind === 'quantise') {
+    answers.attempted({ kind: 'failed', settings: job.settings, reason });
+  } else {
+    answers.surveyed({ kind: 'failed', reason });
+  }
 }
 
 /**
@@ -212,14 +221,37 @@ function connect(): Worker | null {
   return started;
 }
 
-/** Post a call, and say whether one was posted — `false` where this session has no thread to post to. */
+/**
+ * Post a call, and say whether one was posted — `false` where this session has no thread to post to,
+ * and where the browser would not clone the call.
+ *
+ * **The job is recorded only once the browser has taken it, and the order is the point.** A clone the
+ * browser will not make throws here — the realistic cause is room, since `load` carries the whole
+ * sheet and that reaches 67 megabytes — and a job recorded before the throw is one no reply will ever
+ * remove: it would leave {@link running} set on a transform that never started, where
+ * {@link quantiseSheet} queues every later question behind it for the rest of the session. That is
+ * the same consequence {@link unreadable} exists to prevent, by a route no listener ever hears about.
+ * Recording afterwards is safe because a reply cannot arrive first: it is delivered as an event, and
+ * this function has returned before the loop can run one.
+ *
+ * The throw is filed rather than propagated because there is nowhere for it to go — `loadSheet` is
+ * called straight out of a drop handler with no error boundary above it, and `quantiseSheet` from a
+ * timer, where it would be an uncaught exception. A sentence the tab can show is what a reader can
+ * act on. `autoTuneSession.ts` and `sheetWriteSession.ts` both guard the same throw, in the same
+ * place, for the same reason.
+ */
 function send(request: QuantiseRequest, job: Job): boolean {
   const worker = connect();
   if (worker === null) return false;
   const id = nextId++;
-  jobs.set(id, job);
   const call: QuantiseCall = { id, request };
-  worker.postMessage(call);
+  try {
+    worker.postMessage(call);
+  } catch (error: unknown) {
+    fail(job, error instanceof Error ? error.message : String(error));
+    return false;
+  }
+  jobs.set(id, job);
   return true;
 }
 

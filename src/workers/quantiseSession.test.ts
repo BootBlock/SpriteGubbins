@@ -267,6 +267,30 @@ describe('quantiseSession', () => {
     expect(useQuantiseAnswerStore.getState().succeeded?.settings).toEqual(settingsAt(8));
   });
 
+  it('settles and forgets a call the browser would not clone', () => {
+    // The other way a job can be recorded and never answered, and the one this bridge posts the whole
+    // sheet through. A job recorded before the throw would leave the tab busy for ever and put that
+    // configuration behind `quantiseSheet`'s guard for the rest of the session.
+    loadSheet(createImage(64, 64));
+    const refusing = thread();
+    refusing.refuseToClone = new Error('The sheet could not be cloned');
+
+    quantiseSheet(settingsAt(8));
+
+    expect(useQuantiseAnswerStore.getState().attempt).toEqual({
+      kind: 'failed',
+      settings: settingsAt(8),
+      reason: 'The sheet could not be cloned',
+    });
+
+    // The refused call never reached the worker at all, so the question is asked afresh rather than
+    // suppressed by a guard that still believes it is outstanding.
+    expect(refusing.of('quantise')).toHaveLength(0);
+    refusing.refuseToClone = null;
+    quantiseSheet(settingsAt(8));
+    expect(refusing.of('quantise')).toHaveLength(1);
+  });
+
   it('reports the thread dying as the one failure nothing recovers from', () => {
     loadSheet(createImage(64, 64));
     thread().die();
