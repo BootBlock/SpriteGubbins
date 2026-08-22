@@ -6,7 +6,7 @@ import type {
   ResolutionProfile,
   SurfaceDetail,
 } from '../../types/output.ts';
-import type { BackgroundKey, Projection, RenderStyle } from '../../types/rendering.ts';
+import type { BackgroundKey, RenderStyle } from '../../types/rendering.ts';
 import type { JointCapStyle, OverlapMargin } from '../../types/rigging.ts';
 
 /**
@@ -23,10 +23,11 @@ import type { JointCapStyle, OverlapMargin } from '../../types/rigging.ts';
  * state, and leave the rest to `tooltips.ts`, which has no width to run out of.
  * `tests/select-option-labels.test.ts` enforces the budget and derives the number.
  *
- * **Every list here is offered whole, to every category.** The four that are not — the sheet mode,
- * the sheet of the series, the direction set and the rig mode — are built per category in their own
- * files, because each is a question a category can answer differently: see
- * `directionalModeChoices.ts`, `sheetChoices.ts`, `directionSetChoices.ts` and `rigModeChoices.ts`.
+ * **Every list here is offered whole, to every category.** The five that are not — the sheet mode,
+ * the sheet of the series, the direction set, the rig mode and the projection — are built per
+ * category in their own files, because each is a question a category can answer differently: see
+ * `directionalModeChoices.ts`, `sheetChoices.ts`, `directionSetChoices.ts`, `rigModeChoices.ts` and
+ * `projectionChoices.ts`.
  */
 export interface OutputChoice<T extends string | number> {
   readonly value: T;
@@ -44,16 +45,6 @@ export const RENDER_STYLE_CHOICES: readonly OutputChoice<RenderStyle>[] = [
   { value: 'LOW_POLY_3D', label: 'LOW_POLY_3D (faceted, flat per-face shading)' },
   { value: 'CLAY_RENDER', label: 'CLAY_RENDER (untextured form study — check volume)' },
   { value: 'SILHOUETTE_ONLY', label: 'SILHOUETTE_ONLY (readability pass — does it read?)' },
-];
-
-export const PROJECTION_CHOICES: readonly OutputChoice<Projection>[] = [
-  { value: 'THREE_QUARTER_TOPDOWN', label: 'THREE_QUARTER_TOPDOWN (angled overhead)' },
-  { value: 'PURE_TOPDOWN', label: 'PURE_TOPDOWN (directly overhead)' },
-  { value: 'TRUE_ISOMETRIC', label: 'TRUE_ISOMETRIC (1.73:1 diamond, all axes equal)' },
-  { value: 'DIMETRIC_2_1', label: 'DIMETRIC_2_1 (2:1 diamond — the usual one)' },
-  { value: 'OBLIQUE_45', label: 'OBLIQUE_45 (undistorted front, depth at 45°)' },
-  { value: 'ORTHOGRAPHIC_SIDE', label: 'ORTHOGRAPHIC_SIDE (side elevation — platformer)' },
-  { value: 'ORTHOGRAPHIC_FRONT', label: 'ORTHOGRAPHIC_FRONT (flat front elevation)' },
 ];
 
 export const BACKGROUND_KEY_CHOICES: readonly OutputChoice<BackgroundKey>[] = [

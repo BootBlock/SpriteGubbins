@@ -1,5 +1,6 @@
 import { resolveDirectionSet } from '../../constants/categoryDirectionSets.ts';
-import { directionSetChoices, OUTPUT_TOOLTIPS, PROJECTION_CHOICES } from '../../constants/output/index.ts';
+import { resolveProjection } from '../../constants/categoryProjections.ts';
+import { directionSetChoices, OUTPUT_TOOLTIPS, projectionChoices } from '../../constants/output/index.ts';
 import {
   cameraElevationRange,
   DEFAULT_CAMERA_ELEVATIONS,
@@ -25,6 +26,14 @@ const ELEVATION_STEP = 1;
  * other than the angled-overhead one *is* a camera geometry, so its elevation is not a second
  * setting; the angled-overhead one is where a game's own ground read goes, and it takes the span
  * `cameraElevationRange` leaves it.
+ *
+ * **The camera is narrowed by the category as well, and for the same reason the set below is.** An
+ * interface widget is screen-space art with no top surface and no depth axis, so a
+ * `THREE_QUARTER_TOPDOWN` held over from a default session asked for a button under a 35° overhead
+ * camera — a prompt disagreeing with itself rather than merely a degenerate one. INTERFACE is
+ * offered `ORTHOGRAPHIC_FRONT` alone; the other eight categories are offered every camera, TERRAIN
+ * included, because a cliff face is a landform seen from the side and one of the shipped presets is
+ * exactly that.
  *
  * **The direction set is always on screen, because it now always does something.** A directional
  * core draws the chosen set's facings — splitting into a cardinal and a diagonal sheet on the
@@ -54,11 +63,19 @@ export function ProjectionFields() {
   const directions = resolveDirectionSet(category, output.directions);
   const setChoices = directionSetChoices(category);
 
-  // What the chosen projection leaves the elevation, which for all but one of them is a single
-  // figure. The field's own value is resolved through the same range below, for the reason the set
+  // The camera, narrowed through the category exactly as the set above is: an interface widget is
+  // composited onto the screen rather than photographed in a world, so it is drawn under
+  // `ORTHOGRAPHIC_FRONT` and the select offers that alone. Resolved rather than read raw because a
+  // stored projection — or one an art style reference applied — would otherwise put the select on a
+  // value its own options do not contain.
+  const projection = resolveProjection(category, output.projection);
+  const cameraChoices = projectionChoices(category);
+
+  // What that projection leaves the elevation, which for all but one of them is a single figure.
+  // The field's own value is resolved through the same range below, for the reason the projection
   // above is resolved: a stored pairing the projection cannot be drawn at would otherwise leave the
   // control showing a camera the prompt does not carry.
-  const elevationRange = cameraElevationRange(output.projection);
+  const elevationRange = cameraElevationRange(projection);
   const elevationIsFixed = elevationRange.min === elevationRange.max;
 
   return (
@@ -66,15 +83,15 @@ export function ProjectionFields() {
       <SelectField
         label="Projection"
         tooltip={OUTPUT_TOOLTIPS.projection}
-        value={output.projection}
-        choices={PROJECTION_CHOICES}
-        onChange={(projection) => {
+        value={projection}
+        choices={cameraChoices}
+        onChange={(chosen) => {
           // Both in one write: two `setOutputField` calls would put a projection and a stale
           // elevation into the compiler between renders.
           setOutputConfig({
             ...output,
-            projection,
-            cameraElevation: DEFAULT_CAMERA_ELEVATIONS[projection],
+            projection: chosen,
+            cameraElevation: DEFAULT_CAMERA_ELEVATIONS[chosen],
           });
         }}
       />
@@ -82,13 +99,13 @@ export function ProjectionFields() {
       <NumberField
         label="Camera Elevation (°)"
         tooltip={OUTPUT_TOOLTIPS.cameraElevation}
-        value={resolveCameraElevation(output.projection, output.cameraElevation)}
+        value={resolveCameraElevation(projection, output.cameraElevation)}
         min={elevationRange.min}
         max={elevationRange.max}
         step={ELEVATION_STEP}
         disabledReason={
           elevationIsFixed
-            ? `${output.projection} is a camera in its own right, and stands at ${String(elevationRange.min)}°. Choose THREE_QUARTER_TOPDOWN to set the elevation yourself.`
+            ? `${projection} is a camera in its own right, and stands at ${String(elevationRange.min)}°. Choose THREE_QUARTER_TOPDOWN to set the elevation yourself.`
             : ''
         }
         onChange={(value) => {

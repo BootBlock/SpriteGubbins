@@ -239,20 +239,22 @@ describe('projectionDigest', () => {
     );
   });
 
-  it('names the set the category can be turned to, not the one it arrived holding', () => {
-    // The same regression on the other axis, and the reason this digest takes a category at all. An
-    // INTERFACE draws `SINGLE_FRONT` whatever a stored `THREE_CLASSIC` says, so a header reading the
-    // raw field would disagree with both the select above it and the prompt below it — and it would
-    // name a facing, because three classic yaws look like a run list until the category is consulted.
+  it('names the set and the camera the category can honour, not the ones it arrived holding', () => {
+    // The same regression on the other two axes, and the reason this digest takes a category at all.
+    // An INTERFACE draws `SINGLE_FRONT` whatever a stored `THREE_CLASSIC` says, and is drawn under
+    // `ORTHOGRAPHIC_FRONT` whatever a stored `THREE_QUARTER_TOPDOWN` says — so a header reading the
+    // raw fields would disagree with both the selects above it and the prompt below it. It would
+    // also name a facing, because three classic yaws look like a run list until the category is
+    // consulted, and a 35° elevation the flat camera it now names cannot be drawn at.
     const turned = withOutput({
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       directions: 'THREE_CLASSIC',
       primaryDirection: 'front-three-quarter',
     });
-    expect(projectionDigest('INTERFACE', turned)).toBe('THREE_QUARTER_TOPDOWN · 35° · SINGLE_FRONT');
-    // The same configuration under a category whose subject does have a front, where every part of
-    // it is honest — without this pair the assertion above would also pass on a digest that had
-    // simply stopped reporting the set.
+    expect(projectionDigest('INTERFACE', turned)).toBe('ORTHOGRAPHIC_FRONT · 0° · SINGLE_FRONT');
+    // The same configuration under a category whose subject does have a front and can be drawn under
+    // any camera, where every part of it is honest — without this pair the assertions above would
+    // also pass on a digest that had simply stopped reporting either field.
     expect(projectionDigest('CHARACTER', turned)).toBe(
       'THREE_QUARTER_TOPDOWN · 35° · THREE_CLASSIC · front-three-quarter',
     );

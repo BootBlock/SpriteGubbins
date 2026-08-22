@@ -6,6 +6,7 @@ import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../co
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
+import { resolveProjection } from '../constants/categoryProjections.ts';
 import { facingApplies, primaryFacing } from './sheetDirections.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
@@ -170,12 +171,16 @@ export function renderStyleDigest(output: OutputConfig): string {
  * because three classic yaws look like a run list until the category is consulted.
  */
 export function projectionDigest(category: SubjectCategory, output: OutputConfig): string {
+  // The camera is resolved through the category too, and it is the third half of the same sentence:
+  // an INTERFACE is drawn under `ORTHOGRAPHIC_FRONT` whatever a stored `THREE_QUARTER_TOPDOWN` says,
+  // so a header reading the raw field would name a camera section 3 never mentions.
+  const projection = resolveProjection(category, output.projection);
   return join([
-    output.projection,
-    // Resolved through the projection, which is the same sentence again applied to the camera: all
-    // but the angled-overhead projection fix their elevation, so a stored figure outside that range
-    // is one the prompt does not carry.
-    `${String(resolveCameraElevation(output.projection, output.cameraElevation))}°`,
+    projection,
+    // Resolved through that projection rather than the stored one, which is the same sentence again
+    // applied to the elevation: all but the angled-overhead projection fix their elevation, so a
+    // stored figure outside that range is one the prompt does not carry.
+    `${String(resolveCameraElevation(projection, output.cameraElevation))}°`,
     // The set the sheet is drawn to: the chosen one, narrowed through the category — an INTERFACE
     // draws SINGLE_FRONT whatever a stored THREE_CLASSIC says. The chosen set now steers every
     // mode, so this is a choice being echoed rather than a discarded control being repeated.

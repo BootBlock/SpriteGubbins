@@ -13,6 +13,7 @@ import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
 import { directionSetChoices } from '../src/constants/output/directionSetChoices.ts';
+import { projectionChoices } from '../src/constants/output/projectionChoices.ts';
 import { rigModeChoices } from '../src/constants/output/rigModeChoices.ts';
 import { sheetChoices } from '../src/constants/output/sheetChoices.ts';
 import { DIRECTION_LISTS } from '../src/constants/promptText/index.ts';
@@ -86,6 +87,11 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // subject can be turned to — two of the nine are `SINGLE_FRONT` alone.
   setChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionSetChoices(category).map((choice) => choice.label),
+  ),
+  // Scoped to the category like the modes above. Every label is budgeted whichever category renders
+  // it — INTERFACE is offered one camera and the other eight are offered all seven.
+  cameraChoices: SUBJECT_CATEGORIES.flatMap((category) =>
+    projectionChoices(category).map((choice) => choice.label),
   ),
   // Scoped to the category like the modes above, so the labels are budgeted per category rather
   // than once — five of them offer a single rig and never render this control at all.
