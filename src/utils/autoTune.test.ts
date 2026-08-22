@@ -206,3 +206,60 @@ function offLatticeShare(image: ImageData, grid: number): number {
   }
   return total === 0 ? 0 : off / total;
 }
+
+/**
+ * The sweep against the one pass that runs after everything it moves.
+ *
+ * `readCandidate` forces the anti-aliasing off rather than merely leaving its dials out of
+ * `TunedDials`, and the difference is not a nicety: the tab hands the sweep the *live* settings, so
+ * a reader who has the pass on would otherwise have every candidate softened before it was scored —
+ * on the two figures the pass corrupts. `fidelity` is measured against the smooth source the pass
+ * moves the result back toward, and `colors` is what the elbow trades that fidelity against.
+ */
+describe('autoTune against the anti-aliasing pass', () => {
+  /**
+   * The same kind of art as `ART`, with the contour stepping rather than running down one column.
+   *
+   * `ART`'s two lines are both axis-aligned, so no run on it terminates in a crossing edge and the
+   * anti-aliasing has nothing at all to reconstruct — a fixture that would make every assertion below
+   * pass for the wrong reason.
+   */
+  const STEPPED = imageFrom(32, 32, (x, y) =>
+    y < 6 + Math.floor(x / 4) ? { r: 60, g: 90, b: 150, a: 255 } : { r: 220, g: 170, b: 90, a: 255 },
+  );
+  const STEPPED_SHEET = soften(upscaleNearest(STEPPED, GRID));
+
+  const softened: QuantiseSettings = {
+    ...BASE,
+    antiAlias: 'BOTH',
+    antiAliasThreshold: QUANTISE_DEFAULT_DIALS.antiAliasThreshold,
+    antiAliasStrength: 100,
+    antiAliasRun: 2,
+    antiAliasPalette: 'BLEND',
+  };
+
+  it('reads a candidate identically whether the reader has the pass on or off', () => {
+    const crop = { crop: STEPPED_SHEET, reference: STEPPED_SHEET };
+    const dials: TunedDials = {
+      vote: 'DOMINANT',
+      outlineExpansion: 0,
+      lineStrength: 1.5,
+      trimStrength: 0,
+      inkThreshold: 64,
+      colorMerge: 0,
+      fillCleanup: 0,
+      cleanupPasses: 1,
+    };
+
+    expect(readCandidate(dials, [crop], softened)).toEqual(readCandidate(dials, [crop], BASE));
+    // The claim is only worth anything if the pass would otherwise have reached this sheet, so the
+    // same settings are put through the pipeline directly to show that they do change it.
+    expect(quantiseImage(STEPPED_SHEET, softened).colors).toBeGreaterThan(
+      quantiseImage(STEPPED_SHEET, BASE).colors,
+    );
+  });
+
+  it('settles on the same dials with the pass on as with it off', () => {
+    expect(autoTune(STEPPED_SHEET, softened).dials).toEqual(autoTune(STEPPED_SHEET, BASE).dials);
+  });
+});

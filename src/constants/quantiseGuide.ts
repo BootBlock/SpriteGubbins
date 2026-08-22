@@ -103,7 +103,7 @@ export function targetCeilingAdvice(suggested: PixelGrid | null, target: TargetS
  */
 export function colourAdvice(plan: ColorPlan, dithered: boolean): string {
   const cleanup = dithered
-    ? 'The dither is that policy applied positionally rather than one colour at a time, so it runs last — which puts the cleanup dials on this tab ahead of it, tidying what the reading made of the sheet rather than the pattern drawn from it.'
+    ? 'The dither is that policy applied positionally rather than one colour at a time, so it runs after the cleanup dials on this tab rather than before them — which leaves those dials tidying what the reading made of the sheet rather than the pattern drawn from it.'
     : plan.reduction?.kind === 'LOCKED'
       ? 'The cleanup dials on this tab only tidy what that policy produced, and the sheet-wide merge is left off entirely, since folding two held colours together would edit the palette the rest of the series is mapped onto.'
       : 'The cleanup dials on this tab only tidy what that policy produced, and never touch a pinned palette’s own entries.';

@@ -10,6 +10,8 @@ import {
   createImage,
   readPixel,
 } from './imageData.ts';
+import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
+import { channels } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 
 const INK: Rgba = { r: 20, g: 20, b: 20, a: FULLY_OPAQUE };
@@ -116,19 +118,44 @@ describe('antiAlias', () => {
     }
   });
 
-  it('touches no alpha byte under INTERIOR', () => {
-    // The whole promise of that position: no silhouette moves, so the sprite bounds, the atlas cell
-    // each one needs and everything measured off them are exactly as the passes above left them.
+  it('moves no silhouette under INTERIOR', () => {
+    // The whole promise of that position: the sprite bounds, the atlas cell each one needs and
+    // everything measured off them are exactly as the passes above left them.
     const source = imageFrom(12, 6, (x, y) => (y < (x < 6 ? 2 : 3) ? PAPER : CLEAR));
     const withInk = imageFrom(12, 6, (x, y) => (y >= 4 ? CLEAR : y < (x < 6 ? 2 : 3) ? PAPER : INK));
     const result = antiAlias(withInk, { ...SETTINGS, mode: 'INTERIOR' });
     expect(result).not.toBe(withInk);
+    // On a sheet whose pixels are all solid or all clear — the ordinary one here — that is the same
+    // thing as no alpha byte moving at all, because a blend of two opaque pixels is opaque.
     for (let offset = 3; offset < result.data.length; offset += CHANNELS_PER_PIXEL) {
       expect(result.data[offset]).toBe(withInk.data[offset]);
     }
     // And the silhouette-only pass leaves that same sheet's interior contour alone, which is the
     // same claim from the other side.
     expect(antiAlias(source, { ...SETTINGS, mode: 'INTERIOR' })).toBe(source);
+  });
+
+  it('keeps every silhouette where it was on a sheet that arrived carrying soft edges', () => {
+    // The invariant stated exactly, on the sheet that separates it from "no alpha moves": a sheet
+    // this app downloaded earlier and the reader has dropped back in. A boundary between a
+    // half-covered pixel and a solid one is *interior* — neither side is clear — so an alpha does
+    // move there. What may never happen is a pixel being cleared or a cleared pixel gaining
+    // coverage, because a blend of two non-clear alphas is a convex combination of them.
+    const soft = imageFrom(12, 6, (x, y) =>
+      y >= 4 ? CLEAR : y < (x < 6 ? 2 : 3) ? { ...PAPER, a: 128 } : INK,
+    );
+    const result = antiAlias(soft, { ...SETTINGS, mode: 'INTERIOR' });
+
+    let moved = 0;
+    for (let offset = 3; offset < result.data.length; offset += CHANNELS_PER_PIXEL) {
+      const before = soft.data[offset] ?? 0;
+      const after = result.data[offset] ?? 0;
+      if (before !== after) moved += 1;
+      expect(before === FULLY_TRANSPARENT).toBe(after === FULLY_TRANSPARENT);
+    }
+    // The claim above is only worth anything if an alpha did move — otherwise it is the previous
+    // test again under a different name.
+    expect(moved).toBeGreaterThan(0);
   });
 
   it('writes partial coverage into the silhouette under SILHOUETTE', () => {
@@ -162,10 +189,55 @@ describe('antiAlias', () => {
       y < (x < 6 ? 2 : 3) ? PAPER : y < (x < 6 ? 5 : 6) ? MID : INK,
     );
     const snapped = antiAlias(source, { ...SETTINGS, snap: true });
+
+    // Every pixel is one of the three the sheet arrived with — the count the palette gate is for.
     for (let pixel = 0; pixel < source.width * source.height; pixel += 1) {
       const color = readPixel(snapped.data, pixel * CHANNELS_PER_PIXEL);
       expect([PAPER, MID, INK].map((entry) => entry.r)).toContain(color.r);
     }
+
+    // And membership alone is not the claim, because both endpoints are members: an implementation
+    // that snapped each blend back to the nearer of the two pixels it mixed would satisfy the sweep
+    // above and reach for no intermediate tone at all. These two pixels are where a blend crosses
+    // into the third entry, which is the behaviour the position is named for.
+    expect(at(snapped, 5, 5)).toEqual(MID);
+    expect(at(snapped, 5, 2)).toEqual(PAPER);
+  });
+
+  /**
+   * The stepped contour again, with a block of `shades` distinct colours below it that no claim
+   * reaches — so what varies between two of these is the size of the palette a snap would search.
+   */
+  const withPalette = (shades: number): ImageData =>
+    imageFrom(24, 34, (x, y) => {
+      if (y < 8) return y < (x < 12 ? 2 : 3) ? PAPER : INK;
+      if (y < 10) return PAPER;
+      const index = ((y - 10) * 24 + x) % shades;
+      return {
+        r: 40 + (index % 24) * 9,
+        g: 30 + Math.floor(index / 24) * 13,
+        b: 200,
+        a: FULLY_OPAQUE,
+      };
+    });
+
+  it('stops snapping where the sheet holds more colours than a palette can name', () => {
+    // `nearestOklab` is a linear scan paid once per distinct blend, so the search set has to be
+    // bounded by something. Two reductions leave it unbounded — a locked palette at a snap of zero,
+    // and a channel depth at six bits — and on one of those the sheet's colours are not a *palette*
+    // in any sense a blend could be kept to. `MAX_PALETTE_ENTRIES` is where `indexImage` already
+    // draws that line.
+    const small = withPalette(64);
+    expect(countColors(small)).toBeLessThan(MAX_PALETTE_ENTRIES);
+    expect(channels(antiAlias(small, { ...SETTINGS, snap: true }))).not.toEqual(
+      channels(antiAlias(small, { ...SETTINGS, snap: false })),
+    );
+
+    const large = withPalette(384);
+    expect(countColors(large)).toBeGreaterThan(MAX_PALETTE_ENTRIES);
+    expect(channels(antiAlias(large, { ...SETTINGS, snap: true }))).toEqual(
+      channels(antiAlias(large, { ...SETTINGS, snap: false })),
+    );
   });
 
   it('leaves the sheet further from its neighbours as the strength falls', () => {

@@ -1,5 +1,5 @@
 import type { AntiAliasMode } from '../types/quantiser.ts';
-import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, packedColorAt, unpackColor } from './imageData.ts';
+import { CHANNELS_PER_PIXEL, FULLY_TRANSPARENT, packedColorAt } from './imageData.ts';
 import { walkEdgeRuns, type RunTurn } from './edgeRuns.ts';
 import type { MutableOklab } from './oklab.ts';
 import { srgbToOklabInto } from './oklab.ts';
@@ -89,14 +89,16 @@ export function edgeClaims(image: ImageData, settings: ClaimSettings): EdgeClaim
     const firstPacked = packedColorAt(data, first * CHANNELS_PER_PIXEL);
     const secondPacked = packedColorAt(data, second * CHANNELS_PER_PIXEL);
     if (firstPacked === secondPacked) return false;
+    // Channels straight out of the packed value rather than through `unpackColor`, which would
+    // allocate an object per cache miss inside a sweep that runs twice per pixel per axis — the
+    // allocation `differenceMap` refuses for the same reason. The packing is `packColor`'s, so the
+    // three shifts here are its inverse and nothing else knows how it is laid out.
     if (firstPacked !== lowCached) {
-      const color = unpackColor(firstPacked);
-      srgbToOklabInto(lowLab, color.r, color.g, color.b);
+      srgbToOklabInto(lowLab, redOf(firstPacked), greenOf(firstPacked), blueOf(firstPacked));
       lowCached = firstPacked;
     }
     if (secondPacked !== highCached) {
-      const color = unpackColor(secondPacked);
-      srgbToOklabInto(highLab, color.r, color.g, color.b);
+      srgbToOklabInto(highLab, redOf(secondPacked), greenOf(secondPacked), blueOf(secondPacked));
       highCached = secondPacked;
     }
     // The packing puts alpha in the low byte — see `packColor`, which both forms of it agree on.
@@ -153,3 +155,8 @@ export function edgeClaims(image: ImageData, settings: ClaimSettings): EdgeClaim
 
   return { coverage, side, count };
 }
+
+/** `packColor`'s three colour channels, read back without building an object for them. */
+const redOf = (packed: number): number => Math.floor(packed / 16777216) % 256;
+const greenOf = (packed: number): number => Math.floor(packed / 65536) % 256;
+const blueOf = (packed: number): number => Math.floor(packed / 256) % 256;

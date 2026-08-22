@@ -1582,17 +1582,28 @@ describe('quantiseImage anti-aliasing', () => {
     reduction: null,
   });
 
-  it('changes nothing at all while the pass is off', () => {
+  it('softens the sheet once the pass is on, and leaves it alone while it is off', () => {
     const off = quantiseImage(WEDGE, settingsFor('OFF'));
-    const on = quantiseImage(WEDGE, settingsFor('BOTH'));
-    expect(channels(on.image)).not.toEqual(channels(off.image));
+    expect(channels(quantiseImage(WEDGE, settingsFor('BOTH')).image)).not.toEqual(channels(off.image));
+
+    // The other half, which the comparison above cannot make: with the pass off, the four dials
+    // beside it reach nothing, so moving every one of them to its opposite end leaves exactly the
+    // sheet the rest of the pipeline produced.
+    const moved = quantiseImage(WEDGE, {
+      ...settingsFor('OFF'),
+      antiAliasThreshold: 0,
+      antiAliasStrength: 10,
+      antiAliasRun: 12,
+      antiAliasPalette: 'BLEND',
+    });
+    expect(channels(moved.image)).toEqual(channels(off.image));
   });
 
   it('reports the colours of the sheet it produced, not of the one it was handed', () => {
     // With no reduction in force the snap is not applied — `quantiseImage` gates it on one — so the
     // blends are new colours, and the count has to be the softened sheet's.
-    const off = quantiseImage(WEDGE, settingsFor('INTERIOR'));
-    expect(off.colors).toBeGreaterThan(quantiseImage(WEDGE, settingsFor('OFF')).colors);
+    const softened = quantiseImage(WEDGE, settingsFor('INTERIOR'));
+    expect(softened.colors).toBeGreaterThan(quantiseImage(WEDGE, settingsFor('OFF')).colors);
   });
 
   it('re-reads the segmentation where a silhouette was softened', () => {

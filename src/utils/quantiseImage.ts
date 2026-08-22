@@ -377,13 +377,23 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // a linear pass, and each is paid only by the reader who asked for the edit that made it
     // necessary.
     //
-    // **Re-read once more where the anti-aliasing softened a silhouette**, which is why the
-    // condition is now the image's own identity rather than a flag per pass: `snapFrames` and
-    // `antiAlias` both hand back their argument by reference wherever they changed nothing, so
-    // comparing with the sheet the fold left is the one question that covers both of them at once.
-    // A soft fringe is drawn artwork — `spriteSegments` counts a pixel unless its alpha is exactly
-    // zero — so it grows each box by a pixel, and that box is what an atlas cell has to seat.
-    sprites: output === folded ? foldedSprites : spriteSegments(output, settings.spriteGap),
+    // **Re-read once more where a silhouette may have moved.** The condition is the image's own
+    // identity, because `snapFrames` and `antiAlias` both hand back their argument by reference
+    // wherever they changed nothing — so comparing with the sheet the fold left covers both passes
+    // at once. A soft fringe is drawn artwork, since `spriteSegments` counts a pixel unless its
+    // alpha is exactly zero, so it grows each box by a pixel and that box is what an atlas cell has
+    // to seat.
+    //
+    // **`INTERIOR` is exempted, and provably rather than by assumption.** That position claims only
+    // boundaries whose two pixels are both non-clear — `inScope` in `edgeClaims` — and
+    // `coverageBlend` interpolates the two alphas, so the result is a convex combination of two
+    // values at or above one, which cannot round to zero. No pixel is cleared and no pixel stops
+    // being clear, so no box can move however many interior pixels changed. Without this the pass
+    // would pay a full linear re-segmentation for an answer identical to the one it already has.
+    sprites:
+      output === folded || settings.antiAlias === 'INTERIOR'
+        ? foldedSprites
+        : spriteSegments(output, settings.spriteGap),
     symmetry,
     // The finding, always as it stood on the sheet the reading was taken from — see
     // `QuantiseResult.duplicates` for why the fold does not get to re-take it.

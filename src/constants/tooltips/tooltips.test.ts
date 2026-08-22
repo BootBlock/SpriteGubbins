@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ACCENT_HUES } from '../../types/settings.ts';
+import { ANTI_ALIAS_GUIDANCE } from '../antiAlias.ts';
 import { AUTO_TUNE_GUIDANCE } from '../autoTune.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DIAL_HISTORY_GUIDANCE } from '../dialHistory.ts';
@@ -113,6 +114,14 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ['DIAL_HISTORY_GUIDANCE.available', DIAL_HISTORY_GUIDANCE.available],
   ['STUDIO_HISTORY_GUIDANCE.open', STUDIO_HISTORY_GUIDANCE.open],
   ['STUDIO_HISTORY_GUIDANCE.available', STUDIO_HISTORY_GUIDANCE.available],
+  // **All five of `ANTI_ALIAS_GUIDANCE`**, where only two of `AUTO_TUNE_GUIDANCE`'s five qualify —
+  // and the difference is the rule this suite is named for rather than an inconsistency. That panel
+  // reports a *sweep*, so three of its entries describe the state of this sheet. This one reports
+  // nothing at all: it has no reading, and every one of its five paragraphs is a function of the
+  // control positions alone — what the pass is for, what each of the three scopes softens, and why
+  // the palette control is absent. That is a control's own explanation rendered under it rather than
+  // behind an ⓘ, which is the standing `TARGET_MODELS.description` case.
+  ...Object.entries(ANTI_ALIAS_GUIDANCE).map(([key, text]) => [`ANTI_ALIAS_GUIDANCE.${key}`, text] as const),
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */

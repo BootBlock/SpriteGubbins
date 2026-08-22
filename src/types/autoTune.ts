@@ -22,6 +22,15 @@ import type { QuantiseTuning } from './quantiser.ts';
  *   act, the symmetry snap and the duplicate snap, are acting on a reading a score cannot check.
  *   There is nothing here for fidelity to rank.
  *
+ * - **The two frame-alignment dials.** A strip reading is the third of the readings taken over the
+ *   segmentation, and it *moves* frames rather than editing them — so what it changes is where the
+ *   artwork sits, which a per-pixel fidelity score against a crop of the source can only punish.
+ * - **The five anti-aliasing dials.** The pass runs after everything the sweep moves, and it would
+ *   corrupt both figures the sweep ranks by: it moves the result back toward the smooth source that
+ *   `fidelity` is measured against, so a score would raise it until the sheet stopped being pixel
+ *   art, and every coverage it writes is another entry in the `colors` the elbow trades against.
+ *   `readCandidate` therefore forces it off rather than merely leaving it out, and says why.
+ *
  * The pixel grid is not on this shape for a different reason again: it is measured rather than
  * tuned, and the tab already offers what the measurement found.
  */

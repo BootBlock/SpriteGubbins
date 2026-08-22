@@ -392,11 +392,15 @@ export const ANTI_ALIAS_MODES = ['OFF', 'INTERIOR', 'SILHOUETTE', 'BOTH'] as con
  * and writes it — see `antiAlias`, which holds the geometry and its grounding.
  *
  * **The scope is a position rather than a second dial, because the two halves are different
- * decisions.** `INTERIOR` softens the colour boundaries *inside* a sprite and touches no alpha at
- * all, so the silhouette that every downstream reading and every atlas cell is measured from does
- * not move. `SILHOUETTE` softens the outer edge, which means writing partial alpha — and how that
- * reads depends on a background this sheet does not contain, which is why pixel-art practice is
- * split on it and why it is a choice rather than an assumption. `BOTH` does the two.
+ * decisions.** `INTERIOR` softens the colour boundaries *inside* a sprite: it claims only boundaries
+ * whose two pixels are both non-clear, so **no silhouette can move**. That is the invariant, and it
+ * is stronger than it sounds — a blend of two non-clear alphas is a convex combination of them, so
+ * no pixel is ever cleared and no cleared pixel is ever given coverage. On the ordinary sheet, whose
+ * pixels are all fully opaque or fully clear, that means no alpha byte changes at all; on one that
+ * arrived carrying its own soft edges, an interior alpha may move while every silhouette stays
+ * exactly where it was. `SILHOUETTE` softens the outer edge, which does mean writing partial alpha —
+ * and how that reads depends on a background this sheet does not contain, which is why pixel-art
+ * practice is split on it and why it is a choice rather than an assumption. `BOTH` does the two.
  *
  * `OFF` is the off position: the pass does not run at all. Every dial beside it is a strength or a
  * floor, and none of their zeros switch it off.

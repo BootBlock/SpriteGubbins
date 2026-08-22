@@ -9,7 +9,7 @@ export type DialKey = keyof QuantiseDials;
  * The dials are held as a whole value rather than as a patch against the entry before it. A patch
  * is smaller and is the wrong shape for what this stack is walked for: every step of an undo has to
  * produce a complete set of dial positions, and rebuilding one by replaying patches from the front
- * makes the cost of a step depend on how long the reader has been tuning. Eighteen primitives is
+ * makes the cost of a step depend on how long the reader has been tuning. Twenty-five primitives is
  * nothing to copy.
  */
 export interface DialHistoryEntry {

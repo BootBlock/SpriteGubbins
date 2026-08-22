@@ -42,6 +42,13 @@ export type RunTurn = 'LOW' | 'HIGH' | 'NONE';
  * SMAA added explicit diagonal patterns for the real-time case. A clean 45° line is the one contour
  * a pixel artist does not anti-alias, so leaving it alone is the behaviour this pass wants.
  *
+ * It falls out of the *representation* rather than from the areas cancelling, and the distinction is
+ * worth keeping straight. Each index gets one signed number, so what it can carry is the **net** the
+ * crossing leaves — and across a bisected pixel the two halves are equal and opposite, so the net is
+ * zero. The two halves are not nothing: they belong to two different pixels, and a model that
+ * emitted both would put a small blend on each side of every 45° step. This one cannot say that, and
+ * deliberately does not.
+ *
  * `shortestRun` drops runs below a length outright, which is the reader's control over how short a
  * step is worth softening at all. `onCoverage` is called only where the coverage is non-zero.
  *
@@ -79,9 +86,9 @@ export function walkEdgeRuns(
  *
  * The midpoint is in continuous coordinates, where index `i` occupies `[i, i + 1)` and its centre is
  * `i + 0.5` — so a run of even length splits between two pixels and one of odd length splits through
- * the middle pixel, whose centre then sits on the split and takes no coverage. Both are the
- * geometry rather than a case: the reconstructed boundary crosses the discontinuity at the run's
- * centre, and a pixel the crossing bisects has as much of itself on one side as the other.
+ * the middle pixel, whose centre then sits on the split and takes no coverage. That is the net the
+ * signed claim can carry rather than the whole geometric truth: see the module note, which says what
+ * a bisected pixel is actually owed and why this cannot express it.
  */
 function emit(
   start: number,

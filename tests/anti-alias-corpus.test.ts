@@ -32,10 +32,12 @@ import { CORPUS_SHEETS, loadCorpusSheet, type CorpusSheetName } from './sheetCor
  * arrives with its field still on it, and a 64-colour budget, since a floor stated in colour distance
  * means something quite different on a sheet whose colours were never reduced.
  *
- * **`SILHOUETTE` is not tabulated**, and its absence is a fact rather than an omission: what it
- * softens is the boundary between the artwork and the keyed field, so the share it touches is the
- * difference between the two columns that are here. Reporting it as a third would be reporting a
- * subtraction as a measurement.
+ * **`SILHOUETTE` is not tabulated**, and the two columns that are here do not let it be recovered by
+ * subtraction. `BOTH` takes the *union* of the two kinds of boundary, and a pixel reached by one of
+ * each keeps only the stronger claim — which on a keyed sheet's outer contour is a common
+ * configuration — so `both − interior` understates it. What the pair does say is the one thing worth
+ * recording: how much of each sheet the safe half of the pass reaches, and how much more the whole
+ * of it does.
  */
 interface CorpusReading {
   /** The share of the result's pixels the pass moves under `BOTH`, as a percentage. */
@@ -195,17 +197,15 @@ describe('anti-aliasing over the reference sheets', () => {
   it.each(CORPUS_SHEETS)('moves the recorded share of %s', (name) => {
     const expected = EXPECTED[name];
     const sheet = sheetFor(name);
-    expect(movedShare(sheet, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD), expected.note).toBeCloseTo(
-      expected.both,
-      1,
-    );
-    expect(movedShare(sheet, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD), expected.note).toBeCloseTo(
-      expected.interior,
-      1,
-    );
-    // The silhouette is the difference between the two, so `INTERIOR` is always the smaller — and on
-    // every one of these sheets it is strictly smaller, because all eight arrive with a field to key.
-    expect(expected.interior).toBeLessThan(expected.both);
+    const both = movedShare(sheet, 'BOTH', DEFAULT_ANTI_ALIAS_THRESHOLD);
+    const interior = movedShare(sheet, 'INTERIOR', DEFAULT_ANTI_ALIAS_THRESHOLD);
+    expect(both, expected.note).toBeCloseTo(expected.both, 1);
+    expect(interior, expected.note).toBeCloseTo(expected.interior, 1);
+    // `BOTH` is the union of the two kinds of boundary, so it can only reach more pixels than the
+    // interior alone — and on every one of these sheets it reaches strictly more, because all eight
+    // arrive with a field to key and therefore have a silhouette to soften. Measured rather than
+    // read off the table above, which would be the table asserting something about itself.
+    expect(interior, expected.note).toBeLessThan(both);
   });
 
   it.each(CORPUS_SHEETS)('refuses the recorded share of %s’s boundaries', (name) => {

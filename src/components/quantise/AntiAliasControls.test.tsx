@@ -60,6 +60,11 @@ describe('AntiAliasControls', () => {
     expect(dial(/Contrast floor/)).toBeInTheDocument();
     expect(screen.queryByRole('combobox', { name: /Blended shades/ })).not.toBeInTheDocument();
     expect(screen.getByText(ANTI_ALIAS_GUIDANCE.unconstrained)).toBeInTheDocument();
+
+    // And it is the paragraph for every scope rather than for the one that happened to be chosen: a
+    // missing control is the state worth explaining, whichever half of the sheet is being softened.
+    await user.selectOptions(screen.getByRole('combobox', { name: /^Anti-aliasing/ }), 'INTERIOR');
+    expect(screen.getByText(ANTI_ALIAS_GUIDANCE.unconstrained)).toBeInTheDocument();
   });
 
   it('describes whichever half of the sheet the reader has pointed the pass at', async () => {

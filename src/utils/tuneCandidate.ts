@@ -48,7 +48,15 @@ export function readCandidate(
   let colors = 0;
 
   for (const sample of samples) {
-    const result = quantiseImage(sample.crop, { ...settings, ...dials });
+    // **The anti-aliasing is forced off, whatever the tab has it set to.** The sweep is choosing
+    // dials that all run *ahead* of it, and it ranks a candidate on two figures the pass would
+    // corrupt: it moves the result back toward the smooth source, which is what `fidelity` measures,
+    // and every coverage it writes is another entry in `colors`, which is what the elbow trades that
+    // fidelity against. Measured on `test_sprites/armour.png` at a budget of 16, the same sweep
+    // reports 15.7 → 6.0 colours with the pass off and 58.7 → 36.7 with it on — a figure about the
+    // fringe rather than about the dials being swept, and the one the panel's badge shows. It also
+    // saves every candidate a pass it could not be ranked by.
+    const result = quantiseImage(sample.crop, { ...settings, ...dials, antiAlias: 'OFF' });
     const magnified = upscaleNearest(result.image, settings.grid);
     // The mesh is measured per transform and may cut a crop into a whole number of cells that is not
     // the crop's own edge over the grid — a drifting sheet is exactly what `boundaryMesh` exists for.

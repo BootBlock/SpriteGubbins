@@ -11,14 +11,13 @@ import {
 import {
   CHANNELS_PER_PIXEL,
   FULLY_OPAQUE,
-  colorHistogram,
+  FULLY_TRANSPARENT,
   createImage,
-  packColor,
   readPixel,
-  unpackColor,
   writePixel,
 } from './imageData.ts';
 import { locateEntries, nearestOklab, type LocatedEntry } from './lockedPalette.ts';
+import { MAX_PALETTE_ENTRIES } from './pngPalette.ts';
 
 /** Everything the pass needs: what to claim, and whether a blend may be a new colour. */
 export interface AntiAliasSettings extends ClaimSettings {
@@ -58,9 +57,8 @@ export interface AntiAliasSettings extends ClaimSettings {
  * reaching for the intermediate tone that already exists rather than mixing a new one. It bounds the
  * *hues* and not the colour count: a coverage is an alpha, so softening a silhouette adds pixels
  * that are a held hue at a new coverage, and `countColors` keys on all four channels. The nearest
- * search is paid once per distinct blend rather than once per pixel, which is what makes it
- * affordable: a contour of two hundred pixels between one pair of colours produces a handful of
- * distinct blends.
+ * search is paid once per distinct blend rather than once per pixel, and over a set `sheetColors`
+ * refuses to build past the size a palette can be at all — the two things that keep it affordable.
  *
  * **Hands back its argument by reference wherever nothing moved**, which is the contract
  * `snapSymmetric` and `snapFrames` keep and for the same reason: a re-segmentation is a linear pass
@@ -81,7 +79,8 @@ export function antiAlias(image: ImageData, settings: AntiAliasSettings): ImageD
   const output = createImage(width, height);
   output.data.set(data);
 
-  const located = settings.snap ? locateEntries(sheetColors(image)) : null;
+  const palette = settings.snap ? sheetColors(image) : null;
+  const located = palette === null ? null : locateEntries(palette);
   const resolved = new Map<number, Rgba>();
 
   for (let pixel = 0; pixel < width * height; pixel += 1) {
@@ -124,38 +123,59 @@ function step(side: number, width: number): number {
  * because a palette entry is a colour rather than a compositing state. So a silhouette blend keeps
  * the alpha the coverage gave it and takes only the hue it landed nearest.
  *
- * Memoised on the blended colour, which is what bounds the cost of the search. The key drops alpha
+ * Memoised on the blended colour, which is what bounds the number of searches. The key drops alpha
  * for the same reason the search does — two blends of one pair of colours at two coverages resolve to
  * the same entry, and looking each of them up separately would be paying for the distinction the
- * search does not make.
+ * search does not make. It is arithmetic on the packed value rather than a spread, because this runs
+ * once per claimed pixel and a throwaway object per pixel is what every pass beside this one refuses.
  */
 function keep(blend: Rgba, located: readonly LocatedEntry[], resolved: Map<number, Rgba>): Rgba {
-  const key = packColor({ ...blend, a: 0 });
+  const key = (blend.r * 256 + blend.g) * 256 + blend.b;
   const cached = resolved.get(key);
-  if (cached !== undefined) return { ...cached, a: blend.a };
+  if (cached !== undefined) return { r: cached.r, g: cached.g, b: cached.b, a: blend.a };
 
   const nearest = nearestOklab(blend, located)?.entry ?? blend;
   resolved.set(key, nearest);
-  return { ...nearest, a: blend.a };
+  return { r: nearest.r, g: nearest.g, b: nearest.b, a: blend.a };
 }
 
 /**
- * Every distinct colour the sheet holds, opaque, in the order it was first met.
+ * Every distinct colour the sheet holds, opaque, in the order it was first met — or `null` where it
+ * holds more of them than a palette can name.
  *
- * `colorHistogram` keys on all four channels, so one colour carried at two coverages is two entries
- * there and has to become one here — a palette is a list of colours, and a soft pixel's own alpha is
+ * **The `null` is what bounds the snap, and it is the app's own boundary rather than a new one.**
+ * `nearestOklab` is a linear scan, so a search set of this size is paid once per distinct blend; on
+ * a sheet reduced to a budget or to a machine's list that set is tens of colours and the cost is
+ * nothing. Two reductions do not bound it at all, though — a locked palette at a snap of zero
+ * reaches nothing and leaves the sheet exactly as it arrived, and a channel-depth reduction at six
+ * bits admits a quarter of a million — and on one of those the search would run for tens of seconds
+ * over a set that is not a *palette* in any sense a reader means. {@link MAX_PALETTE_ENTRIES} is
+ * where `indexImage` already draws that line, for the same reason: past it, the sheet's colours are
+ * not a list anything can be kept to.
+ *
+ * Alpha is dropped on the way in: a palette is a list of colours, and a soft pixel's own coverage is
  * a fact about that pixel. First-met order is what settles a tie in `nearestOklab`, which takes the
  * earliest entry, so the answer is stable across two runs over the same sheet.
+ *
+ * It reads the channel array directly rather than through `colorHistogram`, which would build a Map
+ * of counts this has no use for — and it stops the moment the sheet passes the ceiling, so the
+ * refusal costs a partial pass rather than a whole one.
  */
-function sheetColors(image: ImageData): readonly Rgba[] {
+function sheetColors(image: ImageData): readonly Rgba[] | null {
+  const { data } = image;
   const seen = new Set<number>();
   const entries: Rgba[] = [];
 
-  for (const key of colorHistogram(image).keys()) {
-    const rgb = key - (key % 256);
-    if (seen.has(rgb)) continue;
-    seen.add(rgb);
-    entries.push({ ...unpackColor(key), a: FULLY_OPAQUE });
+  for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
+    if ((data[offset + 3] ?? 0) === FULLY_TRANSPARENT) continue;
+    const r = data[offset] ?? 0;
+    const g = data[offset + 1] ?? 0;
+    const b = data[offset + 2] ?? 0;
+    const packed = (r * 256 + g) * 256 + b;
+    if (seen.has(packed)) continue;
+    if (seen.size === MAX_PALETTE_ENTRIES) return null;
+    seen.add(packed);
+    entries.push({ r, g, b, a: FULLY_OPAQUE });
   }
 
   return entries;
