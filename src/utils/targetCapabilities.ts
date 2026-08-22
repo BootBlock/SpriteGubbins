@@ -76,13 +76,17 @@ export function supportsPromptFeedback(target: TargetModelId): boolean {
 /**
  * What the vendor publishes about how much prompt this target reads.
  *
+ * Not exported: nothing outside this module needs the whole answer, and the one thing that does
+ * need part of it is {@link promptBudgetFigureFor} below. A target's four-state declaration is read
+ * where it is written, in `constants/models.ts`.
+ *
  * Always answers — including with `UNPUBLISHED` or `NO_VENDOR`, which are the two ways of saying
  * nobody stated a figure and never that the target is unlimited. Treating those as the same as a
  * ceiling is how a prompt ends up silently truncated by a text encoder that was documented all
  * along; treating them as the same as *each other* is how the contradiction in the Seedream entry
  * stayed invisible.
  */
-export function promptBudgetFor(target: TargetModelId): PromptBudget {
+function promptBudgetFor(target: TargetModelId): PromptBudget {
   return capabilitiesFor(target).promptBudget;
 }
 

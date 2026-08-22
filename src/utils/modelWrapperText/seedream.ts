@@ -3,11 +3,13 @@ import type { SectionNumbers } from '../templateEngine.ts';
 
 /**
  * Seedream, whose known failure mode is neither truncation nor a missing channel but *dropping*.
- * ByteDance's own platform documentation puts the comfortable ceiling near 600 English words, against
- * a specification of roughly 2,500; fal, who host the model, put the consequence plainly — "if you
- * cram in more than the frame can hold, you can expect a few instructions to drop". That second line
- * is a host's observation rather than a vendor statement, and is marked as such because this
- * directory cites vendors everywhere else.
+ * ByteDance's own platform documentation advises no more than 600 English words, against a
+ * specification of roughly 4,400, and states the consequence as scattered information and
+ * overlooked details rather than a brief that is cut off — which is why the studio's budget notice
+ * records it as guidance and not as a ceiling. fal, who host the model, put the same thing more
+ * plainly — "if you cram in more than the frame can hold, you can expect a few instructions to
+ * drop". That second line is a host's observation rather than a vendor statement, and is marked as
+ * such because this directory cites vendors everywhere else.
  *
  * So this is the one target told **what to sacrifice**. Nothing else needs that: a truncating
  * encoder cuts by position rather than by choice, and a model that reads the whole prompt has

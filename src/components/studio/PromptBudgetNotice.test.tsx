@@ -58,9 +58,11 @@ describe('PromptBudgetNotice', () => {
   });
 
   it('says nothing while a prompt is inside the figure it is measured against', () => {
-    renderFor('SEEDREAM', 'a short brief');
+    // The whole panel, not just the badge: a case asserting the badge string alone would pass while
+    // the component rendered some other finding in its place.
+    const { container } = renderFor('SEEDREAM', 'a short brief');
 
-    expect(screen.queryByText('Past this target’s advised length')).toBeNull();
+    expect(container.querySelector('section')).toBeNull();
   });
 
   it('announces through a live region that was already in the document', () => {

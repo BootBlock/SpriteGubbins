@@ -1463,23 +1463,26 @@ text with the image — as, since the corrections above, are both Gemini image t
 ### Documented prompt ceilings
 
 Each target's `promptBudget` records what the vendor or the architecture publishes about how much
-prompt is actually read. **`null` means nobody stated a figure — never that the target is
-unlimited**, which is why the studio shows nothing rather than a reassuring tick, and why a ceiling
-is only ever added with a source beside it.
+prompt is actually read, in one of four states. **A `CEILING` is a figure past which the target
+stops reading**; **`GUIDANCE` is a figure the vendor publishes as advice**, past which they document
+degradation rather than truncation; **`UNPUBLISHED` is a vendor who states no figure**, and
+**`NO_VENDOR` is `GENERIC`**, which names no product for a figure to be about. Neither of the last
+two means *unlimited* — nobody said so — which is why the studio shows nothing rather than a
+reassuring tick, and why a figure is only ever added with a source beside it.
 
 | Target | Ceiling | What imposes it |
 | --- | --- | --- |
 | `STABLE_DIFFUSION` | **77 tokens** | CLIP text-encoder context. A base pipeline truncates past it; front-ends that chunk read further, with weaker attention. |
-| `FLUX` | **512 tokens** | T5 text-encoder context on FLUX.1 dev (256 on Schnell). Only the first 77 tokens also reach CLIP. |
+| `FLUX` | **512 tokens** | `MAX_LENGTH` in Black Forest Labs' own FLUX.2 inference code, shared by [dev] and [klein]. FLUX.1 dev matches it; Schnell reads 256. |
 | `FLUX_API` | **32,000 tokens** | Advertised FLUX.2 text input limit on the hosted tier. *(Added later — see the correction below.)* |
 | `QWEN_IMAGE` | **4,500 tokens** | Model input token limit — the tightest ceiling here the whole specification still fits inside. |
-| `SEEDREAM` | none published | Guidance only: ByteDance advise against prompts past ~600 English words, and warn that overloaded briefs drop instructions. |
+| `SEEDREAM` | **600 English words**, as guidance | ByteDance state it on the `prompt` parameter itself, and describe scattered information and overlooked details past it — degradation, not truncation, so the studio words it as a trade-off. |
 | `GPT_IMAGE` | **32,000 characters** | "The maximum length is 32000 characters for the GPT image models" — the Images API's `prompt` parameter. |
 | `GEMINI_PRO_IMAGE` | **65,536 tokens** | Model input token limit. |
 | `GEMINI_FLASH_IMAGE` | **131,072 tokens** | Model input token limit. |
-| `CHATGPT_5_6_SOL` | **1,050,000 tokens** | Model context window. |
-| `MIDJOURNEY` | none published | Its own guidance runs the other way regardless: "short and simple prompts typically generate the best images", and "avoid making long lists or detailed instructions". |
-| `GENERIC` | none published | It names no particular model, so there is no figure to record. |
+| `CHATGPT_5_6_SOL` | **922,000 tokens** | Maximum input tokens: the 1,050,000 context window, less the 128,000 output tokens reserved against it. What this field measures is the prompt alone. |
+| `MIDJOURNEY` | none published, `UNPUBLISHED` | No article in Midjourney's public help centre states a prompt length. Its own guidance runs the other way regardless: "short and simple prompts typically generate the best images", and "avoid making long lists or detailed instructions". |
+| `GENERIC` | none published, `NO_VENDOR` | It names no particular model, so there is no vendor to publish a length. |
 
 Two of these took a second pass to get right, which is the point of writing the source beside each.
 The Gemini and GPT Image rows were first recorded as "none published" on the strength of the pages
@@ -1497,6 +1500,16 @@ will read it. The studio now says so, in gold, beside the copy button, and still
 a specification silently cut to a ceiling would contract for a sheet it no longer describes. On the
 figures above only Stable Diffusion and Flux are exceeded; the rest have room to spare, which is
 worth knowing rather than assuming.
+
+*(Corrected later — August 2026.)* Two of the statements above have since stopped being true, and
+both were found by re-checking rather than by anything failing. OpenAI's Images reference now does
+list `gpt-image-2` beside `gpt-image-1.5`, so that disagreement is closed. And `null` is gone as a
+state: recording "no ceiling" and "no figure found" in one value is what made Seedream — the one
+target whose own entry says long briefs lose instructions — the one target that could never say so,
+because the studio's notice keys off the field. The four states above replace it, and the row for
+each of those three targets now says which one it is. The last sentence above has also stopped being true:
+the specification has grown since, and against the figures as they now stand Qwen-Image is exceeded
+as well, while Seedream is seven times past the advice ByteDance publish.
 
 > **Corrected after shipping — the `CHATGPT_5_6_SOL` row recorded the wrong one of two figures.**
 > 1,050,000 is the *context window*, and the model page states a separate **922,000 maximum input

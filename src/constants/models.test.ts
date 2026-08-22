@@ -88,8 +88,11 @@ describe('what each target model says about its own prompt length', () => {
     const note = budget.note.trim();
 
     // A note behind a figure names its cause in a phrase, and is rendered as one. A note standing in
-    // *place* of a figure is the record of the search, so it owes the reader a sentence's worth.
-    const floor = 'limit' in budget ? 20 : 60;
+    // *place* of a figure is the record of the search, so it owes the reader a sentence's worth. The
+    // lower floor sits just under the shortest note actually carried — “Model input token limit.”
+    // at 24 — which is enough to reject the stub shape it is aimed at: “Vendor documentation.” is 21
+    // characters and names nothing.
+    const floor = 'limit' in budget ? 23 : 60;
     expect(note.length, `${model.id} states too little about its prompt budget`).toBeGreaterThan(floor);
     expect(note, `${model.id}'s budget note is not a sentence`).toMatch(/[.!?]$/);
     // The same rule the guidance copy follows, and for the same reason: a note behind a figure is
@@ -107,15 +110,24 @@ describe('what each target model says about its own prompt length', () => {
     expect(kinds.get('GENERIC')).toBe('NO_VENDOR');
     expect(kinds.get('MIDJOURNEY')).toBe('UNPUBLISHED');
     expect(kinds.get('SEEDREAM')).toBe('GUIDANCE');
-    expect([...kinds].filter(([, kind]) => kind === 'CEILING').map(([id]) => id)).toEqual([
-      'CHATGPT_5_6_SOL',
-      'GEMINI_FLASH_IMAGE',
-      'GEMINI_PRO_IMAGE',
-      'QWEN_IMAGE',
-      'STABLE_DIFFUSION',
-      'FLUX',
-      'FLUX_API',
-      'GPT_IMAGE',
-    ]);
+    // Sorted on both sides, because `TARGET_MODELS` is in *selector* order — a decision about the
+    // dropdown, which this claim has nothing to do with.
+    expect(
+      [...kinds]
+        .filter(([, kind]) => kind === 'CEILING')
+        .map(([id]) => id)
+        .sort(),
+    ).toEqual(
+      [
+        'CHATGPT_5_6_SOL',
+        'GEMINI_FLASH_IMAGE',
+        'GEMINI_PRO_IMAGE',
+        'QWEN_IMAGE',
+        'STABLE_DIFFUSION',
+        'FLUX',
+        'FLUX_API',
+        'GPT_IMAGE',
+      ].sort(),
+    );
   });
 });

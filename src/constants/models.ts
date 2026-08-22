@@ -84,7 +84,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
         kind: 'CEILING',
         limit: 922_000,
         unit: 'tokens',
-        note: 'Maximum input tokens.',
+        note: 'Maximum input tokens — the context window, less the output tokens reserved against it.',
       },
     },
   },
@@ -220,12 +220,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
   },
   {
-    // **No figure, and the search that establishes it is worth stating.** Every article in
-    // Midjourney's help centre was read for one — 105 of them, through the Zendesk article API the
-    // site is built on — and the only lengths it publishes anywhere are a 21-second video and a
-    // 1,000-character profile bio. The widely-repeated “6,000 characters” traces to third parties
-    // and to a Discord forum post, never to Midjourney, so it is not recorded: this app composes
-    // 24,369 characters for the default configuration and a wrong ceiling would be worse than none.
+    // **No figure, and how far that goes is worth stating.** Midjourney's public help centre carries
+    // no prompt length in any of its 105 articles, and the only lengths it publishes anywhere are a
+    // 21-second video and a 1,000-character profile bio. The widely-repeated “6,000 characters”
+    // traces to third parties and to a Discord forum post, never to Midjourney, so it is not
+    // recorded: the studio's opening configuration compiles to roughly 24,000 characters here, and a
+    // wrong ceiling would be worse than none.
     //
     // What Midjourney do publish is qualitative, and it is the opposite of a limit: “Short and
     // simple prompts typically generate the best images with Midjourney”, and “Avoid making long
@@ -325,9 +325,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // "The maximum length is 32000 characters for the GPT image models." Recorded in characters
       // because that is the unit OpenAI states it in, and taken from OpenAI's own published OpenAPI
       // description of the `prompt` field rather than from the rendered reference page, which draws
-      // from it. The disagreement this comment used to record is gone: that reference's `model` enum
-      // now lists `gpt-image-2` and `gpt-image-2-2026-04-21` beside `gpt-image-1.5`, so the family
-      // the ceiling is stated for and the family the enum offers are the same one.
+      // from it. The same reference's `model` enum lists `gpt-image-2` and `gpt-image-2-2026-04-21`
+      // beside `gpt-image-1.5`, so the family the ceiling is stated for and the family the enum
+      // offers are the same one — the two OpenAI surfaces agreed when this was last checked, which
+      // they had not always done.
       // https://developers.openai.com/api/docs/api-reference/images/create
       promptBudget: {
         kind: 'CEILING',

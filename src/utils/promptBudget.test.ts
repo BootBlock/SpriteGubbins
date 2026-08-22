@@ -4,7 +4,8 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { describeOverage, describeUsage, readPromptBudget } from './promptBudget.ts';
-import { promptBudgetFigureFor, promptBudgetFor } from './targetCapabilities.ts';
+import { promptBudgetFigureFor } from './targetCapabilities.ts';
+import { TARGET_MODELS } from '../constants/models.ts';
 import { countWords } from './promptCompiler.ts';
 
 /**
@@ -254,23 +255,19 @@ describe('the app’s own output against the ceilings it now records', () => {
 });
 
 describe('every target answers', () => {
-  it('states one of the four budget states for each id, and never throws', () => {
-    for (const target of TARGET_MODEL_IDS) {
-      const budget = promptBudgetFor(target);
-      expect(['CEILING', 'GUIDANCE', 'UNPUBLISHED', 'NO_VENDOR'], target).toContain(budget.kind);
-      expect(budget.note.length, target).toBeGreaterThan(0);
-    }
-  });
+  const DECLARED = new Map(TARGET_MODELS.map((model) => [model.id, model.capabilities.promptBudget]));
 
-  it('offers a figure exactly where the state carries one', () => {
+  it('offers a figure exactly where the target declares one, and never throws', () => {
     // The narrowing every measurement in the app goes through, so it is worth pinning that it agrees
-    // with the state rather than being a second opinion about it: a figure is offered for the two
-    // states that have one, and withheld for the two that do not.
+    // with the declaration rather than being a second opinion about it: a figure is offered for the
+    // two states that carry one and withheld for the two that do not. Walking `TARGET_MODEL_IDS`
+    // rather than the entries is what makes it a claim about the whole union — a target left out of
+    // the table throws inside the lookup instead of being skipped.
     for (const target of TARGET_MODEL_IDS) {
-      const budget = promptBudgetFor(target);
+      const declared = DECLARED.get(target);
       const figure = promptBudgetFigureFor(target);
 
-      if (budget.kind === 'CEILING' || budget.kind === 'GUIDANCE') {
+      if (declared?.kind === 'CEILING' || declared?.kind === 'GUIDANCE') {
         expect(figure, target).not.toBeNull();
         expect(figure?.limit, target).toBeGreaterThan(0);
         expect(['characters', 'tokens', 'words'], target).toContain(figure?.unit);

@@ -103,9 +103,9 @@ const LIBRARY_PROMPTS: readonly string[] = [
  *
  * Each prompt is measured through {@link readPromptBudget} rather than against the ceiling here, so
  * a reading in this file and the reading the studio puts in front of the user are the same
- * arithmetic in the same unit — a `characters` ceiling against the length itself, everything else
- * against the token estimate. A second spelling of that branch is how the two would come to disagree
- * about what a target reads.
+ * arithmetic in the same unit — `MEASURES` in `utils/promptBudget.ts` decides which counter each
+ * unit takes, and both readings go through it. A second spelling of that table is how the two would
+ * come to disagree about what a target reads.
  */
 export function measurePromptFit(target: TargetModelId): PromptFitReading | null {
   if (promptBudgetFigureFor(target)?.kind !== 'CEILING') return null;

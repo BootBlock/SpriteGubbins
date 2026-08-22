@@ -33,7 +33,7 @@ export interface BudgetReading {
    * — `PromptBudgetNotice` reads the kind and words each one for what it is.
    */
   readonly isOver: boolean;
-  /** How many times over the ceiling, for a prompt that is over it. `1` when exactly at the limit. */
+  /** How many times over the figure, for a prompt that is over it. `1` when exactly at the limit. */
   readonly overBy: number;
 }
 
@@ -114,12 +114,12 @@ export function describeUsage(reading: BudgetReading): string {
 }
 
 /**
- * How far past its ceiling a prompt has gone, phrased at the magnitude it is actually at.
+ * How far past its figure a prompt has gone, phrased at the magnitude it is actually at.
  *
  * A multiplier is the right unit for a prompt many times over: aimed at CLIP's 77-token window, this
  * app's specification is dozens of times past it, and *how many times* is the fact that lands — the
  * raw excess is a five-figure number that says far less. It is the wrong unit anywhere near the
- * ceiling, and that is the whole band a user editing their own prompt sits in: `Math.round`
+ * figure, and that is the whole band a user editing their own prompt sits in: `Math.round`
  * collapses everything under 1.5× to `1`, so a prompt one token past a 4,500-token budget read
  * identically to one two thousand past it, and "1× over" reads as *equal to* rather than *past*.
  * Under {@link MULTIPLIER_FROM} the excess is both finer and directly actionable — it is how much
