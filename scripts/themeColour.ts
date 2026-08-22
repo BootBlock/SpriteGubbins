@@ -9,19 +9,12 @@
  * (`#0a0c12`), so the splash screen handed over to a visibly lighter page, which is precisely the
  * flash the comment above the meta tag claimed it prevented.
  *
- * CLAUDE.md names `src/index.css` as the one place a colour value is written down, and this module
- * is how the three call sites keep to that without a fourth copy: the stylesheet's own `oklch()`
- * declaration is parsed and converted here, at config time, and `vite.config.ts` substitutes the
- * answer into both the manifest and the HTML. Nothing states the hex. Repointing the ramp in
- * `index.css` repoints the chrome and the splash in the same edit.
- *
- * The conversion is `src/utils/oklab.ts` — the app's own, clamped the way a browser clamps — rather
- * than a second implementation of Ottosson's matrices written for the build. That is the same
- * reasoning `src/constants/differenceRamp.ts` records for resolving tokens in code.
+ * The derivation itself is `scripts/tokenColour.ts`, which is what keeps `src/index.css` the one
+ * place a colour value is written down. `vite.config.ts` substitutes the answer into both the
+ * manifest and the HTML, and nothing states the hex.
  */
 
-import { readFileSync } from 'node:fs';
-import { oklabToSrgb, oklchToOklab } from '../src/utils/oklab.ts';
+import { tokenHex } from './tokenColour.ts';
 
 /**
  * `foundry-900`, the page ground, as `#rrggbb`.
@@ -32,15 +25,7 @@ import { oklabToSrgb, oklchToOklab } from '../src/utils/oklab.ts';
  * sees. `foundry-950` is the well *below* the page, which is why it is not the answer to either.
  */
 export function themeColorHex(stylesheetPath: URL): string {
-  const stylesheet = readFileSync(stylesheetPath, 'utf8');
-  const declaration = /--color-foundry-900:\s*oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)/.exec(stylesheet);
-  if (declaration === null) {
-    throw new Error('--color-foundry-900 is not declared in src/index.css as an oklch() triple');
-  }
-
-  const [, lightness, chroma, hue] = declaration;
-  const { r, g, b } = oklabToSrgb(oklchToOklab(Number(lightness), Number(chroma), Number(hue)));
-  return `#${[r, g, b].map((channel) => channel.toString(16).padStart(2, '0')).join('')}`;
+  return tokenHex(stylesheetPath, 'foundry-900');
 }
 
 /** The placeholder `index.html` carries in place of the value, replaced by the build. */
