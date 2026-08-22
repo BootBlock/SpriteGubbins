@@ -44,9 +44,11 @@ import { SymmetryControls } from '../quantise/SymmetryControls.tsx';
  * that would tell them whether moving it helped were a screen and a half above. The controls take
  * five columns of twelve and the previews the other seven, which is the studio's arrangement with
  * the width shared differently: there, both columns hold a `SelectField` and the even split is what
- * has to clear the label budget, whereas here all three selects are on the left and the width the
- * right column does not need for one goes to the canvases instead. `--breakpoint-quantise` derives
- * the 1224px that leaves, and states the arithmetic; below it the tab stacks as it always did.
+ * has to clear the label budget, whereas here all three selects are on the left. Splitting the page
+ * costs the canvases width whatever the ratio is, and 5/7 is how much of that is bought back — an
+ * even split would have spent 68px of it on a column with no select to spend it on.
+ * `--breakpoint-quantise` derives the 1224px that leaves, and states the arithmetic; below it the
+ * tab stacks as it always did.
  *
  * The guide and the drop zone stay full width above the split, and the split itself is inside the
  * sheet guard, because a 5/12 column holding a drop zone beside seven columns of nothing would be a
