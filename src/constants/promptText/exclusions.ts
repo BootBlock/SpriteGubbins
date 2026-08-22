@@ -88,6 +88,28 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // — which is far enough that neither copy looks like a restatement of the other.
   TERRAIN:
     'Characters, creatures, vehicles, buildings and their fittings; sky, horizon and distant landscape; and, on any tile meant to repeat, a landmark distinctive enough to be recognised twice across a laid field.',
+  // The name plate is this category’s own, and it repeats section 0 deliberately for the reason
+  // INTERFACE’s lettering ban does: every real dialogue portrait is shown beside a name, so a
+  // generator asked for one has to be told twice that the words go on at runtime. The second-person
+  // ban is the other one no other category needs — a portrait prompt attracts the conversation it
+  // is drawn for, and an over-the-shoulder figure is neither scenery nor a prop.
+  PORTRAIT:
+    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any second person, hand or over-the-shoulder figure; any prop, weapon or held object entering the crop; any speech bubble, name plate, caption or dialogue box; and any decorative frame, vignette or border around the head.',
+  // The lettering ban is stated in full rather than by reference, and it is the sharpest version of
+  // it in this record: a stack count, a cooldown and a keybind are the three things a real icon
+  // appears to carry and the three an engine draws at runtime. The plate ban is this category’s
+  // boundary with INTERFACE — an icon is the mark, and the slot it sits in belongs to the other
+  // sheet.
+  ICON: 'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature holding or presenting the subject; any slot plate, frame, tooltip or interface chrome around a component; and any lettering, numeral, stack count, timer or key name on a component.',
+  // No environment ban, for a third version of BUILDING’s reason: the scenery the other categories
+  // forbid is this one’s entire deliverable. What is foreign to a backdrop is the *playfield* — the
+  // things a player acts on — and playable geometry is named first because it is the one that costs
+  // a bug report rather than a redraw: a ledge painted into the far band is a ledge somebody will
+  // try to stand on. The seam clause is scoped to bands meant to loop, exactly as TERRAIN’s landmark
+  // clause is scoped to tiles meant to repeat, because the layer library’s panels do not loop at
+  // all.
+  BACKGROUND:
+    'Characters, creatures and vehicles; any platform, ledge, walkway or other geometry a player could stand on or collide with; any pickup, door or interactive object; interface, logo and lettering; and, on any band meant to loop, a visible join where it repeats or a landmark distinctive enough to be recognised twice across a scroll.',
 };
 
 /**
@@ -129,6 +151,19 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
     'Every entry below is a piece of this one interface. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The frames, borders and panel edges it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.',
   TERRAIN:
     'Every entry below is a ground tile or a landform piece. An entry describing anatomy, a wall, a roof, a building module or a vehicle part does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  // “One expression of this one person” rather than “portrait anatomy”, because the failure this
+  // sheet actually has is twelve competent portraits of twelve different people — which “anatomy”
+  // would not name at all. The floor-tile clause is the shared half every guard carries.
+  PORTRAIT:
+    'Every entry below is one expression of this one person’s portrait, drawn to the same crop as the rest. An entry describing a floor tile, a wall, a terrain piece, a building module or a second person does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  // The second sentence is this category’s own and is load-bearing rather than reassurance: an icon
+  // set’s inventory names overlays and marks that sit on top of an icon, and section 0 forbids
+  // annotation drawn over the image. Those are two different things, and saying so where the
+  // inventory is about to list a locked mark is what stops a generator resolving the apparent
+  // conflict by omitting the overlays.
+  ICON: 'Every entry below is one member of this one icon set, or a piece laid over one. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.',
+  BACKGROUND:
+    'Every entry below is a band of this one backdrop, or a loose piece laid over one. An entry describing anatomy, a wall the player walks against, a platform, a vehicle part or an interface element does not belong to this sheet and is an error in this specification, not an instruction to follow.',
 };
 
 /**
@@ -191,6 +226,24 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // a subject check, and this record was only ever where a per-category line existed to hold it.
   TERRAIN:
     'Every component is a ground tile or a landform piece — no characters, creatures, anatomy, buildings or vehicles. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.',
+  // The second half is this category’s own and is the check no generic audit can stand in for: a
+  // portrait sheet can pass every count, background and ordering test and still be unusable, because
+  // whether it is one person only shows up when the drawings are compared with each other. It is
+  // stated as an agreement between the expressions rather than as “every component is identical”,
+  // which would be this record’s VEHICLE mistake again — the expressions are meant to differ, and an
+  // audit demanding they do not fails the sheet on the twelve drawings section 4 requires.
+  PORTRAIT:
+    'Every component is one expression of this one person — no second figure, no scenery, no anatomy below the stated crop, and no name plate, caption or speech bubble. Any two expressions are recognisably the same person, drawn to the same crop with the eyes at the same height, differing only in what the feeling itself moves.',
+  // Qualified throughout, as VEHICLE’s and INTERFACE’s are: this sheet’s components include marks
+  // and overlays, so an unqualified “no marks” would fail it on the entries section 4 required. The
+  // second half is the check this deliverable actually needs — an icon grid fails by disagreeing
+  // with itself about weight and margin, and that only shows when the members are seen together.
+  ICON: 'Every component is a member of this one icon set or a piece laid over one — no anatomy, floor or terrain tiles, scenery, or slot plate behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.',
+  // The seam check is scoped to bands meant to loop for the reason TERRAIN’s edge check is scoped to
+  // tiles: the layer library’s panels do not loop, and an audit demanding a seamless join would fail
+  // that sheet on the six pieces section 4 requires.
+  BACKGROUND:
+    'Every component is a band of this one backdrop or a loose piece laid over one — no characters, creatures, vehicles, interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup. Every band meant to loop carries the same profile, materials and values at its left edge as at its right, so a run of it shows no join, and no looping band carries a mark that would be recognised twice across a scroll.',
 };
 
 /**
@@ -224,6 +277,20 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // A terrain tile has edges but no *border*: the boundary between two materials is painted across
   // the tile, never drawn round it, so a frame on one is the decorative surround this term suppresses.
   TERRAIN: false,
+  // A portrait is cropped, not framed. Its own exclusions ban a vignette or a decorative border round
+  // the head for exactly that reason, so a border on one is the surround this term exists to
+  // suppress.
+  PORTRAIT: false,
+  // The near miss in this record, and the answer is INTERFACE’s boundary rather than an icon’s. An
+  // icon set ships beside plates and rarity frames — but those are INTERFACE’s components, named in
+  // its own `Inventory Slot & Icon Plate` option, and this category’s exclusions ban a slot plate
+  // behind an icon in as many words. What is left on an icon sheet is the decorative surround a
+  // generator adds unasked.
+  ICON: false,
+  // A band has edges but no border: it is cut to a strip and butted against its own copy, so a frame
+  // drawn round one is the surround this term suppresses — and a border would sit exactly where the
+  // seam has to be invisible.
+  BACKGROUND: false,
 };
 
 /**
@@ -262,4 +329,11 @@ export const LIMBS_ARE_COMPONENTS: Readonly<Record<SubjectCategory, boolean>> = 
   EFFECT: false,
   INTERFACE: false,
   TERRAIN: false,
+  // The one of the three that takes the pair, and it takes it on the record’s own test: this
+  // category’s pools describe a body — `Framing & Crop` reaches `Full Body Standing`, and even a
+  // bust carries shoulders and the arms below them. A half-body portrait with three hands is a
+  // failure a generator actually has here, and it is the one this pair guards against.
+  PORTRAIT: true,
+  ICON: false,
+  BACKGROUND: false,
 };

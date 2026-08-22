@@ -229,4 +229,59 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
     audit:
       'nothing on the sheet is a run of tiles drawn already laid together, or a landscape composed from them',
   },
+  // "dialogue scene" and "visual novel screenshot" are safe where "portrait", "character" and "face"
+  // are not: the inventory is twelve portraits of one person, and no component of it is a scene or a
+  // screenshot. The second term is what the sheet is actually returned as when it fails — a picture
+  // of the conversation the portraits were drawn for, rather than the set of them.
+  //
+  // The expressions-blended-into-one half of the failure is stated only in the body forms, for the
+  // reason TERRAIN's tiles-already-laid half is: a term naming it would have to name the
+  // expressions, and negating those negates the subject. A whole clause can hold it because "merged
+  // into one face" is a relation between drawings rather than a word standing in for one.
+  PORTRAIT: {
+    statement: 'no dialogue scene',
+    negatives: ['dialogue scene', 'visual novel screenshot'],
+    instruction:
+      'Do not draw the portraits arranged into a conversation, a roster or a single merged face anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The portraits arranged into a dialogue scene, a party roster or a character sheet, and any two of them blended into one face.',
+    audit: 'nothing on the sheet is a conversation, a roster, or two expressions merged into one drawing',
+  },
+  // **"inventory" is the word this entry could not have**, and it is the trap worth recording: it is
+  // the obvious name for what an icon set fails as, it is this category's own first option, *and* it
+  // is one of the template's own section headings — so it is a required word for every category in
+  // the table, not only this one. `menu screen` is INTERFACE's "assembled screen" narrowed to the
+  // same failure without reaching for it, and neither term names an icon, a symbol or a mark.
+  //
+  // The body forms keep the vocabulary the terms had to give up, for the reason TERRAIN's do: a
+  // whole clause can say "arranged into an inventory" because that is a relation between the icons
+  // rather than a word standing in for one.
+  ICON: {
+    statement: 'no assembled menu screen',
+    negatives: ['menu screen', 'game screenshot'],
+    instruction:
+      'Do not draw the icons fitted into slots, a bag, a hotbar or a skill tree anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The icons arranged into an inventory, a hotbar, a skill tree or any other screen, and any picture of the set in use.',
+    audit: 'nothing on the sheet is an inventory, a hotbar or a skill tree with the icons placed in it',
+  },
+  // Every word this category's failure wants is a word its components answer to — "scene" is its own
+  // `Scene Purpose` field and its own `Full Static Scene Panel` option, and "landscape", "backdrop",
+  // "band" and "stacked" are all equally spoken for. So both terms name a *composite* rather than
+  // the material: nothing on a background sheet is a picture or a screenshot. `composited picture`
+  // is EFFECT's term, shared deliberately — the two categories fail the same way, one in space and
+  // one in time — which is the same licence OBJECT and VEHICLE take with `product shot`.
+  //
+  // The bands-already-stacked half is left to the body forms for TERRAIN's reason, and section 9's
+  // is qualified twice over because the audit is applied band by band: a check reading "no stacked
+  // bands" would fail the sheet on the pieces section 4 requires.
+  BACKGROUND: {
+    statement: 'no composited picture',
+    negatives: ['composited picture', 'game screenshot'],
+    instruction:
+      'Do not draw the bands stacked into the finished scene anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'The bands stacked into the finished scene, and any picture of the backdrop with the playfield in front of it.',
+    audit: 'nothing on the sheet is the finished scene with its bands already stacked one behind another',
+  },
 };

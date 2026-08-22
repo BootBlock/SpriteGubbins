@@ -29,7 +29,8 @@ const PROJECTION_LABELS: readonly OutputChoice<Projection>[] = [
  * elevation one default session away from a sheet of button states. A control offering a value the
  * store will immediately degrade is worse than one that does not offer it.
  *
- * For eight of the nine categories this is the whole list. INTERFACE is left with one entry, and the
+ * For nine of the twelve categories this is the whole list. INTERFACE, PORTRAIT and BACKGROUND are
+ * each left with one entry, and the
  * control still renders it: unlike the rig, the projection is a line section 3 always carries, so a
  * select showing the one camera the sheet is drawn under says more than an absence would.
  */

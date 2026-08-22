@@ -142,21 +142,26 @@ describe('the plan table itself', () => {
     // BUILDING is labelled "Building / Environment Tile", INTERFACE ships a nine-slice whose corners
     // are fixed while its edges and centre repeat and butt against copies of themselves, and
     // TERRAIN's blend set is the ground the first of those stands on — which is what this mode
-    // means. Every other category is a *subject* rather than a field of pieces, and a CHARACTER
-    // reaching this mode is the exact pairing the reported defect produced.
+    // means. BACKGROUND is the fourth and the one that repeats along a single axis: a parallax band
+    // butts against its own copy along the scroll direction, and "no visible join where it repeats"
+    // is the same requirement a floor field has. Every other category is a *subject* rather than a
+    // field of pieces, and a CHARACTER reaching this mode is the exact pairing the reported defect
+    // produced.
     const withTileset = SUBJECT_CATEGORIES.filter((c) => supportsMode(c, 'TILESET_MODULAR'));
-    expect(withTileset).toEqual(['BUILDING', 'INTERFACE', 'TERRAIN']);
+    expect(withTileset).toEqual(['BUILDING', 'INTERFACE', 'TERRAIN', 'BACKGROUND']);
   });
 
   it('exempts exactly the categories whose components are the environment', () => {
     // The guard on `BANS_AN_ENVIRONMENT` above. It is derived by matching prose, so a reword of one
     // exclusion line could empty it and take the check below with it, silently — this is what makes
-    // that loud. BUILDING and TERRAIN are the exemptions, and they are the only ones: a building
-    // tileset's inventory *is* floor tiles and a terrain's *is* the ground plane, which is why their
-    // section 8 bans inhabitants and clutter instead. INTERFACE is not among them — a nine-slice
-    // repeats, but a panel frame is not an environment, so it bans one like everything else.
+    // that loud. BUILDING, TERRAIN and BACKGROUND are the exemptions, and they are the only ones: a
+    // building tileset's inventory *is* floor tiles, a terrain's *is* the ground plane, and a
+    // background's *is* the scenery the other categories call scenery — which is why all three ban
+    // inhabitants and clutter instead. INTERFACE is not among them — a nine-slice repeats, but a
+    // panel frame is not an environment, so it bans one like everything else; and ICON is not,
+    // because a mark in a cell depicts a thing rather than a place.
     const exempt = SUBJECT_CATEGORIES.filter((c) => !BANS_AN_ENVIRONMENT.includes(c));
-    expect(exempt).toEqual(['BUILDING', 'TERRAIN']);
+    expect(exempt).toEqual(['BUILDING', 'TERRAIN', 'BACKGROUND']);
   });
 
   it('gives the frame to the one category that is a sequence, and to no other', () => {

@@ -48,4 +48,13 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // loose wording this record exists to replace.
   TERRAIN:
     'a tile has no front — it is laid flat and read from above, and its sides are named by the compass edge they sit on rather than by any facing; a landform piece’s front is the exposed face the camera sees, the rock wall, the cut bank or the outward side of an outcrop, and its rear is the buried side the ground behind it hides.',
+  // Behind `[IF:MULTI_DIRECTION]` and therefore never emitted, as INTERFACE's and TERRAIN's are:
+  // all three of these categories are bound to `SINGLE_FRONT`. The entries are written honestly
+  // rather than left as filler, because the record is exhaustive and the next reader of it has no
+  // way to tell a placeholder from an answer.
+  PORTRAIT:
+    'the front is the face — the brow, the eyes, the nose and the mouth; the rear is the back of the head and the fall of the hair. The turn stated in section [SEC:SUBJECT] is the sitter’s own pose within a fixed frame and never a rotation of the camera.',
+  ICON: 'an icon has no front and no rear — it is a mark drawn flat into its cell, and the angle the depicted object is shown at is fixed by the projection in section [SEC:CAMERA] for every member of the set at once.',
+  BACKGROUND:
+    'the front is the face of the band that meets the camera; a band has no rear — it is a plane standing at a distance, and what is behind it is the next band back rather than its own far side.',
 };

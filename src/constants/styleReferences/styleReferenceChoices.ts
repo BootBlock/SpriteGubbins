@@ -33,8 +33,8 @@ const STYLE_REFERENCE_LABELS: readonly OutputChoice<StyleReferenceId>[] = STYLE_
  * subject cannot be drawn under puts a ground measurement in section 2 above a flat front elevation
  * in section 3. `categoryStyleReferences.ts` carries the argument.
  *
- * For eight of the nine categories this is the whole library. INTERFACE keeps `NONE` and the four
- * references rendered under `ORTHOGRAPHIC_FRONT`.
+ * For nine of the twelve categories this is the whole library. INTERFACE, PORTRAIT and BACKGROUND
+ * each keep `NONE` and the four references rendered under `ORTHOGRAPHIC_FRONT`.
  */
 export function styleReferenceChoices(category: SubjectCategory): readonly OutputChoice<StyleReferenceId>[] {
   return STYLE_REFERENCE_LABELS.filter((choice) => supportsStyleReference(category, choice.value));

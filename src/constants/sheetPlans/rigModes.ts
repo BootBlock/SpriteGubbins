@@ -47,6 +47,11 @@ import { resolveMode } from './modes.ts';
  *   has no joints to register.
  * - **EFFECT** — `effect.ts`: "A rig is pieces that rotate about pivots against each other. An effect
  *   articulates about nothing." Its components are one phenomenon at successive moments.
+ * - **PORTRAIT** — `portrait.ts`: a face's features are replaced rather than swung, so there is no
+ *   joint to cap.
+ * - **ICON** — `icon.ts`: a mark in a cell, with its state pieces laid over it rather than hinged.
+ * - **BACKGROUND** — `background.ts`: a band scrolls rather than flexes, and its loose pieces are
+ *   placed over it rather than jointed to it.
  * - **INTERFACE** — `interface.ts`: "a slider handle travels along a track and a bar fill grows, and
  *   neither turns about a pivot".
  */
@@ -60,6 +65,15 @@ export const CATEGORY_RIG_MODES: Readonly<Record<SubjectCategory, readonly RigMo
   EFFECT: ['NONE'],
   INTERFACE: ['NONE'],
   TERRAIN: ['NONE'],
+  // A portrait's features are replaced, never swung: a mouth has no pivot and no cap, so section 5's
+  // shared-pivot requirements would be describing a joint the sheet does not draw.
+  PORTRAIT: ['NONE'],
+  // An icon is a mark in a cell. Nothing on it articulates, and the state pieces its plan lists are
+  // laid over it rather than hinged to it.
+  ICON: ['NONE'],
+  // A band scrolls; it does not flex. The loose pieces are placed over a band rather than jointed to
+  // one, which is the same answer TERRAIN gives about the features standing on its ground.
+  BACKGROUND: ['NONE'],
 };
 
 /** Whether this category's components can be asked for in this state of articulation at all. */

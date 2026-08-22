@@ -20,7 +20,7 @@ import type { SubjectCategory } from '../types/subject.ts';
  * the batch is and which yaw its one facing takes — so the outcome is N identical kits requested at
  * angles the subject does not have, rather than a broken sheet.
  *
- * **Which categories this binds is the whole decision, and it is two.**
+ * **Which categories this binds is the whole decision, and it is five.**
  *
  * - **INTERFACE and TERRAIN turn to nothing at all.** A widget is a flat rectangle read straight on;
  *   a tile is laid flat and read from above, and `LANDMARK_TEXT.TERRAIN` says a tile has no front in
@@ -32,6 +32,11 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   `sheetPlans/effect.ts` argues exactly that, and it is why the category's single sheet is a
  *   `'run'` plan, which is what turns a set into a run list. "Has no facing" is a property of some
  *   effects, not of the category, and a table cannot tell them apart.
+ * - **PORTRAIT, ICON and BACKGROUND turn to nothing either, and each for its own reason.** A
+ *   portrait's turn is the *sitter's* pose inside a fixed frame — `Head Turn & Pose` states it, and
+ *   the camera stays where it is — so a wider set would return one bust per yaw at framings that
+ *   cannot be swapped for one another. An icon is a mark drawn into a cell and has no far side. A
+ *   background band is a plane the player never reaches, and turning one yields the same plane.
  * - **BUILDING keeps every set** even though it defaults to a tileset, because a facade is a facing:
  *   `buildingDirectionalVariants` is a real plan of it. That it never surfaced this failure is a
  *   different fact — it also supports `CORE_DIRECTIONAL_VARIANTS`, so the app's default mode survives
@@ -60,6 +65,9 @@ export const CATEGORY_DIRECTION_SETS: Readonly<
   EFFECT: DIRECTION_SETS,
   INTERFACE: ['SINGLE_FRONT'],
   TERRAIN: ['SINGLE_FRONT'],
+  PORTRAIT: ['SINGLE_FRONT'],
+  ICON: ['SINGLE_FRONT'],
+  BACKGROUND: ['SINGLE_FRONT'],
 };
 
 /** Whether this category's subject can be drawn to the facings this set names. */

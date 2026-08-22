@@ -59,7 +59,7 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * **No section writes its own numeral either, and for the same reason one section further out.** A
  * heading declares itself — `## [SECTION:EXCLUSIONS]. EXCLUSIONS` — and prose cites it as
  * `section [SEC:EXCLUSIONS]`; `applySectionNumbers` walks the surviving headings and resolves both.
- * The rig section is conditional and five of the nine categories have no rig at all, so a
+ * The rig section is conditional and eight of the twelve categories have no rig at all, so a
  * hand-numbered document ran `## 4.` straight into `## 6.` on every prompt those categories ever
  * compiled — a gap in the numbering of a document that cites its own sections several hundred times.
  * That defect had already been met once, at the adherence report, and answered by writing its heading

@@ -21,7 +21,7 @@ import type { SubjectCategory } from '../types/subject.ts';
  * here carries the elevation with it: an INTERFACE degrading to `ORTHOGRAPHIC_FRONT` degrades 35°
  * to 0° in the same step, and section 3's two adjacent lines stay one statement about one camera.
  *
- * **Which categories this binds is the whole decision, and it is one.**
+ * **Which categories this binds is the whole decision, and it is three.**
  *
  * - **INTERFACE has exactly one camera, and it is `ORTHOGRAPHIC_FRONT`.** `sheetPlans/interface.ts`
  *   settles the premise in its own words — a button "has no facings to turn to", and the sheet a
@@ -31,6 +31,16 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   `OBLIQUE_45` to project at 45°. `ORTHOGRAPHIC_SIDE` is the same flat camera turned to an edge
  *   that is not drawn. All four shipped INTERFACE presets already pin `ORTHOGRAPHIC_FRONT`, which is
  *   the agreement this table makes unbreakable rather than customary.
+ * - **PORTRAIT and BACKGROUND join it, and ICON deliberately does not.** A portrait is read at eye
+ *   level, straight on: the sitter's own turn is `Head Turn & Pose` in section 1, not a camera, and
+ *   a bust drawn under an angled overhead camera is looking up at a lens the dialogue box does not
+ *   have. A backdrop is a plane standing at a distance, seen face on — it has no top surface for
+ *   `PURE_TOPDOWN`, no ground plane for the axonometric pair to lay out, and no thickness for
+ *   `OBLIQUE_45`. **ICON is the one that looks bound and is not**, for the reason TERRAIN is not: a
+ *   flat front-on mark, a three-quarter potion bottle, an oblique chest and an isometric map pin are
+ *   all shipped icon styles, so the angle the depicted object is drawn at is a genuine art-direction
+ *   choice rather than a property of the deliverable. The cell is what an icon set has in common,
+ *   and the cell is not a camera.
  * - **TERRAIN keeps every projection, and binding it would delete a shipped deliverable.** It is the
  *   category that looks bound and is not: `LANDMARK_TEXT.TERRAIN` does say "a tile has no front — it
  *   is laid flat and read from above", and stops there only in the *tile's* clause. Its second
@@ -49,14 +59,14 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   oblique status aura — because an effect is drawn to match the world it plays over, and the
  *   world is what the projection is about.
  *
- * **The eight unbound categories take `PROJECTIONS` entire** rather than restating it, so a
+ * **The nine unbound categories take `PROJECTIONS` entire** rather than restating it, so a
  * projection added to the union reaches every subject that can be drawn under it in one edit — and
  * the one that is bound stays bound.
  *
  * **The first entry of each list is load-bearing**: it is what {@link resolveProjection} degrades a
  * stored projection the category cannot honour to, the same way `CATEGORY_DIRECTION_SETS` answers
  * for a set. `THREE_QUARTER_TOPDOWN` leads the union because it is the studio's own opening camera,
- * and for the eight categories taking the union the fallback never fires at all.
+ * and for the nine categories taking the union the fallback never fires at all.
  */
 export const CATEGORY_PROJECTIONS: Readonly<Record<SubjectCategory, readonly [Projection, ...Projection[]]>> =
   {
@@ -69,6 +79,9 @@ export const CATEGORY_PROJECTIONS: Readonly<Record<SubjectCategory, readonly [Pr
     EFFECT: PROJECTIONS,
     INTERFACE: ['ORTHOGRAPHIC_FRONT'],
     TERRAIN: PROJECTIONS,
+    PORTRAIT: ['ORTHOGRAPHIC_FRONT'],
+    ICON: PROJECTIONS,
+    BACKGROUND: ['ORTHOGRAPHIC_FRONT'],
   };
 
 /** Whether this category's subject can be drawn under the camera this projection names. */

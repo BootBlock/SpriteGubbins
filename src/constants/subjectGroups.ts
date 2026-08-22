@@ -14,8 +14,9 @@ export interface SubjectFieldGroup extends SectionDefinition {
  * checked against all of them. That matters more than it looks: the same sixteen keys carry
  * completely different labels per category, so a heading written from `character.ts` is quietly
  * false in the rest. `clothing` alone is *Clothing / Armour*, *Harness / Augments*, *Mounting /
- * Framework*, *Scabbard / Holster*, *Awning & Addons*, *Armour & Cladding*, *Secondary Layer* and
- * *Ornament & Trim* and *Scatter Layer* — which is why this group is **Features & fittings** (every
+ * Framework*, *Scabbard / Holster*, *Awning & Addons*, *Armour & Cladding*, *Secondary Layer*,
+ * *Ornament & Trim*, *Scatter Layer*, *Garments At The Shoulders*, *Applied Overlay* and *Applied
+ * Atmosphere* — which is why this group is **Features & fittings** (every
  * one of them sits over the base form rather than being part of it) and not "Surface & detail" (true
  * only of a character's armour, and colliding with `RenderStyleFields`' own *Surface Detail
  * Intensity* one panel down).

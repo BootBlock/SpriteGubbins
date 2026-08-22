@@ -26,6 +26,9 @@ export const SUBJECT_CATEGORIES = [
   'EFFECT',
   'INTERFACE',
   'TERRAIN',
+  'PORTRAIT',
+  'ICON',
+  'BACKGROUND',
 ] as const;
 
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
@@ -186,12 +189,12 @@ export interface CategoryDefinition {
    *
    * **It is written down rather than derived, because the rule is about sound and not spelling.**
    * The template used to fix `a` in the sentence, which is one word written for one category and
-   * read by all nine: four identifiers open with a vowel, so the four targets that reach this
-   * `[IF:RETURNS_TEXT]` paragraph were told the inventory might not belong to `a EFFECT` — the
-   * readers most likely to quote it back. Testing the first letter would fix those four and be
+   * read by every one of them: five identifiers open with a vowel, so the four targets that reach
+   * this `[IF:RETURNS_TEXT]` paragraph were told the inventory might not belong to `a EFFECT` — the
+   * readers most likely to quote it back. Testing the first letter would fix those five and be
    * wrong the first time a category opens with a consonantal vowel (a `UI` takes "a", a `HUD`
-   * takes "a") or a silent one (an `HERB` takes "an"). All nine happen to agree with the letter
-   * test today, and that agreement is a coincidence rather than a rule.
+   * takes "a") or a silent one (an `HERB` takes "an"). Every identifier happens to agree with the
+   * letter test today, and that agreement is a coincidence rather than a rule.
    */
   readonly article: 'a' | 'an';
   readonly fields: readonly FieldOption[];

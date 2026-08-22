@@ -448,13 +448,16 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
     EFFECT: 'an',
     INTERFACE: 'an',
     TERRAIN: 'a',
+    PORTRAIT: 'a',
+    ICON: 'an',
+    BACKGROUND: 'a',
   };
 
   it('gives every category the indefinite article its own identifier takes', () => {
     // The template used to fix `a` in this sentence, so four of the nine identifiers arrived as
     // `a EFFECT`, `a INTERFACE`, `a ITEM` and `a OBJECT` — in the one paragraph written for the four
-    // targets that can quote it back. The article now comes from the category, so this walks all
-    // nine rather than the one the fixture happens to use.
+    // targets that can quote it back. The article now comes from the category, so this walks every
+    // category rather than the one the fixture happens to use.
     for (const category of SUBJECT_CATEGORIES) {
       const output = withOutput({ targetModel: 'GENERIC' });
       const contract = sectionOf(
@@ -574,7 +577,8 @@ describe('generatePrompt — the exclusion precedence, stated at both ends', () 
     // requires; a copy missing the compromise ban would leave the reduced, integrated or decorative
     // version that the delivered sheet actually came back with. The categories are where a half goes
     // missing unevenly, because each has its own exclusion list and its own inventory — and they are
-    // also the two arrangements of the numbering, since five of the nine put exclusions at 7.
+    // also the two arrangements of the numbering, since a category with no rig at all puts
+    // exclusions at 7 where a rigged one puts it at 8.
     for (const category of SUBJECT_CATEGORIES) {
       const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
       const contract = unwrapped(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT'));
@@ -2192,7 +2196,7 @@ describe('the section numbering the prompt cites itself by', () => {
   }
 
   it.each(SUBJECT_CATEGORIES)('runs 0, 1, 2, … with no hole on %s, at every rig it offers', (category) => {
-    // The reported failure: the rig section is conditional, and five of the nine categories have no
+    // The reported failure: the rig section is conditional, and eight of the twelve categories have no
     // rig at all, so every prompt they ever compiled ran `## 4. COMPONENT INVENTORY` straight into
     // `## 6. REQUIRED ASSEMBLY CAPABILITY`. Swept over the rig union rather than the category's own
     // list, because `resolveRigMode` is what a stored value from an older build arrives through.
@@ -2434,7 +2438,8 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       }
     };
 
-    // The axes are grouped rather than swept as one product: a full cross of all nine is fifteen
+    // The axes are grouped rather than swept as one product: a full cross of every category is
+    // fifteen
     // thousand prompts, and most of the pairs select nothing new. Which pairs *do* matter is a
     // property of the code, not a guess — the plans read the category, the mode, the set and the
     // index together, so those four are crossed; section 2 reads the style with the detail; and the

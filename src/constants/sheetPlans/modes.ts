@@ -12,6 +12,9 @@ import { itemDirectionalVariants, ITEM_PART_LIBRARY } from './item.ts';
 import { objectDirectionalVariants, OBJECT_CUTOUT_RIG, OBJECT_PART_LIBRARY } from './object.ts';
 import { TERRAIN_BLEND_SET, TERRAIN_FEATURE_LIBRARY } from './terrain.ts';
 import { vehicleDirectionalVariants, VEHICLE_CUTOUT_RIG, VEHICLE_PART_LIBRARY } from './vehicle.ts';
+import { PORTRAIT_EXPRESSION_LIBRARY } from './portrait.ts';
+import { ICON_SYMBOL_SET } from './icon.ts';
+import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
 
 /**
  * Which sheet each category can produce, and which of them it falls back to.
@@ -117,6 +120,25 @@ export const CATEGORY_SHEET_PLANS: Readonly<
     SINGLE_DIRECTION_POSE_LIBRARY: fixed(TERRAIN_FEATURE_LIBRARY),
     TILESET_MODULAR: fixed(TERRAIN_BLEND_SET),
   },
+  // One mode, and `sheetPlans/portrait.ts` argues the other three out one by one: a portrait's turn
+  // is the sitter's pose inside a fixed frame rather than a camera, nothing on a face rotates about a
+  // pivot, and a head does not butt against a copy of itself.
+  PORTRAIT: {
+    SINGLE_DIRECTION_POSE_LIBRARY: fixed(PORTRAIT_EXPRESSION_LIBRARY),
+  },
+  // One mode, for the reasons `sheetPlans/icon.ts` gives. The absent `TILESET_MODULAR` is the one
+  // worth naming here: an icon grid is cells sitting apart with clear margin between them, which is
+  // the opposite of pieces that butt against copies of themselves.
+  ICON: {
+    SINGLE_DIRECTION_POSE_LIBRARY: fixed(ICON_SYMBOL_SET),
+  },
+  // The fourth category to take the tileset, and the second whose repeat is along one axis rather
+  // than two: a parallax band loops against its own copy along the scroll direction. The layer
+  // library is the answer for the screens that never scroll.
+  BACKGROUND: {
+    SINGLE_DIRECTION_POSE_LIBRARY: fixed(BACKGROUND_LAYER_LIBRARY),
+    TILESET_MODULAR: fixed(BACKGROUND_PARALLAX_SET),
+  },
 };
 
 /**
@@ -144,6 +166,13 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   // the two that carries a cursor, a bar and a toggle, which is most of what a kit is asked for.
   INTERFACE: 'SINGLE_DIRECTION_POSE_LIBRARY',
   TERRAIN: 'TILESET_MODULAR',
+  // The only mode each has, so the fallback and the choice are the same thing for both.
+  PORTRAIT: 'SINGLE_DIRECTION_POSE_LIBRARY',
+  ICON: 'SINGLE_DIRECTION_POSE_LIBRARY',
+  // The parallax set rather than the layer library: a scrolling band is what "a background" means as
+  // a deliverable far more often than a single painted panel does, and it is the half of the pair
+  // that cannot be assembled by hand from the other.
+  BACKGROUND: 'TILESET_MODULAR',
 };
 
 /** Whether this category can produce this kind of sheet at all. */

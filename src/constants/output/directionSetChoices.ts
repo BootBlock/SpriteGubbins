@@ -31,7 +31,7 @@ const DIRECTION_SET_CHOICES: readonly OutputChoice<DirectionSet>[] = [
  * The direction-set half of what `directionalModeChoices` does for the sheet mode, and it exists for
  * the same reason: offering a category a facing its subject does not have is what put "Split into 3
  * sheets" one click away from a button and a ground tile, each run asking for a yaw neither of them
- * turns to. For seven of the nine categories this is the whole list.
+ * turns to. For seven of the twelve categories this is the whole list.
  */
 export function directionSetChoices(category: SubjectCategory): readonly OutputChoice<DirectionSet>[] {
   return DIRECTION_SET_CHOICES.filter((choice) => supportsDirectionSet(category, choice.value));
