@@ -55,6 +55,7 @@ describe('blendWeightedHistogram', () => {
     const shaded = imageFrom(9, 4, (x) => ({ r: 100 + x, g: 100 + x, b: 100 + x, a: 255 }));
     const histogram = blendWeightedHistogram(shaded);
 
+    expect(histogram.size).toBe(9);
     for (const weight of histogram.values()) expect(weight).toBe(4);
   });
 

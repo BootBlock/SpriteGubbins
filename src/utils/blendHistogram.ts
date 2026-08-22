@@ -43,8 +43,11 @@ import { pixelDistanceOf } from './pixelDistance.ts';
  * entirely of transitions does, and why it is the same thing it did before this pass existed.
  *
  * Pure, and bounded in what it allocates: three rows of the image in scaled OKLab, whatever the
- * sheet's height. A per-pixel plane would be sixty-seven megabytes at the ceiling this tab admits,
- * and the reading never looks further than one row either side.
+ * sheet's height. The reading never looks further than one row either side, and the whole-image
+ * alternative is not cheap — `oklabPlanes` holds three `Float64Array`s of one entry per pixel, which
+ * at this tab's 4096 × 4096 ceiling is four hundred megabytes. That is also why this converts rather
+ * than calling it: those planes fold coverage into the colour, taking a cleared pixel towards black,
+ * and the reading here has to keep the two apart.
  */
 export function blendWeightedHistogram(image: ImageData): ReadonlyMap<number, number> {
   const { width, height, data } = image;

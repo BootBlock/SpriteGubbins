@@ -37,7 +37,7 @@ export const PALETTE_COLOR_COUNTS: Readonly<Record<PaletteLimit, number | null>>
  * partway between the two beside it, and taking those as blends would down-weight the whole of a
  * shaded surface; a threshold on the *span* leaves them, because a shading step between adjacent
  * pixels is small and a region boundary is not. 16 was chosen from where the answer stops moving: 8
- * and 16 give the same palette on every fixture measured, while 32 is strict enough to miss most of
+ * and 16 give the same palette on both softened fixtures, while 32 is strict enough to miss most of
  * the fringes and gives back most of the defect — 17 of 24 art colours where 16 gives 22.
  */
 export const BLEND_EDGE_GAP = 16;
@@ -53,7 +53,7 @@ export const BLEND_EDGE_GAP = 16;
  * It also decides what the pass declines to touch, and declining is the safe direction. A pixel a
  * tenth of the way across a boundary is nearly the art colour it sits beside, so a slot spent on it
  * costs almost nothing; the blends worth suppressing are the ones near the middle, and they are far
- * from both ends by construction. 4 and 8 give the same palette on every fixture measured; 0 gives up
+ * from both ends by construction. 4 and 8 give the same palette on both softened fixtures; 0 gives up
  * one art colour of sixteen, which is the ends being taken.
  */
 export const BLEND_END_GAP = 4;
@@ -66,9 +66,18 @@ export const BLEND_END_GAP = 4;
  * between them when the pixel lies on the run joining the pair — and the slack is not a refinement of
  * it but the whole of what makes it fire. A real softening kernel is separable and two-dimensional,
  * so a pixel on a vertical edge carries a little of what was above and below it as well, and lands
- * *near* the run rather than on it: at zero slack the pass detects nothing at all and every fixture
- * comes back at its unweighted figure. 4, 8 and 16 are indistinguishable on all of them, so this sits
- * at the bottom of the plateau, which is the value that reads the fewest pixels as blends.
+ * *near* the run rather than on it: at zero slack the pass detects nothing at all and both softened
+ * fixtures come back at their unweighted figures. 4, 8 and 16 are indistinguishable on both, so this
+ * sits at the bottom of the plateau, which is the value that reads the fewest pixels as blends.
+ *
+ * **What it cannot see, and why that is left alone.** An sRGB blend is a straight run in sRGB and a
+ * slightly curved one in OKLab, and how far it bends depends on the two hues — the midpoint of a
+ * saturated red and a saturated blue sits 5.3 off the run joining them. That only arises where a
+ * boundary is softened over a *single* pixel, because the reading asks about a pixel's immediate
+ * neighbours: across the three-tap kernel a resampler actually leaves, each step's neighbours are the
+ * steps beside it and the run is short enough to be straight. Widening the slack to cover the
+ * one-pixel case changed no palette on any fixture, so it is not widened, and the cost of the miss is
+ * that such a colour keeps the vote it always had.
  */
 export const BLEND_STRAIGHTNESS = 4;
 
@@ -83,6 +92,13 @@ export const BLEND_STRAIGHTNESS = 4;
  * scale-invariant, a sheet that is nothing but transitions — a soft gradient with no flat region
  * anywhere — has every weight scaled by the same constant and is quantised exactly as it was before
  * this pass existed. Zero would make that sheet's whole histogram vanish.
+ *
+ * **A power of two, which is what keeps the palette exactly reproducible.** `wuQuantiser` promises
+ * the same image always yields the same palette, and it rests on every tie resolving the same way.
+ * A weight of 1/64 makes each colour's total a multiple of 1/64, and 16,777,216 pixels — the tab's
+ * ceiling — is 2³⁰ of those, comfortably inside the 2⁵³ where a `Float64Array` still counts exactly.
+ * So no sum here rounds, and two colours that weigh the same weigh *exactly* the same. A weight that
+ * was not a binary fraction would put that promise on the ordering of a floating-point sum.
  *
  * **1/64 is where the answer stops moving.** On both softened fixtures every value from 1/64 down to
  * 10⁻⁶ chooses the same palette; 1/16 recovers part of the loss and 1/4 recovers little. At the
