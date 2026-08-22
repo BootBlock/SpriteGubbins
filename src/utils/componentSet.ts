@@ -228,6 +228,19 @@ function renderGroup(group: ComponentGroup): string {
  * The anatomy comes *last*, and the text says so. Labels are banned by section 0, so grid position is
  * the only thing that identifies a component — appending keeps every base entry at the position the
  * plan promised, where interleaving would silently renumber everything after it.
+ *
+ * **`cite` is why this one value takes an argument the others do not.** Ten of the sheet plans' own
+ * strings cite a section by name — `[SEC:CAMERA]`, `[SEC:CONTRACT]` — and the compiler resolves such
+ * a citation over every value it authors itself. This value is not one of those: it is the app's own
+ * prose with the anatomy the reader *typed* appended to it, so citing over the finished string would
+ * resolve a marker in a name somebody entered and throw out of the compiler mid-render.
+ *
+ * So the whole of the authored half is cited and the reader's pieces are appended after. **Citing
+ * the inventory alone is not enough**, and looks like it is: the heading this function writes for the
+ * anatomy, the sentence about how those pieces are drawn and the reading-order line are all the
+ * app's words too, composed *below* the inventory. A `[SEC:…]` written into one of those would ship
+ * to the model literally, and nothing else would catch it — `assertBlocksResolved` runs before
+ * `substitute`, so it never sees a value's text at all.
  */
 export function componentBreakdownFor(
   category: SubjectCategory,
@@ -235,6 +248,7 @@ export function componentBreakdownFor(
   directions: DirectionSet,
   sheetIndex: number,
   additional: readonly AnatomyComponent[],
+  cite: (text: string) => string,
 ): string {
   const plan = sheetPlanFor(category, mode, directions, sheetIndex);
   const total = componentCountFor(category, mode, directions, sheetIndex, additional);
@@ -244,7 +258,7 @@ export function componentBreakdownFor(
 ${plan.groups.map(renderGroup).join('\n\n')}`;
   const facings = anatomyFacingsFor(category, mode, directions, sheetIndex);
   if (facings === null || additional.length === 0) {
-    return inventory;
+    return cite(inventory);
   }
 
   const entries = additional
@@ -276,12 +290,17 @@ appears.`;
   // a heading reading "Additional anatomy" over a missile pod is the character vocabulary reaching a
   // category that has none. The word "anatomy" went with it — what the sentence is actually claiming
   // is that these are separate components rather than painted-on detail, which is true of a turret.
-  return `${inventory}
+  // Every line above `entries` is the app's own, so the whole of it is cited in one go and the
+  // reader's own pieces are appended after — rather than the inventory alone being cited and the
+  // four strings composed here quietly falling outside it.
+  const authored = `${inventory}
 
 #### ${fieldLabelFor(category, 'additional_anatomy')} — ${String(anatomyCountAt(facings, additional))}
 
 ${drawn}
-They come last in reading order, after the ${String(planComponentCount(plan))} components above:
+They come last in reading order, after the ${String(planComponentCount(plan))} components above:`;
+
+  return `${cite(authored)}
 
 ${entries}`;
 }

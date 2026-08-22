@@ -36,7 +36,7 @@ join, the two forelimb shoulder joins and the join to the hindquarters, and carr
 limbs**: each join is a clean, capped socket, never a stump trailing into a limb. A hindquarters
 ends at the body join and the two hindlimb hip joins, and carries **no limbs** — and no tail, unless
 the inventory lists a tail as its own component. A trunk piece that arrives wearing any limb has
-merged entries the inventory lists separately, and breaks the count in section 0.`;
+merged entries the inventory lists separately, and breaks the count in section [SEC:CONTRACT].`;
 
 export const CREATURE_POSE_LIBRARY: SheetPlan = {
   name: 'Pose library',
@@ -93,7 +93,7 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
       {
         heading: null,
         intro: `One view of **one** head, **one** body and **one** hindquarters per facing: the same piece of
-geometry drawn at each object yaw section 3 lists, in that order. Separate designs, mirrored copies,
+geometry drawn at each object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies,
 or views facing the same way are all failures of this entry, however well drawn.`,
         entries: [
           viewsOf('Heads', 'anatomy', chunk),

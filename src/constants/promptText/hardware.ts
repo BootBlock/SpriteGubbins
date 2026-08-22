@@ -54,7 +54,7 @@ export function describePalette(palette: Palette): string {
  */
 function rule(palette: Palette): string {
   const nearest =
-    'Where section 1 names a colour this palette does not hold, use the nearest entry it does — never mix, tint or dither one to approximate it. The background field is the exception: it stays the key colour section 0 fixes, and is not drawn from this palette.';
+    'Where section [SEC:SUBJECT] names a colour this palette does not hold, use the nearest entry it does — never mix, tint or dither one to approximate it. The background field is the exception: it stays the key colour section [SEC:CONTRACT] fixes, and is not drawn from this palette.';
 
   if (palette.space.kind === 'FIXED') {
     const { entries, approximates } = palette.space;

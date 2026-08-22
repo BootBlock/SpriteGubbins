@@ -123,7 +123,7 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
       {
         heading: 'Directional core',
         intro: `One view of **one** wall bay and **one** roof section per facing: the same piece of geometry drawn
-at each object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing
+at each object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views facing
 the same way are all failures of this entry.`,
         entries: [viewsOf('Wall bays', 'structure', chunk), viewsOf('Roof sections', 'structure', chunk)],
       },

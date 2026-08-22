@@ -15,9 +15,9 @@ import type { SubjectCategory } from '../../types/subject.ts';
  */
 export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> = {
   CHARACTER:
-    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery, architectural modules, and any prop or equipment section 1 does not name.',
+    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery, architectural modules, and any prop or equipment section [SEC:SUBJECT] does not name.',
   CREATURE:
-    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery, architectural modules, riders, handlers and any harness section 1 does not name.',
+    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery, architectural modules, riders, handlers and any harness section [SEC:SUBJECT] does not name.',
   OBJECT:
     'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery, and any character, creature or hand interacting with the object.',
   ITEM: 'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery, and any character, creature or hand holding the item.',
@@ -126,7 +126,7 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // the inventory is about to list a panel frame is what stops a generator resolving the apparent
   // conflict by delivering a panel with no edge.
   INTERFACE:
-    'Every entry below is a piece of this one interface. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The frames, borders and panel edges it does list are components — the subject of the sheet, not the annotation section 0 forbids.',
+    'Every entry below is a piece of this one interface. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The frames, borders and panel edges it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.',
   TERRAIN:
     'Every entry below is a ground tile or a landform piece. An entry describing anatomy, a wall, a roof, a building module or a vehicle part does not belong to this sheet and is an error in this specification, not an instruction to follow.',
 };

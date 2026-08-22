@@ -229,17 +229,42 @@ export function sectionNumbers(template: string): SectionNumbers {
  * `[DEFINE:…]`, and refused for the same reason. The other failure, a name declared twice, is
  * {@link sectionNumbers}'s, since that is where the walk lives.
  *
+ * **It takes the walk rather than making one**, because the numbers are wanted in three places —
+ * here, by the app-authored values the compiler cites through {@link resolveCitations}, and by the
+ * model wrappers — and a function that re-derives its own is one that can come to disagree with the
+ * other two. {@link sectionNumbers} is where the walk lives, and it is the only place it happens.
+ *
  * **Run it after {@link applyConditionals}**, or a dropped section still takes a number, which is
  * the whole defect; and before {@link assertBlocksResolved}, which is what catches a marker
  * malformed enough to match neither pattern.
  */
-export function applySectionNumbers(template: string): string {
-  const numbers = sectionNumbers(template);
-  const resolve = (marker: string, name: string): string => String(numberOf(numbers, name, marker));
+export function applySectionNumbers(template: string, numbers: SectionNumbers): string {
+  return resolveCitations(
+    numbers,
+    template.replace(SECTION_DECLARATION, (marker, name: string) => String(numberOf(numbers, name, marker))),
+  );
+}
 
-  return template
-    .replace(SECTION_DECLARATION, (marker, name: string) => resolve(marker, name))
-    .replace(SECTION_REFERENCE, (marker, name: string) => resolve(marker, name));
+/**
+ * Resolve every `[SEC:…]` in one string, for prose the template does not hold.
+ *
+ * The citation half of {@link applySectionNumbers}, exported because the *values* the template is
+ * filled with cite sections too — fourteen strings in `constants/promptText/` and
+ * `constants/sheetPlans/` do — and {@link substitute} runs last, so a marker written into one of
+ * them would otherwise reach the model as literal template text.
+ *
+ * **It is applied to app-authored prose only, and the compiler is where that boundary is drawn.**
+ * Running it over the value record wholesale would resolve citations in the sixteen free-text
+ * subject fields as well, so a reader who typed `[SEC:NOPE]` into one would throw out of the
+ * compiler mid-render — the failure {@link assertBlocksResolved} sits before {@link substitute} to
+ * avoid. `generatePrompt` therefore resolves the values it authors itself and assigns the values
+ * carrying the reader's own text afterwards, untouched.
+ *
+ * One implementation with the template's own citations, so a section added anywhere moves the
+ * prompt body's citations and the constants' together.
+ */
+export function resolveCitations(numbers: SectionNumbers, text: string): string {
+  return text.replace(SECTION_REFERENCE, (marker, name: string) => String(numberOf(numbers, name, marker)));
 }
 
 /**
@@ -256,12 +281,12 @@ export function applySectionNumbers(template: string): string {
  * this prompt does not carry throws, for the reason a `[SEC:…]` of one does: `section undefined` in
  * front of the model is the failure, not the missing map entry.
  *
- * **The wrappers are not the only prompt text that hand-writes a section number, and this does not
- * reach the rest.** Thirteen strings in `constants/promptText/` and `constants/sheetPlans/` state
- * one too, and they are filled by {@link substitute}, which runs *last* — so a marker written into
- * one of them ships literally, and resolving citations over the values wholesale would throw on a
- * subject field a reader typed a marker into. Deriving those needs a decision about where the
- * app/user boundary sits in the value record, which is issue #96 rather than this function.
+ * **The prompt's own constants cite by name too, and they take a different route.** Fourteen strings
+ * in `constants/promptText/` and `constants/sheetPlans/` state a section, and they are filled by
+ * {@link substitute}, which runs *last* — so they carry a `[SEC:…]` marker that
+ * {@link resolveCitations} resolves as the compiler authors each value, rather than a call to this
+ * function. Same walk, same refusal; a wrapper is prose with no template around it, a constant is
+ * prose the template still has to interpolate.
  */
 export function citeSection(numbers: SectionNumbers, name: string): string {
   return String(numberOf(numbers, name, `section ${name}`));

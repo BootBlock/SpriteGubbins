@@ -92,7 +92,7 @@ function vehicleDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTupl
       {
         heading: 'Directional core',
         intro: `One view of **one** hull and **one** mount per facing: the same piece of geometry drawn at each
-object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing the
+object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views facing the
 same way are all failures of this entry.`,
         entries: [
           viewsOf('Hulls or fuselages', 'structure', chunk),
