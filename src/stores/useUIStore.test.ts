@@ -147,6 +147,53 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().isHistoryModalOpen).toBe(false);
   });
 
+  it('addresses a toast to the page unless it is told otherwise', () => {
+    useUIStore.getState().showToast('Prompt copied');
+    expect(useUIStore.getState().toastTarget).toBe('page');
+
+    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+    expect(useUIStore.getState().toastTarget).toBe('detached');
+  });
+
+  it('brings a notification back into the page when the surface showing it goes', () => {
+    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+
+    vi.advanceTimersByTime(TOAST_DURATION_MS - 1);
+    useUIStore.getState().recallToast();
+
+    // Re-raised rather than re-labelled: the page's live region never announced this, and the dwell
+    // it has left in the window it is leaving is not the dwell it needs where it is arriving.
+    expect(useUIStore.getState().toastMessage).toBe('Downloaded sheet-quantised.png');
+    expect(useUIStore.getState().toastTarget).toBe('page');
+    vi.advanceTimersByTime(TOAST_DURATION_MS - 1);
+    expect(useUIStore.getState().isToastLeaving).toBe(false);
+  });
+
+  it('leaves a notification already on its way out where it is', () => {
+    useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+    vi.advanceTimersByTime(TOAST_DURATION_MS);
+    expect(useUIStore.getState().isToastLeaving).toBe(true);
+
+    useUIStore.getState().recallToast();
+
+    // Nothing is served by pulling a card two thirds of the way off one screen back onto another at
+    // full opacity — its own timer takes it off within `TOAST_EXIT_MS`.
+    expect(useUIStore.getState().toastTarget).toBe('detached');
+    vi.advanceTimersByTime(TOAST_EXIT_MS);
+    expect(useUIStore.getState().toastMessage).toBeNull();
+  });
+
+  it('leaves a toast the page raised alone', () => {
+    useUIStore.getState().showToast('Saved custom preset');
+    const raised = useUIStore.getState().toastId;
+
+    useUIStore.getState().recallToast();
+
+    // Not re-raised, which would restart the dwell of a notification nothing has happened to.
+    expect(useUIStore.getState().toastId).toBe(raised);
+    expect(useUIStore.getState().toastTarget).toBe('page');
+  });
+
   it('shuts every other overlay when the settings dialog opens, and is shut by them', () => {
     // The fourth overlay, and the one that arrived after the invariant was written — which is
     // exactly the shape that gets half-applied. Both directions are checked: an overlay added to

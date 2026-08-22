@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useUIStore } from '../stores/useUIStore.ts';
+import { useShowToast } from './useShowToast.ts';
 
 /**
  * Handing a file to the browser to save, and saying so.
@@ -16,7 +16,7 @@ import { useUIStore } from '../stores/useUIStore.ts';
  * `src/utils/`.
  */
 export function useFileSave(): (filename: string, file: Blob, confirmation: string) => void {
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   return useCallback(
     (filename, file, confirmation) => {

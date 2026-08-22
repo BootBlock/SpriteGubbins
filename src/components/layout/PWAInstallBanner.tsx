@@ -1,4 +1,5 @@
 import { CHROME_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
@@ -18,7 +19,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
 export function PWAInstallBanner() {
   const installPrompt = useUIStore((state) => state.deferredPWAInstallPrompt);
   const setInstallPrompt = useUIStore((state) => state.setInstallPrompt);
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   if (installPrompt === null) return null;
 

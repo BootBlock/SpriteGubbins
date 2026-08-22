@@ -142,6 +142,64 @@ describe('boundaryMesh', () => {
     expect(boundaryMesh(flat, 8)).toEqual(regularMesh(32, 32, 8, { x: 0, y: 0 }));
   });
 
+  it('merges a leading band too narrow to be a cell into the cell after it', () => {
+    // The defect the bound exists for. The art sits one pixel in from the corner, so the walk's
+    // backward step stops at 1 and the axis used to open [0,1), [1,7), … — a band of one source
+    // pixel standing in the result exactly as wide as a cell of six. It is content, so it is not
+    // cropped; it joins the cell beside it, and the axis opens on a cell of seven.
+    const starts = [1, 7, 13, 19, 25, 31, 37, 43];
+    const sheet = sheetWithBoundaries(49, starts, starts);
+
+    const mesh = boundaryMesh(sheet, 6);
+
+    expect(mesh.x).toEqual([0, 7, 13, 19, 25, 31, 37, 43]);
+    expect(mesh.y).toEqual([0, 7, 13, 19, 25, 31, 37, 43]);
+  });
+
+  it('keeps a leading band that is wide enough to be a cell of its own', () => {
+    // The other side of the same line, and the reason the floor is absolute rather than a fraction of
+    // the grid: a margin the generator inset deliberately is content at any width, so three pixels
+    // stands as a cell of its own even though it is half of the pitch here.
+    const starts = [3, 9, 15, 21, 27, 33, 39, 45];
+    const sheet = sheetWithBoundaries(51, starts, starts);
+
+    const mesh = boundaryMesh(sheet, 6);
+
+    expect(mesh.x).toEqual([0, ...starts]);
+    expect(mesh.y).toEqual([0, ...starts]);
+  });
+
+  it('merges a trailing band too narrow to be a cell into the cell before it', () => {
+    // The far edge closes the last cell wherever the extent happens to fall, so the same one-pixel
+    // band arises there with no walk involved — and `downscaleNearest` cannot tell the two ends
+    // apart. The sheet is 50 wide against boundaries at 0, 6, … 48, leaving [48,50); the last cut
+    // goes and the edge closes a cell of eight.
+    const starts = [0, 6, 12, 18, 24, 30, 36, 42, 48];
+    const sheet = sheetWithBoundaries(50, starts, starts);
+
+    const mesh = boundaryMesh(sheet, 6);
+
+    expect(mesh.x).toEqual([0, 6, 12, 18, 24, 30, 36, 42]);
+    expect(mesh.y).toEqual([0, 6, 12, 18, 24, 30, 36, 42]);
+  });
+
+  it('gives a whole short axis to one cell when both its end bands are too narrow', () => {
+    // The bound compounds where there is only one full cell to merge into: a 8-pixel axis at a grid
+    // of 4 with the art inset two pixels has bands of two at each end, and both join the cell
+    // between them. One output pixel for the axis is the honest answer — the alternative is three,
+    // two of which would stand for two source pixels each, which is the defect this exists to stop.
+    // It needs an axis under `grid + 2 × shortest` to arise, so no sheet in `test_sprites/` does.
+    const starts = [2, 6];
+    const sheet = sheetWithBoundaries(8, starts, starts);
+
+    const mesh = boundaryMesh(sheet, 4);
+
+    expect(mesh.x).toEqual([0]);
+    expect(mesh.y).toEqual([0]);
+    // The upper bound the pitch invariant states: a cell plus a band at each end, never `2 × grid`.
+    expect(8).toBeLessThanOrEqual(4 + Math.max(1, Math.floor(4 / 3)) + 2 * (Math.min(3, 4 - 1) - 1));
+  });
+
   it('degenerates to one cell per pixel at a grid of 1', () => {
     const sheet = sheetWithBoundaries(8, [0, 4], [0, 4]);
     const mesh = boundaryMesh(sheet, 1);

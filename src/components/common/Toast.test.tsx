@@ -45,6 +45,31 @@ describe('Toast', () => {
     expect(liveRegion()).toHaveTextContent('Prompt copied to the clipboard');
   });
 
+  it('holds its region open for a message addressed to another surface', () => {
+    render(<Toast />);
+
+    act(() => {
+      useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+    });
+
+    // The quantiser's detached preview has a `Toast` of its own, and the store holds one message —
+    // so this one showing it too would announce every download twice, once on a surface the reader
+    // is not looking at. The region still stands, because a region that appears with its text is
+    // not reliably announced and this document may be given something of its own a moment later.
+    expect(liveRegion()).toBeInTheDocument();
+    expect(liveRegion()).toBeEmptyDOMElement();
+  });
+
+  it('shows a message addressed to the surface it was mounted for', () => {
+    render(<Toast target="detached" />);
+
+    act(() => {
+      useUIStore.getState().showToast('Downloaded sheet-quantised.png', 'detached');
+    });
+
+    expect(liveRegion()).toHaveTextContent('Downloaded sheet-quantised.png');
+  });
+
   it('can be dismissed before its time is up', async () => {
     const user = userEvent.setup();
     render(<Toast />);

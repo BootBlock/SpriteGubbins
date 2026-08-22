@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../constants/ui.ts';
 import type { BeforeInstallPromptEvent } from '../types/pwa.ts';
-import type { AppTab } from '../types/ui.ts';
+import type { AppTab, ToastTarget } from '../types/ui.ts';
 
 /**
  * The shell: which view is showing, what the toast says, which overlay is open, and whether the
@@ -13,6 +13,17 @@ import type { AppTab } from '../types/ui.ts';
 export interface UIState {
   readonly activeTab: AppTab;
   readonly toastMessage: string | null;
+  /**
+   * Which document the current message belongs in.
+   *
+   * A notification follows the surface that raised it, and the app can have two surfaces at once:
+   * the quantiser portals its comparison panel — download button included — into a window of its
+   * own, and a confirmation for a press made there belongs there. Every `Toast` reads this and
+   * renders only what is addressed to the document it is mounted in, which is the same shape
+   * {@link ALL_OVERLAYS_CLOSED} uses to keep one overlay showing at a time: one piece of state
+   * decides, rather than two surfaces each deciding for themselves and both being right.
+   */
+  readonly toastTarget: ToastTarget;
   /**
    * How many toasts have been raised, ever.
    *
@@ -57,8 +68,33 @@ export interface UIState {
   /**
    * Show a message, replacing any current one. It announces for {@link TOAST_DURATION_MS}, then
    * fades for {@link TOAST_EXIT_MS} before clearing itself.
+   *
+   * `target` says which document it belongs in, and defaults to the page. React components take it
+   * from {@link useShowToast}, which reads the surface they are rendered in rather than asking each
+   * call site to know — so a control moved into the detached preview is addressed correctly without
+   * being told. The default is what the stores themselves rely on: four of them raise their own
+   * failures from outside React entirely, and there is no surface but the page they could be raised
+   * from.
    */
-  showToast(message: string): void;
+  showToast(message: string, target?: ToastTarget): void;
+  /**
+   * Bring a notification addressed to the detached preview back into the page.
+   *
+   * The window that was showing it can go at any moment — the reader presses Return, closes it
+   * themselves, or navigates away from the quantiser — and the message would otherwise be left
+   * addressed to a surface that no longer exists, which is the same silence this addressing was
+   * added to stop. `DetachedPreview` calls this as it unmounts.
+   *
+   * It re-raises rather than re-labelling, so the dwell starts again. That is deliberate on both
+   * counts: the page's live region never announced this message, so it needs to be announced there
+   * rather than appearing silently, and the countdown drawn across the card would otherwise show a
+   * full bar over whatever was left of the old timer.
+   *
+   * A message already **leaving** is left alone. Its own timer removes it within
+   * {@link TOAST_EXIT_MS}, and nothing is served by pulling a notification two thirds of the way off
+   * one screen back onto another at full opacity.
+   */
+  recallToast(): void;
   /**
    * Take the toast off the screen now, whichever phase it is in.
    *
@@ -137,9 +173,10 @@ function cancelToastTimer(): void {
   toastTimer = undefined;
 }
 
-export const useUIStore = create<UIState>((set) => ({
+export const useUIStore = create<UIState>((set, get) => ({
   activeTab: 'studio',
   toastMessage: null,
+  toastTarget: 'page',
   toastId: 0,
   isToastLeaving: false,
   ...ALL_OVERLAYS_CLOSED,
@@ -155,9 +192,14 @@ export const useUIStore = create<UIState>((set) => ({
     set({ activeTab });
   },
 
-  showToast: (message) => {
+  showToast: (message, target = 'page') => {
     cancelToastTimer();
-    set((state) => ({ toastMessage: message, toastId: state.toastId + 1, isToastLeaving: false }));
+    set((state) => ({
+      toastMessage: message,
+      toastTarget: target,
+      toastId: state.toastId + 1,
+      isToastLeaving: false,
+    }));
 
     // The dwell, then the fade. `isToastLeaving` goes up while the message is still mounted, which
     // is the only way the surface has something left to animate; the second timer is what finally
@@ -174,6 +216,12 @@ export const useUIStore = create<UIState>((set) => ({
   dismissToast: () => {
     cancelToastTimer();
     set({ toastMessage: null, isToastLeaving: false });
+  },
+
+  recallToast: () => {
+    const { toastMessage, toastTarget, isToastLeaving, showToast } = get();
+    if (toastTarget !== 'detached' || toastMessage === null || isToastLeaving) return;
+    showToast(toastMessage, 'page');
   },
 
   // Opening one overlay closes the others. Every one of them is a `<dialog showModal()>`, and

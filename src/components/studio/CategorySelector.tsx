@@ -1,7 +1,7 @@
 import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
+import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { SelectField } from '../common/SelectField.tsx';
 
@@ -25,7 +25,7 @@ const CATEGORY_CHOICES = SUBJECT_CATEGORIES.map((value) => ({
 export function CategorySelector() {
   const category = useSubjectStore((state) => state.category);
   const setCategory = useSubjectStore((state) => state.setCategory);
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   return (
     <SelectField
