@@ -1979,11 +1979,19 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       }
     };
 
-    // The axes are swept independently rather than as one product. Each selects its own prose —
-    // the plans read the category, mode, set and index; section 2 reads the style and detail; the
-    // wrapper reads only the target — so the cross terms add fifteen thousand prompts and no new
-    // line of text. Both emit flags stay on, because the manifest section is where the one
-    // legitimately straight-quoted line lives.
+    // The axes are grouped rather than swept as one product: a full cross of all nine is fifteen
+    // thousand prompts, and most of the pairs select nothing new. Which pairs *do* matter is a
+    // property of the code, not a guess — the plans read the category, the mode, the set and the
+    // index together, so those four are crossed; section 2 reads the style with the detail; and the
+    // target is crossed with both the category and the style, because a wrapper is not the
+    // self-contained prose it looks like. `modelWrapperText/flux.ts` interpolates
+    // `CATEGORY_ASSEMBLY[category].statement` and `RENDER_STYLE_SURFACE[style].statement`, and the
+    // two negative blocks draw their terms from the same records — so pinning the target loop to one
+    // category and one style left four of the nine assembly sentences and seven of the ten surface
+    // sentences reaching the assertion only by whichever preset happened to pair them with Flux.
+    //
+    // Both emit flags stay on, because the manifest section is where the one legitimately
+    // straight-quoted line lives.
     const EMITTING = { emitManifest: true, emitPromptFeedback: true } as const;
 
     for (const category of SUBJECT_CATEGORIES) {
@@ -2015,7 +2023,14 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       }
     }
     for (const targetModel of TARGET_MODEL_IDS) {
-      collect(generatePrompt('CHARACTER', SUBJECT, withOutput({ ...EMITTING, targetModel })));
+      for (const category of SUBJECT_CATEGORIES) {
+        collect(
+          generatePrompt(category, defaultSubjectFor(category), withOutput({ ...EMITTING, targetModel })),
+        );
+      }
+      for (const renderStyle of RENDER_STYLES) {
+        collect(generatePrompt('CHARACTER', SUBJECT, withOutput({ ...EMITTING, targetModel, renderStyle })));
+      }
     }
     // The presets as well: their subject values are app-authored copy that reaches section 1.
     for (const preset of PRESETS) {
