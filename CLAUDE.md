@@ -569,7 +569,7 @@ in every respect *but* case is a failure. Deliberately not membership: sixty-two
 free text no pool offers, and `Domed lid over a banded body` is sentence case because it is a worked
 example's own wording rather than a name the app suggests.
 
-**Three rules of thumb**
+**Four rules of thumb**
 
 - If a token *doesn't* exist for a genuinely new semantic role, **add the token** to the
   `@theme` block in [src/index.css](src/index.css) rather than hard-coding the value at the
@@ -584,10 +584,30 @@ example's own wording rather than a name the app suggests.
   prop via inline `style`. **It is the only component that may**, and the way to show any other
   colour is to hand it this one: `PaletteField`'s swatch strip passes a bare `#0F380F`, which
   `parseColorFromText` resolves to itself, rather than reaching for a second inline `style`.
-  Two constants files hold raw hex literals for the same reason — they are **domain data**, the
-  vocabulary the prompt compiler understands, not app styling: `COLOR_HEX_MAP` in
-  `src/constants/colors.ts`, which is the colour names a subject field may use, and
-  `src/constants/palettes/`, which is the colours real hardware could display.
+  Files under `src/constants/` hold raw hex for the same reason, and **the exemption is what the
+  colour *is*, not which file it sits in**: a colour the app **names but never paints with** is
+  **domain data** — the vocabulary the prompt compiler understands — and it cannot be a token,
+  because a token is a value this app renders and each of these is a value it *talks about*. Six
+  paths hold them, and they are one rule applied six times rather than six exemptions:
+
+  - `COLOR_HEX_MAP` in `src/constants/colors.ts` — the colour names a subject field may use.
+  - `src/constants/palettes/` — the colours real hardware could display.
+  - `src/constants/categories/` — the colour options each category's own fields offer.
+  - `src/constants/presets/` — the pooled values a preset pins.
+  - `src/constants/output/choices.ts` and `src/constants/promptText/sheet.ts` — the background key,
+    named to the reader and stated verbatim in the compiled prompt.
+
+  **A new colour option goes beside the field that offers it**, in that category's own pool — not
+  in `colors.ts`, which is the shared vocabulary `parseColorFromText` resolves rather than a drawer
+  for every colour in the app. That is the rule the guidance copy already follows, for the reason it
+  gives: an option list and the thing that names it drift apart the moment they are filed apart.
+  [tests/raw-colour-literals.test.ts](tests/raw-colour-literals.test.ts) holds the boundary. It
+  blanks the comments out of every file under `src/` — most of the hex in this repository is prose
+  explaining a key colour — and fails on a literal outside those six, so a component reaching for
+  one is caught when it is written rather than in review. A colocated `*.test.ts` is outside it
+  too, because a fixture pixel never renders; the component that pixel exercises is still scanned,
+  which is the half that decides whether the app took a token. It also fails if one of the six
+  stops carrying any, which is what stops the list rotting into a permission nobody uses.
 - **The two files that paint into pixel data are the third, and they are exempt on a different
   ground.** The two above are colours that are not the app's; `src/constants/differenceRamp.ts` holds
   four that **are** — the page ground, `emerald`, `gold` and `rose` — and

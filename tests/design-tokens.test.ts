@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { scannableSources } from './sourceFiles';
 
 /**
  * The design-token contract.
@@ -177,23 +178,6 @@ const TYPE_SCALE = [
   ['--text-xs', 13],
   ['--text-sm', 15],
 ] as const;
-
-/**
- * Every source file under `src/` that can carry a Tailwind class name.
- *
- * Deliberately not just `.tsx`. A class string does not have to sit in JSX to reach the bundle —
- * Tailwind reads whatever its content scan reads, so a `.ts` module hoisting a shared `className`
- * constant (this repo already has three) counts, and so does `index.css` itself, where a class
- * written even inside a comment is a candidate the build emits. Scanning components alone would
- * leave the one place a size could hide from the guard: `src/constants/`, which is exactly where
- * CLAUDE.md's directory rule sends a hoisted constant.
- */
-function scannableSources(): string[] {
-  const root = resolve(process.cwd(), 'src');
-  return readdirSync(root, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile() && /\.(tsx?|css)$/.test(entry.name))
-    .map((entry) => resolve(entry.parentPath, entry.name));
-}
 
 describe('design tokens', () => {
   it('parsed the wheel out of the constant it is checking against', () => {
