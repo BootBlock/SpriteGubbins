@@ -32,11 +32,14 @@ import { lumaOfChannels } from './lineVote.ts';
  * black is dark-on-dark, and the prior votes to grow the highlights and erase the contour. Measured
  * on the reference sheet at a grid of 6, the term put **96%** of the artwork on the bright side —
  * and the pass it was steering did not merely help less, it *lost ground*: thin-line survival at a
- * thickness of 2 came to **13.7%** against the **29.5%** the same sheet reaches with the pass
+ * thickness of 2 came to **13.4%** against the **29.6%** the same sheet reaches with the pass
  * switched off. It was deleting the linework it exists to rescue. Reweighting only slides the figure
- * (13.7% at the reference's own 10:3, 16.0% at its 9:4, 23.8% at 5:5, 43.3% at 2:8, and 54.4% with
+ * (13.4% at the reference's own 10:3, 15.6% at its 9:4, 23.1% at 5:5, 45.0% at 2:8, and 54.1% with
  * the term gone), so it is removed outright rather than tuned to a number nobody could defend. What
- * is left has no free parameter at all.
+ * is left has no free parameter at all. Each rung is the term restored as
+ * `ground × (median − 127.5) + reach × ((median − min) − (max − median))` in place of the score
+ * below, run through the whole pipeline, and read on the two populations `outlineExpansion`'s own
+ * docblock defines.
  *
  * **Lightness here is the app's own Rec. 601 luma**, `lumaOfChannels`, and not OKLab. The two answer
  * different questions and the quantiser already keeps them apart: OKLab is where colour *distances*
