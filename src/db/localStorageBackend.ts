@@ -7,6 +7,7 @@ import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import { parseHistoryRow, parseImportedPreset, parseQuantisePresetRow } from './rows.ts';
 import { parseJson } from './readers.ts';
+import { HISTORY_STORAGE_BUDGET, evictionLengths, trimHistoryToBudget } from './historyEviction.ts';
 import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
 import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
@@ -19,8 +20,14 @@ import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
  * the backend the app genuinely runs on whenever one of them holds. It must work, and it must be
  * tested.
  *
- * Storage is read and rewritten whole on every operation. That is fine at this scale — a couple
- * of hundred prompts — and it keeps the fallback simple enough to be obviously correct.
+ * Storage is read and rewritten whole on every operation, which keeps the fallback simple enough
+ * to be obviously correct.
+ *
+ * The prompt history is the one collection that does not fit at the size the rest of the app
+ * assumes. `HISTORY_LIMIT` is a count and the quota is a size, and a couple of hundred compiled
+ * prompts is several times what a browser will store — so history is written through
+ * {@link writeHistory}, which trims it to a budget and evicts oldest-first when storage refuses it
+ * anyway. See `historyEviction.ts` for why the count alone wedged the store.
  */
 export class LocalStorageBackend implements PersistenceBackend {
   readonly kind = 'localstorage' as const;
@@ -95,10 +102,46 @@ export class LocalStorageBackend implements PersistenceBackend {
     };
   }
 
+  /**
+   * Store the history, keeping as much of it as the browser will actually take.
+   *
+   * `rows` is newest-first, so every prefix of it is the newest *n* prompts and evicting is a
+   * matter of shortening it. The budget decides the first attempt; a refusal past that is storage
+   * telling us the budget was optimistic here, and the answer is to try again with fewer entries
+   * rather than to lose the prompt the reader just asked for.
+   *
+   * Nothing is written until an attempt succeeds, so a history too large to store at any length
+   * leaves what was already there untouched and rejects — the reader keeps the prompts they had.
+   */
+  private writeHistory(rows: readonly Record<string, unknown>[]): Promise<void> {
+    const affordable = trimHistoryToBudget(rows);
+    if (affordable.length === 0) {
+      return Promise.reject(
+        new Error(
+          `A single prompt is larger than the ${HISTORY_STORAGE_BUDGET} characters the history may occupy.`,
+        ),
+      );
+    }
+
+    let refusal: unknown;
+    for (const length of evictionLengths(affordable.length)) {
+      try {
+        this.storage.setItem(STORAGE_KEYS.promptHistory, JSON.stringify(affordable.slice(0, length)));
+        return Promise.resolve();
+      } catch (error) {
+        refusal = error;
+      }
+    }
+
+    return Promise.reject(
+      new Error(`Storage refused the write to "${STORAGE_KEYS.promptHistory}".`, { cause: refusal }),
+    );
+  }
+
   addHistoryLog(log: PromptHistoryLog): Promise<void> {
     const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
     const next = [log, ...existing.filter((entry) => entry.id !== log.id)].slice(0, HISTORY_LIMIT);
-    return this.write(STORAGE_KEYS.promptHistory, next.map(LocalStorageBackend.toRow));
+    return this.writeHistory(next.map(LocalStorageBackend.toRow));
   }
 
   listHistoryLogs(): Promise<PromptHistoryLog[]> {
