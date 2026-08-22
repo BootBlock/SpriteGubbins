@@ -1654,9 +1654,10 @@ export const QUANTISE_SCALE_GUIDANCE = {
  * What each of the three estimates found, in the words the surfaces beside the number use.
  *
  * **One record rather than a sentence written at each surface**, because the number is described in
- * four places — the badge, the candidate the panel offers, the empty result pane and the live
- * region — and every one of them used to say “from the spacing of this sheet’s edges” whichever
- * reading had answered. That describes `EDGE_PERIOD` alone, and it is the reading that answers on
+ * four places — the badge, the panel’s own paragraph, the empty result pane and the live region —
+ * and every one of them used to say “from the spacing of this sheet’s edges” whichever reading had
+ * answered. (The candidate button beside them says only “estimated”, and has never had room for
+ * more.) That describes `EDGE_PERIOD` alone, and it is the reading that answers on
  * none of the eight sheets in `test_sprites/`, so on real generator output the number was credited
  * to the one reading that did not produce it. The wording follows the reading now, and it follows it
  * from here so that four surfaces cannot drift apart again.
@@ -1669,7 +1670,7 @@ export const ESTIMATED_SCALE_READING: Record<EstimatedMeasurement, { source: str
   EDGE_PERIOD: {
     source: 'from the spacing of its softened edges',
     evidence:
-      'Its edges do keep to one typical spacing, though — exactly, or drifting a pixel or two about it — and that spacing is the scale offered above.',
+      'Its edges do keep to one typical spacing, though — exactly, or drifting a pixel about it — and that spacing is the scale offered above.',
   },
   REPEAT_DISTANCE: {
     source: 'from the distance its detail repeats over',

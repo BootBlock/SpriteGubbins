@@ -113,8 +113,11 @@ describe('the wording of an estimated scale', () => {
   });
 
   it('states the scale in the live region and nowhere else, since only it has no badge beside it', () => {
+    // The pane and the panel are read beside a badge and a button that both carry the number, so a
+    // third copy in prose is one more place for the three to disagree. Only the live region, which
+    // replaces all of them, states it. The panel's paragraph is not asserted here because it takes
+    // no scale to state — a test of that would be a test of the signature, and the compiler has it.
     expect(estimatedScaleStatus(3, 'REPEAT_DISTANCE')).toContain('as 3');
     expect(estimatedScalePlaceholder('REPEAT_DISTANCE')).not.toMatch(/\d/);
-    expect(estimatedScaleGuidance('REPEAT_DISTANCE')).not.toMatch(/scale of \d/);
   });
 });

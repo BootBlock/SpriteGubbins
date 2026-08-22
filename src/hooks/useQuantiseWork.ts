@@ -27,7 +27,7 @@ export interface QuantiseWork {
   readonly facts: SheetFacts | null;
   /**
    * The scale in force — the user's, or an `EXACT` reading of the sheet behind it. `null` when there
-   * is neither, **which an `ESTIMATED` reading does not resolve**: see the note below.
+   * is neither, **which an estimated reading does not resolve**: see the note below.
    */
   readonly grid: PixelGrid | null;
   /**
@@ -76,9 +76,10 @@ export interface QuantiseWork {
  * have to run the rule itself, and the rule would then live in two places.
  *
  * **That rule has a second half, and it lives here too**: only an `EXACT` reading becomes the grid in
- * force. An `ESTIMATED` one is read through the resampling that destroyed the sheet's edges, so it is
- * offered by `GridControls` for the reader to click and never adopted on their behalf — which is why
- * a sheet can be fully surveyed, carry a scale, and still have nothing computed for it.
+ * force. Each of the three estimates carries a tolerance — see {@link ScaleMeasurement} for what each
+ * of them measured — so one is offered by `GridControls` for the reader to click and never adopted on
+ * their behalf, which is why a sheet can be fully surveyed, carry a scale, and still have nothing
+ * computed for it.
  *
  * `key` and `reduction` must keep their identity between renders — memoise them, as `QuantiseTab`
  * does. A fresh object every render restarts the debounce every render, and the transform never runs.
@@ -103,10 +104,10 @@ export function useQuantiseWork(
   // scale, which may not have one — in which case there is no result to compute, and the panel says
   // so.
   //
-  // **An `ESTIMATED` scale is deliberately not adopted here.** It is read through the resampling
-  // that destroyed the sheet's edges, so it carries a tolerance the exact reading does not, and a
-  // scale nobody chose and nobody was asked to check would reduce the sheet by a factor the panel
-  // above is at that moment describing as an estimate. `GridControls` offers it to click instead,
+  // **An estimated scale is deliberately not adopted here.** Each of the three readings that can
+  // produce one carries a tolerance the exact reading does not, and a scale nobody chose and nobody
+  // was asked to check would reduce the sheet by a factor the panel above is at that moment
+  // describing as an estimate. `GridControls` offers it to click instead,
   // which is the same standing this tab gives the target size: a candidate, never a default.
   const grid = gridOverride ?? (facts?.scale?.measurement === 'EXACT' ? facts.scale.grid : null);
 

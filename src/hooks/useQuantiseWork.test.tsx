@@ -35,7 +35,7 @@ const REDUCTION = { kind: 'MAX_COLORS', maxColors: 32 } as const;
 const FACTS: SheetFacts = { scale: { grid: 8, measurement: 'EXACT' }, colors: 1024 };
 const NO_SCALE: SheetFacts = { scale: null, colors: 1024 };
 /** A sheet whose scale was read through its softening — a candidate, never the grid in force. */
-const ESTIMATED: SheetFacts = { scale: { grid: 8, measurement: 'REPEAT_DISTANCE' }, colors: 1024 };
+const ESTIMATE: SheetFacts = { scale: { grid: 8, measurement: 'REPEAT_DISTANCE' }, colors: 1024 };
 
 function resultOf(side: number): QuantiseResult {
   return {
@@ -328,10 +328,10 @@ describe('useQuantiseWork', () => {
     // reduce the sheet by a factor nobody chose and nobody was asked to check, while the panel
     // beside the preview described it as an estimate. `GridControls` offers it to click instead.
     const { result, worker } = drive({ source: sheet('resampled.png'), gridOverride: null });
-    answer({ id: worker.lastId('load'), kind: 'loaded', facts: ESTIMATED });
+    answer({ id: worker.lastId('load'), kind: 'loaded', facts: ESTIMATE });
     settle();
 
-    expect(result.current.facts).toEqual(ESTIMATED);
+    expect(result.current.facts).toEqual(ESTIMATE);
     expect(result.current.grid).toBeNull();
     expect(worker.of('quantise')).toHaveLength(0);
     expect(result.current.busy).toBe(false);
@@ -342,7 +342,7 @@ describe('useQuantiseWork', () => {
     // chosen. Once it is, it is an override like any other and the transform runs at it.
     const source = sheet('resampled.png');
     const { result, rerender, worker } = drive({ source, gridOverride: null });
-    answer({ id: worker.lastId('load'), kind: 'loaded', facts: ESTIMATED });
+    answer({ id: worker.lastId('load'), kind: 'loaded', facts: ESTIMATE });
     settle();
 
     rerender({ source, gridOverride: 8 });

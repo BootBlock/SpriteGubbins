@@ -28,8 +28,8 @@ interface GridControlsProps {
   /**
    * The grid actually in force — the user's, or an `EXACT` reading of the sheet behind it.
    *
-   * An `ESTIMATED` reading is **not** among the things that can be in force: it reaches the box only
-   * by being clicked in the row of candidates below. See `useQuantiseWorker`, which is where the
+   * An estimated reading is **not** among the things that can be in force: it reaches the box only
+   * by being clicked in the row of candidates below. See `useQuantiseWork`, which is where the
    * rule is applied.
    */
   readonly grid: PixelGrid | null;
@@ -167,8 +167,9 @@ export function GridControls({ facts, target, suggested, grid, colorPlan, onGrid
  *
  * **The two that remain are not the same kind of sentence, and that is why one of them goes away.**
  * `none` is *instructions* — what to type, what a grid of 1 does, what to do about a margin — and
- * every word of it stays true however the reader answers, so it stays up. `estimated` is a
- * statement about the **state**: it says the scale above has not been applied and asks for a click.
+ * every word of it stays true however the reader answers, so it stays up. The estimated paragraph
+ * is a statement about the **state**: it says the scale above has not been applied and asks for a
+ * click.
  * The moment a grid is in force that has stopped being true, and leaving it up would have the panel
  * asking for something the reader had already done, beside a box holding the number and a preview
  * showing the result.
