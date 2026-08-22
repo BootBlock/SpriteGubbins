@@ -166,7 +166,19 @@ export function App() {
           fragment jump scrolls to any element, but it only hands focus to one that can hold it — so
           without this, the next Tab carries on from the link and lands back in the chrome.
         */}
-        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">
+        {/*
+          The padding is `--page-gutter` rather than `p-4 md:p-6`, because it is not only this
+          element's padding: all three sticky columns leave the same room above themselves, the two
+          capped ones leave it below as well, and `DetachedPreview` pads its own window with it. One
+          declaration in `index.css` carries the responsive step, and nothing here can drift from
+          it — a second padding utility beside the token is what `tests/sticky-column-offset.test.ts`
+          refuses.
+        */}
+        <main
+          id="main-content"
+          tabIndex={-1}
+          className="mx-auto w-full max-w-7xl flex-1 p-[var(--page-gutter)]"
+        >
           {/*
             The page's only `<h1>`, and the top of an outline every view then continues at `<h2>`.
             It is here rather than in the four views for two reasons: it is the one place that can

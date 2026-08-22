@@ -71,7 +71,16 @@ export function PresetLibrary() {
 
   return (
     <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-      <div className="glass-panel space-y-3 rounded-2xl border border-foundry-700 p-4 shadow-xl lg:sticky lg:top-24 lg:col-span-3">
+      {/*
+        The third sticky column in the app, and it clears the chrome the way the other two do —
+        `--sticky-column-top`, derived from the height `Header` measures. It carried a 6rem spacing
+        step instead: 96px, against a bar measured in Edge at 130px from 1100px through 1300px and 78px
+        by 1500px. So the panel sat 34px underneath the chrome across most of the range this variant
+        opens in, where its own top cannot be scrolled to, and cleared it by too much at the top of
+        that range. It needs no height cap, because the search box and the collection list are a
+        handful of rows rather than a preview that can outgrow the viewport.
+      */}
+      <div className="glass-panel space-y-3 rounded-2xl border border-foundry-700 p-4 shadow-xl lg:sticky lg:top-[var(--sticky-column-top)] lg:col-span-3">
         <PresetSearchField
           value={query}
           onChange={setQuery}
