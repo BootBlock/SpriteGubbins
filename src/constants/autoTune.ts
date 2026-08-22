@@ -21,17 +21,32 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * incumbent is in the set at all.
  *
  * **Measured on the reference sheet** (`test_sprites/armour.png`, 1254², a grid of 6, no keying, no
- * colour budget, every dial at its opening position), driven in Edge: three crops of 240 px, 35
- * positions run — the ink stages skip, because the reading settles on `K_CENTROID` — and **7.8
- * seconds** from the press to the dials moving. That is the figure the guidance's "a few seconds"
- * is stated against, and the one a change to any ladder here has to be judged by.
+ * colour budget, every dial at its opening position), by running `autoTune` over it directly: three
+ * crops of 240 px and 35 positions run — the ink stages skip, because the reading settles on
+ * `DOMINANT`, which blends no ink — ending at a likeness of 0.6087 for 55 colours where the
+ * opening position it started from scored 0.6088 for 1038. That last pair is the elbow's whole job in one figure:
+ * a nineteenth of the colours for a ten-thousandth of the likeness. **The count of positions is what
+ * a change to any ladder here has to be judged by**, not a wall clock — the same code over the same
+ * sheet takes several times longer on one host than another, so the guidance's "a few seconds" is
+ * stated against the 35 rather than against any figure a stopwatch produced.
  *
- * **The sweep chose `K_CENTROID` on that sheet where a reader would likely choose `INK_WEIGHTED`,
- * and that is the objective doing what it says rather than a defect.** A resampled sheet has soft
- * edges, and an average genuinely is closer to a soft edge than a hard one is — so a likeness score
- * prefers the reading that averages, on any sheet whose contours were softened on the way back from
- * the generator. `AUTO_TUNE_GUIDANCE.settled` says so to the reader, because the alternative is a
- * reader taking the answer as a verdict on artwork whose whole value is in its linework.
+ * **The sweep chose the *cheapest* of the three readings on that sheet rather than the most faithful,
+ * and that is the elbow doing what it says rather than a defect.** Of the fifteen positions the
+ * reading stage tries, `INK_WEIGHTED` at expansion 0 reproduces the crops most closely at 0.6460 and
+ * `K_CENTROID` at expansion 0 comes next at 0.6430, both spending 1217 colours; `DOMINANT` at
+ * expansion 0 is the least faithful of the three at 0.6088 and spends 1038. The knee of that frontier
+ * is `DOMINANT`, so a reader whose artwork lives on its linework has to ask for `INK_WEIGHTED`
+ * themselves — which is what `AUTO_TUNE_GUIDANCE.settled` tells them to try.
+ *
+ * **The averaging bias that guidance warns about is real on this sheet even though it did not win
+ * here, and it wins outright on another.** A resampled sheet has soft edges, and an average genuinely
+ * is closer to a soft edge than a hard one is — which is why both averaging readings out-score
+ * `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back from the
+ * generator. On `test_sprites/cyborg_healer.png` (a grid of 4, 31 positions, since its fill cleanup
+ * settles at off and takes the passes stage with it) `K_CENTROID` at expansion 0 leads on **both**
+ * counts — 0.6621 for 1465 colours against `INK_WEIGHTED`'s 0.6571 for 1489 — so the sweep settles
+ * there. That is the sheet the warning stands on, and the reason it is worded as a bias to check
+ * rather than as what this tab will do.
  */
 
 /**
