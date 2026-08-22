@@ -1,5 +1,6 @@
 import type { AtlasConfig, AtlasMetrics, EngineMetadataJSON, SpriteFit } from '../types/atlas.ts';
 import type { AspectRatio } from '../types/output.ts';
+import { NOMINAL_SHEET_SIZE } from '../constants/sheetCanvas.ts';
 import { textureCostsFor } from './atlasBudget.ts';
 
 /**
@@ -10,22 +11,35 @@ import { textureCostsFor } from './atlasBudget.ts';
 /**
  * How much wider than tall the component grid should be, per sheet aspect ratio.
  *
- * A 16:9 sheet wants more columns than rows, a 9:16 sheet fewer. Square and ultrawide both take
- * 1: the grid is laid out inside a *square texture* (atlases are square), so an ultrawide sheet
- * changes how the generator arranges the artwork, not how the atlas packs it.
+ * This is not a coefficient with a taste in it: {@link calculateAtlasMetrics} takes `sqrt(n × bias)`
+ * columns and `n / columns` rows, and those divide out to `bias` — so the number is the *target*
+ * columns-to-rows ratio the grid is aimed at. (Only the target: both figures are rounded up to whole
+ * columns and rows, and at 43 components an ultrawide sheet's 2.34 lands on an 11 × 4 grid, which is
+ * 2.75. A grid is a small number of whole cells and cannot be asked for more precision than that.)
+ * Aiming that ratio at the shape of the sheet therefore fixes the number exactly — it is the sheet's
+ * width over its height, and there is nothing left to choose.
  *
- * A bias away from 1 costs cell size on a square texture, and `usableShare` below is what makes
- * that cost visible rather than leaving it as a number nobody can account for.
+ * So it reads {@link NOMINAL_SHEET_SIZE}, which already holds each aspect's own extent, rather than
+ * listing a figure per aspect. A figure per aspect is a number a reader has to check against a shape
+ * held somewhere else, and the two ways that goes wrong are both silent: a shape gets a bias the
+ * ordering of the shapes contradicts, and a shape added to the union gets whatever the list happens
+ * to say about it. A derivation has no fourth number to forget.
+ *
+ * The extent it reads has its short edge floored, so 21:9 arrives as 1024 × 438 and the bias comes
+ * out at 2.338 rather than 2.333 — a fifth of a percent wide of the shape the identifier names, and
+ * the widest that slack gets across the four. It is far below what a whole number of columns can
+ * express, so it is inherited rather than corrected for: a second rounding rule here would be a
+ * number to keep in step with the one in `sheetCanvas.ts`, which is what this derivation exists to
+ * avoid.
+ *
+ * A bias away from 1 costs cell size on a square texture, and `usableShare` below is what makes that
+ * cost visible rather than leaving it as a number nobody can account for. Ultrawide pays the most:
+ * 43 components on a 2048 texture go into 11 × 4 at a 32% share, against a square sheet's 7 × 7 at
+ * 83%. That is the sheet shape the reader chose, reported rather than quietly flattened.
  */
-const WIDTH_BIAS: Readonly<Record<AspectRatio, number>> = {
-  WIDE_16_9: 1.5,
-  TALL_9_16: 0.75,
-  SQUARE_1_1: 1,
-  ULTRAWIDE_21_9: 1,
-};
-
 export function widthBiasFor(aspectRatio: AspectRatio): number {
-  return WIDTH_BIAS[aspectRatio];
+  const { width, height } = NOMINAL_SHEET_SIZE[aspectRatio];
+  return width / height;
 }
 
 /**

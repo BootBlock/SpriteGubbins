@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { calculateAtlasMetrics } from '../../utils/atlasCalculator.ts';
+import { calculateAtlasMetrics, widthBiasFor } from '../../utils/atlasCalculator.ts';
 import { AtlasGridPreview } from './AtlasGridPreview.tsx';
 
 /**
@@ -14,7 +14,7 @@ function renderPreview() {
     canvasSize: 2048,
     padding: 4,
     componentCount: 43,
-    widthBias: 1.5,
+    widthBias: widthBiasFor('WIDE_16_9'),
   });
   render(<AtlasGridPreview metrics={metrics} canvasSize={2048} componentCount={43} />);
   return metrics;
