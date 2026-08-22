@@ -48,14 +48,16 @@ let nextId = 0;
  * it, and by the time it starts nobody is waiting for it.
  *
  * Driven in Edge on `test_sprites/armour.png` (1254 × 1254) at a grid of 6, every other dial at its
- * default: four steps of one slider 400 ms apart ran **four** transforms and settled 4082 ms after the
- * last step, against **three** and 2117 ms with this slot in place. Three rather than two because the
- * slot holds the next question and not the running one: at roughly a second a pass, the first step was
- * still running when the second and third arrived — so the second was overwritten and never ran — and
- * the third had started by the time the fourth arrived. The four steps came back as outline expansions
- * 1, 2, 3 and 4 before, and 1, 3 and 4 after. A pass that has started cannot be cancelled, because
- * there is no yield point inside `quantiseImage` to notice a newer call at, and putting one there would
- * make a pure function aware of the thread it happens to run on.
+ * default, stepping the outline slider four times 400 ms apart. Without the slot, four runs of four:
+ * every position computed, settling 3407 ms, 4082 ms and 6345 ms after the last step. With it, **two**
+ * transforms in three of four runs and three in the other — the position they started from and the one
+ * they stopped on — settling in 1524–2117 ms.
+ *
+ * **Two is the floor and the count varies above it**, because the slot holds the next question and not
+ * the running one: a pass that has started cannot be cancelled, so how many run depends on how the pass
+ * duration falls against the step spacing. The one run of three caught a step arriving just after a
+ * queued pass had begun. There is no yield point inside `quantiseImage` to notice a newer call at, and
+ * putting one there would make a pure function aware of the thread it happens to run on.
  *
  * `QUANTISE_DEBOUNCE_MS` does not reach any of this. It suppresses the intermediate states of a number
  * being *typed*, which arrive faster than 250 ms apart; a slider step outlives it and is posted.
