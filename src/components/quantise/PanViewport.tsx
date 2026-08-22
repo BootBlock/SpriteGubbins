@@ -47,8 +47,8 @@ const NO_OVERFLOW: Overflow = { x: false, y: false };
  */
 export function PanViewport({ label, viewportRef, children }: PanViewportProps) {
   // This component's own handle on the box, kept beside the caller's callback rather than instead of
-  // it: the observation below needs the element every commit, and a callback only fires when it
-  // changes. Memoised, so React is not detaching and re-attaching the ref on every render.
+  // it: the observation below is established from an effect, and an effect is not where a ref
+  // callback fires. Memoised, so React is not detaching and re-attaching the ref on every render.
   const own = useRef<HTMLDivElement>(null);
   const attach = useCallback(
     (element: HTMLDivElement | null) => {
@@ -65,11 +65,14 @@ export function PanViewport({ label, viewportRef, children }: PanViewportProps) 
   const [holdsFocus, setHoldsFocus] = useState(false);
   const isReachable = isPannable || holdsFocus;
 
-  // No dependency array, so the observation is re-established after every commit. `children` is a
-  // `ReactNode`, which this component cannot depend on, and the element inside it is *replaced* — not
-  // merely resized — when `ImageComparison` swaps its placeholder `<p>` for the `<canvas>` a result
-  // brings. Re-establishing covers that: a `ResizeObserver` delivers an entry as soon as it starts
-  // observing, so re-observing whatever the children now are is also a re-measure of them.
+  // Two observers, each established once. `children` is a `ReactNode` this component cannot depend
+  // on, and the element inside it is *replaced* — not merely resized — when `ImageComparison` swaps
+  // its placeholder for the `<canvas>` a result brings, so the child list is watched rather than the
+  // effect re-run: a `MutationObserver` points the one `ResizeObserver` at whatever the children now
+  // are, and a `ResizeObserver` delivers an entry as soon as it starts observing, so pointing it at a
+  // new child is also a measure of it. An observation re-established on every commit would put a
+  // disconnect, an allocation and a forced synchronous layout into every render of the pane — two of
+  // which are mounted at once, four in wipe mode, and one of which renders twice per drag.
   useLayoutEffect(() => {
     const element = own.current;
     if (element === null) return;
@@ -78,20 +81,39 @@ export function PanViewport({ label, viewportRef, children }: PanViewportProps) 
     // the box's. Borders and a scrollbar that has appeared are already in it, so there is nothing left
     // to be wrong about where an engine differs. Both sides are integer-rounded, so an overflow of
     // less than a pixel reads as none — which is the answer worth having either way.
-    const observer = new ResizeObserver(() => {
+    const sizes = new ResizeObserver(() => {
       const x = element.scrollWidth > element.clientWidth;
       const y = element.scrollHeight > element.clientHeight;
-      // The same answer must be the same object, or React re-renders, the effect above re-observes,
-      // the fresh observer reports again — and the component renders once a frame for as long as it
-      // is mounted, having changed nothing.
+      // The same answer must be the same object, or React re-renders for a change nobody made.
       setOverflow((current) => (current.x === x && current.y === y ? current : { x, y }));
     });
-    observer.observe(element);
-    for (const child of element.children) observer.observe(child);
-    return () => {
-      observer.disconnect();
+    // The box alone would not do: it is a frame sized by the page rather than by the artwork, so a
+    // canvas growing inside it at a new zoom is a resize only the child reports. The set is which
+    // children are observed, so a swap lets go of the one that left rather than holding it detached.
+    sizes.observe(element);
+    const watched = new Set<Element>();
+    const syncChildren = () => {
+      for (const child of watched) {
+        if (child.parentNode === element) continue;
+        sizes.unobserve(child);
+        watched.delete(child);
+      }
+      for (const child of element.children) {
+        if (watched.has(child)) continue;
+        sizes.observe(child);
+        watched.add(child);
+      }
     };
-  });
+    syncChildren();
+
+    const childList = new MutationObserver(syncChildren);
+    childList.observe(element, { childList: true });
+
+    return () => {
+      sizes.disconnect();
+      childList.disconnect();
+    };
+  }, []);
 
   return (
     <div

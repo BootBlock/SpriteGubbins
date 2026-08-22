@@ -16,18 +16,24 @@ import { PanViewport } from './PanViewport.tsx';
 let deliverObservation: () => void = () => undefined;
 
 /**
- * The stub records what it was pointed at and whether it was let go of, because both are promises the
- * component makes and neither is visible in the DOM. The effect has no dependency array, so a fresh
- * observer replaces this one after every commit — `latest` is therefore the live one, and the only one
- * whose observations are still in force.
+ * The stub records what it was pointed at, what it was let go of, and how many of it were built — all
+ * three are promises the component makes, and none of them is visible in the DOM.
+ *
+ * The count is the one worth explaining. The effect that establishes the observation sits on the
+ * pane's hot path: the component renders under a drag, under every dial the reader moves, and under
+ * the observer's own callback. So the effect holds an empty dependency array and points a single
+ * observer at whatever the children become, and `constructed` is what holds it to that.
  */
 class StubResizeObserver {
   static latest: StubResizeObserver | null = null;
+  static constructed = 0;
   readonly observed: Element[] = [];
+  readonly released: Element[] = [];
   isDisconnected = false;
 
   constructor(private readonly callback: ResizeObserverCallback) {
     StubResizeObserver.latest = this;
+    StubResizeObserver.constructed += 1;
     deliverObservation = () => {
       this.callback([], this);
     };
@@ -35,13 +41,16 @@ class StubResizeObserver {
   observe(target: Element) {
     this.observed.push(target);
   }
-  unobserve() {}
+  unobserve(target: Element) {
+    this.released.push(target);
+  }
   disconnect() {
     this.isDisconnected = true;
   }
 }
 
 beforeEach(() => {
+  StubResizeObserver.constructed = 0;
   vi.stubGlobal('ResizeObserver', StubResizeObserver);
 });
 
@@ -157,8 +166,8 @@ describe('PanViewport', () => {
     );
     const canvas = screen.getByRole('img', { name: 'The sheet as it arrived' });
 
-    // The box alone would not do: it is capped at `max-h-96` and never changes size, so a canvas
-    // growing inside it at a new zoom is a resize only the child ever reports.
+    // The box alone would not do: it is a frame sized by the page rather than by the artwork, so a
+    // canvas growing inside it at a new zoom is a resize only the child reports.
     const observer = StubResizeObserver.latest;
     expect(observer?.observed).toEqual([canvas.parentElement, canvas]);
 
@@ -166,6 +175,60 @@ describe('PanViewport', () => {
     // disconnected it would hold the whole subtree for as long as the page is open.
     unmount();
     expect(observer?.isDisconnected).toBe(true);
+  });
+
+  it('builds one observer for the life of the pane, however often it renders', () => {
+    const element = viewport();
+    expect(StubResizeObserver.constructed).toBe(1);
+
+    // Three ordinary renders of the pane, none of them touching the children: the focus the drag
+    // takes, the focus it gives back, and the overflow the observer itself reports. An observation
+    // re-established on each of these costs a disconnect, an allocation and a forced synchronous
+    // layout — per pane, per render, and twice per drag.
+    act(() => {
+      element.focus();
+    });
+    act(() => {
+      element.blur();
+    });
+    measureAs(element, { x: 100, y: 100 }, 100);
+    act(() => {
+      deliverObservation();
+    });
+
+    expect(StubResizeObserver.constructed).toBe(1);
+    expect(StubResizeObserver.latest?.isDisconnected).toBe(false);
+  });
+
+  it('follows the content when it is replaced, without rebuilding the observer', async () => {
+    const { rerender } = render(
+      <Harness>
+        <p>Quantise a sheet to see it here.</p>
+      </Harness>,
+    );
+    const placeholder = screen.getByText('Quantise a sheet to see it here.');
+    const box = placeholder.parentElement;
+    const observer = StubResizeObserver.latest;
+    expect(observer?.observed).toEqual([box, placeholder]);
+
+    // The case the empty dependency array has to keep covering: `ImageComparison` swaps the
+    // placeholder for the canvas a result brings, and the child is *replaced* rather than resized. A
+    // `MutationObserver` is what notices, so the assertions wait a microtask for it rather than reading straight back.
+    rerender(
+      <Harness>
+        <canvas role="img" aria-label="The sheet as it arrived" />
+      </Harness>,
+    );
+    await act(async () => {
+      await Promise.resolve();
+    });
+    const canvas = screen.getByRole('img', { name: 'The sheet as it arrived' });
+
+    expect(StubResizeObserver.constructed).toBe(1);
+    expect(observer?.observed).toEqual([box, placeholder, canvas]);
+    // The departed child is let go of rather than held: an observation on a detached element keeps
+    // the whole subtree alive for as long as the pane is mounted.
+    expect(observer?.released).toEqual([placeholder]);
   });
 
   it('takes the focus its arrow keys need, and cancels the press that would select the image', () => {
