@@ -197,20 +197,20 @@ describe('ImageComparison', () => {
 
   it('asks for a click, not a number, when a scale was estimated and left unapplied', () => {
     // The empty states are told apart by what the reader has to *do*, and only one of them wants a
-    // number typed. An estimate is offered above and waiting to be clicked, so the "type one"
-    // wording would send a reader looking for something the panel had already handed them — and
-    // reads as the estimate having failed.
+    // number typed. An estimate is already offered and waiting to be clicked, so the "type one"
+    // wording would send a reader looking for something the grid panel had already handed them —
+    // and reads as the estimate having failed.
     show(null, undefined, false, { grid: 8, measurement: 'ESTIMATED' }, null);
 
-    expect(screen.getByText(/Click it above to align the sheet to it/)).toBeInTheDocument();
+    expect(screen.getByText(/Click it to align the sheet to it/)).toBeInTheDocument();
     expect(screen.queryByText(/No pixel scale was measured/)).toBeNull();
   });
 
   it('points at the error, rather than asking for a scale, when one is already in force', () => {
     // The third cause of an empty pane, and the one where every instruction about *choosing* a scale
     // is wrong: 8 is in the box and the transform still produced nothing, which only a failure
-    // explains — and the tab renders that failure directly above. Saying "type one in the box above"
-    // here tells the reader to do the thing they have just done.
+    // explains — and the tab renders that failure at the head of the controls. Saying "type one into
+    // the Pixel grid box" here tells the reader to do the thing they have just done.
     show(null, undefined, false, { grid: 8, measurement: 'EXACT' }, 8);
 
     expect(screen.getByText(/could not be quantised at the scale in force/)).toBeInTheDocument();

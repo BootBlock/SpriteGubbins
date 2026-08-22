@@ -38,6 +38,20 @@ import { SymmetryControls } from '../quantise/SymmetryControls.tsx';
  * A tab rather than a modal: this is a workspace — an image, two previews at four zoom levels, a
  * grid control and a download — and the app's densest dialog is already a third of that surface.
  *
+ * **The controls scroll and the previews stay**, once a sheet is loaded and the viewport is wide
+ * enough for the split. The tab grew from four panels to ten, and every one of them stood above the
+ * comparison it changes — so by the time a reader reached the frame-alignment dial, the canvases
+ * that would tell them whether moving it helped were a screen and a half above. The controls take
+ * five columns of twelve and the previews the other seven, which is the studio's arrangement with
+ * the width shared differently: there, both columns hold a `SelectField` and the even split is what
+ * has to clear the label budget, whereas here all three selects are on the left and the width the
+ * right column does not need for one goes to the canvases instead. `--breakpoint-quantise` derives
+ * the 1224px that leaves, and states the arithmetic; below it the tab stacks as it always did.
+ *
+ * The guide and the drop zone stay full width above the split, and the split itself is inside the
+ * sheet guard, because a 5/12 column holding a drop zone beside seven columns of nothing would be a
+ * worse layout than the one this replaced.
+ *
  * The state is only what cannot be derived: which image, which grid, and whether the background key
  * comes out and from how far. Everything the transform says about them lives on a **worker** — see
  * `useQuantiseWork`, and the measurements behind that decision in `src/workers/quantiseWorker.ts`.
@@ -185,7 +199,7 @@ export function QuantiseTab() {
   );
 
   return (
-    <div className="animate-view-fade-in mx-auto max-w-6xl space-y-6">
+    <div className="animate-view-fade-in space-y-6">
       <header className="space-y-1">
         <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Quantise a returned sheet</h2>
         <p className="max-w-3xl text-xs leading-relaxed text-ink-muted">
@@ -217,86 +231,121 @@ export function QuantiseTab() {
       <ImageDropZone acceptFile={acceptFile} currentName={source?.name ?? null} onClear={clear} />
 
       {source !== null && (
-        <>
-          {error !== null && (
-            <p
-              role="alert"
-              className="rounded-2xl border border-rose/40 bg-rose/10 p-4 text-xs leading-relaxed text-rose"
-            >
-              {error}
-            </p>
-          )}
+        /*
+          The split, and it is inside the sheet guard on purpose: with no image loaded the tab is a
+          paragraph and a drop zone, and a 5/12 column holding the drop zone beside seven columns of
+          nothing is a worse layout than the one it replaced.
 
-          {/* Above every panel it governs, and inside the sheet guard with them: it steps the dials
-              back through the positions they have been in, and with no sheet loaded there are no
-              dials on screen for a step to be about. */}
-          <DialHistoryControls />
+          `items-start` is what makes the sticky column possible at all — without it the grid
+          stretches both columns to the taller one's height, and an element already as tall as its
+          container has nowhere to stick to.
+        */
+        <div className="grid grid-cols-1 items-start gap-6 quantise:grid-cols-12">
+          <div className="space-y-6 quantise:col-span-5">
+            {error !== null && (
+              <p
+                role="alert"
+                className="rounded-2xl border border-rose/40 bg-rose/10 p-4 text-xs leading-relaxed text-rose"
+              >
+                {error}
+              </p>
+            )}
 
-          <GridControls
-            facts={facts}
-            target={target}
-            suggested={suggested}
-            grid={grid}
-            colorPlan={colorPlan}
-            onGridChange={setGridOverride}
-          />
-          {/* Under the grid it depends on and above every dial it moves — see `AutoTuneControls`,
-              which says why both halves of that placement matter. */}
-          <AutoTuneControls image={source.image} settings={settings} />
-          {/* The panel is handed the same `keying` the pipeline was, rather than working it out again
-              from the two settings behind it — one rule, one place. The share is the transform's own
-              answer, so it is `null` until there is a transform, which is the same condition the
-              comparison below shows its placeholder for. */}
-          <KeyingControls keying={keying} keyedShare={quantised?.result.keyedShare ?? null} busy={busy} />
-          <PaletteLockControls
-            resultImage={quantised?.result.image ?? null}
-            sheetName={source.name}
-            studioSetting={colorPlan.studioSetting}
-            superseded={colorPlan.superseded}
-            busy={busy}
-          />
-          <SpriteControls sprites={quantised?.result.sprites ?? null} target={target} busy={busy} />
-          {/* Directly under the sprite panel, because it is a reading *of* that reading: an axis is
-              scored inside a sprite's own bounds, so what this panel can say is decided by what the
-              one above found. It is inside the same sheet guard for the same reason as the rest. */}
-          <SymmetryControls
-            symmetry={quantised?.result.symmetry ?? null}
-            sprites={quantised?.result.sprites ?? null}
-            busy={busy}
-          />
-          {/* Beside the symmetry panel and for the same reason: it has nothing to say until sprites
-              have been separated, and its guidance sends a reader back up to the panel above when
-              they have not been. */}
-          <DuplicateControls
-            sprites={quantised?.result.sprites ?? null}
-            duplicates={quantised?.result.duplicates ?? null}
-            snapped={quantised?.result.snapped ?? false}
-            busy={busy}
-          />
-          {/* Third of the readings taken over the segmentation, and last because it is the only one
-              whose subject is a *row* rather than a sprite: what it can say is decided by what the
-              three panels above found, and by the sheet those panels may already have rewritten. */}
-          <FrameAlignmentControls
-            sprites={quantised?.result.sprites ?? null}
-            strips={quantised?.result.strips ?? null}
-            busy={busy}
-          />
-          {/* Last of the panels, and below the dials rather than above them: it is the only one
-              whose subject is the reader's own way of working rather than this sheet, so it reads as
-              a place to *put* what the controls above arrived at. Inside the sheet guard with the
-              rest — a collection of dial positions is nothing to offer someone who has not dropped
-              an image yet, and there would be no dials on screen for Save to be about. */}
-          <QuantisePresetControls />
-          <ImageComparison
-            sourceName={source.name}
-            source={source.image}
-            sourceColors={facts?.colors ?? null}
-            scale={facts?.scale ?? null}
-            grid={grid}
-            quantised={quantised}
-            busy={busy}
-          />
-        </>
+            {/* Above every panel it governs, and inside the sheet guard with them: it steps the dials
+                back through the positions they have been in, and with no sheet loaded there are no
+                dials on screen for a step to be about. */}
+            <DialHistoryControls />
+
+            <GridControls
+              facts={facts}
+              target={target}
+              suggested={suggested}
+              grid={grid}
+              colorPlan={colorPlan}
+              onGridChange={setGridOverride}
+            />
+            {/* Under the grid it depends on and above every dial it moves — see `AutoTuneControls`,
+                which says why both halves of that placement matter. */}
+            <AutoTuneControls image={source.image} settings={settings} />
+            {/* The panel is handed the same `keying` the pipeline was, rather than working it out again
+                from the two settings behind it — one rule, one place. The share is the transform's own
+                answer, so it is `null` until there is a transform, which is the same condition the
+                comparison beside it shows its placeholder for. */}
+            <KeyingControls keying={keying} keyedShare={quantised?.result.keyedShare ?? null} busy={busy} />
+            <PaletteLockControls
+              resultImage={quantised?.result.image ?? null}
+              sheetName={source.name}
+              studioSetting={colorPlan.studioSetting}
+              superseded={colorPlan.superseded}
+              busy={busy}
+            />
+            <SpriteControls sprites={quantised?.result.sprites ?? null} target={target} busy={busy} />
+            {/* Directly under the sprite panel, because it is a reading *of* that reading: an axis is
+                scored inside a sprite's own bounds, so what this panel can say is decided by what the
+                one above found. It is inside the same sheet guard for the same reason as the rest. */}
+            <SymmetryControls
+              symmetry={quantised?.result.symmetry ?? null}
+              sprites={quantised?.result.sprites ?? null}
+              busy={busy}
+            />
+            {/* Beside the symmetry panel and for the same reason: it has nothing to say until sprites
+                have been separated, and its guidance sends a reader back up to the panel above when
+                they have not been. */}
+            <DuplicateControls
+              sprites={quantised?.result.sprites ?? null}
+              duplicates={quantised?.result.duplicates ?? null}
+              snapped={quantised?.result.snapped ?? false}
+              busy={busy}
+            />
+            {/* Third of the readings taken over the segmentation, and last because it is the only one
+                whose subject is a *row* rather than a sprite: what it can say is decided by what the
+                three panels above found, and by the sheet those panels may already have rewritten. */}
+            <FrameAlignmentControls
+              sprites={quantised?.result.sprites ?? null}
+              strips={quantised?.result.strips ?? null}
+              busy={busy}
+            />
+            {/* Last of the panels, and below the dials rather than above them: it is the only one
+                whose subject is the reader's own way of working rather than this sheet, so it reads as
+                a place to *put* what the controls above arrived at. Inside the sheet guard with the
+                rest — a collection of dial positions is nothing to offer someone who has not dropped
+                an image yet, and there would be no dials on screen for Save to be about. */}
+            <QuantisePresetControls />
+          </div>
+
+          {/*
+            The previews, pinned. Everything the reader turns is in the column beside this one, and
+            before the split they were all above it: ten panels of dials, and then the two canvases
+            those dials change, a screen and a half further down. Tuning meant scrolling away from
+            the only thing that says whether the tuning helped.
+
+            The offsets are the studio's, and they are two pairs that each have to agree — the top
+            clears the chrome, and the height cap gives that offset back plus room at the bottom.
+            The chrome is not one height: the header wraps to two rows below `xl`, so an offset
+            written once would tuck the toolbar under the header in the 1224–1279px band and leave a
+            hole above it everywhere else. `xl` sits above this tab's own breakpoint, so both bands
+            exist here exactly as they do in the studio.
+
+            `overflow-y-auto` is what makes the cap safe rather than tidy. A sticky element taller
+            than its cap keeps its top pinned, so whatever hangs past the bottom cannot be scrolled
+            to at all — on a short window that would be the second pane and the caption under it.
+            The column scrolls instead. The pan viewports inside keep their own scrolling, and the
+            lifted tooltip surfaces re-pin against this column the way they already do the studio's:
+            `useAnchoredSurface` listens for `scroll` on the document in the capture phase precisely
+            because an anchor may sit inside a scrolling panel.
+            */}
+          <div className="quantise:sticky quantise:top-34 quantise:col-span-7 quantise:max-h-[calc(100dvh-10rem)] quantise:overflow-y-auto xl:top-24 xl:max-h-[calc(100dvh-7rem)]">
+            <ImageComparison
+              sourceName={source.name}
+              source={source.image}
+              sourceColors={facts?.colors ?? null}
+              scale={facts?.scale ?? null}
+              grid={grid}
+              quantised={quantised}
+              busy={busy}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

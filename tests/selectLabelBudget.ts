@@ -7,10 +7,11 @@
  * telling a first-time user which option is the standard one. Twelve options across seven studio
  * selects shipped that way.
  *
- * Two tests read this, which is why it is a module of its own rather than a constant inside one of
+ * Three tests read this, which is why it is a module of its own rather than a constant inside one of
  * them. `select-option-labels.test.ts` holds the labels to the budget; `studio-column-width.test.ts`
- * holds the *layout* to it. Neither half is worth anything alone — a budget nothing is measured
- * against is a comment, and a column sized for a budget nobody writes to is a coincidence.
+ * and `quantise-column-width.test.ts` hold the two split *layouts* to it, through the shared
+ * derivation in `columnSplit.ts`. Neither half is worth anything alone — a budget nothing is
+ * measured against is a comment, and a column sized for a budget nobody writes to is a coincidence.
  */
 
 /**

@@ -258,9 +258,49 @@
    * cushioned, because it rests on the same 8px advance the budget does: cushion one and the other
    * goes stale silently. Re-derive it whenever the page cap, the grid or the panel padding moves —
    * `tests/studio-column-width.test.ts` recomputes it from those very classes and fails if this
-   * token no longer reaches.
+   * token no longer reaches. The quantiser splits too and lands elsewhere — see
+   * `--breakpoint-quantise` below, which is the same budget divided differently rather than this
+   * figure reused.
    */
   --breakpoint-studio: 65rem;
+
+  /*
+   * The width at which the quantiser may split into two columns, derived the same way and landing
+   * somewhere else — the studio's figure is not transferable, and copying it would have been wrong
+   * in both directions.
+   *
+   * The quantiser is a workspace rather than a form: ten control panels stand above the two
+   * previews they are changing, so tuning a dial means scrolling away from the thing the dial does.
+   * The answer is the studio's — a scrolling control column beside a sticky preview column — but
+   * the split is **5/7 rather than even**, because only one of the two columns holds a
+   * `SelectField`. Three panels do (`DownscaleControls` inside `GridControls`, `SymmetryControls`
+   * and `FrameAlignmentControls`), and all three are in the control column; the preview column
+   * holds one panel of canvases, a wrapping toolbar and no select at all. So the budget binds the
+   * narrower column here, where in the studio it binds both — and 5/7 is what that buys. Splitting
+   * a page always costs the previews width, and they end up narrower than the full-width panel they
+   * replace; the asymmetry is how much of that cost is bought back, and an even split would have
+   * spent 68px of it on a column with nothing to spend it on.
+   *
+   * Derived, at the same 8px `font-mono` advance:
+   *
+   * - 50 characters plus the control's own 42px of chrome → **442px**, as above;
+   * - the panel's 34px (`p-4` either side and its 1px border) → a **476px** column;
+   * - `grid-cols-12` with `gap-6` gives a `col-span-5` child `(5C − 168)/12` of the page's content
+   *   width `C`, so C ≥ 1176px;
+   * - `main` is `max-w-7xl` with `md:p-6`, so C is the viewport less 48px → **1224px**.
+   *
+   * The tab therefore spends the whole of `main`'s cap rather than the `max-w-6xl` it used to hold
+   * itself to: at 6xl the content tops out at 1104px, and a 5/7 split could never reach the budget
+   * at any viewport. Below this width the tab stacks, which is the layout it has always had.
+   * `tests/quantise-column-width.test.ts` recomputes the figure from those same classes.
+   *
+   * **A panel that becomes a column stops being described by a viewport breakpoint**, and the
+   * comparison panel's own two-up grid is where that bit: `lg:` was reporting a 1400px page while
+   * the box it governed was 674px. It is a container query now, bounded by the 642px this
+   * breakpoint gives the preview column at the breakpoint itself. Anything else laid out inside
+   * either column has the same problem waiting for it.
+   */
+  --breakpoint-quantise: 76.5rem;
 
   /*
    * Motion. Named for what each is for, not how it looks: `fade-in` mounts a panel, `pulse-glow`

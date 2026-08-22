@@ -63,7 +63,7 @@ export function secondCaption(mode: PreviewMode, quantised: Quantised | null, bu
   if (quantised === null) {
     return (
       <span className={busy ? 'text-neon' : 'text-gold'}>
-        {busy ? 'Quantised · working…' : 'Quantised · set a pixel grid above'}
+        {busy ? 'Quantised · working…' : 'Quantised · set a pixel grid'}
       </span>
     );
   }

@@ -24,7 +24,7 @@ interface ImageComparisonProps {
    *
    * Needed because "no result yet" has causes that call for opposite instructions: no scale was
    * found at all, so one has to be typed — or one was **estimated** and deliberately not adopted, so
-   * it is waiting to be clicked. Telling a reader to type a number the panel above is already
+   * it is waiting to be clicked. Telling a reader to type a number the grid panel is already
    * offering them is how a working feature reads as a broken one.
    */
   readonly scale: SheetScale | null;
@@ -251,9 +251,24 @@ export function ImageComparison({
       {shown === 'WIPE' ? (
         <WipePanes first={first} second={second} busy={busy} at={wipeAt} onMove={setWipeAt} />
       ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <ComparisonPane {...first} />
-          <ComparisonPane {...second} busy={busy} />
+        /*
+          The query container: `@[38rem]` below measures this box, not the viewport — and that
+          distinction is what the two panes now turn on. This panel used to span the whole page, so a
+          viewport breakpoint described its width closely enough; it is now a column of a split, and
+          `lg:` was reporting a page 1400px wide while the box it governed was 674px. Nothing looked
+          broken, because 1400 and 674 fall the same side of it — the class had simply stopped
+          measuring the thing it decides.
+
+          38rem is bounded rather than chosen: the narrowest this box ever gets in the split is the
+          preview column at `--breakpoint-quantise` itself, which is 642px, and side by side is the
+          whole point of the split. `tests/quantise-column-width.test.ts` re-derives that 642 from the
+          grid and fails if the threshold ever rises past it.
+        */
+        <div className="@container">
+          <div className="grid grid-cols-1 gap-4 @[38rem]:grid-cols-2">
+            <ComparisonPane {...first} />
+            <ComparisonPane {...second} busy={busy} />
+          </div>
         </div>
       )}
     </section>

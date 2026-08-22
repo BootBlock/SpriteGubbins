@@ -31,9 +31,10 @@ import { LABEL_BUDGET } from './selectLabelBudget.ts';
  * Every option label in the app, held to the budget the narrowest `SelectField` can render.
  *
  * The budget itself, and why it is 50, live in `selectLabelBudget.ts` — this file is the half that
- * checks the *copy*. Its sibling, `studio-column-width.test.ts`, checks that the studio's layout
- * actually gives a control the 442px those 50 characters need, which is the half that was missing
- * while the two-column split engaged 16px too early.
+ * checks the *copy*. Its siblings, `studio-column-width.test.ts` and
+ * `quantise-column-width.test.ts`, check that the two split layouts actually give a control the
+ * 442px those 50 characters need, which is the half that was missing while the studio's two-column
+ * split engaged 16px too early.
  */
 
 /**

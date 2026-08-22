@@ -1384,8 +1384,12 @@ export const QUANTISE_SCALE_GUIDANCE = {
  *
  * Three reasons, not two, and they call for three different things from the reader — which is the
  * whole reason this is a set rather than the one line it began as. A pane that tells someone to type
- * a number the panel above is already offering them, or to type one they have just typed, reads as a
+ * a number the grid panel is already offering them, or to type one they have just typed, reads as a
  * working feature having failed.
+ *
+ * **None of these three may say where anything is.** The pane and the grid panel are stacked on a
+ * narrow page and side by side on a wide one, so a caption reading "the box above" is wrong in one of
+ * the two layouts whichever word it picks. They name the control instead.
  *
  * Beside {@link QUANTISE_SCALE_GUIDANCE} rather than inside it: that is the *panel's* prose, several
  * sentences of instruction, and this is a caption on an empty frame. They are answering the same
@@ -1395,18 +1399,19 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
   /** The worker is still reading the sheet, before any setting could apply. */
   reading: 'Reading the sheet and working out the scale it was drawn at…',
   /** No reading found a scale, so there is nothing to align to until one is typed. */
-  none: 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one in the box above.',
+  none: 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one into the Pixel grid box.',
   /** A scale was estimated and deliberately not applied — it is waiting to be chosen. */
   estimated:
-    'The scale in this sheet was estimated from the spacing of its edges rather than measured outright, so it has not been applied. Click it above to align the sheet to it, or type a different one.',
+    'The scale in this sheet was estimated from the spacing of its edges rather than measured outright, so it has not been applied. Click it to align the sheet to it, or type a different one into the Pixel grid box.',
   /**
    * A scale **is** in force and still produced nothing, which only a failure explains.
    *
-   * Reachable two ways — the transform threw, or the worker died — and both put a message above this
-   * pane saying which. So this points at that rather than repeating it, and above all does not fall
-   * back to "type a scale in the box above", which is what the reader has already done.
+   * Reachable two ways — the transform threw, or the worker died — and both put a message at the head
+   * of the controls saying which. So this points at that rather than repeating it, and above all does
+   * not fall back to "type a scale", which is what the reader has already done.
    */
-  failed: 'This sheet could not be quantised at the scale in force. The message above the controls says why.',
+  failed:
+    'This sheet could not be quantised at the scale in force. The message at the head of the controls says why.',
 } as const;
 
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */

@@ -501,6 +501,30 @@ the column from the grid, page and panel classes themselves and fails if the spl
 reaches 442px. **A new two-column layout that lands a select in a column needs its own derivation** —
 1040px is this grid's answer, not a general one.
 
+**The quantiser is the second split, and it derives a different number from the same budget.** Its
+control column is beside a sticky preview column for the reason the studio's form is, and
+`--breakpoint-quantise` lands at **1224px** rather than 1040px because the two tabs share out the
+width differently: both of the studio's columns hold a select, so an even split has to clear 442px
+twice, while all three of the quantiser's are on the left and the preview column holds none — which
+is what pays for a 5/7 split, and why the tab spends the whole of `main`'s cap instead of holding
+itself to `max-w-6xl`. The derivation is shared rather than copied
+([columnSplit.ts](tests/columnSplit.ts) parses the grid, page, span and panel classes; each tab's own
+test states which column has to clear the budget), and
+[quantise-column-width.test.ts](tests/quantise-column-width.test.ts) adds the claim the asymmetry
+rests on — it follows the preview column's imports and fails if a `SelectField` ever appears in
+there, because that would invalidate the breakpoint without breaking anything visible.
+
+**A panel that becomes a column stops being described by a viewport breakpoint.** The derivation
+above measures a column; a `sm:`/`lg:`/`xl:` class *inside* one measures the page, and the two
+parted company the moment the quantiser split — the comparison panel's two-up pane grid was on `lg:`,
+reading a 1400px viewport while the box it governed was 674px. Nothing looked broken, because both
+numbers fall the same side of 1024; the class had simply stopped measuring what it decides. **A
+layout class inside a split column belongs on a container query**, as
+[SubjectForm](src/components/studio/SubjectForm.tsx) already had it and
+[ImageComparison](src/components/quantise/ImageComparison.tsx) now does. Its threshold is bounded
+rather than picked: the narrowest that box ever gets is the column at its own breakpoint, which
+`quantise-column-width.test.ts` re-derives and holds the threshold under.
+
 **A category's option pool is written in title case, and `NONE` is the only value that may shout.**
 The pools in `src/constants/categories/` are two things at once: the suggestions a `ComboBox`
 offers, and the text section 1 of the prompt carries verbatim. That makes casing visible in the
