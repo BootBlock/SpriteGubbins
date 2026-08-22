@@ -148,7 +148,7 @@ export function SheetSplitRun({
             onClick={() => {
               onCopy(run);
             }}
-            className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-extrabold text-ink shadow-md transition-colors hover:bg-accent"
+            className="rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-extrabold text-foundry-950 shadow-md transition-colors hover:bg-accent"
           >
             Copy this sheet
           </button>

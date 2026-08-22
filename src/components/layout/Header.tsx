@@ -114,7 +114,7 @@ export function Header() {
             onClick={() => {
               void copyPrompt();
             }}
-            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 transition-all duration-390 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-r from-accent-strong to-accent px-4 py-2 text-xs font-extrabold text-foundry-950 shadow-lg ring-1 ring-accent-soft/40 transition-all duration-390 hover:scale-[1.03] hover:shadow-2xl hover:ring-accent-soft active:scale-[0.98]"
           >
             <span
               aria-hidden="true"

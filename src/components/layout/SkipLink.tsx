@@ -33,7 +33,7 @@ export function SkipLink() {
     */
     <a
       href="#main-content"
-      className="fixed left-4 -top-24 z-50 rounded-xl bg-accent-strong px-4 py-2 text-xs font-extrabold text-ink shadow-lg ring-1 ring-accent-soft/40 focus:top-4"
+      className="fixed left-4 -top-24 z-50 rounded-xl bg-accent-strong px-4 py-2 text-xs font-extrabold text-foundry-950 shadow-lg ring-1 ring-accent-soft/40 focus:top-4"
     >
       Skip to main content
     </a>

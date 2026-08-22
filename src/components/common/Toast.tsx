@@ -31,6 +31,19 @@ import { useUIStore } from '../../stores/useUIStore.ts';
  * does nothing — and the trade is deliberate. Dismissing is for a notification that is in the way,
  * and one already two thirds of the way off the screen is not; there is no version of this where the
  * button stays live and the transparent card stops swallowing the clicks around it.
+ *
+ * **Everything on the card is near-black, and the card is where that is said.** The ground is a role
+ * colour rather than a panel — `accent-strong` fading to `accent` — and both stops are *light*, so
+ * the ink ramp cannot sit on either: `ink` measures 3.07:1 and 2.04:1 across the two, `ink-muted`
+ * 1.71:1 and 1.14:1. The ✕ was `ink-muted`, which at the accent end is not dim but invisible. So the
+ * surface takes `text-foundry-950`, which measures 5.34:1 and 8.04:1 — the same near-black every
+ * other coloured fill in this app carries its label in, and for the same reason. It is declared once
+ * on the card and inherited, so nothing inside has to remember; the countdown bar is the same tone
+ * for the same reason, having been `ink/60` at 1.56:1 against the stop it was drawn on.
+ *
+ * That leaves the ✕ the same tone as the message beside it, and the hover is the `rotate-90` alone.
+ * A resting tone that differs from the hover is what the muted ramp was buying, and there is no
+ * darker tone to spend on it that keeps the glyph above 4.5:1 at both ends of the gradient.
  */
 export function Toast() {
   const message = useUIStore((state) => state.toastMessage);
@@ -53,9 +66,9 @@ export function Toast() {
           // The exit's duration comes from the same constant the store's second timer is set from,
           // for the reason the countdown below carries its own: `animate-toast-out` declares none.
           style={isLeaving ? { animationDuration: `${TOAST_EXIT_MS}ms` } : undefined}
-          className={`${isLeaving ? 'animate-toast-out' : 'animate-toast-in'} pointer-events-auto relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent-soft/40 bg-gradient-to-r from-accent-strong to-accent px-5 py-3 shadow-2xl ring-1 ring-accent-soft/20 backdrop-blur-xl`}
+          className={`${isLeaving ? 'animate-toast-out' : 'animate-toast-in'} pointer-events-auto relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent-soft/40 bg-gradient-to-r from-accent-strong to-accent px-5 py-3 text-foundry-950 shadow-2xl ring-1 ring-accent-soft/20 backdrop-blur-xl`}
         >
-          <span className="text-xs font-semibold text-ink">{message}</span>
+          <span className="text-xs font-semibold">{message}</span>
           {/*
             No guidance card, deliberately. This surface is on a three-second timer and goes `inert`
             for the fade, so a card hung off it would be anchored to something that is leaving before
@@ -67,7 +80,7 @@ export function Toast() {
             type="button"
             onClick={dismissToast}
             aria-label="Dismiss notification"
-            className="text-ink-muted transition-all duration-390 hover:rotate-90 hover:text-ink"
+            className="transition-all duration-390 hover:rotate-90"
           >
             <span aria-hidden="true">✕</span>
           </button>
@@ -80,7 +93,7 @@ export function Toast() {
           <span
             aria-hidden="true"
             style={{ animationDuration: `${TOAST_DURATION_MS}ms` }}
-            className="animate-toast-timer absolute inset-x-0 bottom-0 h-0.5 origin-left bg-ink/60"
+            className="animate-toast-timer absolute inset-x-0 bottom-0 h-0.5 origin-left bg-foundry-950/60"
           />
         </div>
       )}

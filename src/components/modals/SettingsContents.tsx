@@ -80,7 +80,7 @@ export function SettingsContents() {
           <button
             type="button"
             onClick={toggleSettingsModal}
-            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-ink shadow-lg transition-colors duration-390 hover:bg-accent"
+            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-foundry-950 shadow-lg transition-colors duration-390 hover:bg-accent"
           >
             Done
           </button>
