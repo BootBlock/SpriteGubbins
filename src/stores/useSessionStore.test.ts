@@ -32,6 +32,12 @@ async function flushSave(): Promise<void> {
   await Promise.resolve();
 }
 
+/** Hide the page, as a tab being switched away from does. */
+function hidePage(): void {
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   backend = new LocalStorageBackend(createMemoryStorage());
@@ -44,6 +50,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
+  // `document.visibilityState` is a getter, and a spy on one outlives the case that installed it —
+  // which would leave every later case running against a permanently hidden page.
+  vi.restoreAllMocks();
 });
 
 describe('useSessionStore — restoring', () => {
@@ -173,6 +182,83 @@ describe('useSessionStore — saving', () => {
 
     useSubjectStore.getState().setCategory('OBJECT');
     await flushSave();
+
+    expect(saveSession).not.toHaveBeenCalled();
+  });
+
+  it('writes a pending save when the page is hidden', async () => {
+    // The debounce window is also a window in which the edit exists only in the store, and a tab
+    // switched away from on a phone may never come back — so being hidden ends the wait early.
+    await useSessionStore.getState().restoreSession();
+
+    useSubjectStore.getState().setCategory('ITEM');
+    hidePage();
+    await Promise.resolve();
+
+    expect((await backend.loadSession())?.category).toBe('ITEM');
+  });
+
+  it('writes a pending save when the page goes away', async () => {
+    // `pagehide` rather than `beforeunload`, because that is the event a mobile browser and the
+    // back/forward cache both fire — and it does not require the document to be hidden yet.
+    await useSessionStore.getState().restoreSession();
+
+    useSubjectStore.getState().setCategory('OBJECT');
+    window.dispatchEvent(new Event('pagehide'));
+    await Promise.resolve();
+
+    expect((await backend.loadSession())?.category).toBe('OBJECT');
+  });
+
+  it('writes once when a flush and the timer both come due', async () => {
+    // The flush clears the timer it pre-empts. Without that the same session would be written a
+    // second time on return, and a page hidden and shown again would cost a write per trip.
+    await useSessionStore.getState().restoreSession();
+    const saveSession = vi.spyOn(backend, 'saveSession');
+
+    useSubjectStore.getState().setCategory('ITEM');
+    hidePage();
+    await flushSave();
+
+    expect(saveSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not write when the page is hidden with nothing pending', async () => {
+    // Hiding is not itself a reason to write: a reader switching tabs with no unsaved edit would
+    // otherwise pay a whole-studio serialisation per trip.
+    await useSessionStore.getState().restoreSession();
+    const saveSession = vi.spyOn(backend, 'saveSession');
+
+    hidePage();
+    window.dispatchEvent(new Event('pagehide'));
+    await Promise.resolve();
+
+    expect(saveSession).not.toHaveBeenCalled();
+  });
+
+  it('ignores the page becoming visible again', async () => {
+    // `visibilitychange` fires on the way back too, and the state is what tells the two apart.
+    await useSessionStore.getState().restoreSession();
+    const saveSession = vi.spyOn(backend, 'saveSession');
+
+    useSubjectStore.getState().setCategory('ITEM');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await Promise.resolve();
+
+    expect(saveSession).not.toHaveBeenCalled();
+  });
+
+  it('stops flushing once the listeners are removed', async () => {
+    // The DOM listeners come off with the store subscriptions. A leaked one would keep a torn-down
+    // store writing, which is the failure the removers exist for.
+    await useSessionStore.getState().restoreSession();
+
+    useSubjectStore.getState().setCategory('ITEM');
+    resetSessionForTests();
+    const saveSession = vi.spyOn(backend, 'saveSession');
+    hidePage();
+    window.dispatchEvent(new Event('pagehide'));
+    await Promise.resolve();
 
     expect(saveSession).not.toHaveBeenCalled();
   });
