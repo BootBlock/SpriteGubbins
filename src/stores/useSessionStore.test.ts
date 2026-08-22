@@ -32,6 +32,12 @@ async function flushSave(): Promise<void> {
   await Promise.resolve();
 }
 
+/** Hide the page, as a tab being switched away from does. */
+function hidePage(): void {
+  vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+  document.dispatchEvent(new Event('visibilitychange'));
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   backend = new LocalStorageBackend(createMemoryStorage());
@@ -44,6 +50,9 @@ beforeEach(() => {
 afterEach(() => {
   vi.clearAllTimers();
   vi.useRealTimers();
+  // `document.visibilityState` is a getter, and a spy on one outlives the case that installed it —
+  // which would leave every later case running against a permanently hidden page.
+  vi.restoreAllMocks();
 });
 
 describe('useSessionStore — restoring', () => {
@@ -175,6 +184,93 @@ describe('useSessionStore — saving', () => {
     await flushSave();
 
     expect(saveSession).not.toHaveBeenCalled();
+  });
+
+  it('writes a pending save when the page is hidden', async () => {
+    // The debounce window is also a window in which the edit exists only in the store, and a tab
+    // switched away from on a phone may never come back — so being hidden ends the wait early.
+    await useSessionStore.getState().restoreSession();
+
+    useSubjectStore.getState().setCategory('ITEM');
+    hidePage();
+    await Promise.resolve();
+
+    expect((await backend.loadSession())?.category).toBe('ITEM');
+  });
+
+  it('writes a pending save when the page goes away', async () => {
+    // `pagehide` rather than `beforeunload`, because that is the event a mobile browser and the
+    // back/forward cache both fire — and it does not require the document to be hidden yet.
+    await useSessionStore.getState().restoreSession();
+
+    useSubjectStore.getState().setCategory('OBJECT');
+    window.dispatchEvent(new Event('pagehide'));
+    await Promise.resolve();
+
+    expect((await backend.loadSession())?.category).toBe('OBJECT');
+  });
+
+  it('writes once when a flush and the timer both come due', async () => {
+    // The flush clears the timer it pre-empts. Without that the same session would be written a
+    // second time on return, and a page hidden and shown again would cost a write per trip.
+    await useSessionStore.getState().restoreSession();
+    const saveSession = vi.spyOn(backend, 'saveSession');
+
+    useSubjectStore.getState().setCategory('ITEM');
+    hidePage();
+    await flushSave();
+
+    expect(saveSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not write when the page is hidden with nothing pending', async () => {
+    // Hiding is not itself a reason to write: a reader switching tabs with no unsaved edit would
+    // otherwise pay a whole-studio serialisation per trip.
+    await useSessionStore.getState().restoreSession();
+    const saveSession = vi.spyOn(backend, 'saveSession');
+
+    hidePage();
+    window.dispatchEvent(new Event('pagehide'));
+    await Promise.resolve();
+
+    expect(saveSession).not.toHaveBeenCalled();
+  });
+
+  it('ignores the page becoming visible again', async () => {
+    // `visibilitychange` fires on the way back too, and the state is what tells the two apart.
+    await useSessionStore.getState().restoreSession();
+    const saveSession = vi.spyOn(backend, 'saveSession');
+
+    useSubjectStore.getState().setCategory('ITEM');
+    document.dispatchEvent(new Event('visibilitychange'));
+    await Promise.resolve();
+
+    expect(saveSession).not.toHaveBeenCalled();
+  });
+
+  it('takes the flush listeners off with the store subscriptions', async () => {
+    // Asserted through the registrations rather than through a write, because a leaked listener has
+    // no observable one: it calls the same module-level flush, which is idempotent. What can go
+    // wrong is the *identity* — a remover passed a differently-bound function removes nothing, and
+    // the listeners then accumulate on every re-arm for as long as the module is loaded.
+    const documentAdd = vi.spyOn(document, 'addEventListener');
+    const documentRemove = vi.spyOn(document, 'removeEventListener');
+    const windowAdd = vi.spyOn(window, 'addEventListener');
+    const windowRemove = vi.spyOn(window, 'removeEventListener');
+
+    await useSessionStore.getState().restoreSession();
+    const visibilityHandler = documentAdd.mock.calls.find(([type]) => type === 'visibilitychange')?.[1];
+    // `String(type)`, because `vi.spyOn(window, 'addEventListener')` resolves to the worker-scope
+    // overload under this project's libs, and comparing its narrower event-name union against
+    // 'pagehide' is a type error rather than a false test.
+    const pageHideHandler = windowAdd.mock.calls.find(([type]) => String(type) === 'pagehide')?.[1];
+    expect(visibilityHandler).toBeTypeOf('function');
+    expect(pageHideHandler).toBeTypeOf('function');
+
+    resetSessionForTests();
+
+    expect(documentRemove).toHaveBeenCalledWith('visibilitychange', visibilityHandler);
+    expect(windowRemove).toHaveBeenCalledWith('pagehide', pageHideHandler);
   });
 
   it('stays silent when the write is refused', async () => {

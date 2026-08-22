@@ -86,7 +86,7 @@ which is what the trailing smoke, debris or sparks are for.`,
         { label: 'clearing', text: 'Clearing: early, mid, late', count: 3, kind: 'frame' },
       ],
       outro: `Where the subject names no secondary layer, these frames carry the core’s own lingering residue
-instead — the last of the glow, the settling motes — rather than being dropped: the count section 0
+instead — the last of the glow, the settling motes — rather than being dropped: the count section [SEC:CONTRACT]
 contracts for is exact, and a sheet returning six fewer components than it promised fails that
 contract whatever the subject said. A looping effect has no residue to clear, so these are the frames
 that carry it back round to its first.`,

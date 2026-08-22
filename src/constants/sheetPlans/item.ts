@@ -65,7 +65,7 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
       {
         heading: 'Directional core',
         intro: `One view of **one** body and **one** working end per facing: the same piece of geometry drawn at
-each object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views facing
+each object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views facing
 the same way are all failures of this entry.`,
         entries: [
           viewsOf('Bodies or shafts', 'structure', chunk),

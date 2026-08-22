@@ -5,6 +5,7 @@ import {
   applyOptionals,
   applySectionNumbers,
   assertBlocksResolved,
+  sectionNumbers,
   substitute,
 } from './templateEngine.ts';
 
@@ -184,22 +185,25 @@ describe('applyNumbering', () => {
 });
 
 describe('applySectionNumbers', () => {
+  /** The one walk every caller shares, made here so each case reads as its own whole document. */
+  const numbered = (template: string): string => applySectionNumbers(template, sectionNumbers(template));
+
   it('numbers the headings from zero, in the order they appear', () => {
-    const rendered = applySectionNumbers('## [SECTION:A]. One\n## [SECTION:B]. Two\n## [SECTION:C]. Three');
+    const rendered = numbered('## [SECTION:A]. One\n## [SECTION:B]. Two\n## [SECTION:C]. Three');
     expect(rendered).toBe('## 0. One\n## 1. Two\n## 2. Three');
   });
 
   it('closes the gap a dropped section used to leave', () => {
     // The reported failure, in miniature: the rig section is conditional, so a hand-numbered
     // document ran `## 4.` straight into `## 6.` on every category that articulates about nothing.
-    const rendered = applySectionNumbers('## [SECTION:A]. One\n## [SECTION:C]. Three');
+    const rendered = numbered('## [SECTION:A]. One\n## [SECTION:C]. Three');
     expect(rendered).toBe('## 0. One\n## 1. Three');
   });
 
   it('resolves a citation to the number its section landed on, wherever the citation sits', () => {
     // Forward references are the common case and the reason declarations and citations are separate
     // markers: the output contract cites the exclusions six sections below it.
-    const rendered = applySectionNumbers(
+    const rendered = numbered(
       'see section [SEC:B]\n## [SECTION:A]. One\n## [SECTION:B]. Two\nand section [SEC:A] again',
     );
     expect(rendered).toBe('see section 1\n## 0. One\n## 1. Two\nand section 0 again');
@@ -209,23 +213,21 @@ describe('applySectionNumbers', () => {
     // The half a hand-numbered document could not keep: dropping a section renumbers the ones after
     // it, and each of their citations has to follow in the same edit.
     const both = '## [SECTION:A]. One\n## [SECTION:B]. Two\n## [SECTION:C]. Three\nsee section [SEC:C]';
-    expect(applySectionNumbers(both)).toContain('see section 2');
-    expect(applySectionNumbers(both.replace('## [SECTION:B]. Two\n', ''))).toContain('see section 1');
+    expect(numbered(both)).toContain('see section 2');
+    expect(numbered(both.replace('## [SECTION:B]. Two\n', ''))).toContain('see section 1');
   });
 
   it('throws when two surviving headings declare the same name', () => {
     // The two headings that vary by target declare one name each from mutually exclusive blocks, so
     // exactly one survives. Two survivors would mean a condition that is no longer exclusive, and
     // the symptom would be a second section quietly sharing the first one's number.
-    expect(() => applySectionNumbers('## [SECTION:A]. One\n## [SECTION:A]. Also one')).toThrow(
-      /declared twice/,
-    );
+    expect(() => sectionNumbers('## [SECTION:A]. One\n## [SECTION:A]. Also one')).toThrow(/declared twice/);
   });
 
   it('throws on a citation of a section this prompt does not carry', () => {
     // `section undefined` in the middle of a document whose prose cites itself hundreds of times is
     // exactly the quiet failure `substitute` refuses for a `[DEFINE:…]`.
-    expect(() => applySectionNumbers('## [SECTION:A]. One\nsee section [SEC:B]')).toThrow(/\[SEC:B\]/);
+    expect(() => numbered('## [SECTION:A]. One\nsee section [SEC:B]')).toThrow(/\[SEC:B\]/);
   });
 });
 

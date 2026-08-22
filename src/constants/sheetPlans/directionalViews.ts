@@ -31,7 +31,8 @@ export function viewsOf(label: string, kind: ComponentKind, facings: FacingTuple
 
 /**
  * A piece drawn at each facing, referring to them rather than repeating them — `Handle, at each of
- * the yaws section 3 lists`.
+ * the yaws section [SEC:CAMERA] lists`, which the compiler resolves against the headings this
+ * prompt actually carries.
  *
  * Used for the secondary pieces, where a second full list of facings on every bullet costs tokens in
  * the section a model is already reading as a list.
@@ -39,7 +40,7 @@ export function viewsOf(label: string, kind: ComponentKind, facings: FacingTuple
 export function atEachYaw(label: string, kind: ComponentKind, facings: FacingTuple): ComponentEntry {
   return {
     label: slugify(label),
-    text: `${label}, at each of the yaws section 3 lists`,
+    text: `${label}, at each of the yaws section [SEC:CAMERA] lists`,
     count: facings.length,
     kind,
   };

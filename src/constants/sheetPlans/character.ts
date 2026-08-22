@@ -38,7 +38,7 @@ parts faded or hidden. A head ends at the neck, with no torso below it. A torso 
 opening, the two shoulder openings and the waist, and carries **no head, no arms and no legs**: each
 opening is a clean, capped joint socket, never a stump trailing into a limb. A pelvis ends at the
 waist and the two hip openings, and carries **no legs**. A trunk piece that arrives wearing any limb
-has merged entries the inventory lists separately, and breaks the count in section 0.`;
+has merged entries the inventory lists separately, and breaks the count in section [SEC:CONTRACT].`;
 
 export const CHARACTER_POSE_LIBRARY: SheetPlan = {
   name: 'Pose library',
@@ -101,7 +101,7 @@ function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTup
       {
         heading: null,
         intro: `One view of **one** head, **one** torso and **one** pelvis per facing: the same piece of geometry
-drawn at each object yaw section 3 lists, in that order. Separate designs, mirrored copies, or views
+drawn at each object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views
 facing the same way are all failures of this entry, however well drawn.`,
         entries: [
           viewsOf('Heads', 'anatomy', chunk),
