@@ -2,6 +2,7 @@ import { TARGET_MODELS } from '../../constants/models.ts';
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { SelectField } from '../common/SelectField.tsx';
+import { GeneratorSiteLink } from './GeneratorSiteLink.tsx';
 
 /** The generators offered, paired with their display names. See {@link TARGET_MODELS}. */
 const MODEL_CHOICES = TARGET_MODELS.map((model) => ({ value: model.id, label: model.name }));
@@ -15,6 +16,15 @@ const MODEL_CHOICES = TARGET_MODELS.map((model) => ({ value: model.id, label: mo
  * answer.
  */
 const MODEL_DESCRIPTIONS = new Map(TARGET_MODELS.map((model) => [model.id, model.description]));
+
+/**
+ * The whole entry, keyed the same way, for the link button beside the control.
+ *
+ * A second `Map` rather than widening the one above, because the two are read for different things
+ * and the description's fallback is not the link's: a missing description renders nothing, while a
+ * missing entry has no button to render at all.
+ */
+const MODEL_ENTRIES = new Map(TARGET_MODELS.map((model) => [model.id, model]));
 
 /**
  * Which generator the prompt is being written for.
@@ -31,10 +41,16 @@ const MODEL_DESCRIPTIONS = new Map(TARGET_MODELS.map((model) => [model.id, model
  * per target. Guidance that answers "what did the thing I just picked change?" is worth the four
  * lines it costs, and putting it behind a hover would leave it about as findable as it was when
  * nothing rendered it at all.
+ *
+ * **The button on the control's own row is where the prompt goes next.** A prompt composed here is
+ * used somewhere else, and the app named the generator without ever saying where it is —
+ * `GeneratorSiteLink` opens that generator's image page in a new tab. It costs the select 48px of
+ * its row, which is why `--breakpoint-studio` sits where it does: see the token in `index.css`.
  */
 export function TargetModelSelector() {
   const targetModel = useOutputStore((state) => state.output.targetModel);
   const setOutputField = useOutputStore((state) => state.setOutputField);
+  const entry = MODEL_ENTRIES.get(targetModel);
 
   return (
     <section className="animate-view-fade-in glass-panel rounded-2xl border border-foundry-700 p-4 shadow-xl transition-colors duration-585 hover:border-tab/40">
@@ -48,6 +64,10 @@ export function TargetModelSelector() {
         // stand-in sentence if it ever were reachable: a missing explanation is recoverable, and one
         // borrowed from a different target is a confidently wrong account of what the prompt does.
         description={MODEL_DESCRIPTIONS.get(targetModel) ?? ''}
+        // Unreachable for the same reason the description's fallback is, and answered differently:
+        // an explanation that resolved to nothing can still render the control it belongs to, while
+        // a link with no target is a button that would do nothing when pressed.
+        action={entry && <GeneratorSiteLink name={entry.name} site={entry.generatorSite} />}
         onChange={(value) => {
           setOutputField('targetModel', value);
         }}

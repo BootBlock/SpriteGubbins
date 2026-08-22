@@ -263,13 +263,20 @@
    *
    * - 50 characters plus the control's own 42px of chrome (1px border and 10px `p-2.5` padding
    *   either side, plus the 20px the user agent reserves for the dropdown arrow) → **442px**;
-   * - the panel's 42px (`p-5` either side and its 1px border) → a **484px** column;
+   * - the target-model select shares its row with the button that opens the chosen generator's own
+   *   page — a `gap-2` gutter and a `w-10` button, **48px** the control does not get → **490px**;
+   * - the panel's 42px (`p-5` either side and its 1px border) → a **532px** column;
    * - `grid-cols-12` with `gap-6` gives a `col-span-6` child `C/2 − 12` of the page's content width
-   *   `C`, so C ≥ 992px;
-   * - `main` is `max-w-7xl` padded with `--page-gutter`, 1.5rem here, so C is the viewport less 48px → **1040px**.
+   *   `C`, so C ≥ 1088px;
+   * - `main` is `max-w-7xl` padded with `--page-gutter`, 1.5rem here, so C is the viewport less 48px → **1136px**.
    *
    * Both columns carry a `SelectField` — the form's fifteen and the target-model select — so the
-   * even split is what has to clear this, not the form column alone. The figure is exact rather than
+   * even split is what has to clear this, not the form column alone. **The row the target model
+   * shares is why this is 71rem rather than the 65rem it stood at**: the label budget did not move,
+   * the width available to spend it in did, and 6rem of stacked layout is what a launch button
+   * beside that control costs. `tests/selectLabelBudget.ts` reads those 48px out of the two class
+   * strings that produce them, so resizing the button recomputes this rather than silently
+   * invalidating it. The figure is exact rather than
    * cushioned, because it rests on the same 8px advance the budget does: cushion one and the other
    * goes stale silently. Re-derive it whenever the page cap, the grid or the panel padding moves —
    * `tests/studio-column-width.test.ts` recomputes it from those very classes and fails if this
@@ -277,7 +284,7 @@
    * `--breakpoint-quantise` below, which is the same budget divided differently rather than this
    * figure reused.
    */
-  --breakpoint-studio: 65rem;
+  --breakpoint-studio: 71rem;
 
   /*
    * The width at which the quantiser may split into two columns, derived the same way and landing

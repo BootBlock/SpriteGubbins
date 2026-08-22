@@ -222,6 +222,27 @@ export interface TargetSize {
   readonly height: number;
 }
 
+/**
+ * Where a reader can go and generate with this target, if anywhere.
+ *
+ * Two states rather than an optional URL, for the reason {@link PromptBudget} carries four rather
+ * than one `null`: an absent link is two different findings, and they need different words. A
+ * missing field reads as “nobody went and looked”, which is exactly what the three targets without a
+ * site are not — each of them was checked, and each has a reason a stranger cannot infer from the
+ * name.
+ *
+ * - `PUBLIC` — the vendor runs a page a person can paste a prompt into, and `url` is it. Deliberately
+ *   the *generation* surface rather than the marketing page or the API reference, because what the
+ *   button is for is the next thing the reader does with the prompt they just copied.
+ * - `NONE` — there is no such page, and `note` says why. Open weights you run yourself and a target
+ *   that names no model are both this, and they are not the same reason.
+ *
+ * **A URL is a checkable claim about somebody else's product**, exactly as a capability or a prompt
+ * budget is, so each carries its source in `constants/models.ts` beside the entry that states it.
+ */
+export type GeneratorSite =
+  { readonly kind: 'PUBLIC'; readonly url: string } | { readonly kind: 'NONE'; readonly note: string };
+
 /** One target generator's entry in the selector. */
 export interface TargetModel {
   readonly id: TargetModelId;
@@ -241,6 +262,11 @@ export interface TargetModel {
    * get at.
    */
   readonly description: string;
+  /**
+   * Where to go and generate with this target — the site the selector's link button opens, or the
+   * finding that there is none. See {@link GeneratorSite}.
+   */
+  readonly generatorSite: GeneratorSite;
   readonly capabilities: TargetCapabilities;
 }
 

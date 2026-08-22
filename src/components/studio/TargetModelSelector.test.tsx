@@ -67,3 +67,41 @@ describe('TargetModelSelector', () => {
     expect(selector()).toHaveAccessibleDescription(second.description);
   });
 });
+
+describe('the generator link beside the target model', () => {
+  it.each(TARGET_MODELS.filter((model) => model.generatorSite.kind === 'PUBLIC'))(
+    'opens $name in a new tab',
+    (model) => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, targetModel: model.id } });
+      render(<TargetModelSelector />);
+
+      const link = screen.getByRole('link', { name: `Open ${model.name} in a new tab` });
+      // The URL as the entry states it, not merely that some link exists: a button pointing at the
+      // wrong vendor is the failure a presence check passes.
+      expect(link).toHaveAttribute(
+        'href',
+        model.generatorSite.kind === 'PUBLIC' ? model.generatorSite.url : '',
+      );
+      expect(link).toHaveAttribute('target', '_blank');
+      // The app is installable, so a link followed in place strands the reader in a chromeless
+      // window — and the opened page has no business reaching back through `window.opener`.
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    },
+  );
+
+  it.each(TARGET_MODELS.filter((model) => model.generatorSite.kind === 'NONE'))(
+    'offers $name a disabled control rather than no control',
+    (model) => {
+      useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, targetModel: model.id } });
+      render(<TargetModelSelector />);
+
+      // A control that disappeared as the select changed would say nothing about *why* there is
+      // nowhere to go, which for two of these three is the finding that they are weights you run
+      // yourself.
+      expect(
+        screen.getByRole('button', { name: `${model.name} has no generator site to open` }),
+      ).toBeDisabled();
+      expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    },
+  );
+});

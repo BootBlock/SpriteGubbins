@@ -131,3 +131,42 @@ describe('what each target model says about its own prompt length', () => {
     );
   });
 });
+
+describe('where each target model can be generated with', () => {
+  it.each(TARGET_MODELS)('$id records a generator site, or why there is none', (model) => {
+    const site = model.generatorSite;
+
+    if (site.kind === 'PUBLIC') {
+      // An absolute `https` URL, because the value is handed straight to an anchor's `href`: a bare
+      // path would resolve against this app's own origin and open a page that does not exist, and a
+      // scheme-relative or `http` one would send a reader out of a secure context.
+      expect(site.url, `${model.id} does not name an absolute https URL`).toMatch(/^https:\/\/\S+$/);
+      return;
+    }
+
+    // The half an optional field could never carry, and the reason there are two states rather than
+    // one nullable URL: a target with nowhere to open has to say whether it is open weights, a
+    // vendor with no public page, or a target that names no model at all — and it has to read as a
+    // finding rather than as a field nobody filled in. The floor is the one the budget notes carry
+    // for the same job; it rejects the stub shape rather than judging the words.
+    const note = site.note.trim();
+    expect(note.length, `${model.id} states too little about having no generator site`).toBeGreaterThan(60);
+    expect(note, `${model.id}'s generator-site note is not a sentence`).toMatch(/[.!?]$/);
+    // The rule every string in the bundle follows: this one is rendered in the disabled button's
+    // guidance card, after the sentence that is the same for every target.
+    expect(note, `${model.id}'s generator-site note carries a straight apostrophe`).not.toMatch(/'/);
+    expect(note, `${model.id}'s generator-site note carries a straight double quote`).not.toMatch(/"/);
+  });
+
+  it('offers a link only where a vendor runs a page a reader can paste a prompt into', () => {
+    // Named rather than counted, because which three have nowhere to go is the claim: two are open
+    // weights people run themselves, and the third names no model at all. A fourth arriving here is
+    // either a vendor that has taken its generator down — worth knowing — or a search nobody
+    // finished.
+    const absent = TARGET_MODELS.filter((model) => model.generatorSite.kind === 'NONE').map(
+      (model) => model.id,
+    );
+
+    expect(absent.sort()).toEqual(['FLUX', 'GENERIC', 'STABLE_DIFFUSION'].sort());
+  });
+});

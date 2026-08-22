@@ -220,3 +220,35 @@ export function stickyVariantsOf(tabFile: string): { readonly sticky: string; re
     scroll: capture(tab, /([a-z][\w-]*):overflow-y-auto\b/, `the sticky column's scroll cap in ${tabFile}`),
   };
 }
+
+/**
+ * What a `SelectField` carrying an action has left over for the control itself — the gutter and the
+ * button, in px.
+ *
+ * One select in the app has a control beside it: the target model's, whose generator has a page the
+ * link button opens. A native `<select>` sizes its selected option from its container and truncates
+ * the *tail* — the parenthetical marking the standard choice — so those pixels come straight off
+ * `SELECT_MIN_PX`, and a row that spends them without saying so is how a label clips at one viewport
+ * and not another.
+ *
+ * **Parsed rather than restated**, like the split above: widening the row's gutter or resizing the
+ * button recomputes this, and a rewrite that leaves neither where this can find it throws instead of
+ * quietly reporting nothing.
+ */
+export function selectActionWidthPx(): number {
+  const gapPx = spacing(
+    capture(
+      read('src/components/common/SelectField.tsx'),
+      /className="flex items-center gap-(\d+)">\s*<select/,
+      "the gutter between a `SelectField`'s control and its action",
+    ),
+  );
+  const buttonPx = spacing(
+    capture(
+      read('src/components/studio/GeneratorSiteLink.tsx'),
+      /const BUTTON =\s*'[^']*?\bw-(\d+)\b/,
+      "the generator link button's width",
+    ),
+  );
+  return gapPx + buttonPx;
+}

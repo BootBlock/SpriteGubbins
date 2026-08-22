@@ -35,6 +35,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Generic / Baseline Prompt',
     description:
       'Standard un-wrapped prompt suitable for ChatGPT, Claude, Gemini, or general LLM text-to-image workflows.',
+    // No model named, so no vendor to have a page. The other two `NONE` entries are open weights,
+    // which is a different finding wearing the same absence — see `GeneratorSite`.
+    generatorSite: {
+      kind: 'NONE',
+      note: 'This target names no particular model, so there is no generator site to open.',
+    },
     capabilities: {
       deliberates: true,
       emitsText: true,
@@ -69,6 +75,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
       'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. Choosing Sol in ChatGPT also puts you on a thinking tier, which is what enables images with thinking on a paid plan. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+    // ChatGPT's own image surface, which is where a person rather than an API client reaches this
+    // model. OpenAI announce it as “ChatGPT Images 2.0” and the page is indexed under that name.
+    // https://openai.com/index/introducing-chatgpt-images-2-0/
+    generatorSite: { kind: 'PUBLIC', url: 'https://chatgpt.com/images' },
     capabilities: {
       deliberates: true,
       emitsText: true,
@@ -98,6 +108,15 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Gemini 3.1 Flash Image / Nano Banana 2',
     description:
       'Google’s replacement for the retired Imagen models. A thinking model that reasons over complex prompts, so it receives the full specification including the self-audit, and it can return a companion component map alongside the image.',
+    // The deep-link shape is Google's own: every “Open in Google AI Studio” button on the DeepMind
+    // model pages is `prompts/new_chat?model=<id>`, and the id below is the one those buttons carry
+    // for this model. It is the `-preview` spelling rather than the `gemini-3.1-flash-image` the API
+    // model page names — the two OpenAI-style surfaces disagree, and what the button has to match is
+    // AI Studio's, not the API's. https://deepmind.google/models/gemini-image/
+    generatorSite: {
+      kind: 'PUBLIC',
+      url: 'https://aistudio.google.com/prompts/new_chat?model=gemini-3.1-flash-image-preview',
+    },
     capabilities: {
       deliberates: true,
       emitsText: true,
@@ -119,6 +138,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Gemini 3 Pro Image / Nano Banana Pro',
     description:
       'The heavier Gemini image model, built for complex layouts and precise text rendering. Same handling as Nano Banana 2 — full specification, self-audit and optional component map — at higher cost and quality.',
+    // The same shape, with the id DeepMind's Nano Banana Pro page carries.
+    // https://deepmind.google/models/gemini-image/pro/
+    generatorSite: {
+      kind: 'PUBLIC',
+      url: 'https://aistudio.google.com/prompts/new_chat?model=gemini-3-pro-image-preview',
+    },
     capabilities: {
       deliberates: true,
       emitsText: true,
@@ -154,6 +179,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Seedream 5.0 (ByteDance)',
     description:
       'ByteDance’s reasoning image model — it plans the layout before rendering, so it receives the full specification including the self-audit. Returns images only, so it cannot return a component map. Its prompt is led by a planning directive, because long briefs here are documented to lose instructions — ByteDance advise 600 English words, and the notice under the prompt says how far past that yours is.',
+    // Dreamina is ByteDance's own consumer surface for these models, and its feature page states which
+    // Seedream versions it runs. The path below is where the older `/ai-tool/image/generate` now
+    // redirects. https://dreamina.capcut.com/tools/seedream
+    generatorSite: { kind: 'PUBLIC', url: 'https://dreamina.capcut.com/ai-tool/generate/?type=image' },
     capabilities: {
       deliberates: true,
       emitsText: false,
@@ -202,6 +231,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Qwen-Image 3.0 (Alibaba)',
     description:
       'Built for dense structured layouts and long briefs, at a documented 4.5K tokens. That holds a sparse sheet — one facing, few components — and not the five-view directional sheet the studio opens on, which runs about half as long again. The budget notice under the prompt says where yours lands. Gets a plain negative-prompt block, because Qwen exposes negative_prompt as a documented parameter.',
+    // Qwen Chat, which is where Alibaba shipped 3.0 — the release carried no weights and no API
+    // pricing, so this is the only place a reader can use it at all.
+    generatorSite: { kind: 'PUBLIC', url: 'https://chat.qwen.ai/' },
     capabilities: {
       deliberates: false,
       emitsText: false,
@@ -236,6 +268,10 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Midjourney',
     description:
       'Appends Midjourney flags: aspect ratio, version, --raw, and a low stylisation value, because high stylisation fights a technical layout brief. The background is deliberately not excluded — the sheet needs a keyable one.',
+    // The Create page, whose URL is `/imagine` rather than `/create`: the docs call it the Create page
+    // in prose and link it as `/imagine`, and no `/create` URL appears anywhere in them.
+    // https://docs.midjourney.com/hc/en-us/articles/33329460426765-Website-Overview
+    generatorSite: { kind: 'PUBLIC', url: 'https://www.midjourney.com/imagine' },
     capabilities: {
       deliberates: false,
       emitsText: false,
@@ -250,6 +286,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Stable Diffusion (SD 1.5 / SDXL)',
     description:
       'Appends a weighted negative-prompt block aimed at the two failures that actually recur: assembling the figure instead of exploding it, and adding shadows. Nothing this app composes fits CLIP’s 77-token window, so a base pipeline reads the opening and discards the rest — which is why no built-in preset targets it.',
+    // **Checked, and there is none.** These are weights people run themselves, and Stability's own web
+    // generator is gone: `stability.ai/dreamstudio` now answers 301 to `stability.ai/brandstudio`, a
+    // brand-asset tool that does not offer SD 1.5 or SDXL. A third-party front end would be a
+    // recommendation this app has no business making.
+    generatorSite: {
+      kind: 'NONE',
+      note: 'SD 1.5 and SDXL are open weights you run yourself, and Stability’s own web generator no longer exists.',
+    },
     capabilities: {
       deliberates: false,
       emitsText: false,
@@ -277,6 +321,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Flux (open weights — FLUX.2 dev / klein)',
     description:
       'Separate from Stable Diffusion because Black Forest Labs state outright that FLUX.2 does not support negative prompts — the SD block would be silently discarded — so the same constraints are restated positively, and stated first because only the first 512 tokens are read. A sheet specification is several times that long, so the library ships no preset aimed at these weights.',
+    // Open weights, so nothing to open — Black Forest Labs' playground generates with the hosted tier,
+    // which is the `FLUX_API` entry below and carries that link.
+    generatorSite: {
+      kind: 'NONE',
+      note: 'FLUX.2 [dev] and [klein] are open weights you run yourself, so there is no vendor page that generates with them.',
+    },
     capabilities: {
       deliberates: false,
       emitsText: false,
@@ -300,6 +350,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Flux (BFL API — FLUX.2 pro / max / flex)',
     description:
       'Black Forest Labs’ hosted FLUX.2 tier, which reads 32K tokens — so the whole specification fits. Same positive restatement as the open weights, since no FLUX.2 model takes a negative prompt.',
+    // The BFL Playground, which Black Forest Labs name as the place to try the hosted tier without
+    // writing code. https://help.bfl.ai/articles/8667153955-what-is-the-bfl-playground
+    generatorSite: { kind: 'PUBLIC', url: 'https://playground.bfl.ai/' },
     capabilities: {
       deliberates: false,
       emitsText: false,
@@ -319,6 +372,11 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'GPT Image 2 (OpenAI)',
     description:
       'OpenAI’s current image model, replacing the retired DALL·E 3. Returns images only, so it gets the specification without the self-audit or the component map.',
+    // The same page as Sol above, and for the reason recorded there: ChatGPT's built-in image
+    // generation runs `gpt-image-2`, so ChatGPT Images is where this model is publicly usable by a
+    // person. OpenAI publish no playground URL for it on the model page, and the API reference is
+    // documentation rather than a place to paste a prompt.
+    generatorSite: { kind: 'PUBLIC', url: 'https://chatgpt.com/images' },
     capabilities: {
       deliberates: false,
       emitsText: false,

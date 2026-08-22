@@ -43,6 +43,9 @@ export const STUDIO_ACTION_TOOLTIPS = {
   describeSubject:
     'Writes what the panels above already say about the subject into the identity lock, as the labelled lines the lock is read in. It only ever replaces its own lines — your own prose and the palette line are left where they are — so it is safe to press again after changing a field. Treat what it produces as a first draft: what actually holds a series together is concrete, countable detail taken off the sheet you accepted, and this can only restate the terms you chose from a list.',
 
+  openGenerator:
+    'Opens the chosen generator’s own image page in a new browser tab, so the prompt you have just copied has somewhere to go. Nothing here moves when you press it: no setting changes, nothing is sent, and this app never talks to a generator itself — you paste the prompt in yourself once the page has loaded. Where the link goes is the page that actually generates, rather than the vendor’s front door or its API reference. Three of the targets have no such page, and for those the button is unavailable and says why.',
+
   readPalette:
     'Reads the dominant colours out of a sheet you have accepted and writes them into the identity lock as a palette line, most-used first, with the background key left out. It is the one line of a continuity digest nobody writes accurately by hand — eyeballing hex codes off a sheet is guesswork, and a later generation drifts to whatever the words allowed. The image is decoded in this tab and never leaves it.',
 } as const;
