@@ -41,6 +41,28 @@ const PAINTED: Rgba = { r: 196, g: 27, b: 180, a: 255 };
  */
 const BLEND: Rgba = { r: 161, g: 72, b: 177, a: 255 };
 
+/** The near-black a rendered armour plate is mostly made of, and what the sheet in the report was. */
+const DARK_ART: Rgba = { r: 16, g: 16, b: 16, a: 255 };
+
+/**
+ * The pixel the reported failure was made of: half the key, half {@link DARK_ART}.
+ *
+ * **37 from the key**, which is outside the fringe radius at every rung of the ladder — the ceiling
+ * is 32 — so the pass that exists to erode it reached straight past it and left it drawn. It is
+ * visibly magenta, it survives into the result, and on a sheet whose subject is dark it is most of
+ * the silhouette. What it keeps is the key's hue, which is what claims it now.
+ */
+const DARK_BLEND: Rgba = { r: 135, g: 8, b: 135, a: 255 };
+
+/**
+ * A sprite colour with a hue of its own that happens to lean the key's way: the reference sheet's
+ * armour red, which projects nearly half its chroma onto magenta's axis.
+ *
+ * 54 from the key, so no radius takes it — and it is the case a hue test gets wrong if it measures
+ * only the chroma along the key's axis and not the chroma standing off it.
+ */
+const CHROMATIC_ART: Rgba = { r: 139, g: 43, b: 43, a: 255 };
+
 /** Every channel of every pixel, as a keyed pixel must read: `{0, 0, 0, 0}`, not RGB at zero alpha. */
 function allZero(pixels: number): number[] {
   return Array.from({ length: pixels * 4 }, () => 0);
@@ -126,6 +148,57 @@ describe('keyBackground', () => {
     expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, TRANSPARENT, BLEND, ART, ART)));
   });
 
+  it('keys a halo the radius cannot reach, because the sprite behind it is dark', () => {
+    // The reported failure, in one row. `DARK_BLEND` is half the key by construction, so it is halo —
+    // but it measures 37, and the fringe radius is capped at 32, so pass 2 walked past it at every
+    // rung on the ladder and the sheet came back outlined in magenta. Measured on the reference sheet
+    // at the recommended key and the default tolerance, the ring of pixels touching the field was
+    // 97.1% still visibly magenta and the radius reached 18% of it.
+    const sheet = row(MAGENTA, DARK_BLEND, DARK_ART, DARK_ART);
+
+    const result = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
+
+    expect(result.keyedPixels).toBe(2);
+    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, TRANSPARENT, DARK_ART, DARK_ART)));
+  });
+
+  it('keys that halo at every rung above exact, not only at the loose end', () => {
+    // The hue test is not scaled from the tolerance, so the rung a reader picks decides how much
+    // *field* goes, not whether the edge is cleaned. Walked rather than argued, because the previous
+    // arrangement failed quietly at every rung at once and one spot check would not have shown it.
+    for (const tolerance of KEY_TOLERANCES.filter((rung) => rung > 0)) {
+      const result = keyBackground(row(MAGENTA, DARK_BLEND, DARK_ART), { color: MAGENTA, tolerance });
+
+      expect({ tolerance, keyed: result.keyedPixels }).toEqual({ tolerance, keyed: 2 });
+    }
+  });
+
+  it('leaves a contour standing where it has a hue of its own, however near the key it leans', () => {
+    // The bound on the hue test. `CHROMATIC_ART` touches the field and projects nearly half its
+    // chroma onto the key's axis, so a test that measured only that would take a pixel off every
+    // silhouette on the sheet — which is the failure the ceiling was introduced to stop, arriving by
+    // a different route.
+    const sheet = row(MAGENTA, CHROMATIC_ART, CHROMATIC_ART);
+
+    const result = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
+
+    expect(result.keyedPixels).toBe(1);
+    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, CHROMATIC_ART, CHROMATIC_ART)));
+  });
+
+  it('erodes a dark halo exactly one pixel deep, as it does any other', () => {
+    // The bound the hue test inherits rather than escapes: pass 2 reads pass 1's mask, so the second
+    // blend touches no field and stays. Restated for this half of the test because the hue test has
+    // no radius shrinking with distance to slow it down — asked of its own output it would run down
+    // the whole anti-aliased ramp.
+    const sheet = row(MAGENTA, DARK_BLEND, DARK_BLEND, DARK_ART);
+
+    const result = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
+
+    expect(result.keyedPixels).toBe(2);
+    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, TRANSPARENT, DARK_BLEND, DARK_ART)));
+  });
+
   it('leaves a blend-coloured pixel alone where it touches no field', () => {
     // [field] [art] [blend] [art] [art]
     //
@@ -140,13 +213,16 @@ describe('keyBackground', () => {
     expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, ART, BLEND, ART, ART)));
   });
 
-  it('runs no fringe pass at tolerance 0, because a zero-radius fringe holds only exact matches', () => {
-    const sheet = row(MAGENTA, BLEND, ART);
+  it('runs no fringe pass at tolerance 0, which is the whole of what that rung offers', () => {
+    // `exact` removes the key colour and nothing else. The radius used to carry that on its own,
+    // being scaled from the tolerance — but the hue test is scaled from nothing, so `DARK_BLEND` is
+    // the pixel that would have started disappearing at a rung that promises to touch nothing.
+    const sheet = row(MAGENTA, BLEND, DARK_BLEND, ART);
 
     const result = keyBackground(sheet, { color: MAGENTA, tolerance: 0 });
 
     expect(result.keyedPixels).toBe(1);
-    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, BLEND, ART)));
+    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, BLEND, DARK_BLEND, ART)));
   });
 
   it('does not erode the sprite’s contour at the top of the tolerance ladder', () => {
@@ -177,6 +253,22 @@ describe('keyBackground', () => {
     expect(channels(result.image)).toEqual(
       channels(imageFrom(2, 2, (x, y) => (x === 0 && y === 1 ? BLEND : TRANSPARENT))),
     );
+  });
+
+  it('leaves a grey ramp alone under a key that has no hue to blend', () => {
+    // `PURE_WHITE` and `PURE_BLACK` get the radius and nothing else, which is the same rule that
+    // refuses them the shading latitude. Shading white is how a sheet gets every grey it has, so a
+    // hue test read off an achromatic key would erode a pixel of every grey contour touching the
+    // field — and their chroma is arithmetic noise rather than an exact zero, so the direction it
+    // would be read against is arbitrary.
+    const white: Rgba = { r: 255, g: 255, b: 255, a: 255 };
+    const grey: Rgba = { r: 128, g: 128, b: 128, a: 255 };
+    const sheet = row(white, grey, DARK_ART);
+
+    const result = keyBackground(sheet, { color: white, tolerance: DEFAULT_KEY_TOLERANCE });
+
+    expect(result.keyedPixels).toBe(1);
+    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, grey, DARK_ART)));
   });
 
   it('counts only what it removed, not what arrived empty', () => {

@@ -1273,6 +1273,51 @@ export const FRINGE_TOLERANCE_FACTOR = 3;
 export const FRINGE_TOLERANCE_CEILING = 32;
 
 /**
+ * The least of the key's own chroma a fringe pixel must carry, as a fraction of the key's, before
+ * the fringe pass will take it.
+ *
+ * {@link FRINGE_TOLERANCE_CEILING} above is a radius, and a radius is the wrong instrument for a
+ * blend — `carriesKeyTint` says why at length. This is the other half of the pass's test, and on the
+ * sheet that prompted it, it is the half that does the work. At the recommended magenta and the
+ * default tolerance, the pass has **11030 candidates** — the drawn pixels touching the keyed field —
+ * and **97.1% of them are still visibly magenta**. The radius takes 1997, which is 18.1%: the rest
+ * are blends of the key with near-black armour, which the radius places between 32 and 98 away,
+ * out among the artwork. With this test beside it the pass takes 10849, which is 98.4%, and leaves
+ * **2** visibly magenta pixels standing.
+ *
+ * **0.1 rather than a firmer figure, because the reachable set is halo by construction.** Only a
+ * pixel 4-adjacent to the keyed field is ever asked, and 97.1% of that set is contaminated on this
+ * sheet, so the cost of the floor being loose is bounded by the 2.9% that is not — 141 pixels here,
+ * one deep, on a silhouette the pass is entitled to clean. It is where the knee is, too: 0.15 leaves
+ * 168 of the halo standing, 0.2 leaves 682 and 0.25 leaves 1465, which is the fringe the report was
+ * about, while 0.05 removes no more of it and reaches 235 non-magenta pixels instead of 141.
+ *
+ * The floor is not zero because zero is every grey in the sheet: a pixel carrying none of the key's
+ * chroma is not a blend of it.
+ */
+export const KEY_TINT_SHARE = 0.1;
+
+/**
+ * The most chroma a fringe pixel may carry *off* the key's hue axis, as a fraction of the key's
+ * chroma, before it stops counting as a blend of the key.
+ *
+ * {@link KEY_TINT_SHARE} says how much of the key is in the pixel; this says how much of the pixel
+ * is not the key. Mixing the key with something achromatic leaves nothing off the axis at all, so a
+ * blend against grey, black or white — which is what an anti-aliased silhouette on a dark sheet is
+ * made of — measures near zero. A colour of its own measures a long way: the reference sheet's
+ * armour red projects nearly half its chroma onto magenta's axis, which the share alone would admit,
+ * and 0.87 of it off that axis, which this refuses.
+ *
+ * 0.2 sits between the two by a wide margin, and the margin is what fixes it rather than the
+ * midpoint. Measured over the pass's own candidates, the ninetieth percentile of off-hue chroma is
+ * 0.096 and the ninety-ninth is 0.152, so the ceiling clears the fringe's whole spread — and it is
+ * still four times below the artwork red. The pass is insensitive here, which is the shape a
+ * threshold should have: tightening it to 0.1 leaves 662 of the halo standing, and loosening it to
+ * 0.3 takes seven more pixels.
+ */
+export const KEY_TINT_OFF_HUE = 0.2;
+
+/**
  * The largest image the tab will accept, in pixels.
  *
  * Every pass in the pipeline is linear in this number, so it is what bounds the work one job asks
