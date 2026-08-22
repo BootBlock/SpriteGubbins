@@ -9,14 +9,15 @@ import { writeSheetOffThread } from '../workers/sheetWriteSession.ts';
 import { useFileSave } from './useFileSave.ts';
 
 /**
- * Offering a quantised sheet back as a file, in whichever of the two formats was asked for.
+ * Offering a quantised sheet back as a file, in whichever of the four formats was asked for.
  *
  * **The file is written by this app, not by a canvas.** `canvas.toBlob` can only produce truecolour,
  * so a sheet reduced to sixty-four colours arrived on disk as a 32-bit file that merely happened to
  * use sixty-four of them — the palette this tab's whole pipeline exists to produce was a claim in
  * the panel and absent from what the reader took away. What is downloaded now is a true indexed
- * PNG, or an indexed Aseprite document with the sprites cut into frames, wherever the sheet's
- * colours fit a palette.
+ * PNG, an indexed Aseprite document with the sprites cut into frames, or a pack of one indexed PNG
+ * per sprite — wherever the sheet's colours fit a palette — and a manifest, which carries the rects
+ * rather than the pixels.
  *
  * **The write runs on a thread of its own**, because the canvas encoder it replaced was asynchronous
  * and these are a long synchronous walk over every byte — see `sheetWriteWorker.ts`, which magnifies
@@ -190,7 +191,7 @@ function describeFrames(frames: number, tags: number): string {
  * suffixed so the download never silently replaces the file it came from. The extension is always
  * the one that was written, whatever arrived. A magnified copy carries its factor in the `@4x` form
  * asset pipelines already read, so the 1× file and its magnifications sort together and none of them
- * overwrites another — including across formats, since the two extensions differ.
+ * overwrites another — including across formats, since each of the four has its own extension.
  */
 function quantisedName(sourceName: string, scale: number, extension: string): string {
   const stem = sourceName.replace(/\.[^./\\]+$/, '');

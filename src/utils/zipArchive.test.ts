@@ -34,6 +34,7 @@ describe('zipArchive', () => {
     const archive = zipArchive([{ name: 'check.txt', bytes: payload }]);
     const view = new DataView(archive.buffer);
 
+    // Read at the local header's own CRC field, which is where a reader verifies the entry from.
     expect(view.getUint32(14, true)).toBe(crc32(payload));
     expect(crc32(payload)).toBe(0xcbf43926);
   });

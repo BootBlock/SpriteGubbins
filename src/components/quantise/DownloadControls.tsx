@@ -1,9 +1,11 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MAX_IMAGE_PIXELS, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { SHEET_FORMAT_FILES } from '../../constants/sheetFormats.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
-import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
+import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { sheetIdentity } from '../../utils/sheetIdentity.ts';
 import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
@@ -23,7 +25,7 @@ interface DownloadControlsProps {
   /** `null` until a grid is settled, which is the only state the download can be refused in. */
   readonly resultImage: ImageData | null;
   /**
-   * What the sheet broke into, which is what an Aseprite document's frames are cut along.
+   * What the sheet broke into: an Aseprite document's frames, a pack's files, a manifest's rects.
    *
    * `null` alongside a missing result, and carrying no boxes wherever the sheet held nothing
    * separable — see `SpriteSegmentation`, whose `SOLID` and `SCATTERED` are deliberately boxless.
@@ -63,9 +65,16 @@ export function DownloadControls({
   duplicates,
 }: DownloadControlsProps) {
   const download = useImageDownload();
-  // The studio's own answer about what this sheet is, read here rather than drilled through two
-  // panels that have nothing to do with it — see `useSheetIdentity`, which says why it is a hook.
-  const { names, sheet } = useSheetIdentity();
+  const category = useSubjectStore((state) => state.category);
+  const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  const output = useOutputStore((state) => state.output);
+  // The studio's own answer about what this sheet is, read here rather than drilled down from the
+  // tab through two panels that have nothing to do with it. The derivation itself is pure and lives
+  // in `utils/sheetIdentity.ts`; what needs React is only the two store reads above.
+  const identity = useMemo(
+    () => sheetIdentity(category, output, additionalAnatomy),
+    [category, output, additionalAnatomy],
+  );
   const button = useRef<HTMLButtonElement>(null);
   // Whether the button held the keyboard's focus at the moment it was pressed — see the effect.
   const heldFocus = useRef(false);
@@ -163,8 +172,8 @@ export function DownloadControls({
               format: downloadFormat,
               boxes: sprites?.kind === 'SEGMENTED' ? sprites.boxes : [],
               duplicates,
-              names,
-              sheet,
+              names: identity.names,
+              sheet: identity.sheet,
             });
           }}
           className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"

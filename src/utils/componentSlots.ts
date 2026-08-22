@@ -67,13 +67,20 @@ function anatomySlots(component: AnatomyComponent, facings: SheetFacings): reado
  * A collision is possible between an entry's label and a piece of anatomy the reader typed — nothing
  * stops a subject naming its own `tail` on a plan that already has one — and two sprites answering to
  * one name is a manifest whose consumers overwrite one with the other. The first keeps the name.
+ *
+ * **The suffixed name is registered too, and the suffix advances until one is free.** Counting
+ * occurrences alone is not enough: `tail`, `tail`, `tail-2` renames the second `tail` to `tail-2`
+ * and then hands the third component the name it has just given away — the collision this function
+ * exists to remove, arriving one step later, in a pack where two entries share a path and only one
+ * of them survives extraction.
  */
 function unique(names: readonly string[]): readonly string[] {
-  const seen = new Map<string, number>();
+  const taken = new Set<string>();
   return names.map((name) => {
-    const taken = seen.get(name);
-    seen.set(name, (taken ?? 0) + 1);
-    return taken === undefined ? name : `${name}-${String(taken + 1)}`;
+    let candidate = name;
+    for (let suffix = 2; taken.has(candidate); suffix += 1) candidate = `${name}-${String(suffix)}`;
+    taken.add(candidate);
+    return candidate;
   });
 }
 
@@ -94,5 +101,10 @@ export function componentSlots(
     names.push(...additional.flatMap((component) => anatomySlots(component, anatomyFacings)));
   }
 
-  return unique(names);
+  // A piece of anatomy the reader typed in a non-Latin script, or in punctuation alone, slugs to
+  // nothing — `parseAdditionalAnatomy` has no reason to refuse such a name, and the prompt carries it
+  // perfectly well. What it cannot be is an identifier, so it falls back to its position, which is
+  // what an unnamed sprite is called anyway. Without this the manifest states `"name": ""` while
+  // claiming the sheet is named, and the pack writes an entry called `13-.png`.
+  return unique(names.map((name, index) => (name === '' ? `component-${String(index + 1)}` : name)));
 }

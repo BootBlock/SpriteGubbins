@@ -40,4 +40,4 @@ export const KEY_OFFER_BORDER_SHARE = 0.9;
  * from the panels that are failing to report.
  */
 export const KEY_OFFER_NOTICE =
-  'The border of this sheet is the background key the studio asked for, so it has arrived with its field still on it. Keying that field out is what makes the rest of this tab work: sprites are found in what is transparent, and the duplicate, symmetry and frame readings are all readings of those sprites, so they stay silent until it goes. Nothing is changed until you press it, and the tolerance beside it is yours to move afterwards.';
+  'The border of this sheet is the background key the studio asked for, so it has arrived with its field still on it. Keying that field out is what makes the rest of this tab work: sprites are found in what is transparent, and the duplicate, symmetry and frame readings are all readings of those sprites, so they stay silent until it goes. Nothing is changed until you press it, and the tolerance the pass runs at appears here once it is on, for you to move afterwards.';

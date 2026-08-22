@@ -42,7 +42,7 @@ const PACK_SPRITE_DIRECTORY = 'sprites';
  * ten sorts after nine. The name follows it only where the sheet is named — a positional name is
  * the ordinal again, and `07-sprite-07.png` says nothing twice.
  */
-export function spriteFileName(manifest: SpriteManifest, index: number): string {
+function spriteFileName(manifest: SpriteManifest, index: number): string {
   const sprite = manifest.sprites[index];
   const ordinal = String(index + 1).padStart(2, '0');
   const name = manifest.named && sprite !== undefined ? `-${sprite.name}` : '';

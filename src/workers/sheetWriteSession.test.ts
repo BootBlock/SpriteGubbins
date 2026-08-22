@@ -54,7 +54,12 @@ describe('writeSheetOffThread', () => {
     // The sheet at its own size and the factor, never an already-magnified image: the magnification
     // is the expensive half, and it belongs on the far side of this boundary. The boxes cross at 1:1
     // beside it for the same reason, and are scaled there.
-    expect(thread().posted).toEqual([job]);
+    // Spelled out rather than compared with `job` itself, which the near side passes through by
+    // reference: an assertion that the posted object is the object handed over would hold however
+    // the four fields below were reshaped, which is the property this test is named for.
+    expect(thread().posted).toEqual([
+      expect.objectContaining({ image, scale: 8, format: 'ASEPRITE', boxes }),
+    ]);
 
     thread().answer({ kind: 'written', file: FILE });
     await expect(encoding).resolves.toEqual(FILE);

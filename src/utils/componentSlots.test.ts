@@ -99,6 +99,32 @@ describe('what a name says', () => {
     expect(slots.some((slot) => slot.startsWith('tail'))).toBe(false);
   });
 
+  it('gives a component whose name is not an identifier its position instead', () => {
+    // A name in a non-Latin script, or in punctuation alone, is a perfectly good thing to write in
+    // the prompt and cannot be a file name. Without the fallback the manifest states an empty name
+    // while claiming the sheet is named, and the pack writes an entry called `16-.png`.
+    const slots = componentSlots('CHARACTER', 'SINGLE_DIRECTION_POSE_LIBRARY', 'FOUR_CARDINAL', 0, [
+      { name: '尻尾', count: 1 },
+      { name: '???', count: 1 },
+    ]);
+
+    expect(slots.slice(-2)).toStrictEqual(['component-38', 'component-39']);
+    expect(slots.every((slot) => slot !== '')).toBe(true);
+  });
+
+  it('does not hand a later component a name it has just given away', () => {
+    // Counting occurrences alone renames the second `tail` to `tail-2` and then hands the genuine
+    // `Tail 2` that name as well — two sprites answering to one name, which is two entries at one
+    // path in a pack and only one of them surviving extraction.
+    const slots = componentSlots('CHARACTER', 'SINGLE_DIRECTION_POSE_LIBRARY', 'FOUR_CARDINAL', 0, [
+      { name: 'Tail', count: 1 },
+      { name: 'Tail', count: 1 },
+      { name: 'Tail 2', count: 1 },
+    ]);
+
+    expect(slots.slice(-3)).toStrictEqual(['tail', 'tail-2', 'tail-2-2']);
+  });
+
   it('separates two components a subject named the same thing', () => {
     const slots = componentSlots('CHARACTER', 'SINGLE_DIRECTION_POSE_LIBRARY', 'FOUR_CARDINAL', 0, [
       { name: 'Tail', count: 1 },

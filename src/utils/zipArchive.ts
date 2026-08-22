@@ -1,4 +1,4 @@
-import { concatBytes } from './pngChunk.ts';
+import { ByteWriter } from './byteWriter.ts';
 import { crc32 } from './crc32.ts';
 
 /**
@@ -16,6 +16,12 @@ import { crc32 } from './crc32.ts';
  * deflate on incompressible input emits the data plus five bytes per 65,535-byte block. Storing also
  * keeps this function synchronous and pure, where the PNG writer had to be asynchronous for the
  * browser's compressor.
+ *
+ * **Written through `ByteWriter`**, which is the `.aseprite` writer's own buffer and is
+ * little-endian throughout — which ZIP is too, so the one respect in which that class is not general
+ * purpose is the respect this format agrees with it on. That also means no field here is placed by a
+ * hand-counted offset: the local header's position is simply how many bytes had been written when it
+ * started, which is the arithmetic a manual `DataView` per record gets wrong one field at a time.
  *
  * **The timestamp is fixed at 1980-01-01**, the earliest a DOS field can express. A pure function has
  * no clock, and pinning it makes the archive byte-identical for identical input — which is what lets
@@ -58,65 +64,82 @@ const DOS_DATE = 33;
 const MAX_ENTRIES = 0xffff;
 const MAX_OFFSET = 0xffffffff;
 
+/** One entry's place in the archive, kept while the files are written so the directory can state it. */
+interface DirectoryRecord {
+  readonly name: Uint8Array;
+  readonly check: number;
+  readonly size: number;
+  readonly offset: number;
+}
+
 export function zipArchive(entries: readonly ZipEntry[]): Uint8Array<ArrayBuffer> {
   if (entries.length > MAX_ENTRIES) {
     throw new Error(`An archive of ${String(entries.length)} files is more than the format can list`);
   }
 
   const encoder = new TextEncoder();
-  const locals: Uint8Array[] = [];
-  const centrals: Uint8Array[] = [];
-  let offset = 0;
+  const archive = new ByteWriter();
+  const directory: DirectoryRecord[] = [];
 
   for (const entry of entries) {
     const name = encoder.encode(entry.name);
     const check = crc32(entry.bytes);
-
-    const local = new Uint8Array(30 + name.length);
-    const localView = new DataView(local.buffer);
-    localView.setUint32(0, LOCAL_SIGNATURE, true);
-    localView.setUint16(4, VERSION_NEEDED, true);
-    localView.setUint16(6, UTF8_NAME_FLAG, true);
-    localView.setUint16(8, STORED, true);
-    localView.setUint16(10, DOS_TIME, true);
-    localView.setUint16(12, DOS_DATE, true);
-    localView.setUint32(14, check, true);
-    localView.setUint32(18, entry.bytes.length, true);
-    localView.setUint32(22, entry.bytes.length, true);
-    localView.setUint16(26, name.length, true);
-    local.set(name, 30);
-
-    const central = new Uint8Array(46 + name.length);
-    const centralView = new DataView(central.buffer);
-    centralView.setUint32(0, CENTRAL_SIGNATURE, true);
-    // The version that *made* the file as well as the version needed to read it; the same here.
-    centralView.setUint16(4, VERSION_NEEDED, true);
-    centralView.setUint16(6, VERSION_NEEDED, true);
-    centralView.setUint16(8, UTF8_NAME_FLAG, true);
-    centralView.setUint16(10, STORED, true);
-    centralView.setUint16(12, DOS_TIME, true);
-    centralView.setUint16(14, DOS_DATE, true);
-    centralView.setUint32(16, check, true);
-    centralView.setUint32(20, entry.bytes.length, true);
-    centralView.setUint32(24, entry.bytes.length, true);
-    centralView.setUint16(28, name.length, true);
+    const offset = archive.length;
     if (offset > MAX_OFFSET) throw new Error('The archive is larger than the format can address');
-    centralView.setUint32(42, offset, true);
-    central.set(name, 46);
 
-    locals.push(local, entry.bytes);
-    centrals.push(central);
-    offset += local.length + entry.bytes.length;
+    archive
+      .u32(LOCAL_SIGNATURE)
+      .u16(VERSION_NEEDED)
+      .u16(UTF8_NAME_FLAG)
+      .u16(STORED)
+      .u16(DOS_TIME)
+      .u16(DOS_DATE)
+      .u32(check)
+      // Stored, so the compressed and uncompressed sizes are the same number twice.
+      .u32(entry.bytes.length)
+      .u32(entry.bytes.length)
+      .u16(name.length)
+      .u16(0) // No extra field.
+      .bytes(name)
+      .bytes(entry.bytes);
+
+    directory.push({ name, check, size: entry.bytes.length, offset });
   }
 
-  const directorySize = centrals.reduce((total, central) => total + central.length, 0);
-  const end = new Uint8Array(22);
-  const endView = new DataView(end.buffer);
-  endView.setUint32(0, END_SIGNATURE, true);
-  endView.setUint16(8, entries.length, true);
-  endView.setUint16(10, entries.length, true);
-  endView.setUint32(12, directorySize, true);
-  endView.setUint32(16, offset, true);
+  const directoryAt = archive.length;
+  for (const record of directory) {
+    archive
+      .u32(CENTRAL_SIGNATURE)
+      // The version that *made* the file as well as the version needed to read it; the same here.
+      .u16(VERSION_NEEDED)
+      .u16(VERSION_NEEDED)
+      .u16(UTF8_NAME_FLAG)
+      .u16(STORED)
+      .u16(DOS_TIME)
+      .u16(DOS_DATE)
+      .u32(record.check)
+      .u32(record.size)
+      .u32(record.size)
+      .u16(record.name.length)
+      .u16(0) // No extra field, …
+      .u16(0) // … no comment, …
+      .u16(0) // … one disk, …
+      .u16(0) // … no internal attributes, …
+      .u32(0) // … and none of the external ones a filesystem would carry.
+      .u32(record.offset)
+      .bytes(record.name);
+  }
 
-  return concatBytes([...locals, ...centrals, end]);
+  // Taken before the record that states it, since writing it moves the end.
+  const directorySize = archive.length - directoryAt;
+  return archive
+    .u32(END_SIGNATURE)
+    .u16(0) // This disk, …
+    .u16(0) // … and the disk the directory starts on: one archive, one disk.
+    .u16(entries.length)
+    .u16(entries.length)
+    .u32(directorySize)
+    .u32(directoryAt)
+    .u16(0) // No archive comment.
+    .toBytes();
 }

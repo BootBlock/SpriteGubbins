@@ -1,3 +1,5 @@
+import { slugify } from './slugify.ts';
+
 /**
  * The filename a downloaded prompt arrives as, from the subject's own name.
  *
@@ -7,14 +9,11 @@
  *
  * Lower-cased and reduced to `a-z0-9-` because this crosses a filesystem: a species field is free
  * text and may hold a slash, a colon or a quotation mark, each of which is illegal on at least one
- * platform. An empty stem — a blank species, or one written entirely in punctuation — falls back to
- * `sprite` rather than producing a file called `-prompt.md`.
+ * platform. That reduction is `slugify`, which the sprite pack's entry names take too — one answer
+ * to "this phrase as an identifier", rather than two spellings of one regular expression that could
+ * come to disagree about a character. An empty stem — a blank species, or one written entirely in
+ * punctuation — falls back to `sprite` rather than producing a file called `-prompt.md`.
  */
 export function promptFileName(species: string): string {
-  const stem = species
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-  return `${stem || 'sprite'}-prompt.md`;
+  return `${slugify(species) || 'sprite'}-prompt.md`;
 }
