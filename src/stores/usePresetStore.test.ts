@@ -51,7 +51,7 @@ function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype
 
 beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
-  usePresetStore.setState({ customPresets: [], isExporting: false });
+  usePresetStore.setState({ customPresets: [], isExporting: false, pendingImport: null });
   useSubjectStore.setState({ category: DEFAULT_PRESET.category, subject: DEFAULT_PRESET.subject });
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useUIStore.getState().dismissToast();
@@ -414,11 +414,15 @@ describe('on a fallback whose storage refuses writes', () => {
 
   it('reports a pack it could not import', async () => {
     await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+    await usePresetStore.getState().confirmPresetImport();
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not import that preset pack');
     // The flag has to come back down, or both transfer controls stay disabled for the session.
     expect(usePresetStore.getState().isExporting).toBe(false);
+    // And the question goes with it — a failed replace is retried from the button, not by being
+    // asked again over a collection nothing happened to.
+    expect(usePresetStore.getState().pendingImport).toBeNull();
   });
 });
 
@@ -446,14 +450,77 @@ describe('exportPresetsJSON', () => {
 });
 
 describe('importPresetsJSON', () => {
-  it('replaces the stored collection with the pack contents', async () => {
+  it('replaces the stored collection once the replacement is confirmed', async () => {
     await usePresetStore.getState().saveCustomPreset('Will be replaced', '');
     await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+    await usePresetStore.getState().confirmPresetImport();
 
-    const { customPresets, isExporting } = usePresetStore.getState();
+    const { customPresets, isExporting, pendingImport } = usePresetStore.getState();
     expect(customPresets.map((preset) => preset.name)).toEqual(['Imported Knight']);
     expect(isExporting).toBe(false);
+    expect(pendingImport).toBeNull();
     await expect(backend.listPresets()).resolves.toHaveLength(1);
+  });
+
+  /*
+   * The defect this two-step flow exists for: one press of Import, one file picked, and every
+   * preset the reader had saved was gone. The only warning was the button's tooltip, which
+   * `ControlTooltip` cannot show on a touchscreen at all.
+   */
+  it('stages the pack and deletes nothing until the reader agrees', async () => {
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
+
+    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+
+    expect(usePresetStore.getState().pendingImport?.map((preset) => preset.name)).toEqual([
+      'Imported Knight',
+    ]);
+    // Neither the store nor storage has moved — the question is all that has happened.
+    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Mine']);
+    await expect(backend.listPresets()).resolves.toHaveLength(1);
+    expect((await backend.listPresets())[0]?.name).toBe('Mine');
+  });
+
+  it('leaves the stored rows exactly as they were when the replacement is declined', async () => {
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
+    const before = await backend.listPresets();
+    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+
+    usePresetStore.getState().cancelPresetImport();
+
+    expect(usePresetStore.getState().pendingImport).toBeNull();
+    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Mine']);
+    await expect(backend.listPresets()).resolves.toEqual(before);
+    expect(useUIStore.getState().toastMessage).toBe('Import cancelled, and nothing of yours was deleted');
+  });
+
+  it('replaces nothing when nothing is staged', async () => {
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
+
+    await usePresetStore.getState().confirmPresetImport();
+
+    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Mine']);
+    await expect(backend.listPresets()).resolves.toHaveLength(1);
+  });
+
+  it('says how many it deleted as well as how many arrived', async () => {
+    // "Imported 1 custom preset" is true of a library that had two and now has one, and it was all
+    // the old toast said.
+    await usePresetStore.getState().saveCustomPreset('First', '');
+    await usePresetStore.getState().saveCustomPreset('Second', '');
+    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+
+    await usePresetStore.getState().confirmPresetImport();
+
+    expect(useUIStore.getState().toastMessage).toBe('Imported 1 custom preset, replacing 2');
+  });
+
+  it('reports the arrival alone when there was nothing of the reader’s to replace', async () => {
+    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+
+    await usePresetStore.getState().confirmPresetImport();
+
+    expect(useUIStore.getState().toastMessage).toBe('Imported 1 custom preset');
   });
 
   it('skips built-ins, so re-importing an export does not duplicate them', async () => {
@@ -462,6 +529,7 @@ describe('importPresetsJSON', () => {
     if (!Array.isArray(exported)) throw new Error('the export should be an array.');
 
     await usePresetStore.getState().importPresetsJSON(packFile(exported));
+    await usePresetStore.getState().confirmPresetImport();
 
     const { customPresets } = usePresetStore.getState();
     expect(customPresets).toHaveLength(1);
@@ -487,6 +555,7 @@ describe('importPresetsJSON', () => {
   it('drops entries it cannot vouch for and keeps the rest', async () => {
     const pack = [customPreset({ id: 'custom-good', name: 'Good' }), { id: 42 }, null];
     await usePresetStore.getState().importPresetsJSON(packFile(pack));
+    await usePresetStore.getState().confirmPresetImport();
 
     expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Good']);
   });

@@ -1,8 +1,10 @@
 import { create } from 'zustand';
+import { PRESET_PACK_ITEMS } from '../constants/packImport.ts';
 import { getDatabase } from '../db/database.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { toImageConfig } from '../utils/imageConfig.ts';
 import { findPresetByName } from '../utils/presetNames.ts';
+import { describePackImported } from '../utils/packImportSummary.ts';
 import { parsePresetPack, serialisePresetPack } from '../utils/presetPack.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
@@ -28,6 +30,16 @@ export interface PresetState {
    * synchronously), which is what stops an export racing a half-replaced collection.
    */
   readonly isExporting: boolean;
+  /**
+   * The presets a parsed pack holds, waiting for the reader to agree to the replacement — `null`
+   * whenever no import is being asked about.
+   *
+   * Staged in the store rather than held by the transfer control, because the answer decides what
+   * happens to stored rows and the control that asked is free to unmount before it arrives. It also
+   * keeps the parse and the replace in one place: a pack that fails to parse never reaches here, so
+   * the malformed-file and empty-file paths report exactly as they did before, without a prompt.
+   */
+  readonly pendingImport: readonly PresetArchetype[] | null;
 
   /** Load the stored custom presets into the store. Called once on boot. */
   fetchCustomPresets(): Promise<void>;
@@ -67,13 +79,21 @@ export interface PresetState {
    * DOM's job, and a string is something a test can assert on.
    */
   exportPresetsJSON(): string;
-  /** Replace the stored custom presets with the pack in `file`. */
+  /**
+   * Read the pack in `file` and stage it for confirmation. Nothing stored changes here — the
+   * replacement itself is {@link PresetState.confirmPresetImport}.
+   */
   importPresetsJSON(file: File): Promise<void>;
+  /** Replace the stored custom presets with the staged pack. */
+  confirmPresetImport(): Promise<void>;
+  /** Discard the staged pack, leaving the stored presets exactly as they are. */
+  cancelPresetImport(): void;
 }
 
 export const usePresetStore = create<PresetState>((set, get) => ({
   customPresets: [],
   isExporting: false,
+  pendingImport: null,
 
   fetchCustomPresets: async () => {
     try {
@@ -198,14 +218,43 @@ export const usePresetStore = create<PresetState>((set, get) => ({
         return;
       }
 
-      const database = await getDatabase();
-      await database.replacePresets(imported);
-      set({ customPresets: imported });
-      showToast(`Imported ${imported.length} custom preset${imported.length === 1 ? '' : 's'}`);
+      // Staged, not applied. Everything past this point is the reader's decision, and it is asked
+      // on screen rather than in a tooltip — the tooltip said what an import costs, and
+      // `ControlTooltip` cannot be reached by touch at all, so on a phone the only warning the app
+      // gave was one nobody could open.
+      set({ pendingImport: imported });
     } catch {
       showToast('Could not import that preset pack');
     } finally {
       set({ isExporting: false });
     }
+  },
+
+  confirmPresetImport: async () => {
+    const imported = get().pendingImport;
+    if (imported === null) return;
+
+    const { showToast } = useUIStore.getState();
+    // Counted here rather than when the pack was parsed, so the sentence reports the collection as
+    // it stands at the moment it is replaced.
+    const replacing = get().customPresets.length;
+    set({ isExporting: true });
+    try {
+      const database = await getDatabase();
+      await database.replacePresets(imported);
+      set({ customPresets: imported });
+      showToast(describePackImported(imported.length, replacing, PRESET_PACK_ITEMS));
+    } catch {
+      showToast('Could not import that preset pack');
+    } finally {
+      // Cleared either way: a failed replace is reported and the reader retries from the button,
+      // rather than being asked the same question again over a collection nothing happened to.
+      set({ isExporting: false, pendingImport: null });
+    }
+  },
+
+  cancelPresetImport: () => {
+    set({ pendingImport: null });
+    useUIStore.getState().showToast('Import cancelled, and nothing of yours was deleted');
   },
 }));

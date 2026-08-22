@@ -1,3 +1,4 @@
+import { QUANTISE_PACK_ITEMS } from '../../constants/packImport.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import { JsonPackTransfer } from '../common/JsonPackTransfer.tsx';
@@ -20,15 +21,33 @@ export function QuantisePresetTransferControls() {
   const isTransferring = useQuantisePresetStore((state) => state.isTransferring);
   const exportQuantisePresetsJSON = useQuantisePresetStore((state) => state.exportQuantisePresetsJSON);
   const importQuantisePresetsJSON = useQuantisePresetStore((state) => state.importQuantisePresetsJSON);
-  const hasPresets = useQuantisePresetStore((state) => state.presets.length > 0);
+  const savedCount = useQuantisePresetStore((state) => state.presets.length);
+  const pendingImport = useQuantisePresetStore((state) => state.pendingImport);
+  const confirmQuantisePresetImport = useQuantisePresetStore((state) => state.confirmQuantisePresetImport);
+  const cancelQuantisePresetImport = useQuantisePresetStore((state) => state.cancelQuantisePresetImport);
 
   return (
     <JsonPackTransfer
       filename={PACK_FILENAME}
       exportPack={exportQuantisePresetsJSON}
       importPack={importQuantisePresetsJSON}
+      pendingImport={
+        pendingImport === null
+          ? null
+          : {
+              incoming: pendingImport.length,
+              replacing: savedCount,
+              noun: QUANTISE_PACK_ITEMS,
+              confirmGuidance: QUANTISE_ACTION_TOOLTIPS.confirmImportQuantisePresets,
+              cancelGuidance: QUANTISE_ACTION_TOOLTIPS.cancelImportQuantisePresets,
+              onConfirm: () => {
+                void confirmQuantisePresetImport();
+              },
+              onCancel: cancelQuantisePresetImport,
+            }
+      }
       isTransferring={isTransferring}
-      canExport={hasPresets}
+      canExport={savedCount > 0}
       exportGuidance={QUANTISE_ACTION_TOOLTIPS.exportQuantisePresets}
       importGuidance={QUANTISE_ACTION_TOOLTIPS.importQuantisePresets}
     />

@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { defaultSubjectFor } from '../../constants/categories/index.ts';
+import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
+import type { PresetArchetype } from '../../types/preset.ts';
 import { PresetTransferControls } from './PresetTransferControls.tsx';
 
 /**
@@ -13,7 +17,7 @@ import { PresetTransferControls } from './PresetTransferControls.tsx';
  * refuses.
  */
 beforeEach(() => {
-  usePresetStore.setState({ customPresets: [], isExporting: false });
+  usePresetStore.setState({ customPresets: [], isExporting: false, pendingImport: null });
 });
 
 describe('PresetTransferControls', () => {
@@ -30,5 +34,48 @@ describe('PresetTransferControls', () => {
 
     expect(screen.getByRole('button', { name: /Export JSON/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Import JSON/ })).toBeDisabled();
+  });
+
+  it('replaces both buttons with the question while an import waits to be answered', () => {
+    // The count on screen is the reader's own collection as it stands, not a figure snapshotted
+    // when the file was parsed.
+    const arriving: PresetArchetype = {
+      id: 'custom-arriving',
+      name: 'Arrived',
+      description: '',
+      category: 'CHARACTER',
+      subject: defaultSubjectFor('CHARACTER'),
+      output: DEFAULT_PRESET.output,
+      isCustom: true,
+    };
+    usePresetStore.setState({
+      customPresets: [{ ...arriving, id: 'custom-mine', name: 'Mine' }],
+      pendingImport: [arriving],
+    });
+
+    render(<PresetTransferControls />);
+
+    expect(screen.queryByRole('button', { name: /Export JSON/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Import JSON/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/1 custom preset\./)).toBeInTheDocument();
+  });
+
+  it('asks the store to replace only once Replace is pressed', async () => {
+    const confirmPresetImport = vi.fn().mockResolvedValue(undefined);
+    const arriving: PresetArchetype = {
+      id: 'custom-arriving',
+      name: 'Arrived',
+      description: '',
+      category: 'CHARACTER',
+      subject: defaultSubjectFor('CHARACTER'),
+      output: DEFAULT_PRESET.output,
+      isCustom: true,
+    };
+    usePresetStore.setState({ pendingImport: [arriving], confirmPresetImport });
+
+    render(<PresetTransferControls />);
+    await userEvent.click(screen.getByRole('button', { name: 'Replace' }));
+
+    expect(confirmPresetImport).toHaveBeenCalledTimes(1);
   });
 });

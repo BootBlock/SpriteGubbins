@@ -23,7 +23,7 @@ const saved: QuantisePreset = {
 };
 
 beforeEach(() => {
-  useQuantisePresetStore.setState({ presets: [], isTransferring: false });
+  useQuantisePresetStore.setState({ presets: [], isTransferring: false, pendingImport: null });
   useUIStore.getState().dismissToast();
 });
 
@@ -66,6 +66,23 @@ describe('QuantisePresetTransferControls', () => {
 
     expect(screen.getByRole('button', { name: /Export JSON/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: /Import JSON/ })).toBeDisabled();
+  });
+
+  it('replaces both buttons with the question while an import waits to be answered', async () => {
+    // Both, because an export started over a half-answered import is the race the transferring flag
+    // already existed to stop — leaving Export reachable would reintroduce it through the other door.
+    const arriving: QuantisePreset = { ...saved, id: 'quantise-2', name: 'Arrived' };
+    useQuantisePresetStore.setState({ presets: [saved], pendingImport: [arriving] });
+    const cancelQuantisePresetImport = vi.fn();
+    useQuantisePresetStore.setState({ cancelQuantisePresetImport });
+    render(<QuantisePresetTransferControls />);
+
+    expect(screen.queryByRole('button', { name: /Export JSON/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Import JSON/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/1 saved setting/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(cancelQuantisePresetImport).toHaveBeenCalledTimes(1);
   });
 
   it('hands the chosen file to the store, and clears the input so the same file can be retried', async () => {
