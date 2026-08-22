@@ -159,7 +159,7 @@ describe('every shipped preset', () => {
     // The type says a preset holds the image alone, and structural typing means the type alone
     // cannot enforce it: a whole `OutputConfig` spread into `output` type-checks, and would ship an
     // archetype with an opinion about whether *this* reader wants a JSON manifest handed back.
-    expect(Object.keys(preset.output)).not.toContain('emitManifest');
+    expect(Object.keys(preset.output)).not.toContain('emitComponentMap');
     expect(Object.keys(preset.output)).not.toContain('emitPromptFeedback');
   });
 });

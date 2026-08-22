@@ -203,7 +203,7 @@ export function parseOutputConfig(value: unknown): OutputConfig {
 
   return {
     ...parseImageConfig(source),
-    emitManifest: pickBoolean(source, 'emitManifest', DEFAULT_OUTPUT_CONFIG.emitManifest),
+    emitComponentMap: pickBoolean(source, 'emitComponentMap', DEFAULT_OUTPUT_CONFIG.emitComponentMap),
     emitPromptFeedback: pickBoolean(source, 'emitPromptFeedback', DEFAULT_OUTPUT_CONFIG.emitPromptFeedback),
   };
 }

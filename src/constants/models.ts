@@ -68,7 +68,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. Choosing Sol in ChatGPT also puts you on a thinking tier, which is what enables images with thinking on a paid plan. It reasons over the brief, so it gets the self-audit and can return a companion JSON manifest.',
+      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. Choosing Sol in ChatGPT also puts you on a thinking tier, which is what enables images with thinking on a paid plan. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
     capabilities: {
       deliberates: true,
       emitsText: true,
@@ -92,12 +92,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // Google names this the migration target for the retired Imagen models. It is a *thinking*
     // model — "Gemini 3 image models are thinking models that use a reasoning process ('Thinking')
     // for complex prompts", and it cannot be disabled — and it returns interleaved text and images,
-    // so unlike Imagen it can both work through the specification and hand back a manifest.
+    // so unlike Imagen it can both work through the specification and hand back a component map.
     // https://ai.google.dev/gemini-api/docs/image-generation
     id: 'GEMINI_FLASH_IMAGE',
     name: 'Gemini 3.1 Flash Image / Nano Banana 2',
     description:
-      'Google’s replacement for the retired Imagen models. A thinking model that reasons over complex prompts, so it receives the full specification including the self-audit, and it can return a companion JSON manifest alongside the image.',
+      'Google’s replacement for the retired Imagen models. A thinking model that reasons over complex prompts, so it receives the full specification including the self-audit, and it can return a companion component map alongside the image.',
     capabilities: {
       deliberates: true,
       emitsText: true,
@@ -118,7 +118,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'GEMINI_PRO_IMAGE',
     name: 'Gemini 3 Pro Image / Nano Banana Pro',
     description:
-      'The heavier Gemini image model, built for complex layouts and precise text rendering. Same handling as Nano Banana 2 — full specification, self-audit and optional manifest — at higher cost and quality.',
+      'The heavier Gemini image model, built for complex layouts and precise text rendering. Same handling as Nano Banana 2 — full specification, self-audit and optional component map — at higher cost and quality.',
     capabilities: {
       deliberates: true,
       emitsText: true,
@@ -134,7 +134,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   {
     // ByteDance's current flagship, and a *reasoning* image model — which is the same shape as
     // Gemini's thinking models, and the reason this one gets the self-audit while Midjourney and Flux
-    // do not. It returns images only, so there is no channel for a manifest.
+    // do not. It returns images only, so there is no channel for a component map.
     //
     // **`deliberates: true` here rests on weaker evidence than it does for Gemini, and that is worth
     // knowing rather than smoothing over.** Google state the reasoning pass on their own model page;
@@ -153,7 +153,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'SEEDREAM',
     name: 'Seedream 5.0 (ByteDance)',
     description:
-      'ByteDance’s reasoning image model — it plans the layout before rendering, so it receives the full specification including the self-audit. Returns images only, so it cannot return a manifest. Its prompt is led by a planning directive, because long briefs here are documented to lose instructions — ByteDance advise 600 English words, and the notice under the prompt says how far past that yours is.',
+      'ByteDance’s reasoning image model — it plans the layout before rendering, so it receives the full specification including the self-audit. Returns images only, so it cannot return a component map. Its prompt is led by a planning directive, because long briefs here are documented to lose instructions — ByteDance advise 600 English words, and the notice under the prompt says how far past that yours is.',
     capabilities: {
       deliberates: true,
       emitsText: false,
@@ -313,12 +313,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   },
   {
     // Replaces the DALL·E 3 entry, which OpenAI shut down on 12 May 2026. `gpt-image-2` lists
-    // "image" as its only output modality, so it cannot return a manifest.
+    // "image" as its only output modality, so it cannot return a component map.
     // https://developers.openai.com/api/docs/deprecations
     id: 'GPT_IMAGE',
     name: 'GPT Image 2 (OpenAI)',
     description:
-      'OpenAI’s current image model, replacing the retired DALL·E 3. Returns images only, so it gets the specification without the self-audit or the manifest.',
+      'OpenAI’s current image model, replacing the retired DALL·E 3. Returns images only, so it gets the specification without the self-audit or the component map.',
     capabilities: {
       deliberates: false,
       emitsText: false,

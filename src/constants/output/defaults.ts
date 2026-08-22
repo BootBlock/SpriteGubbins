@@ -87,6 +87,6 @@ export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
  */
 export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
   ...DEFAULT_IMAGE_CONFIG,
-  emitManifest: false,
+  emitComponentMap: false,
   emitPromptFeedback: false,
 };

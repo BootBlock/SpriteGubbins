@@ -25,7 +25,18 @@ import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
  */
 const DOC = 'docs/todo/baseline-prompt-new.md';
 const HEADING = '## 3. The template';
-const FENCE = '```';
+
+/**
+ * A fence line: three or more backticks, and whatever info string the opener carries.
+ *
+ * **Read as a run rather than as the literal three backticks, because the template now contains a
+ * fence of its own.** Section [SECTION:COMPONENT_MAP] fences the JSON it asks a model to reproduce,
+ * so a mirror delimited by exactly three would end at that example — leaving a short block that
+ * compares clean against nothing and a document silently unchecked from there down. CommonMark's own
+ * answer is to open the outer fence with a longer run, which closes only on a run at least as long,
+ * so §3 opens with four and this reads whatever it finds.
+ */
+const FENCE_LINE = /^(`{3,})(.*)$/;
 
 /**
  * The first fenced block under §3's heading, or `null` if the document no longer has one.
@@ -40,9 +51,16 @@ function mirroredTemplate(markdown: string): string | null {
   const lines = markdown.replaceAll('\r\n', '\n').split('\n');
   const heading = lines.indexOf(HEADING);
   if (heading < 0) return null;
-  const open = lines.indexOf(FENCE, heading);
+  const open = lines.findIndex((line, index) => index > heading && FENCE_LINE.test(line));
   if (open < 0) return null;
-  const close = lines.indexOf(FENCE, open + 1);
+  const opener = FENCE_LINE.exec(lines[open] ?? '')?.[1] ?? '';
+  // Closes on a bare run at least as long as the opener, which is CommonMark's rule and the reason a
+  // shorter fence inside the block is content rather than the end of it.
+  const close = lines.findIndex((line, index) => {
+    if (index <= open) return false;
+    const run = FENCE_LINE.exec(line);
+    return run !== null && (run[1] ?? '').length >= opener.length && (run[2] ?? '').trim() === '';
+  });
   if (close < 0) return null;
   return lines.slice(open + 1, close).join('\n');
 }

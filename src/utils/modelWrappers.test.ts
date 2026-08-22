@@ -177,11 +177,11 @@ describe('wrapForModel', () => {
   it('sends Seedream the self-audit but never the manifest', () => {
     // The capability split in one place: it reasons over the brief, so the audit is actionable —
     // and it returns an image and nothing else, so the manifest would be an instruction it can
-    // only drop. `emitManifest` is set here to prove the gate is the capability, not the default.
+    // only drop. `emitComponentMap` is set here to prove the gate is the capability, not the default.
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ targetModel: 'SEEDREAM', emitManifest: true }),
+      withOutput({ targetModel: 'SEEDREAM', emitComponentMap: true }),
     );
     expect(prompt).toContain('## 9. LAYOUT AND SELF-AUDIT');
     expect(prompt).not.toContain('## 10. COMPANION MANIFEST');

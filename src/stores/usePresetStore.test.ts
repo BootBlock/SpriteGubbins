@@ -109,13 +109,13 @@ describe('loadPreset', () => {
     const marine = PRESETS[1];
     if (!marine) throw new Error('PRESETS must hold more than one archetype.');
     useOutputStore.setState({
-      output: { ...DEFAULT_OUTPUT_CONFIG, emitManifest: true, emitPromptFeedback: true },
+      output: { ...DEFAULT_OUTPUT_CONFIG, emitComponentMap: true, emitPromptFeedback: true },
     });
 
     usePresetStore.getState().loadPreset(marine);
 
     const { output } = useOutputStore.getState();
-    expect(output.emitManifest).toBe(true);
+    expect(output.emitComponentMap).toBe(true);
     expect(output.emitPromptFeedback).toBe(true);
     // And the rest of the studio really did move, so this is not passing on a load that did nothing.
     expect(output.targetModel).toBe(marine.output.targetModel);
@@ -128,7 +128,7 @@ describe('loadPreset', () => {
 
     usePresetStore.getState().loadPreset(marine);
 
-    expect(useOutputStore.getState().output.emitManifest).toBe(false);
+    expect(useOutputStore.getState().output.emitComponentMap).toBe(false);
     expect(useOutputStore.getState().output.emitPromptFeedback).toBe(false);
   });
 });
@@ -151,13 +151,13 @@ describe('saveCustomPreset', () => {
     // What a preset holds is also what an exported pack publishes, so a `true` saved here would
     // travel to whoever imports the pack and turn a working preference into part of the archetype.
     useOutputStore.setState({
-      output: { ...DEFAULT_OUTPUT_CONFIG, emitManifest: true, emitPromptFeedback: true },
+      output: { ...DEFAULT_OUTPUT_CONFIG, emitComponentMap: true, emitPromptFeedback: true },
     });
 
     await usePresetStore.getState().saveCustomPreset('My Archetype', '');
 
     const [saved] = await backend.listPresets();
-    expect(Object.keys(saved?.output ?? {})).not.toContain('emitManifest');
+    expect(Object.keys(saved?.output ?? {})).not.toContain('emitComponentMap');
     expect(Object.keys(saved?.output ?? {})).not.toContain('emitPromptFeedback');
   });
 

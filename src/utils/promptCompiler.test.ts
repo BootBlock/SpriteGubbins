@@ -201,22 +201,22 @@ describe('generatePrompt — conditional blocks', () => {
     expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT)).not.toContain('### Identity lock');
   });
 
-  it('asks for a manifest only from a target that can return one', () => {
+  it('asks for a component map only from a target that can return one', () => {
     const sol = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ emitManifest: true, targetModel: 'CHATGPT_5_6_SOL' }),
+      withOutput({ emitComponentMap: true, targetModel: 'CHATGPT_5_6_SOL' }),
     );
-    expect(sol).toContain('## 10. COMPANION MANIFEST');
+    expect(sol).toContain('## 10. COMPANION COMPONENT MAP');
 
     // Midjourney returns an image and nothing else, so the section would be an instruction it can
     // only drop.
     const midjourney = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ emitManifest: true, targetModel: 'MIDJOURNEY' }),
+      withOutput({ emitComponentMap: true, targetModel: 'MIDJOURNEY' }),
     );
-    expect(midjourney).not.toContain('COMPANION MANIFEST');
+    expect(midjourney).not.toContain('COMPANION COMPONENT MAP');
   });
 
   it('passes marker-shaped user text through instead of throwing', () => {
@@ -240,14 +240,14 @@ describe('generatePrompt — conditional blocks', () => {
     for (const targetModel of TARGET_MODEL_IDS) {
       for (const renderStyle of RENDER_STYLES) {
         for (const rigMode of RIG_MODES) {
-          for (const emitManifest of [true, false]) {
+          for (const emitComponentMap of [true, false]) {
             for (const emitPromptFeedback of [true, false]) {
               const prompt = generatePrompt(
                 'CHARACTER',
                 SUBJECT,
-                withOutput({ renderStyle, rigMode, emitManifest, emitPromptFeedback, targetModel }),
+                withOutput({ renderStyle, rigMode, emitComponentMap, emitPromptFeedback, targetModel }),
               );
-              const branch = `${targetModel}/${renderStyle}/${rigMode}/${String(emitManifest)}/${String(emitPromptFeedback)}`;
+              const branch = `${targetModel}/${renderStyle}/${rigMode}/${String(emitComponentMap)}/${String(emitPromptFeedback)}`;
               expect(prompt, branch).not.toMatch(MARKER);
             }
           }
@@ -886,16 +886,16 @@ describe('generatePrompt — the adherence report', () => {
     // sections back, so a reader who cannot trust the numbering cannot follow the citation either.
     // The closing invariants section follows the report and takes whatever number is left, which is
     // what makes the pair worth checking together: two conditional sections in a row.
-    const withoutManifest = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
-    expect(withoutManifest).toContain('## 10. ADHERENCE REPORT');
-    expect(withoutManifest).toContain('## 11. RENDER-CRITICAL INVARIANTS');
-    expect(withoutManifest).not.toContain('## 12.');
+    const withoutMap = generatePrompt('CHARACTER', SUBJECT, withOutput(CAPABLE));
+    expect(withoutMap).toContain('## 10. ADHERENCE REPORT');
+    expect(withoutMap).toContain('## 11. RENDER-CRITICAL INVARIANTS');
+    expect(withoutMap).not.toContain('## 12.');
 
-    const withManifest = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...CAPABLE, emitManifest: true }));
-    expect(withManifest).toContain('## 10. COMPANION MANIFEST');
-    expect(withManifest).toContain('## 11. ADHERENCE REPORT');
-    expect(withManifest).toContain('## 12. RENDER-CRITICAL INVARIANTS');
-    expect(withManifest).not.toContain('## 13.');
+    const withMap = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...CAPABLE, emitComponentMap: true }));
+    expect(withMap).toContain('## 10. COMPANION COMPONENT MAP');
+    expect(withMap).toContain('## 11. ADHERENCE REPORT');
+    expect(withMap).toContain('## 12. RENDER-CRITICAL INVARIANTS');
+    expect(withMap).not.toContain('## 13.');
   });
 
   it('names the second deliverable in the closing line rather than ending on the image alone', () => {
@@ -2204,7 +2204,7 @@ describe('the section numbering the prompt cites itself by', () => {
       // gated on what the target can do, so a target that takes one and not the other is where a
       // hand-numbered tail went wrong before — which the template answered by writing the report's
       // heading twice. Asking for both is what puts every combination of the two through this.
-      const output = withOutput({ targetModel: target, emitManifest: true, emitPromptFeedback: true });
+      const output = withOutput({ targetModel: target, emitComponentMap: true, emitPromptFeedback: true });
       for (const rigMode of ['CUTOUT_RIG', 'NONE'] as const) {
         const numbers = headingNumbers(generatePrompt('CHARACTER', SUBJECT, { ...output, rigMode }));
         expect(numbers, `${target} / ${rigMode}`).toEqual(numbers.map((_number, index) => index));
@@ -2231,15 +2231,84 @@ describe('the section numbering the prompt cites itself by', () => {
   });
 });
 
+describe('generatePrompt — the companion component map', () => {
+  /**
+   * The compiled section, from its heading to the rule that closes it.
+   *
+   * Sliced out of the whole prompt rather than read off the template, because the heading carries a
+   * number the compiler assigns and the section only exists under a configuration that asks for it.
+   */
+  function componentMapSection(): string {
+    const prompt = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ emitComponentMap: true, targetModel: 'CHATGPT_5_6_SOL' }),
+    );
+    const start = prompt.indexOf('## 10. COMPANION COMPONENT MAP');
+    expect(start, 'the component map section is not in the compiled prompt').toBeGreaterThan(-1);
+    const end = prompt.indexOf('\n---\n', start);
+    return end < 0 ? prompt.slice(start) : prompt.slice(start, end);
+  }
+
+  /** The one JSON line, which is the schema a model is asked to reproduce. */
+  function schemaLine(section: string): string {
+    const line = section.split('\n').find((candidate) => candidate.trim().startsWith('{'));
+    expect(line, 'the section carries no JSON schema line').toBeDefined();
+    return (line ?? '').trim();
+  }
+
+  it('fences the schema so a model reproduces it rather than prettifying it', () => {
+    // The example is the one line in the whole prompt that keeps straight quotes, because a curly
+    // quote in a JSON key produces a document that does not parse. It spent a long time as a bare
+    // line of JSON in a Markdown document with nothing marking it as code at all, which is an
+    // exemption protecting a line no model was told to copy verbatim.
+    const lines = componentMapSection().split('\n');
+    const schema = lines.findIndex((line) => line.trim().startsWith('{'));
+    expect(lines[schema - 1]?.trim(), 'the schema line opens no fence').toMatch(/^`{3,}json$/);
+    expect(lines[schema + 1]?.trim(), 'the schema line closes no fence').toMatch(/^`{3,}$/);
+  });
+
+  it('names in its prose exactly the fields its schema carries', () => {
+    // The defect this catches is a sentence and a schema drifting apart: the prose used to promise
+    // "grid position, part name, bone parent, and the pivot" against a schema of `index`, `name`,
+    // `parent` and `pivot` — so a model asked for a grid position and handed an `index` resolved the
+    // contradiction however it liked. Checked in both directions, because a field named in prose and
+    // absent from the schema is the same defect wearing the other face.
+    const section = componentMapSection();
+    const schema: unknown = JSON.parse(schemaLine(section));
+    expect(schema).toBeTypeOf('object');
+
+    const entry = (schema as { components?: unknown[] }).components?.[0] ?? {};
+    const fields = new Set([...Object.keys(schema as object), ...Object.keys(entry as object)]);
+
+    // The prose bolds a field name and bolds nothing else that is a bare lower-case word, which is
+    // what makes the two sides comparable at all rather than a substring search that "index" would
+    // pass on the word "indexed".
+    const bolded = new Set([...section.matchAll(/\*\*([a-z][a-zA-Z]*)\*\*/g)].map((match) => match[1] ?? ''));
+    expect([...bolded].sort()).toEqual([...fields].sort());
+  });
+
+  it('numbers its components from one, which is what joins it to the quantiser’s manifest', () => {
+    // The two documents are named apart because neither can be derived from the other — see
+    // `OutputConfig.emitComponentMap`. What makes them usable together is that both count entries
+    // from one in the reading order section 4 fixes, so the nth entry here and the nth sprite of a
+    // `SpriteManifest` describe one component. A zero-based example, which is what this section
+    // carried, silently offsets every join by one.
+    const schema: unknown = JSON.parse(schemaLine(componentMapSection()));
+    const entry = (schema as { components?: { index?: number }[] }).components?.[0];
+    expect(entry?.index).toBe(1);
+  });
+});
+
 describe('generatePrompt — the punctuation the prompt ships with', () => {
   /**
-   * The manifest schema line, which is the one place a straight quote is correct.
+   * The component map's schema line, which is the one place a straight quote is correct.
    *
-   * Section [SECTION:MANIFEST] asks a model to reproduce the JSON, and a curly quote in a key
+   * Section [SECTION:COMPONENT_MAP] asks a model to reproduce the JSON, and a curly quote in a key
    * produces a document that does not parse. Matched by shape rather than by position, so that
    * reordering the sections cannot turn the exclusion into a hole somewhere else.
    */
-  const MANIFEST_EXAMPLE = /^\{".*"[^"]*\}$/;
+  const COMPONENT_MAP_EXAMPLE = /^\{".*"[^"]*\}$/;
 
   it('writes every configuration’s prose with typographic marks', () => {
     // CLAUDE.md asks the shipped copy for `’` and `“ ”`, and `constants/tooltips/tooltips.test.ts`
@@ -2254,12 +2323,12 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
     // which is how the sheet plans went unchecked while the template was being fixed. Every axis
     // that selects different prose is swept for the same reason.
     const offenders = new Set<string>();
-    let sawManifestExample = false;
+    let sawComponentMapExample = false;
     const collect = (prompt: string) => {
       for (const raw of prompt.split('\n')) {
         const line = raw.trim();
-        if (MANIFEST_EXAMPLE.test(line)) {
-          sawManifestExample = true;
+        if (COMPONENT_MAP_EXAMPLE.test(line)) {
+          sawComponentMapExample = true;
           continue;
         }
         if (/['"]/.test(line)) offenders.add(line);
@@ -2277,9 +2346,9 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
     // category and one style left four of the nine assembly sentences and seven of the ten surface
     // sentences reaching the assertion only by whichever preset happened to pair them with Flux.
     //
-    // Both emit flags stay on, because the manifest section is where the one legitimately
+    // Both emit flags stay on, because the component map section is where the one legitimately
     // straight-quoted line lives.
-    const EMITTING = { emitManifest: true, emitPromptFeedback: true } as const;
+    const EMITTING = { emitComponentMap: true, emitPromptFeedback: true } as const;
 
     for (const category of SUBJECT_CATEGORIES) {
       const subject = defaultSubjectFor(category);
@@ -2341,7 +2410,7 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
 
     // Without this the exclusion above could be silently vacuous — a manifest section the sweep
     // never reached would make the whole assertion pass for the wrong reason.
-    expect(sawManifestExample, 'the sweep never reached the JSON manifest example').toBe(true);
+    expect(sawComponentMapExample, 'the sweep never reached the component map’s JSON example').toBe(true);
     expect([...offenders], `the prompt writes a straight quote:\n${[...offenders].join('\n')}`).toEqual([]);
   });
 });

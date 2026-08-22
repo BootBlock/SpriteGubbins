@@ -281,9 +281,14 @@ build when the two disagree. The constant is the one the app emits, so a change 
 copied over this fence in the same commit — editing the fence alone changes nothing a model ever
 reads, and the test will say so.
 
+**The fence is four backticks, not three.** The template's component-map section fences the JSON
+example it asks a model to reproduce, so a three-backtick fence here would close on that example and
+leave everything after it uncompared. CommonMark closes a fence only on a run at least as long as the
+opener, which is what keeps the inner one content.
+
 ---
 
-```
+````
 # MODULAR SPRITE-SHEET SPECIFICATION — [DEFINE:CATEGORY]
 
 You are producing a **reference sheet for game-asset extraction**: an exploded grid of isolated,
@@ -942,19 +947,32 @@ If two views of one component still face effectively the same way, **the sheet h
 that component at the object yaw section [SEC:CAMERA] gives it rather than delivering the sheet.
 [/IF]
 [/IF]
-[IF:EMIT_MANIFEST]
+[IF:EMIT_COMPONENT_MAP]
 
 ---
 
-## [SECTION:MANIFEST]. COMPANION MANIFEST
+## [SECTION:COMPONENT_MAP]. COMPANION COMPONENT MAP
 
-Alongside the image, output a JSON manifest as text — grid position, part name, bone parent, and
-the pivot as a fraction of the component’s cell:
+Alongside the image, output a component map as text: one JSON document of exactly the shape below,
+carrying these key names and no others, with its straight quotes reproduced as written.
 
-{"grid":{"cols":0,"rows":0},"pieces":[{"index":0,"name":"","parent":null,"pivot":[0.5,0.1]}]}
+```json
+{"grid":{"cols":0,"rows":0},"components":[{"index":1,"name":"","parent":null,"pivot":[0.5,1]}]}
+```
 
-The manifest describes what you actually drew. If a component moved or was omitted, say so there
-rather than describing the ideal.
+**grid** states how many columns and how many rows the components are laid out in. **components**
+carries one entry per component, in the reading order section [SEC:INVENTORY] fixes, and each entry
+states four things:
+
+- **index** — this component’s place in that reading order, counting from one.
+- **name** — what the inventory in section [SEC:INVENTORY] calls this component.
+- **parent** — the **name** of the component this one attaches to in the assembled subject, or null
+  where it attaches to nothing.
+- **pivot** — where this component turns or stands, as a fraction of its own cell: two numbers from
+  0 to 1, across the cell and then down it, so 0.5 and 1 is the foot of the cell, centred.
+
+The map describes what you actually drew. If a component moved or was omitted, say so there rather
+than describing the ideal.
 [/IF]
 [IF:EMIT_PROMPT_FEEDBACK]
 
@@ -1037,7 +1055,7 @@ Generate the sheet now.
 
 Then write the adherence report — after the image has been delivered, never in place of it.
 [/IF]
-```
+````
 
 ---
 

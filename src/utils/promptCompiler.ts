@@ -155,7 +155,7 @@ export function generatePrompt(
 
   // Only a target that returns text alongside the image can honour a manifest; asking a pure image
   // endpoint for one just spends tokens on an instruction it will drop.
-  const emitManifest = output.emitManifest && returnsText(output.targetModel);
+  const emitComponentMap = output.emitComponentMap && returnsText(output.targetModel);
 
   // The report needs *both* halves of that — a pass in which to re-read the specification against
   // the pixels, and a channel to answer through — so it is gated on the conjunction rather than on
@@ -308,7 +308,7 @@ export function generatePrompt(
     SERIES: batch.sheets.length > 1 ? 'yes' : '',
     IDENTITY_LOCK: output.identityLock,
     SOCKETS: output.sockets,
-    EMIT_MANIFEST: emitManifest ? 'yes' : '',
+    EMIT_COMPONENT_MAP: emitComponentMap ? 'yes' : '',
     // Read twice by the template: once for the report section itself, and once more by the closing
     // line, which names the second deliverable so the last thing the target reads is not "generate
     // the sheet now" alone.

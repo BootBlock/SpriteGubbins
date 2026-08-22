@@ -34,8 +34,8 @@ function feedbackUnavailableReason(target: TargetModelId): string {
  * The two things the target can hand back *beside* the image.
  *
  * Grouped by what they need rather than by what they are for: both are text, so both are unavailable
- * the moment the target has no channel for text, and a user who has just been told why the manifest
- * is greyed out should not have to discover the same fact again two groups further down.
+ * the moment the target has no channel for text, and a user who has just been told why the component
+ * map is greyed out should not have to discover the same fact again two groups further down.
  *
  * **These are the only two controls in the studio a preset cannot move.** They are a preference of
  * whoever is generating rather than a property of the archetype, so loading a preset leaves them
@@ -46,17 +46,17 @@ export function CompanionOutputFields() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
 
   const target = output.targetModel;
-  const manifestAvailable = returnsText(target);
+  const componentMapAvailable = returnsText(target);
 
   return (
     <>
       <CheckboxField
-        label="Request a companion JSON manifest"
-        tooltip={OUTPUT_TOOLTIPS.emitManifest}
-        checked={output.emitManifest && manifestAvailable}
-        disabledReason={manifestAvailable ? '' : `This target ${NO_TEXT_CHANNEL}.`}
+        label="Request a companion component map"
+        tooltip={OUTPUT_TOOLTIPS.emitComponentMap}
+        checked={output.emitComponentMap && componentMapAvailable}
+        disabledReason={componentMapAvailable ? '' : `This target ${NO_TEXT_CHANNEL}.`}
         onChange={(checked) => {
-          setOutputField('emitManifest', checked);
+          setOutputField('emitComponentMap', checked);
         }}
       />
 

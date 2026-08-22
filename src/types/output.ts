@@ -188,7 +188,7 @@ export interface TargetCapabilities {
    * and "redraw that component rather than delivering the sheet" name a step they do not have.
    */
   readonly deliberates: boolean;
-  /** Returns text alongside the image, which is what a companion manifest needs. */
+  /** Returns text alongside the image, which is what a companion component map needs. */
   readonly emitsText: boolean;
   /** What the vendor publishes about prompt length, including that they publish nothing. */
   readonly promptBudget: PromptBudget;
@@ -369,7 +369,7 @@ export interface ImageOutputConfig {
  * `ImageOutputConfig` describes the sheet — an archetype can have an opinion about it, and a preset
  * is exactly that opinion written down. The two fields below describe what the user wants *handed
  * back* with the picture, which is a working preference of whoever is generating it: whether they
- * want a JSON manifest to import from, and whether they want the target to write back about the
+ * want a component map to import from, and whether they want the target to write back about the
  * prompt. Nothing about a Cyberpunk Katana Specialist implies either answer.
  *
  * So a preset carries an `ImageOutputConfig` and loading one goes through
@@ -378,8 +378,22 @@ export interface ImageOutputConfig {
  * is the bug the split exists to make unrepresentable.
  */
 export interface OutputConfig extends ImageOutputConfig {
-  /** Ask for a companion JSON manifest. Only conversational targets can honour it. */
-  readonly emitManifest: boolean;
+  /**
+   * Ask for a companion component map. Only conversational targets can honour it.
+   *
+   * **Not the manifest the Quantise tab writes**, and deliberately not called one. That file is a
+   * measurement of delivered pixels — see `types/spriteManifest.ts` — while this is the model's own
+   * statement of what it drew and how the pieces hang together, written before any pixels exist. It
+   * is the only place a bone parent appears anywhere in this app, which is why asking for the
+   * quantiser's shape instead would lose something rather than unify anything: nothing that draws a
+   * sheet can know that file's rects, its magnification or its duplicate links.
+   *
+   * The two **join**, which is the next best thing. Both number their entries from one in the
+   * reading order section 4 fixes, and both name a component the way the inventory does, so a
+   * reader holding both files can put this map's `parent` and `pivot` beside the quantiser's
+   * measured rects for the same sprite.
+   */
+  readonly emitComponentMap: boolean;
   /**
    * Ask the target to audit the sheet it delivered against this prompt, and — where the sheet misses
    * — to write back about the *prompt* rather than the picture.

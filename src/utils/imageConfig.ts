@@ -26,7 +26,7 @@ import type { ImageOutputConfig, OutputConfig } from '../types/output.ts';
  * `eslint.config.js` reserves for a binding that exists only so something else can be taken.
  */
 export function toImageConfig(output: OutputConfig): ImageOutputConfig {
-  const { emitManifest: _emitManifest, emitPromptFeedback: _emitPromptFeedback, ...image } = output;
+  const { emitComponentMap: _emitComponentMap, emitPromptFeedback: _emitPromptFeedback, ...image } = output;
   return image;
 }
 
@@ -39,7 +39,7 @@ export function toImageConfig(output: OutputConfig): ImageOutputConfig {
 export function withCompanionOutputs(image: ImageOutputConfig, from: OutputConfig): OutputConfig {
   return {
     ...image,
-    emitManifest: from.emitManifest,
+    emitComponentMap: from.emitComponentMap,
     emitPromptFeedback: from.emitPromptFeedback,
   };
 }

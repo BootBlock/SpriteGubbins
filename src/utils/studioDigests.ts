@@ -22,7 +22,7 @@ import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
  *
  * **Each digest lists exactly the *settings* its group renders, conditionals included** — the rig
  * geometry only exists for a `CUTOUT_RIG`, the primary facing only when the mode splits into runs,
- * the manifest only where the target has a text channel to return one through. A digest naming a
+ * the component map only where the target has a text channel to return one through. A digest naming a
  * control that is not there is worse than no digest, which is why these are pure functions with the
  * conditionals pinned by tests rather than strings assembled at the call site.
  *
@@ -227,9 +227,9 @@ export function continuityDigest(output: OutputConfig): string {
  * What the target hands back beside the image.
  *
  * Both checkboxes are gated on a capability rather than on the preference alone, exactly as
- * `CompanionOutputFields` renders them: a target with no channel for text cannot return a manifest,
+ * `CompanionOutputFields` renders them: a target with no channel for text cannot return a map,
  * and one that renders in a single pass has no step in which to review what it drew. The stored
- * preference survives switching to such a target, so reading `emitManifest` alone would put a
+ * preference survives switching to such a target, so reading `emitComponentMap` alone would put a
  * deliverable in the digest that the prompt does not ask for.
  *
  * "nothing" rather than silence when neither is on — which is the default, and a header trailing off
@@ -237,7 +237,7 @@ export function continuityDigest(output: OutputConfig): string {
  */
 export function companionDigest(output: OutputConfig): string {
   const requested = join([
-    output.emitManifest && returnsText(output.targetModel) ? 'JSON manifest' : '',
+    output.emitComponentMap && returnsText(output.targetModel) ? 'component map' : '',
     output.emitPromptFeedback && supportsPromptFeedback(output.targetModel) ? 'adherence report' : '',
   ]);
   return requested === '' ? 'image only' : requested;

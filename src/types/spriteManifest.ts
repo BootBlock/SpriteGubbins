@@ -23,6 +23,18 @@ import type { SubjectCategory } from './subject.ts';
  * it did not, every sprite keeps a positional name and the flag says so — a manifest naming the
  * fourteenth sprite `left-hand` on a sheet that came back one component short would be worse than
  * one that named nothing.
+ *
+ * **This is not the component map the prompt asks a model for**, and the two are named apart so that
+ * a reader holding both files can tell which is which. That one is the generator's account of what
+ * it meant to draw — written before any pixels exist, and carrying a bone parent nothing here can
+ * measure; see `OutputConfig.emitComponentMap`. This one measures the pixels that arrived. Neither
+ * can be derived from the other, which is why both exist.
+ *
+ * **They join on {@link ManifestSprite.index}.** Both number their entries from one in the reading
+ * order section 4 of the prompt fixes, and both take a component's name from the same inventory, so
+ * the *n*th entry of a component map and the *n*th sprite here describe one component. That is what
+ * lets a rigging pipeline put the model's `parent` and cell-fraction pivot beside the rect and the
+ * pixel pivot measured here, with no matching step in between.
  */
 
 /** One sprite, where it sits in the written file, and what the inventory calls it. */
