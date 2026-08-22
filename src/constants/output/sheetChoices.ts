@@ -6,7 +6,7 @@ import type { SubjectCategory } from '../../types/subject.ts';
 import type { OutputChoice } from './choices.ts';
 
 /**
- * Which sheet of a pairing's series the studio is composing, one option per sheet.
+ * Which part of a pairing's inventory the studio is composing, one option per part.
  *
  * **The preview compiles one sheet, so something has to say which** — and until a pairing could be
  * more than one, that question had no answer to give. Two things make it load-bearing rather than
@@ -16,13 +16,20 @@ import type { OutputChoice } from './choices.ts';
  * variants would appear under a preview indistinguishable from its fifteen-component core.
  *
  * The count is the *plan's* alone — no additional anatomy — because this list is read while choosing
- * between sheets of one series rather than between pairings: the numbers are here to tell the
+ * between parts of one inventory rather than between pairings: the numbers are here to tell the
  * entries apart, and the plan's own size is the half that differs by design. The anatomy's
  * contribution varies with the subject and lands on every sheet that draws the body
  * (`anatomyFacingsFor`), so folding it in would move most of the figures without separating any.
  *
- * Numbered from one, because it is a position in a sequence the user works through, and the zero it
- * is built from is an array index nobody outside the code has to know about.
+ * **Deliberately unnumbered, and it used to carry `1.`, `2.`, `3.`** — which read as a position in
+ * the batch, because that is the only numbered sequence of sheets anything else in the app counts.
+ * It is not one: this axis is the *inventory*, and every `'run'` part of it is generated once per
+ * facing, so the batch is this list with those parts multiplied out. A reader who set this control
+ * to a character's second entry and then read `Sheet 2 of 6` beside the prompt had two ordinals
+ * agreeing by coincidence — the run parts happen to come last in every series — and concluded the
+ * six were six of the part they had just chosen. Five of them are, at five different facings, and
+ * the first is the trunk they hang on. `SheetProgress` counts the batch and says so; this list does
+ * not compete with it.
  */
 export function sheetChoices(
   category: SubjectCategory,
@@ -31,6 +38,6 @@ export function sheetChoices(
 ): readonly OutputChoice<number>[] {
   return sheetSeriesFor(category, mode, directions).map((plan, index) => ({
     value: index,
-    label: `${String(index + 1)}. ${plan.name} (${String(planComponentCount(plan))})`,
+    label: `${plan.name} (${String(planComponentCount(plan))})`,
   }));
 }

@@ -14,12 +14,7 @@ import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectDefinition } from '../types/subject.ts';
 import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { calculateAtlasMetrics, widthBiasFor } from './atlasCalculator.ts';
-import {
-  batchComponentCount,
-  componentCountFor,
-  seriesComponentCount,
-  sheetCountFor,
-} from './componentSet.ts';
+import { batchComponentCount, componentCountFor, sheetCountFor } from './componentSet.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { sheetBatch } from './sheetBatch.ts';
 
@@ -111,19 +106,47 @@ describe('component counts', () => {
     }
   });
 
-  it('promises the selector the whole series, since that is what the user is choosing', () => {
-    // The one reader that is deliberately *not* per sheet. A pairing costing two generations reading
+  it('promises the selector the whole batch, since that is what the user is choosing', () => {
+    // The one reader that is deliberately *not* per sheet. A pairing costing six generations reading
     // the same figure as one that costs a single sheet would have the two looking like the same size
     // of job, which is the question this label exists to answer.
+    //
+    // **The batch axis, not the inventory axis** — the reported failure this pins. The label used to
+    // sum the parts of the plan and count them, so a CHARACTER's directional pairing over the five
+    // classic facings read "49 across 2 sheets" and then produced six generations of 185 components:
+    // the trunk once, and the limbs at each of the five facings. Both figures now come off the very
+    // batch `sheetBatch` enumerates, which is the list the split drawer, the studio's progress strip
+    // and every prompt's own section 6 are counting.
     for (const { category, mode, directions } of SHEETS) {
-      const choice = directionalModeChoices(category, directions, []).find(
+      const output = withOutput({ directionalMode: mode, directions });
+      const { sheets } = sheetBatch(category, output);
+      const choice = directionalModeChoices(category, output, []).find(
         (candidate) => candidate.value === mode,
       );
-      expect(choice?.label).toContain(String(seriesComponentCount(category, mode, directions, [])));
-      if (sheetCountFor(category, mode, directions) > 1) {
-        expect(choice?.label).toContain(`across ${String(sheetCountFor(category, mode, directions))} sheets`);
+
+      expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
+        String(batchComponentCount(category, sheets, [])),
+      );
+      if (sheets.length > 1) {
+        expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
+          `in ${String(sheets.length)} sheets`,
+        );
       }
     }
+  });
+
+  it('states the batch the reported configuration actually produces, not its two inventory parts', () => {
+    // The figure from the report, spelled out rather than derived, so the two axes cannot both move
+    // and keep the assertion green: 1 trunk sheet + 5 articulation runs, and 15 + 5 × 34 components.
+    const output = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FIVE_CLASSIC' });
+    const label = directionalModeChoices('CHARACTER', output, []).find(
+      (choice) => choice.value === 'CORE_DIRECTIONAL_VARIANTS',
+    )?.label;
+
+    expect(label).toBe('CORE_DIRECTIONAL_VARIANTS (185 in 6 sheets)');
+    // And the inventory axis, which is what the `Inventory Part` select offers: two parts, neither
+    // of them numbered, because the batch is the only sequence of sheets anything counts.
+    expect(sheetCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC')).toBe(2);
   });
 
   it('keeps the anatomy on a sheet index the pairing does not have', () => {
@@ -201,8 +224,16 @@ describe('component counts', () => {
     expect(at(0, anatomy)).toBe(at(0, []) + 3 * 4);
     expect(at(1, anatomy)).toBe(at(1, []) + 3 * 4);
     expect(at(2, anatomy)).toBe(at(2, []));
-    expect(seriesComponentCount('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS', anatomy)).toBe(
-      seriesComponentCount('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS', []) + 3 * 8,
+
+    // And the same over the batch the pairing actually produces: the two core chunks carry the
+    // anatomy at four facings each, and the eight articulation runs behind them carry none.
+    const eightWay = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'EIGHT_COMPASS',
+    });
+    const { sheets } = sheetBatch('CHARACTER', eightWay);
+    expect(batchComponentCount('CHARACTER', sheets, anatomy)).toBe(
+      batchComponentCount('CHARACTER', sheets, []) + 3 * 8,
     );
   });
 
@@ -356,20 +387,29 @@ describe('the count once a subject names anatomy of its own', () => {
     }
   });
 
-  it('offers the same total to the mode selector, the atlas and the prompt', () => {
+  it('counts the anatomy into the atlas, the prompt and the selector, each on its own axis', () => {
     // The two readers that do not read the compiled prompt are the ones that can drift silently: a
-    // selector still promising the mode's own count beside a prompt demanding more is how a user
-    // comes to expect the wrong number of components. This pins the arithmetic they share — the
-    // components themselves are wired up in `SheetFields` and `AtlasCalculatorModal`, which are
-    // driven in the browser rather than here.
+    // selector or an atlas built from an arithmetic of their own would let a user come to expect
+    // the wrong number of components. This pins the anatomy reaching all three — the components
+    // themselves are wired up in `SheetFields` and `AtlasCalculatorModal`, which are driven in the
+    // browser rather than here.
+    //
+    // **The prompt and the atlas describe one image; the selector describes the job.** A rig covers
+    // one facing per sheet, so five classic facings is five generations of the same inventory — the
+    // prompt contracts for one sheet's worth and the label states all five, and a label repeating
+    // the prompt's figure would be advertising a fifth of what the user is about to generate.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
     const count = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, anatomy);
     expect(count).toBe(BASE + 3);
 
-    const label = directionalModeChoices('CHARACTER', 'FIVE_CLASSIC', anatomy).find(
+    const rigOutput = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' });
+    const label = directionalModeChoices('CHARACTER', rigOutput, anatomy).find(
       (choice) => choice.value === 'CUTOUT_RIG_SINGLE_DIRECTION',
     )?.label;
-    expect(label).toContain(String(count));
+    const facings = DIRECTION_LISTS.FIVE_CLASSIC.length;
+    expect(label).toBe(
+      `CUTOUT_RIG_SINGLE_DIRECTION (${String(count * facings)} in ${String(facings)} sheets)`,
+    );
     expect(generatePrompt('CHARACTER', withAnatomy('Demon Horn ×2, Tail ×1'), RIG)).toContain(
       `Exactly ${String(count)} components`,
     );
@@ -458,18 +498,23 @@ describe('what a whole batch asks for', () => {
     expect(batchTotal({ ...RIG, directions: 'EIGHT_COMPASS' }, anatomy)).toBe((PER_SHEET + 3) * facings);
   });
 
-  it('is the pairing’s own series when the direction set buys no runs', () => {
-    // The two axes multiply, so a batch on a single-facing set is exactly the plan's own series.
-    // `seriesComponentCount` is the figure the mode selector states, and these two sums are written
-    // separately — a disagreement is a label promising one job beside a drawer listing another.
+  it('is the pairing’s own inventory when the direction set buys no runs', () => {
+    // The two axes multiply, so a batch on a single-facing set is exactly the plan's own inventory,
+    // part for part. The right-hand sum walks the *inventory* axis by index, which is the axis the
+    // `Inventory Part` select offers and the only one on which the two can be compared at all —
+    // anywhere else the set multiplies the run parts and the batch is legitimately larger.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
     for (const category of SUBJECT_CATEGORIES) {
       for (const mode of modesFor(category)) {
         const output = withOutput({ directionalMode: mode, directions: 'SINGLE_FRONT' });
+        const parts = sheetSeriesFor(category, mode, 'SINGLE_FRONT').reduce(
+          (total, _plan, index) => total + componentCountFor(category, mode, 'SINGLE_FRONT', index, anatomy),
+          0,
+        );
         expect(
           batchComponentCount(category, sheetBatch(category, output).sheets, anatomy),
           `${category}/${mode}`,
-        ).toBe(seriesComponentCount(category, mode, 'SINGLE_FRONT', anatomy));
+        ).toBe(parts);
       }
     }
   });

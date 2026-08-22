@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ATLAS_CANVAS_CHOICES, ATLAS_PADDING_CHOICES } from '../src/constants/atlas.ts';
 import { CATEGORY_OPTIONS } from '../src/constants/categories/index.ts';
 import { CATEGORY_DIRECTION_SETS } from '../src/constants/categoryDirectionSets.ts';
+import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/defaults.ts';
 import { HARDWARE_PROFILE_CHOICES } from '../src/constants/hardware/index.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
 import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
@@ -70,10 +71,14 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   FRAME_ALIGNMENT_MODE_CHOICES: FRAME_ALIGNMENT_MODE_CHOICES.map((choice) => choice.label),
   VOTE_METHOD_CHOICES: VOTE_METHOD_CHOICES.map((choice) => choice.label),
   SYMMETRY_MODE_CHOICES: SYMMETRY_MODE_CHOICES.map((choice) => choice.label),
-  // Over every set the category offers, because the series totals in the labels move with it.
+  // Over every set the category offers, because the batch totals in the labels move with it — both
+  // the component figure and the generation count, since the set is what multiplies a part drawn one
+  // facing at a time.
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      directionalModeChoices(category, directions, HEAVY_ANATOMY).map((choice) => choice.label),
+      directionalModeChoices(category, { ...DEFAULT_OUTPUT_CONFIG, directions }, HEAVY_ANATOMY).map(
+        (choice) => choice.label,
+      ),
     ),
   ),
   // One list per category, like the modes above, because a category is offered only the sets its
@@ -86,10 +91,10 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   rigChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     rigModeChoices(category).map((choice) => choice.label),
   ),
-  // One list per pairing, so a series that grows a sheet is budgeted the moment it exists. No
-  // anatomy: this list distinguishes the sheets of one series from each other, and the subject's
-  // own anatomy lands on the first of them whatever the series holds.
-  seriesChoices: SUBJECT_CATEGORIES.flatMap((category) =>
+  // One list per pairing, so an inventory that grows a part is budgeted the moment it exists. No
+  // anatomy: this list distinguishes the parts of one inventory from each other, and the subject's
+  // own anatomy lands on the first of them whatever the inventory holds.
+  inventoryParts: SUBJECT_CATEGORIES.flatMap((category) =>
     modesFor(category).flatMap((mode) =>
       CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
         sheetChoices(category, mode, directions).map((choice) => choice.label),

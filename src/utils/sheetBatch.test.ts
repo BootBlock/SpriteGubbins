@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
+import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
+import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
+import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { sheetBatch, sheetRunCount } from './sheetBatch.ts';
 import { sheetRuns } from './sheetRuns.ts';
@@ -207,5 +210,80 @@ describe('a subject with no facing is one sheet, whatever set the configuration 
     expect(sheetRunCount('EFFECT', { ...TURNED, directions: 'EIGHT_COMPASS' })).toBe(
       DIRECTION_LISTS.EIGHT_COMPASS.length,
     );
+  });
+});
+
+/**
+ * The reported failure: six sheets of one character, four of which came back as limbs alone.
+ *
+ * The report reads it as a batch that repeats whichever part of the inventory the studio's sheet
+ * control names, and asks why the batch does not step through the others. It does step through them,
+ * and this is where that is pinned: a batch holds **every** part of its pairing's inventory, in plan
+ * order, whatever the control was left on. The five-classic character is one trunk sheet and then the
+ * limbs at each of the five facings — five of six being limbs is what the pairing is, because a
+ * front-facing arm cannot hang on a back-facing body, and the trunk's five views fit on one sheet
+ * while its limbs at five facings are one hundred and seventy components.
+ *
+ * What was genuinely wrong is on the studio's side and is checked in `componentSet.test.ts`: the
+ * mode label advertised the *inventory* axis — "49 across 2 sheets" — for a pairing that produces six
+ * generations of 185 components, and the control that picks a part of that inventory was called
+ * `Sheet of Series` and numbered its options, so `Sheet 2 of 6` beside the prompt read as an index
+ * into it.
+ */
+describe('a batch steps through the whole inventory, whatever part the studio is composing', () => {
+  it('holds every part of the pairing, from whichever one the configuration names', () => {
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const mode of modesFor(category)) {
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          const parts = sheetSeriesFor(category, mode, directions);
+
+          for (let sheetIndex = 0; sheetIndex < parts.length; sheetIndex += 1) {
+            const { sheets } = sheetBatch(
+              category,
+              withOutput({ directionalMode: mode, directions, sheetIndex }),
+            );
+            const where = `${category}/${mode}/${directions} from part ${String(sheetIndex + 1)}`;
+
+            // Every part present, in plan order, and no part the pairing does not have.
+            expect([...new Set(sheets.map((sheet) => sheet.output.sheetIndex))], where).toEqual(
+              parts.map((_part, index) => index),
+            );
+            // And each part's sheets are contiguous, so the batch reads as one part worked through
+            // and then the next — which is the order the identity lock depends on.
+            expect(
+              sheets.map((sheet) => sheet.output.sheetIndex),
+              where,
+            ).toEqual([...sheets.map((sheet) => sheet.output.sheetIndex)].sort((a, b) => a - b));
+          }
+        }
+      }
+    }
+  });
+
+  it('is the trunk once and the limbs at every facing, on the configuration from the report', () => {
+    // Spelled out rather than derived: the whole claim is about the numbers a reader sees, so a test
+    // that recomputed them from the same plans could not tell a changed batch from a changed
+    // expectation.
+    const reported = withOutput({
+      directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+      directions: 'FIVE_CLASSIC',
+      sheetIndex: 1,
+      componentBudget: 43,
+      identityLock: 'Form: Human, Standard Humanoid, Athletic & Slender',
+    });
+    const { sheets, ordinal } = sheetBatch('CHARACTER', reported);
+
+    expect(sheets.map((sheet) => `${sheet.plan.name} · ${sheet.assembly}`)).toEqual([
+      'Directional core · front',
+      'Articulation · front',
+      'Articulation · front-three-quarter',
+      'Articulation · right side',
+      'Articulation · back-three-quarter',
+      'Articulation · back',
+    ]);
+    // The control the report names is on the second part of a two-part inventory, and that lands the
+    // reader on the second sheet of six — two ordinals that agree here by coincidence, because the
+    // run part happens to come last.
+    expect(ordinal).toBe(2);
   });
 });

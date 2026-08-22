@@ -32,15 +32,13 @@ export function SheetFields() {
   const category = useSubjectStore((state) => state.category);
 
   // Only the modes this category can actually produce. Offering the others is what put a tileset's
-  // floors and walls one click away from a character. Both lists take the chosen direction set,
-  // because the set now decides how many sheets a directional pairing is and what each one costs.
+  // floors and walls one click away from a character. Both lists read the chosen direction set,
+  // because the set decides how many parts a directional pairing has and how many generations each
+  // of them takes — the mode list through the whole configuration, since a batch is a property of
+  // one and `sheetBatch` is where that expansion is written down.
   const mode = resolveMode(category, output.directionalMode);
-  const modeChoices = directionalModeChoices(
-    category,
-    output.directions,
-    parseAdditionalAnatomy(additionalAnatomy),
-  );
-  const seriesChoices = sheetChoices(category, mode, output.directions);
+  const modeChoices = directionalModeChoices(category, output, parseAdditionalAnatomy(additionalAnatomy));
+  const inventoryParts = sheetChoices(category, mode, output.directions);
 
   return (
     <>
@@ -50,8 +48,8 @@ export function SheetFields() {
         value={mode}
         choices={modeChoices}
         onChange={(value) => {
-          // The sheet goes back to the first in the same write. Every mode has one, and a stored
-          // index left pointing at a series member the new mode does not have would put the select
+          // The inventory part goes back to the first in the same write. Every mode has one, and a
+          // stored index left pointing at a part the new mode does not have would put the select
           // below on a value its own options do not contain.
           //
           // The rig travels with it for the reason `setCategory` carries the same three fields: the
@@ -69,16 +67,25 @@ export function SheetFields() {
         }}
       />
 
-      {/* Only where the pairing genuinely takes more than one generation, which is the same test the
-          split button applies — a select offering one option is a control with nothing to do. */}
-      {seriesChoices.length > 1 && (
+      {/* Only where the pairing's inventory genuinely splits, which is a narrower test than the split
+          button's — a rig covers one facing per sheet and is several generations of a single part, so
+          it is a batch with nothing for this control to choose between. A select offering one option
+          is a control with nothing to do.
+
+          **It is `Inventory Part` and not `Sheet of Series` because the prompt already spends the
+          word.** `SERIES_POSITION`, `SERIES_TOTAL` and section 6's `The sheets in this series` all
+          count *generations* — the batch, which is this list with its `'run'` parts multiplied out by
+          the direction set — and `SheetProgress` states the same figure as `Sheet N of M`. A control
+          naming the other axis with the same word put two ordinals on one panel and let a reader
+          take `Sheet 2 of 6` as six of whatever they had chosen here. */}
+      {inventoryParts.length > 1 && (
         <SelectField
-          label="Sheet of Series"
+          label="Inventory Part"
           tooltip={OUTPUT_TOOLTIPS.sheetIndex}
-          // Resolved through the series rather than read raw, so a stored index the pairing does not
-          // have shows the sheet the compiler is actually producing instead of an empty control.
+          // Resolved through the inventory rather than read raw, so a stored index the pairing does
+          // not have shows the part the compiler is actually producing instead of an empty control.
           value={resolveSheetIndex(category, mode, output.directions, output.sheetIndex)}
-          choices={seriesChoices}
+          choices={inventoryParts}
           onChange={(value) => {
             setOutputField('sheetIndex', value);
           }}

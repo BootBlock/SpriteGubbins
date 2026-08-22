@@ -27,16 +27,22 @@ import type { BatchSheet } from './sheetBatch.ts';
  * split drawer — sums these entries through one of the functions below, rather than through eight
  * additions that must stay equal.
  *
- * **There are three totals because there are three honest answers, and which one a reader wants
- * depends on what it is describing.** `componentCountFor` is one sheet, and that is what
- * `PRACTICAL_COMPONENT_CEILING` bounds: it is a statement about a single generation, so a series
+ * **There are two totals because there are two honest answers, and which one a reader wants depends
+ * on what it is describing.** `componentCountFor` is one sheet, and that is what
+ * `PRACTICAL_COMPONENT_CEILING` bounds: it is a statement about a single generation, so an inventory
  * totalling forty-nine across two images is not over it. The prompt's contract, the inventory
  * heading, the budget notice and the atlas grid all describe one image and take that.
- * `seriesComponentCount` is the pairing, and the mode selector alone takes it — because that label
- * is read while *choosing* a pairing, and a two-generation job reading the same figure as a single
- * sheet is the question the label exists to answer. `batchComponentCount` is the whole job, facings
- * and all, and the split drawer takes it: eight facings of a fifteen-piece rig is one hundred and
- * twenty components, and until it was summed that figure appeared nowhere the app computed it.
+ * `batchComponentCount` is the whole job, facings and all, and the split drawer and the mode
+ * selector both take it: eight facings of a fifteen-piece rig is one hundred and twenty components,
+ * and until it was summed that figure appeared nowhere the app computed it.
+ *
+ * **There used to be a third, and it was the middle one.** `seriesComponentCount` summed the
+ * *inventory* axis — every part of a pairing's plan, each counted once — and the mode selector was
+ * its only reader. That is an answer to no question a user asks: a part whose components are drawn
+ * for one facing at a time is generated once per direction, so the label advertised "49 across 2
+ * sheets" for a pairing that produces six generations of one hundred and eighty-five components.
+ * The selector takes `batchComponentCount` now, and the middle total went with it rather than
+ * staying behind for a caller that no longer exists.
  */
 
 /** What one group contributes, summing its entries rather than trusting a number in its heading. */
@@ -99,19 +105,6 @@ export function componentCountFor(
   const plan = sheetPlanFor(category, mode, directions, sheetIndex);
   const facings = anatomyFacingsFor(category, mode, directions, sheetIndex);
   return planComponentCount(plan) + (facings === null ? 0 : anatomyCountAt(facings, additional));
-}
-
-/** What every sheet of the pairing costs together — what the deliverable asks for, not one image. */
-export function seriesComponentCount(
-  category: SubjectCategory,
-  mode: DirectionalMode,
-  directions: DirectionSet,
-  additional: readonly AnatomyComponent[],
-): number {
-  return sheetSeriesFor(category, mode, directions).reduce(
-    (total, _plan, index) => total + componentCountFor(category, mode, directions, index, additional),
-    0,
-  );
 }
 
 /** How many sheets the pairing takes for this direction set. One for most; up to three for an eight-compass character. */

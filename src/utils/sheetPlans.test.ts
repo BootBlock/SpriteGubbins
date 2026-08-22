@@ -355,7 +355,7 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
   it('cannot be configured at all — the mode is not offered to a character', () => {
     expect(supportsMode('CHARACTER', 'TILESET_MODULAR')).toBe(false);
     expect(
-      directionalModeChoices('CHARACTER', 'FIVE_CLASSIC', []).map((choice) => choice.value),
+      directionalModeChoices('CHARACTER', DEFAULT_OUTPUT_CONFIG, []).map((choice) => choice.value),
     ).not.toContain('TILESET_MODULAR');
   });
 
