@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
-import { DEPTH_ORDER_TEXT, DIRECTION_LISTS } from '../constants/promptText/index.ts';
+import { DEPTH_ORDER_TEXT, describeDirections, DIRECTION_LISTS } from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { batchComponentCount } from './componentSet.ts';
@@ -65,7 +65,7 @@ describe('sheetRuns', () => {
     // which side renders in front of the body is what stops a west-facing sheet being a mirrored
     // east-facing one.
     for (const run of sheetRuns('CHARACTER', SUBJECT, EIGHT_WAY_RIG)) {
-      expect(run.promptText).toContain(`- Primary assembly direction: ${run.assembly}`);
+      expect(run.promptText).toContain(`- Primary assembly direction: ${describeDirections([run.assembly])}`);
       expect(run.promptText).toContain(DEPTH_ORDER_TEXT[run.assembly]);
       expect(run.promptText).toContain(
         `- Directions required: ${run.assembly.charAt(0).toUpperCase()}${run.assembly.slice(1)}`,
