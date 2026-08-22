@@ -115,9 +115,10 @@ function minFeatureFigure(profile: ResolutionProfile, spriteTargetSize: string):
  * The unit is the whole reason this is one function and not two values the template pairs up. The
  * bullet used to say *native pixels* unconditionally, while the block defining a native pixel is
  * gated on `NATIVE_GRID` — a different and much narrower condition, since `nativeGridScale`
- * additionally wants the `CUSTOM` profile, a size that parses and an enlargement of at least 2. So every pixel-art prompt on a stock profile — the default configuration among them,
- * which is the first prompt the app ever shows anybody — stated a measurement in a unit the document
- * never established. A generator reading *3 × 3 native pixels* with no grid stated has to guess
+ * additionally wants the `CUSTOM` profile, a size that parses and an enlargement of at least 2. So
+ * every pixel-art prompt on a stock profile — the default configuration among them, which is the
+ * first prompt the app ever shows anybody — stated a measurement in a unit the document never
+ * established. A generator reading *3 × 3 native pixels* with no grid stated has to guess
  * between three pixels of a thousand-pixel image and three cells of a grid eight times coarser, and
  * the rule is supposed to be the floor on interior detail.
  *

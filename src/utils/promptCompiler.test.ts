@@ -2267,12 +2267,16 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
 
   it('never names a native pixel without carrying the block that defines one', () => {
     const offenders = new Set<string>();
-    let sawDefinition = false;
+    // Per term rather than one flag for the sweep, because a second entry in the table would
+    // otherwise have its anti-vacuity guard satisfied by the first term's definition — the one part
+    // of this check that would not generalise on its own.
+    const defined = new Set<string>();
     const check = (prompt: string, label: string) => {
       for (const { term, definedBy } of GATED_TERMS) {
-        const defined = prompt.includes(definedBy);
-        if (defined) sawDefinition = true;
-        if (defined) continue;
+        if (prompt.includes(definedBy)) {
+          defined.add(definedBy);
+          continue;
+        }
         for (const raw of prompt.split('\n')) {
           if (term.test(raw)) offenders.add(`${label}: ${raw.trim()}`);
         }
@@ -2314,7 +2318,9 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
 
     // Without this the assertion could pass because the sweep never reached a configuration that
     // emits the definition at all, which would make it vacuous in the other direction.
-    expect(sawDefinition, 'the sweep never reached a prompt carrying the native-grid block').toBe(true);
+    expect([...defined].sort(), 'the sweep never reached a prompt carrying the defining block').toEqual(
+      GATED_TERMS.map(({ definedBy }) => definedBy).sort(),
+    );
     expect([...offenders], `the prompt names a term it never defines:\n${[...offenders].join('\n')}`).toEqual(
       [],
     );
