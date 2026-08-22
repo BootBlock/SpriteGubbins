@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DIRECTION_LISTS } from '../constants/promptText/index.ts';
-import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
+import { CATEGORY_DIRECTION_SETS, resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { modesFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -214,15 +214,16 @@ describe('a subject with no facing is one sheet, whatever set the configuration 
 });
 
 /**
- * The reported failure: six sheets of one character, four of which came back as limbs alone.
+ * The reported failure: six sheets of one character, most of which came back as limbs alone.
  *
- * The report reads it as a batch that repeats whichever part of the inventory the studio's sheet
- * control names, and asks why the batch does not step through the others. It does step through them,
+ * The report counts four of the six that way; the batch is five, which is what the pairing is. It
+ * reads that as a batch repeating whichever part of the inventory the studio's sheet control names,
+ * and asks why the batch does not step through the others. It does step through them,
  * and this is where that is pinned: a batch holds **every** part of its pairing's inventory, in plan
  * order, whatever the control was left on. The five-classic character is one trunk sheet and then the
- * limbs at each of the five facings — five of six being limbs is what the pairing is, because a
- * front-facing arm cannot hang on a back-facing body, and the trunk's five views fit on one sheet
- * while its limbs at five facings are one hundred and seventy components.
+ * limbs at each of the five facings, because a front-facing arm cannot hang on a back-facing body —
+ * and the trunk's five views fit on one sheet while its limbs at five facings are one hundred and
+ * seventy components.
  *
  * What was genuinely wrong is on the studio's side and is checked in `componentSet.test.ts`: the
  * mode label advertised the *inventory* axis — "49 across 2 sheets" — for a pairing that produces six
@@ -244,16 +245,25 @@ describe('a batch steps through the whole inventory, whatever part the studio is
             );
             const where = `${category}/${mode}/${directions} from part ${String(sheetIndex + 1)}`;
 
-            // Every part present, in plan order, and no part the pairing does not have.
-            expect([...new Set(sheets.map((sheet) => sheet.output.sheetIndex))], where).toEqual(
-              parts.map((_part, index) => index),
+            // The whole sequence, not a set of the parts it holds: every part present, each repeated
+            // as many times as it is generated, contiguous, and in plan order. A batch that dropped
+            // a part, repeated one instead of another, expanded a run by the wrong set, or ordered
+            // itself facing-major all fail here, and the last of those is the one a set could not
+            // see — the identity lock depends on the trunk parts being generated before the runs
+            // that have to match them.
+            //
+            // The expectation is written from the plans rather than asked of `sheetBatch`, which is
+            // the point: a right-hand side derived from the code under test would agree with it
+            // however that code changed.
+            const generations = DIRECTION_LISTS[resolveDirectionSet(category, directions)].length;
+            const expected = parts.flatMap((part, index) =>
+              Array.from({ length: part.facings === 'run' ? generations : 1 }, () => index),
             );
-            // And each part's sheets are contiguous, so the batch reads as one part worked through
-            // and then the next — which is the order the identity lock depends on.
+
             expect(
               sheets.map((sheet) => sheet.output.sheetIndex),
               where,
-            ).toEqual([...sheets.map((sheet) => sheet.output.sheetIndex)].sort((a, b) => a - b));
+            ).toEqual(expected);
           }
         }
       }

@@ -107,7 +107,17 @@ export function componentCountFor(
   return planComponentCount(plan) + (facings === null ? 0 : anatomyCountAt(facings, additional));
 }
 
-/** How many sheets the pairing takes for this direction set. One for most; up to three for an eight-compass character. */
+/**
+ * How many *parts* the pairing's inventory has for this direction set — one for most, up to three for
+ * an eight-compass character. Not how many sheets it takes: a part drawn one facing at a time is
+ * generated once per direction, so the batch is this multiplied out and `sheetBatch` is what counts
+ * it.
+ *
+ * Nothing in `src/` reads it any more — the mode selector, its last caller, moved to the batch — and
+ * it stays because it is not a superseded seam but a different question, the one the ceiling check in
+ * `presets.test.ts` asks: a preset is held to `PRACTICAL_COMPONENT_CEILING` on **every part** of its
+ * inventory, and walking the parts is how that reaches the ones the preset does not name.
+ */
 export function sheetCountFor(
   category: SubjectCategory,
   mode: DirectionalMode,

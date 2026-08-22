@@ -72,7 +72,7 @@ const ALL_SECTIONS = Object.values(SECTIONS);
  * label and the sentence the compiler emits for it are then one edit rather than three.
  *
  * **Single column throughout**, unlike `SubjectForm`'s two-up grid. These values are long
- * identifiers — `CORE_DIRECTIONAL_VARIANTS (49 across 2 sheets)` — and halving the width would truncate
+ * identifiers — `CORE_DIRECTIONAL_VARIANTS (185 in 6 sheets)` — and halving the width would truncate
  * them in the control itself. This panel gets its height back from folding instead.
  *
  * The digests are read here rather than inside each group's component, so the store subscription

@@ -50,7 +50,7 @@ export function directionalModeChoices(
     const total = String(batchComponentCount(category, batch, additional));
     // The unit gives way to the sheet count rather than joining it: `SINGLE_DIRECTION_POSE_LIBRARY`
     // leaves 18 characters inside its parenthesis against this file's 50-character budget, and a
-    // four-digit total with both spelled out is 31. Which one to drop is not a close call — that a
+    // four-digit total with both spelled out is 27. Which one to drop is not a close call — that a
     // pairing is eight generations is the fact a user is choosing by, and that the figures count
     // components is what every other number in the panel already means.
     //
