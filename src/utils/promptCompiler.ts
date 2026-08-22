@@ -58,6 +58,7 @@ import {
   applyNumbering,
   applyOptionals,
   applySectionNumbers,
+  sectionNumbers,
   assertBlocksResolved,
   substitute,
 } from './templateEngine.ts';
@@ -429,7 +430,8 @@ export function generatePrompt(
   // conditionals, which is what closes the gap the rig section used to leave behind it. The marker
   // check sits *before* substitution: afterwards the text carries whatever the user typed, and a
   // subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
-  const sections = applySectionNumbers(applyConditionals(PROMPT_TEMPLATE, config));
+  const conditioned = applyConditionals(PROMPT_TEMPLATE, config);
+  const sections = applySectionNumbers(conditioned);
   const resolved = applyNumbering(applyOptionals(sections, values));
   assertBlocksResolved(resolved);
   const prompt = substitute(resolved, values);
@@ -445,6 +447,9 @@ export function generatePrompt(
     // block the prompt it wraps does not carry.
     nativeGrid: nativeScale !== null,
     palette: palette !== null,
+    // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
+    // wrapper naming a section cannot come to name a different one than the prose does.
+    sectionNumbers: sectionNumbers(conditioned),
   });
 }
 

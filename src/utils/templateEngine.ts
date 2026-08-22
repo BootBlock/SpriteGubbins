@@ -175,6 +175,33 @@ export function applyNumbering(template: string): string {
     .join('\n');
 }
 
+/** Each section name a rendered prompt carries, mapped to the number its heading landed on. */
+export type SectionNumbers = ReadonlyMap<string, number>;
+
+/**
+ * Walk the surviving `[SECTION:…]` declarations and give each the number its heading lands on.
+ *
+ * Separate from {@link applySectionNumbers} because the numbers are wanted twice: by the prompt
+ * body, whose citations that function resolves, and by the two model wrappers, which cite sections
+ * in text added after the markers are gone. Both read this one walk, which is what keeps a section
+ * added anywhere from moving one set of citations and not the other.
+ *
+ * **A name declared twice throws.** The two headings that vary by target — section 5's rig pair and
+ * the layout section's audit pair — each declare one name from mutually exclusive `[IF:…]` blocks, so
+ * exactly one survives. Two survivors would mean a condition that is no longer exclusive, and the
+ * symptom would be a second section quietly sharing the first one's number.
+ *
+ * **Run it after {@link applyConditionals}**, or a dropped section still takes a number.
+ */
+export function sectionNumbers(template: string): SectionNumbers {
+  const numbers = new Map<string, number>();
+  for (const [, name = ''] of template.matchAll(SECTION_DECLARATION)) {
+    if (numbers.has(name)) throw new Error(`Prompt template: [SECTION:${name}] was declared twice.`);
+    numbers.set(name, numbers.size);
+  }
+  return numbers;
+}
+
 /**
  * Number each section from zero, in the order the surviving headings appear, and resolve every
  * citation of one to the number it landed on.
@@ -196,38 +223,51 @@ export function applyNumbering(template: string): string {
  * Counting **from zero** rather than one: section 0 is the output contract, deliberately, because
  * it holds the constraints that fail most often and attention weighting favours early tokens.
  *
- * Two failures throw rather than emitting something that still reads as prose:
- *
- * - **A name declared twice.** The two headings that vary by target — section 5's rig pair and
- *   the layout section's audit pair — each declare one name from mutually exclusive `[IF:…]` blocks, so
- *   exactly one survives. Two survivors would mean a condition that is no longer exclusive, and the
- *   symptom would be a second section quietly sharing the first one's number.
- * - **A citation of a section this prompt does not carry.** Nothing cites the conditional sections
- *   today, and a citation that started to would otherwise render as `section undefined` — the same
- *   failure {@link substitute} refuses for a `[DEFINE:…]`, and refused for the same reason.
+ * **A citation of a section this prompt does not carry throws** rather than emitting something that
+ * still reads as prose. Nothing cites the conditional sections today, and a citation that started to
+ * would otherwise render as `section undefined` — the same failure {@link substitute} refuses for a
+ * `[DEFINE:…]`, and refused for the same reason. The other failure, a name declared twice, is
+ * {@link sectionNumbers}'s, since that is where the walk lives.
  *
  * **Run it after {@link applyConditionals}**, or a dropped section still takes a number, which is
  * the whole defect; and before {@link assertBlocksResolved}, which is what catches a marker
  * malformed enough to match neither pattern.
  */
 export function applySectionNumbers(template: string): string {
-  const numbers = new Map<string, number>();
-  for (const [, name = ''] of template.matchAll(SECTION_DECLARATION)) {
-    if (numbers.has(name)) throw new Error(`Prompt template: [SECTION:${name}] was declared twice.`);
-    numbers.set(name, numbers.size);
-  }
-
-  const resolve = (marker: string, name: string): string => {
-    const number = numbers.get(name);
-    if (number === undefined) {
-      throw new Error(`Prompt template: ${marker} names no section this prompt carries.`);
-    }
-    return String(number);
-  };
+  const numbers = sectionNumbers(template);
+  const resolve = (marker: string, name: string): string => String(numberOf(numbers, name, marker));
 
   return template
     .replace(SECTION_DECLARATION, (marker, name: string) => resolve(marker, name))
     .replace(SECTION_REFERENCE, (marker, name: string) => resolve(marker, name));
+}
+
+/**
+ * Cite a section from prose the template does not hold.
+ *
+ * A model wrapper runs on the *rendered* prompt, after {@link applySectionNumbers} has consumed
+ * every marker, so a `[SEC:…]` written there would reach the model as literal template text. The
+ * numerals were therefore hand-written into the Sol and Seedream wrappers, which is the one place in
+ * the app a section number was stated twice — and the two wrappers whose whole job is to say which
+ * blocks may not be shortened are the worst place for a citation to quietly re-point. A section
+ * inserted before the inventory, or the contract ever becoming conditional, would have moved the
+ * prompt's own citations and left theirs behind.
+ *
+ * So they take the same map the headings were numbered from and name their sections rather than
+ * their numbers. A name this prompt does not carry throws, for the reason a `[SEC:…]` of one does:
+ * `section undefined` in front of the model is the failure, not the missing map entry.
+ */
+export function citeSection(numbers: SectionNumbers, name: string): string {
+  return String(numberOf(numbers, name, `section ${name}`));
+}
+
+/** One lookup, so a citation from prose and one from a marker cannot disagree about the answer. */
+function numberOf(numbers: SectionNumbers, name: string, citation: string): number {
+  const number = numbers.get(name);
+  if (number === undefined) {
+    throw new Error(`Prompt template: ${citation} names no section this prompt carries.`);
+  }
+  return number;
 }
 
 /**

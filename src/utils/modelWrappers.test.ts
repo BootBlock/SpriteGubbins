@@ -11,6 +11,7 @@ import { RENDER_STYLES } from '../types/rendering.ts';
 import type { RenderStyle } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
+import { wrapForSeedream, wrapForSol } from './modelWrapperText/index.ts';
 import { generatePrompt } from './promptCompiler.ts';
 
 /**
@@ -316,6 +317,62 @@ describe('wrapForModel', () => {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
       expect(prompt, targetModel).not.toContain('You are not the model that draws this sheet');
     }
+  });
+
+  it('cites the section each wrapper names, at the number that section landed on', () => {
+    // The drift this closes was latent rather than live: the numerals were hand-written into the two
+    // wrappers, and every section they name is unconditional and declared before the first
+    // conditional one, so all five were right. Nothing held them there — a section inserted before
+    // the inventory moves the prompt body's own citations and would have left these behind, in the
+    // two wrappers whose whole job is saying which blocks may not be shortened.
+    const sol = generatePrompt('CHARACTER', SUBJECT, withOutput(NATIVE_GRID_SHEET));
+    const seedream = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'SEEDREAM' }));
+
+    // The prompt's own heading is the answer both halves are held to, read back out of the compiled
+    // text rather than restated here — which is what makes this an agreement check and not a second
+    // hand-written copy of the same five numbers.
+    const headingNumber = (prompt: string, title: string): string => {
+      const heading = new RegExp(String.raw`^## (\d+)\. ${title}$`, 'm').exec(prompt);
+      if (!heading?.[1]) throw new Error(`the compiled prompt should carry a heading for ${title}.`);
+      return heading[1];
+    };
+    const cites = (prompt: string, title: string, sentence: (number: string) => string): void => {
+      expect(wrapperOnly(prompt), title).toContain(sentence(headingNumber(prompt, title)));
+    };
+
+    cites(sol, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `must still carry section ${n},`);
+    cites(sol, 'PROJECTION, CAMERA AND OBJECT ORIENTATION', (n) => `yaws in section ${n} `);
+    cites(sol, 'COMPONENT INVENTORY', (n) => `the inventory in section ${n} `);
+    cites(sol, 'RENDER STYLE', (n) => `Section ${n} states figures as well`);
+    cites(seedream, 'NON-NEGOTIABLE OUTPUT CONTRACT', (n) => `stated in section ${n} `);
+  });
+
+  it('moves a wrapper citation with the heading it names', () => {
+    // What the check above cannot show on its own: today every one of those sections is at the
+    // number it has always been at, so an assertion over the shipped prompt passes against a
+    // hand-written numeral just as well as against a derived one. These two call the wrappers
+    // directly with a map whose headings sit one lower, which no configuration this app offers can
+    // produce — and a numeral written down rather than derived fails here.
+    const shifted = new Map([
+      ['PREFACE', 0],
+      ['CONTRACT', 1],
+      ['SUBJECT', 2],
+      ['STYLE', 3],
+      ['CAMERA', 4],
+      ['INVENTORY', 5],
+    ]);
+
+    expect(wrapForSol('body', true, true, shifted)).toContain(
+      'still carry section 1, the object\nyaws in section 4 and the inventory in section 5',
+    );
+    expect(wrapForSol('body', true, true, shifted)).toContain('Section 3 states figures as well');
+    expect(wrapForSeedream('body', shifted)).toContain('precedence order stated in section 1');
+  });
+
+  it('throws rather than citing a section the prompt does not carry', () => {
+    // The same refusal `applySectionNumbers` makes for a `[SEC:…]`, applied to the wrappers' half of
+    // the citation: `section undefined` in front of a model reads as prose and would ship.
+    expect(() => wrapForSeedream('body', new Map([['STYLE', 2]]))).toThrow(/CONTRACT/);
   });
 
   it('has a selector entry for every wrapped model, and no more', () => {

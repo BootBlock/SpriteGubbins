@@ -10,6 +10,7 @@ import {
   wrapForSol,
   wrapForStableDiffusion,
 } from './modelWrapperText/index.ts';
+import type { SectionNumbers } from './templateEngine.ts';
 
 /**
  * Which wrapper each generator gets.
@@ -88,11 +89,22 @@ export function wrapForModel(
      * both forms hold figures the hand-off can shorten away.
      */
     readonly palette: boolean;
+    /**
+     * Every section name this prompt carries and the number its heading landed on, from
+     * `sectionNumbers`.
+     *
+     * Sol and Seedream both cite sections in the text they add, and this runs after
+     * `applySectionNumbers` has consumed the `[SEC:…]` markers — so a wrapper has no marker to write
+     * and used to write the numeral instead. Passing the map is what makes those citations derive
+     * from the same walk the prompt body's own citations do, rather than being a second hand-kept
+     * statement of the same numbers.
+     */
+    readonly sectionNumbers: SectionNumbers;
   },
 ): string {
   switch (target) {
     case 'CHATGPT_5_6_SOL':
-      return wrapForSol(prompt, options.nativeGrid, options.palette);
+      return wrapForSol(prompt, options.nativeGrid, options.palette, options.sectionNumbers);
 
     case 'MIDJOURNEY':
       return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent, options.surface);
@@ -111,7 +123,7 @@ export function wrapForModel(
       return wrapForQwen(prompt, options.surface, options.limbsAreComponents, options.assembly);
 
     case 'SEEDREAM':
-      return wrapForSeedream(prompt);
+      return wrapForSeedream(prompt, options.sectionNumbers);
 
     case 'GPT_IMAGE':
       return wrapForGptImage(prompt);
