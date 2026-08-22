@@ -22,8 +22,11 @@
 
     "types": ["node"]
   },
-  /* The Vite config plus the Node-side tests — suites that assert on files on disk (the
-     design-token contract) rather than on app behaviour. Browser and domain tests live beside
-     their source under `src/`, inside tsconfig.app.json's program. */
-  "include": ["vite.config.ts", "tests"]
+  /* The Vite config, the build-time helpers it imports, and the Node-side tests — suites that
+     assert on files on disk (the design-token contract) rather than on app behaviour. Browser and
+     domain tests live beside their source under `src/`, inside tsconfig.app.json's program.
+
+     `scripts` is included as `*.ts` only: the standalone `.mjs` tools in there are run by node
+     directly and are not part of any TypeScript program. */
+  "include": ["vite.config.ts", "scripts/**/*.ts", "tests"]
 }

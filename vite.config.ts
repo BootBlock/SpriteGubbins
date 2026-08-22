@@ -6,6 +6,7 @@ import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { assertPrecacheContract } from './scripts/precacheContract.ts';
 
 /**
  * The site root. GitHub Pages serves a project site from `/<repo>/`, and the manifest scope,
@@ -81,95 +82,6 @@ function spa404FallbackPlugin(): Plugin {
   };
 }
 
-/**
- * The precache manifest, stated rather than discovered.
- *
- * `globPatterns` walks `dist/` and has no view of the module graph, so it precaches whatever the
- * build happened to leave in the directory. That is how a 210 kB `sqlite3-worker1-*.js` chunk
- * nothing in this app loads came to be downloaded by every visitor. Excluding that one file fixes
- * that one file; this list is what stops the next one, because a build whose precache does not
- * match it fails rather than shipping.
- *
- * Each entry is a built URL with its content hash replaced by `*` — the hash changes on every
- * edit, the shape does not. Adding a chunk, an icon or a font means adding a line here, in the
- * same commit, where a reviewer can see it.
- *
- * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
- * icons a second time, *after* the `manifestTransforms` step below runs. So this list and the
- * ceiling under it describe the globbed precache — 15 of the shipped worker's 18 entries — and
- * the three they miss are fixed, small and not what a stray chunk arrives as.
- */
-const PRECACHE_SHAPES: readonly string[] = [
-  '404.html',
-  'assets/autoTuneWorker-*.js',
-  'assets/index-*.css',
-  'assets/index-*.js',
-  'assets/quantiseWorker-*.js',
-  'assets/sheetWriteWorker-*.js',
-  'assets/sqlite3-*.wasm',
-  'assets/sqlite3-opfs-async-proxy-*.js',
-  'assets/sqliteWorker-*.js',
-  'assets/workbox-window.prod.es5-*.js',
-  'coi-bootstrap.js',
-  'favicon.ico',
-  'icon-192.png',
-  'icon-512.png',
-  'index.html',
-];
-
-/**
- * A ceiling in KiB on the entries `PRECACHE_SHAPES` lists.
- *
- * That list catches a new *file*; this catches an existing one growing — the app chunk and the
- * SQLite binary are four fifths of the figure between them. What the figure stands at today is
- * not restated here, because it moves with every commit and a number in a comment would be wrong
- * within the week: every build prints it, as `precache <n> entries (<size> KiB)`. The headroom
- * over it is deliberately small, so a 200 kB addition fails here and is argued for in a diff
- * rather than turning up later in a page-load waterfall. Raising the ceiling is a normal thing to
- * do, and it is a line a reviewer sees.
- */
-const PRECACHE_CEILING_KIB = 2160;
-
-/** `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters. */
-function precacheShape(url: string): string {
-  return url.replace(/-[A-Za-z0-9_-]{8}(\.[a-z0-9]+)$/, '-*$1');
-}
-
-/**
- * Hold the generated precache to `PRECACHE_SHAPES` and `PRECACHE_CEILING_KIB`, and fail the build
- * on any disagreement.
- *
- * Runs as a `manifestTransforms` step, which is the one place the entries and their sizes are both
- * in hand before the worker is written — no parsing of `dist/sw.js`, and no guessing at the order
- * plugin `closeBundle` hooks run in. The manifest is passed through untouched.
- */
-function assertPrecacheContract(entries: readonly { url: string; size: number }[]): void {
-  const found = [...new Set(entries.map((entry) => precacheShape(entry.url)))].sort();
-  const expected = [...PRECACHE_SHAPES].sort();
-  const added = found.filter((shape) => !expected.includes(shape));
-  const removed = expected.filter((shape) => !found.includes(shape));
-  if (added.length > 0 || removed.length > 0) {
-    throw new Error(
-      [
-        'The precache manifest no longer matches PRECACHE_SHAPES in vite.config.ts.',
-        ...added.map((shape) => `  + ${shape} (precached, not listed)`),
-        ...removed.map((shape) => `  - ${shape} (listed, not precached)`),
-        'Every file here is downloaded on a first visit. Confirm each addition is one the app',
-        'actually loads — a chunk nothing imports belongs in globIgnores — then update the list.',
-      ].join('\n'),
-    );
-  }
-
-  const totalKiB = entries.reduce((sum, entry) => sum + entry.size, 0) / 1024;
-  if (totalKiB > PRECACHE_CEILING_KIB) {
-    throw new Error(
-      `The precache is ${totalKiB.toFixed(2)} KiB, over the ${PRECACHE_CEILING_KIB} KiB ceiling ` +
-        'in vite.config.ts. That is what a first visit downloads: cut it, or raise the ceiling ' +
-        'in the same commit and say why.',
-    );
-  }
-}
-
 // https://vite.dev/config/
 export default defineConfig({
   base: BASE,
@@ -214,8 +126,8 @@ export default defineConfig({
         // `sqlite3InitModule` this app *does* import comes from.
         //
         // So the chunk stays on the host, unreferenced and never fetched, and what is fixed is the
-        // download: it is out of the precache, and `assertPrecacheContract` above is what stops
-        // the next stray chunk taking its place.
+        // download: it is out of the precache, and `scripts/precacheContract.ts` is what stops the
+        // next stray chunk taking its place.
         globIgnores: ['**/sqlite3-worker1-*.js'],
         manifestTransforms: [
           (entries) => {
