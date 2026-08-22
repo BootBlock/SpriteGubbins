@@ -5,7 +5,7 @@ import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
-import { resolveMode, SHEET_INDEX_RANGE, sheetPlanFor } from '../constants/sheetPlans/index.ts';
+import { SHEET_INDEX_RANGE, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
@@ -1460,14 +1460,18 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
    * multi-facing sheet, so an entry cannot rot into a phrase nobody emits.
    */
   const MULTI_FACING_CLAUSES = [
+    // First, so a regression fails naming the reported defect rather than a heading beside it.
+    'never means that every component faces the same way',
     'components that turn beneath it',
-    'never means that every component on this sheet faces the same way',
     '### The object yaws this sheet requires',
     '### Rotation, not redesign',
     '### One turntable, not several drawings',
     '### Landmarks are the evidence that it rotated',
     '### Silhouette and rotation carry the direction',
-    'Wherever section 4\nnames a direction for a component',
+    // Kept to a fragment the template does not wrap across a line, and one that names no section
+    // number: either would fail this test on a reflow or an inserted section rather than on the
+    // clause reaching a sheet that has no second facing to prefer.
+    'names a direction for a component, that direction wins outright',
   ];
 
   it('carries no clause written for several facings, under any category or sheet', () => {
@@ -1478,9 +1482,9 @@ describe('generatePrompt — section 3 on a sheet that covers one facing', () =>
           for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
             const output = withOutput({ directionalMode, directions, sheetIndex });
             // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
-            // an interface widget compiles one facing whatever the two controls say.
-            const mode = resolveMode(category, directionalMode);
-            const plan = sheetPlanFor(category, mode, directions, sheetIndex);
+            // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
+            // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
+            const plan = sheetPlanFor(category, directionalMode, directions, sheetIndex);
             if (sheetDirections(category, output, plan).covered.length > 1) continue;
 
             const section = sectionOf(generatePrompt(category, subject, output), SECTION);

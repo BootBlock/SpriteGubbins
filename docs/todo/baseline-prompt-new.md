@@ -550,8 +550,7 @@ about its own local vertical axis beneath that fixed camera. **Camera azimuth is
 is what varies.** Those are two different quantities: “one camera” constrains the first and says
 nothing about the second.
 [IF:MULTI_DIRECTION]
-So it never means that every component on this sheet faces the same way — the yaws below and section [SEC:INVENTORY]
-together say what each of them faces.
+So it never means that every component faces the same way.
 [/IF]
 
 ### The subject’s own left and right
@@ -692,7 +691,7 @@ component back towards the primary assembly direction because the rest of the sh
 
 ### What “primary assembly direction” means
 
-It is the direction the assembled pose faces, and the direction of every component section [SEC:INVENTORY] does
+It is the direction the assembled subject faces, and the direction of every component section [SEC:INVENTORY] does
 not give one of its own. On this sheet it is the single object yaw stated above, so wherever that
 section says “the primary direction” it means that yaw and nothing else. It is not a house style,
 and a component turned off it because the piece reads better that way is a defect.
