@@ -15,10 +15,11 @@ import { PRESETS } from './index.ts';
  * pooled term, which the field carries verbatim, and the identity lock, which is either written or
  * empty. This file checks those two and stops. The other half of the same report was a watchtower
  * whose *comments* said three facings while its inherited direction set drew five — untestable,
- * because a comment is not data. And a facing count written in prose is not the safe generalisation it looks like: the
- * `Five-View Turnaround Rig` says “reach all eight facings” about a five-run sheet and is telling
- * the truth, because the engine flips the turned views. A check that had to be taught about that
- * sentence would be asserting its own exemption list rather than the configuration.
+ * because a comment is not data. And a facing count written in prose is not the safe
+ * generalisation it looks like: the `Five-View Turnaround Rig` says “reach all eight facings”
+ * about a five-run sheet and is telling the truth, because the engine flips the turned views. A
+ * check that had to be taught about that sentence would be asserting its own exemption list rather
+ * than the configuration.
  */
 
 /**
@@ -61,9 +62,12 @@ describe('a preset’s card', () => {
    * identity lock — These sheets are not tied to one subject” badge, and none of the compiled
    * prompts carried the block either: `[IF:IDENTITY_LOCK]` omits it when the field is empty.
    *
-   * A preset cannot honestly be given one — a lock records what an accepted sheet actually drew,
-   * and a preset has no accepted sheet — so this check is the direction the fix has to go in: the
-   * card describes the run list, and stops naming the lock.
+   * Rewording the cards was the maintainer's choice between the two honest fixes, and the other one
+   * is real: `IdentitySubjectDigest` builds the lock's subject half out of the sixteen fields a
+   * preset already pins, so the three could have shipped a partial lock instead. What no preset can
+   * ship is the palette half — `IdentityPaletteCapture` reads six hex codes out of a sheet the
+   * reader accepted, and a preset has no accepted sheet. So a card may earn the term either way,
+   * and this check asks only that something is written down before it is claimed.
    */
   it.each(PRESETS)('$name does not promise an identity lock it has not pinned', (preset) => {
     if (!`${preset.name} — ${preset.description}`.toLowerCase().includes('identity lock')) return;
