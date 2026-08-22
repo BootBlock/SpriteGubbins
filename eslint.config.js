@@ -115,10 +115,11 @@ export default tseslint.config(
     },
   },
 
-  // Node-side code: the Vite config, the icon generator, and the tests that assert on files
-  // on disk rather than on app behaviour.
+  // Node-side code: the Vite config, everything under `scripts/` — the icon generator, the
+  // secret scanner, and the build-time helpers the config imports — and the tests that assert
+  // on files on disk rather than on app behaviour.
   {
-    files: ['*.{js,ts}', 'scripts/**/*.{js,mjs}', 'tests/**/*.ts'],
+    files: ['*.{js,ts}', 'scripts/**/*.{js,mjs,ts}', 'tests/**/*.ts'],
     languageOptions: {
       globals: { ...globals.node },
     },

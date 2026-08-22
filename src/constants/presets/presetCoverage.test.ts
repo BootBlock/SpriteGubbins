@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
 import { withCompanionOutputs } from '../../utils/imageConfig.ts';
 import { readPromptBudget } from '../../utils/promptBudget.ts';
+import { MAX_BUDGET_SHARE, measurePromptFit } from '../../test/promptFit.ts';
 import {
   ASPECT_RATIOS,
   BACKGROUND_KEYS,
@@ -17,6 +18,7 @@ import {
   RESOLUTION_PROFILES,
   RIG_MODES,
   SURFACE_DETAILS,
+  TARGET_MODEL_IDS,
 } from '../../types/output.ts';
 import type { ImageOutputConfig } from '../../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
@@ -36,13 +38,21 @@ import { PRESETS } from './index.ts';
  * makes adding an option to the studio without demonstrating it a build failure rather than a gap
  * nobody notices for a year.
  *
- * It deliberately does **not** require a preset per `targetModel`. Every other union here is a property
- * of the sheet, and a preset that names one is teaching something about the art; the target is a
- * property of whoever is generating it, and two of the eleven publish prompt budgets this template does
- * not fit inside — so requiring one preset each would mean shipping presets that warn on load by
- * design. The other half of that is checked instead: whatever target a preset *does* name has to be one
- * that will read the prompt the preset compiles to, with enough of the ceiling left unspent for that
- * reading to mean anything — see {@link MAX_BUDGET_SHARE}.
+ * **`targetModel` is covered too, and for a while it was not** — which is how the Qwen entry came to
+ * tell every reader that the full specification fits inside 4,500 tokens while the studio's opening
+ * configuration compiled to nearly 6,900. The target is a property of whoever is generating the sheet
+ * rather than of the art, so the argument for covering it is a different one: a target with no preset
+ * behind it is a target whose stated ceiling nothing in the suite ever compiles against, and the
+ * description under the selector is then an unchecked claim. Two of the eleven genuinely cannot be
+ * demonstrated — Stable Diffusion reads CLIP's 77 tokens and open-weight Flux 512, against a shortest
+ * shipped prompt of roughly 3,100 — and those are exempted by *measurement*, through
+ * {@link measurePromptFit}, not by a list someone keeps. A ceiling that stops being reachable takes
+ * itself out; one that becomes reachable starts owing a worked example.
+ *
+ * The other half of that is checked as it always was: whatever target a preset *does* name has to be
+ * one that will read the prompt the preset compiles to, with enough of the ceiling left unspent for
+ * that reading to mean anything — see {@link MAX_BUDGET_SHARE}. Whether each description says the
+ * right thing about its own ceiling is `constants/models.test.ts`.
  *
  * **`hardwareProfile` and `palette` are excluded for a different reason**, and it is worth stating
  * rather than leaving as an omission: the argument above turns on a dropdown of bare identifiers
@@ -94,25 +104,6 @@ function usedValues(key: keyof ImageOutputConfig): ReadonlySet<string> {
  */
 const MINIMUM_PER_CATEGORY = 4;
 
-/**
- * How much of its target's documented ceiling a shipped preset is allowed to actually spend.
- *
- * `used <= limit` is the wrong bar, and the library found both reasons it is. A token reading is the
- * app's ~4-characters-per-token estimate — no tokeniser ships with the app, and every target uses a
- * different one — so a preset landing *on* its ceiling has not been shown to fit anything: the
- * estimate's error is wider than the margin being measured, which is precisely the reading
- * {@link readPromptBudget} disclaims in its own doc comment. And a preset is measured against a
- * template it *shares*, so one with no slack turns the next wording change anywhere in
- * `promptTemplate.ts` into a failure in this file. A §4 rewording with nothing to do with any preset
- * met that against a margin of four estimated tokens: its first draft tripped this test, and the
- * wording that landed had to be measured against the ceiling rather than chosen for the sheet.
- *
- * A fifth of the ceiling answers both: it is wider than the estimate's error against prose this
- * punctuation-dense, and it is room the template can grow into without a preset having to be tuned
- * to the character to stay inside it.
- */
-const MAX_BUDGET_SHARE = 0.8;
-
 describe('the built-in library spans the vocabulary', () => {
   it.each(COVERED_OPTIONS)('demonstrates every %s the studio offers', (key, union) => {
     const used = usedValues(key);
@@ -124,6 +115,29 @@ describe('the built-in library spans the vocabulary', () => {
   it.each(SUBJECT_CATEGORIES)('gives %s enough presets to be worth opening', (category) => {
     const owned = PRESETS.filter((preset) => preset.category === category);
     expect(owned.length).toBeGreaterThanOrEqual(MINIMUM_PER_CATEGORY);
+  });
+
+  it.each(TARGET_MODEL_IDS)('demonstrates %s, or measures why it cannot be demonstrated', (target) => {
+    const reading = measurePromptFit(target);
+    // A target that publishes no ceiling reads whatever it is sent, so it is always demonstrable.
+    const demonstrable = reading === null || reading.fit !== 'NONE';
+    const demonstrated = usedValues('targetModel').has(target);
+
+    if (!demonstrable) {
+      expect(
+        demonstrated,
+        `${target} reads ${String(reading.budget.limit)} ${reading.budget.unit} and the shortest ` +
+          `prompt this app composes is ${String(reading.smallest)} — a preset naming it would warn ` +
+          `on load by design`,
+      ).toBe(false);
+      return;
+    }
+
+    expect(
+      demonstrated,
+      `no shipped preset targets ${target}, so nothing in the library ever compiles against its ` +
+        `documented ceiling`,
+    ).toBe(true);
   });
 
   it('demonstrates every joint cap and overlap margin on a sheet that is actually rigged', () => {

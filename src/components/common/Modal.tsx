@@ -32,11 +32,12 @@ interface ModalProps {
  * keyboard handling that duplicates the Escape the platform already provides. Escape and the
  * labelled close button are the two ways out, as they were in the application being migrated.
  *
- * **The toast is rendered inside the dialog**, and `App` renders it only while no overlay is open.
- * That is a consequence of the top layer, not a stylistic choice: an open modal dialog paints above
- * the entire normal document whatever its `z-index`, and makes the rest of it inert. A toast left
- * outside would be both hidden behind the backdrop and removed from the accessibility tree — so
- * copying the atlas spec, or a prompt out of the history drawer, would confirm to nobody.
+ * **The toast is rendered inside the dialog**, and `AppOverlays` renders it out here only while no
+ * overlay is open. That is a consequence of the top layer, not a stylistic choice: an open modal
+ * dialog paints above the entire normal document whatever its `z-index`, and makes the rest of it
+ * inert. A toast left outside would be both hidden behind the backdrop and removed from the
+ * accessibility tree — so copying the atlas spec, or a prompt out of the history drawer, would
+ * confirm to nobody.
  */
 export function Modal({ title, icon, onClose, panelClassName, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);

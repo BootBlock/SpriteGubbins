@@ -7,7 +7,7 @@ import { LocalStorageBackend } from '../../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../../db/webStorage.ts';
 import { useSettingsStore } from '../../stores/useSettingsStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { SettingsModal } from './SettingsModal.tsx';
+import { SettingsContents } from './SettingsContents.tsx';
 
 /**
  * The dialog's job is to be *operable* and to say what it has done, and the two are easy to get
@@ -39,9 +39,9 @@ afterEach(() => {
   useUIStore.getState().dismissToast();
 });
 
-describe('SettingsModal', () => {
+describe('SettingsContents', () => {
   it('gives every accent swatch a name, since colour is the one thing it cannot announce', async () => {
-    render(<SettingsModal />);
+    render(<SettingsContents />);
 
     for (const label of Object.values(ACCENT_LABELS)) {
       expect(await screen.findByRole('button', { name: label })).toBeInTheDocument();
@@ -49,7 +49,7 @@ describe('SettingsModal', () => {
   });
 
   it('marks the chosen accent as pressed, which is what survives a forced palette', async () => {
-    render(<SettingsModal />);
+    render(<SettingsContents />);
 
     // `index.css`'s forced-colours block keys the selected state off `aria-pressed`: in that mode
     // the swatch's own colour is replaced by the system palette, so a selection said in colour
@@ -65,7 +65,7 @@ describe('SettingsModal', () => {
     // these preferences takes effect visibly on the click, so collecting them up and asking for
     // confirmation would put a step after the thing the click already did.
     const user = userEvent.setup();
-    render(<SettingsModal />);
+    render(<SettingsContents />);
 
     await user.click(await screen.findByRole('button', { name: ACCENT_LABELS.jade }));
 
@@ -75,7 +75,7 @@ describe('SettingsModal', () => {
 
   it('turns the ambient backdrop off and stores that too', async () => {
     const user = userEvent.setup();
-    render(<SettingsModal />);
+    render(<SettingsContents />);
 
     await user.click(await screen.findByRole('checkbox', { name: /ambient backdrop/i }));
 
@@ -88,7 +88,7 @@ describe('SettingsModal', () => {
     useSettingsStore.setState({
       settings: { ...DEFAULT_SETTINGS, accentHue: 'rose', motion: 'reduced', ambientBackdrop: false },
     });
-    render(<SettingsModal />);
+    render(<SettingsContents />);
 
     await user.click(await screen.findByRole('button', { name: /reset to defaults/i }));
 
@@ -99,7 +99,7 @@ describe('SettingsModal', () => {
   it('offers the reduce-motion switch as an ordinary choice when the system asks for nothing', () => {
     // The complement of the case below, and the one that would go quiet if `matchMedia` were absent
     // and the control were left permanently unavailable.
-    render(<SettingsModal />);
+    render(<SettingsContents />);
 
     expect(screen.getByRole('checkbox', { name: /reduce motion/i })).toHaveAttribute(
       'aria-disabled',
@@ -117,7 +117,7 @@ describe('SettingsModal', () => {
       removeEventListener: () => undefined,
     }));
 
-    render(<SettingsModal />);
+    render(<SettingsContents />);
 
     const control = screen.getByRole('checkbox', { name: /reduce motion/i });
     expect(control).toBeChecked();

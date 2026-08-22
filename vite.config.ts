@@ -6,6 +6,7 @@ import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { assertPrecacheContract } from './scripts/precacheContract.ts';
 
 /**
  * The site root. GitHub Pages serves a project site from `/<repo>/`, and the manifest scope,
@@ -109,6 +110,33 @@ export default defineConfig({
         // app is useless offline without it.
         globPatterns: ['**/*.{js,css,html,wasm,ico,png,svg,woff2}'],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
+        // `@sqlite.org/sqlite-wasm` ships a Worker1 promiser beside the direct API, and its
+        // `defaultConfig` names the worker with `new Worker(new URL('sqlite3-worker1.mjs',
+        // import.meta.url), { type: 'module' })`. This app never calls the promiser — `src/db`
+        // installs the SAH pool and opens the database itself, over its own message protocol —
+        // but that expression is statically analysable, so a 210 kB chunk is emitted for it.
+        //
+        // **It cannot be kept out of `dist/` from here, and it is not for want of trying.** Vite's
+        // worker plugin rewrites that expression at *transform* time and emits the chunk with
+        // `emitFile`, which happens before tree-shaking has any say and writes the file whether or
+        // not a reference to it survives. Verified by telling Rolldown the whole package is
+        // side-effect-free — `treeshake.moduleSideEffects` returning false for `sqlite-wasm`, set
+        // on `build.rolldownOptions` (which governs whether the parent graph keeps the reference)
+        // and on `worker.rolldownOptions` (which governs the worker chunk itself), separately. Each
+        // produced a byte-identical `dist/`, same chunk hashes included. An alias is no use either
+        // — the factory sits in the same `dist/index.mjs` that the `sqlite3InitModule` this app
+        // *does* import comes from.
+        //
+        // So the chunk stays on the host, unreferenced and never fetched, and what is fixed is the
+        // download: it is out of the precache, and `scripts/precacheContract.ts` is what stops the
+        // next stray chunk taking its place.
+        globIgnores: ['**/sqlite3-worker1-*.js'],
+        manifestTransforms: [
+          (entries) => {
+            assertPrecacheContract(entries);
+            return { manifest: entries };
+          },
+        ],
       },
       manifest: {
         id: BASE,

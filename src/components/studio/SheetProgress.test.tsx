@@ -17,7 +17,7 @@ import { SheetProgress } from './SheetProgress.tsx';
  * Where the user is in a batch, and the way on to the next sheet.
  *
  * The batch itself is `sheetBatch.test.ts`'s, and which sheets are marked copied is
- * `SheetSplitModal.test.tsx`'s for the drawer. What can only be checked here is that the studio says
+ * `SheetSplitContents.test.tsx`'s for the drawer. What can only be checked here is that the studio says
  * *which* of them the prompt beside it is, and that stepping writes a configuration the batch
  * actually contains — both axes at once, which is precisely what the two controls in the panel
  * opposite could not do without the user knowing which order to move them in.

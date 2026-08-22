@@ -5,7 +5,7 @@ import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
-import { SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
+import { SHEET_INDEX_RANGE, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
@@ -29,6 +29,7 @@ import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts';
+import { sheetDirections } from './sheetDirections.ts';
 import { styleReferencePatch } from './styleReferencePatch.ts';
 
 /**
@@ -923,7 +924,7 @@ describe('generatePrompt — the facing the sheet is for', () => {
       }),
     );
 
-    expect(prompt).toContain('- Primary assembly direction: north-west');
+    expect(prompt).toContain('- Primary assembly direction: North-west');
     expect(prompt).toContain('- Directions required: North-west');
     expect(prompt).toContain(promptText.DEPTH_ORDER_TEXT['north-west']);
   });
@@ -1437,6 +1438,116 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
   });
 });
 
+describe('generatePrompt — section 3 on a sheet that covers one facing', () => {
+  /**
+   * The defect: section 3 told a single-facing sheet that “one camera” *never* means every component
+   * faces the same way, thirteen lines above the yaw block telling it that every component on the
+   * sheet is drawn at one orientation. Both sentences were in the same section, and the second was
+   * the true one — the first is written for a sheet with several facings, and was emitted
+   * unconditionally.
+   *
+   * Only some of section 3 was gated, so this sweeps the whole of it rather than pinning the one
+   * clause that was found by reading a compiled prompt.
+   */
+  const SECTION = 'PROJECTION, CAMERA AND OBJECT ORIENTATION';
+
+  /**
+   * Every clause in section 3 that is written for a sheet holding more than one facing.
+   *
+   * Kept as a list rather than as a rule about the prose because there is no rule to write: what
+   * makes a sentence multi-facing is what it claims, not how it is spelled. The list is held honest
+   * from the other end instead — the second test below fails if one of these stops appearing on a
+   * multi-facing sheet, so an entry cannot rot into a phrase nobody emits.
+   */
+  const MULTI_FACING_CLAUSES = [
+    // First, so a regression fails naming the reported defect rather than a heading beside it.
+    'never means that every component faces the same way',
+    'components that turn beneath it',
+    '### The object yaws this sheet requires',
+    '### Rotation, not redesign',
+    '### One turntable, not several drawings',
+    '### Landmarks are the evidence that it rotated',
+    '### Silhouette and rotation carry the direction',
+    // Kept to a fragment the template does not wrap across a line, and one that names no section
+    // number: either would fail this test on a reflow or an inserted section rather than on the
+    // clause reaching a sheet that has no second facing to prefer.
+    'names a direction for a component, that direction wins outright',
+  ];
+
+  it('carries no clause written for several facings, under any category or sheet', () => {
+    for (const category of SUBJECT_CATEGORIES) {
+      const subject = defaultSubjectFor(category);
+      for (const directionalMode of DIRECTIONAL_MODES) {
+        for (const directions of DIRECTION_SETS) {
+          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            const output = withOutput({ directionalMode, directions, sheetIndex });
+            // Asked of the *resolved* sheet, because a category narrows both the mode and the set —
+            // an interface widget compiles one facing whatever the two controls say. `sheetPlanFor`
+            // and `sheetDirections` each resolve for themselves, so the stored values go in raw.
+            const plan = sheetPlanFor(category, directionalMode, directions, sheetIndex);
+            if (sheetDirections(category, output, plan).covered.length > 1) continue;
+
+            const section = sectionOf(generatePrompt(category, subject, output), SECTION);
+            const where = `${category}/${directionalMode}/${directions}/${String(sheetIndex)}`;
+            for (const clause of MULTI_FACING_CLAUSES) {
+              expect(section, `${where} carries "${clause}"`).not.toContain(clause);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it('still emits every one of those clauses where the sheet does hold several facings', () => {
+    // What stops the list above rotting into a set of phrases the template no longer writes, which
+    // would leave the sweep passing while checking nothing.
+    const section = sectionOf(
+      generatePrompt(
+        'CHARACTER',
+        SUBJECT,
+        withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FIVE_CLASSIC' }),
+      ),
+      SECTION,
+    );
+    for (const clause of MULTI_FACING_CLAUSES) {
+      expect(section, `no multi-facing sheet writes "${clause}" any more`).toContain(clause);
+    }
+  });
+
+  it('defines the primary assembly direction it names', () => {
+    // The second half of the same defect: the field is printed unconditionally and the paragraph
+    // saying what it means sat inside the multi-facing block, so a single-facing prompt named the
+    // term that decides what an undirected component faces and never said what it was. Section 4
+    // cites it — “in the primary direction” — so the term is load-bearing on this sheet too.
+    const single = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY' }),
+    );
+    const section = sectionOf(single, SECTION);
+
+    expect(section).toContain('### What “primary assembly direction” means');
+    expect(section).toContain('On this sheet it is the single object yaw stated above');
+    expect(single).toContain('in the primary direction');
+  });
+
+  it('prints the one facing the same way in both bullets that state it', () => {
+    // `DIRECTIONS_DESCRIPTION` and `PRIMARY_DIRECTION` are the same facing on a single-facing sheet,
+    // printed two lines apart — and they disagreed about capitalisation, which reads as two
+    // different things. Derived from the compiled text rather than written out, so the assertion is
+    // that the two agree rather than that either says `Front`.
+    const section = sectionOf(
+      generatePrompt('CHARACTER', SUBJECT, withOutput({ directions: 'SINGLE_FRONT' })),
+      SECTION,
+    );
+    const required = /^- Directions required: (.+)$/m.exec(section)?.[1];
+    const primary = /^- Primary assembly direction: (.+)$/m.exec(section)?.[1];
+
+    expect(required).toBeDefined();
+    expect(primary).toBe(required);
+  });
+});
+
 describe('generatePrompt — technical settings in prose', () => {
   it('states the resolution profile and surface detail as prose, not as identifiers', () => {
     // v1 interpolated the enum raw, so the prompt read "Selected profile: HIGH_RESOLUTION_PIXEL_ART".
@@ -1624,7 +1735,7 @@ describe('generatePrompt — technical settings in prose', () => {
       withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', directions: 'EIGHT_COMPASS' }),
     );
     expect(rig).toContain('- Directions required: South\n');
-    expect(rig).toContain('- Primary assembly direction: south');
+    expect(rig).toContain('- Primary assembly direction: South');
     // Every other facing is named exactly once, on section 6's list of the sheets that carry them —
     // which is a statement about the batch rather than an instruction to draw them here. Everywhere
     // else in the prompt this sheet is a single facing, so the list's own lines are the only thing
@@ -1641,7 +1752,7 @@ describe('generatePrompt — technical settings in prose', () => {
       SUBJECT,
       withOutput({ directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY', directions: 'FOUR_CARDINAL' }),
     );
-    expect(cardinal).toContain('- Primary assembly direction: south');
+    expect(cardinal).toContain('- Primary assembly direction: South');
   });
 
   it('steers the core directional mode by the chosen set, in section 3 and section 4 alike', () => {
@@ -1654,7 +1765,7 @@ describe('generatePrompt — technical settings in prose', () => {
       withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' }),
     );
     expect(cardinal).toContain('- Directions required: South, west, north, east');
-    expect(cardinal).toContain('- Primary assembly direction: south');
+    expect(cardinal).toContain('- Primary assembly direction: South');
     expect(cardinal).toContain('Heads: south, west, north, east');
     expect(cardinal).not.toContain('front-three-quarter');
 
@@ -1668,7 +1779,7 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(classic).toContain(
       '- Directions required: Front, front-three-quarter, right side, back-three-quarter, back',
     );
-    expect(classic).toContain('- Primary assembly direction: front');
+    expect(classic).toContain('- Primary assembly direction: Front');
   });
 
   it('splits the eight-compass core into a cardinal and a diagonal sheet, each owing only its own views', () => {
@@ -1699,7 +1810,7 @@ describe('generatePrompt — technical settings in prose', () => {
       primaryDirection: 'north-east',
     });
     expect(limbs).toContain('- Directions required: North-east');
-    expect(limbs).toContain('- Primary assembly direction: north-east');
+    expect(limbs).toContain('- Primary assembly direction: North-east');
     expect(limbs).toContain('Exactly 34 components');
   });
 

@@ -417,7 +417,12 @@ the grid above can hold means the component was not drawn on it.
 - Directions required: [DEFINE:DIRECTIONS_DESCRIPTION]
 - Primary assembly direction: [DEFINE:PRIMARY_DIRECTION]
 
+[IF:MULTI_DIRECTION]
 ### One fixed camera, and components that turn beneath it
+[/IF]
+[IF:MULTI_DIRECTION!=yes]
+### One fixed camera, and orientation that comes from the component
+[/IF]
 
 **The camera never moves.** Camera position, camera elevation, **camera azimuth**, projection type,
 focal characteristics, sprite scale, pixel density and lighting direction are identical for every
@@ -427,7 +432,10 @@ projection, scale or key-light direction — is a defect.
 **A direction is never produced by moving the camera.** It is produced by rotating the *component*
 about its own local vertical axis beneath that fixed camera. **Camera azimuth is fixed; object yaw
 is what varies.** Those are two different quantities: “one camera” constrains the first and says
-nothing about the second, so it never means that every component faces the same way.
+nothing about the second.
+[IF:MULTI_DIRECTION]
+So it never means that every component faces the same way.
+[/IF]
 
 ### The subject’s own left and right
 
@@ -445,7 +453,12 @@ every drawing, and never resolve it by giving the subject a matching copy on the
 one-sided feature stays one-sided, and where a turn takes it out of view, letting it be hidden is the
 correct answer.
 
+[IF:MULTI_DIRECTION]
 ### The object yaws this sheet requires
+[/IF]
+[IF:MULTI_DIRECTION!=yes]
+### The object yaw this sheet requires
+[/IF]
 
 [DEFINE:DIRECTIONAL_ROTATION]
 [IF:MULTI_DIRECTION]
@@ -557,6 +570,15 @@ It is the direction for every component the inventory does **not** give a direct
 the direction the assembled pose faces. It is not a house style for the sheet. **Wherever section [SEC:INVENTORY]
 names a direction for a component, that direction wins outright** — never pull a directional
 component back towards the primary assembly direction because the rest of the sheet uses it.
+[/IF]
+[IF:MULTI_DIRECTION!=yes]
+
+### What “primary assembly direction” means
+
+It is the direction the assembled subject faces, and the direction of every component section [SEC:INVENTORY] does
+not give one of its own. On this sheet it is the single object yaw stated above, so wherever that
+section says “the primary direction” it means that yaw and nothing else. It is not a house style,
+and a component turned off it because the piece reads better that way is a defect.
 [/IF]
 
 ---

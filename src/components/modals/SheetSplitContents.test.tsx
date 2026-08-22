@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { NO_COMPONENT_BUDGET } from '../../constants/componentBudget.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
+import { describeDirections } from '../../constants/promptText/index.ts';
 import {
   DEFAULT_CAMERA_ELEVATIONS,
   DEPTH_ORDER_TEXT,
@@ -19,7 +20,7 @@ import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { batchComponentCount, componentCountFor, sheetComponentCount } from '../../utils/componentSet.ts';
 import { sheetRuns } from '../../utils/sheetRuns.ts';
-import { SheetSplitModal } from './SheetSplitModal.tsx';
+import { SheetSplitContents } from './SheetSplitContents.tsx';
 
 /**
  * The splitter's one irreversible effect: what it writes to the history.
@@ -94,9 +95,9 @@ function flaggedIn(sheets: readonly RowUnderTest[]): readonly string[] {
     .map((sheet) => sheet.name);
 }
 
-describe('SheetSplitModal', () => {
+describe('SheetSplitContents', () => {
   it('offers one row per facing, each naming what is on it as well as which way it faces', () => {
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     expect(copyButtons()).toHaveLength(FACINGS.length);
     // Both halves of the label, because a batch can split by facing or by sheet and a row cannot
@@ -112,7 +113,7 @@ describe('SheetSplitModal', () => {
     // job is. The arithmetic is `componentSet.test.ts`'s; what is checked here is that the summary
     // states the batch's figure and each row states its own, rather than one of them standing in
     // for the other.
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
     const perSheet = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, []);
@@ -137,7 +138,7 @@ describe('SheetSplitModal', () => {
         cameraElevation: DEFAULT_CAMERA_ELEVATIONS.PURE_TOPDOWN,
       },
     });
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     const sheets = sheetsOnScreen();
     const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
@@ -166,7 +167,7 @@ describe('SheetSplitModal', () => {
         componentBudget: BUDGET_BETWEEN_THE_TWO_SHEETS,
       },
     });
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     // One core sheet, then the articulation run at each of the five classic facings.
     const sheets = sheetsOnScreen();
@@ -199,7 +200,7 @@ describe('SheetSplitModal', () => {
         componentBudget: NO_COMPONENT_BUDGET,
       },
     });
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     const sheets = sheetsOnScreen();
     expect(sheets.some((sheet) => sheet.count > 0)).toBe(true);
@@ -209,7 +210,7 @@ describe('SheetSplitModal', () => {
 
   it('records eight prompts, not one, each with the configuration that reproduces it', async () => {
     const user = userEvent.setup();
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     for (const button of copyButtons()) await user.click(button);
 
@@ -226,7 +227,7 @@ describe('SheetSplitModal', () => {
     for (const log of logs) {
       const facing = log.output.primaryDirection;
       if (facing === null) throw new Error('a split run should have pinned its facing.');
-      expect(log.promptText).toContain(`- Primary assembly direction: ${facing}`);
+      expect(log.promptText).toContain(`- Primary assembly direction: ${describeDirections([facing])}`);
     }
 
     // And they are in storage, not merely in the store.
@@ -235,7 +236,7 @@ describe('SheetSplitModal', () => {
 
   it('marks a run done once it has actually been copied', async () => {
     const user = userEvent.setup();
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     expect(screen.getAllByText('Not yet copied')).toHaveLength(FACINGS.length);
     expect(screen.getByText(`0 of ${String(FACINGS.length)} copied`)).toBeInTheDocument();
@@ -255,7 +256,7 @@ describe('SheetSplitModal', () => {
     // record of where the user has got to.
     vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(new Error('not focused'));
     const user = userEvent.setup();
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     const [first] = copyButtons();
     if (!first) throw new Error('the splitter should offer a copy button per run.');
@@ -273,7 +274,7 @@ describe('SheetSplitModal', () => {
     // back. That rewrites every run's prompt, so progress matched on prompt text would reset to
     // zero at precisely the moment the user did what §5 told them to.
     const user = userEvent.setup();
-    const { unmount } = render(<SheetSplitModal />);
+    const { unmount } = render(<SheetSplitContents />);
 
     const [first] = copyButtons();
     if (!first) throw new Error('the splitter should offer a copy button per run.');
@@ -286,7 +287,7 @@ describe('SheetSplitModal', () => {
     useOutputStore.setState({
       output: { ...useOutputStore.getState().output, identityLock: 'Cyan visor, three amber lights.' },
     });
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     await waitFor(() => {
       expect(screen.getByText(`1 of ${String(FACINGS.length)} copied`)).toBeInTheDocument();
@@ -298,7 +299,7 @@ describe('SheetSplitModal', () => {
     // a user arriving here from a prompt they were reading needs to see which of these rows made it.
     // Both read the ordinal `sheetBatch` computes, which is also what section 6 of every prompt in
     // the batch marks, so the three cannot disagree.
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     /** Which rows carry the marker, by position in the batch — named, not counted. */
     const markedPositions = () =>
@@ -325,7 +326,7 @@ describe('SheetSplitModal', () => {
     // the header's Copy Prompt is reachable mid-batch too — so the confirmation is derived from the
     // configuration being copied wherever a batch is more than one sheet.
     const user = userEvent.setup();
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
 
     const [, second] = copyButtons();
     if (!second) throw new Error('the splitter should offer a copy button per run.');
@@ -341,7 +342,7 @@ describe('SheetSplitModal', () => {
   it('warns when the runs are not tied to one subject', async () => {
     // §5: the hardest part is not sheet one, it is sheet two matching sheet one. Eight sheets with
     // no identity lock come back as eight different characters in similar colours.
-    render(<SheetSplitModal />);
+    render(<SheetSplitContents />);
     expect(screen.queryByText('No identity lock')).not.toBeInTheDocument();
 
     useOutputStore.setState({ output: { ...useOutputStore.getState().output, identityLock: '   ' } });

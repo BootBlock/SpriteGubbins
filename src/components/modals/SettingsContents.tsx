@@ -4,7 +4,6 @@ import { useSettingsStore } from '../../stores/useSettingsStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { CheckboxField } from '../common/CheckboxField.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
-import { Modal } from '../common/Modal.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 import { SettingsAccentField } from './SettingsAccentField.tsx';
 import { SettingsMotionField } from './SettingsMotionField.tsx';
@@ -22,19 +21,18 @@ import { SettingsMotionField } from './SettingsMotionField.tsx';
  * These are all things whose effect is visible the instant they are chosen — the page changes colour,
  * the wash goes out — so a dialog that collected them up and asked for confirmation would be putting
  * a step between the click and the thing the click already did.
+ *
+ * **The contents alone — the dialog frame is `AppOverlays`'.** This file is loaded on demand,
+ * so the frame has to be somewhere that is already parsed when the reader presses the control
+ * that opens it; `LazyOverlay` there explains what goes wrong when it is not.
  */
-export function SettingsModal() {
+export function SettingsContents() {
   const settings = useSettingsStore((state) => state.settings);
   const updateSettings = useSettingsStore((state) => state.updateSettings);
   const toggleSettingsModal = useUIStore((state) => state.toggleSettingsModal);
 
   return (
-    <Modal
-      title="Settings"
-      icon="⚙️"
-      onClose={toggleSettingsModal}
-      panelClassName="glass-panel max-h-full w-full max-w-lg overflow-y-auto rounded-2xl border border-foundry-700 shadow-2xl"
-    >
+    <>
       <div className="space-y-5 p-6 text-xs">
         <SettingsAccentField />
 
@@ -88,6 +86,6 @@ export function SettingsModal() {
           </button>
         </ControlTooltip>
       </div>
-    </Modal>
+    </>
   );
 }

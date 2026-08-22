@@ -421,7 +421,12 @@ export function generatePrompt(
     // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
     MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),
     LANDMARK_DESCRIPTION: LANDMARK_TEXT[category],
-    PRIMARY_DIRECTION: assemblyDirection,
+    // Spelled through the same function as the directions line two bullets above it, because on a
+    // single-facing sheet the two are the *same facing* and printed one after the other — the raw
+    // value gave `Directions required: Front` and `Primary assembly direction: front`, which reads
+    // as two different things. A `Direction` is stored lower case, so whichever bullet capitalises
+    // has to be the one both go through.
+    PRIMARY_DIRECTION: describeDirections([assemblyDirection]),
     // A function of the elevation as well as the facing, for the same reason the yaw list is: which
     // of a subject's pieces renders in front of its body is a near/far question, and directly
     // overhead there is no near side to answer it with.

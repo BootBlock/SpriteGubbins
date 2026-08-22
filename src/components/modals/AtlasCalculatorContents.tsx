@@ -23,7 +23,6 @@ import {
   widthBiasFor,
 } from '../../utils/atlasCalculator.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
-import { Modal } from '../common/Modal.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 import { AtlasFitSummary } from './AtlasFitSummary.tsx';
 import { AtlasGridPreview } from './AtlasGridPreview.tsx';
@@ -51,8 +50,12 @@ import { AtlasMetricGrid } from './AtlasMetricGrid.tsx';
  * measurement of one returned raster, where everything else here describes the design. It is shown
  * beside the plan and never folded into it, so the numbers this modal computes cannot change because
  * of an image dropped on another tab.
+ *
+ * **The contents alone — the dialog frame is `AppOverlays`'.** This file is loaded on demand,
+ * so the frame has to be somewhere that is already parsed when the reader presses the control
+ * that opens it; `LazyOverlay` there explains what goes wrong when it is not.
  */
-export function AtlasCalculatorModal() {
+export function AtlasCalculatorContents() {
   const directionalMode = useOutputStore((state) => state.output.directionalMode);
   const sheetIndex = useOutputStore((state) => state.output.sheetIndex);
   const aspectRatio = useOutputStore((state) => state.output.aspectRatio);
@@ -91,12 +94,7 @@ export function AtlasCalculatorModal() {
   const engineSpec = formatEngineMetadata(buildEngineMetadata(config, metrics, fit));
 
   return (
-    <Modal
-      title="Sprite Atlas & Grid Calculator"
-      icon="📊"
-      onClose={toggleAtlasModal}
-      panelClassName="glass-panel max-h-full w-full max-w-xl overflow-y-auto rounded-2xl border border-foundry-700 shadow-2xl"
-    >
+    <>
       <div className="space-y-4 p-6 text-xs">
         {/*
           Stacked, not a two-column grid — which is how every other `SelectField` in the app is laid
@@ -171,6 +169,6 @@ export function AtlasCalculatorModal() {
           </button>
         </ControlTooltip>
       </div>
-    </Modal>
+    </>
   );
 }
