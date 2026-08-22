@@ -964,9 +964,9 @@ export const SCATTERED_SPRITE_CEILING = 512;
  * silhouette's mirror moves the centre by `d / 2`. Eight pixels of reach therefore covers a limb,
  * a weapon or a cloak extending sixteen drawn pixels past what the other side holds, which is well
  * past anything a sprite drawn at 16 to 64 pixels a side can carry. The reference sheet
- * (`test_sprites/armour.png`, 1254², grid 6) separates into fifteen pieces measuring 25 to 34 drawn
- * pixels across, where the quarter-width bound below is the binding one on all but the four widest
- * of them.
+ * (`test_sprites/armour.png`, 1254², grid 6, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE`)
+ * separates into fifteen pieces measuring 23 to 34 drawn pixels across, where the quarter-width
+ * bound below is the binding one on all but the five widest of them.
  *
  * It is a **bound on cost as much as on the claim**: the sweep is `(4 × reach + 1)` scorings of a
  * whole box, so an unbounded search would be quadratic in the widest sprite on the sheet while a
