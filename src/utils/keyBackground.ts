@@ -69,7 +69,9 @@ export interface KeyedImage {
  * sheet whose subject is near-black the halo lands out among the artwork and no radius separates the
  * two. Measured on the reference sheet at the recommended magenta and the default tolerance, the pass
  * has 11030 candidates, 97.1% of them still visibly magenta, and the radius takes 18.1% of them. With
- * the hue test beside it the pass takes 98.4%, and two visibly magenta pixels survive.
+ * the hue test beside it the pass takes 95.5%, and 251 visibly magenta pixels survive — which reaches
+ * the finished sheet as 75 pixels of one very dark violet under the dominant vote, and none at all
+ * under either averaging reading. Before the hue test those figures were 720, 1010 and 283.
  *
  * `exact` still keys the field and nothing around it: pass 2 does not run at that rung. That used to
  * follow from the radius being scaled off the tolerance, and is now said outright, because the hue

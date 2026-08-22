@@ -1180,7 +1180,8 @@ export const WIPE_STEP_COARSE = 0.1;
  * this tab already does twice over — the zoom levels and the grid candidates.
  *
  * `0` is on the ladder because "exact match only" is a real request, and it is the one setting that
- * also switches the fringe pass off (which is scaled from this number). The values are scaled-OKLab
+ * also switches the fringe pass off — stated outright in `keyBackground`, because that pass's hue
+ * test is scaled from nothing and would otherwise still reach. The values are scaled-OKLab
  * distances, as `keyDistance.ts` measures. Against the recommended magenta they read: **8** takes a
  * field that only re-encoding moved (about 1.4), **16** takes most of one the generator painted at
  * varying purity (its fixtures run 12 to 21), **24** takes the whole of it — shaded and washed to
@@ -1241,12 +1242,19 @@ export const DEFAULT_KEY_TOLERANCE = 24;
  * colour; applied at the boundary alone it only ever reaches pixels that are blends by construction.
  *
  * **The factor alone was never a bound, which is what {@link FRINGE_TOLERANCE_CEILING} is for** — and
- * the ceiling, not this, is what decides how much of a blend the pass actually admits.
+ * the ceiling, not this, is what decides how far the *radius half* of the pass reaches. It is only
+ * half: `carriesKeyTint` is the other, and on a sheet whose subject is dark it is the one doing the
+ * work.
  */
 export const FRINGE_TOLERANCE_FACTOR = 3;
 
 /**
- * The furthest the fringe pass reaches, however high the tolerance goes.
+ * The furthest the *radius half* of the fringe pass reaches, however high the tolerance goes.
+ *
+ * Half, because a radius answers only half the question — see `carriesKeyTint`, which is the other
+ * half and the one that clears a halo against a dark subject. This bound is still exactly right for
+ * the half it governs, and the derivation below still holds; what it never was is the bound on the
+ * pass.
  *
  * A factor with nothing above it is not a threshold, it is a ramp off the end of the scale: at the
  * ladder's top rung the product is 192, which against a magenta key reaches past every colour the
@@ -1256,19 +1264,22 @@ export const FRINGE_TOLERANCE_FACTOR = 3;
  * back a pixel thinner on every silhouette, which is indistinguishable from the artwork having been
  * drawn that way.
  *
- * 32 is fixed by the two things the pass has to sit between, and it is the second of them that is
+ * 32 is fixed by the two things it has to sit between, and it is the second of them that is
  * load-bearing. Measured across every art colour it could be blending with, a pixel three-quarters
- * key sits **at most 21** from it, so a ceiling above that admits every one — the halo goes. And
- * the nearest colours to the recommended magenta that are *not* its own hue are rose and purple at
+ * key sits **at most 21** from it, so a ceiling above that admits every one at that share. And the
+ * nearest colours to the recommended magenta that are *not* its own hue are rose and purple at
  * **40**, so a ceiling below that reaches no unblended artwork. 32 is between them.
  *
- * **It does not, and should not, exclude the blends nearer half.** Those run from about 13 to 40
- * depending on what the key is blending with, so this admits many of them — which is the pass working
- * rather than overrunning: a pixel half made of the key colour and touching the field *is* halo. The
- * bound that keeps it honest is the 40 above, not a claim about what fraction of key a pixel holds.
+ * **What that derivation does not cover is the blends nearer half, and it cannot.** How far a blend
+ * sits from the key is decided mostly by how far its *partner* sits, so the share where a blend
+ * escapes depends entirely on what it is a blend of: half the key into a mid grey measures 19 and is
+ * taken, while half into near-black measures 37 and a quarter measures 57 — both past the 40 where
+ * unblended artwork begins. No value of this constant separates those from the sprite, which is why
+ * a second test exists rather than a looser number here.
  *
- * Above the rung where this binds, the field's own radius has overtaken it and the fringe pass has
- * nothing left to add — every pixel it could reach, pass 1 has already marked.
+ * Above the rung where this binds, the field's own radius has overtaken it and the radius half has
+ * nothing left to add — every pixel *it* could reach, pass 1 has already marked. The hue test carries
+ * the pass from there.
  */
 export const FRINGE_TOLERANCE_CEILING = 32;
 
@@ -1277,45 +1288,58 @@ export const FRINGE_TOLERANCE_CEILING = 32;
  * the fringe pass will take it.
  *
  * {@link FRINGE_TOLERANCE_CEILING} above is a radius, and a radius is the wrong instrument for a
- * blend — `carriesKeyTint` says why at length. This is the other half of the pass's test, and on the
- * sheet that prompted it, it is the half that does the work. At the recommended magenta and the
- * default tolerance, the pass has **11030 candidates** — the drawn pixels touching the keyed field —
- * and **97.1% of them are still visibly magenta**. The radius takes 1997, which is 18.1%: the rest
- * are blends of the key with near-black armour, which the radius places between 32 and 98 away,
- * out among the artwork. With this test beside it the pass takes 10849, which is 98.4%, and leaves
- * **2** visibly magenta pixels standing.
+ * blend — `carriesKeyTint` says why at length. This is one of the two thresholds on the other test,
+ * and on the sheet that prompted it that test is the half doing the work. At the recommended magenta
+ * and the default tolerance the pass has **11030 candidates** — the drawn pixels touching the keyed
+ * field — and **97.1% of them are still visibly magenta**. The radius takes 1997, which is 18.1%:
+ * the rest are blends of the key with near-black armour, which the radius places between 32 and 98
+ * away, out among the artwork. With the hue test beside it the pass takes 10529, which is 95.5%.
  *
  * **0.1 rather than a firmer figure, because the reachable set is halo by construction.** Only a
  * pixel 4-adjacent to the keyed field is ever asked, and 97.1% of that set is contaminated on this
- * sheet, so the cost of the floor being loose is bounded by the 2.9% that is not — 141 pixels here,
- * one deep, on a silhouette the pass is entitled to clean. It is where the knee is, too: 0.15 leaves
- * 168 of the halo standing, 0.2 leaves 682 and 0.25 leaves 1465, which is the fringe the report was
- * about, while 0.05 removes no more of it and reaches 235 non-magenta pixels instead of 141.
+ * sheet, so the cost of the floor being loose is bounded by the 2.9% that is not — 70 pixels here,
+ * one deep, on a silhouette the pass is entitled to clean. Raising it to 0.15 cuts that to 1 and
+ * leaves 389 of the halo standing instead of 251; 0.2 leaves 836 and 0.25 leaves 1542, which is the
+ * fringe the report was about. Dropping to 0.05 leaves no more halo and reaches 120 rather than 70.
  *
  * The floor is not zero because zero is every grey in the sheet: a pixel carrying none of the key's
- * chroma is not a blend of it.
+ * chroma is not a blend of it. It is also what makes {@link KEY_TINT_OFF_HUE}'s ratio well defined.
  */
 export const KEY_TINT_SHARE = 0.1;
 
 /**
- * The most chroma a fringe pixel may carry *off* the key's hue axis, as a fraction of the key's
- * chroma, before it stops counting as a blend of the key.
+ * How far off the key's hue a fringe pixel may sit and still count as a blend of it — as a fraction
+ * of the chroma the pixel carries *along* the key's hue, which makes it the tangent of an angle.
  *
- * {@link KEY_TINT_SHARE} says how much of the key is in the pixel; this says how much of the pixel
- * is not the key. Mixing the key with something achromatic leaves nothing off the axis at all, so a
- * blend against grey, black or white — which is what an anti-aliased silhouette on a dark sheet is
- * made of — measures near zero. A colour of its own measures a long way: the reference sheet's
- * armour red projects nearly half its chroma onto magenta's axis, which the share alone would admit,
- * and 0.87 of it off that axis, which this refuses.
+ * {@link KEY_TINT_SHARE} says how much of the key is in the pixel; this says how straight. Mixing the
+ * key with something achromatic scales its chroma and turns it nowhere, so a blend against grey,
+ * black or white — which is what an anti-aliased silhouette on a dark sheet is made of — measures
+ * near zero at every depth. A colour of its own turns it a long way: the reference sheet's armour red
+ * projects 0.56 of its chroma onto magenta's axis and 0.83 off it, which is an angle of 0.98, and
+ * `#FF0000` itself is 1.06.
  *
- * 0.2 sits between the two by a wide margin, and the margin is what fixes it rather than the
- * midpoint. Measured over the pass's own candidates, the ninetieth percentile of off-hue chroma is
- * 0.096 and the ninety-ninth is 0.152, so the ceiling clears the fringe's whole spread — and it is
- * still four times below the artwork red. The pass is insensitive here, which is the shape a
- * threshold should have: tightening it to 0.1 leaves 662 of the halo standing, and loosening it to
- * 0.3 takes seven more pixels.
+ * **It is a ratio to the pixel's own on-axis chroma and not to the key's, and that is the whole
+ * point of the shape.** Measured against the key's chroma the threshold is one *length*, so it
+ * constrains a saturated pixel tightly and a faint one barely at all — at the bottom of the share
+ * range it admits a cone over 60° wide, which takes in every desaturated violet, periwinkle and dusty
+ * pink. Those are not hypothetical: eight entries of the NES palette this app ships, two of PICO-8's
+ * and one of the C64's fall inside it, so a sprite outlined in `#F8A4C0` lost a ring of silhouette to
+ * a pass that is supposed to remove halo. As a ratio the cone is one angle at every chroma, and all
+ * but the three colours that sit on magenta's hue *exactly* fall back outside it.
+ *
+ * 0.35 is where the knee is. Measured over the pass's own candidates the hue angle runs 0.081 at the
+ * median and 0.234 at the ninetieth percentile, so this clears the fringe's whole spread with room
+ * and still sits a third of the way to the armour red. Tightening it to 0.3 leaves 416 of the halo
+ * standing instead of 251 and buys nothing back; loosening it to 0.4 leaves 134 but starts admitting
+ * `#D8B8F8`, and 0.5 leaves 28 and admits PICO-8's dark purple.
+ *
+ * **Three colours are admitted at any usable setting, and no colour test can refuse them.**
+ * `#F8B8F8`, `#F8D8F8` and `#A057A3` lie on magenta's hue axis at reduced chroma, which is precisely
+ * what the key mixed with white *is* — they are the same colour, so a sprite painted in them cannot
+ * be told from a halo. The escape is the ladder's `exact` rung, which runs no fringe pass at all.
+ * (`#A057A3` is inside the radius as well, so it was never the hue test's to refuse.)
  */
-export const KEY_TINT_OFF_HUE = 0.2;
+export const KEY_TINT_OFF_HUE = 0.35;
 
 /**
  * The largest image the tab will accept, in pixels.
@@ -1469,7 +1493,7 @@ export const QUANTISE_TOOLTIPS = {
   keying:
     'Replaces the background key with transparency, so the sheet can be imported without a colour field behind it. The colour comes from the studio, which is where the prompt stated it. Anti-aliased edges carry blends of that key, and at any tolerance above exact the pixel touching the field is eroded with it — against a black or white key that will take some of the artwork’s own contour, which is why magenta is the recommended key.',
   keyTolerance:
-    'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. It also sets how far the edge clean-up reaches, so at exact there is none.',
+    'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. Above exact it also clears the pixel touching the field wherever that pixel is part key — the blend an anti-aliased edge leaves behind — and that part runs the same at every rung, so what you are choosing here is how much of the field goes rather than how hard the edge is cleaned. If your artwork itself is a pale version of the key colour, exact is the setting that leaves it alone.',
   vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour — and, once a colour reduction is in force, keeps a near-black outline or bright trim even as a minority. It never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce. The outline rescue is the one part of this that a dither switches off: a dither holds the colour reduction back to the end of the pipeline, so there is none in force while the patches are being read, and DOMINANT falls back to the plain vote it takes when no reduction was asked for.',
   outlineExpansion:
     'How far a drawn line is thickened before the sheet is read down to pixels. A contour one drawn pixel wide is a minority inside the patch it crosses, so the patch resolves to the surface behind it and outlines come back broken. This pass grows whichever side of the local contrast the artwork was drawn with — dark ink where the art is dark on light, bright trim where it is light on dark, judged separately for each part of the sheet — so a line still holds enough of its patch to survive being read. It shapes what every reading is handed, so it applies whichever one the Downscale control has in force. Transparency is left exactly where the background key left it, and every colour it produces is one the sheet already contained. Off leaves the sheet as it arrived. Raise it when contours come back dashed — 1 is enough on a typical sheet, and each step past it thickens more than it rescues — and back off when fine detail starts to close up or shapes begin to look drawn rather than rescued.',

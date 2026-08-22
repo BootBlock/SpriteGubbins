@@ -206,9 +206,12 @@ export function keyBasis(color: Rgba): KeyBasis {
  *
  * Safe because nothing can interleave: the conversion and the arithmetic below complete within one
  * synchronous call, JavaScript preempts nothing, and neither step calls out to anything that could
- * re-enter. What the scratch buys is real — {@link keyDistanceSquared} runs up to twice per pixel
- * of a sixteen-megapixel sheet, and an allocation per call is thirty-three million short-lived
- * objects fed to the collector mid-pass.
+ * re-enter. **Two functions share it** — {@link keyDistanceSquared} and {@link carriesKeyTint} — and
+ * that costs nothing beyond the same rule: each writes it and reads it back inside its own call, so
+ * neither can be looking at the other's pixel. `keyBackground` calls the two in one short-circuit
+ * `||` on a single offset, strictly in sequence. What the scratch buys is real — the pair runs up to
+ * three times per pixel of a sixteen-megapixel sheet, and an allocation per call is fifty million
+ * short-lived objects fed to the collector mid-pass.
  */
 const PIXEL: MutableOklab = { L: 0, a: 0, b: 0 };
 
@@ -240,29 +243,44 @@ export function keyDistanceSquared(data: Uint8ClampedArray, offset: number, basi
  *
  * The two are different questions, and the second one cannot be asked with a radius. A pixel on an
  * anti-aliased silhouette is a mixture of the key and whatever lies beside it, so how far it sits
- * from the key is decided mostly by how far *that* is: three-quarters of the recommended magenta
- * mixed into a mid-tone measures about 21, and the same three-quarters mixed into the near-black
- * this app's reference sheet is mostly made of measures past 60. There is no radius between those
- * two and the artwork they are blends of, because the artwork is what the second number is measuring
- * the distance to. Widening the radius until it reaches the dark blends reaches the dark artwork in
- * the same step, and the sheet comes back a pixel thinner on every silhouette.
+ * from the key is decided mostly by how far *that* is — and the further down the mixture runs, the
+ * more of the answer the partner supplies. Three parts key is safe whatever the partner:
+ * `FRINGE_TOLERANCE_CEILING`'s own derivation measures the worst of them at 21, and the radius
+ * takes it. **Half and below is where the partner decides.** Half the recommended magenta into a mid
+ * grey measures 19 and the radius still takes it; the same half into the near-black this app's
+ * reference sheet is mostly made of measures **37**, and a quarter measures **57**.
+ *
+ * There is no radius that separates those from the sprite, because the sprite is what those numbers
+ * are mostly measuring the distance to: the nearest colour to the key that is not a blend of it sits
+ * at **40**, between the two. A ceiling loose enough to reach the dark half-blend reaches unblended
+ * artwork in the same step, and the sheet comes back a pixel thinner on every silhouette — which is
+ * the failure the ceiling was introduced to stop. The radius is correctly placed, and it cannot be
+ * the whole test.
  *
  * What a mixture does keep is the key's **hue**. Mixing the key with something achromatic scales its
  * `a` and `b` together and moves neither off the direction they point in, so the pixel's chroma
  * stays on the key's own axis and only shortens. That is the measurement here, in two parts:
  *
  * - **The share** — how much of the key's chroma the pixel carries along that axis, as a fraction.
- *   1 is the key itself, 0 is any grey, and a mixture with a grey lands at the mixing fraction.
- *   {@link KEY_TINT_SHARE} is the floor.
- * - **The off-hue chroma** — whatever chroma is left once the key's axis is taken out, in the same
- *   units. A mixture with a grey has none. A colour of its own has plenty, which is what keeps the
- *   red of an armour plate — whose chroma projects nearly halfway onto magenta's axis — out of this.
- *   {@link KEY_TINT_OFF_HUE} is the ceiling.
+ *   1 is the key itself and 0 is any grey. It tracks the mixing fraction rather than equalling it:
+ *   OKLab's cube root is not affine, so three parts key over white reads 0.91 and over near-black
+ *   0.81. Monotone is all the floor needs. {@link KEY_TINT_SHARE} is that floor.
+ * - **The hue angle** — whatever chroma is left once the key's axis is taken out, as a fraction of
+ *   what lies *along* it. A mixture with a grey has none at any depth. A colour of its own turns a
+ *   long way: the armour plate's red projects 0.56 of its chroma onto magenta's axis and 0.83 off it.
+ *   {@link KEY_TINT_OFF_HUE} is the ceiling, and its docblock records why the ratio is taken against
+ *   the pixel's own on-axis chroma rather than against the key's.
  *
  * **It is not a licence to erode, and it is not asked everywhere.** `keyBackground` asks it only of
- * a pixel that is 4-adjacent to the keyed field, which is what makes a hue test safe: a pixel
- * touching the field and carrying the field's hue is a blend by construction. Asked of the whole
- * sheet it would take every faintly magenta-tinted pixel of the artwork with it.
+ * a pixel that is 4-adjacent to the keyed field, and the erosion is one pixel deep. Asked of the
+ * whole sheet it would take every faintly key-tinted pixel of the artwork with it.
+ *
+ * **Adjacency is a bound and not a proof, which is the honest limit here.** On a keyed sheet every
+ * silhouette pixel touches the field, so the restriction stops the pass reaching *into* a sprite but
+ * cannot tell a sprite's outermost pixel from the halo over it. Only colour can, and colour runs out
+ * exactly where a sprite is painted in the key's own hue at reduced chroma — which is what the key
+ * mixed with white *is*. {@link KEY_TINT_OFF_HUE} names the three palette entries this costs and the
+ * setting that gets them back.
  *
  * **An achromatic key is answered `false` rather than approximately.** `PURE_WHITE` and `PURE_BLACK`
  * have no hue for a blend to keep, so there is nothing here to measure — the same rule, and the same
@@ -276,9 +294,12 @@ export function carriesKeyTint(data: Uint8ClampedArray, offset: number, basis: K
   const share = (PIXEL.a * basis.hueA + PIXEL.b * basis.hueB) / basis.chroma;
   if (share < KEY_TINT_SHARE) return false;
 
-  // Whatever chroma the pixel carries that is not on the key's axis, measured as a fraction of the
-  // key's own chroma so the ceiling is one number rather than one per key.
-  const offA = PIXEL.a - share * basis.chroma * basis.hueA;
-  const offB = PIXEL.b - share * basis.chroma * basis.hueB;
-  return Math.hypot(offA, offB) <= KEY_TINT_OFF_HUE * basis.chroma;
+  // Whatever chroma the pixel carries that is not on the key's axis, measured against the pixel's
+  // *own* on-axis chroma rather than the key's. That ratio is the tangent of the angle between the
+  // two hues, so the test is one angle at every chroma — see `KEY_TINT_OFF_HUE` for why measuring it
+  // against the key's chroma instead opened the cone wide at the bottom of the share range.
+  const onAxis = share * basis.chroma;
+  const offA = PIXEL.a - onAxis * basis.hueA;
+  const offB = PIXEL.b - onAxis * basis.hueB;
+  return Math.hypot(offA, offB) <= KEY_TINT_OFF_HUE * onAxis;
 }

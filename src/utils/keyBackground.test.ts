@@ -56,7 +56,7 @@ const DARK_BLEND: Rgba = { r: 135, g: 8, b: 135, a: 255 };
 
 /**
  * A sprite colour with a hue of its own that happens to lean the key's way: the reference sheet's
- * armour red, which projects nearly half its chroma onto magenta's axis.
+ * armour red, which projects 0.56 of its own chroma onto magenta's axis and 0.83 off it.
  *
  * 54 from the key, so no radius takes it — and it is the case a hue test gets wrong if it measures
  * only the chroma along the key's axis and not the chroma standing off it.
@@ -153,7 +153,7 @@ describe('keyBackground', () => {
     // but it measures 37, and the fringe radius is capped at 32, so pass 2 walked past it at every
     // rung on the ladder and the sheet came back outlined in magenta. Measured on the reference sheet
     // at the recommended key and the default tolerance, the ring of pixels touching the field was
-    // 97.1% still visibly magenta and the radius reached 18% of it.
+    // 97.1% still visibly magenta and the radius reached 18.1% of it; with the hue test, 95.5%.
     const sheet = row(MAGENTA, DARK_BLEND, DARK_ART, DARK_ART);
 
     const result = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
@@ -174,16 +174,29 @@ describe('keyBackground', () => {
   });
 
   it('leaves a contour standing where it has a hue of its own, however near the key it leans', () => {
-    // The bound on the hue test. `CHROMATIC_ART` touches the field and projects nearly half its
-    // chroma onto the key's axis, so a test that measured only that would take a pixel off every
-    // silhouette on the sheet — which is the failure the ceiling was introduced to stop, arriving by
-    // a different route.
+    // The bound on the hue test. `CHROMATIC_ART` touches the field and projects over half its chroma
+    // onto the key's axis, so a test that measured only that would take a pixel off every silhouette
+    // on the sheet — which is the failure the ceiling was introduced to stop, arriving by a different
+    // route.
     const sheet = row(MAGENTA, CHROMATIC_ART, CHROMATIC_ART);
 
     const result = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
 
     expect(result.keyedPixels).toBe(1);
     expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, CHROMATIC_ART, CHROMATIC_ART)));
+  });
+
+  it('leaves a desaturated contour standing, where the key’s own chroma would swamp the test', () => {
+    // The same bound one level up, on a colour from this app's own NES palette. Its chroma is small,
+    // so an off-hue threshold measured against the *key's* chroma rather than the pixel's admits it
+    // and the sprite comes back a ring thinner — see `KEY_TINT_OFF_HUE`.
+    const pink: Rgba = { r: 248, g: 164, b: 192, a: 255 };
+    const sheet = row(MAGENTA, pink, pink);
+
+    const result = keyBackground(sheet, { color: MAGENTA, tolerance: DEFAULT_KEY_TOLERANCE });
+
+    expect(result.keyedPixels).toBe(1);
+    expect(channels(result.image)).toEqual(channels(row(TRANSPARENT, pink, pink)));
   });
 
   it('erodes a dark halo exactly one pixel deep, as it does any other', () => {
