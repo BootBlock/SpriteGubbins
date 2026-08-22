@@ -462,6 +462,47 @@
    */
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
 
+  /*
+   * What a `transition-*` runs at when the call site says nothing.
+   *
+   * These two are Tailwind's own theme variables, and leaving them alone is what put a large minority
+   * of the app's transitions on a different clock from the rest of it: `transition-colors` with no
+   * `duration-*` beside it resolves to the stock **150ms** on the stock `cubic-bezier(0.4, 0, 0.2, 1)`,
+   * which is 2.6× faster than the commonest figure here and 9.6× faster than the tab pill. **36 of the
+   * app's 121 transition class strings** were on it, across 21 files and whole surfaces at a time —
+   * every button in the history drawer, every row of `SegmentedChoice`, the preset cards, the atlas
+   * calculator — each one snapping inside a panel that eases. A thirty-seventh carried the stock
+   * `duration-` of 200ms outright.
+   *
+   * A default is the fix rather than 36 values, because the value written at a call site is the thing
+   * that goes missing: the next bare `transition-colors` is correct by construction here and would
+   * have been wrong there. **390ms is the base rung** — 200ms taken through the layer's two passes,
+   * and by a distance the commonest figure in `src/` — so a control that says nothing about its speed
+   * now runs at the speed the controls beside it were given by hand.
+   *
+   * The easing follows for the same reason. Exactly one call site in the app names a curve — the tab
+   * pill, which states `ease-emphasized` because the `[data-tab]` sweep it travels with states it too
+   * — so every other transition was on Tailwind's stock ease while every *animation* in this file was
+   * on `--ease-emphasized`. Pointing the default at the signature curve is what makes a transition and
+   * an entrance look like the same layer, and it is the one place the app can say so once.
+   *
+   * **The default is the entrance curve, so anything whose *travel* is the information has to name its
+   * own.** `ease-emphasized` is 83% travelled in its first quarter, which is right for an opacity or a
+   * colour and wrong for a size — the `--ease-decelerate` docblock above says why, and the
+   * `::details-content` rule below is the case it was written for. The disclosure's caret is the one
+   * call site that has to answer this: it turns with that height, so it states `ease-decelerate` at its
+   * end as the height states it at the other. Nothing else in `src/` transitions a size whose travel is
+   * read rather than merely felt — a hover bloom and a press are decoration, and the signature curve is
+   * what they should have had all along.
+   *
+   * Both reduced-motion blocks at the bottom of this file quiet the result: they set
+   * `transition-duration` with `!important` on `*`, which outranks the utility's own declaration
+   * whether the value came from here or from a `duration-*`. The timing function needs no line of its
+   * own — at 0.01ms there is no curve left to travel.
+   */
+  --default-transition-duration: 390ms;
+  --default-transition-timing-function: var(--ease-emphasized);
+
   @keyframes fade-in {
     from {
       opacity: 0;

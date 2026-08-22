@@ -189,7 +189,12 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          className={`size-3.5 shrink-0 text-tab transition-transform duration-585 ${isOpen ? 'rotate-90' : ''}`}
+          // `ease-decelerate` is stated here because the height it turns with states it too — see
+          // the `::details-content` rule in `index.css`, which runs `block-size` on that curve for
+          // this same 585ms. The layer's default is `ease-emphasized`, which is 83% travelled in its
+          // first quarter and is the curve that rule rejects by name for this gesture, so a caret
+          // that said nothing would take it and the two halves would part company mid-turn.
+          className={`size-3.5 shrink-0 text-tab transition-transform duration-585 ease-decelerate ${isOpen ? 'rotate-90' : ''}`}
         >
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" />
         </svg>

@@ -43,7 +43,9 @@ export function Wordmark() {
           <span className="heading-spectrum animate-spectrum-pan">Sprite Gubbins</span>
           <Badge tone="accent">Serverless</Badge>
         </span>
-        <span className="block text-xs text-ink-faint transition-colors group-hover:text-ink-muted">
+        {/* 585 rather than the layer default: this and the tile above are one hover, and a subtitle
+            settling before the glyph it belongs to has finished turning reads as two events. */}
+        <span className="block text-xs text-ink-faint transition-colors duration-585 group-hover:text-ink-muted">
           Modular sprite-sheet prompt architecture
         </span>
       </span>

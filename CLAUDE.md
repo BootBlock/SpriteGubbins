@@ -378,6 +378,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A **section heading**, and the sheen travelling it | `heading-gradient` (+ `animate-gradient-pan`) | `bg-gradient-to-r … bg-clip-text text-transparent`, restated per heading |
 | A **`<details>` easing open and shut** | `section-reveal` | a keyframe on the content, which a `content-visibility: hidden` subtree plays exactly once |
 | The ambient wash breathing, and the live-compile beam | `animate-aurora` / `animate-scan-beam` | one-off durations at the call site |
+| A `transition-*` at the ordinary speed, on a colour, an opacity or a bloom | nothing — the `@theme` default is the base rung, 390ms on `ease-emphasized` | a `duration-*` restating it, except where the call site is one end of a pair the other end also states |
 | Signature easing — an entrance, where the travel is not the point | `ease-emphasized` | `cubic-bezier(...)` inline |
 | Something changing **size**, where the travel *is* what is being read | `ease-decelerate` | `ease-emphasized`, 83% travelled in its first quarter, which reads as a jump |
 | Something **leaving** — an exit, which has to hold before it goes | `ease-exit` | either ease-*out* above run backwards, half gone before the eye catches it starting |
@@ -669,6 +670,38 @@ a new transition written at the stock 200ms would run at roughly twice the speed
 beside it. Pick a duration by finding the nearest thing that already moves and matching it. Two
 pairs have to stay equal — the tab pill and the `[data-tab]` sweep are one event at 1440ms, and the
 disclosure's height and its caret are one gesture at 585ms — and each says so at both ends.
+
+**The layer has a default, and a bare `transition-*` is now correct rather than fast.** Tailwind's
+own `--default-transition-duration` and `--default-transition-timing-function` are set in the
+`@theme` block to **390ms** and `--ease-emphasized`, so a `transition-colors` written with nothing
+beside it runs at the base rung on the signature curve. Before that they were left alone, which put
+**36 of the app's 121 transition class strings**, across 21 files, on the stock 150ms and the stock
+`cubic-bezier(0.4, 0, 0.2, 1)` — every button in the history drawer, every row of `SegmentedChoice`,
+the preset cards, the atlas calculator — 2.6× faster than the commonest figure in the app, inside
+panels that eased. A default is the fix rather than 36 values, because **the value written at a call
+site is the thing that goes missing**. So write a `duration-*` only where the base rung is the wrong
+one — a panel answering a drag takes 585, as both drop zones do — and say at the call site why.
+
+**The default is the entrance curve, so a transition whose *travel* is the information names its
+own.** That is the `ease-decelerate` row above, and the disclosure is the one place in `src/` it
+applies: the caret turns with a height that runs on that curve, so **both ends state it**, exactly as
+the tab pill and the `[data-tab]` sweep both state `ease-emphasized`. That pairing is the one reason
+a call site may restate what the default already gives it. Everything else that scales is a hover
+bloom or a press — decoration, where the travel is felt rather than read — and the signature curve is
+what those should have had all along.
+
+`tests/design-tokens.test.ts` holds the mechanical half: the two theme variables are asserted by name
+against the stylesheet **with its comments blanked**, so the paragraph explaining them cannot satisfy
+the assertion that they exist; and **every `duration-*` under `src/` has to be one of the six rungs**
+(293 / 390 / 585 / 975 / 1365 / 1440). The reduced-motion catch-alls still win over the default, since
+it and a `duration-*` compile to the same declaration and both blocks carry `!important`.
+
+**A whole class name may not be spelled in a comment.** Tailwind scans `src/` and `tests/` without
+caring what is code, so a class written in prose is a candidate the build emits — which is how a
+*retired* figure puts itself back into the bundle as dead CSS, as `.duration-500` did from
+`TabSwitcher`'s note on the pill's old speed. The rung scan therefore reads the **raw** source rather
+than blanking comments, which is what lets it catch that at all; the record stays honest by writing
+the figure and the utility in two halves, as that note and the test's own docblock now do.
 
 **A page transition is the app's second speed, and it is a `view-*` token rather than a number.**
 Navigating is worth dwelling on, so the second pass gave it 1.6× where everything else took 1.3× —

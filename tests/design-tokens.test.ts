@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
-import { basename, resolve, sep } from 'node:path';
+import { basename, relative, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { scannableSources } from './sourceFiles';
+import { codeOnly } from './codeOnly';
+import { scannableSources, tailwindScanned } from './sourceFiles';
 
 /**
  * The design-token contract.
@@ -535,6 +536,133 @@ describe('design tokens', () => {
     expect(files.length).toBeGreaterThan(20);
 
     const offenders = files.filter((file) => arbitrarySize.test(readFileSync(file, 'utf8')));
+
+    expect(offenders).toStrictEqual([]);
+  });
+});
+
+/**
+ * The ladder every transition in the app stands on, slowest rung last.
+ *
+ * These are not six independently chosen speeds. They are the stock Tailwind figures a component
+ * would otherwise have reached for, taken through the whole-layer passes `src/index.css` describes:
+ * 150/200/300/500/700ms at 1.95× give 293 (rounded from 292.5), 390, 585, 975 and 1365, and the tab
+ * pill's 1440 is the page-transition speed, which took 2.4× instead. Stating them here rather than
+ * deriving them is deliberate — a derivation would have to encode which of the two multipliers each
+ * rung took, and that choice *is* the rung.
+ *
+ * What the list catches is a seventh figure appearing: a `duration-` at the stock 200ms, the speed
+ * Tailwind's documentation suggests, which is what `ImageDropZone`'s Clear button carried three
+ * lines below a panel on 585. A number off this ladder is not a slightly wrong speed — it is a
+ * control on a different clock from the surface around it.
+ *
+ * The utility is spelled in two halves for the reason the type scale's guard gives above: `tests/`
+ * is inside Tailwind's content scan, so a complete class name written even in a comment here is a
+ * candidate the build emits — and this file exists to stop that class reaching the bundle at all.
+ */
+const MOTION_RUNGS = [293, 390, 585, 975, 1365, 1440];
+
+/**
+ * The stylesheet with its comments blanked, for the assertions that ask whether a declaration exists.
+ *
+ * `toContain` against the raw file cannot tell a declaration from a sentence about one, and every
+ * token in this file carries a paragraph. The two `--default-transition-*` lines below are the case
+ * that forced it: thirty-odd lines of prose sit directly above them explaining what they are for, and
+ * a reword that quoted either one verbatim would satisfy the assertion with the real declaration
+ * gone. Blanking first means the only thing that can answer is the declaration itself.
+ */
+const declarations = codeOnly(stylesheet);
+
+/**
+ * The utility this ladder is about, assembled from two halves that are not a class name apart.
+ *
+ * Written whole, the pattern would be a candidate in its own right: this file is inside the content
+ * scan it exists to protect, and the value half accepts `(` and `[`, so the source of the regex
+ * matches itself and the guard reports its own line as an offender. Splitting it is the move the
+ * type scale's guard makes one screen up, for the same reason.
+ *
+ * The value is bounded to the characters a Tailwind utility can carry, not to "anything before a
+ * space". A closing brace or parenthesis is what a class abuts at the end of a template literal, and
+ * swallowing one turns a rung into `NaN` and reports a call site that was correct. An asterisk is
+ * what the prose in `index.css` writes when it means the family rather than a member.
+ */
+const UTILITY = new RegExp(String.raw`\bduration` + String.raw`-([\w.[\]()/-]+)`, 'g');
+
+describe('the speed a transition runs at when its call site says nothing', () => {
+  it("gives the layer its own default rather than leaving Tailwind's", () => {
+    // The failure this replaced: `transition-colors` with no `duration-*` beside it resolves to
+    // Tailwind's stock 150ms, which is 2.6× faster than the commonest figure in `src/`. 36 of the
+    // app's 121 transition class strings were on it, across 21 files — whole surfaces, not stray
+    // controls — and every one of them looked correct, because a class that says nothing cannot
+    // look wrong.
+    expect(declarations).toContain('--default-transition-duration: 390ms;');
+    expect(declarations).toContain('--default-transition-timing-function: var(--ease-emphasized);');
+  });
+
+  it('defaults to the base rung, so a bare transition matches the controls beside it', () => {
+    const declared = /--default-transition-duration: (\d+)ms;/.exec(declarations)?.[1];
+
+    // Not merely *a* rung. 390 is the one 44 call sites wrote out by hand, so it is the figure a
+    // control that says nothing has to land on for the default to be doing its job at all.
+    expect(Number(declared)).toBe(MOTION_RUNGS[1]);
+  });
+
+  it('points the default at a curve this file defines, never at a bare cubic-bezier', () => {
+    const easing = /--default-transition-timing-function: (.+);/.exec(declarations)?.[1] ?? '';
+    const token = /^var\((--ease-[a-z-]+)\)$/.exec(easing)?.[1];
+
+    // Exactly one call site in `src/` names a curve, so this declaration decides the easing of every
+    // other transition in the app. A raw `cubic-bezier(...)` here would be the literal CLAUDE.md's
+    // token table bans, written in the one place that reaches everything.
+    expect(token).not.toBeUndefined();
+    expect(declarations).toContain(`${String(token)}: cubic-bezier(`);
+  });
+
+  it('keeps a line in each reduced-motion block for the property the default now decides', () => {
+    // The catch-alls are what quiet the default: it and a `duration-*` compile to the same
+    // `transition-duration`, and only these declarations carry `!important`. The suite's existing
+    // check compares the two blocks *with each other*, so it stays green if both lose the same line
+    // — which is exactly the edit that would let the default through. This counts them instead.
+    const quiets = declarations.match(/transition-duration: 0\.01ms !important;/g) ?? [];
+
+    // Four: the two catch-alls, and the `::details-content` rule each one carries beside it.
+    expect(quiets).toHaveLength(4);
+  });
+
+  it('turns the disclosure caret on the curve its own height turns on', () => {
+    // The two halves are one gesture and `index.css` says so at the height's end. Before the layer
+    // had a default the caret was on Tailwind's stock ease; a default of `ease-emphasized` would
+    // hand it the curve that rule rejects by name — 83% travelled in its first quarter — so the
+    // panel would ease while the chevron snapped. It has to state the curve, as the height does.
+    const source = resolve(process.cwd(), 'src/components/common/CollapsibleSection.tsx');
+    const classes = /className=\{`size-3\.5[^`]*`\}/.exec(readFileSync(source, 'utf8'))?.[0] ?? '';
+
+    expect(classes).toContain('duration-585');
+    expect(classes).toContain('ease-decelerate');
+  });
+
+  it('leaves no class in anything Tailwind scans naming a speed off the ladder', () => {
+    // The type scale's guard in its motion form, and it is the same failure twice over. Tailwind
+    // compiles the stock 200ms happily, so a component that wants the speed the docs suggest just
+    // takes it and the layer stops describing the app — and Tailwind's content scan does not care
+    // whether a class it finds is code, so a whole class name written in a *comment* reaches the
+    // bundle as dead CSS. A note recording the tab pill's retired speed did exactly that, and the
+    // class it named was still being emitted long after the figure was corrected. So this reads the
+    // **raw** source rather than blanking comments, and it reads `tests/` as well as `src/` because
+    // the build does: both offences are the same offence, and the record stays honest by writing the
+    // utility and its figure in two halves, as that note and this docblock now do.
+    const files = tailwindScanned();
+    expect(files.length).toBeGreaterThan(20);
+
+    const offenders = files.flatMap((file) =>
+      readFileSync(file, 'utf8')
+        .split('\n')
+        .flatMap((line, index) =>
+          [...line.matchAll(UTILITY)]
+            .filter((match) => !MOTION_RUNGS.includes(Number(match[1])))
+            .map(() => `${relative(process.cwd(), file).split(sep).join('/')}:${String(index + 1)}`),
+        ),
+    );
 
     expect(offenders).toStrictEqual([]);
   });

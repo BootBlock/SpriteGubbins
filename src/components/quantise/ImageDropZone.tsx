@@ -71,7 +71,7 @@ export function ImageDropZone({ acceptFile, currentName, onClear }: ImageDropZon
             <button
               type="button"
               onClick={onClear}
-              className="rounded-lg border border-rose/40 bg-rose/10 px-3 py-1.5 text-xs font-semibold text-rose transition-all duration-200 hover:border-rose hover:bg-rose/20 active:scale-[0.98]"
+              className="rounded-lg border border-rose/40 bg-rose/10 px-3 py-1.5 text-xs font-semibold text-rose transition-all hover:border-rose hover:bg-rose/20 active:scale-[0.98]"
             >
               <span aria-hidden="true">✕</span> Clear
             </button>

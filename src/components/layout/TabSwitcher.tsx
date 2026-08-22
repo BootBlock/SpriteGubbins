@@ -66,10 +66,15 @@ export function TabSwitcher() {
             these are not separately timed — the CSS transition and this one are describing the
             same event.
 
-            They now agree, which they had not: the pill was `duration-500` against a 600ms colour
-            sweep, so it arrived a tenth of a second before the page had finished turning and this
-            comment described an intent rather than the code. Both are the view-change's own length,
-            and moving one means moving the `[data-tab]` rule in `index.css` with it.
+            They now agree, which they had not: the pill was on a 500ms `duration-` against a 600ms
+            colour sweep, so it arrived a tenth of a second before the page had finished turning and
+            this comment described an intent rather than the code. Both are the view-change's own
+            length, and moving one means moving the `[data-tab]` rule in `index.css` with it.
+
+            The retired figure is written in two halves deliberately: this file is inside Tailwind's
+            content scan, and a whole class name spelled even in a comment is a candidate the build
+            emits — so a record of what a change fixed would otherwise put the fixed class back in
+            the bundle.
           */}
           <span
             style={{ width: SLOT_WIDTH, transform: `translateX(${activeIndex * 100}%)` }}

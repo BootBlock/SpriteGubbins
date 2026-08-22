@@ -59,7 +59,10 @@ export function IdentityPaletteCapture() {
   return (
     <section
       {...dropHandlers}
-      className={`rounded-xl border border-dashed p-3 transition-colors ${
+      // 585 rather than the layer default, which is the control rung: this is a drop *zone*, and the
+      // quantiser's takes the same figure for the same reason — the surface answering a drag is the
+      // panel, not a button on it.
+      className={`rounded-xl border border-dashed p-3 transition-colors duration-585 ${
         isDraggedOver ? 'border-tab bg-tab/10' : 'border-foundry-600 bg-foundry-800/60'
       }`}
     >
