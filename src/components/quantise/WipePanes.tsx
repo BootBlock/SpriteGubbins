@@ -3,7 +3,7 @@ import type { CSSProperties } from 'react';
 import type { ComparisonPaneProps } from './ComparisonPane.tsx';
 import { PaneWindow } from './PaneWindow.tsx';
 import { WipeHandle } from './WipeHandle.tsx';
-import { WorkingOverlay } from './WorkingOverlay.tsx';
+import { WorkingBadge } from './WorkingBadge.tsx';
 
 interface WipePanesProps {
   /** The sheet as it arrived, which the divider reveals to its left. */
@@ -55,13 +55,13 @@ export function WipePanes({ first, second, busy, at, onMove }: WipePanesProps) {
         <span>{second.caption}</span>
       </figcaption>
 
-      {/* The positioning context for the divider, the clip and the working overlay — and where the
+      {/* The positioning context for the divider, the clip and the working chip — and where the
           divider's position is published, so the handle and the clip below cannot come apart. */}
       {/* Cast because `CSSProperties` enumerates the known CSS properties and a custom one is not
           among them — the same cast, for the same reason, as the one `PresetCard` makes to hand a
           card its own stop on the wheel. */}
       <div ref={frame} className="relative" style={{ '--wipe': `${String(at * 100)}%` } as CSSProperties}>
-        {busy && <WorkingOverlay />}
+        {busy && <WorkingBadge />}
         <PaneWindow {...paneOf(first)} />
         <div className="absolute inset-0" style={{ clipPath: 'inset(0 0 0 var(--wipe))' }}>
           <PaneWindow {...paneOf(second)} />

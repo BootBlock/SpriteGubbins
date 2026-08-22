@@ -1,7 +1,7 @@
 import type { ReactNode, RefCallback } from 'react';
 import type { PaneContent } from './PaneWindow.tsx';
 import { PaneWindow } from './PaneWindow.tsx';
-import { WorkingOverlay } from './WorkingOverlay.tsx';
+import { WorkingBadge } from './WorkingBadge.tsx';
 
 export interface ComparisonPaneProps {
   /** What this pane is showing and how big it is — the line above the frame. */
@@ -35,9 +35,9 @@ export function ComparisonPane({ caption, busy = false, ...window }: ComparisonP
   return (
     <figure className="space-y-2">
       <figcaption className="font-mono text-2xs text-ink-faint">{caption}</figcaption>
-      {/* The positioning context the working overlay resolves against — see `WorkingOverlay`. */}
+      {/* The positioning context the working chip resolves against — see `WorkingBadge`. */}
       <div className="relative">
-        {busy && <WorkingOverlay />}
+        {busy && <WorkingBadge />}
         <PaneWindow {...window} />
       </div>
     </figure>
