@@ -9,13 +9,25 @@ import type { StepProfile } from './stepProfile.ts';
 import { stepProfile } from './stepProfile.ts';
 
 /**
- * Finding the scale of art that was drawn at one and then **resampled**.
+ * Finding the scale of art that was drawn at one and then **resampled about a lattice it kept**.
  *
- * The other half of the question `detectPixelGrid` answers in ./pixelGrid.ts, and the half that
- * covers what models actually return. That one counts colour transitions and asks which lattice
- * they all fall on, which is exact and has no tolerance in it — so a sheet whose edges have been
- * softened by so much as a three-tap kernel puts transitions on every column, no lattice can
- * account for nine tenths of them, and the answer is `null` for the most common input this tab has.
+ * The other half of the question `detectPixelGrid` answers in ./pixelGrid.ts. That one counts colour
+ * transitions and asks which lattice they all fall on, which is exact and has no tolerance in it —
+ * so a sheet whose edges have been softened by so much as a three-tap kernel puts transitions on
+ * every column, no lattice can account for nine tenths of them, and the answer is `null` for
+ * artwork that plainly has a scale. This reading is what covers that: art exported through a
+ * smoothing resize, where the boundaries have become ramps but still start every `grid` pixels.
+ *
+ * **It is not what a generator returns, and this file said for a long time that it was.** Measured
+ * across the eight sheets in `test_sprites/` — both axes, every candidate from 3 to 24 — the best
+ * corrected share any of them reaches is 0.16 against a threshold of 0.9, and 0.35 with the phase
+ * searched afresh in every 64-pixel window so that drift cannot decohere it. A returned sheet's
+ * pitch *drifts*: its boundaries wander between, say, 6 and 7, so after a few dozen cells they are
+ * no longer on any lattice at any phase, and every phase class of every candidate holds within one
+ * per cent of chance. That is a fact about the artwork rather than about this threshold, so there is
+ * no recalibration of it that would answer one of those sheets. `estimateProfilePeriod` is the
+ * reading that serves them, because a correlation measures the repeat *distance* and never asks
+ * where the repeats sit. `tests/sheet-scale-corpus.test.ts` holds the measurement.
  *
  * What survives resampling is not *where* an image changes but **how often**. A boundary becomes a
  * ramp, and a ramp still starts every `grid` pixels, so the measurement here is of a period rather

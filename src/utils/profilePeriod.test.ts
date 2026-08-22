@@ -179,6 +179,46 @@ describe('estimateProfilePeriod', () => {
     expect(estimateProfilePeriod(sheet)).toBeNull();
   });
 
+  it('reads a pitch of two, which the lattice reading’s borrowed floor could not reach', () => {
+    // The floor this reading used to take from `estimatePixelGrid` was 4, derived from the width of
+    // a lattice window — a bound on a measurement this one does not make. Five of the eight sheets
+    // in `test_sprites/` are drawn at 2, 3 or ≈3.4, and two of them were being answered at *twice*
+    // their pitch because the descent could go no finer. A correlation has nothing that degenerates
+    // at 2: the comb is at every even lag and the troughs are at every odd one.
+    const sheet = imageFrom(96, 96, (x, y) => {
+      const index = Math.floor(y / 2) * 48 + Math.floor(x / 2);
+      return { r: (index * 71 + 40) % 200, g: (index * 149 + 80) % 200, b: (index * 37 + 120) % 200, a: 255 };
+    });
+
+    expect(estimateProfilePeriod(sheet)).toBe(2);
+  });
+
+  it('does not settle in the trough between two teeth of a comb it could reach', () => {
+    // A ±1 window centred on the *odd* lag of a period-2 comb collects both flanking teeth and
+    // outscores either of them, so a descent weighing its candidates by windowed mass alone lands
+    // on a lag the correlation is negative at. At the old floor of 4 the candidates were always
+    // several lags apart and mass and shape agreed, so nothing had to say which was being asked
+    // for. Measured on `test_sprites/cyborg_healer.png`, whose pitch is 2: lag 3 scores 0.885
+    // against lag 2’s 0.53, and the reading descended from 8 to 3. The answer must be the comb’s
+    // own tooth, never the gap between two of them.
+    const sheet = imageFrom(96, 96, (x, y) => {
+      const index = Math.floor(y / 2) * 48 + Math.floor(x / 2);
+      return { r: (index * 71 + 40) % 200, g: (index * 149 + 80) % 200, b: (index * 37 + 120) % 200, a: 255 };
+    });
+
+    expect(estimateProfilePeriod(sheet)).not.toBe(3);
+  });
+
+  it('lets an axis reading strong evidence speak past one reading weak evidence', () => {
+    // The polluted axis of the marks fixture settles on 13 while the clean axis reads 6. Two axes
+    // that can each vouch for themselves and disagree are a contradiction, and a contradiction is a
+    // refusal — but an axis that cannot vouch for its own reading is abstaining, not disagreeing,
+    // and giving it a veto throws away the one axis that read the sheet.
+    const shifted = detailedSheet((cellX, cellY) => cellX % 4 === 3 && cellY % 3 === 0);
+
+    expect(estimateProfilePeriod(shifted)).toBe(6);
+  });
+
   it('reads plain regular pitch too, where the earlier readings would normally answer first', () => {
     const sheet = soften(
       imageFrom(64, 64, (x, y) => {

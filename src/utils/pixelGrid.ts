@@ -20,15 +20,21 @@ import { estimateProfilePeriod } from './profilePeriod.ts';
  *
  * {@link detectPixelGrid} is exact and has no tolerance in it, so where it answers there is nothing
  * an estimate could add and a second opinion could only disagree. `estimatePixelGrid` covers
- * artwork drawn at a scale and then resampled — softened edges, but a true period underneath.
- * `estimateProfilePeriod` covers what generators actually return: drifting blocks *with interior
- * detail* — straps and markings whose edges are what a line list has to tell the boundaries apart
- * from, where autocorrelation of the whole profile needs no such separation and reads straight
- * through them. `estimateMeshPeriod` stays behind it for *small* sheets: a handful of drifting
- * cells across a few dozen pixels sits under the correlation's repeat floor, and a clean median of
- * the boundary spacings still speaks there —
+ * artwork drawn at a scale and then resampled *about a lattice it kept* — softened edges, but a
+ * true period at a fixed phase underneath. `estimateProfilePeriod` covers what generators actually
+ * return: drifting blocks *with interior detail* — straps and markings whose edges are what a line
+ * list has to tell the boundaries apart from, where autocorrelation of the whole profile needs no
+ * such separation and reads straight through them. `estimateMeshPeriod` stays behind it for *small*
+ * sheets: a handful of drifting cells across a few dozen pixels sits under the correlation's repeat
+ * floor, and a clean median of the boundary spacings still speaks there —
  * `meshPeriod.test.ts` holds the sheet that proves the path. Every estimated answer is offered
  * under the same `ESTIMATED` hedge: a candidate to click and judge, never adopted on its own.
+ *
+ * **Which reading serves which sheet is measured, not asserted.** `tests/sheet-scale-corpus.test.ts`
+ * runs all four over the eight sheets in `test_sprites/` and pins what each one answers, against the
+ * pitch each sheet was independently measured to have been drawn at. The middle two answer on none
+ * of that corpus, and the file records for each sheet which gate refused it — because a docblock
+ * claiming a reading serves real generator output is exactly what went unchecked before.
  *
  * Running each reading only on the one before's refusal is also what keeps the survey cheap where
  * it can be: a crisp sheet pays for one pass, and only the sheets each later reading exists for

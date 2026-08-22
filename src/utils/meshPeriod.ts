@@ -9,8 +9,8 @@ import { boundaryClusters } from './boundaryClusters.ts';
 import { stepProfile } from './stepProfile.ts';
 
 /**
- * The scale of art whose blocks repeat at *almost* a period — the sheets generators actually
- * return, and the ones both integer readings refuse.
+ * The scale of art whose blocks repeat at *almost* a period, on a sheet too **small** for the
+ * correlation reading to speak about.
  *
  * `detectPixelGrid` needs every transition on one lattice and `estimatePixelGrid` needs nine
  * tenths of the change within a pixel of one, and drifting art satisfies neither: its boundary
@@ -18,6 +18,17 @@ import { stepProfile } from './stepProfile.ts';
  * the drift does not destroy is the *typical spacing* — measure where the boundaries actually
  * sit and the gaps between neighbours cluster tightly around the scale the art was drawn at. The
  * median of those gaps is that scale, read the way `boundaryMesh` will consume it.
+ *
+ * **The niche is the small sheet, and this file used to claim the whole corpus.** `ACF_FEWEST_REPEATS`
+ * keeps the correlation reading off anything whose pitch fits fewer than eight times across the
+ * shorter edge, and a handful of drifting cells across a few dozen pixels is exactly that — a clean
+ * median of the boundary spacings still speaks there, and `meshPeriod.test.ts` holds the sheet that
+ * proves it. On a *large* returned sheet it neither fires nor should: across the eight in
+ * `test_sprites/` the spacings agree with their own median at 2%, 12%, 15%, 24%, 41%, 47%, 58% and
+ * 69%, against the seven tenths {@link SPACING_AGREEMENT} asks for — and on six of the eight the
+ * median disagrees with the pitch the sheet was actually drawn at, so an admitting threshold would
+ * buy six confident wrong answers to gain two right ones. The constant's own docblock carries the
+ * figures; `tests/sheet-scale-corpus.test.ts` re-measures them.
  *
  * **Offered only where the spacings genuinely cluster.** A median exists for any two lines, so
  * the reading demands enough spacings to call a habit — and demands that most of them sit within

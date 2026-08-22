@@ -6,7 +6,7 @@ import {
   ACF_PROMINENCE,
   ACF_STRUCTURE_FLOOR,
   measurableGridCeiling,
-  MIN_ESTIMATED_GRID,
+  MIN_CORRELATED_PERIOD,
 } from '../constants/quantiser.ts';
 import type { PixelGrid } from '../types/quantiser.ts';
 import { stepProfile } from './stepProfile.ts';
@@ -28,8 +28,13 @@ import { stepProfile } from './stepProfile.ts';
  * covariances first read as one number, and that was its defect: detail patterned along one axis
  * can *anticorrelate* at the true pitch, and in the summed form that anticorrelation cancelled the
  * other axis's clean fundamental — the reading then offered the pitch's double, which merges the
- * art's cells for good. Read apart, the polluted axis refuses or disagrees, and disagreement is a
- * refusal rather than an average.
+ * art's cells for good. Read apart, the polluted axis disagrees or finds nothing at all.
+ *
+ * **The reconciliation turns on whether an axis can vouch for itself**, which `AxisReading.sure`
+ * carries. Two axes that agree within a pixel offer the finer, provided one of them is sure — two
+ * unsure axes corroborate nothing, because a *content* periodicity lands on both axes as readily as
+ * a pixel pitch does. Apart, the sure axis speaks alone: an axis reading weak evidence gets no veto
+ * over one reading strong evidence, which is the difference between disagreeing and abstaining.
  *
  * The correlation is mean-removed — the profile is non-negative, so its mean alone would put a
  * pedestal under every lag — divided by the overlap count so shrinking overlap cannot tilt the
@@ -61,29 +66,53 @@ export function estimateProfilePeriod(image: ImageData): PixelGrid | null {
     measurableGridCeiling(image.width, image.height),
     Math.floor(shortest / ACF_FEWEST_REPEATS),
   );
-  if (ceiling < MIN_ESTIMATED_GRID) return null;
+  if (ceiling < MIN_CORRELATED_PERIOD) return null;
 
   const across = axisPeriod(profile.columns, ceiling);
   const down = axisPeriod(profile.rows, ceiling);
 
-  if (across !== null && down !== null) {
-    // Within a pixel is agreement — drift makes a fractional pitch land on either neighbour — and
-    // the finer of the two is the cheap direction to be wrong in. Further apart is a
-    // contradiction, and a contradiction is a refusal, never an average.
-    if (Math.abs(across.period - down.period) > 1) return null;
-    return Math.min(across.period, down.period);
+  // Within a pixel is agreement — drift makes a fractional pitch land on either neighbour — and the
+  // finer of the two is the cheap direction to be wrong in. **Agreement corroborates an axis that
+  // could not vouch for itself, and two that cannot corroborate nothing**: the doubts `sure` folds
+  // together are all forms of "this axis is reading weak evidence", and two weak readings landing
+  // together is what a *content* periodicity looks like as readily as a pixel pitch — the layout
+  // fixture in this file's tests puts the same spurious 40 on both axes, because the layout is the
+  // same on both.
+  if (across !== null && down !== null && Math.abs(across.period - down.period) <= 1) {
+    if (across.sure || down.sure) return Math.min(across.period, down.period);
+    return null;
   }
 
-  const alone = across ?? down;
-  if (alone === null) return null;
-  // An unconfirmed octave with no second axis to corroborate it stays unoffered.
-  return alone.sure ? alone.period : null;
+  // Apart, or one axis silent. **An axis that cannot vouch for itself does not get a veto**, which
+  // is the difference between disagreeing and abstaining: the sheet whose columns are polluted by
+  // marks in every fourth cell settles them on 13 against a clean 6 down the rows, and refusing the
+  // pair would throw away the one axis that read the sheet. A contradiction is a refusal only
+  // between two axes that can each speak alone.
+  const sure = [across, down].filter((reading) => reading?.sure === true);
+  if (sure.length !== 1) return null;
+  return sure[0]?.period ?? null;
 }
 
 /** One axis's answer: the pitch it settled on, and whether it settled it alone. */
 interface AxisReading {
   readonly period: number;
-  /** `false` when the peak's half was prominent but under-supported — the octave-ambiguous case. */
+  /**
+   * Whether this axis can offer its pitch **on its own**, with no second axis to corroborate it.
+   *
+   * Three ways an axis settles on a pitch it cannot vouch for, and they are one question rather
+   * than three: the descent found a division prominent but under-supported, so the octave is
+   * unresolved; the pitch's own double carries less than {@link ACF_MULTIPLE_CONFIRMATION}; or the
+   * pitch's own window carries less than {@link ACF_CORRELATION_FLOOR}.
+   *
+   * **The last two used to refuse outright**, which is what put them out of the caller's reach —
+   * and each of them is one axis asking whether it is sure by itself, which is exactly the question
+   * the *other* axis answers. Measured on `test_sprites/three-quarter-view_tiles1.png`, whose pitch
+   * is 4: both axes settle on 4 independently, and both were refused by the double's confirmation
+   * (0.055 and 0.156 against 0.3) before either could be compared with the other. Two axes landing
+   * on one pitch is stronger evidence than either gate withholds, and the reconciliation in
+   * {@link estimateProfilePeriod} already read agreement that way for the octave case. So all three
+   * doubts now reach it the same way, and none of them loosens what a *single* axis may offer.
+   */
   readonly sure: boolean;
 }
 
@@ -115,26 +144,14 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
   // so a settled pitch can consult its own double.
   const highest = Math.min(2 * ceiling + 1, detail.length - 2);
   const r = new Float64Array(highest + 1);
-  for (let lag = Math.max(1, MIN_ESTIMATED_GRID - 1); lag <= highest; lag += 1) {
+  for (let lag = LOWEST_READABLE_LAG; lag <= highest; lag += 1) {
     r[lag] = covariance(detail, detailMoments.mean, lag) / detailMoments.variance;
   }
 
   // A candidate must *carry* correlation, not merely stand above its valleys: the differenced
   // domain's baseline is zero and its anticorrelation troughs are deep, so without this floor a
   // flat nothing between two troughs measures as prominent — the shape of no pitch at all.
-  let best: number | null = null;
-  let bestMass = -Infinity;
-  for (let lag = MIN_ESTIMATED_GRID; lag <= ceiling; lag += 1) {
-    const here = r[lag] ?? 0;
-    if (here < ACF_PROMINENCE) continue;
-    if (here < (r[lag - 1] ?? 0) || here <= (r[lag + 1] ?? 0)) continue;
-    if (prominence(r, lag, ceiling) < ACF_PROMINENCE) continue;
-    const mass = windowedMass(r, lag);
-    if (mass > bestMass) {
-      bestMass = mass;
-      best = lag;
-    }
-  }
+  const best = bestSupportedPeak(r, MIN_CORRELATED_PERIOD, ceiling, ceiling);
   if (best === null) return null;
 
   // Descend while a division's window carries nearly the settled peak's own mass. Halves *and*
@@ -142,62 +159,35 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
   // integer — art at four and a third peaks at thirteen, which no halving reaches.
   let settled = best;
   let sure = true;
-  while (settled >= 2 * MIN_ESTIMATED_GRID) {
-    const candidates: number[] = [];
-    for (const divisor of [2, 3]) {
-      const divided = Math.round(settled / divisor);
-      for (const candidate of [divided - 1, divided, divided + 1]) {
-        if (candidate < MIN_ESTIMATED_GRID || candidate >= settled || candidate > ceiling) continue;
-        if (!candidates.includes(candidate)) candidates.push(candidate);
-      }
-    }
-    let taken: number | null = null;
-    let takenMass = -Infinity;
-    for (const candidate of candidates) {
-      const mass = windowedMass(r, candidate);
-      if (mass > takenMass) {
-        takenMass = mass;
-        taken = candidate;
-      }
-    }
+  while (settled >= 2 * MIN_CORRELATED_PERIOD) {
+    const taken = bestSupportedPeak(
+      r,
+      MIN_CORRELATED_PERIOD,
+      settled - 1,
+      ceiling,
+      divisionsOf(settled, ceiling),
+    );
     if (taken === null) break;
-    if (takenMass >= ACF_HARMONIC_DESCENT * windowedMass(r, settled)) {
+    if (exclusiveMass(r, taken, settled) >= ACF_HARMONIC_DESCENT * exclusiveMass(r, settled, taken)) {
       settled = taken;
       continue;
     }
     // The bar failed — but a division that is still a prominent peak of its own is an octave the
-    // data cannot settle, not a refuted one. Take the most supported such peak as the tentative
-    // fine answer and let the caller demand corroboration; swallowing the coarse peak here is how
-    // a doubled — or tripled — ghost gets offered.
-    let tentative: number | null = null;
-    let tentativeMass = -Infinity;
-    for (const candidate of candidates) {
-      const here = r[candidate] ?? 0;
-      if (here < ACF_PROMINENCE) continue;
-      if (here < (r[candidate - 1] ?? 0) || here <= (r[candidate + 1] ?? 0)) continue;
-      if (prominence(r, candidate, ceiling) < ACF_PROMINENCE) continue;
-      const mass = windowedMass(r, candidate);
-      if (mass > tentativeMass) {
-        tentativeMass = mass;
-        tentative = candidate;
-      }
-    }
-    if (tentative !== null) {
-      settled = tentative;
-      sure = false;
-    }
+    // data cannot settle, not a refuted one. Take it as the tentative fine answer and let the
+    // caller demand corroboration; swallowing the coarse peak here is how a doubled — or tripled —
+    // ghost gets offered.
+    settled = taken;
+    sure = false;
     break;
   }
 
-  if (sure) {
-    // A genuine period correlates at its double, where the range holds one to ask — read through
-    // the same clamped window as every gate, because a fractional pitch's echo lands beside the
-    // exact double, flanked by the troughs a signed sum would count against it.
-    if (2 * settled + 1 <= highest && windowedMass(r, 2 * settled) < ACF_MULTIPLE_CONFIRMATION) {
-      return null;
-    }
-    if (windowedMass(r, settled) < ACF_CORRELATION_FLOOR) return null;
+  // A genuine period correlates at its double, where the range holds one to ask — read through the
+  // same clamped window as every gate, because a fractional pitch's echo lands beside the exact
+  // double, flanked by the troughs a signed sum would count against it.
+  if (2 * settled + 1 <= highest && windowedMass(r, 2 * settled) < ACF_MULTIPLE_CONFIRMATION) {
+    sure = false;
   }
+  if (windowedMass(r, settled) < ACF_CORRELATION_FLOOR) sure = false;
   return { period: settled, sure };
 }
 
@@ -254,20 +244,159 @@ function windowedMass(r: Float64Array, lag: number): number {
   return Math.max(0, r[lag - 1] ?? 0) + Math.max(0, r[lag] ?? 0) + Math.max(0, r[lag + 1] ?? 0);
 }
 
-/** How far the peak stands above the higher of the two valleys flanking it. */
+/**
+ * The most supported *prominent local maximum* in a range of lags, or `null` where the range holds
+ * none.
+ *
+ * One shape test, read twice — by the search that settles an axis's pitch and by the descent that
+ * asks whether a division of it is better supported. **The descent used to weigh its candidates by
+ * windowed mass alone**, and that is the hole a small pitch falls through: at a floor of 4 a
+ * division was always several lags from its neighbours, so mass and shape agreed and nothing had to
+ * say which was being asked for. At a floor of 2 they part company — a period-2 comb puts a *deep
+ * trough* at lag 3, flanked by the teeth at 2 and 4, and a ±1 window centred on that trough collects
+ * both teeth and outscores either. Measured on `test_sprites/cyborg_healer.png`, whose pitch is 2:
+ * lag 3 scores 0.885 against lag 2's 0.53, and the reading descended from 8 to 3 — a pitch the
+ * correlation is *negative* at.
+ *
+ * A genuine harmonic of a pitch is always a local maximum of the correlation. A lag that merely sits
+ * between two teeth is not, and the shape test is what tells them apart whatever the window says.
+ *
+ * `candidates` names the lags to consider; omitted, every lag in the range is considered.
+ */
+function bestSupportedPeak(
+  r: Float64Array,
+  lowest: number,
+  highest: number,
+  ceiling: number,
+  candidates?: readonly number[],
+): number | null {
+  let best: number | null = null;
+  let bestMass = -Infinity;
+  const consider = (lag: number) => {
+    if (lag < lowest || lag > highest) return;
+    const here = r[lag] ?? 0;
+    if (here < ACF_PROMINENCE) return;
+    if (!risesFromTheLeft(r, lag) || here <= (r[lag + 1] ?? 0)) return;
+    if (prominence(r, lag, ceiling) < ACF_PROMINENCE) return;
+    const mass = windowedMass(r, lag);
+    if (mass > bestMass) {
+      bestMass = mass;
+      best = lag;
+    }
+  };
+  if (candidates === undefined) {
+    for (let lag = lowest; lag <= highest; lag += 1) consider(lag);
+  } else {
+    for (const lag of candidates) consider(lag);
+  }
+  return best;
+}
+
+/**
+ * The divisions of a settled peak a descent may consider: its half and its third, each with its two
+ * neighbours.
+ *
+ * Halves *and* thirds, because a fractional pitch peaks sharpest at whichever multiple lands nearest
+ * an integer — art at four and a third peaks at thirteen, which no halving reaches. The neighbours
+ * are there because the division of a fractional pitch is itself fractional.
+ */
+function divisionsOf(settled: number, ceiling: number): readonly number[] {
+  const divisions: number[] = [];
+  for (const divisor of [2, 3]) {
+    const divided = Math.round(settled / divisor);
+    for (const candidate of [divided - 1, divided, divided + 1]) {
+      if (candidate > ceiling || candidate >= settled) continue;
+      if (!divisions.includes(candidate)) divisions.push(candidate);
+    }
+  }
+  return divisions;
+}
+
+/**
+ * One lag's windowed mass, counting only the lags the *other* lag's window does not also cover.
+ *
+ * **Neither side of the descent's comparison may be weighed by the other's evidence.** The two are
+ * judged on ±1 windows, and where those windows overlap the shared lags support both claims at once
+ * — so the comparison stops being between two readings of the sheet and becomes a reading of one lag
+ * against itself. At a floor of 4 the arithmetic kept them apart unasked: the descent only ran from
+ * a settled peak of 8 upward, so a division was never nearer than `settled − 2`, and the invariant
+ * went unstated because nothing could break it. At a floor of 2 it stops holding. Art at four and a
+ * third settles on 13 and descends correctly to 4, and 4's third has 3 as a neighbour, whose window
+ * `[2, 3, 4]` is three quarters supplied by the very 4 it is being weighed against — measured on
+ * that fixture, 3 scores 0.885 on borrowed evidence and nothing at all on its own.
+ *
+ * A flat ban on neighbouring candidates would answer that, and it would also forbid an honest
+ * descent: a comb at every even lag whose most-supported tooth happens to land on 4 can only reach
+ * its true 2 by stepping across the trough at 3, which carries nothing for either of them. So the
+ * exclusion is of the *shared lags* rather than of nearby candidates, which is what the invariant
+ * actually says.
+ */
+function exclusiveMass(r: Float64Array, lag: number, other: number): number {
+  let mass = 0;
+  for (let index = lag - 1; index <= lag + 1; index += 1) {
+    if (index >= other - 1 && index <= other + 1) continue;
+    mass += Math.max(0, r[index] ?? 0);
+  }
+  return mass;
+}
+
+/**
+ * The smallest lag the correlation is *evidence* at.
+ *
+ * **Lag 1 is not a measurement of the sheet.** The correlation is read on the profile's first
+ * difference, and differencing puts a structural trough at lag 1 whatever the image holds — a
+ * step's change is followed by no change — so `r[1]` is deeply negative for a period-2 comb, for
+ * smooth paint and for noise alike. Measured across the eight reference sheets in `test_sprites/`
+ * it runs −0.13 to −0.83, and it says nothing about any of them.
+ *
+ * Nothing had to state this while the search floor was `MIN_ESTIMATED_GRID`: the lowest lag ever
+ * examined was 4, and lag 1 was three positions outside every window and every valley search. At
+ * {@link MIN_CORRELATED_PERIOD} it is the immediate left neighbour of the first candidate, so a
+ * peak at 2 would clear the local-maximum test against it on any image, and stand a false half-unit
+ * of prominence above it on any image. Both gates therefore start here, and a candidate at the
+ * floor is judged on its right-hand side alone — which is honest, because there is nothing on its
+ * left to judge it against.
+ */
+const LOWEST_READABLE_LAG = MIN_CORRELATED_PERIOD;
+
+/**
+ * Whether the correlation rises into this lag from the left — vacuously true at the floor, where
+ * there is no readable lag to its left. See {@link LOWEST_READABLE_LAG}.
+ */
+function risesFromTheLeft(r: Float64Array, lag: number): boolean {
+  if (lag <= LOWEST_READABLE_LAG) return true;
+  return (r[lag] ?? 0) >= (r[lag - 1] ?? 0);
+}
+
+/**
+ * How far the peak stands above the higher of the two valleys flanking it.
+ *
+ * **A side with no readable lags on it constrains nothing**, which is only ever the left of a peak
+ * at {@link LOWEST_READABLE_LAG}. Reading the missing side as though the valley sat at the peak's
+ * own height — which is what an unscanned running minimum initialised to the peak reports — makes
+ * the prominence exactly zero there, so the first lag the search may consider is the one lag it can
+ * never accept. On `test_sprites/cyborg_healer.png`, whose pitch is 2, that is the difference
+ * between reading the sheet and refusing it.
+ */
 function prominence(r: Float64Array, lag: number, ceiling: number): number {
   const peak = r[lag] ?? 0;
-  let leftValley = peak;
-  for (let index = lag - 1; index >= Math.max(1, MIN_ESTIMATED_GRID - 1); index -= 1) {
+  const left = valley(r, peak, lag - 1, LOWEST_READABLE_LAG, -1);
+  const right = valley(r, peak, lag + 1, ceiling + 1, 1);
+  return peak - Math.max(left, right);
+}
+
+/**
+ * The lowest correlation between a peak and the next lag that rises above it, scanning one way.
+ *
+ * `-Infinity` where the scan has nothing to read, which is the "constrains nothing" case
+ * {@link prominence} names.
+ */
+function valley(r: Float64Array, peak: number, from: number, until: number, step: number): number {
+  let lowest = Infinity;
+  for (let index = from; step < 0 ? index >= until : index <= until; index += step) {
     const here = r[index] ?? 0;
     if (here > peak) break;
-    if (here < leftValley) leftValley = here;
+    if (here < lowest) lowest = here;
   }
-  let rightValley = peak;
-  for (let index = lag + 1; index <= ceiling + 1; index += 1) {
-    const here = r[index] ?? 0;
-    if (here > peak) break;
-    if (here < rightValley) rightValley = here;
-  }
-  return peak - Math.max(leftValley, rightValley);
+  return lowest === Infinity ? -Infinity : lowest;
 }

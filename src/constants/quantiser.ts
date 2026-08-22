@@ -163,8 +163,11 @@ export const GRID_DETECTION_THRESHOLD = 0.9;
 export const SOFTENED_EDGE_RAMP = 1;
 
 /**
- * The smallest scale the estimator will consider, and the one number here that is derived rather
- * than chosen.
+ * The smallest scale the **lattice** estimator will consider, and the one number here that is
+ * derived rather than chosen.
+ *
+ * Read by `estimatePixelGrid` alone. The correlation reading has its own floor and its own reason
+ * for it — see {@link MIN_CORRELATED_PERIOD}, which records what borrowing this one cost.
  *
  * A ramp of {@link SOFTENED_EDGE_RAMP} admits `2 × ramp + 1` offsets out of every `grid`, so at a
  * grid of `2 × ramp + 1` the window covers *every* offset and the measurement below becomes the
@@ -177,6 +180,30 @@ export const SOFTENED_EDGE_RAMP = 1;
  * of a cell overlap, and there is no period left in the image to find.
  */
 export const MIN_ESTIMATED_GRID = 2 * SOFTENED_EDGE_RAMP + 2;
+
+/**
+ * The smallest pitch the **correlation** reading will consider, which is not the same floor.
+ *
+ * `estimateProfilePeriod` borrowed {@link MIN_ESTIMATED_GRID} for years, and the derivation above
+ * does not reach it: that floor is a property of a ±1 window laid on a *lattice*, where a grid of
+ * `2 × ramp + 1` puts a window over every offset and the measurement collapses into the statement
+ * that an image is an image. A correlation asks a different question — how far apart does this axis
+ * repeat — and nothing about it degenerates at 3, or at 2. What bounds it is arithmetic: a pitch of
+ * 1 is the claim that the sheet is already at its own resolution, which is the one answer no reading
+ * can assert, since every image repeats at 1.
+ *
+ * **The borrowed floor was refusing the corpus.** Of the eight sheets in `test_sprites/`, the pitch
+ * measured on five is 2, 3 or ≈3.4 — all of them under 4 — and two of those five were answered at
+ * *twice* their pitch because the descent could go no finer: the reference sheet at 6 where its comb
+ * sits at 3, and `cyborg_healer.png` at 4 where every even lag is a peak. Merging the art's own cells
+ * is the error this reading calls the expensive one, and the floor was manufacturing it.
+ *
+ * Two hazards the old floor hid rather than answered come with the lower one, and both are fixed at
+ * their root in `profilePeriod.ts` rather than held off by a number: lag 1 is a structural artefact
+ * of differencing and is not evidence (`LOWEST_READABLE_LAG`), and neither side of the descent's
+ * comparison may be weighed by the other's evidence (`exclusiveMass`).
+ */
+export const MIN_CORRELATED_PERIOD = 2;
 
 /**
  * The share of a sheet's change that must sit on a scale's lattice for that scale to be *offered*.
@@ -196,6 +223,13 @@ export const MIN_ESTIMATED_GRID = 2 * SOFTENED_EDGE_RAMP + 2;
  * candidate 0.37, and smooth painted artwork with no scale in it at most 0.40. A doubled scale
  * *collects* about half the sheet's change, which is the figure intuition reaches for, but scores
  * 0.17 to 0.38 once the share a lattice that coarse would collect by chance is taken back out.
+ *
+ * **It is not what refuses the reference corpus, and lowering it would not answer one sheet.**
+ * Across the eight sheets in `test_sprites/`, both axes and every candidate from 3 to 24, the best
+ * corrected share any of them reaches is 0.16 — and 0.35 when the phase is searched afresh in every
+ * 64-pixel window, so that drift cannot decohere it. Real generator output has no global integer
+ * lattice at any phase, which is a fact about the artwork rather than about this figure;
+ * `tests/sheet-scale-corpus.test.ts` records what each reading does with it.
  *
  * **Coarser is the only direction this number defends, and that is not a weakness.** A *finer*
  * candidate scores 1 as well and always will: art drawn at 8 changes only on multiples of 8, every
@@ -281,7 +315,11 @@ export const ACF_PROMINENCE = 0.2;
 
 /**
  * How much *support* an axis's settled peak must carry — its ±1 window, with negative neighbours
- * held at zero — for that axis to offer the pitch.
+ * held at zero — for that axis to offer the pitch **on its own**.
+ *
+ * Falling short no longer refuses outright: it clears the axis's `sure` flag, and an unsure axis may
+ * still be corroborated by a second axis that can vouch for itself. See `AxisReading` in
+ * `profilePeriod.ts` for why the three doubts an axis can hold are one question.
  *
  * Measured on the window rather than the single lag, deliberately: drift splits a fundamental
  * between two neighbouring lags, so a single-lag floor under-measures exactly the sheets this
@@ -324,7 +362,13 @@ export const ACF_HARMONIC_DESCENT = 0.7;
 
 /**
  * The confirmation a settled pitch takes from its own double's ±1 window, where the range holds
- * one.
+ * one, before that axis may offer the pitch **on its own**.
+ *
+ * As with {@link ACF_CORRELATION_FLOOR}, falling short clears the axis's `sure` flag rather than
+ * refusing outright. Measured on `test_sprites/three-quarter-view_tiles1.png`, whose pitch is 4:
+ * both axes settle on 4 and both carry almost nothing at 8 — 0.055 across and 0.156 down — so the
+ * sheet is refused, and `tests/sheet-scale-corpus.test.ts` records that this is the gate that
+ * refuses it.
  *
  * A genuine period correlates at its multiples; a coincidence does not. Windowed and clamped by
  * the same measure as every other gate, because a fractional pitch's echo lands beside the exact
@@ -375,8 +419,20 @@ export const FEWEST_SPACINGS = 6;
  *
  * Within a pixel, because that is the drift `boundaryMesh` follows cut by cut; seven tenths,
  * because a genuine drifting grid concentrates nearly all its spacings on the two integers around
- * its true pitch, while edges at assorted distances spread theirs — the two populations are far
- * apart, and the threshold sits between them rather than near either.
+ * its true pitch, while edges at assorted distances spread theirs.
+ *
+ * **The two populations are not far apart on real generator output, and the corpus says so.** The
+ * eight sheets in `test_sprites/` agree at 2%, 12%, 15%, 24%, 41%, 47%, 58% and 69% — a continuum
+ * running right up to the threshold, not a gap it sits in. `three-quarter-view_tiles1.png`, the
+ * crispest sheet in the set, misses by one percentage point.
+ *
+ * **It is not lowered, and the reason is what a lower one would offer.** The median this reading
+ * would then hand over disagrees with the pitch measured on the sheet in six of the eight: 4 where
+ * the reference sheet's comb sits at 3, 4 where `cyborg_healer.png`'s sits at 2, 5 against ≈3.4,
+ * and 26, 7 and 11 against sheets whose pitch is ≈2 or nothing at all. A threshold admitting those
+ * buys six confident wrong numbers to gain two right ones, which is the trade
+ * {@link GRID_ESTIMATION_THRESHOLD} argues against at length and this reading is no exception to.
+ * What the reading is *for* is stated in `meshPeriod.ts`, and it is not this corpus.
  */
 export const SPACING_AGREEMENT = 0.7;
 

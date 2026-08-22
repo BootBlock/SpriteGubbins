@@ -2,7 +2,11 @@
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",
     "target": "ES2023",
-    "lib": ["ES2023"],
+    /* `DOM` because a suite here drives the app's image utilities, which are written against
+       `ImageData` — the tests run under happy-dom, which provides it. See
+       `tests/sheet-scale-corpus.test.ts`, which measures the scale readings against the sheets in
+       `test_sprites/`, and so needs the filesystem and the browser types in one program. */
+    "lib": ["ES2023", "DOM"],
     "module": "ESNext",
     "skipLibCheck": true,
 

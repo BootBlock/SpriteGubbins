@@ -2,13 +2,19 @@ import { concatBytes } from '../utils/pngChunk.ts';
 import { scanlineFilters, unfilterScanlines } from './pngScanlines.ts';
 
 /**
- * A PNG *reader*, for the tests of the PNG writer.
+ * A PNG *reader*, for the tests of the PNG writer and for the reference sheets in `test_sprites/`.
  *
  * Deliberately an independent implementation rather than the encoder's own steps run backwards: a
  * round trip through shared code proves only that the code agrees with itself, and what these tests
  * need to establish is that the bytes are a PNG. It walks the chunk stream, reads `IHDR`, `PLTE` and
  * `tRNS` as a decoder would, inflates `IDAT` through the platform's `DecompressionStream`, and
  * reconstructs the scanlines through `unfilterScanlines`.
+ *
+ * **Three colour types, for two reasons.** 3 and 6 are what `encodePng` writes, and reading them is
+ * what cross-checks it. 2 — 8-bit truecolour, no alpha — is what every sheet in `test_sprites/` is,
+ * and `sheetCorpus.ts` needs them as `ImageData` before any reading can be measured on them. All
+ * three are read as the format specifies them rather than guessed at, which is what the refusal
+ * below is protecting; a fourth would be added the same way, by implementing it.
  *
  * `concatBytes` is taken from the encoder's own file rather than restated: joining the `IDAT`
  * fragments is not part of what this is cross-checking, and a second spelling of it would be
@@ -74,13 +80,14 @@ export async function decodePng(bytes: Uint8Array): Promise<DecodedPng> {
   const bitDepth = header.getUint8(8);
   const colorType = header.getUint8(9);
   const interlace = header.getUint8(12);
-  // Colour types 3 and 6 at depth 8, because those are the two `encodePng` writes and every file
-  // this reads comes from it. Anything else is refused rather than guessed at: a decoder that
-  // silently misreads a format it does not know would make a wrong file look like a passing test.
-  if (bitDepth !== 8 || (colorType !== 3 && colorType !== 6)) {
+  // Colour types 2, 3 and 6 at depth 8 — see the note at the top of the file. Anything else is
+  // refused rather than guessed at: a decoder that silently misreads a format it does not know
+  // would make a wrong file look like a passing test.
+  if (bitDepth !== 8 || (colorType !== 2 && colorType !== 3 && colorType !== 6)) {
     throw new Error(`unsupported: colour type ${String(colorType)} at depth ${String(bitDepth)}`);
   }
-  const bytesPerPixel = colorType === 3 ? 1 : 4;
+  if (interlace !== 0) throw new Error('unsupported: interlaced');
+  const bytesPerPixel = colorType === 3 ? 1 : colorType === 2 ? 3 : 4;
 
   const inflated = await inflate(concatBytes(idat));
   const rowBytes = width * bytesPerPixel;
@@ -93,6 +100,11 @@ export async function decodePng(bytes: Uint8Array): Promise<DecodedPng> {
       const index = raw[pixel] ?? 0;
       const entry = palette?.[index] ?? [0, 0, 0];
       pixels.set([entry[0] ?? 0, entry[1] ?? 0, entry[2] ?? 0, transparency?.[index] ?? 255], pixel * 4);
+    } else if (colorType === 2) {
+      // Truecolour carries no alpha channel at all, so every pixel is opaque. `tRNS` on a type-2
+      // file names one colour as transparent; none of the reference sheets carries the chunk, and
+      // reading it as though it did would invent an alpha the file never stated.
+      pixels.set([raw[pixel * 3] ?? 0, raw[pixel * 3 + 1] ?? 0, raw[pixel * 3 + 2] ?? 0, 255], pixel * 4);
     } else {
       pixels.set(raw.subarray(pixel * 4, pixel * 4 + 4), pixel * 4);
     }

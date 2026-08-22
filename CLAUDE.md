@@ -1189,13 +1189,24 @@ and they are on different sheets on purpose.
   key carries the resampler's ringing. That spread is what the keying tolerance is *for*, and a test
   or a measurement that assumes one exact background colour passes against a hand-built fixture and
   is wrong on all eight of these.
-- **Every one is PNG colour type 2** — 8-bit truecolour, non-interlaced, **no alpha channel**. So
-  `src/test/decodePng.ts` reads none of them: it handles colour types 3 and 6 and throws on the
-  rest, by design, because it exists to check what `encodePng` writes. A scratch decode is still
-  hand-rolled, as the calibration method has always required.
+- **Every one is PNG colour type 2** — 8-bit truecolour, non-interlaced, **no alpha channel**.
+  `src/test/decodePng.ts` reads that alongside the two `encodePng` writes, and
+  [tests/sheetCorpus.ts](tests/sheetCorpus.ts) is what hands a test the eight sheets as
+  `ImageData`. It still throws on anything else rather than guessing, which is the point of the
+  refusal — a fourth colour type is added by implementing it, never by loosening the check.
 - **No sheet's dimensions divide by its grid.** 1254², 1536 × 1024 and 1672 × 941 are what the
   generator returned, not what a cell count implies — which is the case the splitter and the
   bounding-box pass actually have to handle.
+- **No sheet carries a global integer lattice, and the scale readings are measured against them.**
+  The pitch of generated art *drifts*, so its boundaries leave any fixed lattice within a few dozen
+  cells: measured across all eight, both axes and every candidate from 3 to 24, every phase class
+  holds within one per cent of chance. That is why the two lattice readings answer on none of the
+  corpus and cannot be recalibrated into answering, and why the correlation reading — which measures
+  a repeat *distance* and never asks where the repeats sit — is the one that serves it.
+  [tests/sheet-scale-corpus.test.ts](tests/sheet-scale-corpus.test.ts) pins what each of the four
+  answers on each sheet, against the pitch each sheet was independently measured to hold. **A
+  recalibration states what it did to all eight**, and the check on any new figure is what it does
+  to the *wrong* candidates, not only to the right ones.
 
 ## Verifying a change
 
