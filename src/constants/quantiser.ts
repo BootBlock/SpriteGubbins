@@ -548,7 +548,7 @@ export const DEFAULT_CLEANUP_PASSES = 1;
  * folding near-duplicate colours together sheet-wide; `mergeColors` holds the rule, and the
  * distance is scaled OKLab, as every colour-tolerance gate measures. Calibration points, measured on
  * the armour sheet (grid 6, ink-weighted 1.5×, a budget of 64): at 12 its sixty-four colours
- * settle to thirty and every fill reads as one surface with its shading intact; by 24 it
+ * settle to twenty-seven and every fill reads as one surface with its shading intact; by 24 it
  * reaches fourteen and begins to spend genuine shading. The range runs on to 48 anyway — six
  * colours on that sheet — because a flatter look is a style, not a mistake, and the preview is
  * beside the dial. Half the RGB range it replaced, for the reason `FILL_CLEANUP_RANGE` gives:
