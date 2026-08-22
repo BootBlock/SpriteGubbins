@@ -102,7 +102,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       deliberates: true,
       emitsText: true,
       // "Input token limit: 131,072", and Outputs "Image and Text" — which is what earns the
-      // manifest. https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image
+      // component map. https://ai.google.dev/gemini-api/docs/models/gemini-3.1-flash-image
       promptBudget: {
         kind: 'CEILING',
         limit: 131_072,

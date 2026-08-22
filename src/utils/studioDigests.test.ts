@@ -20,7 +20,8 @@ import {
  * open group does not render is worse than no digest at all, because the user reads it as the
  * configuration and it is not. So every conditional here is pinned on both sides — the rig geometry
  * that only exists for a `CUTOUT_RIG`, the primary facing that only exists when the mode splits into
- * runs, the manifest that only exists where the target has a text channel to return one through.
+ * runs, the component map that only exists where the target has a text channel to return one
+ * through.
  */
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };

@@ -2200,9 +2200,9 @@ describe('the section numbering the prompt cites itself by', () => {
   it.each(TARGET_MODEL_IDS)(
     'runs 0, 1, 2, … with no hole for %s, with both companions asked for',
     (target) => {
-      // The other axis that adds and removes sections: the manifest and the adherence report are each
-      // gated on what the target can do, so a target that takes one and not the other is where a
-      // hand-numbered tail went wrong before — which the template answered by writing the report's
+      // The other axis that adds and removes sections: the component map and the adherence report
+      // are each gated on what the target can do, so a target that takes one and not the other is
+      // where a hand-numbered tail went wrong before — which the template answered by writing the report's
       // heading twice. Asking for both is what puts every combination of the two through this.
       const output = withOutput({ targetModel: target, emitComponentMap: true, emitPromptFeedback: true });
       for (const rigMode of ['CUTOUT_RIG', 'NONE'] as const) {
@@ -2408,7 +2408,7 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       collect(generatePrompt(preset.category, preset.subject, withOutput(preset.output)));
     }
 
-    // Without this the exclusion above could be silently vacuous — a manifest section the sweep
+    // Without this the exclusion above could be silently vacuous — a component map section the sweep
     // never reached would make the whole assertion pass for the wrong reason.
     expect(sawComponentMapExample, 'the sweep never reached the component map’s JSON example').toBe(true);
     expect([...offenders], `the prompt writes a straight quote:\n${[...offenders].join('\n')}`).toEqual([]);

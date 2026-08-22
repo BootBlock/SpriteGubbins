@@ -153,8 +153,8 @@ export function generatePrompt(
   // the splitter varies nothing but the facing and the sheet index, and both are fields of `output`.
   const batch = sheetBatch(category, output);
 
-  // Only a target that returns text alongside the image can honour a manifest; asking a pure image
-  // endpoint for one just spends tokens on an instruction it will drop.
+  // Only a target that returns text alongside the image can honour a component map; asking a pure
+  // image endpoint for one just spends tokens on an instruction it will drop.
   const emitComponentMap = output.emitComponentMap && returnsText(output.targetModel);
 
   // The report needs *both* halves of that — a pass in which to re-read the specification against

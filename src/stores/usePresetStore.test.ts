@@ -104,7 +104,7 @@ describe('loadPreset', () => {
 
   it('leaves the companion outputs exactly as the user set them', () => {
     // The two checkboxes under "Returned alongside the image" are working preferences, not part of
-    // any archetype: a reader who wants a JSON manifest wants one for the sheet they are about to
+    // any archetype: a reader who wants a component map wants one for the sheet they are about to
     // make, and browsing the library must not quietly switch that off — or on.
     const marine = PRESETS[1];
     if (!marine) throw new Error('PRESETS must hold more than one archetype.');

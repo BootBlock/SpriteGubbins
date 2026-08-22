@@ -31,8 +31,9 @@ const HEADING = '## 3. The template';
  *
  * **Read as a run rather than as the literal three backticks, because the template now contains a
  * fence of its own.** Section [SECTION:COMPONENT_MAP] fences the JSON it asks a model to reproduce,
- * so a mirror delimited by exactly three would end at that example — leaving a short block that
- * compares clean against nothing and a document silently unchecked from there down. CommonMark's own
+ * so a mirror delimited by exactly three ends at that example — which makes §3 unmirrorable rather
+ * than merely stale: the block stops short of the constant, the comparison below fails on the first
+ * line past the fence, and no wording of the document can get it green again. CommonMark's own
  * answer is to open the outer fence with a longer run, which closes only on a run at least as long,
  * so §3 opens with four and this reads whatever it finds.
  */

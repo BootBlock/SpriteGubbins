@@ -389,9 +389,10 @@ export interface OutputConfig extends ImageOutputConfig {
    * sheet can know that file's rects, its magnification or its duplicate links.
    *
    * The two **join**, which is the next best thing. Both number their entries from one in the
-   * reading order section 4 fixes, and both name a component the way the inventory does, so a
-   * reader holding both files can put this map's `parent` and `pivot` beside the quantiser's
-   * measured rects for the same sprite.
+   * reading order section 4 fixes, so a reader holding both files can put this map's `parent` and
+   * `pivot` beside the quantiser's measured rects for the same sprite. The index is what carries
+   * that, not the name: the quantiser names a sprite from the inventory only where the sheet came
+   * back with the count it was asked for, and numbers it otherwise — see `SpriteManifest.named`.
    */
   readonly emitComponentMap: boolean;
   /**
