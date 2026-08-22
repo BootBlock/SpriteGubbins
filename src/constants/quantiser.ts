@@ -964,9 +964,9 @@ export const SCATTERED_SPRITE_CEILING = 512;
  * silhouette's mirror moves the centre by `d / 2`. Eight pixels of reach therefore covers a limb,
  * a weapon or a cloak extending sixteen drawn pixels past what the other side holds, which is well
  * past anything a sprite drawn at 16 to 64 pixels a side can carry. The reference sheet
- * (`test_sprites/armour.png`, 1254², grid 6) separates into fifteen pieces measuring 24 to 35 drawn
- * pixels across, where the quarter-width bound below is the binding one on all but the widest of
- * them.
+ * (`test_sprites/armour.png`, 1254², grid 6) separates into fifteen pieces measuring 25 to 34 drawn
+ * pixels across, where the quarter-width bound below is the binding one on all but the four widest
+ * of them.
  *
  * It is a **bound on cost as much as on the claim**: the sweep is `(4 × reach + 1)` scorings of a
  * whole box, so an unbounded search would be quadratic in the widest sprite on the sheet while a
@@ -1015,20 +1015,26 @@ export const DEFAULT_SYMMETRY = 'OFF';
  * which is what a flat-coloured sheet from a clean generator can actually reach. The Symmetry
  * control's own `OFF` is what stops the pass running.
  *
+ * **Every figure below is measured on the reference sheet under stated conditions**, because a
+ * share is meaningless without them: `test_sprites/armour.png` at grid 6, the ink-weighted reading
+ * at its defaults (line 1.5×, trim 0, ink threshold 64), the magenta key at tolerance 24, the
+ * Symmetry control on `CHECK`, and every other dial where it opens. The sheet segments into fifteen
+ * armour pieces there, and each figure is the mean of the fifteen shares the panel reports.
+ *
  * The ceiling is 64 because past it the figure stops separating anything: a quarter of the
  * black-to-white span already admits a mid-tone against its own shadow, and a tolerance that admits
- * a shadow admits most of what a returned sprite's two halves disagree about. Measured on the
- * reference sheet, whose fifteen armour pieces are drawn at several angles and are asymmetric by
- * subject, the mean share reported rises from **39%** at exact to **72%** at 64 — near-symmetry
+ * a shadow admits most of what a returned sprite's two halves disagree about. Those fifteen pieces
+ * are drawn at several angles and are asymmetric by subject, and with the colour dials left where
+ * they open the mean share rises from **0.7%** at exact to **77.1%** at 64 — near-symmetry
  * claimed for a sheet that holds none, which is what would leave the floor below nothing to refuse.
  *
  * **What the dial is worth depends entirely on how flat the sheet already is**, and the reference
  * sheet measures both ends of that. Reduced to 64 colours with the colour merge at 24 it settles to
- * eleven colours, and every rung from exact to 24 reports the identical **38.6%** — the merge has
+ * eleven colours, and every rung from exact to 24 reports the identical **36.9%** — the merge has
  * already folded everything within 24, so no two mirrored pixels are left sitting between it and
- * exact. The same sheet read with no reduction and no merge holds 12,026 colours, where exact
- * reports **0.6%** and the rungs climb smoothly: 8.0% at 2, 15.1% at 4, 24.4% at 8, 35.8% at 16,
- * 53.2% at 32.
+ * exact, and the reading first moves at 25. The same sheet read with no reduction and no merge holds
+ * 11,912 colours, where exact reports **0.7%** and the rungs climb smoothly: 8.0% at 2, 14.8% at 4,
+ * 24.2% at 8, 35.6% at 16, 52.7% at 32.
  */
 export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
 
@@ -1039,9 +1045,9 @@ export const SYMMETRY_TOLERANCE_RANGE = { min: 0, max: 64, step: 1 } as const;
  * Eight is the rung that behaves sensibly at both ends of that sweep. On a **reduced** sheet it is a
  * no-op, and rightly so: the colours are flat and far apart, so exact equality is the question worth
  * asking and anything short of the gap between two palette entries changes no answer. On an
- * **unreduced** one it turns a reading of 0.6% — which says nothing about the artwork and everything
- * about the resampling — into 24.4%, without reaching the 32 and above where a surface starts
- * matching its own shading.
+ * **unreduced** one it turns a reading of 0.7% — which says nothing about the artwork and everything
+ * about the resampling — into 24.2%, without reaching the 32 and above where a surface starts
+ * matching its own shading, which is 52.7% by that rung.
  */
 export const DEFAULT_SYMMETRY_TOLERANCE = 8;
 
@@ -1057,11 +1063,13 @@ export const DEFAULT_SYMMETRY_TOLERANCE = 8;
  * *reports* every sprite and the reader can watch which of them reach it.
  *
  * The reference sheet is what this was read against, and it is the awkward case rather than the easy
- * one: fifteen armour pieces drawn at several angles, none of them meant to be symmetric. At the
- * default tolerance they report **20% to 68%**, so nothing is settled at 90 or at 75; two are
- * settled at 65 and four at 60, those four being the pieces whose best axis lands on or beside their
- * own box centre. A sheet of front-facing subjects is the case the other way round, and the panel
- * lists every share so which one is in front of the reader is legible rather than assumed.
+ * one: fifteen armour pieces drawn at several angles, none of them meant to be symmetric. Read under
+ * the conditions {@link SYMMETRY_TOLERANCE_RANGE} states, reduced to 64 colours with the colour
+ * merge at 24, and at the default tolerance, they report **18% to 68%** — so nothing is settled at
+ * 90 or at 75; one is settled at 65, two at 60 and four at 55, and each of those four places its
+ * best axis within a pixel of its own box centre. A sheet of front-facing subjects is the case the
+ * other way round, and the panel lists every share so which one is in front of the reader is
+ * legible rather than assumed.
  */
 export const SYMMETRY_CONFIDENCE_RANGE = { min: 50, max: 100, step: 1 } as const;
 
