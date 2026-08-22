@@ -42,13 +42,17 @@ let nextId = 0;
  * **At most one `quantise` call is ever outstanding**, which is what stops a reader who steps a slider
  * paying for every position they passed through. The worker runs each call to completion on one
  * message loop, so a job posted while another is running is not concurrent with it — it is *behind*
- * it, and by the time it starts nobody is waiting for it. Measured in Edge on `test_sprites/armour.png`
- * (1254 × 1254) at its own estimated grid of 6, every dial at its default: one transform settles
- * 1552 ms after the grid is applied, while four steps of one slider 400 ms apart took 3450 ms from the
- * last step, two superseded transforms running to completion first.
+ * it, and by the time it starts nobody is waiting for it.
  *
- * `QUANTISE_DEBOUNCE_MS` does not reach that. It suppresses the intermediate states of a number being
- * *typed*, which arrive faster than 250 ms apart; a slider step outlives it and is posted.
+ * Driven in Edge on `test_sprites/armour.png` (1254 × 1254) at a grid of 6, every other dial at its
+ * default: four steps of one slider 400 ms apart ran **four** transforms and settled 4082 ms after the
+ * last step, against **three** and 2117 ms with this slot in place. Three rather than two because the
+ * second step's transform had already begun when the third arrived, and a pass that has started cannot
+ * be cancelled — there is no yield point inside `quantiseImage` to notice a newer call at, and putting
+ * one there would make a pure function aware of the thread it happens to run on.
+ *
+ * `QUANTISE_DEBOUNCE_MS` does not reach any of this. It suppresses the intermediate states of a number
+ * being *typed*, which arrive faster than 250 ms apart; a slider step outlives it and is posted.
  */
 let running: QuantiseSettings | null = null;
 
