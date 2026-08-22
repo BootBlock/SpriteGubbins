@@ -72,7 +72,7 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
     id: 'topdown-muzzle-flash-run',
     name: 'Top-Down Muzzle Flash Run',
     description:
-      'Eight frame sequences of a muzzle flash seen from overhead, one per compass facing, sharing one identity lock — a directional effect needs eight animations rather than eight frozen frames.',
+      'Eight frame sequences of a muzzle flash seen from overhead, one per compass facing — a directional effect needs eight animations rather than eight frozen frames.',
     category: 'EFFECT',
     subject: {
       species: 'Muzzle Flash / Discharge',
@@ -102,8 +102,8 @@ export const EFFECT_COMBAT_PRESETS: readonly PresetArchetype[] = [
       projection: 'PURE_TOPDOWN',
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.PURE_TOPDOWN,
       // Eight sheets, not one: this mode covers the primary facing alone, so a direction set beside
-      // it is a run list. That is what a directional effect needs — eight frame *sequences* sharing
-      // one identity lock, rather than one sheet holding eight frozen frames and no animation.
+      // it is a run list. That is what a directional effect needs — eight frame *sequences*, rather
+      // than one sheet holding eight frozen frames and no animation.
       directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
       directions: 'EIGHT_COMPASS',
       primaryDirection: 'south',

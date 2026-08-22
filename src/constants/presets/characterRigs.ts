@@ -17,7 +17,7 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
     id: 'iso-cutout-rig',
     name: 'Isometric Cut-Out Rig',
     description:
-      'A true-isometric cut-out rig with squared joint caps, four attachment sockets and four cardinal runs sharing one identity lock. The best look at how a rig sheet differs from a directional one.',
+      'A true-isometric cut-out rig with squared joint caps, four attachment sockets and four cardinal runs rather than one sheet. The best look at how a rig sheet differs from a directional one.',
     category: 'CHARACTER',
     subject: {
       species: 'Android',
@@ -43,9 +43,9 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       cameraElevation: DEFAULT_CAMERA_ELEVATIONS.TRUE_ISOMETRIC,
       rigMode: 'CUTOUT_RIG',
       directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
-      // A run list, not one sheet: four sheets of fifteen pieces, generated one per cardinal facing
-      // with the same identity lock. Isometric games turn on the diamond's four axes, so four is the
-      // set rather than eight.
+      // A run list, not one sheet: four sheets of fifteen pieces, generated one per cardinal
+      // facing. Isometric games turn on the diamond's four axes, so four is the set rather than
+      // eight.
       directions: 'FOUR_CARDINAL',
       primaryDirection: 'south',
       // Squared caps and a full-cap overlap, because a plated machine hides its joints behind a plate
