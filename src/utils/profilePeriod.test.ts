@@ -16,7 +16,7 @@ describe('estimateProfilePeriod', () => {
     const sheet = detailedSheet(detailedMarks);
 
     expect(estimateProfilePeriod(sheet)).toBe(6);
-    expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'ESTIMATED' });
+    expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'REPEAT_DISTANCE' });
 
     // The line-list reading refused this sheet for as long as its chance floor was the axis mean:
     // the marks lifted the floor past the cell boundaries, the boundaries dropped out, and the
@@ -123,7 +123,7 @@ describe('estimateProfilePeriod', () => {
     );
 
     expect(estimateProfilePeriod(sheet)).toBe(6);
-    expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'ESTIMATED' });
+    expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'REPEAT_DISTANCE' });
   });
 
   it('refuses smooth artwork, whose profile has no structure to correlate', () => {

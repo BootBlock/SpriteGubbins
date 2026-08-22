@@ -72,7 +72,7 @@ describe('QuantiseGuide', () => {
   });
 
   it('points an estimated sheet at the click, and fills the ceiling in with this sheet’s numbers', () => {
-    show(factsWith({ grid: 6, measurement: 'ESTIMATED' }), true, 13);
+    show(factsWith({ grid: 6, measurement: 'REPEAT_DISTANCE' }), true, 13);
 
     expect(screen.getByText(/An estimate is waiting under the grid box/)).toBeInTheDocument();
     expect(
@@ -85,7 +85,7 @@ describe('QuantiseGuide', () => {
     // and the reading does not change when the estimate is clicked — so the panel kept telling the
     // reader to click an estimate that was no longer waiting, beside a box holding the number.
     // `GridControls` drops its own paragraph at this exact moment, and the two must agree.
-    show(factsWith({ grid: 6, measurement: 'ESTIMATED' }), true, 13, 6);
+    show(factsWith({ grid: 6, measurement: 'REPEAT_DISTANCE' }), true, 13, 6);
 
     expect(screen.queryByText(/An estimate is waiting under the grid box/)).toBeNull();
     expect(screen.getByText(/A scale is in force and the right preview/)).toBeInTheDocument();

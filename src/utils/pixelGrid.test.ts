@@ -167,7 +167,7 @@ describe('measureSheetScale', () => {
     // adopted silently.
     const resampled = soften(upscaleNearest(PIXEL_SOURCE, 8));
     expect(detectPixelGrid(resampled)).toBeNull();
-    expect(measureSheetScale(resampled)).toEqual({ grid: 8, measurement: 'ESTIMATED' });
+    expect(measureSheetScale(resampled)).toEqual({ grid: 8, measurement: 'EDGE_PERIOD' });
   });
 
   it('never estimates over an exact reading', () => {

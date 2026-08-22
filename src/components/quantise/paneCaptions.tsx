@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { QUANTISE_RESULT_PLACEHOLDER } from '../../constants/quantiser.ts';
+import { estimatedScalePlaceholder, QUANTISE_RESULT_PLACEHOLDER } from '../../constants/quantiser.ts';
 import type {
   PixelGrid,
   PreviewMode,
@@ -96,7 +96,7 @@ export function secondCaption(mode: PreviewMode, quantised: Quantised | null, bu
 export function emptyReason(busy: boolean, grid: PixelGrid | null, scale: SheetScale | null): string {
   if (busy) return QUANTISE_RESULT_PLACEHOLDER.reading;
   if (grid !== null) return QUANTISE_RESULT_PLACEHOLDER.failed;
-  if (scale?.measurement === 'ESTIMATED') return QUANTISE_RESULT_PLACEHOLDER.estimated;
+  if (scale !== null && scale.measurement !== 'EXACT') return estimatedScalePlaceholder(scale.measurement);
   return QUANTISE_RESULT_PLACEHOLDER.none;
 }
 

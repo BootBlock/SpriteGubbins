@@ -1,3 +1,4 @@
+import { ESTIMATED_SCALE_READING } from '../../constants/quantiser.ts';
 import type { SheetFacts } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
 
@@ -23,12 +24,17 @@ interface ScaleBadgeProps {
  *
  * Four states, and the distinction the middle two carry is the point of the component. An `EXACT`
  * scale is a fact about the image — every colour transition in it falls on that lattice — and
- * wants nothing from the reader. An `ESTIMATED` one is the period of edges that resampling has
- * already softened away, which is a measurement with a tolerance in it, so it wears the same
- * "needs attention" gold as finding nothing at all: both mean the reader has to look at the preview
- * before trusting the number. Reporting an estimate in the settled emerald of a measurement would
- * be the exact failure the estimate is hedged against — a scale nobody checked, reducing a sheet by
- * the wrong factor with nothing on screen saying so.
+ * wants nothing from the reader. An estimate is a reading with a tolerance in it, so it wears the
+ * same "needs attention" gold as finding nothing at all: both mean the reader has to look at the
+ * preview before trusting the number. Reporting an estimate in the settled emerald of a measurement
+ * would be the exact failure the estimate is hedged against — a scale nobody checked, reducing a
+ * sheet by the wrong factor with nothing on screen saying so.
+ *
+ * **Which estimate answered is named, not just that one did.** Three readings produce a number here
+ * and they find it in three different things, so a badge that credited every one of them to the
+ * spacing of the sheet's edges described the reading that answers on none of `test_sprites/`. The
+ * wording comes from `ESTIMATED_SCALE_READING`, which the pane, the panel and the live region draw
+ * from too.
  *
  * The two gold states never appear together, so sharing a tone costs no distinction: an estimate is
  * only ever read from a sheet the exact pass found nothing in.
@@ -42,8 +48,12 @@ export function ScaleBadge({ facts }: ScaleBadgeProps) {
   if (facts.scale === null) {
     return <Badge tone="attention">No pixel scale in this image</Badge>;
   }
-  if (facts.scale.measurement === 'ESTIMATED') {
-    return <Badge tone="attention">{facts.scale.grid}× — estimated from the spacing of its edges</Badge>;
+  if (facts.scale.measurement !== 'EXACT') {
+    return (
+      <Badge tone="attention">
+        {facts.scale.grid}× — estimated {ESTIMATED_SCALE_READING[facts.scale.measurement].source}
+      </Badge>
+    );
   }
   // Not "every edge falls on it": the threshold believes a scale that up to a tenth of the sheet's
   // transitions miss, which is the whole point of it not being 1.0 — a stray pixel from a

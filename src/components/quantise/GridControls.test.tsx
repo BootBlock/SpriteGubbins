@@ -46,11 +46,23 @@ describe('GridControls', () => {
   });
 
   it('marks an estimate as an estimate, and asks for the click that would apply it', () => {
-    show(factsWith({ grid: 8, measurement: 'ESTIMATED' }), null);
+    show(factsWith({ grid: 8, measurement: 'EDGE_PERIOD' }), null);
 
-    expect(screen.getByText(/estimated from the spacing of its edges/)).toBeInTheDocument();
+    expect(screen.getByText(/estimated from the spacing of its softened edges/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
     expect(screen.getByText(/Its edges do keep to one typical spacing/)).toBeInTheDocument();
+  });
+
+  it('credits the reading that actually answered, badge and paragraph alike', () => {
+    // The regression this test exists for. Three readings produce an estimate, and both surfaces
+    // used to describe every one of them as the spacing of the sheet's edges — the reading that
+    // answers on none of the eight sheets in `test_sprites/`. A reader deciding whether to trust
+    // the number was being told where it came from, wrongly.
+    show(factsWith({ grid: 3, measurement: 'REPEAT_DISTANCE' }), null);
+
+    expect(screen.getByText(/estimated from the distance its detail repeats over/)).toBeInTheDocument();
+    expect(screen.getByText(/Its detail does repeat over one distance across the sheet/)).toBeInTheDocument();
+    expect(screen.queryByText(/edges/)).toBeNull();
   });
 
   it('stops asking for the click once the estimate has been applied', () => {
@@ -58,12 +70,12 @@ describe('GridControls', () => {
     // rather than a measurement, so it has not been applied: click it" — and that stops being true
     // the moment a grid is in force. Left up, the panel asks for something the reader has already
     // done, beside a box holding the number and a preview showing the result.
-    show(factsWith({ grid: 8, measurement: 'ESTIMATED' }), 8);
+    show(factsWith({ grid: 8, measurement: 'EDGE_PERIOD' }), 8);
 
     expect(screen.queryByText(/so it has not been applied/)).toBeNull();
     // The badge and the candidate stay: they report where the number came from, which is still true
     // and is the one thing the reader must not lose track of once it is applied.
-    expect(screen.getByText(/estimated from the spacing of its edges/)).toBeInTheDocument();
+    expect(screen.getByText(/estimated from the spacing of its softened edges/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /8× estimated/ })).toBeInTheDocument();
   });
 

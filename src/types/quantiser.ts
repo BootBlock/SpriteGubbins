@@ -103,18 +103,31 @@ export interface ImportedImage {
 }
 
 /**
- * Which of the two readings of a sheet produced its scale, and therefore how far it can be trusted.
+ * Which of the four readings of a sheet produced its scale, and therefore how far it can be trusted.
  *
  * `EXACT` is `detectPixelGrid`: every colour transition in the image falls on the lattice, give or
- * take the stray pixel a compression artefact leaves, and there is nothing to check. `ESTIMATED` is
- * `estimatePixelGrid`, reading the *period* of edges that resampling has already destroyed — a
- * measurement with a tolerance in it, so it is offered as a candidate and never adopted on its own.
+ * take the stray pixel a compression artefact leaves, and there is nothing to check. The other three
+ * are the estimates {@link measureSheetScale} falls through to, each carrying a tolerance, each
+ * offered as a candidate and never adopted on its own — `EDGE_PERIOD` is `estimatePixelGrid`,
+ * reading the *period* of edges that resampling has softened into ramps; `REPEAT_DISTANCE` is
+ * `estimateProfilePeriod`, reading the distance the sheet's detail repeats over and never asking
+ * where the repeats sit; and `BOUNDARY_SPACING` is `estimateMeshPeriod`, reading the typical gap
+ * between the boundary lines a drifting sheet still shows.
  *
- * The distinction is carried rather than dropped because the two are not interchangeable on screen:
- * a number the user must check against the preview, presented as one they need not, is the failure
- * this whole reading exists to avoid.
+ * **The three estimates are named apart rather than pooled under one `ESTIMATED`**, because the copy
+ * beside the number says how it was arrived at, and while they were pooled it said "from the spacing
+ * of this sheet's edges" whichever reading had answered — which on real generator output is the
+ * one reading that answers on none of `test_sprites/`. A reader deciding whether to trust a number
+ * is owed the reading that produced it, so the value carries it.
+ *
+ * The distinction from `EXACT` is carried for the older reason, and it still holds: a number the
+ * user must check against the preview, presented as one they need not, is the failure this whole
+ * reading exists to avoid.
  */
-export type ScaleMeasurement = 'EXACT' | 'ESTIMATED';
+export type ScaleMeasurement = 'EXACT' | 'EDGE_PERIOD' | 'REPEAT_DISTANCE' | 'BOUNDARY_SPACING';
+
+/** The three readings that carry a tolerance — every {@link ScaleMeasurement} but `EXACT`. */
+export type EstimatedMeasurement = Exclude<ScaleMeasurement, 'EXACT'>;
 
 /**
  * The pixel scale in a sheet, and how it was arrived at.

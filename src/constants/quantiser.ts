@@ -1,4 +1,5 @@
 import type { PaletteLimit } from '../types/output.ts';
+import type { EstimatedMeasurement, PixelGrid } from '../types/quantiser.ts';
 
 /** The quantiser's fixed numbers and the copy that explains its one control. */
 
@@ -1632,34 +1633,81 @@ export const QUANTISE_STEPS = [
 ] as const;
 
 /**
- * What the panel says when the sheet's scale could not be read exactly, keyed to how far the reading
- * got.
+ * What the panel says when no reading found a scale at all.
  *
  * Here rather than inline in `GridControls` for the reason {@link QUANTISE_STEPS} is: it is content,
- * it ships in the bundle, and it is read by strangers. It became a *set* when the estimator arrived,
- * which is the other half of the reason — one paragraph inline is a component with some copy in it,
- * and a choice between paragraphs is a component deciding what the app says.
+ * it ships in the bundle, and it is read by strangers. One paragraph inline is a component with some
+ * copy in it, and a choice between paragraphs is a component deciding what the app says.
  *
- * Neither names the scale it is talking about. The badge above and the button beside it both state
- * the number already, and a third copy of it in prose is one more place for the three to disagree.
+ * A record of one, because the other paragraph the panel can show is {@link estimatedScaleGuidance}
+ * — the same choice, made against a reading that answered rather than against silence.
+ *
+ * It names no scale, since there is none to name; the estimated paragraph names none either, for
+ * the reason given there.
  */
 export const QUANTISE_SCALE_GUIDANCE = {
   /** Nothing was read at all — the sheet is smooth, with no regular spacing left in it to measure. */
   none: 'Nothing in this image changes on a regular grid, its edges do not soften at a regular spacing, its texture repeats at no pitch from one part of the sheet to the next, and such boundaries as it has keep to no one typical spacing either — so none of the four readings of the sheet found a scale. Type the scale the art was meant to be drawn at: a 16 × 16 sprite handed back on a 128 × 128 canvas is a grid of 8. A grid of 1 keeps the size and reduces the palette only. The grid does not have to start at the image’s corner — where it sits on the art is measured from the image whenever a scale is applied.',
-  /** The edges repeat at a spacing, which is a candidate the reader still has to check. */
-  estimated:
-    'Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. Its edges do keep to one typical spacing, though — exactly, or drifting a pixel or two about it — and that spacing is the scale offered above. It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.',
 } as const;
+
+/**
+ * What each of the three estimates found, in the words the surfaces beside the number use.
+ *
+ * **One record rather than a sentence written at each surface**, because the number is described in
+ * four places — the badge, the candidate the panel offers, the empty result pane and the live
+ * region — and every one of them used to say “from the spacing of this sheet’s edges” whichever
+ * reading had answered. That describes `EDGE_PERIOD` alone, and it is the reading that answers on
+ * none of the eight sheets in `test_sprites/`, so on real generator output the number was credited
+ * to the one reading that did not produce it. The wording follows the reading now, and it follows it
+ * from here so that four surfaces cannot drift apart again.
+ *
+ * `source` is the clause naming where the number came from, written to sit after “estimated”.
+ * `evidence` is the sentence the panel’s paragraph carries, which says what the sheet does hold
+ * given that nothing in it changes on a regular grid.
+ */
+export const ESTIMATED_SCALE_READING: Record<EstimatedMeasurement, { source: string; evidence: string }> = {
+  EDGE_PERIOD: {
+    source: 'from the spacing of its softened edges',
+    evidence:
+      'Its edges do keep to one typical spacing, though — exactly, or drifting a pixel or two about it — and that spacing is the scale offered above.',
+  },
+  REPEAT_DISTANCE: {
+    source: 'from the distance its detail repeats over',
+    evidence:
+      'Its detail does repeat over one distance across the sheet, though, wherever each block happens to start — and that distance is the scale offered above.',
+  },
+  BOUNDARY_SPACING: {
+    source: 'from the gaps between the boundaries it still shows',
+    evidence:
+      'The boundaries it still shows do keep to one typical gap, though, give or take a pixel of drift — and that gap is the scale offered above.',
+  },
+};
+
+/**
+ * The panel’s paragraph for a sheet whose scale was estimated and left unapplied.
+ *
+ * A function rather than a second entry in {@link QUANTISE_SCALE_GUIDANCE}, for the reason
+ * `targetCeilingAdvice` is one: the middle sentence is the reading’s own, and copy with a value
+ * substituted into it is still copy, so the place to read it whole is here beside the rest.
+ *
+ * It names no number, as the `none` paragraph beside it names none: the badge above and the button
+ * next to it both state the scale already, and a third copy of it in prose is one more place for the
+ * three to disagree.
+ */
+export function estimatedScaleGuidance(measurement: EstimatedMeasurement): string {
+  return `Nothing in this image changes on a regular grid, which is what smooth artwork downscaled to sprite size looks like — the thing the prompt asks against and models deliver anyway. ${ESTIMATED_SCALE_READING[measurement].evidence} It is an estimate rather than a measurement, so it has not been applied: click it, then judge an edge at 4× or 8× before downloading, and type a different number if the preview disagrees.`;
+}
 
 /**
  * What the result pane says when it has no result to show, keyed to the reason it has none.
  *
- * Three reasons, not two, and they call for three different things from the reader — which is the
+ * Four reasons, not two, and they call for four different things from the reader — which is the
  * whole reason this is a set rather than the one line it began as. A pane that tells someone to type
  * a number the grid panel is already offering them, or to type one they have just typed, reads as a
- * working feature having failed.
+ * working feature having failed. The fourth is {@link estimatedScalePlaceholder} rather than an
+ * entry here, because it names the reading that produced the number.
  *
- * **None of these three may say where anything is.** The pane and the grid panel are stacked on a
+ * **None of them may say where anything is.** The pane and the grid panel are stacked on a
  * narrow page and side by side on a wide one, so a caption reading "the box above" is wrong in one of
  * the two layouts whichever word it picks. They name the control instead.
  *
@@ -1672,9 +1720,6 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
   reading: 'Reading the sheet and working out the scale it was drawn at…',
   /** No reading found a scale, so there is nothing to align to until one is typed. */
   none: 'No pixel scale was measured in this image, so there is nothing to align it to yet. Type one into the Pixel grid box.',
-  /** A scale was estimated and deliberately not applied — it is waiting to be chosen. */
-  estimated:
-    'The scale in this sheet was estimated from the spacing of its edges rather than measured outright, so it has not been applied. Click it to align the sheet to it, or type a different one into the Pixel grid box.',
   /**
    * A scale **is** in force and still produced nothing, which only a failure explains.
    *
@@ -1686,9 +1731,34 @@ export const QUANTISE_RESULT_PLACEHOLDER = {
     'This sheet could not be quantised at the scale in force. The message at the head of the controls says why.',
 } as const;
 
+/**
+ * The empty result pane’s caption for a scale that was estimated and deliberately not applied.
+ *
+ * Out of {@link QUANTISE_RESULT_PLACEHOLDER} and into a function for the reason
+ * {@link estimatedScaleGuidance} is one: it names the reading that answered, which is a value rather
+ * than a constant. It keeps the record’s own rule about place — it names the Pixel grid control
+ * instead of saying where it is, because the pane and the grid panel are stacked on a narrow page
+ * and side by side on a wide one.
+ */
+export function estimatedScalePlaceholder(measurement: EstimatedMeasurement): string {
+  return `The scale in this sheet was estimated ${ESTIMATED_SCALE_READING[measurement].source} rather than measured outright, so it has not been applied. Click it to align the sheet to it, or type a different one into the Pixel grid box.`;
+}
+
+/**
+ * The live region’s sentence for the same state, which is what a screen-reader user gets in place
+ * of the badge, the button and the paragraph a sighted reader is being shown.
+ *
+ * It states the number, where the two above deliberately do not: nothing else in this state reaches
+ * the region, so leaving the scale out would announce that something had been found without saying
+ * what.
+ */
+export function estimatedScaleStatus(grid: PixelGrid, measurement: EstimatedMeasurement): string {
+  return `Estimated this sheet’s pixel scale as ${String(grid)} ${ESTIMATED_SCALE_READING[measurement].source}. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
+}
+
 /** Guidance shown against the quantiser's controls, keyed to the control it explains. */
 export const QUANTISE_TOOLTIPS = {
-  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, the spacing they still keep to — exactly, or with a little drift — is estimated instead and offered to click rather than applied. Type it yourself when no reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
+  grid: 'How many image pixels wide one drawn pixel is. Measured from where the sheet’s colours change — art drawn at 8 changes only every 8 pixels, so that is the scale reported. Where resampling has softened those changes away, a scale is estimated instead — from the spacing the softened edges still keep to, from the distance the detail repeats over, or from the gaps between such boundaries as remain — and offered to click rather than applied. Type it yourself when no reading found a scale, or when the one reported disagrees with the preview. Art inset from the image’s corner needs no cropping: where the grid sits on the art is measured separately whenever a scale is applied. A grid of 1 leaves the size alone and only reduces the palette.',
   previewMode:
     'Which of five ways the result is shown. Side by side is the pair of frames, each on the same part of the sheet at the same magnification. Wipe lays them over one another in a single frame under a divider you can drag, so the very same screen pixels can be seen before and after. Difference replaces the result with a map of what the reduction cost: one mark per drawn pixel, coloured by how far that pixel ended up from the patch of the sheet it stands for — dark where it is faithful, green then gold as it drifts, red where it has lost what it replaced. Sprites draws the result with a dashed box just outside each separate piece of artwork the keyed sheet was found to hold, which is how the count and the gap in the sprite panel are checked against the picture. Onion skin lays every frame of each row of sprites over one another on the first frame’s slot, so a row whose frames sit at the same spacing comes out as one crisp figure and a frame that wandered shows as a ghost beside it. It changes only what this panel draws; the result, the download and everything stored are the same in all five.',
   differenceScale:

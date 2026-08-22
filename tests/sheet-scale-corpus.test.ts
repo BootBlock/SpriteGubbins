@@ -92,7 +92,15 @@ interface CorpusReadings {
 /** The five answers one sheet produces — the readings' own output, with nothing expected about it. */
 type CorpusAnswers = Omit<CorpusReadings, 'note'>;
 
-const estimatedScale = (grid: number): SheetScale => ({ grid, measurement: 'ESTIMATED' });
+/**
+ * What the tab offers for a sheet the correlation answered — the label included.
+ *
+ * `REPEAT_DISTANCE` rather than a bare “estimated”, because the label is what the copy beside
+ * the number is written from: the badge, the panel, the empty pane and the live region all say
+ * which reading produced it. Every sheet in this corpus that answers at all answers here, so
+ * pinning the label pins the claim those four surfaces make about real generator output.
+ */
+const correlatedScale = (grid: number): SheetScale => ({ grid, measurement: 'REPEAT_DISTANCE' });
 
 const EXPECTED: Record<CorpusSheetName, CorpusReadings> = {
   'armour.png': {
@@ -100,7 +108,7 @@ const EXPECTED: Record<CorpusSheetName, CorpusReadings> = {
     estimated: null,
     correlated: 3,
     drifting: null,
-    offered: estimatedScale(3),
+    offered: correlatedScale(3),
     note: 'The reference sheet. Both axes settle on 3 and both can vouch for it.',
   },
   'cyborg_black_red.png': {
@@ -108,7 +116,7 @@ const EXPECTED: Record<CorpusSheetName, CorpusReadings> = {
     estimated: null,
     correlated: 3,
     drifting: null,
-    offered: estimatedScale(3),
+    offered: correlatedScale(3),
     note: 'A fractional pitch answered at its finer neighbour, which under-reduces rather than merging cells.',
   },
   'character_space_marine_blue.png': {
@@ -132,7 +140,7 @@ const EXPECTED: Record<CorpusSheetName, CorpusReadings> = {
     estimated: null,
     correlated: 2,
     drifting: null,
-    offered: estimatedScale(2),
+    offered: correlatedScale(2),
     note: 'A period-2 comb, read at 2 on both axes.',
   },
   'three-quarter-view_tiles1.png': {

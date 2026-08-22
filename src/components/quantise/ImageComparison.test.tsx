@@ -205,7 +205,7 @@ describe('ImageComparison', () => {
     // number typed. An estimate is already offered and waiting to be clicked, so the "type one"
     // wording would send a reader looking for something the grid panel had already handed them —
     // and reads as the estimate having failed.
-    show(null, undefined, false, { grid: 8, measurement: 'ESTIMATED' }, null);
+    show(null, undefined, false, { grid: 8, measurement: 'REPEAT_DISTANCE' }, null);
 
     expect(screen.getByText(/Click it to align the sheet to it/)).toBeInTheDocument();
     expect(screen.queryByText(/No pixel scale was measured/)).toBeNull();

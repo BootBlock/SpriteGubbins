@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { KEY_OFFER_BORDER_SHARE } from '../../constants/keyOffer.ts';
+import { estimatedScaleStatus } from '../../constants/quantiser.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseWork } from '../../hooks/useQuantiseWork.ts';
@@ -388,6 +389,10 @@ export function QuantiseTab() {
  * cannot otherwise get: the two previews say everything visually and nothing else does. An empty
  * string while there is no sheet, so the region exists from the first render with nothing to say.
  *
+ * **The sentence names the reading that answered**, as the badge and the panel do, and it takes its
+ * wording from the same record they take theirs from — three readings produce an estimate here, and
+ * for a long time every one of them was announced as the spacing of the sheet's edges.
+ *
  * **An estimated scale is announced too, and it is the state that most needs it.** Nothing is
  * running and nothing has been produced — the tab is waiting on the reader — so without this the
  * region falls silent for good at the exact moment a sighted reader is being shown a badge, a
@@ -407,8 +412,9 @@ function statusOf(
   quantised: Quantised | null,
 ): string {
   if (busy) return facts === null ? 'Measuring the sheet.' : 'Quantising the sheet.';
-  if (facts?.scale?.measurement === 'ESTIMATED' && grid === null) {
-    return `Estimated a pixel scale of ${String(facts.scale.grid)} from the spacing of this sheet's edges. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
+  const scale = facts?.scale ?? null;
+  if (scale !== null && scale.measurement !== 'EXACT' && grid === null) {
+    return estimatedScaleStatus(scale.grid, scale.measurement);
   }
   if (quantised === null) return '';
   const { image, colors } = quantised.result;

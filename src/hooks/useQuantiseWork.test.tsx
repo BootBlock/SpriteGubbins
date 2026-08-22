@@ -35,7 +35,7 @@ const REDUCTION = { kind: 'MAX_COLORS', maxColors: 32 } as const;
 const FACTS: SheetFacts = { scale: { grid: 8, measurement: 'EXACT' }, colors: 1024 };
 const NO_SCALE: SheetFacts = { scale: null, colors: 1024 };
 /** A sheet whose scale was read through its softening — a candidate, never the grid in force. */
-const ESTIMATED: SheetFacts = { scale: { grid: 8, measurement: 'ESTIMATED' }, colors: 1024 };
+const ESTIMATED: SheetFacts = { scale: { grid: 8, measurement: 'REPEAT_DISTANCE' }, colors: 1024 };
 
 function resultOf(side: number): QuantiseResult {
   return {

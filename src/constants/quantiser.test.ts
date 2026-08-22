@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_DIFFERENCE_SCALE,
+  estimatedScaleGuidance,
+  estimatedScalePlaceholder,
+  estimatedScaleStatus,
+  ESTIMATED_SCALE_READING,
   DEFAULT_KEY_TOLERANCE,
   DIFFERENCE_SCALES,
   FRINGE_TOLERANCE_CEILING,
@@ -72,5 +76,45 @@ describe('the difference scales', () => {
     // The control is read as "how closely am I looking", which only holds if the numbers ascend —
     // and the tooltip explains the rungs in that order.
     expect([...DIFFERENCE_SCALES]).toStrictEqual([...DIFFERENCE_SCALES].sort((a, b) => a - b));
+  });
+});
+
+/**
+ * The wording each estimate takes, which is the whole of what {@link ScaleMeasurement} carries a
+ * reading's name for.
+ *
+ * Three readings produce an estimated scale and they find it in three different things, so a
+ * sentence written for one of them is wrong beside the other two — which is what the badge, the
+ * panel, the empty result pane and the live region all said for as long as the readings were pooled
+ * under one `ESTIMATED`. The record is where the four of them now take their words from, so this is
+ * where the claim is held.
+ */
+describe('the wording of an estimated scale', () => {
+  it('describes each reading in terms of what that reading measured', () => {
+    expect(ESTIMATED_SCALE_READING.EDGE_PERIOD.source).toContain('edges');
+    expect(ESTIMATED_SCALE_READING.REPEAT_DISTANCE.source).toContain('repeats');
+    expect(ESTIMATED_SCALE_READING.BOUNDARY_SPACING.source).toContain('boundaries');
+  });
+
+  it('credits no reading with what another one measured', () => {
+    // The defect, stated the way it presented: the correlation reads a repeat *distance* and never
+    // asks where the repeats sit, so a sentence about the spacing of the sheet's edges describes
+    // something it did not look at — and it is the reading that answers on every sheet in
+    // `test_sprites/` that answers at all.
+    for (const surface of [
+      estimatedScaleStatus(3, 'REPEAT_DISTANCE'),
+      estimatedScalePlaceholder('REPEAT_DISTANCE'),
+      estimatedScaleGuidance('REPEAT_DISTANCE'),
+    ]) {
+      expect(surface).not.toContain('edges');
+    }
+    expect(estimatedScaleGuidance('BOUNDARY_SPACING')).not.toContain('edges');
+    expect(estimatedScaleStatus(5, 'BOUNDARY_SPACING')).not.toContain('edges');
+  });
+
+  it('states the scale in the live region and nowhere else, since only it has no badge beside it', () => {
+    expect(estimatedScaleStatus(3, 'REPEAT_DISTANCE')).toContain('as 3');
+    expect(estimatedScalePlaceholder('REPEAT_DISTANCE')).not.toMatch(/\d/);
+    expect(estimatedScaleGuidance('REPEAT_DISTANCE')).not.toMatch(/scale of \d/);
   });
 });

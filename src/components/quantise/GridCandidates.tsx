@@ -19,13 +19,15 @@ const CANDIDATE_CLASS =
  * **Every one of these is a candidate rather than a default**, which is why they are buttons and not
  * a value the box opens with. They reach it by three different routes and are worth different
  * amounts: an `EXACT` reading is already in the box, so its button is the way back after the user
- * has typed over it; an `ESTIMATED` one is read through the resampling that destroyed the sheet's
- * edges and is *never* adopted on its own, so this row is the only place it is reachable at all;
+ * has typed over it; an estimate is read through the resampling that destroyed the sheet's edges
+ * and is *never* adopted on its own, so this row is the only place it is reachable at all;
  * and the target size is an upper bound derived from how many components the sheet has to seat,
  * which is not a measurement of this image in the first place.
  *
  * Saying which is which is the whole job. A row of bare numbers would let the one that carries a
- * tolerance be clicked as though it were the one that does not.
+ * tolerance be clicked as though it were the one that does not. Which of the three estimates
+ * answered is not said here — the button has one word of room, and the badge above it names the
+ * reading in full.
  */
 export function GridCandidates({ scale, suggested, onChoose }: GridCandidatesProps) {
   if (scale === null && suggested === null) return null;
@@ -35,7 +37,7 @@ export function GridCandidates({ scale, suggested, onChoose }: GridCandidatesPro
       <span className="text-xs font-semibold text-ink-muted">Try</span>
       {scale !== null && (
         <ControlTooltip
-          hint={scale.measurement === 'ESTIMATED' ? 'Estimated scale' : 'Measured scale'}
+          hint={scale.measurement === 'EXACT' ? 'Measured scale' : 'Estimated scale'}
           text={QUANTISE_ACTION_TOOLTIPS.candidateFromSheet}
         >
           <button
@@ -45,7 +47,7 @@ export function GridCandidates({ scale, suggested, onChoose }: GridCandidatesPro
             }}
             className={CANDIDATE_CLASS}
           >
-            {scale.grid}× {scale.measurement === 'ESTIMATED' ? 'estimated' : 'measured'}
+            {scale.grid}× {scale.measurement === 'EXACT' ? 'measured' : 'estimated'}
           </button>
         </ControlTooltip>
       )}

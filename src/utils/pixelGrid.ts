@@ -28,7 +28,10 @@ import { estimateProfilePeriod } from './profilePeriod.ts';
  * sheets: a handful of drifting cells across a few dozen pixels sits under the correlation's repeat
  * floor, and a clean median of the boundary spacings still speaks there —
  * `meshPeriod.test.ts` holds the sheet that proves the path. Every estimated answer is offered
- * under the same `ESTIMATED` hedge: a candidate to click and judge, never adopted on its own.
+ * under the same hedge: a candidate to click and judge, never adopted on its own. **Which of them
+ * answered is carried out with the number** rather than pooled into one `ESTIMATED`, because the
+ * copy beside it names the reading — see {@link ScaleMeasurement}, and the wording each reading
+ * takes in `ESTIMATED_SCALE_READING`.
  *
  * **Which reading serves which sheet is measured, not asserted.** `tests/sheet-scale-corpus.test.ts`
  * runs all four over the eight sheets in `test_sprites/` and pins what each one answers, against the
@@ -46,13 +49,13 @@ export function measureSheetScale(image: ImageData): SheetScale | null {
   if (detected !== null) return { grid: detected, measurement: 'EXACT' };
 
   const estimated = estimatePixelGrid(image);
-  if (estimated !== null) return { grid: estimated, measurement: 'ESTIMATED' };
+  if (estimated !== null) return { grid: estimated, measurement: 'EDGE_PERIOD' };
 
   const correlated = estimateProfilePeriod(image);
-  if (correlated !== null) return { grid: correlated, measurement: 'ESTIMATED' };
+  if (correlated !== null) return { grid: correlated, measurement: 'REPEAT_DISTANCE' };
 
   const drifting = estimateMeshPeriod(image);
-  return drifting === null ? null : { grid: drifting, measurement: 'ESTIMATED' };
+  return drifting === null ? null : { grid: drifting, measurement: 'BOUNDARY_SPACING' };
 }
 
 /**

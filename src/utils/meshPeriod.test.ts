@@ -49,7 +49,7 @@ describe('estimateMeshPeriod', () => {
     const small = sheetWithBoundaries(35, [0, 4, 9, 13, 17, 22, 26, 31]);
 
     expect(estimateProfilePeriod(small)).toBeNull();
-    expect(measureSheetScale(small)).toEqual({ grid: 5, measurement: 'ESTIMATED' });
+    expect(measureSheetScale(small)).toEqual({ grid: 5, measurement: 'BOUNDARY_SPACING' });
   });
 
   it('offers nothing for edges at assorted spacings, which are not a drifting grid', () => {

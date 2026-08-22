@@ -1,5 +1,10 @@
 import { useId } from 'react';
-import { MANUAL_GRID_RANGE, QUANTISE_SCALE_GUIDANCE, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
+import {
+  estimatedScaleGuidance,
+  MANUAL_GRID_RANGE,
+  QUANTISE_SCALE_GUIDANCE,
+  QUANTISE_TOOLTIPS,
+} from '../../constants/quantiser.ts';
 import type { TargetSize } from '../../types/output.ts';
 import type { ColorPlan, PixelGrid, SheetFacts, SheetScale } from '../../types/quantiser.ts';
 import { Tooltip } from '../common/Tooltip.tsx';
@@ -172,5 +177,5 @@ function scaleGuidance(facts: SheetFacts | null, scale: SheetScale | null, grid:
   if (facts === null) return null;
   if (scale === null) return QUANTISE_SCALE_GUIDANCE.none;
   if (scale.measurement === 'EXACT') return null;
-  return grid === null ? QUANTISE_SCALE_GUIDANCE.estimated : null;
+  return grid === null ? estimatedScaleGuidance(scale.measurement) : null;
 }
