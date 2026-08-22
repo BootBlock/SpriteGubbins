@@ -64,7 +64,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             onClick={() => {
               window.location.reload();
             }}
-            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-ink shadow-lg transition-colors hover:bg-accent"
+            className="rounded-xl bg-accent-strong px-5 py-2.5 text-xs font-bold text-foundry-950 shadow-lg transition-colors hover:bg-accent"
           >
             Reload the app
           </button>

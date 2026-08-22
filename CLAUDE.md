@@ -425,8 +425,9 @@ Two properties make that safe to hand to a user, and both are asserted rather th
   view would light up in the accent.
 - **The accent cannot change a contrast ratio.** Every hue is the default's *luminance*, not its
   lightness: OKLCH lightness is perceptual and its relationship to luminance depends on hue, so nine
-  hues at one lightness would be nine different ratios against `ink` and every panel — `text-ink`
-  sits on `accent-strong` in the app's loudest button. Chroma is then the same fraction of each
+  hues at one lightness would be nine different ratios against every panel and against the near-black
+  every coloured fill carries its label in — `text-foundry-950` sits on `accent-strong` in the app's
+  loudest button. Chroma is then the same fraction of each
   hue's own gamut maximum as the default is of its, per the wheel's rule. Derive a new hue by
   bisecting lightness against a gamut search, never by eye: the test that guards this fails on a
   0.003 nudge.
@@ -452,6 +453,32 @@ app is a position on it. That is a structural claim and it has to stay true, so 
   *light* colour, so ink on one is two light tones a shade apart (~1.8:1), where near-black measures
   8.7:1 at the wheel's worst stop. Any new surface painted `bg-tab` needs dark text for the same
   reason.
+
+**The rule is about the *ground*, not about the wheel, and `accent` is where it was missed.** Measure
+every solid role fill this app paints — the three accent stops, `gold`, `rose`, `emerald`, the two
+`neon`s and all ten stops on the wheel — and **no tone on the ink ramp reaches 4.5:1 on any of them**.
+The best of the eighteen pairings is `text-ink` on `accent-strong` at 3.07:1; `text-ink` on `accent`
+is 2.04:1 and `text-ink-muted` on it is 1.14:1, which is what the toast's dismiss ✕ wore, where it is
+not dim but invisible. `text-foundry-950` clears AA on every one of them, its worst being 5.34:1 on
+`accent-strong`. So the near-black is not the better of two workable choices — it is the only half of
+the palette that can sit on a role colour at all, and **anything painted on a solid role fill takes
+it**. None of those figures move with the accent the reader picked, because every hue holds the
+default's luminance.
+
+**A ground declares the ink once, for its whole subtree.** The toast is the case that shows why: its
+message, its ✕ and its countdown bar all sit on the gradient, and each had been choosing a tone of
+its own. `text-foundry-950` goes on the card and the three inherit it, which is the arrangement
+`action-tab` already has — the utility sets `color`, and no call site restates it. A *translucent*
+role fill is a different question and is not covered by this: at the alphas the app uses (10–30%)
+the composite is mostly panel, and `text-ink` on one measures between 5.9:1 and 10.4:1.
+
+`tests/design-tokens.test.ts` holds both halves, and it sweeps `src/` twice because one pass cannot
+see both shapes. An element whose class string names a ground **unconditionally** must carry no ink
+tone anywhere in its subtree — that is the toast, whose gradient is on the card while the offending
+glyph was three children away. And a class string that names a ground must carry none *itself* — that
+is one branch of a ternary at a time, which is how `SegmentedChoice`'s selected pill and a hoisted
+class constant get checked at all. Run against the code before the fix, the first reports twelve
+tones across nine components and the second reports eight.
 
 **A view's colour is assigned on the element the `var()`s resolve against** — `data-tab` on the
 shell in [src/App.tsx](src/App.tsx), and nowhere else. Custom properties are substituted at

@@ -45,7 +45,7 @@ export function PWAInstallBanner() {
                 showToast('The browser would not open its install dialogue');
               }
             }}
-            className="rounded-xl bg-accent-strong px-4 py-1.5 text-xs font-bold text-ink shadow-md transition-colors hover:bg-accent"
+            className="rounded-xl bg-accent-strong px-4 py-1.5 text-xs font-bold text-foundry-950 shadow-md transition-colors hover:bg-accent"
           >
             Install
           </button>

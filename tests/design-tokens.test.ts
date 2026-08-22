@@ -1022,8 +1022,9 @@ describe('the accent hue the user chose', () => {
     // The claim this whole feature rests on: **changing the accent cannot change a contrast ratio**.
     // It holds because luminance is held, not lightness — OKLCH lightness is perceptual and its
     // relationship to luminance depends on hue, so nine hues at one lightness would be nine
-    // different ratios against `ink` and against every panel. Gold at L 0.62 is far brighter than
-    // indigo at L 0.62, and `text-ink` sits on `accent-strong` in the app's loudest button.
+    // different ratios against every panel and against the near-black every coloured fill in this
+    // app carries its label in. Gold at L 0.62 is far brighter than indigo at L 0.62, and
+    // `text-foundry-950` sits on `accent-strong` in the app's loudest button.
     //
     // 1% of tolerance, against a derivation whose worst rounding error is 0.211%: wide enough that
     // three decimal places in the stylesheet are not a failure, narrow enough that a hue picked by
@@ -1063,6 +1064,221 @@ describe('the accent hue the user chose', () => {
       expect(rule).not.toContain('--color-tab');
       expect(rule).not.toContain('--tab-chord');
     }
+  });
+});
+
+/**
+ * The **unconditional** part of a `className` value, starting at `at`: a quoted attribute entire, or
+ * a template literal's static chunks with every `${…}` blanked out.
+ *
+ * Which half of a class string is conditional decides whether a tone beside a ground is a defect or
+ * a sibling. `SegmentedChoice` writes `` `… ${selected ? 'bg-tab text-foundry-950' : 'bg-foundry-700
+ * text-ink-faint …'}` `` — the ink is the branch where the ground is *not* a role colour, and a scan
+ * that read the two as one string would fail correct code. So the subtree sweep below keys on a
+ * ground that is on the element **whatever the state**, and the literal sweep keys on one branch at
+ * a time.
+ */
+function staticClasses(source: string, at: string | number): string {
+  const cursor = Number(at) + 'className='.length;
+  const opener = source[cursor];
+  if (opener === '"' || opener === "'") {
+    const end = source.indexOf(opener, cursor + 1);
+    return end === -1 ? '' : source.slice(cursor + 1, end);
+  }
+  if (opener !== '{') return '';
+
+  let depth = 0;
+  let close = cursor;
+  for (; close < source.length; close++) {
+    if (source[close] === '{') depth++;
+    else if (source[close] === '}' && --depth === 0) break;
+  }
+
+  const expression = source.slice(cursor + 1, close);
+  const template = /^\s*`([\s\S]*)`\s*$/.exec(expression);
+  // A bare conditional — `className={active ? … : …}` — has no unconditional text at all, so it
+  // contributes nothing here and is left to the literal sweep.
+  if (template === null) return '';
+  return (template[1] ?? '').replace(/\$\{[\s\S]*?\}/g, ' ');
+}
+
+/**
+ * The JSX subtree rooted at the element whose opening tag contains `index`, as source text.
+ *
+ * A ground is not usually the thing that carries the text. The eight accent buttons state their fill
+ * and their label colour in one class string, so a same-string check finds them — and the toast does
+ * not: its gradient is on the card, while the message, the dismiss ✕ and the countdown bar are three
+ * separate children each choosing a tone of its own. That is the shape the reported defect had, so a
+ * check that only reads the ground's own class string is a check that would have missed it.
+ *
+ * The opening tag ends at the first `>` outside a brace or a quote, which is what stops the `>` of an
+ * `onClick={() => …}` being mistaken for it — twelve of the nineteen grounds in the app carry a
+ * handler before their `className`, and reading the tag as ending there truncates the attributes and
+ * lets the ground go unseen. The close is then found by counting nested `<Tag`/`</Tag>` pairs.
+ */
+function subtreeAt(source: string, index: string | number): string | null {
+  const open = source.lastIndexOf('<', Number(index));
+  const tag = /^<([A-Za-z][\w.]*)/.exec(source.slice(open, open + 40))?.[1];
+  if (tag === undefined) return null;
+
+  let cursor = open + 1;
+  let braces = 0;
+  let quote: string | null = null;
+  for (; cursor < source.length; cursor++) {
+    const character = source[cursor];
+    if (quote !== null) {
+      if (character === quote) quote = null;
+      continue;
+    }
+    if (character === '"' || character === "'" || character === '`') quote = character;
+    else if (character === '{') braces++;
+    else if (character === '}') braces--;
+    else if (character === '>' && braces === 0) break;
+  }
+  if (source[cursor - 1] === '/') return source.slice(open, cursor + 1);
+
+  const opener = new RegExp(`<${tag}(?![\\w.])`, 'g');
+  const closer = new RegExp(`</${tag}\\s*>`, 'g');
+  let depth = 1;
+  let scan = cursor + 1;
+  while (depth > 0) {
+    opener.lastIndex = scan;
+    closer.lastIndex = scan;
+    const nested = opener.exec(source);
+    const close = closer.exec(source);
+    // An unbalanced tag is a parse this file cannot complete, so it hands back the rest of the
+    // module rather than a subtree whose end it has guessed: over-reading fails loudly, and stopping
+    // early is what would let a tone hide past the point the scan gave up.
+    if (close === null) return source.slice(open);
+    if (nested !== null && nested.index < close.index) {
+      depth++;
+      scan = nested.index + 1;
+    } else {
+      depth--;
+      scan = close.index + close[0].length;
+    }
+  }
+  return source.slice(open, scan);
+}
+
+/**
+ * A role colour used as a **ground** — the case the ink ramp cannot sit on.
+ *
+ * The defect this suite was written for: the toast paints its card `accent-strong → accent` and put
+ * `text-ink-muted` on the dismiss ✕, which measures 1.14:1 at the accent end. It is not a dim glyph,
+ * it is an absent one. Eight primary buttons had the same fill under `text-ink` at 3.07:1 and 2.04:1,
+ * so the ✕ was the loud instance of a pattern rather than an isolated slip.
+ *
+ * The rule that replaced it is the one the wheel already states for `bg-tab`, and the measurement
+ * below is what makes it general: across *every* solid role fill this app paints — the three accent
+ * stops, `gold`, `rose`, `emerald`, the two `neon`s and all ten stops on the wheel — no tone on the
+ * ink ramp reaches 4.5:1 (the best of them is 3.07:1) and `foundry-950` clears it everywhere (the
+ * worst is 5.34:1). So the near-black is not a preference between two workable options; it is the
+ * only half of the palette that can sit on a role colour at all.
+ *
+ * A *translucent* role fill is deliberately outside all of it. At the alphas the app uses the
+ * composite is mostly panel, and `text-ink` on one measures between 5.9:1 and 10.4:1, so folding the
+ * two cases together would ban a pairing that is correct.
+ */
+describe('a role colour used as a ground', () => {
+  /** Every stop a solid role fill can be. The wheel is here because `bg-tab` resolves to one of it. */
+  const GROUNDS = [
+    '--color-accent',
+    '--color-accent-strong',
+    '--color-accent-soft',
+    '--color-gold',
+    '--color-rose',
+    '--color-emerald',
+    '--color-neon',
+    '--color-neon-deep',
+    ...SPECTRUM_STOPS.map((stop) => `--color-spectrum-${stop}`),
+  ];
+
+  /** Every tone on the ink ramp, which is what a component reaches for by default. */
+  const RAMP = ['--color-ink', '--color-ink-muted', '--color-ink-faint'];
+
+  /**
+   * The same stops as class names, at **full strength**: the negative lookahead is what keeps
+   * `bg-accent/15` — a tint over a panel — out of a sweep that would otherwise fail it.
+   */
+  const SOLID_GROUND =
+    /(?<![\w-])(?:bg|from|to)-(?:accent(?:-strong|-soft)?|tab|gold|rose|emerald|neon(?:-deep)?)(?![\w/-])/;
+
+  /**
+   * The ramp as class names. `bg-` as well as `text-`, because the countdown bar was `bg-ink/60` at
+   * 1.56:1 — a graphic on the ground rather than a label, failing the same way for the same reason.
+   *
+   * `ring-` is deliberately absent: a ring is drawn outside the element, over whatever surrounds it,
+   * so `ring-ink ring-offset-foundry-800` on an accent swatch sits on the panel and is correct.
+   */
+  const RAMP_CLASS = /(?<![\w-])(?:text|bg)-ink(?:-muted|-faint)?(?:\/\d+)?(?![\w-])/g;
+
+  it('cannot carry a tone off the ink ramp, at any stop', () => {
+    // Stated as a failure rather than left implied, because it is the half that makes the sweeps
+    // below a rule instead of a preference: if a later palette change lifted the ramp clear of these
+    // stops, the ban would be the thing to revisit, and this is what would say so.
+    for (const ground of GROUNDS) {
+      for (const tone of RAMP) expect(contrastBetween(tone, ground)).toBeLessThan(4.5);
+    }
+  });
+
+  it('carries the near-black instead, which clears AA on every stop', () => {
+    // 5.34:1 at the worst of them, which is `accent-strong`. The accent the reader picked does not
+    // move that: every hue holds the default's luminance, which the suite above asserts.
+    for (const ground of GROUNDS) {
+      expect(contrastBetween('--color-foundry-950', ground)).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it('leaves no ink tone anywhere inside an element painted with one', () => {
+    const offenders: string[] = [];
+    let grounds = 0;
+
+    for (const file of scannableSources()) {
+      const source = readFileSync(file, 'utf8');
+      for (const attribute of source.matchAll(/className=/g)) {
+        if (!SOLID_GROUND.test(staticClasses(source, attribute.index))) continue;
+        const subtree = subtreeAt(source, attribute.index);
+        if (subtree === null) continue;
+        grounds++;
+        for (const tone of subtree.matchAll(RAMP_CLASS)) offenders.push(`${basename(file)}: ${tone[0]}`);
+      }
+    }
+
+    // A regex that stopped matching — a fill respelled, an attribute order the tag scan misreads —
+    // would empty the sweep and pass it having read no ground at all. Nineteen exist as this is
+    // written; the floor is well under that so a button added or removed is not a failure.
+    expect(grounds).toBeGreaterThan(10);
+    expect(offenders).toStrictEqual([]);
+  });
+
+  it('leaves no ink tone in a class string that paints one', () => {
+    // The second sweep, and it is not a weaker copy of the first: it reads *one branch at a time*,
+    // so it reaches the conditional grounds the subtree sweep steps over — `SegmentedChoice`'s
+    // selected pill, `PresetCollectionList`'s active row — where the ground and the ink genuinely
+    // belong to different states. It also reaches a class string hoisted out of JSX altogether,
+    // which is where CLAUDE.md's directory rule sends a shared one and where no `className=` exists
+    // to anchor a subtree on.
+    //
+    // What neither sweep covers is a *child* of a conditionally-grounded element:
+    // `PresetCollectionList`'s count span is `text-foundry-950/70` when the row is active and
+    // `text-ink-faint` when it is not, and nothing mechanical can pair those two ternaries up.
+    const offenders: string[] = [];
+    let strings = 0;
+
+    for (const file of scannableSources()) {
+      const source = readFileSync(file, 'utf8');
+      for (const literal of source.matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)) {
+        const text = literal[1] ?? literal[2] ?? '';
+        if (!SOLID_GROUND.test(text)) continue;
+        strings++;
+        for (const tone of text.matchAll(RAMP_CLASS)) offenders.push(`${basename(file)}: ${tone[0]}`);
+      }
+    }
+
+    // Twenty as this is written, for the same reason the floor above exists.
+    expect(strings).toBeGreaterThan(10);
+    expect(offenders).toStrictEqual([]);
   });
 });
 

@@ -117,7 +117,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
               onClick={() => {
                 onRestore(log);
               }}
-              className="rounded-lg bg-accent-strong px-2.5 py-1 text-xs font-semibold text-ink transition-colors hover:bg-accent"
+              className="rounded-lg bg-accent-strong px-2.5 py-1 text-xs font-semibold text-foundry-950 transition-colors hover:bg-accent"
             >
               Restore
             </button>
