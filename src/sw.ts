@@ -117,14 +117,14 @@ async function respond(request: Request): Promise<Response> {
   // carrying query parameters still matches the one cached shell.
   if (request.mode === 'navigate') {
     const shell = await cache.match(INDEX_URL, { ignoreSearch: true });
-    if (shell) return isolate(shell, request);
+    if (shell) return withIsolationHeaders(shell, sw.location.origin);
   }
 
   const cached = await cache.match(request, { ignoreSearch: true });
-  if (cached) return isolate(cached, request);
+  if (cached) return withIsolationHeaders(cached, sw.location.origin);
 
   try {
-    return isolate(await fetch(request), request);
+    return withIsolationHeaders(await fetch(request), sw.location.origin);
   } catch {
     // Offline with nothing cached. This can only be a *subresource* — a navigation was already
     // answered from the precached shell above, and had that shell been missing this lookup
@@ -132,14 +132,4 @@ async function respond(request: Request): Promise<Response> {
     // 200 with the wrong MIME type and hide the real cause, so fail cleanly instead.
     return Response.error();
   }
-}
-
-/**
- * {@link withIsolationHeaders} bound to this worker's own origin.
- *
- * The gate is on the **request** URL rather than the response's, because a cached response and a
- * `Response.error()` both report a URL this decision cannot be made from.
- */
-function isolate(response: Response, request: Request): Response {
-  return withIsolationHeaders(response, request.url, sw.location.origin);
 }

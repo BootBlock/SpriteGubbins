@@ -119,8 +119,8 @@ The app also makes itself cross-origin isolated:
 - **In production**, GitHub Pages sends no custom headers, so the app's own service worker adds
   them to the responses it serves from this origin, and a small bootstrap script reloads the page
   once after that worker first takes control. The very first visit is therefore not isolated; the
-  reload fixes it. Another origin's response is passed through exactly as that origin sent it — a
-  proxy cannot state on its behalf who may embed it.
+  reload fixes it. A response that came from another origin is passed through exactly as that origin
+  sent it — a proxy cannot state on its behalf who may embed it.
 
 This is independent of the database. The SAH-pool VFS the app uses needs neither
 `SharedArrayBuffer` nor isolation — only the worker above — so a not-yet-isolated first visit still
