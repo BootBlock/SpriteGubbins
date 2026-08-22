@@ -335,5 +335,5 @@ export function assertBlocksResolved(template: string): void {
   const residue = RESIDUAL_BLOCK_MARKER.exec(template);
   if (residue === null) return;
   const line = template.slice(0, residue.index).split('\n').length;
-  throw new Error(`Prompt template: unresolved marker "${residue[0]}" survived rendering, at line ${line}.`);
+  throw new Error(`Prompt template: unresolved marker “${residue[0]}” survived rendering, at line ${line}.`);
 }

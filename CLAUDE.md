@@ -913,6 +913,30 @@ same words held to the same rules, shown a second way. The quantiser's `QUANTISE
 state of *the user's image* — what the scale reader found, what the empty pane is waiting for — and
 one of them is an ellipsis rather than a sentence. A control is what this suite is named for.
 
+**The punctuation rule reaches every string in the app, and the guidance records are one surface of
+several.** A toast, a live-region sentence, a `disabledReason` and a phrase assembled in
+`utils/colorReduction.ts` are all prose a reader sees, and none of them is in a `*_TOOLTIPS` record —
+so seven had drifted into straight quotes, the two preset libraries among them, quoting the reader's
+own preset name two different ways.
+[tests/interface-punctuation.test.ts](tests/interface-punctuation.test.ts) parses every non-test
+`.ts` and `.tsx` under `src/` and fails on a straight quote in any authored string or JSX text, with
+an HTML entity read as the mark it stands for. **A string is checked because it is written in
+`src/`**, not because a file was remembered, which turns the problem into deciding what to leave out.
+
+**Every exclusion says the mark is *syntax*, and none says a string reaches nobody.** That second
+ground was tried first, on `Error` messages, and it is false here: `hooks/useImageDownload.ts` puts
+`error.message` into a toast and `workers/autoTuneSession.ts` puts it into the paragraph under the
+Auto button, so an `Error` message is held to the rule like anything else. What is left is a
+statement bound to a `*_SQL` name, a class string, and a line that parses as a whole JSON document —
+the manifest a model is asked to return, where a curly quote in a key produces a document that does
+not parse. **A class string is excused by where it is bound**, a `className` attribute or a
+`*_CLASS`/`*_CLASSES` constant, rather than by the bracket syntax of an arbitrary value: a run of
+`[…]` is also how an array prints, and a rule loose enough to blank one excuses a straight-quoted
+array in a sentence. Each exclusion is counted and a count of zero fails, because one that stops
+suppressing anything has become a hole. **The floors are counted per extension** for the same
+reason — one total sat green through the loss of every `.tsx` in the app, which is the half carrying
+the JSX text.
+
 ## Prompt text is the product, and it is written to rules
 
 The app's whole output is prompt text for image-generation models, and that text is a **contract,

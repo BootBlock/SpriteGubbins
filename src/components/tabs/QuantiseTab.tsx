@@ -408,7 +408,7 @@ function statusOf(
 ): string {
   if (busy) return facts === null ? 'Measuring the sheet.' : 'Quantising the sheet.';
   if (facts?.scale?.measurement === 'ESTIMATED' && grid === null) {
-    return `Estimated a pixel scale of ${String(facts.scale.grid)} from the spacing of this sheet's edges. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
+    return `Estimated a pixel scale of ${String(facts.scale.grid)} from the spacing of this sheet’s edges. It has not been applied — choose it, or type a scale, to quantise the sheet.`;
   }
   if (quantised === null) return '';
   const { image, colors } = quantised.result;

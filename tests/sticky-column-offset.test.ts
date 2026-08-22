@@ -60,9 +60,10 @@ function read(file: string): string {
  * because it *is* the chrome the columns are clearing rather than something that has to clear it.
  * The prefix is what separates the two, so it is what the pattern requires.
  *
- * `scannableSources` is the walk two other suites already use, rather than a fourth answer to what
+ * `scannableSources` is the walk the other guard suites share, rather than another answer to what
  * counts as source — and it reaches `.ts` as well as `.tsx`, so a class string hoisted into a
- * constant is swept along with the JSX.
+ * constant is swept along with the JSX. Its own docblock names who else calls it; a count kept here
+ * as well would be a second census, and the stale one is always the one being read.
  */
 function stickyColumns(): readonly (readonly [string, string])[] {
   const found: (readonly [string, string])[] = [];

@@ -222,15 +222,15 @@ describe('saveCustomPreset', () => {
     expect(customPresets[0]?.subject.role).toBe('Bellfounder');
     // And in storage, not merely in the store.
     await expect(backend.listPresets()).resolves.toHaveLength(1);
-    expect(useUIStore.getState().toastMessage).toBe('Updated custom preset "My Archetype"');
+    expect(useUIStore.getState().toastMessage).toBe('Updated custom preset “My Archetype”');
   });
 
   it('says it saved when the name is new, and updated when it is not', async () => {
     await usePresetStore.getState().saveCustomPreset('Fresh', '');
-    expect(useUIStore.getState().toastMessage).toBe('Saved custom preset "Fresh"');
+    expect(useUIStore.getState().toastMessage).toBe('Saved custom preset “Fresh”');
 
     await usePresetStore.getState().saveCustomPreset('Fresh', '');
-    expect(useUIStore.getState().toastMessage).toBe('Updated custom preset "Fresh"');
+    expect(useUIStore.getState().toastMessage).toBe('Updated custom preset “Fresh”');
   });
 
   it('treats a differently-cased name as the same one, and adopts the new spelling', async () => {
@@ -287,7 +287,7 @@ describe('updateCustomPresetDetails', () => {
     expect(stored[0]?.description).toBe('Is this now');
     expect(stored[0]?.subject.role).toBe('Lamplighter');
     expect(stored[0]?.id).toBe(saved.id);
-    expect(useUIStore.getState().toastMessage).toBe('Updated "After"');
+    expect(useUIStore.getState().toastMessage).toBe('Updated “After”');
   });
 
   it('changes the description alone, which nothing else in the app can do', async () => {
@@ -325,7 +325,7 @@ describe('updateCustomPresetDetails', () => {
         .customPresets.map((preset) => preset.name)
         .sort(),
     ).toEqual(['Mine', 'Taken']);
-    expect(useUIStore.getState().toastMessage).toBe('A preset named "Taken" already exists');
+    expect(useUIStore.getState().toastMessage).toBe('A preset named “Taken” already exists');
   });
 
   it('refuses a collision that differs only in case', async () => {

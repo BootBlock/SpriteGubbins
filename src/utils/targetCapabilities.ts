@@ -23,7 +23,7 @@ const CAPABILITIES: ReadonlyMap<TargetModelId, TargetCapabilities> = new Map(
  */
 function capabilitiesFor(target: TargetModelId): TargetCapabilities {
   const capabilities = CAPABILITIES.get(target);
-  if (!capabilities) throw new Error(`No capabilities declared for target model "${target}".`);
+  if (!capabilities) throw new Error(`No capabilities declared for target model “${target}”.`);
   return capabilities;
 }
 
