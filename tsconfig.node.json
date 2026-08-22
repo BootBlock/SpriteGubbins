@@ -26,8 +26,11 @@
 
     "types": ["node"]
   },
-  /* The Vite config plus the Node-side tests — suites that assert on files on disk (the
-     design-token contract) rather than on app behaviour. Browser and domain tests live beside
-     their source under `src/`, inside tsconfig.app.json's program. */
+  /* The Vite config plus the Node-side tests — the suites that read files on disk, whether what
+     they assert on is the file itself (the design-token contract) or what the app makes of it
+     (`sheet-scale-corpus.test.ts`, which measures the quantiser's scale readings against the
+     sheets in `test_sprites/`). Reading the filesystem is what puts a suite here: `src/`'s program
+     carries no Node types, deliberately, so a `node:fs` import anywhere under it fails the
+     type-check. Every other test lives beside its source under `src/`. */
   "include": ["vite.config.ts", "tests"]
 }

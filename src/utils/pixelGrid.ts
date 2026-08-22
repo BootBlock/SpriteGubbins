@@ -32,9 +32,10 @@ import { estimateProfilePeriod } from './profilePeriod.ts';
  *
  * **Which reading serves which sheet is measured, not asserted.** `tests/sheet-scale-corpus.test.ts`
  * runs all four over the eight sheets in `test_sprites/` and pins what each one answers, against the
- * pitch each sheet was independently measured to have been drawn at. The middle two answer on none
- * of that corpus, and the file records for each sheet which gate refused it — because a docblock
- * claiming a reading serves real generator output is exactly what went unchecked before.
+ * pitch each sheet was independently measured to have been drawn at. Only `estimateProfilePeriod`
+ * answers on any of it — the other three answer on none — and the file records for each sheet which
+ * gate refused it, because a docblock claiming a reading serves real generator output is exactly
+ * what went unchecked before.
  *
  * Running each reading only on the one before's refusal is also what keeps the survey cheap where
  * it can be: a crisp sheet pays for one pass, and only the sheets each later reading exists for

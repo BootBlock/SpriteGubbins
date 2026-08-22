@@ -31,7 +31,6 @@ export interface DecodedPng {
   readonly height: number;
   readonly colorType: number;
   readonly bitDepth: number;
-  readonly interlace: number;
   /** `PLTE` as `[r, g, b]` triples, or `null` where the file carries no palette chunk. */
   readonly palette: readonly (readonly number[])[] | null;
   /** `tRNS` alphas, or `null` where the file carries no such chunk. */
@@ -110,7 +109,7 @@ export async function decodePng(bytes: Uint8Array): Promise<DecodedPng> {
     }
   }
 
-  return { width, height, colorType, bitDepth, interlace, palette, transparency, filters, pixels };
+  return { width, height, colorType, bitDepth, palette, transparency, filters, pixels };
 }
 
 async function inflate(bytes: Uint8Array): Promise<Uint8Array> {

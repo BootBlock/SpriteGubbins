@@ -166,8 +166,10 @@ export const SOFTENED_EDGE_RAMP = 1;
  * The smallest scale the **lattice** estimator will consider, and the one number here that is
  * derived rather than chosen.
  *
- * Read by `estimatePixelGrid` alone. The correlation reading has its own floor and its own reason
- * for it — see {@link MIN_CORRELATED_PERIOD}, which records what borrowing this one cost.
+ * Read by the two readings that work from **lines** — `estimatePixelGrid`, which lays a ±1 window on
+ * a lattice, and `estimateMeshPeriod`, which measures the gaps between boundary clusters a softened
+ * ramp spreads across the same three positions. The correlation reading has its own floor and its
+ * own reason for it — see {@link MIN_CORRELATED_PERIOD}, which records what borrowing this one cost.
  *
  * A ramp of {@link SOFTENED_EDGE_RAMP} admits `2 × ramp + 1` offsets out of every `grid`, so at a
  * grid of `2 × ramp + 1` the window covers *every* offset and the measurement below becomes the
@@ -332,13 +334,15 @@ export const ACF_PROMINENCE = 0.2;
  * the synthetic fixtures measure 0.86 to 0.99 at their true pitch and a real returned sheet —
  * sprites on a field, whose envelope once buried the reading entirely — measures 0.58 on its
  * clean rows axis and 0.35 on its detail-polluted columns axis. The floor sits between the real
- * sheet's two axes: the clean axis answers and the polluted one refuses, and one axis is enough.
+ * sheet's two axes: the clean axis can speak alone and the polluted one cannot, and one axis that
+ * can is enough.
  * For a structureless profile the correlation at any lag sits within a few hundredths of zero,
  * far below it.
  *
  * The floor is the last gate in its chain, and every synthetic junk class constructed so far dies
  * at an earlier one — the structure gate, the positivity floor, or the double's confirmation — so
- * its refusal direction is witnessed only by the real sheet's polluted axis, not by a fixture.
+ * the direction in which it withholds an axis's `sure` is witnessed only by the real sheet's
+ * polluted axis, not by a fixture.
  * That makes it defence in depth rather than a load-bearing wall: recalibrating it downward is
  * pinned by the sprites-on-field fixture, and a fixture that reaches it from above is still
  * wanted.

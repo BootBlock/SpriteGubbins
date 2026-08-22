@@ -71,8 +71,11 @@ export function estimateProfilePeriod(image: ImageData): PixelGrid | null {
   const across = axisPeriod(profile.columns, ceiling);
   const down = axisPeriod(profile.rows, ceiling);
 
-  // Within a pixel is agreement — drift makes a fractional pitch land on either neighbour — and the
-  // finer of the two is the cheap direction to be wrong in. **Agreement corroborates an axis that
+  // Within a pixel is agreement — drift makes a fractional pitch land on either neighbour, so the
+  // two axes are reading one pitch and the only question left is which integer to spell it with.
+  // The finer is the cheap direction to be wrong in, and it is taken whichever axis holds it: that
+  // is a choice between two spellings of one reading, not one axis overruling the other.
+  // **Agreement corroborates an axis that
   // could not vouch for itself, and two that cannot corroborate nothing**: the doubts `sure` folds
   // together are all forms of "this axis is reading weak evidence", and two weak readings landing
   // together is what a *content* periodicity looks like as readily as a pixel pitch — the layout
@@ -151,7 +154,7 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
   // A candidate must *carry* correlation, not merely stand above its valleys: the differenced
   // domain's baseline is zero and its anticorrelation troughs are deep, so without this floor a
   // flat nothing between two troughs measures as prominent — the shape of no pitch at all.
-  const best = bestSupportedPeak(r, MIN_CORRELATED_PERIOD, ceiling, ceiling);
+  const best = bestSupportedPeak(r, ceiling, ceiling);
   if (best === null) return null;
 
   // Descend while a division's window carries nearly the settled peak's own mass. Halves *and*
@@ -160,15 +163,9 @@ function axisPeriod(axis: Float64Array, ceiling: number): AxisReading | null {
   let settled = best;
   let sure = true;
   while (settled >= 2 * MIN_CORRELATED_PERIOD) {
-    const taken = bestSupportedPeak(
-      r,
-      MIN_CORRELATED_PERIOD,
-      settled - 1,
-      ceiling,
-      divisionsOf(settled, ceiling),
-    );
+    const taken = bestSupportedPeak(r, settled - 1, ceiling, divisionsOf(settled, ceiling));
     if (taken === null) break;
-    if (exclusiveMass(r, taken, settled) >= ACF_HARMONIC_DESCENT * exclusiveMass(r, settled, taken)) {
+    if (windowedMass(r, taken) >= ACF_HARMONIC_DESCENT * windowedMass(r, settled)) {
       settled = taken;
       continue;
     }
@@ -261,11 +258,19 @@ function windowedMass(r: Float64Array, lag: number): number {
  * A genuine harmonic of a pitch is always a local maximum of the correlation. A lag that merely sits
  * between two teeth is not, and the shape test is what tells them apart whatever the window says.
  *
- * `candidates` names the lags to consider; omitted, every lag in the range is considered.
+ * **It is also what keeps the two sides of the descent's comparison honest.** They are weighed by
+ * ±1 windows, so windows that overlap would have the shared lags supporting both claims at once —
+ * and a candidate two lags from the settled peak shares one. Two prominent local maxima can never be
+ * *adjacent*, so the only lag they can share is the one between them, which is below both by
+ * definition and clamped to zero wherever it is a trough. Requiring the shape is therefore what
+ * bounds the overlap, rather than a second rule about how far apart the two may sit.
+ *
+ * The range runs from {@link MIN_CORRELATED_PERIOD} to `highest`; `ceiling` is how far
+ * {@link prominence} may scan for a flanking valley, which is the whole search range rather than
+ * this one. `candidates` names the lags to consider; omitted, every lag in the range is considered.
  */
 function bestSupportedPeak(
   r: Float64Array,
-  lowest: number,
   highest: number,
   ceiling: number,
   candidates?: readonly number[],
@@ -273,7 +278,7 @@ function bestSupportedPeak(
   let best: number | null = null;
   let bestMass = -Infinity;
   const consider = (lag: number) => {
-    if (lag < lowest || lag > highest) return;
+    if (lag < MIN_CORRELATED_PERIOD || lag > highest) return;
     const here = r[lag] ?? 0;
     if (here < ACF_PROMINENCE) return;
     if (!risesFromTheLeft(r, lag) || here <= (r[lag + 1] ?? 0)) return;
@@ -285,7 +290,7 @@ function bestSupportedPeak(
     }
   };
   if (candidates === undefined) {
-    for (let lag = lowest; lag <= highest; lag += 1) consider(lag);
+    for (let lag = MIN_CORRELATED_PERIOD; lag <= highest; lag += 1) consider(lag);
   } else {
     for (const lag of candidates) consider(lag);
   }
@@ -313,34 +318,6 @@ function divisionsOf(settled: number, ceiling: number): readonly number[] {
 }
 
 /**
- * One lag's windowed mass, counting only the lags the *other* lag's window does not also cover.
- *
- * **Neither side of the descent's comparison may be weighed by the other's evidence.** The two are
- * judged on ±1 windows, and where those windows overlap the shared lags support both claims at once
- * — so the comparison stops being between two readings of the sheet and becomes a reading of one lag
- * against itself. At a floor of 4 the arithmetic kept them apart unasked: the descent only ran from
- * a settled peak of 8 upward, so a division was never nearer than `settled − 2`, and the invariant
- * went unstated because nothing could break it. At a floor of 2 it stops holding. Art at four and a
- * third settles on 13 and descends correctly to 4, and 4's third has 3 as a neighbour, whose window
- * `[2, 3, 4]` is three quarters supplied by the very 4 it is being weighed against — measured on
- * that fixture, 3 scores 0.885 on borrowed evidence and nothing at all on its own.
- *
- * A flat ban on neighbouring candidates would answer that, and it would also forbid an honest
- * descent: a comb at every even lag whose most-supported tooth happens to land on 4 can only reach
- * its true 2 by stepping across the trough at 3, which carries nothing for either of them. So the
- * exclusion is of the *shared lags* rather than of nearby candidates, which is what the invariant
- * actually says.
- */
-function exclusiveMass(r: Float64Array, lag: number, other: number): number {
-  let mass = 0;
-  for (let index = lag - 1; index <= lag + 1; index += 1) {
-    if (index >= other - 1 && index <= other + 1) continue;
-    mass += Math.max(0, r[index] ?? 0);
-  }
-  return mass;
-}
-
-/**
  * The smallest lag the correlation is *evidence* at.
  *
  * **Lag 1 is not a measurement of the sheet.** The correlation is read on the profile's first
@@ -349,8 +326,9 @@ function exclusiveMass(r: Float64Array, lag: number, other: number): number {
  * smooth paint and for noise alike. Measured across the eight reference sheets in `test_sprites/`
  * it runs −0.13 to −0.83, and it says nothing about any of them.
  *
- * Nothing had to state this while the search floor was `MIN_ESTIMATED_GRID`: the lowest lag ever
- * examined was 4, and lag 1 was three positions outside every window and every valley search. At
+ * Nothing had to state this while the search floor was `MIN_ESTIMATED_GRID`: the lowest lag read
+ * anywhere was 3 — one below the floor, which is as far as a window or a valley scan reached — so
+ * lag 1 sat two positions outside all of them and was never consulted. At
  * {@link MIN_CORRELATED_PERIOD} it is the immediate left neighbour of the first candidate, so a
  * peak at 2 would clear the local-maximum test against it on any image, and stand a false half-unit
  * of prominence above it on any image. Both gates therefore start here, and a candidate at the

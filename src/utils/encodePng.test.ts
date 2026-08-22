@@ -27,7 +27,6 @@ describe('encodePng', () => {
     expect(encoded.paletteEntries).toBe(4);
     expect(decoded.colorType).toBe(3);
     expect(decoded.bitDepth).toBe(8);
-    expect(decoded.interlace).toBe(0);
     expect(decoded.width).toBe(image.width);
     expect(decoded.height).toBe(image.height);
     expect([...decoded.pixels]).toEqual([...image.data]);

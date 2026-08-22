@@ -43,7 +43,8 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * is closer to a soft edge than a hard one is — which is why both averaging readings out-score
  * `DOMINANT` on likeness above, on a sheet whose contours were softened on the way back from the
  * generator. On `test_sprites/cyborg_healer.png` (a grid of 4, 31 positions, since its fill cleanup
- * settles at off and takes the passes stage with it) `K_CENTROID` at expansion 0 leads on **both**
+ * settles at off and takes the passes stage with it, and again a grid the run was given rather than
+ * one the sheet reads at) `K_CENTROID` at expansion 0 leads on **both**
  * counts — 0.6621 for 1465 colours against `INK_WEIGHTED`'s 0.6571 for 1489 — so the sweep settles
  * there. That is the sheet the warning stands on, and the reason it is worded as a bias to check
  * rather than as what this tab will do.
@@ -58,9 +59,10 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * spacings before it will call a spacing a habit, the colour merge and the fill cleanup are
  * neighbourhood passes that need a neighbourhood, and forty cells gives every one of them several
  * times what it asks for. What it costs depends on the grid, since the crop is forty cells of
- * whichever one is in force: at the grid of 6 the reference sheet reads at, a crop is 240 px square,
- * which is a twenty-seventh of that 1254 px sheet — so all three together are just over a tenth of
- * it.
+ * whichever one is in force: at the grid of 6 these figures are stated under, a crop of the 1254 px
+ * reference sheet is 240 px square, a twenty-seventh of it, so all three together are just over a
+ * tenth. That is a worked example rather than a property of the sheet — what the readings *offer*
+ * for it is 3 (`tests/sheet-scale-corpus.test.ts`), where the same crop is 120 px square.
  */
 export const PROXY_CROP_CELLS = 40;
 

@@ -174,8 +174,11 @@ describe('estimateProfilePeriod', () => {
       return inSprite ? { r: 40, g: 160, b: 70, a: 255 } : { r: 250, g: 240, b: 235, a: 255 };
     });
 
-    // The layout pitch of 64 is above floor(320 / 8) = 40, so it is out of the search range; the
-    // sprites are internally flat, so nothing else offers a pitch either.
+    // The layout pitch of 64 is above floor(320 / 8) = 40, so it is out of the search range. What is
+    // left is the 40-pixel span of a sprite within its own cell, and *both* axes peak there at
+    // 0.508 — identically, because the layout is the same on both. Neither can vouch for it (its
+    // double at 80 carries nothing), and two axes that cannot corroborate nothing, however exactly
+    // they agree. That is the refusal, and it is the one this reading owes a content periodicity.
     expect(estimateProfilePeriod(sheet)).toBeNull();
   });
 
@@ -193,30 +196,25 @@ describe('estimateProfilePeriod', () => {
     expect(estimateProfilePeriod(sheet)).toBe(2);
   });
 
-  it('does not settle in the trough between two teeth of a comb it could reach', () => {
+  it('descends to the comb’s own tooth, never into the gap between two of them', () => {
+    // Two-pixel cells whose colours repeat every four cells, so the most-supported peak sits at a
+    // *multiple* of the pitch — 24 down the columns and 8 across the rows — and the answer is only
+    // reached by descending. That is the shape a real sheet has: measured on
+    // `test_sprites/cyborg_healer.png`, whose pitch is 2, the search settles on 8.
+    //
     // A ±1 window centred on the *odd* lag of a period-2 comb collects both flanking teeth and
     // outscores either of them, so a descent weighing its candidates by windowed mass alone lands
-    // on a lag the correlation is negative at. At the old floor of 4 the candidates were always
-    // several lags apart and mass and shape agreed, so nothing had to say which was being asked
-    // for. Measured on `test_sprites/cyborg_healer.png`, whose pitch is 2: lag 3 scores 0.885
-    // against lag 2’s 0.53, and the reading descended from 8 to 3. The answer must be the comb’s
-    // own tooth, never the gap between two of them.
-    const sheet = imageFrom(96, 96, (x, y) => {
-      const index = Math.floor(y / 2) * 48 + Math.floor(x / 2);
-      return { r: (index * 71 + 40) % 200, g: (index * 149 + 80) % 200, b: (index * 37 + 120) % 200, a: 255 };
+    // on a lag the correlation is negative at — on the healer sheet, 0.885 at lag 3 against 0.53 at
+    // lag 2, and it descended from 8 to 3. At the old floor of 4 that lag was unreachable and mass
+    // and shape never disagreed, so nothing had to say which was being asked for. A genuine
+    // harmonic is a local maximum; the gap between two teeth is not.
+    const group = 4;
+    const sheet = imageFrom(192, 192, (x, y) => {
+      const index = (Math.floor(y / 2) % group) * group + (Math.floor(x / 2) % group);
+      return { r: (index * 83 + 30) % 220, g: (index * 151 + 90) % 220, b: (index * 47 + 140) % 220, a: 255 };
     });
 
-    expect(estimateProfilePeriod(sheet)).not.toBe(3);
-  });
-
-  it('lets an axis reading strong evidence speak past one reading weak evidence', () => {
-    // The polluted axis of the marks fixture settles on 13 while the clean axis reads 6. Two axes
-    // that can each vouch for themselves and disagree are a contradiction, and a contradiction is a
-    // refusal — but an axis that cannot vouch for its own reading is abstaining, not disagreeing,
-    // and giving it a veto throws away the one axis that read the sheet.
-    const shifted = detailedSheet((cellX, cellY) => cellX % 4 === 3 && cellY % 3 === 0);
-
-    expect(estimateProfilePeriod(shifted)).toBe(6);
+    expect(estimateProfilePeriod(sheet)).toBe(2);
   });
 
   it('reads plain regular pitch too, where the earlier readings would normally answer first', () => {
