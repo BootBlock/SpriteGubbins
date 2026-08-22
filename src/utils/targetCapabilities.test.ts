@@ -18,7 +18,7 @@ import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabi
 const DELIBERATING = ['GENERIC', 'CHATGPT_5_6_SOL', 'GEMINI_FLASH_IMAGE', 'GEMINI_PRO_IMAGE'] as const;
 
 /**
- * Deliberates, and still cannot return a manifest.
+ * Deliberates, and still cannot return a component map.
  *
  * Seedream 5.0 reasons over the brief and plans its layout before rendering, so it earns the
  * self-audit — but it hands back JPEG or PNG and nothing else, so there is no channel for the JSON.
@@ -83,7 +83,7 @@ describe('returnsText', () => {
 
   it('is false for a reasoning model that still returns only an image', () => {
     // The case that proves the two flags are read separately rather than one inferring the other:
-    // asking Seedream for a JSON manifest spends tokens on an instruction it can only drop.
+    // asking Seedream for a component map spends tokens on an instruction it can only drop.
     for (const target of DELIBERATING_IMAGE_ONLY) {
       expect(deliberates(target), target).toBe(true);
       expect(returnsText(target), target).toBe(false);

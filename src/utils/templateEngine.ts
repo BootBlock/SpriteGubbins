@@ -212,8 +212,8 @@ export function sectionNumbers(template: string): SectionNumbers {
  * `## 4. COMPONENT INVENTORY` straight into `## 6. REQUIRED ASSEMBLY CAPABILITY` — a gap in the
  * numbering of a document whose prose cites its own sections several hundred times. The adherence
  * report already had the same problem one section further down and answered it by writing its
- * heading **twice**, once behind `[IF:EMIT_MANIFEST]` and once behind the negation; that does not
- * scale past one conditional section, and it left the citations in section 0 to be kept in step by
+ * heading **twice**, once behind `[IF:EMIT_COMPONENT_MAP]` and once behind the negation; that does
+ * not scale past one conditional section, and it left the citations in section 0 to be kept in step by
  * hand regardless.
  *
  * So a heading declares itself, `## [SECTION:EXCLUSIONS]. EXCLUSIONS`, and prose cites it,

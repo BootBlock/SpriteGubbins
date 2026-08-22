@@ -36,7 +36,7 @@ export interface OutputState {
    * loading a preset does.
    *
    * The distinction from `setOutputConfig` is the whole point: a preset describes an archetype and
-   * has no business deciding whether this user wants a JSON manifest back, so those two answers
+   * has no business deciding whether this user wants a component map back, so those two answers
    * survive a load. A prompt restored from history goes the other way and takes the lot, because
    * that entry *is* the configuration that produced the prompt in it — companions included.
    */

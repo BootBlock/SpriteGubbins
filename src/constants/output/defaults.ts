@@ -81,12 +81,12 @@ export const DEFAULT_IMAGE_CONFIG: ImageOutputConfig = {
  * to keep in step.
  *
  * Both companions start off because each adds a section to the prompt and asks the target for a
- * second deliverable, and a user who has not asked for a manifest — or for a critique of their own
- * prompt — should not have to read one. They stay wherever the user leaves them: a preset cannot
+ * second deliverable, and a user who has not asked for a component map — or for a critique of their
+ * own prompt — should not have to read one. They stay wherever the user leaves them: a preset cannot
  * move them, and neither can this constant once the studio is open.
  */
 export const DEFAULT_OUTPUT_CONFIG: OutputConfig = {
   ...DEFAULT_IMAGE_CONFIG,
-  emitManifest: false,
+  emitComponentMap: false,
   emitPromptFeedback: false,
 };

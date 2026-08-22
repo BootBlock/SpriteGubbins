@@ -20,7 +20,8 @@ import {
  * open group does not render is worse than no digest at all, because the user reads it as the
  * configuration and it is not. So every conditional here is pinned on both sides — the rig geometry
  * that only exists for a `CUTOUT_RIG`, the primary facing that only exists when the mode splits into
- * runs, the manifest that only exists where the target has a text channel to return one through.
+ * runs, the component map that only exists where the target has a text channel to return one
+ * through.
  */
 function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...DEFAULT_OUTPUT_CONFIG, ...overrides };
@@ -334,25 +335,25 @@ describe('continuityDigest', () => {
     expect(continuityDigest(withOutput({ identityLock: 'Cyan visor' }))).toContain('Cyan visor');
   });
 
-  it('says nothing about the manifest, which is not one of its controls', () => {
+  it('says nothing about the component map, which is not one of its controls', () => {
     // The checkbox lives in `CompanionOutputFields`. A digest naming a control its group does not
     // render is the failure this whole module is written to avoid.
-    expect(continuityDigest(withOutput({ emitManifest: true }))).not.toContain('manifest');
+    expect(continuityDigest(withOutput({ emitComponentMap: true }))).not.toContain('component map');
   });
 });
 
 describe('companionDigest', () => {
   it('says the target returns the image alone when neither box is ticked', () => {
-    expect(companionDigest(withOutput({ emitManifest: false, emitPromptFeedback: false }))).toBe(
+    expect(companionDigest(withOutput({ emitComponentMap: false, emitPromptFeedback: false }))).toBe(
       'image only',
     );
   });
 
   it('names each deliverable that was asked for', () => {
     const digest = companionDigest(
-      withOutput({ emitManifest: true, emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' }),
+      withOutput({ emitComponentMap: true, emitPromptFeedback: true, targetModel: 'CHATGPT_5_6_SOL' }),
     );
-    expect(digest).toContain('JSON manifest');
+    expect(digest).toContain('component map');
     expect(digest).toContain('adherence report');
   });
 
@@ -362,7 +363,7 @@ describe('companionDigest', () => {
     // not with the store.
     expect(
       companionDigest(
-        withOutput({ emitManifest: true, emitPromptFeedback: true, targetModel: 'MIDJOURNEY' }),
+        withOutput({ emitComponentMap: true, emitPromptFeedback: true, targetModel: 'MIDJOURNEY' }),
       ),
     ).toBe('image only');
   });

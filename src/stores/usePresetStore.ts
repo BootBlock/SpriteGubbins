@@ -107,7 +107,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
   loadPreset: (preset) => {
     // Both stores written inside one action, so the undo stack records the studio this leaves
     // behind rather than half of it. `applyImageConfig` rather than `setOutputConfig`: a preset
-    // describes an archetype and has no business deciding whether this reader wants a JSON manifest.
+    // describes an archetype and has no business deciding whether this reader wants a component map.
     useSubjectStore.getState().setStudio(preset.category, preset.subject, () => {
       useOutputStore.getState().applyImageConfig(preset.output);
     });
@@ -135,7 +135,7 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       category,
       subject,
       // Stripped rather than stored and ignored on load: a saved preset is also an exported preset,
-      // and a pack carrying `emitManifest` would be describing a preference of whoever happened to
+      // and a pack carrying `emitComponentMap` would be describing a preference of whoever happened to
       // save it as though it were a property of the archetype.
       output: toImageConfig(useOutputStore.getState().output),
       isCustom: true,

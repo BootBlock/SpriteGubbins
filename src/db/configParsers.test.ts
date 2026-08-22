@@ -142,18 +142,18 @@ describe('parseOutputConfig — sheetIndex', () => {
  * records the configuration a prompt was actually composed from.
  */
 describe('parseImageConfig against parseOutputConfig', () => {
-  const STORED = { emitManifest: true, emitPromptFeedback: true, renderStyle: 'CEL_SHADED' };
+  const STORED = { emitComponentMap: true, emitPromptFeedback: true, renderStyle: 'CEL_SHADED' };
 
   it('reads the image alone, ignoring stored companion outputs', () => {
     const image = parseImageConfig(STORED);
 
     expect(image.renderStyle).toBe('CEL_SHADED');
-    expect(Object.keys(image)).not.toContain('emitManifest');
+    expect(Object.keys(image)).not.toContain('emitComponentMap');
     expect(Object.keys(image)).not.toContain('emitPromptFeedback');
   });
 
   it('reads them for a history entry, which is what produced the prompt', () => {
-    expect(parseOutputConfig(STORED)).toMatchObject({ emitManifest: true, emitPromptFeedback: true });
+    expect(parseOutputConfig(STORED)).toMatchObject({ emitComponentMap: true, emitPromptFeedback: true });
   });
 
   it('agrees with the defaults on a payload it cannot read at all', () => {

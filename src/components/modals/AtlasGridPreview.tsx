@@ -34,7 +34,7 @@ interface AtlasGridPreviewProps {
  * real: the layout section asks for the components "in the reading order fixed by section 4", which is
  * row-major order these cells are filled in, so slot #12 genuinely is the twelfth part the inventory
  * lists. What the prompt never states is the grid's **shape** — no dimensions appear anywhere in it,
- * and where a companion manifest is emitted at all, section 10 has the model *report back* the
+ * and where a companion component map is emitted at all, section 10 has the model *report back* the
  * `cols`/`rows` it chose rather than being handed them. These come from `ceil(sqrt(count × bias))`
  * in `utils/atlasCalculator.ts`, so the row and column half of that readout was inviting a reader to
  * look for part #12 at row 2, column 4 of a sheet whose rows were never that wide. What is left is

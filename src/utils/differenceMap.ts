@@ -9,14 +9,17 @@ import type { MutableOklab } from './oklab.ts';
  * How far each output pixel sits from the patch of source it stands for, in scaled OKLab.
  *
  * The quantiser's dials are conservative by design, and that is exactly what makes them hard to
- * judge. On the reference sheet a second cleanup pass moves **404** of 44,099 pixels at the
- * settings `DIFFERENCE_SCALES` is calibrated on, and **62** at the ink-weighted settings the report
- * that raised it was using — and a few hundred pixels a shade apart are invisible in a preview at
- * any magnification a whole sheet fits in. The result pane can say *what* the sheet became and
- * cannot say *what it cost*, so a dial that is working and a dial that is doing nothing look
- * identical, which is the reading two separate user reports arrived at. This is the measurement
- * behind that judgement: one number per output pixel, painted where the pixel is, so a change of
- * half a shade in one corner of the sheet is somewhere to look rather than something to find.
+ * judge. On the reference sheet, at the settings `DIFFERENCE_SCALES` is calibrated on and with the
+ * fill cleanup at the top of its range, a second cleanup pass moves **360** of 43,681 pixels by at
+ * most 26.8 — and **930** of them by at most 14.4 under the ink-weighted vote at the same rung.
+ * That is under one per cent of the sheet in the first case and a little over two in the second —
+ * scattered cells, none of them further out than a tenth of black-to-white, which is invisible in a
+ * preview at any magnification a whole sheet fits in. The result pane can
+ * say *what* the sheet became and cannot say *what it cost*, so a dial that is working and a dial
+ * that is doing nothing look identical, which is the reading two separate user reports arrived at.
+ * This is the measurement behind that judgement: one number per output pixel, painted where the
+ * pixel is, so a change of half a shade in one corner of the sheet is somewhere to look rather than
+ * something to find. Both counts are re-derived by `tests/quantiser-docblock-figures.test.ts`.
  *
  * **One cell, one number: the mean distance from the cell's own source pixels to the colour that
  * replaced them.** Mean rather than worst, because the question a cell answers is how well it

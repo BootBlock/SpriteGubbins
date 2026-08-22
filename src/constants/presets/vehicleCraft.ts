@@ -75,7 +75,7 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       spriteTargetSize: '64 × 80 px assembled',
       aspectRatio: 'SQUARE_1_1',
       // Thirteen unlabelled cells, four of which are leg segments that differ only in which end
-      // carries the pivot — which is the sheet a companion manifest earns its keep on. Asking for
+      // carries the pivot — which is the sheet a component map earns its keep on. Asking for
       // one is the user's switch rather than the preset's, so this names a target that *can* return
       // text and leaves the choice where it belongs.
       targetModel: 'GEMINI_FLASH_IMAGE',

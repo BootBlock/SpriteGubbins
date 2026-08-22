@@ -17,8 +17,8 @@
 >   visualizer". Hovering a cell reported its slot number, row and column, and the row and column half
 >   of that is a promise this app cannot keep. The compiled prompt fixes the *order* — §9 asks for the
 >   components "in the reading order fixed by section 4" — but never the grid's shape: it names no
->   dimensions anywhere, and where a companion manifest is emitted at all, §10 has the model report
->   back the rows and columns it chose rather than being handed them. The calculator's own grid comes
+>   dimensions anywhere, and where a companion component map is emitted at all, §10 has the model
+>   report back the rows and columns it chose rather than being handed them. The calculator's own grid comes
 >   from `ceil(sqrt(count × bias))`, so the readout invited a reader to look for part #12 at row 2,
 >   column 4 of a sheet whose rows were never that wide. The drawing stays, because the shape of the
 >   waste is the one thing the metric tiles cannot state; the hover readout is replaced by a

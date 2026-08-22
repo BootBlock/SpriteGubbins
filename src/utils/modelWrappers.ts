@@ -21,8 +21,8 @@ import type { SectionNumbers } from './templateEngine.ts';
  *
  * **Two branches return the prompt unchanged, and that is a finding rather than a gap.** The Gemini
  * image models read the prompt as a specification and think over it, which the *template* adapts to
- * by giving them the self-audit and the manifest, so there is nothing left for a wrapper to say that
- * the specification does not already say better. `GENERIC` is unchanged for the opposite reason —
+ * by giving them the self-audit and the component map, so there is nothing left for a wrapper to
+ * say that the specification does not already say better. `GENERIC` is unchanged for the opposite reason —
  * naming no model, it can have no model-specific text — and that is what makes it usable with
  * anything this app does not know about.
  *

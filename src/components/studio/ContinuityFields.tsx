@@ -14,9 +14,9 @@ import { IdentitySubjectDigest } from './IdentitySubjectDigest.tsx';
  * order they become available — one describes a sheet that does not exist yet, the other a sheet
  * that does.
  *
- * The manifest checkbox belongs with the adherence report in `CompanionOutputFields` rather than
- * here, though the argument for here — it is what makes fifteen anonymous cells importable — is a
- * real one. What those two share is a target that returns text at all, which is the thing a user
+ * The component map checkbox belongs with the adherence report in `CompanionOutputFields` rather
+ * than here, though the argument for here — it is what makes fifteen anonymous cells importable —
+ * is a real one. What those two share is a target that returns text at all, which is the thing a user
  * actually runs into when one greys out; continuity is never why either is unavailable.
  */
 export function ContinuityFields() {

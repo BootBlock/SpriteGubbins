@@ -164,7 +164,7 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * component **shows**, not which components exist, so a torso whose worn detail is excluded is
  * drawn without the detail rather than left off the sheet. Both copies now carry that sentence, and
  * the copy in section 8 says "leave the element out **of the image** entirely" for the neighbouring
- * reason — the manifest and the adherence report ask for text *beside* the image, and an
+ * reason — the component map and the adherence report ask for text *beside* the image, and an
  * unqualified "leave it out" reaches them.
  *
  * `promptCompiler.test.ts` slices each section and asserts, under every category, that both copies
@@ -837,19 +837,32 @@ If two views of one component still face effectively the same way, **the sheet h
 that component at the object yaw section [SEC:CAMERA] gives it rather than delivering the sheet.
 [/IF]
 [/IF]
-[IF:EMIT_MANIFEST]
+[IF:EMIT_COMPONENT_MAP]
 
 ---
 
-## [SECTION:MANIFEST]. COMPANION MANIFEST
+## [SECTION:COMPONENT_MAP]. COMPANION COMPONENT MAP
 
-Alongside the image, output a JSON manifest as text — grid position, part name, bone parent, and
-the pivot as a fraction of the component’s cell:
+Alongside the image, output a component map as text: one JSON document of exactly the shape below,
+carrying these key names and no others, with its straight quotes reproduced as written.
 
-{"grid":{"cols":0,"rows":0},"pieces":[{"index":0,"name":"","parent":null,"pivot":[0.5,0.1]}]}
+\`\`\`json
+{"grid":{"cols":0,"rows":0},"components":[{"index":1,"name":"","parent":null,"pivot":[0.5,1]}]}
+\`\`\`
 
-The manifest describes what you actually drew. If a component moved or was omitted, say so there
-rather than describing the ideal.
+**grid** states how many columns and how many rows the components are laid out in. **components**
+carries one entry per component, in the reading order section [SEC:INVENTORY] fixes, and each entry
+states four things:
+
+- **index** — this component’s place in that reading order, counting from one.
+- **name** — what the inventory in section [SEC:INVENTORY] calls this component.
+- **parent** — the **name** of the component this one attaches to in the assembled subject, or null
+  where it attaches to nothing.
+- **pivot** — where this component turns or stands, as a fraction of its own cell: two numbers from
+  0 to 1, across the cell and then down it, so 0.5 and 1 is the foot of the cell, centred.
+
+The map describes what you actually drew. If a component moved or was omitted, say so there rather
+than describing the ideal.
 [/IF]
 [IF:EMIT_PROMPT_FEEDBACK]
 
