@@ -7,6 +7,7 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 import { assertPrecacheContract } from './scripts/precacheContract.ts';
+import { THEME_COLOR_PLACEHOLDER, themeColorHex } from './scripts/themeColour.ts';
 
 /**
  * The site root. GitHub Pages serves a project site from `/<repo>/`, and the manifest scope,
@@ -28,6 +29,32 @@ const BASE = '/SpriteGubbins/';
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as {
   version: string;
 };
+
+/**
+ * The page ground, `foundry-900`, resolved from `src/index.css` at config time.
+ *
+ * The manifest and the `<meta name="theme-color">` tag both need it and neither can read a custom
+ * property, so it is derived rather than copied — see `scripts/themeColour.ts` for what the
+ * hand-written value used to be and what it cost.
+ */
+const THEME_COLOR = themeColorHex(new URL('./src/index.css', import.meta.url));
+
+/**
+ * Substitute {@link THEME_COLOR} into `index.html`.
+ *
+ * `order: 'pre'` so the placeholder is gone before Vite's own `%VITE_*%` env pass and before
+ * vite-plugin-pwa rewrites the document. Applies to the dev server too, which runs the same hook —
+ * so the tag is correct wherever the app is served from, and there is no build-only path to forget.
+ */
+function themeColorPlugin(): Plugin {
+  return {
+    name: 'sprite-gubbins-theme-color',
+    transformIndexHtml: {
+      order: 'pre',
+      handler: (html) => html.replaceAll(THEME_COLOR_PLACEHOLDER, THEME_COLOR),
+    },
+  };
+}
 
 /**
  * Cross-origin isolation headers (spec Phase 1, Task 1.3.3).
@@ -90,6 +117,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     spa404FallbackPlugin(),
+    themeColorPlugin(),
     VitePWA({
       // `injectManifest`, not `generateSW`: the worker has to add the cross-origin isolation
       // headers to every response, which needs custom fetch logic a generated worker cannot
@@ -149,8 +177,8 @@ export default defineConfig({
         description:
           'Compose precise, model-targeted prompts for generating game sprite sheets and texture atlases.',
         lang: 'en-GB',
-        theme_color: '#060911',
-        background_color: '#060911',
+        theme_color: THEME_COLOR,
+        background_color: THEME_COLOR,
         display: 'standalone',
         orientation: 'any',
         scope: BASE,

@@ -10,9 +10,11 @@
       content="Compose precise, model-targeted prompts for generating game sprite sheets and texture atlases."
     />
 
-    <!-- Matches the PWA manifest's theme/background colour (foundry-900) so the browser
-         chrome and the splash screen never flash a different colour than the app. -->
-    <meta name="theme-color" content="#060911" />
+    <!-- The page ground, `foundry-900`. The placeholder is substituted at config time from the
+         stylesheet's own oklch() declaration — a meta tag cannot read a custom property, and the
+         literal that used to sit here matched no token, so the splash screen it is meant to match
+         handed over to a visibly lighter page. See scripts/themeColour.ts. -->
+    <meta name="theme-color" content="__THEME_COLOR__" />
     <meta name="color-scheme" content="dark" />
 
     <!-- Relative, not root-absolute: the site is served from /SpriteGubbins/ on GitHub Pages,

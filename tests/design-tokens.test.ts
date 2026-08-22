@@ -1,7 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { basename, resolve, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { scannableSources } from './sourceFiles';
+import { THEME_COLOR_PLACEHOLDER, themeColorHex } from '../scripts/themeColour.ts';
 
 /**
  * The design-token contract.
@@ -1464,5 +1466,54 @@ describe('the sprite outline’s markers', () => {
     const [dark, light] = [stops.at(0)?.oklch, stops.at(1)?.oklch];
     expect(light?.[0] ?? 0).toBeGreaterThan((dark?.[0] ?? 0) + 0.7);
     for (const stop of stops) expect(stop.oklch[1]).toBeLessThan(0.05);
+  });
+});
+
+describe('the browser chrome and the install splash', () => {
+  /**
+   * The colour a reader sees *before* and *around* the app is the app's own ground, or it is a seam.
+   *
+   * Three places state it and none of them can read a custom property: the `<meta name="theme-color">`
+   * tag, and the manifest's `theme_color` and `background_color`. All three carried a hand-written
+   * `#060911`, which is not a token — it sits between `foundry-950` (`#04050a`) and `foundry-900`
+   * (`#0a0c12`), so the splash screen handed over to a visibly lighter page while the comment above
+   * the meta tag asserted it could not. `scripts/themeColour.ts` derives the value from the
+   * stylesheet instead, and this is what holds the derivation to the ramp.
+   */
+  const html = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
+  const viteConfig = readFileSync(resolve(process.cwd(), 'vite.config.ts'), 'utf8');
+  const derived = themeColorHex(pathToFileURL(resolve(process.cwd(), 'src/index.css')));
+
+  /** A linear-sRGB triple as the `#rrggbb` a manifest and a meta tag can carry. */
+  function hexOf([r, g, b]: [number, number, number]): string {
+    const encode = (linear: number) =>
+      Math.round(255 * (linear <= 0.0031308 ? 12.92 * linear : 1.055 * linear ** (1 / 2.4) - 0.055));
+    return `#${[r, g, b].map((channel) => encode(channel).toString(16).padStart(2, '0')).join('')}`;
+  }
+
+  it('resolves to foundry-900, the page ground — by this suite’s own maths, not the helper’s', () => {
+    // Converted here from the token the stylesheet declares, so a broken conversion in
+    // `src/utils/oklab.ts` fails rather than agreeing with itself.
+    expect(derived).toBe(hexOf(linearOf(oklchToken('--color-foundry-900'))));
+  });
+
+  it('is the colour `body` actually carries, which is what makes the hand-over seamless', () => {
+    expect(stylesheet).toMatch(/body \{[^}]*background-color: var\(--color-foundry-900\)/);
+  });
+
+  it('leaves index.html a placeholder rather than a fourth copy of the value', () => {
+    expect(html).toContain(`<meta name="theme-color" content="${THEME_COLOR_PLACEHOLDER}" />`);
+    expect(html).not.toMatch(/name="theme-color" content="#/);
+  });
+
+  it('gives the manifest the derived constant for both of its two decisions', () => {
+    // `theme_color` tints the browser's chrome and `background_color` paints the splash. They agree
+    // here, and they have to be stated separately for that agreement to mean anything.
+    expect(viteConfig).toMatch(/theme_color: THEME_COLOR,/);
+    expect(viteConfig).toMatch(/background_color: THEME_COLOR,/);
+  });
+
+  it('writes the value down nowhere outside the stylesheet', () => {
+    for (const source of [html, viteConfig]) expect(source).not.toMatch(/#[0-9a-fA-F]{6}\b/);
   });
 });
