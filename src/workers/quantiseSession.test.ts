@@ -73,11 +73,10 @@ describe('quantiseSession', () => {
   it('starts one thread and sends the sheet to it once', () => {
     loadSheet(createImage(64, 64));
     quantiseSheet(settingsAt(8));
-    quantiseSheet(settingsAt(4));
 
     expect(FakeWorker.started).toHaveLength(1);
     expect(thread().of('load')).toHaveLength(1);
-    expect(thread().of('quantise')).toHaveLength(2);
+    expect(thread().of('quantise')).toHaveLength(1);
   });
 
   it('files what came back against the question it answered', () => {
@@ -98,6 +97,93 @@ describe('quantiseSession', () => {
     // to be here, where the outstanding jobs are, rather than in the hook that comes and goes.
     loadSheet(createImage(64, 64));
     quantiseSheet(settingsAt(8));
+    quantiseSheet(settingsAt(8));
+
+    expect(thread().of('quantise')).toHaveLength(1);
+  });
+
+  it('runs one transform for a run of settings the reader passed through', () => {
+    // The reported failure. A slider step outlives the 250 ms debounce, so each one reaches here; the
+    // worker has a single message loop, so each would be computed to completion behind the last while
+    // the reader waited for a position they had already left. Counted rather than timed: four steps
+    // ask four times, and only the first and the one they stopped on are ever posted.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+    quantiseSheet(settingsAt(7));
+    quantiseSheet(settingsAt(6));
+    quantiseSheet(settingsAt(5));
+
+    expect(thread().of('quantise')).toHaveLength(1);
+
+    thread().answer({ id: thread().lastId('quantise'), kind: 'quantised', result: resultOf(8) });
+
+    const asked = thread().of('quantise');
+    expect(asked).toHaveLength(2);
+    expect(asked[1]?.request).toEqual({ kind: 'quantise', settings: settingsAt(5) });
+  });
+
+  it('drops the queued transform when the reader returns to the one already running', () => {
+    // Stepping a slider back to where it started. The answer being computed is the answer wanted, so
+    // there is nothing left to run afterwards — queueing it anyway would recompute a result the tab
+    // is about to be handed.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+    quantiseSheet(settingsAt(5));
+    quantiseSheet(settingsAt(8));
+
+    thread().answer({ id: thread().lastId('quantise'), kind: 'quantised', result: resultOf(8) });
+
+    expect(thread().of('quantise')).toHaveLength(1);
+  });
+
+  it('starts the queued transform after the one before it failed', () => {
+    // A failure stops the worker running just as an answer does, so it has to release the queue too.
+    // Left out, one out-of-memory transform would silently end every transform for the rest of the
+    // session — the tab would ask, the session would queue, and nothing would ever start it.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(1));
+    quantiseSheet(settingsAt(8));
+
+    thread().answer({ id: thread().lastId('quantise'), kind: 'failed', reason: 'Out of memory' });
+
+    const asked = thread().of('quantise');
+    expect(asked).toHaveLength(2);
+    expect(asked[1]?.request).toEqual({ kind: 'quantise', settings: settingsAt(8) });
+  });
+
+  it('does not start a transform queued against the sheet before this one', () => {
+    // The queued job names settings the previous sheet was being read at. Running it against the new
+    // sheet would file an answer nobody asked for, and the tab asks again for whatever it wants now.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+    const stale = thread().lastId('quantise');
+    quantiseSheet(settingsAt(5));
+
+    loadSheet(createImage(32, 32));
+    thread().answer({ id: stale, kind: 'quantised', result: resultOf(8) });
+
+    expect(thread().of('quantise')).toHaveLength(1);
+  });
+
+  it('carries on asking after a thread this browser will not start', () => {
+    // Nothing was posted, so nothing is running, so nothing may be held back waiting for a reply that
+    // cannot come. The session has given up either way — what this pins is that it gave up because of
+    // the thread, not because it believes a transform is still in flight.
+    vi.stubGlobal(
+      'Worker',
+      class {
+        constructor() {
+          throw new Error('module workers are unsupported');
+        }
+      },
+    );
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+
+    vi.stubGlobal('Worker', FakeWorker);
+    releaseSheet();
+    useQuantiseAnswerStore.getState().reset();
+    loadSheet(createImage(64, 64));
     quantiseSheet(settingsAt(8));
 
     expect(thread().of('quantise')).toHaveLength(1);
