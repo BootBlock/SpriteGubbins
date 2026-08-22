@@ -1,4 +1,4 @@
-import { KEY_SHADING_LATITUDE } from '../constants/quantiser.ts';
+import { KEY_SHADING_LATITUDE, KEY_TINT_OFF_HUE, KEY_TINT_SHARE } from '../constants/quantiser.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { type MutableOklab, srgbToOklab, srgbToOklabInto } from './oklab.ts';
 
@@ -69,20 +69,26 @@ const PLANE_DISCOUNT = 1 - 1 / (KEY_SHADING_LATITUDE * KEY_SHADING_LATITUDE);
 /**
  * Below this, a vector is treated as having no direction at all.
  *
- * Two different vectors are tested against it, on two different scales, and one threshold serves
- * both with room to spare. The **key's own length** runs 0 to 255, and only `PURE_BLACK` reaches
- * zero there: black is OKLab's origin, and the darkest key a byte can express besides it measures
- * about 9.4. The **residual** — whatever is left of the L axis once the key's direction is
- * projected out — runs 0 to 1, reaching zero for `PURE_WHITE` and for any grey. Neither arrives as
- * an exact zero, because Ottosson's matrix rows do not sum to exactly one: a grey's residual
- * computes to about 4e-8 rather than nothing, so the test has to be a threshold rather than an
- * equality.
+ * Three different vectors are tested against it, on two different scales, and one threshold serves
+ * all of them with room to spare. None of them arrives as an exact zero when it should, because
+ * Ottosson's matrix rows do not sum to exactly one, so each test has to be a threshold rather than
+ * an equality.
  *
- * The margin between that noise floor and the smallest *genuine* residual is what makes one
- * constant safe for both: the nearest-to-grey key whole bytes can express, `#FEFFFF`, measures
- * about 1.1e-3 — three orders above this — and magenta's is 0.42.
+ * - The **key's own length** runs 0 to 255, and only `PURE_BLACK` reaches zero there: black is
+ *   OKLab's origin, and the darkest key a byte can express besides it measures about 9.4.
+ * - The **residual** — whatever is left of the L axis once the key's direction is projected out —
+ *   runs 0 to 1, and is zero for `PURE_WHITE` and for any grey. A grey's computes to about 4e-8,
+ *   and the nearest-to-grey key whole bytes can express, `#FEFFFF`, measures 1.1e-3.
+ * - The key's **chroma**, which {@link carriesKeyTint} needs a direction from, runs 0 to about 80
+ *   and is zero for the same achromatic keys. Their noise reaches further here than the residual's
+ *   does — `PURE_WHITE` computes to 9.5e-6 — while the smallest chroma any non-grey byte triple
+ *   carries is 0.27.
+ *
+ * Those two innermost figures are what fix the constant: it has to sit above 9.5e-6 and below
+ * 1.1e-3, and 1e-4 is very nearly the geometric middle of them, leaving an order of magnitude on
+ * each side. Every other margin above is thousands of times wider.
  */
-const NO_DIRECTION = 1e-6;
+const NO_DIRECTION = 1e-4;
 
 /**
  * The key colour together with the plane its own variation lies in, worked out once per image.
@@ -110,6 +116,18 @@ export interface KeyBasis {
   readonly veilL: number;
   readonly veilA: number;
   readonly veilB: number;
+  /**
+   * How much chroma the key itself carries, and which way on the `a`/`b` plane it carries it.
+   *
+   * {@link carriesKeyTint} is the only reader, and it needs the key's hue as a *direction* rather
+   * than as the plane above: a blend of the key with something achromatic keeps the key's hue
+   * exactly and loses its length, which is a fact about the two chroma axes alone. Zero chroma —
+   * `PURE_WHITE`, `PURE_BLACK`, any grey — names no direction, and the two components are left at
+   * zero for it.
+   */
+  readonly chroma: number;
+  readonly hueA: number;
+  readonly hueB: number;
 }
 
 /**
@@ -124,6 +142,14 @@ export interface KeyBasis {
  */
 export function keyBasis(color: Rgba): KeyBasis {
   const key = srgbToOklab(color.r, color.g, color.b);
+  // Worked out before either early return, because it is a different question from the plane's and
+  // is answered for keys the plane is not: a key with a hue has one whether or not the Gram-Schmidt
+  // below leaves a direction to wash along. An achromatic key has none, and the zeroes say so.
+  const chroma = Math.hypot(key.a, key.b);
+  const hue =
+    chroma < NO_DIRECTION
+      ? { chroma: 0, hueA: 0, hueB: 0 }
+      : { chroma, hueA: key.a / chroma, hueB: key.b / chroma };
   const straight: KeyBasis = {
     L: key.L,
     a: key.a,
@@ -134,6 +160,7 @@ export function keyBasis(color: Rgba): KeyBasis {
     veilL: 0,
     veilA: 0,
     veilB: 0,
+    ...hue,
   };
 
   // `PURE_BLACK` is the origin, so it names no direction to be shaded along — mixing black toward
@@ -169,6 +196,7 @@ export function keyBasis(color: Rgba): KeyBasis {
     veilL: residualL / residual,
     veilA: residualA / residual,
     veilB: residualB / residual,
+    ...hue,
   };
 }
 
@@ -178,9 +206,12 @@ export function keyBasis(color: Rgba): KeyBasis {
  *
  * Safe because nothing can interleave: the conversion and the arithmetic below complete within one
  * synchronous call, JavaScript preempts nothing, and neither step calls out to anything that could
- * re-enter. What the scratch buys is real — {@link keyDistanceSquared} runs up to twice per pixel
- * of a sixteen-megapixel sheet, and an allocation per call is thirty-three million short-lived
- * objects fed to the collector mid-pass.
+ * re-enter. **Two functions share it** — {@link keyDistanceSquared} and {@link carriesKeyTint} — and
+ * that costs nothing beyond the same rule: each writes it and reads it back inside its own call, so
+ * neither can be looking at the other's pixel. `keyBackground` calls the two in one short-circuit
+ * `||` on a single offset, strictly in sequence. What the scratch buys is real — the pair runs up to
+ * three times per pixel of a sixteen-megapixel sheet, and an allocation per call is fifty million
+ * short-lived objects fed to the collector mid-pass.
  */
 const PIXEL: MutableOklab = { L: 0, a: 0, b: 0 };
 
@@ -204,4 +235,71 @@ export function keyDistanceSquared(data: Uint8ClampedArray, offset: number, basi
   const veil = dL * basis.veilL + da * basis.veilA + db * basis.veilB;
 
   return dL * dL + da * da + db * db - PLANE_DISCOUNT * (shade * shade + veil * veil);
+}
+
+/**
+ * Whether the pixel at `offset` carries the key's own hue — the question a *blend* answers, where
+ * {@link keyDistanceSquared} answers the question a *field* answers.
+ *
+ * The two are different questions, and the second one cannot be asked with a radius. A pixel on an
+ * anti-aliased silhouette is a mixture of the key and whatever lies beside it, so how far it sits
+ * from the key is decided mostly by how far *that* is — and the further down the mixture runs, the
+ * more of the answer the partner supplies. Three parts key is safe whatever the partner:
+ * `FRINGE_TOLERANCE_CEILING`'s own derivation measures the worst of them at 21, and the radius
+ * takes it. **Half and below is where the partner decides.** Half the recommended magenta into a mid
+ * grey measures 19 and the radius still takes it; the same half into the near-black this app's
+ * reference sheet is mostly made of measures **37**, and a quarter measures **57**.
+ *
+ * There is no radius that separates those from the sprite, because the sprite is what those numbers
+ * are mostly measuring the distance to: the nearest colour to the key that is not a blend of it sits
+ * at **40**, between the two. A ceiling loose enough to reach the dark half-blend reaches unblended
+ * artwork in the same step, and the sheet comes back a pixel thinner on every silhouette — which is
+ * the failure the ceiling was introduced to stop. The radius is correctly placed, and it cannot be
+ * the whole test.
+ *
+ * What a mixture does keep is the key's **hue**. Mixing the key with something achromatic scales its
+ * `a` and `b` together and moves neither off the direction they point in, so the pixel's chroma
+ * stays on the key's own axis and only shortens. That is the measurement here, in two parts:
+ *
+ * - **The share** — how much of the key's chroma the pixel carries along that axis, as a fraction.
+ *   1 is the key itself and 0 is any grey. It tracks the mixing fraction rather than equalling it:
+ *   OKLab's cube root is not affine, so three parts key over white reads 0.91 and over near-black
+ *   0.81. Monotone is all the floor needs. {@link KEY_TINT_SHARE} is that floor.
+ * - **The hue angle** — whatever chroma is left once the key's axis is taken out, as a fraction of
+ *   what lies *along* it. A mixture with a grey has none at any depth. A colour of its own turns a
+ *   long way: the armour plate's red projects 0.56 of its chroma onto magenta's axis and 0.83 off it.
+ *   {@link KEY_TINT_OFF_HUE} is the ceiling, and its docblock records why the ratio is taken against
+ *   the pixel's own on-axis chroma rather than against the key's.
+ *
+ * **It is not a licence to erode, and it is not asked everywhere.** `keyBackground` asks it only of
+ * a pixel that is 4-adjacent to the keyed field, and the erosion is one pixel deep. Asked of the
+ * whole sheet it would take every faintly key-tinted pixel of the artwork with it.
+ *
+ * **Adjacency is a bound and not a proof, which is the honest limit here.** On a keyed sheet every
+ * silhouette pixel touches the field, so the restriction stops the pass reaching *into* a sprite but
+ * cannot tell a sprite's outermost pixel from the halo over it. Only colour can, and colour runs out
+ * exactly where a sprite is painted in the key's own hue at reduced chroma — which is what the key
+ * mixed with white *is*. {@link KEY_TINT_OFF_HUE} names the three palette entries this costs and the
+ * setting that gets them back.
+ *
+ * **An achromatic key is answered `false` rather than approximately.** `PURE_WHITE` and `PURE_BLACK`
+ * have no hue for a blend to keep, so there is nothing here to measure — the same rule, and the same
+ * reason, as the latitude they are refused above. For them the fringe pass keeps the radius alone,
+ * which is the right instrument for a grey ramp.
+ */
+export function carriesKeyTint(data: Uint8ClampedArray, offset: number, basis: KeyBasis): boolean {
+  if (basis.chroma === 0) return false;
+
+  srgbToOklabInto(PIXEL, data[offset] ?? 0, data[offset + 1] ?? 0, data[offset + 2] ?? 0);
+  const share = (PIXEL.a * basis.hueA + PIXEL.b * basis.hueB) / basis.chroma;
+  if (share < KEY_TINT_SHARE) return false;
+
+  // Whatever chroma the pixel carries that is not on the key's axis, measured against the pixel's
+  // *own* on-axis chroma rather than the key's. That ratio is the tangent of the angle between the
+  // two hues, so the test is one angle at every chroma — see `KEY_TINT_OFF_HUE` for why measuring it
+  // against the key's chroma instead opened the cone wide at the bottom of the share range.
+  const onAxis = share * basis.chroma;
+  const offA = PIXEL.a - onAxis * basis.hueA;
+  const offB = PIXEL.b - onAxis * basis.hueB;
+  return Math.hypot(offA, offB) <= KEY_TINT_OFF_HUE * onAxis;
 }

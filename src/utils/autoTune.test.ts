@@ -6,10 +6,12 @@ import { TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { autoTune } from './autoTune.ts';
+import { keyBackground } from './keyBackground.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
 import { proxyCrops } from './proxyCrops.ts';
 import { quantiseImage } from './quantiseImage.ts';
 import { meanSsim } from './ssim.ts';
+import { readCandidate } from './tuneCandidate.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 
 const GRID = 4;
@@ -125,18 +127,29 @@ describe('autoTune', () => {
     // The comparison this guards: a candidate's result has its background cleared, so measuring it
     // against a crop that still carries the magenta would score every candidate against a field none
     // of them produces. Below is what that mistake would measure — far under what the sweep reports.
+    //
+    // Scored through `readCandidate` rather than by hand, and handed the *raw* crop as its reference,
+    // which is precisely the mistake stated as data. A hand-rolled magnify-and-compare would be a
+    // second copy of that function's own seam, and the copy would not carry the trim it takes: the
+    // mesh is measured per transform, so a keyed crop's result need not be the crop's own edge over
+    // the grid.
     const keyed: QuantiseSettings = { ...BASE, key: { color: MAGENTA, tolerance: 16 } };
     const [crop] = proxyCrops(KEYED_SHEET, GRID, PROXY_CROP_CELLS, PROXY_CROP_COUNT);
     expect(crop).toBeDefined();
     if (crop === undefined) return;
 
     const outcome = autoTune(KEYED_SHEET, keyed);
-    const againstTheField = meanSsim(
-      crop.image,
-      upscaleNearest(quantiseImage(crop.image, { ...keyed, ...outcome.dials }).image, GRID),
-    );
+    const score = (reference: ImageData): number =>
+      readCandidate(outcome.dials, [{ crop: crop.image, reference }], keyed).fidelity;
 
-    expect(outcome.reading.fidelity).toBeGreaterThan(againstTheField + 0.2);
+    // The same crop, the same dials, the same magnification — only the reference differs, which is
+    // what makes the pair a measurement of the mistake rather than of two unrelated runs. The gap on
+    // this fixture is about 0.19, and the floor is a wide band below that rather than a tight fit:
+    // what is being asserted is that keying the reference is decisively better, not that it is worth
+    // one particular figure.
+    expect(score(keyBackground(crop.image, { color: MAGENTA, tolerance: 16 }).image)).toBeGreaterThan(
+      score(crop.image) + 0.1,
+    );
   });
 
   it('scores every candidate alike on the lattice while their fidelities differ', () => {

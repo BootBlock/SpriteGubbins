@@ -1,7 +1,7 @@
 import { FRINGE_TOLERANCE_CEILING, FRINGE_TOLERANCE_FACTOR } from '../constants/quantiser.ts';
 import type { BackgroundKeying } from '../types/quantiser.ts';
 import { alphaAt, CHANNELS_PER_PIXEL, copyPixel, createImage, FULLY_TRANSPARENT } from './imageData.ts';
-import { keyBasis, keyDistanceSquared } from './keyDistance.ts';
+import { carriesKeyTint, keyBasis, keyDistanceSquared } from './keyDistance.ts';
 
 /**
  * Turning a returned sheet's background key into transparency.
@@ -49,26 +49,38 @@ export interface KeyedImage {
  * 1. **The field.** A pixel within `tolerance` of the key colour, or already fully transparent, is
  *    marked. Nothing is written yet.
  * 2. **The fringe, and the output.** A marked pixel becomes transparent. An *unmarked* pixel becomes
- *    transparent too if it is 4-adjacent to a marked one and within `tolerance ×
- *    FRINGE_TOLERANCE_FACTOR`, capped at `FRINGE_TOLERANCE_CEILING`, of the key. Everything else is
- *    copied through untouched.
+ *    transparent too if it is 4-adjacent to a marked one and is either within `tolerance ×
+ *    FRINGE_TOLERANCE_FACTOR` of the key — capped at `FRINGE_TOLERANCE_CEILING` — or carries the
+ *    key's own hue, which is what `carriesKeyTint` measures. Everything else is copied through
+ *    untouched.
  *
  * **Pass 2 reads the mask, never its own output**, so the erosion is exactly one pixel deep and cannot
  * cascade. That bound is the point: the same rule applied to its own results is a flood fill, and it
  * would walk straight down a gradient until the sprite ran out. One pixel is also what anti-aliasing
  * on a downscaled render actually produces at the scale the grid step then votes over.
  *
- * The adjacency requirement is what makes the wider fringe threshold safe — see
- * `FRINGE_TOLERANCE_FACTOR`. And because that threshold is scaled from `tolerance` rather than being a
- * control of its own, a tolerance of 0 makes pass 2 unreachable by construction: the only pixels
- * within a zero-radius fringe are exact matches, which pass 1 has already marked. The ceiling keeps
- * that property — capping zero leaves zero — while taking away the other end, where an unbounded
- * multiple reached past every colour in the sheet.
+ * The adjacency requirement is what makes both of pass 2's thresholds safe — see
+ * `FRINGE_TOLERANCE_FACTOR` and `carriesKeyTint`. A pixel touching the field and carrying the field's
+ * hue is a blend by construction; the same hue test asked of the whole sheet would take every faintly
+ * key-tinted pixel of the artwork with it.
  *
- * Past the rung where the ceiling binds, pass 2 stops finding anything: the field's own radius has
- * overtaken the fringe's, so every pixel the second test could admit the first has already marked.
- * That is the pass expiring rather than misbehaving — a tolerance that loose is matching the blends
- * directly.
+ * **The radius alone left most of the halo standing, and that is what the hue test is for.** How far
+ * a blend sits from the key is decided mostly by how far the *artwork* it blends with sits, so on a
+ * sheet whose subject is near-black the halo lands out among the artwork and no radius separates the
+ * two. Measured on the reference sheet at the recommended magenta and the default tolerance, the pass
+ * has 11030 candidates, 97.1% of them still visibly magenta, and the radius takes 18.1% of them. With
+ * the hue test beside it the pass takes 95.5%, and 251 visibly magenta pixels survive — which reaches
+ * the finished sheet as 75 pixels of one very dark violet under the dominant vote, and none at all
+ * under either averaging reading. Before the hue test those figures were 720, 1010 and 283.
+ *
+ * `exact` still keys the field and nothing around it: pass 2 does not run at that rung. That used to
+ * follow from the radius being scaled off the tolerance, and is now said outright, because the hue
+ * test is scaled off nothing.
+ *
+ * Past the rung where the ceiling binds, the *radius* half of pass 2 stops finding anything on its
+ * own: the field's own radius has overtaken the fringe's, so every pixel that test could admit the
+ * first has already marked. That is that half expiring rather than misbehaving — a tolerance that
+ * loose is matching those blends directly — and the hue test carries the pass from there.
  *
  * **Keyed pixels are written `{0, 0, 0, 0}`, not their original RGB at zero alpha.** This is not
  * tidiness. `alignToGrid` resolves each cell to its modal *packed RGBA*, so transparent pixels that
@@ -89,6 +101,10 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
   // past the distance between any two colours, and the pass stops being an edge clean-up and becomes
   // a blanket erosion of every silhouette in the sheet. See `FRINGE_TOLERANCE_CEILING`.
   const fringeRadius = Math.min(tolerance * FRINGE_TOLERANCE_FACTOR, FRINGE_TOLERANCE_CEILING) ** 2;
+  // `exact` removes the key colour and nothing else, which is the whole of what that rung offers a
+  // reader. The radius used to carry that on its own — scaled from the tolerance, it is zero there —
+  // but the tint test is not scaled from anything, so the rung is now stated rather than derived.
+  const fringes = tolerance > 0;
 
   const field = new Uint8Array(pixels);
   for (let index = 0; index < pixels; index += 1) {
@@ -112,7 +128,14 @@ export function keyBackground(image: ImageData, { color, tolerance }: Background
       field[index] === 1 ||
       // Adjacency first, and deliberately: it fails for every interior pixel, which is nearly all of
       // them, and it fails on four array reads rather than three multiplications.
-      (touchesField(field, width, height, index) && keyDistanceSquared(data, offset, basis) <= fringeRadius);
+      (fringes &&
+        touchesField(field, width, height, index) &&
+        // Near the key, **or** made partly of it. Two tests because a blend answers only the second
+        // one: how far a mixture sits from the key is decided by how far the artwork it mixes with
+        // sits, so against a dark sheet the halo lands out among the artwork whatever the radius is.
+        // The radius keeps its own half — it reaches blends whose partner pulled the hue off the
+        // key's axis, which the tint test refuses. See `carriesKeyTint`.
+        (keyDistanceSquared(data, offset, basis) <= fringeRadius || carriesKeyTint(data, offset, basis)));
 
     if (!isKeyed) {
       copyPixel(data, output.data, offset);
