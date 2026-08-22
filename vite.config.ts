@@ -118,12 +118,15 @@ const PRECACHE_SHAPES: readonly string[] = [
 ];
 
 /**
- * A ceiling in KiB on the entries `PRECACHE_SHAPES` lists, which currently come to 2111.19.
+ * A ceiling in KiB on the entries `PRECACHE_SHAPES` lists.
  *
  * That list catches a new *file*; this catches an existing one growing — the app chunk and the
- * SQLite binary are 81% of the figure between them. The headroom is deliberately small: a 200 kB
- * addition is meant to fail here and be argued for in a diff, rather than turn up later in a
- * page-load waterfall. Raising it is a normal thing to do, and it is a line a reviewer sees.
+ * SQLite binary are four fifths of the figure between them. What the figure stands at today is
+ * not restated here, because it moves with every commit and a number in a comment would be wrong
+ * within the week: every build prints it, as `precache <n> entries (<size> KiB)`. The headroom
+ * over it is deliberately small, so a 200 kB addition fails here and is argued for in a diff
+ * rather than turning up later in a page-load waterfall. Raising the ceiling is a normal thing to
+ * do, and it is a line a reviewer sees.
  */
 const PRECACHE_CEILING_KIB = 2160;
 
