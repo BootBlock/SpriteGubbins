@@ -247,15 +247,21 @@ export function applySectionNumbers(template: string): string {
  *
  * A model wrapper runs on the *rendered* prompt, after {@link applySectionNumbers} has consumed
  * every marker, so a `[SEC:…]` written there would reach the model as literal template text. The
- * numerals were therefore hand-written into the Sol and Seedream wrappers, which is the one place in
- * the app a section number was stated twice — and the two wrappers whose whole job is to say which
- * blocks may not be shortened are the worst place for a citation to quietly re-point. A section
- * inserted before the inventory, or the contract ever becoming conditional, would have moved the
- * prompt's own citations and left theirs behind.
+ * numerals were therefore hand-written into the Sol and Seedream wrappers — the worst place in the
+ * app for a citation to quietly re-point, since naming the blocks that may not be shortened is the
+ * whole of what those two do. A section inserted before the inventory, or the contract ever becoming
+ * conditional, would have moved the prompt's own citations and left theirs behind.
  *
- * So they take the same map the headings were numbered from and name their sections rather than
- * their numbers. A name this prompt does not carry throws, for the reason a `[SEC:…]` of one does:
- * `section undefined` in front of the model is the failure, not the missing map entry.
+ * So they take the numbers from this walk and name their sections rather than their numbers. A name
+ * this prompt does not carry throws, for the reason a `[SEC:…]` of one does: `section undefined` in
+ * front of the model is the failure, not the missing map entry.
+ *
+ * **The wrappers are not the only prompt text that hand-writes a section number, and this does not
+ * reach the rest.** Thirteen strings in `constants/promptText/` and `constants/sheetPlans/` state
+ * one too, and they are filled by {@link substitute}, which runs *last* — so a marker written into
+ * one of them ships literally, and resolving citations over the values wholesale would throw on a
+ * subject field a reader typed a marker into. Deriving those needs a decision about where the
+ * app/user boundary sits in the value record, which is issue #96 rather than this function.
  */
 export function citeSection(numbers: SectionNumbers, name: string): string {
   return String(numberOf(numbers, name, `section ${name}`));

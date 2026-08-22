@@ -15,9 +15,9 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * which keeps this from becoming a third copy of a rule the template already states twice.
  *
  * **It cites that section by name.** The numeral used to be written out here, which is a second
- * statement of a number the prompt body already derives — and this wrapper is the one place a
- * misdirected citation would send the whole precedence order to the wrong block. `sections` is the
- * map the headings were numbered from, so a section added before the contract moves both at once.
+ * statement of a number the prompt body already derives — and a misdirected citation would send the
+ * whole precedence order to the wrong block. `sections` comes from the walk that numbered the
+ * headings, so a section added before the contract moves both at once.
  */
 export function wrapForSeedream(prompt: string, sections: SectionNumbers): string {
   return `Plan the grid and the per-component cells before rendering: this is a layout brief, not a scene.

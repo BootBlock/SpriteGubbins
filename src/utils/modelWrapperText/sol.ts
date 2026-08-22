@@ -86,12 +86,13 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * shape.
  *
  * **The sections are cited by name, never by numeral.** This wrapper runs on the rendered prompt,
- * after the `[SEC:…]` markers have been resolved away, so for a while it wrote `section 0`,
- * `section 3` and `section 4` out by hand — the one place in the app a section number was stated
- * twice. The numbers were right, and nothing held them there: a section inserted before the
- * inventory re-points every citation in the prompt body and leaves these four behind, in the
- * wrapper whose whole job is naming the blocks that may not be shortened. `sections` is the map
- * `applySectionNumbers` numbered the headings from, so the two move together.
+ * after the `[SEC:…]` markers have been resolved away, so for a while it wrote all four of its
+ * citations out by hand — `section 0`, `section 2`, `section 3` and `section 4`. The numbers were
+ * right, and nothing held them there: a section inserted before the inventory re-points every
+ * citation in the prompt body and leaves these four behind, in the wrapper whose whole job is naming
+ * the blocks that may not be shortened. `sections` comes from `sectionNumbers`, the walk
+ * `applySectionNumbers` numbers the headings by, so the two move together — see `citeSection` for
+ * what that does and does not reach.
  *
  * **`nativeGrid` and `palette` are passed rather than worked out here**, for the reason every other
  * wrapper's arguments are: this file holds text and knows nothing about render styles, resolution
