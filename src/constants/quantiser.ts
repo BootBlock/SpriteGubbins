@@ -22,6 +22,109 @@ export const PALETTE_COLOR_COUNTS: Readonly<Record<PaletteLimit, number | null>>
 };
 
 /**
+ * How far apart a pixel's two opposite neighbours must sit before the pixel between them can be read
+ * as a blend of the pair — in scaled OKLab, as every colour tolerance on this tab is.
+ *
+ * The pass this opens is `blendWeightedHistogram`, and what it protects is the palette a *budget*
+ * chooses. A generated sheet's anti-aliased fringes are a large, high-variance population of colours
+ * that exist only where two regions meet, and `buildPalette` counted every one of their pixels
+ * exactly as it counted a pixel of the art's own flat colours — so a budget could spend slots on
+ * blends and then merge genuine art tones onto shared entries. Measured on softened fixtures at a
+ * budget equal to the art's own colour count, the palette held 7 of 8, 8 of 12, 10 of 16 and 14 of
+ * 24 of the colours the art was drawn in.
+ *
+ * **A gap is what makes the reading a boundary rather than a gradient.** Soft shading has every pixel
+ * partway between the two beside it, and taking those as blends would down-weight the whole of a
+ * shaded surface; a threshold on the *span* leaves them, because a shading step between adjacent
+ * pixels is small and a region boundary is not. 16 was chosen from where the answer stops moving: 8
+ * and 16 give the same palette on both softened fixtures, while 32 is strict enough to miss most of
+ * the fringes and gives back most of the defect — 17 of 24 art colours where 16 gives 22.
+ */
+export const BLEND_EDGE_GAP = 16;
+
+/**
+ * How far a pixel must sit from **both** of the neighbours it lies between before it counts as a
+ * blend of them, in the same units.
+ *
+ * Without it the test takes the ends of its own run: a pixel identical to one neighbour is trivially
+ * "between" the pair, so a flat colour beside a boundary would be read as a blend of itself and
+ * whatever is on the other side. The floor is what makes the reading mean *partway along*.
+ *
+ * It also decides what the pass declines to touch, and declining is the safe direction. A pixel a
+ * tenth of the way across a boundary is nearly the art colour it sits beside, so a slot spent on it
+ * costs almost nothing; the blends worth suppressing are the ones near the middle, and they are far
+ * from both ends by construction. 4 and 8 give the same palette on both softened fixtures; 0 gives up
+ * one art colour of sixteen, which is the ends being taken.
+ */
+export const BLEND_END_GAP = 4;
+
+/**
+ * How far off the straight run between its two neighbours a pixel may sit and still be read as a
+ * blend of them, in the same units.
+ *
+ * The test is the triangle inequality — the distances to the two neighbours sum to the distance
+ * between them when the pixel lies on the run joining the pair — and the slack is not a refinement of
+ * it but the whole of what makes it fire. A real softening kernel is separable and two-dimensional,
+ * so a pixel on a vertical edge carries a little of what was above and below it as well, and lands
+ * *near* the run rather than on it: at zero slack the pass detects nothing at all and both softened
+ * fixtures come back at their unweighted figures. 4, 8 and 16 are indistinguishable on both, so this
+ * sits at the bottom of the plateau, which is the value that reads the fewest pixels as blends.
+ *
+ * **What it cannot see, and why that is left alone.** An sRGB blend is a straight run in sRGB and a
+ * slightly curved one in OKLab, and how far it bends depends on the two hues — the midpoint of a
+ * saturated red and a saturated blue sits 5.3 off the run joining them. That only arises where a
+ * boundary is softened over a *single* pixel, because the reading asks about a pixel's immediate
+ * neighbours: across the three-tap kernel a resampler actually leaves, each step's neighbours are the
+ * steps beside it and the run is short enough to be straight. Widening the slack to cover the
+ * one-pixel case changed no palette on any fixture, so it is not widened, and the cost of the miss is
+ * that such a colour keeps the vote it always had.
+ */
+export const BLEND_STRAIGHTNESS = 4;
+
+/**
+ * What a blend pixel's vote is worth, as a fraction of a flat pixel's, when a budget's palette is
+ * chosen.
+ *
+ * **A fraction rather than nothing**, and the difference is what keeps the pass safe on the sheets it
+ * has no opinion about. Every colour stays in the histogram, so the set a palette is chosen *from* is
+ * exactly the set the image contains, and `buildPalette`'s "already inside the budget" answer is the
+ * same one it always gave. And because Wu's criterion and the representative's tally are both
+ * scale-invariant, a sheet that is nothing but transitions — a soft gradient with no flat region
+ * anywhere — has every weight scaled by the same constant and is quantised exactly as it was before
+ * this pass existed. Zero would make that sheet's whole histogram vanish.
+ *
+ * **A power of two, which is what keeps the palette exactly reproducible.** `wuQuantiser` promises
+ * the same image always yields the same palette, and it rests on every tie resolving the same way.
+ * A weight of 1/64 makes each colour's total a multiple of 1/64, and 16,777,216 pixels — the tab's
+ * ceiling — is 2³⁰ of those, comfortably inside the 2⁵³ where a `Float64Array` still counts exactly.
+ * So no sum here rounds, and two colours that weigh the same weigh *exactly* the same. A weight that
+ * was not a binary fraction would put that promise on the ordering of a floating-point sum.
+ *
+ * **1/64 is where the answer stops moving.** On both softened fixtures every value from 1/64 down to
+ * 10⁻⁶ chooses the same palette; 1/16 recovers part of the loss and 1/4 recovers little. At the
+ * budgets equal to the art's own colour count quoted at {@link BLEND_EDGE_GAP}, this takes 7 of 8 to
+ * 8, 8 of 12 to 11, 10 of 16 to 15 and 14 of 24 to 22 — and on a fixture whose 24 colours meet at
+ * one-pixel seams it takes the palette from 21 art colours and 3 blends to all 24, and the mean error
+ * at the art's own colours from 1.83 to nothing.
+ *
+ * **What it costs, on a sheet with no flat colour to protect.** End to end on the reference armour
+ * sheet — grid 6, budgets of 16 and 64, under all three vote readings — structural similarity moves
+ * by less than 0.005 either way, which is inside the run-to-run noise of the measurement. The pass
+ * makes the histogram about five times the cost of a plain one and the whole pipeline about five per
+ * cent more; absolute timings are stated nowhere here, because they move by several times between
+ * runs on one machine.
+ *
+ * **The one thing it cannot tell apart, said plainly.** A deliberate one-pixel shading band drawn
+ * between a light body and a dark one is geometrically a blend of the two, and no local reading
+ * separates it from a fringe. On native-scale art at a budget below the art's colour count, this pass
+ * gives such a band up before it gives up a drawn contour — which is the trade this app makes
+ * everywhere else, and is why `lineVote` and `outlineExpansion` exist. Art drawn at a scale is not
+ * affected: a band two pixels wide or more has interior pixels whose neighbours match, and those are
+ * never read as blends.
+ */
+export const BLEND_VOTE_WEIGHT = 1 / 64;
+
+/**
  * The fraction of an image's colour transitions that must fall on a scale's lattice for that scale to
  * be believed.
  *

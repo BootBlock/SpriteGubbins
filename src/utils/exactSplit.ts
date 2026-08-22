@@ -26,7 +26,15 @@ import { unpackColor } from './imageData.ts';
  * budget never enters this file at all.
  */
 
-/** One distinct colour and how many pixels carry it. */
+/**
+ * One distinct colour and what the pixels carrying it are worth.
+ *
+ * Worth rather than how many, because `blendWeightedHistogram` is where the figure comes from: a
+ * pixel partway between the two beside it counts for a fraction of one that does not, so this is a
+ * weight and need not be a whole number. Nothing here reads it as a count — every use is a sum, a
+ * ratio against another sum, or a comparison — so the two behave alike, and a colour the image
+ * contains always arrives with a weight above zero.
+ */
 export interface ColorTally {
   readonly key: number;
   readonly count: number;
@@ -113,7 +121,8 @@ function pickAll(groups: readonly (readonly ColorTally[])[]): readonly Rgba[] {
 }
 
 /**
- * How much colour variance a group holds, summed across all four channels and weighted by pixels.
+ * How much colour variance a group holds, summed across all four channels and weighted by what each
+ * colour's pixels are worth — see {@link ColorTally}.
  *
  * The same quantity the coarse pass minimises, computed the same way — Σ n·v² less the square of
  * the weighted mean — so the two halves of the search agree about which group is worth splitting.

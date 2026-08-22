@@ -34,12 +34,34 @@ export function pixelDistance(
   right: MutableOklab,
   rightAlpha: number,
 ): number {
+  return pixelDistanceOf(left.L, left.a, left.b, leftAlpha, right.L, right.a, right.b, rightAlpha);
+}
+
+/**
+ * {@link pixelDistance} from eight loose numbers, for a caller holding channels rather than objects.
+ *
+ * The same arithmetic and therefore the same answer — which is the point of it existing rather than
+ * being spelled a second time, exactly as `lumaOfChannels` sits beside `lumaOf`. `blendHistogram`
+ * reads three pixels per pixel of a sheet of up to 16.8 million and holds each as three numbers out
+ * of a row buffer; copying them into a scratch object only to read them straight back out is work
+ * with no result, and it measured as most of that pass's cost.
+ */
+export function pixelDistanceOf(
+  leftL: number,
+  leftA: number,
+  leftB: number,
+  leftAlpha: number,
+  rightL: number,
+  rightA: number,
+  rightB: number,
+  rightAlpha: number,
+): number {
   if (leftAlpha === FULLY_TRANSPARENT || rightAlpha === FULLY_TRANSPARENT) {
     return leftAlpha === rightAlpha ? 0 : Math.abs(leftAlpha - rightAlpha);
   }
-  const dL = left.L - right.L;
-  const dA = left.a - right.a;
-  const dB = left.b - right.b;
+  const dL = leftL - rightL;
+  const dA = leftA - rightA;
+  const dB = leftB - rightB;
   const dAlpha = leftAlpha - rightAlpha;
   return Math.sqrt(dL * dL + dA * dA + dB * dB + dAlpha * dAlpha);
 }

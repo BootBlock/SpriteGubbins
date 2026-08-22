@@ -63,7 +63,7 @@ export function wuCellOfKey(key: number): number {
  * that bin, which is what lets {@link boxSum} answer for an arbitrary box by differencing corners.
  */
 export interface WuMoments {
-  /** Pixels. */
+  /** What the pixels weigh — see `ColorTally`, whose figure this sums. */
   readonly weight: Float64Array;
   /** Σ red, Σ green, Σ blue — the numerators of a box's mean colour. */
   readonly red: Float64Array;
@@ -92,7 +92,9 @@ export type WuAxis = 'r' | 'g' | 'b';
  * Built from the colour histogram rather than from the pixels: the histogram has already excluded
  * fully transparent pixels — which is what keeps a keyed field from claiming palette slots — and it
  * is one entry per *colour*, so a sheet of sixteen million pixels and a few thousand colours is
- * walked a few thousand times here.
+ * walked a few thousand times here. Its figures are weights rather than counts and need not be whole
+ * numbers, which the `Float64Array` tables already accommodate; `blendWeightedHistogram` says what a
+ * pixel is worth and why.
  */
 export function buildMoments(histogram: ReadonlyMap<number, number>): WuMoments {
   const moments: WuMoments = {
