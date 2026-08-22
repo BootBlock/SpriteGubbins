@@ -238,22 +238,31 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     // Counted here rather than when the pack was parsed, so the sentence reports the collection as
     // it stands at the moment it is replaced.
     const replacing = get().customPresets.length;
-    set({ isExporting: true });
+    // **Cleared before the first await, not in the `finally`.** The staged pack is this action's
+    // own guard, and clearing it afterwards left the guard open across the whole database write: a
+    // second press ran a second replace, and a press of Cancel in the same window answered "nothing
+    // of yours was deleted" over a deletion already dispatched. Closing it here hands the question
+    // back to the two transfer buttons, which `isExporting` disables for the rest of the write —
+    // one flag governing the whole flow, as it did before the confirmation existed.
+    set({ isExporting: true, pendingImport: null });
     try {
       const database = await getDatabase();
       await database.replacePresets(imported);
       set({ customPresets: imported });
       showToast(describePackImported(imported.length, replacing, PRESET_PACK_ITEMS));
     } catch {
+      // Reported and left there: the reader retries from the button, rather than being asked the
+      // same question again over a collection nothing happened to.
       showToast('Could not import that preset pack');
     } finally {
-      // Cleared either way: a failed replace is reported and the reader retries from the button,
-      // rather than being asked the same question again over a collection nothing happened to.
-      set({ isExporting: false, pendingImport: null });
+      set({ isExporting: false });
     }
   },
 
   cancelPresetImport: () => {
+    // Nothing staged is nothing to cancel, so it says nothing — a toast here would answer a
+    // question the reader had already answered.
+    if (get().pendingImport === null) return;
     set({ pendingImport: null });
     useUIStore.getState().showToast('Import cancelled, and nothing of yours was deleted');
   },

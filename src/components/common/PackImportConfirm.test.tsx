@@ -36,10 +36,25 @@ describe('PackImportConfirm', () => {
     expect(screen.getByText(/11 custom presets/)).toBeInTheDocument();
   });
 
+  it('names both figures on each button, because the sentence cannot be attached to one', async () => {
+    // `ControlTooltip` clones its child and writes `aria-describedby` itself, so a description set
+    // here is overwritten — absent while its card is hidden, and pointing at the card while it is up.
+    renderConfirm();
+
+    expect(
+      screen.getByRole('button', {
+        name: 'Replace your custom presets with the 4 custom presets in this file',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Cancel the import and keep your 11 custom presets' }),
+    ).toBeInTheDocument();
+  });
+
   it('lands focus on Cancel, so a stray Enter is harmless', async () => {
     const { onConfirm, onCancel } = renderConfirm();
 
-    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: /^Cancel the import/ })).toHaveFocus();
 
     await userEvent.keyboard('{Enter}');
     expect(onCancel).toHaveBeenCalledTimes(1);
@@ -49,7 +64,7 @@ describe('PackImportConfirm', () => {
   it('asks the store to replace only when Replace is pressed', async () => {
     const { onConfirm, onCancel } = renderConfirm();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Replace' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Replace your/ }));
 
     expect(onConfirm).toHaveBeenCalledTimes(1);
     expect(onCancel).not.toHaveBeenCalled();

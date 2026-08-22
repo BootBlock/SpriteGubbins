@@ -503,6 +503,37 @@ describe('importPresetsJSON', () => {
     await expect(backend.listPresets()).resolves.toHaveLength(1);
   });
 
+  it('closes the question before the write, so a second press cannot replace twice', async () => {
+    await usePresetStore.getState().saveCustomPreset('First', '');
+    await usePresetStore.getState().saveCustomPreset('Second', '');
+    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+
+    const writing = usePresetStore.getState().confirmPresetImport();
+    // Already closed, with the write still in flight — which is what makes the second press a no-op.
+    expect(usePresetStore.getState().pendingImport).toBeNull();
+    await usePresetStore.getState().confirmPresetImport();
+    await writing;
+
+    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Imported Knight']);
+    // One replace, so one truthful sentence — a second would have reported deleting two presets
+    // that the first had already deleted.
+    expect(useUIStore.getState().toastMessage).toBe('Imported 1 custom preset, replacing 2');
+  });
+
+  it('says nothing when there is no question left to cancel', async () => {
+    // Cancel used to answer “nothing of yours was deleted” over a deletion already dispatched.
+    await usePresetStore.getState().saveCustomPreset('Mine', '');
+    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
+    const writing = usePresetStore.getState().confirmPresetImport();
+    useUIStore.getState().dismissToast();
+
+    usePresetStore.getState().cancelPresetImport();
+
+    expect(useUIStore.getState().toastMessage).toBeNull();
+    await writing;
+    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Imported Knight']);
+  });
+
   it('says how many it deleted as well as how many arrived', async () => {
     // "Imported 1 custom preset" is true of a library that had two and now has one, and it was all
     // the old toast said.

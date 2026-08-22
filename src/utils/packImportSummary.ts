@@ -21,7 +21,7 @@ export function describePackReplacement(incoming: number, replacing: number, nou
   const arriving = `This file holds ${countPackItems(incoming, noun)}.`;
   return replacing === 0
     ? `${arriving} You have none saved, so importing it deletes nothing of yours.`
-    : `${arriving} Importing it deletes the ${countPackItems(replacing, noun)} you have saved, and there is no undo.`;
+    : `${arriving} Importing it deletes the ${countPackItems(replacing, noun)} you already have, and there is no undo.`;
 }
 
 /**
@@ -34,4 +34,24 @@ export function describePackReplacement(incoming: number, replacing: number, nou
 export function describePackImported(incoming: number, replacing: number, noun: PackItemNoun): string {
   const imported = `Imported ${countPackItems(incoming, noun)}`;
   return replacing === 0 ? imported : `${imported}, replacing ${replacing}`;
+}
+
+/**
+ * The Replace button's accessible name.
+ *
+ * It carries the figures rather than leaning on the sentence beside it, because the sentence cannot
+ * be attached to the button: {@link ControlTooltip} clones its child and writes `aria-describedby`
+ * itself, so a description set here would be overwritten. A name that stands alone is also what the
+ * app's own repeated buttons do — `QuantisePresetRow` names the preset each of its buttons acts on
+ * for the same reason.
+ */
+export function describeReplaceAction(incoming: number, noun: PackItemNoun): string {
+  return `Replace your ${noun.plural} with the ${countPackItems(incoming, noun)} in this file`;
+}
+
+/** The Cancel button's accessible name, saying what survives rather than merely "cancel". */
+export function describeCancelAction(replacing: number, noun: PackItemNoun): string {
+  return replacing === 0
+    ? 'Cancel the import, which changes nothing'
+    : `Cancel the import and keep your ${countPackItems(replacing, noun)}`;
 }

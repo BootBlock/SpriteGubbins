@@ -395,6 +395,35 @@ describe('importQuantisePresetsJSON', () => {
     await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
   });
 
+  it('closes the question before the write, so a second press cannot replace twice', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('First', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Second', '');
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+
+    const writing = useQuantisePresetStore.getState().confirmQuantisePresetImport();
+    expect(useQuantisePresetStore.getState().pendingImport).toBeNull();
+    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
+    await writing;
+
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Arrived']);
+    expect(useUIStore.getState().toastMessage).toBe('Imported 1 saved setting, replacing 2');
+  });
+
+  it('says nothing when there is no question left to cancel', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
+    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
+    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
+    const writing = useQuantisePresetStore.getState().confirmQuantisePresetImport();
+    useUIStore.getState().dismissToast();
+
+    useQuantisePresetStore.getState().cancelQuantisePresetImport();
+
+    expect(useUIStore.getState().toastMessage).toBeNull();
+    await writing;
+    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Arrived']);
+  });
+
   it('says how many it deleted as well as how many arrived', async () => {
     await useQuantisePresetStore.getState().saveQuantisePreset('First', '');
     await useQuantisePresetStore.getState().saveQuantisePreset('Second', '');

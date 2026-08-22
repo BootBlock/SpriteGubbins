@@ -229,7 +229,10 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
 
     const { showToast } = useUIStore.getState();
     const replacing = get().presets.length;
-    set({ isTransferring: true });
+    // Cleared before the first await, for the reason `confirmPresetImport` gives: the staged pack
+    // is this action's guard, and leaving it open across the write let a second press replace
+    // twice and let Cancel report a deletion as though it had not happened.
+    set({ isTransferring: true, pendingImport: null });
     try {
       const database = await getDatabase();
       await database.replaceQuantisePresets(imported);
@@ -238,11 +241,12 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     } catch {
       showToast('Could not import that quantiser pack');
     } finally {
-      set({ isTransferring: false, pendingImport: null });
+      set({ isTransferring: false });
     }
   },
 
   cancelQuantisePresetImport: () => {
+    if (get().pendingImport === null) return;
     set({ pendingImport: null });
     useUIStore.getState().showToast('Import cancelled, and nothing you saved was deleted');
   },

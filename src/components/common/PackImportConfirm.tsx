@@ -1,6 +1,10 @@
 import { useEffect, useId, useRef } from 'react';
 import type { PackItemNoun } from '../../types/packImport.ts';
-import { describePackReplacement } from '../../utils/packImportSummary.ts';
+import {
+  describeCancelAction,
+  describePackReplacement,
+  describeReplaceAction,
+} from '../../utils/packImportSummary.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
 
 /**
@@ -37,7 +41,15 @@ export interface PackImportConfirmProps {
  * Focus moves here on arrival, and it moves to **Cancel**. The press that opened the file chooser
  * left focus on a button this replaces, so without it focus falls to the document body and a
  * keyboard reader is left with no idea anything is being asked; landing on the harmless half is
- * what makes a stray Enter safe.
+ * what makes a stray Enter safe. {@link JsonPackTransfer} hands focus back to the Import button once
+ * the question is answered, for the same reason in the other direction.
+ *
+ * **Each button carries the figures in its own accessible name**, rather than pointing at the
+ * sentence with `aria-describedby`. It cannot point at it: `ControlTooltip` clones its child and
+ * writes that attribute itself, so a description set here is overwritten — absent while the card is
+ * hidden, and pointing at the card while it is up. Naming the buttons is the route that survives,
+ * and it is what `QuantisePresetRow` already does for its own repeated pair. The sentence is a
+ * polite live region as well, which announces it to a reader whose focus is elsewhere.
  */
 export function PackImportConfirm({
   incoming,
@@ -61,14 +73,14 @@ export function PackImportConfirm({
       aria-labelledby={messageId}
       className="animate-fade-in flex w-full flex-wrap items-center gap-x-3 gap-y-2 rounded-lg border border-rose/40 bg-rose/10 px-3 py-2"
     >
-      <p id={messageId} className="min-w-48 flex-1 text-xs text-ink">
+      <p id={messageId} aria-live="polite" aria-atomic="true" className="min-w-48 flex-1 text-xs text-ink">
         {describePackReplacement(incoming, replacing, noun)}
       </p>
 
       <ControlTooltip hint="Replace" text={confirmGuidance}>
         <button
           type="button"
-          aria-describedby={messageId}
+          aria-label={describeReplaceAction(incoming, noun)}
           onClick={onConfirm}
           className="rounded-lg bg-rose px-3 py-1 text-xs font-bold text-foundry-950 transition-opacity duration-390 hover:opacity-90"
         >
@@ -80,7 +92,7 @@ export function PackImportConfirm({
         <button
           ref={cancelRef}
           type="button"
-          aria-describedby={messageId}
+          aria-label={describeCancelAction(replacing, noun)}
           onClick={onCancel}
           className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
         >

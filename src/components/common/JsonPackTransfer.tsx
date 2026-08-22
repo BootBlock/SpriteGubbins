@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useDownload } from '../../hooks/useDownload.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
 import { PackImportConfirm } from './PackImportConfirm.tsx';
@@ -11,7 +11,7 @@ interface JsonPackTransferProps {
   readonly exportPack: () => string;
   /**
    * Read this file and stage what it holds for confirmation. It replaces nothing — that is
-   * `onConfirmImport`, once the reader has seen what the replacement costs.
+   * `pendingImport.onConfirm`, once the reader has seen what the replacement costs.
    */
   readonly importPack: (file: File) => Promise<void>;
   /**
@@ -54,6 +54,13 @@ interface JsonPackTransferProps {
  * of both buttons rather than opening a dialog — see {@link PackImportConfirm}. Both buttons,
  * because an export started over a half-answered import is the race the transferring flag already
  * existed to stop; leaving Export reachable here would reintroduce it through the other door.
+ *
+ * **Focus comes back to the Import button when the question goes**, the other half of the question
+ * taking focus on arrival: the button that had it was unmounted, so answering would otherwise drop
+ * a keyboard reader onto the document body. It cannot be handed over *before* the state change, as
+ * `PresetCard` does with its rename editor, because the button does not exist until afterwards —
+ * and a confirmed replace brings it back disabled for the length of the write, so what is waited on
+ * is a button both mounted and enabled rather than one render.
  */
 export function JsonPackTransfer({
   filename,
@@ -67,6 +74,22 @@ export function JsonPackTransfer({
 }: JsonPackTransferProps) {
   const download = useDownload();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importButtonRef = useRef<HTMLButtonElement>(null);
+  const isReturningFocus = useRef(false);
+
+  // A ref rather than state, and no dependency list: the flag is set from an event handler and read
+  // on whichever later render the button is ready on, which is not a value any render can name.
+  useEffect(() => {
+    const button = importButtonRef.current;
+    if (!isReturningFocus.current || button === null || button.disabled) return;
+    isReturningFocus.current = false;
+    button.focus();
+  });
+
+  const answer = (respond: () => void) => () => {
+    isReturningFocus.current = true;
+    respond();
+  };
 
   return (
     <>
@@ -94,6 +117,7 @@ export function JsonPackTransfer({
           */}
           <ControlTooltip hint="Import JSON" text={importGuidance}>
             <button
+              ref={importButtonRef}
               type="button"
               disabled={isTransferring}
               onClick={() => {
@@ -106,12 +130,17 @@ export function JsonPackTransfer({
           </ControlTooltip>
         </>
       ) : (
-        <PackImportConfirm {...pendingImport} />
+        <PackImportConfirm
+          {...pendingImport}
+          onConfirm={answer(pendingImport.onConfirm)}
+          onCancel={answer(pendingImport.onCancel)}
+        />
       )}
 
       {/*
-        Outside the branch above, and it has to be: the picker fires `change` after its own dialog
-        closes, and by then the staged pack has replaced the buttons.
+        Outside the branch above, and it has to be: the handler clears `input.value` in a `.then()`
+        that runs after the staged pack has replaced the buttons, and an input unmounted with them
+        would never be cleared — so the same file could not simply be picked again.
       */}
       <input
         ref={fileInputRef}

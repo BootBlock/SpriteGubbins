@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { PRESET_PACK_ITEMS, QUANTISE_PACK_ITEMS } from '../constants/packImport.ts';
-import { countPackItems, describePackImported, describePackReplacement } from './packImportSummary.ts';
+import {
+  countPackItems,
+  describeCancelAction,
+  describePackImported,
+  describePackReplacement,
+  describeReplaceAction,
+} from './packImportSummary.ts';
 
 describe('countPackItems', () => {
   it('uses the singular for exactly one', () => {
@@ -45,5 +51,28 @@ describe('describePackImported', () => {
 
   it('reports the arrival alone when nothing was replaced', () => {
     expect(describePackImported(1, 0, QUANTISE_PACK_ITEMS)).toBe('Imported 1 saved setting');
+  });
+});
+
+/**
+ * The two buttons' accessible names, which carry the figures rather than pointing at the sentence.
+ * They have to: `ControlTooltip` clones its child and writes `aria-describedby` itself, so a
+ * description set on either button is overwritten.
+ */
+describe('the confirmation buttons’ accessible names', () => {
+  it('says what Replace replaces, and with how much', () => {
+    expect(describeReplaceAction(4, PRESET_PACK_ITEMS)).toBe(
+      'Replace your custom presets with the 4 custom presets in this file',
+    );
+  });
+
+  it('says what Cancel keeps, rather than merely that it cancels', () => {
+    expect(describeCancelAction(11, PRESET_PACK_ITEMS)).toBe(
+      'Cancel the import and keep your 11 custom presets',
+    );
+  });
+
+  it('does not offer to keep nothing', () => {
+    expect(describeCancelAction(0, QUANTISE_PACK_ITEMS)).toBe('Cancel the import, which changes nothing');
   });
 });
