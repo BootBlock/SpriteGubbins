@@ -4,6 +4,7 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
+import { SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
@@ -11,6 +12,7 @@ import {
   DIRECTION_SETS,
   DIRECTIONAL_MODES,
   HARDWARE_PROFILE_IDS,
+  PALETTE_IDS,
   RENDER_STYLES,
   RESOLUTION_PROFILES,
   RIG_MODES,
@@ -1998,9 +2000,10 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       const subject = defaultSubjectFor(category);
       for (const directionalMode of DIRECTIONAL_MODES) {
         for (const directions of DIRECTION_SETS) {
-          // Eight covers the longest series any category has, and an index past the end resolves
-          // back to its first sheet rather than throwing.
-          for (let sheetIndex = 0; sheetIndex < 8; sheetIndex += 1) {
+          // The bound is derived, not written down: `SHEET_INDEX_RANGE.max` is the longest series
+          // any pairing produces over any set its category offers, so a pairing that grows a sheet
+          // is swept without this loop being touched.
+          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
             collect(
               generatePrompt(
                 category,
@@ -2030,6 +2033,20 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
       }
       for (const renderStyle of RENDER_STYLES) {
         collect(generatePrompt('CHARACTER', SUBJECT, withOutput({ ...EMITTING, targetModel, renderStyle })));
+      }
+    }
+    // The System Profile and Palette selects need their own loops rather than riding on the
+    // presets, because a preset deliberately never sets either — `constants/presets/index.ts` puts
+    // both outside the coverage contract. So section 2's hardware block and its palette paragraph
+    // appear in no swept prompt otherwise, and neither does the style reference's own prose.
+    for (const hardwareProfile of HARDWARE_PROFILE_IDS) {
+      for (const palette of PALETTE_IDS) {
+        collect(generatePrompt('CHARACTER', SUBJECT, withOutput({ hardwareProfile, palette })));
+      }
+    }
+    for (const styleReference of STYLE_REFERENCE_IDS) {
+      for (const nameStyleReference of [false, true]) {
+        collect(generatePrompt('CHARACTER', SUBJECT, withOutput({ styleReference, nameStyleReference })));
       }
     }
     // The presets as well: their subject values are app-authored copy that reaches section 1.
