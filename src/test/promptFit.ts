@@ -21,10 +21,11 @@
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PRESETS } from '../constants/presets/index.ts';
-import type { PromptBudget, TargetModelId } from '../types/output.ts';
+import type { PromptBudgetFigure, TargetModelId } from '../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import { withCompanionOutputs } from '../utils/imageConfig.ts';
 import { readPromptBudget } from '../utils/promptBudget.ts';
+import { promptBudgetFigureFor } from '../utils/targetCapabilities.ts';
 import { generatePrompt } from '../utils/promptCompiler.ts';
 
 /**
@@ -56,7 +57,7 @@ export type PromptFit = 'ALL' | 'SOME' | 'NONE';
 
 /** One target's ceiling, measured against every prompt the app ships a configuration for. */
 export interface PromptFitReading {
-  readonly budget: PromptBudget;
+  readonly budget: PromptBudgetFigure;
   /** {@link MAX_BUDGET_SHARE} of the ceiling, in the budget's own unit. */
   readonly allowance: number;
   readonly smallest: number;
@@ -91,7 +92,14 @@ const LIBRARY_PROMPTS: readonly string[] = [
 
 /**
  * Measure every prompt in {@link LIBRARY_PROMPTS} against one target's ceiling, or `null` where the
- * vendor publishes none.
+ * target has none to measure against.
+ *
+ * **A ceiling only, never a guidance figure**, which is the one place these two measure differently
+ * from the studio's notice. What this reading decides is what a description may claim about fitting
+ * and which targets the preset library owes a worked example — both of them claims about the prompt
+ * *arriving*, which is what a ceiling is about and what advice is not. Seedream's 600 words would
+ * otherwise put every prompt this app composes at `NONE` and take the five presets naming it out of
+ * the library, on the strength of a figure past which ByteDance still read the whole brief.
  *
  * Each prompt is measured through {@link readPromptBudget} rather than against the ceiling here, so
  * a reading in this file and the reading the studio puts in front of the user are the same
@@ -100,9 +108,11 @@ const LIBRARY_PROMPTS: readonly string[] = [
  * about what a target reads.
  */
 export function measurePromptFit(target: TargetModelId): PromptFitReading | null {
+  if (promptBudgetFigureFor(target)?.kind !== 'CEILING') return null;
+
   const readings = LIBRARY_PROMPTS.map((prompt) => readPromptBudget(prompt, target));
   const [first] = readings;
-  // `readPromptBudget` answers `null` for a target with no published ceiling, and it answers it for
+  // `readPromptBudget` answers `null` for a target with no published figure, and it answers it for
   // every prompt or none — the budget is a property of the target alone.
   if (first === undefined || first === null) return null;
 

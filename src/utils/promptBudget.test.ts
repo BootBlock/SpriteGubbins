@@ -4,7 +4,8 @@ import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { describeOverage, describeUsage, readPromptBudget } from './promptBudget.ts';
-import { promptBudgetFor } from './targetCapabilities.ts';
+import { promptBudgetFigureFor, promptBudgetFor } from './targetCapabilities.ts';
+import { countWords } from './promptCompiler.ts';
 
 /**
  * A ceiling nobody publishes and a ceiling of zero must not be confused, and neither must be
@@ -13,13 +14,12 @@ import { promptBudgetFor } from './targetCapabilities.ts';
  */
 
 describe('readPromptBudget', () => {
-  it('returns null where the vendor publishes no ceiling', () => {
+  it('returns null where nobody published a figure to measure against', () => {
     // Null means *unstated*, not unlimited — the preview shows nothing rather than a reassuring
-    // tick. Three targets earn it: Midjourney documents no prompt limit at all, Seedream publishes
-    // guidance rather than a ceiling, and Generic names no particular model, so there is no figure
-    // to look up.
+    // tick. Two targets earn it, for two different reasons the entries now state separately:
+    // Midjourney's vendor documents no prompt length at all, and Generic names no vendor to have
+    // documented one.
     expect(readPromptBudget('anything', 'MIDJOURNEY')).toBeNull();
-    expect(readPromptBudget('anything', 'SEEDREAM')).toBeNull();
     expect(readPromptBudget('anything', 'GENERIC')).toBeNull();
   });
 
@@ -45,11 +45,38 @@ describe('readPromptBudget', () => {
     expect(readPromptBudget('x', 'FLUX_API')?.budget.limit).toBe(32_000);
   });
 
-  it('leaves Seedream unstated, because guidance is not a ceiling', () => {
-    // ByteDance advise against prompts past ~600 English words and warn that overloaded briefs drop
-    // instructions. That is advice about quality, not a documented limit on what is read — the same
-    // distinction that keeps Midjourney null, and the reason null must not drift into meaning zero.
-    expect(readPromptBudget('anything', 'SEEDREAM')).toBeNull();
+  it('measures Seedream against its published advice, and keeps it marked as advice', () => {
+    // The defect this whole file was re-cut for. ByteDance state 600 English words on the `prompt`
+    // parameter itself and document what happens past it — information scattered, details dropped —
+    // and the entry carried `null`, which is the value that switches the studio's notice off. So the
+    // one target whose own description says long briefs lose instructions was the one target that
+    // could never say so.
+    //
+    // It stays `GUIDANCE`, because ByteDance do not say the brief is cut: `PromptBudgetNotice` reads
+    // that and words the finding as lost detail rather than as a prompt that will not arrive.
+    const brief = 'word '.repeat(700);
+    const reading = readPromptBudget(brief, 'SEEDREAM');
+
+    expect(reading?.budget.kind).toBe('GUIDANCE');
+    expect(reading?.budget.limit).toBe(600);
+    expect(reading?.budget.unit).toBe('words');
+    expect(reading?.used).toBe(700);
+    expect(reading?.isOver).toBe(true);
+  });
+
+  it('counts words exactly, and does not hedge a count it did not estimate', () => {
+    // A word budget is measured with the preview's own counter, so the figure is the count itself —
+    // the `~` belongs to the token estimator alone. Hedging every unit that was not `characters`
+    // would have put one in front of this the moment `words` existed.
+    const brief = 'a brief of exactly eight separate little words';
+    const reading = readPromptBudget(brief, 'SEEDREAM');
+
+    expect(reading?.used).toBe(countWords(brief));
+    expect(reading).not.toBeNull();
+    if (reading === null) return;
+
+    expect(describeUsage(reading)).toBe('8 words');
+    expect(describeUsage(reading)).not.toContain('~');
   });
 
   it('measures a character budget in characters, not in estimated tokens', () => {
@@ -227,13 +254,29 @@ describe('the app’s own output against the ceilings it now records', () => {
 });
 
 describe('every target answers', () => {
-  it('returns a budget or null for each id, and never throws', () => {
+  it('states one of the four budget states for each id, and never throws', () => {
     for (const target of TARGET_MODEL_IDS) {
       const budget = promptBudgetFor(target);
-      if (budget === null) continue;
-      expect(budget.limit, target).toBeGreaterThan(0);
-      expect(['characters', 'tokens'], target).toContain(budget.unit);
+      expect(['CEILING', 'GUIDANCE', 'UNPUBLISHED', 'NO_VENDOR'], target).toContain(budget.kind);
       expect(budget.note.length, target).toBeGreaterThan(0);
+    }
+  });
+
+  it('offers a figure exactly where the state carries one', () => {
+    // The narrowing every measurement in the app goes through, so it is worth pinning that it agrees
+    // with the state rather than being a second opinion about it: a figure is offered for the two
+    // states that have one, and withheld for the two that do not.
+    for (const target of TARGET_MODEL_IDS) {
+      const budget = promptBudgetFor(target);
+      const figure = promptBudgetFigureFor(target);
+
+      if (budget.kind === 'CEILING' || budget.kind === 'GUIDANCE') {
+        expect(figure, target).not.toBeNull();
+        expect(figure?.limit, target).toBeGreaterThan(0);
+        expect(['characters', 'tokens', 'words'], target).toContain(figure?.unit);
+      } else {
+        expect(figure, target).toBeNull();
+      }
     }
   });
 });

@@ -1,5 +1,5 @@
 import { TARGET_MODELS } from '../constants/models.ts';
-import type { PromptBudget, TargetCapabilities, TargetModelId } from '../types/output.ts';
+import type { PromptBudget, PromptBudgetFigure, TargetCapabilities, TargetModelId } from '../types/output.ts';
 
 /**
  * What each target generator can do with the prompt, looked up by id.
@@ -74,12 +74,29 @@ export function supportsPromptFeedback(target: TargetModelId): boolean {
 }
 
 /**
- * The documented ceiling on how much prompt this target will read, or `null` where none is
- * published.
+ * What the vendor publishes about how much prompt this target reads.
  *
- * `null` means nobody stated a figure — never that the target is unlimited. Treating the two as the
- * same is how a prompt ends up silently truncated by a text encoder that was documented all along.
+ * Always answers — including with `UNPUBLISHED` or `NO_VENDOR`, which are the two ways of saying
+ * nobody stated a figure and never that the target is unlimited. Treating those as the same as a
+ * ceiling is how a prompt ends up silently truncated by a text encoder that was documented all
+ * along; treating them as the same as *each other* is how the contradiction in the Seedream entry
+ * stayed invisible.
  */
-export function promptBudgetFor(target: TargetModelId): PromptBudget | null {
+export function promptBudgetFor(target: TargetModelId): PromptBudget {
   return capabilitiesFor(target).promptBudget;
+}
+
+/**
+ * The same answer narrowed to the figure a prompt can actually be measured against, or `null` where
+ * the target carries none.
+ *
+ * The one place the four states collapse back to two, and it is deliberately one place: every
+ * measurement in the app runs through here, so “is there a number?” is asked once and a caller
+ * cannot invent a third answer to it. What a caller must still decide for itself is what the number
+ * *means* — a `CEILING` is where the target stops reading and a `GUIDANCE` figure is where the
+ * vendor says quality starts falling, and only the first is a claim about a prompt arriving intact.
+ */
+export function promptBudgetFigureFor(target: TargetModelId): PromptBudgetFigure | null {
+  const budget = promptBudgetFor(target);
+  return budget.kind === 'CEILING' || budget.kind === 'GUIDANCE' ? budget : null;
 }

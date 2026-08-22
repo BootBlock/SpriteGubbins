@@ -119,7 +119,9 @@ describe('the built-in library spans the vocabulary', () => {
 
   it.each(TARGET_MODEL_IDS)('demonstrates %s, or measures why it cannot be demonstrated', (target) => {
     const reading = measurePromptFit(target);
-    // A target that publishes no ceiling reads whatever it is sent, so it is always demonstrable.
+    // A target with no published ceiling reads whatever it is sent, so it is always demonstrable —
+    // which covers the target whose vendor publishes advice instead, because advice does not stop
+    // the prompt arriving. See `measurePromptFit`, which is where that distinction is made.
     const demonstrable = reading === null || reading.fit !== 'NONE';
     const demonstrated = usedValues('targetModel').has(target);
 
@@ -211,7 +213,11 @@ describe('no shipped preset contradicts itself', () => {
       ),
       preset.output.targetModel,
     );
-    if (reading === null) return;
+    // A guidance figure is not what this assertion is about: past one the target still reads the
+    // whole prompt, so a preset naming Seedream is a worked example that arrives intact and loses
+    // some detail — a trade-off its card can state, not a card that is broken on load. Only a
+    // ceiling decides whether the prompt arrives.
+    if (reading === null || reading.budget.kind !== 'CEILING') return;
 
     // Multiplied out rather than read off `reading.overBy`, which is this same ratio already: that
     // field guards a `limit` of zero by resolving to 0, and 0 is under every share — so a nonsense
