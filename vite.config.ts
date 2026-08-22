@@ -182,7 +182,17 @@ export default defineConfig({
     // in needs an entry *today* (its one bare import is excluded above, and an excluded dependency
     // is never pre-bundled, so it cannot trigger a round of its own). That makes the worker a
     // reason to keep naming dependencies, not an account of what went wrong here.
-    include: ['react', 'react-dom/client', 'react/jsx-runtime', 'react/jsx-dev-runtime', 'zustand'],
+    // `react-dom` is a second entry point beside `react-dom/client`, not a duplicate of it: Vite
+    // optimises per entry, so the two carry separate hashes. `createPortal` is imported from the
+    // bare specifier — it is what renders the quantiser's comparison panel into a window of its own.
+    include: [
+      'react',
+      'react-dom',
+      'react-dom/client',
+      'react/jsx-runtime',
+      'react/jsx-dev-runtime',
+      'zustand',
+    ],
   },
 
   worker: {

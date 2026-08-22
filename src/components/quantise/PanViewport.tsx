@@ -109,7 +109,11 @@ export function PanViewport({ label, viewportRef, children }: PanViewportProps) 
         setHoldsFocus(false);
       }}
       {...panHandlers}
-      className={`max-h-96 overflow-auto rounded-xl border bg-foundry-950 ${
+      // The cap is a property of where the pane *is*, not of the pane: 24rem is what fits beside ten
+      // panels of controls in the split, and it is the whole preview when the panel has been detached
+      // into a window of its own. `DetachedPreview` sets the property there; the fallback is written
+      // in rather than declared on `:root`, so an unset property can never silently remove the cap.
+      className={`max-h-[var(--pane-height,24rem)] overflow-auto rounded-xl border bg-foundry-950 ${
         isPanning
           ? // Cyan, not indigo: this is the palette's live state, and a drag under way is exactly that.
             'cursor-grabbing select-none border-neon'

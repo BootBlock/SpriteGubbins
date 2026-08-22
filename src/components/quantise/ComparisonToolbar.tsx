@@ -1,9 +1,11 @@
 import { PREVIEW_MODE_LABELS } from '../../constants/previewModes.ts';
 import { DIFFERENCE_SCALES, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
+import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/quantise.ts';
 import { PREVIEW_MODES } from '../../types/quantiser.ts';
 import type { PreviewMode, SpriteSegmentation } from '../../types/quantiser.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import { DownloadControls } from './DownloadControls.tsx';
+import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
@@ -28,6 +30,10 @@ interface ComparisonToolbarProps {
   readonly resultImage: ImageData | null;
   /** What the sheet broke into, which an Aseprite document’s frames are cut along. */
   readonly sprites: SpriteSegmentation | null;
+  /** Whether this toolbar is currently being rendered into a window of the panel's own. */
+  readonly isDetached: boolean;
+  /** Send the panel to a window of its own, or bring it back — whichever it is not doing now. */
+  readonly onDetachToggle: () => void;
 }
 
 /**
@@ -52,6 +58,8 @@ export function ComparisonToolbar({
   sourceName,
   resultImage,
   sprites,
+  isDetached,
+  onDetachToggle,
 }: ComparisonToolbarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -105,15 +113,38 @@ export function ComparisonToolbar({
         )}
       </div>
 
-      <DownloadControls
-        downloadScale={downloadScale}
-        onDownloadScaleChange={onDownloadScaleChange}
-        downloadFormat={downloadFormat}
-        onDownloadFormatChange={onDownloadFormatChange}
-        sourceName={sourceName}
-        resultImage={resultImage}
-        sprites={sprites}
-      />
+      <div className="flex flex-wrap items-center gap-3">
+        <DownloadControls
+          downloadScale={downloadScale}
+          onDownloadScaleChange={onDownloadScaleChange}
+          downloadFormat={downloadFormat}
+          onDownloadFormatChange={onDownloadFormatChange}
+          sourceName={sourceName}
+          resultImage={resultImage}
+          sprites={sprites}
+        />
+
+        {/* Last in the row, and beside the download rather than among the pills on the left: those
+            three settings say how the preview is *drawn*, and this says where the whole panel is —
+            which is the same kind of thing as taking the result away. One button rather than two,
+            because there is only ever one of the two moves available, and it travels with the
+            toolbar: detached, this is the copy of the control sitting in the other window. */}
+        <ControlTooltip
+          hint={isDetached ? 'Return the preview' : 'Detach the preview'}
+          text={
+            isDetached ? QUANTISE_ACTION_TOOLTIPS.reattachPreview : QUANTISE_ACTION_TOOLTIPS.detachPreview
+          }
+        >
+          <button
+            type="button"
+            onClick={onDetachToggle}
+            className="rounded-lg border border-foundry-600 bg-foundry-700 px-3.5 py-1.5 text-xs font-semibold text-ink transition-all duration-390 hover:bg-foundry-600 active:scale-[0.98]"
+          >
+            <span aria-hidden="true">{isDetached ? '⤡' : '⤢'}</span>{' '}
+            {isDetached ? 'Return to the page' : 'Detach preview'}
+          </button>
+        </ControlTooltip>
+      </div>
     </div>
   );
 }

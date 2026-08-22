@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { useAnchoredSurface } from './useAnchoredSurface.ts';
 import type { SurfaceAlignment } from './useAnchoredSurface.ts';
 
@@ -291,6 +291,41 @@ describe('useAnchoredSurface', () => {
     } finally {
       HTMLElement.prototype.showPopover = original;
     }
+  });
+
+  it('measures and listens against the surface’s own document, not this module’s', () => {
+    // The quantiser's comparison panel can be portalled into a window of its own, and React builds a
+    // portalled subtree with the container's `ownerDocument` — so the anchor, the card and the
+    // viewport they have to stay inside are all somewhere this file's bare `document` does not
+    // refer to. Read the global there and a card is clamped against the *main* window's viewport
+    // and re-pinned by scrolls that never reach it: in the top layer that is not off-centre, it is
+    // unreachable, since the surface contributes to no scroll region of its own.
+    const view = window.open('', '_blank');
+    if (view === null) throw new Error('happy-dom refused a window this test needs.');
+    const other = view.document;
+    const listensThere = vi.spyOn(other, 'addEventListener');
+    const listensHere = vi.spyOn(document, 'addEventListener');
+
+    render(<Surface isShowing gap={8} />, { container: other.body });
+    const inside = within(other.body);
+    const surface = inside.getByTestId('surface');
+    vi.spyOn(inside.getByRole('button', { name: 'anchor' }), 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(50, 300, 16, 20),
+    );
+    Object.defineProperty(surface, 'offsetWidth', { value: 288, configurable: true });
+    Object.defineProperty(surface, 'offsetHeight', { value: 200, configurable: true });
+    // The window the card is in is short — 24px below the anchor, against a 200px card — while the
+    // one this module's `document` refers to has room to spare. Only one of those readings flips it.
+    vi.spyOn(other.documentElement, 'clientWidth', 'get').mockReturnValue(400);
+    vi.spyOn(other.documentElement, 'clientHeight', 'get').mockReturnValue(360);
+    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(2000);
+
+    view.dispatchEvent(new Event('resize'));
+
+    expect(listensThere.mock.calls.filter(([type]) => type === 'scroll')).toHaveLength(1);
+    expect(listensHere.mock.calls.filter(([type]) => type === 'scroll')).toHaveLength(0);
+    expect(surface.dataset.placement).toBe('above');
+    expect(surface.style.top).toBe(`${String(300 - 8 - 200 - 8)}px`);
   });
 
   it('takes its reposition listeners back off on unmount', () => {
