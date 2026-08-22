@@ -51,8 +51,8 @@ import { pixelDistance } from './pixelDistance.ts';
  * pixels either way is a real correction on a sprite 32 across and is four tenths of one per cent on
  * a sprite 2048 across, where the appendage that moved the centre would have to be a thousand pixels
  * long for the sweep to reach it. So the sheets the budget narrows are the sheets the extra
- * candidates were never going to help, and the reference sheet — fifteen sprites at 24 to 35 pixels
- * across — is not narrowed at all.
+ * candidates were never going to help, and the reference sheet — fifteen sprites at 23 to 34 pixels
+ * across, keyed on `#FF00FF` at `DEFAULT_KEY_TOLERANCE` — is not narrowed at all.
  *
  * An axis genuinely further out than the reach comes back as a **low confidence about the centre**,
  * which is the honest answer rather than a wrong axis stated confidently.
