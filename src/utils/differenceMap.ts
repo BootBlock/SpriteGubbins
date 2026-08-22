@@ -12,8 +12,9 @@ import type { MutableOklab } from './oklab.ts';
  * judge. On the reference sheet, at the settings `DIFFERENCE_SCALES` is calibrated on and with the
  * fill cleanup at the top of its range, a second cleanup pass moves **360** of 43,681 pixels by at
  * most 26.8 — and **930** of them by at most 14.4 under the ink-weighted vote at the same rung.
- * That is under one per cent of the sheet in the first case and two in the second, a shade apart,
- * which is invisible in a preview at any magnification a whole sheet fits in. The result pane can
+ * That is under one per cent of the sheet in the first case and a little over two in the second —
+ * scattered cells, none of them further out than a tenth of black-to-white, which is invisible in a
+ * preview at any magnification a whole sheet fits in. The result pane can
  * say *what* the sheet became and cannot say *what it cost*, so a dial that is working and a dial
  * that is doing nothing look identical, which is the reading two separate user reports arrived at.
  * This is the measurement behind that judgement: one number per output pixel, painted where the

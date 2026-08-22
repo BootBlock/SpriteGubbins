@@ -677,9 +677,9 @@ export const DEFAULT_PALETTE_SNAP = 20;
  *
  * The ceiling is 4 because the useful range ends well before it, and the floor of usefulness is 1.
  * Measured on the reference sheet at a grid of 6 — the full figures and the two metrics are in
- * `outlineExpansion` — thin-line survival climbs 29.5 → 43.5 → 54.4 → 60.4 → 64.1% across 0 to 4
- * while surface loss climbs 0.39 → 2.89 → 5.71 → 8.03 → 10.70%, so the first step buys fourteen
- * points of the first for two and a half of the second and every step after it buys less. The
+ * `outlineExpansion` — thin-line survival climbs 29.6 → 42.7 → 54.1 → 61.4 → 65.4% across 0 to 4
+ * while surface loss climbs 0.39 → 2.70 → 5.12 → 7.81 → 10.51%, so the first step buys thirteen
+ * points of the first for two and a third of the second and every step after it buys less. The
  * range runs on anyway, because a sheet drawn at a coarser scale or with thinner contours than this
  * one will want more, and the preview is beside the dial.
  */
@@ -690,7 +690,7 @@ export const OUTLINE_EXPANSION_RANGE = { min: 0, max: 4, step: 1 } as const;
  *
  * **Not the measured knee, which is 1, and the difference is deliberate.** This pass moves pixels
  * the reader did not ask to have moved: even at 1 it thickens every contour on the sheet, and it
- * takes the sheet's ink share from 14.2% to 17.0% where the reduction alone had it at 15.8%. That is
+ * takes the sheet's ink share from 14.2% to 17.2% where the reduction alone had it at 16.5%. That is
  * the right answer for a sheet whose outlines are breaking up and the wrong one for a sheet that came
  * back clean, and nothing here can tell which arrived — the same argument the background keying opens
  * off on. The guidance names the symptom to raise it for, and the preview beside the dial is where
@@ -883,9 +883,9 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * Game Boy    92.00 / 85.20 / 87.90  93.93 / 84.98 / 87.52  94.36 / 85.03 / 87.54            —                      —            94.36 / 85.03 / 87.54
  * ```
  *
- * The unrestricted column is `mixingPlan` with its `pairFrom` opened past the longest palette here,
- * so every entry is a candidate; the Game Boy's four make the 4, 6, 8 and unrestricted columns one
- * search, which is why two of them are left blank rather than restated.
+ * The unrestricted column is the search with every palette entry a candidate; the Game Boy's four
+ * make the 4, 6, 8 and unrestricted columns one search, which is why two of them are left blank
+ * rather than restated.
  *
  * **The unrestricted search is the worst column wherever the palette is large enough for it to
  * matter** — 2.6× to 3.3× worse than a shortlist of 3 on the 64-colour budget, 1.5× to 2.0× at 16,
@@ -916,7 +916,11 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * once per distinct colour.
  *
  * `tests/quantiser-docblock-figures.test.ts` re-derives the column this constant ships, and both
- * colour counts. The other five are swept by hand, by opening `mixingPlan`'s `pairFrom`.
+ * colour counts. **The other five are swept by overriding this constant, not by passing
+ * `mixingPlan` a wider `pairFrom`** — that argument is clamped to `LONGEST_SHORTLIST`, which is
+ * `max(DITHER_SHORTLIST, DITHER_LATTICE_CORNERS)` and sizes the module's scratch arrays at load, so
+ * asking for 64 silently returns the 8 column. The unrestricted column is this constant at **128**,
+ * the longest list palette the tab admits.
  */
 export const DITHER_SHORTLIST = 3;
 

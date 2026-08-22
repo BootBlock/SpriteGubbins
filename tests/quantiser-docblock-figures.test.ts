@@ -3,6 +3,7 @@ import { loadCorpusSheet } from './sheetCorpus.ts';
 import { cellMeanField, meanCellDistance, toConeField } from './cellDistance.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
 import {
+  DEFAULT_FILL_CLEANUP,
   DEFAULT_INK_THRESHOLD,
   DIFFERENCE_PRECISION,
   FILL_CLEANUP_RANGE,
@@ -72,29 +73,40 @@ describe('the figures the quantiser docblocks state', () => {
     expect(difference.peak).toBeCloseTo(177.4, 1);
   }, 120_000);
 
+  /** What a second cleanup pass moves: how many cells, and the largest step any one of them took. */
+  function cleanupPassShift(vote: VoteMethod, fillCleanup: number): { cells: number; largest: number } {
+    const once = quantiseImage(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 1 }));
+    const twice = quantiseImage(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 2 }));
+
+    let cells = 0;
+    let peak = 0;
+    for (let cell = 0; cell < once.difference.cells.length; cell += 1) {
+      const step = Math.abs((once.difference.cells[cell] ?? 0) - (twice.difference.cells[cell] ?? 0));
+      if (step > 0) cells += 1;
+      if (step > peak) peak = step;
+    }
+    return { cells, largest: peak / DIFFERENCE_PRECISION };
+  }
+
   it.each([
     { vote: 'DOMINANT', moved: 360, largest: 26.84375 },
     { vote: 'INK_WEIGHTED', moved: 930, largest: 14.375 },
   ] satisfies readonly { vote: VoteMethod; moved: number; largest: number }[])(
     'DIFFERENCE_SCALES and differenceMap — what a second cleanup pass moves under $vote',
     ({ vote, moved, largest }) => {
-      const fillCleanup = FILL_CLEANUP_RANGE.max;
-      const once = quantiseImage(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 1 }));
-      const twice = quantiseImage(sheet, CALIBRATION({ vote, fillCleanup, cleanupPasses: 2 }));
+      const shift = cleanupPassShift(vote, FILL_CLEANUP_RANGE.max);
 
-      let shifted = 0;
-      let peak = 0;
-      for (let cell = 0; cell < once.difference.cells.length; cell += 1) {
-        const step = Math.abs((once.difference.cells[cell] ?? 0) - (twice.difference.cells[cell] ?? 0));
-        if (step > 0) shifted += 1;
-        if (step > peak) peak = step;
-      }
-
-      expect(shifted).toBe(moved);
-      expect(peak / DIFFERENCE_PRECISION).toBeCloseTo(largest, 5);
+      expect(shift.cells).toBe(moved);
+      expect(shift.largest).toBeCloseTo(largest, 5);
     },
     240_000,
   );
+
+  it('DIFFERENCE_SCALES — and moves nothing with the fill cleanup at its opening zero', () => {
+    // The half of that claim easiest to leave unstated: the passes multiply this one dial, so the
+    // figure above means nothing without the rung it was read at, and this is what says so.
+    expect(cleanupPassShift('DOMINANT', DEFAULT_FILL_CLEANUP)).toEqual({ cells: 0, largest: 0 });
+  }, 240_000);
 
   describe('outlineExpansion — the survival and surface-loss ladders', () => {
     /** Each cell's ink share on the sheet **as it arrived**, which is what both ladders sort by. */
@@ -158,25 +170,31 @@ describe('the figures the quantiser docblocks state', () => {
         vote: 'DOMINANT',
         survival: [29.6, 42.7, 54.1, 61.4, 65.4],
         loss: [0.39, 2.7, 5.12, 7.81, 10.51],
+        noInkLoss: [0.0, 0.52, 1.73, 3.65, 6.05],
         resultShare: [16.5, 17.2, 18.9, 20.8, 22.9],
       },
       {
         vote: 'INK_WEIGHTED',
         survival: [8.4, 18.0, 32.5, 40.5, 48.5],
         loss: [0.0, 0.47, 2.32, 3.97, 6.08],
+        noInkLoss: [0.0, 0.02, 0.59, 1.52, 2.86],
         resultShare: [10.2, 9.8, 12.8, 14.3, 16.1],
       },
     ] satisfies readonly {
       vote: VoteMethod;
       survival: readonly number[];
       loss: readonly number[];
+      noInkLoss: readonly number[];
       resultShare: readonly number[];
     }[])(
       'runs the stated ladder under $vote',
-      ({ vote, survival, loss, resultShare }) => {
+      ({ vote, survival, loss, noInkLoss, resultShare }) => {
         const { shares, cells } = sourceInkShares();
         const minority = cellsWhere(shares, (share) => share > 0 && share < 0.5);
         const surface = cellsWhere(shares, (share) => share < 0.2);
+        // The cheap reading the docblock rejects, pinned because the gap to `surface` is its whole
+        // point — a figure quoted to reject a method drifts as readily as one quoted to justify one.
+        const noInk = cellsWhere(shares, (share) => share === 0);
 
         for (const [thickness, expected] of survival.entries()) {
           const { image } = quantiseImage(sheet, CALIBRATION({ vote, outlineExpansion: thickness }));
@@ -185,6 +203,7 @@ describe('the figures the quantiser docblocks state', () => {
 
           expect(shareOf(minority)).toBeCloseTo(expected, 1);
           expect(shareOf(surface)).toBeCloseTo(loss[thickness] ?? 0, 2);
+          expect(shareOf(noInk)).toBeCloseTo(noInkLoss[thickness] ?? 0, 2);
 
           let ink = 0;
           let opaque = 0;
@@ -217,7 +236,7 @@ describe('the figures the quantiser docblocks state', () => {
     ): readonly number[] => {
       const field = toConeField(image);
       return [1, 4, 8].map((block) =>
-        Number(meanCellDistance(reference, field, width, height, block).toFixed(2)),
+        Number(meanCellDistance(reference, field, width, height, block).toFixed(3)),
       );
     };
 
@@ -234,11 +253,13 @@ describe('the figures the quantiser docblocks state', () => {
         ),
       );
 
+      // Three decimals rather than the docblock's own one, because 15.75 rounds either way and the
+      // table says 15.7 — a two-decimal pin would not tell the two apart.
       expect(rows).toEqual([
-        [14.34, 4.73, 3.38],
-        [15.75, 4.44, 3.12],
-        [15.81, 4.47, 3.16],
-        [15.76, 4.48, 3.13],
+        [14.335, 4.734, 3.377],
+        [15.747, 4.44, 3.116],
+        [15.812, 4.472, 3.158],
+        [15.757, 4.476, 3.133],
       ]);
     }, 240_000);
 
@@ -268,10 +289,10 @@ describe('the figures the quantiser docblocks state', () => {
           ),
         ),
       ).toEqual([
-        [2.2, 0.75, 0.44],
-        [4.26, 1.43, 0.88],
-        [6.11, 2.52, 1.64],
-        [93.93, 84.98, 87.52],
+        [2.199, 0.75, 0.44],
+        [4.264, 1.428, 0.876],
+        [6.109, 2.516, 1.645],
+        [93.926, 84.982, 87.523],
       ]);
     }, 240_000);
   });
