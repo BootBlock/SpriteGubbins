@@ -141,10 +141,17 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
   },
   {
-    // Alibaba's Qwen-Image 3.0, released 21 July 2026, and the tightest published ceiling the whole
-    // specification still fits inside: 4.5K tokens against a prompt measuring ~3,600. Roomier targets
-    // fit it too — that is not the point. This is the one where the margin is small enough that the
-    // budget notice earns its place, and the first target where a *small* budget is not a warning.
+    // Alibaba's Qwen-Image 3.0, released 21 July 2026, and the tightest published ceiling this app
+    // has anything to say to: 4.5K tokens, against a library running ~3,100 to ~7,900 estimated
+    // tokens.
+    //
+    // **The description below said the whole specification fits inside it, and it does not.** The
+    // studio's opening configuration compiles to ~6,800 — half as long again as the budget — so the
+    // first thing that entry did for a reader who took it at its word was to contradict itself: the
+    // sentence promised a fit and `PromptBudgetNotice` fired on the same screen. What is true is a
+    // trade-off rather than a fit, and this is the one target where the trade-off is live, which is
+    // where the budget notice earns its place. `constants/models.test.ts` measures the range and
+    // holds the sentence to it.
     //
     // Not a thinking model — no reasoning pass is documented, and the model page lists structured
     // outputs as unsupported — so it gets the specification without the self-audit. Note that 3.0
@@ -152,7 +159,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'QWEN_IMAGE',
     name: 'Qwen-Image 3.0 (Alibaba)',
     description:
-      'Built for dense structured layouts and long briefs — at 4.5K tokens it is the tightest published ceiling the full specification still fits inside. Gets a plain negative-prompt block, because Qwen exposes negative_prompt as a documented parameter.',
+      'Built for dense structured layouts and long briefs, at a documented 4.5K tokens. That holds a sparse sheet — one facing, few components — and not the five-view directional sheet the studio opens on, which runs about half as long again. The budget notice under the prompt says where yours lands. Gets a plain negative-prompt block, because Qwen exposes negative_prompt as a documented parameter.',
     capabilities: {
       deliberates: false,
       emitsText: false,
@@ -180,7 +187,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'STABLE_DIFFUSION',
     name: 'Stable Diffusion (SD 1.5 / SDXL)',
     description:
-      'Appends a weighted negative-prompt block aimed at the two failures that actually recur: assembling the figure instead of exploding it, and adding shadows.',
+      'Appends a weighted negative-prompt block aimed at the two failures that actually recur: assembling the figure instead of exploding it, and adding shadows. Nothing this app composes fits CLIP’s 77-token window, so a base pipeline reads the opening and discards the rest — which is why no built-in preset targets it.',
     capabilities: {
       deliberates: false,
       emitsText: false,
@@ -206,7 +213,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'FLUX',
     name: 'Flux (open weights — FLUX.2 dev / klein)',
     description:
-      'Separate from Stable Diffusion because Black Forest Labs state outright that FLUX.2 does not support negative prompts — the SD block would be silently discarded — so the same constraints are restated positively, and stated first because only the first 512 tokens are read.',
+      'Separate from Stable Diffusion because Black Forest Labs state outright that FLUX.2 does not support negative prompts — the SD block would be silently discarded — so the same constraints are restated positively, and stated first because only the first 512 tokens are read. A sheet specification is several times that long, so the library ships no preset aimed at these weights.',
     capabilities: {
       deliberates: false,
       emitsText: false,
