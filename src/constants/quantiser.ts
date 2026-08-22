@@ -741,8 +741,9 @@ export const VOTE_METHOD_CHOICES = [
  *
  * What separates the patterns is what the eye does with them, measured on the reference sheet
  * (`test_sprites/armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the mesh
- * 210 × 209) as the mean scaled-OKLab distance from **the sheet's own cell means**: per pixel, then
- * over aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a dither is
+ * 209 × 209) as the mean scaled-OKLab distance from **the sheet's own cell means**: per pixel, then
+ * over aligned 4 × 4 and 8 × 8 blocks averaged in linear light, each block over whatever it holds
+ * where the sheet's own edge cuts it short. The second pair is what a dither is
  * *for*, since a pattern trades per-pixel accuracy for a local average.
  *
  * **The reference is the source's cell means rather than any sheet the pipeline produces, and it
@@ -757,12 +758,12 @@ export const VOTE_METHOD_CHOICES = [
  * column rather than their size.
  *
  * ```
- * budget 64      flat 13.3 / 3.92 / 2.58   BAYER_4 15.3 / 4.32 / 2.99   BAYER_8 15.3 / 4.31 / 2.98   BLUE_NOISE 15.3 / 4.35 / 3.02
- * budget 32      flat 14.3 / 4.75 / 3.38   BAYER_4 15.7 / 4.46 / 3.12   BAYER_8 15.8 / 4.49 / 3.17   BLUE_NOISE 15.7 / 4.49 / 3.15
- * budget 8       flat 21.0 / 7.74 / 6.11   BAYER_4 18.0 / 5.33 / 3.81   BAYER_8 18.1 / 5.35 / 3.83   BLUE_NOISE 18.1 / 5.29 / 3.72
- * Game Boy       flat 92.3 / 90.2 / 92.0   BAYER_4 93.5 / 85.7 / 87.8   BAYER_8 93.5 / 85.7 / 87.8   BLUE_NOISE 93.5 / 85.8 / 87.7
- * Mega Drive     flat 20.1 / 8.02 / 6.37   BAYER_4 21.9 / 4.97 / 3.55   BAYER_8 22.0 / 5.02 / 3.53   BLUE_NOISE 22.0 / 5.16 / 3.51
- * Master System  flat 23.9 / 9.56 / 7.10   BAYER_4 27.1 / 5.66 / 3.81   BAYER_8 27.1 / 5.87 / 3.93   BLUE_NOISE 27.0 / 6.04 / 3.83
+ * budget 64      flat 13.4 / 3.89 / 2.55   BAYER_4 15.4 / 4.27 / 2.95   BAYER_8 15.4 / 4.26 / 2.95   BLUE_NOISE 15.4 / 4.31 / 2.98
+ * budget 32      flat 14.3 / 4.73 / 3.38   BAYER_4 15.8 / 4.44 / 3.12   BAYER_8 15.8 / 4.47 / 3.16   BLUE_NOISE 15.8 / 4.48 / 3.13
+ * budget 8       flat 21.1 / 7.72 / 6.10   BAYER_4 18.1 / 5.32 / 3.79   BAYER_8 18.1 / 5.34 / 3.82   BLUE_NOISE 18.1 / 5.27 / 3.72
+ * Game Boy       flat 92.2 / 90.2 / 92.0   BAYER_4 93.3 / 85.7 / 87.8   BAYER_8 93.4 / 85.7 / 87.8   BLUE_NOISE 93.4 / 85.8 / 87.7
+ * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.0 / 4.94 / 3.56   BAYER_8 22.1 / 5.01 / 3.62   BLUE_NOISE 22.0 / 5.13 / 3.56
+ * Master System  flat 24.0 / 9.56 / 7.10   BAYER_4 27.2 / 5.71 / 3.98   BAYER_8 27.2 / 5.93 / 4.10   BLUE_NOISE 27.1 / 6.06 / 3.81
  * ```
  *
  * Three things to read out of that. **The per-pixel figure rises on five of the six cases**,
@@ -780,8 +781,8 @@ export const VOTE_METHOD_CHOICES = [
  * altogether, and all three land on the ordinary reading: per-pixel cost, block gain.
  *
  * The choice between the three patterns is about what each *looks* like rather than about fidelity.
- * They are not identical — the Master System's 4 × 4 figure spreads 0.38 across them — but that
- * spread is a tenth of the 3.90 between the flat step and the best of them, so it is not what a
+ * They are not identical — the Master System's 4 × 4 figure spreads 0.35 across them — but that
+ * spread is a tenth of the 3.85 between the flat step and the best of them, so it is not what a
  * reader should be choosing on.
  *
  * The labels' parentheticals carry the choosing half, per the select budget's rule; what each

@@ -51,6 +51,12 @@ export function boundaryMesh(image: ImageData, grid: PixelGrid): GridMesh {
  * The fallback {@link boundaryMesh} reaches for when an image holds too few boundaries to anchor a
  * measured mesh, and the mesh the crisp case measures out to — which is also what makes it the
  * right fixture for tests that are about the transforms rather than the measurement.
+ *
+ * It is held to the same end-cell bound the measured mesh is, deliberately: a fixture that can
+ * express a mesh the app is unable to produce is a fixture testing a fiction. So an `offset` of one
+ * or two pixels, or an `extent` leaving a band that short at the far end, comes back with that band
+ * merged into the cell beside it rather than standing as a cell of its own — see
+ * {@link boundEndCells}.
  */
 export function regularMesh(
   width: number,
@@ -64,9 +70,83 @@ export function regularMesh(
 /** Cell starts for one axis at a regular pitch and phase — the fallback, and the crisp case. */
 function regularStarts(extent: number, grid: PixelGrid, offset: number): number[] {
   const starts: number[] = [];
-  if (offset > 0) starts.push(0);
   for (let start = offset; start < extent; start += grid) starts.push(start);
-  return starts;
+  return boundEndCells(starts, extent, grid);
+}
+
+/**
+ * How far a cut may sit from where the walk expected it.
+ *
+ * `walkFrom` accepts a detected line within this of the expected position and re-anchors on it, so
+ * every interior cell it produces is between `grid − tolerance` and `grid + tolerance` wide.
+ */
+function axisTolerance(grid: PixelGrid): number {
+  return Math.max(1, Math.floor(grid / 3));
+}
+
+/**
+ * The narrowest an end cell may be: three source pixels, or the whole cell at a grid below that.
+ *
+ * **An absolute floor rather than a fraction of the grid**, because what is wrong with a one-pixel
+ * end band is absolute. `downscaleNearest` gives every cell one output pixel, so a band of one or
+ * two source pixels stands in the result exactly as wide as a full cell — and one or two pixels is
+ * not a band of anything: it is the backward walk stopping short of the edge, or the extent failing
+ * to divide by the pitch. Measured on the eight sheets in `test_sprites/`, every end band the mesh
+ * produced too narrow to be a cell was one or other of those two widths.
+ *
+ * **A proportional floor would take content with it, and that is the mistake this number avoids.** A
+ * margin the generator inset deliberately is content the reader paid for, at any width — art three
+ * pixels in from the corner at a grid of 8 is a case `quantiseImage.test.ts` states outright — and
+ * `grid − tolerance` would be 6 there, folding that margin into the art's own first cell and losing
+ * a cell of the sprite. Three is the smallest run that can hold a boundary and an interior, so it is
+ * the line below which a band cannot be a cell of artwork at any grid.
+ *
+ * `grid − 1` caps it, because at a grid of 2 or 3 the floor would otherwise reach a whole cell.
+ */
+function shortestEndCell(grid: PixelGrid): number {
+  return Math.min(SHORTEST_END_BAND, grid - 1);
+}
+
+/** See {@link shortestEndCell} — an end band of fewer source pixels than this is not a cell. */
+const SHORTEST_END_BAND = 3;
+
+/**
+ * The axis closed off at both ends, with an end cell too narrow to be a cell merged into its
+ * neighbour.
+ *
+ * **A partial cell at either end is content and is never cropped** — the art a generator inset from
+ * the corner is no more disposable than the art it cut short at the far edge. But `downscaleNearest`
+ * emits **one output pixel per cell**, so a band of one or two source pixels would carry the same
+ * weight in the result as a full cell, and the result would no longer be a reduction at one scale.
+ * Both ends can produce one: the walk's backward loop stops at a position between 1 and `grid − 1`,
+ * and the far edge closes the last cell wherever the extent happens to fall. On the eight sheets in
+ * `test_sprites/`, five of the sixteen sheet-and-keying combinations produced a leading band of one
+ * or two pixels, and `armour.png` unkeyed produced a one-pixel band at *both* ends of its x axis —
+ * which is how a 1254 × 1254 sheet came back 210 × 209 at a grid of 6.
+ *
+ * So a short end band is **merged** into the cell beside it rather than kept or dropped: its pixels
+ * stay in the sheet and vote in that cell's tally, weighted by the area they actually cover. The
+ * leading merge moves the first cut down to the image edge; the trailing merge drops the last cut
+ * and lets the edge close the cell before it. Nothing is deleted, and no output pixel stands for a
+ * band narrower than {@link shortestEndCell} — which is where the line is drawn, and why.
+ *
+ * **What this buys is an invariant the whole pipeline can be read against**: every interior cell is
+ * within tolerance of the grid, and an end cell holds at least three source pixels and fewer than
+ * `2 × grid`. It does *not* make the result's dimensions a function of the source and the grid alone
+ * — a mesh that follows drift honestly resolves a different number of cells on a keyed sheet than on
+ * the same sheet unkeyed, because each cut may move within tolerance and re-anchor there. That
+ * difference is the measurement working; a one-pixel band was not.
+ */
+function boundEndCells(starts: readonly number[], extent: number, grid: PixelGrid): number[] {
+  const first = starts[0];
+  if (first === undefined) return [];
+  const shortest = shortestEndCell(grid);
+  const bounded = first === 0 ? [...starts] : first < shortest ? [0, ...starts.slice(1)] : [0, ...starts];
+
+  const last = bounded[bounded.length - 1];
+  // A one-cell axis has no neighbour to merge into, and its single cell is the whole extent.
+  if (bounded.length > 1 && last !== undefined && extent - last < shortest) bounded.pop();
+  return bounded;
 }
 
 /**
@@ -87,9 +167,11 @@ function regularStarts(extent: number, grid: PixelGrid, offset: number): number[
  * **The result is strictly ascending by construction, and nothing needs to re-check it.** Every
  * forward step accepts a position within `tolerance` of the previous one plus `grid`, and
  * `grid − tolerance ≥ 1` at every grid this takes — so each accepted position exceeds its
- * predecessor by at least one, the backward walk decreases the same way and stops before 1, and the
- * prepended 0 sits strictly below the first accepted line. A dedupe pass here would be a guard
- * against a state the arithmetic rules out, wearing the look of handling it.
+ * predecessor by at least one, and the backward walk decreases the same way and stops before 1.
+ * {@link boundEndCells} closes the axis off at 0 without disturbing that: it either prepends 0
+ * below a first cut of at least three, or moves that first cut down to 0, and both sit strictly
+ * below the cut after them. A dedupe pass here would be a guard against a state
+ * the arithmetic rules out, wearing the look of handling it.
  */
 function meshAxis(axis: Float64Array, extent: number, grid: PixelGrid): number[] {
   const lines = boundaryClusters(axis).filter((line) => line.position < extent);
@@ -106,8 +188,7 @@ function meshAxis(axis: Float64Array, extent: number, grid: PixelGrid): number[]
   }
   if (best === null) return regularStarts(extent, grid, bestPhase(axis, grid));
 
-  const accepted = best.starts;
-  return accepted[0] === 0 ? accepted : [0, ...accepted];
+  return boundEndCells(best.starts, extent, grid);
 }
 
 /** One anchor's walk: the cuts it takes, and the evidence — the closeness score and captured mass. */
@@ -124,7 +205,7 @@ function walkFrom(
   extent: number,
   grid: PixelGrid,
 ): AxisWalk {
-  const tolerance = Math.max(1, Math.floor(grid / 3));
+  const tolerance = axisTolerance(grid);
   const starts: number[] = [anchor];
   let fit = 0;
   let mass = 0;
