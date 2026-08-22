@@ -34,6 +34,7 @@ import {
 } from '../constants/promptText/index.ts';
 import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
+import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
@@ -177,7 +178,12 @@ export function generatePrompt(
   // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
   // below — the two values and the flag that gates their block — so a heading with nothing under it
   // is not expressible, exactly as it is not for the two above.
-  const reference = styleReferenceFor(output.styleReference);
+  //
+  // Narrowed through the category first, for the reason the projection above is: a reference states
+  // the camera it was rendered under, and its characteristics carry that camera into section 2 as a
+  // measurement no resolver downstream can edit. A Diablo II reference on an INTERFACE would put
+  // “a tile edge runs two pixels sideways for every one it drops” above `Flat front elevation`.
+  const reference = styleReferenceFor(resolveStyleReference(category, output.styleReference));
 
   // Whether the render style withholds the surface rather than describing one, and what it withholds.
   // Read four times below — three conditionals and the paragraph that stands in for the lines they

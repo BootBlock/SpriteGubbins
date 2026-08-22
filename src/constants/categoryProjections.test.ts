@@ -51,9 +51,14 @@ describe('the table itself', () => {
   });
 
   it('leaves EFFECT every camera, because an effect matches the world it plays over', () => {
-    // The same argument `CATEGORY_DIRECTION_SETS` makes about this category, one axis over. Its four
-    // shipped presets stand at four different cameras on purpose.
+    // The same argument `CATEGORY_DIRECTION_SETS` makes about this category, one axis over — and the
+    // library is where it stops being an assertion: the eight shipped effect presets stand at six of
+    // the seven cameras on purpose, which is the count the table's docblock states.
     expect(CATEGORY_PROJECTIONS.EFFECT).toEqual(PROJECTIONS);
+
+    const effects = PRESETS.filter((preset) => preset.category === 'EFFECT');
+    expect(effects).toHaveLength(8);
+    expect(new Set(effects.map((preset) => preset.output.projection)).size).toBe(6);
   });
 
   it('leaves no projection of the union unreachable', () => {

@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { DEFAULT_IMAGE_CONFIG } from '../../constants/output/index.ts';
+import { supportsProjection } from '../../constants/categoryProjections.ts';
 import { DEFAULT_MODE_FOR, supportsMode } from '../../constants/sheetPlans/index.ts';
 import { PresetCardSpecs } from './PresetCardSpecs.tsx';
 
 /**
  * The three-term line under a preset's name.
  *
- * The contract worth pinning is the third term: a card is a promise about what loading the preset
- * gives you, so the sheet mode has to be the *resolved* one. Nothing shipped can break it — the
- * built-ins are checked pairing by pairing in `presetCoverage.test.ts` — so the case below is built
- * by hand, exactly as an imported pack can build one.
+ * The contract worth pinning is that a card is a promise about what loading the preset gives you, so
+ * the two terms a category can refuse — the sheet mode and the projection — have to be the
+ * *resolved* ones. Nothing shipped can break either: the built-ins are checked pairing by pairing in
+ * `presetCoverage.test.ts` and camera by camera in `categoryProjections.test.ts`. So the cases below
+ * are built by hand, exactly as an imported pack can build one.
  */
 
 /** The specs line, reached through a term no other element on it carries. */
@@ -55,5 +57,35 @@ describe('PresetCardSpecs', () => {
     // saying `CUTOUT_RIG_SINGLE_DIRECTION` here is the mismatch this resolution removes.
     expect(specs()).toHaveTextContent(DEFAULT_MODE_FOR.INTERFACE);
     expect(specs()).not.toHaveTextContent('CUTOUT_RIG_SINGLE_DIRECTION');
+  });
+
+  it('names the camera the category will actually be given, not the one it was handed', () => {
+    // The same route in, one term over: `parseImportedPreset` checks `projection` against the flat
+    // `PROJECTIONS` union with no category in scope. A widget is composited onto the screen rather
+    // than photographed in a world, so it has no top for an overhead camera to show.
+    expect(supportsProjection('INTERFACE', 'THREE_QUARTER_TOPDOWN')).toBe(false);
+
+    render(
+      <PresetCardSpecs
+        category="INTERFACE"
+        output={{ ...DEFAULT_IMAGE_CONFIG, projection: 'THREE_QUARTER_TOPDOWN' }}
+      />,
+    );
+
+    expect(specs()).toHaveTextContent('ORTHOGRAPHIC_FRONT');
+    expect(specs()).not.toHaveTextContent('THREE_QUARTER_TOPDOWN');
+  });
+
+  it('keeps a stored camera the category can be drawn under', () => {
+    // The resolution only ever narrows: eight of the nine categories are offered every camera, so a
+    // side-on terrain preset — which the library ships — must print the camera it stored.
+    render(
+      <PresetCardSpecs
+        category="TERRAIN"
+        output={{ ...DEFAULT_IMAGE_CONFIG, projection: 'ORTHOGRAPHIC_SIDE' }}
+      />,
+    );
+
+    expect(specs()).toHaveTextContent('ORTHOGRAPHIC_SIDE');
   });
 });

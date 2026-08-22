@@ -43,10 +43,11 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   makes about EFFECT, arriving at the opposite answer for the opposite reason. The facings and the
  *   camera are separate questions, and TERRAIN answers them differently: it is bound in that table
  *   and unbound in this one.
- * - **EFFECT keeps every projection**, for the reason that file already gives about it. Its four
- *   shipped presets stand at four different cameras — a flat front burst, an overhead pool, a
- *   side-on slash and a dimetric ground rune — because an effect is drawn to match the world it
- *   plays over, and the world is what the projection is about.
+ * - **EFFECT keeps every projection**, for the reason that file already gives about it. Its eight
+ *   shipped presets stand at six of the seven cameras — a flat front burst, an overhead muzzle
+ *   flash, a side-on impact spark, a dimetric shockwave, an angled-overhead frost nova and an
+ *   oblique status aura — because an effect is drawn to match the world it plays over, and the
+ *   world is what the projection is about.
  *
  * **The eight unbound categories take `PROJECTIONS` entire** rather than restating it, so a
  * projection added to the union reaches every subject that can be drawn under it in one edit — and
@@ -87,10 +88,10 @@ export function supportsProjection(category: SubjectCategory, projection: Projec
  * under, where the alternative is the self-contradicting prompt this table exists to remove.
  *
  * Every reader of `projection` goes through here — the compiler, the collapsed studio digest, the
- * split drawer's depth-order note and the control itself — so a stale value degrades to one answer
- * rather than to four. The camera elevation is then resolved against *this* answer rather than the
- * stored projection, because the two are one statement and resolving them against different cameras
- * is the disagreement `elevation.ts` was written to end.
+ * split drawer's depth-order note, the preset card's spec line and the control itself — so a stale
+ * value degrades to one answer rather than to five. The camera elevation is then resolved against
+ * *this* answer rather than the stored projection, because the two are one statement and resolving
+ * them against different cameras is the disagreement `elevation.ts` was written to end.
  */
 export function resolveProjection(category: SubjectCategory, projection: Projection): Projection {
   const offered = CATEGORY_PROJECTIONS[category];

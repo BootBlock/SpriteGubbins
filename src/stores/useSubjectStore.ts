@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
+import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { resolveCameraElevation } from '../constants/promptText/index.ts';
 import { resolveMode, resolveRigMode } from '../constants/sheetPlans/index.ts';
@@ -94,12 +95,17 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     const directions = resolveDirectionSet(category, output.directions);
     const projection = resolveProjection(category, output.projection);
     const cameraElevation = resolveCameraElevation(projection, output.cameraElevation);
+    // And the art style reference, which is the projection's second door: a reference states the
+    // camera it was rendered under and carries it into section 2 as a measurement, so a look the new
+    // subject cannot be drawn to goes rather than standing over a camera that contradicts it.
+    const styleReference = resolveStyleReference(category, output.styleReference);
     if (
       directionalMode !== output.directionalMode ||
       rigMode !== output.rigMode ||
       directions !== output.directions ||
       projection !== output.projection ||
       cameraElevation !== output.cameraElevation ||
+      styleReference !== output.styleReference ||
       output.sheetIndex !== 0
     ) {
       store.setOutputConfig({
@@ -109,6 +115,7 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
         directions,
         projection,
         cameraElevation,
+        styleReference,
         // Cleared with the set exactly as the control clears it, and only then: a facing pinned
         // against `THREE_CLASSIC` is one `SINGLE_FRONT` never turns to, and leaving it behind would
         // let a preset saved from here persist a facing its own set does not contain.

@@ -71,6 +71,12 @@ export function ProjectionFields() {
   const projection = resolveProjection(category, output.projection);
   const cameraChoices = projectionChoices(category);
 
+  // Whether the reader has anywhere to go for a free elevation, which the disabled reason below
+  // sends them to. The angled-overhead camera is the only projection that leaves the elevation open,
+  // and an INTERFACE is not offered it — so under that category the sentence would name an option
+  // the select above does not contain.
+  const elevationIsSettable = cameraChoices.some((choice) => choice.value === 'THREE_QUARTER_TOPDOWN');
+
   // What that projection leaves the elevation, which for all but one of them is a single figure.
   // The field's own value is resolved through the same range below, for the reason the projection
   // above is resolved: a stored pairing the projection cannot be drawn at would otherwise leave the
@@ -105,7 +111,11 @@ export function ProjectionFields() {
         step={ELEVATION_STEP}
         disabledReason={
           elevationIsFixed
-            ? `${projection} is a camera in its own right, and stands at ${String(elevationRange.min)}°. Choose THREE_QUARTER_TOPDOWN to set the elevation yourself.`
+            ? `${projection} is a camera in its own right, and stands at ${String(elevationRange.min)}°.${
+                elevationIsSettable
+                  ? ' Choose THREE_QUARTER_TOPDOWN to set the elevation yourself.'
+                  : ' This subject is drawn under that one camera, so there is no elevation to set.'
+              }`
             : ''
         }
         onChange={(value) => {

@@ -868,8 +868,8 @@ below was bought with one of those.
   control must reach the compiled prompt as stated, or not be on screen. The Directions control
   steers the directional core (the plans are functions of the chosen set) and is the run list for
   every `'run'` sheet; `resolveMode` / `resolveDirectionSet` / `resolveSheetIndex` /
-  `resolveProjection` degrade stored values a category cannot honour, and the digests report the
-  resolved answer, never the raw field.
+  `resolveProjection` / `resolveStyleReference` degrade stored values a category cannot honour, and
+  the digests report the resolved answer, never the raw field.
 - **State geometry, not adjectives.** A direction is an object yaw in degrees beneath a fixed
   camera, plus what that yaw *occludes* — a name like "side view" is satisfiable by a three-quarter
   view with moved details. A part is defined by where it **ends**: the trunk-termination paragraphs

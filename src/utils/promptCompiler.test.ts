@@ -1261,6 +1261,32 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(widget).not.toContain('the vertical screen axis carries both height and depth');
   });
 
+  it('never carries an art direction reference whose camera the category cannot be drawn under', () => {
+    // The projection's second door, and the one narrowing the select alone leaves open: a reference
+    // writes the projection *and* states it again in prose that reaches section 2 verbatim. Under
+    // INTERFACE the dimetric camera is degraded, so the measurement describing it must go with it —
+    // otherwise the prompt asks for one camera as a measurement and another as the projection.
+    const widget = generatePrompt(
+      'INTERFACE',
+      defaultSubjectFor('INTERFACE'),
+      withOutput({ styleReference: 'DIABLO_II', projection: 'DIMETRIC_2_1', cameraElevation: 30 }),
+    );
+
+    expect(widget).toContain(`- Projection: ${promptText.PROJECTION_TEXT.ORTHOGRAPHIC_FRONT}`);
+    expect(widget).not.toContain('two pixels sideways for every one it drops');
+    expect(widget).not.toContain('Art direction reference');
+
+    // And still carried wherever the subject can be drawn under that camera, which is the other
+    // eight categories — dropping it everywhere would delete the control rather than scope it.
+    const ground = generatePrompt(
+      'TERRAIN',
+      defaultSubjectFor('TERRAIN'),
+      withOutput({ styleReference: 'DIABLO_II', projection: 'DIMETRIC_2_1', cameraElevation: 30 }),
+    );
+
+    expect(ground).toContain('two pixels sideways for every one it drops');
+  });
+
   it('leaves a landform its side-on camera, which is what the cliff preset draws', () => {
     // The category that looks bound and is not. TERRAIN is pinned to `SINGLE_FRONT` for its facings
     // because a tile has no front to turn away from — the camera is a separate question, and an

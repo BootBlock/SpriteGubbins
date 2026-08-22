@@ -8,7 +8,7 @@ import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/defaults.ts';
 import { HARDWARE_PROFILE_CHOICES } from '../src/constants/hardware/index.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
 import { PALETTE_CHOICES } from '../src/constants/palettes/index.ts';
-import { STYLE_REFERENCE_CHOICES } from '../src/constants/styleReferences/index.ts';
+import { styleReferenceChoices } from '../src/constants/styleReferences/index.ts';
 import * as OUTPUT_CHOICES from '../src/constants/output/choices.ts';
 import type { OutputChoice } from '../src/constants/output/choices.ts';
 import { directionalModeChoices } from '../src/constants/output/directionalModeChoices.ts';
@@ -67,8 +67,12 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   PALETTE_CHOICES: PALETTE_CHOICES.map((choice) => choice.label),
   // The third list naming a real thing rather than a stored identifier — a published game, where the
   // two above name a machine and its colours. Same budget, same reason: the column is measured in
-  // characters and does not care what they mean.
-  STYLE_REFERENCE_CHOICES: STYLE_REFERENCE_CHOICES.map((choice) => choice.label),
+  // characters and does not care what they mean. Scoped to the category like the modes below,
+  // because a reference states the camera it was rendered under and a subject that cannot be drawn
+  // under it is not offered the look.
+  styleReferenceChoices: SUBJECT_CATEGORIES.flatMap((category) =>
+    styleReferenceChoices(category).map((choice) => choice.label),
+  ),
   DITHER_CHOICES: DITHER_CHOICES.map((choice) => choice.label),
   FRAME_ALIGNMENT_MODE_CHOICES: FRAME_ALIGNMENT_MODE_CHOICES.map((choice) => choice.label),
   VOTE_METHOD_CHOICES: VOTE_METHOD_CHOICES.map((choice) => choice.label),

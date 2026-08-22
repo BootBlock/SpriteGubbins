@@ -320,5 +320,37 @@ describe('useSubjectStore', () => {
 
       expect(useOutputStore.getState().output.cameraElevation).toBe(60);
     });
+
+    it('drops an art style reference the new subject cannot be drawn to match', () => {
+      // The projection's second door. A reference states the camera it was rendered under and
+      // carries it into section 2 as a measurement — “a tile edge runs two pixels sideways for every
+      // one it drops” is the 30° dimetric camera — so leaving it behind puts that measurement above
+      // a flat front elevation, and a preset saved from here would persist the pair.
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          styleReference: 'DIABLO_II',
+          projection: 'DIMETRIC_2_1',
+          cameraElevation: 30,
+        },
+      });
+      useSubjectStore.getState().setCategory('INTERFACE');
+
+      expect(useOutputStore.getState().output.styleReference).toBe('NONE');
+    });
+
+    it('keeps a reference the new subject can be drawn to match', () => {
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          styleReference: 'DIABLO_II',
+          projection: 'DIMETRIC_2_1',
+          cameraElevation: 30,
+        },
+      });
+      useSubjectStore.getState().setCategory('TERRAIN');
+
+      expect(useOutputStore.getState().output.styleReference).toBe('DIABLO_II');
+    });
   });
 });

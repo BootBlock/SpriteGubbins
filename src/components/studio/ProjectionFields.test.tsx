@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
+import { defaultSubjectFor } from '../../constants/categories/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { ProjectionFields } from './ProjectionFields.tsx';
 
 /**
@@ -21,6 +23,10 @@ function elevation(): HTMLInputElement {
 
 beforeEach(() => {
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
+  // The category decides which cameras the select offers, so it is part of this component's input.
+  // `setState` rather than `setCategory`, which would reconcile the output store as well and leave
+  // the case below unable to arrive holding an unhonourable projection.
+  useSubjectStore.setState({ category: 'CHARACTER', subject: defaultSubjectFor('CHARACTER') });
 });
 
 describe('ProjectionFields', () => {
@@ -56,6 +62,42 @@ describe('ProjectionFields', () => {
       fireEvent.change(elevation(), { target: { value: '40' } });
     });
     expect(useOutputStore.getState().output.cameraElevation).toBe(90);
+  });
+
+  it('offers a category only the cameras its subject can be drawn under', () => {
+    // A widget is composited onto the screen rather than photographed in a world, so INTERFACE is
+    // offered `ORTHOGRAPHIC_FRONT` alone — and a stored camera it cannot honour shows resolved,
+    // because the select cannot sit on a value its own options do not contain.
+    useSubjectStore.setState({ category: 'INTERFACE', subject: defaultSubjectFor('INTERFACE') });
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, projection: 'THREE_QUARTER_TOPDOWN', cameraElevation: 35 },
+    });
+    render(<ProjectionFields />);
+
+    const select = screen.getByRole('combobox', { name: 'Projection' });
+    expect(select).toHaveValue('ORTHOGRAPHIC_FRONT');
+    expect(screen.getAllByRole('option', { name: /^ORTHOGRAPHIC_FRONT/ })).toHaveLength(1);
+    expect(screen.queryByRole('option', { name: /^THREE_QUARTER_TOPDOWN/ })).toBeNull();
+    expect(elevation()).toHaveValue(0);
+  });
+
+  it('does not send a reader to a camera their category is not offered', () => {
+    // The elevation's disabled reason names the one projection that leaves the number open. Under a
+    // category that is not offered it, that sentence would point at an option the select above does
+    // not contain, so the reason says the subject has one camera instead.
+    useSubjectStore.setState({ category: 'INTERFACE', subject: defaultSubjectFor('INTERFACE') });
+    render(<ProjectionFields />);
+
+    expect(screen.getByText(/ORTHOGRAPHIC_FRONT is a camera in its own right/)).toBeInTheDocument();
+    expect(screen.queryByText(/Choose THREE_QUARTER_TOPDOWN/)).toBeNull();
+
+    // And still offered wherever it is reachable, which is the other eight categories.
+    useSubjectStore.setState({ category: 'TERRAIN', subject: defaultSubjectFor('TERRAIN') });
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, projection: 'PURE_TOPDOWN', cameraElevation: 90 },
+    });
+    render(<ProjectionFields />);
+    expect(screen.getAllByText(/Choose THREE_QUARTER_TOPDOWN/).length).toBeGreaterThan(0);
   });
 
   it('shows the elevation the prompt will carry, not one a stored pairing is holding', () => {

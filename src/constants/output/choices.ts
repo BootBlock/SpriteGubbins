@@ -23,11 +23,12 @@ import type { JointCapStyle, OverlapMargin } from '../../types/rigging.ts';
  * state, and leave the rest to `tooltips.ts`, which has no width to run out of.
  * `tests/select-option-labels.test.ts` enforces the budget and derives the number.
  *
- * **Every list here is offered whole, to every category.** The five that are not — the sheet mode,
- * the sheet of the series, the direction set, the rig mode and the projection — are built per
- * category in their own files, because each is a question a category can answer differently: see
- * `directionalModeChoices.ts`, `sheetChoices.ts`, `directionSetChoices.ts`, `rigModeChoices.ts` and
- * `projectionChoices.ts`.
+ * **Every list here is offered whole, to every category.** The six that are not — the sheet mode,
+ * the sheet of the series, the direction set, the rig mode, the projection and the art style
+ * reference — are built per category in their own files, because each is a question a category can
+ * answer differently: see `directionalModeChoices.ts`, `sheetChoices.ts`, `directionSetChoices.ts`,
+ * `rigModeChoices.ts`, `projectionChoices.ts`, and `styleReferences/styleReferenceChoices.ts` —
+ * which is filed with the library it labels rather than here, as the machine and palette lists are.
  */
 export interface OutputChoice<T extends string | number> {
   readonly value: T;

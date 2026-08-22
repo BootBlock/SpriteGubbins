@@ -6,7 +6,9 @@ import type { StyleReference } from '../../types/styleReference.ts';
 import { styleReferencePatch } from '../../utils/styleReferencePatch.ts';
 import { LABEL_BUDGET } from '../../../tests/selectLabelBudget.ts';
 import { resolveCameraElevation } from '../promptText/index.ts';
-import { STYLE_REFERENCE_CHOICES, STYLE_REFERENCES, styleReferenceFor } from './index.ts';
+import { STYLE_REFERENCES, styleReferenceChoices, styleReferenceFor } from './index.ts';
+import { supportsStyleReference } from '../categoryStyleReferences.ts';
+import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 
 /**
  * The art style reference library's own contract.
@@ -168,8 +170,38 @@ describe('every art style reference', () => {
   });
 
   it('offers every reference in the dropdown, NONE first', () => {
-    expect(STYLE_REFERENCE_CHOICES.map((choice) => choice.value)).toEqual([...STYLE_REFERENCE_IDS]);
-    expect(STYLE_REFERENCE_CHOICES[0]?.label).toContain('NONE');
+    // Against a category that can be drawn under every camera, which is eight of the nine — the
+    // ninth is the scoping, checked below.
+    expect(styleReferenceChoices('CHARACTER').map((choice) => choice.value)).toEqual([
+      ...STYLE_REFERENCE_IDS,
+    ]);
+    expect(styleReferenceChoices('CHARACTER')[0]?.label).toContain('NONE');
+  });
+
+  it('offers a category only the looks its subject can be drawn to match', () => {
+    // A reference states the camera it was rendered under, and its characteristics carry that camera
+    // into section 2 as a measurement no resolver downstream can edit. So a look whose projection the
+    // subject cannot be drawn under is not offered — which for INTERFACE removes the six side-on and
+    // the two dimetric references and keeps the four rendered flat on.
+    const offered = styleReferenceChoices('INTERFACE').map((choice) => choice.value);
+
+    expect(offered).toContain('NONE');
+    expect(offered.length).toBeLessThan(STYLE_REFERENCE_IDS.length);
+    for (const reference of REFERENCES) {
+      expect(
+        offered.includes(reference.id),
+        `${reference.id} is drawn under ${reference.settings.projection}`,
+      ).toBe(reference.settings.projection === 'ORTHOGRAPHIC_FRONT');
+    }
+  });
+
+  it('keeps NONE for every category, which is what the fallback rests on', () => {
+    // `resolveStyleReference` degrades to `NONE` rather than to a per-category default, so a category
+    // that could not be offered it would have nothing to degrade to.
+    for (const category of SUBJECT_CATEGORIES) {
+      expect(supportsStyleReference(category, 'NONE'), category).toBe(true);
+      expect(styleReferenceChoices(category).length).toBeGreaterThan(0);
+    }
   });
 });
 
