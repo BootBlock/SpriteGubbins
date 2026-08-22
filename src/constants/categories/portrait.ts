@@ -21,11 +21,13 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * together drop section 3's rotation, occlusion and landmark rules — forty lines about a rotation
  * this sheet does not have.
  *
- * **The one field that changes what the sheet contains is `Portrait Assembly Base`.** A flat portrait
- * is redrawn whole per expression; a layered one draws one head once and swaps the brows, eyes and
- * mouth over it, which is how a visual novel gets sixty expressions out of eight sprites. That is a
- * different component inventory from the same subject, and `sheetPlans/portrait.ts` is where it is
- * spelled out.
+ * **`Portrait Assembly Base` states how the set is meant to come apart, and it does not reshape the
+ * inventory.** A flat portrait is redrawn whole per expression; a layered one draws one head once
+ * and swaps the brows, eyes and mouth over it, which is how a visual novel gets sixty expressions
+ * out of eight sprites. Both are cutting instructions the reader applies to the same twelve
+ * drawings, so the field reaches section 1 verbatim and the plan stays a function of the category
+ * and the mode alone, as every other plan in this app is. `sheetPlans/portrait.ts` argues that at
+ * length, and `Extra Expressions` is where a reader asks for the feature pieces themselves.
  */
 export const PORTRAIT: CategoryDefinition = {
   label: 'Portrait / Character Bust',
@@ -131,7 +133,6 @@ export const PORTRAIT: CategoryDefinition = {
         'Half Body To Waist',
         'Three-Quarter Body To Thigh',
         'Full Body Standing',
-        'Head And Shoulders In A Vignette',
       ],
     },
     {

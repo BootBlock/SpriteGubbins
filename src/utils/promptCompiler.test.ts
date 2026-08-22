@@ -2269,6 +2269,17 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
    */
   const TARGET_SIZES = ['', '16 × 32 px', '512 × 512 px', 'as big as it needs to be'];
 
+  /**
+   * 30 seconds, because this is the one test in the suite whose cost is a *product* of four closed
+   * unions and the category list — and the category list grew by a third when PORTRAIT, ICON and
+   * BACKGROUND were added.
+   *
+   * Measured on that change: 2,947ms of the 5,000ms default when the file runs alone, and past the
+   * default under full-suite contention — so it failed on roughly one run in two, at random, which
+   * is worse than failing outright. The budget is stated here rather than raised for the whole suite
+   * because every other test in it is cheap, and a global default of 30s would stop a genuine hang
+   * being reported as one.
+   */
   it('never names a native pixel without carrying the block that defines one', () => {
     const offenders = new Set<string>();
     // Per term rather than one flag for the sweep, because a second entry in the table would
@@ -2331,7 +2342,7 @@ describe('generatePrompt — a term the prompt uses is a term the prompt defines
     expect([...offenders], `the prompt names a term it never defines:\n${[...offenders].join('\n')}`).toEqual(
       [],
     );
-  });
+  }, 30_000);
 });
 
 describe('generatePrompt — the companion component map', () => {

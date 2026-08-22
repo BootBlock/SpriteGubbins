@@ -8,8 +8,9 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * for laying one out, so it was the conspicuous gap: a nine-slice frame is not a prop, a loot item
  * or a building module, and none of the other six reaches it.
  *
- * **It is also the one category with no yaw and no elevation of its own**, which is why the two
- * sheet modes it supports both cover a single facing. Section 3's rules about views *disagreeing*
+ * **It has no yaw and no elevation of its own** — PORTRAIT, ICON and BACKGROUND joined it in that
+ * later, each for its own reason — which is why the two sheet modes it supports both cover a single
+ * facing. Section 3's rules about views *disagreeing*
  * are gated on `[IF:MULTI_DIRECTION]` and drop out entirely there, so a flat widget never reads
  * forty lines about a rotation it does not have — see `sheetPlans/interface.ts`, which declines the
  * two directional modes for that reason rather than by omission. Lighting is not in that list: a

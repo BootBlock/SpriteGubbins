@@ -35,7 +35,7 @@ import { resolveMode } from './modes.ts';
  * rests on that agreement as well: the rig it hands back is not filtered through this table, so a
  * category with the sheet but not the rig would be given one it does not support.
  *
- * The other five each argue their own case in their plan file, and this table is where those
+ * The other eight each argue their own case in their plan file, and this table is where those
  * arguments become enforceable:
  *
  * - **ITEM** — `item.ts`: an item "has no rig, which is why this category offers no cut-out mode".

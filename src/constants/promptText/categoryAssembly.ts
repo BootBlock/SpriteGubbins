@@ -50,12 +50,12 @@ import type { CategoryAssembly, SubjectCategory } from '../../types/subject.ts';
  * TERRAIN's exclusion line already uses for it.
  *
  * CHARACTER and CREATURE keep the pair that shipped. The figure vocabulary was always right for
- * those two, and this record is what stops it being read by the other seven.
+ * those two, and this record is what stops it being read by the other ten.
  */
 export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembly>> = {
   // The three body forms are the wording that shipped, unchanged: this is the one category the
-  // figure vocabulary was written for, and giving the other eight their own is what this record does
-  // rather than a rewrite of the two it always fitted.
+  // figure vocabulary was written for, and giving the other eleven their own is what this record
+  // does rather than a rewrite of the two it always fitted.
   CHARACTER: {
     statement: 'no assembled figure',
     negatives: ['assembled character', 'posed figure'],

@@ -16,7 +16,8 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * **The crop is the axis worth spending most of that variation on**, because it is the one setting a
  * project cannot change its mind about later: a dialogue box built for a head and shoulders cannot
  * take a half body, and a set drawn to two crops cannot be swapped one for another at runtime. So
- * the four cover a head-and-shoulders, a bust, a half body and a full standing figure.
+ * the four cover a head and shoulders, a bust to the chest, a head alone and a full standing
+ * figure.
  *
  * `SINGLE_FRONT` is the honest direction set rather than what makes the prompt coherent: the one
  * sheet mode this category has covers a single facing whatever the control says, so the set decides

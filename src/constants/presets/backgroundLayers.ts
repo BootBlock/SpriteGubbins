@@ -18,11 +18,12 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * a backdrop *does* have and a widget does not is depth — which is carried by the depth tier and the
  * palette, not by the camera.
  *
- * **Each of the four pins the playable-geometry exclusion or the seam one**, and between them they
- * say why a backdrop has two bans no other category needs. A ledge painted into the far band is a
- * ledge somebody will try to stand on, which costs a bug report rather than a redraw; a visible join
- * is the failure that only shows up once the band is scrolling, by which time the sheet has been
- * signed off.
+ * **The two looping presets pin the bans that only a looping band can break**, and between them
+ * they say why a backdrop has two exclusions no other category needs. A ledge painted into the far
+ * band is a ledge somebody will try to stand on, which costs a bug report rather than a redraw; a
+ * visible join is the failure that only shows up once the band is scrolling, by which time the sheet
+ * has been signed off. The two that do not loop pin what a still screen gets wrong instead —
+ * lettering baked into a title card, and foreground dressing a player reads as a pickup.
  */
 export const BACKGROUND_LAYER_PRESETS: readonly PresetArchetype[] = [
   {
@@ -33,7 +34,7 @@ export const BACKGROUND_LAYER_PRESETS: readonly PresetArchetype[] = [
     category: 'BACKGROUND',
     subject: {
       species: 'Near Treeline & Hedgerow',
-      gender: 'Far Parallax, Slowest',
+      gender: 'Near Parallax, Fastest',
       age: 'Golden Hour & Long Light',
       role: 'Establishing Vista',
       setting: 'High Fantasy Wilderness',
@@ -164,14 +165,17 @@ export const BACKGROUND_LAYER_PRESETS: readonly PresetArchetype[] = [
     category: 'BACKGROUND',
     subject: {
       species: 'Underwater Column & Kelp',
-      gender: 'Foreground Overlay, Ahead Of Play',
+      gender: 'Mid Parallax',
       age: 'Fog & Heavy Haze',
       role: 'Boss Chamber',
       setting: 'Tropical Island & Reef',
       build: 'Tall Vertical Column',
       silhouette: 'Sheer Cliff Wall',
       face_head: 'Colossal Statue',
-      anatomy: 'Seamless Band With Loose Overlays',
+      // The layer library's own assembly sentence is "nothing repeating", so a seamless band here
+      // would have section 1 asking for a loop while section 4 required a stack that never repeats.
+      // Stacked depth layers is what this plan actually cuts, and what the description promises.
+      anatomy: 'Stacked Depth Layers',
       clothing: 'Drifting Embers & Motes',
       worn_details: 'Hatched & Cross-Hatched Shading',
       primary_colours: 'Deep Teal Water & Sunlit Surface',

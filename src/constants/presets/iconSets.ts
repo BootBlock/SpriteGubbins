@@ -13,12 +13,14 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * for that reason, so the library is what demonstrates that the choice exists at all — four icon
  * sets under one camera would have taught a reader that icons have none.
  *
- * **All four pin the lettering exclusion or the plate one**, and between them they say why an icon
- * set has two bans no other category needs. A stack count, a cooldown and a keybind are drawn by the
- * engine at runtime over the top of the sprite, so an icon carrying one serves a single quantity in
- * a single language. The slot plate belongs to INTERFACE, whose own `Inventory Slot & Icon Plate`
- * option is exactly that piece — an icon sheet that draws its own plates delivers a set that cannot
- * be dropped into the interface the project already has.
+ * **The first two pin the two bans no other category needs**, and between them they say why. A
+ * stack count, a cooldown and a keybind are drawn by the engine at runtime over the top of the
+ * sprite, so an icon carrying one serves a single quantity in a single language. The slot plate
+ * belongs to INTERFACE, whose own `Inventory Slot & Icon Plate` option is exactly that piece — an
+ * icon sheet that draws its own plates delivers a set that cannot be dropped into the interface the
+ * project already has. The other two pin what their own deliverable gets wrong instead: a badge at
+ * 16 px is ruined by a shadow falling outside its cell, and a map marker attracts the ground it is
+ * meant to be placed on.
  *
  * `SINGLE_FRONT` is the honest direction set for the reason it is on every category bound to it: the
  * one mode here covers a single facing whatever the control says, and any wider set turns one grid

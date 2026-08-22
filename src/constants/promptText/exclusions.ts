@@ -94,13 +94,13 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // ban is the other one no other category needs — a portrait prompt attracts the conversation it
   // is drawn for, and an over-the-shoulder figure is neither scenery nor a prop.
   PORTRAIT:
-    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any second person, hand or over-the-shoulder figure; any prop, weapon or held object entering the crop; any speech bubble, name plate, caption or dialogue box; and any decorative frame, vignette or border around the head.',
+    'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any second person or hand, and anything drawn over the sitter’s shoulder; any prop, weapon or held object entering the crop; any speech bubble, name plate, caption or dialogue box; and any decorative frame, vignette or border around the head.',
   // The lettering ban is stated in full rather than by reference, and it is the sharpest version of
   // it in this record: a stack count, a cooldown and a keybind are the three things a real icon
   // appears to carry and the three an engine draws at runtime. The plate ban is this category’s
   // boundary with INTERFACE — an icon is the mark, and the slot it sits in belongs to the other
   // sheet.
-  ICON: 'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature holding or presenting the subject; any slot plate, frame, tooltip or interface chrome around a component; and any lettering, numeral, stack count, timer or key name on a component.',
+  ICON: 'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature holding or presenting the subject; any slot plate, tooltip or interface panel drawn behind or around a component; and any lettering, numeral, stack count, timer or key name on a component. A selected ring, a highlight halo and a tier mark are components of this sheet, each drawn clear in its own cell for the engine to lay over an icon; an input prompt is the blank cap or button shape the engine writes a binding onto, never the key name it is named after.',
   // No environment ban, for a third version of BUILDING’s reason: the scenery the other categories
   // forbid is this one’s entire deliverable. What is foreign to a backdrop is the *playfield* — the
   // things a player acts on — and playable geometry is named first because it is the one that costs
@@ -109,7 +109,7 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // clause is scoped to tiles meant to repeat, because the layer library’s panels do not loop at
   // all.
   BACKGROUND:
-    'Characters, creatures and vehicles; any platform, ledge, walkway or other geometry a player could stand on or collide with; any pickup, door or interactive object; interface, logo and lettering; and, on any band meant to loop, a visible join where it repeats or a landmark distinctive enough to be recognised twice across a scroll.',
+    'Any character, creature or vehicle drawn at the playfield’s own scale, or near enough the camera to read as an actor rather than as scenery; any platform, ledge, walkway or other geometry a player could stand on or collide with; any pickup, door or interactive object; interface, logo and lettering; and, on any band meant to loop, a visible join where it repeats or a landmark distinctive enough to be recognised twice across a scroll. A bird at distance, a wrecked hull, a derelict station on the horizon and anything else the inventory in section [SEC:INVENTORY] names are scenery, and are drawn.',
 };
 
 /**
@@ -238,12 +238,12 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // and overlays, so an unqualified “no marks” would fail it on the entries section 4 required. The
   // second half is the check this deliverable actually needs — an icon grid fails by disagreeing
   // with itself about weight and margin, and that only shows when the members are seen together.
-  ICON: 'Every component is a member of this one icon set or a piece laid over one — no anatomy, floor or terrain tiles, scenery, or slot plate behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.',
+  ICON: 'Every component is a member of this one icon set or a piece laid over one — no anatomy, floor or terrain tiles, scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.',
   // The seam check is scoped to bands meant to loop for the reason TERRAIN’s edge check is scoped to
   // tiles: the layer library’s panels do not loop, and an audit demanding a seamless join would fail
   // that sheet on the six pieces section 4 requires.
   BACKGROUND:
-    'Every component is a band of this one backdrop or a loose piece laid over one — no characters, creatures, vehicles, interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup. Every band meant to loop carries the same profile, materials and values at its left edge as at its right, so a run of it shows no join, and no looping band carries a mark that would be recognised twice across a scroll.',
+    'Every component is a band of this one backdrop or a loose piece laid over one — nothing drawn at the playfield’s own scale, no interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup. Every band meant to loop carries the same profile, materials and values at its left edge as at its right, so a run of it shows no join, and no looping band carries a mark that would be recognised twice across a scroll.',
 };
 
 /**
@@ -281,12 +281,15 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // the head for exactly that reason, so a border on one is the surround this term exists to
   // suppress.
   PORTRAIT: false,
-  // The near miss in this record, and the answer is INTERFACE’s boundary rather than an icon’s. An
-  // icon set ships beside plates and rarity frames — but those are INTERFACE’s components, named in
-  // its own `Inventory Slot & Icon Plate` option, and this category’s exclusions ban a slot plate
-  // behind an icon in as many words. What is left on an icon sheet is the decorative surround a
-  // generator adds unasked.
-  ICON: false,
+  // INTERFACE's answer, for INTERFACE's reason, and it took a review pass to get here. The *plate*
+  // an icon sits in is genuinely that category's component and this one's exclusions ban it, which
+  // is what made `false` look right. But `ICON_SYMBOL_SET`'s state group requires a selected ring
+  // and a highlight halo, and those are edges around something by construction: `--no border`
+  // suppresses exactly them, and `--no` cannot express the placement that would separate an edge the
+  // sheet requires from a surround a generator adds. The rule `modelWrapperText/midjourney.ts`
+  // states for this term is that it stays out wherever excluding it would take the sheet's own
+  // subject with it, and one of this sheet's three groups is that subject.
+  ICON: true,
   // A band has edges but no border: it is cut to a strip and butted against its own copy, so a frame
   // drawn round one is the surround this term suppresses — and a border would sit exactly where the
   // seam has to be invisible.
