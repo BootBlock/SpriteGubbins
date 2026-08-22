@@ -23,6 +23,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  */
 export const INTERFACE: CategoryDefinition = {
   label: 'Interface / HUD Element',
+  article: 'an',
   fields: [
     {
       key: 'species',

@@ -10,6 +10,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  */
 export const OBJECT: CategoryDefinition = {
   label: 'Interactive Object / Prop',
+  article: 'an',
   fields: [
     {
       key: 'species',

@@ -4,6 +4,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
 /** Monsters and beasts — non-humanoid limb layouts, biological rather than worn detail. */
 export const CREATURE: CategoryDefinition = {
   label: 'Creature / Monster',
+  article: 'a',
   fields: [
     {
       key: 'species',

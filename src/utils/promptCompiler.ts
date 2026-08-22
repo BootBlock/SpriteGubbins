@@ -32,7 +32,7 @@ import {
   VALIDATION_PASS_TEXT,
   validationPassFor,
 } from '../constants/promptText/index.ts';
-import { fieldLabelFor } from '../constants/categories/index.ts';
+import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
@@ -58,6 +58,7 @@ import {
   applyNumbering,
   applyOptionals,
   applySectionNumbers,
+  sectionNumbers,
   assertBlocksResolved,
   substitute,
 } from './templateEngine.ts';
@@ -194,6 +195,10 @@ export function generatePrompt(
 
   const values: Record<string, string> = {
     CATEGORY: category,
+    // The article belongs to the category rather than to the sentence, and is written down in
+    // `CATEGORY_OPTIONS` rather than derived from the identifier's first letter — English picks it
+    // by sound. See `CategoryDefinition.article`.
+    CATEGORY_ARTICLE: CATEGORY_OPTIONS[category].article,
     COMPONENT_COUNT: String(componentCount),
     COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, output.directions, output.sheetIndex, anatomy),
     // Every one of these is now a function of the category as well as the mode. That is the whole
@@ -429,7 +434,8 @@ export function generatePrompt(
   // conditionals, which is what closes the gap the rig section used to leave behind it. The marker
   // check sits *before* substitution: afterwards the text carries whatever the user typed, and a
   // subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
-  const sections = applySectionNumbers(applyConditionals(PROMPT_TEMPLATE, config));
+  const conditioned = applyConditionals(PROMPT_TEMPLATE, config);
+  const sections = applySectionNumbers(conditioned);
   const resolved = applyNumbering(applyOptionals(sections, values));
   assertBlocksResolved(resolved);
   const prompt = substitute(resolved, values);
@@ -445,6 +451,9 @@ export function generatePrompt(
     // block the prompt it wraps does not carry.
     nativeGrid: nativeScale !== null,
     palette: palette !== null,
+    // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
+    // wrapper naming a section cannot come to name a different one than the prose does.
+    sectionNumbers: sectionNumbers(conditioned),
   });
 }
 

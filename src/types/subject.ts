@@ -7,8 +7,9 @@
  * The kinds of thing the studio can describe.
  *
  * Each identifier is substituted into the compiled prompt verbatim — section 0 reads "components
- * that do not belong to a [DEFINE:CATEGORY]" — so it has to be a noun that survives being dropped
- * into a sentence, not an internal code.
+ * that do not belong to [DEFINE:CATEGORY_ARTICLE] [DEFINE:CATEGORY]" — so it has to be a noun that
+ * survives being dropped into a sentence, not an internal code. The article in front of it is the
+ * category's own, from `CategoryDefinition.article`, and not a word fixed in the template.
  *
  * **A new category appends.** This order is the category selector's, the Presets tab's collection
  * list, and the order `PRESETS` concatenates its collections in; a preset's position in that array
@@ -167,8 +168,9 @@ export interface FieldOption {
 }
 
 /**
- * A category's full definition: its display name, and the *inventory* of its sixteen fields — what
- * each one is called here, what it means here, and the values it suggests here.
+ * A category's full definition: its display name, the article its identifier takes in the compiled
+ * prompt, and the *inventory* of its sixteen fields — what each one is called here, what it means
+ * here, and the values it suggests here.
  *
  * **Not display order.** `SubjectForm` renders through `SUBJECT_FIELD_GROUPS`
  * (`constants/subjectGroups.ts`), which decides both the grouping and the order fields appear in,
@@ -178,6 +180,20 @@ export interface FieldOption {
  */
 export interface CategoryDefinition {
   readonly label: string;
+  /**
+   * The indefinite article the category identifier takes — section 0 reads "components that do not
+   * belong to [DEFINE:CATEGORY_ARTICLE] [DEFINE:CATEGORY]".
+   *
+   * **It is written down rather than derived, because the rule is about sound and not spelling.**
+   * The template used to fix `a` in the sentence, which is one word written for one category and
+   * read by all nine: four identifiers open with a vowel, so the four targets that reach this
+   * `[IF:RETURNS_TEXT]` paragraph were told the inventory might not belong to `a EFFECT` — the
+   * readers most likely to quote it back. Testing the first letter would fix those four and be
+   * wrong the first time a category opens with a consonantal vowel (a `UI` takes "a", a `HUD`
+   * takes "a") or a silent one (an `HERB` takes "an"). All nine happen to agree with the letter
+   * test today, and that agreement is a coincidence rather than a rule.
+   */
+  readonly article: 'a' | 'an';
   readonly fields: readonly FieldOption[];
 }
 

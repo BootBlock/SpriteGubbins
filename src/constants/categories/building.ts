@@ -10,6 +10,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  */
 export const BUILDING: CategoryDefinition = {
   label: 'Building / Environment Tile',
+  article: 'a',
   fields: [
     {
       key: 'species',

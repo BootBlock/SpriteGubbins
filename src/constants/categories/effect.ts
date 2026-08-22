@@ -19,6 +19,7 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  */
 export const EFFECT: CategoryDefinition = {
   label: 'Effect / VFX Sequence',
+  article: 'an',
   fields: [
     {
       key: 'species',

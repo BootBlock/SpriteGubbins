@@ -23,7 +23,7 @@ import {
 import type { OutputConfig } from '../types/output.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
-import type { SubjectDefinition } from '../types/subject.ts';
+import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts';
 import { styleReferencePatch } from './styleReferencePatch.ts';
 
@@ -366,6 +366,43 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
       // The clause that says a category disagreement is not ranked travels with the tripwire it
       // defers to — present together, absent together, never one without the other.
       expect(prompt.includes('never a conflict to rank'), targetModel).toBe(prompt.includes(TRIPWIRE));
+    }
+  });
+
+  /**
+   * The article each identifier takes, written out rather than read back from `CATEGORY_OPTIONS`.
+   * Taking it from the record the compiler takes it from would assert only that one value was
+   * copied twice, and would pass on a category authored `an CHARACTER` as readily as on `a EFFECT`.
+   */
+  const EXPECTED_ARTICLE: Readonly<Record<SubjectCategory, string>> = {
+    CHARACTER: 'a',
+    CREATURE: 'a',
+    OBJECT: 'an',
+    ITEM: 'an',
+    BUILDING: 'a',
+    VEHICLE: 'a',
+    EFFECT: 'an',
+    INTERFACE: 'an',
+    TERRAIN: 'a',
+  };
+
+  it('gives every category the indefinite article its own identifier takes', () => {
+    // The template used to fix `a` in this sentence, so four of the nine identifiers arrived as
+    // `a EFFECT`, `a INTERFACE`, `a ITEM` and `a OBJECT` — in the one paragraph written for the four
+    // targets that can quote it back. The article now comes from the category, so this walks all
+    // nine rather than the one the fixture happens to use.
+    for (const category of SUBJECT_CATEGORIES) {
+      const output = withOutput({ targetModel: 'GENERIC' });
+      const contract = sectionOf(
+        generatePrompt(category, defaultSubjectFor(category), output),
+        'NON-NEGOTIABLE OUTPUT CONTRACT',
+      ).replaceAll('\n', ' ');
+      const wrong = EXPECTED_ARTICLE[category] === 'a' ? 'an' : 'a';
+
+      expect(contract, category).toContain(`do not belong to ${EXPECTED_ARTICLE[category]} ${category}`);
+      // Both directions, because only one of them is what a first-letter test would catch — and a
+      // spelling test is the thing the written-down article exists instead of.
+      expect(contract, category).not.toContain(`do not belong to ${wrong} ${category}`);
     }
   });
 });
