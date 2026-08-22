@@ -25,6 +25,9 @@ type Job = { readonly kind: 'load' } | { readonly kind: 'quantise'; readonly set
 /** Said for both ways the thread can be unavailable, because they are one thing to a reader. */
 const THREAD_LOST = 'The quantiser could not start in this browser';
 
+/** Said for a reply the thread sent and this side could not read back. */
+const REPLY_LOST = 'The quantiser’s answer could not be read back from its thread';
+
 /** The thread, or `null` before the first sheet, after the tab is cleared, and after {@link lose}. */
 let thread: Worker | null = null;
 
@@ -47,9 +50,12 @@ let nextId = 0;
  * Driven in Edge on `test_sprites/armour.png` (1254 × 1254) at a grid of 6, every other dial at its
  * default: four steps of one slider 400 ms apart ran **four** transforms and settled 4082 ms after the
  * last step, against **three** and 2117 ms with this slot in place. Three rather than two because the
- * second step's transform had already begun when the third arrived, and a pass that has started cannot
- * be cancelled — there is no yield point inside `quantiseImage` to notice a newer call at, and putting
- * one there would make a pure function aware of the thread it happens to run on.
+ * slot holds the next question and not the running one: at roughly a second a pass, the first step was
+ * still running when the second and third arrived — so the second was overwritten and never ran — and
+ * the third had started by the time the fourth arrived. The four steps came back as outline expansions
+ * 1, 2, 3 and 4 before, and 1, 3 and 4 after. A pass that has started cannot be cancelled, because
+ * there is no yield point inside `quantiseImage` to notice a newer call at, and putting one there would
+ * make a pure function aware of the thread it happens to run on.
  *
  * `QUANTISE_DEBOUNCE_MS` does not reach any of this. It suppresses the intermediate states of a number
  * being *typed*, which arrive faster than 250 ms apart; a slider step outlives it and is posted.
@@ -60,8 +66,9 @@ let running: QuantiseSettings | null = null;
  * The newest question asked while {@link running}, or `null` when there is none.
  *
  * One slot rather than a queue, because every entry but the last is a settings value the reader has
- * already left behind. Superseding it costs nothing: the reply to a transform nobody is waiting for is
- * discarded by {@link receive} anyway, so all a queued job ever bought was the CPU to compute it.
+ * already left behind. Superseding one costs nothing that was worth having: a job that never runs files
+ * no answer, and an answer to settings the reader has moved off is one `useQuantiseWork` finds stale
+ * the moment it arrives — so all a queued job ever bought was the CPU it took to compute.
  */
 let pending: QuantiseSettings | null = null;
 
@@ -91,8 +98,8 @@ function receive(event: MessageEvent<unknown>): void {
   file(reply, job);
 
   // The queue is one deep, so a transform replying is what lets the next one start — including a
-  // transform that *failed*, which has still stopped running. Settled after the answer is filed, so
-  // the reader sees the result at the moment it arrives rather than one message loop later.
+  // transform that *failed*, which has still stopped running. The answer is filed first so that the
+  // store already holds it if starting the next question throws.
   if (job.kind === 'quantise') settle();
 }
 
@@ -135,6 +142,35 @@ function settle(): void {
 }
 
 /**
+ * A reply the worker sent that will not deserialise on arrival.
+ *
+ * **No `message` follows one of these and no `error` fires**, so nothing else settles the job it was
+ * the answer to. Before the slot existed that stranded one entry in {@link jobs} and suppressed that
+ * one question; now it would leave {@link running} set on a transform that can never reply, and every
+ * later question would queue behind it for the rest of the session. `autoTuneSession.ts` and
+ * `sheetWriteSession.ts` both guard the same gap, in the same place, for the same reason.
+ *
+ * The event carries no correlation id, so there is no telling which outstanding call it belonged to.
+ * Everything outstanding is failed together, which is honest about what is now unknown and is what
+ * puts a sentence on screen in place of a tab that spins for ever. A `QuantiseResult` is much the
+ * largest thing this protocol sends back, so the transform is the realistic one either way.
+ *
+ * **The thread is kept**, unlike {@link lose}: it still holds the sheet, and a reply that would not
+ * come back says nothing about the next one. So the reader moves a dial and is asked again.
+ */
+function unreadable(): void {
+  const answers = useQuantiseAnswerStore.getState();
+  for (const job of jobs.values()) {
+    if (job.kind === 'quantise') {
+      answers.attempted({ kind: 'failed', settings: job.settings, reason: REPLY_LOST });
+    } else {
+      answers.surveyed({ kind: 'failed', reason: REPLY_LOST });
+    }
+  }
+  forget();
+}
+
+/**
  * Give up on the thread, and stay given up until the session ends.
  *
  * Both causes are properties of the browser rather than of the sheet — `new Worker` throws where
@@ -169,6 +205,7 @@ function connect(): Worker | null {
 
   started.addEventListener('message', receive);
   started.addEventListener('error', lose);
+  started.addEventListener('messageerror', unreadable);
   thread = started;
   return started;
 }
@@ -203,11 +240,14 @@ export function loadSheet(image: ImageData): void {
 /**
  * Ask for the sheet at these settings, coalescing anything asked while a transform is running.
  *
- * Three cases, and only the first posts a call: the worker is idle, so this starts; it is already
- * running exactly this question, so there is nothing to do and nothing to queue; or it is running an
- * older one, and this becomes the single job that starts when that one replies. The last case also
- * *clears* a queued value the caller has since moved off — the caller only ever asks for the settings
- * in force, so anything queued that differs from them has no reader left.
+ * Three cases, and only the first posts a call:
+ *
+ * - The worker is idle, so this question starts now.
+ * - It is already running exactly this question, so nothing is posted and the queue is *emptied* —
+ *   the caller only ever asks for the settings in force, so a queued value it has since moved back
+ *   off has no reader left, and running it would recompute the answer about to arrive.
+ * - It is running an older question, so this becomes the single job that starts when that one
+ *   replies, displacing whatever was queued before it for the same reason.
  *
  * The second case matters beyond coalescing, because the session outlives the tab: a user who sets a
  * grid and navigates away before the answer lands comes back with no result and no memory of having
@@ -218,8 +258,10 @@ export function quantiseSheet(settings: QuantiseSettings): void {
     pending = sameQuantiseSettings(running, settings) ? null : settings;
     return;
   }
-  // Only what actually reached the thread counts as running, or a session that has lost its thread
-  // would sit holding a transform that will never reply and refuse every question after it.
+  // Only what actually reached the thread counts as running, so that the slot means what its name
+  // says. Today every path that stops {@link send} posting has already run {@link forget}, so nothing
+  // observable turns on it — the alternative is a variable that is true of the code and false of the
+  // world, which is what the next reader of it would be misled by.
   running = send({ kind: 'quantise', settings }, { kind: 'quantise', settings }) ? settings : null;
 }
 

@@ -30,10 +30,15 @@ import type { QuantiseCall, QuantiseReply } from './quantiseProtocol.ts';
  * **The queue is bounded on the other side, not here.** A `quantise` posted while one is running waits
  * behind it in this loop and cannot be skipped once it arrives — there is no yield point inside
  * `quantiseImage` to notice a newer call at, and putting one there would make a pure function aware of
- * the thread it happens to be on. So `quantiseSession.ts` holds at most one `quantise` outstanding and
- * posts the next only when the previous replies, which is what keeps this loop from ever holding two.
- * A second sender would break that, and nothing here would say so: the session is the only owner of
- * this thread, and it stays that way.
+ * the thread it happens to be on. So `quantiseSession.ts` holds at most one `quantise` outstanding per
+ * loaded sheet, and posts the next only when the previous replies.
+ *
+ * **Per sheet, not outright**, because a new sheet abandons the transform of the old one rather than
+ * waiting for it: this loop can hold a `quantise` about the sheet before last, the `load` that replaced
+ * it, and a `quantise` about the new one. The first of those finishes into a reply the session no longer
+ * recognises, which is the cost of not making the reader wait to drop a second sheet. A second *sender*
+ * would break the bound properly, and nothing here would say so: the session is the only owner of this
+ * thread, and it stays that way.
  *
  * Nothing here is quantiser logic. Every line of that is in `src/utils/`, pure and tested without a
  * DOM; this file is the thread it runs on.
