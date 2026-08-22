@@ -73,11 +73,10 @@ describe('quantiseSession', () => {
   it('starts one thread and sends the sheet to it once', () => {
     loadSheet(createImage(64, 64));
     quantiseSheet(settingsAt(8));
-    quantiseSheet(settingsAt(4));
 
     expect(FakeWorker.started).toHaveLength(1);
     expect(thread().of('load')).toHaveLength(1);
-    expect(thread().of('quantise')).toHaveLength(2);
+    expect(thread().of('quantise')).toHaveLength(1);
   });
 
   it('files what came back against the question it answered', () => {
@@ -95,12 +94,123 @@ describe('quantiseSession', () => {
   it('does not ask twice for a question already outstanding', () => {
     // The case the tab cannot see. A user who sets a grid and navigates away before the answer lands
     // comes back to a component that has no result and no memory of having asked — so the guard has
-    // to be here, where the outstanding jobs are, rather than in the hook that comes and goes.
+    // to be here, which is where the outstanding transform is known, rather than in the hook that
+    // comes and goes.
     loadSheet(createImage(64, 64));
     quantiseSheet(settingsAt(8));
     quantiseSheet(settingsAt(8));
 
     expect(thread().of('quantise')).toHaveLength(1);
+  });
+
+  it('runs one transform for a run of settings the reader passed through', () => {
+    // The reported failure. A slider step outlives the 250 ms debounce, so each one reaches here; the
+    // worker has a single message loop, so each would be computed to completion behind the last while
+    // the reader waited for a position they had already left. Counted rather than timed: four steps
+    // ask four times, and only the first and the one they stopped on are ever posted.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+    quantiseSheet(settingsAt(7));
+    quantiseSheet(settingsAt(6));
+    quantiseSheet(settingsAt(5));
+
+    expect(thread().of('quantise')).toHaveLength(1);
+
+    thread().answer({ id: thread().lastId('quantise'), kind: 'quantised', result: resultOf(8) });
+
+    const asked = thread().of('quantise');
+    expect(asked).toHaveLength(2);
+    expect(asked[1]?.request).toEqual({ kind: 'quantise', settings: settingsAt(5) });
+  });
+
+  it('drops the queued transform when the reader returns to the one already running', () => {
+    // Stepping a slider back to where it started. The answer being computed is the answer wanted, so
+    // there is nothing left to run afterwards — queueing it anyway would recompute a result the tab
+    // is about to be handed.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+    quantiseSheet(settingsAt(5));
+    quantiseSheet(settingsAt(8));
+
+    thread().answer({ id: thread().lastId('quantise'), kind: 'quantised', result: resultOf(8) });
+
+    expect(thread().of('quantise')).toHaveLength(1);
+  });
+
+  it('starts the queued transform after the one before it failed', () => {
+    // A failure stops the worker running just as an answer does, so it has to release the queue too.
+    // Left out, one out-of-memory transform would silently end every transform for the rest of the
+    // session — the tab would ask, the session would queue, and nothing would ever start it.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(1));
+    quantiseSheet(settingsAt(8));
+
+    thread().answer({ id: thread().lastId('quantise'), kind: 'failed', reason: 'Out of memory' });
+
+    const asked = thread().of('quantise');
+    expect(asked).toHaveLength(2);
+    expect(asked[1]?.request).toEqual({ kind: 'quantise', settings: settingsAt(8) });
+  });
+
+  it('forgets both the running and the queued transform when the next sheet arrives', () => {
+    // Two claims, because dropping only the bookkeeping passes the weaker half of each. The queued job
+    // names settings the *previous* sheet was being read at, so running it would file an answer nobody
+    // asked for — and the slot has to be released as well, or the new sheet's own question queues
+    // behind a transform whose reply this side has already stopped recognising, for ever.
+    loadSheet(createImage(64, 64));
+    quantiseSheet(settingsAt(8));
+    const stale = thread().lastId('quantise');
+    quantiseSheet(settingsAt(5));
+
+    loadSheet(createImage(32, 32));
+    quantiseSheet(settingsAt(3));
+
+    const asked = thread().of('quantise');
+    expect(asked).toHaveLength(2);
+    expect(asked[1]?.request).toEqual({ kind: 'quantise', settings: settingsAt(3) });
+
+    // The abandoned reply, then the one that is wanted. Neither may start the settings queued against
+    // the sheet that has gone.
+    thread().answer({ id: stale, kind: 'quantised', result: resultOf(8) });
+    thread().answer({ id: thread().lastId('quantise'), kind: 'quantised', result: resultOf(3) });
+
+    expect(thread().of('quantise')).toHaveLength(2);
+  });
+
+  it('releases the slot when a reply cannot be read back, and says so', () => {
+    // `messageerror` is the third way a reply never arrives, and the only one that fires no `error`
+    // and no `message`. Left unanswered it holds the slot on a transform that can never reply, and
+    // every later question queues behind it for the rest of the session.
+    loadSheet(createImage(64, 64));
+    thread().answer({ id: thread().lastId('load'), kind: 'loaded', facts: FACTS });
+    quantiseSheet(settingsAt(8));
+
+    thread().unreadable();
+
+    expect(useQuantiseAnswerStore.getState().attempt).toEqual({
+      kind: 'failed',
+      settings: settingsAt(8),
+      reason: 'The quantiser’s answer could not be read back from its thread',
+    });
+    // The thread is kept — it still holds the sheet — so the next question is asked of it as usual.
+    expect(useQuantiseAnswerStore.getState().fatal).toBeNull();
+    quantiseSheet(settingsAt(5));
+    expect(FakeWorker.started).toHaveLength(1);
+    expect(thread().of('quantise')).toHaveLength(2);
+  });
+
+  it('files an unreadable reply against the survey when that is what was outstanding', () => {
+    // The event carries no correlation id, so what it is failed against is whatever was outstanding.
+    // A survey is filed against the sheet rather than against any settings, which is what lets the
+    // tab stop waiting on a scale reading that is never coming.
+    loadSheet(createImage(64, 64));
+
+    thread().unreadable();
+
+    expect(useQuantiseAnswerStore.getState().survey).toEqual({
+      kind: 'failed',
+      reason: 'The quantiser’s answer could not be read back from its thread',
+    });
   });
 
   it('asks again once the outstanding answer has arrived and been superseded', () => {
@@ -169,8 +279,8 @@ describe('quantiseSession', () => {
     // next image meets the same failure. A session that reconnected here would put a working preview
     // under the banner saying the quantiser could not start — and `fatal` has no way back, by
     // design. It also matters that the dead thread is dropped: a terminated worker still accepts
-    // `postMessage`, so a job posted to one is never answered and never leaves `jobs`, where the
-    // in-flight guard would then suppress that question for the rest of the session.
+    // `postMessage`, so a job posted to one is never answered — which would leave the slot held by a
+    // transform that can never reply, and every later question queued behind it.
     loadSheet(createImage(64, 64));
     const first = thread();
     first.die();

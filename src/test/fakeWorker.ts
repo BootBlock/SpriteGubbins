@@ -44,6 +44,14 @@ export class FakeWorker {
     for (const listener of this.listeners.get('message') ?? []) listener({ data: reply });
   }
 
+  /**
+   * A reply the thread sent that will not deserialise on arrival — no `message` follows one of these
+   * and no `error` fires, which is what makes it a separate event to answer.
+   */
+  unreadable(): void {
+    for (const listener of this.listeners.get('messageerror') ?? []) listener(new Event('messageerror'));
+  }
+
   /** The thread itself failing, which is the one thing no later sheet recovers from. */
   die(): void {
     for (const listener of this.listeners.get('error') ?? []) listener(new Event('error'));
