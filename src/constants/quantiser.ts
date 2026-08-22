@@ -680,10 +680,10 @@ export const VOTE_METHOD_CHOICES = [
  * {@link DITHER_SHORTLIST} — so a cheaper tier would have been a worse result at no saving.
  *
  * What separates the patterns is what the eye does with them, measured on the reference sheet
- * (`armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the resolved sheet
- * 211 × 209) as the mean scaled-OKLab distance from that resolved sheet: per pixel, then over
- * aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a dither is
- * *for*, since a pattern trades per-pixel accuracy for a local average.
+ * (`test_sprites/armour.png`, grid 6, the standard vote, no keying, the cleanup dials off, the
+ * resolved sheet 211 × 209) as the mean scaled-OKLab distance from that resolved sheet: per pixel,
+ * then over aligned 4 × 4 and 8 × 8 blocks averaged in linear light. The second pair is what a
+ * dither is *for*, since a pattern trades per-pixel accuracy for a local average.
  *
  * ```
  * budget 64      flat 1.85 / 0.78 / 0.48   BAYER_4 2.10 / 0.72 / 0.43   BAYER_8 2.12 / 0.73 / 0.43   BLUE_NOISE 2.12 / 0.73 / 0.42
@@ -964,8 +964,9 @@ export const SCATTERED_SPRITE_CEILING = 512;
  * silhouette's mirror moves the centre by `d / 2`. Eight pixels of reach therefore covers a limb,
  * a weapon or a cloak extending sixteen drawn pixels past what the other side holds, which is well
  * past anything a sprite drawn at 16 to 64 pixels a side can carry. The reference sheet
- * (`armour.png`, 1254², grid 6) separates into fifteen pieces measuring 24 to 35 drawn pixels
- * across, where the quarter-width bound below is the binding one on all but the widest of them.
+ * (`test_sprites/armour.png`, 1254², grid 6) separates into fifteen pieces measuring 24 to 35 drawn
+ * pixels across, where the quarter-width bound below is the binding one on all but the widest of
+ * them.
  *
  * It is a **bound on cost as much as on the claim**: the sweep is `(4 × reach + 1)` scorings of a
  * whole box, so an unbounded search would be quadratic in the widest sprite on the sheet while a
@@ -1251,13 +1252,14 @@ export const DIFFERENCE_PRECISION = 64;
  * than either: the scale is a way of *looking*, so what it wants is a handful of settled rungs a
  * reader can go back and forth between, not a continuum they have to re-find.
  *
- * The rungs are read off the reference sheet (`armour.png`, 1254², grid 6, the standard vote, a
- * budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75 10.3, p90 54.8, p99
- * 120.8 and peaks at 180 — roughly seven cells in ten near-exact, and a tail that is the sheet's
- * edges. Against that: **4** grades the near-exact seventy per cent and saturates the rest, **32**
- * is the default because it puts the whole of what a dial moves across the ramp — a second cleanup
- * pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed* sheet needs, where a
- * silhouette cell whose coverage flipped scores past 200 on the alpha axis alone.
+ * The rungs are read off the reference sheet (`test_sprites/armour.png`, 1254², grid 6, the
+ * standard vote, a budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75
+ * 10.3, p90 54.8, p99 120.8 and peaks at 180 — roughly seven cells in ten near-exact, and a tail
+ * that is the sheet's edges. Against that: **4** grades the near-exact seventy per cent and
+ * saturates the rest, **32** is the default because it puts the whole of what a dial moves across
+ * the ramp — a second cleanup pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed*
+ * sheet needs, where a silhouette cell whose coverage flipped scores past 200 on the alpha axis
+ * alone.
  */
 export const DIFFERENCE_SCALES = [4, 8, 16, 32, 64, 128] as const;
 

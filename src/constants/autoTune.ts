@@ -20,11 +20,11 @@ import type { TuneStageName } from '../types/autoTune.ts';
  * dial off the ladder; four stages can be in that state at once. See `withIncumbent` for why the
  * incumbent is in the set at all.
  *
- * **Measured on the reference sheet** (`armour.png`, 1254², a grid of 6, no keying, no colour
- * budget, every dial at its opening position), driven in Edge: three crops of 240 px, 35 positions
- * run — the ink stages skip, because the reading settles on `K_CENTROID` — and **7.8 seconds** from
- * the press to the dials moving. That is the figure the guidance's "a few seconds" is stated
- * against, and the one a change to any ladder here has to be judged by.
+ * **Measured on the reference sheet** (`test_sprites/armour.png`, 1254², a grid of 6, no keying, no
+ * colour budget, every dial at its opening position), driven in Edge: three crops of 240 px, 35
+ * positions run — the ink stages skip, because the reading settles on `K_CENTROID` — and **7.8
+ * seconds** from the press to the dials moving. That is the figure the guidance's "a few seconds"
+ * is stated against, and the one a change to any ladder here has to be judged by.
  *
  * **The sweep chose `K_CENTROID` on that sheet where a reader would likely choose `INK_WEIGHTED`,
  * and that is the objective doing what it says rather than a defect.** A resampled sheet has soft

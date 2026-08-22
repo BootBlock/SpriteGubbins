@@ -1137,6 +1137,53 @@ the `verify` skill covers this.
 - The global `:focus-visible` ring in `index.css` covers the whole app — don't remove it
   per-component, and don't re-implement it either.
 
+## The test sprite sheets live in `test_sprites/` (mandatory)
+
+Anything that needs a **real** sprite sheet — driving the quantiser in the browser through the
+`verify` skill, a scratch decode that measures a dial, a screenshot for an issue — takes one of the
+eight sheets in [test_sprites](test_sprites). They are generated output from the models this app
+writes prompts for, so they carry what a reader's own sheet carries: a resampled grid, a noisy key
+colour, and dimensions that divide into nothing.
+
+**`armour.png` moved here from the repository root**, and it is still *the reference sheet*: every
+calibration figure in `src/constants/quantiser.ts` and `src/constants/autoTune.ts` is measured on it
+and each docblock names it as `test_sprites/armour.png`. A figure re-measured on a different sheet is
+a different claim and has to say which sheet it came from. **Nothing else moves it** — the point of a
+reference is that the ladders stay comparable across changes.
+
+**The other seven exist so a recalibration can be checked against a sheet it was not tuned on.** A
+dial fitted to fifteen armour pieces on a 1254² page is fitted to one layout, one palette and one
+subject; the terrain tiles are flat colour with hard edges, the UI sheet is thin strokes and
+gradients, and the vehicles are dense rust texture. Those are three different things to get wrong,
+and they are on different sheets on purpose.
+
+| Sheet | Size | What it holds |
+| --- | --- | --- |
+| `armour.png` | 1254² | The reference. Three rows of five: helmet, torso, hips, green and gold, five facings each. |
+| `cyborg_black_red.png` | 1254² | The same three-by-five gear layout in a darker, higher-contrast palette with emissive green. |
+| `character_space_marine_blue.png` | 1672 × 941 | Three rows of five gear pieces with a cloak — large soft cloth areas beside fine metal trim. |
+| `cyborg_monk.png` | 1536 × 1024 | A whole character in parts — head, torso, arms, hands, legs — many facings each, and the rows are of uneven length. |
+| `cyborg_healer.png` | 1536 × 1024 | The same, plus loose accessories (a rosary, bells, a robe) that belong to no row. |
+| `three-quarter-view_tiles1.png` | 1254² | Terrain tiles, three rows of eight, with wide empty margins on all four sides. |
+| `ui_elements1.png` | 1672 × 941 | Frames, bars, buttons and cursors — thin strokes, five rows of uneven length. |
+| `vehicles_and_props.png` | 1672 × 941 | Vehicles, wheels, barrels and barricades in three-quarter view, four rows of six. |
+
+**Three properties they all share, and each one breaks something that a synthetic fixture does not:**
+
+- **The key colour is magenta, and it is not flat.** Measured over the outer border, `armour.png`
+  runs `#e502e7` to `#f723fa` and `character_space_marine_blue.png` — the widest of the eight —
+  runs `#db02d9` to `#ef25f5`. These sheets were resampled on the way out of the generator, so the
+  key carries the resampler's ringing. That spread is what the keying tolerance is *for*, and a test
+  or a measurement that assumes one exact background colour passes against a hand-built fixture and
+  is wrong on all eight of these.
+- **Every one is PNG colour type 2** — 8-bit truecolour, non-interlaced, **no alpha channel**. So
+  `src/test/decodePng.ts` reads none of them: it handles colour types 3 and 6 and throws on the
+  rest, by design, because it exists to check what `encodePng` writes. A scratch decode is still
+  hand-rolled, as the calibration method has always required.
+- **No sheet's dimensions divide by its grid.** 1254², 1536 × 1024 and 1672 × 941 are what the
+  generator returned, not what a cell count implies — which is the case the splitter and the
+  bounding-box pass actually have to handle.
+
 ## Verifying a change
 
 ```bash
