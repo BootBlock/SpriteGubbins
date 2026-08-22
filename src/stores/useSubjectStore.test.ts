@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
+import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { DEFAULT_MODE_FOR } from '../constants/sheetPlans/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
@@ -258,6 +259,98 @@ describe('useSubjectStore', () => {
       });
       useSubjectStore.getState().setCategory('CREATURE');
       expect(useOutputStore.getState().output.primaryDirection).toBe('north-west');
+    });
+  });
+
+  /**
+   * The fourth leak, and the only one that put a self-contradicting prompt on screen.
+   *
+   * `projection` was not reconciled at all, so `THREE_QUARTER_TOPDOWN` — the camera the app opens on
+   * — survived a switch to INTERFACE, and section 3 compiled `Angled overhead … the vertical screen
+   * axis carries both height and depth` and `Camera elevation: 35° above the horizon` above an
+   * inventory of button states, a panel frame and a cursor. The other three leaks produced a
+   * degenerate prompt; this one produced a prompt arguing with itself.
+   *
+   * The elevation is reconciled with it, because the two are one statement about one camera.
+   */
+  describe('the projection when the category changes', () => {
+    it('drops a camera the new subject has no geometry for, and the elevation with it', () => {
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          projection: 'THREE_QUARTER_TOPDOWN',
+          cameraElevation: 35,
+        },
+      });
+      useSubjectStore.getState().setCategory('INTERFACE');
+
+      const { output } = useOutputStore.getState();
+      expect(output.projection).toBe('ORTHOGRAPHIC_FRONT');
+      // Not merely narrowed — 35° beside a flat front elevation is the disagreement the projection
+      // and the elevation are resolved together to prevent.
+      expect(output.cameraElevation).toBe(DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_FRONT);
+    });
+
+    it('keeps a camera the new subject can be drawn under, rather than resetting for its own sake', () => {
+      // Eight of the nine categories are offered every projection, so this is most switches — and
+      // TERRAIN is the one worth naming: a cliff face is a landform seen from the side, which is
+      // what the `side-on-volcanic-cliff` preset draws.
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          projection: 'ORTHOGRAPHIC_SIDE',
+          cameraElevation: DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_SIDE,
+        },
+      });
+      useSubjectStore.getState().setCategory('TERRAIN');
+
+      const { output } = useOutputStore.getState();
+      expect(output.projection).toBe('ORTHOGRAPHIC_SIDE');
+      expect(output.cameraElevation).toBe(DEFAULT_CAMERA_ELEVATIONS.ORTHOGRAPHIC_SIDE);
+    });
+
+    it('keeps a chosen elevation the surviving camera still leaves open', () => {
+      // The fallback only ever narrows. `THREE_QUARTER_TOPDOWN` spans 1–89°, so a reader who set 60°
+      // on a character keeps it on a creature — resetting to the projection's default would discard
+      // a deliberate choice for nothing.
+      useOutputStore.setState({
+        output: { ...DEFAULT_OUTPUT_CONFIG, projection: 'THREE_QUARTER_TOPDOWN', cameraElevation: 60 },
+      });
+      useSubjectStore.getState().setCategory('CREATURE');
+
+      expect(useOutputStore.getState().output.cameraElevation).toBe(60);
+    });
+
+    it('drops an art style reference the new subject cannot be drawn to match', () => {
+      // The projection's second door. A reference states the camera it was rendered under and
+      // carries it into section 2 as a measurement — “a tile edge runs two pixels sideways for every
+      // one it drops” is the 30° dimetric camera — so leaving it behind puts that measurement above
+      // a flat front elevation, and a preset saved from here would persist the pair.
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          styleReference: 'DIABLO_II',
+          projection: 'DIMETRIC_2_1',
+          cameraElevation: 30,
+        },
+      });
+      useSubjectStore.getState().setCategory('INTERFACE');
+
+      expect(useOutputStore.getState().output.styleReference).toBe('NONE');
+    });
+
+    it('keeps a reference the new subject can be drawn to match', () => {
+      useOutputStore.setState({
+        output: {
+          ...DEFAULT_OUTPUT_CONFIG,
+          styleReference: 'DIABLO_II',
+          projection: 'DIMETRIC_2_1',
+          cameraElevation: 30,
+        },
+      });
+      useSubjectStore.getState().setCategory('TERRAIN');
+
+      expect(useOutputStore.getState().output.styleReference).toBe('DIABLO_II');
     });
   });
 });

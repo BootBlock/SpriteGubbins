@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { CATEGORY_OPTIONS, defaultSubjectFor } from '../constants/categories/index.ts';
 import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
+import { resolveProjection } from '../constants/categoryProjections.ts';
+import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
+import { resolveCameraElevation } from '../constants/promptText/index.ts';
 import { resolveMode, resolveRigMode } from '../constants/sheetPlans/index.ts';
 import type { SubjectCategory, SubjectDefinition, SubjectFieldKey } from '../types/subject.ts';
 import { useOutputStore } from './useOutputStore.ts';
@@ -72,15 +75,37 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
     // panel offered "Split into 3 sheets" and the first of those asked for a button at object yaw
     // 45°. `resolveDirectionSet` keeps the set wherever the new subject can be turned to it — seven
     // of the nine categories can be turned to all of them — and falls back only where it cannot.
+    //
+    // And the projection, the fourth and last of the claims a category can refuse. It is the one
+    // that failed loudest: an INTERFACE arriving from a default session kept `THREE_QUARTER_TOPDOWN`
+    // and compiled `Angled overhead … the vertical screen axis carries both height and depth` above
+    // an inventory of button states, which is a prompt contradicting itself rather than merely
+    // asking for a degenerate batch. `resolveProjection` keeps the camera wherever the new subject
+    // can be drawn under it — eight of the nine categories can be drawn under all of them — and
+    // falls back only where it cannot.
+    //
+    // The elevation follows the *resolved* projection rather than the stored one, because the two
+    // are one statement about one camera: a projection narrowed to `ORTHOGRAPHIC_FRONT` beside a
+    // stored 35° is exactly the disagreement `elevation.ts` exists to end, and re-resolving it here
+    // is what stops a preset saved from this category persisting it.
     const store = useOutputStore.getState();
     const { output } = store;
     const directionalMode = resolveMode(category, output.directionalMode);
     const rigMode = resolveRigMode(category, directionalMode, output.rigMode);
     const directions = resolveDirectionSet(category, output.directions);
+    const projection = resolveProjection(category, output.projection);
+    const cameraElevation = resolveCameraElevation(projection, output.cameraElevation);
+    // And the art style reference, which is the projection's second door: a reference states the
+    // camera it was rendered under and carries it into section 2 as a measurement, so a look the new
+    // subject cannot be drawn to goes rather than standing over a camera that contradicts it.
+    const styleReference = resolveStyleReference(category, output.styleReference);
     if (
       directionalMode !== output.directionalMode ||
       rigMode !== output.rigMode ||
       directions !== output.directions ||
+      projection !== output.projection ||
+      cameraElevation !== output.cameraElevation ||
+      styleReference !== output.styleReference ||
       output.sheetIndex !== 0
     ) {
       store.setOutputConfig({
@@ -88,6 +113,9 @@ export const useSubjectStore = create<SubjectState>((set, get) => ({
         directionalMode,
         rigMode,
         directions,
+        projection,
+        cameraElevation,
+        styleReference,
         // Cleared with the set exactly as the control clears it, and only then: a facing pinned
         // against `THREE_CLASSIC` is one `SINGLE_FRONT` never turns to, and leaving it behind would
         // let a preset saved from here persist a facing its own set does not contain.

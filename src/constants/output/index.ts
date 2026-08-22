@@ -17,13 +17,13 @@ export {
   OUTLINE_STYLE_CHOICES,
   OVERLAP_MARGIN_CHOICES,
   PALETTE_LIMIT_CHOICES,
-  PROJECTION_CHOICES,
   RENDER_STYLE_CHOICES,
   RESOLUTION_PROFILE_CHOICES,
   SURFACE_DETAIL_CHOICES,
 } from './choices.ts';
 export { directionalModeChoices } from './directionalModeChoices.ts';
 export { directionSetChoices } from './directionSetChoices.ts';
+export { projectionChoices } from './projectionChoices.ts';
 export { rigModeChoices } from './rigModeChoices.ts';
 export { sheetChoices } from './sheetChoices.ts';
 export { OUTPUT_TOOLTIPS } from './tooltips.ts';

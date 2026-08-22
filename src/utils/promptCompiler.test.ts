@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
+import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
 import { SHEET_INDEX_RANGE } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
+import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
+import { PROJECTIONS } from '../types/rendering.ts';
 import {
   BACKGROUND_KEYS,
   DIRECTION_SETS,
@@ -1277,6 +1280,82 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(flat).toContain(`- Projection: ${promptText.PROJECTION_TEXT.ORTHOGRAPHIC_SIDE}`);
     expect(flat).toContain('- Camera elevation: 0° above the horizon');
     expect(flat).not.toContain('90° above the horizon');
+  });
+
+  it('never states a camera the category cannot be drawn under', () => {
+    // The fourth setting a category can refuse, and the last one nothing narrowed: an INTERFACE
+    // holding the studio's opening camera compiled `Angled overhead … the vertical screen axis
+    // carries both height and depth` above an inventory of button states. The sweep is over every
+    // category and every projection rather than over the reported pair, because what is being pinned
+    // is the property — section 3 names a camera `CATEGORY_PROJECTIONS` offers, whatever arrives.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const projection of PROJECTIONS) {
+        const prompt = generatePrompt(
+          category,
+          defaultSubjectFor(category),
+          withOutput({ projection, cameraElevation: DEFAULT_CAMERA_ELEVATIONS[projection] }),
+        );
+        const named = CATEGORY_PROJECTIONS[category].filter((offered) =>
+          prompt.includes(`- Projection: ${promptText.PROJECTION_TEXT[offered]}`),
+        );
+        expect(named, `${category} / ${projection} names no camera it is offered`).toHaveLength(1);
+      }
+    }
+  });
+
+  it('degrades the elevation with the camera, so the two lines agree after narrowing', () => {
+    // The reported failure, exactly: a widget under a 35° overhead camera. Both lines have to move,
+    // because the elevation is resolved against the projection and would otherwise be the half left
+    // describing the camera that was discarded.
+    const widget = generatePrompt(
+      'INTERFACE',
+      defaultSubjectFor('INTERFACE'),
+      withOutput({ projection: 'THREE_QUARTER_TOPDOWN', cameraElevation: 35 }),
+    );
+
+    expect(widget).toContain(`- Projection: ${promptText.PROJECTION_TEXT.ORTHOGRAPHIC_FRONT}`);
+    expect(widget).toContain('- Camera elevation: 0° above the horizon');
+    expect(widget).not.toContain('35° above the horizon');
+    expect(widget).not.toContain('the vertical screen axis carries both height and depth');
+  });
+
+  it('never carries an art direction reference whose camera the category cannot be drawn under', () => {
+    // The projection's second door, and the one narrowing the select alone leaves open: a reference
+    // writes the projection *and* states it again in prose that reaches section 2 verbatim. Under
+    // INTERFACE the dimetric camera is degraded, so the measurement describing it must go with it —
+    // otherwise the prompt asks for one camera as a measurement and another as the projection.
+    const widget = generatePrompt(
+      'INTERFACE',
+      defaultSubjectFor('INTERFACE'),
+      withOutput({ styleReference: 'DIABLO_II', projection: 'DIMETRIC_2_1', cameraElevation: 30 }),
+    );
+
+    expect(widget).toContain(`- Projection: ${promptText.PROJECTION_TEXT.ORTHOGRAPHIC_FRONT}`);
+    expect(widget).not.toContain('two pixels sideways for every one it drops');
+    expect(widget).not.toContain('Art direction reference');
+
+    // And still carried wherever the subject can be drawn under that camera, which is the other
+    // eight categories — dropping it everywhere would delete the control rather than scope it.
+    const ground = generatePrompt(
+      'TERRAIN',
+      defaultSubjectFor('TERRAIN'),
+      withOutput({ styleReference: 'DIABLO_II', projection: 'DIMETRIC_2_1', cameraElevation: 30 }),
+    );
+
+    expect(ground).toContain('two pixels sideways for every one it drops');
+  });
+
+  it('leaves a landform its side-on camera, which is what the cliff preset draws', () => {
+    // The category that looks bound and is not. TERRAIN is pinned to `SINGLE_FRONT` for its facings
+    // because a tile has no front to turn away from — the camera is a separate question, and an
+    // exposed rock face is exactly what a flat field has nowhere to put.
+    const cliff = generatePrompt(
+      'TERRAIN',
+      defaultSubjectFor('TERRAIN'),
+      withOutput({ projection: 'ORTHOGRAPHIC_SIDE', cameraElevation: 0 }),
+    );
+
+    expect(cliff).toContain(`- Projection: ${promptText.PROJECTION_TEXT.ORTHOGRAPHIC_SIDE}`);
   });
 
   it('settles a plan-view rig’s depth order by height rather than by facing', () => {

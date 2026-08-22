@@ -1,6 +1,8 @@
+import { resolveStyleReference } from '../../constants/categoryStyleReferences.ts';
 import { OUTPUT_TOOLTIPS } from '../../constants/output/index.ts';
-import { STYLE_REFERENCE_CHOICES, styleReferenceFor } from '../../constants/styleReferences/index.ts';
+import { styleReferenceChoices, styleReferenceFor } from '../../constants/styleReferences/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { styleReferencePatch } from '../../utils/styleReferencePatch.ts';
 import { CheckboxField } from '../common/CheckboxField.tsx';
 import { SelectField } from '../common/SelectField.tsx';
@@ -38,16 +40,22 @@ export function StyleReferenceField() {
   const nameStyleReference = useOutputStore((state) => state.output.nameStyleReference);
   const applyOutputPatch = useOutputStore((state) => state.applyOutputPatch);
   const setOutputField = useOutputStore((state) => state.setOutputField);
+  const category = useSubjectStore((state) => state.category);
 
-  const reference = styleReferenceFor(styleReference);
+  // Narrowed through the category exactly as the Projection select is, and for the same reason one
+  // step back: a reference writes the projection, so offering one the subject cannot be drawn under
+  // puts a ground measurement in section 2 above a flat front elevation in section 3. Resolved
+  // rather than read raw because the select cannot sit on a value its own options do not contain.
+  const chosenId = resolveStyleReference(category, styleReference);
+  const reference = styleReferenceFor(chosenId);
 
   return (
     <div className="space-y-3">
       <SelectField
         label="Art Style Reference"
         tooltip={OUTPUT_TOOLTIPS.styleReference}
-        value={styleReference}
-        choices={STYLE_REFERENCE_CHOICES}
+        value={chosenId}
+        choices={styleReferenceChoices(category)}
         description={reference === null ? '' : reference.characteristics.join(' ')}
         onChange={(value) => {
           const chosen = styleReferenceFor(value);

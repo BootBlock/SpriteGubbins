@@ -1,51 +1,13 @@
-import { STYLE_REFERENCE_IDS } from '../../types/styleReference.ts';
-import type { StyleReference, StyleReferenceId } from '../../types/styleReference.ts';
-import type { OutputChoice } from '../output/choices.ts';
-import { OVERHEAD_STYLE_REFERENCES } from './overhead.ts';
-import { PROJECTED_STYLE_REFERENCES } from './projected.ts';
-import { SIDE_ON_STYLE_REFERENCES } from './sideOn.ts';
-
 /**
- * Every published look the studio offers, and the two ways the app reaches them.
+ * The style-reference library's public surface.
  *
- * Assembled from one module per how the game is read — overhead, side-on, projected — exactly as the
- * hardware and palette libraries are assembled per family, and keyed by the whole `StyleReferenceId`
- * union so a new member is a compile error until it has a definition. `NONE` maps to `null`, which is
- * what "not matching a published look" means everywhere downstream.
- *
- * **The library is deliberately shorter than the list of games anyone would name**, and what decided
- * membership was whether the look could be *stated*. A reference ships only where the projection, the
- * facings, the colour discipline and at least one hard scale figure are documented, and where the look
- * is a property of the artwork rather than of what the engine does to it afterwards. That rules out
- * more than it admits: a game whose sprites are lit by normal maps at runtime, or composited as
- * rotating and additively-blended quads, or placed in a real-time-lit 3D scene, cannot be reproduced
- * by a still sheet however well known it is — and a preset promising otherwise would be selling a
- * result the format cannot deliver. Games whose defining numbers are simply unpublished are excluded
- * on the same principle, since the alternative is a plausible figure nobody can source.
+ * Three files rather than one, and the split is what keeps the graph acyclic: `library.ts` holds the
+ * map and the lookup, `styleReferenceChoices.ts` holds the labels and the category scoping, and this
+ * barrel is what the app imports. The choices module needs the map, and the module that decides
+ * which references a category can be drawn to match needs the lookup — so neither may reach them
+ * through a barrel that also re-exports it.
  */
-export const STYLE_REFERENCES: Readonly<Record<StyleReferenceId, StyleReference | null>> = {
-  NONE: null,
-  ...OVERHEAD_STYLE_REFERENCES,
-  ...SIDE_ON_STYLE_REFERENCES,
-  ...PROJECTED_STYLE_REFERENCES,
-};
-
-/** The look this sheet is drawn to match, or `null` for `NONE`. */
-export function styleReferenceFor(id: StyleReferenceId): StyleReference | null {
-  return STYLE_REFERENCES[id];
-}
-
-/** What the `NONE` option is called, since it has no `StyleReference` to carry a label. */
-const NONE_LABEL = 'NONE (not matching a published game)';
-
-/**
- * The dropdown's options, derived from the map so a reference cannot be added without appearing.
- *
- * `STYLE_REFERENCE_IDS` fixes the order, which keeps the three readings contiguous in the list.
- */
-export const STYLE_REFERENCE_CHOICES: readonly OutputChoice<StyleReferenceId>[] = STYLE_REFERENCE_IDS.map(
-  (id) => ({
-    value: id,
-    label: STYLE_REFERENCES[id]?.label ?? NONE_LABEL,
-  }),
-);
+export { STYLE_REFERENCES, styleReferenceFor } from './library.ts';
+// The dropdown's options are scoped to the category, because which references a subject can be drawn
+// to match depends on the camera each one was rendered under — see `categoryStyleReferences.ts`.
+export { styleReferenceChoices } from './styleReferenceChoices.ts';

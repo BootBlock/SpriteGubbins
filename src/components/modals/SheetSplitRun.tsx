@@ -1,3 +1,4 @@
+import { resolveProjection } from '../../constants/categoryProjections.ts';
 import { depthOrderText, resolveCameraElevation } from '../../constants/promptText/index.ts';
 import { resolveRigMode } from '../../constants/sheetPlans/index.ts';
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
@@ -126,9 +127,16 @@ export function SheetSplitRun({
 
       {resolveRigMode(category, run.output.directionalMode, run.output.rigMode) === 'CUTOUT_RIG' && (
         <p className="mb-3 text-xs leading-relaxed text-ink-muted">
+          {/* The elevation is resolved against the projection the *category* leaves, not the stored
+              one: a camera the subject cannot be drawn under is degraded before the compiler prints
+              it, and a depth-order note reading the raw field would describe a different camera to
+              the sheet it is labelling. */}
           {depthOrderText(
             run.assembly,
-            resolveCameraElevation(run.output.projection, run.output.cameraElevation),
+            resolveCameraElevation(
+              resolveProjection(category, run.output.projection),
+              run.output.cameraElevation,
+            ),
           )}
         </p>
       )}

@@ -33,6 +33,8 @@ import {
   validationPassFor,
 } from '../constants/promptText/index.ts';
 import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
+import { resolveProjection } from '../constants/categoryProjections.ts';
+import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
 import { hardwareProfileFor } from '../constants/hardware/index.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
@@ -126,14 +128,22 @@ export function generatePrompt(
   // that catches one.
   const coveredMirrorPairs = mirrorPairs(coveredDirections);
 
-  // Where the camera stands, resolved for the reason the mode above is: the projection *is* a
+  // Which camera this sheet is drawn under, resolved through the category for the reason the mode
+  // and the direction set above are: a widget is screen-space art with no top surface and no depth
+  // axis, so a stored `THREE_QUARTER_TOPDOWN` on an INTERFACE puts `the vertical screen axis carries
+  // both height and depth` above an inventory of button states — one prompt disagreeing with itself.
+  const projection = resolveProjection(category, output.projection);
+
+  // Where that camera stands, resolved for the reason the mode above is: the projection *is* a
   // camera, so all but the angled-overhead one fix the elevation, and a stored configuration can
   // still be holding a number that projection cannot be drawn at. Section 3 prints the projection
   // and the elevation as adjacent lines, so an unresolved one is two statements about one camera
   // that disagree — and it decides section 3's occlusion contract as well, which is a good deal
   // more than a line of prose: from directly overhead a yaw hides nothing, and the front/rear
-  // occlusions the oblique wording states are exactly what section 9 then audits for.
-  const cameraElevation = resolveCameraElevation(output.projection, output.cameraElevation);
+  // occlusions the oblique wording states are exactly what section 9 then audits for. It takes the
+  // projection resolved on the line above rather than the stored one, because resolving the two
+  // against different cameras is the same disagreement one step further back.
+  const cameraElevation = resolveCameraElevation(projection, output.cameraElevation);
 
   // Which sheet of which batch this configuration is. Every prompt before this one described its
   // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and
@@ -169,7 +179,12 @@ export function generatePrompt(
   // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
   // below — the two values and the flag that gates their block — so a heading with nothing under it
   // is not expressible, exactly as it is not for the two above.
-  const reference = styleReferenceFor(output.styleReference);
+  //
+  // Narrowed through the category first, for the reason the projection above is: a reference states
+  // the camera it was rendered under, and its characteristics carry that camera into section 2 as a
+  // measurement no resolver downstream can edit. A Diablo II reference on an INTERFACE would put
+  // “a tile edge runs two pixels sideways for every one it drops” above `Flat front elevation`.
+  const reference = styleReferenceFor(resolveStyleReference(category, output.styleReference));
 
   // Whether the render style withholds the surface rather than describing one, and what it withholds.
   // Read four times below — three conditionals and the paragraph that stands in for the lines they
@@ -384,7 +399,7 @@ export function generatePrompt(
     STYLE_REFERENCE_NAME: reference?.name ?? '',
     STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
 
-    PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
+    PROJECTION_DESCRIPTION: PROJECTION_TEXT[projection],
     CAMERA_ELEVATION: String(cameraElevation),
     DIRECTIONS_DESCRIPTION: describeDirections(coveredDirections),
     // The fix for the defect that made a front-three-quarter, a right-side and a back-three-quarter
