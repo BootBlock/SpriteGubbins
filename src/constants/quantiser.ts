@@ -759,7 +759,7 @@ export const VOTE_METHOD_CHOICES = [
  *
  * ```
  * budget 64      flat 13.4 / 3.89 / 2.55   BAYER_4 15.4 / 4.27 / 2.95   BAYER_8 15.4 / 4.26 / 2.95   BLUE_NOISE 15.4 / 4.31 / 2.98
- * budget 32      flat 14.3 / 4.73 / 3.38   BAYER_4 15.8 / 4.44 / 3.12   BAYER_8 15.8 / 4.47 / 3.16   BLUE_NOISE 15.8 / 4.48 / 3.13
+ * budget 32      flat 14.3 / 4.73 / 3.38   BAYER_4 15.7 / 4.44 / 3.12   BAYER_8 15.8 / 4.47 / 3.16   BLUE_NOISE 15.8 / 4.48 / 3.13
  * budget 8       flat 21.1 / 7.72 / 6.10   BAYER_4 18.1 / 5.32 / 3.79   BAYER_8 18.1 / 5.34 / 3.82   BLUE_NOISE 18.1 / 5.27 / 3.72
  * Game Boy       flat 92.2 / 90.2 / 92.0   BAYER_4 93.3 / 85.7 / 87.8   BAYER_8 93.4 / 85.7 / 87.8   BLUE_NOISE 93.4 / 85.8 / 87.7
  * Mega Drive     flat 20.2 / 8.02 / 6.36   BAYER_4 22.0 / 4.94 / 3.56   BAYER_8 22.1 / 5.01 / 3.62   BLUE_NOISE 22.0 / 5.13 / 3.56
@@ -876,15 +876,19 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * is a different reading; this one has no flat step in it.
  *
  * ```
- *              2                    3                    4                    6                    8              unrestricted
- * budget 64  1.81 / 0.79 / 0.50   2.19 / 0.80 / 0.49   2.69 / 0.82 / 0.47   3.34 / 1.02 / 0.58   3.73 / 1.11 / 0.62   7.30 / 2.24 / 1.21
- * budget 16  3.38 / 1.28 / 0.81   4.25 / 1.44 / 0.88   4.57 / 1.59 / 0.93   5.33 / 1.78 / 1.04   6.04 / 2.02 / 1.13   8.63 / 2.44 / 1.33
- * budget 8   5.38 / 2.47 / 1.69   6.08 / 2.52 / 1.64   6.84 / 2.62 / 1.69   7.70 / 2.75 / 1.72   8.44 / 2.84 / 1.79   8.44 / 2.84 / 1.79
- * Game Boy   92.1 / 85.2 / 87.9   94.1 / 85.0 / 87.5   94.5 / 85.0 / 87.5         —                    —             94.5 / 85.0 / 87.5
+ *                       2                      3                      4                      6                      8                 unrestricted
+ * budget 64     1.82 / 0.75 / 0.47     2.20 / 0.75 / 0.44     2.69 / 0.80 / 0.44     3.35 / 1.00 / 0.54     3.74 / 1.08 / 0.58     7.33 / 2.22 / 1.16
+ * budget 16     3.39 / 1.27 / 0.81     4.26 / 1.43 / 0.88     4.59 / 1.58 / 0.94     5.35 / 1.77 / 1.05     6.06 / 2.00 / 1.14     8.67 / 2.42 / 1.33
+ * budget 8      5.41 / 2.46 / 1.69     6.11 / 2.52 / 1.64     6.87 / 2.61 / 1.70     7.73 / 2.73 / 1.74     8.47 / 2.83 / 1.81     8.47 / 2.83 / 1.81
+ * Game Boy    92.00 / 85.20 / 87.90  93.93 / 84.98 / 87.52  94.36 / 85.03 / 87.54            —                      —            94.36 / 85.03 / 87.54
  * ```
  *
+ * The unrestricted column is `mixingPlan` with its `pairFrom` opened past the longest palette here,
+ * so every entry is a candidate; the Game Boy's four make the 4, 6, 8 and unrestricted columns one
+ * search, which is why two of them are left blank rather than restated.
+ *
  * **The unrestricted search is the worst column wherever the palette is large enough for it to
- * matter** — 2.5× to 3.3× worse than a shortlist of 3 on the 64-colour budget, 1.5× to 2.0× at 16,
+ * matter** — 2.6× to 3.3× worse than a shortlist of 3 on the 64-colour budget, 1.5× to 2.0× at 16,
  * and 1.1× to 1.4× by 8 colours, where three of eight is most of the palette anyway (the Game Boy's
  * four make the two columns the same search). The reason is worth stating because it is not obvious:
  * a plan is optimal for the *whole tile*, and a flat region a few pixels across samples only a few
@@ -895,7 +899,7 @@ export const BLUE_NOISE_MINORITY = 0.1;
  *
  * **3 rather than 2 is a genuinely close call, and the figures alone do not settle it.** 2 is the
  * quieter per-pixel figure everywhere and the better 8 × 8 figure at budget 16, by 8%; 3 is the
- * better 8 × 8 figure at budget 64 by 2%, at budget 8 by 3% and on the four-colour Game Boy by 0.5%.
+ * better 8 × 8 figure at budget 64 by 6%, at budget 8 by 3% and on the four-colour Game Boy by 0.4%.
  * What decides it is structural rather than measured: with two candidates there is exactly one pair,
  * so a target whose two nearest entries lie the *same* side of it has no mixture that can reach it
  * and the plan falls back to a flat colour. A third candidate is the smallest shortlist that can
@@ -910,6 +914,9 @@ export const BLUE_NOISE_MINORITY = 0.1;
  * most expensive pass in the pipeline. Wall-clock figures are deliberately not stated — they move by
  * several times between runs on one machine — but the shape is: three pairs, `levels` rungs each,
  * once per distinct colour.
+ *
+ * `tests/quantiser-docblock-figures.test.ts` re-derives the column this constant ships, and both
+ * colour counts. The other five are swept by hand, by opening `mixingPlan`'s `pairFrom`.
  */
 export const DITHER_SHORTLIST = 3;
 
@@ -1345,13 +1352,22 @@ export const DIFFERENCE_PRECISION = 64;
  * reader can go back and forth between, not a continuum they have to re-find.
  *
  * The rungs are read off the reference sheet (`test_sprites/armour.png`, 1254², grid 6, the
- * standard vote, a budget of 64, no keying), where the per-cell distance runs p50 **0.66**, p75
- * 10.2, p90 55.0, p99 117.9 and peaks at 177 — roughly seven cells in ten near-exact, and a tail
- * that is the sheet's edges. Against that: **4** grades the near-exact seventy per cent and
- * saturates the rest, **32** is the default because it puts the whole of what a dial moves across
- * the ramp — a second cleanup pass shifts 396 cells by up to 25 — and **128** is the rung a *keyed*
- * sheet needs, where a silhouette cell whose coverage flipped scores past 200 on the alpha axis
- * alone.
+ * standard vote, a budget of 64, no keying, every other dial at its opening position, the mesh
+ * 209 × 209), where the per-cell distance runs p50 **0.66**, p75 10.2, p90 55.0, p99 117.9 and
+ * peaks at 177 — roughly seven cells in ten near-exact, and a tail that is the sheet's edges.
+ * Against that: **4** grades the near-exact seventy per cent and saturates the rest, **32** is the
+ * default because it puts the whole of what a dial moves across the ramp, and **128** is the rung a
+ * *keyed* sheet needs, where a silhouette cell whose coverage flipped scores past 200 on the alpha
+ * axis alone.
+ *
+ * **What "a dial moves" is measured as**, since the figure is only reproducible if the dial is
+ * named: the cleanup passes. They multiply the fill cleanup and nothing else, so both have to be
+ * stated — with the fill
+ * cleanup at its opening zero, a second pass moves no cell at all. At the top of that slider's
+ * range ({@link FILL_CLEANUP_RANGE}, 48) the second pass shifts **360** of the mesh's 43,681 cells,
+ * by at most **26.8**. That is the whole of it inside 32, and past the 16 below it.
+ *
+ * `tests/quantiser-docblock-figures.test.ts` re-derives the ladder and that pair from the sheet.
  */
 export const DIFFERENCE_SCALES = [4, 8, 16, 32, 64, 128] as const;
 

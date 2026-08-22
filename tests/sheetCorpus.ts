@@ -58,7 +58,7 @@ export const CORPUS_SHEETS: readonly CorpusSheetName[] = [
  * `import.meta.url` — Vitest rewrites module URLs, so they are not `file:` URLs the filesystem can
  * be asked about. `tests/design-tokens.test.ts` records the same trap.
  */
-async function loadCorpusSheet(name: CorpusSheetName): Promise<ImageData> {
+export async function loadCorpusSheet(name: CorpusSheetName): Promise<ImageData> {
   const path = resolve(process.cwd(), 'test_sprites', name);
   const decoded = await decodePng(new Uint8Array(await readFile(path)));
   const image = createImage(decoded.width, decoded.height);

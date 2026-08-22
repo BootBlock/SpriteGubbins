@@ -23,29 +23,45 @@ import { outlinePolarity, polarityAt, type PolarityField } from './outlinePolari
  * that was one pixel wide is then `2 × thickness + 1` wide, and a cell that straddles it is holding
  * enough ink to win the vote it was losing.
  *
- * **Measured on the reference sheet** at a grid of 6, the standard vote and a budget of 64, across
- * the 44,099 cells its mesh lays down. Two figures, because either alone picks the wrong setting:
+ * **Measured on the reference sheet** (`test_sprites/armour.png`, grid 6, the standard vote, a
+ * budget of 64, no keying, every other dial at its opening position), across the 43,681 cells its
+ * mesh lays down. **Ink** here is a pixel whose luma is below `LINE_INK_CEILING`, the darkest
+ * quarter, and every share a cell is sorted by is read off the sheet **as it arrived** — before the
+ * pass runs, because the whole question is what the pass does to cells the artist drew a contour
+ * through. A cell "resolves to ink" when the one pixel it became is ink by that same test. Two
+ * figures, because either alone picks the wrong setting:
  *
- * - **survival** — of the 7,135 cells holding ink as a *minority* of their own pixels, which is
- *   every cell a one-pixel contour crosses, the share that resolve to ink. It runs **29.5% with the
- *   pass off, then 43.5%, 54.4%, 60.4% and 64.1%** across thicknesses 1 to 4;
- * - **surface loss** — of the 34,240 cells the source says are under a fifth ink, which is a stray
+ * - **survival** — of the 6,433 cells holding ink as a *minority* of their own pixels, which is
+ *   every cell a one-pixel contour crosses, the share that resolve to ink. It runs **29.6% with the
+ *   pass off, then 42.7%, 54.1%, 61.4% and 65.4%** across thicknesses 1 to 4;
+ * - **surface loss** — of the 33,575 cells the source says are under a fifth ink, which is a stray
  *   fringe rather than a contour crossing, the share that come out ink anyway. It runs **0.39%, then
- *   2.89%, 5.71%, 8.03% and 10.70%**. Against it, the sheet's own ink share is 14.2% of its opaque
- *   pixels and the result's runs 15.8, 17.0, 19.2, 20.8 and 23.0%.
+ *   2.70%, 5.12%, 7.81% and 10.51%**. Against it, the sheet's own ink share is 14.2% of its opaque
+ *   pixels and the result's runs 16.5, 17.2, 18.9, 20.8 and 22.9%.
  *
- * The first step buys 14 points of survival for 2.5 of surface, and every step after it buys less
- * for the same: 10.9 for 2.8, then 6.0 for 2.3, then 3.7 for 2.7. So the knee is at **1**, and the
+ * The first step buys 13.2 points of survival for 2.3 of surface, and every step after it buys less
+ * for the same: 11.4 for 2.4, then 7.3 for 2.7, then 4.0 for 2.7. So the knee is at **1**, and the
  * range runs to 4 because a sheet whose contours are thinner or whose scale is coarser will want
- * more. The ink-weighted reading is the same shape one thickness later, from a lower start: 20.7%,
- * 20.5%, 31.8%, 41.2%, 46.7% survival against 0.02%, 0.65%, 2.01%, 4.11% and 6.06% surface.
+ * more. **The ink-weighted reading climbs the same ladder from far lower down**, and that is the
+ * argument for the pass rather than against it: 8.4% survival with the pass off, then 18.0%, 32.5%,
+ * 40.5% and 48.5%, against 0.00%, 0.47%, 2.32%, 3.97% and 6.08% surface, and a result ink share of
+ * 10.2, 9.8, 12.8, 14.3 and 16.1%. A vote that exists to keep outlines still loses nine cells in ten
+ * of them until this pass runs, because it can only *darken* a cell ink is losing rather than hand
+ * it the cell — and each of its steps buys survival more cheaply than the standard vote's does, 20
+ * points per point of surface at the first step against the standard vote's 6.
  *
- * **The second figure is here because the first one on its own chose wrongly.** Counting only cells
- * with *no* source ink at all put the knee at 2 — and driving the tab in a browser at 2 showed
- * helmets whose interiors had gone blotchy, the gold and green masses broken up by dark that had
- * grown along every seam between them. Almost every cell on a sheet like this holds a pixel or two
- * of dark, so "no ink at all" was blind to exactly the failure that matters. Any recalibration of
- * this dial needs both numbers and a look at the preview.
+ * **The second figure is here because the first one on its own chose wrongly.** The obvious cheap
+ * reading of surface loss is to count only the 31,268 cells with *no* source ink at all, and that
+ * one puts the cost of a thickness of 2 at 1.73% where the under-a-fifth set puts it at 5.12% —
+ * three times smaller, and small enough to look like a free step. Driving the tab in a browser at 2
+ * showed helmets whose interiors had gone blotchy, the gold and green masses broken up by dark that
+ * had grown along every seam between them. Almost every cell on a sheet like this holds a pixel or
+ * two of dark, so "no ink at all" was blind to exactly the failure that matters. Any recalibration
+ * of this dial needs both numbers and a look at the preview.
+ *
+ * Every figure in the two paragraphs above is re-derived by
+ * `tests/quantiser-docblock-figures.test.ts`, which fails when a pass upstream of this one moves
+ * one — so a recalibration is told to come back here rather than leaving the ladder stale.
  *
  * **The cost is flat in the thickness**, which is the whole reason `runningExtremum` is written the
  * way it is: the pass took the same time at a thickness of 4 as at 1 in every run of that sweep. It
