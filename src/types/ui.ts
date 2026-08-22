@@ -34,3 +34,19 @@ export interface SectionDefinition {
   readonly id: string;
   readonly defaultOpen: boolean;
 }
+
+/**
+ * Which document a notification is addressed to.
+ *
+ * The app normally has one, and for most of its life the toast could simply be "the toast". The
+ * quantiser's preview breaks that: it portals its whole panel — toolbar, download button and all —
+ * into a window of its own, so a press that answers with a toast can happen in a document the page's
+ * `<Toast />` cannot reach. A confirmation naming what was written, or a failure naming why nothing
+ * was, would then be painted on the page the reader has just moved away from.
+ *
+ * So a notification carries a destination and each mounted `Toast` renders only what is addressed to
+ * it. `'page'` is the default rather than an option a caller has to remember, because every surface
+ * in the app but one is in the page — including the modals, whose toast is mounted inside the
+ * `<dialog>` for a different reason and is still the page's.
+ */
+export type ToastTarget = 'page' | 'detached';

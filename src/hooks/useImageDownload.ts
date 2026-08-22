@@ -1,12 +1,12 @@
 import { useCallback } from 'react';
 import { SHEET_FORMAT_FILES } from '../constants/sheetFormats.ts';
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
-import { useUIStore } from '../stores/useUIStore.ts';
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
 import { writeSheetOffThread } from '../workers/sheetWriteSession.ts';
 import { useFileSave } from './useFileSave.ts';
+import { useShowToast } from './useShowToast.ts';
 
 /**
  * Offering a quantised sheet back as a file, in whichever of the four formats was asked for.
@@ -58,7 +58,7 @@ export interface ImageDownload {
 }
 
 export function useImageDownload(): ImageDownload {
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
   const saveFile = useFileSave();
   // From the store rather than from this component, because the thread outlives the view: `App`
   // swaps the whole tab on navigation, and a flag held here would come back `false` with a write

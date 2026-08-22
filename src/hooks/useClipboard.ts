@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { useUIStore } from '../stores/useUIStore.ts';
+import { useShowToast } from './useShowToast.ts';
 
 /**
  * Copying text, and telling the user whether it worked.
@@ -18,7 +18,7 @@ import { useUIStore } from '../stores/useUIStore.ts';
  * further work to do (logging the prompt it just copied) can skip it when the copy failed.
  */
 export function useClipboard(): (text: string, successMessage: string) => Promise<boolean> {
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   return useCallback(
     async (text, successMessage) => {

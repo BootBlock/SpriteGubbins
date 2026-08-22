@@ -1,7 +1,7 @@
 import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
 /**
@@ -25,7 +25,7 @@ export function SubjectActions() {
   const category = useSubjectStore((state) => state.category);
   const randomizeSubject = useSubjectStore((state) => state.randomizeSubject);
   const resetSubject = useSubjectStore((state) => state.resetSubject);
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   const { label: categoryLabel } = CATEGORY_OPTIONS[category];
 

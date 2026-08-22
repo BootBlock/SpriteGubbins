@@ -63,7 +63,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
-  'assets/useSubjectStore-*.js',
+  'assets/useShowToast-*.js',
   'assets/useUIStore-*.js',
   'assets/index-*.css',
   'assets/index-*.js',

@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { MAX_IMAGE_PIXELS } from '../constants/quantiser.ts';
-import { useUIStore } from '../stores/useUIStore.ts';
 import type { ImportedImage } from '../types/quantiser.ts';
+import { useShowToast } from './useShowToast.ts';
 
 /**
  * Turning a file the user chose or dropped into pixels.
@@ -22,7 +22,7 @@ import type { ImportedImage } from '../types/quantiser.ts';
 export function useImageFile(
   onImport: (imported: ImportedImage) => void,
 ): (file: File | null | undefined) => void {
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   return useCallback(
     (file: File | null | undefined) => {

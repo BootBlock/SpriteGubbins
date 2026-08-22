@@ -2,8 +2,8 @@ import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useFileDropTarget } from '../../hooks/useFileDropTarget.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
+import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
 import { FilePickerField } from '../common/FilePickerField.tsx';
 import type { ImportedImage } from '../../types/quantiser.ts';
 import { withPaletteSegment } from '../../utils/identityDigest.ts';
@@ -28,7 +28,7 @@ import { identityPalette } from '../../utils/identityPalette.ts';
  */
 export function IdentityPaletteCapture() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   function handleImport({ name, image }: ImportedImage) {
     // Read at call time, not at render time. Decoding awaits `createImageBitmap`, and the lock's
