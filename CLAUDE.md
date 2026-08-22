@@ -604,8 +604,10 @@ example's own wording rather than a name the app suggests.
   [tests/raw-colour-literals.test.ts](tests/raw-colour-literals.test.ts) holds the boundary. It
   blanks the comments out of every file under `src/` — most of the hex in this repository is prose
   explaining a key colour — and fails on a literal outside those six, so a component reaching for
-  one is caught when it is written rather than in review. It also fails if one of the six stops
-  carrying any, which is what stops the list rotting into a permission nobody uses.
+  one is caught when it is written rather than in review. A colocated `*.test.ts` is outside it
+  too, because a fixture pixel never renders; the component that pixel exercises is still scanned,
+  which is the half that decides whether the app took a token. It also fails if one of the six
+  stops carrying any, which is what stops the list rotting into a permission nobody uses.
 - **The two files that paint into pixel data are the third, and they are exempt on a different
   ground.** The two above are colours that are not the app's; `src/constants/differenceRamp.ts` holds
   four that **are** — the page ground, `emerald`, `gold` and `rose` — and
