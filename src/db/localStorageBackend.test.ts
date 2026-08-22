@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LocalStorageBackend } from './localStorageBackend.ts';
 import { createMemoryStorage, type WebStorageLike } from './webStorage.ts';
-import { createRefusingStorage } from '../test/storageDoubles.ts';
+import { createBoundedStorage, createRefusingStorage } from '../test/storageDoubles.ts';
 import { HISTORY_LIMIT } from './backend.ts';
+import { HISTORY_STORAGE_BUDGET } from './historyEviction.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
@@ -180,6 +181,90 @@ describe('LocalStorageBackend — history', () => {
     await backend.addHistoryLog(log());
     await backend.clearHistoryLogs();
     expect(await backend.listHistoryLogs()).toEqual([]);
+  });
+});
+
+/**
+ * The history is capped by `HISTORY_LIMIT`, which is a count, while the store is bounded by a
+ * quota, which is a size — and a compiled prompt runs to a couple of thousand words. Measured in
+ * Edge, the store refused the 179th entry of a limit of 200, and because `slice(0, HISTORY_LIMIT)`
+ * was the only trim nothing ever shrank: every copy from then on lost the new prompt and kept all
+ * 178 old ones, for as long as the reader kept using the app.
+ *
+ * `createBoundedStorage` is what makes that reachable without a browser. `createRefusingStorage`
+ * cannot: it refuses the first write too, so it models private mode rather than a full store, and
+ * a backend that had wedged would pass every case written against it.
+ */
+describe('LocalStorageBackend — a full store', () => {
+  /** A log whose serialised row is roughly `size` characters, as a real compiled prompt is. */
+  function bigLog(id: string, createdAt: number, size: number): PromptHistoryLog {
+    return log({ id, createdAt, promptText: 'x'.repeat(size) });
+  }
+
+  it('keeps accepting prompts once the store is full, rather than wedging', async () => {
+    // Room for a handful of these and no more, which is the ~178-of-200 state in miniature.
+    backend = new LocalStorageBackend(createBoundedStorage(30_000));
+
+    for (let i = 0; i < 40; i += 1) {
+      await backend.addHistoryLog(bigLog(`log-${i}`, i, 4_000));
+    }
+
+    const logs = await backend.listHistoryLogs();
+    // The newest prompt is the one the reader just asked for, so it is the one that must survive.
+    expect(logs[0]?.id).toBe('log-39');
+    // Fewer than the count limit, because it is the size that ran out — the defect was that this
+    // stayed pinned at whatever fitted first and never took another entry.
+    expect(logs.length).toBeGreaterThan(1);
+    expect(logs.length).toBeLessThan(HISTORY_LIMIT);
+  });
+
+  it('evicts the oldest, not the newest', async () => {
+    backend = new LocalStorageBackend(createBoundedStorage(30_000));
+
+    for (let i = 0; i < 20; i += 1) {
+      await backend.addHistoryLog(bigLog(`log-${i}`, i, 4_000));
+    }
+
+    const ids = (await backend.listHistoryLogs()).map((entry) => entry.id);
+    // A contiguous run ending at the newest: nothing from the middle is kept, and nothing new lost.
+    expect(ids).toEqual(Array.from({ length: ids.length }, (_, index) => `log-${19 - index}`));
+  });
+
+  it('leaves the stored history alone when a prompt is too large to store at any length', async () => {
+    backend = new LocalStorageBackend(createBoundedStorage(30_000));
+    await backend.addHistoryLog(log({ id: 'kept', createdAt: 1 }));
+
+    const promise = backend.addHistoryLog(bigLog('monstrous', 2, 60_000));
+    await expect(promise).rejects.toThrow(/refused the write/i);
+
+    // The eviction runs on the candidate collection, never on storage, so a run that never found a
+    // length storage would take has written nothing. Answering an unstorable prompt by emptying the
+    // history would be a worse failure than the one being fixed.
+    expect((await backend.listHistoryLogs()).map((entry) => entry.id)).toEqual(['kept']);
+  });
+
+  it('rejects a prompt larger than the history budget without touching storage', async () => {
+    // Distinct from the case above: here the browser would take the write and the budget will not,
+    // because the history may not spend the quota the settings and the session also need.
+    await backend.addHistoryLog(log({ id: 'kept' }));
+
+    const promise = backend.addHistoryLog(bigLog('vast', 2, HISTORY_STORAGE_BUDGET + 1_000));
+    await expect(promise).rejects.toThrow(/exceeds the .*budget/i);
+
+    expect((await backend.listHistoryLogs()).map((entry) => entry.id)).toEqual(['kept']);
+  });
+
+  it('leaves room for the settings and the session, which the history may not crowd out', async () => {
+    // The reason the budget exists at all. A history allowed to fill the quota takes the app's own
+    // preferences down with it, and losing the oldest prompt is recoverable where that is not.
+    backend = new LocalStorageBackend(createBoundedStorage(HISTORY_STORAGE_BUDGET + 200_000));
+
+    for (let i = 0; i < 200; i += 1) {
+      await backend.addHistoryLog(bigLog(`log-${i}`, i, 30_000));
+    }
+
+    await expect(backend.saveSettings(DEFAULT_SETTINGS)).resolves.toBeUndefined();
+    await expect(backend.saveSession(session())).resolves.toBeUndefined();
   });
 });
 

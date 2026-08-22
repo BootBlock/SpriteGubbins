@@ -19,3 +19,30 @@ export function createRefusingStorage(): WebStorageLike {
     },
   };
 }
+
+/**
+ * Storage that accepts writes until the total it holds would pass `ceiling` characters, and throws
+ * a `QuotaExceededError` past that — which is what a real store does, and what
+ * {@link createRefusingStorage} cannot model because it refuses the first write too.
+ *
+ * The ceiling counts every key, as a browser's quota does: a history that fills the store is
+ * exactly the condition that leaves the settings with nowhere to go.
+ */
+export function createBoundedStorage(ceiling: number): WebStorageLike {
+  const entries = new Map<string, string>();
+
+  return {
+    getItem: (key) => entries.get(key) ?? null,
+    setItem: (key, value) => {
+      let used = 0;
+      for (const [storedKey, storedValue] of entries) {
+        if (storedKey === key) continue;
+        used += storedKey.length + storedValue.length;
+      }
+      if (used + key.length + value.length > ceiling) {
+        throw new DOMException('The quota has been exceeded.', 'QuotaExceededError');
+      }
+      entries.set(key, value);
+    },
+  };
+}

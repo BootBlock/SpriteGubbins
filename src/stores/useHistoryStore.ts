@@ -64,6 +64,12 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       await database.addHistoryLog(log);
       // Trimmed to the same limit the backends enforce, so the store cannot show an entry the
       // table has already dropped.
+      //
+      // The localStorage fallback can drop more than that: it evicts oldest-first when the quota
+      // refuses the write, so at a full store this list keeps a tail of entries storage no longer
+      // holds. That is bounded and self-correcting — the drawer calls `fetchHistory` when it opens,
+      // which replaces the list with what was actually stored — and it errs towards showing an old
+      // prompt rather than losing a new one, which is the way round to be wrong.
       set((state) => ({ historyLogs: [log, ...state.historyLogs].slice(0, HISTORY_LIMIT) }));
     } catch {
       useUIStore.getState().showToast('Could not save this prompt to history');
