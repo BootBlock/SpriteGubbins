@@ -7,8 +7,8 @@
  *
  * **It is not what keeps a closing tab's last edit**, and no figure could be: a page can be hidden
  * at any moment, so the store flushes a pending write on `visibilitychange` and `pagehide` instead
- * of relying on the window being short. One window stays open regardless — the write crosses a
- * `postMessage` to the SQLite worker, and a tab that does not survive that round trip loses the
- * edit. That is the residue, and it is smaller than the debounce window this figure sets.
+ * of relying on the window being short. One window stays open regardless: the write is asynchronous
+ * whichever backend answers, and a tab that does not survive it loses the edit. Nothing here has
+ * measured how long that is.
  */
 export const SESSION_SAVE_DEBOUNCE_MS = 400;

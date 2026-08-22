@@ -248,19 +248,29 @@ describe('useSessionStore — saving', () => {
     expect(saveSession).not.toHaveBeenCalled();
   });
 
-  it('stops flushing once the listeners are removed', async () => {
-    // The DOM listeners come off with the store subscriptions. A leaked one would keep a torn-down
-    // store writing, which is the failure the removers exist for.
+  it('takes the flush listeners off with the store subscriptions', async () => {
+    // Asserted through the registrations rather than through a write, because a leaked listener has
+    // no observable one: it calls the same module-level flush, which is idempotent. What can go
+    // wrong is the *identity* — a remover passed a differently-bound function removes nothing, and
+    // the listeners then accumulate on every re-arm for as long as the module is loaded.
+    const documentAdd = vi.spyOn(document, 'addEventListener');
+    const documentRemove = vi.spyOn(document, 'removeEventListener');
+    const windowAdd = vi.spyOn(window, 'addEventListener');
+    const windowRemove = vi.spyOn(window, 'removeEventListener');
+
     await useSessionStore.getState().restoreSession();
+    const visibilityHandler = documentAdd.mock.calls.find(([type]) => type === 'visibilitychange')?.[1];
+    // `String(type)`, because `vi.spyOn(window, 'addEventListener')` resolves to the worker-scope
+    // overload under this project's libs, and comparing its narrower event-name union against
+    // 'pagehide' is a type error rather than a false test.
+    const pageHideHandler = windowAdd.mock.calls.find(([type]) => String(type) === 'pagehide')?.[1];
+    expect(visibilityHandler).toBeTypeOf('function');
+    expect(pageHideHandler).toBeTypeOf('function');
 
-    useSubjectStore.getState().setCategory('ITEM');
     resetSessionForTests();
-    const saveSession = vi.spyOn(backend, 'saveSession');
-    hidePage();
-    window.dispatchEvent(new Event('pagehide'));
-    await Promise.resolve();
 
-    expect(saveSession).not.toHaveBeenCalled();
+    expect(documentRemove).toHaveBeenCalledWith('visibilitychange', visibilityHandler);
+    expect(windowRemove).toHaveBeenCalledWith('pagehide', pageHideHandler);
   });
 
   it('stays silent when the write is refused', async () => {
