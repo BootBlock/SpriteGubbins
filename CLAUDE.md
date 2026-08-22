@@ -792,6 +792,7 @@ recorded at the control itself, which is the treatment anything added to the lis
 | `CollapsibleSection`'s section headers, `SheetSplitRun`'s prompt disclosure | A `<summary>` has to be the **first child** of its `<details>`, so a wrapper round it stops it being the disclosure's control. Both already name and describe themselves through `aria-labelledby` / `aria-describedby`. |
 | `Toast`'s ✕ | The surface is on a three-second timer and goes `inert` for its exit, so a card anchored to it outlives its anchor — and a ✕ on a notification needs no explaining. |
 | `SegmentedChoice`'s pills, `ComboBoxOption`'s options | Each is one **value** of a setting, not a control; the ⓘ on the setting above explains all of them at once, and a card per value is one explanation in ten places. |
+| `SkipLink` | Its own text is the whole explanation, and `ControlTooltip` reveals on `:focus-visible` — which is the only way this link is ever reached, so a card would open on the first Tab of every keyboard session, over the chrome the reader is leaving. |
 | `ComboBox`'s chevron | Not a control at all — `tabIndex={-1}`, `aria-hidden`, and a pointer-only duplicate of what the field it sits in already does. |
 
 **The copy is content, so it lives in `src/constants/` and is written like content.** A setting's

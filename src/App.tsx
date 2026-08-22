@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { Toast } from './components/common/Toast.tsx';
 import { Header } from './components/layout/Header.tsx';
 import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
+import { SkipLink } from './components/layout/SkipLink.tsx';
 import { AtlasCalculatorModal } from './components/modals/AtlasCalculatorModal.tsx';
 import { HistoryModal } from './components/modals/HistoryModal.tsx';
 import { SettingsModal } from './components/modals/SettingsModal.tsx';
@@ -154,10 +155,18 @@ export function App() {
       )}
 
       <div className="relative flex min-h-dvh flex-col">
+        {/* First in the document, because a bypass reached after the chrome bypasses nothing. */}
+        <SkipLink />
+
         <Header />
         <PWAInstallBanner />
 
-        <main id="main-content" className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">
+        {/*
+          `tabIndex={-1}` is what makes the link above move *focus* and not merely the viewport. A
+          fragment jump scrolls to any element, but it only hands focus to one that can hold it — so
+          without this, the next Tab carries on from the link and lands back in the chrome.
+        */}
+        <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-7xl flex-1 p-4 md:p-6">
           {/*
             The page's only `<h1>`, and the top of an outline every view then continues at `<h2>`.
             It is here rather than in the four views for two reasons: it is the one place that can

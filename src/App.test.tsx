@@ -41,4 +41,30 @@ describe('App', () => {
 
     expect(screen.getByRole('main')).toContainElement(screen.getByRole('heading', { level: 1 }));
   });
+
+  /*
+   * `SkipLink` can say what it points at; only the shell can say that the target is there and that
+   * nothing focusable comes first. A bypass reached after the chrome bypasses nothing.
+   */
+  it('opens the document with the bypass, ahead of every other focusable thing', () => {
+    useUIStore.setState({ activeTab: 'studio' });
+    const { container } = render(<App />);
+
+    const focusable = container.querySelectorAll('a[href], button, select, input, [tabindex]');
+    expect(focusable[0]).toBe(screen.getByRole('link', { name: 'Skip to main content' }));
+  });
+
+  it('gives the bypass a landmark to land on, and one that can hold focus', () => {
+    useUIStore.setState({ activeTab: 'studio' });
+    render(<App />);
+
+    // The fragment and the id are written down in two files, so the pair is what is asserted — and
+    // `tabIndex` is what makes following it move focus rather than only the viewport.
+    const landmark = screen.getByRole('main');
+    expect(screen.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute(
+      'href',
+      `#${landmark.id}`,
+    );
+    expect(landmark).toHaveAttribute('tabindex', '-1');
+  });
 });
