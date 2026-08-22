@@ -22,6 +22,9 @@ export const CHROME_TOOLTIPS = {
   installApp:
     'Installs Sprite Gubbins as an application on this device, using the browser’s own install flow. The studio is the same either way; what installing buys is a window of its own, a launcher entry, and offline use — the app carries no server, so with the files cached it works with no network at all. Your prompt history and saved presets stay in this browser’s storage, where they already are.',
 
+  reloadApp:
+    'Fetches the app again from the beginning. The view you were on could not be loaded — its code is fetched separately from the rest of the app, so a dropped connection at the wrong moment leaves that one view unable to start — and a failed fetch is remembered for the rest of the session, which is why pressing the tab again would not help. Nothing you have saved is affected: your prompt history, your presets and the studio state you were working on are all in this browser’s storage and are read back as the app starts.',
+
   dismissInstall:
     'Takes this offer down for now without installing anything. Nothing is stored about the refusal, so the browser is free to offer again on a later visit, and the app is unchanged in the meantime.',
 } as const;

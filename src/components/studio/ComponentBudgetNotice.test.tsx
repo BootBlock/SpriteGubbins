@@ -10,7 +10,7 @@ import { ComponentBudgetNotice } from './ComponentBudgetNotice.tsx';
 
 /**
  * The budget's visible effect on the sheet the studio is configured to; the split drawer's per-row
- * chip is the other half, and `SheetSplitModal.test.tsx` pins that. What is being pinned here is the
+ * chip is the other half, and `SheetSplitContents.test.tsx` pins that. What is being pinned here is the
  * boundary — a warning that fires a component early would train the user to ignore it, and one that
  * fires a component late is not there for the sheet it exists to catch.
  */

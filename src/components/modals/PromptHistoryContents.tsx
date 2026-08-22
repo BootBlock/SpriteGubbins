@@ -2,8 +2,6 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { HISTORY_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useClipboard } from '../../hooks/useClipboard.ts';
 import { useHistoryStore } from '../../stores/useHistoryStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
-import { Modal } from '../common/Modal.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 import { HistoryEntry } from './HistoryEntry.tsx';
 import { HistoryFooter } from './HistoryFooter.tsx';
@@ -18,14 +16,17 @@ import { HistoryFooter } from './HistoryFooter.tsx';
  *
  * The table is read on open rather than held in memory for the session, so a prompt copied in another
  * tab shows up here.
+ *
+ * **The contents alone — the dialog frame is `AppOverlays`'.** This file is loaded on demand,
+ * so the frame has to be somewhere that is already parsed when the reader presses the control
+ * that opens it; `LazyOverlay` there explains what goes wrong when it is not.
  */
-export function HistoryModal() {
+export function PromptHistoryContents() {
   const historyLogs = useHistoryStore((state) => state.historyLogs);
   const isLoading = useHistoryStore((state) => state.isLoading);
   const fetchHistory = useHistoryStore((state) => state.fetchHistory);
   const deleteLog = useHistoryStore((state) => state.deleteLog);
   const restoreLog = useHistoryStore((state) => state.restoreLog);
-  const toggleHistoryModal = useUIStore((state) => state.toggleHistoryModal);
   const copyText = useClipboard();
 
   const [query, setQuery] = useState('');
@@ -47,12 +48,7 @@ export function HistoryModal() {
   }, [historyLogs, query]);
 
   return (
-    <Modal
-      title="Prompt History"
-      icon="🕓"
-      onClose={toggleHistoryModal}
-      panelClassName="glass-panel ml-auto flex h-full w-full max-w-md flex-col self-stretch overflow-hidden rounded-2xl border border-foundry-700 shadow-2xl"
-    >
+    <>
       <div className="border-b border-foundry-700 px-6 py-3">
         {/* The ⓘ, not a card on the field itself: this is a labelled box holding a value, which is
             what that affordance has always marked, and a card revealed by focusing a field opens
@@ -106,6 +102,6 @@ export function HistoryModal() {
       </div>
 
       <HistoryFooter shownCount={matches.length} isFiltered={query.trim() !== ''} />
-    </Modal>
+    </>
   );
 }

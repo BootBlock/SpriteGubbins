@@ -31,7 +31,7 @@ describe('the budget’s effect on the prompt', () => {
     // the self-contradiction v2 exists to remove — and emitting the budget as prose would ask the
     // generator to negotiate a figure only the user can change. Its whole visible effect is the two
     // warnings — the studio's, which `ComponentBudgetNotice.test.tsx` covers, and the split drawer's
-    // per-row chip, which `SheetSplitModal.test.tsx` does.
+    // per-row chip, which `SheetSplitContents.test.tsx` does.
     const { category, subject } = DEFAULT_PRESET;
     const output = DEFAULT_OUTPUT_CONFIG;
     const uncapped = generatePrompt(category, subject, { ...output, componentBudget: NO_COMPONENT_BUDGET });

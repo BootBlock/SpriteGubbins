@@ -391,7 +391,7 @@ describe('the count once a subject names anatomy of its own', () => {
     // The two readers that do not read the compiled prompt are the ones that can drift silently: a
     // selector or an atlas built from an arithmetic of their own would let a user come to expect
     // the wrong number of components. This pins the anatomy reaching all three — the components
-    // themselves are wired up in `SheetFields` and `AtlasCalculatorModal`, which are driven in the
+    // themselves are wired up in `SheetFields` and `AtlasCalculatorContents`, which are driven in the
     // browser rather than here.
     //
     // **The prompt and the atlas describe one image; the selector describes the job.** A rig covers
