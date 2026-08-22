@@ -60,6 +60,7 @@ import {
   applySectionNumbers,
   sectionNumbers,
   assertBlocksResolved,
+  resolveCitations,
   substitute,
 } from './templateEngine.ts';
 
@@ -193,123 +194,6 @@ export function generatePrompt(
     componentCount,
   );
 
-  const values: Record<string, string> = {
-    CATEGORY: category,
-    // The article belongs to the category rather than to the sentence, and is written down in
-    // `CATEGORY_OPTIONS` rather than derived from the identifier's first letter — English picks it
-    // by sound. See `CategoryDefinition.article`.
-    CATEGORY_ARTICLE: CATEGORY_OPTIONS[category].article,
-    COMPONENT_COUNT: String(componentCount),
-    COMPONENT_BREAKDOWN: componentBreakdownFor(category, mode, output.directions, output.sheetIndex, anatomy),
-    // Every one of these is now a function of the category as well as the mode. That is the whole
-    // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
-    // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
-    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category],
-    ASSEMBLY_POSES: plan.assembly,
-    CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
-    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
-    // The same claim in three sections, from the record that also feeds the wrappers' two negative
-    // channels — so a category names its assembled whole the same way wherever the prompt says it.
-    CATEGORY_ASSEMBLY_INSTRUCTION: CATEGORY_ASSEMBLY[category].instruction,
-    CATEGORY_ASSEMBLY_EXCLUSION: CATEGORY_ASSEMBLY[category].exclusion,
-    CATEGORY_ASSEMBLY_AUDIT: CATEGORY_ASSEMBLY[category].audit,
-    // Section 0's "one consistent scale" rule is abstract, and its worked example is what makes it
-    // land — so the example names pieces this category's sheet actually holds, rather than the hand
-    // and torso it named for every subject the app can describe.
-    SCALE_EXAMPLE_DESCRIPTION: SCALE_EXAMPLE_TEXT[category],
-
-    RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
-    SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
-    RESOLUTION_PROFILE_DESCRIPTION: RESOLUTION_PROFILE_TEXT[output.resolutionProfile],
-    // A function of the target size as well as the profile, because `CUSTOM` is the one profile
-    // that carries no scale of its own — see `minFeatureSize`.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize),
-    // Sprite-scale bullets join the pixel discipline only when the stated component is small
-    // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, output.spriteTargetSize),
-    // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
-    // the value is still supplied because `substitute` throws on a token it has no value for, and
-    // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
-    PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
-    OUTLINE_DESCRIPTION: OUTLINE_TEXT[output.outlineStyle],
-    LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
-    // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
-    // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
-    // is still there to be filled.
-    VALIDATION_PASS_DESCRIPTION: VALIDATION_PASS_TEXT[output.renderStyle],
-    SPRITE_TARGET_SIZE: output.spriteTargetSize,
-    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: `substitute` throws
-    // on a token it has no value for, and the template's own `[IF:NATIVE_GRID]` is what decides
-    // whether the token is still there to be filled.
-    NATIVE_GRID_SCALE: nativeScale === null ? '' : String(nativeScale),
-
-    HARDWARE_NAME: hardware?.name ?? '',
-    HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
-    PALETTE_NAME: palette?.name ?? '',
-    PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
-
-    STYLE_REFERENCE_NAME: reference?.name ?? '',
-    STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
-
-    PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
-    CAMERA_ELEVATION: String(cameraElevation),
-    DIRECTIONS_DESCRIPTION: describeDirections(coveredDirections),
-    // The fix for the defect that made a front-three-quarter, a right-side and a back-three-quarter
-    // head come back at the same angle: the facings are stated as object *yaws* beneath a camera the
-    // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
-    // The elevation goes with them because what a yaw reveals is a function of both.
-    DIRECTIONAL_ROTATION: directionalRotation(coveredDirections, cameraElevation),
-    // The same facings related to each other rather than enumerated: cell N + 1 is cell N after a
-    // stated turn. The yaw list above is four independent descriptions, and a generator reads it as
-    // four independent pictures — which is how a sheet comes back with its asymmetries re-decided in
-    // every cell, each view facing correctly and none of them the same object.
-    TURNTABLE_SEQUENCE: turntableSequence(coveredDirections),
-    // Which of the subject's own sides each of those yaws brings towards the camera. Supplied
-    // whether or not the block survives, as `PALETTE_DESCRIPTION` is: the template gates it on
-    // `[IF:PLAN_VIEW!=yes]` *inside* `[IF:MULTI_DIRECTION]`, so a single-facing sheet drops it for
-    // having no second view to compare and a plan view drops it for having no near side at all.
-    LEADING_SIDE_LEDGER: leadingSideLedger(coveredDirections),
-    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
-    // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
-    MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),
-    LANDMARK_DESCRIPTION: LANDMARK_TEXT[category],
-    PRIMARY_DIRECTION: assemblyDirection,
-    // A function of the elevation as well as the facing, for the same reason the yaw list is: which
-    // of a subject's pieces renders in front of its body is a near/far question, and directly
-    // overhead there is no near side to answer it with.
-    DEPTH_ORDER_DESCRIPTION: depthOrderText(assemblyDirection, cameraElevation),
-
-    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
-    ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
-    JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
-    OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
-    SOCKETS: output.sockets,
-    IDENTITY_LOCK: output.identityLock,
-
-    SERIES_POSITION: String(batch.ordinal),
-    SERIES_TOTAL: String(batch.sheets.length),
-    // Computed whether or not the block survives, as `PALETTE_DESCRIPTION` is: `substitute` throws
-    // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
-    // the token is still there to be filled.
-    SERIES_SHEETS: describeSeries(category, batch, anatomy),
-  };
-
-  // The sixteen subject fields, keyed by the upper-case form of their own key rather than written
-  // out again — a field added to `SUBJECT_FIELD_KEYS` reaches the template without a second edit.
-  //
-  // **Each one supplies its label as well as its value**, because section 1 no longer writes the
-  // labels itself. Sixteen keys shared by six categories meant one category's vocabulary reaching
-  // all of them: a vehicle's *Service Condition* arrived as "Age / Vitality", its turret under
-  // "Anatomy base" and its vision slit under "Head & sensory features" — correct values, every one
-  // of them labelled from the category the keys were first designed for, in the section the template
-  // calls the sole authority for the subject's design and which forbids inferring anything it does
-  // not state. Read through `fieldLabelFor` so the prompt and the studio cannot drift apart: they
-  // are now the same string.
-  for (const key of SUBJECT_FIELD_KEYS) {
-    values[key.toUpperCase()] = subject[key];
-    values[`${key.toUpperCase()}_LABEL`] = fieldLabelFor(category, key);
-  }
-
   // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
   // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
   // another in the inventory. It also empties for `NONE`, which drops the line entirely rather than
@@ -328,7 +212,6 @@ export function generatePrompt(
   // it and reading it back off `values` would come out `string | undefined`.
   const anatomyFacings = anatomyFacingsFor(category, mode, output.directions, output.sheetIndex);
   const additionalAnatomyLine = anatomyFacings !== null ? anatomy.map(formatAnatomyComponent).join(', ') : '';
-  values.ADDITIONAL_ANATOMY = additionalAnatomyLine;
 
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
@@ -429,13 +312,168 @@ export function generatePrompt(
     RETURNS_TEXT: returnsText(output.targetModel) ? 'yes' : '',
   };
 
-  // Blocks, then sections, then optionals, then numbering, then substitution — see
-  // `templateEngine.ts` for why that order. Sections are numbered from the headings that survived the
-  // conditionals, which is what closes the gap the rig section used to leave behind it. The marker
-  // check sits *before* substitution: afterwards the text carries whatever the user typed, and a
-  // subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
+  // The conditioned template, and the number each of its surviving headings lands on. Three sets of
+  // citations resolve against that one answer — the prompt body's own, which `applySectionNumbers`
+  // reads below; the app-authored values, through `cite`; and the model wrappers, which cite
+  // sections in text added after the markers are gone. Any of them deriving its own is how a section
+  // added anywhere moves one set and leaves the others behind.
   const conditioned = applyConditionals(PROMPT_TEMPLATE, config);
-  const sections = applySectionNumbers(conditioned);
+  const numbers = sectionNumbers(conditioned);
+  const cite = (text: string): string => resolveCitations(numbers, text);
+
+  // Every value below is the app's own prose, so each is resolved through `cite` once the record is
+  // built: a `[SEC:…]` written into one of the constants they read from is a citation of a heading,
+  // and `substitute` runs last, so nothing else would ever consume it. **The values carrying text
+  // the reader typed are assigned afterwards instead, and are never cited over** — that is where the
+  // app/user boundary sits, and it has to be a boundary between *values* rather than one drawn
+  // inside the record's keys: a subject field reading `[SEC:NOPE]` is an odd name, not a broken
+  // template, and resolving citations over it would throw out of the compiler mid-render.
+  const authored: Record<string, string> = {
+    CATEGORY: category,
+    // The article belongs to the category rather than to the sentence, and is written down in
+    // `CATEGORY_OPTIONS` rather than derived from the identifier's first letter — English picks it
+    // by sound. See `CategoryDefinition.article`.
+    CATEGORY_ARTICLE: CATEGORY_OPTIONS[category].article,
+    COMPONENT_COUNT: String(componentCount),
+    // Every one of these is now a function of the category as well as the mode. That is the whole
+    // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
+    // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
+    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category],
+    ASSEMBLY_POSES: plan.assembly,
+    CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
+    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
+    // The same claim in three sections, from the record that also feeds the wrappers' two negative
+    // channels — so a category names its assembled whole the same way wherever the prompt says it.
+    CATEGORY_ASSEMBLY_INSTRUCTION: CATEGORY_ASSEMBLY[category].instruction,
+    CATEGORY_ASSEMBLY_EXCLUSION: CATEGORY_ASSEMBLY[category].exclusion,
+    CATEGORY_ASSEMBLY_AUDIT: CATEGORY_ASSEMBLY[category].audit,
+    // Section 0's "one consistent scale" rule is abstract, and its worked example is what makes it
+    // land — so the example names pieces this category's sheet actually holds, rather than the hand
+    // and torso it named for every subject the app can describe.
+    SCALE_EXAMPLE_DESCRIPTION: SCALE_EXAMPLE_TEXT[category],
+
+    RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
+    SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
+    RESOLUTION_PROFILE_DESCRIPTION: RESOLUTION_PROFILE_TEXT[output.resolutionProfile],
+    // A function of the target size as well as the profile, because `CUSTOM` is the one profile
+    // that carries no scale of its own — see `minFeatureSize`.
+    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize),
+    // Sprite-scale bullets join the pixel discipline only when the stated component is small
+    // enough that silhouette carries the identity; `''` is what drops the optional line.
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, output.spriteTargetSize),
+    // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
+    // the value is still supplied because `substitute` throws on a token it has no value for, and
+    // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
+    PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
+    OUTLINE_DESCRIPTION: OUTLINE_TEXT[output.outlineStyle],
+    LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
+    // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
+    // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
+    // is still there to be filled.
+    VALIDATION_PASS_DESCRIPTION: VALIDATION_PASS_TEXT[output.renderStyle],
+    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: `substitute` throws
+    // on a token it has no value for, and the template's own `[IF:NATIVE_GRID]` is what decides
+    // whether the token is still there to be filled.
+    NATIVE_GRID_SCALE: nativeScale === null ? '' : String(nativeScale),
+
+    HARDWARE_NAME: hardware?.name ?? '',
+    HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
+    PALETTE_NAME: palette?.name ?? '',
+    PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
+
+    STYLE_REFERENCE_NAME: reference?.name ?? '',
+    STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
+
+    PROJECTION_DESCRIPTION: PROJECTION_TEXT[output.projection],
+    CAMERA_ELEVATION: String(cameraElevation),
+    DIRECTIONS_DESCRIPTION: describeDirections(coveredDirections),
+    // The fix for the defect that made a front-three-quarter, a right-side and a back-three-quarter
+    // head come back at the same angle: the facings are stated as object *yaws* beneath a camera the
+    // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
+    // The elevation goes with them because what a yaw reveals is a function of both.
+    DIRECTIONAL_ROTATION: directionalRotation(coveredDirections, cameraElevation),
+    // The same facings related to each other rather than enumerated: cell N + 1 is cell N after a
+    // stated turn. The yaw list above is four independent descriptions, and a generator reads it as
+    // four independent pictures — which is how a sheet comes back with its asymmetries re-decided in
+    // every cell, each view facing correctly and none of them the same object.
+    TURNTABLE_SEQUENCE: turntableSequence(coveredDirections),
+    // Which of the subject's own sides each of those yaws brings towards the camera. Supplied
+    // whether or not the block survives, as `PALETTE_DESCRIPTION` is: the template gates it on
+    // `[IF:PLAN_VIEW!=yes]` *inside* `[IF:MULTI_DIRECTION]`, so a single-facing sheet drops it for
+    // having no second view to compare and a plan view drops it for having no near side at all.
+    LEADING_SIDE_LEDGER: leadingSideLedger(coveredDirections),
+    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
+    // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
+    MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),
+    LANDMARK_DESCRIPTION: LANDMARK_TEXT[category],
+    PRIMARY_DIRECTION: assemblyDirection,
+    // A function of the elevation as well as the facing, for the same reason the yaw list is: which
+    // of a subject's pieces renders in front of its body is a near/far question, and directly
+    // overhead there is no near side to answer it with.
+    DEPTH_ORDER_DESCRIPTION: depthOrderText(assemblyDirection, cameraElevation),
+
+    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
+    ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
+    JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
+    OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
+
+    SERIES_POSITION: String(batch.ordinal),
+    SERIES_TOTAL: String(batch.sheets.length),
+    // Computed whether or not the block survives, as `PALETTE_DESCRIPTION` is: `substitute` throws
+    // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
+    // the token is still there to be filled.
+    SERIES_SHEETS: describeSeries(category, batch, anatomy),
+  };
+
+  // The sixteen field labels are the app's own words too, so they are cited over with the rest —
+  // their values, assigned below, are not. Read through `fieldLabelFor` so the prompt and the
+  // studio cannot drift apart: they are now the same string. Sixteen keys shared by six categories
+  // otherwise meant one category's vocabulary reaching all of them — a vehicle's *Service Condition*
+  // arriving as "Age / Vitality", its turret under "Anatomy base" and its vision slit under "Head &
+  // sensory features" — correct values, every one of them labelled from the category the keys were
+  // first designed for, in the section the template calls the sole authority for the subject's
+  // design and which forbids inferring anything it does not state.
+  for (const key of SUBJECT_FIELD_KEYS) {
+    authored[`${key.toUpperCase()}_LABEL`] = fieldLabelFor(category, key);
+  }
+
+  const values: Record<string, string> = Object.fromEntries(
+    Object.entries(authored).map(([token, text]) => [token, cite(text)]),
+  );
+
+  // Everything from here down carries text the reader typed, so none of it is cited over.
+  //
+  // The sixteen subject fields are keyed by the upper-case form of their own key rather than written
+  // out again — a field added to `SUBJECT_FIELD_KEYS` reaches the template without a second edit.
+  for (const key of SUBJECT_FIELD_KEYS) {
+    values[key.toUpperCase()] = subject[key];
+  }
+
+  values.SPRITE_TARGET_SIZE = output.spriteTargetSize;
+  values.SOCKETS = output.sockets;
+  values.IDENTITY_LOCK = output.identityLock;
+  values.ADDITIONAL_ANATOMY = additionalAnatomyLine;
+
+  // The one value that is both: an inventory of the app's own prose with the anatomy the reader named
+  // appended to it. It resolves its own citations over the app-authored half, before the reader's
+  // text is composed into it — which is what keeps the boundary above a boundary between strings
+  // rather than a hopeful exclusion.
+  values.COMPONENT_BREAKDOWN = componentBreakdownFor(
+    category,
+    mode,
+    output.directions,
+    output.sheetIndex,
+    anatomy,
+    cite,
+  );
+
+  // Blocks, then sections, then optionals, then numbering, then substitution — see
+  // `templateEngine.ts` for why that order. The first of those ran above, because the values had to
+  // be cited against the headings it leaves standing; what follows is the rest of it. Sections are
+  // numbered from those same survivors, which is what closes the gap the rig section used to leave
+  // behind it. The marker check sits *before* substitution: afterwards the text carries whatever the
+  // user typed, and a subject named `Robot [IF:X] guard` is an odd name rather than a broken template.
+  const sections = applySectionNumbers(conditioned, numbers);
   const resolved = applyNumbering(applyOptionals(sections, values));
   assertBlocksResolved(resolved);
   const prompt = substitute(resolved, values);
@@ -453,7 +491,7 @@ export function generatePrompt(
     palette: palette !== null,
     // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
     // wrapper naming a section cannot come to name a different one than the prose does.
-    sectionNumbers: sectionNumbers(conditioned),
+    sectionNumbers: numbers,
   });
 }
 

@@ -9,6 +9,7 @@ import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import * as promptText from '../constants/promptText/index.ts';
 import {
+  BACKGROUND_KEYS,
   DIRECTION_SETS,
   DIRECTIONAL_MODES,
   HARDWARE_PROFILE_IDS,
@@ -49,6 +50,9 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
 const EMPTY_SUBJECT: SubjectDefinition = Object.fromEntries(
   SUBJECT_FIELD_KEYS.map((key) => [key, '']),
 ) as SubjectDefinition;
+
+/** Every marker the five template passes consume, none of which may survive into a compiled prompt. */
+const MARKER = /\[(?:DEFINE|OPTIONAL|IF|SECTION|SEC):|\[\/IF\]|\[N\]/;
 
 describe('generatePrompt — the subject', () => {
   it('writes every stated subject field into the prompt', () => {
@@ -240,10 +244,64 @@ describe('generatePrompt — conditional blocks', () => {
                 withOutput({ renderStyle, rigMode, emitManifest, emitPromptFeedback, targetModel }),
               );
               const branch = `${targetModel}/${renderStyle}/${rigMode}/${String(emitManifest)}/${String(emitPromptFeedback)}`;
-              expect(prompt, branch).not.toMatch(/\[(?:DEFINE|OPTIONAL|IF):|\[\/IF\]|\[N\]/);
+              expect(prompt, branch).not.toMatch(MARKER);
             }
           }
         }
+      }
+    }
+  });
+
+  it('never lets one reach it from a value either, under any category or sheet', () => {
+    // The branch sweep above pins one category, and the markers that arrive through a *value* are
+    // per-category: the exclusions and the inventory guard are keyed by it, and the sheet plans'
+    // prose is keyed by the category, the mode, the direction set and the sheet index together.
+    // Those citations are consumed by `resolveCitations` as the compiler authors each value rather
+    // than by `applySectionNumbers`, so `assertBlocksResolved` — which runs before substitution —
+    // cannot see them. This is what does.
+    for (const category of SUBJECT_CATEGORIES) {
+      // Named anatomy, because `componentBreakdownFor` returns early without it — and the prose it
+      // composes *past* that early return is app-authored, so it is exactly the text a stray marker
+      // could hide in. A default subject names none, so every sweep in this file used to stop short
+      // of that half of the one value the compiler treats specially.
+      const subject = { ...defaultSubjectFor(category), additional_anatomy: 'Sensor Vane ×2' };
+      for (const directionalMode of DIRECTIONAL_MODES) {
+        for (const directions of DIRECTION_SETS) {
+          for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
+            const prompt = generatePrompt(
+              category,
+              subject,
+              withOutput({ directionalMode, directions, sheetIndex }),
+            );
+            expect(prompt, `${category}/${directionalMode}/${directions}/${String(sheetIndex)}`).not.toMatch(
+              MARKER,
+            );
+          }
+        }
+      }
+      // Section 2's palette paragraph cites two sections and no preset ever selects a palette, so it
+      // reaches no other sweep in this file.
+      for (const palette of PALETTE_IDS) {
+        expect(generatePrompt(category, subject, withOutput({ palette })), palette).not.toMatch(MARKER);
+      }
+      // The target is crossed with the category for the reason the punctuation sweep crosses them: a
+      // wrapper is not the self-contained prose it looks like. `wrapForModel` is handed
+      // `CATEGORY_ASSEMBLY`, `FRAME_IS_A_COMPONENT` and `LIMBS_ARE_COMPONENTS` — all category-keyed,
+      // all app-authored, and all reaching the model *after* `substitute`, so a marker written into
+      // one of them would ship literally rather than being cited over on the value path.
+      for (const targetModel of TARGET_MODEL_IDS) {
+        expect(
+          generatePrompt(category, subject, withOutput({ targetModel })),
+          `${category}/${targetModel}`,
+        ).not.toMatch(MARKER);
+      }
+      // And the background key, which is the one wrapper input no other sweep varies: `BACKGROUND_KEY_TEXT`
+      // reaches Flux's wrapper by the same uncited route, so only its default entry was ever checked.
+      for (const backgroundKey of BACKGROUND_KEYS) {
+        expect(
+          generatePrompt(category, subject, withOutput({ backgroundKey, targetModel: 'FLUX' })),
+          `${category}/${backgroundKey}`,
+        ).not.toMatch(MARKER);
       }
     }
   });
