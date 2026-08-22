@@ -1,9 +1,9 @@
 import { Fragment } from 'react';
 import { IDENTITY_PALETTE_LABEL, IDENTITY_SUBJECT_SEGMENTS } from '../../constants/identityLock.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
 import { withSegments } from '../../utils/identityDigest.ts';
 import { identitySubjectSegments } from '../../utils/identitySubject.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -25,7 +25,7 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
  */
 export function IdentitySubjectDigest() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
-  const showToast = useUIStore((state) => state.showToast);
+  const showToast = useShowToast();
 
   function handleClick() {
     // Read at click time rather than subscribed, exactly as the palette capture reads the lock: the

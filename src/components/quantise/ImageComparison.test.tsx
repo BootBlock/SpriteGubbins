@@ -1,8 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
 import { flatDifference } from '../../test/images.ts';
+import { useSheetWriteStore } from '../../stores/useSheetWriteStore.ts';
+import { useUIStore } from '../../stores/useUIStore.ts';
 import { createImage } from '../../utils/imageData.ts';
+import { encodePng } from '../../utils/encodePng.ts';
 import type { QuantiseResult, SheetScale } from '../../types/quantiser.ts';
+import { Toast } from '../common/Toast.tsx';
 import { ImageComparison } from './ImageComparison.tsx';
 
 /**
@@ -526,6 +531,34 @@ describe('ImageComparison’s preview modes', () => {
   });
 });
 
+/** Press the toolbar's control, wherever the toolbar currently is. */
+function press(name: string, inside: HTMLElement = document.body) {
+  fireEvent.click(within(inside).getByRole('button', { name }));
+}
+
+/**
+ * Keep hold of the window the panel is opened into, which the test otherwise has no handle on.
+ *
+ * happy-dom opens a real second `Window`, so this passes the call straight through rather than
+ * standing in for it: what the tests below then query is the document the portal actually built
+ * its elements in.
+ */
+function watchOpen(): { last: Window | null } {
+  const seen: { last: Window | null } = { last: null };
+  const open = window.open.bind(window);
+  vi.spyOn(window, 'open').mockImplementation((...args) => {
+    seen.last = open(...args);
+    return seen.last;
+  });
+  return seen;
+}
+
+/** Where the panel has gone, or a failure naming the reason the rest of the test would not. */
+function bodyOf(opened: { last: Window | null }): HTMLElement {
+  if (opened.last === null) throw new Error('No window was opened.');
+  return opened.last.document.body;
+}
+
 /**
  * Moving the whole panel into a window of its own, and back.
  *
@@ -538,34 +571,6 @@ describe('ImageComparison, detached', () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
-
-  /** Press the toolbar's control, wherever the toolbar currently is. */
-  function press(name: string, inside: HTMLElement = document.body) {
-    fireEvent.click(within(inside).getByRole('button', { name }));
-  }
-
-  /**
-   * Keep hold of the window the panel is opened into, which the test otherwise has no handle on.
-   *
-   * happy-dom opens a real second `Window`, so this passes the call straight through rather than
-   * standing in for it: what the tests below then query is the document the portal actually built
-   * its elements in.
-   */
-  function watchOpen(): { last: Window | null } {
-    const seen: { last: Window | null } = { last: null };
-    const open = window.open.bind(window);
-    vi.spyOn(window, 'open').mockImplementation((...args) => {
-      seen.last = open(...args);
-      return seen.last;
-    });
-    return seen;
-  }
-
-  /** Where the panel has gone, or a failure naming the reason the rest of the test would not. */
-  function bodyOf(opened: { last: Window | null }): HTMLElement {
-    if (opened.last === null) throw new Error('No window was opened.');
-    return opened.last.document.body;
-  }
 
   it('moves the panel out of the page and leaves the way back behind', () => {
     const opened = watchOpen();
@@ -668,5 +673,113 @@ describe('ImageComparison, detached', () => {
         name: '4×',
       }),
     ).toHaveAttribute('aria-pressed', 'true');
+  });
+});
+
+/**
+ * Where a notification raised in the detached window lands.
+ *
+ * The panel that moves carries its toolbar, and the toolbar carries the download button — so every
+ * confirmation this panel raises is raised in the other document. Both of them are the reader's only
+ * copy of what happened: the success names what was actually written, down to whether the sprites
+ * were named from the inventory or numbered because the count disagreed with it, and the failure
+ * names why nothing was. Painted on the page behind, both are lost, and the live region announcing
+ * them is in the wrong document too.
+ *
+ * Each of these therefore mounts the page's own `<Toast />` as `AppOverlays` does, and asserts on
+ * both documents rather than on one: the message being in the right place is only half the claim,
+ * and one store message showing on two surfaces at once is the other half.
+ */
+describe('ImageComparison, detached — where its notifications land', () => {
+  /** The written sheet, ready at once — this is about where the answer is shown, not about waiting. */
+  beforeEach(() => {
+    useUIStore.setState({ toastMessage: null, toastTarget: 'page' });
+    useSheetWriteStore.setState({ writing: false });
+    FakeSheetWriteWorker.reset();
+    FakeSheetWriteWorker.respond = ({ image }) =>
+      encodePng(image).then((file) => ({ kind: 'written', file }) as const);
+    vi.stubGlobal('Worker', FakeSheetWriteWorker);
+    URL.createObjectURL = vi.fn(() => 'blob:sheet');
+    URL.revokeObjectURL = vi.fn();
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => undefined);
+  });
+
+  afterEach(() => {
+    useUIStore.getState().dismissToast();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  /** The panel with the page's toast beside it, which is the arrangement `AppOverlays` renders. */
+  function showWithToast() {
+    render(
+      <>
+        <ImageComparison
+          sourceName="sheet.png"
+          source={createImage(SOURCE_SIDE, SOURCE_SIDE)}
+          sourceColors={200}
+          scale={null}
+          grid={8}
+          quantised={{ result: resultFor(8), grid: 8 }}
+          busy={false}
+        />
+        <Toast />
+      </>,
+    );
+  }
+
+  /** Press Download and wait for the writer's answer, which is what raises the notification. */
+  async function download(inside: HTMLElement): Promise<void> {
+    await act(async () => {
+      press('Download PNG', inside);
+      await Promise.resolve();
+    });
+    await waitFor(() => {
+      expect(useUIStore.getState().toastMessage).not.toBeNull();
+    });
+  }
+
+  it('answers a download pressed in the detached window there, not on the page behind it', async () => {
+    const opened = watchOpen();
+    showWithToast();
+    press('Detach preview');
+
+    await download(bodyOf(opened));
+
+    // The confirmation names the file and what was written into it, and it is in the document the
+    // reader pressed the button in.
+    expect(within(bodyOf(opened)).getByText(/Downloaded sheet-quantised\.png/)).toBeInTheDocument();
+    // And nowhere else. The page's live region is still mounted — it has to be, or nothing it is
+    // later given is announced — but it is holding no message.
+    expect(screen.queryByText(/Downloaded sheet-quantised\.png/)).toBeNull();
+  });
+
+  it('brings a notification still on screen back into the page when the preview returns', async () => {
+    const opened = watchOpen();
+    showWithToast();
+    press('Detach preview');
+    await download(bodyOf(opened));
+
+    press('Return to the page', bodyOf(opened));
+
+    // The window the message was in has gone, so it is announced here instead — rather than being
+    // taken off the screen by a reader pressing Return for an unrelated reason.
+    expect(screen.getByText(/Downloaded sheet-quantised\.png/)).toBeInTheDocument();
+    expect(useUIStore.getState().toastTarget).toBe('page');
+  });
+
+  it('leaves the page its own notifications while the preview is detached', () => {
+    const opened = watchOpen();
+    showWithToast();
+    press('Detach preview');
+
+    act(() => {
+      useUIStore.getState().showToast('Saved custom preset');
+    });
+
+    // Addressed by the surface that raised it, not by which surfaces happen to exist: a toast from
+    // the page belongs in the page even while a second document is showing.
+    expect(screen.getByText('Saved custom preset')).toBeInTheDocument();
+    expect(within(bodyOf(opened)).queryByText('Saved custom preset')).toBeNull();
   });
 });

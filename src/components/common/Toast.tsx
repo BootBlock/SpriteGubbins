@@ -1,5 +1,19 @@
 import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../../constants/ui.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import type { ToastTarget } from '../../types/ui.ts';
+
+interface ToastProps {
+  /**
+   * Which document this one serves. Messages addressed anywhere else are not its to show.
+   *
+   * Defaults to the page, which is where three of the four mounts are: `AppOverlays` renders one
+   * while no overlay is open, and `Modal` renders one inside the `<dialog>` — mutually exclusive by
+   * construction, and both of them the page's. The fourth is `DetachedPreview`, which is the only
+   * surface that can be on screen *beside* the page rather than instead of it, and the only reason
+   * this prop exists.
+   */
+  readonly target?: ToastTarget;
+}
 
 /**
  * The app's one notification surface, reading straight from the store.
@@ -44,8 +58,16 @@ import { useUIStore } from '../../stores/useUIStore.ts';
  * That leaves the ✕ the same tone as the message beside it, and the hover is the `rotate-90` alone.
  * A resting tone that differs from the hover is what the muted ramp was buying, and there is no
  * darker tone to spend on it that keeps the glyph above 4.5:1 at both ends of the gradient.
+ *
+ * **A message it is not addressed to is not its to show.** More than one of these can be mounted at
+ * once — the comparison panel's window has its own, because the panel's download button travels
+ * there — and the store holds one message, so both would otherwise announce it and both timers would
+ * be draining the same piece of state. The live region is still rendered here either way, for the
+ * reason above: a region that appears with its text is not reliably announced, and a document that
+ * only ever renders one when it has something to say never announces anything.
  */
-export function Toast() {
+export function Toast({ target = 'page' }: ToastProps) {
+  const addressed = useUIStore((state) => state.toastTarget === target);
   const message = useUIStore((state) => state.toastMessage);
   const toastId = useUIStore((state) => state.toastId);
   const isLeaving = useUIStore((state) => state.isToastLeaving);
@@ -57,7 +79,7 @@ export function Toast() {
       aria-atomic="true"
       className="pointer-events-none fixed inset-x-4 bottom-6 z-50 flex justify-end sm:inset-x-auto sm:right-6"
     >
-      {message !== null && (
+      {addressed && message !== null && (
         // Keyed by the toast rather than by its wording, so a repeated message still restarts the
         // entrance and the countdown instead of inheriting the previous one's progress.
         <div
