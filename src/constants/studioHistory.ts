@@ -22,7 +22,7 @@ export const STUDIO_HISTORY_LIMIT = 20;
 /** The paragraph under the two buttons, keyed to whether there is anything to undo. */
 export const STUDIO_HISTORY_GUIDANCE = {
   /** Nothing recorded yet, which is every reader's first sight of this panel. */
-  open: 'Switching category and Randomise each replace all sixteen answers below at once, and so does loading a preset or restoring a prompt from the history. Every one of those is recorded here before it happens, so the subject you had is one press away rather than gone. Editing a single field records nothing, because typing the old value back is already the way to undo it — but an edit made after one of those acts is not lost either, because stepping forward again brings the studio back exactly as you left it.',
+  open: 'Switching category, Randomise and Reset each replace all sixteen answers below at once, and so does loading a preset or restoring a prompt from the history. Every one of those is recorded here before it happens, so the subject you had is one press away rather than gone. Editing a single field records nothing, because typing the old value back is already the way to undo it — but an edit made after one of those acts is not lost either, because stepping forward again brings the studio back exactly as you left it.',
 
   /** At least one step back is available. */
   available:

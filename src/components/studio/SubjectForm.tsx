@@ -1,14 +1,12 @@
 import { CATEGORY_OPTIONS } from '../../constants/categories/index.ts';
 import { SUBJECT_FIELD_GROUPS } from '../../constants/subjectGroups.ts';
-import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
 import { subjectGroupDigest } from '../../utils/studioDigests.ts';
 import { CollapsibleSection } from '../common/CollapsibleSection.tsx';
 import { ComboBox } from '../common/ComboBox.tsx';
-import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SectionToggleAll } from '../common/SectionToggleAll.tsx';
 import { CategorySelector } from './CategorySelector.tsx';
+import { SubjectActions } from './SubjectActions.tsx';
 
 /**
  * What is being drawn: the category, and the sixteen fields that describe the subject, in five
@@ -35,20 +33,17 @@ export function SubjectForm() {
   const category = useSubjectStore((state) => state.category);
   const subject = useSubjectStore((state) => state.subject);
   const setField = useSubjectStore((state) => state.setField);
-  const randomizeSubject = useSubjectStore((state) => state.randomizeSubject);
-  const showToast = useUIStore((state) => state.showToast);
 
-  const { label: categoryLabel, fields } = CATEGORY_OPTIONS[category];
+  const { fields } = CATEGORY_OPTIONS[category];
   // Keyed for lookup because the groups name fields by key while a category defines them as a list.
   // Built per render: `fields` changes with the category, and a module-level map could not.
   const fieldsByKey = new Map(fields.map((field) => [field.key, field]));
 
-  // The panel is a *named* group. The Randomise button below is a group of its own, and Tailwind's
-  // `group-hover:` matches any `group` ancestor — so an unnamed one out here would roll its dice
-  // from a pointer anywhere in the panel.
+  // `group/panel` is *named* on purpose — see the note in `SubjectActions`, whose die turns from
+  // its own unnamed `group` and would otherwise turn from a pointer anywhere in this panel.
   return (
     <section className="animate-view-fade-in glass-panel group/panel space-y-4 rounded-2xl border border-foundry-700 p-5 shadow-2xl transition-colors duration-585 hover:border-tab/40">
-      {/* `flex-wrap`: the header now carries two controls beside the heading, and at a narrow panel
+      {/* `flex-wrap`: the header carries three controls beside the heading, and at a narrow panel
           they would otherwise squeeze the title rather than dropping below it. */}
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-foundry-700 pb-3">
         <h2 className="flex items-center gap-2.5 text-base font-bold text-ink">
@@ -65,24 +60,7 @@ export function SubjectForm() {
         <div className="flex items-center gap-2">
           <SectionToggleAll sections={SUBJECT_FIELD_GROUPS} panelLabel="Subject Definition" />
 
-          <ControlTooltip hint="Randomise" text={STUDIO_ACTION_TOOLTIPS.randomise}>
-            <button
-              type="button"
-              onClick={() => {
-                randomizeSubject();
-                showToast(`Randomised ${categoryLabel} properties`);
-              }}
-              className="group flex items-center gap-1.5 rounded-xl bg-gold px-3 py-1.5 text-xs font-black text-foundry-950 shadow-md transition-transform duration-390 hover:scale-[1.04] active:scale-[0.96]"
-            >
-              <span
-                aria-hidden="true"
-                className="inline-block transition-transform duration-975 group-hover:rotate-180"
-              >
-                🎲
-              </span>
-              Randomise
-            </button>
-          </ControlTooltip>
+          <SubjectActions />
         </div>
       </div>
 
