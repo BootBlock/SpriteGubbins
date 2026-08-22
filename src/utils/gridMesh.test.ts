@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DETAILED_SIZE, DETAILED_STARTS, detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
 import { imageFrom, soften } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { boundaryMesh, regularMesh } from './gridMesh.ts';
@@ -92,6 +93,48 @@ describe('boundaryMesh', () => {
     const mesh = boundaryMesh(sheet, 8);
 
     expect(mesh.x).toEqual(starts);
+  });
+
+  it('cuts a detailed drifting sheet on the art’s own boundaries, not on its interior detail', () => {
+    // The sheet a generator actually returns, and the one the mesh degraded on: cells drifting
+    // between six and seven pixels, a contour ring, and hard marks drawn through the middle of
+    // every fourth-by-third cell. The marks' edges carry several times what a cell boundary
+    // carries, so while the line list's floor was the axis mean they displaced the boundaries out
+    // of it — and the mesh walked a list that was partly detail and partly missing, putting cuts
+    // as much as three pixels off the art.
+    //
+    // Every cut now lands within a pixel of a boundary. The pixel is a merged cluster's centre
+    // pulled by a mark edge one pixel outside the boundary's own ramp, which is inside the walk's
+    // tolerance and inside what the modal vote absorbs.
+    const sheet = detailedSheet(detailedMarks);
+
+    const mesh = boundaryMesh(sheet, 6);
+
+    for (const axis of [mesh.x, mesh.y]) {
+      for (const boundary of DETAILED_STARTS) {
+        const nearest = Math.min(...axis.map((cut) => Math.abs(cut - boundary)));
+        expect(nearest, `no cut within a pixel of ${String(boundary)}`).toBeLessThanOrEqual(1);
+      }
+      // The art holds twenty cells. A cut placed one pixel early leaves a pixel of sheet past the
+      // last boundary, and the walk completes a cell there rather than dropping it — the safe
+      // direction, and the one extra cut this tolerates.
+      expect(axis.length).toBeGreaterThanOrEqual(DETAILED_STARTS.length);
+      expect(axis.length).toBeLessThanOrEqual(DETAILED_STARTS.length + 1);
+    }
+  });
+
+  it('cuts the same sheet exactly where the art does when it carries no interior detail', () => {
+    // The control: the identical drifting sheet with its marks taken away. Nothing about the drift,
+    // the contour ring, the wobble or the softening stops the mesh landing on every boundary to the
+    // pixel — so the pixel of slack above is what the detail costs, and nothing else is.
+    const mesh = boundaryMesh(
+      detailedSheet(() => false),
+      6,
+    );
+
+    expect(mesh.x).toEqual([...DETAILED_STARTS]);
+    expect(mesh.y).toEqual([...DETAILED_STARTS]);
+    expect(DETAILED_SIZE).toBe(127);
   });
 
   it('falls back to the regular lattice where an image holds too few boundaries to anchor one', () => {

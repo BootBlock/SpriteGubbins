@@ -22,10 +22,11 @@ import { estimateProfilePeriod } from './profilePeriod.ts';
  * an estimate could add and a second opinion could only disagree. `estimatePixelGrid` covers
  * artwork drawn at a scale and then resampled — softened edges, but a true period underneath.
  * `estimateProfilePeriod` covers what generators actually return: drifting blocks *with interior
- * detail* — straps and markings whose edges pollute any statistic built from detected lines, but
- * which autocorrelation of the whole profile reads through. `estimateMeshPeriod` stays behind it
- * for *small* sheets: a handful of drifting cells across a few dozen pixels sits under the
- * correlation's repeat floor, and a clean median of the boundary spacings still speaks there —
+ * detail* — straps and markings whose edges are what a line list has to tell the boundaries apart
+ * from, where autocorrelation of the whole profile needs no such separation and reads straight
+ * through them. `estimateMeshPeriod` stays behind it for *small* sheets: a handful of drifting
+ * cells across a few dozen pixels sits under the correlation's repeat floor, and a clean median of
+ * the boundary spacings still speaks there —
  * `meshPeriod.test.ts` holds the sheet that proves the path. Every estimated answer is offered
  * under the same `ESTIMATED` hedge: a candidate to click and judge, never adopted on its own.
  *

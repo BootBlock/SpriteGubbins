@@ -144,15 +144,21 @@ const SMALLEST_SPRITE_EDGE = 16;
 export const MANUAL_GRID_RANGE = { min: 1, max: MAX_IMAGE_EDGE / SMALLEST_SPRITE_EDGE } as const;
 
 /**
- * How many times chance a position's change must be before it reads as a boundary line.
+ * How many times the background a position's change must be before it reads as a boundary line.
  *
- * A structureless axis spreads its change evenly, handing every position `total / usable` of it —
- * so a boundary is a position carrying a *multiple* of that, and 2 is the smallest multiple that
- * separates the two populations on the sheets measured: a softened boundary's centre column carries
- * about half its step, which is many times chance on any sheet with real cells, while noise and
- * gradient columns sit at chance by definition. Weak genuine boundaries that fall under it are not
- * lost — `boundaryMesh` completes a missing line at the expected spacing, which is where a boundary
- * too faint to detect almost certainly is.
+ * The background is what a position carries when it is *not* a boundary, which `boundaryClusters`
+ * separates out rather than taking the axis mean for — a mean is the background and the structure
+ * averaged together, so on a detailed sheet the interior marks lift the very level the boundaries
+ * are measured against. Against the background proper, 2 is the smallest multiple that separates
+ * the two populations on the sheets measured: a softened boundary's centre column carries about
+ * half its step, which is many times the background on any sheet with real cells, while noise and
+ * gradient columns sit at the background by definition. Weak genuine boundaries that fall under it
+ * are not lost — `boundaryMesh` completes a missing line at the expected spacing, which is where a
+ * boundary too faint to detect almost certainly is.
+ *
+ * It is also the multiple the background is *found* by, because the same question is being asked at
+ * every pass of that search: a sample worth more than twice the level so far is structure and does
+ * not belong in the level. One figure, read twice, rather than two that could drift apart.
  *
  * Filed here with the other calibrated thresholds — `GRID_DETECTION_THRESHOLD` and its siblings —
  * rather than beside the function that reads it, for the reason `KEY_SHADING_LATITUDE` records:
