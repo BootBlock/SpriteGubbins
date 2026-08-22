@@ -497,7 +497,7 @@ the grid above can hold means the component was not drawn on it.
 
 ### Pixel discipline
 - Build every form from deliberate, contiguous pixel clusters placed by intent.
-- No feature smaller than [DEFINE:MIN_FEATURE_SIZE] native pixels.
+- No feature smaller than [DEFINE:MIN_FEATURE_SIZE].
 - Diagonals use clean, regular staircase patterns. Where section [SEC:INVENTORY] lists a piece and its bilateral
   counterpart as two separate components — a left-side piece and its right-side one — equivalent
   edges on the two use identical staircase patterns.
@@ -2058,6 +2058,28 @@ them would be two answers to one question. A size that does not parse leaves not
 field is free prose, and a shipped preset holds *"48 × 96 px assembled (2 metres tall at 48 px per
 metre)"*. And a component already large enough to fill its share of the canvas comes back as 1,
 where the delivered pixels *are* the native ones and §0 needs no help from §2 to say so.
+
+**Found after shipping: §2's pixel discipline named the grid, and the grid was gated away from it.**
+Its minimum-feature bullet read "No feature smaller than N × N **native** pixels" on every pixel-art
+sheet, while the block above defining a native pixel is gated on `NATIVE_GRID` — a far narrower
+condition, since it additionally wants the `CUSTOM` profile, a size that parses and an enlargement of
+at least 2. `DEFAULT_OUTPUT_CONFIG` is `PIXEL_ART` on `HIGH_RESOLUTION` with an empty target size, so
+the first prompt the app ever showed anybody stated a measurement in a unit the document never
+established — and the two guesses available to a generator are far apart: three delivered pixels of a
+thousand-pixel image, or three cells of an unstated grid that might be eight times coarser. That is
+precisely the floor on interior detail the whole native-grid apparatus exists to make enforceable.
+
+The fix is at the pairing rather than at the bullet. The bullet is **not** gated — every pixel-art
+sheet needs a floor on interior detail — so what varies is the *unit*, and it now arrives inside
+`[DEFINE:MIN_FEATURE_SIZE]` from the same `nativeGridScale` answer the gate is computed from:
+*native pixels* where §2 defines one, *delivered pixels* where it does not. §0's
+render-at-the-delivered-resolution rule is what establishes the second, and the native-grid block's
+carve-out is the only exception to it — so at 1:1 the two units name the same pixel, which is the
+same reasoning that has `nativeGridScale` return `null` there. The template no longer writes a unit
+of its own beside the figure, because a template that does is a second place that has to agree with
+the gate, and it did not. `promptCompiler.test.ts` now sweeps style × profile × size × aspect ×
+category and fails on any prompt naming a native pixel without the block that defines one — a
+term-before-definition check that generalises to the next term gated apart from its definition.
 
 **What the wording had to keep true.** `smallScaleDiscipline` deliberately never restates the size,
 because the target names a typical whole figure rather than a hard per-component dimension — a hand

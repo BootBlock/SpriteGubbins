@@ -8,10 +8,12 @@ import { PALETTES } from '../constants/palettes/index.ts';
 import { SHEET_INDEX_RANGE, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
+import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
 import * as promptText from '../constants/promptText/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../constants/promptText/index.ts';
 import { PROJECTIONS } from '../types/rendering.ts';
 import {
+  ASPECT_RATIOS,
   BACKGROUND_KEYS,
   DIRECTION_SETS,
   DIRECTIONAL_MODES,
@@ -1582,7 +1584,11 @@ describe('generatePrompt — technical settings in prose', () => {
         spriteTargetSize: '512 × 512 px',
       }),
     );
-    expect(large).toContain('No feature smaller than 3 × 3 native pixels.');
+    // *Delivered* rather than *native*, and the pair above is what shows the unit tracking the gate
+    // rather than the figure: a 512-pixel component fills its share of the canvas already, so
+    // `nativeGridScale` finds nothing to enlarge and section 2 emits no block defining a native
+    // pixel. The 16 × 16 icon does have one, so it counts in native pixels.
+    expect(large).toContain('No feature smaller than 3 × 3 delivered pixels.');
   });
 
   it('adds the sprite-scale bullets only where the target is sprite-sized and the style is pixel', () => {
@@ -2228,6 +2234,90 @@ describe('the section numbering the prompt cites itself by', () => {
       expect(prompt, category).toContain(`## ${String(exclusions)}. EXCLUSIONS`);
       expect(prompt, category).toContain(`An exclusion in section ${String(exclusions)} outranks`);
     }
+  });
+});
+
+describe('generatePrompt — a term the prompt uses is a term the prompt defines', () => {
+  /**
+   * Terms whose definition is gated apart from their use, paired with the block that establishes
+   * them.
+   *
+   * **The failure this generalises from** is *native pixel*. The pixel-discipline bullet said "No
+   * feature smaller than 3 × 3 native pixels" on every pixel-art sheet, while the only block
+   * defining a native pixel is gated on `NATIVE_GRID` — which additionally wants the `CUSTOM`
+   * profile, a target size that parses and an enlargement of at least 2. `DEFAULT_OUTPUT_CONFIG` is
+   * `PIXEL_ART` on `HIGH_RESOLUTION` with an empty target size, so the very first prompt the app
+   * showed anybody measured against a unit it never established — and a generator guessing between
+   * three delivered pixels and three cells of an unstated coarser grid is the "far more interior
+   * detail than the grid could hold" failure the whole native-grid apparatus exists to prevent.
+   *
+   * A term goes in this table when its definition can be gated away from its use. The check is one
+   * direction only: a definition with no use is a budget question, not a contradiction.
+   */
+  const GATED_TERMS = [{ term: /native pixel/, definedBy: `### ${NATIVE_GRID_HEADING}` }] as const;
+
+  /**
+   * The sizes that reach each side of `nativeGridScale`'s four conditions.
+   *
+   * `''` and the prose one never parse; `16 × 32 px` is small enough to enlarge and `512 × 512 px`
+   * is large enough that there is nothing left to enlarge — so `CUSTOM` appears in this sweep on
+   * both sides of the gate rather than only on the side that emits the block.
+   */
+  const TARGET_SIZES = ['', '16 × 32 px', '512 × 512 px', 'as big as it needs to be'];
+
+  it('never names a native pixel without carrying the block that defines one', () => {
+    const offenders = new Set<string>();
+    let sawDefinition = false;
+    const check = (prompt: string, label: string) => {
+      for (const { term, definedBy } of GATED_TERMS) {
+        const defined = prompt.includes(definedBy);
+        if (defined) sawDefinition = true;
+        if (defined) continue;
+        for (const raw of prompt.split('\n')) {
+          if (term.test(raw)) offenders.add(`${label}: ${raw.trim()}`);
+        }
+      }
+    };
+
+    // The axes are `nativeGridScale`'s own five inputs plus the profile the figure is read from:
+    // the render style, the resolution profile, the target size, the sheet aspect, and the category
+    // — which decides the component count the scale search has to seat.
+    for (const category of SUBJECT_CATEGORIES) {
+      const subject = defaultSubjectFor(category);
+      for (const renderStyle of RENDER_STYLES) {
+        for (const resolutionProfile of RESOLUTION_PROFILES) {
+          for (const spriteTargetSize of TARGET_SIZES) {
+            for (const aspectRatio of ASPECT_RATIOS) {
+              const output = withOutput({ renderStyle, resolutionProfile, spriteTargetSize, aspectRatio });
+              check(
+                generatePrompt(category, subject, output),
+                `${category}/${renderStyle}/${resolutionProfile}/${spriteTargetSize || 'no size'}/${aspectRatio}`,
+              );
+            }
+          }
+        }
+      }
+    }
+    // A wrapper is prose of its own, and `modelWrapperText/sol.ts` names the native-grid block by
+    // heading — so every target is swept rather than trusting the body alone.
+    for (const targetModel of TARGET_MODEL_IDS) {
+      for (const renderStyle of RENDER_STYLES) {
+        check(
+          generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel, renderStyle })),
+          `${targetModel}/${renderStyle}`,
+        );
+      }
+    }
+    for (const preset of PRESETS) {
+      check(generatePrompt(preset.category, preset.subject, withOutput(preset.output)), preset.id);
+    }
+
+    // Without this the assertion could pass because the sweep never reached a configuration that
+    // emits the definition at all, which would make it vacuous in the other direction.
+    expect(sawDefinition, 'the sweep never reached a prompt carrying the native-grid block').toBe(true);
+    expect([...offenders], `the prompt names a term it never defines:\n${[...offenders].join('\n')}`).toEqual(
+      [],
+    );
   });
 });
 

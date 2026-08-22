@@ -129,6 +129,17 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * pass in which to re-read the sheet gets the two instructions and no checklist, which is that gate's
  * own argument rather than a hole in this one.
  *
+ * **The pixel-discipline minimum names the grid too, and it is the one mention that is not gated.**
+ * That bullet has to appear on every pixel-art sheet, grid or no grid, so gating it would delete the
+ * floor on interior detail from the majority of prompts the app composes. What varies is its *unit*,
+ * which arrives inside `[DEFINE:MIN_FEATURE_SIZE]` from the same answer the gate above is computed
+ * from — *native pixels* where the block below defines one, *delivered pixels* where it does not.
+ * It read *native pixels* unconditionally until then, which put a measurement in a unit the document
+ * never established into the very first prompt the app shows anybody: `DEFAULT_OUTPUT_CONFIG` is
+ * `PIXEL_ART` on `HIGH_RESOLUTION` with no target size, which is a stock profile and therefore no
+ * grid. That is why the unit is not written here beside the figure — a template with a unit of its
+ * own is a second place that has to agree with the gate, and it did not.
+ *
  * **Section 8 closes by restating section 0's exclusion precedence, and the distance between the two
  * is the argument for it.** The rule is stated where the precedence order is settled, which is the
  * far end of the document from the list that triggers it — and a sheet came back wearing a holstered
@@ -381,7 +392,7 @@ the grid above can hold means the component was not drawn on it.
 
 ### Pixel discipline
 - Build every form from deliberate, contiguous pixel clusters placed by intent.
-- No feature smaller than [DEFINE:MIN_FEATURE_SIZE] native pixels.
+- No feature smaller than [DEFINE:MIN_FEATURE_SIZE].
 - Diagonals use clean, regular staircase patterns. Where section [SEC:INVENTORY] lists a piece and its bilateral
   counterpart as two separate components — a left-side piece and its right-side one — equivalent
   edges on the two use identical staircase patterns.
