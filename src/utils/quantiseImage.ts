@@ -10,7 +10,8 @@ import { despeckle } from './despeckle.ts';
 import { ditherImage } from './ditherImage.ts';
 import { ditherMatrix } from './ditherMatrix.ts';
 import { mergeColors } from './mergeColors.ts';
-import { countColors } from './imageData.ts';
+import { colorHistogram } from './imageData.ts';
+import { paletteEntriesFrom } from './paletteEntries.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
 import { hardenSilhouette } from './hardenSilhouette.ts';
@@ -368,6 +369,10 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     snap: settings.antiAliasPalette === 'SNAP' && settings.reduction !== null,
   });
 
+  // One walk over the finished sheet, read twice below. `colorHistogram` excludes fully transparent
+  // pixels, so a keyed field claims neither a colour of the count nor an entry of the palette.
+  const histogram = colorHistogram(output);
+
   return {
     image: output,
     // Measured here rather than asked for later, and against `source` rather than `image`: the
@@ -426,7 +431,13 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     offset: meshOffset(mesh, settings.grid),
     // Only the result is counted here. The figure it is read against belongs to the sheet rather than
     // to any setting, so it is measured once when the sheet loads — see `SheetFacts`.
-    colors: countColors(output),
+    //
+    // One histogram answers both of the next two lines. They are different questions — how many
+    // distinct pixel values the sheet holds, and which colours it is made of, which differ wherever
+    // one colour appears at several coverages — and taking a pass each would be a second walk over
+    // the whole result for an answer already in hand.
+    colors: histogram.size,
+    paletteEntries: paletteEntriesFrom(histogram),
     // No zero-pixel guard: `ImageData`'s constructor throws `IndexSizeError` for a zero width or
     // height, so an image with nothing in it cannot reach this line and a division by zero has no way
     // to arise. A guard against it would be a comment claiming to protect against the impossible.

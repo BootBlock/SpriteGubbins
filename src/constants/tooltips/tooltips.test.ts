@@ -5,6 +5,7 @@ import { AUTO_TUNE_GUIDANCE } from '../autoTune.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DIAL_HISTORY_GUIDANCE } from '../dialHistory.ts';
 import { TARGET_MODELS } from '../models.ts';
+import { PALETTE_EXPORT_GUIDANCE } from '../paletteExport.ts';
 import { accentSwatchGuidance } from '../settings.ts';
 import { SHEET_IDENTITY_GUIDANCE } from '../sheetIdentity.ts';
 import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
@@ -141,6 +142,13 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // rendered under it rather than behind an ⓘ, which is the standing `TARGET_MODELS.description` case.
   ...Object.entries(SHEET_IDENTITY_GUIDANCE).map(
     ([key, text]) => [`SHEET_IDENTITY_GUIDANCE.${key}`, text] as const,
+  ),
+  // Both entries of `PALETTE_EXPORT_GUIDANCE`, on the `ANTI_ALIAS_GUIDANCE` footing and for the same
+  // reason: the panel takes no reading of the reader's image. One entry says what would be on offer
+  // and where the third palette is, the other says what the three formats are for — a function of
+  // what the app has settled rather than of what any sheet turned out to be.
+  ...Object.entries(PALETTE_EXPORT_GUIDANCE).map(
+    ([key, text]) => [`PALETTE_EXPORT_GUIDANCE.${key}`, text] as const,
   ),
 ];
 

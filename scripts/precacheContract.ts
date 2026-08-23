@@ -146,8 +146,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the split's shared chunks, so `TextField-*` and `componentGridScale-*` gave their names up to them.
  * Those are two of exactly the `+`/`-` pairs the note on `PRECACHE_SHAPES` warns read like a stray
  * file and are not one.
+ *
+ * **Raised once more, from 2256, by the palette export.** A settled palette can now leave the app as
+ * a swatch PNG, a `.gpl` or a hex list, offered in the studio beside the palette that pins one and on
+ * the Quantise tab for the sheet's own colours and for a held lock. Measured against the build
+ * immediately before it, rebuilt from that commit with the same `node_modules`, the precache goes
+ * from 2253.00 to **2262.25 KiB**, a delta of 9.25. Three quarters of that is prose rather than code:
+ * three writers and a shared button row are small, and the five guidance paragraphs behind them are
+ * constant data the entry chunk reaches, as every raise above says of its own. No file was added to
+ * or removed from the precache. The margin is left at the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2256;
+export const PRECACHE_CEILING_KIB = 2265;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

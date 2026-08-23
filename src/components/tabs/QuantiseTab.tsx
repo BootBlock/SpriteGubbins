@@ -24,6 +24,7 @@ import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { KeyingControls } from '../quantise/KeyingControls.tsx';
+import { PaletteExportControls } from '../quantise/PaletteExportControls.tsx';
 import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 import { QuantisePresetControls } from '../quantise/QuantisePresetControls.tsx';
@@ -324,6 +325,14 @@ export function QuantiseTab() {
               studioSetting={colorPlan.studioSetting}
               superseded={colorPlan.superseded}
               busy={busy}
+            />
+            {/* Directly under the lock, because one of the two palettes it offers is that lock —
+                and separate from it because a download does nothing to the next sheet, which is
+                what the panel above is entirely about. The colours are the transform's own answer
+                rather than a reading taken here; see `QuantiseResult.paletteEntries`. */}
+            <PaletteExportControls
+              resultPalette={quantised?.result.paletteEntries ?? null}
+              sheetName={source.name}
             />
             {/* Directly above the sprite panel, because the two are the two readings of one sheet:
                 this states what the studio's prompt asked for and what a download is about to record,

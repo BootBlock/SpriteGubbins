@@ -1,6 +1,7 @@
 import type { LockedPalette, Rgba } from '../types/quantiser.ts';
-import { FULLY_OPAQUE, colorHistogram, remapColors, unpackColor } from './imageData.ts';
+import { remapColors } from './imageData.ts';
 import { type Oklab, srgbToOklab } from './oklab.ts';
+import { imagePaletteEntries } from './paletteEntries.ts';
 
 /**
  * The two halves of a sheet palette lock: taking the colours off one result, and redrawing the next
@@ -20,37 +21,22 @@ import { type Oklab, srgbToOklab } from './oklab.ts';
  */
 
 /**
- * The colours a quantised result is made of, most-used first — the palette a lock holds.
+ * The colours a quantised result is made of, most-used first, as a lock that names where they came
+ * from.
  *
- * **Deduplicated across alpha, and returned opaque.** A lock is a statement about colour, and a
- * result's alpha is a statement about its silhouette: the same fill appears at full coverage inside
- * a sprite and at a dozen partial coverages along its edge, and counting those as separate entries
- * would fill the lock with one colour many times over and inflate every count the panel prints.
- * {@link applyLockedPalette} keeps each pixel's own alpha for the same reason.
+ * The reading itself is {@link imagePaletteEntries}, which is also what the export panel writes to a
+ * file and what says why the entries are deduplicated across alpha and returned opaque —
+ * {@link applyLockedPalette} keeps each pixel’s own alpha for the same reason. What this adds is the
+ * provenance a lock needs and a palette on its own does not: which sheet the colours were taken
+ * from, and the studio setting in force when they were.
  *
- * Fully transparent pixels take no part, exactly as they take no part in `colorHistogram` — a pixel
- * carrying no colour has no colour to lock.
- *
- * Population order, ties broken by packed value, so the order is deterministic on every input. It is
- * what the panel lists and what a reader sees first, so the sheet's dominant colours lead.
+ * A sheet with nothing opaque in it locks nothing rather than an empty palette: an empty lock would
+ * map every colour onto no colour at all, which {@link applyLockedPalette} would have to answer by
+ * returning the sheet unchanged — a lock that silently does nothing while the panel says one is
+ * held. The control that offers this refuses instead.
  */
 export function lockPaletteFrom(image: ImageData, sheetName: string, setting: string): LockedPalette | null {
-  const counts = new Map<number, number>();
-  for (const [packed, count] of colorHistogram(image)) {
-    // The alpha byte off the end of the packing, leaving `0xRRGGBB` — the colour without its
-    // coverage. `unpackColor` below turns it back into a full entry with `a` supplied.
-    const color = Math.floor(packed / 256);
-    counts.set(color, (counts.get(color) ?? 0) + count);
-  }
-
-  const entries = [...counts.entries()]
-    .sort((left, right) => right[1] - left[1] || left[0] - right[0])
-    .map(([color]) => unpackColor(color * 256 + FULLY_OPAQUE));
-
-  // A sheet with nothing opaque in it locks nothing rather than an empty palette: an empty lock
-  // would map every colour onto no colour at all, which `applyLockedPalette` would have to answer
-  // by returning the sheet unchanged — a lock that silently does nothing while the panel says one
-  // is held. The control that offers this refuses instead.
+  const entries = imagePaletteEntries(image);
   return entries.length === 0 ? null : { entries, setting, sheetName };
 }
 
