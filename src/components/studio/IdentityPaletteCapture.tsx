@@ -1,13 +1,9 @@
-import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useFileDropTarget } from '../../hooks/useFileDropTarget.ts';
+import { useIdentityPaletteCapture } from '../../hooks/useIdentityPaletteCapture.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
-import { useShowToast } from '../../hooks/useShowToast.ts';
-import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { FilePickerField } from '../common/FilePickerField.tsx';
-import type { ImportedImage } from '../../types/quantiser.ts';
-import { withPaletteSegment } from '../../utils/identityDigest.ts';
-import { identityPalette } from '../../utils/identityPalette.ts';
+import { QuantisedSheetCaptureButton } from './QuantisedSheetCaptureButton.tsx';
 
 /**
  * Reads an accepted sheet's colours into the identity lock above it.
@@ -18,6 +14,13 @@ import { identityPalette } from '../../utils/identityPalette.ts';
  * offers a starting point for those from the studio's own fields, and this only ever adds or
  * replaces the `Palette:` segment.
  *
+ * **Two ways in, and the button is the one to reach for.** The sheet whose palette a reader wants is
+ * almost always the one they have just cleaned in the Quantise tab, so `QuantisedSheetCaptureButton`
+ * takes it straight from there — see that file for what asking them to find the file again was
+ * costing. The picker and the drop target stay for the sheet that is not in the tab: one from last
+ * week, or one somebody else generated. Both routes end in `useIdentityPaletteCapture`, so they
+ * cannot disagree about what they read.
+ *
  * **Nothing is uploaded.** The image is decoded here, measured here, and never leaves the tab. That
  * is what separates this from §10.3's captured digest, which is removed rather than merely unbuilt:
  * describing what a sheet *depicts* needs an outbound vision call, while its colours are simply in
@@ -27,33 +30,8 @@ import { identityPalette } from '../../utils/identityPalette.ts';
  * listener here would rewrite the lock when the user pasted a screenshot meant for somewhere else.
  */
 export function IdentityPaletteCapture() {
-  const setOutputField = useOutputStore((state) => state.setOutputField);
-  const showToast = useShowToast();
-
-  function handleImport({ name, image }: ImportedImage) {
-    // Read at call time, not at render time. Decoding awaits `createImageBitmap`, and the lock's
-    // own text field sits directly above this control — so a value captured when the file was
-    // chosen would discard whatever the user typed while the image was still decoding, and would
-    // key the palette against a background the prompt no longer states.
-    const { backgroundKey, identityLock } = useOutputStore.getState().output;
-
-    const palette = identityPalette(image, BACKGROUND_KEY_COLORS[backgroundKey]);
-
-    // A sheet with nothing but its key field leaves the lock alone rather than clearing its palette.
-    // A generation that came back blank is the likeliest way to get here, and silently deleting a
-    // good palette because a *failed* sheet was dropped is a worse outcome than doing nothing.
-    if (palette.length === 0) {
-      showToast(`${name} has nothing on it but its background key — the identity lock is unchanged`);
-      return;
-    }
-
-    setOutputField('identityLock', withPaletteSegment(identityLock, palette));
-    showToast(
-      `Read ${String(palette.length)} ${palette.length === 1 ? 'colour' : 'colours'} from ${name} into the identity lock`,
-    );
-  }
-
-  const acceptFile = useImageFile(handleImport);
+  const capture = useIdentityPaletteCapture();
+  const acceptFile = useImageFile(capture);
   const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
 
   return (
@@ -67,6 +45,8 @@ export function IdentityPaletteCapture() {
       }`}
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <QuantisedSheetCaptureButton />
+
         <FilePickerField
           label="Read the palette from an accepted sheet"
           tooltip={STUDIO_ACTION_TOOLTIPS.readPalette}
@@ -75,11 +55,12 @@ export function IdentityPaletteCapture() {
       </div>
 
       <p className="mt-2 text-xs leading-relaxed text-ink-faint">
-        Drop one here, or choose it. Its dominant colours are added to the lock above as a{' '}
-        <span className="font-mono">Palette</span> line, most-used first, with the background key excluded. A
-        sheet with anti-aliased edges carries blends of that key, which can fill the tail of the list —
-        quantise it first for a clean read. Nothing is uploaded — the image is read in this tab and never
-        leaves it.
+        Take it from the Quantise tab, drop one here, or choose it. Its dominant colours are added to the lock
+        above as a <span className="font-mono">Palette</span> line, most-used first, with the background key
+        excluded. A file dropped here is read exactly as it arrived, so a sheet with anti-aliased edges
+        carries blends of that key into the tail of the list — the button reads the quantised result instead,
+        which is the clean list and the one the next sheet will be drawn in. Nothing is uploaded — the image
+        is read in this tab and never leaves it.
       </p>
     </section>
   );
