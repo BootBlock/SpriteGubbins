@@ -13,6 +13,7 @@ import {
   LINE_STRENGTH_RANGE,
   OUTLINE_EXPANSION_RANGE,
   PALETTE_SNAP_RANGE,
+  SILHOUETTE_THRESHOLDS,
   SPRITE_GAP_RANGE,
   SYMMETRY_CONFIDENCE_RANGE,
   SYMMETRY_TOLERANCE_RANGE,
@@ -59,6 +60,13 @@ export function parseQuantiseDials(value: unknown): QuantiseDials {
     // A ladder rather than a range, so membership is the check: the control offers six rungs and a
     // value between two of them is one this app never wrote.
     keyTolerance: pick(value, 'keyTolerance', QUANTISE_DEFAULT_DIALS.keyTolerance, KEY_TOLERANCES),
+    // A ladder too, and checked the same way and for the same reason.
+    silhouetteThreshold: pick(
+      value,
+      'silhouetteThreshold',
+      QUANTISE_DEFAULT_DIALS.silhouetteThreshold,
+      SILHOUETTE_THRESHOLDS,
+    ),
     vote: pick(value, 'vote', QUANTISE_DEFAULT_DIALS.vote, VOTE_METHODS),
     outlineExpansion: pickWholeNumber(
       value,

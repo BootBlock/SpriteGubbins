@@ -84,6 +84,7 @@ describe('mergeColors', () => {
     const result = quantiseImage(sheet, {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,

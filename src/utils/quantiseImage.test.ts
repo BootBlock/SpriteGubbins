@@ -77,6 +77,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(upscaleNearest(SPRITE, 8), {
       grid: 8,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -111,6 +112,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -147,6 +149,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -185,6 +188,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(source, {
       grid: 8,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -223,6 +227,7 @@ describe('quantiseImage', () => {
     const dilated = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -263,6 +268,7 @@ describe('quantiseImage', () => {
     const keyed = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: KEYING,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -297,6 +303,100 @@ describe('quantiseImage', () => {
     ]);
   });
 
+  it('hardens a soft silhouette a sheet arrived with, which no other pass reaches at a grid of 1', () => {
+    // The state the control exists for: a sheet already at its own pixel scale, so the cell reading
+    // is a no-op and every soft pixel it arrived with survives to the end of the pipeline.
+    const soft = imageFrom(4, 1, (x) => ({ ...ART, a: [255, 192, 64, 0][x] ?? 0 }));
+    const at = (silhouetteThreshold: number) =>
+      pixels(
+        quantiseImage(soft, {
+          grid: 1,
+          key: null,
+          silhouetteThreshold,
+          vote: 'DOMINANT',
+          lineStrength: 1.5,
+          trimStrength: 0,
+          inkThreshold: 64,
+          fillCleanup: 0,
+          cleanupPasses: 1,
+          spriteGap: 1,
+          symmetry: 'OFF' as const,
+          symmetryTolerance: 8,
+          symmetryConfidence: 90,
+          duplicateTolerance: 0,
+          duplicateSnap: false,
+          frameAlignment: 'OFF' as const,
+          frameDriftTolerance: 0,
+          antiAlias: 'OFF' as const,
+          antiAliasThreshold: 24,
+          antiAliasStrength: 100,
+          antiAliasRun: 2,
+          antiAliasPalette: 'SNAP' as const,
+          dither: 'NONE' as const,
+          outlineExpansion: 0,
+          colorMerge: 0,
+          reduction: null,
+        }).image,
+      );
+
+    // Off, the ramp comes through exactly as it arrived — which is the defect this dial answers.
+    // The clear pixel keeps the colour it was written with, because nothing has touched it.
+    expect(at(0)).toEqual([[ART, { ...ART, a: 192 }, { ...ART, a: 64 }, { ...ART, a: 0 }]]);
+    // On, every partial pixel has gone one way or the other: 192 is above half a pixel and 64 is not.
+    // What is cleared is written the canonical `{0, 0, 0, 0}`, as `keyBackground` writes it and for
+    // the same reason — a transparent pixel that kept its own RGB is its own colour to the cell vote.
+    expect(at(50)).toEqual([[ART, ART, TRANSPARENT, TRANSPARENT]]);
+  });
+
+  it('hardens behind the key, so the two erosions cannot compound', () => {
+    // `keyBackground` admits an already-transparent pixel into its field and clears one pixel inward
+    // from it wherever that pixel carries the key’s hue. So the order decides how far the sheet
+    // erodes: behind the key, the pass never sees a pixel this cleared.
+    //
+    // The artwork is a magenta the key cannot match — measured at 38.3 against a tolerance of 16 and
+    // a fringe radius capped at 32 — but which the fringe pass’s hue test does reach when it is
+    // adjacent to the field. That is what makes the ordering visible at all.
+    const TINTED: Rgba = { r: 128, g: 64, b: 128, a: 255 };
+    const sheet = imageFrom(5, 1, (x) => {
+      if (x === 0) return MAGENTA;
+      return { ...TINTED, a: x === 1 ? 64 : 255 };
+    });
+
+    const result = quantiseImage(sheet, {
+      grid: 1,
+      key: KEYING,
+      silhouetteThreshold: 50,
+      vote: 'DOMINANT',
+      lineStrength: 1.5,
+      trimStrength: 0,
+      inkThreshold: 64,
+      fillCleanup: 0,
+      cleanupPasses: 1,
+      spriteGap: 1,
+      symmetry: 'OFF' as const,
+      symmetryTolerance: 8,
+      symmetryConfidence: 90,
+      duplicateTolerance: 0,
+      duplicateSnap: false,
+      frameAlignment: 'OFF' as const,
+      frameDriftTolerance: 0,
+      antiAlias: 'OFF' as const,
+      antiAliasThreshold: 24,
+      antiAliasStrength: 100,
+      antiAliasRun: 2,
+      antiAliasPalette: 'SNAP' as const,
+      dither: 'NONE' as const,
+      outlineExpansion: 0,
+      colorMerge: 0,
+      reduction: null,
+    });
+
+    // The third pixel is the assertion. Hardening first would clear the second, hand it to the key as
+    // field, and the fringe pass would take this one with it — a pixel of silhouette neither dial
+    // asked for.
+    expect(pixels(result.image)).toEqual([[TRANSPARENT, TRANSPARENT, TINTED, TINTED, TINTED]]);
+  });
+
   it('reports the sprites on the keyed result, in the result’s own pixels', () => {
     // The segmentation is read off the finished sheet rather than the source, so the box is stated
     // in drawn pixels — the 2 × 2 the sprite resolved to above, not the 16 × 16 it occupied on the
@@ -305,6 +405,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: KEYING,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -344,6 +445,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -376,6 +478,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: KEYING,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -413,6 +516,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(INSET_SHEET, {
       grid: 8,
       key: KEYING,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -468,6 +572,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(inset, {
       grid: 8,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -513,6 +618,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -551,6 +657,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(TWO_HUNDRED_COLORS, {
       grid: 1,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -610,6 +717,7 @@ describe('quantiseImage', () => {
       const result = quantiseImage(soft, {
         grid: 1,
         key: null,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,
@@ -672,6 +780,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(drifting, {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -738,6 +847,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(noisy, {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -818,6 +928,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(sheet, {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -856,6 +967,7 @@ describe('quantiseImage', () => {
     const result = quantiseImage(field, {
       grid: 1,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -907,6 +1019,7 @@ describe('quantiseImage', () => {
         const settings = {
           grid: 8,
           key,
+          silhouetteThreshold: 0,
           vote,
           lineStrength: 1.5,
           trimStrength: 0.5,
@@ -975,6 +1088,7 @@ describe('quantiseImage — a locked palette', () => {
   const settingsFor = (vote: (typeof VOTE_METHODS)[number], colorMerge: number) => ({
     grid: 1,
     key: null,
+    silhouetteThreshold: 0,
     vote,
     lineStrength: 1.5,
     trimStrength: 0,
@@ -1056,6 +1170,7 @@ describe('quantiseImage — a dither', () => {
   const settingsFor = (dither: 'NONE' | 'BAYER_4', reduction: typeof TWO_TONE | null, cleanup: number) => ({
     grid: 2,
     key: null,
+    silhouetteThreshold: 0,
     vote: 'DOMINANT' as const,
     lineStrength: 1.5,
     trimStrength: 0,
@@ -1162,6 +1277,7 @@ function symmetrySettings(symmetry: 'OFF' | 'CHECK' | 'SNAP', symmetryConfidence
   return {
     grid: 1,
     key: null,
+    silhouetteThreshold: 0,
     vote: 'DOMINANT',
     lineStrength: 1.5,
     trimStrength: 0,
@@ -1318,6 +1434,7 @@ describe('quantiseImage — duplicate sprites', () => {
   const settingsFor = (duplicateTolerance: number, duplicateSnap: boolean) => ({
     grid: 1,
     key: null,
+    silhouetteThreshold: 0,
     vote: 'DOMINANT' as const,
     outlineExpansion: 0,
     lineStrength: 1.5,
@@ -1449,6 +1566,7 @@ describe('quantiseImage frame alignment', () => {
   ): QuantiseSettings => ({
     grid: 1,
     key: null,
+    silhouetteThreshold: 0,
     vote: 'DOMINANT' as const,
     outlineExpansion: 0,
     lineStrength: 1.5,
@@ -1557,6 +1675,7 @@ describe('quantiseImage anti-aliasing', () => {
   const settingsFor = (antiAlias: 'OFF' | 'INTERIOR' | 'SILHOUETTE' | 'BOTH'): QuantiseSettings => ({
     grid: 1,
     key: KEYING,
+    silhouetteThreshold: 0,
     vote: 'DOMINANT' as const,
     outlineExpansion: 0,
     lineStrength: 1.5,

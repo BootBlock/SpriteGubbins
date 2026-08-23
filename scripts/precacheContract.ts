@@ -98,8 +98,14 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * is nearly three times the headroom the old ceiling had left. The new figure restores that headroom
  * rather than widening it: a category is a large addition and the next one should have to say so
  * here, which is the whole point of the small margin.
+ *
+ * **Raised from 2220 by the edge-hardening pass on the Quantise tab.** The pass itself is small; what
+ * it costs is the constant data around it — a ladder, two defaults, the control's guidance paragraph
+ * and the panel's own — all of which the entry chunk reaches, so all of it lands in the precache.
+ * Measured against the build immediately before it, that came to 3.26 KiB against 2.90 KiB of
+ * headroom. The new figure restores a margin of the same order rather than widening it.
  */
-export const PRECACHE_CEILING_KIB = 2220;
+export const PRECACHE_CEILING_KIB = 2224;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

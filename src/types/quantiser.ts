@@ -458,8 +458,9 @@ export interface ThresholdMatrix {
 }
 
 /**
- * The Downscale panel's dials, as one value: which reading turns the mesh into pixels, and the
- * strengths and tolerances that shape it.
+ * The pipeline's own dials, as one value: which reading turns the mesh into pixels, the strengths
+ * and tolerances that shape it, and the passes either side of it that each have a panel of their
+ * own.
  *
  * A named shape rather than more fields on {@link QuantiseSettings} directly, because the dials
  * travel together — the store holds them as workflow intent, the tab hands them to the hook as
@@ -467,6 +468,16 @@ export interface ThresholdMatrix {
  * them. Every slider's range and default lives in `constants/quantiser.ts` beside its reasoning.
  */
 export interface QuantiseTuning {
+  /**
+   * How much of a pixel must be covered for it to survive the edge hardening, as a percentage;
+   * `0` means the pass does not run.
+   *
+   * **First on this shape because the pass is first in the pipeline**, immediately behind the
+   * background key and ahead of the mesh. It is the same kind of statement the key makes — what
+   * counts as background — answered by coverage where the key answers by colour, which is why the
+   * control sits in the keying panel. See `hardenSilhouette`.
+   */
+  readonly silhouetteThreshold: number;
   /** Which cell reading turns the mesh into pixels — see {@link VoteMethod}. */
   readonly vote: VoteMethod;
   /**

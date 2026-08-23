@@ -12,6 +12,11 @@ import type { QuantiseTuning } from './quantiser.ts';
  * - **The two keying dials.** Keying deletes pixels, and it states an intent about a workflow rather
  *   than answering a question about fidelity. A score that rewarded matching the source would never
  *   key anything; a score that rewarded keying would delete artwork nobody asked it to.
+ * - **The edge hardening**, which is the keying dials' third: it states what counts as background
+ *   rather than answering a question about fidelity, and a score measured against the smooth source
+ *   would answer `0` before it had looked at anything — hardening a soft outline is a move *away*
+ *   from that source by construction. `autoTune` applies it to the reference instead, so it is
+ *   constant across every candidate rather than something one of them could win by.
  * - **The dither.** A dither trades per-pixel accuracy for a local average on purpose — the figures
  *   under `DITHER_CHOICES` measure exactly that — so a fidelity score answers `NONE` before it has
  *   looked at anything. Sweeping it would dress a foregone conclusion as a measurement.

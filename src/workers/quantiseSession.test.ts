@@ -12,6 +12,7 @@ function settingsAt(grid: number): QuantiseSettings {
   return {
     grid,
     key: null,
+    silhouetteThreshold: 0,
     vote: 'DOMINANT',
     lineStrength: 1.5,
     trimStrength: 0,

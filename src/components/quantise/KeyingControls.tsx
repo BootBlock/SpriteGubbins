@@ -1,6 +1,6 @@
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { KEY_OFFER_NOTICE } from '../../constants/keyOffer.ts';
-import { KEY_TOLERANCES, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
+import { KEY_TOLERANCES, QUANTISE_TOOLTIPS, SILHOUETTE_THRESHOLDS } from '../../constants/quantiser.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
@@ -62,12 +62,20 @@ interface KeyingControlsProps {
  * The tolerance *is* a control, because it describes **this returned raster** rather than the prompt —
  * how far this particular generation drifted from the colour it was asked for. That makes it the pixel
  * grid's sibling rather than the palette limit's, and it lives beside the grid in `useQuantiseStore`.
+ *
+ * **The edge hardening is here for the same reason and answers by coverage rather than by colour.**
+ * Both controls decide what counts as background: the key matches a colour the prompt named, and the
+ * hardening thresholds the alpha the sheet arrived with. That second question has no answer in the
+ * studio at all, so it is a control on this tab whether or not the key is being matched — which is
+ * why it sits outside the block the toggle hides. See `hardenSilhouette`.
  */
 export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingControlsProps) {
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
+  const silhouetteThreshold = useQuantiseStore((state) => state.silhouetteThreshold);
   const setKeyingEnabled = useQuantiseStore((state) => state.setKeyingEnabled);
   const setKeyTolerance = useQuantiseStore((state) => state.setKeyTolerance);
+  const setSilhouetteThreshold = useQuantiseStore((state) => state.setSilhouetteThreshold);
 
   // Shown, not decided: the swatch and the reason below are about which key the *studio* names, which
   // is a different question from whether the pass runs. `TRANSPARENT` names no colour, so there is
@@ -146,6 +154,40 @@ export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingCont
             ))
           )}
         </div>
+      )}
+
+      {/*
+        Outside the keying block on purpose. This dial reads the sheet’s own coverage rather than the
+        key’s colour, so it is the pass a reader wants precisely when keying is off — a sheet that
+        arrived carrying its own alpha — and hiding it behind the toggle would put it out of reach in
+        the state it exists for.
+      */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-ink-muted">
+          Harden soft edges
+          <Tooltip text={QUANTISE_TOOLTIPS.silhouetteThreshold} hint="Harden soft edges" />
+        </span>
+        <SegmentedChoice
+          label="Silhouette coverage threshold"
+          values={SILHOUETTE_THRESHOLDS}
+          value={silhouetteThreshold}
+          // `0` reads as the thing it means rather than as a number beside five percentages: it is the
+          // pass not running, which is where the tab opens.
+          format={(value) => (value === 0 ? 'off' : `${String(value)}%`)}
+          onChange={setSilhouetteThreshold}
+        />
+      </div>
+
+      {silhouetteThreshold > 0 && (
+        <p className="mt-3 text-xs leading-relaxed text-ink-muted">
+          Every partly transparent pixel is now either cleared or made solid, so the outline comes back to a
+          hard edge one pixel wide. That only reaches a sheet that arrived carrying its own soft outline — one
+          this app downloaded earlier, or a drawing exported with an anti-aliased silhouette. A sheet being
+          read down from a larger scale has its soft edges resolved by the patch reading instead, and this
+          leaves it alone. Only transparency is read: the colour boundaries inside a sprite are untouched,
+          which is what a colour budget or a pinned palette is for. Lower settings keep more of the fringe and
+          grow the silhouette by it, higher ones clear more and tighten it back.
+        </p>
       )}
 
       {isKeying && (

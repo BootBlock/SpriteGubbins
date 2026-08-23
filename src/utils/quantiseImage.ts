@@ -13,6 +13,7 @@ import { mergeColors } from './mergeColors.ts';
 import { countColors } from './imageData.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
+import { hardenSilhouette } from './hardenSilhouette.ts';
 import { keyBackground } from './keyBackground.ts';
 import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
@@ -25,12 +26,12 @@ import { spriteSegments } from './spriteSegments.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
- * The whole pipeline: key, measure the mesh, read the cells down to pixels — with the colour
+ * The whole pipeline: key, harden, measure the mesh, read the cells down to pixels — with the colour
  * reduction on whichever side of the vote the chosen reading demands.
  *
  * ```
- * DOMINANT:                 ImageData → keyBackground → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
- * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → outlineExpansion → cells resolved directly → reduceColors
+ * DOMINANT:                 ImageData → keyBackground → hardenSilhouette → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
+ * INK_WEIGHTED, K_CENTROID: ImageData → keyBackground → hardenSilhouette → outlineExpansion → cells resolved directly → reduceColors
  * with a dither, any reading:  … → cells resolved with no reduction at all → mergeColors → despeckle → ditherImage
  * then, on whatever that produced:
  *   spriteSegments → sheetSymmetry → snapSymmetric (SNAP only) → duplicateSprites → snapDuplicates
@@ -96,6 +97,13 @@ import { buildPalette } from './wuQuantiser.ts';
  * same reason: a keyed field's drifting colours are steps the profile would otherwise count, and
  * collapsing them leaves the art's own boundaries as the only mass worth weighing.
  *
+ * **The edge hardening sits between the two, and it is the key's own question asked of coverage.**
+ * A sheet that arrives at its own pixel scale keeps whatever soft outline it was drawn with, because
+ * at a grid of 1 the cell reading is a no-op and nothing else in the pipeline reaches a soft edge.
+ * It goes behind the key so the two erosions cannot compound, and ahead of the mesh so the profile
+ * weighs a hard boundary rather than a ramp — the same reason the key goes ahead of it. The call
+ * site carries the argument in full.
+ *
  * **The symmetry pass goes last, after everything, and that is not interchangeable either.** It
  * scores a mirror axis *inside a sprite's bounds*, so it needs the segmentation — which is taken
  * from the alpha of the finished sheet — and it compares mirrored pixels by colour, so it wants the
@@ -131,7 +139,19 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // `null` skips the pass outright rather than keying against some default colour: the studio's key
   // may be `TRANSPARENT`, which names no colour at all, and the user may simply not have asked.
   const keyed = settings.key === null ? null : keyBackground(image, settings.key);
-  const source = keyed?.image ?? image;
+  // **Second, immediately behind the key and ahead of everything else**, because it answers the key's
+  // own question — what counts as background — by coverage where the key answers it by colour. It is
+  // the one pass that reaches a soft edge on a sheet already at its own pixel scale, where the mesh
+  // reading is a no-op; `hardenSilhouette` carries the rest of that argument.
+  //
+  // **After the key rather than before it**, and the order is not interchangeable. `keyBackground`
+  // admits an already-transparent pixel into its field and erodes one pixel inward from it, so a
+  // hardening that ran first would hand the key a wider field than the sheet has and the two erosions
+  // would compound into a silhouette neither dial asked for. Behind it, the key never sees a pixel
+  // this cleared. Nothing is lost by the order either: `keyBackground` writes only full transparency
+  // or the pixel it was handed, so there is no partial alpha of its own for this to threshold — the
+  // coverage it reads is always the sheet's own.
+  const source = hardenSilhouette(keyed?.image ?? image, settings.silhouetteThreshold);
   const pixels = image.width * image.height;
 
   // Measured on the un-reduced image: the reduction can merge two adjacent regions into one colour
@@ -351,8 +371,8 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   return {
     image: output,
     // Measured here rather than asked for later, and against `source` rather than `image`: the
-    // reduction this reports on is the one that ran, and the image it ran on is the keyed one every
-    // pass above worked from. Keying's own cost is `keyedShare`, two lines down.
+    // reduction this reports on is the one that ran, and the image it ran on is the keyed and
+    // hardened one every pass above worked from. Keying's own cost is `keyedShare`, two lines down.
     //
     // **`source`, not `expanded`.** The outline expansion is part of what the reduction cost, not a
     // new baseline to measure the rest of it against — a reader turning that dial up is asking what

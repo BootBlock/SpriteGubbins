@@ -1,6 +1,7 @@
 import { PROXY_CROP_CELLS, PROXY_CROP_COUNT } from '../constants/autoTune.ts';
 import type { TuneOutcome, TuneStageReport, TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
+import { hardenSilhouette } from './hardenSilhouette.ts';
 import { keyBackground } from './keyBackground.ts';
 import { proxyCrops } from './proxyCrops.ts';
 import { readCandidate } from './tuneCandidate.ts';
@@ -54,7 +55,14 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
 
   const samples: readonly Sample[] = crops.map((crop) => ({
     crop: crop.image,
-    reference: settings.key === null ? crop.image : keyBackground(crop.image, settings.key).image,
+    // **The edge hardening is applied to the reference too**, and for the reason the keying is: a
+    // candidate's result has been hardened, so a reference that still carried its soft outline would
+    // score every candidate against a fringe none of them produces. Both sides in the same terms, in
+    // the pipeline's own order — key first, then harden.
+    reference: hardenSilhouette(
+      settings.key === null ? crop.image : keyBackground(crop.image, settings.key).image,
+      settings.silhouetteThreshold,
+    ),
   }));
 
   let settled = tunedDialsOf(settings);

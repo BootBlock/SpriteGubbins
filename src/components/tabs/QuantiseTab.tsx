@@ -83,6 +83,7 @@ export function QuantiseTab() {
   const gridOverride = useQuantiseStore((state) => state.gridOverride);
   const keyingEnabled = useQuantiseStore((state) => state.keyingEnabled);
   const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
+  const silhouetteThreshold = useQuantiseStore((state) => state.silhouetteThreshold);
   const vote = useQuantiseStore((state) => state.vote);
   const outlineExpansion = useQuantiseStore((state) => state.outlineExpansion);
   const lineStrength = useQuantiseStore((state) => state.lineStrength);
@@ -111,6 +112,7 @@ export function QuantiseTab() {
   // selectors above, so an unrelated store change does not rebuild it.
   const tuning = useMemo(
     () => ({
+      silhouetteThreshold,
       vote,
       outlineExpansion,
       lineStrength,
@@ -135,6 +137,7 @@ export function QuantiseTab() {
       antiAliasPalette,
     }),
     [
+      silhouetteThreshold,
       vote,
       outlineExpansion,
       lineStrength,

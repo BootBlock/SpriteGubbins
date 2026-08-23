@@ -75,6 +75,7 @@ export interface QuantiseState extends QuantiseDials {
   setGridOverride(gridOverride: PixelGrid | null): void;
   setKeyingEnabled(keyingEnabled: boolean): void;
   setKeyTolerance(keyTolerance: number): void;
+  setSilhouetteThreshold(silhouetteThreshold: number): void;
   setVote(vote: VoteMethod): void;
   setOutlineExpansion(outlineExpansion: number): void;
   setLineStrength(lineStrength: number): void;
@@ -239,6 +240,10 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
 
     setKeyTolerance: (keyTolerance) => {
       edit('keyTolerance', { keyTolerance });
+    },
+
+    setSilhouetteThreshold: (silhouetteThreshold) => {
+      edit('silhouetteThreshold', { silhouetteThreshold });
     },
 
     setVote: (vote) => {

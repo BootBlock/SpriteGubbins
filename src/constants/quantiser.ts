@@ -1587,6 +1587,42 @@ export const KEY_SHADING_LATITUDE = 2;
 export const DEFAULT_KEY_TOLERANCE = 24;
 
 /**
+ * The coverage thresholds the edge-hardening control offers, as percentages of a pixel.
+ *
+ * **A ladder rather than a slider**, for the reason {@link KEY_TOLERANCES} is one: every pass in this
+ * pipeline is linear in an image that may be {@link MAX_IMAGE_PIXELS}, so a range input would recompute
+ * the whole transform on each pointer move of a drag.
+ *
+ * `0` is on the ladder because it is the off position, and it is the position the tab opens at — see
+ * {@link DEFAULT_SILHOUETTE_THRESHOLD}. The rest are read as “a pixel this covered is artwork”: at
+ * **10** almost every soft pixel is kept and made solid, so the silhouette grows by whatever fringe it
+ * arrived with; **25** keeps the fringe that is mostly artwork; **50** is the standard answer, the
+ * position at which a pixel goes whichever way it was already mostly drawn; **75** and **90** clear
+ * progressively more of the fringe, so the silhouette tightens back towards the pixels that were
+ * nearly solid to begin with.
+ *
+ * Deliberately not stated as a distance in bytes, which is what every other tolerance on this tab is
+ * stated in. Those are colour distances answering “how far apart are these two colours”; this is a
+ * *coverage*, which is a share of one pixel — and a share is what a reader compares against the
+ * fringe they can see rather than against the ladder’s other rungs.
+ */
+export const SILHOUETTE_THRESHOLDS = [0, 10, 25, 50, 75, 90] as const;
+
+/**
+ * Where the edge hardening starts: off.
+ *
+ * **Opt-in, on the same ground `keyingEnabled` is.** The pass deletes pixels — every partly covered
+ * pixel below the threshold is cleared outright — and a sheet whose soft outline is the finished
+ * result is a legitimate sheet rather than a fault waiting to be repaired. A reader who dropped in a
+ * hand-drawn PNG with an anti-aliased silhouette has not asked for it to be hardened, and nothing
+ * about the sheet says whether they want it.
+ *
+ * It is also the position at which the pass costs a linear read of the alpha channel and no copy at
+ * all, which is what the reader who never touches this control should pay.
+ */
+export const DEFAULT_SILHOUETTE_THRESHOLD = 0;
+
+/**
  * How much further than {@link KEY_TOLERANCES} the one-pixel fringe pass reaches.
  *
  * A pixel on an anti-aliased edge is a blend of the key colour and the artwork beside it, so it sits
@@ -1925,6 +1961,8 @@ export const QUANTISE_TOOLTIPS = {
     'Replaces the background key with transparency, so the sheet can be imported without a colour field behind it. The colour comes from the studio, which is where the prompt stated it. Anti-aliased edges carry blends of that key, and at any tolerance above exact the pixel touching the field is eroded with it — against a black or white key that will take some of the artwork’s own contour, which is why magenta is the recommended key.',
   keyTolerance:
     'How far a pixel may sit from the key colour and still count as background. A returned sheet is almost never the exact colour that was asked for, so exact usually keys nothing. Where the key has a colour of its own — magenta, as recommended — the distance is measured with that colour’s own kind of variation discounted: a pixel that is the key shaded darker or washed paler counts as roughly half as far away as one that has drifted to a different colour, which is what lets the field go without the sprite going with it. A white or black key has no colour to preserve, so it is measured straight and wants a closer eye. Raise it until the field goes and stop before the sprite does. Above exact it also clears the pixel touching the field wherever that pixel is part key — the blend an anti-aliased edge leaves behind — and that part runs the same at every rung, so what you are choosing here is how much of the field goes rather than how hard the edge is cleaned. If your artwork itself is a pale version of the key colour, exact is the setting that leaves it alone.',
+  silhouetteThreshold:
+    'How much of a pixel must be covered for it to count as artwork. A sheet that arrives at its own pixel scale keeps whatever soft outline it was drawn or rendered with, because the passes above only reach a soft edge where a patch of source is being read down to one pixel — at a scale of 1 there is no patch to read. This clears every partly transparent pixel below the setting and makes every one above it solid, so the outline comes back to a hard edge one pixel wide. A low setting keeps almost all of the fringe and the silhouette grows by it; a high one clears almost all of it and the silhouette tightens; 50% sends each pixel whichever way it was already mostly drawn. Only transparency is read, so colour boundaries inside a sprite are untouched — those are what a colour budget or a pinned palette is for. Off leaves the sheet exactly as it arrived, which is what a sheet whose soft outline is the finished artwork wants.',
   vote: 'How each patch of the sheet is read down to its one pixel. DOMINANT takes the patch’s most common colour — and, once a colour reduction is in force, keeps a near-black outline or bright trim even as a minority. It never invents a colour, so it is the standard choice. INK_WEIGHTED darkens each patch toward the line crossing it, the way a pixel artist draws an outline as a darker shade of the thing outlined — the strongest choice for a sheet whose contours break up, at the cost of blending colours the image never contained. K_CENTROID averages only the patch’s dominant colour cluster, a middle ground that keeps hue smooth but lets a thin line lose its patch. It changes only the quantised result — the prompt, the studio and everything stored stay as they are — and the two averaging readings still honour the studio’s colour setting, applied to the result they produce. The outline rescue is the one part of this that a dither switches off: a dither holds the colour reduction back to the end of the pipeline, so there is none in force while the patches are being read, and DOMINANT falls back to the plain vote it takes when no reduction was asked for.',
   outlineExpansion:
     'How far a drawn line is thickened before the sheet is read down to pixels. A contour one drawn pixel wide is a minority inside the patch it crosses, so the patch resolves to the surface behind it and outlines come back broken. This pass grows whichever side of the local contrast the artwork was drawn with — dark ink where the art is dark on light, bright trim where it is light on dark, judged separately for each part of the sheet — so a line still holds enough of its patch to survive being read. It shapes what every reading is handed, so it applies whichever one the Downscale control has in force. Transparency is left exactly where the background key left it, and every colour it produces is one the sheet already contained. Off leaves the sheet as it arrived. Raise it when contours come back dashed — 1 is enough on a typical sheet, and each step past it thickens more than it rescues — and back off when fine detail starts to close up or shapes begin to look drawn rather than rescued.',

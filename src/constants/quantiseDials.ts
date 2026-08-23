@@ -18,6 +18,7 @@ import {
   DEFAULT_LINE_STRENGTH,
   DEFAULT_OUTLINE_EXPANSION,
   DEFAULT_PALETTE_SNAP,
+  DEFAULT_SILHOUETTE_THRESHOLD,
   DEFAULT_SPRITE_GAP,
   DEFAULT_SYMMETRY,
   DEFAULT_SYMMETRY_CONFIDENCE,
@@ -47,6 +48,7 @@ import {
 export const QUANTISE_DEFAULT_DIALS: QuantiseDials = {
   keyingEnabled: false,
   keyTolerance: DEFAULT_KEY_TOLERANCE,
+  silhouetteThreshold: DEFAULT_SILHOUETTE_THRESHOLD,
   vote: 'DOMINANT',
   outlineExpansion: DEFAULT_OUTLINE_EXPANSION,
   lineStrength: DEFAULT_LINE_STRENGTH,
@@ -84,6 +86,7 @@ export const QUANTISE_DEFAULT_DIALS: QuantiseDials = {
 const DIAL_NAMES: { readonly [K in keyof QuantiseDials]: K } = {
   keyingEnabled: 'keyingEnabled',
   keyTolerance: 'keyTolerance',
+  silhouetteThreshold: 'silhouetteThreshold',
   vote: 'vote',
   outlineExpansion: 'outlineExpansion',
   lineStrength: 'lineStrength',

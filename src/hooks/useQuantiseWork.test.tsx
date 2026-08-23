@@ -11,6 +11,7 @@ import { useQuantiseWork } from './useQuantiseWork.ts';
 
 /** A stable reference, as `colorPlanFor`'s memo gives the hook — see the note on `key`. */
 const TUNING = {
+  silhouetteThreshold: 0,
   vote: 'DOMINANT',
   lineStrength: 1.5,
   trimStrength: 0,
@@ -179,6 +180,7 @@ describe('useQuantiseWork', () => {
       settings: {
         grid: 16,
         key: null,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,

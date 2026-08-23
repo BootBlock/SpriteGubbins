@@ -81,6 +81,7 @@ describe('kCentroidCells', () => {
         quantiseImage(sheet, {
           grid: 6,
           key: null,
+          silhouetteThreshold: 0,
           vote,
           lineStrength: 1.5,
           trimStrength: 0,

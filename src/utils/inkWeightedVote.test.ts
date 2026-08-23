@@ -146,6 +146,7 @@ describe('quantiseImage, ink-weighted', () => {
     const dominant = quantiseImage(ringSheet, {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -173,6 +174,7 @@ describe('quantiseImage, ink-weighted', () => {
     const weighted = quantiseImage(ringSheet, {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'INK_WEIGHTED',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -205,6 +207,7 @@ describe('quantiseImage, ink-weighted', () => {
     const snapped = quantiseImage(ringSheet, {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'INK_WEIGHTED',
       lineStrength: 1.5,
       trimStrength: 0,

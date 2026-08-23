@@ -378,6 +378,7 @@ describe('quantiseImage, line-aware', () => {
     // be byte-identical to the plain vote it has always run.
     const unrestricted = quantiseImage(sheet, {
       ...mismatched,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -417,6 +418,7 @@ describe('quantiseImage, line-aware', () => {
     const composedWithoutRescue = downscaleNearest(alignToGrid(voteSource, mesh), mesh);
     const reduced = quantiseImage(sheet, {
       ...mismatched,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -449,6 +451,7 @@ describe('quantiseImage, line-aware', () => {
     const reduced = quantiseImage(sheet, {
       grid: 1,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -483,6 +486,7 @@ describe('quantiseImage, line-aware', () => {
     const settings = {
       grid: 6,
       key: null,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,

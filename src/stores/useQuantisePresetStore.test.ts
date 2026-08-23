@@ -25,6 +25,7 @@ vi.mock('../db/database.ts', () => ({
 const TUNED: QuantiseDials = {
   keyingEnabled: true,
   keyTolerance: 32,
+  silhouetteThreshold: 0,
   vote: 'K_CENTROID',
   outlineExpansion: 1,
   lineStrength: 2.1,

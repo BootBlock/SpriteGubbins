@@ -109,6 +109,7 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     const {
       keyingEnabled,
       keyTolerance,
+      silhouetteThreshold,
       vote,
       outlineExpansion,
       lineStrength,
@@ -146,6 +147,7 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       dials: {
         keyingEnabled,
         keyTolerance,
+        silhouetteThreshold,
         vote,
         outlineExpansion,
         lineStrength,

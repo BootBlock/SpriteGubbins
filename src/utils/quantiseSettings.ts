@@ -27,6 +27,7 @@ import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '.
 export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSettings): boolean {
   return (
     left.grid === right.grid &&
+    left.silhouetteThreshold === right.silhouetteThreshold &&
     left.vote === right.vote &&
     left.outlineExpansion === right.outlineExpansion &&
     left.lineStrength === right.lineStrength &&

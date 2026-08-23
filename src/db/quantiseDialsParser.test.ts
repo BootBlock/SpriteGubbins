@@ -14,6 +14,7 @@ import { parseQuantiseDials } from './quantiseDialsParser.ts';
 const STORED: QuantiseDials = {
   keyingEnabled: true,
   keyTolerance: 64,
+  silhouetteThreshold: 0,
   vote: 'INK_WEIGHTED',
   outlineExpansion: 2,
   lineStrength: 2.3,

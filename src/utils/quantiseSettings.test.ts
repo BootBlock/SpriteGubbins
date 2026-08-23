@@ -9,6 +9,7 @@ const WHITE = { r: 255, g: 255, b: 255, a: 255 };
 const BASE: QuantiseSettings = {
   grid: 8,
   key: { color: MAGENTA, tolerance: 32 },
+  silhouetteThreshold: 0,
   vote: 'DOMINANT',
   lineStrength: 1.5,
   trimStrength: 0,
@@ -49,6 +50,7 @@ const BASE: QuantiseSettings = {
  * nothing has to be cast back out of a record keyed by a string.
  */
 const MOVED: { readonly [K in keyof QuantiseTuning]: (from: QuantiseSettings) => QuantiseSettings } = {
+  silhouetteThreshold: (from) => ({ ...from, silhouetteThreshold: 50 }),
   vote: (from) => ({ ...from, vote: 'INK_WEIGHTED' }),
   outlineExpansion: (from) => ({ ...from, outlineExpansion: 2 }),
   lineStrength: (from) => ({ ...from, lineStrength: 2.5 }),
@@ -88,6 +90,7 @@ describe('sameQuantiseSettings', () => {
       sameQuantiseSettings(BASE, {
         grid: 8,
         key: { color: { ...MAGENTA }, tolerance: 32 },
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,
@@ -163,6 +166,7 @@ describe('sameQuantiseSettings', () => {
     expect(
       sameQuantiseSettings(BASE, {
         ...BASE,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,
@@ -204,6 +208,7 @@ describe('sameQuantiseSettings', () => {
     const budget: QuantiseSettings = BASE;
     const pinned: QuantiseSettings = {
       ...BASE,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -230,6 +235,7 @@ describe('sameQuantiseSettings', () => {
     };
     const depth: QuantiseSettings = {
       ...BASE,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -256,6 +262,7 @@ describe('sameQuantiseSettings', () => {
     };
     const none: QuantiseSettings = {
       ...BASE,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -295,6 +302,7 @@ describe('sameQuantiseSettings', () => {
     expect(
       sameQuantiseSettings(none, {
         ...BASE,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,
@@ -323,6 +331,7 @@ describe('sameQuantiseSettings', () => {
     expect(
       sameQuantiseSettings(depth, {
         ...BASE,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,
@@ -355,6 +364,7 @@ describe('sameQuantiseSettings', () => {
     // palette: `nearestColor` breaks a tie on the earliest entry, so the order decides the sheet.
     const pinned: QuantiseSettings = {
       ...BASE,
+      silhouetteThreshold: 0,
       vote: 'DOMINANT',
       lineStrength: 1.5,
       trimStrength: 0,
@@ -383,6 +393,7 @@ describe('sameQuantiseSettings', () => {
     expect(
       sameQuantiseSettings(pinned, {
         ...BASE,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,
@@ -411,6 +422,7 @@ describe('sameQuantiseSettings', () => {
     expect(
       sameQuantiseSettings(pinned, {
         ...BASE,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,
@@ -439,6 +451,7 @@ describe('sameQuantiseSettings', () => {
     expect(
       sameQuantiseSettings(pinned, {
         ...BASE,
+        silhouetteThreshold: 0,
         vote: 'DOMINANT',
         lineStrength: 1.5,
         trimStrength: 0,

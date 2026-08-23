@@ -18,8 +18,9 @@ interface SegmentedChoiceProps<T extends string | number> {
 /**
  * One value chosen from a small fixed set, as a row of pills.
  *
- * Six controls in the Quantise tab are this — the preview layout, the preview magnification, the
- * heatmap scale, the keying tolerance, and the download's magnification and format. Most are a
+ * Seven controls in the Quantise tab are this — the preview layout, the preview magnification, the
+ * heatmap scale, the keying tolerance, the edge hardening, and the download's magnification and
+ * format. Most are a
  * handful of stepped numbers where a slider would be the obvious choice and the wrong one —
  * every one of them re-runs work proportional to the whole image, and a drag would spend a recompute
  * per pointer move on a sheet that may be sixteen megapixels. Stepped values reach the same range at

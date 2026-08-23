@@ -59,4 +59,19 @@ describe('KeyingControls', () => {
     expect(screen.queryByRole('button', { name: 'Key the background' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Key colour tolerance')).toBeInTheDocument();
   });
+
+  it('offers the edge hardening whether or not the key is being matched', async () => {
+    // The control this panel holds that is not about the key colour at all. It reads the sheet's own
+    // coverage, so the reader wants it precisely when keying is off — a sheet that arrived carrying
+    // its own alpha — and hiding it behind the toggle would put it out of reach in the one state it
+    // exists for.
+    show();
+    const row = screen.getByLabelText('Silhouette coverage threshold');
+
+    expect(useQuantiseStore.getState().silhouetteThreshold).toBe(0);
+    await userEvent.click(screen.getByRole('button', { name: '50%' }));
+
+    expect(useQuantiseStore.getState().silhouetteThreshold).toBe(50);
+    expect(row).toBeInTheDocument();
+  });
 });
