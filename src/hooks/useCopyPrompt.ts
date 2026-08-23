@@ -25,7 +25,7 @@ function copyConfirmation(category: SubjectCategory, output: OutputConfig): stri
   const sheet = sheets[ordinal - 1];
   if (sheets.length < 2 || sheet === undefined) return 'Prompt copied to the clipboard';
 
-  return `Copied sheet ${String(ordinal)} of ${String(sheets.length)} — ${sheet.plan.name} · ${sheetCoverage(sheet)}`;
+  return `Copied sheet ${String(ordinal)} of ${String(sheets.length)} — ${sheet.plan.name} · ${sheetCoverage(sheet.covered, sheet.assembly)}`;
 }
 
 /**
