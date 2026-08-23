@@ -798,6 +798,11 @@ describe('ImageComparison, detached — where its notifications land', () => {
     });
   }
 
+  // The studio's default configuration is a two-sheet batch whose sheets draw the one facing its
+  // direction set offers, so neither is named by a facing and the download takes its ordinal — see
+  // `SheetIdentity.facing`.
+  const DOWNLOADED = /Downloaded sheet-quantised-sheet-1\.png/;
+
   it('answers a download pressed in the detached window there, not on the page behind it', async () => {
     const opened = watchOpen();
     showWithToast();
@@ -807,10 +812,10 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
     // The confirmation names the file and what was written into it, and it is in the document the
     // reader pressed the button in.
-    expect(within(bodyOf(opened)).getByText(/Downloaded sheet-quantised\.png/)).toBeInTheDocument();
+    expect(within(bodyOf(opened)).getByText(DOWNLOADED)).toBeInTheDocument();
     // And nowhere else. The page's live region is still mounted — it has to be, or nothing it is
     // later given is announced — but it is holding no message.
-    expect(screen.queryByText(/Downloaded sheet-quantised\.png/)).toBeNull();
+    expect(screen.queryByText(DOWNLOADED)).toBeNull();
   });
 
   it('brings a notification still on screen back into the page when the preview returns', async () => {
@@ -823,7 +828,7 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
     // The window the message was in has gone, so it is announced here instead — rather than being
     // taken off the screen by a reader pressing Return for an unrelated reason.
-    expect(screen.getByText(/Downloaded sheet-quantised\.png/)).toBeInTheDocument();
+    expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
     expect(useUIStore.getState().toastTarget).toBe('page');
   });
 

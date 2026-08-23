@@ -6,6 +6,8 @@ import { parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { sheetComponentCount } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { sheetBatch } from './sheetBatch.ts';
+import type { BatchSheet } from './sheetBatch.ts';
+import { slugify } from './slugify.ts';
 
 /**
  * What the studio says the sheet in the Quantise tab is, for the manifest a download writes.
@@ -31,10 +33,45 @@ export interface SheetIdentity {
   /** One name per component the prompt asks for, in the order section 4 lays them out. */
   readonly names: readonly string[];
   /**
+   * The facing that tells this sheet apart from the rest of its batch, slugged — or `null` where no
+   * facing does.
+   *
+   * **What a download is named and laid out by.** Eight cut-out rig runs are eight archives of
+   * fifteen identically-named files, so until this reached the writer the only thing keeping the
+   * south sheet's hand apart from the west sheet's was which folder the reader unzipped it into. A
+   * facing is the word an engine importer's tree is keyed by, which is why it is preferred to the
+   * ordinal wherever a sheet has one.
+   *
+   * **A facing only names a sheet where it distinguishes one**, and three cases say it does not: a
+   * batch of a single sheet has nothing to tell apart, a sheet drawing several facings is not any
+   * one of them, and two sheets drawing the same lone facing — a directional core and its
+   * articulation, both at `front` on a single-direction set — would be given one name twice. The
+   * download falls back to the ordinal in each, which every batch has and no two sheets share.
+   */
+  readonly facing: string | null;
+  /**
    * The sheet's own place in its batch, or `null` where the batch does not hold the position it
    * resolved to — a contract `sheetBatch` keeps, checked rather than assumed because it is an index.
    */
   readonly sheet: ManifestSheet | null;
+}
+
+/**
+ * The one facing this sheet draws, where no other sheet of the batch draws that facing alone.
+ *
+ * Read off the batch rather than off the sheet, because whether a facing *identifies* anything is a
+ * property of the set it sits in: `south` names one of eight rig runs and names nothing at all on a
+ * tileset, and the sheet itself cannot tell those apart. Compared by identity against the entry the
+ * ordinal picked out, so a batch that did hold two sheets at one facing withholds the name from both
+ * rather than from whichever was looked at second.
+ */
+function distinguishingFacing(sheets: readonly BatchSheet[], current: BatchSheet): string | null {
+  if (sheets.length < 2 || current.covered.length !== 1) return null;
+  const [only] = current.covered;
+  const shared = sheets.some(
+    (sheet) => sheet !== current && sheet.covered.length === 1 && sheet.covered[0] === only,
+  );
+  return shared ? null : slugify(only);
 }
 
 export function sheetIdentity(
@@ -48,7 +85,7 @@ export function sheetIdentity(
   // that happen to agree.
   const { sheets, ordinal } = sheetBatch(category, output);
   const current = sheets[ordinal - 1];
-  if (current === undefined) return { names: [], sheet: null };
+  if (current === undefined) return { names: [], facing: null, sheet: null };
 
   // **Both halves are read off the same batch sheet**, rather than one from it and one from the
   // studio's stored fields. Those agree in every reachable state — the ordinal is derived from
@@ -58,6 +95,7 @@ export function sheetIdentity(
 
   return {
     names: componentSlots(category, mode, current.output.directions, current.output.sheetIndex, anatomy),
+    facing: distinguishingFacing(sheets, current),
     sheet: {
       category,
       plan: current.plan.name,

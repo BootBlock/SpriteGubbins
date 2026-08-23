@@ -173,6 +173,7 @@ export function DownloadControls({
               boxes: sprites?.kind === 'SEGMENTED' ? sprites.boxes : [],
               duplicates,
               names: identity.names,
+              facing: identity.facing,
               sheet: identity.sheet,
             });
           }}

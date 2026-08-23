@@ -32,8 +32,8 @@ import type { ZipEntry } from './zipArchive.ts';
 export const PACK_SHEET_FILE = 'sheet.png';
 /** What the manifest is called inside the archive. */
 export const PACK_MANIFEST_FILE = 'manifest.json';
-/** The directory the cut-out sprites sit in. */
-const PACK_SPRITE_DIRECTORY = 'sprites';
+/** The directory the cut-out sprites sit in, where the sheet's own facing does not name one. */
+export const PACK_SPRITE_DIRECTORY = 'sprites';
 
 /**
  * Where one sprite lands in the archive, derived from what the manifest already states.
@@ -42,17 +42,24 @@ const PACK_SPRITE_DIRECTORY = 'sprites';
  * ten sorts after nine. The name follows it only where the sheet is named — a positional name is
  * the ordinal again, and `07-sprite-07.png` says nothing twice.
  */
-function spriteFileName(manifest: SpriteManifest, index: number): string {
+function spriteFileName(manifest: SpriteManifest, index: number, directory: string): string {
   const sprite = manifest.sprites[index];
   const ordinal = String(index + 1).padStart(2, '0');
   const name = manifest.named && sprite !== undefined ? `-${sprite.name}` : '';
-  return `${PACK_SPRITE_DIRECTORY}/${ordinal}${name}.png`;
+  return `${directory}/${ordinal}${name}.png`;
 }
 
 export async function encodeSpritePack(
   sheet: ImageData,
   manifest: SpriteManifest,
+  facing: string | null,
 ): Promise<WrittenSpritePack> {
+  // The facing where the sheet has one that names it, so eight rig runs expand into the per-facing
+  // tree an engine importer scans rather than into eight `sprites/` that overwrite one another. A
+  // sheet no facing distinguishes keeps the fixed directory — see `SheetIdentity.facing`, which is
+  // where the three cases that come to `null` are set out, and which is why this takes the answer
+  // rather than reading `manifest.sheet` for a facing it cannot tell is a distinguishing one.
+  const directory = facing ?? PACK_SPRITE_DIRECTORY;
   const written = await encodePng(sheet);
   const files: ZipEntry[] = [{ name: PACK_SHEET_FILE, bytes: written.bytes }];
 
@@ -68,7 +75,7 @@ export async function encodeSpritePack(
         pixels: 0,
       }),
     );
-    files.push({ name: spriteFileName(manifest, index), bytes: cut.bytes });
+    files.push({ name: spriteFileName(manifest, index, directory), bytes: cut.bytes });
   }
 
   // Last, so a reader scrolling an archive listing meets the sheet, then the sprites, then the index

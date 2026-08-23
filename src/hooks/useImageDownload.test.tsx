@@ -7,6 +7,7 @@ import { FakeSheetWriteWorker } from '../test/fakeSheetWriteWorker.ts';
 import { imageFrom } from '../test/images.ts';
 import type { Rgba, SpriteBox } from '../types/quantiser.ts';
 import type { SheetFormat } from '../types/sheetFormat.ts';
+import type { ManifestSheet } from '../types/spriteManifest.ts';
 import { encodeAseprite } from '../utils/encodeAseprite.ts';
 import { encodePng } from '../utils/encodePng.ts';
 import { scaleBoxes } from '../utils/sheetLayout.ts';
@@ -73,11 +74,12 @@ afterEach(() => {
 });
 
 /**
- * The three fields a manifest is built from, empty — the state of a sheet nothing has been read off
- * and no studio configuration stands behind. Every test here is about the *file*, so this is the
- * default and the manifest suites are where those fields carry anything.
+ * What a sheet nothing has been read off and no studio configuration stands behind carries: the
+ * three fields a manifest is built from, empty, and no facing to name the download by. Most tests
+ * here are about the *file*, so this is the default — the naming suite below overrides `sheet` and
+ * `facing`, and the manifest suites are where the rest carry anything.
  */
-const NOTHING_READ = { duplicates: [], names: [], sheet: null } as const;
+const NOTHING_READ = { duplicates: [], names: [], facing: null, sheet: null } as const;
 
 /** Runs the download and hands back the file it produced, once the encode has settled. */
 async function download(
@@ -140,6 +142,65 @@ describe('useImageDownload', () => {
       4,
     );
     expect(downloadName).toBe('armour-quantised@4x.png');
+  });
+
+  describe('the sheet a download is named for', () => {
+    /** One sheet of a batch of ten, which is the eight-compass character the split produces. */
+    const inBatch = (ordinal: number, facings: ManifestSheet['facings']): ManifestSheet => ({
+      category: 'CHARACTER',
+      plan: 'Rig pieces',
+      ordinal,
+      total: 10,
+      facings,
+      assembly: facings[0] ?? 'south',
+      components: 15,
+    });
+
+    /** Saves one sheet of that batch and hands back the name the browser was given. */
+    async function nameFor(
+      facing: string | null,
+      sheet: ManifestSheet | null,
+      scale = 1,
+    ): Promise<string | null> {
+      const { result } = renderHook(() => useImageDownload());
+      act(() => {
+        result.current.save({
+          sourceName: 'armour.png',
+          image: imageFrom(2, 2, () => CLEAR),
+          scale,
+          format: 'PNG',
+          boxes: [],
+          duplicates: [],
+          names: [],
+          facing,
+          sheet,
+        });
+      });
+      await waitFor(() => {
+        expect(saved).not.toBeNull();
+      });
+      return downloadName;
+    }
+
+    it('carries the facing, so eight rig runs are eight distinguishable files', async () => {
+      expect(await nameFor('south-west', inBatch(4, ['south-west']))).toBe('armour-quantised-south-west.png');
+    });
+
+    it('falls back to the ordinal where no facing names the sheet', async () => {
+      // A directional core draws four facings and is not any one of them, so the number answers —
+      // every sheet of a batch has one and no two share it.
+      expect(await nameFor(null, inBatch(1, ['south', 'west', 'north', 'east']))).toBe(
+        'armour-quantised-sheet-1.png',
+      );
+    });
+
+    it('says nothing about a batch of one, where there is nothing to tell apart', async () => {
+      expect(await nameFor(null, { ...inBatch(1, ['front']), total: 1 })).toBe('armour-quantised.png');
+    });
+
+    it('keeps the magnification last, where an asset pipeline reads it', async () => {
+      expect(await nameFor('south', inBatch(3, ['south']), 4)).toBe('armour-quantised-south@4x.png');
+    });
   });
 
   it('still saves a sheet with more colours than a palette can hold, and says so', async () => {

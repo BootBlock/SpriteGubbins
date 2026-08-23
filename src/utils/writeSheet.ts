@@ -50,6 +50,15 @@ export interface SheetWriteJob {
   readonly imageName: string;
   /** The studio's configuration at the moment of the press, or `null` where it states no sheet. */
   readonly sheet: ManifestSheet | null;
+  /**
+   * The facing that tells this sheet apart from the rest of its batch, or `null` where none does.
+   *
+   * What a pack lays its sprites out under, and — on the far side of the press, where the file is
+   * named — what the download is called. Resolved by `sheetIdentity` rather than here, because it is
+   * a reading of the whole batch and not of this one sheet. Sent whatever the format is, for the
+   * reason {@link SheetWriteJob.boxes} is.
+   */
+  readonly facing: string | null;
 }
 
 export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
@@ -58,7 +67,7 @@ export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
   if (format === 'PNG') return encodePng(magnify(image, scale));
   if (format === 'ASEPRITE') return encodeAseprite(magnify(image, scale), scaleBoxes(boxes, scale));
   if (format === 'SPRITE_PACK') {
-    return encodeSpritePack(magnify(image, scale), manifestFor(job, PACK_SHEET_FILE));
+    return encodeSpritePack(magnify(image, scale), manifestFor(job, PACK_SHEET_FILE), job.facing);
   }
 
   const manifest = manifestFor(job, job.imageName);
