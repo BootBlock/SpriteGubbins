@@ -35,6 +35,18 @@ interface PaletteExportControlsProps {
  * because that panel is about what a lock *does to the next sheet*, which a download does not touch.
  * A third palette is offered in the studio, beside the control that pins it, since a machine palette
  * is settled before any image exists.
+ *
+ * **The counts say “entries”, not “colours”, and the word is doing real work** — the same distinction
+ * the sheet download’s confirmation makes. An entry is one colour however many coverages it appears
+ * at, while the caption beside the preview counts distinct pixel values, so the two figures part
+ * company on any sheet with a soft edge. Two numbers for one thing on one screen is what the wording
+ * avoids, and the panel’s paragraph says which is which.
+ *
+ * **Not gated on a recompute being in flight**, unlike the lock beside it. A download states what is
+ * on screen, which is what the preview is also still showing, and that is the footing
+ * `DownloadControls` has always stood on. A lock is different because it feeds back into the
+ * pipeline: holding the colours of a sheet the dials have already moved past changes the next
+ * result, where writing a file of it changes nothing.
  */
 export function PaletteExportControls({ resultPalette, sheetName }: PaletteExportControlsProps) {
   const lock = useQuantiseStore((state) => state.lockedPalette);
@@ -48,7 +60,7 @@ export function PaletteExportControls({ resultPalette, sheetName }: PaletteExpor
       {sheetColors.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
           <Badge tone="valid">
-            {sheetColors.length} {sheetColors.length === 1 ? 'colour' : 'colours'} in this sheet
+            {sheetColors.length} {sheetColors.length === 1 ? 'entry' : 'entries'} in this sheet
           </Badge>
           <PaletteDownload
             palette={{ name: sheetName, entries: sheetColors }}
@@ -60,8 +72,7 @@ export function PaletteExportControls({ resultPalette, sheetName }: PaletteExpor
       {lock !== null && (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2">
           <Badge tone="valid">
-            {lock.entries.length} {lock.entries.length === 1 ? 'colour' : 'colours'} held from{' '}
-            {lock.sheetName}
+            {lock.entries.length} {lock.entries.length === 1 ? 'entry' : 'entries'} held from {lock.sheetName}
           </Badge>
           {/* Named apart from the row above, and it has to be: a lock taken off the sheet on
               screen would otherwise write both palettes under one file name, and they are not the

@@ -16,9 +16,10 @@ import { useShowToast } from './useShowToast.ts';
  * piece of a character.
  *
  * **No worker and no busy state**, which is the whole difference from {@link useImageDownload}. That
- * one wraps a walk over millions of bytes that a reader can watch happen; the largest palette here
- * is a 4,096 × 16 strip, so the press has no duration worth showing and a second press during it
- * would be a second small file rather than the same large one written twice.
+ * one wraps a walk over millions of bytes that a reader can watch happen; the largest picture this
+ * writes is a 4,096 × 16 strip, because the swatch is offered only up to `MAX_PALETTE_ENTRIES`
+ * colours — see `PaletteFileType.maxEntries`. So the press has no duration worth showing, and a
+ * second press during it would be a second small file rather than the same large one written twice.
  *
  * See {@link useClipboard} for why the browser-effect helpers live in this directory rather than in
  * `src/utils/`.
@@ -37,7 +38,10 @@ export function usePaletteDownload(): (palette: SettledPalette, format: PaletteF
           saveFile(
             filename,
             new Blob([written.bytes], { type: type.mediaType }),
-            `Downloaded ${filename} — ${String(written.entries)} ${written.entries === 1 ? 'colour' : 'colours'}`,
+            // “Entries”, as the badge above the button says and for the same reason: the caption
+            // beside the preview counts distinct pixel values, and calling both of them colours
+            // would put two numbers for one thing on one screen.
+            `Downloaded ${filename} — ${String(written.entries)} ${written.entries === 1 ? 'entry' : 'entries'}`,
           );
         })
         .catch((error: unknown) => {

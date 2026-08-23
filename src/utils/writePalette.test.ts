@@ -54,7 +54,6 @@ describe('writePalette', () => {
     for (const format of ['SWATCH_PNG', 'GPL', 'HEX_LIST'] as const) {
       const written = await writePalette(PALETTE, format);
       expect(written.entries, format).toBe(2);
-      expect(written.format, format).toBe(format);
     }
   });
 });

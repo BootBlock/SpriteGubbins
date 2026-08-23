@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { MAX_PALETTE_ENTRIES } from '../../utils/pngPalette.ts';
 import type { Rgba } from '../../types/quantiser.ts';
 import { PaletteDownload } from './PaletteDownload.tsx';
 
@@ -83,8 +84,33 @@ describe('PaletteDownload', () => {
     await userEvent.click(screen.getByRole('button', { name: /hex list$/ }));
 
     await waitFor(() => {
-      expect(useUIStore.getState().toastMessage).toBe('Downloaded armour-palette.txt — 2 colours');
+      expect(useUIStore.getState().toastMessage).toBe('Downloaded armour-palette.txt — 2 entries');
     });
+  });
+
+  /**
+   * A result with no colour budget reduces nothing, so the list can run to tens of thousands — at
+   * which point a block each is a strip of a hundred thousand pixels, built on the reader's own
+   * thread and useful to nobody. The two text forms still carry the whole list.
+   */
+  it('withholds the swatch above the count an image can carry as a palette', () => {
+    const wide = Array.from({ length: MAX_PALETTE_ENTRIES + 1 }, (_unused, at) => ({
+      r: at % 256,
+      g: (at * 7) % 256,
+      b: (at * 13) % 256,
+      a: 255,
+    }));
+    show(wide);
+
+    expect(screen.queryByRole('button', { name: /swatch PNG$/ })).toBeNull();
+    expect(screen.getByRole('button', { name: /GIMP palette$/ })).toBeVisible();
+    expect(screen.getByRole('button', { name: /hex list$/ })).toBeVisible();
+  });
+
+  it('offers the swatch at exactly that count', () => {
+    show(Array.from({ length: MAX_PALETTE_ENTRIES }, (_unused, at) => ({ r: at, g: 0, b: 0, a: 255 })));
+
+    expect(screen.getByRole('button', { name: /swatch PNG$/ })).toBeVisible();
   });
 
   it('renders nothing at all for a palette with no colours in it', () => {

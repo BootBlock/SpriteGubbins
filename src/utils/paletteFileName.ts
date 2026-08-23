@@ -1,3 +1,4 @@
+import { fileStem } from './fileStem.ts';
 import { slugify } from './slugify.ts';
 
 /**
@@ -10,7 +11,7 @@ import { slugify } from './slugify.ts';
  * **A palette named after a file loses that file’s extension first.** Two of the three palettes this
  * app can hand over are named after the sheet they came off, so without this the swatch of
  * `armour.png` would download as `armour-png-palette.png` — a name with the wrong extension in the
- * middle of it. `quantisedName` in `useImageDownload` strips one for the same reason.
+ * middle of it. That strip is `fileStem`, shared with the sheet download, which needs the same one.
  *
  * A name that slugs to nothing — punctuation alone, or a machine spelled in a script `slugify` does
  * not transliterate — comes back as `palette.png` rather than `-palette.png`, so the download is
@@ -18,6 +19,6 @@ import { slugify } from './slugify.ts';
  * than the stem: `palette-palette.png` is a name nobody would read as a fallback.
  */
 export function paletteFileName(name: string, extension: string): string {
-  const stem = slugify(name.replace(/\.[^./\\]+$/, ''));
+  const stem = slugify(fileStem(name));
   return stem === '' ? `palette.${extension}` : `${stem}-palette.${extension}`;
 }

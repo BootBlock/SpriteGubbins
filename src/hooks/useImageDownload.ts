@@ -4,6 +4,7 @@ import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
+import { fileStem } from '../utils/fileStem.ts';
 import { writeSheetOffThread } from '../workers/sheetWriteSession.ts';
 import { useFileSave } from './useFileSave.ts';
 import { useShowToast } from './useShowToast.ts';
@@ -194,7 +195,7 @@ function describeFrames(frames: number, tags: number): string {
  * overwrites another — including across formats, since each of the four has its own extension.
  */
 function quantisedName(sourceName: string, scale: number, extension: string): string {
-  const stem = sourceName.replace(/\.[^./\\]+$/, '');
+  const stem = fileStem(sourceName);
   const factor = scale === 1 ? '' : `@${String(scale)}x`;
   return `${stem === '' ? 'sprite-sheet' : stem}-quantised${factor}.${extension}`;
 }

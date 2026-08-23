@@ -85,8 +85,7 @@ export function PaletteLockControls({
           <Badge tone="attention">No palette held</Badge>
         ) : (
           <Badge tone="valid">
-            {lock.entries.length} {lock.entries.length === 1 ? 'colour' : 'colours'} held from{' '}
-            {lock.sheetName}
+            {lock.entries.length} {lock.entries.length === 1 ? 'entry' : 'entries'} held from {lock.sheetName}
           </Badge>
         )}
 

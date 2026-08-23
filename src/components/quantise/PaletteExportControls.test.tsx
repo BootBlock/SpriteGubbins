@@ -36,7 +36,7 @@ describe('PaletteExportControls', () => {
   it('offers the colours of the sheet once the transform has answered', () => {
     show([GREEN, RED]);
 
-    expect(screen.getByText('2 colours in this sheet')).toBeVisible();
+    expect(screen.getByText('2 entries in this sheet')).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Download the colours of this sheet as a swatch PNG' }),
     ).toBeVisible();
@@ -52,7 +52,7 @@ describe('PaletteExportControls', () => {
     });
     show(null);
 
-    expect(screen.getByText('1 colour held from cyborg_monk.png')).toBeVisible();
+    expect(screen.getByText('1 entry held from cyborg_monk.png')).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Download the locked palette as a GIMP palette' }),
     ).toBeVisible();
@@ -67,7 +67,7 @@ describe('PaletteExportControls', () => {
     show([GREEN, RED]);
 
     expect(screen.getAllByRole('button')).toHaveLength(6);
-    expect(screen.getByText('2 colours in this sheet')).toBeVisible();
-    expect(screen.getByText('1 colour held from armour.png')).toBeVisible();
+    expect(screen.getByText('2 entries in this sheet')).toBeVisible();
+    expect(screen.getByText('1 entry held from armour.png')).toBeVisible();
   });
 });

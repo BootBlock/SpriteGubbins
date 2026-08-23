@@ -151,10 +151,11 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * a swatch PNG, a `.gpl` or a hex list, offered in the studio beside the palette that pins one and on
  * the Quantise tab for the sheet's own colours and for a held lock. Measured against the build
  * immediately before it, rebuilt from that commit with the same `node_modules`, the precache goes
- * from 2253.00 to **2262.25 KiB**, a delta of 9.25. Three quarters of that is prose rather than code:
- * three writers and a shared button row are small, and the five guidance paragraphs behind them are
- * constant data the entry chunk reaches, as every raise above says of its own. No file was added to
- * or removed from the precache. The margin is left at the same order as every raise above.
+ * from 2253.00 to **2262.58 KiB**, a delta of 9.58. About a quarter of that is prose — the five
+ * guidance paragraphs measure 2,537 bytes between them, constant data the entry chunk reaches as
+ * every raise above says of its own — and the rest is the writers, the shared button row and the
+ * panel. No file was added to or removed from the precache. The margin is left at the same order as
+ * every raise above.
  */
 export const PRECACHE_CEILING_KIB = 2265;
 

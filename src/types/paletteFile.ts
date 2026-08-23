@@ -34,9 +34,16 @@ export interface SettledPalette {
   readonly entries: readonly Rgba[];
 }
 
-/** What a palette writer hands back: the bytes, and how many colours went into them. */
+/**
+ * What a palette writer hands back: the bytes, and how many colours went into them.
+ *
+ * One shape rather than a discriminated union, unlike `WrittenSheet` — deliberately, because the
+ * three writers here differ in nothing a caller can act on. A sheet download reports frames, tags,
+ * sprite counts and whether a palette fitted, none of which mean anything in the other formats; a
+ * palette file is bytes and a count in all three. Handing the format back as well would be handing
+ * the caller the argument it just passed in.
+ */
 export interface WrittenPalette {
-  readonly format: PaletteFileFormat;
   readonly bytes: Uint8Array<ArrayBuffer>;
   readonly entries: number;
 }

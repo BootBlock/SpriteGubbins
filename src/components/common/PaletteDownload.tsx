@@ -34,16 +34,27 @@ interface PaletteDownloadProps {
  * hex list wants two presses rather than four. Each button says which file it writes, so nothing
  * about the press is hidden behind a pill somewhere else in the row.
  *
+ * **A format is offered only where the palette fits it**, which today withholds the swatch picture
+ * from a palette of more than `MAX_PALETTE_ENTRIES` colours — see `PaletteFileType.maxEntries`,
+ * which says why that is the honest ceiling rather than a convenience. Withheld rather than
+ * disabled: a control that can never become available on this palette is not a state the reader can
+ * get out of, and the panel’s own paragraph says where the whole list still goes.
+ *
  * Renders nothing for a palette with no colours in it. There is no file to write, and a swatch
- * picture cannot be zero pixels wide — see `swatchImage`, which refuses rather than guarding.
+ * picture cannot be zero pixels wide — see `swatchImage`.
  */
 export function PaletteDownload({ palette, subject }: PaletteDownloadProps) {
   const download = usePaletteDownload();
   if (palette.entries.length === 0) return null;
 
+  const offered = PALETTE_FILE_FORMATS.filter((format) => {
+    const limit = PALETTE_FILE_TYPES[format].maxEntries;
+    return limit === null || palette.entries.length <= limit;
+  });
+
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      {PALETTE_FILE_FORMATS.map((format) => (
+      {offered.map((format) => (
         <ControlTooltip key={format} hint={PALETTE_FILE_TYPES[format].label} text={FORMAT_GUIDANCE[format]}>
           <button
             type="button"

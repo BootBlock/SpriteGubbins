@@ -5,10 +5,9 @@ import { createImage, FULLY_OPAQUE, pixelOffset, writePixel } from './imageData.
  * A palette drawn as a picture: one square block per colour, in the palette’s own order.
  *
  * This is the form an engine importer reads. A pipeline that maps artwork onto a fixed set of
- * colours wants the set as a texture — Godot’s rig contract carries a `palette_swatch` and will not
- * quantise without one — and the alternative was for a reader to paint the colours into a small
- * image by hand, which is how a green one step off the green in the prompt gets into a whole
- * character’s worth of pieces.
+ * colours wants that set as a texture rather than as text, and the alternative was for a reader to
+ * paint the colours into a small image by hand — which is how a green one step off the green in the
+ * prompt gets into a whole character’s worth of pieces.
  *
  * **One row, left to right, never a grid.** The order is the palette’s and a reader of the file has
  * to be able to recover it: a row is a sequence and needs no rule about where it wraps. It also
@@ -19,6 +18,10 @@ import { createImage, FULLY_OPAQUE, pixelOffset, writePixel } from './imageData.
  * is a statement about a silhouette, which belongs to the artwork. The entries arrive opaque from
  * `imagePaletteEntries` in any case, and a swatch drawn with a partial alpha would come back from a
  * sampler as a colour nobody chose.
+ *
+ * **How wide it may get is the caller’s to decide**, and `PaletteDownload` decides it: the swatch is
+ * offered only up to `MAX_PALETTE_ENTRIES` colours, which is what keeps this a 4,096-pixel strip at
+ * worst rather than the 160,000-pixel one an unreduced sheet would produce.
  *
  * **A palette with no entries is not this function’s to handle**, and no guard is written for one.
  * A browser’s `ImageData` refuses a zero width outright, so the only thing a guard could return is a
