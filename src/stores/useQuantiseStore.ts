@@ -184,7 +184,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
    * function for twenty dials without a hand-written list of them to copy the other nineteen.
    *
    * **A `null` key is a move that never coalesces with the gesture before it**, which is what the
-   * sweep's answer wants: it moves eight dials at once, and the positions it replaced are exactly
+   * sweep's answer wants: it moves twelve dials at once, and the positions it replaced are exactly
    * the ones a reader wants back after seeing what it made of their sheet.
    *
    * `performance.now()` rather than `Date.now()`, because the only thing the figure is compared

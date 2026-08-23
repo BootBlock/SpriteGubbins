@@ -6,9 +6,10 @@ import { autoTune } from '../utils/autoTune.ts';
 /**
  * The auto-tune sweep, off the thread that has to stay responsive.
  *
- * The sweep runs the whole quantiser pipeline once per candidate — up to sixty-five of them, over
- * three crops — so on the main thread it is not slow, it is a **freeze** of seconds inside a click
- * handler, where React cannot even paint the button as pressed. That is the same argument the sheet
+ * The sweep runs the whole quantiser pipeline once per candidate — up to 1217 of them, over five
+ * crops, going round the dials as many as eight times — so on the main thread it is not slow, it is a
+ * **freeze** of a minute or more inside a click handler, where React cannot even paint the button as
+ * pressed. `constants/autoTune.ts` carries where those figures come from. That is the same argument the sheet
  * writer's thread rests on, and the same argument that put the pipeline itself on a thread.
  *
  * **A thread per press, ended by its own answer**, which is the sheet writer's shape rather than the

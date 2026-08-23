@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/autoTune.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import { imageFrom, soften } from '../test/images.ts';
@@ -18,13 +18,16 @@ import { upscaleNearest } from './upscaleNearest.ts';
 const GRID = 4;
 
 /**
- * Long enough for two whole sweeps of the fixture, which is past Vitest's own five seconds.
+ * Long enough for two whole sweeps of the fixture, which is well past Vitest's own five seconds.
  *
  * The sweep runs the pipeline up to `TUNE_ROUNDS` times over every ladder and every crop, which is
- * the trade `constants/autoTune.ts` argues for — so a test that runs two of them is slow by design
- * rather than by accident, and the figure is stated here once rather than at each call site.
+ * the trade `constants/autoTune.ts` argues for — so every test in this file is slow by design rather
+ * than by accident. **Set for the whole file rather than on the tests that looked slowest**: a single
+ * sweep of this fixture takes several seconds on an idle machine and more than five under the
+ * parallelism of the whole suite, so a per-test figure produced a file that passed on its own and
+ * failed intermittently in the gate — which is the worst of the three states it could have been in.
  */
-const TWO_SWEEPS_MS = 60_000;
+vi.setConfig({ testTimeout: 60_000 });
 const MAGENTA: Rgba = { r: 255, g: 0, b: 255, a: 255 };
 
 /** 32 × 32 of pixel art: two fills, a dark contour between them, and a bright trim along one edge. */
@@ -69,13 +72,13 @@ describe('autoTune', () => {
   it('counts the positions it ran, including the one the reader arrived with', () => {
     const outcome = autoTune(SHEET, BASE);
 
-    const swept = outcome.stages.reduce((total, stage) => total + stage.candidates, 0);
-    expect(outcome.candidates).toBe(swept + 1);
     // The ceiling `constants/autoTune.ts` states, and the arithmetic it states it from: every stage
     // is walked at most once a round, and no round can cost more than the dearest branch plus the
-    // seven ladders that can carry a reader's own position as an extra.
+    // seven ladders that can carry a reader's own position as an extra. What the total is *made of*
+    // is asserted where the per-stage counts are.
     expect(outcome.rounds).toBeGreaterThanOrEqual(1);
     expect(outcome.rounds).toBeLessThanOrEqual(TUNE_ROUNDS);
+    expect(outcome.candidates).toBeGreaterThan(1);
     expect(outcome.candidates).toBeLessThanOrEqual(1 + TUNE_ROUNDS * (145 + 7));
   });
 
@@ -110,21 +113,17 @@ describe('autoTune', () => {
     expect(outcome.cropEdge % GRID).toBe(0);
   });
 
-  it('answers with the eight dials it is allowed to move and nothing else', () => {
+  it('answers with the twelve dials it is allowed to move and nothing else', () => {
     const outcome = autoTune(SHEET, BASE);
 
     expect(Object.keys(outcome.dials).sort()).toEqual([...TUNED_KEYS].sort());
   });
 
-  it(
-    'gives the same answer twice for the same sheet and the same settings',
-    () => {
-      // A reader who presses Auto twice has not asked for two different answers, and the elbow's ties
-      // and the crop chooser's are both settled by order rather than by whatever a sort left behind.
-      expect(autoTune(SHEET, BASE)).toEqual(autoTune(SHEET, BASE));
-    },
-    TWO_SWEEPS_MS,
-  );
+  it('gives the same answer twice for the same sheet and the same settings', () => {
+    // A reader who presses Auto twice has not asked for two different answers, and the elbow's ties
+    // and the crop chooser's are both settled by order rather than by whatever a sort left behind.
+    expect(autoTune(SHEET, BASE)).toEqual(autoTune(SHEET, BASE));
+  });
 
   it('lands somewhere that reproduces the artwork', () => {
     const outcome = autoTune(SHEET, BASE);
@@ -133,19 +132,15 @@ describe('autoTune', () => {
     expect(outcome.reading.colors).toBeGreaterThan(0);
   });
 
-  it(
-    'starts from the dials it was handed, and says what they were worth',
-    () => {
-      const started: QuantiseSettings = { ...BASE, vote: 'K_CENTROID', colorMerge: 24 };
+  it('starts from the dials it was handed, and says what they were worth', () => {
+    const started: QuantiseSettings = { ...BASE, vote: 'K_CENTROID', colorMerge: 24 };
 
-      const outcome = autoTune(SHEET, started);
+    const outcome = autoTune(SHEET, started);
 
-      // The baseline is a reading of the positions in force, so a sheet swept from two different
-      // starting points reports two different baselines even where the sweep ends in the same place.
-      expect(outcome.baseline).not.toEqual(autoTune(SHEET, BASE).baseline);
-    },
-    TWO_SWEEPS_MS,
-  );
+    // The baseline is a reading of the positions in force, so a sheet swept from two different
+    // starting points reports two different baselines even where the sweep ends in the same place.
+    expect(outcome.baseline).not.toEqual(autoTune(SHEET, BASE).baseline);
+  });
 
   it('judges a keyed sheet against a keyed reference, not against the key field', () => {
     // The comparison this guards: a candidate's result has its background cleared, so measuring it
@@ -205,30 +200,65 @@ describe('autoTune', () => {
     expect(new Set(scores.map((score) => score.fidelity)).size).toBeGreaterThan(1);
   });
 
-  it(
-    'goes round the stages until a round moves nothing',
-    () => {
-      const outcome = autoTune(SHEET, BASE);
+  it('stops on a repeat rather than at the round cap, and looks back further than one round', () => {
+    const outcome = autoTune(SHEET, BASE);
 
-      // The last round is the one that moved nothing, which is what says the descent converged rather
-      // than ran out — so re-sweeping from where it landed has to cost exactly one round and land in
-      // the same place. A sweep that stopped at the ceiling would fail this, and so would one whose
-      // stages disagree about their own answers.
-      expect(outcome.rounds).toBeGreaterThan(1);
+    // This fixture's descent does not reach a fixed point — it settles into a two-round loop, which
+    // is the case `TUNE_ROUNDS`' own docblock says the cap exists for. Comparing only against the
+    // round *before* would never see that loop close: narrowed to
+    // `sameTunedDials(visited.at(-1), settled)` this fixture runs all six rounds and answers with a
+    // different position, which is what makes the assertion falsifiable rather than decorative.
+    expect(outcome.rounds).toBeGreaterThan(1);
+    expect(outcome.rounds).toBeLessThan(TUNE_ROUNDS);
+  });
 
-      const again = autoTune(SHEET, { ...BASE, ...outcome.dials });
-      expect(again.rounds).toBe(1);
-      expect(again.dials).toEqual(outcome.dials);
-    },
-    TWO_SWEEPS_MS,
-  );
+  it('answers the same way however many times it is pressed', () => {
+    // A loop rather than a fixed point still has to give the reader a stable answer: pressing Auto
+    // on the sheet it has just tuned must not walk the dials somewhere new each time. Three presses,
+    // because a two-round loop would show up on the second and a longer one on the third.
+    const first = autoTune(SHEET, BASE);
+    const second = autoTune(SHEET, { ...BASE, ...first.dials });
+    const third = autoTune(SHEET, { ...BASE, ...second.dials });
 
-  it('counts a stage’s positions across every round that reached it', () => {
+    expect(second.dials).toEqual(first.dials);
+    expect(third.dials).toEqual(first.dials);
+  });
+
+  it('hands back the dials of a stage that was skipped in the last round', () => {
+    // The defect rounds introduced: a stage can sweep under one reading and then be skipped because
+    // a later round moved off it, which leaves the reader with dial positions chosen under a reading
+    // the sweep abandoned — and the panel renders the skip sentence instead of a count, so nothing
+    // on screen says they moved. Started from an ink blend the reader has set by hand, so a stage
+    // that hands its dials back is visibly distinguishable from one that never had them.
+    const started: QuantiseSettings = { ...BASE, lineStrength: 2.5, trimStrength: 1, inkThreshold: 40 };
+
+    const outcome = autoTune(SHEET, started);
+    const inkStages = outcome.stages.filter(
+      (stage) => stage.stage === 'INK_BLEND' || stage.stage === 'INK_THRESHOLD',
+    );
+
+    // The claim is only worth anything if those stages did skip, and if the sweep did leave the
+    // reading that makes them live — both of which this fixture does.
+    expect(outcome.dials.vote).not.toBe('INK_WEIGHTED');
+    for (const stage of inkStages) expect(stage.skipped).toMatch(/blends no ink/);
+    expect(outcome.dials.lineStrength).toBe(started.lineStrength);
+    expect(outcome.dials.trimStrength).toBe(started.trimStrength);
+    expect(outcome.dials.inkThreshold).toBe(started.inkThreshold);
+  });
+
+  it('counts a stage’s positions across every round that reached it, skips included', () => {
     const outcome = autoTune(SHEET, BASE);
     const reading = outcome.stages.find((stage) => stage.stage === 'READING');
+    const inkBlend = outcome.stages.find((stage) => stage.stage === 'INK_BLEND');
 
     // `READING` never skips and its ladder is complete, so it costs exactly fifteen a round.
     expect(reading?.candidates).toBe(15 * outcome.rounds);
+    // And the ink blend is the other half of the contract: it swept in an earlier round and is
+    // skipped in the last, so it reports a reason *and* what it spent. Dropping the carry-forward
+    // would leave this at zero while the sweep's own total still counted those positions.
+    expect(inkBlend?.skipped).not.toBeNull();
+    expect(inkBlend?.candidates).toBeGreaterThan(0);
+    expect(outcome.candidates).toBe(1 + outcome.stages.reduce((total, stage) => total + stage.candidates, 0));
   });
 
   it('refuses a sheet smaller than one cell of the grid in force', () => {

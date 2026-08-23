@@ -1,5 +1,5 @@
 import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/autoTune.ts';
-import type { TuneOutcome, TuneStageName, TuneStageReport, TunedDials } from '../types/autoTune.ts';
+import type { TuneOutcome, TuneStageName, TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
 import { hardenSilhouette } from './hardenSilhouette.ts';
 import { keyBackground } from './keyBackground.ts';
@@ -7,7 +7,7 @@ import { proxyCrops } from './proxyCrops.ts';
 import { readCandidate } from './tuneCandidate.ts';
 import type { Sample } from './tuneCandidate.ts';
 import { chooseByElbow } from './tuneScore.ts';
-import { sameTunedDials, tunedDialsOf, withIncumbent } from './tuneStage.ts';
+import { restoreSkipped, sameTunedDials, tunedDialsOf, withIncumbent } from './tuneStage.ts';
 import { TUNE_STAGES } from './tuneStages.ts';
 
 /**
@@ -80,12 +80,14 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
     ),
   }));
 
-  let settled = tunedDialsOf(settings);
+  const opening = tunedDialsOf(settings);
+  let settled = opening;
   const baseline = readCandidate(settled, samples, settings);
   let reading = baseline;
   // The starting position counts: it was run, and every stage below ranks it against its own.
   let candidates = 1;
-  const reports = new Map<TuneStageName, TuneStageReport>();
+  const spent = new Map<TuneStageName, number>();
+  let skips = new Map<TuneStageName, string>();
   // Seeded with where the reader started, so a first round that moves nothing is a first round that
   // ends the sweep — the same fact every later round's repeat states.
   const visited: TunedDials[] = [settled];
@@ -93,18 +95,31 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
 
   while (rounds < TUNE_ROUNDS) {
     rounds += 1;
+    // Rebuilt each round rather than accumulated, because a skip is a fact about the round it
+    // happened in: a stage that skipped in round one and swept in round two is a stage that ran.
+    skips = new Map();
 
     for (const stage of TUNE_STAGES) {
       const plan = stage.plan(settled, settings);
       if ('skipped' in plan) {
-        reports.set(stage.name, {
-          stage: stage.name,
-          // Whatever earlier rounds spent on this stage stands: the count is what the sweep cost,
-          // and a stage that ran in round one and skipped in round two did both.
-          candidates: reports.get(stage.name)?.candidates ?? 0,
-          skipped: plan.skipped,
-          settled: stage.describe(settled),
-        });
+        skips.set(stage.name, plan.skipped);
+        // **And its dials go back where the reader had them, here rather than at the end.** Rounds
+        // are what make this necessary at all: a stage can sweep under one reading and then be
+        // skipped because a later round moved off it, which leaves positions chosen under a reading
+        // the sweep has abandoned — measured on `test_sprites/armour.png`, a line strength of 2 and
+        // an ink threshold of 56 both settled under `INK_WEIGHTED` and survived the descent's move
+        // to `K_CENTROID`. They reach no pixel of the result, because each skip predicate is exactly
+        // the pipeline's own gate; they reach the *tab*, where they are two sliders the reader never
+        // touched sitting somewhere new, ready to take effect the moment they change the control
+        // that was gating them.
+        //
+        // **Inside the round rather than after the last one**, so the position the descent carries
+        // is one it would report — which is what keeps the fixed point `visited` looks for a fixed
+        // point of the answer rather than of an intermediate the restore then moves. It also puts
+        // the reader's own ink dials back into the *next* round's reading stage, which is
+        // `withIncumbent`'s principle one level up: a reading is ranked against the dials in force
+        // rather than against ones an abandoned branch left behind.
+        settled = restoreSkipped(settled, opening, stage);
         continue;
       }
 
@@ -118,13 +133,9 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
       settled = tried[chosen] ?? settled;
       reading = readings[chosen] ?? reading;
       candidates += tried.length;
-
-      reports.set(stage.name, {
-        stage: stage.name,
-        candidates: (reports.get(stage.name)?.candidates ?? 0) + tried.length,
-        skipped: null,
-        settled: stage.describe(settled),
-      });
+      // Whatever earlier rounds spent on this stage stands: the count is what the sweep cost, and a
+      // stage that ran in round one and skipped in round two did both.
+      spent.set(stage.name, (spent.get(stage.name) ?? 0) + tried.length);
     }
 
     // A round that ended anywhere the descent has already stood is the round that ends the sweep:
@@ -142,10 +153,15 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
     candidates,
     reading,
     baseline,
-    // Emitted in the order the stages run rather than the order they were last written, so the panel
-    // reads down the pipeline whatever a round skipped.
-    stages: TUNE_STAGES.map((stage) => reports.get(stage.name)).filter(
-      (report): report is TuneStageReport => report !== undefined,
-    ),
+    // Built here rather than as each stage ran, and in the order the stages run: a phrase describes
+    // where a dial *ends up*, and a stage that ran early in the last round is describing a position
+    // a later stage's restore may still have moved. Each stage reads only its own dials, so one pass
+    // over the final position describes every one of them correctly.
+    stages: TUNE_STAGES.map((stage) => ({
+      stage: stage.name,
+      candidates: spent.get(stage.name) ?? 0,
+      skipped: skips.get(stage.name) ?? null,
+      settled: stage.describe(settled),
+    })),
   };
 }

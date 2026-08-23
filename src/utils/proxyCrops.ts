@@ -32,7 +32,7 @@ export interface ProxyCrop {
  * own lattice may be phased or drifting; what it guarantees is that every candidate meets the *same*
  * mesh, which is what makes the ranking between them sound.
  *
- * The windows are non-overlapping, so three crops are three samples rather than three views of one
+ * The windows are non-overlapping, so five crops are five samples rather than five views of one
  * busy corner. Where the sheet cannot hold as many as were asked for, it returns what it has —
  * possibly one — and an empty list only where the sheet is smaller than a single cell, which is the
  * one case the sweep genuinely cannot proceed from.
@@ -64,7 +64,7 @@ export function proxyCrops(
   }
 
   // Busiest first, and reading order between equals — so a flat sheet, where every window scores the
-  // same, still returns the same three crops on every press rather than whatever the sort settled on.
+  // same, still returns the same windows on every press rather than whatever the sort settled on.
   windows.sort((a, b) => b.energy - a.energy || a.top - b.top || a.left - b.left);
 
   const chosen: ProxyCrop[] = [];

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import { TUNED_DIAL_KEYS } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
-import { ladder, sameTunedDials, tunedDialsOf, withIncumbent } from './tuneStage.ts';
+import type { QuantiseSettings } from '../types/quantiser.ts';
+import { TUNE_STAGES } from './tuneStages.ts';
+import { ladder, restoreSkipped, sameTunedDials, tunedDialsOf, withIncumbent } from './tuneStage.ts';
 
 const DIALS: TunedDials = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
 
@@ -78,5 +80,65 @@ describe('withIncumbent', () => {
     for (const key of TUNED_DIAL_KEYS) {
       expect(withIncumbent([shift(settled, key)], settled)).toHaveLength(2);
     }
+  });
+});
+
+describe('restoreSkipped', () => {
+  it('puts a stage’s own dials back and leaves every other dial alone', () => {
+    const opening = DIALS;
+    const swept: TunedDials = {
+      ...DIALS,
+      vote: 'K_CENTROID',
+      lineStrength: 2,
+      trimStrength: 1.5,
+      inkThreshold: 40,
+      colorMerge: 24,
+    };
+    const stage = TUNE_STAGES.find((entry) => entry.name === 'INK_BLEND');
+    expect(stage).toBeDefined();
+    if (stage === undefined) return;
+
+    const restored = restoreSkipped(swept, opening, stage);
+
+    expect(restored.lineStrength).toBe(opening.lineStrength);
+    expect(restored.trimStrength).toBe(opening.trimStrength);
+    // Everything the stage does not name is exactly where the descent left it, the two union-typed
+    // dials included — the switch inside is what stops a widened index signature from touching them.
+    expect(restored.vote).toBe('K_CENTROID');
+    expect(restored.inkThreshold).toBe(40);
+    expect(restored.colorMerge).toBe(24);
+  });
+
+  it('names dials every stage really owns, and no stage owns another’s', () => {
+    // The list is what the restore acts on, so a stage naming a dial it does not vary would hand
+    // back a position somebody else chose. Read off each stage's own candidates rather than a second
+    // hand-written list: whatever a plan changes is what it owns.
+    const settings: QuantiseSettings = {
+      ...QUANTISE_DEFAULT_DIALS,
+      grid: 4,
+      key: null,
+      reduction: { kind: 'MAX_COLORS', maxColors: 16 },
+      antiAlias: 'BOTH',
+      vote: 'INK_WEIGHTED',
+    };
+    const from: TunedDials = { ...DIALS, vote: 'INK_WEIGHTED', fillCleanup: 16 };
+
+    for (const stage of TUNE_STAGES) {
+      const plan = stage.plan(from, settings);
+      if (!('candidates' in plan)) continue;
+      const varied = new Set(
+        TUNED_DIAL_KEYS.filter((key) => plan.candidates.some((candidate) => candidate[key] !== from[key])),
+      );
+      for (const key of varied) expect(stage.dials).toContain(key);
+      for (const key of stage.dials) expect(TUNED_DIAL_KEYS).toContain(key);
+    }
+  });
+
+  it('gives every swept dial exactly one owner', () => {
+    // Two stages owning one dial would have the second restore undo the first's answer; none owning
+    // it would leave a dial the sweep can move and never hand back.
+    const owners = TUNE_STAGES.flatMap((stage) => [...stage.dials]);
+
+    expect([...owners].sort()).toEqual([...TUNED_DIAL_KEYS].sort());
   });
 });

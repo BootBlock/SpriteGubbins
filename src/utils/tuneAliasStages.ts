@@ -21,7 +21,7 @@ import { ladder, type TuneStage } from './tuneStage.ts';
  * definition rather than an oversight.
  *
  * **Three stages rather than one grid over three dials**, which is the descent's own argument applied
- * once more: 9 × 8 × 20 is 1440 positions where 9 + 8 + 20 is 37, and the two contour dials are near
+ * once more: 10 × 8 × 20 is 1600 positions where 10 + 8 + 20 is 38, and the two contour dials are near
  * enough independent to descend separately — one filters a boundary by contrast and the other by
  * length. The strength and the blended-shades position *are* swept together, because they are one
  * question asked twice: how far a blend travels, and whether the far end of that travel is allowed to
@@ -34,6 +34,7 @@ import { ladder, type TuneStage } from './tuneStage.ts';
 export const TUNE_ALIAS_STAGES: readonly TuneStage[] = [
   {
     name: 'ALIAS_CONTOUR',
+    dials: ['antiAliasThreshold'],
     plan: (settled, settings) =>
       settings.antiAlias === 'OFF'
         ? { skipped: ALIAS_OFF }
@@ -49,6 +50,7 @@ export const TUNE_ALIAS_STAGES: readonly TuneStage[] = [
   },
   {
     name: 'ALIAS_RUN',
+    dials: ['antiAliasRun'],
     plan: (settled, settings) =>
       settings.antiAlias === 'OFF'
         ? { skipped: ALIAS_OFF }
@@ -57,6 +59,7 @@ export const TUNE_ALIAS_STAGES: readonly TuneStage[] = [
   },
   {
     name: 'ALIAS_BLEND',
+    dials: ['antiAliasStrength', 'antiAliasPalette'],
     plan: (settled, settings) => {
       if (settings.antiAlias === 'OFF') return { skipped: ALIAS_OFF };
       // The blended-shades position is read only where a reduction states which colours the sheet is

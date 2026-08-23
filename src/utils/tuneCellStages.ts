@@ -26,6 +26,7 @@ import { ladder, type TuneStage } from './tuneStage.ts';
 export const TUNE_CELL_STAGES: readonly TuneStage[] = [
   {
     name: 'READING',
+    dials: ['vote', 'outlineExpansion'],
     plan: (settled) => ({
       candidates: ladder(
         VOTE_METHODS.flatMap((vote) =>
@@ -37,6 +38,7 @@ export const TUNE_CELL_STAGES: readonly TuneStage[] = [
   },
   {
     name: 'INK_BLEND',
+    dials: ['lineStrength', 'trimStrength'],
     plan: (settled) =>
       settled.vote !== 'INK_WEIGHTED'
         ? { skipped: INK_ONLY }
@@ -51,6 +53,7 @@ export const TUNE_CELL_STAGES: readonly TuneStage[] = [
   },
   {
     name: 'INK_THRESHOLD',
+    dials: ['inkThreshold'],
     plan: (settled) =>
       settled.vote !== 'INK_WEIGHTED'
         ? { skipped: INK_ONLY }
@@ -61,6 +64,7 @@ export const TUNE_CELL_STAGES: readonly TuneStage[] = [
   },
   {
     name: 'COLOUR_MERGE',
+    dials: ['colorMerge'],
     plan: (settled) => ({
       candidates: ladder(TUNE_COLOR_MERGES.map((colorMerge) => ({ ...settled, colorMerge }))),
     }),
@@ -68,6 +72,7 @@ export const TUNE_CELL_STAGES: readonly TuneStage[] = [
   },
   {
     name: 'FILL_CLEANUP',
+    dials: ['fillCleanup'],
     plan: (settled) => ({
       candidates: ladder(TUNE_FILL_CLEANUPS.map((fillCleanup) => ({ ...settled, fillCleanup }))),
     }),
@@ -76,6 +81,7 @@ export const TUNE_CELL_STAGES: readonly TuneStage[] = [
   },
   {
     name: 'CLEANUP_PASSES',
+    dials: ['cleanupPasses'],
     plan: (settled) =>
       settled.fillCleanup === 0
         ? { skipped: 'The fill cleanup settled at off, so a second pass has nothing to run over.' }

@@ -125,16 +125,20 @@ export type TuneStageName = (typeof TUNE_STAGE_NAMES)[number];
  * the same sheet, and a reader looking at an unmoved dial needs to know which they are looking at.
  *
  * **One entry per stage, not one per round.** The descent runs each stage once a round — see
- * `autoTune` for why it rounds at all — so {@link candidates} is the total across every round that
- * reached this stage, while {@link skipped} and {@link settled} describe the *last* round to reach
- * it. A reader is looking at the dials as they now stand, which is what those two are about; the
- * count is what the sweep cost, which is a sum.
+ * `autoTune` for why it rounds at all — so {@link candidates} is the total across every round, while
+ * {@link skipped} is whether the **last** round found anything for the stage to do and
+ * {@link settled} is where its dials finished. A reader is looking at the dials as they now stand,
+ * which is what those two are about; the count is what the sweep cost, which is a sum.
+ *
+ * **A stage can therefore report a reason *and* a count**, and the pair is not a contradiction: it
+ * swept in an earlier round and a later one moved off the reading that made its dials live. Its
+ * dials are back where the reader had them either way — see `restoreSkipped`.
  */
 export interface TuneStageReport {
   readonly stage: TuneStageName;
   /** How many positions were tried across every round; `0` where the stage was skipped in all of them. */
   readonly candidates: number;
-  /** Why the stage had nothing to try in the last round that reached it, or `null` where it ran. */
+  /** Why the stage had nothing to try in the last round, or `null` where it ran in that round. */
   readonly skipped: string | null;
   /**
    * Where this stage's own dials stand afterwards, as a phrase — `INK_WEIGHTED, expansion 1`.

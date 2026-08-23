@@ -20,13 +20,13 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * so every ladder here is stated at the resolution the answer changes at rather than at the coarsest
  * resolution that still finds something. **145 positions a round on the branch that skips nothing** —
  * 15 + 49 + 11 + 15 + 13 + 4 across the six cell-and-colour stages, then 10 + 8 + 20 across the three
- * anti-aliasing ones — which is **871** across {@link TUNE_ROUNDS} rounds plus the position the
- * reader arrived with, and at most **913** where a reader has moved a dial off every ladder that can
+ * anti-aliasing ones — which is **1161** across {@link TUNE_ROUNDS} rounds plus the position the
+ * reader arrived with, and at most **1217** where a reader has moved a dial off every ladder that can
  * carry one. With the anti-aliasing control at its own `OFF`, which is where the tab opens, those
- * three stages skip and the two figures are **643** and **667**. Those are ceilings rather than
+ * three stages skip and the two figures are **857** and **889**. Those are ceilings rather than
  * ordinary costs, because the descent stops as soon as a round retraces a position it has already
- * stood at — three of the four corpus sheets measured below do that at the second round. Every stage
- * also ranks the positions
+ * stood at: measured over the eight corpus sheets the real figures run from 134 to 403 positions, and
+ * {@link TUNE_ROUNDS} carries that table. Every stage also ranks the positions
  * already in force, which costs nothing where its ladder already holds them; see `withIncumbent` for
  * why the incumbent is in the set at all.
  *
@@ -36,7 +36,8 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * because the tab opens that control off, ending at a likeness of **0.6554 for 112 colours** where
  * the opening position it started from scored 0.6264 for 960. A ninth of the colours for three
  * hundredths *more* likeness, which is the elbow finding a knee that is better on both counts than
- * where the reader began.
+ * where the reader began. It is also the sheet that costs the most rounds of the eight — the table
+ * under {@link TUNE_ROUNDS} carries the rest.
  *
  * **What the widening bought, measured rather than assumed.** The narrower sweep this replaced — 35
  * positions, one round, three crops — settled this sheet on `DOMINANT` with the merge at 12 and the
@@ -76,10 +77,12 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  * from the generator. On `test_sprites/cyborg_healer.png` (a grid of 4, and again a grid the run was
  * given rather than one the sheet reads at) `K_CENTROID` at expansion 0 beats the other averaging
  * reading on **both** counts — 0.6649 for 1416 colours against `INK_WEIGHTED`'s 0.6571 for 1435 — and
- * the elbow still settles on `DOMINANT`, at 0.6478 for 1298, because it is cheaper than either. So on
- * that sheet a reader who wants what the likeness column says is best has to ask for it, which is the
- * warning stated at its sharpest: the bias is a reason to check the reading, and the elbow is a
- * separate reason not to read the settled position as "the most faithful one".
+ * the elbow settles on `DOMINANT`, at 0.6478 for 1298, because it is cheaper than either. Those six
+ * figures are a reading of the first stage **at three crops**, like the four above them; at five they
+ * are 0.6638 for 1427, 0.6569 for 1445 and 0.6567 for 1321, which moves no part of the argument.
+ * So on that sheet a reader who wants what the likeness column says is best has to ask for it, which
+ * is the warning stated at its sharpest: the bias is a reason to check the reading, and the elbow is
+ * a separate reason not to read the settled position as "the most faithful one".
  */
 
 /**
@@ -128,7 +131,7 @@ export const PROXY_CROP_COUNT = 5;
 export const PROXY_CROP_STRIDE = 0.5;
 
 /**
- * How many times the descent goes round the stages.
+ * How many times the descent goes round the stages, at most.
  *
  * **A coordinate descent cannot revisit what an earlier stage chose, and one round is one chance.**
  * The stages run in the pipeline's own order, so each is swept from dials the stages ahead of it have
@@ -138,22 +141,39 @@ export const PROXY_CROP_STRIDE = 0.5;
  * first left everything, so each of those decisions is finally taken against the dials it shares a
  * pipeline with rather than against the ones the tab opened at.
  *
- * **The sweep stops as soon as a round ends anywhere the descent has already stood**, so this is a
- * ceiling rather than a cost. Measured over the corpus by running the stages to a fixed point:
- * `cyborg_healer.png` at a grid of 4, `ui_elements1.png` at 4 and `vehicles_and_props.png` at 5 all
- * stop at the second round, and the reference sheet — `test_sprites/armour.png` at a grid of 6 —
- * takes until the **fifth**, moving through `DOMINANT` at 0.6254 for 54 colours, `INK_WEIGHTED` at
- * 0.6576 for 123 and 0.6525 for 112, to `K_CENTROID` at 0.6554 for 112. Six is what lets the worst of
- * those four reach its own fixed point with a round to spare, and a cap is still needed because
- * nothing guarantees one exists: what the stages descend on is a pair of figures ranked by an elbow
- * rather than a scalar objective, so the descent can loop instead of settling.
+ * **This is a ceiling and not a cost**, because the sweep stops as soon as a round ends anywhere the
+ * descent has already stood — see `autoTune`. Measured over the whole corpus at the grids
+ * `tests/sheet-scale-corpus.test.ts` reads for them, every dial at its opening position, no keying
+ * and no colour budget:
  *
- * **The cap is what a sheet that loops costs, and the reference sheet is what says three was too
- * few.** Stopped at three it would have reported 0.6525 for 112 colours, where the fixed point it
- * reaches two rounds later is 0.6554 for the *same* 112 — strictly better on both figures. A cap that
- * cuts a descent short does not merely stop early; it answers with wherever the cut happened to fall.
+ * | Sheet | Rounds | Positions |
+ * | --- | --- | --- |
+ * | `armour.png` (grid 6) | **6** | 403 |
+ * | `character_space_marine_blue.png` (5) | 4 | 181 |
+ * | `vehicles_and_props.png` (5) | 4 | 185 |
+ * | `cyborg_black_red.png` (6) | 3 | 142 |
+ * | `three-quarter-view_tiles1.png` (5) | 3 | 142 |
+ * | `ui_elements1.png` (4) | 3 | 142 |
+ * | `cyborg_monk.png` (4) | 3 | 134 |
+ * | `cyborg_healer.png` (4) | 3 | 134 |
+ *
+ * **Eight is the worst of those eight plus headroom, and the headroom is the point.** A cap that a
+ * sheet exactly reaches cannot be told apart from one that cut it short — and a cut descent does not
+ * merely stop early, it answers with wherever the cut happened to fall. The reference sheet is the
+ * case that says so: stopped at three it would have reported a likeness of 0.6525 for 112 colours,
+ * where the position it reaches two rounds later is 0.6554 for the *same* 112 — strictly better on
+ * both figures. Seven of the eight sheets never see the extra rounds at all, so the headroom is paid
+ * only by a sheet that needs it.
+ *
+ * **A cap is still needed, because nothing guarantees the descent settles.** What the stages descend
+ * on is a pair of figures ranked by an elbow rather than a scalar objective, and an elbow's knee
+ * moves with the candidate set — so a descent can circle a loop instead of reaching a fixed point.
+ * That is not a rare case, and it is not confined to synthetic fixtures: the reference sheet at a
+ * colour budget of 16 with the anti-aliasing at `BOTH` circles for all eight rounds and never
+ * repeats, and the fixture in `autoTune.test.ts` settles into a two-round loop — which is why the
+ * stop compares against every position visited rather than only against the round before.
  */
-export const TUNE_ROUNDS = 6;
+export const TUNE_ROUNDS = 8;
 
 /** The outline-expansion widths the reading stage tries — the dial's whole range. */
 export const TUNE_OUTLINE_EXPANSIONS = [0, 1, 2, 3, 4] as const;
@@ -288,7 +308,7 @@ export const TUNE_STAGE_LABELS: Readonly<Record<TuneStageName, string>> = {
 export const AUTO_TUNE_GUIDANCE = {
   waiting:
     'A pixel scale has to be settled before the dials can be swept: every candidate is judged by re-drawing the result at that scale and comparing it with the artwork it came from, and there is nothing to compare against until the scale is known. Set a grid above, then come back.',
-  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over five busy crops of it, at several hundred combinations of the dials that decide how a cell is read, how its colours settle and how its contours are softened, and moves them to whichever came closest to the artwork for the fewest colours. It goes round the dials up to six times, stopping as soon as a round retraces ground it has already covered, so each one is finally chosen against the others rather than against the positions they opened at.',
+  idle: 'The dials on this tab open at positions that suit some sheets and not others, and nothing on screen says which kind of sheet you have. This runs the pipeline over five busy crops of it, at several hundred combinations of the dials that decide how a cell is read, how its colours settle and how its contours are softened, and moves them to whichever came closest to the artwork for the fewest colours. It goes round the dials up to eight times, stopping as soon as a round retraces ground it has already covered, so each one is finally chosen against the others rather than against the positions they opened at.',
   running:
     'Running the pipeline over five crops of the sheet, once for each candidate, and going round the dials until they stop moving. It can take a minute or two on a large sheet, and the preview beside it keeps working throughout — the sweep is on a thread of its own.',
   settled:
