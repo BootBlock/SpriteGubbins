@@ -123,10 +123,36 @@ describe('parseColorFromText', () => {
     expect(parseColorFromText('Smoked Glass & Aged Brass')).toBe(COLOR_HEX_MAP['brass']);
     expect(parseColorFromText('Bark Umber & Deep Moss')).toBe(COLOR_HEX_MAP['umber']);
     expect(parseColorFromText('Salt-Bleached Driftwood & Rope')).toBe(COLOR_HEX_MAP['driftwood']);
-    expect(parseColorFromText('Sun-Bleached Sand & Ochre')).toBe(COLOR_HEX_MAP['ochre']);
-    // And the option that already shipped naming it, whose swatch `ochre` deliberately does not
-    // take: `violet` sits earlier in the text, and ties resolve by position there.
+    expect(parseColorFromText('Desert Ochre & Bleached Sand')).toBe(COLOR_HEX_MAP['ochre']);
+    expect(parseColorFromText('Sand Dun & Chalk Underbelly')).toBe(COLOR_HEX_MAP['sand']);
+    expect(parseColorFromText('Blackened Iron & Warm Oak')).toBe(COLOR_HEX_MAP['oak']);
+    expect(parseColorFromText('Vellum Cream & Sepia Ink')).toBe(COLOR_HEX_MAP['cream']);
+    expect(parseColorFromText('Pale Adobe & Turquoise Trim')).toBe(COLOR_HEX_MAP['turquoise']);
+    expect(parseColorFromText('Storm Slate & Sea Foam')).toBe(COLOR_HEX_MAP['slate']);
+    expect(parseColorFromText('Tilled Chocolate Earth & Straw')).toBe(COLOR_HEX_MAP['straw']);
+    expect(parseColorFromText('Terracotta & Cream')).toBe(COLOR_HEX_MAP['terracotta']);
+  });
+
+  it('moves a shipped option’s swatch onto the word that option names first', () => {
+    // Seven options that already shipped resolve differently now, and each one is listed rather than
+    // described: a comment saying "some swatches move" is a claim nobody can check, and the six that
+    // were unlisted while only `Sun-Bleached Sand & Ochre` was named are exactly what that costs.
+    //
+    // Every one of them moves *onto* the earlier word, which is the preference `parseColorFromText`
+    // documents — these fields are written most-important-first, so the leading colour is the one the
+    // option is chiefly about. `Dusk Violet & Ochre Rock` is the counterpart that does not move,
+    // because `violet` already led it.
+    expect(parseColorFromText('Sand Beige & Rust')).toBe(COLOR_HEX_MAP['sand']);
+    expect(parseColorFromText('Desert Sand & Rust')).toBe(COLOR_HEX_MAP['sand']);
+    expect(parseColorFromText('Bleached Sand & Rust')).toBe(COLOR_HEX_MAP['sand']);
+    expect(parseColorFromText('Sun-Bleached Sand & Ochre')).toBe(COLOR_HEX_MAP['sand']);
+    expect(parseColorFromText('Concrete Slate & Blue Metal')).toBe(COLOR_HEX_MAP['slate']);
+    expect(parseColorFromText('Gothic Slate & Bronze')).toBe(COLOR_HEX_MAP['slate']);
     expect(parseColorFromText('Dusk Violet & Ochre Rock')).toBe(COLOR_HEX_MAP['violet']);
+    // The seventh moves onto a *compound* rather than onto `slate`, which is the whole reason the
+    // compound is in the map: the option names a violet-blue, and bare `slate` is a grey-blue.
+    expect(parseColorFromText('Whitewash & Slate Blue')).toBe(COLOR_HEX_MAP['slate blue']);
+    expect(parseColorFromText('Slate Blue & Weathered Oak')).toBe(COLOR_HEX_MAP['slate blue']);
   });
 
   it('does not let a new short name match inside a longer word', () => {

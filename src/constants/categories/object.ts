@@ -40,6 +40,9 @@ export const OBJECT: CategoryDefinition = {
         'Conveyor Belt Segment',
         'Ladder / Climbable Rung Set',
         'Crank Winch & Chain',
+        'Water Well & Winch',
+        'Workbench & Tool Rack',
+        'Brazier / Standing Lamp',
       ],
     },
     {
@@ -58,6 +61,9 @@ export const OBJECT: CategoryDefinition = {
         'Mid-Destruction Frame',
         'Charging / Spooling Up',
         'Buried & Partly Excavated',
+        'Newly Installed & Unused',
+        'Sealed & Awaiting A Key',
+        'Looted & Emptied',
       ],
     },
     {
@@ -76,6 +82,8 @@ export const OBJECT: CategoryDefinition = {
         'Bronze Age Ritual',
         'Modern Municipal',
         'Deep-Sea Salvage',
+        'Iron Age Rustic',
+        'Clean Corporate Minimal',
       ],
     },
     {
@@ -95,6 +103,8 @@ export const OBJECT: CategoryDefinition = {
         'Checkpoint / Respawn Anchor',
         'Trap / Ambush Trigger',
         'Light Source',
+        'Storage & Stash Point',
+        'Puzzle Mechanism',
       ],
     },
     {
@@ -115,6 +125,9 @@ export const OBJECT: CategoryDefinition = {
         'Farmyard & Barn',
         'Underground Mine Shaft',
         'Coral Shelf Seabed',
+        'Village Square',
+        'Ruined Cathedral Nave',
+        'Desert Waystation',
       ],
     },
     {
@@ -133,6 +146,8 @@ export const OBJECT: CategoryDefinition = {
         'Flat Floor Inlay',
         'Suspended Ceiling Fixture',
         'Tall Narrow Post',
+        'Low Wide Plinth Block',
+        'Sunken Floor Pit',
       ],
     },
     {
@@ -152,6 +167,9 @@ export const OBJECT: CategoryDefinition = {
         'Fine Streaks & Flecks',
         'Lattice Frame & Struts',
         'Coiled Rope & Hook',
+        'Ribbed Barrel & Domed Cap',
+        'Stepped Ziggurat Tiers',
+        'Splayed Tripod Legs',
       ],
     },
     {
@@ -172,6 +190,9 @@ export const OBJECT: CategoryDefinition = {
         // For a sheet whose subject has no focal element at all — an effect, a particle set, a
         // silhouette pass — because leaving the field empty would invite one to be invented.
         'No Focal Feature',
+        'Glass Lantern Housing & Wick',
+        'Carved Stone Face & Offering Bowl',
+        'Rope Drum & Hand Crank',
       ],
     },
     {
@@ -187,6 +208,8 @@ export const OBJECT: CategoryDefinition = {
         'Rotating Spherical Core',
         'Break-Apart Shard Set',
         'Particle Frame Sequence',
+        'Two-Part Lid And Base',
+        'Telescoping Extendable Mast',
       ],
     },
     {
@@ -203,6 +226,8 @@ export const OBJECT: CategoryDefinition = {
         'Hydraulic Lift Feet',
         'Ceiling Chain Mount',
         'Buried Foundation Plinth',
+        'Rope Lashed To A Post',
+        'Sled Skids & Drag Rope',
       ],
     },
     {
@@ -223,6 +248,9 @@ export const OBJECT: CategoryDefinition = {
         'Soot Scorch Ring',
         'Rope Fray & Knots',
         'No Surface Detail At All',
+        'Trigger Wire & Hidden Seam',
+        'Chalk Tally Marks',
+        'Wax Drips & Guttered Stubs',
       ],
     },
     {
@@ -242,6 +270,9 @@ export const OBJECT: CategoryDefinition = {
         'Pale Frost White & Storm Grey',
         'Weathered Pine & Rust Iron',
         'Pure Black Fill',
+        'Blackened Iron & Warm Oak',
+        'Chalk White & Sea Blue',
+        'Verdigris Copper & Grey Stone',
       ],
     },
     {
@@ -260,6 +291,9 @@ export const OBJECT: CategoryDefinition = {
         'White-Hot Core #FFFFFF',
         'Rain Sheen Blue #3B82F6',
         'No Accent, Fill Only',
+        'Candle Flame Yellow #FBBF24',
+        'Rune Gold Glow #D4AF37',
+        'Sickly Poison Green #84CC16',
       ],
     },
     {
@@ -278,6 +312,9 @@ export const OBJECT: CategoryDefinition = {
         'Translucent Water & Ice',
         'Splintered Timber & Banded Steel',
         'Flat Fill, No Material Read',
+        'Rope, Canvas & Tarred Timber',
+        'Fired Clay & Glazed Tile',
+        'Woven Wicker & Iron Bands',
       ],
     },
     {
@@ -296,6 +333,9 @@ export const OBJECT: CategoryDefinition = {
         'No living character, no shadows, no ground grid',
         'No living character, no cables on floor, no ground grid',
         'No internal detail, no outline, no gradient, no highlights',
+        'No flame, no smoke, no embers',
+        'No coins or loot spilling out',
+        'No rope running off the sheet edge',
       ],
     },
     {
@@ -313,6 +353,10 @@ export const OBJECT: CategoryDefinition = {
         'Shockwave Ring ×1, Ember Mote ×3',
         'Rain Streak ×4, Snow Flake ×4, Ash Mote ×4, Ground Splash ×2',
         'Intact Shell ×1, Cracked Shell ×1, Splinter Shard ×4',
+        'Hanging Lantern ×1',
+        'Chain Link Run ×4',
+        'Loose Lid ×1',
+        'Winch Handle ×1',
       ],
     },
   ],

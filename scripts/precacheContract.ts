@@ -196,8 +196,19 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * studio now reaches the quantiser's two stores, so the split cut them out of both views into a
  * chunk the two share. A first visit downloads the same bytes either way; what changed is that they
  * are now in a chunk of their own. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2291, by the complementary options across all thirteen categories.** Every
+ * category's sixteen pools gained options chosen so that each value in `Role / Class` — and each
+ * value in the two fields that read like it, `Species / Archetype` and `Setting / Theme` — has
+ * something to pair with in the other fifteen: a druid had an antlered circlet and no bark, hide or
+ * herb pouch to wear with it, and a gunslinger had no hat. That is 664 options, plus seven colour
+ * words and one compound in `constants/colors.ts`, all of it constant data the entry chunk reaches,
+ * so all of it is paid for on a first visit. Measured against the build immediately before it —
+ * 2288.92 KiB, rebuilt from that commit with the same `node_modules` — the precache reaches
+ * **2305.95 KiB**, a delta of 17.03. No file was added to or removed from the precache. The margin is
+ * left at the same order as every raise above rather than widened.
  */
-export const PRECACHE_CEILING_KIB = 2291;
+export const PRECACHE_CEILING_KIB = 2309;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -30,6 +30,8 @@ export const VEHICLE: CategoryDefinition = {
         'Watercraft / Submersible',
         'Hover / Repulsor Craft',
         'Rail Car / Mine Cart',
+        'Cycle / Two-Wheeler',
+        'Animal-Drawn Cart',
       ],
     },
     {
@@ -45,6 +47,9 @@ export const VEHICLE: CategoryDefinition = {
         'Elite Command Variant',
         'Salvaged Mixed Parts',
         'Corporate Fleet Branding',
+        'Racing Team Livery',
+        'Emergency Service Markings',
+        'Agricultural Contractor Colours',
       ],
     },
     {
@@ -60,6 +65,9 @@ export const VEHICLE: CategoryDefinition = {
         'Rusted Scrapyard Find',
         'Freshly Refitted',
         'Prototype Test Rig',
+        'Lovingly Restored',
+        'Half-Stripped For Parts',
+        'Freshly Repainted Over Damage',
       ],
     },
     {
@@ -76,6 +84,11 @@ export const VEHICLE: CategoryDefinition = {
         'Interceptor / Air Superiority',
         'Salvage & Repair Rig',
         'Command & Control',
+        'Civilian Commuter',
+        'Racing / Time Trial',
+        'Agricultural Work Vehicle',
+        'Fire & Rescue',
+        'Mining & Excavation',
       ],
     },
     {
@@ -92,6 +105,9 @@ export const VEHICLE: CategoryDefinition = {
         'Cyberpunk Street Racer',
         'Fantasy Skyship',
         'Retro Space Age',
+        'Rural Farmland Roads',
+        'Frozen Research Station',
+        'Industrial Dockyard',
       ],
     },
     {
@@ -110,6 +126,9 @@ export const VEHICLE: CategoryDefinition = {
         'Long-Hulled Hauler',
         'Compact Single-Seat',
         'Colossal Siege Platform',
+        'Narrow Two-Wheel Frame',
+        'Wide Low Racing Stance',
+        'High-Clearance Field Chassis',
       ],
     },
     {
@@ -125,6 +144,9 @@ export const VEHICLE: CategoryDefinition = {
         'Skeletal Exposed Frame',
         'Bulbous Pressurised Hull',
         'Swept Delta Wing',
+        'Tall Cab Over Working Deck',
+        'Open Flatbed & Stake Sides',
+        'Bulbous Nose & Round Fenders',
       ],
     },
     {
@@ -139,6 +161,9 @@ export const VEHICLE: CategoryDefinition = {
         'Sensor Array & Antenna Mast',
         'Blank Autonomous Nose',
         'Wraparound Bubble Cockpit',
+        'Split Windscreen & Round Lamps',
+        'Cage Grille & Push Bar',
+        'Blade Guard & Work Lights',
       ],
     },
     {
@@ -154,6 +179,9 @@ export const VEHICLE: CategoryDefinition = {
         'Articulated Walker Legs',
         'Rotor-Borne Airframe',
         'Thruster-Borne Airframe',
+        'Half-Track Chassis',
+        'Hull With Towed Implement',
+        'Two-Wheel Frame & Forks',
       ],
     },
     {
@@ -168,6 +196,9 @@ export const VEHICLE: CategoryDefinition = {
         'Bare Unclad Frame',
         'Aerodynamic Fairing Panels',
         'Ablative Heat Shielding',
+        'Painted Body Panels & Chrome Trim',
+        'Canvas Tilt Over Hoops',
+        'Mud Guards & Splash Flaps',
       ],
     },
     {
@@ -183,6 +214,8 @@ export const VEHICLE: CategoryDefinition = {
         'Exposed Cabling & Hoses',
         'Nose Art & Panel Graffiti',
         'Scorch Marks & Weld Seams',
+        'Straw, Chaff & Field Mud',
+        'Chipped Paint Over Primer',
       ],
     },
     {
@@ -197,6 +230,9 @@ export const VEHICLE: CategoryDefinition = {
         'Deep Navy #1E3A8A & Steel',
         'Crimson Lacquer #DC2626 & Chrome',
         'Charcoal & Safety Orange #F97316',
+        'Tractor Green & Yellow Wheels',
+        'Fire Red & Polished Brass',
+        'Faded Blue & Bare Metal',
       ],
     },
     {
@@ -211,6 +247,7 @@ export const VEHICLE: CategoryDefinition = {
         'Cockpit Glow Green #10B981',
         'Faction Stripe Magenta #F43F5E',
         'Running-Light White',
+        'Racing Stripe White',
       ],
     },
     {
@@ -225,6 +262,9 @@ export const VEHICLE: CategoryDefinition = {
         'Cast Alloy & Ceramic Tile',
         'Corrugated Scrap Iron & Canvas',
         'Polished Chrome & Leather',
+        'Painted Sheet Steel & Bakelite',
+        'Aluminium Panel & Acrylic',
+        'Timber Deck & Iron Bracing',
       ],
     },
     {
@@ -238,6 +278,8 @@ export const VEHICLE: CategoryDefinition = {
         'No motion blur or speed lines',
         'No exhaust plume or dust cloud',
         'No weapon fire or tracer effects',
+        'No cargo or load on the deck',
+        'No mud spray or tyre tracks',
       ],
     },
     {
@@ -252,6 +294,10 @@ export const VEHICLE: CategoryDefinition = {
         'Missile Pod ×2',
         'Towed Trailer Section ×1',
         'Spare Wheel ×1, Fuel Drum ×2',
+        'Plough Implement ×1',
+        'Loader Bucket ×1',
+        'Roof Beacon ×2',
+        'Winch Drum ×1',
       ],
     },
   ],

@@ -72,4 +72,28 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   // the other, so "Pale Skin & Neon Magenta Hair" resolved to no colour at all. Not a fragment of any
   // English word, which is the one rule this map has about what may be added.
   magenta: '#d946ef',
+  // The seven tones the option pools name and this vocabulary could not resolve, added alongside the
+  // complementary options that made the gap visible: a creature's sand hide, a building's terracotta
+  // render, an interface's cream card. Four of them also decide an option that already shipped —
+  // `sand` takes three `… Sand & Rust` pairings and one `… Sand & Ochre` off their second word,
+  // `slate` takes two of BUILDING's, `oak` gives a swatch to a door and a carved panel that had
+  // none, and `straw` to a creature's mud splatter. Each moves the swatch onto the word the option
+  // names *first*, which is the preference `parseColorFromText` documents.
+  //
+  // `sepia` was written here too and is deliberately absent: every string in the app that names it
+  // has `parchment` or `cream` ahead of it, so the entry decided nothing. That is the shadowing this
+  // file's own opening note records `cyan` doing to `plasma cyan`, and an entry no option can reach
+  // is worth less than the line explaining it.
+  sand: '#dcc9a0',
+  oak: '#8f6a3f',
+  cream: '#f5ecd7',
+  terracotta: '#c96f4a',
+  turquoise: '#40e0d0',
+  slate: '#64748b',
+  straw: '#e3c565',
+  // Two words that name one colour, which the map already holds `acid green` and `plasma cyan` for.
+  // Without it `slate` wins both of the app's `Slate Blue` options on position and paints them the
+  // grey-blue it is, where the name is the violet-blue it is not — the longest name at a position
+  // wins, which is what makes the compound the fix rather than a reordering.
+  'slate blue': '#6a5acd',
 };

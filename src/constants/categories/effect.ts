@@ -36,6 +36,9 @@ export const EFFECT: CategoryDefinition = {
         'Aura / Status Field',
         'Projectile Body & Trail',
         'Environmental Ambience',
+        'Buff / Heal Burst',
+        'Shield & Barrier Pulse',
+        'Trail / Footfall Puff',
       ],
     },
     {
@@ -53,6 +56,10 @@ export const EFFECT: CategoryDefinition = {
         'Toxic / Corrosive',
         'Holy / Radiant',
         'Kinetic Dust & Debris',
+        'Life & Nature',
+        'Water & Wave',
+        'Sound & Resonance',
+        'Blood & Viscera',
       ],
     },
     {
@@ -67,6 +74,8 @@ export const EFFECT: CategoryDefinition = {
         'Critical / Overcharged',
         'Ultimate / Screen-Filling',
         'Fizzle / Failed Cast',
+        'Sustained Channel',
+        'Fading Residue',
       ],
     },
     {
@@ -83,6 +92,9 @@ export const EFFECT: CategoryDefinition = {
         'Status Ailment Marker',
         'Traversal & Movement Cue',
         'Ambient Set Dressing',
+        'Healing & Restoration',
+        'Summon & Arrival',
+        'Block & Parry Confirmation',
       ],
     },
     {
@@ -99,6 +111,8 @@ export const EFFECT: CategoryDefinition = {
         'Retro Arcade',
         'Anime Action',
         'Grounded Naturalism',
+        'Dark Fantasy Occult',
+        'Cosy Storybook',
       ],
     },
     {
@@ -113,6 +127,8 @@ export const EFFECT: CategoryDefinition = {
         'Screen-Filling Cataclysm',
         'Thin Trail Or Ribbon',
         'Tall Column Or Beam',
+        'Hand-Sized Flourish',
+        'Ground-Hugging Spread',
       ],
     },
     {
@@ -129,6 +145,10 @@ export const EFFECT: CategoryDefinition = {
         'Billowing Cloud Mass',
         'Jagged Shard Cluster',
         'Spiralling Vortex',
+        'Rising Motes & Updraft',
+        'Falling Rain Of Shards',
+        'Braided Twin Strands',
+        'Blooming Petal Unfold',
       ],
     },
     {
@@ -143,6 +163,8 @@ export const EFFECT: CategoryDefinition = {
         'Concentrated Point Flare',
         'Layered Multi-Core Cluster',
         'Diffuse, No Single Focus',
+        'Rotating Sigil Disc',
+        'Twin Paired Cores',
       ],
     },
     {
@@ -157,6 +179,9 @@ export const EFFECT: CategoryDefinition = {
         'In, Hold, Out Transitions',
         'Core And Secondary Split',
         'Staggered Multi-Burst',
+        'Arrival, Settle, Idle',
+        'Loop With Distinct Entry Frame',
+        'Mirrored Left And Right Variants',
       ],
     },
     {
@@ -172,6 +197,9 @@ export const EFFECT: CategoryDefinition = {
         'Drifting Ember Motes',
         'Condensation & Vapour',
         'No Secondary Layer',
+        'Falling Petals & Leaves',
+        'Rising Bubble Stream',
+        'Splashing Droplets & Ripples',
       ],
     },
     {
@@ -187,6 +215,9 @@ export const EFFECT: CategoryDefinition = {
         'Concentric Pulse Rings',
         'Hard Cel Shape Banding',
         'Scrolling Noise Texture',
+        'Soft Bokeh Motes',
+        'Feathered Airbrush Falloff',
+        'Scrolling Chevron Bands',
       ],
     },
     {
@@ -202,6 +233,9 @@ export const EFFECT: CategoryDefinition = {
         'Void Black & Crimson',
         'Toxic Acid Green & Charcoal',
         'Radiant Gold #FBBF24 & Cream',
+        'Verdant Green #4ADE80 & Soft Gold',
+        'Deep Ocean Blue & Foam White',
+        'Bone Grey & Sickly Ochre',
       ],
     },
     {
@@ -217,6 +251,9 @@ export const EFFECT: CategoryDefinition = {
         'Electric Cyan #22D3EE',
         'Scorch Umber #6B4423',
         'No Accent — Single Hue Ramp',
+        'Petal Pink #FBCFE8',
+        'Deep Shadow Indigo #312E81',
+        'Warm Highlight Cream #FEF3C7',
       ],
     },
     {
@@ -232,6 +269,9 @@ export const EFFECT: CategoryDefinition = {
         'Hard-Edged Cel Shapes',
         'Soft Volumetric Haze',
         'Dithered Pixel Transparency',
+        'Painted Shapes With Additive Rim',
+        'Stippled Pixel Clusters',
+        'Flat Silhouette Cut-Outs',
       ],
     },
     {
@@ -246,6 +286,8 @@ export const EFFECT: CategoryDefinition = {
         'No damage numbers or UI text',
         'No lens flare or camera artefacts',
         'No overlap or bleed between frames',
+        'No ground decal left behind',
+        'No colour grading across the whole cell',
       ],
     },
     {
@@ -260,6 +302,10 @@ export const EFFECT: CategoryDefinition = {
         'Debris Chunk ×4',
         'Lingering Smoke Puff ×2',
         'Screen-Space Flash Frame ×1',
+        'Healing Rune ×3',
+        'Rising Petal ×4',
+        'Splash Ring ×2',
+        'Residual Glow Frame ×2',
       ],
     },
   ],

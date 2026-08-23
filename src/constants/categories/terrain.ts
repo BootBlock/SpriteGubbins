@@ -42,6 +42,10 @@ export const TERRAIN: CategoryDefinition = {
         'Marsh & Peat Bog',
         'Salt Flat & Cracked Pan',
         'Paved Road & Cobble',
+        'Ploughed Field & Furrow',
+        'Timber Boardwalk & Decking',
+        'Interior Flagstone & Rush',
+        'Mud Flat & Tidal Silt',
       ],
     },
     {
@@ -58,6 +62,9 @@ export const TERRAIN: CategoryDefinition = {
         'Flooded & Waterlogged',
         'Ash-Covered',
         'Freshly Tilled',
+        'Newly Sown & Sprouting',
+        'Trampled & Rutted',
+        'Bleached & Sun-Baked',
       ],
     },
     {
@@ -73,6 +80,8 @@ export const TERRAIN: CategoryDefinition = {
         'Water-Carved & Channelled',
         'Frost-Shattered',
         'Overgrown & Reclaimed',
+        'Freshly Fallen & Undisturbed',
+        'Trodden Into Hard Pan',
       ],
     },
     {
@@ -89,6 +98,9 @@ export const TERRAIN: CategoryDefinition = {
         'Water Crossing',
         'Cover & Concealment',
         'Decorative Backdrop Ground',
+        'Farmed & Cultivated Ground',
+        'Bridge & Walkway Surface',
+        'Interior Floor',
       ],
     },
     {
@@ -105,6 +117,9 @@ export const TERRAIN: CategoryDefinition = {
         'Cosy Farming Valley',
         'Alien Bioluminescent World',
         'Historical Rural Countryside',
+        'Feudal East Asia Countryside',
+        'Volcanic Island Chain',
+        'Storybook Toy Model',
       ],
     },
     {
@@ -119,6 +134,7 @@ export const TERRAIN: CategoryDefinition = {
         'Chunky Low-Resolution Blocks',
         'Sparse & Near-Flat',
         'Large Tile, One Feature Each',
+        'Two-Tile Alternating Pattern',
       ],
     },
     {
@@ -134,6 +150,9 @@ export const TERRAIN: CategoryDefinition = {
         'Overhanging Undercut Cliff',
         'Crumbling Broken Verge',
         'Rounded Rolling Bank',
+        'Straight Fenced Field Boundary',
+        'Braided Stream Channel Edge',
+        'Gently Scalloped Shoreline',
       ],
     },
     {
@@ -150,6 +169,9 @@ export const TERRAIN: CategoryDefinition = {
         'Crystal Formation',
         'Bubbling Spring Head',
         'Cracked Impact Crater',
+        'Fallen Weathered Log',
+        'Shallow Ford & Stepping Stones',
+        'Charred Stump Field',
       ],
     },
     {
@@ -164,6 +186,8 @@ export const TERRAIN: CategoryDefinition = {
         'Uniform Self-Tiling Field',
         'Terraced Elevation Set',
         'Freestanding Feature Pieces',
+        'Dual-Grid Offset Set',
+        'Height-Layered Cliff Set',
       ],
     },
     {
@@ -180,6 +204,10 @@ export const TERRAIN: CategoryDefinition = {
         'Wildflower Patches',
         'Rubble & Broken Masonry',
         'Fungal Caps & Bracket Growth',
+        'Crop Stubble & Straw',
+        'Shells & Driftwood',
+        'Dropped Fruit & Windfall',
+        'Bare Untouched Ground',
       ],
     },
     {
@@ -196,6 +224,10 @@ export const TERRAIN: CategoryDefinition = {
         'Frost Patterning',
         'Dry Mud Polygons',
         'Moss Patches & Lichen',
+        'Plough Furrow Lines',
+        'Cart Rut Tracks',
+        'Animal Hoof Prints',
+        'Salt Bloom Crust',
       ],
     },
     {
@@ -212,6 +244,9 @@ export const TERRAIN: CategoryDefinition = {
         'Rust Red Rock & Dust',
         'Deep Teal Water & Wet Sand',
         'Cave Stone Grey & Damp Umber',
+        'Tilled Chocolate Earth & Straw',
+        'Pale Boardwalk Timber & Grey',
+        'Volcanic Black & Sulphur Yellow',
       ],
     },
     {
@@ -227,6 +262,9 @@ export const TERRAIN: CategoryDefinition = {
         'Blighted Crimson #DC2626',
         'Shallow Water Teal #14B8A6',
         'Frost Highlight White',
+        'Ripe Crop Gold #EAB308',
+        'Fresh Sprout Green #4ADE80',
+        'Damp Moss Green #16A34A',
       ],
     },
     {
@@ -243,6 +281,10 @@ export const TERRAIN: CategoryDefinition = {
         'Clay, Silt & Cracked Mud',
         'Loose Gravel & Shale',
         'Cut Flagstone & Mortar',
+        'Ploughed Loam & Field Clods',
+        'Planked Timber & Iron Nails',
+        'Rush Matting & Worn Flagstone',
+        'Tidal Silt & Wet Shell',
       ],
     },
     {
@@ -257,6 +299,7 @@ export const TERRAIN: CategoryDefinition = {
         'No composed landscape scene or vista',
         'No cast shadow or grid overlay on a tile',
         'No characters, no buildings, no sky, no cast shadow',
+        'No footprints, ruts or tracks',
       ],
     },
     {
@@ -272,6 +315,10 @@ export const TERRAIN: CategoryDefinition = {
         'Frozen Puddle ×2, Snow Drift ×2',
         'Lava Flow Straight ×2, Lava Pool ×1',
         'Cave Entrance Mouth ×1',
+        'Field Gate Gap ×1',
+        'Furrow End Cap ×2',
+        'Boardwalk Plank Run ×3',
+        'Tide Pool ×2',
       ],
     },
   ],
