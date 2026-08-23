@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { componentTargetSize, statesAssembledSize } from './componentTargetSize.ts';
+import { componentTargetSize, statedTargetSize, statesAssembledSize } from './componentTargetSize.ts';
 
 /** The value every shipped cut-out rig preset holds, in the words its author wrote. */
 const ASSEMBLED = '48 × 96 px assembled (2 metres tall at 48 px per metre)';
@@ -54,6 +54,26 @@ describe('componentTargetSize', () => {
     expect(componentTargetSize('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', ASSEMBLED)).toEqual({
       width: 48,
       height: 96,
+    });
+  });
+
+  it('is not the same question as whether a size has been stated', () => {
+    // `statesAssembledSize` is the sheet's answer and is right while the field is empty, which is
+    // what the studio's label and the prompt's gate need. A caller asserting the reader *has* named
+    // an assembly needs the field's answer, or it describes a size that is not there — which is what
+    // put "Not a component size" over an empty box in the atlas panel.
+    expect(statesAssembledSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION')).toBe(true);
+    expect(statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', '')).toBeNull();
+  });
+
+  it('carries the quantity beside the size, for the readers that can use an assembly', () => {
+    expect(statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', ASSEMBLED)).toEqual({
+      quantity: 'ASSEMBLED',
+      size: { width: 48, height: 96 },
+    });
+    expect(statedTargetSize('BUILDING', 'TILESET_MODULAR', '32 × 32 px per tile')).toEqual({
+      quantity: 'COMPONENT',
+      size: { width: 32, height: 32 },
     });
   });
 

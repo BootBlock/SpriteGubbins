@@ -228,6 +228,25 @@ export interface TargetSize {
 }
 
 /**
+ * The size the studio's field states, **with the quantity it is a size of**.
+ *
+ * The answer to the question the free-text field never carried: `48 × 96 px assembled` and
+ * `48 × 96 px per tile` parse to the same pair and mean different things, and which one a
+ * configuration means is a property of the sheet rather than of the words. `componentTargetSize`
+ * derives it; nothing stores it, because a stored answer beside a derived one is a second thing that
+ * can disagree with the sheet plan.
+ *
+ * A reader that only wants a genuine component size takes `TargetSize | null` and lets the resolver
+ * narrow for it. A reader that has something useful to say about an assembly — the pixel-discipline
+ * floor, which must not forbid detail a small piece needs, and the atlas panel, which has to explain
+ * why it is not checking a fit — takes this instead.
+ */
+export interface StatedTargetSize {
+  readonly quantity: 'COMPONENT' | 'ASSEMBLED';
+  readonly size: TargetSize;
+}
+
+/**
  * Where a reader can go and generate with this target, if anywhere.
  *
  * Two states rather than an optional URL, for the reason {@link PromptBudget} carries four rather

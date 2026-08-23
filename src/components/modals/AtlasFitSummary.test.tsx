@@ -9,6 +9,11 @@ import { AtlasFitSummary } from './AtlasFitSummary.tsx';
  * size for the assembly, so the studio hands this panel no component size even though the field in
  * front of the reader is full. Saying "no component size named" over `48 × 96 px assembled` reads as
  * the panel having failed to see it, which is a worse answer than the wrong number it replaced.
+ *
+ * **The two are told apart by the sheet, not by the field.** Driven the other way, a rig sheet with
+ * the box empty got the branch that asks for a size — promising that naming one turns this into a
+ * check, which on that sheet it never will: its components are pieces of whatever figure the size
+ * describes. The ask belongs to the sheets where filling the box in actually does something.
  */
 function renderFit(assembled: boolean) {
   render(
@@ -34,8 +39,7 @@ describe('AtlasFitSummary with no component size to check', () => {
     renderFit(true);
 
     expect(screen.getByText('Not a component size')).toBeInTheDocument();
-    // And it does not ask for a size that is already on screen, under a label the studio stopped
-    // using for this sheet.
+    // And it does not ask for a size, because no size the reader could give it would help.
     expect(screen.queryByText('Target Component Size')).not.toBeInTheDocument();
     expect(screen.getByText(/the pieces a figure is assembled from/u)).toBeInTheDocument();
   });

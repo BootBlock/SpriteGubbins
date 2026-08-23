@@ -1630,6 +1630,30 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(poses).not.toContain('Target assembled size');
   });
 
+  it('never points the profile line at a target-size line that is not there', () => {
+    // The assembled wording says "stated below", and the target-size line is an `[OPTIONAL:…]` that
+    // drops on an empty field — so keying it on the *sheet* left a rig sheet with an empty box
+    // telling the generator to work to a size the prompt does not carry. It keys on the field
+    // instead, and the base wording covers the empty case as it always did, by saying *where one is
+    // stated*.
+    const blank = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        rigMode: 'CUTOUT_RIG',
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '',
+      }),
+    );
+    expect(blank).not.toContain('Target assembled size');
+    expect(blank).not.toContain('- Target component size:');
+    expect(blank).not.toContain('target assembled size stated below');
+    expect(blank).toContain(
+      '- Resolution profile: Custom — work to the target component size where one is stated',
+    );
+  });
+
   it('reads the rig sheet’s assembled figure as no component size at all', () => {
     // Three of section 2's features are about one component, and each of them keyed off a figure no
     // component has. `CUSTOM` is the gate all three share, so this is the configuration where the
@@ -1647,9 +1671,12 @@ describe('generatePrompt — technical settings in prose', () => {
         spriteTargetSize: '24 × 24 px assembled',
       }),
     );
-    // The rung `CUSTOM` falls back to when it has no scale to reason from, in delivered pixels
-    // because no native grid was derived either.
-    expect(rig).toContain('No feature smaller than 2 × 2 delivered pixels.');
+    // The finest rung, in delivered pixels because no native grid was derived either. Not the
+    // unstated middle rung: a floor keyed off a figure no component has can only be too coarse, and
+    // too coarse forbids detail a limb segment legitimately needs.
+    expect(rig).toContain('No feature smaller than 1 × 1 delivered pixels.');
+    // And the profile line above it no longer promises a component size the sheet does not state.
+    expect(rig).toContain('- Resolution profile: Custom — work to the target assembled size stated below');
     expect(rig).not.toContain('every component is designed silhouette-first');
     expect(rig).not.toContain(NATIVE_GRID_HEADING);
 

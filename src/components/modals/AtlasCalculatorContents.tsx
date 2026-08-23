@@ -96,6 +96,9 @@ export function AtlasCalculatorContents() {
   // `null`, which the empty field has always produced. The memory figures below are a function of
   // the canvas alone and are unaffected either way.
   const target = componentTargetSize(category, directionalMode, spriteTargetSize);
+  // The sheet's answer rather than the field's. The row below has to be true while the box is empty,
+  // and on a rig sheet the truthful thing to say then is not "name a size" — nothing the reader can
+  // type will make a cell checkable against a component this sheet does not draw.
   const assembled = statesAssembledSize(category, directionalMode);
   const fit = target === null ? null : spriteFitFor(metrics.usableBounds, target);
   const smallestCanvas = target === null ? null : smallestCanvasFor(config, target);

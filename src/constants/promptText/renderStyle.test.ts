@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolutionProfile } from '../../types/output.ts';
-import { componentTargetSize } from '../../utils/componentTargetSize.ts';
+import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
-import { minFeatureSize } from './renderStyle.ts';
+import { minFeatureSize, resolutionProfileDescription } from './renderStyle.ts';
 
 /**
  * The figure alone, which is what the rungs below are about — the unit has its own test.
@@ -12,7 +12,8 @@ import { minFeatureSize } from './renderStyle.ts';
  */
 const NATIVE = ' native pixels';
 function figure(profile: ResolutionProfile, spriteTargetSize: string): string {
-  const stated = minFeatureSize(profile, parseTargetSize(spriteTargetSize), true);
+  const size = parseTargetSize(spriteTargetSize);
+  const stated = minFeatureSize(profile, size === null ? null : { quantity: 'COMPONENT', size }, true);
   expect(stated.endsWith(NATIVE), stated).toBe(true);
   return stated.slice(0, -NATIVE.length);
 }
@@ -41,8 +42,8 @@ describe('minFeatureSize', () => {
     // and the generator resolved that by discarding one half of the instruction.
     expect(figure('CUSTOM', '16 × 16 px')).toBe('1 × 1');
     expect(figure('CUSTOM', '32 × 32 px')).toBe('1 × 1');
-    // The same prose on a sheet whose components *are* the figure — a rig sheet withholds it
-    // instead, which the case at the foot of this file drives.
+    // The same prose read as a component size, which is what every sheet but a rig one makes it —
+    // the rig case at the foot of this file drives the other reading.
     expect(figure('CUSTOM', '48 × 96 px assembled (2 metres tall at 48 px per metre)')).toBe('1 × 1');
   });
 
@@ -72,25 +73,48 @@ describe('minFeatureSize', () => {
     // The defect: the bullet said *native pixels* on every pixel-art sheet, while the block defining
     // a native pixel is gated on a far narrower condition — so the app's own default configuration
     // stated a measurement in a unit its prompt never established.
-    expect(minFeatureSize('CUSTOM', { width: 16, height: 32 }, true)).toBe('1 × 1 native pixels');
+    expect(minFeatureSize('CUSTOM', { quantity: 'COMPONENT', size: { width: 16, height: 32 } }, true)).toBe(
+      '1 × 1 native pixels',
+    );
     expect(minFeatureSize('HIGH_RESOLUTION', null, false)).toBe('3 × 3 delivered pixels');
     // The figure does not move with the unit — only the noun does.
     expect(minFeatureSize('MID_RESOLUTION', null, true)).toBe('2 × 2 native pixels');
     expect(minFeatureSize('MID_RESOLUTION', null, false)).toBe('2 × 2 delivered pixels');
   });
 
-  it('falls back to the middle rung on a cut-out rig sheet, whose stated size is the assembly', () => {
-    // A rig sheet's components are a head, a torso, a pelvis and twelve limb segments, so the 48 × 96
-    // it states is the figure they assemble into. Keyed off that, the floor above claimed a
-    // per-component minimum derived from a number no component has — so `componentTargetSize`
-    // withholds it, and `CUSTOM` falls back to the rung it uses whenever there is no scale to reason
-    // from. `US_CHARACTER_RIG`'s own field, so the shipped presets are covered by this rung now.
-    const assembled = componentTargetSize(
-      'CHARACTER',
-      'CUTOUT_RIG_SINGLE_DIRECTION',
-      '48 × 96 px assembled (2 metres tall at 48 px per metre)',
-    );
-    expect(assembled).toBeNull();
-    expect(minFeatureSize('CUSTOM', assembled, true)).toBe('2 × 2 native pixels');
+  it('takes the finest rung where the stated size is the assembly, never a coarser guess', () => {
+    // A rig sheet's components are a head, a torso, a pelvis and twelve limb segments, so the size
+    // it states is the figure they assemble into and no rung can be derived from it. Two wrong
+    // answers were available and both are coarser than the truth: the rung of the assembly is at
+    // least as coarse as the rung of any piece of it, and the unstated middle rung is `2 × 2`. A
+    // floor that is too coarse forbids detail a small piece legitimately needs, where one that is
+    // too fine is merely inert — so the finest rung is the only answer that cannot be wrong.
+    const assembled = statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', '480 × 960 px assembled');
+    expect(assembled).toEqual({ quantity: 'ASSEMBLED', size: { width: 480, height: 960 } });
+    // 480 would be past the last rung as a component size, which is what makes this case the one
+    // that shows the difference: `3 × 3` on limb segments a few dozen pixels across.
+    expect(figure('CUSTOM', '480 × 960 px')).toBe('3 × 3');
+    expect(minFeatureSize('CUSTOM', assembled, false)).toBe('1 × 1 delivered pixels');
+
+    // And the three shipped rig presets that carry CUSTOM keep the floor they always had — each
+    // sits on the finest rung by its assembled edge, so this restores rather than changes them.
+    for (const size of ['64 × 96 px assembled', '56 × 88 px assembled', '64 × 80 px assembled']) {
+      const rig = statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', size);
+      expect(minFeatureSize('CUSTOM', rig, false)).toBe('1 × 1 delivered pixels');
+    }
+  });
+
+  it('states what CUSTOM works to, and never names a component on a sheet that has no such size', () => {
+    // The two are printed one line apart in section 2, so a flat lookup here told the generator to
+    // work to a component size directly above a line stating a size and saying no component is it.
+    expect(resolutionProfileDescription('CUSTOM', false)).toContain('target component size');
+    expect(resolutionProfileDescription('CUSTOM', true)).toContain('target assembled size');
+    expect(resolutionProfileDescription('CUSTOM', true)).not.toContain('component size');
+
+    // The three that *are* a scale read the same either way — the assembled answer is CUSTOM's
+    // alone, because CUSTOM is the only profile that defers to the field.
+    for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
+      expect(resolutionProfileDescription(profile, true)).toBe(resolutionProfileDescription(profile, false));
+    }
   });
 });

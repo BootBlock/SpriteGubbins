@@ -34,7 +34,10 @@ describe('nativeGridScale', () => {
     expect(nativeGridScale('PIXEL_ART', 'CUSTOM', { width: 16, height: 32 }, 'SQUARE_1_1', 12)).toBe(7);
   });
 
-  it('reads the size out of the prose a preset actually holds', () => {
+  it('reads the size out of the kind of prose a preset actually holds', () => {
+    // The parenthetical is the trap: three further numbers, none of them a size. No *rig* preset's
+    // value reaches this function any more — the case below is why — so this stands for the prose
+    // shape rather than for a configuration the app still compiles.
     expect(scaleFor('48 × 96 px assembled (2 metres tall at 48 px per metre)', 12)).toBe(2);
   });
 

@@ -1,5 +1,5 @@
 import type { RenderStyle } from '../../types/rendering.ts';
-import type { ResolutionProfile, SurfaceDetail, TargetSize } from '../../types/output.ts';
+import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -45,6 +45,39 @@ export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, string>
 };
 
 /**
+ * What `CUSTOM` works to on a sheet whose stated size is the assembly.
+ *
+ * The entry above says *component size*, and it is printed on the line directly before section 2's
+ * target-size line — so on a cut-out rig sheet the two disagreed the moment that line started saying
+ * *assembled*: one telling the generator to work to a component size where one is stated, the next
+ * stating a size and saying outright that no component is it. That is the same label-against-value
+ * contradiction the rig change removed, one line further up.
+ *
+ * It states the assembly rather than falling silent because the assembly **is** the scale on that
+ * sheet: the pieces are drawn at their share of one figure, which is what section 2's own line
+ * already tells the generator. Falling back to *the sheet aspect* would throw away the only figure
+ * the prompt has.
+ */
+const CUSTOM_ASSEMBLED_TEXT =
+  'Custom — work to the target assembled size stated below, drawing every component at the share of that figure it occupies';
+
+/**
+ * The resolution profile in the prose the prompt carries, for this sheet.
+ *
+ * Three of the four profiles *are* a scale and read the same wherever they appear. `CUSTOM` is the
+ * one that defers to the target-size field, so it is the one that has to agree with what that field
+ * turns out to be naming.
+ */
+export function resolutionProfileDescription(profile: ResolutionProfile, statesAssembled: boolean): string {
+  // `RESOLUTION_PROFILE_TEXT` stays exported even though nothing else imports it: it is still the map
+  // `[DEFINE:RESOLUTION_PROFILE_DESCRIPTION]` is filled from for three of the four profiles, and
+  // `promptTemplate.test.ts` walks that naming convention over `constants/promptText/`'s exports.
+  // Listing the token as *computed* there instead would say the map does not exist, and drop the
+  // check that it still does.
+  return profile === 'CUSTOM' && statesAssembled ? CUSTOM_ASSEMBLED_TEXT : RESOLUTION_PROFILE_TEXT[profile];
+}
+
+/**
  * What the three profiles that *are* a scale permit.
  *
  * v1 stated a flat `2×2` across every profile, which is wrong at both ends: at high resolution a
@@ -80,36 +113,52 @@ const CUSTOM_MIN_FEATURE = [
 const LARGEST_MIN_FEATURE = '3 × 3';
 
 /**
- * `CUSTOM` with no per-component size to reason from.
+ * `CUSTOM` with no size stated at all.
  *
  * The profile then falls back to "the sheet aspect", so there is no scale to reason from and the
- * middle rung is the only answer that is not a guess at one end or the other. Two configurations
- * arrive here: a field holding no `W × H` pair, and a cut-out rig sheet, whose stated size is the
- * assembled figure rather than any component of it — see `utils/componentTargetSize.ts`. Keying a
- * per-component floor off an assembled figure is the same error one step further on than the one
- * that function names.
+ * middle rung is the only answer that is not a guess at one end or the other.
  */
 const UNSTATED_MIN_FEATURE = '2 × 2';
+
+/**
+ * `CUSTOM` on a sheet whose stated size is the **assembly**, where the floor cannot be derived and
+ * must not be guessed coarse.
+ *
+ * A component of a cut-out rig sheet is a part of the figure the field measures, so its own smaller
+ * edge is somewhere below that figure's — and the rungs below get *coarser* as the edge grows. Two
+ * wrong answers are therefore available and they fail differently. Keying the rung off the assembly
+ * returns a floor at least as coarse as the truth, which forbids detail a small piece legitimately
+ * needs; falling to {@link UNSTATED_MIN_FEATURE} did the same thing on the three shipped rig presets
+ * that carry `CUSTOM`, each of which sits on the finest rung by its assembled edge and was being told
+ * `2 × 2` instead.
+ *
+ * The finest rung is the only answer that cannot forbid something real. Where it is wrong it is
+ * merely permissive, and a floor that permits is inert rather than incorrect — which is the trade a
+ * rule of this kind should take when the quantity it needs is one the app deliberately does not
+ * hold.
+ */
+const ASSEMBLED_MIN_FEATURE = CUSTOM_MIN_FEATURE[0].size;
 
 /**
  * The figure, without the unit it is counted in.
  *
  * **Three of the four profiles *are* a scale, and `CUSTOM` is not** — which is what makes this a
- * function rather than the record it began as. `CUSTOM` means "work to the target component size",
- * so its scale lives in that size and nowhere else — resolved by the caller through
- * `componentTargetSize`, never parsed out of the free-text field here, because whether the field
- * states a component at all is a question about the sheet plan rather than about the text. Keying
+ * function rather than the record it began as. `CUSTOM` means "work to the target size", so its
+ * scale lives in that size and nowhere else — resolved by the caller through `statedTargetSize`,
+ * never parsed out of the free-text field here, because *which quantity* the field names is a
+ * question about the sheet plan rather than about the text, and the rung turns on the answer. Keying
  * the minimum on the profile alone
  * gave the one profile that can state *16 × 16* the same `2 × 2` floor as a 256-pixel figure, and a
  * sprite sixteen pixels across whose smallest permitted feature is four of them is a contradiction
  * the generator resolves by discarding one half of it — silently, and in whichever direction it
  * likes.
  */
-function minFeatureFigure(profile: ResolutionProfile, target: TargetSize | null): string {
+function minFeatureFigure(profile: ResolutionProfile, stated: StatedTargetSize | null): string {
   if (profile !== 'CUSTOM') return PROFILE_MIN_FEATURE[profile];
-  if (target === null) return UNSTATED_MIN_FEATURE;
+  if (stated === null) return UNSTATED_MIN_FEATURE;
+  if (stated.quantity === 'ASSEMBLED') return ASSEMBLED_MIN_FEATURE;
 
-  const edge = Math.min(target.width, target.height);
+  const edge = Math.min(stated.size.width, stated.size.height);
   return CUSTOM_MIN_FEATURE.find((rung) => edge <= rung.upTo)?.size ?? LARGEST_MIN_FEATURE;
 }
 
@@ -138,8 +187,8 @@ function minFeatureFigure(profile: ResolutionProfile, target: TargetSize | null)
  */
 export function minFeatureSize(
   profile: ResolutionProfile,
-  target: TargetSize | null,
+  stated: StatedTargetSize | null,
   hasNativeGrid: boolean,
 ): string {
-  return `${minFeatureFigure(profile, target)} ${hasNativeGrid ? 'native' : 'delivered'} pixels`;
+  return `${minFeatureFigure(profile, stated)} ${hasNativeGrid ? 'native' : 'delivered'} pixels`;
 }

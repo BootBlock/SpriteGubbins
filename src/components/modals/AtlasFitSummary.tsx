@@ -43,9 +43,10 @@ export function AtlasFitSummary({
           <Tooltip text={ATLAS_TOOLTIPS.fit} hint="Component fit" />
         </span>
         {fit === null ? (
-          // Two different states, and the badge says which: a size the reader has not given, and one
-          // they have given for the assembly rather than for a component. Saying "none named" over a
-          // studio field holding `48 × 96 px assembled` reads as the panel having failed to see it.
+          // Two different states, and the badge says which: a sheet still waiting for a size, and one
+          // whose size can never be a component's. Saying "none named" on the second reads as the
+          // panel having failed to see a studio field that is right there holding
+          // `48 × 96 px assembled`, and invites the reader to fill in a box that would not help.
           <Badge>{assembled ? 'Not a component size' : 'No component size named'}</Badge>
         ) : fit.scale === 0 ? (
           <Badge tone="attention">⚠ Does not fit</Badge>

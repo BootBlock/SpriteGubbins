@@ -17,6 +17,14 @@ import type { ResolutionProfile, TargetSize } from '../../types/output.ts';
  * component is drawn, and a cut-out rig sheet's stated size is the figure its components assemble
  * into — so they take `null` there and emit nothing, which is also what keeps them from pointing
  * "above" at a line that no longer says *component*.
+ *
+ * **`minFeatureSize` takes the wider `StatedTargetSize` and this does not, which is the asymmetry
+ * to hold.** That one states a floor on every prompt, so withholding the size does not silence it —
+ * it makes it state a coarser figure, and a floor that is too coarse forbids detail a small piece
+ * needs. These bullets are additional prose, so withholding the size simply leaves them out, which
+ * costs guidance rather than asserting anything false. No shipped rig preset states a figure inside
+ * the sprite-scale edge below in any case; if one ever does, the answer is a second wording for an
+ * assembly, not this gate loosened.
  */
 
 /**
