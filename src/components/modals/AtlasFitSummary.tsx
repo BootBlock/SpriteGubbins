@@ -12,6 +12,8 @@ interface AtlasFitSummaryProps {
   readonly canvasSize: AtlasCanvasSize;
   /** The smallest texture that seats every component at 1:1, or `null` where none does. */
   readonly smallestCanvas: AtlasCanvasSize | null;
+  /** Whether the studio's stated size is the assembled figure — see {@link AtlasFitDetail}. */
+  readonly assembled: boolean;
 }
 
 /**
@@ -26,7 +28,13 @@ interface AtlasFitSummaryProps {
  * `attention` and `valid` rather than `accent`, because this is a status and not an action, and
  * they are the two tones that already mean "needs attention" and "clean" everywhere else in the app.
  */
-export function AtlasFitSummary({ usableBounds, fit, canvasSize, smallestCanvas }: AtlasFitSummaryProps) {
+export function AtlasFitSummary({
+  usableBounds,
+  fit,
+  canvasSize,
+  smallestCanvas,
+  assembled,
+}: AtlasFitSummaryProps) {
   return (
     <div className="space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -35,7 +43,10 @@ export function AtlasFitSummary({ usableBounds, fit, canvasSize, smallestCanvas 
           <Tooltip text={ATLAS_TOOLTIPS.fit} hint="Component fit" />
         </span>
         {fit === null ? (
-          <Badge>No component size named</Badge>
+          // Two different states, and the badge says which: a size the reader has not given, and one
+          // they have given for the assembly rather than for a component. Saying "none named" over a
+          // studio field holding `48 × 96 px assembled` reads as the panel having failed to see it.
+          <Badge>{assembled ? 'Not a component size' : 'No component size named'}</Badge>
         ) : fit.scale === 0 ? (
           <Badge tone="attention">⚠ Does not fit</Badge>
         ) : (
@@ -48,6 +59,7 @@ export function AtlasFitSummary({ usableBounds, fit, canvasSize, smallestCanvas 
         fit={fit}
         canvasSize={canvasSize}
         smallestCanvas={smallestCanvas}
+        assembled={assembled}
       />
     </div>
   );

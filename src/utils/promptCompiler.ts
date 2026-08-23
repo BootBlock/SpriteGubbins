@@ -50,6 +50,7 @@ import { directionalRotation } from './directionalRotation.ts';
 import { leadingSideLedger } from './leadingSideLedger.ts';
 import { turntableSequence } from './turntableSequence.ts';
 import { describeMirrorPairs, mirrorPairs } from './mirrorPairs.ts';
+import { componentTargetSize, statesAssembledSize } from './componentTargetSize.ts';
 import { nativeGridScale } from './nativeGridScale.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
@@ -204,10 +205,18 @@ export function generatePrompt(
   // it, and as the unit the pixel-discipline section counts its minimum feature in — so the prompt
   // cannot carry the carve-out without the figure it points at, nor name a native pixel where
   // nothing defines one.
+  // The size of one component, or `null` where this configuration states none — an empty field, a
+  // field with no `W × H` pair in it, or a cut-out rig sheet, whose stated size is the figure its
+  // pieces assemble into rather than any piece of it. Resolved once and read by all three of the
+  // section-2 features that are about a single component, so they cannot disagree about whether one
+  // has been stated. Section 2's line itself still carries the field verbatim, under whichever of
+  // its two labels `RIG_MODE` selects — the reader's own words, said to be the quantity they are.
+  const componentTarget = componentTargetSize(category, output.directionalMode, output.spriteTargetSize);
+
   const nativeScale = nativeGridScale(
     output.renderStyle,
     output.resolutionProfile,
-    output.spriteTargetSize,
+    componentTarget,
     output.aspectRatio,
     componentCount,
   );
@@ -234,6 +243,16 @@ export function generatePrompt(
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
     RIG_MODE: rigMode,
+    // Which quantity section 2's target-size line names. A cut-out rig sheet draws a head, a torso,
+    // a pelvis and twelve limb segments, so a size stated for it is the figure those assemble into —
+    // and the shipped rig presets say so in the value itself, while the line above them called it a
+    // component size. One line contradicting itself, left for the generator to resolve.
+    //
+    // **Not `RIG_MODE`, even though section 5 is gated on that.** A pose-library sheet may carry
+    // `CUTOUT_RIG` as a perfectly legitimate request — its pieces do get bound to bones — while
+    // still stating a size per figure, which is what its own presets write. The question here is
+    // which sheet is drawn, and `statesAssembledSize` asks the sheet.
+    ASSEMBLED_TARGET: statesAssembledSize(category, output.directionalMode) ? 'yes' : '',
     // Gates four places at once: the precedence clause in section 0, the three surface lines and the
     // surface-discipline block in section 2 — negated — and the paragraph that replaces them. One
     // flag, because a style either states the surface itself or leaves those settings to state it.
@@ -389,10 +408,10 @@ export function generatePrompt(
     // stated *native* unconditionally for as long as the two were separate, so every pixel-art
     // prompt on a stock profile — the default among them — measured against a unit it never
     // defined.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize, nativeScale !== null),
+    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, componentTarget, nativeScale !== null),
     // Sprite-scale bullets join the pixel discipline only when the stated component is small
     // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, output.spriteTargetSize),
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, componentTarget),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.

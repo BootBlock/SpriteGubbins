@@ -1,6 +1,5 @@
 import type { RenderStyle } from '../../types/rendering.ts';
-import type { ResolutionProfile, SurfaceDetail } from '../../types/output.ts';
-import { parseTargetSize } from '../../utils/targetSize.ts';
+import type { ResolutionProfile, SurfaceDetail, TargetSize } from '../../types/output.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -81,10 +80,14 @@ const CUSTOM_MIN_FEATURE = [
 const LARGEST_MIN_FEATURE = '3 × 3';
 
 /**
- * `CUSTOM` with no readable size in it.
+ * `CUSTOM` with no per-component size to reason from.
  *
  * The profile then falls back to "the sheet aspect", so there is no scale to reason from and the
- * middle rung is the only answer that is not a guess at one end or the other.
+ * middle rung is the only answer that is not a guess at one end or the other. Two configurations
+ * arrive here: a field holding no `W × H` pair, and a cut-out rig sheet, whose stated size is the
+ * assembled figure rather than any component of it — see `utils/componentTargetSize.ts`. Keying a
+ * per-component floor off an assembled figure is the same error one step further on than the one
+ * that function names.
  */
 const UNSTATED_MIN_FEATURE = '2 × 2';
 
@@ -93,16 +96,17 @@ const UNSTATED_MIN_FEATURE = '2 × 2';
  *
  * **Three of the four profiles *are* a scale, and `CUSTOM` is not** — which is what makes this a
  * function rather than the record it began as. `CUSTOM` means "work to the target component size",
- * so its scale lives in `spriteTargetSize` and nowhere else. Keying the minimum on the profile alone
+ * so its scale lives in that size and nowhere else — resolved by the caller through
+ * `componentTargetSize`, never parsed out of the free-text field here, because whether the field
+ * states a component at all is a question about the sheet plan rather than about the text. Keying
+ * the minimum on the profile alone
  * gave the one profile that can state *16 × 16* the same `2 × 2` floor as a 256-pixel figure, and a
  * sprite sixteen pixels across whose smallest permitted feature is four of them is a contradiction
  * the generator resolves by discarding one half of it — silently, and in whichever direction it
  * likes.
  */
-function minFeatureFigure(profile: ResolutionProfile, spriteTargetSize: string): string {
+function minFeatureFigure(profile: ResolutionProfile, target: TargetSize | null): string {
   if (profile !== 'CUSTOM') return PROFILE_MIN_FEATURE[profile];
-
-  const target = parseTargetSize(spriteTargetSize);
   if (target === null) return UNSTATED_MIN_FEATURE;
 
   const edge = Math.min(target.width, target.height);
@@ -134,8 +138,8 @@ function minFeatureFigure(profile: ResolutionProfile, spriteTargetSize: string):
  */
 export function minFeatureSize(
   profile: ResolutionProfile,
-  spriteTargetSize: string,
+  target: TargetSize | null,
   hasNativeGrid: boolean,
 ): string {
-  return `${minFeatureFigure(profile, spriteTargetSize)} ${hasNativeGrid ? 'native' : 'delivered'} pixels`;
+  return `${minFeatureFigure(profile, target)} ${hasNativeGrid ? 'native' : 'delivered'} pixels`;
 }

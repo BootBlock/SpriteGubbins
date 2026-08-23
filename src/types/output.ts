@@ -216,6 +216,11 @@ export interface PixelExtent {
  * turns it into a candidate pixel grid for a returned sheet, and the atlas calculator checks it
  * against the cell a texture affords. It lives beside the field it is the parsed form of, rather
  * than in any of their vocabularies.
+ *
+ * **Reaching it takes `componentTargetSize`, not `parseTargetSize`.** The field states a component
+ * size on every sheet but the cut-out rig one, where it states the figure the pieces assemble into —
+ * so the parse alone answers *what number is written there*, and only the resolver answers *whether
+ * that number is a component*. All four features want the second question.
  */
 export interface TargetSize {
   readonly width: number;
@@ -375,7 +380,17 @@ export interface ImageOutputConfig {
    */
   readonly sheetIndex: number;
   readonly backgroundKey: BackgroundKey;
-  /** Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely. */
+  /**
+   * Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely.
+   *
+   * **Which quantity it names is decided by the sheet, not by this field.** On a cut-out rig sheet
+   * the components are the parts a figure is assembled from, so the size stated is the assembly —
+   * which is what the shipped rig presets write into the value by hand, as `48 × 96 px assembled`.
+   * The studio labels the box accordingly, section 2 states the figure with what it is, and
+   * `componentTargetSize` is what every per-component reader goes through. A second field naming the
+   * quantity was considered and rejected: the sheet plan already answers it, and a stored answer
+   * beside a derived one is a fifth thing that can disagree.
+   */
   readonly spriteTargetSize: string;
 
   readonly rigMode: RigMode;

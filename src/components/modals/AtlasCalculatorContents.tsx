@@ -15,7 +15,7 @@ import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { textureCostsFor } from '../../utils/atlasBudget.ts';
 import { smallestCanvasFor, spriteFitFor } from '../../utils/atlasFit.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
-import { parseTargetSize } from '../../utils/targetSize.ts';
+import { componentTargetSize, statesAssembledSize } from '../../utils/componentTargetSize.ts';
 import {
   buildEngineMetadata,
   calculateAtlasMetrics,
@@ -87,7 +87,16 @@ export function AtlasCalculatorContents() {
   // Derived during render rather than memoised. Every input is a primitive that changed this render
   // anyway, so a memo keyed on the two objects above would rebuild on every pass and only add a
   // cache that never hits.
-  const target = parseTargetSize(spriteTargetSize);
+  //
+  // Per-component, and asked for as such: a cell holds one component, so a configuration whose
+  // stated size is the assembled figure has no size to check a cell against. That is a cut-out rig
+  // sheet, whose components are a head, a torso, a pelvis and twelve limb segments — checked against
+  // the figure they assemble into, the fit row answered for a component none of them is, and the
+  // smallest canvas it names is the one that would seat fifteen whole characters. Both withdraw on
+  // `null`, which the empty field has always produced. The memory figures below are a function of
+  // the canvas alone and are unaffected either way.
+  const target = componentTargetSize(category, directionalMode, spriteTargetSize);
+  const assembled = statesAssembledSize(category, directionalMode);
   const fit = target === null ? null : spriteFitFor(metrics.usableBounds, target);
   const smallestCanvas = target === null ? null : smallestCanvasFor(config, target);
   const costs = textureCostsFor(canvasSize);
@@ -127,6 +136,7 @@ export function AtlasCalculatorContents() {
           fit={fit}
           canvasSize={canvasSize}
           smallestCanvas={smallestCanvas}
+          assembled={assembled}
         />
 
         {/* Directly under the fit, because it answers the same question about the other half of the

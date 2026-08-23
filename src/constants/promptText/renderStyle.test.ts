@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolutionProfile } from '../../types/output.ts';
+import { componentTargetSize } from '../../utils/componentTargetSize.ts';
+import { parseTargetSize } from '../../utils/targetSize.ts';
 import { minFeatureSize } from './renderStyle.ts';
 
 /**
@@ -10,7 +12,7 @@ import { minFeatureSize } from './renderStyle.ts';
  */
 const NATIVE = ' native pixels';
 function figure(profile: ResolutionProfile, spriteTargetSize: string): string {
-  const stated = minFeatureSize(profile, spriteTargetSize, true);
+  const stated = minFeatureSize(profile, parseTargetSize(spriteTargetSize), true);
   expect(stated.endsWith(NATIVE), stated).toBe(true);
   return stated.slice(0, -NATIVE.length);
 }
@@ -39,7 +41,8 @@ describe('minFeatureSize', () => {
     // and the generator resolved that by discarding one half of the instruction.
     expect(figure('CUSTOM', '16 × 16 px')).toBe('1 × 1');
     expect(figure('CUSTOM', '32 × 32 px')).toBe('1 × 1');
-    // `US_CHARACTER_RIG`'s own field, so the shipped presets are covered by this rung too.
+    // The same prose on a sheet whose components *are* the figure — a rig sheet withholds it
+    // instead, which the case at the foot of this file drives.
     expect(figure('CUSTOM', '48 × 96 px assembled (2 metres tall at 48 px per metre)')).toBe('1 × 1');
   });
 
@@ -69,10 +72,25 @@ describe('minFeatureSize', () => {
     // The defect: the bullet said *native pixels* on every pixel-art sheet, while the block defining
     // a native pixel is gated on a far narrower condition — so the app's own default configuration
     // stated a measurement in a unit its prompt never established.
-    expect(minFeatureSize('CUSTOM', '16 × 32 px', true)).toBe('1 × 1 native pixels');
-    expect(minFeatureSize('HIGH_RESOLUTION', '', false)).toBe('3 × 3 delivered pixels');
+    expect(minFeatureSize('CUSTOM', { width: 16, height: 32 }, true)).toBe('1 × 1 native pixels');
+    expect(minFeatureSize('HIGH_RESOLUTION', null, false)).toBe('3 × 3 delivered pixels');
     // The figure does not move with the unit — only the noun does.
-    expect(minFeatureSize('MID_RESOLUTION', '', true)).toBe('2 × 2 native pixels');
-    expect(minFeatureSize('MID_RESOLUTION', '', false)).toBe('2 × 2 delivered pixels');
+    expect(minFeatureSize('MID_RESOLUTION', null, true)).toBe('2 × 2 native pixels');
+    expect(minFeatureSize('MID_RESOLUTION', null, false)).toBe('2 × 2 delivered pixels');
+  });
+
+  it('falls back to the middle rung on a cut-out rig sheet, whose stated size is the assembly', () => {
+    // A rig sheet's components are a head, a torso, a pelvis and twelve limb segments, so the 48 × 96
+    // it states is the figure they assemble into. Keyed off that, the floor above claimed a
+    // per-component minimum derived from a number no component has — so `componentTargetSize`
+    // withholds it, and `CUSTOM` falls back to the rung it uses whenever there is no scale to reason
+    // from. `US_CHARACTER_RIG`'s own field, so the shipped presets are covered by this rung now.
+    const assembled = componentTargetSize(
+      'CHARACTER',
+      'CUTOUT_RIG_SINGLE_DIRECTION',
+      '48 × 96 px assembled (2 metres tall at 48 px per metre)',
+    );
+    expect(assembled).toBeNull();
+    expect(minFeatureSize('CUSTOM', assembled, true)).toBe('2 × 2 native pixels');
   });
 });

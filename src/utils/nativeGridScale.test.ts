@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import { componentTargetSize } from './componentTargetSize.ts';
 import { nativeGridScale } from './nativeGridScale.ts';
+import { parseTargetSize } from './targetSize.ts';
 
-/** The configuration the field is read under: pixel art, and the one profile that has no scale. */
+/**
+ * The configuration the size is read under: pixel art, and the one profile that has no scale.
+ *
+ * The size arrives parsed, because that is how the compiler hands it over — through
+ * `componentTargetSize`, which answers whether the field states a component at all. The prose stays
+ * written out here so each case still reads as the field a user would have typed.
+ */
 function scaleFor(spriteTargetSize: string, components: number): number | null {
-  return nativeGridScale('PIXEL_ART', 'CUSTOM', spriteTargetSize, 'WIDE_16_9', components);
+  return nativeGridScale('PIXEL_ART', 'CUSTOM', parseTargetSize(spriteTargetSize), 'WIDE_16_9', components);
 }
 
 describe('nativeGridScale', () => {
@@ -23,26 +31,43 @@ describe('nativeGridScale', () => {
 
   it('is a function of the sheet shape as well', () => {
     // A square canvas is 1024 × 1024 rather than 1024 × 576, so the same twelve components fit at 7×.
-    expect(nativeGridScale('PIXEL_ART', 'CUSTOM', '16 × 32 px', 'SQUARE_1_1', 12)).toBe(7);
+    expect(nativeGridScale('PIXEL_ART', 'CUSTOM', { width: 16, height: 32 }, 'SQUARE_1_1', 12)).toBe(7);
   });
 
   it('reads the size out of the prose a preset actually holds', () => {
     expect(scaleFor('48 × 96 px assembled (2 metres tall at 48 px per metre)', 12)).toBe(2);
   });
 
+  it('never sees a cut-out rig sheet’s assembled figure, because the resolver withholds it', () => {
+    // The search below seats one cell per component, so an assembled figure priced through it
+    // describes a canvas of fifteen whole characters. `componentTargetSize` is what stops that
+    // arriving — the same `null` an empty field produces, for the same reason: there is no
+    // per-component size to enlarge. Driven end to end rather than asserted on the resolver alone,
+    // because the pairing is what the compiler relies on.
+    const assembled = componentTargetSize(
+      'CHARACTER',
+      'CUTOUT_RIG_SINGLE_DIRECTION',
+      '48 × 96 px assembled (2 metres tall at 48 px per metre)',
+    );
+    expect(assembled).toBeNull();
+    expect(nativeGridScale('PIXEL_ART', 'CUSTOM', assembled, 'WIDE_16_9', 15)).toBeNull();
+    // The same words on a sheet whose components *are* the figure still answer — the test above —
+    // which is what shows the withdrawal is about the sheet rather than about the text.
+  });
+
   it('says nothing where the style has no native grid to enlarge', () => {
     // Section 0's resampling rule stands unqualified on a painted sheet, which is correct there:
     // there is no grid of placed pixels to multiply.
-    expect(nativeGridScale('PAINTED_2D', 'CUSTOM', '16 × 32 px', 'WIDE_16_9', 12)).toBeNull();
-    expect(nativeGridScale('CLAY_RENDER', 'CUSTOM', '16 × 32 px', 'WIDE_16_9', 12)).toBeNull();
-    expect(nativeGridScale('RETRO_PIXEL_ART', 'CUSTOM', '16 × 32 px', 'WIDE_16_9', 12)).toBe(6);
+    expect(nativeGridScale('PAINTED_2D', 'CUSTOM', { width: 16, height: 32 }, 'WIDE_16_9', 12)).toBeNull();
+    expect(nativeGridScale('CLAY_RENDER', 'CUSTOM', { width: 16, height: 32 }, 'WIDE_16_9', 12)).toBeNull();
+    expect(nativeGridScale('RETRO_PIXEL_ART', 'CUSTOM', { width: 16, height: 32 }, 'WIDE_16_9', 12)).toBe(6);
   });
 
   it('says nothing where the profile states a scale of its own', () => {
     // The gate `minFeatureSize` and `smallScaleDiscipline` already apply to this field: the other
     // three profiles *are* a scale, so a derived figure beside one is two answers to one question.
     for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
-      expect(nativeGridScale('PIXEL_ART', profile, '16 × 32 px', 'WIDE_16_9', 12)).toBeNull();
+      expect(nativeGridScale('PIXEL_ART', profile, { width: 16, height: 32 }, 'WIDE_16_9', 12)).toBeNull();
     }
   });
 
