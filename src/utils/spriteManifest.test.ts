@@ -15,6 +15,7 @@ const BOXES = [box(0, 0), box(10, 0), box(0, 10)];
 
 const input = {
   image: 'armour-quantised.png',
+  spriteDirectory: null,
   width: 40,
   height: 40,
   scale: 1,
@@ -49,6 +50,18 @@ describe('buildManifest', () => {
     const manifest = buildManifest(input);
 
     expect(manifest.sprites[0]?.pivot).toStrictEqual({ x: 2, y: 4 });
+  });
+
+  it('says the pivot is the default rather than a measurement', () => {
+    // The trap this closes: a pair of numbers reads as a measurement, and on a cut-out rig sheet it
+    // is the wrong end of almost every piece. Every sprite states where its number came from.
+    const manifest = buildManifest(input);
+
+    expect(manifest.sprites.map((sprite) => sprite.pivotSource)).toStrictEqual([
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+    ]);
   });
 
   it('names the sprites from the inventory when the counts agree', () => {
@@ -108,6 +121,7 @@ describe('buildManifest', () => {
         facings: ['south', 'west', 'north', 'east'],
         assembly: 'south',
         components: 12,
+        rigMode: 'CUTOUT_RIG',
       },
     });
 

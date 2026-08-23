@@ -99,10 +99,15 @@ band’s own rate:`,
         },
         {
           label: 'cloud-wisp',
+          parts: ['cloud-wisp-large', 'cloud-wisp-medium', 'cloud-wisp-small'],
           text: 'Cloud or drift wisp ×3: large, medium and small',
           count: 3,
           kind: 'structure',
         },
+        // No `parts`, and the sibling above it has them: `large, medium and small` assigns a
+        // description to each of three pieces, where `a mast, a chimney, a snag` illustrates what
+        // sort of shape is wanted. Naming these three would fix an order the prompt never asked the
+        // generator for, which is what `ComponentEntry.parts` forbids.
         {
           label: 'silhouette-detail',
           text: 'Silhouette detail ×3: the small shapes that break a band’s outline — a mast, a chimney, a snag',
@@ -121,9 +126,16 @@ band’s own rate:`,
           count: 1,
           kind: 'structure',
         },
-        { label: 'light-shaft', text: 'Light shaft ×2: one broad, one narrow', count: 2, kind: 'structure' },
+        {
+          label: 'light-shaft',
+          parts: ['light-shaft-broad', 'light-shaft-narrow'],
+          text: 'Light shaft ×2: one broad, one narrow',
+          count: 2,
+          kind: 'structure',
+        },
         {
           label: 'drifting-particle',
+          parts: ['drifting-particle-near', 'drifting-particle-far'],
           text: 'Drifting particle ×2: one near, one far',
           count: 2,
           kind: 'structure',
@@ -159,12 +171,14 @@ the far mass to move less than the near one:`,
         },
         {
           label: 'mid-mass',
+          parts: ['mid-mass-left', 'mid-mass-right'],
           text: 'Mid mass ×2: the left half of the scene, and the right',
           count: 2,
           kind: 'structure',
         },
         {
           label: 'edge-occluder',
+          parts: ['edge-occluder-left', 'edge-occluder-right'],
           text: 'Edge occluder ×2: the piece closing the left of the frame, and the right',
           count: 2,
           kind: 'structure',
@@ -186,6 +200,7 @@ Each is drawn full-height within its own bounds so nothing shows through beneath
         },
         {
           label: 'standing-feature',
+          parts: ['standing-feature-large', 'standing-feature-medium', 'standing-feature-small'],
           text: 'Standing feature ×3: large, medium and small — what the scene is furnished with',
           count: 3,
           kind: 'structure',
@@ -213,9 +228,16 @@ Each is drawn full-height within its own bounds so nothing shows through beneath
           count: 1,
           kind: 'structure',
         },
-        { label: 'light-shaft', text: 'Light shaft ×2: one broad, one narrow', count: 2, kind: 'structure' },
+        {
+          label: 'light-shaft',
+          parts: ['light-shaft-broad', 'light-shaft-narrow'],
+          text: 'Light shaft ×2: one broad, one narrow',
+          count: 2,
+          kind: 'structure',
+        },
         {
           label: 'drifting-particle',
+          parts: ['drifting-particle-near', 'drifting-particle-far'],
           text: 'Drifting particle ×2: one near, one far',
           count: 2,
           kind: 'structure',

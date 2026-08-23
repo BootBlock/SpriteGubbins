@@ -46,12 +46,11 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SelectField-*.js',
   'assets/SettingsContents-*.js',
   'assets/SheetSplitContents-*.js',
+  'assets/SheetStepButtons-*.js',
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
-  'assets/TextField-*.js',
   'assets/Tooltip-*.js',
   'assets/componentBudget-*.js',
-  'assets/componentGridScale-*.js',
   'assets/componentTargetSize-*.js',
   'assets/database-*.js',
   'assets/firstOfEachId-*.js',
@@ -59,6 +58,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',
   'assets/sheetCanvas-*.js',
+  'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
@@ -136,8 +136,37 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * not. Measured against the build immediately before it, the precache goes from 2247.43 to **2250.62
  * KiB**, a delta of 3.19 — and it lands in the same constants-pulling chunks the paragraph above
  * names rather than in the entry chunk. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2254, by the Quantise tab's sheet-identity panel.** It adds a panel, a
+ * hook, a shared step-button component and two guidance paragraphs, and it moves the step buttons
+ * out of the studio so both tabs reach them. Measured against the build immediately before it, the
+ * precache goes from 2250.62 to **2253.00 KiB**, a delta of 2.38. Four of the shape lines above moved
+ * in the same build for **two** renames, and no file was added to or removed from the precache by it:
+ * sharing `SheetStepButtons` and `sheetCoverage` between the studio and the quantiser re-cut two of
+ * the split's shared chunks, so `TextField-*` and `componentGridScale-*` gave their names up to them.
+ * Those are two of exactly the `+`/`-` pairs the note on `PRECACHE_SHAPES` warns read like a stray
+ * file and are not one.
+ *
+ * **Raised once more, from 2256 to 2264, by the per-component names the sheet plans now carry.** Every
+ * inventory line whose components are told apart by what they are rather than by where they sit
+ * gained a `parts` list naming each of them, so a sprite pack cut from a character rig writes
+ * `04-left-upper-arm.png` where it wrote `04-left-arm-1.png` — 328 names on 98 entries, across the
+ * eleven plan files that have any. Measured against the build immediately before it, the precache
+ * goes from 2253.00 to **2260.98 KiB**, a delta of 7.98. It is constant data the entry chunk
+ * reaches, which is why it is paid for on a first visit and named here rather than being an
+ * invisible edit. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2264 to 2268, where the rig target-size change met the raise above it.**
+ * Neither branch crossed the ceiling on its own — the target-size work measured 2252.72 KiB against
+ * its own base and the per-component names measured 2260.98 against theirs — and the merge of the
+ * two lands at **2265.42 KiB**. So this raise is bought by the smaller half of a pair that was
+ * already 3.02 under: section 2's target-size line is stated twice, once for a component size and
+ * once for an assembly, and the CUSTOM resolution profile gains a second wording beside it, because
+ * a cut-out rig sheet's stated size is the figure its pieces assemble into. That is prompt text
+ * rather than code, so it is constant data the entry chunk reaches, the same footing the raise above
+ * stands on. The margin is left at the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2254;
+export const PRECACHE_CEILING_KIB = 2268;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

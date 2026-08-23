@@ -27,6 +27,7 @@ import { KeyingControls } from '../quantise/KeyingControls.tsx';
 import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 import { QuantisePresetControls } from '../quantise/QuantisePresetControls.tsx';
+import { SheetIdentityControls } from '../quantise/SheetIdentityControls.tsx';
 import { SpriteControls } from '../quantise/SpriteControls.tsx';
 import { SymmetryControls } from '../quantise/SymmetryControls.tsx';
 
@@ -335,6 +336,12 @@ export function QuantiseTab() {
               superseded={colorPlan.superseded}
               busy={busy}
             />
+            {/* Directly above the sprite panel, because the two are the two readings of one sheet:
+                this states what the studio's prompt asked for and what a download is about to record,
+                and the panel below states what actually came back. It changes no pixel and no dial —
+                its buttons move the *studio* — so it sits with the readings rather than among the
+                passes above it. */}
+            <SheetIdentityControls />
             <SpriteControls
               sprites={quantised?.result.sprites ?? null}
               target={target}

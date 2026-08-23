@@ -57,10 +57,42 @@ export interface ComponentEntry {
    * the right side" comes to, and rewording the sentence would silently rename the file.
    *
    * Lower-case, hyphen-separated and unique within its plan — `sheetPlans.test.ts` holds all three.
-   * Where an entry is worth more than one component, `componentSlots` suffixes it with the facing or
-   * the ordinal, so this names the line rather than any one component of it.
+   * Where an entry is worth more than one component, `componentSlots` takes the names from {@link
+   * ComponentEntry.parts}, or suffixes this with the facing or the ordinal where the line has none —
+   * so this names the line rather than any one component of it.
    */
   readonly label: string;
+  /**
+   * What each of this line's components is called, one name per component, in reading order.
+   *
+   * `label` names the *line*; this names the *components*, and the two are different things wherever
+   * a line is worth more than one component whose parts are told apart by what they are rather than
+   * by where they sit. Without it `componentSlots` had nothing to suffix a label with but an ordinal,
+   * so a fifteen-piece character rig cut into a sprite pack arrived as `04-left-arm-1.png` through
+   * `06-left-arm-3.png` — three files whose names carry nothing the index beside them does not
+   * already say, while the sheet's own inventory calls them the upper arm, the lower arm and the
+   * hand. An engine importer keys a piece by its slot, so every one of them had to be renamed by
+   * hand against a table held somewhere else.
+   *
+   * **Absent is the honest answer for a genuine ×N line**, and that is the distinction to hold: the
+   * blend set's `Base material tile ×6: the primary, and five variants differing only in surface
+   * scatter` has no name to give its second variant that its third does not equally answer to, and
+   * an ordinal is what such a component is actually called. The test is whether the parts are
+   * *distinguishable by name*, never whether there are several of them — so a named part that itself
+   * comes in ×N copies takes an ordinal inside its own name (`mounting-bracket-1`), which says both
+   * halves.
+   *
+   * **It is authored rather than parsed back out of `text`.** Reading the names from the prose is
+   * exactly the parse the `label` field exists to avoid: `Fittings: handle ×1, latch or catch ×1,
+   * mounting bracket ×2` is one sentence and four components, and rewording it would silently rename
+   * four files. It also may not *invent* a name the prose does not fix — the blend set's four outer
+   * corner transitions are drawn "once per corner" with no corner named, so naming them here would
+   * have the manifest assert an order the prompt never asked for.
+   *
+   * Each name is lower-case and hyphen-separated like `label`, the list is exactly `count` long, and
+   * no two components of one plan answer to the same name — `sheetPlans.test.ts` holds all three.
+   */
+  readonly parts?: readonly string[];
   readonly text: string;
   readonly count: number;
   readonly kind: ComponentKind;
