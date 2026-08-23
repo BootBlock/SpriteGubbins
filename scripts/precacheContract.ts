@@ -98,8 +98,16 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * is nearly three times the headroom the old ceiling had left. The new figure restores that headroom
  * rather than widening it: a category is a large addition and the next one should have to say so
  * here, which is the whole point of the small margin.
+ *
+ * **Raised again from 2220 by PORTRAIT's near-future option pools.** Sixteen pools gained the
+ * cyberpunk and adjacent-genre entries issue #140 asked for, and six tooltips gained the sentence
+ * explaining them — 4.44 KiB measured against the build immediately before, taking the precache
+ * from 2217.10 to 2221.54 KiB. Option text is constant data the entry chunk reaches, so a pool is
+ * paid for on every first visit, which is the reason expanding one is a line in this file rather
+ * than an invisible edit. The 3.46 KiB left over is the same order of headroom the figure has
+ * carried since the last raise.
  */
-export const PRECACHE_CEILING_KIB = 2220;
+export const PRECACHE_CEILING_KIB = 2225;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -67,4 +67,9 @@ export const COLOR_HEX_MAP: Readonly<Record<string, string>> = {
   // one rule this map has about what may be added.
   blonde: '#d9b36c',
   auburn: '#8c3b1b',
+  // The near-future vocabulary's own hair and neon word, which arrived with PORTRAIT's cyberpunk
+  // options. `cyan` and `plasma cyan` already covered one half of a neon pairing and nothing covered
+  // the other, so "Pale Skin & Neon Magenta Hair" resolved to no colour at all. Not a fragment of any
+  // English word, which is the one rule this map has about what may be added.
+  magenta: '#d946ef',
 };
