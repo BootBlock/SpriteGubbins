@@ -114,8 +114,14 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the build immediately before it, that came to 3.38 KiB, and it lands on top of the pools above: the
  * two together bring the precache to 2224.86 KiB. The new figure keeps a margin of the same order
  * rather than widening it.
+ *
+ * **Raised once more, from 2228, by the FONT subject category.** A category costs roughly 19 KiB of
+ * entry chunk — a sixteen-field option pool with its guidance, four sheet plans and four presets —
+ * which is the same figure the three categories before it came to. Measured against the build
+ * immediately before it, this one takes the precache to 2247.30 KiB. The margin is left at the same
+ * order as every raise above rather than widened to absorb the next one.
  */
-export const PRECACHE_CEILING_KIB = 2228;
+export const PRECACHE_CEILING_KIB = 2251;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

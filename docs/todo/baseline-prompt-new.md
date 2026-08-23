@@ -307,9 +307,19 @@ Satisfy this section before any aesthetic consideration.
    still attached to it is two entries merged, not one component.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
-[N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image, and nothing
-   annotating it: no arrows, callouts or grid lines, and no frame or border around the image or
-   around a component.
+[IF:LETTERING_IS_A_COMPONENT!=yes]
+[N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
+[/IF]
+[IF:LETTERING_IS_A_COMPONENT]
+[N]. The components section [SEC:INVENTORY] lists are characters, and they are the **only** lettering
+   this image carries. No watermark, signature, caption, legend, index number or codepoint anywhere
+   in it, and nothing written beside a component to name it — grid position is the only identity a
+   component has, exactly as it is on every other sheet. No two components are drawn touching or set
+   side by side as a word, a name or a specimen line: that is two entries merged, and the count above
+   is what catches it.
+[/IF]
+[N]. Nothing annotating the image: no arrows, callouts or grid lines, and no frame or border around
+   the image or around a component.
 [N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
    virtual canvas and downscale, and do not upscale a smaller one.
@@ -731,7 +741,7 @@ lists separately, and it makes the cut-out part unusable.
 
 ### Placement is the only identity map
 
-Labels are forbidden by section [SEC:CONTRACT], so **grid position is how each component is identified**. Lay
+Nothing on this sheet names a component, so **grid position is how each component is identified**. Lay
 the components out in strict reading order across the image — screen-left to screen-right, then top
 to bottom — in exactly the order the inventory above lists them. A reordered, merged or omitted entry silently mis-maps every
 component after it.
@@ -845,9 +855,15 @@ Absent from the image entirely:
 
 - [DEFINE:CATEGORY_EXCLUSIONS]
 - All shadows: cast, contact, drop, and ambient occlusion onto the background.
-- Text, labels, numbers, captions, watermarks, signatures and legends; and anything annotating the
-  sheet: arrows, callouts, colour swatches, grid lines, and frames or borders around the image or
-  around a component.
+[IF:LETTERING_IS_A_COMPONENT!=yes]
+- Text, labels, numbers, captions, watermarks, signatures and legends.
+[/IF]
+[IF:LETTERING_IS_A_COMPONENT]
+- Any lettering other than the characters section [SEC:INVENTORY] lists: watermarks, signatures,
+  captions, legends, index numbers, codepoints, and anything written beside a component to name it.
+[/IF]
+- Anything annotating the sheet: arrows, callouts, colour swatches, grid lines, and frames or
+  borders around the image or around a component.
 - [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
 - Motion blur, speed lines, glow bleeding beyond a component’s silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
@@ -877,7 +893,13 @@ Before delivering, verify:
 
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.
+[/IF]
+[IF:LETTERING_IS_A_COMPONENT]
+[N]. The only lettering on the sheet is the characters the inventory lists — no caption, legend,
+   index number or codepoint beside any of them, and no two of them set side by side as a word.
+[/IF]
 [N]. Components appear in the exact order the inventory lists them.
 [N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
    and [DEFINE:CATEGORY_ASSEMBLY_AUDIT].

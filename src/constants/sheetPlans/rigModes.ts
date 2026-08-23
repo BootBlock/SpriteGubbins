@@ -50,6 +50,8 @@ import { resolveMode } from './modes.ts';
  * - **PORTRAIT** — `portrait.ts`: a face's features are replaced rather than swung, so there is no
  *   joint to cap.
  * - **ICON** — `icon.ts`: a mark in a cell, with its state pieces laid over it rather than hinged.
+ * - **FONT** — `font.ts`: a glyph is a mark on a baseline, and its overlay is drawn into the same
+ *   component rather than hinged to it.
  * - **BACKGROUND** — `background.ts`: a band scrolls rather than flexes, and its loose pieces are
  *   placed over it rather than jointed to it.
  * - **INTERFACE** — `interface.ts`: "a slider handle travels along a track and a bar fill grows, and
@@ -74,6 +76,9 @@ export const CATEGORY_RIG_MODES: Readonly<Record<SubjectCategory, readonly RigMo
   // A band scrolls; it does not flex. The loose pieces are placed over a band rather than jointed to
   // one, which is the same answer TERRAIN gives about the features standing on its ground.
   BACKGROUND: ['NONE'],
+  // A glyph is a mark on a baseline. Nothing on it articulates, and an engine renders a character by
+  // blitting one sprite rather than by rotating pieces of it.
+  FONT: ['NONE'],
 };
 
 /** Whether this category's components can be asked for in this state of articulation at all. */

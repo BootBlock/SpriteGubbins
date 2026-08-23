@@ -34,4 +34,8 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
   PORTRAIT: 'the resting portrait and every expression beside it are the same head drawn at the same scale',
   ICON: 'every icon fills the same cell to the same margin, so none arrives at half the weight of the one beside it',
   BACKGROUND: 'a tree on a band and the rooftops on that same band are in proportion to each other',
+  // ICON's shape, for ICON's reason and one more of its own: this sheet's components are not pieces
+  // of each other either, and what has to hold between them is stricter than agreement about weight —
+  // a glyph a pixel off the shared baseline is visible in every word the engine ever sets.
+  FONT: 'every glyph stands on the same baseline at the same cap height, so none arrives taller or heavier than the one beside it',
 };

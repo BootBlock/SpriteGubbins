@@ -46,6 +46,15 @@ export function wrapForModel(
      */
     readonly frameIsAComponent: boolean;
     /**
+     * Whether this sheet's components are lettering, from `LETTERING_IS_A_COMPONENT`.
+     *
+     * Four wrappers read it, where `frameIsAComponent` above is read by one, and for that option's
+     * reason: `text`, `labels` and `captions` are things to avoid on twelve categories and the
+     * subject itself on the thirteenth, and no negative channel can express the difference. It is
+     * passed rather than derived here so this file stays dispatch and knows nothing about categories.
+     */
+    readonly letteringIsAComponent: boolean;
+    /**
      * What this sheet's render style lets a wrapper say about the surface, from
      * `RENDER_STYLE_SURFACE`.
      *
@@ -107,20 +116,44 @@ export function wrapForModel(
       return wrapForSol(prompt, options.nativeGrid, options.palette, options.sectionNumbers);
 
     case 'MIDJOURNEY':
-      return wrapForMidjourney(prompt, options.aspectRatio, options.frameIsAComponent, options.surface);
+      return wrapForMidjourney(
+        prompt,
+        options.aspectRatio,
+        options.frameIsAComponent,
+        options.letteringIsAComponent,
+        options.surface,
+      );
 
     case 'STABLE_DIFFUSION':
-      return wrapForStableDiffusion(prompt, options.surface, options.limbsAreComponents, options.assembly);
+      return wrapForStableDiffusion(
+        prompt,
+        options.surface,
+        options.limbsAreComponents,
+        options.letteringIsAComponent,
+        options.assembly,
+      );
 
     // One wrapper for both Flux tiers. They differ only in how much of the prompt is read, which is
     // a budget fact rather than a wrapping one — and the restatement leads for both, since Black
     // Forest Labs' word-order guidance applies to the hosted tier just as it does to the weights.
     case 'FLUX':
     case 'FLUX_API':
-      return wrapForFlux(prompt, options.backgroundKeyDescription, options.surface, options.assembly);
+      return wrapForFlux(
+        prompt,
+        options.backgroundKeyDescription,
+        options.surface,
+        options.letteringIsAComponent,
+        options.assembly,
+      );
 
     case 'QWEN_IMAGE':
-      return wrapForQwen(prompt, options.surface, options.limbsAreComponents, options.assembly);
+      return wrapForQwen(
+        prompt,
+        options.surface,
+        options.limbsAreComponents,
+        options.letteringIsAComponent,
+        options.assembly,
+      );
 
     case 'SEEDREAM':
       return wrapForSeedream(prompt, options.sectionNumbers);

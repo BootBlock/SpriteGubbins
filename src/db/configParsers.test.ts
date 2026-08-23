@@ -108,11 +108,13 @@ describe('parseOutputConfig — sheetIndex', () => {
   });
 
   it('is bounded by the plan table rather than by a number written down here', () => {
-    // Derived, so a pairing that grows a sheet admits one in the same edit. Three sheets is the most
-    // any pairing takes today — the eight-compass character series — and an index past that is
-    // corrupt storage rather than a choice.
+    // Derived, so a pairing that grows a sheet admits one in the same edit. Four sheets is the most
+    // any pairing takes today — FONT's glyph set, which is four because printable ASCII does not fit
+    // one generation — and an index past that is corrupt storage rather than a choice. It moved from
+    // three when that category landed, which is the derivation doing its job: the eight-compass
+    // character series is still the longest *directional* one.
     expect(SHEET_INDEX_RANGE.min).toBe(0);
-    expect(SHEET_INDEX_RANGE.max).toBe(2);
+    expect(SHEET_INDEX_RANGE.max).toBe(3);
   });
 
   it('falls back for anything outside that, fractional, or not a number', () => {

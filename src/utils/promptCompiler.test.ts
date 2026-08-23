@@ -367,10 +367,13 @@ describe('generatePrompt — numbered lists', () => {
     );
 
     expect(numberedRuns(prompt)).toHaveLength(3);
-    // Six in the contract — five fixed plus the pixel-grid rule — eight in the audit, which is the
+    // Seven in the contract — six fixed plus the pixel-grid rule — eight in the audit, which is the
     // run that used to end at 8 with no 7 above it and now carries the component-boundary check, and
     // three in the closing invariants, which this configuration reaches because it is multi-facing.
-    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([6, 8, 3]);
+    // The contract's fixed items went from five to six when the text ban split off the annotation
+    // ban beside it: only the first half is conditional on `LETTERING_IS_A_COMPONENT`, and one item
+    // carrying both could not be made conditional at all.
+    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([7, 8, 3]);
   });
 });
 
@@ -451,6 +454,7 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
     PORTRAIT: 'a',
     ICON: 'an',
     BACKGROUND: 'a',
+    FONT: 'a',
   };
 
   it('gives every category the indefinite article its own identifier takes', () => {
@@ -2196,7 +2200,7 @@ describe('the section numbering the prompt cites itself by', () => {
   }
 
   it.each(SUBJECT_CATEGORIES)('runs 0, 1, 2, … with no hole on %s, at every rig it offers', (category) => {
-    // The reported failure: the rig section is conditional, and eight of the twelve categories have no
+    // The reported failure: the rig section is conditional, and nine of the thirteen categories have no
     // rig at all, so every prompt they ever compiled ran `## 4. COMPONENT INVENTORY` straight into
     // `## 6. REQUIRED ASSEMBLY CAPABILITY`. Swept over the rig union rather than the category's own
     // list, because `resolveRigMode` is what a stored value from an older build arrives through.
@@ -2527,5 +2531,88 @@ describe('generatePrompt — the punctuation the prompt ships with', () => {
     // never reached would make the whole assertion pass for the wrong reason.
     expect(sawComponentMapExample, 'the sweep never reached the component map’s JSON example').toBe(true);
     expect([...offenders], `the prompt writes a straight quote:\n${[...offenders].join('\n')}`).toEqual([]);
+  });
+});
+
+/**
+ * The one global rule this app has ever made per-category, and the contradiction it removes.
+ *
+ * Sections 0, 8 and 9 each ban text on the sheet, and all three were written as rules about every
+ * category — which is right for twelve of the thirteen. A glyph set's components *are* lettering, so
+ * on that one category section 4 requires exactly what those three forbid: the
+ * §4-requires/§8-forbids contradiction the per-category exclusion, guard and audit records were
+ * introduced to remove, arriving in the contract itself rather than in a category's own line.
+ *
+ * **Both directions, at all three sites.** A change that dropped the text ban for everybody would
+ * satisfy a one-sided check, and twelve categories still need it stated — so the assertion is that
+ * each site carries the unconditional wording exactly where `LETTERING_IS_A_COMPONENT` is false and
+ * the qualified wording exactly where it is true. The record is read for *which* category, never for
+ * what the prompt says: the wording is written out here, so a record and a template that drifted
+ * apart in the same direction cannot agree their way past this.
+ *
+ * **And the exemption's own boundary**, which is the half that makes it narrow rather than an
+ * absence: a watermark, a signature and a caption naming a component are annotation on a font sheet
+ * exactly as they are on every other, so the qualified wording has to keep saying so.
+ */
+describe('generatePrompt — the one ban that is per-category', () => {
+  /** What each of the three sites says when lettering is annotation, and when it is the subject. */
+  const SITES = [
+    {
+      where: 'section 0’s contract',
+      banned: 'No text, labels, numbers, captions, watermarks or signatures anywhere in the image.',
+      permitted: 'they are the **only** lettering',
+    },
+    {
+      where: 'section 8’s exclusions',
+      banned: '- Text, labels, numbers, captions, watermarks, signatures and legends.',
+      permitted: 'Any lettering other than the characters section',
+    },
+    {
+      where: 'section 9’s self-audit',
+      banned: 'No text or labels anywhere.',
+      permitted: 'The only lettering on the sheet is the characters the inventory lists',
+    },
+  ] as const;
+
+  it.each(SUBJECT_CATEGORIES)('states the text rule for %s in the form that category needs', (category) => {
+    // A target that deliberates, so section 9's checklist is emitted at all — the site is conditional
+    // on the target as well, and a sweep that never reached it would pass vacuously.
+    const prompt = generatePrompt(
+      category,
+      defaultSubjectFor(category),
+      withOutput({ targetModel: 'CHATGPT_5_6_SOL' }),
+    );
+    const lettering = promptText.LETTERING_IS_A_COMPONENT[category];
+
+    for (const site of SITES) {
+      expect(prompt.includes(site.banned), `${category}: ${site.where} (unconditional ban)`).toBe(!lettering);
+      expect(prompt.includes(site.permitted), `${category}: ${site.where} (qualified ban)`).toBe(lettering);
+    }
+  });
+
+  it('finds a category on each side of that, so neither branch is vacuous', () => {
+    // Derived membership means a record flipped to all-false or all-true would leave every assertion
+    // above trivially satisfiable, and the suite green.
+    const lettered = SUBJECT_CATEGORIES.filter((c) => promptText.LETTERING_IS_A_COMPONENT[c]);
+    expect(lettered).toEqual(['FONT']);
+    expect(lettered.length).toBeLessThan(SUBJECT_CATEGORIES.length);
+  });
+
+  it.each(SUBJECT_CATEGORIES)('keeps the annotation ban on %s whatever lettering is', (category) => {
+    // What the exemption does *not* reach, and the reason it is narrow rather than an absence. Every
+    // category — the lettered one included — still bans a watermark, a signature and a caption naming
+    // a component, and still bans the arrows, callouts and grid lines that used to ride on the same
+    // contract item as the text ban. Splitting that item is what let the halves differ; this is the
+    // half that must not.
+    const prompt = generatePrompt(
+      category,
+      defaultSubjectFor(category),
+      withOutput({ targetModel: 'CHATGPT_5_6_SOL' }),
+    );
+
+    expect(prompt, category).toContain('no arrows, callouts or grid lines');
+    for (const banned of ['watermark', 'signature', 'caption']) {
+      expect(prompt.toLowerCase(), `${category} stops banning a ${banned}`).toContain(banned);
+    }
   });
 });

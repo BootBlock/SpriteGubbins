@@ -3,7 +3,11 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { MIDJOURNEY_VERSION, TARGET_MODELS } from '../constants/models.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
-import { CATEGORY_ASSEMBLY, RENDER_STYLE_SURFACE } from '../constants/promptText/index.ts';
+import {
+  CATEGORY_ASSEMBLY,
+  LETTERING_IS_A_COMPONENT,
+  RENDER_STYLE_SURFACE,
+} from '../constants/promptText/index.ts';
 import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
 import { TARGET_MODEL_IDS } from '../types/output.ts';
 import type { OutputConfig } from '../types/output.ts';
@@ -592,10 +596,17 @@ describe('what a wrapper says about the assembled whole', () => {
     }
 
     // Flux's is prose and leads the prompt, so its clause is checked where it actually lands —
-    // closing the first sentence — rather than merely somewhere in the wrapper.
+    // closing the first sentence — rather than merely somewhere in the wrapper. `no text` drops out
+    // on the one category whose components are lettering, which is the same conditional the two
+    // negative blocks apply to their own `text` entries — so the expected sentence is built from
+    // `LETTERING_IS_A_COMPONENT` rather than fixed, and asserts the *absence* on that category
+    // rather than skipping it.
     const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
+    const lettering = LETTERING_IS_A_COMPONENT[category];
     expect(flux.startsWith('The sheet shows only disconnected individual parts on a'), category).toBe(true);
-    expect(flux, category).toContain(`no cast shadow, no text, and ${statement}.`);
+    expect(flux, category).toContain(
+      lettering ? `no cast shadow, and ${statement}.` : `no cast shadow, no text, and ${statement}.`,
+    );
 
     // And nothing anywhere in any of the three says another category's failure. Both halves are
     // walked on all three targets, because the failure being guarded against is a wrapper reading a
@@ -654,5 +665,62 @@ describe('what a wrapper says about the assembled whole', () => {
         else expect(said, where).toEqual([]);
       }
     }
+  });
+});
+
+/**
+ * The negative channels' half of the same contradiction, which is wider than the prompt body's.
+ *
+ * `text`, `labels` and `captions` are things to avoid on twelve categories and the subject itself on
+ * the thirteenth, and a negative channel names a thing rather than a placement — the limit
+ * `FRAME_IS_A_COMPONENT` was introduced for, arriving at four wrappers instead of one. Flux carries
+ * `no text` in the leading sentence Black Forest Labs' word-order guidance makes the strongest
+ * position in the prompt, so on a glyph set it would spend that position negating the sheet.
+ *
+ * **The two terms that stay are what makes this a boundary rather than a hole.** A watermark and a
+ * signature are not characters of a font, so no reading of the exemption reaches them, and a signed
+ * sheet is as spoilt as any other. They are asserted present on every category, in both blocks that
+ * carry them, alongside the terms that drop.
+ */
+describe('what a wrapper says about text', () => {
+  /** The three terms that name the subject of a glyph set, and where each is carried. */
+  const DROPS = [
+    { targetModel: 'STABLE_DIFFUSION', terms: ['text', 'labels'] },
+    { targetModel: 'QWEN_IMAGE', terms: ['text', 'labels', 'captions'] },
+  ] as const;
+
+  /** The two that are annotation whatever the sheet draws, in the blocks that already carried them. */
+  const KEEPS = ['watermark', 'signature'] as const;
+
+  it.each(SUBJECT_CATEGORIES)('drops the subject-naming terms for %s only where they are it', (category) => {
+    const subject = defaultSubjectFor(category);
+    const lettering = LETTERING_IS_A_COMPONENT[category];
+
+    for (const { targetModel, terms } of DROPS) {
+      // Split on the comma the way both blocks join them, so `cast shadow` cannot satisfy a check
+      // written for `shadow` — the reason `negatedByMidjourney` above does the same.
+      const block = wrapperOnly(generatePrompt(category, subject, withOutput({ targetModel })))
+        .split(/[,\n]/)
+        .map((entry) =>
+          entry
+            .replace(/^Negative prompt:/, '')
+            .trim()
+            .replace(/\.$/, ''),
+        );
+      const where = `${targetModel} / ${category}`;
+
+      for (const term of terms) expect(block.includes(term), `${where} / ${term}`).toBe(!lettering);
+      for (const term of KEEPS) expect(block, `${where} / ${term}`).toContain(term);
+    }
+
+    // Midjourney's flag is the same claim through `--no`, parsed by the helper this file already has.
+    const flagged = negatedByMidjourney('PIXEL_ART', category);
+    for (const term of ['text', 'labels']) {
+      expect(flagged.includes(term), `MIDJOURNEY / ${category} / ${term}`).toBe(!lettering);
+    }
+
+    // And Flux, whose claim is prose in the leading sentence rather than a term in a list.
+    const flux = generatePrompt(category, subject, withOutput({ targetModel: 'FLUX' }));
+    expect(flux.includes('no cast shadow, no text,'), `FLUX / ${category}`).toBe(!lettering);
   });
 });

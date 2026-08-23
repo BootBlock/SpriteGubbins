@@ -9,6 +9,7 @@ import { CREATURE_BEAST_PRESETS } from './creatureBeasts.ts';
 import { CREATURE_HORROR_PRESETS } from './creatureHorrors.ts';
 import { EFFECT_COMBAT_PRESETS } from './effectCombat.ts';
 import { EFFECT_MAGIC_PRESETS } from './effectMagic.ts';
+import { FONT_SET_PRESETS } from './fontSets.ts';
 import { GAME_LOOK_PRESETS } from './gameLooks.ts';
 import { INTERFACE_KIT_PRESETS } from './interfaceKits.ts';
 import { ICON_SET_PRESETS } from './iconSets.ts';
@@ -74,6 +75,7 @@ export const PRESETS: readonly PresetArchetype[] = [
   ...PORTRAIT_BUST_PRESETS,
   ...ICON_SET_PRESETS,
   ...BACKGROUND_LAYER_PRESETS,
+  ...FONT_SET_PRESETS,
   ...GAME_LOOK_PRESETS,
   ...UNSUNG_SAVIOUR_PRESETS,
 ];

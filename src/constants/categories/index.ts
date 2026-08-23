@@ -17,6 +17,7 @@ import { TERRAIN } from './terrain.ts';
 import { PORTRAIT } from './portrait.ts';
 import { ICON } from './icon.ts';
 import { BACKGROUND } from './background.ts';
+import { FONT } from './font.ts';
 
 /**
  * The complete option pool for every category.
@@ -38,6 +39,7 @@ export const CATEGORY_OPTIONS: Readonly<Record<SubjectCategory, CategoryDefiniti
   PORTRAIT,
   ICON,
   BACKGROUND,
+  FONT,
 };
 
 /**

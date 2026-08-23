@@ -20,6 +20,12 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * the wording Qwen's block already used for it, and it is emitted on the styles whose section 2 line
  * asserts a hard edge and withheld on the three that ask for a soft one.
  *
+ * **`text` and `labels` are the sheet's as well, and they are the pair that had to become
+ * conditional.** A glyph set's components are characters, so on that one category those two terms
+ * negate the subject — the argument `LETTERING_IS_A_COMPONENT` makes at length. `watermark` and
+ * `signature` keep their places between them: neither is a character of a font, and a signed sheet is
+ * spoilt whatever it depicts.
+ *
  * **The run that opens the block is the sheet's too, and it was the last fixed string here.** It
  * read `(assembled character:1.3), (posed figure:1.3)` on every category, which spent the highest
  * weight in the whole block naming a figure on sheets whose components are floor tiles and panel
@@ -30,14 +36,15 @@ export function wrapForStableDiffusion(
   prompt: string,
   surface: RenderStyleSurface,
   limbsAreComponents: boolean,
+  letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
 ): string {
   const negatives = [
     ...assembly.negatives.map((term) => `(${term}:1.3)`),
-    'text',
+    ...(letteringIsAComponent ? [] : ['text']),
     'watermark',
     'signature',
-    'labels',
+    ...(letteringIsAComponent ? [] : ['labels']),
     'floor shadow',
     'drop shadow',
     'gradient background',

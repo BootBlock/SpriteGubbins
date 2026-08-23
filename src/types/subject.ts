@@ -29,6 +29,7 @@ export const SUBJECT_CATEGORIES = [
   'PORTRAIT',
   'ICON',
   'BACKGROUND',
+  'FONT',
 ] as const;
 
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];

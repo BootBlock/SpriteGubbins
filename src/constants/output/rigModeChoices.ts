@@ -27,7 +27,7 @@ const RIG_MODE_LABELS: readonly OutputChoice<RigMode>[] = [
  * the category has no joints for is not rendered, so the mismatch cannot be chosen in the first
  * place.
  *
- * Eight of the twelve categories are left with one entry, and the control is not what the studio shows
+ * Nine of the thirteen categories are left with one entry, and the control is not what the studio shows
  * them — a select offering a single option is a control with nothing to do, so `RiggingFields` says
  * why the choice is absent instead. This still returns the list rather than the emptiness, because
  * `NONE` is genuinely what those sheets are and the collapsed group's digest names it.

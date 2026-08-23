@@ -82,6 +82,7 @@ export const CATEGORY_PROJECTIONS: Readonly<Record<SubjectCategory, readonly [Pr
     PORTRAIT: ['ORTHOGRAPHIC_FRONT'],
     ICON: PROJECTIONS,
     BACKGROUND: ['ORTHOGRAPHIC_FRONT'],
+    FONT: ['ORTHOGRAPHIC_FRONT'],
   };
 
 /** Whether this category's subject can be drawn under the camera this projection names. */

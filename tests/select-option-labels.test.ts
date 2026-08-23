@@ -92,7 +92,7 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
     ),
   ),
   // One list per category, like the modes above, because a category is offered only the sets its
-  // subject can be turned to — five of the twelve are `SINGLE_FRONT` alone.
+  // subject can be turned to — six of the thirteen are `SINGLE_FRONT` alone.
   setChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionSetChoices(category).map((choice) => choice.label),
   ),

@@ -14,6 +14,7 @@ import {
   isPlanView,
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
+  LETTERING_IS_A_COMPONENT,
   LIGHTING_TEXT,
   LIMBS_ARE_COMPONENTS,
   minFeatureSize,
@@ -329,6 +330,13 @@ export function generatePrompt(
     // own bug — the category and the inventory are compiled from one value, so they can only
     // disagree if something here is wrong — and only a target with a text channel can report that.
     RETURNS_TEXT: returnsText(output.targetModel) ? 'yes' : '',
+    // The one gate in this record that is a fact about the *subject* rather than about the target or
+    // the sheet, and the only one that relaxes a rule instead of adding one. Sections 0, 8 and 9 each
+    // ban text on the sheet, and on a glyph set that is the ban section 4 requires the reader to
+    // break — so each of the three carries a second wording that states where the exemption stops
+    // rather than going quiet. `LETTERING_IS_A_COMPONENT` is where the judgement lives, including why
+    // it is a record and not a test on the category here.
+    LETTERING_IS_A_COMPONENT: LETTERING_IS_A_COMPONENT[category] ? 'yes' : '',
   };
 
   // The conditioned template, and the number each of its surviving headings lands on. Three sets of
@@ -511,6 +519,7 @@ export function generatePrompt(
     aspectRatio: output.aspectRatio,
     backgroundKeyDescription: BACKGROUND_KEY_TEXT[output.backgroundKey],
     frameIsAComponent: FRAME_IS_A_COMPONENT[category],
+    letteringIsAComponent: LETTERING_IS_A_COMPONENT[category],
     surface: RENDER_STYLE_SURFACE[output.renderStyle],
     limbsAreComponents: LIMBS_ARE_COMPONENTS[category],
     assembly: CATEGORY_ASSEMBLY[category],

@@ -170,7 +170,7 @@ describe('every art style reference', () => {
   });
 
   it('offers every reference in the dropdown, NONE first', () => {
-    // Against a category that can be drawn under every camera, which is nine of the twelve — the
+    // Against a category that can be drawn under every camera, which is nine of the thirteen — the
     // other three are the scoping, checked below.
     expect(styleReferenceChoices('CHARACTER').map((choice) => choice.value)).toEqual([
       ...STYLE_REFERENCE_IDS,
