@@ -181,12 +181,13 @@ export function KeyingControls({ keying, keyedShare, busy, offered }: KeyingCont
       {silhouetteThreshold > 0 && (
         <p className="mt-3 text-xs leading-relaxed text-ink-muted">
           Every partly transparent pixel is now either cleared or made solid, so the outline comes back to a
-          hard edge one pixel wide. That only reaches a sheet that arrived carrying its own soft outline — one
-          this app downloaded earlier, or a drawing exported with an anti-aliased silhouette. A sheet being
-          read down from a larger scale has its soft edges resolved by the patch reading instead, and this
-          leaves it alone. Only transparency is read: the colour boundaries inside a sprite are untouched,
-          which is what a colour budget or a pinned palette is for. Lower settings keep more of the fringe and
-          grow the silhouette by it, higher ones clear more and tighten it back.
+          hard edge one pixel wide. It runs at every pixel scale, and there is only something for it to find
+          on a sheet that arrived carrying its own transparency — one this app downloaded earlier, or a
+          drawing exported with an anti-aliased silhouette. On a sheet being read down from a larger scale it
+          runs ahead of the patch reading, so what it changes there is what that reading is handed. Only
+          transparency is read: the colour boundaries inside a sprite are untouched, which is what a colour
+          budget or a pinned palette is for. Lower settings keep more of the fringe and grow the silhouette by
+          it, higher ones clear more and tighten it back.
         </p>
       )}
 

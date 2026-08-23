@@ -1601,10 +1601,12 @@ export const DEFAULT_KEY_TOLERANCE = 24;
  * progressively more of the fringe, so the silhouette tightens back towards the pixels that were
  * nearly solid to begin with.
  *
- * Deliberately not stated as a distance in bytes, which is what every other tolerance on this tab is
- * stated in. Those are colour distances answering “how far apart are these two colours”; this is a
- * *coverage*, which is a share of one pixel — and a share is what a reader compares against the
- * fringe they can see rather than against the ladder’s other rungs.
+ * Deliberately not stated as a distance in bytes, which is what every *colour* tolerance on this tab
+ * is stated in. Those answer “how far apart are these two colours”; this is a *coverage*, which is a
+ * share of one pixel — and a share is what a reader compares against the fringe they can see rather
+ * than against the ladder’s other rungs. `FRAME_DRIFT_RANGE` is the other dial stated in neither, and
+ * for the same kind of reason: a displacement is counted in drawn pixels because that is the quantity
+ * it is.
  */
 export const SILHOUETTE_THRESHOLDS = [0, 10, 25, 50, 75, 90] as const;
 

@@ -9,12 +9,14 @@ import { upscaleNearest } from './upscaleNearest.ts';
 export interface Sample {
   readonly crop: ImageData;
   /**
-   * The crop as the reader wants it — keyed, where keying is in force.
+   * The crop as the reader wants it — keyed and hardened, where either is in force.
    *
    * **Not the raw crop**, and the difference is the whole comparison on a keyed sheet. A candidate's
    * result has its background cleared, so measuring it against a crop that still carries the key
-   * field would score every candidate against a field none of them produces. Keying the reference
-   * puts both sides in the same terms.
+   * field would score every candidate against a field none of them produces. The same holds for the
+   * edge hardening, which is why `autoTune` applies both, in the pipeline's own order: a candidate's
+   * silhouette is hard, and a reference that still carried its fringe would score every one of them
+   * against a softness none of them produces. Putting both sides in the same terms is the point.
    */
   readonly reference: ImageData;
 }

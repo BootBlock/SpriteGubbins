@@ -108,10 +108,12 @@ describe('AutoTuneControls', () => {
     expect(dials.outlineExpansion).toBe(2);
     expect(dials.lineStrength).toBe(2.5);
     expect(dials.colorMerge).toBe(12);
-    // The ten it must not reach — a keying setting deletes pixels, a dither trades likeness away on
-    // purpose, and the rest change what the tab reports rather than what it draws.
+    // The eleven it must not reach — the three that decide what counts as background delete pixels,
+    // a dither trades likeness away on purpose, and the rest change what the tab reports rather than
+    // what it draws.
     expect(dials.keyingEnabled).toBe(QUANTISE_DEFAULT_DIALS.keyingEnabled);
     expect(dials.keyTolerance).toBe(QUANTISE_DEFAULT_DIALS.keyTolerance);
+    expect(dials.silhouetteThreshold).toBe(QUANTISE_DEFAULT_DIALS.silhouetteThreshold);
     expect(dials.dither).toBe(QUANTISE_DEFAULT_DIALS.dither);
     expect(dials.paletteSnap).toBe(QUANTISE_DEFAULT_DIALS.paletteSnap);
     expect(dials.spriteGap).toBe(QUANTISE_DEFAULT_DIALS.spriteGap);

@@ -60,18 +60,25 @@ describe('KeyingControls', () => {
     expect(screen.getByLabelText('Key colour tolerance')).toBeInTheDocument();
   });
 
-  it('offers the edge hardening whether or not the key is being matched', async () => {
+  it('offers the edge hardening with the key off, which is the state it exists for', async () => {
     // The control this panel holds that is not about the key colour at all. It reads the sheet's own
     // coverage, so the reader wants it precisely when keying is off — a sheet that arrived carrying
     // its own alpha — and hiding it behind the toggle would put it out of reach in the one state it
     // exists for.
     show();
-    const row = screen.getByLabelText('Silhouette coverage threshold');
 
+    expect(screen.getByLabelText('Silhouette coverage threshold')).toBeInTheDocument();
     expect(useQuantiseStore.getState().silhouetteThreshold).toBe(0);
     await userEvent.click(screen.getByRole('button', { name: '50%' }));
 
     expect(useQuantiseStore.getState().silhouetteThreshold).toBe(50);
-    expect(row).toBeInTheDocument();
+  });
+
+  it('offers it with the key on as well, which is the half a `!isKeying` guard would pass', () => {
+    // The inverse of the case above, and the one the sibling test cannot catch: wrapping the row in
+    // the negation of the toggle leaves that test green and takes the control away here.
+    show({ keying: { color: { r: 255, g: 0, b: 255, a: 255 }, tolerance: 24 } });
+
+    expect(screen.getByLabelText('Silhouette coverage threshold')).toBeInTheDocument();
   });
 });

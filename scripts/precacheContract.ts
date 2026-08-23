@@ -102,7 +102,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **Raised from 2220 by the edge-hardening pass on the Quantise tab.** The pass itself is small; what
  * it costs is the constant data around it — a ladder, two defaults, the control's guidance paragraph
  * and the panel's own — all of which the entry chunk reaches, so all of it lands in the precache.
- * Measured against the build immediately before it, that came to 3.26 KiB against 2.90 KiB of
+ * Measured against the build immediately before it, that came to 3.38 KiB against 2.90 KiB of
  * headroom. The new figure restores a margin of the same order rather than widening it.
  */
 export const PRECACHE_CEILING_KIB = 2224;

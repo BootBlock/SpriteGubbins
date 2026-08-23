@@ -19,21 +19,25 @@ import { CHANNELS_PER_PIXEL, FULLY_OPAQUE, FULLY_TRANSPARENT, createImage } from
  * strength asked for — and the pipeline's order is what makes that read as one intent rather than
  * two passes fighting.
  *
- * **Only alpha is read and only alpha is written.** A pixel that arrived fully transparent is left
- * fully transparent, a pixel that arrived fully opaque is left exactly as it was, and a partly
- * covered pixel keeps its own RGB when it is kept. That is what makes the pass *silhouette* rather
- * than interior: an interior soft boundary is a colour ramp at full alpha, and hardening one of those
- * is what a colour reduction already does. There is nothing here for a second control to do.
+ * **Alpha alone decides, and a pixel this pass does not clear keeps the colour it arrived with.** A
+ * fully transparent pixel is copied through untouched, a fully opaque one is copied through
+ * untouched, and a partly covered one keeps its own RGB wherever the threshold keeps it. That is
+ * what makes the pass *silhouette* rather than interior: an interior soft boundary is a colour ramp
+ * at full alpha, which this cannot see, and hardening one of those is what a colour reduction
+ * already does. There is nothing here for a second control to do.
  *
- * A cleared pixel is written `{0, 0, 0, 0}` rather than its own RGB at zero alpha, for the reason
- * `keyBackground` gives at length: `alignToGrid` votes on the packed RGBA, so transparent pixels that
- * kept different RGB values are still different colours to that vote.
+ * A pixel this pass **clears** is written `{0, 0, 0, 0}` rather than its own RGB at zero alpha, for
+ * the reason `keyBackground` gives at length: `alignToGrid` votes on the packed RGBA, so transparent
+ * pixels that kept different RGB values are still different colours to that vote. It is not extended
+ * to a pixel that arrived clear, and that boundary is what keeps the two paths below equivalent — a
+ * pass that canonicalised those as well would edit pixels the early-out hands back unedited, so what
+ * the sheet came out as would depend on whether it happened to hold any partial alpha at all.
  *
- * **Hands back its argument by reference wherever nothing moved**, which is the contract
- * `snapSymmetric`, `snapFrames` and `antiAlias` all keep and for the same reason — the copy alone is
- * 67MB at the ceiling this app admits, and a sheet with no partial alpha in it has nothing for this
- * pass to change. The scan that decides is one linear read of the alpha channel, which is what makes
- * asking cheaper than copying.
+ * **Hands back its argument by reference wherever the sheet carries no partial alpha**, which is the
+ * contract `snapSymmetric`, `snapFrames` and `antiAlias` all keep and for the same reason — the copy
+ * alone is 67MB at the ceiling this app admits, and a sheet made entirely of clear and solid pixels
+ * is one this pass would copy unchanged. The scan that decides is one linear read of the alpha
+ * channel, which is what makes asking cheaper than copying.
  *
  * Pure: one `ImageData` in, one out, no store and no canvas.
  */
@@ -46,9 +50,9 @@ export function hardenSilhouette(image: ImageData, threshold: number): ImageData
   const floor = threshold * FULLY_OPAQUE;
 
   // Asked before anything is allocated. A sheet whose every pixel is fully clear or fully solid is
-  // already hardened however the dial stands, and that is the ordinary state of a sheet the passes
-  // above produced — so the reader who leaves this on across a whole session pays a linear read
-  // rather than a copy of the sheet.
+  // one the loop below would copy verbatim, whatever the dial stands at, and that is the ordinary
+  // state of a sheet the passes above produced — so the reader who leaves this on across a whole
+  // session pays a linear read rather than a copy of the sheet.
   let partial = false;
   for (let offset = 3; offset < data.length; offset += CHANNELS_PER_PIXEL) {
     const alpha = data[offset] ?? 0;
@@ -63,16 +67,18 @@ export function hardenSilhouette(image: ImageData, threshold: number): ImageData
 
   for (let offset = 0; offset < data.length; offset += CHANNELS_PER_PIXEL) {
     const alpha = data[offset + 3] ?? 0;
-    // A pixel that was already clear stays clear rather than being measured: it carries no coverage
-    // to compare, and `createImage` has already written the canonical zero for it.
-    if (alpha === FULLY_TRANSPARENT) continue;
-    // Below the threshold the pixel is not artwork, and the same zero stands.
-    if (alpha * 100 < floor) continue;
+    // Below the threshold the pixel is not artwork, and nothing is written: `createImage` zero-fills,
+    // which is exactly the canonical `{0, 0, 0, 0}` the modal vote downstream depends on. A pixel
+    // that arrived clear is *not* on this branch — it carries no coverage to compare, so it falls
+    // through to the copy below and leaves with the colour it came in with.
+    if (alpha !== FULLY_TRANSPARENT && alpha * 100 < floor) continue;
 
     output.data[offset] = data[offset] ?? 0;
     output.data[offset + 1] = data[offset + 1] ?? 0;
     output.data[offset + 2] = data[offset + 2] ?? 0;
-    output.data[offset + 3] = FULLY_OPAQUE;
+    // The one channel this pass decides: a kept pixel is made solid, and a pixel that arrived clear
+    // stays clear.
+    output.data[offset + 3] = alpha === FULLY_TRANSPARENT ? FULLY_TRANSPARENT : FULLY_OPAQUE;
   }
 
   return output;
