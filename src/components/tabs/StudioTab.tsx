@@ -22,8 +22,10 @@ import { TargetModelSelector } from '../studio/TargetModelSelector.tsx';
  * minimum width — and `lg` (1024px) sits 16px below it, which put every select in this tab 8px short
  * of its own longest option at exactly the viewport where the two columns first appeared. Both
  * columns are bound by it, the form's fifteen selects and the target model's one, so the even split
- * above is what has to clear the minimum rather than the form column alone. `--breakpoint-studio` in
- * `src/index.css` derives the 1040px; below it the studio stacks, which is the layout it already
+ * above is what has to clear the minimum rather than the form column alone. The target model's is
+ * also the one select in the app sharing its row with a control — the button that opens the chosen
+ * generator's page — so its column has to clear the minimum *and* those 48px. `--breakpoint-studio`
+ * in `src/index.css` derives the 1120px; below it the studio stacks, which is the layout it already
  * used below `lg`.
  *
  * **The sticky column is capped at the viewport and lays itself out as a flex column**, so

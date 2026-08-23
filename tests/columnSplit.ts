@@ -71,10 +71,33 @@ function spacing(step: string): number {
 interface ColumnSplitOptions {
   /** The tab component whose grid, page position and column spans are being read. */
   readonly tabFile: string;
-  /** Every panel in the split that holds a `SelectField` — the widest chrome binds. */
+  /**
+   * Every panel in the split that holds a `SelectField`.
+   *
+   * Each is measured on its own, because chrome and any control sharing the select's row belong to
+   * one panel apiece and the widest of each need not be the same panel. `contentWidthAt` still
+   * charges the widest chrome for the claims that are about a column rather than a control.
+   */
   readonly panelFiles: readonly string[];
   /** How many `:col-span-*` children the grid is expected to have. */
   readonly columns: number;
+}
+
+/** One panel in the split, and what it spends before a control of its own gets any width. */
+interface SplitPanel {
+  readonly file: string;
+  /** The panel's own padding and border, both sides. */
+  readonly chromePx: number;
+  /**
+   * What a control *sharing a row with the select* takes, or zero.
+   *
+   * Read from the panel rather than assumed, because it is the one term that belongs to a single
+   * panel. Charging it against the tab's **widest** chrome — which is a different panel — overstates
+   * the requirement by the difference between the two, and the budget this feeds is exact rather
+   * than cushioned: in the studio that mistake was 8px, which is two characters of the 8px mono
+   * advance the whole budget rests on.
+   */
+  readonly actionPx: number;
 }
 
 interface ColumnSplit {
@@ -84,7 +107,17 @@ interface ColumnSplit {
   readonly splitWidthPx: number;
   /** The spans found, in source order. */
   readonly spans: readonly number[];
-  /** What a panel filling `span` tracks has left for its controls, at a given viewport. */
+  /** The panels named, each with what it spends before its own controls. */
+  readonly panels: readonly SplitPanel[];
+  /** How wide a column of `span` tracks is at a given viewport, before any panel's chrome. */
+  readonly columnWidthAt: (span: number, viewportPx: number) => number;
+  /**
+   * The same column, less the **widest** chrome any of the named panels spends.
+   *
+   * The conservative column-wide figure, for a claim about the column rather than about one control
+   * in it. A budget belonging to a particular control takes `columnWidthAt` and that panel's own two
+   * terms instead — see `studio-column-width.test.ts`, where the difference is a real 8px.
+   */
   readonly contentWidthAt: (span: number, viewportPx: number) => number;
 }
 
@@ -175,13 +208,19 @@ export function readColumnSplit({ tabFile, panelFiles, columns }: ColumnSplitOpt
   if (panelFiles.length === 0) {
     throw new Error(`no panels named for ${tabFile} — a column with no measured chrome clears any budget`);
   }
-  const panelChromePx = Math.max(
-    ...panelFiles.map((file) => {
-      const classes = capture(read(file), /<section className="([^"]*)"/, `${file}'s panel`);
-      const padding = spacing(capture(classes, /\bp-(\d+)\b/, `${file}'s panel padding`));
-      return 2 * (padding + (/\bborder\b/.test(classes) ? 1 : 0));
-    }),
-  );
+  const panels: readonly SplitPanel[] = panelFiles.map((file) => {
+    const source = read(file);
+    const classes = capture(source, /<section className="([^"]*)"/, `${file}'s panel`);
+    const padding = spacing(capture(classes, /\bp-(\d+)\b/, `${file}'s panel padding`));
+    return {
+      file,
+      chromePx: 2 * (padding + (/\bborder\b/.test(classes) ? 1 : 0)),
+      // Parsed rather than named by the caller, so a second panel putting a control beside its
+      // select is charged for it the moment it does, and one that stops stops being charged.
+      actionPx: /\baction=\{/.test(source) ? selectActionWidthPx() : 0,
+    };
+  });
+  const panelChromePx = Math.max(...panels.map((panel) => panel.chromePx));
 
   /** Where the split engages: a stock breakpoint, or a `--breakpoint-*` token in the theme. */
   const splitWidthPx =
@@ -194,14 +233,20 @@ export function readColumnSplit({ tabFile, panelFiles, columns }: ColumnSplitOpt
       ),
     ) * ROOT_FONT_PX;
 
+  function columnWidthAt(span: number, viewportPx: number): number {
+    const content = Math.min(pageCapPx, viewportPx) - 2 * pagePadPx;
+    const track = (content - (trackCount - 1) * gapPx) / trackCount;
+    return span * track + (span - 1) * gapPx;
+  }
+
   return {
     variant,
     splitWidthPx,
     spans,
+    panels,
+    columnWidthAt,
     contentWidthAt(span, viewportPx) {
-      const content = Math.min(pageCapPx, viewportPx) - 2 * pagePadPx;
-      const track = (content - (trackCount - 1) * gapPx) / trackCount;
-      return span * track + (span - 1) * gapPx - panelChromePx;
+      return columnWidthAt(span, viewportPx) - panelChromePx;
     },
   };
 }

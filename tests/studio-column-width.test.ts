@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MD_BREAKPOINT_PX, readColumnSplit, selectActionWidthPx, stickyVariantsOf } from './columnSplit.ts';
+import { MD_BREAKPOINT_PX, readColumnSplit, stickyVariantsOf } from './columnSplit.ts';
 import { SELECT_MIN_PX } from './selectLabelBudget.ts';
 
 /**
@@ -17,7 +17,7 @@ import { SELECT_MIN_PX } from './selectLabelBudget.ts';
  * fifteen and the target model's one — so the narrower of the two is what has to clear the budget,
  * and an even split is what that produces. The target model's is also the one select in the app that
  * shares its row with a control, so this tab's budget is the label's plus that row's, which is why
- * `--breakpoint-studio` sits 6rem above where the labels alone would put it.
+ * `--breakpoint-studio` sits 5rem above where the labels alone would put it.
  *
  * Measuring the *narrowest* span is measuring every column, and deliberately only one assertion:
  * `contentWidthAt` grows with the span it is given, so a second loop over all of them could not
@@ -49,15 +49,23 @@ describe('studio column width', () => {
    *
    * **The action beside the target-model select is part of the budget, not a decoration on top of
    * it.** That select shares its row with the button that opens the chosen generator's own page, so
-   * the control is narrower than the column by the gutter and the button — 48px that come off the
-   * end of the label, which is where the parenthetical is. Measuring the column alone would have
-   * approved a split that clipped every option in the panel the day the button landed.
+   * the control is narrower than its panel by the gutter and the button — 48px off the end of the
+   * label, which is where the parenthetical is.
+   *
+   * **Each panel is measured against its own two terms**, rather than the tab's widest chrome
+   * against the tab's only action. Those belong to different panels here — the form's are `p-5` and
+   * carry no action, the target model's is `p-4` and carries the only one — so the pair exists in
+   * no panel in the tab, and pricing it that way put `--breakpoint-studio` 8px above what anything
+   * needs. Eight pixels is a character of the mono advance the budget is built from, and the token
+   * says of itself that it is exact rather than cushioned.
    */
-  it('gives a select its full budget beside its action, at the width the columns first appear', () => {
+  it('gives every panel’s select its full budget beside whatever shares its row', () => {
     const narrowest = Math.min(...split.spans);
-    expect(split.contentWidthAt(narrowest, split.splitWidthPx)).toBeGreaterThanOrEqual(
-      SELECT_MIN_PX + selectActionWidthPx(),
-    );
+    const column = split.columnWidthAt(narrowest, split.splitWidthPx);
+
+    for (const panel of split.panels) {
+      expect(column - panel.chromePx, panel.file).toBeGreaterThanOrEqual(SELECT_MIN_PX + panel.actionPx);
+    }
   });
 
   it('makes the preview sticky on the same condition as the split', () => {

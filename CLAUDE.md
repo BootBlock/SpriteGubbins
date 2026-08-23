@@ -521,17 +521,26 @@ way, and that is exactly how the studio's split came to engage at `lg` while the
 there was 434px: every select in the tab 8px short of its own longest option, at the one viewport
 where the second column first appears. So a stock device breakpoint is the wrong instrument for a
 split whose columns hold a select — `--breakpoint-studio` in [src/index.css](src/index.css) derives
-1040px from the budget instead, and every class that decides whether those columns exist is prefixed
+1120px from the budget instead, and every class that decides whether those columns exist is prefixed
 with it, the sticky preview included. Two tests keep the halves honest:
 [select-option-labels.test.ts](tests/select-option-labels.test.ts) fails on an overlong label or a new
 select nobody budgeted, and [studio-column-width.test.ts](tests/studio-column-width.test.ts) re-derives
 the column from the grid, page and panel classes themselves and fails if the split engages before it
 reaches 442px. **A new two-column layout that lands a select in a column needs its own derivation** —
-1040px is this grid's answer, not a general one.
+1120px is this grid's answer, not a general one.
+
+**A control sharing the select's row is part of that derivation, and it is charged to its own
+panel.** The target model's select has a button beside it that opens the chosen generator's page, so
+that control gets its column less 48px — a `gap-2` gutter and a `w-10` button — and the studio's
+breakpoint carries the 5rem that buys. The trap is which panel pays: the widest chrome in the tab is
+the form's `p-5` and the only button is in the target model's `p-4`, so pricing the two together
+describes a panel that exists nowhere and puts the token 8px high, which is a whole character of the
+mono advance. [columnSplit.ts](tests/columnSplit.ts) reads chrome and action per panel, parsing both
+out of the class strings that produce them, and each tab's test asserts panel by panel.
 
 **The quantiser is the second split, and it derives a different number from the same budget.** Its
 control column is beside a sticky preview column for the reason the studio's form is, and
-`--breakpoint-quantise` lands at **1224px** rather than 1040px because the two tabs share out the
+`--breakpoint-quantise` lands at **1224px** rather than 1120px because the two tabs share out the
 width differently: both of the studio's columns hold a select, so an even split has to clear 442px
 twice, while all three of the quantiser's are on the left and the preview column holds none — which
 is what pays for a 5/7 split, and why the tab spends the whole of `main`'s cap instead of holding

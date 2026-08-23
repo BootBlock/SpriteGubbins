@@ -79,13 +79,13 @@ const HINT = 'Open generator';
  *
  * **The width is fixed and it is budgeted.** `SelectField` lays this out on the same row as the
  * `<select>`, which truncates the tail of its selected option rather than wrapping, so what this
- * takes off the control is what a label loses — `tests/selectLabelBudget.ts` reads the figure out of
- * this very class string, and `tests/studio-column-width.test.ts` holds the studio's two-column
- * split to the wider column it needs. Changing it here recomputes both.
+ * takes off the control is what a label loses — `tests/columnSplit.ts` reads the figure out of this
+ * very class string, and `tests/studio-column-width.test.ts` holds the studio's two-column split to
+ * the wider column it needs. Changing it here recomputes both.
  *
  * The height matches the select's own: 10px of padding either side of a 13px line, plus its border.
  * The disabled state names a token rather than reaching for an opacity and puts the hover back where
  * it started, as `HistoryControls` does — a disabled button still matches `:hover`.
  */
 const BUTTON =
-  'flex h-10 w-10 items-center justify-center rounded-xl border border-foundry-600 bg-foundry-700 text-sm font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-foundry-700 disabled:hover:text-ink-faint';
+  'flex h-10 w-10 items-center justify-center rounded-xl border border-foundry-600 bg-foundry-700 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-foundry-600 hover:text-ink active:scale-[0.98] disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-foundry-700 disabled:hover:text-ink-faint';

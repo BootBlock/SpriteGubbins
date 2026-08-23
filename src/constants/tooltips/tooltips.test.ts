@@ -95,6 +95,15 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
     definition.fields.map((field) => [`${category}.${field.key}`, field.tooltip] as const),
   ),
   ...TARGET_MODELS.map((model) => [`TARGET_MODELS.${model.id}`, model.description] as const),
+  // The second thing that list carries, and it reaches the reader the same way the first does: a
+  // target with nowhere to open renders its link button disabled, and this note is what the card
+  // says after the sentence every target shares. Two of the three are about open weights, which is
+  // the pair the “no two controls share a sentence” check is for.
+  ...TARGET_MODELS.flatMap((model) =>
+    model.generatorSite.kind === 'NONE'
+      ? [[`TARGET_MODELS.${model.id}.generatorSite`, model.generatorSite.note] as const]
+      : [],
+  ),
   ...APP_TAB_CHOICES.map((tab) => [`APP_TAB_CHOICES.${tab.id}`, tab.guidance] as const),
   ...ACCENT_HUES.map((hue) => [`accentSwatchGuidance(${hue})`, accentSwatchGuidance(hue)] as const),
   ['presetCollectionGuidance(built-in)', presetCollectionGuidance('Humanoid Character', false)],
