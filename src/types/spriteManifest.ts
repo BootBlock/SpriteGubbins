@@ -1,4 +1,5 @@
 import type { Direction } from './rendering.ts';
+import type { RigMode } from './rigging.ts';
 import type { SubjectCategory } from './subject.ts';
 
 /**
@@ -40,6 +41,23 @@ import type { SubjectCategory } from './subject.ts';
  * the two would be matched against each other.
  */
 
+/**
+ * Where a sprite's pivot came from, so a consumer can tell a convention from a measurement.
+ *
+ * **One member today, and the field exists because of what it will not be tomorrow.** Every pivot
+ * this app writes is the bottom-centre default, which is right for a sprite that stands on the
+ * ground and wrong for one that hangs from a joint — and a rig sheet is fourteen of the latter to
+ * one of the former. A pipeline that reads the number without knowing which it holds rigs a forearm
+ * about the middle of itself.
+ *
+ * Measuring the joint cap the prompt asks for would add a second member here. It cannot be done from
+ * the silhouette alone: a bone segment carries a cap at *both* ends, so geometry says where the two
+ * caps are and not which of them the piece hangs from. That takes the component map the prompt
+ * already asks a model for, which nothing in this app reads yet.
+ */
+export const PIVOT_SOURCES = ['DEFAULT_BOTTOM_CENTRE'] as const;
+export type PivotSource = (typeof PIVOT_SOURCES)[number];
+
 /** One sprite, where it sits in the written file, and what the inventory calls it. */
 export interface ManifestSprite {
   /** Reading order, counting from one — the position section 4 identifies a component by. */
@@ -65,8 +83,15 @@ export interface ManifestSprite {
    * component that hangs from a socket rather than standing on the ground — an arm, a lid, a
    * detachable roof — will want its own, and this is the number to overrule rather than the answer
    * for it.
+   *
+   * **Which of those it is, {@link pivotSource} states.** A pair of numbers reads as a measurement
+   * whatever the documentation beside it says, and on a cut-out rig sheet it is a measurement of the
+   * wrong end for almost every piece — so the file says where the number came from rather than
+   * leaving a consumer to find out by rigging a limb and watching the elbow come apart.
    */
   readonly pivot: { readonly x: number; readonly y: number };
+  /** Where {@link pivot} came from — see {@link PivotSource}. */
+  readonly pivotSource: PivotSource;
   /**
    * The index of the sprite this one duplicates, or `null` where it is its own drawing.
    *
@@ -103,6 +128,17 @@ export interface ManifestSheet {
   readonly assembly: Direction;
   /** How many components the prompt for this sheet contracted for. */
   readonly components: number;
+  /**
+   * Whether the prompt asked for a rig, and which one — the studio's own answer, after resolution.
+   *
+   * **What decides whether a bottom-centre pivot is a starting point or a defect.** On a `NONE` or
+   * `POSE_LIBRARY` sheet the components are placed, so the foot of the box is where most of them
+   * belong. On a `CUTOUT_RIG` sheet they are hung: section 5 of the prompt asked for a cap at each
+   * piece's joint end and named its centre as the pivot, and this file measured a bottom edge
+   * instead. A consumer that reads this as `CUTOUT_RIG` should treat every
+   * {@link ManifestSprite.pivot} as a number to replace.
+   */
+  readonly rigMode: RigMode;
 }
 
 /** The sheet, what came back on it, and where each piece of it is. */

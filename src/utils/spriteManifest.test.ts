@@ -51,6 +51,18 @@ describe('buildManifest', () => {
     expect(manifest.sprites[0]?.pivot).toStrictEqual({ x: 2, y: 4 });
   });
 
+  it('says the pivot is the default rather than a measurement', () => {
+    // The trap this closes: a pair of numbers reads as a measurement, and on a cut-out rig sheet it
+    // is the wrong end of almost every piece. Every sprite states where its number came from.
+    const manifest = buildManifest(input);
+
+    expect(manifest.sprites.map((sprite) => sprite.pivotSource)).toStrictEqual([
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+    ]);
+  });
+
   it('names the sprites from the inventory when the counts agree', () => {
     const manifest = buildManifest({ ...input, names: ['heads-south', 'heads-west', 'heads-north'] });
 
@@ -97,6 +109,26 @@ describe('buildManifest', () => {
     expect(manifest.sprites.every((sprite) => sprite.duplicateOf === null)).toBe(true);
   });
 
+  it('carries the rig the sheet was asked for, which is what makes the default a defect', () => {
+    // A consumer cannot tell a placeable sprite from a hung one by looking at a rect, and the two
+    // want opposite ends of the box. The sheet says which kind of sheet these pivots are on.
+    const manifest = buildManifest({
+      ...input,
+      sheet: {
+        category: 'CHARACTER',
+        plan: 'Rig pieces',
+        ordinal: 1,
+        total: 1,
+        facings: ['south'],
+        assembly: 'south',
+        components: 15,
+        rigMode: 'CUTOUT_RIG',
+      },
+    });
+
+    expect(manifest.sheet?.rigMode).toBe('CUTOUT_RIG');
+  });
+
   it('carries the studio’s own account of which sheet this is', () => {
     const manifest = buildManifest({
       ...input,
@@ -108,6 +140,7 @@ describe('buildManifest', () => {
         facings: ['south', 'west', 'north', 'east'],
         assembly: 'south',
         components: 12,
+        rigMode: 'CUTOUT_RIG',
       },
     });
 

@@ -57,6 +57,26 @@ describe('sheetIdentity', () => {
     expect(names.slice(0, 1)).toStrictEqual(['heads-south-west']);
   });
 
+  it('records the rig the sheet itself demands, not the field beside it', () => {
+    // A rig-pieces sheet fixes its own rig, and it is the sheet whose bottom-centre pivots are all
+    // the wrong end — so the manifest has to say `CUTOUT_RIG` here however `rigMode` was stored.
+    const { sheet } = sheetIdentity(
+      'CHARACTER',
+      config({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', rigMode: 'POSE_LIBRARY' }),
+      '',
+    );
+
+    expect(sheet?.rigMode).toBe('CUTOUT_RIG');
+  });
+
+  it('degrades a rig the category cannot honour, as every other digest does', () => {
+    // A stored pairing from an older build, a preset or a hand-edited export: TERRAIN articulates
+    // about nothing, so a manifest claiming a rig for it would be a claim the prompt never made.
+    const { sheet } = sheetIdentity('TERRAIN', config({ rigMode: 'CUTOUT_RIG' }), '');
+
+    expect(sheet?.rigMode).toBe('NONE');
+  });
+
   it('counts the subject’s own anatomy, which the sheet contracts for too', () => {
     const { names, sheet } = sheetIdentity(
       'CREATURE',

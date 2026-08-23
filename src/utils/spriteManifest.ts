@@ -40,7 +40,7 @@ export interface ManifestInput {
 }
 
 /** This manifest shape's version — see {@link SpriteManifest.version}, which is not a compatibility surface. */
-export const MANIFEST_VERSION = 1;
+export const MANIFEST_VERSION = 2;
 
 /** A box as its own key, so a duplicate group's member can be found in the segmentation's list. */
 function boxKey(box: SpriteBox): string {
@@ -93,6 +93,10 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
     // and not another. Floored rather than fractional: a pivot between two pixels is a half-pixel
     // offset a renderer resolves differently from an importer.
     pivot: { x: Math.floor(box.left + box.width / 2), y: box.top + box.height },
+    // Stated beside the number rather than left to the documentation, because the number is the
+    // whole of what a pipeline reads. Every pivot this app writes is the default; see `PivotSource`,
+    // which says what a measured one would take that this app does not have.
+    pivotSource: 'DEFAULT_BOTTOM_CENTRE',
     duplicateOf: links.get(index) ?? null,
   }));
 

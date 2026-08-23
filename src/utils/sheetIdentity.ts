@@ -1,4 +1,4 @@
-import { resolveMode } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SubjectCategory } from '../types/subject.ts';
@@ -55,6 +55,10 @@ export function sheetIdentity(
   // exactly those fields — and reading one of each would make that agreement an assumption rather
   // than a construction, on the very pair whose lengths a manifest's names depend on matching.
   const mode = resolveMode(category, current.output.directionalMode);
+  // Resolved rather than read raw, as every other field the digests state is: a stored `CUTOUT_RIG`
+  // on a category that articulates about nothing is not what the prompt for this sheet carries, and
+  // the manifest must record the sheet that was asked for rather than the field that was stored.
+  const rigMode = resolveRigMode(category, current.output.directionalMode, current.output.rigMode);
 
   return {
     names: componentSlots(category, mode, current.output.directions, current.output.sheetIndex, anatomy),
@@ -66,6 +70,7 @@ export function sheetIdentity(
       facings: current.covered,
       assembly: current.assembly,
       components: sheetComponentCount(category, current, anatomy),
+      rigMode,
     },
   };
 }
