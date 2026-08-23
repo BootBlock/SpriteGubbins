@@ -34,8 +34,9 @@ import type { SubjectCategory } from './subject.ts';
  * **They join on {@link ManifestSprite.index}, and on nothing else.** Both number their entries from
  * one in the reading order section 4 of the prompt fixes, so the *n*th entry of a component map and
  * the *n*th sprite here describe one component. That is what lets a rigging pipeline put the model's
- * `parent` and cell-fraction pivot beside the rect and the pixel pivot measured here, with no
- * matching step in between. **Not on the name**, which is the pairing that looks equivalent and is
+ * `parent` and cell-fraction pivot beside the rect measured here, with no matching step in between —
+ * and the map's pivot is the one to take, because the pivot in this file is the convention
+ * {@link ManifestSprite.pivotSource} names rather than a measurement. **Not on the name**, which is the pairing that looks equivalent and is
  * not: the map always takes its names from the inventory, while this file only does where
  * {@link SpriteManifest.named} is true, and a sheet that came back a component short is exactly when
  * the two would be matched against each other.
@@ -46,17 +47,19 @@ import type { SubjectCategory } from './subject.ts';
  *
  * **One member today, and the field exists because of what it will not be tomorrow.** Every pivot
  * this app writes is the bottom-centre default, which is right for a sprite that stands on the
- * ground and wrong for one that hangs from a joint — and a rig sheet is fourteen of the latter to
- * one of the former. A pipeline that reads the number without knowing which it holds rigs a forearm
- * about the middle of itself.
+ * ground and wrong for one that registers at a joint — and on an articulated sheet the second is
+ * almost every piece: of the fifteen a character's rig sheet draws, only the two feet stand on
+ * anything. A pipeline that reads the number without knowing which it holds rigs a forearm about the
+ * middle of itself.
  *
- * Measuring the joint cap the prompt asks for would add a second member here. It cannot be done from
- * the silhouette alone: a bone segment carries a cap at *both* ends, so geometry says where the two
- * caps are and not which of them the piece hangs from. That takes the component map the prompt
- * already asks a model for, which nothing in this app reads yet.
+ * Measuring the joint cap the prompt asks for would add a second member here, and the silhouette
+ * cannot supply it on its own. A mid-chain segment meets a piece at each end — a lower arm joins the
+ * upper arm above it and the hand below it — and section 5 asks for the caps at a shared joint to
+ * match, so the two ends of such a piece are alike and geometry cannot say which of them it hangs
+ * from. That takes the bone parent the component map states, which the prompt already asks a model
+ * for and nothing in this app reads yet.
  */
-export const PIVOT_SOURCES = ['DEFAULT_BOTTOM_CENTRE'] as const;
-export type PivotSource = (typeof PIVOT_SOURCES)[number];
+export type PivotSource = 'DEFAULT_BOTTOM_CENTRE';
 
 /** One sprite, where it sits in the written file, and what the inventory calls it. */
 export interface ManifestSprite {
@@ -131,12 +134,13 @@ export interface ManifestSheet {
   /**
    * Whether the prompt asked for a rig, and which one — the studio's own answer, after resolution.
    *
-   * **What decides whether a bottom-centre pivot is a starting point or a defect.** On a `NONE` or
-   * `POSE_LIBRARY` sheet the components are placed, so the foot of the box is where most of them
-   * belong. On a `CUTOUT_RIG` sheet they are hung: section 5 of the prompt asked for a cap at each
-   * piece's joint end and named its centre as the pivot, and this file measured a bottom edge
-   * instead. A consumer that reads this as `CUTOUT_RIG` should treat every
-   * {@link ManifestSprite.pivot} as a number to replace.
+   * **What decides whether a bottom-centre pivot is a starting point or a defect.** On a `NONE`
+   * sheet the components are placed, so the foot of the box is where most of them belong. Both of
+   * the others register their pieces at joints instead — a `CUTOUT_RIG` sheet carries section 5's
+   * cap at each piece's joint end, with its centre named as the pivot, and a `POSE_LIBRARY` sheet is
+   * assembled by hand about the same shared pivots — and this file states the foot of the box
+   * regardless. A consumer reading either of those should treat every {@link ManifestSprite.pivot}
+   * as a number to replace.
    */
   readonly rigMode: RigMode;
 }
