@@ -140,11 +140,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **Raised once more, from 2254, by the Quantise tab's sheet-identity panel.** It adds a panel, a
  * hook, a shared step-button component and two guidance paragraphs, and it moves the step buttons
  * out of the studio so both tabs reach them. Measured against the build immediately before it, the
- * precache goes from 2250.62 to **2252.92 KiB**, a delta of 2.30. Three of the shapes above changed
- * name in the same build and no file was added or removed by it: sharing `SheetStepButtons` and
- * `sheetCoverage` between the studio and the quantiser re-cut two of the split's shared chunks, so
- * `TextField-*` and `componentGridScale-*` gave their names up to them. That is exactly the
- * `+`/`-` pair the note on `PRECACHE_SHAPES` warns reads like a stray file and is not one.
+ * precache goes from 2250.62 to **2253.00 KiB**, a delta of 2.38. Four of the shape lines above moved
+ * in the same build for **two** renames, and no file was added to or removed from the precache by it:
+ * sharing `SheetStepButtons` and `sheetCoverage` between the studio and the quantiser re-cut two of
+ * the split's shared chunks, so `TextField-*` and `componentGridScale-*` gave their names up to them.
+ * Those are two of exactly the `+`/`-` pairs the note on `PRECACHE_SHAPES` warns read like a stray
+ * file and are not one.
  */
 export const PRECACHE_CEILING_KIB = 2256;
 
