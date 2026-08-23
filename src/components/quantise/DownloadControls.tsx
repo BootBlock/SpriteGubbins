@@ -1,11 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { MAX_IMAGE_PIXELS, PREVIEW_ZOOMS, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { SHEET_FORMAT_FILES } from '../../constants/sheetFormats.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useImageDownload } from '../../hooks/useImageDownload.ts';
-import { useOutputStore } from '../../stores/useOutputStore.ts';
-import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { sheetIdentity } from '../../utils/sheetIdentity.ts';
+import { useSheetIdentity } from '../../hooks/useSheetIdentity.ts';
 import type { TargetSize } from '../../types/output.ts';
 import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
@@ -77,16 +75,10 @@ export function DownloadControls({
   target,
 }: DownloadControlsProps) {
   const download = useImageDownload();
-  const category = useSubjectStore((state) => state.category);
-  const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
-  const output = useOutputStore((state) => state.output);
-  // The studio's own answer about what this sheet is, read here rather than drilled down from the
-  // tab through two panels that have nothing to do with it. The derivation itself is pure and lives
-  // in `utils/sheetIdentity.ts`; what needs React is only the two store reads above.
-  const identity = useMemo(
-    () => sheetIdentity(category, output, additionalAnatomy),
-    [category, output, additionalAnatomy],
-  );
+  // The studio's own answer about what this sheet is — the same reading `SheetIdentityControls` puts
+  // on screen, through the one hook, so what the panel promises and what the file records cannot be
+  // two answers. See `useSheetIdentity`, which says why it is shared rather than derived twice.
+  const identity = useSheetIdentity();
   const button = useRef<HTMLButtonElement>(null);
   // Whether the button held the keyboard's focus at the moment it was pressed — see the effect.
   const heldFocus = useRef(false);
@@ -200,6 +192,7 @@ export function DownloadControls({
               cell: cuts ? resolveSpriteCell(cellChoice, target) : null,
               duplicates,
               names: identity.names,
+              facing: identity.facing,
               sheet: identity.sheet,
             });
           }}

@@ -4,7 +4,7 @@ import { imageFrom } from '../test/images.ts';
 import { readZip } from '../test/readZip.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
-import { PACK_MANIFEST_FILE, PACK_SHEET_FILE } from './encodeSpritePack.ts';
+import { PACK_MANIFEST_FILE, PACK_SHEET_FILE, PACK_SPRITE_DIRECTORY } from './encodeSpritePack.ts';
 import { writeSheet } from './writeSheet.ts';
 import type { SheetWriteJob } from './writeSheet.ts';
 
@@ -51,6 +51,7 @@ function job(overrides: Partial<SheetWriteJob> = {}): SheetWriteJob {
     names: ['heads-south', 'heads-west'],
     imageName: 'armour-quantised.png',
     sheet: null,
+    facing: null,
     ...overrides,
   };
 }
@@ -102,8 +103,48 @@ describe('writeSheet', () => {
       const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
 
       // The archive is self-contained, so the rects are into the sheet beside them rather than into
-      // a file the reader would have had to download separately.
-      expect(manifest).toMatchObject({ image: PACK_SHEET_FILE, named: true });
+      // a file the reader would have had to download separately — and it says where the pieces sit,
+      // which stopped being a constant the moment a facing could name that directory.
+      expect(manifest).toMatchObject({
+        image: PACK_SHEET_FILE,
+        spriteDirectory: PACK_SPRITE_DIRECTORY,
+        named: true,
+      });
+    });
+
+    it('lays the sprites out under the facing that names the sheet', async () => {
+      // The whole point of the change: eight rig runs expand into the per-facing tree an engine
+      // importer scans, rather than into eight `sprites/` that overwrite one another. The sheet and
+      // the manifest keep their fixed names, since one archive holds one of each.
+      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'south-west' }));
+
+      expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
+        PACK_SHEET_FILE,
+        'south-west/01-heads-south.png',
+        'south-west/02-heads-west.png',
+        PACK_MANIFEST_FILE,
+      ]);
+    });
+
+    it('states that directory in its manifest, which is the archive’s only index', async () => {
+      // Whether a facing distinguishes a sheet is a reading of the whole batch, so nothing inside the
+      // archive can re-derive it. A script that unzips a pack and reads `manifest.json` to find the
+      // pieces would otherwise have two candidate paths and no way to choose between them.
+      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'south-west' }));
+      const entry = readZip(written.bytes).find((file) => file.name === PACK_MANIFEST_FILE);
+      const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
+
+      expect(manifest).toMatchObject({ spriteDirectory: 'south-west' });
+    });
+
+    it('keeps the fixed directory where no facing names the sheet', async () => {
+      // A tileset, and a run drawn at the one direction its set offers: a per-facing tree there
+      // would always hold exactly one directory, so the layout follows what the sheet actually is.
+      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: null }));
+
+      expect(readZip(written.bytes).map((entry) => entry.name)).toContain(
+        `${PACK_SPRITE_DIRECTORY}/01-heads-south.png`,
+      );
     });
 
     it('cuts every sprite into the cell where one was asked for, whatever its own box measured', async () => {
@@ -183,7 +224,14 @@ describe('writeSheet', () => {
       const written = await writeSheet(job({ format: 'MANIFEST' }));
       const manifest: unknown = JSON.parse(new TextDecoder().decode(written.bytes));
 
-      expect(manifest).toMatchObject({ image: 'armour-quantised.png', width: 8, height: 4 });
+      // And points at no sprite directory: a manifest taken on its own describes a PNG the reader
+      // downloads separately, so there are no sprite files for one to hold.
+      expect(manifest).toMatchObject({
+        image: 'armour-quantised.png',
+        spriteDirectory: null,
+        width: 8,
+        height: 4,
+      });
     });
 
     it('describes the file at the magnification that was asked for', async () => {

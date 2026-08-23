@@ -46,18 +46,18 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SelectField-*.js',
   'assets/SettingsContents-*.js',
   'assets/SheetSplitContents-*.js',
+  'assets/SheetStepButtons-*.js',
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
-  'assets/TextField-*.js',
   'assets/Tooltip-*.js',
   'assets/componentBudget-*.js',
-  'assets/componentGridScale-*.js',
   'assets/database-*.js',
   'assets/firstOfEachId-*.js',
   'assets/models-*.js',
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',
   'assets/sheetCanvas-*.js',
+  'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
   'assets/targetSize-*.js',
   'assets/useClipboard-*.js',
@@ -137,17 +137,35 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * KiB**, a delta of 3.19 — and it lands in the same constants-pulling chunks the paragraph above
  * names rather than in the entry chunk. The margin is left at the same order as every raise above.
  *
- * **Raised once more, from 2254, by the sprite pack’s fixed cell.** The pack could only cut to each
- * sprite’s own bounding box, which no rig importer accepts, so the download now offers a stated cell
- * with the artwork registered at a stated anchor. The code is four small modules; what it costs is
- * prose — five guidance paragraphs for the new controls, two rewritten download cards, and the
- * labels each pill and box carries. Measured against the build immediately before it — 2250.62 KiB,
- * rebuilt from that commit with the same `node_modules` — the precache reaches **2258.80 KiB**, a
- * delta of 8.18. It adds no entry to `PRECACHE_SHAPES`: the modules land in the same
+ * **Raised once more, from 2254, by the Quantise tab's sheet-identity panel.** It adds a panel, a
+ * hook, a shared step-button component and two guidance paragraphs, and it moves the step buttons
+ * out of the studio so both tabs reach them. Measured against the build immediately before it, the
+ * precache goes from 2250.62 to **2253.00 KiB**, a delta of 2.38. Four of the shape lines above moved
+ * in the same build for **two** renames, and no file was added to or removed from the precache by it:
+ * sharing `SheetStepButtons` and `sheetCoverage` between the studio and the quantiser re-cut two of
+ * the split's shared chunks, so `TextField-*` and `componentGridScale-*` gave their names up to them.
+ * Those are two of exactly the `+`/`-` pairs the note on `PRECACHE_SHAPES` warns read like a stray
+ * file and are not one.
+ *
+ * **Raised once more, from 2256 to 2264, by the per-component names the sheet plans now carry.** Every
+ * inventory line whose components are told apart by what they are rather than by where they sit
+ * gained a `parts` list naming each of them, so a sprite pack cut from a character rig writes
+ * `04-left-upper-arm.png` where it wrote `04-left-arm-1.png` — 328 names on 98 entries, across the
+ * eleven plan files that have any. Measured against the build immediately before it, the precache
+ * goes from 2253.00 to **2260.98 KiB**, a delta of 7.98. It is constant data the entry chunk
+ * reaches, which is why it is paid for on a first visit and named here rather than being an
+ * invisible edit. The margin is left at the same order as every raise above. *
+ * **Raised once more, from 2264, by the sprite pack’s fixed cell.** The pack could only cut to each
+ * sprite’s own bounding box, which a rig importer cannot take, so the download now offers a stated
+ * cell with the artwork registered at a stated anchor. The code is four small modules; what it costs
+ * is prose — five guidance paragraphs for the new controls, two rewritten download cards, and the
+ * labels each pill and box carries. Measured against the build immediately before it — 2263.33 KiB,
+ * rebuilt from that commit with the same `node_modules` — the precache reaches **2271.75 KiB**, a
+ * delta of 8.42. It adds no entry to `PRECACHE_SHAPES`: the modules land in the same
  * constants-pulling chunks every raise above names. The margin is left at the same order rather than
  * widened.
  */
-export const PRECACHE_CEILING_KIB = 2262;
+export const PRECACHE_CEILING_KIB = 2276;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

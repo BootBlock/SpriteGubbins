@@ -34,6 +34,8 @@ import { cellOffsets, cellPivot } from './spriteCell.ts';
 export interface ManifestInput {
   /** The image the rects are into, as the pack names it beside this manifest. */
   readonly image: string;
+  /** Where the pack puts the cut-out sprites, or `null` for a manifest written on its own. */
+  readonly spriteDirectory: string | null;
   /** The written file's size, so a consumer needs nothing but this manifest to place a rect. */
   readonly width: number;
   readonly height: number;
@@ -59,7 +61,7 @@ export interface ManifestInput {
 }
 
 /** This manifest shape's version — see {@link SpriteManifest.version}, which is not a compatibility surface. */
-export const MANIFEST_VERSION = 1;
+export const MANIFEST_VERSION = 2;
 
 /** A box as its own key, so a duplicate group's member can be found in the segmentation's list. */
 function boxKey(box: SpriteBox): string {
@@ -121,6 +123,10 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
     // than fractional, inside `cellPivot`: a pivot between two pixels is a half-pixel offset a
     // renderer resolves differently from an importer.
     pivot: cellPivot(box, anchor),
+    // Stated beside the number rather than left to the documentation, because the number is the
+    // whole of what a pipeline reads — and the two cuts genuinely differ here, which is the reason
+    // this field is not a constant. See `PivotSource`.
+    pivotSource: cell === null ? 'DEFAULT_BOTTOM_CENTRE' : 'CELL_ANCHOR',
     cellOffset: scaleOffset(offsets?.[index], input.scale),
     duplicateOf: links.get(index) ?? null,
   }));
@@ -128,6 +134,7 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
   return {
     version: MANIFEST_VERSION,
     image: input.image,
+    spriteDirectory: input.spriteDirectory,
     width: input.width,
     height: input.height,
     scale: input.scale,

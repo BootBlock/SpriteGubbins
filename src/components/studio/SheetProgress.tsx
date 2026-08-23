@@ -1,25 +1,11 @@
 import { useMemo } from 'react';
-import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useCopiedSheets } from '../../hooks/useCopiedSheets.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { sheetBatch } from '../../utils/sheetBatch.ts';
 import { sheetCoverage } from '../../utils/sheetCoverage.ts';
 import { Badge } from '../common/Badge.tsx';
-import { ControlTooltip } from '../common/ControlTooltip.tsx';
-
-/**
- * The two step buttons, so the pair stays matched — they sit side by side, and a difference between
- * them reads as a mistake rather than as emphasis. The disabled case is the batch's two ends, which
- * are reached often enough that it is a state rather than an edge.
- *
- * Its disabled treatment is the app's, not a second one: `text-ink-faint` with the hover suppressed,
- * as `HistoryFooter` and `PresetTransferControls` both spell it. An `opacity-50` layered on top of
- * that ink would composite to roughly 2.4:1 against `foundry-950` — a third of the contrast every
- * other disabled control in the app is rendered at, and on the state a user *starts* every batch in.
- */
-const STEP_BUTTON =
-  'rounded-lg border border-foundry-600 bg-foundry-950 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:border-tab/50 hover:bg-foundry-700 hover:text-ink disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:border-foundry-600 disabled:hover:bg-foundry-950';
+import { SheetStepButtons } from '../common/SheetStepButtons.tsx';
 
 /**
  * Where in the batch the prompt below is, whether it has been taken away, and the way on to the next
@@ -34,12 +20,9 @@ const STEP_BUTTON =
  * to the next but to know that the sheet and the facing are two nested controls in the panel opposite
  * and to step them by hand in the right order.
  *
- * **Stepping is a whole configuration, not a field.** Every entry of the batch carries `output` — the
- * studio's own configuration with its facing and its place in the series varied — so moving to the
- * next sheet is writing that entry back, and the studio cannot land on a combination the batch does
- * not contain. Setting the two fields separately is what this replaces: it puts a sheet index and a
- * stale facing into the compiler between renders, and on the eight-compass pairing, where the series
- * has a sheet the other sets do not, it can name a sheet that is not there at all.
+ * **The two step buttons are `SheetStepButtons`**, shared with the Quantise tab's identity panel: a
+ * batch is begun here and worked through there, and the rule that a step writes a whole configuration
+ * rather than two fields belongs in one place. See that component, which states it.
  *
  * **Which sheets are done is read from the history**, through {@link useCopiedSheets}, for the reason
  * that hook states — the workflow expects the user to leave mid-batch and come back, and the split
@@ -52,7 +35,6 @@ const STEP_BUTTON =
 export function SheetProgress() {
   const category = useSubjectStore((state) => state.category);
   const output = useOutputStore((state) => state.output);
-  const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const isCopied = useCopiedSheets();
 
   const { sheets, ordinal } = useMemo(() => sheetBatch(category, output), [category, output]);
@@ -63,8 +45,6 @@ export function SheetProgress() {
   // degrades to the first sheet — but it is an index, so it is checked rather than asserted.
   if (sheets.length < 2 || current === undefined) return null;
 
-  const previous = sheets[ordinal - 2];
-  const next = sheets[ordinal];
   const copiedCount = sheets.filter((sheet) => isCopied(sheet.output)).length;
 
   return (
@@ -89,7 +69,7 @@ export function SheetProgress() {
           </Badge>
 
           <span className="font-mono text-xs font-bold text-ink">
-            {current.plan.name} · {sheetCoverage(current)}
+            {current.plan.name} · {sheetCoverage(current.covered, current.assembly)}
           </span>
 
           {isCopied(current.output) ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
@@ -98,34 +78,7 @@ export function SheetProgress() {
         {/* `ml-auto` on the wrapper, which is the flex item — the buttons are inside it and would
             measure it against their own box. */}
         <span className="ml-auto flex items-center gap-2">
-          <ControlTooltip hint="Previous sheet" text={STUDIO_ACTION_TOOLTIPS.previousSheet}>
-            <button
-              type="button"
-              disabled={previous === undefined}
-              onClick={() => {
-                if (previous !== undefined) setOutputConfig(previous.output);
-              }}
-              className={STEP_BUTTON}
-            >
-              {/* Decorative, so hidden — the word beside it carries the whole meaning, and an
-                  unhidden glyph is read out as "left arrow" in the middle of the label. Every other
-                  glyph-bearing button in the app hides its icon the same way. */}
-              <span aria-hidden="true">←</span> Previous
-            </button>
-          </ControlTooltip>
-
-          <ControlTooltip hint="Next sheet" text={STUDIO_ACTION_TOOLTIPS.nextSheet}>
-            <button
-              type="button"
-              disabled={next === undefined}
-              onClick={() => {
-                if (next !== undefined) setOutputConfig(next.output);
-              }}
-              className={STEP_BUTTON}
-            >
-              Next sheet <span aria-hidden="true">→</span>
-            </button>
-          </ControlTooltip>
+          <SheetStepButtons />
         </span>
       </div>
 

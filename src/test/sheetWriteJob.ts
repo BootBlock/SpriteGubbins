@@ -25,6 +25,7 @@ export function sheetWriteJob(overrides: Partial<SheetWriteJob> = {}): SheetWrit
     names: [],
     imageName: 'sheet-quantised.png',
     sheet: null,
+    facing: null,
     ...overrides,
   };
 }

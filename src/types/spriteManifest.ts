@@ -1,4 +1,5 @@
 import type { Direction } from './rendering.ts';
+import type { RigMode } from './rigging.ts';
 import type { SpriteAnchor } from './spriteCell.ts';
 import type { SubjectCategory } from './subject.ts';
 
@@ -34,12 +35,36 @@ import type { SubjectCategory } from './subject.ts';
  * **They join on {@link ManifestSprite.index}, and on nothing else.** Both number their entries from
  * one in the reading order section 4 of the prompt fixes, so the *n*th entry of a component map and
  * the *n*th sprite here describe one component. That is what lets a rigging pipeline put the model's
- * `parent` and cell-fraction pivot beside the rect and the pixel pivot measured here, with no
- * matching step in between. **Not on the name**, which is the pairing that looks equivalent and is
+ * `parent` and cell-fraction pivot beside the rect measured here, with no matching step in between —
+ * and the map's pivot is the one to take, because the pivot in this file is the convention
+ * {@link ManifestSprite.pivotSource} names rather than a measurement. **Not on the name**, which is the pairing that looks equivalent and is
  * not: the map always takes its names from the inventory, while this file only does where
  * {@link SpriteManifest.named} is true, and a sheet that came back a component short is exactly when
  * the two would be matched against each other.
  */
+
+/**
+ * Where a sprite's pivot came from, so a consumer can tell a convention from a statement.
+ *
+ * **`DEFAULT_BOTTOM_CENTRE` is what this app writes when nobody said otherwise**, and it is right
+ * for a sprite that stands on the ground and wrong for one that registers at a joint — on an
+ * articulated sheet the second is almost every piece: of the fifteen a character's rig sheet draws,
+ * only the two feet stand on anything. A pipeline that reads the number without knowing which it
+ * holds rigs a forearm about the middle of itself.
+ *
+ * **`CELL_ANCHOR` is the reader answering that**, and it is a statement rather than a default: the
+ * cut-into-a-cell controls ask which edge or corner each piece is registered against, and the pivot
+ * is that point. See `SpriteCell`. It is still not a *measurement* — nobody looked at the artwork to
+ * find the joint — which is why it joins the default here rather than replacing it.
+ *
+ * Measuring the joint cap the prompt asks for would add a third member, and the silhouette cannot
+ * supply it on its own. A mid-chain segment meets a piece at each end — a lower arm joins the upper
+ * arm above it and the hand below it — and section 5 asks for the caps at a shared joint to match,
+ * so the two ends of such a piece are alike and geometry cannot say which of them it hangs from.
+ * That takes the bone parent the component map states, which the prompt already asks a model for and
+ * nothing in this app reads yet.
+ */
+export type PivotSource = 'DEFAULT_BOTTOM_CENTRE' | 'CELL_ANCHOR';
 
 /** One sprite, where it sits in the written file, and what the inventory calls it. */
 export interface ManifestSprite {
@@ -75,13 +100,21 @@ export interface ManifestSprite {
    * detachable roof — will want its own, and this is the number to overrule rather than the answer
    * for it.
    *
+   * **Which of those it is, {@link pivotSource} states.** A pair of numbers reads as a measurement
+   * whatever the documentation beside it says, and on a cut-out rig sheet it is a measurement of the
+   * wrong end for almost every piece — so the file says where the number came from rather than
+   * leaving a consumer to find out by rigging a limb and watching the elbow come apart.
+   *
    * **Where a cell was asked for, this is the anchor the artwork was registered against** rather
    * than a default at all: the reader named that point because it is where the piece joins whatever
-   * carries it, so the pivot is that same point and not a second convention beside it. The default
-   * anchor is bottom-centre, which reproduces the paragraph above exactly. It is a point on the
-   * *box* either way, in the sheet's coordinates — {@link cellOffset} is what moves it into a cell.
+   * carries it, so the pivot is that same point and not a second convention beside it, and
+   * {@link pivotSource} says so. The default anchor is bottom-centre, which reproduces the paragraph
+   * above exactly. It is a point on the *box* either way, in the sheet's own coordinates —
+   * {@link cellOffset} is what moves it into a cell.
    */
   readonly pivot: { readonly x: number; readonly y: number };
+  /** Where {@link pivot} came from — see {@link PivotSource}. */
+  readonly pivotSource: PivotSource;
   /**
    * Where this sprite's box sits inside its cell, or `null` where each sprite keeps its own box.
    *
@@ -127,6 +160,18 @@ export interface ManifestSheet {
   readonly assembly: Direction;
   /** How many components the prompt for this sheet contracted for. */
   readonly components: number;
+  /**
+   * Whether the prompt asked for a rig, and which one — the studio's own answer, after resolution.
+   *
+   * **What decides whether a bottom-centre pivot is a starting point or a defect.** On a `NONE`
+   * sheet the components are placed, so the foot of the box is where most of them belong. Both of
+   * the others register their pieces at joints instead — a `CUTOUT_RIG` sheet carries section 5's
+   * cap at each piece's joint end, with its centre named as the pivot, and a `POSE_LIBRARY` sheet is
+   * assembled by hand about the same shared pivots — and this file states the foot of the box
+   * regardless. A consumer reading either of those should treat every {@link ManifestSprite.pivot}
+   * as a number to replace.
+   */
+  readonly rigMode: RigMode;
 }
 
 /** The sheet, what came back on it, and where each piece of it is. */
@@ -141,6 +186,20 @@ export interface SpriteManifest {
   readonly version: number;
   /** The file the sprites are cut from, as the pack writes it beside this manifest. */
   readonly image: string;
+  /**
+   * The directory inside the pack the cut-out sprites sit in, or `null` in a manifest written alone.
+   *
+   * **Stated because it stopped being a constant.** It was always `sprites`, so a consumer could
+   * hard-code the path; it is now the sheet's own facing wherever a facing distinguishes the sheet
+   * from the rest of its batch, which is what makes eight rig runs unzip into a tree keyed by facing.
+   * Whether a facing was a distinguishing one is a reading of the whole batch and is deliberately not
+   * derivable from {@link ManifestSheet.facings}, so a manifest that named neither would leave the
+   * one machine-readable index in the archive unable to find the files beside it.
+   *
+   * `null` where this manifest was downloaded on its own: it describes a PNG the reader takes
+   * separately, and there are no sprite files for a directory to hold.
+   */
+  readonly spriteDirectory: string | null;
   readonly width: number;
   readonly height: number;
   /** How far the written file magnifies the quantised sheet — `1` for the sheet at its own size. */

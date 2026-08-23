@@ -35,24 +35,32 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
         { label: 'base', text: 'Base, mount or footing ×1', count: 1, kind: 'structure' },
         {
           label: 'access-panel',
+          parts: ['access-panel-closed', 'access-panel-part-open', 'access-panel-fully-open'],
           text: 'Access panel, lid or hatch: closed, part-open, fully open',
           count: 3,
           kind: 'mechanism',
         },
         {
           label: 'primary-moving-subassembly',
+          parts: [
+            'primary-moving-subassembly-rest',
+            'primary-moving-subassembly-mid-travel',
+            'primary-moving-subassembly-full-travel',
+          ],
           text: 'Primary moving subassembly: rest, mid-travel, full-travel',
           count: 3,
           kind: 'mechanism',
         },
         {
           label: 'interface-or-control-face',
+          parts: ['control-face-inactive', 'control-face-active'],
           text: 'Interface or control face: inactive, active',
           count: 2,
           kind: 'mechanism',
         },
         {
           label: 'fittings',
+          parts: ['handle', 'latch', 'mounting-bracket-1', 'mounting-bracket-2'],
           text: 'Fittings: handle ×1, latch or catch ×1, mounting bracket ×2',
           count: 4,
           kind: 'structure',
@@ -136,11 +144,18 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
         },
         {
           label: 'primary-moving-subassembly',
+          parts: ['primary-moving-subassembly-root', 'primary-moving-subassembly-travelling'],
           text: 'Primary moving subassembly: root segment, travelling segment',
           count: 2,
           kind: 'mechanism',
         },
-        { label: 'fittings', text: 'Fittings: handle ×1, latch or catch ×1', count: 2, kind: 'structure' },
+        {
+          label: 'fittings',
+          parts: ['handle', 'latch'],
+          text: 'Fittings: handle ×1, latch or catch ×1',
+          count: 2,
+          kind: 'structure',
+        },
       ],
       outro: `Each moving piece carries its pivot at the joint it turns about, matched in diameter to the piece
 it turns against, exactly as any other articulated segment on a rigged sheet would.`,

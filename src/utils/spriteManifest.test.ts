@@ -15,6 +15,7 @@ const BOXES = [box(0, 0), box(10, 0), box(0, 10)];
 
 const input = {
   image: 'armour-quantised.png',
+  spriteDirectory: null,
   width: 40,
   height: 40,
   scale: 1,
@@ -50,6 +51,18 @@ describe('buildManifest', () => {
     const manifest = buildManifest(input);
 
     expect(manifest.sprites[0]?.pivot).toStrictEqual({ x: 2, y: 4 });
+  });
+
+  it('says the pivot is the default rather than a measurement', () => {
+    // The trap this closes: a pair of numbers reads as a measurement, and on a cut-out rig sheet it
+    // is the wrong end of almost every piece. Every sprite states where its number came from.
+    const manifest = buildManifest(input);
+
+    expect(manifest.sprites.map((sprite) => sprite.pivotSource)).toStrictEqual([
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+    ]);
   });
 
   it('names the sprites from the inventory when the counts agree', () => {
@@ -109,6 +122,7 @@ describe('buildManifest', () => {
         facings: ['south', 'west', 'north', 'east'],
         assembly: 'south',
         components: 12,
+        rigMode: 'CUTOUT_RIG',
       },
     });
 
@@ -170,6 +184,21 @@ describe('buildManifest, cut into a cell', () => {
     // Centred at 1:1 the 5-wide artwork leaves an odd pixel, floored to an offset of 1; at 4× that
     // is 4. Flooring after scaling would have centred 20 in 32 and landed on 6.
     expect(magnified.sprites[0]?.cellOffset).toMatchObject({ x: 4 });
+  });
+
+  it('says the pivot came from the anchor rather than from the default', () => {
+    // The field would otherwise assert `DEFAULT_BOTTOM_CENTRE` on a pivot the reader had moved,
+    // which is the one claim it exists to make honestly.
+    const manifest = buildManifest({
+      ...input,
+      cell: { ...cell, anchor: { x: 'LEFT', y: 'TOP' } },
+    });
+
+    expect(manifest.sprites.map((sprite) => sprite.pivotSource)).toStrictEqual([
+      'CELL_ANCHOR',
+      'CELL_ANCHOR',
+      'CELL_ANCHOR',
+    ]);
   });
 
   it('still links a duplicate to its canonical', () => {
