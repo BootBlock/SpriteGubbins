@@ -17,11 +17,18 @@ interface SelectFieldProps<T extends string | number> {
    * description.
    *
    * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen: this is
-   * for the one select whose options differ from each other in a way no single sentence can cover.
-   * Optional because every other select in the app has nothing of the kind to say, and twenty-nine
-   * call sites passing a permanently-empty string would bury the one that does — while empty *is* still
-   * accepted from the one that passes it, as `CheckboxField`'s reason is, so a caller resolving the
-   * text can hand over what it found rather than choosing between a prop and no prop.
+   * for the five selects whose options differ from each other in a way no single sentence can cover
+   * — the palette, the render style, the art style reference, the system profile and the target
+   * generator. Each of those has a table behind it holding a different account of what some of its
+   * options mean, and this is where the row for the chosen one is read out.
+   *
+   * Optional because the other twenty-five have no such table, and twenty-five call sites passing a
+   * permanently-empty string would bury the five that do — while empty *is* still accepted from
+   * those five, as `CheckboxField`'s reason is, so a caller resolving the text out of its table can
+   * hand over what it found rather than choosing between a prop and no prop. Four of the five need
+   * that in earnest — their tables are keyed on something the select can hold and the table has no
+   * row for — and the target generator's is a guard over a miss its own call site records as
+   * unreachable.
    */
   readonly description?: string;
   /**
@@ -29,7 +36,7 @@ interface SelectFieldProps<T extends string | number> {
    * `NumberField` and `CheckboxField` both show theirs.
    *
    * Optional here where those two require it, for the reason `description` is: one of the app's
-   * thirty selects has a setting above it that takes its value over, and the other
+   * thirty selects — the rig mode — has a setting above it that takes its value over, and the other
    * twenty-nine passing a permanently-empty string would bury the one that does.
    */
   readonly disabledReason?: string;

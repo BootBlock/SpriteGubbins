@@ -58,6 +58,15 @@ export function sourceCaption(source: ImageData, sourceColors: number | null): R
  * not have to: the mode draws nothing of its own while the alignment pass is off, so the caption is
  * where a reader is told that rather than being left to wonder what they are looking at.
  * `SIDE_BY_SIDE` and `WIPE` share the last form, because they show the same picture.
+ *
+ * **A caption over a result says nothing about a newer one being on its way.** It used to end in a
+ * ` · updating…` clause for as long as the worker ran, and this line sits directly above the frame
+ * — so a clause that took the caption row onto a second line moved the artwork down by a line at the
+ * moment the reader was watching it change, which is the one thing this tab must not do to a
+ * before-and-after. `WorkingBadge` says it in the frame’s corner instead, where it is laid over the
+ * picture rather than measured beside it and costs the layout nothing. The empty form above still
+ * turns on `busy`: there is no artwork under it to move, and the wording it would otherwise carry
+ * asks for a pixel grid the reader has already set.
  */
 export function secondCaption(mode: PreviewMode, quantised: Quantised | null, busy: boolean): ReactNode {
   if (quantised === null) {
@@ -68,21 +77,20 @@ export function secondCaption(mode: PreviewMode, quantised: Quantised | null, bu
     );
   }
 
-  const trailing = busy ? ' · updating…' : '';
   if (mode === 'DIFFERENCE') {
     const { mean, peak } = quantised.result.difference;
-    return `Difference · mean ${mean.toFixed(2)} · peak ${peak.toFixed(1)}${trailing}`;
+    return `Difference · mean ${mean.toFixed(2)} · peak ${peak.toFixed(1)}`;
   }
   if (mode === 'SPRITES') {
-    return `Sprites · ${spritesFound(quantised.result.sprites)}${trailing}`;
+    return `Sprites · ${spritesFound(quantised.result.sprites)}`;
   }
   if (mode === 'ONION') {
     const { strips, sprites } = quantised.result;
-    return `Onion skin · ${stripsFound(strips, sprites)}${trailing}`;
+    return `Onion skin · ${stripsFound(strips, sprites)}`;
   }
 
   const { image, colors } = quantised.result;
-  return `Quantised · ${String(image.width)} × ${String(image.height)} · ${colourCount(colors)}${trailing}`;
+  return `Quantised · ${String(image.width)} × ${String(image.height)} · ${colourCount(colors)}`;
 }
 
 /**

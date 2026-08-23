@@ -99,13 +99,23 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * rather than widening it: a category is a large addition and the next one should have to say so
  * here, which is the whole point of the small margin.
  *
- * **Raised from 2220 by the edge-hardening pass on the Quantise tab.** The pass itself is small; what
- * it costs is the constant data around it — a ladder, two defaults, the control's guidance paragraph
- * and the panel's own — all of which the entry chunk reaches, so all of it lands in the precache.
- * Measured against the build immediately before it, that came to 3.38 KiB against 2.90 KiB of
- * headroom. The new figure restores a margin of the same order rather than widening it.
+ * **Raised again from 2220 by PORTRAIT’s near-future option pools.** Fifteen of that category’s
+ * sixteen pools gained options — fourteen of them the cyberpunk and adjacent-genre entries issue
+ * #140 asked for, and `Head Turn & Pose` four poses that are not genre entries at all — along with
+ * six tooltips and a docblock paragraph explaining them. Measured against the build immediately
+ * before, that is 4.42 KiB: the precache goes from 2217.06 to 2221.48 KiB. Option text is constant
+ * data the entry chunk reaches, so a pool is paid for on every first visit, which is the reason
+ * expanding one is a line in this file rather than an invisible edit. The 3.52 KiB left over is the
+ * same order of headroom the figure has carried since the last raise.
+ *
+ * **Raised once more, from 2225, by the edge-hardening pass on the Quantise tab.** The pass itself is
+ * small; what it costs is the constant data around it — a ladder, two defaults, the control’s
+ * guidance paragraph and the panel’s own — all of which the entry chunk reaches. Measured against
+ * the build immediately before it, that came to 3.38 KiB, and it lands on top of the pools above: the
+ * two together bring the precache to 2224.86 KiB. The new figure keeps a margin of the same order
+ * rather than widening it.
  */
-export const PRECACHE_CEILING_KIB = 2224;
+export const PRECACHE_CEILING_KIB = 2228;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

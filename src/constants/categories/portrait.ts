@@ -28,6 +28,24 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * drawings, so the field reaches section 1 verbatim and the plan stays a function of the category
  * and the mode alone, as every other plan in this app is. `sheetPlans/portrait.ts` argues that at
  * length, and `Extra Expressions` is where a reader asks for the feature pieces themselves.
+ *
+ * **A genre is carried by every field at once, not by `World & Era` alone.** A cyberpunk portrait is
+ * not a fantasy portrait with the era swapped: the chrome is on the face, the coolant lines and the
+ * neck ports are at the shoulders, the jacks and the barcode are on the skin, and the accent colour
+ * is a display rather than an iris. Stating the era and leaving the other fifteen fields
+ * fantasy-shaped is how a set comes back as a robed elder wearing one implant — so the near-future
+ * options run through fourteen of the sixteen pools, from who the subject is down to what the sheet
+ * must not show, and `Explicit Exclusions` names the four things the genre invites onto a sheet an
+ * engine composites for itself. `Framing & Crop` and `Head Turn & Pose` are the two that stay
+ * genre-neutral, and they are the two that mean the same thing in any era: a crop is a measurement
+ * and a head turn is a pose, and neither has a cyberpunk form to offer.
+ *
+ * **`World & Era` splits the genre rather than naming it once.** A neon sprawl, a corporate
+ * arcology, a rain-slick noir street and a recovered post-cyberpunk city are four wardrobes under
+ * four lighting schemes, and the bare word is answered as whichever of them the generator has seen
+ * most of — so the pool offers the four and not the word. The adjacent `-punk` settings are there
+ * for the same reason: they are the eras a reader reaches for next, and each states a material
+ * world rather than a mood.
  */
 export const PORTRAIT: CategoryDefinition = {
   label: 'Portrait / Character Bust',
@@ -37,7 +55,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'species',
       label: 'Portrait Subject',
       tooltip:
-        'Who the portrait is of. It fixes the head shape, the skin or hide, and how far the face may depart from a human one before the expressions stop reading — a beak and a muzzle carry a smile very differently from a mouth, and a sheet that is not told which it is drawing tends to split the difference.',
+        'Who the portrait is of. It fixes the head shape, the skin or hide, and how far the face may depart from a human one before the expressions stop reading — a beak and a muzzle carry a smile very differently from a mouth, and a sheet that is not told which it is drawing tends to split the difference. The augmented entries differ in how much face is left: an augmented human still expresses with skin, where a full conversion expresses with plating and lights, and stating which decides whether the set can carry a smile at all.',
       options: [
         'Human',
         'Elf & Fae Kin',
@@ -51,6 +69,14 @@ export const PORTRAIT: CategoryDefinition = {
         'Aquatic & Amphibian Kin',
         'Insectoid & Arachnid Kin',
         'Masked & Faceless Figure',
+        'Cyborg & Augmented Human',
+        'Full Conversion Cyborg',
+        'Synthetic Replicant & Bioroid',
+        'Vat-Grown Clone',
+        'Gene-Spliced Chimera',
+        'Uplifted Animal',
+        'Digital Avatar & Artificial Mind',
+        'Nanite-Rebuilt Survivor',
       ],
     },
     {
@@ -64,6 +90,8 @@ export const PORTRAIT: CategoryDefinition = {
         'Androgynous',
         'Non-Binary Presentation',
         'Ambiguous & Concealed',
+        'Synthetic & Sexless',
+        'Surgically Idealised',
         'Not Applicable',
       ],
     },
@@ -71,7 +99,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'age',
       label: 'Apparent Age',
       tooltip:
-        'How old the face looks. A portrait is read closer than any other art this app composes for, so age is carried by detail a sprite never shows — the set of the eyes, the slackness of the jaw, the lines that deepen when the expression changes.',
+        'How old the face looks. A portrait is read closer than any other art this app composes for, so age is carried by detail a sprite never shows — the set of the eyes, the slackness of the jaw, the lines that deepen when the expression changes. The last two entries state a face whose age has been interfered with, which is worth saying outright: clinic-smooth skin over a worn-out body is a design, and a generator left to infer it simply picks one age and holds it.',
       options: [
         'Child',
         'Adolescent',
@@ -81,6 +109,8 @@ export const PORTRAIT: CategoryDefinition = {
         'Elderly & Weathered',
         'Ancient & Preserved',
         'Ageless & Unreadable',
+        'Clinically Rejuvenated',
+        'Prematurely Worn & Burnt Out',
       ],
     },
     {
@@ -99,13 +129,21 @@ export const PORTRAIT: CategoryDefinition = {
         'Bystander & Townsfolk',
         'Captive & Victim',
         'Herald & Messenger',
+        'Fixer & Job Broker',
+        'Corporate Handler',
+        'Hacker & Intrusion Specialist',
+        'Street Doctor & Implant Fitter',
+        'Enforcer & Hired Muscle',
+        'Informant & Snitch',
+        'Streamer & Media Personality',
+        'Gang Lieutenant',
       ],
     },
     {
       key: 'setting',
       label: 'World & Era',
       tooltip:
-        'The world this face belongs to. It settles the clothing at the shoulders, the grooming and the jewellery all at once, which is most of what separates two portraits that share a bone structure.',
+        'The world this face belongs to. It settles the clothing at the shoulders, the grooming and the jewellery all at once, which is most of what separates two portraits that share a bone structure. The near-future entries are deliberately several rather than one: a neon sprawl, a corporate arcology, a rain-slick noir street and a recovered post-cyberpunk city are four wardrobes and four lighting schemes, and “cyberpunk” on its own is answered as whichever of them the generator has seen most of.',
       options: [
         'High Fantasy',
         'Grim Dark Fantasy',
@@ -114,7 +152,21 @@ export const PORTRAIT: CategoryDefinition = {
         'Victorian Gaslamp',
         'Wild West Frontier',
         'Modern Day',
-        'Near-Future Cyberpunk',
+        'Neon Sprawl Megacity',
+        'Corporate Arcology Dystopia',
+        'Cyber-Noir Rain-Slick Streets',
+        'Post-Cyberpunk Recovered City',
+        'Biopunk Wetware Clinic',
+        'Nanopunk Grey Goo Frontier',
+        'Solarpunk Green City',
+        'Transhuman Uplift Era',
+        'Cassette Futurism',
+        'Eighties Retro-Future Chrome',
+        'Dieselpunk Interwar Industry',
+        'Decopunk Chrome Metropolis',
+        'Atompunk Atomic Age',
+        'Steampunk Clockwork Empire',
+        'Anime Mecha Near-Future',
         'Far-Future Space Opera',
         'Post-Apocalyptic Wasteland',
         'Mythic Antiquity',
@@ -149,13 +201,17 @@ export const PORTRAIT: CategoryDefinition = {
         'Chin Lowered, Looking Up',
         'Head Tilted To One Side',
         'Turned Away, Glancing Back',
+        'Leaning In Toward The Viewer',
+        'Hunched, Shoulders Raised',
+        'Head Bowed, Eyes Down',
+        'One Shoulder Forward, Guarded',
       ],
     },
     {
       key: 'face_head',
       label: 'Facial Features & Hair',
       tooltip:
-        'The face itself and what frames it — the eyes, the nose, the mouth, the hair and whatever grows on the jaw. On a portrait these are the subject rather than a detail of it, so it is worth being specific: this is the field the likeness actually lives in.',
+        'The face itself and what frames it — the eyes, the nose, the mouth, the hair and whatever grows on the jaw. On a portrait these are the subject rather than a detail of it, so it is worth being specific: this is the field the likeness actually lives in. An implant named here is part of that likeness and has to be drawn identically in every expression, which is why the chrome entries say where it sits rather than only that there is some.',
       options: [
         'Sharp Angular Features, Short Hair',
         'Soft Rounded Features, Long Hair',
@@ -165,16 +221,28 @@ export const PORTRAIT: CategoryDefinition = {
         'Scarred Asymmetric Features, Shaven Head',
         'Wide Expressive Eyes, Loose Curls',
         'Narrow Hooded Eyes, Slicked Hair',
+        'Heavy Brow & Tusked Jaw',
         'Non-Human Muzzle & Mane',
+        'Gill Slits & Nictitating Eyes',
+        'Antennae & Compound Eyes',
         'Faceplate & Optic Lenses',
         'Concealed Behind A Mask',
+        'Chrome Optic Implant & Undercut',
+        'Mirrorshade Lenses & Slicked Hair',
+        'Chrome Jaw Plating & Buzz Cut',
+        'Split-Dyed Hair & Shaved Sides',
+        'Fibre-Optic Hair & Fine Features',
+        'Vat-Smooth Features, Bleached Crop',
+        'Full Chrome Faceplate & Slit Visor',
+        'Cheap Prosthetic Eye & Scarred Cheek',
+        'Rebreather Mask & Cracked Goggles',
       ],
     },
     {
       key: 'anatomy',
       label: 'Portrait Assembly Base',
       tooltip:
-        'How the set is cut so the engine can build an expression. A flat portrait redraws the whole head for each one; a layered set draws the head once and swaps the features over it, which is how a dialogue system gets dozens of expressions out of a handful of sprites. Choose by how many expressions the game needs, not by how the art looks.',
+        'How the set is cut so the engine can build an expression. A flat portrait redraws the whole head for each one; a layered set draws the head once and swaps the features over it, which is how a dialogue system gets dozens of expressions out of a handful of sprites. Choose by how many expressions the game needs, not by how the art looks. The last three cut for something other than feeling — a lit optic and a damage state are overlays a game turns on, and asking for them as their own pass is what stops them being painted into all twelve expressions.',
       options: [
         'Single Flat Portrait Per Expression',
         'Shared Head With Swappable Mouths',
@@ -182,6 +250,9 @@ export const PORTRAIT: CategoryDefinition = {
         'Shared Head With Swappable Brows, Eyes And Mouths',
         'Shared Body With Swappable Heads',
         'Layered Base, Features And Overlay',
+        'Shared Head With Swappable Optics',
+        'Layered Base With Emissive Overlay Pass',
+        'Shared Head With Swappable Damage Overlays',
       ],
     },
     {
@@ -195,11 +266,22 @@ export const PORTRAIT: CategoryDefinition = {
         'Padded Gambeson & Cowl',
         'Plate Gorget & Pauldrons',
         'Hooded Cloak & Clasp',
+        'Fur-Lined Mantle & Brooch',
         'Tailored Coat & Cravat',
         'Layered Silk Robes',
         'Utility Harness & Webbing',
         'Sealed Suit Collar Ring',
         'Ceremonial Stole & Chain Of Office',
+        'Techwear Harness & Ribbed Collar',
+        'Armoured Bomber Jacket & Patches',
+        'Corporate Suit & Lapel Badge',
+        'Ballistic Weave Trench Collar',
+        'Cracked Synth-Leather Jacket',
+        'Coolant Lines Into The Shoulders',
+        'Data Cabling & Neck Ports',
+        'Holographic Sequin Wrap',
+        'Surgical Gown & Trauma Ports',
+        'Bare Chrome Shoulder Casing',
       ],
     },
     {
@@ -218,6 +300,16 @@ export const PORTRAIT: CategoryDefinition = {
         'Frost Rime & Pallor',
         'Gilded Facial Jewellery',
         'Bandages Over One Eye',
+        'Neural Jack Behind The Ear',
+        'Chrome Temple Ports',
+        'Reactive Ink Tattoos',
+        'Ultraviolet Neon Body Paint',
+        'Barcode Brand On The Neck',
+        'Cracked Synthetic Skin',
+        'Etched Corporate Mark On Chrome',
+        'Nasal Filter Plugs',
+        'Grafted Skin In Mismatched Tones',
+        'Holographic Face Tattoo',
       ],
     },
     {
@@ -234,6 +326,13 @@ export const PORTRAIT: CategoryDefinition = {
         'Green Hide & Coarse Black Mane',
         'Burnished Bronze Plating',
         'Cold Blue Skin & Silver Hair',
+        'Pale Skin & Neon Magenta Hair',
+        'Sallow Skin & Bleached White Crop',
+        'Deep Brown Skin & Teal Locs',
+        'Sun-Damaged Skin & Rust Red Hair',
+        'Grey Vat Pallor & Pale Green Hair',
+        'Matte Black Carbon Shell',
+        'Mirror Chrome Skull & Black Synth Skin',
       ],
     },
     {
@@ -250,6 +349,12 @@ export const PORTRAIT: CategoryDefinition = {
         'Polished Gold Trim #D4AF37',
         'Tarnished Silver #94A3B8',
         'Unlit Black Sclera',
+        'Neon Cyan Optics #00E5FF',
+        'Hot Magenta Neon #FF2D95',
+        'Toxic Green Readout #7CFF3F',
+        'Warning Amber Readout #FFB020',
+        'Bioluminescent Teal #2DD4BF',
+        'Cold Chrome Highlight #E5E7EB',
       ],
     },
     {
@@ -266,13 +371,19 @@ export const PORTRAIT: CategoryDefinition = {
         'Brushed Alloy & Backlit Lens',
         'Fur, Horn & Braided Cord',
         'Scale, Pearl & Damp Weed',
+        'Chrome, Rubber Ducting & Light Strip',
+        'Wet Synth-Skin & Glass Optics',
+        'Matte Carbon Weave & Circuit Glass',
+        'Vat-Grown Flesh & Surgical Steel',
+        'Cracked Screen & Dead Pixels',
+        'Worn Plastic, Tape & Bare Wire',
       ],
     },
     {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the dialogue system’s job off the sheet. The name plate is the one that matters most: a portrait with a name painted beside it serves one character in one language, and the box the engine draws would then sit over the top of it.',
+        'Negative rules keeping the dialogue system’s job off the sheet. The name plate is the one that matters most: a portrait with a name painted beside it serves one character in one language, and the box the engine draws would then sit over the top of it. The last four are what a near-future look invites onto a portrait — city glow, an interface overlay, a glitch pass and the weather of the street it was drawn on. Each is something an engine paints for itself at runtime, and baked into the sprite none of them can be turned off again.',
       options: [
         'No name plate, caption or speech bubble',
         'No background scene behind the head',
@@ -280,6 +391,10 @@ export const PORTRAIT: CategoryDefinition = {
         'No frame, vignette or decorative border',
         'No drop shadow cast onto anything behind',
         'No held prop or weapon entering the crop',
+        'No neon signage or city glow behind the head',
+        'No user-interface overlay across the face',
+        'No lens flare, bloom or glitch artefacts',
+        'No rain, smoke or atmospheric haze in the crop',
       ],
     },
     {
@@ -294,6 +409,11 @@ export const PORTRAIT: CategoryDefinition = {
         'Blood Spatter ×1, Bruising ×1',
         'Closed Eyes For Blinking ×1',
         'Speaking Mouth Shapes ×4',
+        'Optic Glow States ×3',
+        'Glitch Overlay ×2',
+        'Cracked Faceplate ×1, Sparking Damage ×1',
+        'Interface Reflection Overlay ×1',
+        'Rebreather Mask Fitted ×1',
       ],
     },
   ],
