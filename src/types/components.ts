@@ -132,6 +132,36 @@ export interface ComponentGroup {
 export type SheetFacings = 'run' | readonly [Direction, ...Direction[]];
 
 /**
+ * What a size stated for a sheet is a size **of**.
+ *
+ * The studio's `spriteTargetSize` is one free-text box and it names two different quantities. On a
+ * sheet whose components are whole deliverable units — a tile, an icon cell, a glyph, a frame, a
+ * façade bay, a parallax band — the size the reader types is one of those components, and the
+ * shipped presets say so in the value: `32 × 32 px per tile`, `16 × 16 px per badge`,
+ * `96 × 128 px per bay`. On a sheet whose components are the parts one subject is cut into, it is
+ * the subject those parts assemble into, and the presets say that too: `48 × 96 px assembled`,
+ * `32 × 48 px per figure`, `64 × 64 px per icon cell` on an ITEM part library whose entries are a
+ * grip, a shaft and a working end. Every preset in the library falls on one side or the other, and
+ * none contradicts its own sheet.
+ *
+ * **The test is whether the whole has one definite size**, not whether the entries are called parts.
+ * A nine-slice set is cut into corners, edges and a centre and it is still `COMPONENT`, because what
+ * they assemble into is "a panel at any width and height" — there is no assembled size to state. A
+ * tile field, a façade of repeated bays and a parallax band are indefinite for the same reason. A
+ * character, a creature, an object, a vehicle and an item each have one, so their part libraries,
+ * their directional views and their rigs all state it.
+ *
+ * **It is declared per sheet rather than derived from {@link ComponentKind}**, which cannot answer
+ * it: `structure` covers an OBJECT housing, which is a part, and a BUILDING façade bay, which is a
+ * unit its own preset prices individually. Nor is it a property of the category or the sheet mode —
+ * `SINGLE_DIRECTION_POSE_LIBRARY` draws a head, a torso and limb variants for a CHARACTER and whole
+ * glyphs for a FONT, which is the pairing that made the field mean two things in the first place.
+ *
+ * `utils/componentTargetSize.ts` is the seam every reader comes through, and it reads this.
+ */
+export type TargetQuantity = 'COMPONENT' | 'ASSEMBLED';
+
+/**
  * One sheet: what it asks for, how many facings it draws, and what its components must assemble into.
  *
  * The assembly sentence lives here rather than in a table of its own because it is the same
@@ -152,6 +182,15 @@ export interface SheetPlan {
   readonly groups: readonly ComponentGroup[];
   /** Completes "The component set must assemble cleanly into: …". */
   readonly assembly: string;
+  /**
+   * Which quantity a target size stated for this sheet names — see {@link TargetQuantity}.
+   *
+   * It sits beside {@link SheetPlan.assembly} because it is the same fact read a second way: the
+   * sentence says what the components assemble into, and this says whether that whole is the thing
+   * the reader is pricing. A plan whose assembly names something of no fixed size answers
+   * `'COMPONENT'`.
+   */
+  readonly targetQuantity: TargetQuantity;
 }
 
 /**

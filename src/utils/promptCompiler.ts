@@ -200,10 +200,16 @@ export function generatePrompt(
 
   // The size the field states, with the quantity it is a size of, or `null` where it states none.
   // Resolved once and read by every section-2 feature that turns on it, so they cannot disagree
-  // about what the reader named. The quantity is the sheet's answer, not the text's: a cut-out rig
-  // sheet's components are the parts a figure is assembled from, so the size stated for it is the
-  // assembly — see `componentTargetSize.ts`.
-  const statedTarget = statedTargetSize(category, output.directionalMode, output.spriteTargetSize);
+  // about what the reader named. The quantity is the sheet's answer, not the text's: a sheet whose
+  // components are the parts one subject is cut into states the size of the subject they assemble
+  // into — see `componentTargetSize.ts`.
+  const statedTarget = statedTargetSize(
+    category,
+    output.directionalMode,
+    output.directions,
+    output.sheetIndex,
+    output.spriteTargetSize,
+  );
 
   // The same answer narrowed to a genuine component size, for the three readers that can do nothing
   // with an assembly: each seats or measures one component, and an assembled figure fed to any of
@@ -254,13 +260,20 @@ export function generatePrompt(
     // and the shipped rig presets say so in the value itself, while the line above them called it a
     // component size. One line contradicting itself, left for the generator to resolve.
     //
-    // **Not `RIG_MODE`, even though section 5 is gated on that.** A pose-library sheet may carry
-    // `CUTOUT_RIG` as a perfectly legitimate request — its pieces do get bound to bones — while
-    // still stating a size per unit, which is what its own presets write. The question here is which
-    // sheet is drawn, and `statesAssembledSize` asks the sheet. It asks the sheet alone, so it is
-    // right while the field is empty too — which is what this gate needs, since the `[OPTIONAL:…]`
-    // inside it is what decides whether there is a line at all.
-    ASSEMBLED_TARGET: statesAssembledSize(category, output.directionalMode) ? 'yes' : '',
+    // **Not `RIG_MODE`, even though section 5 is gated on that.** A FONT or ICON sheet may carry
+    // `CUTOUT_RIG` as a stored value while drawing whole glyphs, and a pose-library sheet may carry
+    // it as a perfectly legitimate request — its pieces do get bound to bones. The question here is
+    // which sheet is drawn, and `statesAssembledSize` asks the resolved sheet plan. It asks the plan
+    // alone, so it is right while the field is empty too — which is what this gate needs, since the
+    // `[OPTIONAL:…]` inside it is what decides whether there is a line at all.
+    ASSEMBLED_TARGET: statesAssembledSize(
+      category,
+      output.directionalMode,
+      output.directions,
+      output.sheetIndex,
+    )
+      ? 'yes'
+      : '',
     // Gates four places at once: the precedence clause in section 0, the three surface lines and the
     // surface-discipline block in section 2 — negated — and the paragraph that replaces them. One
     // flag, because a style either states the surface itself or leaves those settings to state it.

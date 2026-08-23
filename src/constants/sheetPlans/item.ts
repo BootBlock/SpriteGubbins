@@ -19,6 +19,7 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   facings: 'run',
   assembly:
     'the complete item as held or stowed, and in each state its parts allow — sheathed, drawn, opened, or expended — without redrawing any part that does not change.',
+  targetQuantity: 'ASSEMBLED',
   groups: [
     {
       heading: null,
@@ -64,6 +65,7 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     facings: chunk,
     assembly:
       'the complete item seen from each of the directions listed above, reading as one object turned rather than several drawings of it.',
+    targetQuantity: 'ASSEMBLED',
     groups: [
       {
         heading: 'Directional core',

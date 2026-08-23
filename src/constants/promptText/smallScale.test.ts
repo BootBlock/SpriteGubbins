@@ -70,15 +70,24 @@ describe('smallScaleDiscipline', () => {
     expect(bulletsFor('CUSTOM', 'as big as it needs to be')).toBe('');
   });
 
-  it('answers nothing on a cut-out rig sheet, whose stated size is the assembly', () => {
+  it('answers nothing on a sheet whose stated size is the assembly', () => {
     // These bullets are about how one component is drawn, and they point "above" at a line that
-    // says *component* — which on a rig sheet says *assembled* instead. `componentTargetSize` is
-    // what withholds the figure, so the sentence and the line it cites cannot come apart.
-    const assembled = componentTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', '24 × 24 px assembled');
+    // says *component* — which on a sheet of parts says *assembled* instead. `componentTargetSize`
+    // is what withholds the figure, so the sentence and the line it cites cannot come apart.
+    const assembled = componentTargetSize(
+      'CHARACTER',
+      'CUTOUT_RIG_SINGLE_DIRECTION',
+      'SINGLE_FRONT',
+      0,
+      '24 × 24 px assembled',
+    );
     expect(assembled).toBeNull();
     expect(smallScaleDiscipline('CUSTOM', assembled)).toBe('');
-    // The same words on a pose library, whose components *are* the figure, still fire — so the
+    // The same words on a tileset, whose components *are* the thing priced, still fire — so the
     // withdrawal is about the sheet rather than about the size being small.
+    expect(
+      componentTargetSize('TERRAIN', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, '24 × 24 px assembled'),
+    ).not.toBeNull();
     expect(bulletsFor('CUSTOM', '24 × 24 px assembled')).not.toBe('');
   });
 });

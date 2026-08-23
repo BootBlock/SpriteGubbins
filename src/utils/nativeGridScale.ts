@@ -32,8 +32,9 @@ import { componentGridScale } from './componentGridScale.ts';
  *   and state their own figure, so a second derived figure beside one of them is two answers to one
  *   question.
  * - **There has to be a per-component size.** The field is free prose, so it may hold no `W × H`
- *   pair at all — and on a cut-out rig sheet the pair it holds is the *assembled* figure, as the
- *   shipped preset *"48 × 96 px assembled (2 metres tall at 48 px per metre)"* says outright.
+ *   pair at all — and on a sheet whose components are the parts one subject is cut into, the pair it
+ *   holds is the *assembled* size, as the shipped preset *"48 × 96 px assembled (2 metres tall at 48
+ *   px per metre)"* says outright.
  *   `componentTargetSize` answers both, and the caller resolves it: the search below seats one cell
  *   per component, so an assembled figure fed into it prices a canvas of fifteen whole characters
  *   and returns a scale for a sheet nobody asked for.

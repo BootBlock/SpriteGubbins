@@ -218,9 +218,9 @@ export interface PixelExtent {
  * than in any of their vocabularies.
  *
  * **Reaching it takes `componentTargetSize`, not `parseTargetSize`.** The field states a component
- * size on every sheet but the cut-out rig one, where it states the figure the pieces assemble into —
- * so the parse alone answers *what number is written there*, and only the resolver answers *whether
- * that number is a component*. All four features want the second question.
+ * size on a sheet of whole deliverable units and the assembled subject on a sheet of parts — so the
+ * parse alone answers *what number is written there*, and only the resolver answers *whether that
+ * number is a component*. All four features want the second question.
  */
 export interface TargetSize {
   readonly width: number;
@@ -402,13 +402,15 @@ export interface ImageOutputConfig {
   /**
    * Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely.
    *
-   * **Which quantity it names is decided by the sheet, not by this field.** On a cut-out rig sheet
-   * the components are the parts a figure is assembled from, so the size stated is the assembly —
-   * which is what the shipped rig presets write into the value by hand, as `48 × 96 px assembled`.
-   * The studio labels the box accordingly, section 2 states the figure with what it is, and
-   * `componentTargetSize` is what every per-component reader goes through. A second field naming the
-   * quantity was considered and rejected: the sheet plan already answers it, and a stored answer
-   * beside a derived one is a fifth thing that can disagree.
+   * **Which quantity it names is decided by the sheet, not by this field.** Where a sheet's
+   * components are the parts one subject is cut into, the size stated is the assembly — which is
+   * what the shipped presets write into the value by hand, as `48 × 96 px assembled`,
+   * `32 × 48 px per figure` and `64 × 64 px per icon cell`. The studio labels the box accordingly,
+   * section 2 states the size with what it is, and `componentTargetSize` is what every per-component
+   * reader goes through. `SheetPlan.targetQuantity` is where each sheet declares its answer; a
+   * second *stored* field naming the quantity was considered and rejected, because the sheet plan
+   * already answers it and a stored answer beside a derived one is a fifth thing that can
+   * disagree.
    */
   readonly spriteTargetSize: string;
 

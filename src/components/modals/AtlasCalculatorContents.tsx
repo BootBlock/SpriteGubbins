@@ -89,17 +89,18 @@ export function AtlasCalculatorContents() {
   // cache that never hits.
   //
   // Per-component, and asked for as such: a cell holds one component, so a configuration whose
-  // stated size is the assembled figure has no size to check a cell against. That is a cut-out rig
-  // sheet, whose components are a head, a torso, a pelvis and twelve limb segments — checked against
-  // the figure they assemble into, the fit row answered for a component none of them is, and the
-  // smallest canvas it names is the one that would seat fifteen whole characters. Both withdraw on
-  // `null`, which the empty field has always produced. The memory figures below are a function of
-  // the canvas alone and are unaffected either way.
-  const target = componentTargetSize(category, directionalMode, spriteTargetSize);
+  // stated size is the assembly has no size to check a cell against. That is any sheet whose
+  // components are the parts one subject is cut into — a rig's head, torso, pelvis and twelve limb
+  // segments, a pose library's, an ITEM part library's grip and shaft. Checked against the subject
+  // they assemble into, the fit row answered for a component none of them is, and the smallest
+  // canvas it names is the one that would seat fifteen whole characters. Both withdraw on `null`,
+  // which the empty field has always produced. The memory figures below are a function of the canvas
+  // alone and are unaffected either way.
+  const target = componentTargetSize(category, directionalMode, directions, sheetIndex, spriteTargetSize);
   // The sheet's answer rather than the field's. The row below has to be true while the box is empty,
-  // and on a rig sheet the truthful thing to say then is not "name a size" — nothing the reader can
+  // and on such a sheet the truthful thing to say then is not "name a size" — nothing the reader can
   // type will make a cell checkable against a component this sheet does not draw.
-  const assembled = statesAssembledSize(category, directionalMode);
+  const assembled = statesAssembledSize(category, directionalMode, directions, sheetIndex);
   const fit = target === null ? null : spriteFitFor(metrics.usableBounds, target);
   const smallestCanvas = target === null ? null : smallestCanvasFor(config, target);
   const costs = textureCostsFor(canvasSize);

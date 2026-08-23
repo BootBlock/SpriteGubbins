@@ -14,9 +14,9 @@ import type { ResolutionProfile, TargetSize } from '../../types/output.ts';
  * ever need these bullets.
  *
  * **The size arrives resolved, from `componentTargetSize`.** These bullets are about how one
- * component is drawn, and a cut-out rig sheet's stated size is the figure its components assemble
- * into — so they take `null` there and emit nothing, which is also what keeps them from pointing
- * "above" at a line that no longer says *component*.
+ * component is drawn, and on a sheet whose components are the parts one subject is cut into the
+ * stated size is the subject they assemble into — so they take `null` there and emit nothing, which
+ * is also what keeps them from pointing "above" at a line that no longer says *component*.
  *
  * **`minFeatureSize` takes the wider `StatedTargetSize` and this does not, which is the asymmetry
  * to hold.** That one states a floor on every prompt, so withholding the size does not silence it —

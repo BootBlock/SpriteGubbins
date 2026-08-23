@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { componentCountFor, sheetCountFor } from '../../utils/componentSet.ts';
+import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
 import { withCompanionOutputs } from '../../utils/imageConfig.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
@@ -44,11 +45,62 @@ function promptFor(preset: PresetArchetype): string {
 const SHORTEST_USEFUL_DESCRIPTION = 60;
 const LONGEST_READABLE_DESCRIPTION = 220;
 
+/**
+ * The nouns a preset's target-size value uses for the quantity it is pricing, split by which quantity
+ * that is.
+ *
+ * The value is free text, so nothing parses it in the app — but a preset author naming a quantity in
+ * it is stating the same fact the preset's own sheet plan declares as `SheetPlan.targetQuantity`, and
+ * two statements of one fact drift. `Platformer Side Runner` writing `32 × 48 px per frame cell` on a
+ * sheet the app then told the generator was a component size is exactly that drift, and it is what
+ * issue #149 was opened about.
+ *
+ * A value that names a quantity and matches neither list fails as well, so a new wording has to be
+ * classified rather than slipping through unchecked — which is the half a phrase list of this kind
+ * loses first. A **bare** pair like `16 × 32 px` names no quantity at all and is left alone: seven of
+ * the art-style presets carry one, and the studio's own label is what tells their reader which
+ * quantity the box is asking for.
+ */
+const ASSEMBLED_NOUNS = ['assembled', 'per figure', 'per frame cell', 'per icon cell', 'per cell'];
+const COMPONENT_NOUNS = [
+  'per tile',
+  'per bay',
+  'per band',
+  'per frame',
+  'per badge',
+  'per button slice',
+  'per portrait',
+];
+
 describe('every shipped preset', () => {
   it('has a unique id', () => {
     const ids = PRESETS.map((preset) => preset.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it.each(PRESETS.filter((preset) => preset.output.spriteTargetSize !== ''))(
+    '$name prices the quantity its own sheet states',
+    (preset) => {
+      const value = preset.output.spriteTargetSize.toLowerCase();
+      if (!/assembled|\bper\s/u.test(value)) return;
+
+      // `per frame cell` and `per icon cell` both end in a noun the other list also holds, so the
+      // longer phrase is tested first and the shorter one only where it did not match.
+      const assembled = ASSEMBLED_NOUNS.some((noun) => value.includes(noun));
+      const component = !assembled && COMPONENT_NOUNS.some((noun) => value.includes(noun));
+      expect(assembled || component, `no classified quantity in “${preset.output.spriteTargetSize}”`).toBe(
+        true,
+      );
+      expect(
+        statesAssembledSize(
+          preset.category,
+          preset.output.directionalMode,
+          preset.output.directions,
+          preset.output.sheetIndex,
+        ),
+      ).toBe(assembled);
+    },
+  );
 
   it.each(PRESETS)('$name describes itself at a length its card can carry', (preset) => {
     expect(preset.description.length).toBeGreaterThanOrEqual(SHORTEST_USEFUL_DESCRIPTION);

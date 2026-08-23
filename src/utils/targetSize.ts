@@ -6,8 +6,9 @@ import type { TargetSize } from '../types/output.ts';
  * **It answers what pair is written there, never what that pair is a size of.** The field holds
  * prose — the shipped presets carry *"48 × 96 px assembled (2 metres tall at 48 px per metre)"* and
  * *"96 × 128 px per bay"* — and those two parse identically while meaning different things. Which
- * one a configuration means is a property of the *sheet plan*, so `componentTargetSize` is what
- * every feature reads, and this function is its parse step and its only caller in `src/`.
+ * one a configuration means is a property of the *sheet plan*, which declares it as
+ * `SheetPlan.targetQuantity`, so `componentTargetSize` is what every feature reads and this function
+ * is its parse step and its only caller in `src/`.
  *
  * **The parse is kept apart from that second reading, and the separation is load-bearing.**
  * `targetSizeGrid` takes an `ImageData` and so belongs to a program with the DOM lib; this function

@@ -130,15 +130,23 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * own argument rather than a hole in this one.
  *
  * **Section 2's target-size line is stated twice, because the field names two different quantities.**
- * On every sheet but the cut-out rig one a component *is* the figure, so `- Target component size:`
- * says what it means. `CUTOUT_RIG_SINGLE_DIRECTION` draws a head, a torso, a pelvis and twelve limb
- * segments, and the shipped rig presets state a size for the figure those assemble into — so that
- * label and that value contradicted each other on one line, and the generator was left to resolve it.
- * The gate is `ASSEMBLED_TARGET`, and it is the *sheet's* answer rather than the rig field's — a
- * pose-library sheet may carry `CUTOUT_RIG` as a legitimate request while still drawing pieces sized
- * per figure, which is why `RIG_MODE` is the wrong flag here even though section 5 uses it.
- * `utils/componentTargetSize.ts` computes it, and is the same answer for the readers on the app's
- * side of the same field.
+ * On a sheet of whole deliverable units — a tile, a glyph, an icon cell, a frame — a component *is*
+ * the thing the reader is pricing, so `- Target component size:` says what it means. A sheet whose
+ * components are the parts one subject is cut into is the other case: a cut-out rig draws a head, a
+ * torso, a pelvis and twelve limb segments, and the shipped rig presets state a size for the figure
+ * those assemble into — so that label and that value contradicted each other on one line, and the
+ * generator was left to resolve it. The same is true of a pose library, an articulation sheet and an
+ * ITEM part library, whose presets write `32 × 48 px per figure` and `64 × 64 px per icon cell`.
+ * The gate is `ASSEMBLED_TARGET`, and it is the resolved *sheet plan's* answer rather than the rig
+ * field's — a sheet of units may carry `CUTOUT_RIG` as a legitimate request while still stating a
+ * size per unit, which is why `RIG_MODE` is the wrong flag here even though section 5 uses it.
+ * `utils/componentTargetSize.ts` computes it from `SheetPlan.targetQuantity`, and is the same answer
+ * for the readers on the app's side of the same field.
+ *
+ * **Both wordings are category-neutral, because the sheets that take the assembled one are not all
+ * figures.** An OBJECT part library, an ITEM's grip and shaft and a BACKGROUND layer library all
+ * state an assembled size, so the line says *the complete subject* rather than *the whole figure* —
+ * the same generic noun section 1 is written in.
  *
  * **The pixel-discipline minimum names the grid too, and it is the one mention that is not gated.**
  * That bullet has to appear on every pixel-art sheet, grid or no grid, so gating it would delete the
@@ -346,7 +354,7 @@ Where this conflicts with anything above, the identity lock wins.
 [/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [IF:ASSEMBLED_TARGET]
-[OPTIONAL:SPRITE_TARGET_SIZE  | - Target assembled size, for the whole figure once its pieces are put together: [DEFINE:SPRITE_TARGET_SIZE]. This sheet draws the pieces, not the assembly, so no single component is this size — each is drawn at whatever share of the figure it occupies.]
+[OPTIONAL:SPRITE_TARGET_SIZE  | - Target assembled size, for the complete subject once its pieces are put together: [DEFINE:SPRITE_TARGET_SIZE]. This sheet draws the pieces, not the assembly, so no single component is this size — each is drawn at whatever share of the whole it occupies.]
 [/IF]
 [IF:ASSEMBLED_TARGET!=yes]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]

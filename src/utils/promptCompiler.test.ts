@@ -1571,9 +1571,11 @@ describe('generatePrompt — technical settings in prose', () => {
     // scale lives in the target-size field rather than in the profile itself. A 16 × 16 icon whose
     // smallest permitted feature was 2 × 2 asked for a sprite drawn in sixteenths of itself, and the
     // generator resolved that by discarding one half of the instruction.
+    // An ICON symbol set, because the component wording is the one a sheet of whole units takes and
+    // no CHARACTER sheet is one — every plan that category has draws parts of a figure.
     const icon = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({
         renderStyle: 'RETRO_PIXEL_ART',
         resolutionProfile: 'CUSTOM',
@@ -1584,8 +1586,8 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(icon).toContain('No feature smaller than 1 × 1 native pixels.');
 
     const large = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({
         renderStyle: 'RETRO_PIXEL_ART',
         resolutionProfile: 'CUSTOM',
@@ -1612,12 +1614,29 @@ describe('generatePrompt — technical settings in prose', () => {
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );
-    expect(rig).toContain('- Target assembled size, for the whole figure once its pieces are put together:');
+    expect(rig).toContain(
+      '- Target assembled size, for the complete subject once its pieces are put together:',
+    );
     expect(rig).toContain('48 × 96 px assembled (2 metres tall at 48 px per metre)');
     expect(rig).not.toContain('- Target component size:');
 
     // The same words on a sheet that states a size per unit keep the component wording, so the split
-    // is about which sheet is drawn rather than about the text in the field.
+    // is about which sheet is drawn rather than about the text in the field. A CHARACTER pose library
+    // is *not* that contrast — it draws a head, a torso, a pelvis and limb variants, so it states an
+    // assembly like the rig does. An ICON symbol set is, because its components are whole icons.
+    const icons = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({
+        directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+        spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
+      }),
+    );
+    expect(icons).toContain('- Target component size: 48 × 96 px assembled');
+    expect(icons).not.toContain('Target assembled size');
+
+    // And the pose library takes the assembled wording, which is the widening this test is named
+    // for: before it, a sheet of parts was told a size it draws nothing at.
     const poses = generatePrompt(
       'CHARACTER',
       SUBJECT,
@@ -1626,8 +1645,8 @@ describe('generatePrompt — technical settings in prose', () => {
         spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
       }),
     );
-    expect(poses).toContain('- Target component size: 48 × 96 px assembled');
-    expect(poses).not.toContain('Target assembled size');
+    expect(poses).toContain('- Target assembled size, for the complete subject once its pieces are put');
+    expect(poses).not.toContain('- Target component size:');
   });
 
   it('never points the profile line at a target-size line that is not there', () => {
@@ -1680,11 +1699,11 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(rig).not.toContain('every component is designed silhouette-first');
     expect(rig).not.toContain(NATIVE_GRID_HEADING);
 
-    // The identical size on a pose library, where the components are what it measures, still reaches
-    // all three — which is what shows the withdrawal is the sheet's doing.
-    const poses = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+    // The identical size on an ICON symbol set, where the components are what it measures, still
+    // reaches all three — which is what shows the withdrawal is the sheet's doing.
+    const icons = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({
         directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
         renderStyle: 'RETRO_PIXEL_ART',
@@ -1692,9 +1711,9 @@ describe('generatePrompt — technical settings in prose', () => {
         spriteTargetSize: '24 × 24 px assembled',
       }),
     );
-    expect(poses).toContain('No feature smaller than 1 × 1 native pixels.');
-    expect(poses).toContain('every component is designed silhouette-first');
-    expect(poses).toContain(NATIVE_GRID_HEADING);
+    expect(icons).toContain('No feature smaller than 1 × 1 native pixels.');
+    expect(icons).toContain('every component is designed silhouette-first');
+    expect(icons).toContain(NATIVE_GRID_HEADING);
   });
 
   it('adds the sprite-scale bullets only where the target is sprite-sized and the style is pixel', () => {
@@ -1706,15 +1725,15 @@ describe('generatePrompt — technical settings in prose', () => {
 
     // At sprite scale the pixel-discipline section grows the silhouette-first rules, beside the
     // target-size line the bullets refer back to.
-    const icon = generatePrompt('CHARACTER', SUBJECT, spriteScale);
+    const icon = generatePrompt('ICON', defaultSubjectFor('ICON'), spriteScale);
     expect(icon).toContain('- Target component size: 16 × 16 px');
     expect(icon).toContain('every component is designed silhouette-first');
 
     // A larger target keeps the generic discipline alone — no bullet, and no blank line where the
     // optional was, which is what the OPTIONAL marker exists to guarantee.
     const large = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({ ...spriteScale, spriteTargetSize: '128 × 128 px' }),
     );
     expect(large).not.toContain('silhouette-first');
@@ -1723,8 +1742,8 @@ describe('generatePrompt — technical settings in prose', () => {
     // are pixel rules, and a painted 16 px icon is a different discipline this section does not
     // claim to state.
     const painted = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({ ...spriteScale, renderStyle: 'PAINTED_2D' }),
     );
     expect(painted).not.toContain('silhouette-first');
@@ -1736,9 +1755,11 @@ describe('generatePrompt — technical settings in prose', () => {
     // size a sheet over a thousand pixels wide can only satisfy by enlarging one — so the size was
     // read as a mood, and a sheet came back carrying far more interior detail than the grid it named
     // could hold. Nothing here re-derives the figure; `nativeGridScale.test.ts` pins the arithmetic.
+    // An ICON symbol set, because a native grid is derived from a *component* size and no CHARACTER
+    // sheet states one — every plan that category has draws parts of a figure.
     const prompt = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({
         renderStyle: 'PIXEL_ART',
         resolutionProfile: 'CUSTOM',
@@ -1755,11 +1776,12 @@ describe('generatePrompt — technical settings in prose', () => {
     // Section 2 says which of the two things the size is, and states the multiple as a figure.
     expect(prompt).toContain('### The native grid, and the scale it is delivered at');
     expect(prompt).toContain('**The target component size above is a native pixel grid');
-    // Fifteen components at a 16 × 32 grid, each given half its own size of clearance, seat 8 × 2 on
-    // the nominal 1024 × 576 sheet at 5× and 7 × 2 at 6× — one short. The count is asserted beside it
-    // so a change to the sheet plan fails here naming its own cause rather than the figure.
-    expect(prompt).toContain('Exactly 15 components');
-    expect(prompt).toContain('**5× or more**');
+    // Twenty-eight components at a 16 × 32 grid, each given half its own size of clearance, seat
+    // 10 × 3 on the nominal 1024 × 576 sheet at 4× and 8 × 2 at 5× — twelve short. The count is
+    // asserted beside it so a change to the sheet plan fails here naming its own cause rather than
+    // the figure.
+    expect(prompt).toContain('Exactly 28 components');
+    expect(prompt).toContain('**4× or more**');
     // And the enlargement is the one that adds nothing, which is what the report's sheet failed.
     expect(prompt).toContain('The enlargement adds nothing');
 
@@ -1777,15 +1799,25 @@ describe('generatePrompt — technical settings in prose', () => {
       spriteTargetSize: '16 × 32 px',
     } as const;
 
-    // A square sheet is 1024 × 1024 rather than 1024 × 576, so the same fifteen components fit at 7×.
-    const square = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...grid, aspectRatio: 'SQUARE_1_1' }));
-    expect(square).toContain('Exactly 15 components');
-    expect(square).toContain('**7× or more**');
+    // A square sheet is 1024 × 1024 rather than 1024 × 576, so the same twenty-eight components fit
+    // at 5× — 8 × 4 seats them, and 6× seats 7 × 3.
+    const square = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({ ...grid, aspectRatio: 'SQUARE_1_1' }),
+    );
+    expect(square).toContain('Exactly 28 components');
+    expect(square).toContain('**5× or more**');
 
-    // And a sheet asking for twice as many of them on the same canvas is enlarged less.
-    const crowded = generatePrompt('OBJECT', SUBJECT, withOutput({ ...grid, aspectRatio: 'WIDE_16_9' }));
-    expect(crowded).toContain('Exactly 30 components');
-    expect(crowded).toContain('**4× or more**');
+    // And a sheet asking for fewer of them on the same canvas is enlarged more: a PORTRAIT
+    // expression set is twelve, which 7 × 2 seats at 6×.
+    const sparse = generatePrompt(
+      'PORTRAIT',
+      defaultSubjectFor('PORTRAIT'),
+      withOutput({ ...grid, aspectRatio: 'WIDE_16_9' }),
+    );
+    expect(sparse).toContain('Exactly 12 components');
+    expect(sparse).toContain('**6× or more**');
   });
 
   it('leaves section 0’s rule unqualified where there is no native grid', () => {
@@ -1797,7 +1829,11 @@ describe('generatePrompt — technical settings in prose', () => {
 
     // A painted sheet has no grid of placed pixels to multiply, so the carve-out would be permission
     // to enlarge nothing in particular.
-    const painted = generatePrompt('CHARACTER', SUBJECT, withOutput({ ...grid, renderStyle: 'PAINTED_2D' }));
+    const painted = generatePrompt(
+      'ICON',
+      defaultSubjectFor('ICON'),
+      withOutput({ ...grid, renderStyle: 'PAINTED_2D' }),
+    );
     expect(painted).toContain('do not upscale a smaller one');
     expect(painted).not.toContain('The native grid, and the scale');
     // Item 5 is word for word what it was, the scoping sentence included — a prompt with no grid to
@@ -1806,8 +1842,8 @@ describe('generatePrompt — technical settings in prose', () => {
 
     // A profile that is a scale already states its own figure; a second one is two answers.
     const profiled = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({ ...grid, resolutionProfile: 'RETRO_16_BIT' }),
     );
     expect(profiled).not.toContain('The native grid, and the scale');
@@ -1815,15 +1851,22 @@ describe('generatePrompt — technical settings in prose', () => {
     // A component already large enough to fill its share of the canvas is delivered at 1:1, which is
     // what section 0 says on its own.
     const large = generatePrompt(
-      'CHARACTER',
-      SUBJECT,
+      'ICON',
+      defaultSubjectFor('ICON'),
       withOutput({ ...grid, spriteTargetSize: '512 × 512 px' }),
     );
     expect(large).toContain('- Target component size: 512 × 512 px');
     expect(large).not.toContain('The native grid, and the scale');
 
+    // A sheet whose components are the parts of one subject states no component size at all, so
+    // there is nothing to derive a grid from however pixel-art and however custom it is.
+    const parts = generatePrompt('CHARACTER', SUBJECT, withOutput(grid));
+    expect(parts).not.toContain('The native grid, and the scale');
+
     // And the default studio state states no size at all, so nothing is derived from one.
-    expect(generatePrompt('CHARACTER', SUBJECT, OUTPUT)).not.toContain('The native grid, and the scale');
+    expect(generatePrompt('ICON', defaultSubjectFor('ICON'), OUTPUT)).not.toContain(
+      'The native grid, and the scale',
+    );
   });
 
   it('names one projection and one elevation', () => {

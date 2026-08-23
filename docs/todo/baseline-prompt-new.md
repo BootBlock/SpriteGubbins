@@ -448,7 +448,7 @@ Where this conflicts with anything above, the identity lock wins.
 [/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
 [IF:ASSEMBLED_TARGET]
-[OPTIONAL:SPRITE_TARGET_SIZE  | - Target assembled size, for the whole figure once its pieces are put together: [DEFINE:SPRITE_TARGET_SIZE]. This sheet draws the pieces, not the assembly, so no single component is this size — each is drawn at whatever share of the figure it occupies.]
+[OPTIONAL:SPRITE_TARGET_SIZE  | - Target assembled size, for the complete subject once its pieces are put together: [DEFINE:SPRITE_TARGET_SIZE]. This sheet draws the pieces, not the assembly, so no single component is this size — each is drawn at whatever share of the whole it occupies.]
 [/IF]
 [IF:ASSEMBLED_TARGET!=yes]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]

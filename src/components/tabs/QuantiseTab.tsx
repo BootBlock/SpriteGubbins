@@ -222,15 +222,15 @@ export function QuantiseTab() {
   // measurement of this image, so it is offered to click and never silently preferred.
   //
   // Read through `componentTargetSize` rather than parsed here, because both things downstream of it
-  // are per-component and a cut-out rig sheet states the assembled figure instead. Fed the raw field
+  // are per-component and a sheet of parts states the assembled subject instead. Fed the raw field
   // there, the grid candidate seats fifteen cells of a whole character rather than of a torso, and
   // the Sprites panel compares the largest piece against a size no piece on the sheet has — so its
   // *within the target* carries whatever slack separates a torso from a whole body, which is a
   // number nothing here knows. `null` withdraws both, and the app holds no per-piece size to put in
   // their place.
   const target = useMemo(
-    () => componentTargetSize(category, directionalMode, spriteTargetSize),
-    [category, directionalMode, spriteTargetSize],
+    () => componentTargetSize(category, directionalMode, directions, sheetIndex, spriteTargetSize),
+    [category, directionalMode, directions, sheetIndex, spriteTargetSize],
   );
   // How many components this sheet's own prompt contracts for — the figure the sprite panel holds
   // the segmentation against, and the ceiling the grid suggestion seats. One derivation for both,

@@ -48,13 +48,13 @@ export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, string>
  * What `CUSTOM` works to on a sheet whose stated size is the assembly.
  *
  * The entry above says *component size*, and it is printed on the line directly before section 2's
- * target-size line — so on a cut-out rig sheet the two disagreed the moment that line started saying
+ * target-size line — so on a sheet of parts the two disagreed the moment that line started saying
  * *assembled*: one telling the generator to work to a component size where one is stated, the next
  * stating a size and saying outright that no component is it. That is the same label-against-value
- * contradiction the rig change removed, one line further up.
+ * contradiction removed one line further up.
  *
  * It states the assembly rather than falling silent because the assembly **is** the scale on that
- * sheet: the pieces are drawn at their share of one figure, which is what section 2's own line
+ * sheet: the pieces are drawn at their share of one subject, which is what section 2's own line
  * already tells the generator. Falling back to *the sheet aspect* would throw away the only figure
  * the prompt has.
  */
@@ -124,8 +124,8 @@ const UNSTATED_MIN_FEATURE = '2 × 2';
  * `CUSTOM` on a sheet whose stated size is the **assembly**, where the floor cannot be derived and
  * must not be guessed coarse.
  *
- * A component of a cut-out rig sheet is a part of the figure the field measures, so its own smaller
- * edge is somewhere below that figure's — and the rungs below get *coarser* as the edge grows. Two
+ * A component of such a sheet is a part of the subject the field measures, so its own smaller edge
+ * is somewhere below that subject's — and the rungs below get *coarser* as the edge grows. Two
  * wrong answers are therefore available and they fail differently. Keying the rung off the assembly
  * returns a floor at least as coarse as the truth, which forbids detail a small piece legitimately
  * needs; falling to {@link UNSTATED_MIN_FEATURE} did the same thing on the three shipped rig presets

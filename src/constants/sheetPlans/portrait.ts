@@ -39,6 +39,7 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   facings: 'run',
   assembly:
     'the same person in every mood a conversation needs — at rest, pleased, angry, hurt, afraid — each drawn to the same crop and the same registration, so any one of them can replace any other in a dialogue box without the head shifting on the screen.',
+  targetQuantity: 'COMPONENT',
   groups: [
     {
       heading: null,

@@ -41,7 +41,7 @@ describe('nativeGridScale', () => {
     expect(scaleFor('48 × 96 px assembled (2 metres tall at 48 px per metre)', 12)).toBe(2);
   });
 
-  it('never sees a cut-out rig sheet’s assembled figure, because the resolver withholds it', () => {
+  it('never sees an assembled figure, because the resolver withholds it', () => {
     // The search below seats one cell per component, so an assembled figure priced through it
     // describes a canvas of fifteen whole characters. `componentTargetSize` is what stops that
     // arriving — the same `null` an empty field produces, for the same reason: there is no
@@ -50,6 +50,8 @@ describe('nativeGridScale', () => {
     const assembled = componentTargetSize(
       'CHARACTER',
       'CUTOUT_RIG_SINGLE_DIRECTION',
+      'SINGLE_FRONT',
+      0,
       '48 × 96 px assembled (2 metres tall at 48 px per metre)',
     );
     expect(assembled).toBeNull();

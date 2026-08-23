@@ -8,8 +8,9 @@ interface AtlasFitDetailProps {
    * Which of the two ways {@link fit} came back `null`: a sheet that states assemblies rather than a
    * field nobody has filled in.
    *
-   * A cut-out rig sheet's components are the parts a figure is assembled from, so the size stated
-   * for it is not a component's and a cell cannot be checked against it. **It is the sheet's answer
+   * Such a sheet's components are the parts one subject is cut into — a rig's, but equally a pose
+   * library's or an ITEM part library's — so the size stated for it is not a component's and a cell
+   * cannot be checked against it. **It is the sheet's answer
    * and not the field's**, because nothing the reader types into that box will make this row
    * checkable — so asking them for a size here, as the branch below does, would promise a check that
    * is never going to arrive. Which is also why the prose says what the *sheet* states rather than
@@ -40,7 +41,7 @@ function Pixels({ children }: { readonly children: string }) {
  *
  * **The first two are both `fit === null`, and telling them apart is the point.** One is a sheet
  * where naming a component size would make this row work; the other is a sheet where no size can,
- * because its components are pieces of the figure any size stated there describes. Only the first is
+ * because its components are pieces of the subject any size stated there describes. Only the first is
  * worth asking the reader for anything, which is why the ask lives in that branch alone and can name
  * the studio's label outright.
  */
@@ -55,8 +56,8 @@ export function AtlasFitDetail({
     return (
       <p className="text-xs leading-relaxed text-ink-muted">
         Each component has <Pixels>{`${usableBounds} × ${usableBounds} px`}</Pixels> to itself. This sheet’s
-        components are the pieces a figure is assembled from, and a cell holds one piece — while a size stated
-        for this sheet describes the whole figure. Checking a piece against a whole body would pass whatever
+        components are the pieces one subject is cut into, and a cell holds one piece — while a size stated
+        for this sheet describes the whole subject. Checking a piece against the whole would pass whatever
         came back, so the fit stands down, and there is no size you could give it that would change that.
       </p>
     );

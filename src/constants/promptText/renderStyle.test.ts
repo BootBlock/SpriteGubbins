@@ -89,7 +89,13 @@ describe('minFeatureSize', () => {
     // least as coarse as the rung of any piece of it, and the unstated middle rung is `2 × 2`. A
     // floor that is too coarse forbids detail a small piece legitimately needs, where one that is
     // too fine is merely inert — so the finest rung is the only answer that cannot be wrong.
-    const assembled = statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', '480 × 960 px assembled');
+    const assembled = statedTargetSize(
+      'CHARACTER',
+      'CUTOUT_RIG_SINGLE_DIRECTION',
+      'SINGLE_FRONT',
+      0,
+      '480 × 960 px assembled',
+    );
     expect(assembled).toEqual({ quantity: 'ASSEMBLED', size: { width: 480, height: 960 } });
     // 480 would be past the last rung as a component size, which is what makes this case the one
     // that shows the difference: `3 × 3` on limb segments a few dozen pixels across.
@@ -99,7 +105,7 @@ describe('minFeatureSize', () => {
     // And the three shipped rig presets that carry CUSTOM keep the floor they always had — each
     // sits on the finest rung by its assembled edge, so this restores rather than changes them.
     for (const size of ['64 × 96 px assembled', '56 × 88 px assembled', '64 × 80 px assembled']) {
-      const rig = statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', size);
+      const rig = statedTargetSize('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT', 0, size);
       expect(minFeatureSize('CUSTOM', rig, false)).toBe('1 × 1 delivered pixels');
     }
   });

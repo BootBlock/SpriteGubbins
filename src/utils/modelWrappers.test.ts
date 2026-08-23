@@ -44,6 +44,12 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
  * `DEFAULT_OUTPUT_CONFIG`'s `FIVE_CLASSIC` rather than that preset's `FOUR_CARDINAL`, and the scale
  * comes out at 7 either way.
  */
+/**
+ * A sheet that derives a native grid — which takes a **component** size, so an ICON symbol set
+ * rather than the character every other fixture here uses. No CHARACTER plan states one: its
+ * components are the parts of a figure, and the size a reader states for one of those sheets is the
+ * figure they assemble into. See `utils/componentTargetSize.ts`.
+ */
 const NATIVE_GRID_SHEET = {
   targetModel: 'CHATGPT_5_6_SOL',
   renderStyle: 'PIXEL_ART',
@@ -210,7 +216,7 @@ describe('wrapForModel', () => {
     // intact while section 2's native-grid block — which it did not name — was compressed to "at
     // least 7x" and lost both of its checkable sentences. The sheet came back with no native pixel
     // grid in it at all.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(NATIVE_GRID_SHEET));
+    const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
 
     expect(wrapperOnly(prompt)).toContain(
       `Shorten nothing in:\n\n- the block headed “${NATIVE_GRID_HEADING}”`,
@@ -222,7 +228,7 @@ describe('wrapForModel', () => {
     // pointer following it would leave the directive naming something that is not there — which
     // reads as an instruction rather than as a fault, and is exactly how this failed the first time.
     // Both sides take the one constant; this is what stops the substitution being quietly undone.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput(NATIVE_GRID_SHEET));
+    const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
 
     expect(prompt).toContain(`### ${NATIVE_GRID_HEADING}`);
   });
@@ -329,7 +335,7 @@ describe('wrapForModel', () => {
     // conditional one, so all five were right. Nothing held them there — a section inserted before
     // the inventory moves the prompt body's own citations and would have left these behind, in the
     // two wrappers whose whole job is saying which blocks may not be shortened.
-    const sol = generatePrompt('CHARACTER', SUBJECT, withOutput(NATIVE_GRID_SHEET));
+    const sol = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
     const seedream = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'SEEDREAM' }));
 
     // The prompt's own heading is the answer both halves are held to, read back out of the compiled

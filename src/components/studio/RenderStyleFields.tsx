@@ -86,7 +86,12 @@ export function RenderStyleFields() {
   const category = useSubjectStore((state) => state.category);
 
   const pass = validationPassFor(output.renderStyle);
-  const assembled = statesAssembledSize(category, output.directionalMode);
+  const assembled = statesAssembledSize(
+    category,
+    output.directionalMode,
+    output.directions,
+    output.sheetIndex,
+  );
 
   return (
     <>
@@ -124,10 +129,12 @@ export function RenderStyleFields() {
       />
 
       {/* The label names the quantity the box actually holds, which is not the same on every sheet.
-          A cut-out rig sheet's components are a head, a torso, a pelvis and twelve limb segments, so
-          a size stated for it is the figure those assemble into — which is what the shipped rig
-          presets already write into the value by hand, as “48 × 96 px assembled”. Asking for a
-          component size and being handed an assembly is what put `- Target component size: 48 × 96
+          Where a sheet's components are the parts one subject is cut into — a rig's head, torso,
+          pelvis and twelve limb segments, but equally a pose library's, an articulation sheet's or
+          an ITEM part library's grip and shaft — a size stated for it is the subject those assemble
+          into, which is what the shipped presets already write into the value by hand as
+          “48 × 96 px assembled”, “32 × 48 px per figure” and “64 × 64 px per icon cell”. Asking for
+          a component size and being handed an assembly is what put `- Target component size: 48 × 96
           px assembled` into section 2, a label and a value contradicting each other on one line, and
           what sent that figure on to five readers that treat it as one component's. The studio is
           where the field is filled in, so it is where the two quantities are told apart.

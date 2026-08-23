@@ -18,10 +18,10 @@ interface SpriteControlsProps {
    * before the artwork reaches an atlas cell sized from the same number.
    *
    * **`null` has two causes and the clause withdraws for both** — see `componentTargetSize`. An
-   * empty field is the obvious one. The other is a cut-out rig sheet, where the studio's stated size
-   * is the whole figure the pieces assemble into: the largest piece there is a torso, so the line
-   * compared a torso against a body and its *within the target* carried the difference between them
-   * as slack. Nothing in the app knows that difference, so the reading could not be corrected for —
+   * empty field is the obvious one. The other is a sheet whose components are the parts one subject
+   * is cut into, where the studio's stated size is the whole those parts assemble into: on a rig the
+   * largest piece is a torso, so the line compared a torso against a body and its *within the
+   * target* carried the difference between them as slack. Nothing in the app knows that difference, so the reading could not be corrected for —
    * only withdrawn, which is what a per-component claim the app cannot support is worth.
    */
   readonly target: TargetSize | null;

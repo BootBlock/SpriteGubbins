@@ -33,6 +33,7 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   facings: 'run',
   assembly:
     'a scene of any width scrolling behind the playfield — each band looping against its own copy with no visible join, the bands stacked front to back with no gap showing between them, and the loose pieces placed over whichever band they belong to.',
+  targetQuantity: 'COMPONENT',
   groups: [
     {
       heading: 'Depth bands',
@@ -150,6 +151,12 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   facings: 'run',
   assembly:
     'one finished backdrop at screen size, with the dressing pieces placed over it and the edge pieces closing the frame at either side — nothing repeating, and nothing the player could mistake for something they can stand on.',
+  // The one library on this side of the line whose whole is a screen rather than a subject. Its
+  // entries run from a full-width sky to a piece of ground clutter, so there is no one component
+  // size to state — and the assembly above names a definite one, the backdrop at screen size, which
+  // is what a reader typing `640 × 360 px` here is describing. The parallax set above answers
+  // `'COMPONENT'` instead: a band loops against its own copy, so the scene it builds has no width.
+  targetQuantity: 'ASSEMBLED',
   groups: [
     {
       heading: 'Scene panel',
