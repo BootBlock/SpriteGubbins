@@ -104,6 +104,10 @@ band’s own rate:`,
           count: 3,
           kind: 'structure',
         },
+        // No `parts`, and the sibling above it has them: `large, medium and small` assigns a
+        // description to each of three pieces, where `a mast, a chimney, a snag` illustrates what
+        // sort of shape is wanted. Naming these three would fix an order the prompt never asked the
+        // generator for, which is what `ComponentEntry.parts` forbids.
         {
           label: 'silhouette-detail',
           text: 'Silhouette detail ×3: the small shapes that break a band’s outline — a mast, a chimney, a snag',

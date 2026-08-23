@@ -1,5 +1,5 @@
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import type { ComponentEntry, SheetFacings } from '../types/components.ts';
+import type { ComponentEntry, SheetFacings, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode, DirectionSet } from '../types/output.ts';
 import type { SubjectCategory } from '../types/subject.ts';
@@ -98,6 +98,23 @@ function unique(names: readonly string[]): readonly string[] {
   });
 }
 
+/**
+ * One plan's own components, before the subject's anatomy and before {@link unique} runs.
+ *
+ * Exported for the one caller that needs the *undeduplicated* list: `sheetPlans.test.ts` asserts
+ * that no two components of a plan answer to the same name, and it cannot ask `componentSlots` —
+ * `unique` guarantees the property that test exists to check, so the assertion would pass on a plan
+ * whose second `outer-corner-transitions-1` had just been renamed to `outer-corner-transitions-1-2`.
+ * The test walking the entries itself is the other way to get this, and it was the first way: it
+ * reached only the entries naming their own parts, which is 98 of the 418 in the table, and it
+ * missed the collision that actually matters — an authored name landing on a name another line
+ * *derives*, which is a live risk because the authoring convention puts ordinals inside part names
+ * (`mounting-bracket-1`) and the derived branch produces exactly that shape.
+ */
+export function planSlots(plan: SheetPlan): readonly string[] {
+  return plan.groups.flatMap((group) => group.entries.flatMap((entry) => entrySlots(entry, plan.facings)));
+}
+
 export function componentSlots(
   category: SubjectCategory,
   mode: DirectionalMode,
@@ -106,9 +123,7 @@ export function componentSlots(
   additional: readonly AnatomyComponent[],
 ): readonly string[] {
   const plan = sheetPlanFor(category, mode, directions, sheetIndex);
-  const names = plan.groups.flatMap((group) =>
-    group.entries.flatMap((entry) => entrySlots(entry, plan.facings)),
-  );
+  const names = [...planSlots(plan)];
 
   const anatomyFacings = anatomyFacingsFor(category, mode, directions, sheetIndex);
   if (anatomyFacings !== null) {

@@ -20,6 +20,7 @@ import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
+import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
@@ -547,14 +548,18 @@ describe('every inventory line carries an identifier the manifest can use', () =
 
   it('never names two components of one plan the same thing', () => {
     // Stronger than the line-level check below, and it is the half `parts` made reachable: two lines
-    // with distinct labels can still author the same part name, and `componentSlots` would then
-    // rename the second to `x-2` — a name that reads as the second copy of something rather than as
-    // the collision it is. Asserted against the expansion rather than the labels, because that is
-    // what a pack writes.
+    // with distinct labels can still land on one name, and `componentSlots` would then rename the
+    // second to `x-2` — a name that reads as the second copy of something rather than as the
+    // collision it is.
+    //
+    // Asserted on `planSlots`, which is the expansion a pack writes *before* `unique` runs. Neither
+    // of the two nearer answers works: `componentSlots` applies that rename, so it guarantees the
+    // property being checked here and the assertion could never fail; and walking `parts` alone
+    // reaches 98 of the table's 418 entries, missing exactly the collision that is live — an
+    // authored name landing on one another line *derives*, since the authoring convention puts
+    // ordinals inside part names (`mounting-bracket-1`) and the derived branch produces that shape.
     for (const { category, mode, plan } of everyPlan) {
-      const names = plan.groups.flatMap((group) =>
-        group.entries.flatMap((entry) => entry.parts ?? (entry.count === 1 ? [entry.label] : [])),
-      );
+      const names = planSlots(plan);
       expect(new Set(names).size, `${category}/${mode}/${plan.name}: ${names.join(', ')}`).toBe(names.length);
     }
   });
