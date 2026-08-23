@@ -170,8 +170,8 @@ describe('every art style reference', () => {
   });
 
   it('offers every reference in the dropdown, NONE first', () => {
-    // Against a category that can be drawn under every camera, which is nine of the twelve — the
-    // other three are the scoping, checked below.
+    // Against a category that can be drawn under every camera, which is nine of the thirteen — the
+    // other four are the scoping, checked below.
     expect(styleReferenceChoices('CHARACTER').map((choice) => choice.value)).toEqual([
       ...STYLE_REFERENCE_IDS,
     ]);
@@ -181,9 +181,9 @@ describe('every art style reference', () => {
   it('offers a category only the looks its subject can be drawn to match', () => {
     // A reference states the camera it was rendered under, and its characteristics carry that camera
     // into section 2 as a measurement no resolver downstream can edit. So a look whose projection the
-    // subject cannot be drawn under is not offered — which for INTERFACE, PORTRAIT and BACKGROUND
-    // alike removes the six side-on and the two dimetric references and keeps the four rendered flat
-    // on.
+    // subject cannot be drawn under is not offered — which for INTERFACE, PORTRAIT, BACKGROUND and
+    // FONT alike removes the six side-on and the two dimetric references and keeps the four rendered
+    // flat on.
     const offered = styleReferenceChoices('INTERFACE').map((choice) => choice.value);
 
     expect(offered).toContain('NONE');

@@ -115,15 +115,29 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * two together bring the precache to 2224.86 KiB. The new figure keeps a margin of the same order
  * rather than widening it.
  *
- * **Raised again, from 2228, by the extended auto-tune sweep.** No new pass and no new control — what
- * it costs is prose and ladders, all of it constant data the entry chunk reaches: four more dial
- * ladders for the anti-aliasing stages, three more entries in `TUNE_STAGE_LABELS`, the panel's five
- * rewritten guidance paragraphs and the Auto button's own card, which grew to name the twelve dials
- * the sweep now moves and the fourteen it will not. Measured against the build immediately before,
- * that is 3.18 KiB: the precache goes from 2224.86 to 2228.04 KiB, which is the previous margin spent
- * exactly. The new figure restores a margin of the same order rather than widening it.
+ * **Raised once more, from 2228, by the FONT subject category.** Measured against the build
+ * immediately before it — 2224.86 KiB, rebuilt from that commit with the same `node_modules` — this
+ * one takes the precache to 2247.43 KiB, a delta of 22.57 KiB for a sixteen-field option pool with
+ * its guidance, four sheet plans and four presets. That is a fifth more than the 18.9 KiB average of
+ * the three categories in the paragraph above, and the reason is worth recording rather than
+ * averaging away: this category's plans enumerate ninety-four glyphs one entry at a time, where the
+ * other three name a dozen components between them.
+ *
+ * **It is not the entry chunk, and the paragraphs above should not be read as saying a category ever
+ * is.** `assets/index-*.js` is byte-identical across the two builds at 222.97 kB. The growth lands in
+ * the three chunks that pull the constants in — `quantiseDials`, `useShowToast` and `useCopyPrompt`
+ * — which is what the precache figure measures and the entry chunk is not. The margin is left at the
+ * same order as every raise above rather than widened to absorb the next one.
+ *
+ * **Raised once more again, from 2251, by the extended auto-tune sweep.** It adds no pass and no
+ * control; what it costs is ladders and prose — four dial ladders for the anti-aliasing stages, three
+ * more entries in `TUNE_STAGE_LABELS`, the panel's five rewritten guidance paragraphs and the Auto
+ * button's own card, which grew to name the twelve dials the sweep moves and the fourteen it will
+ * not. Measured against the build immediately before it, the precache goes from 2247.43 to **2250.62
+ * KiB**, a delta of 3.19 — and it lands in the same constants-pulling chunks the paragraph above
+ * names rather than in the entry chunk. The margin is left at the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2231;
+export const PRECACHE_CEILING_KIB = 2254;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -20,7 +20,7 @@ import type { SubjectCategory } from '../types/subject.ts';
  * the batch is and which yaw its one facing takes — so the outcome is N identical kits requested at
  * angles the subject does not have, rather than a broken sheet.
  *
- * **Which categories this binds is the whole decision, and it is five.**
+ * **Which categories this binds is the whole decision, and it is six.**
  *
  * - **INTERFACE and TERRAIN turn to nothing at all.** A widget is a flat rectangle read straight on;
  *   a tile is laid flat and read from above, and `LANDMARK_TEXT.TERRAIN` says a tile has no front in
@@ -32,6 +32,11 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   `sheetPlans/effect.ts` argues exactly that, and it is why the category's single sheet is a
  *   `'run'` plan, which is what turns a set into a run list. "Has no facing" is a property of some
  *   effects, not of the category, and a table cannot tell them apart.
+ * - **FONT turns to nothing, and it is the tightest of the bound categories.** A glyph is a flat mark
+ *   on a baseline, read from one side only: an engine renders text by blitting the sprite as it was
+ *   drawn, so a letter delivered at any yaw but front-on is a letter that cannot be used at all.
+ *   Where INTERFACE and TERRAIN would return a drawing at an angle the subject does not have, this
+ *   would return a deliverable that fails outright — which is the same answer for a stronger reason.
  * - **PORTRAIT, ICON and BACKGROUND turn to nothing either, and each for its own reason.** A
  *   portrait's turn is the *sitter's* pose inside a fixed frame — `Head Turn & Pose` states it, and
  *   the camera stays where it is — so a wider set would return one bust per yaw at framings that
@@ -68,6 +73,7 @@ export const CATEGORY_DIRECTION_SETS: Readonly<
   PORTRAIT: ['SINGLE_FRONT'],
   ICON: ['SINGLE_FRONT'],
   BACKGROUND: ['SINGLE_FRONT'],
+  FONT: ['SINGLE_FRONT'],
 };
 
 /** Whether this category's subject can be drawn to the facings this set names. */

@@ -229,8 +229,8 @@ function renderGroup(group: ComponentGroup): string {
  * the only thing that identifies a component — appending keeps every base entry at the position the
  * plan promised, where interleaving would silently renumber everything after it.
  *
- * **`cite` is why this one value takes an argument the others do not.** Ten of the sheet plans' own
- * strings cite a section by name — `[SEC:CAMERA]`, `[SEC:CONTRACT]` — and the compiler resolves such
+ * **`cite` is why this one value takes an argument the others do not.** Thirteen of the sheet plans'
+ * own strings cite a section by name — `[SEC:CAMERA]`, `[SEC:CONTRACT]` — and the compiler resolves such
  * a citation over every value it authors itself. This value is not one of those: it is the app's own
  * prose with the anatomy the reader *typed* appended to it, so citing over the finished string would
  * resolve a marker in a name somebody entered and throw out of the compiler mid-render.

@@ -76,6 +76,12 @@ export const PERMITTED_KINDS: Readonly<Record<SubjectCategory, readonly Componen
   // which pieces their plans name — a wall run, a panel edge, a horizon band — and that is a
   // difference between inventories rather than between kinds.
   BACKGROUND: ['tile', 'structure'],
+  // ICON's row, and the narrowness is the same claim: a glyph is a mark on a baseline. It has no
+  // anatomy, no mechanism, no frame of its own, and it never butts against a copy of itself — an
+  // engine spaces characters at runtime and the cells sit apart — so a `tile` entry here would be a
+  // nine-slice or a background band filed under a font. Every entry in the four `font.ts` plans is a
+  // single character, which is what this union already means by a piece of the subject.
+  FONT: ['structure'],
 };
 
 /** Whether this category may contain a component of this kind at all. */

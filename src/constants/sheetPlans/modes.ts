@@ -15,6 +15,7 @@ import { vehicleDirectionalVariants, VEHICLE_CUTOUT_RIG, VEHICLE_PART_LIBRARY } 
 import { PORTRAIT_EXPRESSION_LIBRARY } from './portrait.ts';
 import { ICON_SYMBOL_SET } from './icon.ts';
 import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
+import { FONT_CAPITALS, FONT_DIGITS_AND_PUNCTUATION, FONT_LOWER_CASE, FONT_SYMBOLS } from './font.ts';
 
 /**
  * Which sheet each category can produce, and which of them it falls back to.
@@ -139,6 +140,19 @@ export const CATEGORY_SHEET_PLANS: Readonly<
     SINGLE_DIRECTION_POSE_LIBRARY: fixed(BACKGROUND_LAYER_LIBRARY),
     TILESET_MODULAR: fixed(BACKGROUND_PARALLAX_SET),
   },
+  // One mode, and the only pairing in the table whose series exists because the *character set*
+  // outgrew a generation rather than because the subject has parts. `sheetPlans/font.ts` argues the
+  // other three modes out one by one; the absent `TILESET_MODULAR` is the one worth naming here,
+  // because a font sheet looks like a grid and is the opposite of a tile field — the cells sit apart
+  // and the engine decides the spacing at runtime.
+  FONT: {
+    SINGLE_DIRECTION_POSE_LIBRARY: fixed(
+      FONT_CAPITALS,
+      FONT_LOWER_CASE,
+      FONT_DIGITS_AND_PUNCTUATION,
+      FONT_SYMBOLS,
+    ),
+  },
 };
 
 /**
@@ -173,6 +187,8 @@ export const DEFAULT_MODE_FOR: Readonly<Record<SubjectCategory, DirectionalMode>
   // a deliverable far more often than a single painted panel does, and it is the half of the pair
   // that cannot be assembled by hand from the other.
   BACKGROUND: 'TILESET_MODULAR',
+  // The only mode it has, so the fallback and the choice are the same thing here.
+  FONT: 'SINGLE_DIRECTION_POSE_LIBRARY',
 };
 
 /** Whether this category can produce this kind of sheet at all. */

@@ -92,18 +92,18 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
     ),
   ),
   // One list per category, like the modes above, because a category is offered only the sets its
-  // subject can be turned to — five of the twelve are `SINGLE_FRONT` alone.
+  // subject can be turned to — six of the thirteen are `SINGLE_FRONT` alone.
   setChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     directionSetChoices(category).map((choice) => choice.label),
   ),
   // Scoped to the category like the modes above. Every label is budgeted whichever category renders
-  // it — INTERFACE, PORTRAIT and BACKGROUND are each offered one camera and the other nine are
+  // it — INTERFACE, PORTRAIT, BACKGROUND and FONT are each offered one camera and the other nine are
   // offered all seven.
   cameraChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     projectionChoices(category).map((choice) => choice.label),
   ),
   // Scoped to the category like the modes above, so the labels are budgeted per category rather
-  // than once — eight of them offer a single rig and never render this control at all.
+  // than once — nine of them offer a single rig and never render this control at all.
   rigChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     rigModeChoices(category).map((choice) => choice.label),
   ),

@@ -59,7 +59,7 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * **No section writes its own numeral either, and for the same reason one section further out.** A
  * heading declares itself — `## [SECTION:EXCLUSIONS]. EXCLUSIONS` — and prose cites it as
  * `section [SEC:EXCLUSIONS]`; `applySectionNumbers` walks the surviving headings and resolves both.
- * The rig section is conditional and eight of the twelve categories have no rig at all, so a
+ * The rig section is conditional and nine of the thirteen categories have no rig at all, so a
  * hand-numbered document ran `## 4.` straight into `## 6.` on every prompt those categories ever
  * compiled — a gap in the numbering of a document that cites its own sections several hundred times.
  * That defect had already been met once, at the adherence report, and answered by writing its heading
@@ -111,7 +111,7 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * section least able to afford it.
  *
  * **The native grid is stated in three places, and the split is what makes each of them necessary.**
- * Section 0's fifth item is a rule about *resampling*, and as written it read as a ban on the one
+ * Section 0's sixth item is a rule about *resampling*, and as written it read as a ban on the one
  * enlargement pixel art is made of — so the carve-out belongs in the item it would otherwise
  * contradict, not only where the scale is stated. **Both the carve-out and the sentence scoping the
  * item to resampling sit inside the gate**, which is what keeps a prompt with no native grid word for
@@ -194,9 +194,18 @@ Satisfy this section before any aesthetic consideration.
    still attached to it is two entries merged, not one component.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
-[N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image, and nothing
-   annotating it: no arrows, callouts or grid lines, and no frame or border around the image or
-   around a component.
+[IF:LETTERING_IS_A_COMPONENT!=yes]
+[N]. No text, labels, numbers, captions, watermarks or signatures anywhere in the image.
+[/IF]
+[IF:LETTERING_IS_A_COMPONENT]
+[N]. The components section [SEC:INVENTORY] lists are characters, and they are the **only** lettering
+   this image carries. No watermark, signature, caption, legend, index number or codepoint anywhere
+   in it, and nothing written beside a component to name it — grid position is the only identity a
+   component has, exactly as it is on every other sheet. No two components are drawn touching or set
+   side by side as a word, a name or a specimen line.
+[/IF]
+[N]. Nothing annotating the image: no arrows, callouts or grid lines, and no frame or border around
+   the image or around a component.
 [N]. One consistent scale across every component: [DEFINE:SCALE_EXAMPLE_DESCRIPTION].
 [N]. Render every component directly at the delivered output resolution. Do not compose at a larger
    virtual canvas and downscale, and do not upscale a smaller one.
@@ -618,7 +627,7 @@ lists separately, and it makes the cut-out part unusable.
 
 ### Placement is the only identity map
 
-Labels are forbidden by section [SEC:CONTRACT], so **grid position is how each component is identified**. Lay
+Nothing on this sheet names a component, so **grid position is how each component is identified**. Lay
 the components out in strict reading order across the image — screen-left to screen-right, then top
 to bottom — in exactly the order the inventory above lists them. A reordered, merged or omitted entry silently mis-maps every
 component after it.
@@ -732,9 +741,15 @@ Absent from the image entirely:
 
 - [DEFINE:CATEGORY_EXCLUSIONS]
 - All shadows: cast, contact, drop, and ambient occlusion onto the background.
-- Text, labels, numbers, captions, watermarks, signatures and legends; and anything annotating the
-  sheet: arrows, callouts, colour swatches, grid lines, and frames or borders around the image or
-  around a component.
+[IF:LETTERING_IS_A_COMPONENT!=yes]
+- Text, labels, numbers, captions, watermarks, signatures and legends.
+[/IF]
+[IF:LETTERING_IS_A_COMPONENT]
+- Any lettering other than the characters section [SEC:INVENTORY] lists: watermarks, signatures,
+  captions, legends, index numbers, codepoints, and anything written beside a component to name it.
+[/IF]
+- Anything annotating the sheet: arrows, callouts, colour swatches, grid lines, and frames or
+  borders around the image or around a component.
 - [DEFINE:CATEGORY_ASSEMBLY_EXCLUSION]
 - Motion blur, speed lines, glow bleeding beyond a component’s silhouette, and any particle
   effect the inventory in section [SEC:INVENTORY] does not name.
@@ -764,7 +779,13 @@ Before delivering, verify:
 
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
+[IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.
+[/IF]
+[IF:LETTERING_IS_A_COMPONENT]
+[N]. The only lettering on the sheet is the characters the inventory lists — no caption, legend,
+   index number or codepoint beside any of them.
+[/IF]
 [N]. Components appear in the exact order the inventory lists them.
 [N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,
    and [DEFINE:CATEGORY_ASSEMBLY_AUDIT].

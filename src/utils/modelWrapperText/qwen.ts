@@ -16,6 +16,12 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * too, and the two were fixed together because a wrapper that only argues with section 2 on one
  * target is still a wrapper that argues with it.
  *
+ * **`text`, `labels` and `captions` come out on a glyph set, and the two beside them stay.** Those
+ * three name the subject of a font sheet, which is the rule `FRAME_IS_A_COMPONENT` states for
+ * Midjourney's flag applied to a channel that carries far more of them. `watermark` and `signature`
+ * are unaffected: neither is a character of a font, so no reading of `LETTERING_IS_A_COMPONENT`
+ * reaches them, and a sheet that came back signed would be as spoilt as any other.
+ *
  * **This block used to say the assembly claim three times and now says it however many times
  * `CATEGORY_ASSEMBLY` does.** Its third term was `complete figure`, which is `assembled character`
  * restated; one record cannot hold two spellings of one entry without the categories diverging by
@@ -25,13 +31,12 @@ export function wrapForQwen(
   prompt: string,
   surface: RenderStyleSurface,
   limbsAreComponents: boolean,
+  letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
 ): string {
   const negatives = [
     ...assembly.negatives,
-    'text',
-    'labels',
-    'captions',
+    ...(letteringIsAComponent ? [] : ['text', 'labels', 'captions']),
     'watermark',
     'signature',
     'cast shadow',

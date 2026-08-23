@@ -172,17 +172,24 @@ describe('sheetBatch — where the configuration sits in its own batch', () => {
  * above `object yaw 45°`.
  *
  * The categories here are the ones whose subject has no facing at all: whatever set the
- * configuration arrived with, `resolveDirectionSet` narrows it to `SINGLE_FRONT` and the batch is
- * one sheet.
+ * configuration arrived with, `resolveDirectionSet` narrows it to `SINGLE_FRONT`, and the facing
+ * axis contributes nothing to the batch.
+ *
+ * **The claim is about that axis and not about the total**, which is a distinction the suite could
+ * ignore for as long as every category in it had a one-sheet series. FONT does not: printable ASCII
+ * is ninety-four glyphs against a ceiling of forty-three, so its batch is four sheets and none of
+ * them is a facing. Asserting `1` here would have failed a category that is behaving correctly, and
+ * the fix is to compare against the series the plan table holds — an independent source, and the
+ * other axis `sheetBatch` multiplies.
  *
  * **Derived rather than listed**, because the list was written when there were two of them and the
  * next three arrived without it. `CATEGORY_DIRECTION_SETS` is the table that decides this, and a
- * category bound there is one whose batch has to collapse — so reading it is what keeps the two
+ * category bound there is one whose facing axis has to collapse — so reading it is what keeps the two
  * halves from parting company, as they had by the time PORTRAIT, ICON and BACKGROUND joined
  * INTERFACE and TERRAIN. `categoryDirectionSets.test.ts` is where the *membership* of that set is
  * pinned by hand; what this suite owes is the behaviour, for whoever is in it.
  */
-describe('a subject with no facing is one sheet, whatever set the configuration arrived with', () => {
+describe('a subject with no facing is one sheet per plan, whatever set the configuration arrived with', () => {
   const TURNED = withOutput({ directions: 'THREE_CLASSIC', primaryDirection: 'front-three-quarter' });
 
   const UNTURNABLE = SUBJECT_CATEGORIES.filter(
@@ -193,32 +200,45 @@ describe('a subject with no facing is one sheet, whatever set the configuration 
     // Guards the three assertions below against the table emptying: derived membership means a
     // reworded or relaxed `CATEGORY_DIRECTION_SETS` would leave every `it.each` with nothing to run
     // and the suite green, which is the failure a hand-written list cannot have and this one can.
-    expect(UNTURNABLE.length).toBeGreaterThanOrEqual(5);
+    expect(UNTURNABLE.length).toBeGreaterThanOrEqual(6);
   });
 
+  /** What the plan table alone asks for — the series axis, with nothing multiplied into it. */
+  function seriesLength(category: (typeof UNTURNABLE)[number]): number {
+    return sheetSeriesFor(category, TURNED.directionalMode, TURNED.directions).length;
+  }
+
   it.each(UNTURNABLE)('%s is not split into a run per facing', (category) => {
-    expect(sheetRunCount(category, TURNED)).toBe(1);
+    // Against the series rather than against `1`: the two are equal for five of the six, and FONT is
+    // four sheets of one glyph set at one facing. What is being checked either way is that the
+    // facing axis contributed nothing — a stored `THREE_CLASSIC` reaching the batch would treble it.
+    expect(sheetRunCount(category, TURNED)).toBe(seriesLength(category));
     expect(sheetBatch(category, TURNED).ordinal).toBe(1);
   });
 
-  it.each(UNTURNABLE)('%s draws its one sheet front on', (category) => {
-    const [sheet] = sheetBatch(category, TURNED).sheets;
-    expect(sheet?.covered).toEqual(['front']);
-    expect(sheet?.assembly).toBe('front');
+  it.each(UNTURNABLE)('%s draws every sheet front on', (category) => {
+    const { sheets } = sheetBatch(category, TURNED);
+    expect(sheets).toHaveLength(seriesLength(category));
+    for (const sheet of sheets) {
+      expect(sheet.covered).toEqual(['front']);
+      expect(sheet.assembly).toBe('front');
+    }
   });
 
   it.each(UNTURNABLE)('%s asks for no yaw it does not have', (category) => {
-    const [run, ...rest] = sheetRuns(category, defaultSubjectFor(category), TURNED);
-    expect(rest).toEqual([]);
+    const runs = sheetRuns(category, defaultSubjectFor(category), TURNED);
+    expect(runs).toHaveLength(seriesLength(category));
 
-    const prompt = run?.promptText ?? '';
-    // The two lines the report quotes, and their replacements. `object yaw 0°` is the whole point:
-    // section 3 states the rotation as a figure, so a facing the subject cannot take is not a
-    // wording problem but a number the generator will act on.
-    expect(prompt).toContain('Directions required: Front');
-    expect(prompt).toContain('object yaw 0°');
-    expect(prompt).not.toContain('Front-three-quarter');
-    expect(prompt).not.toContain('object yaw 45°');
+    for (const run of runs) {
+      // The two lines the report quotes, and their replacements. `object yaw 0°` is the whole point:
+      // section 3 states the rotation as a figure, so a facing the subject cannot take is not a
+      // wording problem but a number the generator will act on. Every sheet of the series is checked,
+      // because each is compiled from its own copy of the specification.
+      expect(run.promptText).toContain('Directions required: Front');
+      expect(run.promptText).toContain('object yaw 0°');
+      expect(run.promptText).not.toContain('Front-three-quarter');
+      expect(run.promptText).not.toContain('object yaw 45°');
+    }
   });
 
   it('still splits a CHARACTER on the same configuration, which is what makes the fix per category', () => {

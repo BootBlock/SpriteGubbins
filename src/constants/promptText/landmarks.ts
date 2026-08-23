@@ -57,4 +57,9 @@ export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   ICON: 'an icon has no front and no rear — it is a mark drawn flat into its cell, and the angle the depicted object is shown at is fixed by the projection in section [SEC:CAMERA] for every member of the set at once.',
   BACKGROUND:
     'the front is the face of the band that meets the camera; a band has no rear — it is a plane standing at a distance, and what is behind it is the next band back rather than its own far side.',
+  // Behind `[IF:MULTI_DIRECTION]` and therefore never emitted, as the four entries above it are:
+  // FONT is bound to `SINGLE_FRONT`. Written honestly rather than left as filler, and the honest
+  // answer is the strongest of the five — a glyph turned away from the camera is not merely drawn at
+  // an angle its subject does not have, it is a glyph no engine can render text from.
+  FONT: 'a glyph has no front and no rear — it is a mark drawn flat on a baseline and read from one side only, and the shape an engine blits is the shape drawn face on.',
 };

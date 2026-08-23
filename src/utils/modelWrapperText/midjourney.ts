@@ -36,6 +36,12 @@ const ASPECT_FLAGS: Readonly<Record<AspectRatio, string>> = {
  * comment above already records for `background` — a term stays out of `--no` where excluding it
  * would take the sheet's own subject with it.
  *
+ * **`text` and `labels` come out on the same test, and they are the sharpest case of it.** A glyph
+ * set's components are characters, so those two entries name the subject of the sheet — the same
+ * relation `frame, border` has to an interface kit, arrived at from the other direction. The caller
+ * answers from `LETTERING_IS_A_COMPONENT`, which also records what stays: `watermark` and `signature`
+ * are not in this list at all, and nothing about that exemption would reach them if they were.
+ *
  * **`shadow` and `gradient` were the third instance of that judgement, and they resolve two
  * different ways.** Bare, each negates something a render style requires: "material shading and soft
  * form shadow" is `RENDERED_3D`'s own section 2 line, and a gradient across a form is what that
@@ -115,11 +121,11 @@ export function wrapForMidjourney(
   prompt: string,
   aspectRatio: AspectRatio,
   frameIsAComponent: boolean,
+  letteringIsAComponent: boolean,
   surface: RenderStyleSurface,
 ): string {
   const negatives = [
-    'text',
-    'labels',
+    ...(letteringIsAComponent ? [] : ['text', 'labels']),
     'cast shadow',
     ...surface.negatives,
     ...(frameIsAComponent ? [] : ['frame', 'border']),

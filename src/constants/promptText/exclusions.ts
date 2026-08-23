@@ -110,6 +110,18 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // all.
   BACKGROUND:
     'Any character, creature or vehicle drawn at the playfield’s own scale, or near enough the camera to read as an actor rather than as scenery; any platform, ledge, walkway or other geometry a player could stand on or collide with; any pickup, door or interactive object; interface, logo and lettering; and, on any band meant to loop, a visible join where it repeats or a landmark distinctive enough to be recognised twice across a scroll. A bird at distance, a wrecked hull, a derelict station on the horizon and anything else the inventory in section [SEC:INVENTORY] names are scenery, and are drawn.',
+  // The one category whose line ends by *rescuing* something the list it sits in would otherwise
+  // take, which is BACKGROUND's move and matters more here than anywhere: this bullet's own list
+  // sits three lines above one saying the only lettering permitted is the inventory's, and without
+  // the closing sentence a reader meets both immediately before an inventory of ninety-four letters.
+  //
+  // **Where the caption ban went is the half worth recording.** A draft ended this line with “any
+  // caption, key, index number or codepoint written beside a component to name it” — which is
+  // exactly what the conditional bullet further down the same list now says, and a list stating one
+  // thing twice in two wordings is the duplication `CategoryAssembly.exclusion` is written against.
+  // The template's own bullet is the right home for it, because that boundary is the *contract's*
+  // rather than this category's.
+  FONT: 'Backgrounds, environments, ground planes, terrain, sky and scenery; any page, card, panel, plate or ruled line drawn behind or beneath a component; any hand, quill, brush or nib drawing the letters; and any decorative flourish, swash or ornament the inventory in section [SEC:INVENTORY] does not name. The characters the inventory names are the subject of the sheet, and are drawn.',
 };
 
 /**
@@ -164,6 +176,12 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
   ICON: 'Every entry below is one member of this one icon set, or a piece laid over one. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.',
   BACKGROUND:
     'Every entry below is a band of this one backdrop, or a loose piece laid over one. An entry describing anatomy, a wall the player walks against, a platform, a vehicle part or an interface element does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  // The second sentence is this category's own and is the load-bearing one in the whole record: it is
+  // the only place in a compiled prompt where the reader is told, at the point of listing ninety-four
+  // letters, that the lettering below is the subject rather than the thing section 0 forbids.
+  // INTERFACE's and ICON's guards make the same move for frames and overlays; this one makes it for
+  // the ban those two only ever strengthened.
+  FONT: 'Every entry below is one character of this one font. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The letters, digits and marks it does list are components — the subject of the sheet, and the one thing section [SEC:CONTRACT] permits it to carry — not the annotation that section forbids.',
 };
 
 /**
@@ -244,6 +262,17 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // that sheet on the six pieces section 4 requires.
   BACKGROUND:
     'Every component is a band of this one backdrop or a loose piece laid over one — nothing drawn at the playfield’s own scale, no interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup. Every band meant to loop carries the same profile, materials and values at its left edge as at its right, so a run of it shows no join, and no looping band carries a mark that would be recognised twice across a scroll.',
+  // Qualified throughout, as VEHICLE's and ICON's are, and here the qualifier does the most work in
+  // the record: every component of this sheet *is* lettering, so an unqualified “no lettering” — the
+  // clause BACKGROUND's line above carries — would fail the sheet on all ninety-four entries section 4
+  // required. The caption clause is deliberately absent for the reason `CATEGORY_EXCLUSION_TEXT`'s
+  // FONT line gives: the conditional text check two items above this one in the same list already
+  // states it, and this record may not restate what sits beside it.
+  //
+  // The second half is the check no generic audit can stand in for: a font sheet passes every count,
+  // background and ordering test and is still unusable if one glyph sits a pixel off the baseline,
+  // and that only shows when the characters are compared with each other.
+  FONT: 'Every component is one character of this one font — no anatomy, tiles, terrain or scenery, and no page, plate or panel drawn behind a component. Every character stands on the same baseline at the same cap height and stroke weight under the same light, so no component reads as belonging to a different font.',
 };
 
 /**
@@ -294,6 +323,11 @@ export const FRAME_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = 
   // drawn round one is the surround this term suppresses — and a border would sit exactly where the
   // seam has to be invisible.
   BACKGROUND: false,
+  // A glyph has an outline and no border. `Applied Treatment` offers `Hard Outline Around Each Glyph`,
+  // which is the letterform's own edge drawn into the same component rather than a frame *around* it,
+  // so the term suppresses nothing this sheet requires — and it does suppress the plate, card and
+  // ruled line this category's own exclusions already ban.
+  FONT: false,
 };
 
 /**
@@ -339,4 +373,60 @@ export const LIMBS_ARE_COMPONENTS: Readonly<Record<SubjectCategory, boolean>> = 
   PORTRAIT: true,
   ICON: false,
   BACKGROUND: false,
+  // A glyph is a stroke skeleton, and this is the one category whose pools cannot describe a body at
+  // all: there is no arm to arrive twice and nothing for a generator to fuse. The pair would be
+  // weight spent on a failure this sheet cannot have.
+  FONT: false,
+};
+
+/**
+ * Whether **lettering** is one of this category's components rather than the annotation section 0
+ * forbids — the record that makes the app's oldest global rule a per-category one.
+ *
+ * **What it changes is a contract, not a term.** The template bans text on the sheet in three places:
+ * section 0's output contract, section 8's exclusion list and section 9's self-audit. All three were
+ * written as global rules, and for twelve categories that is exactly right — a stack count baked into
+ * an icon, a caption under a portrait and a legend down the side of a tileset are each a real failure
+ * those bans catch. A glyph set is the one deliverable whose *components are lettering*, so on it the
+ * three forbid in sections 0, 8 and 9 precisely what section 4 requires, which is the
+ * §4-requires/§8-forbids contradiction every per-category record in this file exists to remove.
+ *
+ * **The exemption is narrow, and the narrowness is the design.** What it lifts is the ban on the
+ * inventory's own entries being letters, and it lifts nothing else: a watermark, a signature, a
+ * caption naming a component, an index number, a codepoint written beside a glyph, a legend, an arrow
+ * and a grid line are all annotation on a font sheet exactly as they are anywhere.
+ * `CATEGORY_EXCLUSION_TEXT` and `CATEGORY_AUDIT_TEXT` above are where FONT states that boundary in
+ * its own words, and section 0's conditional states it too rather than simply going quiet — a sheet
+ * told nothing at all about text comes back with the characters set as a specimen line, which is
+ * `CATEGORY_ASSEMBLY.FONT`'s failure.
+ *
+ * **Four wrappers read it where `FRAME_IS_A_COMPONENT` is read by one**, and the reason is the one
+ * that record gives: a negative channel names a thing to avoid and cannot express a placement. So
+ * `text`, `labels` and `captions` come out of Midjourney's negative flag, Stable Diffusion's and
+ * Qwen's negative blocks and Flux's leading sentence for this category alone, because on it those
+ * terms suppress the subject. `watermark` and `signature` stay in every channel that carried them:
+ * neither is a character of a font, and no reading of this exemption reaches them.
+ *
+ * A record rather than a check on the category at the call site, for the reason every per-category
+ * fact in this file is one: the next category is a compile error here until somebody answers for it,
+ * where a `category === 'FONT'` would silently answer for it wrongly.
+ */
+export const LETTERING_IS_A_COMPONENT: Readonly<Record<SubjectCategory, boolean>> = {
+  CHARACTER: false,
+  CREATURE: false,
+  OBJECT: false,
+  ITEM: false,
+  BUILDING: false,
+  VEHICLE: false,
+  EFFECT: false,
+  // The two that ban lettering a second time in their own exclusions, and the ban is *stronger* on
+  // them rather than merely inherited: a keybind letter, a stack count and a confirmation word baked
+  // into a button cap are each an asset serving one keyboard, one quantity or one language. Nothing
+  // about this record loosens either of them.
+  INTERFACE: false,
+  ICON: false,
+  TERRAIN: false,
+  PORTRAIT: false,
+  BACKGROUND: false,
+  FONT: true,
 };

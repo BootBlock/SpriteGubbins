@@ -21,7 +21,7 @@ import type { SubjectCategory } from '../types/subject.ts';
  * here carries the elevation with it: an INTERFACE degrading to `ORTHOGRAPHIC_FRONT` degrades 35°
  * to 0° in the same step, and section 3's two adjacent lines stay one statement about one camera.
  *
- * **Which categories this binds is the whole decision, and it is three.**
+ * **Which categories this binds is the whole decision, and it is four.**
  *
  * - **INTERFACE has exactly one camera, and it is `ORTHOGRAPHIC_FRONT`.** `sheetPlans/interface.ts`
  *   settles the premise in its own words — a button "has no facings to turn to", and the sheet a
@@ -41,6 +41,12 @@ import type { SubjectCategory } from '../types/subject.ts';
  *   all shipped icon styles, so the angle the depicted object is drawn at is a genuine art-direction
  *   choice rather than a property of the deliverable. The cell is what an icon set has in common,
  *   and the cell is not a camera.
+ * - **FONT is the fourth, and it is ICON's near miss resolved the other way.** A glyph is a mark on
+ *   a baseline with no object behind it, so there is nothing to be drawn at an angle: an engine
+ *   renders text by blitting the sprite as it was drawn, and a letter delivered under any camera but
+ *   the flat front one cannot be used at all. Where ICON's angle is an art-direction choice about the
+ *   thing depicted, a glyph depicts nothing — which is why the two categories part company here and
+ *   nowhere else.
  * - **TERRAIN keeps every projection, and binding it would delete a shipped deliverable.** It is the
  *   category that looks bound and is not: `LANDMARK_TEXT.TERRAIN` does say "a tile has no front — it
  *   is laid flat and read from above", and stops there only in the *tile's* clause. Its second
@@ -82,6 +88,7 @@ export const CATEGORY_PROJECTIONS: Readonly<Record<SubjectCategory, readonly [Pr
     PORTRAIT: ['ORTHOGRAPHIC_FRONT'],
     ICON: PROJECTIONS,
     BACKGROUND: ['ORTHOGRAPHIC_FRONT'],
+    FONT: ['ORTHOGRAPHIC_FRONT'],
   };
 
 /** Whether this category's subject can be drawn under the camera this projection names. */

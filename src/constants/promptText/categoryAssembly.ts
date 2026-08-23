@@ -284,4 +284,41 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
       'The bands stacked into the finished scene, and any picture of the backdrop with the playfield in front of it.',
     audit: 'nothing on the sheet is the finished scene with its bands already stacked one behind another',
   },
+  // **The one category where the assembly failure and the contract are the same question**, which is
+  // what makes the terms hard rather than the concept. This sheet's components are lettering — the
+  // one thing section 0 permits here and forbids everywhere else — so the failure is not that text
+  // appeared but that the characters were *set*: drawn side by side as a word, a name, a specimen
+  // line or a run of body copy, which merges entries the count lists separately.
+  //
+  // Every obvious word is spoken for, and by this category more thoroughly than by any other.
+  // “letter”, “glyph”, “character”, “alphabet”, “type” and “font” are all required — the inventory
+  // names ninety-four of them and section 1 carries `Font Family` verbatim — and “text” is the word
+  // the whole contract change turns on. “poster” and “signage” are this category's own option values
+  // (`Heavy Poster Weight`, `Slab Serif Signage Face`), so a `specimen poster` would negate a weight
+  // the subject may have asked for. What is left names the *setting together* without naming what
+  // was set: `pangram` is a run of letters and nothing else, and `paragraph` is what a failed sheet
+  // actually comes back as. Neither word appears anywhere in a compiled prompt except as a
+  // prohibition, which is the condition `CategoryAssembly.negatives` states.
+  //
+  // **`statement` is the two terms and nothing more, where every other category's reads as a
+  // phrase**, and the shortfall is this category's vocabulary rather than an oversight. A draft read
+  // `no pangram or paragraph of set text`, and “text” is `Credits & Long Body Text` — an option
+  // section 1 may state verbatim — so the qualifier that made the clause read as English negated one
+  // of this category's own values. (“set” is safe, and is worth naming because it looks like the
+  // second collision: it is a word of the category's own label, `Bitmap Font / Glyph Set`, which
+  // `requiredWords` subtracts for every category.) Flux takes the clause positively rather than as a
+  // negative prompt, and `categoryAssembly.test.ts` holds it to the terms rule for exactly that
+  // reason: the bleed is the same either way.
+  //
+  // The body forms keep the vocabulary the terms had to give up, for the reason TERRAIN's do: “set
+  // side by side as a word” is a relation between characters rather than a word standing in for one.
+  FONT: {
+    statement: 'no pangram or paragraph',
+    negatives: ['pangram', 'paragraph'],
+    instruction:
+      'Do not draw the characters set beside one another into a word, a name, a specimen line or a run of body copy anywhere on the sheet, including as a reference or key.',
+    exclusion:
+      'Any word, name, specimen line or paragraph set from the characters, and any picture of the font in use.',
+    audit: 'no two characters are drawn touching or set side by side as a word',
+  },
 };

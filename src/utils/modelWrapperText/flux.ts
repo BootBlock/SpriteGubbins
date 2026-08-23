@@ -25,6 +25,13 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * form shadow is the shading that gives a component its volume — and it is `RENDERED_3D`'s and
  * `CLAY_RENDER`'s subject. The unqualified plural took both.
  *
+ * **`no text` is the sheet's too, and on one category it is the opposite of what the sheet needs.**
+ * A glyph set's components *are* lettering, so the strongest position in the strongest sentence this
+ * wrapper writes would be spent negating the subject — and Flux has no negative channel to correct it
+ * from. `LETTERING_IS_A_COMPONENT` answers, and the clause is replaced rather than dropped: what a
+ * font sheet must not carry is the characters *set together*, which is `assembly.statement`'s job on
+ * every other category and does the whole of it here.
+ *
  * **And the clause that closes the first sentence is the sheet's, from `CATEGORY_ASSEMBLY`.** It
  * read "no assembled figure" whatever the subject was, which put a claim about a figure in the
  * position Black Forest Labs' word-order guidance calls the strongest — on a terrain, building or
@@ -35,9 +42,16 @@ export function wrapForFlux(
   prompt: string,
   backgroundKeyDescription: string,
   surface: RenderStyleSurface,
+  letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
 ): string {
-  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with no cast shadow, no text, and ${assembly.statement}. Every part is drawn ${surface.statement}.
+  // Two clauses take `and`, three take a serial comma before it. Interpolating the middle clause on
+  // its own left the two-clause form reading "no cast shadow, and …", which is the one category this
+  // branch is for — so the whole closing run is written per shape rather than patched in the middle.
+  const closing = letteringIsAComponent
+    ? `no cast shadow and ${assembly.statement}`
+    : `no cast shadow, no text, and ${assembly.statement}`;
+  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with ${closing}. Every part is drawn ${surface.statement}.
 
 ${prompt}`;
 }

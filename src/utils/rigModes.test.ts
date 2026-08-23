@@ -104,13 +104,14 @@ describe('the rig table itself', () => {
     expect(SUBJECT_CATEGORIES.filter((c) => supportsRigMode(c, 'CUTOUT_RIG'))).toEqual(withRigSheet);
   });
 
-  it('leaves the eight categories that turn about nothing with one answer', () => {
+  it('leaves the nine categories that turn about nothing with one answer', () => {
     // Each argues its own case in its plan file: an item has no rig, a building's modules butt on a
     // shared width, a terrain is ground, an effect is a stretch of time, a slider handle travels
     // along a track, a face's features are replaced rather than swung, an icon's state pieces are
-    // laid over it rather than hinged to it, and a band scrolls rather than flexes. Named rather
-    // than derived, because the whole point of the table is that these eight are a decision someone
-    // made and not a fact falling out of another list.
+    // laid over it rather than hinged to it, a band scrolls rather than flexes, and a glyph's overlay
+    // is drawn into the same component rather than hinged to it. Named rather than derived, because
+    // the whole point of the table is that these nine are a decision someone made and not a fact
+    // falling out of another list.
     expect(UNARTICULATED).toEqual([
       'ITEM',
       'BUILDING',
@@ -120,6 +121,7 @@ describe('the rig table itself', () => {
       'PORTRAIT',
       'ICON',
       'BACKGROUND',
+      'FONT',
     ]);
     for (const category of UNARTICULATED) {
       expect(CATEGORY_RIG_MODES[category]).toEqual(['NONE']);

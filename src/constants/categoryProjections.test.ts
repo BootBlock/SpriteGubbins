@@ -27,18 +27,20 @@ describe('the table itself', () => {
     expect(projectionChoices(category).length).toBeGreaterThan(0);
   });
 
-  it('binds exactly the three categories whose subject is composited rather than photographed', () => {
+  it('binds exactly the four categories whose subject is composited rather than photographed', () => {
     // An interface widget is screen-space art: no top for `PURE_TOPDOWN` to show, no ground plane
     // for the axonometric cameras to lay out, no thickness for `OBLIQUE_45` to project. A BACKGROUND
     // band is the same claim about a plane standing at a distance, and a PORTRAIT is read at eye
     // level with the sitter's own turn stated in section 1 rather than by the camera. The
     // interesting half of the decision is who is left out, which is what makes naming the bound set
     // worth more than deriving it — ICON is the near miss, and it keeps every camera because a
-    // three-quarter potion bottle and an isometric map pin are both shipped icon styles.
+    // three-quarter potion bottle and an isometric map pin are both shipped icon styles. FONT sits
+    // on the bound side of that near miss, which is the one place it is tighter than ICON: an icon
+    // depicts an object that has an angle, and a glyph is a mark with no object behind it at all.
     const bound = SUBJECT_CATEGORIES.filter(
       (category) => CATEGORY_PROJECTIONS[category].length < PROJECTIONS.length,
     );
-    expect(bound).toEqual(['INTERFACE', 'PORTRAIT', 'BACKGROUND']);
+    expect(bound).toEqual(['INTERFACE', 'PORTRAIT', 'BACKGROUND', 'FONT']);
     for (const category of bound) {
       expect(CATEGORY_PROJECTIONS[category]).toEqual(['ORTHOGRAPHIC_FRONT']);
     }
@@ -90,7 +92,7 @@ describe('the table itself', () => {
 
 describe('resolveProjection', () => {
   it('keeps a camera the subject can be drawn under', () => {
-    // Nine of the twelve categories are offered every one, so for those this is every case.
+    // Nine of the thirteen categories are offered every one, so for those this is every case.
     expect(resolveProjection('CHARACTER', 'TRUE_ISOMETRIC')).toBe('TRUE_ISOMETRIC');
     expect(resolveProjection('TERRAIN', 'ORTHOGRAPHIC_SIDE')).toBe('ORTHOGRAPHIC_SIDE');
     expect(resolveProjection('INTERFACE', 'ORTHOGRAPHIC_FRONT')).toBe('ORTHOGRAPHIC_FRONT');

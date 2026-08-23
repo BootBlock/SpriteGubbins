@@ -208,7 +208,7 @@ export function sectionNumbers(template: string): SectionNumbers {
  *
  * **The template must not write the numerals itself, for the reason {@link applyNumbering} gives
  * about list items — and the cost of it having done so was larger here.** Section 5 is conditional
- * on the rig mode, and eight of the twelve categories have no rig at all, so those prompts ran
+ * on the rig mode, and nine of the thirteen categories have no rig at all, so those prompts ran
  * `## 4. COMPONENT INVENTORY` straight into `## 6. REQUIRED ASSEMBLY CAPABILITY` — a gap in the
  * numbering of a document whose prose cites its own sections several hundred times. The adherence
  * report already had the same problem one section further down and answered it by writing its
