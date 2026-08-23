@@ -45,8 +45,13 @@ export function wrapForFlux(
   letteringIsAComponent: boolean,
   assembly: CategoryAssembly,
 ): string {
-  const withoutText = letteringIsAComponent ? '' : ' no text,';
-  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with no cast shadow,${withoutText} and ${assembly.statement}. Every part is drawn ${surface.statement}.
+  // Two clauses take `and`, three take a serial comma before it. Interpolating the middle clause on
+  // its own left the two-clause form reading "no cast shadow, and …", which is the one category this
+  // branch is for — so the whole closing run is written per shape rather than patched in the middle.
+  const closing = letteringIsAComponent
+    ? `no cast shadow and ${assembly.statement}`
+    : `no cast shadow, no text, and ${assembly.statement}`;
+  return `The sheet shows only disconnected individual parts on a ${backgroundKeyDescription} field, with ${closing}. Every part is drawn ${surface.statement}.
 
 ${prompt}`;
 }

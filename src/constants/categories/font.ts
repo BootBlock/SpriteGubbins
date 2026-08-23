@@ -25,6 +25,15 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * the field this category cannot do without, and why `Stroke Construction` is stated for the whole
  * set rather than per glyph.
  *
+ * **The `build` pool states heights and never contents, and that is a constraint rather than a
+ * preference.** The sheet series is a function of the category alone — four sheets covering printable
+ * ASCII, whatever section 1 says — so an option claiming the set holds no lower case would put
+ * section 1 in contradiction with the twenty-six letters section 4 requires on sheet two, which is
+ * the §1-states/§4-requires failure the per-category records exist to remove. A first draft offered
+ * `Caps Only, One Height` and did exactly that; `Unicase, One Height Throughout` is the metric that
+ * option was reaching for, and it is compatible with every sheet. **A new `Vertical Metrics` option
+ * has to pass the same test**: it may fix a height, and it may not say which characters exist.
+ *
  * **The camera is fixed and the facings are fixed, and both for the same reason.** A glyph is a flat
  * mark with no far side: `categoryProjections.ts` pins `ORTHOGRAPHIC_FRONT` and
  * `categoryDirectionSets.ts` pins `SINGLE_FRONT`, because turning a letter to three quarters returns
@@ -132,9 +141,9 @@ export const FONT: CategoryDefinition = {
       key: 'build',
       label: 'Vertical Metrics',
       tooltip:
-        'Where the glyphs sit against each other — the baseline they all stand on, and how far the capitals rise above the lower-case letters. Stating it for the whole set is what stops one glyph arriving a pixel taller than the next, which is invisible on the sheet and visible in every word the engine draws.',
+        'Where the glyphs sit against each other — the baseline they all stand on, and how far the capitals rise above the lower-case letters. Stating it for the whole set is what stops one glyph arriving a pixel taller than the next, which is invisible on the sheet and visible in every word the engine draws. It decides the heights, never which characters the set holds: the sheets always cover printable ASCII, so a value here that withheld the lower case would be asking for a sheet the inventory still lists.',
       options: [
-        'Caps Only, One Height',
+        'Unicase, One Height Throughout',
         'Short X-Height, Tall Caps',
         'Tall X-Height, Short Caps',
         'Equal Caps And Ascenders',

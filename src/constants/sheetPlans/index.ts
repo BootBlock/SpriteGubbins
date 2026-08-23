@@ -19,8 +19,10 @@ export { CATEGORY_RIG_MODES, fixedRigMode, resolveRigMode, supportsRigMode } fro
  * What a stored sheet index is allowed to be, bounded by the longest series any pairing produces
  * over any direction set its category offers.
  *
- * Derived rather than written down, so a pairing that grows a third sheet admits one here in the
- * same edit — the eight-compass character series is the current maximum at three. It is deliberately
+ * Derived rather than written down, so a pairing that grows a sheet admits one here in the same
+ * edit — FONT's glyph set is the current maximum at four, printable ASCII being more glyphs than one
+ * generation delivers, and the eight-compass character series is the longest *directional* one at
+ * three. It is deliberately
  * a bound on *corrupt storage* and not a validity check: which indices are real depends on the
  * category and the chosen set, which `parseOutputConfig` does not have, so an index that is whole
  * and in range but larger than its own series resolves to sheet one in {@link sheetPlanFor}.

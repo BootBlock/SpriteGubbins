@@ -111,7 +111,7 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * section least able to afford it.
  *
  * **The native grid is stated in three places, and the split is what makes each of them necessary.**
- * Section 0's fifth item is a rule about *resampling*, and as written it read as a ban on the one
+ * Section 0's sixth item is a rule about *resampling*, and as written it read as a ban on the one
  * enlargement pixel art is made of — so the carve-out belongs in the item it would otherwise
  * contradict, not only where the scale is stated. **Both the carve-out and the sentence scoping the
  * item to resampling sit inside the gate**, which is what keeps a prompt with no native grid word for
@@ -202,8 +202,7 @@ Satisfy this section before any aesthetic consideration.
    this image carries. No watermark, signature, caption, legend, index number or codepoint anywhere
    in it, and nothing written beside a component to name it — grid position is the only identity a
    component has, exactly as it is on every other sheet. No two components are drawn touching or set
-   side by side as a word, a name or a specimen line: that is two entries merged, and the count above
-   is what catches it.
+   side by side as a word, a name or a specimen line.
 [/IF]
 [N]. Nothing annotating the image: no arrows, callouts or grid lines, and no frame or border around
    the image or around a component.
@@ -785,7 +784,7 @@ Before delivering, verify:
 [/IF]
 [IF:LETTERING_IS_A_COMPONENT]
 [N]. The only lettering on the sheet is the characters the inventory lists — no caption, legend,
-   index number or codepoint beside any of them, and no two of them set side by side as a word.
+   index number or codepoint beside any of them.
 [/IF]
 [N]. Components appear in the exact order the inventory lists them.
 [N]. Every component stops at its own joins — no entry arrives with a neighbouring piece attached,

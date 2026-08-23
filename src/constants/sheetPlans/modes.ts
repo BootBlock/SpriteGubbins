@@ -15,7 +15,7 @@ import { vehicleDirectionalVariants, VEHICLE_CUTOUT_RIG, VEHICLE_PART_LIBRARY } 
 import { PORTRAIT_EXPRESSION_LIBRARY } from './portrait.ts';
 import { ICON_SYMBOL_SET } from './icon.ts';
 import { BACKGROUND_LAYER_LIBRARY, BACKGROUND_PARALLAX_SET } from './background.ts';
-import { FONT_GLYPH_SET } from './font.ts';
+import { FONT_CAPITALS, FONT_DIGITS_AND_PUNCTUATION, FONT_LOWER_CASE, FONT_SYMBOLS } from './font.ts';
 
 /**
  * Which sheet each category can produce, and which of them it falls back to.
@@ -146,7 +146,12 @@ export const CATEGORY_SHEET_PLANS: Readonly<
   // because a font sheet looks like a grid and is the opposite of a tile field — the cells sit apart
   // and the engine decides the spacing at runtime.
   FONT: {
-    SINGLE_DIRECTION_POSE_LIBRARY: fixed(...FONT_GLYPH_SET),
+    SINGLE_DIRECTION_POSE_LIBRARY: fixed(
+      FONT_CAPITALS,
+      FONT_LOWER_CASE,
+      FONT_DIGITS_AND_PUNCTUATION,
+      FONT_SYMBOLS,
+    ),
   },
 };
 

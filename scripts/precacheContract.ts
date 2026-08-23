@@ -115,11 +115,19 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * two together bring the precache to 2224.86 KiB. The new figure keeps a margin of the same order
  * rather than widening it.
  *
- * **Raised once more, from 2228, by the FONT subject category.** A category costs roughly 19 KiB of
- * entry chunk — a sixteen-field option pool with its guidance, four sheet plans and four presets —
- * which is the same figure the three categories before it came to. Measured against the build
- * immediately before it, this one takes the precache to 2247.30 KiB. The margin is left at the same
- * order as every raise above rather than widened to absorb the next one.
+ * **Raised once more, from 2228, by the FONT subject category.** Measured against the build
+ * immediately before it — 2224.86 KiB, rebuilt from that commit with the same `node_modules` — this
+ * one takes the precache to 2247.43 KiB, a delta of 22.57 KiB for a sixteen-field option pool with
+ * its guidance, four sheet plans and four presets. That is a fifth more than the 18.9 KiB average of
+ * the three categories in the paragraph above, and the reason is worth recording rather than
+ * averaging away: this category's plans enumerate ninety-four glyphs one entry at a time, where the
+ * other three name a dozen components between them.
+ *
+ * **It is not the entry chunk, and the paragraphs above should not be read as saying a category ever
+ * is.** `assets/index-*.js` is byte-identical across the two builds at 222.97 kB. The growth lands in
+ * the three chunks that pull the constants in — `quantiseDials`, `useShowToast` and `useCopyPrompt`
+ * — which is what the precache figure measures and the entry chunk is not. The margin is left at the
+ * same order as every raise above rather than widened to absorb the next one.
  */
 export const PRECACHE_CEILING_KIB = 2251;
 

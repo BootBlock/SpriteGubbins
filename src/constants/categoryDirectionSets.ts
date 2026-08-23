@@ -20,7 +20,7 @@ import type { SubjectCategory } from '../types/subject.ts';
  * the batch is and which yaw its one facing takes — so the outcome is N identical kits requested at
  * angles the subject does not have, rather than a broken sheet.
  *
- * **Which categories this binds is the whole decision, and it is five.**
+ * **Which categories this binds is the whole decision, and it is six.**
  *
  * - **INTERFACE and TERRAIN turn to nothing at all.** A widget is a flat rectangle read straight on;
  *   a tile is laid flat and read from above, and `LANDMARK_TEXT.TERRAIN` says a tile has no front in

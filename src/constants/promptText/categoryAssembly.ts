@@ -302,10 +302,12 @@ export const CATEGORY_ASSEMBLY: Readonly<Record<SubjectCategory, CategoryAssembl
   //
   // **`statement` is the two terms and nothing more, where every other category's reads as a
   // phrase**, and the shortfall is this category's vocabulary rather than an oversight. A draft read
-  // `no pangram or paragraph of set text` — and “set” is this category's own `Set Assembly Base`
-  // field while “text” is `Credits & Long Body Text`, so the qualifier that made it read as English
-  // negated two things section 1 may state verbatim. Flux takes the clause positively rather than as
-  // a negative prompt, and `categoryAssembly.test.ts` holds it to the terms rule for exactly that
+  // `no pangram or paragraph of set text`, and “text” is `Credits & Long Body Text` — an option
+  // section 1 may state verbatim — so the qualifier that made the clause read as English negated one
+  // of this category's own values. (“set” is safe, and is worth naming because it looks like the
+  // second collision: it is a word of the category's own label, `Bitmap Font / Glyph Set`, which
+  // `requiredWords` subtracts for every category.) Flux takes the clause positively rather than as a
+  // negative prompt, and `categoryAssembly.test.ts` holds it to the terms rule for exactly that
   // reason: the bleed is the same either way.
   //
   // The body forms keep the vocabulary the terms had to give up, for the reason TERRAIN's do: “set

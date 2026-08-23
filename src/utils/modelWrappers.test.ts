@@ -605,7 +605,7 @@ describe('what a wrapper says about the assembled whole', () => {
     const lettering = LETTERING_IS_A_COMPONENT[category];
     expect(flux.startsWith('The sheet shows only disconnected individual parts on a'), category).toBe(true);
     expect(flux, category).toContain(
-      lettering ? `no cast shadow, and ${statement}.` : `no cast shadow, no text, and ${statement}.`,
+      lettering ? `no cast shadow and ${statement}.` : `no cast shadow, no text, and ${statement}.`,
     );
 
     // And nothing anywhere in any of the three says another category's failure. Both halves are

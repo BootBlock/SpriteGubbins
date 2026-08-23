@@ -12,12 +12,19 @@ import type { PresetArchetype } from '../../types/preset.ts';
  * what these four vary instead is the thing a font sheet is actually decided by: the construction,
  * the metrics and the surface.
  *
- * **Every one of them names a target that reasons over the prompt**, and that is a recommendation
- * this library makes rather than a rule the app enforces. Lettering is the deliverable image
- * generators get wrong most often, and a set with three malformed glyphs has to be redrawn by hand —
- * so the archetypes lead with the targets most likely to return something usable, while the category
- * itself stays available on all eleven. `categories/font.ts` says the same thing to the reader,
- * under `Font Family`, which is where somebody choosing this category will read it.
+ * **Every one of them names an autoregressive target**, and that is a recommendation this library
+ * makes rather than a rule the app enforces. Lettering is the deliverable image generators get wrong
+ * most often, and a set with three malformed glyphs has to be redrawn by hand — so the archetypes
+ * lead with the targets most likely to return something usable, while the category itself stays
+ * available on all eleven. `categories/font.ts` says the same thing to the reader, under
+ * `Font Family`, which is where somebody choosing this category will read it.
+ *
+ * **Autoregressive is not `deliberates`, and the two are easy to conflate here.** Three of the four
+ * targets named below do carry that flag, but `GPT_IMAGE` does not — `constants/models.ts` has it
+ * returning images only, so it gets no self-audit and no component map. What these four have in
+ * common is how they *draw*, which is a claim about glyph fidelity and not about whether the target
+ * can work through a specification. Nothing in the app gates on it, which is why it is a library
+ * recommendation rather than a capability.
  *
  * **The first two pin the exclusion no other category needs.** The components of this sheet are
  * characters, so the failure is not that lettering appeared but that it was *set*: two glyphs drawn
@@ -30,7 +37,7 @@ export const FONT_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'retro-pixel-interface-font',
     name: 'Retro Pixel Interface Font',
     description:
-      'Capitals and digits on a hard pixel grid, drawn to one cell width so a renderer can index straight into the sheet by codepoint. Flat fills only — a gradient inside a stem is noise at the size a HUD draws text.',
+      'A printable ASCII set on a hard pixel grid, one cell wide per glyph so a renderer can index it by codepoint. Caps and lower case share a height, and the fills are flat: a gradient in a stem is noise at HUD size.',
     category: 'FONT',
     subject: {
       species: 'Square Grid Pixel Face',
@@ -38,7 +45,7 @@ export const FONT_SET_PRESETS: readonly PresetArchetype[] = [
       age: 'Clean & Newly Cut',
       role: 'Interface Labels & Buttons',
       setting: 'Modern Day',
-      build: 'Caps Only, One Height',
+      build: 'Unicase, One Height Throughout',
       silhouette: 'Straight Segments, Sharp Corners',
       face_head: 'Flat Cut Terminals',
       anatomy: 'Fixed Cell, One Width For All',
@@ -116,7 +123,7 @@ export const FONT_SET_PRESETS: readonly PresetArchetype[] = [
     id: 'carved-stone-title-font',
     name: 'Carved Stone Title Font',
     description:
-      'Heavy capitals cut into stone, for title cards and chapter breaks. It excludes the swashes and flourishes a display face attracts, because a glyph whose ornament crosses the cell cannot be cut out as one sprite.',
+      'Heavy letterforms cut into stone, for title cards and chapter breaks. It excludes the swashes and flourishes a display face attracts, because a glyph whose ornament crosses the cell cannot be cut out as one sprite.',
     category: 'FONT',
     subject: {
       species: 'Blocky Display Face',
@@ -124,7 +131,7 @@ export const FONT_SET_PRESETS: readonly PresetArchetype[] = [
       age: 'Ancient & Weathered Carving',
       role: 'Headings & Title Cards',
       setting: 'Mythic Antiquity',
-      build: 'Caps Only, One Height',
+      build: 'Equal Caps And Ascenders',
       silhouette: 'Straight Segments, Cut Corners',
       face_head: 'Notched & Chiselled Terminals',
       anatomy: 'Two Cell Widths, Narrow And Wide',

@@ -29,6 +29,13 @@ import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
  * capitals it has to sit beside — and the failure that follows is silent, because both sheets look
  * correct alone and only disagree once text is set from them.
  *
+ * **What the lower-case sheet states about those metrics it *defers*, and that is not fussiness.**
+ * The series is fixed while `Vertical Metrics` is the reader's, so a plan asserting an x-height, an
+ * ascender and a descender requires what several legitimate values of that field withhold —
+ * `No Descenders, Flat Baseline` most plainly. Section 4 may not require what section 1 declines to
+ * state, so this sheet asks for agreement with whatever section 1 fixed rather than naming the three
+ * measurements itself. `categories/font.ts` carries the constraint's other half, on the pool.
+ *
  * **A letter or a digit is shown; a punctuation mark is named and given its codepoint.** Shown alone
  * in a bullet, `-` and `~` read as list syntax rather than as the subject, and the two quotation
  * marks cannot be written into this repository's source at all — CLAUDE.md asks every authored string
@@ -151,13 +158,14 @@ export const FONT_LOWER_CASE: SheetPlan = {
   name: 'Lower case',
   facings: 'run',
   assembly:
-    'a run of set text at any size — every lower-case letter sharing one baseline and one x-height, with ascenders and descenders reaching the same distances throughout, and each cutting out of the sheet as a single character an engine can index by codepoint.',
+    'a run of set text at any size — every lower-case letter sharing one baseline and one height against it, with any ascender or descender reaching the same distance throughout, and each cutting out of the sheet as a single character an engine can index by codepoint.',
   groups: [
     {
       heading: null,
       intro: `The twenty-six Latin lower-case letters, in this order. They are drawn to sit beside the capitals of
-the same font, so the x-height, the ascender height and the descender depth are the ones section
-[SEC:SUBJECT] states rather than whatever this sheet arrives at on its own:`,
+the same font, so their height against the baseline — and how far any ascender rises or any descender
+drops — is what the vertical metrics in section [SEC:SUBJECT] fix, rather than whatever this sheet
+arrives at on its own. Where those metrics allow a letter no ascender or no descender, it has none:`,
       entries: LOWER_CASE_ENTRIES,
       outro: `${METRICS_RULE}
 
@@ -209,11 +217,3 @@ ${ISOLATION_RULE}`,
     },
   ],
 };
-
-/** The four sheets, in the order a set is generated and checked. */
-export const FONT_GLYPH_SET = [
-  FONT_CAPITALS,
-  FONT_LOWER_CASE,
-  FONT_DIGITS_AND_PUNCTUATION,
-  FONT_SYMBOLS,
-] as const;
