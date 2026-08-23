@@ -1,14 +1,13 @@
 import type { TargetSize } from '../types/output.ts';
 
 /**
- * Reading the studio's `spriteTargetSize` as the component size it states.
+ * Reading a `W × H` pair out of the studio's free-text `spriteTargetSize`, and nothing else.
  *
- * The field is free prose — the shipped presets hold *"48 × 96 px assembled (2 metres tall at 48 px
- * per metre)"* — and it names a **component** size, not a sheet scale. Four features read it and
- * none owns it: `minFeatureSize` takes it as the scale the pixel-discipline section is written
- * against, `nativeGridScale` turns it into the whole-number enlargement the prompt asks that grid be
- * delivered at, `targetSizeGrid` turns it into a candidate scale for a returned sheet, and the atlas
- * calculator checks it against the cell a texture affords.
+ * **It answers what pair is written there, never what that pair is a size of.** The field holds
+ * prose — the shipped presets carry *"48 × 96 px assembled (2 metres tall at 48 px per metre)"* and
+ * *"96 × 128 px per bay"* — and those two parse identically while meaning different things. Which
+ * one a configuration means is a property of the *sheet plan*, so `componentTargetSize` is what
+ * every feature reads, and this function is its parse step and its only caller in `src/`.
  *
  * **The parse is kept apart from that second reading, and the separation is load-bearing.**
  * `targetSizeGrid` takes an `ImageData` and so belongs to a program with the DOM lib; this function

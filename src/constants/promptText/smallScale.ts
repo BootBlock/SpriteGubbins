@@ -1,5 +1,4 @@
-import type { ResolutionProfile } from '../../types/output.ts';
-import { parseTargetSize } from '../../utils/targetSize.ts';
+import type { ResolutionProfile, TargetSize } from '../../types/output.ts';
 
 /**
  * The bullets section 2's pixel discipline adds when the stated component is sprite-sized.
@@ -9,10 +8,23 @@ import { parseTargetSize } from '../../utils/targetSize.ts';
  * no microtexture — say nothing about that inversion. A generator asked for a 16 × 16 icon under
  * the generic rules alone returns a miniature illustration: correct pixels, unreadable sprite.
  *
- * The gate mirrors `minFeatureSize`'s reasoning exactly: only `CUSTOM` consults the free-text size,
+ * The gate mirrors `minFeatureSize`'s reasoning exactly: only `CUSTOM` consults the stated size,
  * because the other three profiles *are* a scale and state their own figure — and the coarsest of
  * those, `RETRO_16_BIT` at 64–96 pixels per figure, is well past sprite scale, so none of them can
  * ever need these bullets.
+ *
+ * **The size arrives resolved, from `componentTargetSize`.** These bullets are about how one
+ * component is drawn, and a cut-out rig sheet's stated size is the figure its components assemble
+ * into — so they take `null` there and emit nothing, which is also what keeps them from pointing
+ * "above" at a line that no longer says *component*.
+ *
+ * **`minFeatureSize` takes the wider `StatedTargetSize` and this does not, which is the asymmetry
+ * to hold.** That one states a floor on every prompt, so withholding the size does not silence it —
+ * it makes it state a coarser figure, and a floor that is too coarse forbids detail a small piece
+ * needs. These bullets are additional prose, so withholding the size simply leaves them out, which
+ * costs guidance rather than asserting anything false. No shipped rig preset states a figure inside
+ * the sprite-scale edge below in any case; if one ever does, the answer is a second wording for an
+ * assembly, not this gate loosened.
  */
 
 /**
@@ -50,10 +62,8 @@ const SPRITE_SCALE_EDGE = 32;
  *   so each bullet states what is true of the finished sheet, as the 1:1 inspection bullet beside
  *   it does.
  */
-export function smallScaleDiscipline(profile: ResolutionProfile, spriteTargetSize: string): string {
+export function smallScaleDiscipline(profile: ResolutionProfile, target: TargetSize | null): string {
   if (profile !== 'CUSTOM') return '';
-
-  const target = parseTargetSize(spriteTargetSize);
   if (target === null || Math.min(target.width, target.height) > SPRITE_SCALE_EDGE) return '';
 
   return [

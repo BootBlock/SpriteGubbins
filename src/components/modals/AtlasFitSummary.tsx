@@ -12,6 +12,8 @@ interface AtlasFitSummaryProps {
   readonly canvasSize: AtlasCanvasSize;
   /** The smallest texture that seats every component at 1:1, or `null` where none does. */
   readonly smallestCanvas: AtlasCanvasSize | null;
+  /** Whether the studio's stated size is the assembled figure — see {@link AtlasFitDetail}. */
+  readonly assembled: boolean;
 }
 
 /**
@@ -26,7 +28,13 @@ interface AtlasFitSummaryProps {
  * `attention` and `valid` rather than `accent`, because this is a status and not an action, and
  * they are the two tones that already mean "needs attention" and "clean" everywhere else in the app.
  */
-export function AtlasFitSummary({ usableBounds, fit, canvasSize, smallestCanvas }: AtlasFitSummaryProps) {
+export function AtlasFitSummary({
+  usableBounds,
+  fit,
+  canvasSize,
+  smallestCanvas,
+  assembled,
+}: AtlasFitSummaryProps) {
   return (
     <div className="space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -35,7 +43,11 @@ export function AtlasFitSummary({ usableBounds, fit, canvasSize, smallestCanvas 
           <Tooltip text={ATLAS_TOOLTIPS.fit} hint="Component fit" />
         </span>
         {fit === null ? (
-          <Badge>No component size named</Badge>
+          // Two different states, and the badge says which: a sheet still waiting for a size, and one
+          // whose size can never be a component's. Saying "none named" on the second reads as the
+          // panel having failed to see a studio field that is right there holding
+          // `48 × 96 px assembled`, and invites the reader to fill in a box that would not help.
+          <Badge>{assembled ? 'Not a component size' : 'No component size named'}</Badge>
         ) : fit.scale === 0 ? (
           <Badge tone="attention">⚠ Does not fit</Badge>
         ) : (
@@ -48,6 +60,7 @@ export function AtlasFitSummary({ usableBounds, fit, canvasSize, smallestCanvas 
         fit={fit}
         canvasSize={canvasSize}
         smallestCanvas={smallestCanvas}
+        assembled={assembled}
       />
     </div>
   );

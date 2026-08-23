@@ -25,7 +25,7 @@ import {
   PROJECTION_TEXT,
   RENDER_STYLE_SURFACE,
   RENDER_STYLE_TEXT,
-  RESOLUTION_PROFILE_TEXT,
+  resolutionProfileDescription,
   resolveCameraElevation,
   SCALE_EXAMPLE_TEXT,
   smallScaleDiscipline,
@@ -50,6 +50,7 @@ import { directionalRotation } from './directionalRotation.ts';
 import { leadingSideLedger } from './leadingSideLedger.ts';
 import { turntableSequence } from './turntableSequence.ts';
 import { describeMirrorPairs, mirrorPairs } from './mirrorPairs.ts';
+import { statedTargetSize, statesAssembledSize } from './componentTargetSize.ts';
 import { nativeGridScale } from './nativeGridScale.ts';
 import { wrapForModel } from './modelWrappers.ts';
 import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
@@ -197,9 +198,23 @@ export function generatePrompt(
   // sheet of forty components is enlarged less than a sheet of twelve.
   const componentCount = componentCountFor(category, mode, output.directions, output.sheetIndex, anatomy);
 
+  // The size the field states, with the quantity it is a size of, or `null` where it states none.
+  // Resolved once and read by every section-2 feature that turns on it, so they cannot disagree
+  // about what the reader named. The quantity is the sheet's answer, not the text's: a cut-out rig
+  // sheet's components are the parts a figure is assembled from, so the size stated for it is the
+  // assembly — see `componentTargetSize.ts`.
+  const statedTarget = statedTargetSize(category, output.directionalMode, output.spriteTargetSize);
+
+  // The same answer narrowed to a genuine component size, for the three readers that can do nothing
+  // with an assembly: each seats or measures one component, and an assembled figure fed to any of
+  // them prices a canvas of fifteen whole characters. `minFeatureSize` takes the wider value
+  // instead, because it has a defensible floor to state on such a sheet and no floor at all is worse
+  // than a permissive one.
+  const componentTarget = statedTarget?.quantity === 'COMPONENT' ? statedTarget.size : null;
+
   // The whole-number enlargement the native pixel grid is delivered at, or `null` where this
   // configuration has no native grid — a style that is not pixel art, a profile that states its own
-  // scale, an unparseable size, or a component already large enough that there is nothing to
+  // scale, no per-component size, or a component already large enough that there is nothing to
   // enlarge. Read three times below — as the value, as the flag that gates the three places stating
   // it, and as the unit the pixel-discipline section counts its minimum feature in — so the prompt
   // cannot carry the carve-out without the figure it points at, nor name a native pixel where
@@ -207,7 +222,7 @@ export function generatePrompt(
   const nativeScale = nativeGridScale(
     output.renderStyle,
     output.resolutionProfile,
-    output.spriteTargetSize,
+    componentTarget,
     output.aspectRatio,
     componentCount,
   );
@@ -234,6 +249,18 @@ export function generatePrompt(
   const config: Record<string, string> = {
     RENDER_STYLE: output.renderStyle,
     RIG_MODE: rigMode,
+    // Which quantity section 2's target-size line names. A cut-out rig sheet draws a head, a torso,
+    // a pelvis and twelve limb segments, so a size stated for it is the figure those assemble into —
+    // and the shipped rig presets say so in the value itself, while the line above them called it a
+    // component size. One line contradicting itself, left for the generator to resolve.
+    //
+    // **Not `RIG_MODE`, even though section 5 is gated on that.** A pose-library sheet may carry
+    // `CUTOUT_RIG` as a perfectly legitimate request — its pieces do get bound to bones — while
+    // still stating a size per unit, which is what its own presets write. The question here is which
+    // sheet is drawn, and `statesAssembledSize` asks the sheet. It asks the sheet alone, so it is
+    // right while the field is empty too — which is what this gate needs, since the `[OPTIONAL:…]`
+    // inside it is what decides whether there is a line at all.
+    ASSEMBLED_TARGET: statesAssembledSize(category, output.directionalMode) ? 'yes' : '',
     // Gates four places at once: the precedence clause in section 0, the three surface lines and the
     // surface-discipline block in section 2 — negated — and the paragraph that replaces them. One
     // flag, because a style either states the surface itself or leaves those settings to state it.
@@ -381,7 +408,19 @@ export function generatePrompt(
 
     RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
     SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
-    RESOLUTION_PROFILE_DESCRIPTION: RESOLUTION_PROFILE_TEXT[output.resolutionProfile],
+    // Takes the same answer the target-size line does, because the two are printed one after the
+    // other and `CUSTOM` is the profile that defers to that line. Left as the flat lookup, it told
+    // the generator to work to a component size where one is stated, directly above a line stating a
+    // size and saying no component is it.
+    //
+    // **Keyed on the field, not on the sheet**, unlike the gate below. The assembled wording points
+    // at a size "stated below", and on a rig sheet with the box empty there is no line below — so
+    // the sheet's answer would leave the prompt pointing at nothing. The base wording covers that
+    // case as it always did, by saying *where one is stated*.
+    RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
+      output.resolutionProfile,
+      statedTarget?.quantity === 'ASSEMBLED',
+    ),
     // A function of the target size as well as the profile, because `CUSTOM` is the one profile
     // that carries no scale of its own — see `minFeatureSize`. It carries its own unit, from the
     // same `nativeScale` answer `NATIVE_GRID` is: the figure counts native pixels only where the
@@ -389,10 +428,10 @@ export function generatePrompt(
     // stated *native* unconditionally for as long as the two were separate, so every pixel-art
     // prompt on a stock profile — the default among them — measured against a unit it never
     // defined.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, output.spriteTargetSize, nativeScale !== null),
+    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, statedTarget, nativeScale !== null),
     // Sprite-scale bullets join the pixel discipline only when the stated component is small
     // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, output.spriteTargetSize),
+    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, componentTarget),
     // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
     // the value is still supplied because `substitute` throws on a token it has no value for, and
     // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.

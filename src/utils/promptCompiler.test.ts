@@ -1599,6 +1599,104 @@ describe('generatePrompt — technical settings in prose', () => {
     expect(large).toContain('No feature smaller than 3 × 3 delivered pixels.');
   });
 
+  it('names the quantity the target size actually states, which the sheet decides', () => {
+    // The defect: one line reading `- Target component size: 48 × 96 px assembled`, a label and a
+    // value contradicting each other, on the sheet whose components are a head, a torso, a pelvis
+    // and twelve limb segments. None of them is 48 × 96; the largest is a torso.
+    const rig = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        rigMode: 'CUTOUT_RIG',
+        spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
+      }),
+    );
+    expect(rig).toContain('- Target assembled size, for the whole figure once its pieces are put together:');
+    expect(rig).toContain('48 × 96 px assembled (2 metres tall at 48 px per metre)');
+    expect(rig).not.toContain('- Target component size:');
+
+    // The same words on a sheet that states a size per unit keep the component wording, so the split
+    // is about which sheet is drawn rather than about the text in the field.
+    const poses = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+        spriteTargetSize: '48 × 96 px assembled (2 metres tall at 48 px per metre)',
+      }),
+    );
+    expect(poses).toContain('- Target component size: 48 × 96 px assembled');
+    expect(poses).not.toContain('Target assembled size');
+  });
+
+  it('never points the profile line at a target-size line that is not there', () => {
+    // The assembled wording says "stated below", and the target-size line is an `[OPTIONAL:…]` that
+    // drops on an empty field — so keying it on the *sheet* left a rig sheet with an empty box
+    // telling the generator to work to a size the prompt does not carry. It keys on the field
+    // instead, and the base wording covers the empty case as it always did, by saying *where one is
+    // stated*.
+    const blank = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        rigMode: 'CUTOUT_RIG',
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '',
+      }),
+    );
+    expect(blank).not.toContain('Target assembled size');
+    expect(blank).not.toContain('- Target component size:');
+    expect(blank).not.toContain('target assembled size stated below');
+    expect(blank).toContain(
+      '- Resolution profile: Custom — work to the target component size where one is stated',
+    );
+  });
+
+  it('reads the rig sheet’s assembled figure as no component size at all', () => {
+    // Three of section 2's features are about one component, and each of them keyed off a figure no
+    // component has. `CUSTOM` is the gate all three share, so this is the configuration where the
+    // old behaviour was visible: a 24 × 24 assembled figure put a 1 × 1 minimum feature and the
+    // sprite-scale bullets on a sheet of pieces, and derived a native-grid enlargement from a canvas
+    // priced for fifteen whole characters.
+    const rig = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        rigMode: 'CUTOUT_RIG',
+        renderStyle: 'RETRO_PIXEL_ART',
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '24 × 24 px assembled',
+      }),
+    );
+    // The finest rung, in delivered pixels because no native grid was derived either. Not the
+    // unstated middle rung: a floor keyed off a figure no component has can only be too coarse, and
+    // too coarse forbids detail a limb segment legitimately needs.
+    expect(rig).toContain('No feature smaller than 1 × 1 delivered pixels.');
+    // And the profile line above it no longer promises a component size the sheet does not state.
+    expect(rig).toContain('- Resolution profile: Custom — work to the target assembled size stated below');
+    expect(rig).not.toContain('every component is designed silhouette-first');
+    expect(rig).not.toContain(NATIVE_GRID_HEADING);
+
+    // The identical size on a pose library, where the components are what it measures, still reaches
+    // all three — which is what shows the withdrawal is the sheet's doing.
+    const poses = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({
+        directionalMode: 'SINGLE_DIRECTION_POSE_LIBRARY',
+        renderStyle: 'RETRO_PIXEL_ART',
+        resolutionProfile: 'CUSTOM',
+        spriteTargetSize: '24 × 24 px assembled',
+      }),
+    );
+    expect(poses).toContain('No feature smaller than 1 × 1 native pixels.');
+    expect(poses).toContain('every component is designed silhouette-first');
+    expect(poses).toContain(NATIVE_GRID_HEADING);
+  });
+
   it('adds the sprite-scale bullets only where the target is sprite-sized and the style is pixel', () => {
     const spriteScale = withOutput({
       renderStyle: 'RETRO_PIXEL_ART',

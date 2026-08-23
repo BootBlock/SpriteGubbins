@@ -129,6 +129,17 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * pass in which to re-read the sheet gets the two instructions and no checklist, which is that gate's
  * own argument rather than a hole in this one.
  *
+ * **Section 2's target-size line is stated twice, because the field names two different quantities.**
+ * On every sheet but the cut-out rig one a component *is* the figure, so `- Target component size:`
+ * says what it means. `CUTOUT_RIG_SINGLE_DIRECTION` draws a head, a torso, a pelvis and twelve limb
+ * segments, and the shipped rig presets state a size for the figure those assemble into — so that
+ * label and that value contradicted each other on one line, and the generator was left to resolve it.
+ * The gate is `ASSEMBLED_TARGET`, and it is the *sheet's* answer rather than the rig field's — a
+ * pose-library sheet may carry `CUTOUT_RIG` as a legitimate request while still drawing pieces sized
+ * per figure, which is why `RIG_MODE` is the wrong flag here even though section 5 uses it.
+ * `utils/componentTargetSize.ts` computes it, and is the same answer for the readers on the app's
+ * side of the same field.
+ *
  * **The pixel-discipline minimum names the grid too, and it is the one mention that is not gated.**
  * That bullet has to appear on every pixel-art sheet, grid or no grid, so gating it would delete the
  * floor on interior detail from the majority of prompts the app composes. What varies is its *unit*,
@@ -334,7 +345,12 @@ Where this conflicts with anything above, the identity lock wins.
 - Surface-detail intensity: [DEFINE:SURFACE_DETAIL_DESCRIPTION]
 [/IF]
 - Resolution profile: [DEFINE:RESOLUTION_PROFILE_DESCRIPTION]
+[IF:ASSEMBLED_TARGET]
+[OPTIONAL:SPRITE_TARGET_SIZE  | - Target assembled size, for the whole figure once its pieces are put together: [DEFINE:SPRITE_TARGET_SIZE]. This sheet draws the pieces, not the assembly, so no single component is this size — each is drawn at whatever share of the figure it occupies.]
+[/IF]
+[IF:ASSEMBLED_TARGET!=yes]
 [OPTIONAL:SPRITE_TARGET_SIZE  | - Target component size: [DEFINE:SPRITE_TARGET_SIZE]]
+[/IF]
 [IF:VALIDATION_PASS!=yes]
 [IF:PALETTE!=yes]
 - Palette strategy: [DEFINE:PALETTE_DESCRIPTION]

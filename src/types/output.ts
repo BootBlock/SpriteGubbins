@@ -216,10 +216,34 @@ export interface PixelExtent {
  * turns it into a candidate pixel grid for a returned sheet, and the atlas calculator checks it
  * against the cell a texture affords. It lives beside the field it is the parsed form of, rather
  * than in any of their vocabularies.
+ *
+ * **Reaching it takes `componentTargetSize`, not `parseTargetSize`.** The field states a component
+ * size on every sheet but the cut-out rig one, where it states the figure the pieces assemble into —
+ * so the parse alone answers *what number is written there*, and only the resolver answers *whether
+ * that number is a component*. All four features want the second question.
  */
 export interface TargetSize {
   readonly width: number;
   readonly height: number;
+}
+
+/**
+ * The size the studio's field states, **with the quantity it is a size of**.
+ *
+ * The answer to the question the free-text field never carried: `48 × 96 px assembled` and
+ * `48 × 96 px per tile` parse to the same pair and mean different things, and which one a
+ * configuration means is a property of the sheet rather than of the words. `componentTargetSize`
+ * derives it; nothing stores it, because a stored answer beside a derived one is a second thing that
+ * can disagree with the sheet plan.
+ *
+ * A reader that only wants a genuine component size takes `TargetSize | null` and lets the resolver
+ * narrow for it. A reader that has something useful to say about an assembly — the pixel-discipline
+ * floor, which must not forbid detail a small piece needs, and the atlas panel, which has to explain
+ * why it is not checking a fit — takes this instead.
+ */
+export interface StatedTargetSize {
+  readonly quantity: 'COMPONENT' | 'ASSEMBLED';
+  readonly size: TargetSize;
 }
 
 /**
@@ -375,7 +399,17 @@ export interface ImageOutputConfig {
    */
   readonly sheetIndex: number;
   readonly backgroundKey: BackgroundKey;
-  /** Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely. */
+  /**
+   * Free text, e.g. `48 × 96 px` — an explicit target the profile names only vaguely.
+   *
+   * **Which quantity it names is decided by the sheet, not by this field.** On a cut-out rig sheet
+   * the components are the parts a figure is assembled from, so the size stated is the assembly —
+   * which is what the shipped rig presets write into the value by hand, as `48 × 96 px assembled`.
+   * The studio labels the box accordingly, section 2 states the figure with what it is, and
+   * `componentTargetSize` is what every per-component reader goes through. A second field naming the
+   * quantity was considered and rejected: the sheet plan already answers it, and a stored answer
+   * beside a derived one is a fifth thing that can disagree.
+   */
   readonly spriteTargetSize: string;
 
   readonly rigMode: RigMode;

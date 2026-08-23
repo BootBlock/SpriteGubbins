@@ -51,6 +51,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/StudioTab-*.js',
   'assets/Tooltip-*.js',
   'assets/componentBudget-*.js',
+  'assets/componentTargetSize-*.js',
   'assets/database-*.js',
   'assets/firstOfEachId-*.js',
   'assets/models-*.js',
@@ -59,7 +60,6 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/sheetCanvas-*.js',
   'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
-  'assets/targetSize-*.js',
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
@@ -154,18 +154,28 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * eleven plan files that have any. Measured against the build immediately before it, the precache
  * goes from 2253.00 to **2260.98 KiB**, a delta of 7.98. It is constant data the entry chunk
  * reaches, which is why it is paid for on a first visit and named here rather than being an
- * invisible edit. The margin is left at the same order as every raise above. *
- * **Raised once more, from 2264, by the sprite pack’s fixed cell.** The pack could only cut to each
- * sprite’s own bounding box, which a rig importer cannot take, so the download now offers a stated
+ * invisible edit. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2264 to 2268, where the rig target-size change met the raise above it.**
+ * Neither branch crossed the ceiling on its own — the target-size work measured 2252.72 KiB against
+ * its own base and the per-component names measured 2260.98 against theirs — and the merge of the
+ * two lands at **2265.42 KiB**. So this raise is bought by the smaller half of a pair that was
+ * already 3.02 under: section 2's target-size line is stated twice, once for a component size and
+ * once for an assembly, and the CUSTOM resolution profile gains a second wording beside it, because
+ * a cut-out rig sheet's stated size is the figure its pieces assemble into. That is prompt text
+ * rather than code, so it is constant data the entry chunk reaches, the same footing the raise above
+ * stands on. The margin is left at the same order as every raise above. *
+ * **Raised once more, from 2268, by the sprite pack's fixed cell.** The pack could only cut to each
+ * sprite's own bounding box, which a rig importer cannot take, so the download now offers a stated
  * cell with the artwork registered at a stated anchor. The code is four small modules; what it costs
  * is prose — five guidance paragraphs for the new controls, two rewritten download cards, and the
- * labels each pill and box carries. Measured against the build immediately before it — 2263.33 KiB,
- * rebuilt from that commit with the same `node_modules` — the precache reaches **2271.75 KiB**, a
- * delta of 8.42. It adds no entry to `PRECACHE_SHAPES`: the modules land in the same
+ * labels each pill and box carries. Measured against the build immediately before it — 2265.42 KiB,
+ * rebuilt from that commit with the same `node_modules` — the precache reaches **2273.85 KiB**, a
+ * delta of 8.43. It adds no entry to `PRECACHE_SHAPES`: the modules land in the same
  * constants-pulling chunks every raise above names. The margin is left at the same order rather than
  * widened.
  */
-export const PRECACHE_CEILING_KIB = 2276;
+export const PRECACHE_CEILING_KIB = 2278;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -10,6 +10,8 @@ import {
 import { paletteFor } from '../../constants/palettes/index.ts';
 import { validationPassFor } from '../../constants/promptText/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
+import { useSubjectStore } from '../../stores/useSubjectStore.ts';
+import { statesAssembledSize } from '../../utils/componentTargetSize.ts';
 import type { ValidationPass } from '../../types/rendering.ts';
 import { SelectField } from '../common/SelectField.tsx';
 import { TextField } from '../common/TextField.tsx';
@@ -81,8 +83,10 @@ function supersession(pass: ValidationPass | null): string {
 export function RenderStyleFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
+  const category = useSubjectStore((state) => state.category);
 
   const pass = validationPassFor(output.renderStyle);
+  const assembled = statesAssembledSize(category, output.directionalMode);
 
   return (
     <>
@@ -119,11 +123,20 @@ export function RenderStyleFields() {
         }}
       />
 
+      {/* The label names the quantity the box actually holds, which is not the same on every sheet.
+          A cut-out rig sheet's components are a head, a torso, a pelvis and twelve limb segments, so
+          a size stated for it is the figure those assemble into — which is what the shipped rig
+          presets already write into the value by hand, as “48 × 96 px assembled”. Asking for a
+          component size and being handed an assembly is what put `- Target component size: 48 × 96
+          px assembled` into section 2, a label and a value contradicting each other on one line, and
+          what sent that figure on to five readers that treat it as one component's. The studio is
+          where the field is filled in, so it is where the two quantities are told apart.
+          `statesAssembledSize` is the same answer the compiler and the two panels take. */}
       <TextField
-        label="Target Component Size"
+        label={assembled ? 'Target Assembled Size' : 'Target Component Size'}
         tooltip={OUTPUT_TOOLTIPS.spriteTargetSize}
         value={output.spriteTargetSize}
-        placeholder="48 × 96 px"
+        placeholder={assembled ? '48 × 96 px assembled' : '48 × 96 px'}
         onChange={(value) => {
           setOutputField('spriteTargetSize', value);
         }}

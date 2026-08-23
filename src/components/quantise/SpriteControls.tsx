@@ -11,11 +11,18 @@ interface SpriteControlsProps {
   /** What the transform found, or `null` while there is no result to have found anything in. */
   readonly sprites: SpriteSegmentation | null;
   /**
-   * The component size the studio's prompt asks for, or `null` where it states none.
+   * The size **one component** was asked for, or `null` where the studio states none.
    *
    * The figure the measurement is worth reading against: a sheet whose sprites come back larger
    * than this was drawn at a coarser scale than the prompt asked for, which is a thing to know
    * before the artwork reaches an atlas cell sized from the same number.
+   *
+   * **`null` has two causes and the clause withdraws for both** — see `componentTargetSize`. An
+   * empty field is the obvious one. The other is a cut-out rig sheet, where the studio's stated size
+   * is the whole figure the pieces assemble into: the largest piece there is a torso, so the line
+   * compared a torso against a body and its *within the target* carried the difference between them
+   * as slack. Nothing in the app knows that difference, so the reading could not be corrected for —
+   * only withdrawn, which is what a per-component claim the app cannot support is worth.
    */
   readonly target: TargetSize | null;
   /**

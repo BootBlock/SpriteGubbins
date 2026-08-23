@@ -13,7 +13,7 @@ import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { borderKeyShare } from '../../utils/borderKeyShare.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
-import { parseTargetSize } from '../../utils/targetSize.ts';
+import { componentTargetSize } from '../../utils/componentTargetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
 import { AntiAliasControls } from '../quantise/AntiAliasControls.tsx';
 import { AutoTuneControls } from '../quantise/AutoTuneControls.tsx';
@@ -219,7 +219,18 @@ export function QuantiseTab() {
   // The studio's own target size, read as a second candidate. Deliberately **not** folded into
   // `grid`: it is an upper bound derived from how many components the sheet has to seat, not a
   // measurement of this image, so it is offered to click and never silently preferred.
-  const target = useMemo(() => parseTargetSize(spriteTargetSize), [spriteTargetSize]);
+  //
+  // Read through `componentTargetSize` rather than parsed here, because both things downstream of it
+  // are per-component and a cut-out rig sheet states the assembled figure instead. Fed the raw field
+  // there, the grid candidate seats fifteen cells of a whole character rather than of a torso, and
+  // the Sprites panel compares the largest piece against a size no piece on the sheet has — so its
+  // *within the target* carries whatever slack separates a torso from a whole body, which is a
+  // number nothing here knows. `null` withdraws both, and the app holds no per-piece size to put in
+  // their place.
+  const target = useMemo(
+    () => componentTargetSize(category, directionalMode, spriteTargetSize),
+    [category, directionalMode, spriteTargetSize],
+  );
   // How many components this sheet's own prompt contracts for — the figure the sprite panel holds
   // the segmentation against, and the ceiling the grid suggestion seats. One derivation for both,
   // because two would be two answers to "what did the prompt ask for" on one screen.
