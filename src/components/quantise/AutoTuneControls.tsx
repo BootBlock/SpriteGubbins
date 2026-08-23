@@ -2,7 +2,7 @@ import { AUTO_TUNE_GUIDANCE, TUNE_STAGE_LABELS } from '../../constants/autoTune.
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useAutoTuneStore } from '../../stores/useAutoTuneStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import type { TuneOutcome } from '../../types/autoTune.ts';
+import type { TuneOutcome, TuneStageReport } from '../../types/autoTune.ts';
 import type { QuantiseSettings } from '../../types/quantiser.ts';
 import { tuneOffThread } from '../../workers/autoTuneSession.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -106,9 +106,7 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
       {!tuning && outcome !== null && (
         <ul className="mt-3 space-y-1 font-mono text-2xs text-ink-faint">
           {outcome.stages.map((stage) => (
-            <li key={stage.stage}>
-              {`${TUNE_STAGE_LABELS[stage.stage]} · ${stage.settled} · ${stage.skipped ?? `${String(stage.candidates)} positions tried`}`}
-            </li>
+            <li key={stage.stage}>{stageLine(stage)}</li>
           ))}
         </ul>
       )}
@@ -128,6 +126,22 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
       )}
     </section>
   );
+}
+
+/**
+ * One stage's line: what it is, where its dials stand, and what it did.
+ *
+ * **A stage can have both a count and a reason, and the line says both.** The descent goes round, so
+ * a stage that swept under one reading and was set aside when a later round moved off it has spent
+ * positions *and* has nothing to do now — see `TuneStageReport`. Showing only the reason left the
+ * chip's total unaccountable: on the reference sheet at its opening dials the chip reads 403
+ * positions while the lines beneath it added to 282, with the missing 121 in two stages that
+ * reported a sentence instead.
+ */
+function stageLine(stage: TuneStageReport): string {
+  const label = `${TUNE_STAGE_LABELS[stage.stage]} · ${stage.settled}`;
+  const tried = stage.candidates === 0 ? null : `${String(stage.candidates)} positions tried`;
+  return [label, tried, stage.skipped].filter((part) => part !== null).join(' · ');
 }
 
 /** What the sweep cost, as one chip: `323 positions · 5 crops of 160 px · 2 rounds`. */

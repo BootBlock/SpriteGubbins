@@ -86,9 +86,11 @@ export function ladder(candidates: readonly TunedDials[]): readonly [TunedDials,
  * report a choice that was never compared with the one it replaced.
  *
  * The filter is what keeps it from costing anything on the stages whose ladder already holds the
- * incumbent — which is every reading stage, since the vote and expansion ladders are complete, and
- * every stage at all from the second round onwards, since a stage that moved a dial moved it onto its
- * own ladder.
+ * incumbent — which is the reading stage and the cleanup passes, whose ladders are their dials'
+ * whole ranges. **It does not become free after the first round**, and the ceiling in
+ * `constants/autoTune.ts` charges the extra in every round for the two reasons it stays: a stage the
+ * elbow could not separate keeps an off-ladder position rather than moving onto the ladder, and
+ * {@link restoreSkipped} puts an off-ladder *opening* value back whenever a stage skips.
  */
 export function withIncumbent(
   candidates: readonly TunedDials[],

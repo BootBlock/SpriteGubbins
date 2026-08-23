@@ -241,7 +241,7 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   // **Both exemptions lift under a dither**, which `statedPalette` expresses rather than checks for:
   // the reduction it is handed is `null` there, because the palette has not been applied yet, so
   // there is no entry of the user's for a fold to edit.
-  const merged = statedPalette(reduction) ? resolved : mergeColors(resolved, settings.colorMerge);
+  const merged = mergeIsExempt(settings) ? resolved : mergeColors(resolved, settings.colorMerge);
   const cleaned = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
   // And the palette step last of all where a dither holds it — see the note above on why it cannot
   // run anywhere else, and why these two passes come before it rather than after.
@@ -505,6 +505,28 @@ function reduceColors(image: ImageData, reduction: ColorReduction): ImageData {
  */
 function statedPalette(reduction: ColorReduction | null): boolean {
   return reduction?.kind === 'PALETTE' || reduction?.kind === 'LOCKED';
+}
+
+/**
+ * Whether the sheet-wide colour merge is held back — asked of the settings alone, so a caller that
+ * is not the pipeline can ask it too.
+ *
+ * **The merge does not run where the reader has *stated* which colours the sheet is made of**, a
+ * pinned palette or one locked off an earlier sheet: those entries are an explicit statement that
+ * two colours are distinct, and a cleanup dial must not quietly un-pin a pair of them. The exemption
+ * lifts under a dither, because there the palette step has not run yet and no pixel is a palette
+ * entry, so there is nothing of the reader's for a fold to edit.
+ *
+ * Exported because the auto-tune sweep has to know: a stage that swept the merge's ladder under a
+ * stated palette would run fifteen candidates a round over one image, and would tell the reader it
+ * had moved a dial that reached nothing. `TUNE_CELL_STAGES` asks this rather than restating it — a
+ * second copy of the condition is a second opinion about when the pass runs.
+ */
+export function mergeIsExempt(settings: QuantiseSettings): boolean {
+  // The pipeline above expresses this as `statedPalette(reduction)`, where `reduction` is already
+  // `null` under a dither; the two forms agree because `statedPalette(null)` is false, and because a
+  // dither is only positional at all where a reduction is in force.
+  return ditherMatrix(settings.dither) === null && statedPalette(settings.reduction);
 }
 
 /**

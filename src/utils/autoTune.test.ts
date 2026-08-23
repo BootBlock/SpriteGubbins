@@ -206,8 +206,9 @@ describe('autoTune', () => {
     // This fixture's descent does not reach a fixed point — it settles into a two-round loop, which
     // is the case `TUNE_ROUNDS`' own docblock says the cap exists for. Comparing only against the
     // round *before* would never see that loop close: narrowed to
-    // `sameTunedDials(visited.at(-1), settled)` this fixture runs all six rounds and answers with a
-    // different position, which is what makes the assertion falsifiable rather than decorative.
+    // `sameTunedDials(visited.at(-1), settled)` this fixture runs every round the cap allows and
+    // answers with a different position, which is what makes the assertion falsifiable rather than
+    // decorative.
     expect(outcome.rounds).toBeGreaterThan(1);
     expect(outcome.rounds).toBeLessThan(TUNE_ROUNDS);
   });
@@ -259,6 +260,31 @@ describe('autoTune', () => {
     expect(inkBlend?.skipped).not.toBeNull();
     expect(inkBlend?.candidates).toBeGreaterThan(0);
     expect(outcome.candidates).toBe(1 + outcome.stages.reduce((total, stage) => total + stage.candidates, 0));
+  });
+
+  it('hands back only dials that reach no pixel, so the reading stays true of them', () => {
+    // The claim the restore rests on, asserted rather than argued: each skip predicate is exactly
+    // the pipeline's own gate, so moving a skipped stage's dials cannot change the result — which is
+    // what lets `reading` stand while a later skip moves `settled` underneath it. Read through
+    // `readCandidate` rather than by hand, so it is the sweep's own scorer that answers.
+    const sample = [{ crop: SHEET, reference: SHEET }];
+    const alike = (a: TunedDials, b: TunedDials, settings: QuantiseSettings) => {
+      expect(readCandidate(a, sample, settings)).toEqual(readCandidate(b, sample, settings));
+    };
+    const base = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
+
+    // The ink dials, under each reading that blends no ink.
+    for (const vote of ['DOMINANT', 'K_CENTROID'] as const) {
+      alike({ ...base, vote }, { ...base, vote, lineStrength: 4, trimStrength: 3, inkThreshold: 96 }, BASE);
+    }
+    // The passes dial, with the fill cleanup at off.
+    alike({ ...base, fillCleanup: 0, cleanupPasses: 1 }, { ...base, fillCleanup: 0, cleanupPasses: 4 }, BASE);
+    // And all four anti-aliasing dials, with the control where the tab opens it.
+    alike(
+      base,
+      { ...base, antiAliasThreshold: 96, antiAliasStrength: 10, antiAliasRun: 12, antiAliasPalette: 'BLEND' },
+      BASE,
+    );
   });
 
   it('refuses a sheet smaller than one cell of the grid in force', () => {

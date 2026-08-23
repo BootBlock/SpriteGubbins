@@ -40,8 +40,8 @@ import { TUNE_STAGES } from './tuneStages.ts';
  * **The stop is a repeat of any earlier round's position, not only of the round before.** What the
  * stages descend on is not a scalar objective — the elbow ranks a pair of figures and its knee moves
  * with the candidate set — so a round can end somewhere it has been two rounds earlier and go round
- * that loop for ever. Measured on the reference sheet the descent reaches a fixed point at the fifth
- * round; on three of the other corpus sheets it reaches one at the second. A repeat of *any* position
+ * that loop for ever. Measured over the corpus, five of the eight sheets stop at the third round and
+ * the reference sheet takes six — `TUNE_ROUNDS` carries that table. A repeat of *any* position
  * already seen means every later round would retrace the same ground, which is what makes stopping
  * there a fact about the descent rather than a budget running out. `TUNE_ROUNDS` is what bounds the
  * case where none is found.

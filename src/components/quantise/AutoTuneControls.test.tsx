@@ -57,6 +57,16 @@ const OUTCOME: TuneOutcome = {
       skipped: 'The fill cleanup settled at off, so a second pass has nothing to run over.',
       settled: '1 pass',
     },
+    { stage: 'ALIAS_CONTOUR', candidates: 10, skipped: null, settled: 'boundaries past 32' },
+    { stage: 'ALIAS_RUN', candidates: 8, skipped: null, settled: 'runs of 4 and longer' },
+    // A stage that swept in an earlier round and skipped in the last one: the panel shows the reason
+    // rather than the count, and both are true at once. See `TuneStageReport`.
+    {
+      stage: 'ALIAS_BLEND',
+      candidates: 20,
+      skipped: 'The anti-aliasing control is off, so its dials reach nothing.',
+      settled: '60% BLEND',
+    },
   ],
 };
 
@@ -181,6 +191,20 @@ describe('AutoTuneControls', () => {
     });
     // A skipped stage is listed rather than left out: an unmoved dial that was never swept and one
     // that was swept and left alone are different facts about the sheet.
+    // Every stage the sweep can report has a line, the three anti-aliasing ones included — a label
+    // added to `TUNE_STAGE_LABELS` and rendered nowhere would otherwise be invisible to this suite.
+    expect(screen.getAllByRole('listitem')).toHaveLength(OUTCOME.stages.length);
+    expect(
+      screen.getByText(`${TUNE_STAGE_LABELS.ALIAS_RUN} · runs of 4 and longer · 8 positions tried`),
+    ).toBeInTheDocument();
+    // And a stage carrying both a count and a reason shows both, because the rounds make that a real
+    // state and showing only the reason leaves the chip's own total unaccountable.
+    expect(
+      screen.getByText(
+        `${TUNE_STAGE_LABELS.ALIAS_BLEND} · 60% BLEND · 20 positions tried · The anti-aliasing control is off, so its dials reach nothing.`,
+      ),
+    ).toBeInTheDocument();
+    // A stage that never ran shows the reason alone — "0 positions tried" would be noise.
     expect(
       screen.getByText(
         `${TUNE_STAGE_LABELS.CLEANUP_PASSES} · 1 pass · The fill cleanup settled at off, so a second pass has nothing to run over.`,

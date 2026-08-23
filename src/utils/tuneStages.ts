@@ -31,10 +31,11 @@ import type { TuneStage } from './tuneStage.ts';
  * would otherwise leave the reader positions chosen in a branch the sweep abandoned. That is what
  * `TuneStage.dials` is for, and `autoTune` carries the argument.
  *
- * **Five of the nine stages can find themselves with nothing to do, and they say so rather than
+ * **Seven of the nine stages can find themselves with nothing to do, and they say so rather than
  * sweeping anyway.** The two files this list is composed from carry which and why: the ink dials are
- * read only by `INK_WEIGHTED` and the passes dial only where the fill cleanup is on, and all three
- * anti-aliasing stages reach nothing while that control is `OFF`.
+ * read only by `INK_WEIGHTED`, the passes dial only where the fill cleanup is on, the merge only
+ * where no palette has been stated, and all three anti-aliasing stages reach nothing while that
+ * control is `OFF`. Only the reading and the fill cleanup always run.
  *
  * **Where a stage's own ladder starts is not what decides a tie** — `withIncumbent` is. See the note
  * there: a ladder is a set of positions worth trying, and making its *first* entry carry the

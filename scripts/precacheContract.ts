@@ -114,8 +114,16 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the build immediately before it, that came to 3.38 KiB, and it lands on top of the pools above: the
  * two together bring the precache to 2224.86 KiB. The new figure keeps a margin of the same order
  * rather than widening it.
+ *
+ * **Raised again, from 2228, by the extended auto-tune sweep.** No new pass and no new control — what
+ * it costs is prose and ladders, all of it constant data the entry chunk reaches: four more dial
+ * ladders for the anti-aliasing stages, three more entries in `TUNE_STAGE_LABELS`, the panel's five
+ * rewritten guidance paragraphs and the Auto button's own card, which grew to name the twelve dials
+ * the sweep now moves and the fourteen it will not. Measured against the build immediately before,
+ * that is 3.18 KiB: the precache goes from 2224.86 to 2228.04 KiB, which is the previous margin spent
+ * exactly. The new figure restores a margin of the same order rather than widening it.
  */
-export const PRECACHE_CEILING_KIB = 2228;
+export const PRECACHE_CEILING_KIB = 2231;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -59,12 +59,13 @@ export function readCandidate(
     // candidate is ranked by: it moves the result back toward the smooth source `fidelity` is
     // measured against, and every coverage it writes is another entry in `colors`. Both halves of
     // that are true and neither is a reason to hide the pass from the score. A reader with the pass
-    // on is going to *get* that fringe, so the two badges the panel reports — measured on
-    // `test_sprites/armour.png` at a budget of 16, 15.7 → 6.0 colours with the pass forced off
-    // against 58.7 → 36.7 with it running — were figures about a sheet nobody was looking at. Ranking
-    // the candidates on what they actually produce is what puts the two back in agreement, and the
-    // elbow is what stops the fringe being bought at any price: every coverage it writes is a colour
-    // the trade has to pay for.
+    // on is going to *get* that fringe, so the two badges the panel reported were figures about a
+    // sheet nobody was looking at. Measured on `test_sprites/armour.png` at a grid of 6 and a budget
+    // of 16, the sweep reports 16.0 → 12.8 colours with the control at `OFF` and 15.6 → 167.6 with it
+    // at `BOTH` — which is what a softened silhouette costs, since a coverage is an alpha and `SNAP`
+    // bounds the hues rather than the count. Ranking the candidates on what they actually produce is
+    // what puts badge and preview back in agreement, and the elbow is what stops the fringe being
+    // bought at any price: every coverage it writes is a colour the trade has to pay for.
     const result = quantiseImage(sample.crop, { ...settings, ...dials });
     const magnified = upscaleNearest(result.image, settings.grid);
     // The mesh is measured per transform and may cut a crop into a whole number of cells that is not

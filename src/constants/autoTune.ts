@@ -90,7 +90,7 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
  *
  * The sweep reads crops rather than the sheet because it runs the whole pipeline once per candidate,
  * and the sheet can be 16.8 million pixels. Forty cells is the smallest crop that still answers the
- * questions being asked of it: the mesh reader wants at least {@link FEWEST_SPACINGS} boundary
+ * questions being asked of it: the mesh reader wants at least `FEWEST_SPACINGS` boundary
  * spacings before it will call a spacing a habit, the colour merge and the fill cleanup are
  * neighbourhood passes that need a neighbourhood, and forty cells gives every one of them several
  * times what it asks for. What it costs depends on the grid, since the crop is forty cells of

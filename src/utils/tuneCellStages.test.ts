@@ -10,7 +10,7 @@ import {
 } from '../constants/autoTune.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import type { TunedDials } from '../types/autoTune.ts';
-import type { QuantiseSettings } from '../types/quantiser.ts';
+import type { ColorReduction, QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { VOTE_METHODS } from '../types/quantiser.ts';
 import { TUNE_CELL_STAGES } from './tuneCellStages.ts';
 import { tunedDialsOf } from './tuneStage.ts';
@@ -69,6 +69,43 @@ describe('TUNE_CELL_STAGES', () => {
     expect(merge && 'candidates' in merge ? merge.candidates.length : 0).toBe(TUNE_COLOR_MERGES.length);
     expect(cleanup && 'candidates' in cleanup ? cleanup.candidates.length : 0).toBe(
       TUNE_FILL_CLEANUPS.length,
+    );
+  });
+
+  it('leaves the merge nothing to do where a stated palette holds the pass back', () => {
+    // `quantiseImage` does not run the merge at all under a pinned or locked palette, so sweeping
+    // its ladder there would rank fifteen measurements of one image a round and would report a dial
+    // as moved that reached nothing. The predicate is `mergeIsExempt`, asked rather than restated.
+    const white: Rgba = { r: 255, g: 255, b: 255, a: 255 };
+    const stated: readonly ColorReduction[] = [
+      { kind: 'PALETTE', entries: [white] },
+      { kind: 'LOCKED', entries: [white], snap: 8 },
+    ];
+
+    for (const reduction of stated) {
+      const held = stageNamed('COLOUR_MERGE')?.plan(DIALS, { ...SETTINGS, reduction });
+      expect(held && 'skipped' in held ? held.skipped : null).toMatch(/pinned or locked palette/);
+
+      // **And the exemption lifts under a dither**, because there the palette step has not run yet
+      // and no pixel is one of the reader's entries — which is the branch a hand-written copy of the
+      // condition would have missed.
+      const dithered = stageNamed('COLOUR_MERGE')?.plan(DIALS, {
+        ...SETTINGS,
+        reduction,
+        dither: 'BAYER_4',
+      });
+      expect(dithered && 'candidates' in dithered ? dithered.candidates.length : 0).toBe(
+        TUNE_COLOR_MERGES.length,
+      );
+    }
+
+    // A budget states how many colours, not which, so nothing is exempt.
+    const budgeted = stageNamed('COLOUR_MERGE')?.plan(DIALS, {
+      ...SETTINGS,
+      reduction: { kind: 'MAX_COLORS', maxColors: 16 },
+    });
+    expect(budgeted && 'candidates' in budgeted ? budgeted.candidates.length : 0).toBe(
+      TUNE_COLOR_MERGES.length,
     );
   });
 
