@@ -135,8 +135,9 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * components are the parts one subject is cut into is the other case: a cut-out rig draws a head, a
  * torso, a pelvis and twelve limb segments, and the shipped rig presets state a size for the figure
  * those assemble into — so that label and that value contradicted each other on one line, and the
- * generator was left to resolve it. The same is true of a pose library, an articulation sheet and an
- * ITEM part library, whose presets write `32 × 48 px per figure` and `64 × 64 px per icon cell`.
+ * generator was left to resolve it. The same is true of a directional core, a pose library, an
+ * articulation sheet and an ITEM part library — whose presets write `32 × 48 px per figure`,
+ * `32 × 48 px per frame cell` and `64 × 64 px per icon cell` respectively.
  * The gate is `ASSEMBLED_TARGET`, and it is the resolved *sheet plan's* answer rather than the rig
  * field's — a sheet of units may carry `CUTOUT_RIG` as a legitimate request while still stating a
  * size per unit, which is why `RIG_MODE` is the wrong flag here even though section 5 uses it.

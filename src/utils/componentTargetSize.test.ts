@@ -11,7 +11,8 @@ describe('statesAssembledSize', () => {
     // library draws a head, a torso, a pelvis and limb variants; the articulation sheet draws
     // thirty-four limbs; an ITEM part library draws a grip, a shaft and a working end. Every one of
     // those states the subject the parts assemble into, and each category's own presets write it —
-    // `32 × 48 px per figure`, `32 × 48 px per frame cell`, `64 × 64 px per icon cell`.
+    // `32 × 48 px per figure` on a directional core, `32 × 48 px per frame cell` on a pose library,
+    // `64 × 64 px per icon cell` on a part library.
     for (const category of ['CHARACTER', 'CREATURE', 'OBJECT', 'VEHICLE', 'ITEM'] as const) {
       for (const mode of [
         'SINGLE_DIRECTION_POSE_LIBRARY',

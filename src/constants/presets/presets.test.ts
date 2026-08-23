@@ -55,6 +55,15 @@ const LONGEST_READABLE_DESCRIPTION = 220;
  * sheet the app then told the generator was a component size is exactly that drift, and it is what
  * issue #149 was opened about.
  *
+ * **The two lists divide on what the noun names, and the word *cell* is the tell.** A component-side
+ * value names the component itself — a tile, a bay, a band, a badge, a portrait, an animation frame,
+ * a button slice. An assembly-side value names the **cell one assembled subject occupies**: `per
+ * cell` on an OBJECT part library whose entries are a housing, a base and a hatch, `per icon cell` on
+ * an ITEM part library whose entries are a grip and a shaft, `per frame cell` on a character pose
+ * library. None of those sheets draws anything a reader would price at the stated size; each draws
+ * the pieces of the one thing that fills the cell. So the longer `… cell` phrase is matched before
+ * the bare noun it ends in — `per frame cell` before `per frame`, `per icon cell` before `per cell`.
+ *
  * A value that names a quantity and matches neither list fails as well, so a new wording has to be
  * classified rather than slipping through unchecked — which is the half a phrase list of this kind
  * loses first. A **bare** pair like `16 × 32 px` names no quantity at all and is left alone: seven of

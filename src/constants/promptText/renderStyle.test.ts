@@ -42,8 +42,9 @@ describe('minFeatureSize', () => {
     // and the generator resolved that by discarding one half of the instruction.
     expect(figure('CUSTOM', '16 × 16 px')).toBe('1 × 1');
     expect(figure('CUSTOM', '32 × 32 px')).toBe('1 × 1');
-    // The same prose read as a component size, which is what every sheet but a rig one makes it —
-    // the rig case at the foot of this file drives the other reading.
+    // The same prose read as a component size, which is what a sheet of whole deliverable units
+    // makes it — the word “assembled” is the preset author's and nothing here parses it. The case at
+    // the foot of this file drives the other reading, on a sheet whose components are parts.
     expect(figure('CUSTOM', '48 × 96 px assembled (2 metres tall at 48 px per metre)')).toBe('1 × 1');
   });
 

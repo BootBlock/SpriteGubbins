@@ -1,3 +1,4 @@
+import type { TargetQuantity } from './components.ts';
 import type { HardwareProfileId } from './hardware.ts';
 import type { PaletteId } from './palette.ts';
 import type { StyleReferenceId } from './styleReference.ts';
@@ -242,7 +243,14 @@ export interface TargetSize {
  * why it is not checking a fit — takes this instead.
  */
 export interface StatedTargetSize {
-  readonly quantity: 'COMPONENT' | 'ASSEMBLED';
+  /**
+   * The sheet plan's own declaration, carried through rather than re-derived.
+   *
+   * {@link TargetQuantity} is defined beside `SheetPlan` because the sheet is what answers this; a
+   * second union spelled out here would be the same enumeration written twice, free to gain a member
+   * in one place and not the other.
+   */
+  readonly quantity: TargetQuantity;
   readonly size: TargetSize;
 }
 
@@ -404,8 +412,8 @@ export interface ImageOutputConfig {
    *
    * **Which quantity it names is decided by the sheet, not by this field.** Where a sheet's
    * components are the parts one subject is cut into, the size stated is the assembly — which is
-   * what the shipped presets write into the value by hand, as `48 × 96 px assembled`,
-   * `32 × 48 px per figure` and `64 × 64 px per icon cell`. The studio labels the box accordingly,
+   * what the shipped presets write into the value by hand, as a rig's `48 × 96 px assembled`, a
+   * directional core's `32 × 48 px per figure` and a part library's `64 × 64 px per icon cell`. The studio labels the box accordingly,
    * section 2 states the size with what it is, and `componentTargetSize` is what every per-component
    * reader goes through. `SheetPlan.targetQuantity` is where each sheet declares its answer; a
    * second *stored* field naming the quantity was considered and rejected, because the sheet plan

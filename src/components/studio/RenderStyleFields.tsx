@@ -132,8 +132,9 @@ export function RenderStyleFields() {
           Where a sheet's components are the parts one subject is cut into — a rig's head, torso,
           pelvis and twelve limb segments, but equally a pose library's, an articulation sheet's or
           an ITEM part library's grip and shaft — a size stated for it is the subject those assemble
-          into, which is what the shipped presets already write into the value by hand as
-          “48 × 96 px assembled”, “32 × 48 px per figure” and “64 × 64 px per icon cell”. Asking for
+          into, which is what the shipped presets already write into the value by hand — a rig's
+          “48 × 96 px assembled”, a directional core's “32 × 48 px per figure”, a part library's
+          “64 × 64 px per icon cell”. Asking for
           a component size and being handed an assembly is what put `- Target component size: 48 × 96
           px assembled` into section 2, a label and a value contradicting each other on one line, and
           what sent that figure on to five readers that treat it as one component's. The studio is

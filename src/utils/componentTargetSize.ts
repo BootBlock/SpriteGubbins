@@ -36,8 +36,8 @@ import { parseTargetSize } from './targetSize.ts';
  * quantities separate hardest, but it is not where they separate: a CHARACTER pose library draws a
  * head, a torso, a pelvis and limb variants, the articulation sheet draws thirty-four limbs, and an
  * ITEM part library draws a grip, a shaft and a working end. Every one of those states the assembled
- * subject, which is what their own presets already write — `32 × 48 px per figure`,
- * `32 × 48 px per frame cell`, `64 × 64 px per icon cell`. So the resolved *sheet* answers it, not
+ * subject, which is what their own presets already write — `32 × 48 px per figure` on a directional
+ * core, `32 × 48 px per frame cell` on a pose library, `64 × 64 px per icon cell` on a part library. So the resolved *sheet* answers it, not
  * the category, not the mode and not the stored rig field: `SINGLE_DIRECTION_POSE_LIBRARY` draws
  * parts for a CHARACTER and whole glyphs for a FONT, and an ITEM carrying
  * `CUTOUT_RIG_SINGLE_DIRECTION` from an older build is drawn a directional core instead, which
@@ -78,10 +78,9 @@ export function statedTargetSize(
 ): StatedTargetSize | null {
   const size = parseTargetSize(spriteTargetSize);
   if (size === null) return null;
-  return {
-    quantity: statesAssembledSize(category, mode, directions, sheetIndex) ? 'ASSEMBLED' : 'COMPONENT',
-    size,
-  };
+  // The plan's own value, not a ternary rebuilding it from the boolean above — that would be the
+  // enumeration written a second time, and the two spellings could then disagree.
+  return { quantity: sheetPlanFor(category, mode, directions, sheetIndex).targetQuantity, size };
 }
 
 /**

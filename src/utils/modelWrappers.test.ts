@@ -40,15 +40,14 @@ const SPECIFICATION = '# MODULAR SPRITE-SHEET SPECIFICATION';
  * Four of the five fields are `nativeGridScale`'s gate — a pixel-art style, the `CUSTOM` profile and
  * a size that parses, on a canvas that seats the components at a multiple above 1 — and
  * `targetModel` is what puts Sol's wrapper round the result. The four are the Stardew Valley style
- * reference's own settings, which is the look the traced run asked for; the direction set is
- * `DEFAULT_OUTPUT_CONFIG`'s `FIVE_CLASSIC` rather than that preset's `FOUR_CARDINAL`, and the scale
- * comes out at 7 either way.
- */
-/**
- * A sheet that derives a native grid — which takes a **component** size, so an ICON symbol set
- * rather than the character every other fixture here uses. No CHARACTER plan states one: its
- * components are the parts of a figure, and the size a reader states for one of those sheets is the
- * figure they assemble into. See `utils/componentTargetSize.ts`.
+ * reference's own settings, which is the look the traced run asked for.
+ *
+ * **The category the tests pair it with is an ICON, not the character every other fixture here
+ * uses**, because a native grid is derived from a *component* size and no CHARACTER plan states one:
+ * that category's components are the parts of a figure, and the size a reader states for such a
+ * sheet is the figure they assemble into. See `utils/componentTargetSize.ts`. An ICON narrows every
+ * direction set to `SINGLE_FRONT`, so its twenty-eight components come out at 5× on this square
+ * canvas whatever `DEFAULT_OUTPUT_CONFIG` names.
  */
 const NATIVE_GRID_SHEET = {
   targetModel: 'CHATGPT_5_6_SOL',
