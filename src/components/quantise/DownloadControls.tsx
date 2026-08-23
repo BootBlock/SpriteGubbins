@@ -6,12 +6,16 @@ import { useImageDownload } from '../../hooks/useImageDownload.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { sheetIdentity } from '../../utils/sheetIdentity.ts';
+import type { TargetSize } from '../../types/output.ts';
 import type { SpriteDuplicateGroup, SpriteSegmentation } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
+import type { SpriteCellChoice } from '../../types/spriteCell.ts';
+import { resolveSpriteCell } from '../../utils/spriteCell.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { SegmentedChoice } from '../common/SegmentedChoice.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
+import { SpriteCellControls } from './SpriteCellControls.tsx';
 
 interface DownloadControlsProps {
   /** How many file pixels one drawn pixel is written as when the sheet is saved. */
@@ -39,6 +43,11 @@ interface DownloadControlsProps {
    * of the segmentation, so a sheet with nothing separable has nothing to group.
    */
   readonly duplicates: readonly SpriteDuplicateGroup[];
+  /** What the sprites are cut into — see `SpriteCellControls`, which is where it is set. */
+  readonly cellChoice: SpriteCellChoice;
+  readonly onCellChoiceChange: (choice: SpriteCellChoice) => void;
+  /** The component size the studio's prompt states, which is one of the cell's two sources. */
+  readonly target: TargetSize | null;
 }
 
 /**
@@ -63,6 +72,9 @@ export function DownloadControls({
   resultImage,
   sprites,
   duplicates,
+  cellChoice,
+  onCellChoiceChange,
+  target,
 }: DownloadControlsProps) {
   const download = useImageDownload();
   const category = useSubjectStore((state) => state.category);
@@ -93,6 +105,13 @@ export function DownloadControls({
   // would silently ignore.
   const effectiveScale = available.includes(downloadScale) ? downloadScale : PREVIEW_ZOOMS[0];
   const unavailable = resultImage === null || download.saving;
+  // The boxes both the cell controls and the press work from, in the 1:1 result's own coordinates —
+  // one derivation, so the panel's warning and the writer's refusal cannot be about different sets.
+  const boxes = sprites?.kind === 'SEGMENTED' ? sprites.boxes : [];
+  // Only the two formats that describe sprites read a cell, so only they offer the controls for one.
+  // The same conditional `ComparisonToolbar` puts on the heatmap's scale, for the same reason: a
+  // control that changed nothing would be a lie on screen.
+  const cuts = downloadFormat === 'SPRITE_PACK' || downloadFormat === 'MANIFEST';
 
   useEffect(() => {
     // A button that disables under the reader's own press takes their focus with it: the browser
@@ -149,6 +168,10 @@ export function DownloadControls({
         />
       </div>
 
+      {cuts && (
+        <SpriteCellControls choice={cellChoice} onChange={onCellChoiceChange} target={target} boxes={boxes} />
+      )}
+
       <ControlTooltip
         hint={`Download ${SHEET_FORMAT_FILES[downloadFormat].label}`}
         text={DOWNLOAD_GUIDANCE[downloadFormat]}
@@ -170,7 +193,11 @@ export function DownloadControls({
               image: resultImage,
               scale: effectiveScale,
               format: downloadFormat,
-              boxes: sprites?.kind === 'SEGMENTED' ? sprites.boxes : [],
+              boxes,
+              // Sent whatever the format is, as the boxes are, and `null` under a format that does
+              // not cut — so a cell left set from an earlier press cannot reach a writer that has no
+              // controls on screen for it.
+              cell: cuts ? resolveSpriteCell(cellChoice, target) : null,
               duplicates,
               names: identity.names,
               sheet: identity.sheet,

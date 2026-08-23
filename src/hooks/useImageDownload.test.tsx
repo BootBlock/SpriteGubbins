@@ -77,7 +77,7 @@ afterEach(() => {
  * and no studio configuration stands behind. Every test here is about the *file*, so this is the
  * default and the manifest suites are where those fields carry anything.
  */
-const NOTHING_READ = { duplicates: [], names: [], sheet: null } as const;
+const NOTHING_READ = { cell: null, duplicates: [], names: [], sheet: null } as const;
 
 /** Runs the download and hands back the file it produced, once the encode has settled. */
 async function download(

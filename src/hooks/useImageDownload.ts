@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { SHEET_FORMAT_FILES } from '../constants/sheetFormats.ts';
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
 import { writeSheetOffThread } from '../workers/sheetWriteSession.ts';
@@ -43,6 +44,13 @@ export interface SheetDownload {
    * not have to know which formats care.
    */
   readonly boxes: readonly SpriteBox[];
+  /**
+   * The fixed cell every sprite is cut into, at 1:1, or `null` where each keeps its bounding box.
+   *
+   * Refused rather than resampled where a sprite does not fit it — see `writeSheet`, which throws
+   * the sentence this hook's own failure toast then carries.
+   */
+  readonly cell: SpriteCell | null;
   /** The duplicate reading over those sprites, which a manifest turns into links between them. */
   readonly duplicates: readonly SpriteDuplicateGroup[];
   /** One name per component the studio's prompt asks for, in the order section 4 lays them out. */
@@ -66,7 +74,7 @@ export function useImageDownload(): ImageDownload {
   const saving = useSheetWriteStore((state) => state.writing);
 
   const save = useCallback(
-    ({ sourceName, image, scale, format, boxes, duplicates, names, sheet }: SheetDownload) => {
+    ({ sourceName, image, scale, format, boxes, cell, duplicates, names, sheet }: SheetDownload) => {
       // Read at the press rather than closed over, so the guard cannot go stale behind a render.
       // `writeSheetOffThread` refuses a second write as well; this is what keeps a refused press
       // from reporting a failure the reader did not cause.
@@ -79,6 +87,7 @@ export function useImageDownload(): ImageDownload {
         scale,
         format,
         boxes,
+        cell,
         duplicates,
         names,
         // What a manifest downloaded on its own says its rects are into: the PNG this same press

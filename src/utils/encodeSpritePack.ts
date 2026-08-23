@@ -2,6 +2,7 @@ import type { SpriteManifest } from '../types/spriteManifest.ts';
 import type { WrittenSpritePack } from '../types/sheetFormat.ts';
 import { cropSprite } from './cropSprite.ts';
 import { encodePng } from './encodePng.ts';
+import { placeInCell } from './placeInCell.ts';
 import { encodeManifest } from './spriteManifest.ts';
 import { zipArchive } from './zipArchive.ts';
 import type { ZipEntry } from './zipArchive.ts';
@@ -20,9 +21,15 @@ import type { ZipEntry } from './zipArchive.ts';
  * states the boxes at that same magnification — the alternative is three descriptions of one sheet
  * that agree until someone chooses a magnification.
  *
- * **A sprite keeps its bounding box**, transparent corners included: it is what the preview ringed
- * and what the manifest states, and trimming here would give one sprite two sizes depending on which
- * file it left in. See `cropSprite`.
+ * **A sprite is cut at the rect the manifest states, and at no other**, transparent corners
+ * included: it is what the preview ringed and what the manifest states, and trimming here would give
+ * one sprite two sizes depending on which file it left in. See `cropSprite`.
+ *
+ * **A fixed cell is then a canvas that box is laid on, never a wider cut.** Where the manifest
+ * states a cell, each sprite's file is that size with the box at the displacement the manifest gives
+ * it — because a sheet's sprites sit a gutter apart, and cutting the sheet at a cell-sized rect
+ * would bake the neighbour into the margin. `placeInCell` measured that on all eight reference
+ * sheets and says what it costs; `SpriteCell` says why a cell is offered at all.
  *
  * Pure, as everything in this directory is — asynchronous only because the PNG writer waits on the
  * platform's compressor.
@@ -57,17 +64,20 @@ export async function encodeSpritePack(
   const files: ZipEntry[] = [{ name: PACK_SHEET_FILE, bytes: written.bytes }];
 
   for (const [index, sprite] of manifest.sprites.entries()) {
-    const cut = await encodePng(
-      cropSprite(sheet, {
-        left: sprite.x,
-        top: sprite.y,
-        width: sprite.width,
-        height: sprite.height,
-        // Not read by the crop, and not worth recovering from the manifest, which states a sprite's
-        // extent rather than how much of the box its artwork fills.
-        pixels: 0,
-      }),
-    );
+    const box = cropSprite(sheet, {
+      left: sprite.x,
+      top: sprite.y,
+      width: sprite.width,
+      height: sprite.height,
+      // Not read by the crop, and not worth recovering from the manifest, which states a sprite's
+      // extent rather than how much of the box its artwork fills.
+      pixels: 0,
+    });
+    // The two are `null` together — see `ManifestSprite.cellOffset` — and are read as a pair rather
+    // than one of them being trusted to imply the other.
+    const { cell } = manifest;
+    const offset = sprite.cellOffset;
+    const cut = await encodePng(cell === null || offset === null ? box : placeInCell(box, cell, offset));
     files.push({ name: spriteFileName(manifest, index), bytes: cut.bytes });
   }
 

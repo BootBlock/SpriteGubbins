@@ -136,8 +136,18 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * not. Measured against the build immediately before it, the precache goes from 2247.43 to **2250.62
  * KiB**, a delta of 3.19 — and it lands in the same constants-pulling chunks the paragraph above
  * names rather than in the entry chunk. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2254, by the sprite pack’s fixed cell.** The pack could only cut to each
+ * sprite’s own bounding box, which no rig importer accepts, so the download now offers a stated cell
+ * with the artwork registered at a stated anchor. The code is four small modules; what it costs is
+ * prose — five guidance paragraphs for the new controls, two rewritten download cards, and the
+ * labels each pill and box carries. Measured against the build immediately before it — 2250.62 KiB,
+ * rebuilt from that commit with the same `node_modules` — the precache reaches **2258.80 KiB**, a
+ * delta of 8.18. It adds no entry to `PRECACHE_SHAPES`: the modules land in the same
+ * constants-pulling chunks every raise above names. The margin is left at the same order rather than
+ * widened.
  */
-export const PRECACHE_CEILING_KIB = 2254;
+export const PRECACHE_CEILING_KIB = 2262;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -103,10 +103,7 @@ export function SheetFields() {
         // configuration has one.
         disabledReason=""
         onChange={(value) => {
-          // A budget is a count of components, and `NumberField` treats `step` as a hint rather
-          // than a check — so a typed `42.7` is refused here in the same way it refuses an
-          // out-of-range entry, instead of reaching the warning as "a budget of 42.7".
-          if (Number.isInteger(value)) setOutputField('componentBudget', value);
+          setOutputField('componentBudget', value);
         }}
       />
 

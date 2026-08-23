@@ -86,6 +86,7 @@ function show(
       scale={scale}
       grid={inForce}
       quantised={grid === null ? null : { result: resultFor(grid, colors, { x: 0, y: 0 }, distance), grid }}
+      target={null}
       busy={busy}
     />,
   );
@@ -128,6 +129,7 @@ describe('ImageComparison', () => {
         scale={null}
         grid={8}
         quantised={{ result: resultFor(8, 32, { x: 3, y: 3 }), grid: 8 }}
+        target={null}
         busy={false}
       />,
     );
@@ -268,6 +270,7 @@ describe('ImageComparison', () => {
         scale={{ grid: 8, measurement: 'EXACT' }}
         grid={8}
         quantised={{ result: resultFor(8), grid: 8 }}
+        target={null}
         busy={busy}
       />
     );
@@ -310,6 +313,7 @@ describe('ImageComparison', () => {
         scale={{ grid: shown.grid, measurement: 'EXACT' }}
         grid={shown.grid}
         quantised={shown}
+        target={null}
         busy={busy}
       />
     );
@@ -487,6 +491,7 @@ describe('ImageComparison’s preview modes', () => {
         scale={null}
         grid={8}
         quantised={{ result: { ...result, strips: [], sprites: { kind: 'SOLID' } }, grid: 8 }}
+        target={null}
         busy={false}
       />,
     );
@@ -528,6 +533,7 @@ describe('ImageComparison’s preview modes', () => {
           },
           grid: 8,
         }}
+        target={null}
         busy={false}
       />,
     );
@@ -560,6 +566,7 @@ describe('ImageComparison’s preview modes', () => {
           },
           grid: 8,
         }}
+        target={null}
         busy={false}
       />,
     );
@@ -780,6 +787,7 @@ describe('ImageComparison, detached — where its notifications land', () => {
           scale={null}
           grid={8}
           quantised={{ result: resultFor(8), grid: 8 }}
+          target={null}
           busy={false}
         />
         <Toast />

@@ -1,4 +1,5 @@
 import type { Direction } from './rendering.ts';
+import type { SpriteAnchor } from './spriteCell.ts';
 import type { SubjectCategory } from './subject.ts';
 
 /**
@@ -51,7 +52,15 @@ export interface ManifestSprite {
    * inventory entry slugs to the same words takes a numeric suffix.
    */
   readonly name: string;
-  /** The bounding box in the written file's own pixels — magnified with it, never at 1:1. */
+  /**
+   * The artwork's own bounding box in the written file's own pixels — magnified with it, never 1:1.
+   *
+   * **This is the box whatever the cut is**, and deliberately so. A fixed cell is roomier than the
+   * artwork, and a sheet's sprites sit a gutter apart, so a rect widened to the cell would name a
+   * region holding the neighbour as well — see `placeInCell`, which measured that. The cell is
+   * stated once in {@link SpriteManifest.cell} and the displacement per sprite in
+   * {@link cellOffset}, which together say how to build the cell from this box.
+   */
   readonly x: number;
   readonly y: number;
   readonly width: number;
@@ -65,8 +74,23 @@ export interface ManifestSprite {
    * component that hangs from a socket rather than standing on the ground — an arm, a lid, a
    * detachable roof — will want its own, and this is the number to overrule rather than the answer
    * for it.
+   *
+   * **Where a cell was asked for, this is the anchor the artwork was registered against** rather
+   * than a default at all: the reader named that point because it is where the piece joins whatever
+   * carries it, so the pivot is that same point and not a second convention beside it. The default
+   * anchor is bottom-centre, which reproduces the paragraph above exactly. It is a point on the
+   * *box* either way, in the sheet's coordinates — {@link cellOffset} is what moves it into a cell.
    */
   readonly pivot: { readonly x: number; readonly y: number };
+  /**
+   * Where this sprite's box sits inside its cell, or `null` where each sprite keeps its own box.
+   *
+   * The one thing a consumer cannot work out from the anchor alone without repeating this app's own
+   * rounding: an odd amount of slack is floored, at 1:1, and magnified with everything else. In the
+   * written file's own pixels, as the rect above is, and non-`null` exactly when
+   * {@link SpriteManifest.cell} is.
+   */
+  readonly cellOffset: { readonly x: number; readonly y: number } | null;
   /**
    * The index of the sprite this one duplicates, or `null` where it is its own drawing.
    *
@@ -125,5 +149,30 @@ export interface SpriteManifest {
   readonly sheet: ManifestSheet | null;
   /** Whether {@link ManifestSprite.name} carries inventory names or positional ones. */
   readonly named: boolean;
+  /**
+   * The fixed cell every sprite was cut into, or `null` where each kept its own bounding box.
+   *
+   * **The field a rig importer reads before it reads anything else.** An importer of cut-out pieces
+   * declares a slot size and refuses artwork that does not match it, so a pack of fifteen differently
+   * sized pieces is one it cannot take at all — see `SpriteCell`, which says why the app offers a
+   * cell rather than trimming or leaving the boxes as they fell.
+   *
+   * Stated in the written file's own pixels, as the rects above are, so the two need no factor
+   * between them. The anchor says where in each cell the artwork stands, and is the point
+   * {@link ManifestSprite.pivot} carries wherever this is not `null`.
+   *
+   * **A cell is a canvas, not a region of the sheet.** Each sprite's file in a pack is this size,
+   * holding that sprite's bounding box at {@link ManifestSprite.cellOffset} and transparency
+   * everywhere else. Cutting the sheet at a cell-sized rect instead would take in whatever sits a
+   * gutter away, which `placeInCell` measured on all eight reference sheets.
+   */
+  readonly cell: ManifestCell | null;
   readonly sprites: readonly ManifestSprite[];
+}
+
+/** The cell a cut used, at the written file's own magnification. */
+export interface ManifestCell {
+  readonly width: number;
+  readonly height: number;
+  readonly anchor: SpriteAnchor;
 }

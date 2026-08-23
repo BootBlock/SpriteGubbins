@@ -397,6 +397,7 @@ export function QuantiseTab() {
               scale={facts?.scale ?? null}
               grid={grid}
               quantised={quantised}
+              target={target}
               busy={busy}
             />
           </div>
