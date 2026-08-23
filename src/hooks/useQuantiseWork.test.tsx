@@ -316,7 +316,7 @@ describe('useQuantiseWork', () => {
   it('shows no result at all once there is no scale to compute one at', () => {
     // The state a cleared grid box reaches on a sheet detection could not measure. There is nothing
     // coming, so `busy` is false — which means a result left on screen here would be presented as
-    // settled: captioned without "updating…", and offered to the Download button, while the panel
+    // settled: shown without the working chip, and offered to the Download button, while the panel
     // above it asks for a grid.
     const source = sheet('a.png');
     const { result, rerender, worker } = drive({ source, gridOverride: 8 });
