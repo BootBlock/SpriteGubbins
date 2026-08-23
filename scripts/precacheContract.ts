@@ -146,8 +146,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the split's shared chunks, so `TextField-*` and `componentGridScale-*` gave their names up to them.
  * Those are two of exactly the `+`/`-` pairs the note on `PRECACHE_SHAPES` warns read like a stray
  * file and are not one.
+ *
+ * **Raised once more, from 2256 to 2264, by the per-component names the sheet plans now carry.** Every
+ * inventory line whose components are told apart by what they are rather than by where they sit
+ * gained a `parts` list naming each of them, so a sprite pack cut from a character rig writes
+ * `04-left-upper-arm.png` where it wrote `04-left-arm-1.png` — 328 names on 98 entries, across the
+ * eleven plan files that have any. Measured against the build immediately before it, the precache
+ * goes from 2253.00 to **2260.98 KiB**, a delta of 7.98. It is constant data the entry chunk
+ * reaches, which is why it is paid for on a first visit and named here rather than being an
+ * invisible edit. The margin is left at the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2256;
+export const PRECACHE_CEILING_KIB = 2264;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
