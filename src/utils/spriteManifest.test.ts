@@ -15,6 +15,7 @@ const BOXES = [box(0, 0), box(10, 0), box(0, 10)];
 
 const input = {
   image: 'armour-quantised.png',
+  spriteDirectory: null,
   width: 40,
   height: 40,
   scale: 1,

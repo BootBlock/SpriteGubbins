@@ -157,6 +157,20 @@ export interface SpriteManifest {
   readonly version: number;
   /** The file the sprites are cut from, as the pack writes it beside this manifest. */
   readonly image: string;
+  /**
+   * The directory inside the pack the cut-out sprites sit in, or `null` in a manifest written alone.
+   *
+   * **Stated because it stopped being a constant.** It was always `sprites`, so a consumer could
+   * hard-code the path; it is now the sheet's own facing wherever a facing distinguishes the sheet
+   * from the rest of its batch, which is what makes eight rig runs unzip into a tree keyed by facing.
+   * Whether a facing was a distinguishing one is a reading of the whole batch and is deliberately not
+   * derivable from {@link ManifestSheet.facings}, so a manifest that named neither would leave the
+   * one machine-readable index in the archive unable to find the files beside it.
+   *
+   * `null` where this manifest was downloaded on its own: it describes a PNG the reader takes
+   * separately, and there are no sprite files for a directory to hold.
+   */
+  readonly spriteDirectory: string | null;
   readonly width: number;
   readonly height: number;
   /** How far the written file magnifies the quantised sheet — `1` for the sheet at its own size. */

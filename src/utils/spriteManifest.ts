@@ -25,6 +25,8 @@ import { scaleBoxes } from './sheetLayout.ts';
 export interface ManifestInput {
   /** The image the rects are into, as the pack names it beside this manifest. */
   readonly image: string;
+  /** Where the pack puts the cut-out sprites, or `null` for a manifest written on its own. */
+  readonly spriteDirectory: string | null;
   /** The written file's size, so a consumer needs nothing but this manifest to place a rect. */
   readonly width: number;
   readonly height: number;
@@ -103,6 +105,7 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
   return {
     version: MANIFEST_VERSION,
     image: input.image,
+    spriteDirectory: input.spriteDirectory,
     width: input.width,
     height: input.height,
     scale: input.scale,

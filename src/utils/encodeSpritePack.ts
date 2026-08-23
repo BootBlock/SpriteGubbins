@@ -32,8 +32,8 @@ import type { ZipEntry } from './zipArchive.ts';
 export const PACK_SHEET_FILE = 'sheet.png';
 /** What the manifest is called inside the archive. */
 export const PACK_MANIFEST_FILE = 'manifest.json';
-/** The directory the cut-out sprites sit in. */
-const PACK_SPRITE_DIRECTORY = 'sprites';
+/** The directory the cut-out sprites sit in, where the sheet's own facing does not name one. */
+export const PACK_SPRITE_DIRECTORY = 'sprites';
 
 /**
  * Where one sprite lands in the archive, derived from what the manifest already states.
@@ -42,16 +42,17 @@ const PACK_SPRITE_DIRECTORY = 'sprites';
  * ten sorts after nine. The name follows it only where the sheet is named — a positional name is
  * the ordinal again, and `07-sprite-07.png` says nothing twice.
  */
-function spriteFileName(manifest: SpriteManifest, index: number): string {
+function spriteFileName(manifest: SpriteManifest, index: number, directory: string): string {
   const sprite = manifest.sprites[index];
   const ordinal = String(index + 1).padStart(2, '0');
   const name = manifest.named && sprite !== undefined ? `-${sprite.name}` : '';
-  return `${PACK_SPRITE_DIRECTORY}/${ordinal}${name}.png`;
+  return `${directory}/${ordinal}${name}.png`;
 }
 
 export async function encodeSpritePack(
   sheet: ImageData,
   manifest: SpriteManifest,
+  directory: string,
 ): Promise<WrittenSpritePack> {
   const written = await encodePng(sheet);
   const files: ZipEntry[] = [{ name: PACK_SHEET_FILE, bytes: written.bytes }];
@@ -68,7 +69,7 @@ export async function encodeSpritePack(
         pixels: 0,
       }),
     );
-    files.push({ name: spriteFileName(manifest, index), bytes: cut.bytes });
+    files.push({ name: spriteFileName(manifest, index, directory), bytes: cut.bytes });
   }
 
   // Last, so a reader scrolling an archive listing meets the sheet, then the sprites, then the index
