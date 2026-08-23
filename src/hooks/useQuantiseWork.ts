@@ -11,6 +11,7 @@ import type {
   SheetFacts,
   QuantiseTuning,
 } from '../types/quantiser.ts';
+import { gridInForce } from '../utils/gridInForce.ts';
 import { sameQuantiseSettings } from '../utils/quantiseSettings.ts';
 import { quantiseSheet } from '../workers/quantiseSession.ts';
 
@@ -102,14 +103,9 @@ export function useQuantiseWork(
   const facts = source !== null && survey?.kind === 'facts' ? survey.facts : null;
   // The user's answer wins where they gave one; clearing the box falls back to the sheet's own
   // scale, which may not have one — in which case there is no result to compute, and the panel says
-  // so.
-  //
-  // **An estimated scale is deliberately not adopted here.** Each of the three readings that can
-  // produce one carries a tolerance the exact reading does not, and a scale nobody chose and nobody
-  // was asked to check would reduce the sheet by a factor the panel above is at that moment
-  // describing as an estimate. `GridControls` offers it to click instead,
-  // which is the same standing this tab gives the target size: a candidate, never a default.
-  const grid = gridOverride ?? (facts?.scale?.measurement === 'EXACT' ? facts.scale.grid : null);
+  // so. The rule itself, and why an estimated reading is never adopted, is `gridInForce`: the
+  // studio's capture button has to reach the same answer about a tab it cannot see.
+  const grid = gridInForce(gridOverride, facts);
 
   const settings = useMemo<QuantiseSettings | null>(
     () => (grid === null ? null : { grid, key, reduction, ...tuning }),

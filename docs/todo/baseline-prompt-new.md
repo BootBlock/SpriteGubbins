@@ -2177,11 +2177,15 @@ underneath it.
    only one of them needs a model.
 
    The **palette** does not — the colours are simply *in* the pixels. `IdentityPaletteCapture` sits
-   under the identity lock in the studio: drop an accepted sheet on it, and its dominant colours are
-   read out, ordered by how much of the subject they cover, with the background key excluded, and
-   written into the lock as a `Palette:` segment. It replaces an earlier palette rather than
-   accumulating, so re-reading sheet two of eight cannot leave two disagreeing lists in a field that
-   says *reproduce exactly*. The image is decoded in the tab and never leaves it.
+   under the identity lock in the studio, and takes a sheet two ways: from the Quantise tab, which is
+   where the sheet just accepted already is, or from a file dropped or chosen here, for one the tab
+   does not hold. Either way its dominant colours are read out, ordered by how much of the subject
+   they cover, with the background key excluded, and written into the lock as a `Palette:` segment.
+   It replaces an earlier palette rather than accumulating, so re-reading sheet two of eight cannot
+   leave two disagreeing lists in a field that says *reproduce exactly*. The route from the tab reads
+   the **quantised result** rather than the image dropped into it, and refuses one whose background
+   key is still painted on, because the segment is meant to state the colours the reader settled. The
+   image is decoded in the tab and never leaves it.
 
    > The **prose** half is **removed rather than built, as this item framed it.** "Cyan visor across
    > upper face" and "three amber chest lights in a vertical row" need eyes on the image, which means

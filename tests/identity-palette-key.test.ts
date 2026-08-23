@@ -2,8 +2,14 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { BACKGROUND_KEY_COLORS } from '../src/constants/backgroundKeyColors.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
 import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
-import type { QuantiseTuning } from '../src/types/quantiser.ts';
+import type {
+  BackgroundKeying,
+  ImportedImage,
+  QuantiseSettings,
+  QuantiseTuning,
+} from '../src/types/quantiser.ts';
 import { identityPalette } from '../src/utils/identityPalette.ts';
+import { quantisedSheetCapture } from '../src/utils/quantisedSheetCapture.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
 import { CORPUS_SHEETS, loadCorpus, type CorpusSheetName } from './sheetCorpus.ts';
 
@@ -51,16 +57,31 @@ const nearTheKey = (hex: string): boolean => {
   return channels.every((value, at) => Math.abs(value - (key[at] ?? 0)) <= NEAR_KEY);
 };
 
+/** What the tab is asking for, at one of the three keying positions this file measures. */
+const settingsAt = (key: BackgroundKeying | null): QuantiseSettings => {
+  const tuning: QuantiseTuning = TUNING;
+  return { ...tuning, grid: 4, key, reduction: { kind: 'MAX_COLORS', maxColors: 32 } };
+};
+
 /** The identity palette of one sheet's quantised result, with the tab's keying on or off. */
 const paletteOf = (image: ImageData, keyed: boolean): readonly string[] => {
-  const tuning: QuantiseTuning = TUNING;
-  const result = quantiseImage(image, {
-    ...tuning,
-    grid: 4,
-    key: keyed ? { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE } : null,
-    reduction: { kind: 'MAX_COLORS', maxColors: 32 },
-  });
-  return identityPalette(result.image, KEY);
+  const settings = settingsAt(keyed ? { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE } : null);
+  return identityPalette(quantiseImage(image, settings).image, KEY);
+};
+
+/** What the studio's capture button would decide about one sheet at one keying position. */
+const offerFor = (name: string, image: ImageData, key: BackgroundKeying | null): string => {
+  const settings = settingsAt(key);
+  const source: ImportedImage = { name, image };
+  return quantisedSheetCapture({
+    source,
+    grid: settings.grid,
+    settled: { settings, result: quantiseImage(image, settings) },
+    failed: false,
+    keying: key,
+    reduction: settings.reduction,
+    studioKey: KEY,
+  }).kind;
 };
 
 describe('identityPalette on a quantised result', () => {
@@ -92,5 +113,29 @@ describe('identityPalette on a quantised result', () => {
       expect(paletteOf(image, true).filter(nearTheKey)).toHaveLength(0);
     },
     300_000,
+  );
+
+  /**
+   * The guard the two halves above justify, at the two positions that both look keyed to a check
+   * written against the settings rather than against the pixels.
+   *
+   * The `0` rung is the one worth a case of its own: it is a keying pass that *ran*, so
+   * `settings.key` is not `null`, and on a resampled sheet it removes only the handful of pixels
+   * matching the key exactly. Measured over the corpus the border share is 1.000 there and with
+   * keying off, against 0.000 at `DEFAULT_KEY_TOLERANCE` — which is what lets the offer be decided
+   * by a threshold at all rather than by a fitted one.
+   */
+  it.each(CORPUS_SHEETS)(
+    'refuses %s until the tab has actually taken the field out',
+    (name) => {
+      const image = corpus.get(name);
+      expect(image).toBeDefined();
+      if (image === undefined) return;
+
+      expect(offerFor(name, image, null)).toBe('UNAVAILABLE');
+      expect(offerFor(name, image, { color: KEY, tolerance: 0 })).toBe('UNAVAILABLE');
+      expect(offerFor(name, image, { color: KEY, tolerance: DEFAULT_KEY_TOLERANCE })).toBe('READY');
+    },
+    600_000,
   );
 });

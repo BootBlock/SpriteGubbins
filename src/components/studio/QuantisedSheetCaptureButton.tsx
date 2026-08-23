@@ -1,9 +1,13 @@
+import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { STUDIO_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useIdentityPaletteCapture } from '../../hooks/useIdentityPaletteCapture.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useQuantiseAnswerStore } from '../../stores/useQuantiseAnswerStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { colorPlanFor } from '../../utils/colorReduction.ts';
+import { gridInForce } from '../../utils/gridInForce.ts';
+import { keyingInForce } from '../../utils/keyingInForce.ts';
 import { quantisedSheetCapture } from '../../utils/quantisedSheetCapture.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
@@ -21,29 +25,61 @@ import { ControlTooltip } from '../common/ControlTooltip.tsx';
  * The picker stays, and is not a fallback: a reader locking an identity off a sheet from last week
  * has nothing in the tab at all.
  *
- * **The button is disabled rather than hidden** in each of the three states that has nothing to read
- * — see `quantisedSheetCapture` for what they are and which control resolves each. A route that
- * appears only once the other tab is in the right state is a route nobody discovers, and this one
- * exists to be found at the moment the reader would otherwise reach for the file picker.
+ * **The button is disabled rather than hidden** in each of the five states that has nothing worth
+ * reading — see `quantisedSheetCapture` for what they are and which control resolves each. A route
+ * that appears only once the other tab is in the right state is a route nobody discovers, and this
+ * one exists to be found at the moment the reader would otherwise reach for the file picker.
  *
- * It reads the two quantise stores directly rather than being handed anything, because there is
- * nothing between here and them: `App` renders this inside the Studio tab, and the tab that owns
- * those stores is unmounted at the time.
+ * **It rebuilds what the tab is asking for rather than being handed it**, because `App` unmounts that
+ * tab on navigation and there is nothing to hand it over. Every part of that is built from the shared
+ * derivation the tab itself uses — `gridInForce`, `keyingInForce`, `colorPlanFor` — so the two cannot
+ * come to different conclusions about the state the reader left the tab in.
  */
 export function QuantisedSheetCaptureButton() {
   const source = useQuantiseStore((state) => state.source);
+  const gridOverride = useQuantiseStore((state) => state.gridOverride);
+  const keyingEnabled = useQuantiseStore((state) => state.keyingEnabled);
+  const keyTolerance = useQuantiseStore((state) => state.keyTolerance);
+  const lockedPalette = useQuantiseStore((state) => state.lockedPalette);
+  const paletteSnap = useQuantiseStore((state) => state.paletteSnap);
+  const survey = useQuantiseAnswerStore((state) => state.survey);
+  const attempt = useQuantiseAnswerStore((state) => state.attempt);
   const succeeded = useQuantiseAnswerStore((state) => state.succeeded);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
+  const palette = useOutputStore((state) => state.output.palette);
+  const paletteLimit = useOutputStore((state) => state.output.paletteLimit);
   const capture = useIdentityPaletteCapture();
 
-  // The result and the keying it was computed at come off the one answer, which is what makes the
-  // keying question decidable: it asks what was done to *this* image, not where the tab's dial
-  // happens to stand now.
-  const offer = quantisedSheetCapture(
-    source,
-    succeeded?.result ?? null,
-    succeeded?.settings.key ?? null,
-    BACKGROUND_KEY_COLORS[backgroundKey],
+  const studioKey = BACKGROUND_KEY_COLORS[backgroundKey];
+
+  // Memoised because the last of the checks walks the result's border, which is a few thousand pixels
+  // — cheap for a press, and not something to repeat on every render of the panel this sits in. It is
+  // the same reading, at the same cost, that `QuantiseTab` memoises to decide whether to offer keying.
+  const offer = useMemo(
+    () =>
+      quantisedSheetCapture({
+        source,
+        grid: gridInForce(gridOverride, survey?.kind === 'facts' ? survey.facts : null),
+        settled: succeeded,
+        failed: attempt?.kind === 'failed',
+        keying: keyingInForce(keyingEnabled, studioKey, keyTolerance),
+        reduction: colorPlanFor(palette, paletteLimit, lockedPalette, paletteSnap).reduction,
+        studioKey,
+      }),
+    [
+      source,
+      gridOverride,
+      survey,
+      succeeded,
+      attempt,
+      keyingEnabled,
+      studioKey,
+      keyTolerance,
+      palette,
+      paletteLimit,
+      lockedPalette,
+      paletteSnap,
+    ],
   );
 
   return (

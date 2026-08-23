@@ -149,14 +149,15 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * file and are not one.
  *
  * **Raised once more, from 2256, by the identity lock reading the Quantise tab's sheet.** It adds a
- * button, a shared capture hook, the pure offer function behind it and three sentences of guidance.
- * Measured against the build immediately before it, the precache goes from 2253.00 to **2255.54
- * KiB**, a delta of 2.54. It also adds a *file* — `assets/useQuantiseStore-*.js`, one of the shape
+ * button, a shared capture hook, the pure offer function behind it and five sentences of guidance —
+ * plus the two rules the button and the Quantise tab now share, `gridInForce` and `keyingInForce`.
+ * Measured against the build immediately before it, the precache goes from 2253.00 to **2257.15
+ * KiB**, a delta of 4.15. It also adds a *file* — `assets/useQuantiseStore-*.js`, one of the shape
  * lines above — and that one is not a rename: the studio now reaches the quantiser's two stores, so
  * the split cut them out of both views into a chunk the two share. A first visit downloads the same
  * bytes either way; what changed is that they are now in a chunk of their own.
  */
-export const PRECACHE_CEILING_KIB = 2259;
+export const PRECACHE_CEILING_KIB = 2261;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
