@@ -104,7 +104,7 @@ export function WipeHandle({ at, onMove, frameRef }: WipeHandleProps) {
       text={QUANTISE_TOOLTIPS.wipe}
       // The wrapper takes the control's place in the layout, so the placement moves out here with it
       // — `ControlTooltip` says why it replaces the default rather than adding to it. `z-20` clears
-      // the working overlay, which the divider has to stay usable through.
+      // the working chip, which the divider has to stay usable through.
       className="absolute inset-y-0 left-[var(--wipe)] z-20 -translate-x-1/2 px-2"
     >
       <div

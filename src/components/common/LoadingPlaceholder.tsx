@@ -14,11 +14,11 @@ interface LoadingPlaceholderProps {
  * `App` and `AppOverlays` split the four views and the four overlays into chunks of their own, so
  * between a reader pressing a tab and that view's code being parsed there is a gap — sub-frame once
  * the service worker has precached everything, and a real wait on a first visit. This is what
- * occupies the space meanwhile: the app's own loading treatment, which the quantiser's working
- * overlay already uses for the same purpose.
+ * occupies the space meanwhile: the app's own loading treatment, which the quantiser's drop zone
+ * already uses for the same purpose.
  *
  * **The sheen is a layer over the surface, not a class beside it**, which is the arrangement
- * `WorkingOverlay` already has and the reason it has it: `shimmer-surface` is a `background-image`,
+ * `ImageDropZone` already has and the reason it has it: `shimmer-surface` is a `background-image`,
  * and so is `glass-panel`'s hairline of the view's colour. On one element the two are the same
  * property and the winner is decided by where they land in the generated stylesheet, which no call
  * site can see — the panel would simply lose its top edge. On two, they compose.
