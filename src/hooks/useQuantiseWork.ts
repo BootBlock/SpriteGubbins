@@ -154,7 +154,7 @@ export function useQuantiseWork(
     // change and keep the preview up while the next one is computed — but only while there is a
     // newer one coming. With no scale in force there is nothing being computed and nothing to lag
     // behind, so a result from the scale the user has just deleted would be presented as settled:
-    // captioned without the "updating…", offered to the Download button, and contradicting the panel
+    // shown without the working chip, offered to the Download button, and contradicting the panel
     // above it, which is at that moment asking for a grid.
     quantised:
       source !== null && settings !== null && succeeded !== null
