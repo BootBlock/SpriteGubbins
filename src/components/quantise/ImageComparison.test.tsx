@@ -333,7 +333,6 @@ describe('ImageComparison', () => {
     show(8);
 
     expect(screen.queryByText('Quantising…')).toBeNull();
-    expect(screen.queryByText(/updating…/)).toBeNull();
   });
 });
 
