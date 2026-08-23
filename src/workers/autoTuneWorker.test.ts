@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import { imageFrom } from '../test/images.ts';
+import { TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { upscaleNearest } from '../utils/upscaleNearest.ts';
 import { sweep } from './autoTuneWorker.ts';
@@ -62,7 +63,7 @@ describe('sweep', () => {
     expect(reply?.kind).toBe('tuned');
     if (reply?.kind !== 'tuned') return;
     expect(reply.outcome.candidates).toBeGreaterThan(1);
-    expect(reply.outcome.stages).toHaveLength(6);
+    expect(reply.outcome.stages).toHaveLength(TUNE_STAGE_NAMES.length);
   });
 
   it('answers with a sentence rather than throwing when the sweep refuses', () => {

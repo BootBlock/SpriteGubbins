@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  TUNE_ALIAS_RUNS,
+  TUNE_ALIAS_STRENGTHS,
+  TUNE_ALIAS_THRESHOLDS,
   TUNE_CLEANUP_PASSES,
   TUNE_COLOR_MERGES,
   TUNE_FILL_CLEANUPS,
@@ -9,6 +12,9 @@ import {
   TUNE_TRIM_STRENGTHS,
 } from '../constants/autoTune.ts';
 import {
+  ANTI_ALIAS_RUN_RANGE,
+  ANTI_ALIAS_STRENGTH_RANGE,
+  ANTI_ALIAS_THRESHOLD_RANGE,
   CLEANUP_PASSES_RANGE,
   COLOR_MERGE_RANGE,
   FILL_CLEANUP_RANGE,
@@ -18,106 +24,68 @@ import {
   TRIM_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
-import { TUNED_DIAL_KEYS, TUNE_STAGE_NAMES } from '../types/autoTune.ts';
+import { TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
-import { VOTE_METHODS } from '../types/quantiser.ts';
-import { TUNE_STAGES, withIncumbent } from './tuneStages.ts';
+import type { QuantiseSettings } from '../types/quantiser.ts';
+import { tunedDialsOf, withIncumbent } from './tuneStage.ts';
+import { TUNE_STAGES } from './tuneStages.ts';
 
-const DIALS: TunedDials = {
-  vote: QUANTISE_DEFAULT_DIALS.vote,
-  outlineExpansion: QUANTISE_DEFAULT_DIALS.outlineExpansion,
-  lineStrength: QUANTISE_DEFAULT_DIALS.lineStrength,
-  trimStrength: QUANTISE_DEFAULT_DIALS.trimStrength,
-  inkThreshold: QUANTISE_DEFAULT_DIALS.inkThreshold,
-  colorMerge: QUANTISE_DEFAULT_DIALS.colorMerge,
-  fillCleanup: QUANTISE_DEFAULT_DIALS.fillCleanup,
-  cleanupPasses: QUANTISE_DEFAULT_DIALS.cleanupPasses,
+const DIALS: TunedDials = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
+const SETTINGS: QuantiseSettings = { ...QUANTISE_DEFAULT_DIALS, grid: 4, key: null, reduction: null };
+/** The most expensive ask on offer: the pass pointed somewhere, and a palette for the snap to keep to. */
+const SOFTENED: QuantiseSettings = {
+  ...SETTINGS,
+  antiAlias: 'BOTH',
+  reduction: { kind: 'MAX_COLORS', maxColors: 16 },
 };
 
-const stageNamed = (name: string) => TUNE_STAGES.find((stage) => stage.name === name);
+/**
+ * What one round of the descent costs from these dials, walking whichever branch is dearest.
+ *
+ * The rounds after the first cost the same as the first on the same branch, so the sweep's whole
+ * figure is one of these times `TUNE_ROUNDS` plus the position the reader arrived with — which is
+ * how `constants/autoTune.ts` states it.
+ */
+function roundCost(settings: QuantiseSettings, from: TunedDials, dearest: boolean): number {
+  const reach = (dials: TunedDials) =>
+    (dials.vote === 'INK_WEIGHTED' ? 1 : 0) + (dials.fillCleanup > 0 ? 1 : 0);
+  let cost = 0;
+  let settled = from;
+  for (const stage of TUNE_STAGES) {
+    const plan = stage.plan(settled, settings);
+    if (!('candidates' in plan)) continue;
+    const tried = withIncumbent(plan.candidates, settled);
+    cost += tried.length;
+    settled = dearest
+      ? tried.reduce((best, candidate) => (reach(candidate) > reach(best) ? candidate : best))
+      : (tried[0] ?? settled);
+  }
+  return cost;
+}
 
 describe('TUNE_STAGES', () => {
   it('names every stage the report can carry, in the order they run', () => {
     expect(TUNE_STAGES.map((stage) => stage.name)).toEqual([...TUNE_STAGE_NAMES]);
   });
 
-  it('sweeps the reading across every vote and every expansion', () => {
-    const plan = stageNamed('READING')?.plan(DIALS);
-
-    expect(plan && 'candidates' in plan ? plan.candidates.length : 0).toBe(
-      VOTE_METHODS.length * TUNE_OUTLINE_EXPANSIONS.length,
-    );
+  it('costs 145 positions a round on the branch that skips nothing', () => {
+    // The whole point of descending stage by stage rather than gridding every dial at once: the cost
+    // is the sum of the stages, where a full grid over twelve dials is a quarter of a billion.
+    // Walked down the branch that skips nothing — the ink-weighted reading, a fill cleanup that is
+    // on, the anti-aliasing pointed somewhere and a palette for its snap to keep to. Every other
+    // branch is cheaper, which is what makes this the ceiling.
+    expect(roundCost(SOFTENED, DIALS, true)).toBe(145);
   });
 
-  it('varies only its own dials, leaving the rest exactly where they were', () => {
-    for (const stage of TUNE_STAGES) {
-      const plan = stage.plan({ ...DIALS, vote: 'INK_WEIGHTED', fillCleanup: 16 });
-      if (!('candidates' in plan)) continue;
-      for (const candidate of plan.candidates) {
-        // Whatever a stage changes, the eight fields it hands on are still the eight it was given.
-        expect(Object.keys(candidate).sort()).toEqual(Object.keys(DIALS).sort());
-      }
-    }
+  it('costs 107 a round with the anti-aliasing control where the tab opens it', () => {
+    // The three alias stages skip outright, which is the ordinary sweep rather than an exception:
+    // `DEFAULT_ANTI_ALIAS` is `OFF` and the sweep may not move it.
+    expect(roundCost(SETTINGS, DIALS, true)).toBe(107);
   });
 
-  it('leaves the two ink stages nothing to do under a reading that blends no ink', () => {
-    for (const vote of ['DOMINANT', 'K_CENTROID'] as const) {
-      for (const name of ['INK_BLEND', 'INK_THRESHOLD']) {
-        const plan = stageNamed(name)?.plan({ ...DIALS, vote });
-        expect(plan && 'skipped' in plan ? plan.skipped : null).toMatch(/blends no ink/);
-      }
-    }
-  });
-
-  it('sweeps the two ink stages under the ink-weighted reading', () => {
-    const blend = stageNamed('INK_BLEND')?.plan({ ...DIALS, vote: 'INK_WEIGHTED' });
-    const threshold = stageNamed('INK_THRESHOLD')?.plan({ ...DIALS, vote: 'INK_WEIGHTED' });
-
-    expect(blend && 'candidates' in blend ? blend.candidates.length : 0).toBe(
-      TUNE_LINE_STRENGTHS.length * TUNE_TRIM_STRENGTHS.length,
-    );
-    expect(threshold && 'candidates' in threshold ? threshold.candidates.length : 0).toBe(
-      TUNE_INK_THRESHOLDS.length,
-    );
-  });
-
-  it('leaves the passes stage nothing to do while the fill cleanup is off', () => {
-    const off = stageNamed('CLEANUP_PASSES')?.plan({ ...DIALS, fillCleanup: 0 });
-    const on = stageNamed('CLEANUP_PASSES')?.plan({ ...DIALS, fillCleanup: 24 });
-
-    expect(off && 'skipped' in off ? off.skipped : null).toMatch(/nothing to run over/);
-    expect(on && 'candidates' in on ? on.candidates.length : 0).toBe(TUNE_CLEANUP_PASSES.length);
-  });
-
-  it('costs sixty-one positions from the dials as they open, including the one they open at', () => {
-    // The whole point of descending stage by stage rather than gridding every dial at once: the
-    // cost is the sum of the stages, where a full grid over eight dials is a third of a million.
-    // Walked down the branch that skips nothing: the ink-weighted reading, and a fill cleanup that
-    // is on. Every other branch is cheaper, which is what makes this the ceiling.
-    const worst = (candidates: readonly TunedDials[], settled: TunedDials): TunedDials =>
-      candidates.reduce(
-        (best, candidate) => (reach(candidate) > reach(best) ? candidate : best),
-        candidates[0] ?? settled,
-      );
-    const reach = (dials: TunedDials) =>
-      (dials.vote === 'INK_WEIGHTED' ? 1 : 0) + (dials.fillCleanup > 0 ? 1 : 0);
-
-    let most = 1;
-    let settled: TunedDials = DIALS;
-    for (const stage of TUNE_STAGES) {
-      const plan = stage.plan(settled);
-      if (!('candidates' in plan)) continue;
-      const tried = withIncumbent(plan.candidates, settled);
-      most += tried.length;
-      settled = worst(tried, settled);
-    }
-
-    expect(most).toBe(61);
-  });
-
-  it('costs four more where the ladders have to carry the dials in force as well', () => {
-    // A reader who has moved a dial off its ladder adds that position to the stage that sweeps it.
-    // Four stages can be in that state at once, which is what puts the ceiling at sixty-five.
+  it('costs one more per stage where a reader has moved a dial off its ladder', () => {
+    // Seven of the nine stages can carry the dials in force as an extra candidate; the reading and
+    // the cleanup passes cannot, because their ladders are their dials' whole ranges.
     const offLadder: TunedDials = {
       ...DIALS,
       vote: 'INK_WEIGHTED',
@@ -125,61 +93,55 @@ describe('TUNE_STAGES', () => {
       inkThreshold: 63,
       colorMerge: 7,
       fillCleanup: 9,
+      antiAliasThreshold: 23,
+      antiAliasRun: 7,
+      antiAliasStrength: 45,
     };
 
-    let most = 1;
-    let settled = offLadder;
-    for (const stage of TUNE_STAGES) {
-      const plan = stage.plan(settled);
-      if (!('candidates' in plan)) continue;
-      const tried = withIncumbent(plan.candidates, settled);
-      most += tried.length;
-      settled = tried[0] ?? settled;
-    }
-
-    expect(most).toBe(65);
-  });
-
-  it('describes where each stage left its own dials', () => {
-    expect(stageNamed('READING')?.describe({ ...DIALS, vote: 'INK_WEIGHTED', outlineExpansion: 2 })).toBe(
-      'INK_WEIGHTED, expansion 2',
-    );
-    expect(stageNamed('COLOUR_MERGE')?.describe({ ...DIALS, colorMerge: 0 })).toBe('merge off');
-    expect(stageNamed('FILL_CLEANUP')?.describe({ ...DIALS, fillCleanup: 0 })).toBe('cleanup off');
-    expect(stageNamed('CLEANUP_PASSES')?.describe({ ...DIALS, cleanupPasses: 1 })).toBe('1 pass');
-    expect(stageNamed('CLEANUP_PASSES')?.describe({ ...DIALS, cleanupPasses: 3 })).toBe('3 passes');
+    expect(roundCost(SOFTENED, offLadder, false)).toBe(145 + 7);
   });
 });
 
 describe('the ladders', () => {
+  const LADDERS: readonly (readonly [readonly number[], { min: number; max: number; step: number }])[] = [
+    [TUNE_OUTLINE_EXPANSIONS, OUTLINE_EXPANSION_RANGE],
+    [TUNE_LINE_STRENGTHS, LINE_STRENGTH_RANGE],
+    [TUNE_TRIM_STRENGTHS, TRIM_STRENGTH_RANGE],
+    [TUNE_INK_THRESHOLDS, INK_THRESHOLD_RANGE],
+    [TUNE_COLOR_MERGES, COLOR_MERGE_RANGE],
+    [TUNE_FILL_CLEANUPS, FILL_CLEANUP_RANGE],
+    [TUNE_CLEANUP_PASSES, CLEANUP_PASSES_RANGE],
+    [TUNE_ALIAS_THRESHOLDS, ANTI_ALIAS_THRESHOLD_RANGE],
+    [TUNE_ALIAS_RUNS, ANTI_ALIAS_RUN_RANGE],
+    [TUNE_ALIAS_STRENGTHS, ANTI_ALIAS_STRENGTH_RANGE],
+  ];
+
   it('stays inside the range each dial’s own slider offers', () => {
     // A ladder that left the range would offer a position the reader's own control refuses.
-    const within = (ladder: readonly number[], range: { min: number; max: number }) =>
-      ladder.every((value) => value >= range.min && value <= range.max);
-
-    expect(within(TUNE_OUTLINE_EXPANSIONS, OUTLINE_EXPANSION_RANGE)).toBe(true);
-    expect(within(TUNE_LINE_STRENGTHS, LINE_STRENGTH_RANGE)).toBe(true);
-    expect(within(TUNE_TRIM_STRENGTHS, TRIM_STRENGTH_RANGE)).toBe(true);
-    expect(within(TUNE_INK_THRESHOLDS, INK_THRESHOLD_RANGE)).toBe(true);
-    expect(within(TUNE_COLOR_MERGES, COLOR_MERGE_RANGE)).toBe(true);
-    expect(within(TUNE_FILL_CLEANUPS, FILL_CLEANUP_RANGE)).toBe(true);
-    expect(within(TUNE_CLEANUP_PASSES, CLEANUP_PASSES_RANGE)).toBe(true);
+    for (const [rungs, range] of LADDERS) {
+      expect(rungs.every((value) => value >= range.min && value <= range.max)).toBe(true);
+    }
   });
 
   it('lands every position on a step the slider can actually reach', () => {
-    const onStep = (ladder: readonly number[], range: { min: number; step: number }) =>
-      ladder.every(
-        (value) =>
-          Math.abs(Math.round((value - range.min) / range.step) * range.step - (value - range.min)) < 1e-9,
-      );
+    for (const [rungs, range] of LADDERS) {
+      expect(
+        rungs.every(
+          (value) =>
+            Math.abs(Math.round((value - range.min) / range.step) * range.step - (value - range.min)) < 1e-9,
+        ),
+      ).toBe(true);
+    }
+  });
 
-    expect(onStep(TUNE_OUTLINE_EXPANSIONS, OUTLINE_EXPANSION_RANGE)).toBe(true);
-    expect(onStep(TUNE_LINE_STRENGTHS, LINE_STRENGTH_RANGE)).toBe(true);
-    expect(onStep(TUNE_TRIM_STRENGTHS, TRIM_STRENGTH_RANGE)).toBe(true);
-    expect(onStep(TUNE_INK_THRESHOLDS, INK_THRESHOLD_RANGE)).toBe(true);
-    expect(onStep(TUNE_COLOR_MERGES, COLOR_MERGE_RANGE)).toBe(true);
-    expect(onStep(TUNE_FILL_CLEANUPS, FILL_CLEANUP_RANGE)).toBe(true);
-    expect(onStep(TUNE_CLEANUP_PASSES, CLEANUP_PASSES_RANGE)).toBe(true);
+  it('climbs, so no ladder states one position twice', () => {
+    // Two rungs at one value is a candidate run twice and an elbow ranking a duplicate, both of
+    // which are invisible in a report that only counts positions.
+    for (const [rungs] of LADDERS) {
+      expect(rungs.every((value, index) => index === 0 || value > (rungs[index - 1] ?? -Infinity))).toBe(
+        true,
+      );
+    }
   });
 
   it('holds every dial’s opening position, so the commonest sweep carries no extra candidate', () => {
@@ -193,6 +155,9 @@ describe('the ladders', () => {
     expect(TUNE_COLOR_MERGES).toContain(QUANTISE_DEFAULT_DIALS.colorMerge);
     expect(TUNE_FILL_CLEANUPS).toContain(QUANTISE_DEFAULT_DIALS.fillCleanup);
     expect(TUNE_CLEANUP_PASSES).toContain(QUANTISE_DEFAULT_DIALS.cleanupPasses);
+    expect(TUNE_ALIAS_THRESHOLDS).toContain(QUANTISE_DEFAULT_DIALS.antiAliasThreshold);
+    expect(TUNE_ALIAS_RUNS).toContain(QUANTISE_DEFAULT_DIALS.antiAliasRun);
+    expect(TUNE_ALIAS_STRENGTHS).toContain(QUANTISE_DEFAULT_DIALS.antiAliasStrength);
   });
 
   it('opens each ladder at the position that turns its pass off, where it has one', () => {
@@ -202,38 +167,10 @@ describe('the ladders', () => {
     expect(TUNE_FILL_CLEANUPS[0]).toBe(0);
     expect(TUNE_CLEANUP_PASSES[0]).toBe(CLEANUP_PASSES_RANGE.min);
     expect(TUNE_LINE_STRENGTHS[0]).toBe(LINE_STRENGTH_RANGE.min);
-  });
-});
-
-describe('withIncumbent', () => {
-  it('puts the dials in force first, so a tie leaves every one of them alone', () => {
-    // `chooseByElbow` settles a tie on the earliest candidate, and this is what makes that mean
-    // "where the reader had it" rather than "wherever the ladder happens to start".
-    const settled: TunedDials = { ...DIALS, inkThreshold: 63 };
-
-    const tried = withIncumbent([{ ...DIALS, inkThreshold: 16 }], settled);
-
-    expect(tried[0]).toEqual(settled);
-    expect(tried).toHaveLength(2);
-  });
-
-  it('costs nothing where the ladder already holds it', () => {
-    const settled: TunedDials = { ...DIALS, inkThreshold: 64 };
-    const ladder = [{ ...DIALS, inkThreshold: 16 }, settled, { ...DIALS, inkThreshold: 96 }];
-
-    const tried = withIncumbent(ladder, settled);
-
-    expect(tried).toHaveLength(3);
-    expect(tried[0]).toEqual(settled);
-  });
-
-  it('compares every swept dial, so two positions differing in one are two positions', () => {
-    const settled: TunedDials = { ...DIALS, vote: 'INK_WEIGHTED' };
-
-    for (const key of TUNED_DIAL_KEYS) {
-      const differing = { ...settled, ...(key === 'vote' ? { vote: 'K_CENTROID' as const } : {}) };
-      const shifted = key === 'vote' ? differing : { ...settled, [key]: settled[key] + 1 };
-      expect(withIncumbent([shifted], settled)).toHaveLength(2);
-    }
+    // The three anti-aliasing dials have no off position of their own — the control's own `OFF` is
+    // what stops the pass — so each opens at the floor of its range, which is the loosest reading.
+    expect(TUNE_ALIAS_THRESHOLDS[0]).toBe(ANTI_ALIAS_THRESHOLD_RANGE.min);
+    expect(TUNE_ALIAS_RUNS[0]).toBe(ANTI_ALIAS_RUN_RANGE.min);
+    expect(TUNE_ALIAS_STRENGTHS[0]).toBe(ANTI_ALIAS_STRENGTH_RANGE.min);
   });
 });

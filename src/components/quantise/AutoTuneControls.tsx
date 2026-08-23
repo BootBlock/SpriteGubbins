@@ -26,7 +26,7 @@ interface AutoTuneControlsProps {
  * Where this sheet's dials want to be, found by running them.
  *
  * The one panel on this tab that answers a question instead of asking one. Every other control here
- * is a position for the reader to find; this reads three busy crops of their sheet at around sixty
+ * is a position for the reader to find; this reads five busy crops of their sheet at several hundred
  * combinations and says which came closest to the artwork for the fewest colours.
  *
  * **Directly under the grid, and above every dial it moves.** It cannot run without a pixel scale —
@@ -130,10 +130,14 @@ export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
   );
 }
 
-/** What the sweep cost, as one chip: `60 positions · 3 crops of 160 px`. */
+/** What the sweep cost, as one chip: `323 positions · 5 crops of 160 px · 2 rounds`. */
 function costLabel(outcome: TuneOutcome): string {
   const crops = `${String(outcome.crops)} ${outcome.crops === 1 ? 'crop' : 'crops'}`;
-  return `${String(outcome.candidates)} positions · ${crops} of ${String(outcome.cropEdge)} px`;
+  // The rounds are on the chip rather than left to the stage list, because they are what the
+  // position count is a multiple of: a reader comparing two sweeps of the same sheet is otherwise
+  // looking at two figures with no shared unit.
+  const rounds = `${String(outcome.rounds)} ${outcome.rounds === 1 ? 'round' : 'rounds'}`;
+  return `${String(outcome.candidates)} positions · ${crops} of ${String(outcome.cropEdge)} px · ${rounds}`;
 }
 
 /** The panel's state as one sentence, for the live region above. */

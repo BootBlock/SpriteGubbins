@@ -30,11 +30,13 @@ import type { QuantiseTuning } from './quantiser.ts';
  * - **The two frame-alignment dials.** A strip reading is the third of the readings taken over the
  *   segmentation, and it *moves* frames rather than editing them — so what it changes is where the
  *   artwork sits, which a per-pixel fidelity score against a crop of the source can only punish.
- * - **The five anti-aliasing dials.** The pass runs after everything the sweep moves, and it would
- *   corrupt both figures the sweep ranks by: it moves the result back toward the smooth source that
- *   `fidelity` is measured against, so a score would raise it until the sheet stopped being pixel
- *   art, and every coverage it writes is another entry in the `colors` the elbow trades against.
- *   `readCandidate` therefore forces it off rather than merely leaving it out, and says why.
+ * - **The anti-aliasing *mode*, and it alone of that panel's five dials.** Where the pass is pointed
+ *   is a statement about style rather than a question about fidelity — a great deal of pixel art is
+ *   aliased on purpose, and `DEFAULT_ANTI_ALIAS` says at length why the app opens with it off. So
+ *   the sweep leaves it exactly where the reader put it, which is the line the keying dials sit on
+ *   the far side of and for the same reason. The four dials that *shape* the pass are swept, because
+ *   with the mode held they ask a question the two figures can answer: which contours are worth
+ *   softening, and how much of each coverage is worth its colours.
  *
  * The pixel grid is not on this shape for a different reason again: it is measured rather than
  * tuned, and the tab already offers what the measurement found.
@@ -49,6 +51,10 @@ export type TunedDials = Pick<
   | 'colorMerge'
   | 'fillCleanup'
   | 'cleanupPasses'
+  | 'antiAliasThreshold'
+  | 'antiAliasStrength'
+  | 'antiAliasRun'
+  | 'antiAliasPalette'
 >;
 
 /**
@@ -68,6 +74,10 @@ const TUNED_DIAL_NAMES: { readonly [K in keyof TunedDials]: K } = {
   colorMerge: 'colorMerge',
   fillCleanup: 'fillCleanup',
   cleanupPasses: 'cleanupPasses',
+  antiAliasThreshold: 'antiAliasThreshold',
+  antiAliasStrength: 'antiAliasStrength',
+  antiAliasRun: 'antiAliasRun',
+  antiAliasPalette: 'antiAliasPalette',
 };
 
 /**
@@ -101,6 +111,9 @@ export const TUNE_STAGE_NAMES = [
   'COLOUR_MERGE',
   'FILL_CLEANUP',
   'CLEANUP_PASSES',
+  'ALIAS_CONTOUR',
+  'ALIAS_RUN',
+  'ALIAS_BLEND',
 ] as const;
 export type TuneStageName = (typeof TUNE_STAGE_NAMES)[number];
 
@@ -110,12 +123,18 @@ export type TuneStageName = (typeof TUNE_STAGE_NAMES)[number];
  * A stage that did not run says so rather than being left out of the list, because "the ink dials
  * were not swept" and "the ink dials were swept and left where they were" are different facts about
  * the same sheet, and a reader looking at an unmoved dial needs to know which they are looking at.
+ *
+ * **One entry per stage, not one per round.** The descent runs each stage once a round — see
+ * `autoTune` for why it rounds at all — so {@link candidates} is the total across every round that
+ * reached this stage, while {@link skipped} and {@link settled} describe the *last* round to reach
+ * it. A reader is looking at the dials as they now stand, which is what those two are about; the
+ * count is what the sweep cost, which is a sum.
  */
 export interface TuneStageReport {
   readonly stage: TuneStageName;
-  /** How many positions were tried; `0` where the stage was skipped. */
+  /** How many positions were tried across every round; `0` where the stage was skipped in all of them. */
   readonly candidates: number;
-  /** Why the stage had nothing to try, or `null` where it ran. */
+  /** Why the stage had nothing to try in the last round that reached it, or `null` where it ran. */
   readonly skipped: string | null;
   /**
    * Where this stage's own dials stand afterwards, as a phrase — `INK_WEIGHTED, expansion 1`.
@@ -133,6 +152,14 @@ export interface TuneOutcome {
   /** How many crops were read, and the edge each one spans in source pixels. */
   readonly crops: number;
   readonly cropEdge: number;
+  /**
+   * How many times the descent went round the stages.
+   *
+   * At least one and at most `TUNE_ROUNDS`. A round that moved no dial is the last one, and it is
+   * counted: it ran, and running it is how the sweep knows the descent has converged rather than
+   * assuming it. See `autoTune`, which holds the argument for rounding at all.
+   */
+  readonly rounds: number;
   /**
    * How many candidate positions were run, across every stage plus the one the reader arrived with.
    *

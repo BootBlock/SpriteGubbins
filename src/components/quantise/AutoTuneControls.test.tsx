@@ -9,6 +9,7 @@ import { FakeAutoTuneWorker } from '../../test/fakeAutoTuneWorker.ts';
 import type { TuneOutcome } from '../../types/autoTune.ts';
 import type { QuantiseSettings } from '../../types/quantiser.ts';
 import { createImage } from '../../utils/imageData.ts';
+import { tunedDialsOf } from '../../utils/tuneStage.ts';
 import { abandonSweep } from '../../workers/autoTuneSession.ts';
 import { AutoTuneControls } from './AutoTuneControls.tsx';
 
@@ -30,18 +31,18 @@ const SETTINGS: QuantiseSettings = {
 
 const OUTCOME: TuneOutcome = {
   dials: {
+    ...tunedDialsOf(QUANTISE_DEFAULT_DIALS),
     vote: 'INK_WEIGHTED',
     outlineExpansion: 2,
     lineStrength: 2.5,
     trimStrength: 1,
     inkThreshold: 76,
     colorMerge: 12,
-    fillCleanup: 0,
-    cleanupPasses: 1,
   },
-  crops: 3,
+  crops: 5,
   cropEdge: 160,
-  candidates: 60,
+  candidates: 323,
+  rounds: 2,
   reading: { fidelity: 0.9412, colors: 24 },
   baseline: { fidelity: 0.8137, colors: 31 },
   stages: [
@@ -160,7 +161,7 @@ describe('AutoTuneControls', () => {
     await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
 
     await waitFor(() => {
-      expect(screen.getByText('60 positions · 3 crops of 160 px')).toBeInTheDocument();
+      expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
     expect(screen.getByText('likeness 0.814 → 0.941')).toBeInTheDocument();
     expect(screen.getByText('31 → 24 colours')).toBeInTheDocument();
@@ -225,13 +226,13 @@ describe('AutoTuneControls', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
-      expect(screen.getByText('60 positions · 3 crops of 160 px')).toBeInTheDocument();
+      expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
 
     useQuantiseStore.getState().undo();
 
     await waitFor(() => {
-      expect(screen.queryByText('60 positions · 3 crops of 160 px')).not.toBeInTheDocument();
+      expect(screen.queryByText('323 positions · 5 crops of 160 px · 2 rounds')).not.toBeInTheDocument();
     });
     expect(screen.getByText(AUTO_TUNE_GUIDANCE.idle)).toBeInTheDocument();
   });
@@ -256,12 +257,12 @@ describe('AutoTuneControls', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
     await waitFor(() => {
-      expect(screen.getByText('60 positions · 3 crops of 160 px')).toBeInTheDocument();
+      expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     });
 
     rerender(<AutoTuneControls image={createImage(8, 8)} settings={null} />);
 
-    expect(screen.getByText('60 positions · 3 crops of 160 px')).toBeInTheDocument();
+    expect(screen.getByText('323 positions · 5 crops of 160 px · 2 rounds')).toBeInTheDocument();
     expect(screen.getByText(AUTO_TUNE_GUIDANCE.settled)).toBeInTheDocument();
     expect(screen.getByText(AUTO_TUNE_GUIDANCE.waiting)).toBeInTheDocument();
   });

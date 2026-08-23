@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { PROXY_CROP_CELLS, PROXY_CROP_COUNT } from '../constants/autoTune.ts';
+import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/autoTune.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import { imageFrom, soften } from '../test/images.ts';
-import { TUNE_STAGE_NAMES } from '../types/autoTune.ts';
+import { TUNED_DIAL_KEYS, TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { autoTune } from './autoTune.ts';
@@ -12,9 +12,19 @@ import { proxyCrops } from './proxyCrops.ts';
 import { quantiseImage } from './quantiseImage.ts';
 import { meanSsim } from './ssim.ts';
 import { readCandidate } from './tuneCandidate.ts';
+import { tunedDialsOf } from './tuneStage.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 
 const GRID = 4;
+
+/**
+ * Long enough for two whole sweeps of the fixture, which is past Vitest's own five seconds.
+ *
+ * The sweep runs the pipeline up to `TUNE_ROUNDS` times over every ladder and every crop, which is
+ * the trade `constants/autoTune.ts` argues for — so a test that runs two of them is slow by design
+ * rather than by accident, and the figure is stated here once rather than at each call site.
+ */
+const TWO_SWEEPS_MS = 60_000;
 const MAGENTA: Rgba = { r: 255, g: 0, b: 255, a: 255 };
 
 /** 32 × 32 of pixel art: two fills, a dark contour between them, and a bright trim along one edge. */
@@ -47,16 +57,7 @@ const BASE: QuantiseSettings = {
   reduction: null,
 };
 
-const TUNED_KEYS: readonly (keyof TunedDials)[] = [
-  'vote',
-  'outlineExpansion',
-  'lineStrength',
-  'trimStrength',
-  'inkThreshold',
-  'colorMerge',
-  'fillCleanup',
-  'cleanupPasses',
-];
+const TUNED_KEYS: readonly (keyof TunedDials)[] = TUNED_DIAL_KEYS;
 
 describe('autoTune', () => {
   it('reports every stage once, in the order they run', () => {
@@ -70,16 +71,31 @@ describe('autoTune', () => {
 
     const swept = outcome.stages.reduce((total, stage) => total + stage.candidates, 0);
     expect(outcome.candidates).toBe(swept + 1);
-    expect(outcome.candidates).toBeLessThanOrEqual(65);
+    // The ceiling `constants/autoTune.ts` states, and the arithmetic it states it from: every stage
+    // is walked at most once a round, and no round can cost more than the dearest branch plus the
+    // seven ladders that can carry a reader's own position as an extra.
+    expect(outcome.rounds).toBeGreaterThanOrEqual(1);
+    expect(outcome.rounds).toBeLessThanOrEqual(TUNE_ROUNDS);
+    expect(outcome.candidates).toBeLessThanOrEqual(1 + TUNE_ROUNDS * (145 + 7));
   });
 
-  it('says why a stage that could not run did not', () => {
+  it('says why a stage that could not run did not, and where its dials stand either way', () => {
     const outcome = autoTune(SHEET, BASE);
 
     for (const stage of outcome.stages) {
       if (stage.skipped === null) expect(stage.candidates).toBeGreaterThan(0);
-      else expect(stage.candidates).toBe(0);
+      // A skipped stage may still carry a count, and that is the rounds rather than a contradiction:
+      // the reading can move off `INK_WEIGHTED` in a later round than the one that swept the ink
+      // dials, and those positions were still run. `skipped` describes the last round to reach the
+      // stage; `candidates` is what the sweep spent on it altogether.
       expect(stage.settled.length).toBeGreaterThan(0);
+    }
+    // The three anti-aliasing stages are skipped in every round on this sheet, since the tab opens
+    // that control at `OFF` and the sweep may not move it — so those are the ones that must be zero.
+    for (const name of ['ALIAS_CONTOUR', 'ALIAS_RUN', 'ALIAS_BLEND'] as const) {
+      const stage = outcome.stages.find((entry) => entry.stage === name);
+      expect(stage?.skipped).not.toBeNull();
+      expect(stage?.candidates).toBe(0);
     }
   });
 
@@ -100,11 +116,15 @@ describe('autoTune', () => {
     expect(Object.keys(outcome.dials).sort()).toEqual([...TUNED_KEYS].sort());
   });
 
-  it('gives the same answer twice for the same sheet and the same settings', () => {
-    // A reader who presses Auto twice has not asked for two different answers, and the elbow's ties
-    // and the crop chooser's are both settled by order rather than by whatever a sort left behind.
-    expect(autoTune(SHEET, BASE)).toEqual(autoTune(SHEET, BASE));
-  });
+  it(
+    'gives the same answer twice for the same sheet and the same settings',
+    () => {
+      // A reader who presses Auto twice has not asked for two different answers, and the elbow's ties
+      // and the crop chooser's are both settled by order rather than by whatever a sort left behind.
+      expect(autoTune(SHEET, BASE)).toEqual(autoTune(SHEET, BASE));
+    },
+    TWO_SWEEPS_MS,
+  );
 
   it('lands somewhere that reproduces the artwork', () => {
     const outcome = autoTune(SHEET, BASE);
@@ -113,15 +133,19 @@ describe('autoTune', () => {
     expect(outcome.reading.colors).toBeGreaterThan(0);
   });
 
-  it('starts from the dials it was handed, and says what they were worth', () => {
-    const started: QuantiseSettings = { ...BASE, vote: 'K_CENTROID', colorMerge: 24 };
+  it(
+    'starts from the dials it was handed, and says what they were worth',
+    () => {
+      const started: QuantiseSettings = { ...BASE, vote: 'K_CENTROID', colorMerge: 24 };
 
-    const outcome = autoTune(SHEET, started);
+      const outcome = autoTune(SHEET, started);
 
-    // The baseline is a reading of the positions in force, so a sheet swept from two different
-    // starting points reports two different baselines even where the sweep ends in the same place.
-    expect(outcome.baseline).not.toEqual(autoTune(SHEET, BASE).baseline);
-  });
+      // The baseline is a reading of the positions in force, so a sheet swept from two different
+      // starting points reports two different baselines even where the sweep ends in the same place.
+      expect(outcome.baseline).not.toEqual(autoTune(SHEET, BASE).baseline);
+    },
+    TWO_SWEEPS_MS,
+  );
 
   it('judges a keyed sheet against a keyed reference, not against the key field', () => {
     // The comparison this guards: a candidate's result has its background cleared, so measuring it
@@ -161,10 +185,11 @@ describe('autoTune', () => {
     expect(crop).toBeDefined();
     if (crop === undefined) return;
 
+    const base = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
     const far: TunedDials[] = [
-      { ...QUANTISE_DEFAULT_DIALS, vote: 'DOMINANT', outlineExpansion: 0 },
-      { ...QUANTISE_DEFAULT_DIALS, vote: 'INK_WEIGHTED', lineStrength: 3, trimStrength: 3 },
-      { ...QUANTISE_DEFAULT_DIALS, vote: 'K_CENTROID', colorMerge: 48, fillCleanup: 48 },
+      { ...base, vote: 'DOMINANT', outlineExpansion: 0 },
+      { ...base, vote: 'INK_WEIGHTED', lineStrength: 3, trimStrength: 3 },
+      { ...base, vote: 'K_CENTROID', colorMerge: 48, fillCleanup: 48 },
     ];
     const scores = far.map((dials) => {
       const magnified = upscaleNearest(quantiseImage(crop.image, { ...BASE, ...dials }).image, GRID);
@@ -178,6 +203,32 @@ describe('autoTune', () => {
     // And the fidelities the sweep actually ranks on are not all alike, which is the other half of
     // the claim: one scorer separates these candidates and the other cannot.
     expect(new Set(scores.map((score) => score.fidelity)).size).toBeGreaterThan(1);
+  });
+
+  it(
+    'goes round the stages until a round moves nothing',
+    () => {
+      const outcome = autoTune(SHEET, BASE);
+
+      // The last round is the one that moved nothing, which is what says the descent converged rather
+      // than ran out — so re-sweeping from where it landed has to cost exactly one round and land in
+      // the same place. A sweep that stopped at the ceiling would fail this, and so would one whose
+      // stages disagree about their own answers.
+      expect(outcome.rounds).toBeGreaterThan(1);
+
+      const again = autoTune(SHEET, { ...BASE, ...outcome.dials });
+      expect(again.rounds).toBe(1);
+      expect(again.dials).toEqual(outcome.dials);
+    },
+    TWO_SWEEPS_MS,
+  );
+
+  it('counts a stage’s positions across every round that reached it', () => {
+    const outcome = autoTune(SHEET, BASE);
+    const reading = outcome.stages.find((stage) => stage.stage === 'READING');
+
+    // `READING` never skips and its ladder is complete, so it costs exactly fifteen a round.
+    expect(reading?.candidates).toBe(15 * outcome.rounds);
   });
 
   it('refuses a sheet smaller than one cell of the grid in force', () => {
@@ -208,13 +259,12 @@ function offLatticeShare(image: ImageData, grid: number): number {
 }
 
 /**
- * The sweep against the one pass that runs after everything it moves.
+ * The sweep against the one pass that runs after everything else it moves.
  *
- * `readCandidate` forces the anti-aliasing off rather than merely leaving its dials out of
- * `TunedDials`, and the difference is not a nicety: the tab hands the sweep the *live* settings, so
- * a reader who has the pass on would otherwise have every candidate softened before it was scored —
- * on the two figures the pass corrupts. `fidelity` is measured against the smooth source the pass
- * moves the result back toward, and `colors` is what the elbow trades that fidelity against.
+ * `readCandidate` runs the anti-aliasing exactly as the reader pointed it, and the four dials that
+ * shape it are swept like any other. The mode is the one setting on that line the sweep may not
+ * touch — see `TUNE_ALIAS_STAGES` — so these are the two halves of that: with the control off the
+ * sweep never reaches those dials, and with it on it both scores through the pass and moves them.
  */
 describe('autoTune against the anti-aliasing pass', () => {
   /**
@@ -229,37 +279,43 @@ describe('autoTune against the anti-aliasing pass', () => {
   );
   const STEPPED_SHEET = soften(upscaleNearest(STEPPED, GRID));
 
-  const softened: QuantiseSettings = {
-    ...BASE,
-    antiAlias: 'BOTH',
-    antiAliasThreshold: QUANTISE_DEFAULT_DIALS.antiAliasThreshold,
-    antiAliasStrength: 100,
-    antiAliasRun: 2,
-    antiAliasPalette: 'BLEND',
-  };
+  const softened: QuantiseSettings = { ...BASE, antiAlias: 'BOTH', antiAliasPalette: 'BLEND' };
 
-  it('reads a candidate identically whether the reader has the pass on or off', () => {
+  const DIALS: TunedDials = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
+
+  it('reads a candidate through the pass the reader asked for', () => {
     const crop = { crop: STEPPED_SHEET, reference: STEPPED_SHEET };
-    const dials: TunedDials = {
-      vote: 'DOMINANT',
-      outlineExpansion: 0,
-      lineStrength: 1.5,
-      trimStrength: 0,
-      inkThreshold: 64,
-      colorMerge: 0,
-      fillCleanup: 0,
-      cleanupPasses: 1,
-    };
 
-    expect(readCandidate(dials, [crop], softened)).toEqual(readCandidate(dials, [crop], BASE));
-    // The claim is only worth anything if the pass would otherwise have reached this sheet, so the
-    // same settings are put through the pipeline directly to show that they do change it.
-    expect(quantiseImage(STEPPED_SHEET, softened).colors).toBeGreaterThan(
-      quantiseImage(STEPPED_SHEET, BASE).colors,
+    // The same dials read two ways, differing only in where the reader pointed the pass. They must
+    // not agree: a reader with the pass on gets the fringe, and the two figures the panel reports
+    // are figures about the sheet they are looking at.
+    expect(readCandidate(DIALS, [crop], softened)).not.toEqual(readCandidate(DIALS, [crop], BASE));
+    expect(readCandidate(DIALS, [crop], softened).colors).toBeGreaterThan(
+      readCandidate(DIALS, [crop], BASE).colors,
     );
   });
 
-  it('settles on the same dials with the pass on as with it off', () => {
-    expect(autoTune(STEPPED_SHEET, softened).dials).toEqual(autoTune(STEPPED_SHEET, BASE).dials);
+  it('never reaches the alias dials while the reader has the pass off', () => {
+    const outcome = autoTune(STEPPED_SHEET, BASE);
+
+    for (const stage of ['ALIAS_CONTOUR', 'ALIAS_RUN', 'ALIAS_BLEND'] as const) {
+      const report = outcome.stages.find((entry) => entry.stage === stage);
+      expect(report?.candidates).toBe(0);
+      expect(report?.skipped).toMatch(/anti-aliasing control is off/);
+    }
+    expect(outcome.dials.antiAliasThreshold).toBe(BASE.antiAliasThreshold);
+    expect(outcome.dials.antiAliasStrength).toBe(BASE.antiAliasStrength);
+    expect(outcome.dials.antiAliasRun).toBe(BASE.antiAliasRun);
+    expect(outcome.dials.antiAliasPalette).toBe(BASE.antiAliasPalette);
+  });
+
+  it('sweeps the alias dials once the reader has pointed the pass somewhere', () => {
+    const outcome = autoTune(STEPPED_SHEET, softened);
+
+    for (const stage of ['ALIAS_CONTOUR', 'ALIAS_RUN', 'ALIAS_BLEND'] as const) {
+      const report = outcome.stages.find((entry) => entry.stage === stage);
+      expect(report?.skipped).toBeNull();
+      expect(report?.candidates).toBeGreaterThan(0);
+    }
   });
 });

@@ -5,6 +5,7 @@ import { FakeAutoTuneWorker } from '../test/fakeAutoTuneWorker.ts';
 import type { TuneOutcome } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
 import { createImage } from '../utils/imageData.ts';
+import { tunedDialsOf } from '../utils/tuneStage.ts';
 import { abandonSweep, tuneOffThread } from './autoTuneSession.ts';
 import type { AutoTuneRequest } from './autoTuneWorker.ts';
 
@@ -40,18 +41,16 @@ const SETTINGS: QuantiseSettings = {
 
 const OUTCOME: TuneOutcome = {
   dials: {
+    ...tunedDialsOf(QUANTISE_DEFAULT_DIALS),
     vote: 'INK_WEIGHTED',
     outlineExpansion: 1,
     lineStrength: 2,
-    trimStrength: 0,
-    inkThreshold: 64,
     colorMerge: 12,
-    fillCleanup: 0,
-    cleanupPasses: 1,
   },
-  crops: 3,
+  crops: 5,
   cropEdge: 160,
-  candidates: 60,
+  candidates: 323,
+  rounds: 2,
   reading: { fidelity: 0.94, colors: 24 },
   baseline: { fidelity: 0.81, colors: 31 },
   stages: [],
