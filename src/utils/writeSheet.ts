@@ -1,10 +1,12 @@
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
+import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet, SpriteManifest } from '../types/spriteManifest.ts';
 import { encodeAseprite } from './encodeAseprite.ts';
 import { encodePng } from './encodePng.ts';
-import { encodeSpritePack, PACK_SHEET_FILE } from './encodeSpritePack.ts';
+import { encodeSpritePack, PACK_SHEET_FILE, PACK_SPRITE_DIRECTORY } from './encodeSpritePack.ts';
 import { scaleBoxes } from './sheetLayout.ts';
+import { oversizedSprites, oversizeReason } from './spriteCell.ts';
 import { buildManifest, encodeManifest } from './spriteManifest.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 
@@ -22,6 +24,13 @@ import { upscaleNearest } from './upscaleNearest.ts';
  * in the same call, which is what stops a file and its manifest describing one sheet at two
  * coordinates. The manifest formats skip the enlargement entirely: a description of the sheet needs
  * the size arithmetic, never the 67-megabyte allocation that producing the pixels would cost.
+ *
+ * **A cell that a sprite does not fit is refused here**, before any of the above runs. It is the one
+ * thing a download can be turned down for that is not a property of the file format, and the refusal
+ * is the whole point of it: a sprite larger than the stated cell is a sheet drawn at a coarser scale
+ * than the prompt asked for, and squeezing it would hand a rig a piece whose pixels no longer line
+ * up with any of its neighbours. The panel says the same thing before the press, from the same
+ * reading — see `oversizedSprites`.
  *
  * Pure, as everything in this directory is — asynchronous only because the PNG writer waits on the
  * platform's compressor.
@@ -46,22 +55,55 @@ export interface SheetWriteJob {
   readonly duplicates: readonly SpriteDuplicateGroup[];
   /** One name per component the studio's prompt asks for, or empty where it states no sheet. */
   readonly names: readonly string[];
+  /**
+   * The fixed cell every sprite is cut into, at 1:1, or `null` where each keeps its bounding box.
+   *
+   * Read by the two formats that describe sprites and ignored by the two that do not, in the way the
+   * boxes above are: the press does not have to know which formats care. See `SpriteCell`.
+   */
+  readonly cell: SpriteCell | null;
   /** What the manifest calls the picture its rects are into, where that picture is a file of its own. */
   readonly imageName: string;
   /** The studio's configuration at the moment of the press, or `null` where it states no sheet. */
   readonly sheet: ManifestSheet | null;
+  /**
+   * The facing that tells this sheet apart from the rest of its batch, or `null` where none does.
+   *
+   * What a pack lays its sprites out under, and — on the far side of the press, where the file is
+   * named — what the download is called. Resolved by `sheetIdentity` rather than here, because it is
+   * a reading of the whole batch and not of this one sheet. Sent whatever the format is, for the
+   * reason {@link SheetWriteJob.boxes} is.
+   */
+  readonly facing: string | null;
 }
 
 export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
-  const { image, scale, format, boxes } = job;
+  const { image, scale, format, boxes, cell } = job;
 
   if (format === 'PNG') return encodePng(magnify(image, scale));
   if (format === 'ASEPRITE') return encodeAseprite(magnify(image, scale), scaleBoxes(boxes, scale));
-  if (format === 'SPRITE_PACK') {
-    return encodeSpritePack(magnify(image, scale), manifestFor(job, PACK_SHEET_FILE));
+
+  // Both remaining formats state cells, so the refusal is taken once rather than in each of them.
+  // Measured at 1:1, where the reader stated the cell and the segmentation measured the boxes: the
+  // magnification multiplies both, so it can neither create nor cure an overhang.
+  if (cell !== null) {
+    const over = oversizedSprites(boxes, cell);
+    if (over.length > 0) throw new Error(oversizeReason(boxes, cell, over));
   }
 
-  const manifest = manifestFor(job, job.imageName);
+  if (format === 'SPRITE_PACK') {
+    // The facing where the sheet has one that names it, so eight rig runs expand into the per-facing
+    // tree an engine importer scans rather than into eight `sprites/` that overwrite one another. A
+    // sheet no facing distinguishes keeps the fixed directory — `SheetIdentity.facing` is where the
+    // three cases that come to `null` are set out. Resolved here rather than inside the encoder
+    // because the manifest states it too, and one archive may not describe its own layout twice.
+    const directory = job.facing ?? PACK_SPRITE_DIRECTORY;
+    return encodeSpritePack(magnify(image, scale), manifestFor(job, PACK_SHEET_FILE, directory), directory);
+  }
+
+  // No directory: this manifest describes a PNG the reader downloads separately, so no sprite files
+  // exist for one to hold.
+  const manifest = manifestFor(job, job.imageName, null);
   return {
     format: 'MANIFEST',
     bytes: encodeManifest(manifest),
@@ -78,19 +120,22 @@ function magnify(image: ImageData, scale: number): ImageData {
 /**
  * The manifest for this job, describing the file at the magnification it is written in.
  *
- * `image` differs between the two formats that build one and nothing else does: inside a pack the
- * sheet is a member of the archive under its own fixed name, while a manifest downloaded alone
- * describes the PNG the same press would have written, so it names that file instead.
+ * `image` and `spriteDirectory` differ between the two formats that build one and nothing else
+ * does: inside a pack the sheet is a member of the archive under its own fixed name and the sprites
+ * sit in a directory beside it, while a manifest downloaded alone describes the PNG the same press
+ * would have written — so it names that file instead, and has no sprite files to point at.
  */
-function manifestFor(job: SheetWriteJob, image: string): SpriteManifest {
+function manifestFor(job: SheetWriteJob, image: string, spriteDirectory: string | null): SpriteManifest {
   return buildManifest({
     image,
+    spriteDirectory,
     width: job.image.width * job.scale,
     height: job.image.height * job.scale,
     scale: job.scale,
     boxes: job.boxes,
     duplicates: job.duplicates,
     names: job.names,
+    cell: job.cell,
     sheet: job.sheet,
   });
 }

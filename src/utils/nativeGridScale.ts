@@ -1,8 +1,7 @@
 import { NOMINAL_SHEET_SIZE, SHEET_CELL_PITCH } from '../constants/sheetCanvas.ts';
-import type { AspectRatio, ResolutionProfile } from '../types/output.ts';
+import type { AspectRatio, ResolutionProfile, TargetSize } from '../types/output.ts';
 import type { RenderStyle } from '../types/rendering.ts';
 import { componentGridScale } from './componentGridScale.ts';
-import { parseTargetSize } from './targetSize.ts';
 
 /**
  * The whole-number enlargement the sheet presents its native pixel grid at, where it has one.
@@ -32,9 +31,12 @@ import { parseTargetSize } from './targetSize.ts';
  *   already apply to this same field and for the same reason: the other three profiles *are* a scale
  *   and state their own figure, so a second derived figure beside one of them is two answers to one
  *   question.
- * - **The size has to parse.** The field is free prose — a shipped preset holds *"48 × 96 px
- *   assembled (2 metres tall at 48 px per metre)"* — and where no `W × H` pair is in it there is
- *   nothing to enlarge.
+ * - **There has to be a per-component size.** The field is free prose, so it may hold no `W × H`
+ *   pair at all — and on a cut-out rig sheet the pair it holds is the *assembled* figure, as the
+ *   shipped preset *"48 × 96 px assembled (2 metres tall at 48 px per metre)"* says outright.
+ *   `componentTargetSize` answers both, and the caller resolves it: the search below seats one cell
+ *   per component, so an assembled figure fed into it prices a canvas of fifteen whole characters
+ *   and returns a scale for a sheet nobody asked for.
  * - **The enlargement has to be an enlargement.** A component already large enough to fill its share
  *   of the canvas comes back as 1, and a sheet whose components cannot be seated at 1:1 at all comes
  *   back as `null` from the search. Neither is a scale worth stating, and at 1 the delivered pixels
@@ -49,14 +51,12 @@ import { parseTargetSize } from './targetSize.ts';
 export function nativeGridScale(
   renderStyle: RenderStyle,
   profile: ResolutionProfile,
-  spriteTargetSize: string,
+  target: TargetSize | null,
   aspectRatio: AspectRatio,
   components: number,
 ): number | null {
   if (renderStyle !== 'PIXEL_ART' && renderStyle !== 'RETRO_PIXEL_ART') return null;
   if (profile !== 'CUSTOM') return null;
-
-  const target = parseTargetSize(spriteTargetSize);
   if (target === null) return null;
 
   const scale = componentGridScale(

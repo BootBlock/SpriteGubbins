@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { SHEET_FORMAT_FILES } from '../constants/sheetFormats.ts';
 import { useSheetWriteStore } from '../stores/useSheetWriteStore.ts';
 import type { SpriteBox, SpriteDuplicateGroup } from '../types/quantiser.ts';
+import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SheetFormat, WrittenSheet } from '../types/sheetFormat.ts';
 import { fileStem } from '../utils/fileStem.ts';
@@ -44,12 +45,26 @@ export interface SheetDownload {
    * not have to know which formats care.
    */
   readonly boxes: readonly SpriteBox[];
+  /**
+   * The fixed cell every sprite is cut into, at 1:1, or `null` where each keeps its bounding box.
+   *
+   * Refused rather than resampled where a sprite does not fit it — see `writeSheet`, which throws
+   * the sentence this hook's own failure toast then carries.
+   */
+  readonly cell: SpriteCell | null;
   /** The duplicate reading over those sprites, which a manifest turns into links between them. */
   readonly duplicates: readonly SpriteDuplicateGroup[];
   /** One name per component the studio's prompt asks for, in the order section 4 lays them out. */
   readonly names: readonly string[];
   /** Which sheet of which deliverable the studio is composing, or `null` where it names none. */
   readonly sheet: ManifestSheet | null;
+  /**
+   * The facing that tells this sheet apart from the rest of its batch, or `null` where none does.
+   *
+   * What the file is named for, and what a pack lays its sprites out under. Resolved by
+   * `sheetIdentity`, which reads the whole batch to decide whether a facing distinguishes anything.
+   */
+  readonly facing: string | null;
 }
 
 /** The press, and whether one is still being answered. */
@@ -67,25 +82,28 @@ export function useImageDownload(): ImageDownload {
   const saving = useSheetWriteStore((state) => state.writing);
 
   const save = useCallback(
-    ({ sourceName, image, scale, format, boxes, duplicates, names, sheet }: SheetDownload) => {
+    ({ sourceName, image, scale, format, boxes, cell, duplicates, names, facing, sheet }: SheetDownload) => {
       // Read at the press rather than closed over, so the guard cannot go stale behind a render.
       // `writeSheetOffThread` refuses a second write as well; this is what keeps a refused press
       // from reporting a failure the reader did not cause.
       if (useSheetWriteStore.getState().writing) return;
       const file = SHEET_FORMAT_FILES[format];
-      const filename = quantisedName(sourceName, scale, file.extension);
+      const which = whichSheet(facing, sheet);
+      const filename = quantisedName(sourceName, which, scale, file.extension);
 
       writeSheetOffThread({
         image,
         scale,
         format,
         boxes,
+        cell,
         duplicates,
         names,
+        facing,
         // What a manifest downloaded on its own says its rects are into: the PNG this same press
         // would have written, at this same magnification, rather than the dropped file — which is
         // the sheet as it arrived and not as the tab has since read it.
-        imageName: quantisedName(sourceName, scale, SHEET_FORMAT_FILES.PNG.extension),
+        imageName: quantisedName(sourceName, which, scale, SHEET_FORMAT_FILES.PNG.extension),
         sheet,
       })
         .then((written) => {
@@ -186,16 +204,41 @@ function describeFrames(frames: number, tags: number): string {
 }
 
 /**
- * `character-sheet.webp` → `character-sheet-quantised.png`, or `…-quantised@4x.aseprite` magnified.
+ * Which sheet of the batch this is, as the clause that goes in the file's name.
+ *
+ * **The eight rig runs are the case this exists for.** They are eight separate generations, each
+ * dropped on this tab in turn and downloaded in turn, and every one of them was arriving named after
+ * the file that was dropped — so the reader was left holding eight archives that differed in nothing
+ * a file listing shows. Filing one wrongly is silent: the pieces load, the actor rigs, and the
+ * character faces the wrong way in one octant of a circle.
+ *
+ * **The facing where a facing names the sheet, and the ordinal otherwise.** A facing is the word the
+ * tree an engine importer scans is keyed by, so it is worth more than a number wherever there is
+ * one; `SheetIdentity.facing` is where the cases that have none are set out. The ordinal answers all
+ * of them, since every sheet of a batch has one and no two share it — and it is withheld from a
+ * batch of one, where there is nothing to tell apart and `-sheet-1` would say so falsely.
+ */
+function whichSheet(facing: string | null, sheet: ManifestSheet | null): string {
+  if (facing !== null) return `-${facing}`;
+  if (sheet === null || sheet.total < 2) return '';
+  return `-sheet-${String(sheet.ordinal)}`;
+}
+
+/**
+ * `character-sheet.webp` → `character-sheet-quantised.png`, or `…-quantised-south@4x.aseprite`.
  *
  * Named after the source so a batch of eight split sheets stays sorted beside its originals, and
  * suffixed so the download never silently replaces the file it came from. The extension is always
  * the one that was written, whatever arrived. A magnified copy carries its factor in the `@4x` form
  * asset pipelines already read, so the 1× file and its magnifications sort together and none of them
  * overwrites another — including across formats, since each of the four has its own extension.
+ *
+ * **{@link whichSheet} sits between the two**, because both are already conventions about position:
+ * the sheet's own name has to come before the magnification a pipeline reads off the end, and after
+ * the `-quantised` that says what this app did to the file it was handed.
  */
-function quantisedName(sourceName: string, scale: number, extension: string): string {
+function quantisedName(sourceName: string, which: string, scale: number, extension: string): string {
   const stem = fileStem(sourceName);
   const factor = scale === 1 ? '' : `@${String(scale)}x`;
-  return `${stem === '' ? 'sprite-sheet' : stem}-quantised${factor}.${extension}`;
+  return `${stem === '' ? 'sprite-sheet' : stem}-quantised${which}${factor}.${extension}`;
 }

@@ -11,7 +11,14 @@ const BASE: Omit<AtlasConfig, 'canvasSize'> = {
   widthBias: widthBiasFor('WIDE_16_9'),
 };
 
-/** `US_CHARACTER_RIG`'s own target component size — a real one, and not square. */
+/**
+ * A real component size, and not square.
+ *
+ * It is the pair `US_CHARACTER_RIG` holds, and it is deliberately not cited as that preset's own:
+ * that preset draws a cut-out rig, whose stated size is the assembled figure — so `spriteFitFor` is
+ * never handed it. `componentTargetSize` withholds it, and this module's whole job is to check a
+ * cell against one component. The figures below are a size like any other.
+ */
 const CHARACTER = { width: 48, height: 96 };
 
 describe('spriteFitFor', () => {

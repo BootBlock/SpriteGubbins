@@ -51,6 +51,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/StudioTab-*.js',
   'assets/Tooltip-*.js',
   'assets/componentBudget-*.js',
+  'assets/componentTargetSize-*.js',
   'assets/database-*.js',
   'assets/firstOfEachId-*.js',
   'assets/models-*.js',
@@ -59,7 +60,6 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/sheetCanvas-*.js',
   'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
-  'assets/targetSize-*.js',
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
@@ -147,17 +147,45 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * Those are two of exactly the `+`/`-` pairs the note on `PRECACHE_SHAPES` warns read like a stray
  * file and are not one.
  *
- * **Raised once more, from 2256, by the palette export.** A settled palette can now leave the app as
- * a swatch PNG, a `.gpl` or a hex list, offered in the studio beside the palette that pins one and on
+ * **Raised once more, from 2256 to 2264, by the per-component names the sheet plans now carry.** Every
+ * inventory line whose components are told apart by what they are rather than by where they sit
+ * gained a `parts` list naming each of them, so a sprite pack cut from a character rig writes
+ * `04-left-upper-arm.png` where it wrote `04-left-arm-1.png` — 328 names on 98 entries, across the
+ * eleven plan files that have any. Measured against the build immediately before it, the precache
+ * goes from 2253.00 to **2260.98 KiB**, a delta of 7.98. It is constant data the entry chunk
+ * reaches, which is why it is paid for on a first visit and named here rather than being an
+ * invisible edit. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2264 to 2268, where the rig target-size change met the raise above it.**
+ * Neither branch crossed the ceiling on its own — the target-size work measured 2252.72 KiB against
+ * its own base and the per-component names measured 2260.98 against theirs — and the merge of the
+ * two lands at **2265.42 KiB**. So this raise is bought by the smaller half of a pair that was
+ * already 3.02 under: section 2's target-size line is stated twice, once for a component size and
+ * once for an assembly, and the CUSTOM resolution profile gains a second wording beside it, because
+ * a cut-out rig sheet's stated size is the figure its pieces assemble into. That is prompt text
+ * rather than code, so it is constant data the entry chunk reaches, the same footing the raise above
+ * stands on. The margin is left at the same order as every raise above. *
+ * **Raised once more, from 2268, by the sprite pack's fixed cell.** The pack could only cut to each
+ * sprite's own bounding box, which a rig importer cannot take, so the download now offers a stated
+ * cell with the artwork registered at a stated anchor. The code is four small modules; what it costs
+ * is prose — five guidance paragraphs for the new controls, two rewritten download cards, and the
+ * labels each pill and box carries. Measured against the build immediately before it — 2265.42 KiB,
+ * rebuilt from that commit with the same `node_modules` — the precache reaches **2273.85 KiB**, a
+ * delta of 8.43. It adds no entry to `PRECACHE_SHAPES`: the modules land in the same
+ * constants-pulling chunks every raise above names. The margin is left at the same order rather than
+ * widened.
+ *
+ * **Raised once more, from 2278, by the palette export.** A settled palette can now leave the app as
+ * a swatch PNG, a `.gpl` or a hex list, offered in the studio beside the control that pins one and on
  * the Quantise tab for the sheet's own colours and for a held lock. Measured against the build
- * immediately before it, rebuilt from that commit with the same `node_modules`, the precache goes
- * from 2253.00 to **2262.57 KiB**, a delta of 9.57. About a quarter of that is prose — the five
- * guidance paragraphs measure 2,537 bytes between them, constant data the entry chunk reaches as
- * every raise above says of its own — and the rest is the writers, the shared button row and the
- * panel. No file was added to or removed from the precache. The margin is left at the same order as
- * every raise above.
+ * immediately before it — 2273.85 KiB, the figure the raise above records — the precache reaches
+ * **2283.43 KiB**, a delta of 9.58. About a quarter of that is prose: the five guidance paragraphs
+ * measure 2,537 bytes between them, constant data the entry chunk reaches on the footing every raise
+ * above stands on, and the rest is the three writers, the shared button row and the panel. No file
+ * was added to or removed from the precache. The margin is left at the same order as every raise
+ * above.
  */
-export const PRECACHE_CEILING_KIB = 2265;
+export const PRECACHE_CEILING_KIB = 2287;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

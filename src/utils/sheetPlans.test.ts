@@ -20,6 +20,7 @@ import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentCountFor } from './componentSet.ts';
+import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
@@ -520,6 +521,46 @@ describe('every inventory line carries an identifier the manifest can use', () =
           /^[a-z0-9]+(-[a-z0-9]+)*$/,
         );
       }
+    }
+  });
+
+  it('gives a line that names its parts exactly one name per component', () => {
+    // `componentSlots` takes the names straight from `parts`, so a list of the wrong length makes the
+    // name list a different length from the component count — which maps every sprite after the
+    // divergence onto the wrong component, the failure the whole arrangement is arranged against.
+    for (const { category, mode, plan } of everyPlan) {
+      for (const entry of plan.groups.flatMap((group) => group.entries)) {
+        if (entry.parts === undefined) continue;
+        expect(entry.parts, `${category}/${mode}/${plan.name}: ${entry.text}`).toHaveLength(entry.count);
+      }
+    }
+  });
+
+  it('spells every part name as a slug', () => {
+    for (const { category, mode, plan } of everyPlan) {
+      for (const entry of plan.groups.flatMap((group) => group.entries)) {
+        for (const part of entry.parts ?? []) {
+          expect(part, `${category}/${mode}/${plan.name}: ${entry.text}`).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+        }
+      }
+    }
+  });
+
+  it('never names two components of one plan the same thing', () => {
+    // Stronger than the line-level check below, and it is the half `parts` made reachable: two lines
+    // with distinct labels can still land on one name, and `componentSlots` would then rename the
+    // second to `x-2` — a name that reads as the second copy of something rather than as the
+    // collision it is.
+    //
+    // Asserted on `planSlots`, which is the expansion a pack writes *before* `unique` runs. Neither
+    // of the two nearer answers works: `componentSlots` applies that rename, so it guarantees the
+    // property being checked here and the assertion could never fail; and walking `parts` alone
+    // reaches 98 of the table's 418 entries, missing exactly the collision that is live — an
+    // authored name landing on one another line *derives*, since the authoring convention puts
+    // ordinals inside part names (`mounting-bracket-1`) and the derived branch produces that shape.
+    for (const { category, mode, plan } of everyPlan) {
+      const names = planSlots(plan);
+      expect(new Set(names).size, `${category}/${mode}/${plan.name}: ${names.join(', ')}`).toBe(names.length);
     }
   });
 

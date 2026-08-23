@@ -40,6 +40,7 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
         // to read as unavailable while still reading as the same button.
         {
           label: 'button-body',
+          parts: ['button-body-normal', 'button-body-hover', 'button-body-pressed', 'button-body-disabled'],
           text: 'Button body: normal, hover, pressed, disabled',
           count: 4,
           kind: 'structure',
@@ -51,28 +52,44 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
           count: 1,
           kind: 'structure',
         },
-        { label: 'bar-track-and-fill', text: 'Bar track ×1, bar fill ×1', count: 2, kind: 'structure' },
+        {
+          label: 'bar-track-and-fill',
+          parts: ['bar-track', 'bar-fill'],
+          text: 'Bar track ×1, bar fill ×1',
+          count: 2,
+          kind: 'structure',
+        },
         {
           label: 'toggle-or-checkbox',
+          parts: ['toggle-off', 'toggle-on', 'toggle-disabled'],
           text: 'Toggle or checkbox: off, on, disabled',
           count: 3,
           kind: 'structure',
         },
         {
           label: 'slider',
+          parts: ['slider-track', 'slider-handle-rest', 'slider-handle-held'],
           text: 'Slider track ×1, slider handle: at rest, held',
           count: 3,
           kind: 'structure',
         },
         {
           label: 'icon-plate-or-slot',
+          parts: ['icon-plate-empty', 'icon-plate-filled', 'icon-plate-highlighted'],
           text: 'Icon plate or slot: empty, filled, highlighted',
           count: 3,
           kind: 'structure',
         },
-        { label: 'cursor', text: 'Cursor: pointing, held, refused', count: 3, kind: 'structure' },
+        {
+          label: 'cursor',
+          parts: ['cursor-pointing', 'cursor-held', 'cursor-refused'],
+          text: 'Cursor: pointing, held, refused',
+          count: 3,
+          kind: 'structure',
+        },
         {
           label: 'trim',
+          parts: ['divider-rule', 'corner-ornament', 'resize-grip'],
           text: 'Trim: divider rule ×1, corner ornament ×1, scroll or resize grip ×1',
           count: 3,
           kind: 'structure',
@@ -101,11 +118,23 @@ still does at every corner of the assembled panel.`,
       entries: [
         {
           label: 'frame-corners',
+          parts: [
+            'frame-corner-top-left',
+            'frame-corner-top-right',
+            'frame-corner-bottom-right',
+            'frame-corner-bottom-left',
+          ],
           text: 'Frame corners ×4: top-left, top-right, bottom-right, bottom-left',
           count: 4,
           kind: 'tile',
         },
-        { label: 'frame-edges', text: 'Frame edges ×4: top, right, bottom, left', count: 4, kind: 'tile' },
+        {
+          label: 'frame-edges',
+          parts: ['frame-edge-top', 'frame-edge-right', 'frame-edge-bottom', 'frame-edge-left'],
+          text: 'Frame edges ×4: top, right, bottom, left',
+          count: 4,
+          kind: 'tile',
+        },
         { label: 'frame-centre-fill', text: 'Frame centre fill ×1', count: 1, kind: 'tile' },
       ],
       outro: `Opposite ends of every repeating piece match, so a run of any length shows no join: an edge butts
@@ -120,10 +149,17 @@ every join.`,
 between them. Both of its states are drawn, because a pressed button that is not the same width as
 its resting one shifts on the screen when it is pressed.`,
       entries: [
-        { label: 'button-end-caps', text: 'Button end caps ×2: left, right', count: 2, kind: 'tile' },
+        {
+          label: 'button-end-caps',
+          parts: ['button-end-cap-left', 'button-end-cap-right'],
+          text: 'Button end caps ×2: left, right',
+          count: 2,
+          kind: 'tile',
+        },
         { label: 'button-stretching-middle', text: 'Button stretching middle ×1', count: 1, kind: 'tile' },
         {
           label: 'pressed-button-end-caps',
+          parts: ['pressed-button-end-cap-left', 'pressed-button-end-cap-right'],
           text: 'Pressed button end caps ×2: left, right',
           count: 2,
           kind: 'tile',
@@ -139,8 +175,20 @@ its resting one shifts on the screen when it is pressed.`,
     {
       heading: 'Trim and joins',
       entries: [
-        { label: 'divider-rail', text: 'Divider rail: horizontal ×1, vertical ×1', count: 2, kind: 'tile' },
-        { label: 'divider-end-caps', text: 'Divider end caps ×2: start, end', count: 2, kind: 'tile' },
+        {
+          label: 'divider-rail',
+          parts: ['divider-rail-horizontal', 'divider-rail-vertical'],
+          text: 'Divider rail: horizontal ×1, vertical ×1',
+          count: 2,
+          kind: 'tile',
+        },
+        {
+          label: 'divider-end-caps',
+          parts: ['divider-end-cap-start', 'divider-end-cap-end'],
+          text: 'Divider end caps ×2: start, end',
+          count: 2,
+          kind: 'tile',
+        },
         // Not a tile: an ornament is laid over a corner the frame has already drawn, so it neither
         // repeats nor has to butt against anything.
         { label: 'corner-ornament', text: 'Corner ornament ×1', count: 1, kind: 'structure' },

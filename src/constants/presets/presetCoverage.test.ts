@@ -232,8 +232,9 @@ describe('no shipped preset contradicts itself', () => {
   });
 
   it.each(PRESETS)('$name gives a CUSTOM resolution something to work to', (preset) => {
-    // `CUSTOM` means "work to the target component size". With the size field empty it means nothing
-    // at all, and the prompt loses the only statement of scale it had.
+    // `CUSTOM` means "work to the target size" — the component's on most sheets, the assembled
+    // figure's on a cut-out rig one. With the field empty it means nothing at all either way, and
+    // the prompt loses the only statement of scale it had.
     if (preset.output.resolutionProfile !== 'CUSTOM') return;
 
     expect(preset.output.spriteTargetSize).not.toBe('');
