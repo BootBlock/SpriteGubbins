@@ -231,7 +231,10 @@ describe('ImageComparison', () => {
 
     expect(quantised).not.toBeNull();
     expect(screen.getByText('Quantising…')).toBeInTheDocument();
-    expect(screen.getByText(/· updating…$/)).toBeInTheDocument();
+    // Still saying what is on screen, which is the previous result — and saying only that. A grid of
+    // 8 over a 128px sheet is 16 pixels a side, and the exact text is the assertion: the caption used
+    // to grow a clause about the newer result while the worker ran.
+    expect(screen.getByText('Quantised · 16 × 16 · 32 colours')).toBeInTheDocument();
   });
 
   it('says it is working without laying anything over the artwork', () => {
@@ -248,6 +251,47 @@ describe('ImageComparison', () => {
     choose('Wipe');
     expect(screen.getByText('Quantising…')).toBeInTheDocument();
     expect(document.querySelectorAll('.shimmer-surface')).toHaveLength(0);
+  });
+
+  it('holds the caption row still while a newer result is computed', () => {
+    // The chip is laid over the artwork, but the caption is measured beside it: this line sits
+    // directly above the frame, so anything the busy state adds to it moves the picture. A
+    // ` · updating…` clause used to be appended here, and a caption row it took onto a second line
+    // pushed the artwork down a line at the moment the reader was comparing it — reported against
+    // the wipe, which is one frame under one caption row and so shifts as a whole.
+    const source = createImage(SOURCE_SIDE, SOURCE_SIDE);
+    const panel = (busy: boolean) => (
+      <ImageComparison
+        sourceName="sheet.png"
+        source={source}
+        sourceColors={200}
+        scale={{ grid: 8, measurement: 'EXACT' }}
+        grid={8}
+        quantised={{ result: resultFor(8), grid: 8 }}
+        busy={busy}
+      />
+    );
+    const captions = () => [...document.querySelectorAll('figcaption')].map((row) => row.textContent);
+
+    const { rerender } = render(panel(false));
+    const pair = captions();
+    expect(pair).toHaveLength(2);
+
+    rerender(panel(true));
+    expect(screen.getByText('Quantising…')).toBeInTheDocument();
+    expect(captions()).toEqual(pair);
+
+    // The wipe holds both captions in one wrapping row above one frame, and carries that row itself
+    // rather than through the pane — so it is the layout a fix applied to the pair alone would have
+    // left moving.
+    rerender(panel(false));
+    choose('Wipe');
+    const wipe = captions();
+    expect(wipe).toHaveLength(1);
+
+    rerender(panel(true));
+    expect(screen.getByText('Quantising…')).toBeInTheDocument();
+    expect(captions()).toEqual(wipe);
   });
 
   it('repaints when the pixels change and not merely when the panel renders', () => {
