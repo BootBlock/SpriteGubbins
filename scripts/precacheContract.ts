@@ -46,18 +46,18 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SelectField-*.js',
   'assets/SettingsContents-*.js',
   'assets/SheetSplitContents-*.js',
+  'assets/SheetStepButtons-*.js',
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
-  'assets/TextField-*.js',
   'assets/Tooltip-*.js',
   'assets/componentBudget-*.js',
-  'assets/componentGridScale-*.js',
   'assets/database-*.js',
   'assets/firstOfEachId-*.js',
   'assets/models-*.js',
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',
   'assets/sheetCanvas-*.js',
+  'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
   'assets/targetSize-*.js',
   'assets/useClipboard-*.js',
@@ -136,8 +136,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * not. Measured against the build immediately before it, the precache goes from 2247.43 to **2250.62
  * KiB**, a delta of 3.19 — and it lands in the same constants-pulling chunks the paragraph above
  * names rather than in the entry chunk. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2254, by the Quantise tab's sheet-identity panel.** It adds a panel, a
+ * hook, a shared step-button component and two guidance paragraphs, and it moves the step buttons
+ * out of the studio so both tabs reach them. Measured against the build immediately before it, the
+ * precache goes from 2250.62 to **2252.92 KiB**, a delta of 2.30. Three of the shapes above changed
+ * name in the same build and no file was added or removed by it: sharing `SheetStepButtons` and
+ * `sheetCoverage` between the studio and the quantiser re-cut two of the split's shared chunks, so
+ * `TextField-*` and `componentGridScale-*` gave their names up to them. That is exactly the
+ * `+`/`-` pair the note on `PRECACHE_SHAPES` warns reads like a stray file and is not one.
  */
-export const PRECACHE_CEILING_KIB = 2254;
+export const PRECACHE_CEILING_KIB = 2256;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
