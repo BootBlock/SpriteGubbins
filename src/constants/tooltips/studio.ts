@@ -46,6 +46,9 @@ export const STUDIO_ACTION_TOOLTIPS = {
   openGenerator:
     'Opens the chosen generator’s own image page in a new browser tab, so the prompt you have just copied has somewhere to go. Nothing here moves when you press it: no setting changes, nothing is sent, and this app never talks to a generator itself — you paste the prompt in yourself once the page has loaded. Where the link goes is the page that actually generates, rather than the vendor’s front door or its API reference. Three of the targets have no such page, and for those the button is unavailable and says why.',
 
+  readPaletteFromQuantise:
+    'Takes the colours from the sheet the Quantise tab is holding and writes them into the identity lock as a palette line, without your having to find the file again. It reads the quantised result rather than the image you dropped into that tab, so the colours it states are the ones you settled there and the ones the palette lock will hold the following sheets to. The Quantise tab is left exactly as it is, and nothing beyond the palette line of the lock changes.',
+
   readPalette:
     'Reads the dominant colours out of a sheet you have accepted and writes them into the identity lock as a palette line, most-used first, with the background key left out. It is the one line of a continuity digest nobody writes accurately by hand — eyeballing hex codes off a sheet is guesswork, and a later generation drifts to whatever the words allowed. The image is decoded in this tab and never leaves it.',
 } as const;

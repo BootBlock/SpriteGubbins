@@ -7,6 +7,7 @@ import { DIAL_HISTORY_GUIDANCE } from '../dialHistory.ts';
 import { TARGET_MODELS } from '../models.ts';
 import { PALETTE_EXPORT_GUIDANCE } from '../paletteExport.ts';
 import { accentSwatchGuidance } from '../settings.ts';
+import { IDENTITY_CAPTURE_UNAVAILABLE } from '../identityCapture.ts';
 import { SHEET_IDENTITY_GUIDANCE } from '../sheetIdentity.ts';
 import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
@@ -149,6 +150,14 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // what the app has settled rather than of what any sheet turned out to be.
   ...Object.entries(PALETTE_EXPORT_GUIDANCE).map(
     ([key, text]) => [`PALETTE_EXPORT_GUIDANCE.${key}`, text] as const,
+  ),
+  // All five of `IDENTITY_CAPTURE_UNAVAILABLE`, on the `TARGET_MODELS[].generatorSite.note` footing:
+  // a disabled button, and the sentence its card carries after the one every state shares. Filed
+  // outside `constants/tooltips/` because they are findings about the app's state rather than an
+  // explanation of the control — which is the filing, not the surface, and the surface is what this
+  // suite is named for.
+  ...Object.entries(IDENTITY_CAPTURE_UNAVAILABLE).map(
+    ([key, text]) => [`IDENTITY_CAPTURE_UNAVAILABLE.${key}`, text] as const,
   ),
 ];
 

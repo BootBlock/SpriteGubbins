@@ -56,7 +56,7 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
 }
 
 /** The keying half of it: both absent, or the same colour matched to the same distance. */
-function sameKeying(left: BackgroundKeying | null, right: BackgroundKeying | null): boolean {
+export function sameKeying(left: BackgroundKeying | null, right: BackgroundKeying | null): boolean {
   if (left === null || right === null) return left === right;
   return left.tolerance === right.tolerance && sameColor(left.color, right.color);
 }
@@ -68,7 +68,7 @@ function sameKeying(left: BackgroundKeying | null, right: BackgroundKeying | nul
  * which is what narrows `right` as well as `left` — the alternative reads more neatly and needs a
  * cast to get at the field it is comparing, which is the trade this repository does not make.
  */
-function sameReduction(left: ColorReduction | null, right: ColorReduction | null): boolean {
+export function sameReduction(left: ColorReduction | null, right: ColorReduction | null): boolean {
   if (left === null || right === null) return left === right;
 
   switch (left.kind) {

@@ -12,6 +12,7 @@ import type { PixelGrid, Quantised, SheetFacts } from '../../types/quantiser.ts'
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
 import { borderKeyShare } from '../../utils/borderKeyShare.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
+import { keyingInForce } from '../../utils/keyingInForce.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { componentTargetSize } from '../../utils/componentTargetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
@@ -179,7 +180,7 @@ export function QuantiseTab() {
   // worker's debounce each render, and the transform would never be asked for.
   const keyColor = BACKGROUND_KEY_COLORS[backgroundKey];
   const keying = useMemo(
-    () => (!keyingEnabled || keyColor === null ? null : { color: keyColor, tolerance: keyTolerance }),
+    () => keyingInForce(keyingEnabled, keyColor, keyTolerance),
     [keyingEnabled, keyColor, keyTolerance],
   );
 

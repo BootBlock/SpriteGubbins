@@ -63,6 +63,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
+  'assets/useQuantiseStore-*.js',
   'assets/useShowToast-*.js',
   'assets/useUIStore-*.js',
   'assets/index-*.css',
@@ -184,8 +185,19 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * above stands on, and the rest is the three writers, the shared button row and the panel. No file
  * was added to or removed from the precache. The margin is left at the same order as every raise
  * above.
+ *
+ * **Raised once more, from 2287, by the identity lock reading the Quantise tab's sheet.** It adds a
+ * button, a shared capture hook, the pure offer function behind it, five sentences of guidance, and
+ * the two rules that button and the Quantise tab now share — `gridInForce` and `keyingInForce`.
+ * Measured on its own base before this branch met main, the precache went from 2253.00 to **2257.15
+ * KiB**, a delta of 4.15; the merge of the two lands at **2287.61**, which is the palette export's
+ * recorded 2283.43 plus that delta to within 0.03. It also adds a *file* —
+ * `assets/useQuantiseStore-*.js`, one of the shape lines above — and that one is not a rename: the
+ * studio now reaches the quantiser's two stores, so the split cut them out of both views into a
+ * chunk the two share. A first visit downloads the same bytes either way; what changed is that they
+ * are now in a chunk of their own. The margin is left at the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2287;
+export const PRECACHE_CEILING_KIB = 2291;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
