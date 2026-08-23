@@ -34,10 +34,18 @@ import type { CategoryDefinition } from '../../types/subject.ts';
  * neck ports are at the shoulders, the jacks and the barcode are on the skin, and the accent colour
  * is a display rather than an iris. Stating the era and leaving the other fifteen fields
  * fantasy-shaped is how a set comes back as a robed elder wearing one implant — so the near-future
- * options are spread across `Portrait Subject`, `Facial Features & Hair`,
- * `Garments At The Shoulders`, `Marks & Adornment`, `Surface Materials` and both colour fields, and
- * `Explicit Exclusions` names the neon spill, the interface overlay and the glitch pass the genre
- * invites onto a sheet an engine has to composite for itself.
+ * options run through fourteen of the sixteen pools, from who the subject is down to what the sheet
+ * must not show, and `Explicit Exclusions` names the four things the genre invites onto a sheet an
+ * engine composites for itself. `Framing & Crop` and `Head Turn & Pose` are the two that stay
+ * genre-neutral, and they are the two that mean the same thing in any era: a crop is a measurement
+ * and a head turn is a pose, and neither has a cyberpunk form to offer.
+ *
+ * **`World & Era` splits the genre rather than naming it once.** A neon sprawl, a corporate
+ * arcology, a rain-slick noir street and a recovered post-cyberpunk city are four wardrobes under
+ * four lighting schemes, and the bare word is answered as whichever of them the generator has seen
+ * most of — so the pool offers the four and not the word. The adjacent `-punk` settings are there
+ * for the same reason: they are the eras a reader reaches for next, and each states a material
+ * world rather than a mood.
  */
 export const PORTRAIT: CategoryDefinition = {
   label: 'Portrait / Character Bust',
@@ -123,8 +131,8 @@ export const PORTRAIT: CategoryDefinition = {
         'Herald & Messenger',
         'Fixer & Job Broker',
         'Corporate Handler',
-        'Netrunner & Hacker Contact',
-        'Street Doctor & Ripperdoc',
+        'Hacker & Intrusion Specialist',
+        'Street Doctor & Implant Fitter',
         'Enforcer & Hired Muscle',
         'Informant & Snitch',
         'Streamer & Media Personality',
@@ -144,7 +152,6 @@ export const PORTRAIT: CategoryDefinition = {
         'Victorian Gaslamp',
         'Wild West Frontier',
         'Modern Day',
-        'Near-Future Cyberpunk',
         'Neon Sprawl Megacity',
         'Corporate Arcology Dystopia',
         'Cyber-Noir Rain-Slick Streets',
@@ -172,8 +179,6 @@ export const PORTRAIT: CategoryDefinition = {
       tooltip:
         'How much of the person the frame holds, measured from the top of the head down. This is the single most important field on the sheet: a dialogue box wants a head and shoulders, a party roster wants a bust, and a title screen wants a half body — and a set drawn to two different crops cannot be swapped one for another at runtime.',
       options: [
-        'Eyes Only, Extreme Close-Up',
-        'Face Filling The Frame',
         'Head Only',
         'Head And Shoulders',
         'Bust To Upper Chest',
@@ -225,7 +230,6 @@ export const PORTRAIT: CategoryDefinition = {
         'Chrome Optic Implant & Undercut',
         'Mirrorshade Lenses & Slicked Hair',
         'Chrome Jaw Plating & Buzz Cut',
-        'Dermal Ports Along The Temple',
         'Split-Dyed Hair & Shaved Sides',
         'Fibre-Optic Hair & Fine Features',
         'Vat-Smooth Features, Bleached Crop',
@@ -379,7 +383,7 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'exclusions',
       label: 'Explicit Exclusions',
       tooltip:
-        'Negative rules keeping the dialogue system’s job off the sheet. The name plate is the one that matters most: a portrait with a name painted beside it serves one character in one language, and the box the engine draws would then sit over the top of it. The last four are what a near-future look invites: neon spill, an interface overlay and a glitch pass are all things an engine composites for itself, and baked into the sprite they cannot be turned off.',
+        'Negative rules keeping the dialogue system’s job off the sheet. The name plate is the one that matters most: a portrait with a name painted beside it serves one character in one language, and the box the engine draws would then sit over the top of it. The last four are what a near-future look invites onto a portrait — city glow, an interface overlay, a glitch pass and the weather of the street it was drawn on. Each is something an engine paints for itself at runtime, and baked into the sprite none of them can be turned off again.',
       options: [
         'No name plate, caption or speech bubble',
         'No background scene behind the head',

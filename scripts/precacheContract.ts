@@ -99,13 +99,14 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * rather than widening it: a category is a large addition and the next one should have to say so
  * here, which is the whole point of the small margin.
  *
- * **Raised again from 2220 by PORTRAIT's near-future option pools.** Sixteen pools gained the
- * cyberpunk and adjacent-genre entries issue #140 asked for, and six tooltips gained the sentence
- * explaining them — 4.44 KiB measured against the build immediately before, taking the precache
- * from 2217.10 to 2221.54 KiB. Option text is constant data the entry chunk reaches, so a pool is
- * paid for on every first visit, which is the reason expanding one is a line in this file rather
- * than an invisible edit. The 3.46 KiB left over is the same order of headroom the figure has
- * carried since the last raise.
+ * **Raised again from 2220 by PORTRAIT's near-future option pools.** Fifteen of that category's
+ * sixteen pools gained options — fourteen of them the cyberpunk and adjacent-genre entries issue
+ * #140 asked for, and `Head Turn & Pose` four poses that are not genre entries at all — along with
+ * six tooltips and a docblock paragraph explaining them. Measured against the build immediately
+ * before, that is 4.42 KiB: the precache goes from 2217.06 to 2221.48 KiB. Option text is constant
+ * data the entry chunk reaches, so a pool is paid for on every first visit, which is the reason
+ * expanding one is a line in this file rather than an invisible edit. The 3.52 KiB left over is the
+ * same order of headroom the figure has carried since the last raise.
  */
 export const PRECACHE_CEILING_KIB = 2225;
 
