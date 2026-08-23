@@ -48,6 +48,7 @@ function resultOf(side: number): QuantiseResult {
     image: createImage(side, side),
     difference: flatDifference(side, side),
     colors: 32,
+    paletteEntries: [],
     keyedShare: 0,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     symmetry: null,

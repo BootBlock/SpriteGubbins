@@ -1,5 +1,5 @@
 import { sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import type { ComponentEntry, SheetFacings } from '../types/components.ts';
+import type { ComponentEntry, SheetFacings, SheetPlan } from '../types/components.ts';
 import type { AnatomyComponent } from '../types/anatomy.ts';
 import type { DirectionalMode, DirectionSet } from '../types/output.ts';
 import type { SubjectCategory } from '../types/subject.ts';
@@ -22,23 +22,37 @@ import { slugify } from './slugify.ts';
  * appends it, because grid position is the only thing identifying a component and interleaving would
  * renumber everything after it.
  *
- * **What a name is worth, and what it is not.** It identifies the inventory *line* a component came
- * from, suffixed by the facing where the sheet draws one piece per facing and by an ordinal
- * otherwise. So `heads-south` is exact, and `left-arm-3` is the third of the eight variants that
- * line asks for — which of them is the hand is in the prompt's own text and deliberately not here.
- * An entry naming its parts in prose could have them read back out, and that is the parse this whole
- * `label` field exists to avoid.
+ * **What a name is worth.** Where an inventory line names its components, it is those names:
+ * `ComponentEntry.parts` carries them, so a character rig's fifteen pieces cut out as `04-left-upper-arm.png`
+ * rather than `04-left-arm-1.png`, and an engine importer keying a piece by its slot has one to key
+ * on. Where a line does not — the facings a directional sheet draws, and a genuine ×N run of
+ * variants nothing tells apart — the name identifies the *line* and is suffixed by the facing or by
+ * an ordinal. So `heads-south` is exact, `left-upper-arm` is exact, and `base-material-tile-3` is
+ * the third of six tiles that differ only in surface scatter, which is what such a component is
+ * actually called.
+ *
+ * The names are authored on the entry rather than read back out of its prose, which is the parse the
+ * `label` field exists to avoid — see `ComponentEntry.parts` for why that boundary is where it is.
  *
  * Pure, as everything in this directory is.
  */
 
 /**
- * One entry's names: the facing where a sheet draws one per facing, an ordinal where it does not.
+ * One entry's names: its own where it states them, the facing where a sheet draws one per facing,
+ * an ordinal where neither applies.
+ *
+ * **`parts` wins over the facing suffix**, because it is the more specific claim and the only one
+ * authored per entry: a line that names its components has said what they are, and deriving a facing
+ * name over the top of that would answer a question the entry already answered. No entry carries
+ * both today — every directional entry comes from `viewsOf` or `atEachYaw`, neither of which names
+ * parts — so the precedence is a statement about which fact is authoritative rather than a branch
+ * anything currently takes.
  *
  * The facing is slugged rather than used as it stands, because one of them is two words: the classic
  * vocabulary's `right side` would otherwise put a space in a file name and in an identifier.
  */
 function entrySlots(entry: ComponentEntry, facings: SheetFacings): readonly string[] {
+  if (entry.parts !== undefined) return entry.parts;
   if (facings !== 'run' && entry.count === facings.length) {
     return facings.map((facing) => `${entry.label}-${slugify(facing)}`);
   }
@@ -84,6 +98,23 @@ function unique(names: readonly string[]): readonly string[] {
   });
 }
 
+/**
+ * One plan's own components, before the subject's anatomy and before {@link unique} runs.
+ *
+ * Exported for the one caller that needs the *undeduplicated* list: `sheetPlans.test.ts` asserts
+ * that no two components of a plan answer to the same name, and it cannot ask `componentSlots` —
+ * `unique` guarantees the property that test exists to check, so the assertion would pass on a plan
+ * whose second `outer-corner-transitions-1` had just been renamed to `outer-corner-transitions-1-2`.
+ * The test walking the entries itself is the other way to get this, and it was the first way: it
+ * reached only the entries naming their own parts, which is 98 of the 418 in the table, and it
+ * missed the collision that actually matters — an authored name landing on a name another line
+ * *derives*, which is a live risk because the authoring convention puts ordinals inside part names
+ * (`mounting-bracket-1`) and the derived branch produces exactly that shape.
+ */
+export function planSlots(plan: SheetPlan): readonly string[] {
+  return plan.groups.flatMap((group) => group.entries.flatMap((entry) => entrySlots(entry, plan.facings)));
+}
+
 export function componentSlots(
   category: SubjectCategory,
   mode: DirectionalMode,
@@ -92,9 +123,7 @@ export function componentSlots(
   additional: readonly AnatomyComponent[],
 ): readonly string[] {
   const plan = sheetPlanFor(category, mode, directions, sheetIndex);
-  const names = plan.groups.flatMap((group) =>
-    group.entries.flatMap((entry) => entrySlots(entry, plan.facings)),
-  );
+  const names = [...planSlots(plan)];
 
   const anatomyFacings = anatomyFacingsFor(category, mode, directions, sheetIndex);
   if (anatomyFacings !== null) {

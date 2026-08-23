@@ -28,10 +28,34 @@ interface NumberFieldProps {
  * finite and inside most ranges, so a user who selects all and deletes on the way to retyping would
  * otherwise have committed a real `0` — and if they clicked away at that moment, silently kept it.
  *
+ * **`step` is a check here, not a hint**, and that is the half the platform does not give you: a
+ * `type="number"` input reports a value off its own step grid as *invalid* and still hands it over
+ * verbatim, so a field declaring `step={1}` used to commit a typed `20.5`. Every call site in the
+ * app declares a step of 1, and each wanted a whole number for a reason of its own — a count of
+ * components, a degree of camera elevation, the side of a cell that becomes an `ImageData` — and the
+ * component budget had grown its own `Number.isInteger` guard while the rest had not. A guard per
+ * call site is a check three of four callers forget; one here is what makes the prop mean what it
+ * says. The comparison is taken against `min` rather than
+ * against zero, because a grid may be offset, and it carries a tolerance because binary floating
+ * point cannot represent every step exactly.
+ *
  * `disabledReason` is a string for the reason `CheckboxField` gives: a greyed-out control says
  * nothing about why. The camera elevation is fixed by six of the seven projections and free under
  * the seventh, so *which* setting has taken the number over is the whole of what a reader needs.
  */
+/**
+ * Whether a value sits on the field's own step grid, counting from `min`.
+ *
+ * The tolerance is relative to the step, so it holds for a step far from 1 as well: at `step` 0.1,
+ * `(0.3 - 0) / 0.1` comes to 2.9999999999999996 in binary floating point, and rounding that to 3
+ * before comparing is what stops a value the reader typed exactly being refused.
+ */
+function onStep(value: number, min: number, step: number): boolean {
+  if (step <= 0) return true;
+  const steps = (value - min) / step;
+  return Math.abs(steps - Math.round(steps)) < 1e-9;
+}
+
 export function NumberField({
   label,
   tooltip,
@@ -80,7 +104,9 @@ export function NumberField({
           const entered = event.target.value.trim();
           if (entered === '') return;
           const parsed = Number(entered);
-          if (Number.isFinite(parsed) && parsed >= min && parsed <= max) onChange(parsed);
+          if (Number.isFinite(parsed) && parsed >= min && parsed <= max && onStep(parsed, min, step)) {
+            onChange(parsed);
+          }
         }}
         className="w-full rounded-xl border border-foundry-600 bg-foundry-950/80 p-2.5 font-mono text-xs text-ink shadow-inner transition-colors duration-390 hover:border-accent/40 focus:border-accent aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
       />

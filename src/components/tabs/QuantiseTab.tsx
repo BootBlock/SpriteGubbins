@@ -14,7 +14,7 @@ import { borderKeyShare } from '../../utils/borderKeyShare.ts';
 import { colorPlanFor } from '../../utils/colorReduction.ts';
 import { keyingInForce } from '../../utils/keyingInForce.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
-import { parseTargetSize } from '../../utils/targetSize.ts';
+import { componentTargetSize } from '../../utils/componentTargetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
 import { AntiAliasControls } from '../quantise/AntiAliasControls.tsx';
 import { AutoTuneControls } from '../quantise/AutoTuneControls.tsx';
@@ -25,6 +25,7 @@ import { GridControls } from '../quantise/GridControls.tsx';
 import { ImageComparison } from '../quantise/ImageComparison.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { KeyingControls } from '../quantise/KeyingControls.tsx';
+import { PaletteExportControls } from '../quantise/PaletteExportControls.tsx';
 import { PaletteLockControls } from '../quantise/PaletteLockControls.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 import { QuantisePresetControls } from '../quantise/QuantisePresetControls.tsx';
@@ -220,7 +221,18 @@ export function QuantiseTab() {
   // The studio's own target size, read as a second candidate. Deliberately **not** folded into
   // `grid`: it is an upper bound derived from how many components the sheet has to seat, not a
   // measurement of this image, so it is offered to click and never silently preferred.
-  const target = useMemo(() => parseTargetSize(spriteTargetSize), [spriteTargetSize]);
+  //
+  // Read through `componentTargetSize` rather than parsed here, because both things downstream of it
+  // are per-component and a cut-out rig sheet states the assembled figure instead. Fed the raw field
+  // there, the grid candidate seats fifteen cells of a whole character rather than of a torso, and
+  // the Sprites panel compares the largest piece against a size no piece on the sheet has — so its
+  // *within the target* carries whatever slack separates a torso from a whole body, which is a
+  // number nothing here knows. `null` withdraws both, and the app holds no per-piece size to put in
+  // their place.
+  const target = useMemo(
+    () => componentTargetSize(category, directionalMode, spriteTargetSize),
+    [category, directionalMode, spriteTargetSize],
+  );
   // How many components this sheet's own prompt contracts for — the figure the sprite panel holds
   // the segmentation against, and the ceiling the grid suggestion seats. One derivation for both,
   // because two would be two answers to "what did the prompt ask for" on one screen.
@@ -326,6 +338,14 @@ export function QuantiseTab() {
               superseded={colorPlan.superseded}
               busy={busy}
             />
+            {/* Directly under the lock, because one of the two palettes it offers is that lock —
+                and separate from it because a download does nothing to the next sheet, which is
+                what the panel above is entirely about. The colours are the transform's own answer
+                rather than a reading taken here; see `QuantiseResult.paletteEntries`. */}
+            <PaletteExportControls
+              resultPalette={quantised?.result.paletteEntries ?? null}
+              sheetName={source.name}
+            />
             {/* Directly above the sprite panel, because the two are the two readings of one sheet:
                 this states what the studio's prompt asked for and what a download is about to record,
                 and the panel below states what actually came back. It changes no pixel and no dial —
@@ -405,6 +425,7 @@ export function QuantiseTab() {
               scale={facts?.scale ?? null}
               grid={grid}
               quantised={quantised}
+              target={target}
               busy={busy}
             />
           </div>

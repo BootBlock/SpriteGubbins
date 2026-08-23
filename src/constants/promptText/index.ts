@@ -29,6 +29,7 @@ export {
   minFeatureSize,
   RENDER_STYLE_TEXT,
   RESOLUTION_PROFILE_TEXT,
+  resolutionProfileDescription,
   SURFACE_DETAIL_TEXT,
 } from './renderStyle.ts';
 export { RENDER_STYLE_SURFACE } from './renderStyleSurface.ts';

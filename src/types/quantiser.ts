@@ -996,6 +996,21 @@ export interface QuantiseResult {
    */
   readonly colors: number;
   /**
+   * The colours of {@link image} as a palette — deduplicated across alpha, opaque, most-used first.
+   *
+   * **Not the same list as {@link colors} counts**, and the difference is the reason both are here.
+   * That figure counts distinct pixel values, so an anti-aliased edge carrying one green at six
+   * coverages contributes six to it; this holds that green once, because a palette is a statement
+   * about colour and coverage belongs to the silhouette. Anything showing both has to say which of
+   * them it is showing.
+   *
+   * Carried on the result rather than measured where it is wanted, for the reason every other
+   * reading here is: it is a fact about the sheet the reader is looking at, and taking it again on
+   * the main thread would be a second pass over as much as 16.8 megapixels each time a dial moved.
+   * The two are read off one histogram — see `paletteEntriesFrom`.
+   */
+  readonly paletteEntries: readonly Rgba[];
+  /**
    * The fraction of the source the key removed, 0–1, and `0` where keying did not run.
    *
    * Reported because it is the one question this feature cannot answer from the preview: the sheet

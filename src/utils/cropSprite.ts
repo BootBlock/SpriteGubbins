@@ -16,6 +16,7 @@ import { CHANNELS_PER_PIXEL, createImage, pixelOffset } from './imageData.ts';
  * otherwise read past the end of the channel array and return a band of transparent pixels stitched
  * onto the sprite. Rows outside the sheet are simply not copied, so a box hanging over an edge comes
  * back with what the sheet actually holds.
+
  *
  * Row by row rather than pixel by pixel: a sprite's row is contiguous in both images, so this is one
  * `set` per row against four channel writes per pixel.

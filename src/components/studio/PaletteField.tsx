@@ -3,7 +3,9 @@ import { PALETTE_CHOICES, paletteFor } from '../../constants/palettes/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import type { Palette } from '../../types/palette.ts';
 import { channelLevels, channelSpaceSize } from '../../utils/channelLevels.ts';
+import { fixedPaletteColors } from '../../utils/paletteEntries.ts';
 import { ColorSwatch } from '../common/ColorSwatch.tsx';
+import { PaletteDownload } from '../common/PaletteDownload.tsx';
 import { SelectField } from '../common/SelectField.tsx';
 
 /**
@@ -21,6 +23,12 @@ import { SelectField } from '../common/SelectField.tsx';
  * The strip is `aria-hidden` and is a visual convenience rather than the only statement of the
  * colours: the description gives the count and the rule, and the compiled prompt beside it lists
  * every entry in full, which is where a reader who cannot use the swatches gets them.
+ *
+ * **The download row is offered on the same condition as the strip**, and for the same reason: a
+ * channel-depth palette is a ladder rather than a list, so there is nothing to write out. It is the
+ * third of the three places this app settles an exact set of colours, and the only one that is
+ * settled before any image exists — the other two are on the Quantise tab, where the same row is
+ * offered by `PaletteExportControls`.
  */
 export function PaletteField() {
   const palette = useOutputStore((state) => state.output.palette);
@@ -42,11 +50,19 @@ export function PaletteField() {
       />
 
       {pinned !== null && pinned.space.kind === 'FIXED' && (
-        <div aria-hidden="true" className="mt-2 flex flex-wrap gap-1">
-          {pinned.space.entries.map((hex) => (
-            <ColorSwatch key={hex} colorText={hex} />
-          ))}
-        </div>
+        <>
+          <div aria-hidden="true" className="mt-2 flex flex-wrap gap-1">
+            {pinned.space.entries.map((hex) => (
+              <ColorSwatch key={hex} colorText={hex} />
+            ))}
+          </div>
+          <div className="mt-2">
+            <PaletteDownload
+              palette={{ name: pinned.name, entries: fixedPaletteColors(pinned.space.entries) }}
+              subject={`${pinned.name} palette`}
+            />
+          </div>
+        </>
       )}
     </div>
   );

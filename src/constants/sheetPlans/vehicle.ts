@@ -38,24 +38,28 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
         // sides the same way, so the two modes describe one vehicle rather than two.
         {
           label: 'near-side-drive-unit',
+          parts: ['near-side-drive-unit-rest', 'near-side-drive-unit-mid-travel'],
           text: 'Near-side drive unit: at rest, at mid-travel',
           count: 2,
           kind: 'mechanism',
         },
         {
           label: 'far-side-drive-unit',
+          parts: ['far-side-drive-unit-rest', 'far-side-drive-unit-mid-travel'],
           text: 'Far-side drive unit: at rest, at mid-travel',
           count: 2,
           kind: 'mechanism',
         },
         {
           label: 'turret',
+          parts: ['turret-stowed', 'turret-traversed', 'turret-elevated'],
           text: 'Turret, weapon or working mount: stowed, traversed, elevated',
           count: 3,
           kind: 'mechanism',
         },
         {
           label: 'crew-hatch-or-canopy',
+          parts: ['crew-hatch-closed', 'crew-hatch-open'],
           text: 'Crew hatch or canopy: closed, open',
           count: 2,
           kind: 'mechanism',
@@ -68,6 +72,7 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
         },
         {
           label: 'fittings',
+          parts: ['lamp-housing', 'exhaust-vent', 'hard-point-1', 'hard-point-2'],
           text: 'Fittings: lamp housing ×1, exhaust or vent ×1, tow or hard point ×2',
           count: 4,
           kind: 'structure',
@@ -143,18 +148,21 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
         { label: 'hull-or-fuselage', text: 'Hull or fuselage ×1', count: 1, kind: 'structure' },
         {
           label: 'turret',
+          parts: ['turret-base-ring', 'turret-traversing-body'],
           text: 'Turret, weapon or working mount: base ring ×1, traversing body ×1',
           count: 2,
           kind: 'mechanism',
         },
         {
           label: 'near-side-drive-unit',
+          parts: ['near-side-drive-unit-root', 'near-side-drive-unit-travelling'],
           text: 'Near-side drive unit: root segment, travelling segment',
           count: 2,
           kind: 'mechanism',
         },
         {
           label: 'far-side-drive-unit',
+          parts: ['far-side-drive-unit-root', 'far-side-drive-unit-travelling'],
           text: 'Far-side drive unit: root segment, travelling segment',
           count: 2,
           kind: 'mechanism',
@@ -167,6 +175,7 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
         },
         {
           label: 'fittings',
+          parts: ['cladding-panel', 'lamp-housing'],
           text: 'Fittings: cladding panel ×1, lamp housing ×1',
           count: 2,
           kind: 'structure',

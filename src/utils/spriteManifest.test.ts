@@ -15,12 +15,14 @@ const BOXES = [box(0, 0), box(10, 0), box(0, 10)];
 
 const input = {
   image: 'armour-quantised.png',
+  spriteDirectory: null,
   width: 40,
   height: 40,
   scale: 1,
   boxes: BOXES,
   duplicates: [],
   names: [],
+  cell: null,
   sheet: null,
 };
 
@@ -49,6 +51,18 @@ describe('buildManifest', () => {
     const manifest = buildManifest(input);
 
     expect(manifest.sprites[0]?.pivot).toStrictEqual({ x: 2, y: 4 });
+  });
+
+  it('says the pivot is the default rather than a measurement', () => {
+    // The trap this closes: a pair of numbers reads as a measurement, and on a cut-out rig sheet it
+    // is the wrong end of almost every piece. Every sprite states where its number came from.
+    const manifest = buildManifest(input);
+
+    expect(manifest.sprites.map((sprite) => sprite.pivotSource)).toStrictEqual([
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+      'DEFAULT_BOTTOM_CENTRE',
+    ]);
   });
 
   it('names the sprites from the inventory when the counts agree', () => {
@@ -108,10 +122,95 @@ describe('buildManifest', () => {
         facings: ['south', 'west', 'north', 'east'],
         assembly: 'south',
         components: 12,
+        rigMode: 'CUTOUT_RIG',
       },
     });
 
     expect(manifest.sheet).toMatchObject({ ordinal: 1, total: 10, components: 12 });
+  });
+});
+
+describe('buildManifest, cut into a cell', () => {
+  const cell = { width: 8, height: 8, anchor: { x: 'CENTRE', y: 'BOTTOM' } } as const;
+
+  it('keeps the rect on the artwork’s own bounding box, whatever the cut is', () => {
+    // A cell-sized rect would name a region holding whatever sits a gutter away — see `placeInCell`,
+    // which measured that on all eight reference sheets.
+    const manifest = buildManifest({ ...input, boxes: [box(10, 10, 4, 6)], cell });
+
+    expect(manifest.sprites[0]).toMatchObject({ x: 10, y: 10, width: 4, height: 6 });
+  });
+
+  it('states where that box sits inside its cell', () => {
+    const manifest = buildManifest({ ...input, boxes: [box(10, 10, 4, 6)], cell });
+
+    // Two pixels of slack either side across, and the artwork against the foot.
+    expect(manifest.sprites[0]?.cellOffset).toStrictEqual({ x: 2, y: 2 });
+  });
+
+  it('records the cell itself, at the magnification the file is written in', () => {
+    // The field a rig importer reads before it reads anything else: the rects say where each piece
+    // is and this says what shape every one of them is.
+    expect(buildManifest({ ...input, scale: 2, cell }).cell).toStrictEqual({
+      width: 16,
+      height: 16,
+      anchor: { x: 'CENTRE', y: 'BOTTOM' },
+    });
+  });
+
+  it('carries no cell and no offset where each sprite kept its bounding box', () => {
+    const manifest = buildManifest(input);
+
+    expect(manifest.cell).toBeNull();
+    expect(manifest.sprites.map((sprite) => sprite.cellOffset)).toStrictEqual([null, null, null]);
+  });
+
+  it('puts the pivot on the anchor the artwork was registered against', () => {
+    const manifest = buildManifest({
+      ...input,
+      boxes: [box(10, 10, 4, 6)],
+      cell: { ...cell, anchor: { x: 'LEFT', y: 'TOP' } },
+    });
+
+    // The reader named that point because it is where the piece joins whatever carries it, so the
+    // pivot is that same point rather than a second convention beside it — and it is a point on the
+    // box, which is what `cellOffset` moves into the cell.
+    expect(manifest.sprites[0]?.pivot).toStrictEqual({ x: 10, y: 10 });
+  });
+
+  it('measures the offset at 1:1 and magnifies it, so one placement serves every rung', () => {
+    const magnified = buildManifest({ ...input, scale: 4, boxes: [box(10, 10, 5, 6)], cell });
+
+    // Centred at 1:1 the 5-wide artwork leaves an odd pixel, floored to an offset of 1; at 4× that
+    // is 4. Flooring after scaling would have centred 20 in 32 and landed on 6.
+    expect(magnified.sprites[0]?.cellOffset).toMatchObject({ x: 4 });
+  });
+
+  it('says the pivot came from the anchor rather than from the default', () => {
+    // The field would otherwise assert `DEFAULT_BOTTOM_CENTRE` on a pivot the reader had moved,
+    // which is the one claim it exists to make honestly.
+    const manifest = buildManifest({
+      ...input,
+      cell: { ...cell, anchor: { x: 'LEFT', y: 'TOP' } },
+    });
+
+    expect(manifest.sprites.map((sprite) => sprite.pivotSource)).toStrictEqual([
+      'CELL_ANCHOR',
+      'CELL_ANCHOR',
+      'CELL_ANCHOR',
+    ]);
+  });
+
+  it('still links a duplicate to its canonical', () => {
+    const manifest = buildManifest({
+      ...input,
+      cell,
+      duplicates: [
+        { canonical: BOXES[0] as SpriteBox, duplicates: [{ box: BOXES[1] as SpriteBox, exact: true }] },
+      ],
+    });
+
+    expect(manifest.sprites.map((sprite) => sprite.duplicateOf)).toStrictEqual([null, 1, null]);
   });
 });
 

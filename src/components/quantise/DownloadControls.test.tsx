@@ -6,8 +6,10 @@ import { useUIStore } from '../../stores/useUIStore.ts';
 import { FakeSheetWriteWorker } from '../../test/fakeSheetWriteWorker.ts';
 import type { SpriteSegmentation } from '../../types/quantiser.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
+import type { SpriteCellChoice } from '../../types/spriteCell.ts';
 import { createImage } from '../../utils/imageData.ts';
 import { encodePng } from '../../utils/encodePng.ts';
+import { DEFAULT_SPRITE_CELL_CHOICE } from '../../constants/spriteCell.ts';
 import { DownloadControls } from './DownloadControls.tsx';
 
 /**
@@ -49,6 +51,7 @@ function draw(
   resultImage: ImageData | null = createImage(4, 4),
   downloadFormat: SheetFormat = 'PNG',
   sprites: SpriteSegmentation | null = null,
+  cellChoice: SpriteCellChoice = DEFAULT_SPRITE_CELL_CHOICE,
 ) {
   render(
     <DownloadControls
@@ -60,6 +63,9 @@ function draw(
       resultImage={resultImage}
       duplicates={[]}
       sprites={sprites}
+      cellChoice={cellChoice}
+      onCellChoiceChange={() => undefined}
+      target={null}
     />,
   );
 }
@@ -166,5 +172,65 @@ describe('DownloadControls', () => {
     draw(null);
     expect(downloadButton()).toBeDisabled();
     expect(downloadButton()).toHaveTextContent('Download PNG');
+  });
+});
+
+describe('DownloadControls, cutting into a cell', () => {
+  /** A sheet that came apart into one sprite, which is enough for a cut to be about something. */
+  const SEGMENTED: SpriteSegmentation = {
+    kind: 'SEGMENTED',
+    boxes: [{ left: 0, top: 0, width: 2, height: 2, pixels: 4 }],
+    specks: 0,
+  };
+
+  it('offers the cut only under the formats that describe sprites', () => {
+    // A control that changed nothing would be a lie on screen: a PNG and an Aseprite document read
+    // no cell, so neither offers one.
+    draw(createImage(4, 4), 'PNG', SEGMENTED);
+    expect(screen.queryByRole('group', { name: 'Sprite cut' })).toBeNull();
+  });
+
+  it('offers it under the sprite pack', () => {
+    draw(createImage(4, 4), 'SPRITE_PACK', SEGMENTED);
+
+    expect(screen.getByRole('group', { name: 'Sprite cut' })).toBeInTheDocument();
+  });
+
+  it('offers it under the manifest, which states the same rects without the artwork', () => {
+    draw(createImage(4, 4), 'MANIFEST', SEGMENTED);
+
+    expect(screen.getByRole('group', { name: 'Sprite cut' })).toBeInTheDocument();
+  });
+
+  it('sends the resolved cell to the writer', async () => {
+    draw(createImage(4, 4), 'SPRITE_PACK', SEGMENTED, {
+      ...DEFAULT_SPRITE_CELL_CHOICE,
+      source: 'FIXED',
+      fixed: { width: 8, height: 8 },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /download sprite pack/i }));
+
+    expect(FakeSheetWriteWorker.started[0]?.posted[0]?.cell).toStrictEqual({
+      width: 8,
+      height: 8,
+      anchor: { x: 'CENTRE', y: 'BOTTOM' },
+    });
+    await finish();
+  });
+
+  it('sends no cell under a format that does not cut, whatever was last set', async () => {
+    // Otherwise a cell left set from an earlier press reaches a writer with no controls on screen
+    // for it.
+    draw(createImage(4, 4), 'PNG', SEGMENTED, {
+      ...DEFAULT_SPRITE_CELL_CHOICE,
+      source: 'FIXED',
+      fixed: { width: 8, height: 8 },
+    });
+
+    await userEvent.click(screen.getByRole('button', { name: /download png/i }));
+
+    expect(FakeSheetWriteWorker.started[0]?.posted[0]?.cell).toBeNull();
+    await finish();
   });
 });

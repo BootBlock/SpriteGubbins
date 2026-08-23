@@ -2,9 +2,9 @@ import { paletteFor } from '../constants/palettes/index.ts';
 import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
 import type { PaletteId } from '../types/palette.ts';
 import type { PaletteLimit } from '../types/output.ts';
-import type { ColorPlan, LockedPalette, Rgba } from '../types/quantiser.ts';
+import type { ColorPlan, LockedPalette } from '../types/quantiser.ts';
 import { channelLevels } from './channelLevels.ts';
-import { fromHex } from './imageData.ts';
+import { fixedPaletteColors } from './paletteEntries.ts';
 
 /**
  * What the studio's two colour settings ask the quantiser to do, and what to call it on screen.
@@ -98,7 +98,7 @@ function studioPlan(palette: PaletteId, limit: PaletteLimit): ColorPlan {
     };
   }
 
-  const entries = pinned.space.entries.map(fromHex).filter((entry): entry is Rgba => entry !== null);
+  const entries = fixedPaletteColors(pinned.space.entries);
   // A palette whose every entry failed to parse is one no test would have let ship — the library's
   // own suite checks the spelling of all of them — but mapping an image onto an empty palette would
   // return it unchanged while the studio said it had been pinned. Nothing rather than a lie.

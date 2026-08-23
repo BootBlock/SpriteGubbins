@@ -47,6 +47,7 @@ function resultFor(grid: number, colors = 32, offset = { x: 0, y: 0 }, distance 
     image,
     difference: flatDifference(image.width, image.height, distance),
     colors,
+    paletteEntries: [],
     keyedShare: 0,
     sprites: { kind: 'SEGMENTED', boxes: [], specks: 0 },
     symmetry: null,
@@ -86,6 +87,7 @@ function show(
       scale={scale}
       grid={inForce}
       quantised={grid === null ? null : { result: resultFor(grid, colors, { x: 0, y: 0 }, distance), grid }}
+      target={null}
       busy={busy}
     />,
   );
@@ -128,6 +130,7 @@ describe('ImageComparison', () => {
         scale={null}
         grid={8}
         quantised={{ result: resultFor(8, 32, { x: 3, y: 3 }), grid: 8 }}
+        target={null}
         busy={false}
       />,
     );
@@ -268,6 +271,7 @@ describe('ImageComparison', () => {
         scale={{ grid: 8, measurement: 'EXACT' }}
         grid={8}
         quantised={{ result: resultFor(8), grid: 8 }}
+        target={null}
         busy={busy}
       />
     );
@@ -310,6 +314,7 @@ describe('ImageComparison', () => {
         scale={{ grid: shown.grid, measurement: 'EXACT' }}
         grid={shown.grid}
         quantised={shown}
+        target={null}
         busy={busy}
       />
     );
@@ -487,6 +492,7 @@ describe('ImageComparison’s preview modes', () => {
         scale={null}
         grid={8}
         quantised={{ result: { ...result, strips: [], sprites: { kind: 'SOLID' } }, grid: 8 }}
+        target={null}
         busy={false}
       />,
     );
@@ -528,6 +534,7 @@ describe('ImageComparison’s preview modes', () => {
           },
           grid: 8,
         }}
+        target={null}
         busy={false}
       />,
     );
@@ -560,6 +567,7 @@ describe('ImageComparison’s preview modes', () => {
           },
           grid: 8,
         }}
+        target={null}
         busy={false}
       />,
     );
@@ -780,6 +788,7 @@ describe('ImageComparison, detached — where its notifications land', () => {
           scale={null}
           grid={8}
           quantised={{ result: resultFor(8), grid: 8 }}
+          target={null}
           busy={false}
         />
         <Toast />
@@ -798,6 +807,12 @@ describe('ImageComparison, detached — where its notifications land', () => {
     });
   }
 
+  // The studio's opening configuration is a batch of six: a directional core drawing all five
+  // classic facings, then one articulation run per facing. This test downloads the first, and a
+  // sheet drawing several facings is not any one of them — so no facing names it and the download
+  // takes its ordinal instead. See `SheetIdentity.facing`.
+  const DOWNLOADED = /Downloaded sheet-quantised-sheet-1\.png/;
+
   it('answers a download pressed in the detached window there, not on the page behind it', async () => {
     const opened = watchOpen();
     showWithToast();
@@ -807,10 +822,10 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
     // The confirmation names the file and what was written into it, and it is in the document the
     // reader pressed the button in.
-    expect(within(bodyOf(opened)).getByText(/Downloaded sheet-quantised\.png/)).toBeInTheDocument();
+    expect(within(bodyOf(opened)).getByText(DOWNLOADED)).toBeInTheDocument();
     // And nowhere else. The page's live region is still mounted — it has to be, or nothing it is
     // later given is announced — but it is holding no message.
-    expect(screen.queryByText(/Downloaded sheet-quantised\.png/)).toBeNull();
+    expect(screen.queryByText(DOWNLOADED)).toBeNull();
   });
 
   it('brings a notification still on screen back into the page when the preview returns', async () => {
@@ -823,7 +838,7 @@ describe('ImageComparison, detached — where its notifications land', () => {
 
     // The window the message was in has gone, so it is announced here instead — rather than being
     // taken off the screen by a reader pressing Return for an unrelated reason.
-    expect(screen.getByText(/Downloaded sheet-quantised\.png/)).toBeInTheDocument();
+    expect(screen.getByText(DOWNLOADED)).toBeInTheDocument();
     expect(useUIStore.getState().toastTarget).toBe('page');
   });
 

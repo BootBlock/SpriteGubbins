@@ -82,7 +82,7 @@ export const RESOLUTION_PROFILE_CHOICES: readonly OutputChoice<ResolutionProfile
   { value: 'HIGH_RESOLUTION', label: 'HIGH_RESOLUTION (25–35% of sheet height)' },
   { value: 'MID_RESOLUTION', label: 'MID_RESOLUTION (18–25% of sheet height)' },
   { value: 'RETRO_16_BIT', label: 'RETRO_16_BIT (64–96 px per figure)' },
-  { value: 'CUSTOM', label: 'CUSTOM (work to the target component size)' },
+  { value: 'CUSTOM', label: 'CUSTOM (work to the target size below)' },
 ];
 
 export const PALETTE_LIMIT_CHOICES: readonly OutputChoice<PaletteLimit>[] = [
