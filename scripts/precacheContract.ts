@@ -136,8 +136,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * not. Measured against the build immediately before it, the precache goes from 2247.43 to **2250.62
  * KiB**, a delta of 3.19 — and it lands in the same constants-pulling chunks the paragraph above
  * names rather than in the entry chunk. The margin is left at the same order as every raise above.
+ *
+ * **Raised once more, from 2254, by the per-component names the sheet plans now carry.** Every
+ * inventory line whose components are told apart by what they are rather than by where they sit
+ * gained a `parts` list naming each of them, so a sprite pack cut from a character rig writes
+ * `04-left-upper-arm.png` where it wrote `04-left-arm-1.png` — around 460 names across the ten plan
+ * files that have any. Measured against the build immediately before it, the precache goes from
+ * 2250.62 to **2258.58 KiB**, a delta of 7.96. It is constant data the entry chunk reaches, which is
+ * why it is paid for on a first visit and named here rather than being an invisible edit. The margin
+ * is left at the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2254;
+export const PRECACHE_CEILING_KIB = 2262;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

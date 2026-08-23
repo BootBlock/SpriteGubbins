@@ -62,12 +62,61 @@ describe('what a name says', () => {
     ]);
   });
 
-  it('numbers a line the sheet draws several of at one facing', () => {
+  it('names each piece of a rig from the line that lists it', () => {
+    // The reported defect: fifteen rig pieces cut out as `01-trunk-1.png` through `15-right-leg-3.png`,
+    // where the sheet's own inventory calls them the head, the torso, the pelvis and three segments a
+    // side. An engine importer keys a piece by its slot, so every one of them had to be renamed by
+    // hand against a table held somewhere else.
+    const slots = componentSlots('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FOUR_CARDINAL', 0, []);
+
+    expect(slots).toStrictEqual([
+      'head',
+      'torso',
+      'pelvis',
+      'left-upper-arm',
+      'left-lower-arm',
+      'left-hand',
+      'right-upper-arm',
+      'right-lower-arm',
+      'right-hand',
+      'left-upper-leg',
+      'left-lower-leg',
+      'left-foot',
+      'right-upper-leg',
+      'right-lower-leg',
+      'right-foot',
+    ]);
+  });
+
+  it('numbers the copies of a named part inside its own name', () => {
+    // The pose library's arm line is eight *variants* of three named segments, so the name says both
+    // halves: which segment, and which of that segment's copies. `left-arm-4` said neither.
     const slots = componentSlots('CHARACTER', 'SINGLE_DIRECTION_POSE_LIBRARY', 'FOUR_CARDINAL', 0, []);
 
-    // The trunk is three components on one line, then eight arm variants — which of the eight is the
-    // hand is in the prompt's own text, deliberately not in the name.
-    expect(slots.slice(0, 5)).toStrictEqual(['trunk-1', 'trunk-2', 'trunk-3', 'left-arm-1', 'left-arm-2']);
+    expect(slots.slice(0, 6)).toStrictEqual([
+      'head',
+      'torso',
+      'pelvis',
+      'left-upper-arm-1',
+      'left-upper-arm-2',
+      'left-upper-arm-3',
+    ]);
+  });
+
+  it('leaves a genuine ×N line on its ordinals', () => {
+    // `Base material tile ×6: the primary, and five variants differing only in surface scatter` has no
+    // name to give its second variant that its third does not equally answer to. An ordinal is what
+    // such a component is actually called, so the entry states no parts and the suffix stands.
+    const slots = componentSlots('TERRAIN', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, []);
+
+    expect(slots.slice(0, 6)).toStrictEqual([
+      'base-material-tile-1',
+      'base-material-tile-2',
+      'base-material-tile-3',
+      'base-material-tile-4',
+      'base-material-tile-5',
+      'base-material-tile-6',
+    ]);
   });
 
   it('appends the subject’s own anatomy last, once per facing where the sheet turns it', () => {

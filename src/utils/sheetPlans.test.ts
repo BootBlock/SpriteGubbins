@@ -523,6 +523,42 @@ describe('every inventory line carries an identifier the manifest can use', () =
     }
   });
 
+  it('gives a line that names its parts exactly one name per component', () => {
+    // `componentSlots` takes the names straight from `parts`, so a list of the wrong length makes the
+    // name list a different length from the component count — which maps every sprite after the
+    // divergence onto the wrong component, the failure the whole arrangement is arranged against.
+    for (const { category, mode, plan } of everyPlan) {
+      for (const entry of plan.groups.flatMap((group) => group.entries)) {
+        if (entry.parts === undefined) continue;
+        expect(entry.parts, `${category}/${mode}/${plan.name}: ${entry.text}`).toHaveLength(entry.count);
+      }
+    }
+  });
+
+  it('spells every part name as a slug', () => {
+    for (const { category, mode, plan } of everyPlan) {
+      for (const entry of plan.groups.flatMap((group) => group.entries)) {
+        for (const part of entry.parts ?? []) {
+          expect(part, `${category}/${mode}/${plan.name}: ${entry.text}`).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+        }
+      }
+    }
+  });
+
+  it('never names two components of one plan the same thing', () => {
+    // Stronger than the line-level check below, and it is the half `parts` made reachable: two lines
+    // with distinct labels can still author the same part name, and `componentSlots` would then
+    // rename the second to `x-2` — a name that reads as the second copy of something rather than as
+    // the collision it is. Asserted against the expansion rather than the labels, because that is
+    // what a pack writes.
+    for (const { category, mode, plan } of everyPlan) {
+      const names = plan.groups.flatMap((group) =>
+        group.entries.flatMap((entry) => entry.parts ?? (entry.count === 1 ? [entry.label] : [])),
+      );
+      expect(new Set(names).size, `${category}/${mode}/${plan.name}: ${names.join(', ')}`).toBe(names.length);
+    }
+  });
+
   it('never names two lines of one plan the same thing', () => {
     // Within a plan a label is an identity: `componentSlots` suffixes it with a facing or an ordinal,
     // so two lines sharing one label produce two runs of the same names for different components.

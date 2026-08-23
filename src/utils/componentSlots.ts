@@ -22,23 +22,37 @@ import { slugify } from './slugify.ts';
  * appends it, because grid position is the only thing identifying a component and interleaving would
  * renumber everything after it.
  *
- * **What a name is worth, and what it is not.** It identifies the inventory *line* a component came
- * from, suffixed by the facing where the sheet draws one piece per facing and by an ordinal
- * otherwise. So `heads-south` is exact, and `left-arm-3` is the third of the eight variants that
- * line asks for — which of them is the hand is in the prompt's own text and deliberately not here.
- * An entry naming its parts in prose could have them read back out, and that is the parse this whole
- * `label` field exists to avoid.
+ * **What a name is worth.** Where an inventory line names its components, it is those names:
+ * `ComponentEntry.parts` carries them, so a character rig's fifteen pieces cut out as `04-left-upper-arm.png`
+ * rather than `04-left-arm-1.png`, and an engine importer keying a piece by its slot has one to key
+ * on. Where a line does not — the facings a directional sheet draws, and a genuine ×N run of
+ * variants nothing tells apart — the name identifies the *line* and is suffixed by the facing or by
+ * an ordinal. So `heads-south` is exact, `left-upper-arm` is exact, and `base-material-tile-3` is
+ * the third of six tiles that differ only in surface scatter, which is what such a component is
+ * actually called.
+ *
+ * The names are authored on the entry rather than read back out of its prose, which is the parse the
+ * `label` field exists to avoid — see `ComponentEntry.parts` for why that boundary is where it is.
  *
  * Pure, as everything in this directory is.
  */
 
 /**
- * One entry's names: the facing where a sheet draws one per facing, an ordinal where it does not.
+ * One entry's names: its own where it states them, the facing where a sheet draws one per facing,
+ * an ordinal where neither applies.
+ *
+ * **`parts` wins over the facing suffix**, because it is the more specific claim and the only one
+ * authored per entry: a line that names its components has said what they are, and deriving a facing
+ * name over the top of that would answer a question the entry already answered. No entry carries
+ * both today — every directional entry comes from `viewsOf` or `atEachYaw`, neither of which names
+ * parts — so the precedence is a statement about which fact is authoritative rather than a branch
+ * anything currently takes.
  *
  * The facing is slugged rather than used as it stands, because one of them is two words: the classic
  * vocabulary's `right side` would otherwise put a space in a file name and in an identifier.
  */
 function entrySlots(entry: ComponentEntry, facings: SheetFacings): readonly string[] {
+  if (entry.parts !== undefined) return entry.parts;
   if (facings !== 'run' && entry.count === facings.length) {
     return facings.map((facing) => `${entry.label}-${slugify(facing)}`);
   }

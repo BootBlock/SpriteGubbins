@@ -28,6 +28,7 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
         { label: 'main-body-or-shaft', text: 'Main body or shaft ×1', count: 1, kind: 'structure' },
         {
           label: 'working-end',
+          parts: ['working-end-primary', 'working-end-secondary'],
           text: 'Working end, as the subject defines it: primary state, secondary state',
           count: 2,
           kind: 'mechanism',
@@ -35,12 +36,14 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
         { label: 'guard', text: 'Guard, collar or transition piece ×1', count: 1, kind: 'structure' },
         {
           label: 'detachable-or-consumable-part',
+          parts: ['detachable-part-full', 'detachable-part-depleted'],
           text: 'Detachable or consumable part: full, depleted',
           count: 2,
           kind: 'mechanism',
         },
         {
           label: 'fittings',
+          parts: ['pommel', 'binding', 'fixing'],
           text: 'Fittings: pommel or cap ×1, binding or wrap ×1, fixing ×1',
           count: 3,
           kind: 'structure',
