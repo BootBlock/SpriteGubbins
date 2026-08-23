@@ -52,14 +52,8 @@ function spriteFileName(manifest: SpriteManifest, index: number, directory: stri
 export async function encodeSpritePack(
   sheet: ImageData,
   manifest: SpriteManifest,
-  facing: string | null,
+  directory: string,
 ): Promise<WrittenSpritePack> {
-  // The facing where the sheet has one that names it, so eight rig runs expand into the per-facing
-  // tree an engine importer scans rather than into eight `sprites/` that overwrite one another. A
-  // sheet no facing distinguishes keeps the fixed directory — see `SheetIdentity.facing`, which is
-  // where the three cases that come to `null` are set out, and which is why this takes the answer
-  // rather than reading `manifest.sheet` for a facing it cannot tell is a distinguishing one.
-  const directory = facing ?? PACK_SPRITE_DIRECTORY;
   const written = await encodePng(sheet);
   const files: ZipEntry[] = [{ name: PACK_SHEET_FILE, bytes: written.bytes }];
 

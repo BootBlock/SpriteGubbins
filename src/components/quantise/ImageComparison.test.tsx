@@ -798,9 +798,10 @@ describe('ImageComparison, detached — where its notifications land', () => {
     });
   }
 
-  // The studio's default configuration is a two-sheet batch whose sheets draw the one facing its
-  // direction set offers, so neither is named by a facing and the download takes its ordinal — see
-  // `SheetIdentity.facing`.
+  // The studio's opening configuration is a batch of six: a directional core drawing all five
+  // classic facings, then one articulation run per facing. This test downloads the first, and a
+  // sheet drawing several facings is not any one of them — so no facing names it and the download
+  // takes its ordinal instead. See `SheetIdentity.facing`.
   const DOWNLOADED = /Downloaded sheet-quantised-sheet-1\.png/;
 
   it('answers a download pressed in the detached window there, not on the page behind it', async () => {

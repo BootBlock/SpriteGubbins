@@ -82,8 +82,13 @@ describe('writeSheet', () => {
       const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
 
       // The archive is self-contained, so the rects are into the sheet beside them rather than into
-      // a file the reader would have had to download separately.
-      expect(manifest).toMatchObject({ image: PACK_SHEET_FILE, named: true });
+      // a file the reader would have had to download separately — and it says where the pieces sit,
+      // which stopped being a constant the moment a facing could name that directory.
+      expect(manifest).toMatchObject({
+        image: PACK_SHEET_FILE,
+        spriteDirectory: PACK_SPRITE_DIRECTORY,
+        named: true,
+      });
     });
 
     it('lays the sprites out under the facing that names the sheet', async () => {
@@ -98,6 +103,17 @@ describe('writeSheet', () => {
         'south-west/02-heads-west.png',
         PACK_MANIFEST_FILE,
       ]);
+    });
+
+    it('states that directory in its manifest, which is the archive’s only index', async () => {
+      // Whether a facing distinguishes a sheet is a reading of the whole batch, so nothing inside the
+      // archive can re-derive it. A script that unzips a pack and reads `manifest.json` to find the
+      // pieces would otherwise have two candidate paths and no way to choose between them.
+      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'south-west' }));
+      const entry = readZip(written.bytes).find((file) => file.name === PACK_MANIFEST_FILE);
+      const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
+
+      expect(manifest).toMatchObject({ spriteDirectory: 'south-west' });
     });
 
     it('keeps the fixed directory where no facing names the sheet', async () => {
@@ -127,7 +143,14 @@ describe('writeSheet', () => {
       const written = await writeSheet(job({ format: 'MANIFEST' }));
       const manifest: unknown = JSON.parse(new TextDecoder().decode(written.bytes));
 
-      expect(manifest).toMatchObject({ image: 'armour-quantised.png', width: 8, height: 4 });
+      // And points at no sprite directory: a manifest taken on its own describes a PNG the reader
+      // downloads separately, so there are no sprite files for one to hold.
+      expect(manifest).toMatchObject({
+        image: 'armour-quantised.png',
+        spriteDirectory: null,
+        width: 8,
+        height: 4,
+      });
     });
 
     it('describes the file at the magnification that was asked for', async () => {

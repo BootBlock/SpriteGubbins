@@ -10,14 +10,16 @@ import type { BatchSheet } from './sheetBatch.ts';
 import { slugify } from './slugify.ts';
 
 /**
- * What the studio says the sheet in the Quantise tab is, for the manifest a download writes.
+ * What the studio says the sheet in the Quantise tab is, for everything a download records.
  *
  * **The bookkeeping a ten-generation character otherwise leaves to the reader.** An eight-compass
  * character is two core sheets and eight articulation runs, each generated separately, each arriving
  * as its own file named after whatever the browser saved — and until this reached the manifest,
  * nothing in any of those files said which sheet of which subject it held. The names are the other
  * half: section 4 fixes the inventory and the reading order, so the *n*th sprite is the *n*th
- * component, and `componentSlots` is what turns that into a list.
+ * component, and `componentSlots` is what turns that into a list. The facing is the third: it names
+ * the file the download arrives as and the directory a sprite pack lays its pieces out in, which is
+ * what tells eight rig runs apart on disk.
  *
  * **It is a statement about the studio, never a claim about the image.** Nothing can check that the
  * dropped sheet is the one the studio is composing — a reader may be quantising a sheet from last
@@ -28,7 +30,7 @@ import { slugify } from './slugify.ts';
  * handed in, which is what keeps the batch walk and the inventory expansion testable without React.
  */
 
-/** The names for this sheet's components, and the sheet's own place in its batch. */
+/** The names for this sheet's components, the facing that identifies it, and its place in its batch. */
 export interface SheetIdentity {
   /** One name per component the prompt asks for, in the order section 4 lays them out. */
   readonly names: readonly string[];
