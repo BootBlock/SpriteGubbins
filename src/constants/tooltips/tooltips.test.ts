@@ -6,6 +6,7 @@ import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DIAL_HISTORY_GUIDANCE } from '../dialHistory.ts';
 import { TARGET_MODELS } from '../models.ts';
 import { accentSwatchGuidance } from '../settings.ts';
+import { SHEET_IDENTITY_GUIDANCE } from '../sheetIdentity.ts';
 import { STUDIO_HISTORY_GUIDANCE } from '../studioHistory.ts';
 import { APP_TAB_CHOICES } from '../ui.ts';
 import { presetCollectionGuidance } from './presets.ts';
@@ -132,6 +133,15 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   // the palette control is absent. That is a control's own explanation rendered under it rather than
   // behind an ⓘ, which is the standing `TARGET_MODELS.description` case.
   ...Object.entries(ANTI_ALIAS_GUIDANCE).map(([key, text]) => [`ANTI_ALIAS_GUIDANCE.${key}`, text] as const),
+  // Both entries of `SHEET_IDENTITY_GUIDANCE`, on the `ANTI_ALIAS_GUIDANCE` footing rather than the
+  // `QUANTISE_SCALE_GUIDANCE` one — and the panel it belongs to is the case where the two are easiest
+  // to confuse, because it sits among the quantiser's readings and looks like one. It reports no
+  // reading: it says what a download will record and what the two step buttons beside it do, and it
+  // says outright that it is not a reading of the reader's image. That is a control's own explanation
+  // rendered under it rather than behind an ⓘ, which is the standing `TARGET_MODELS.description` case.
+  ...Object.entries(SHEET_IDENTITY_GUIDANCE).map(
+    ([key, text]) => [`SHEET_IDENTITY_GUIDANCE.${key}`, text] as const,
+  ),
 ];
 
 /** Flattens the records into `NAME.key` pairs, so a failure names the entry rather than a position. */

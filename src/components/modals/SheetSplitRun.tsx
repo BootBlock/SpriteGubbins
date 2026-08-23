@@ -113,7 +113,7 @@ export function SheetSplitRun({
               answer is `sheetCoverage`'s, shared with the studio's batch strip and the copy
               confirmation, because three places naming a sheet is three chances to name it
               differently. */}
-          {run.plan.name} · {sheetCoverage(run)}
+          {run.plan.name} · {sheetCoverage(run.covered, run.assembly)}
         </span>
         {/* The view's own colour, which is what the palette reserves for "this one, here" — the
             copied chips beside it mean the same thing on every row and keep their fixed tones. */}
