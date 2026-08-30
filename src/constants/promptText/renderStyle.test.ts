@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolutionProfile } from '../../types/output.ts';
+import { RESOLUTION_PROFILES } from '../../types/output.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
@@ -160,15 +161,43 @@ describe('resolutionProfileDescription — the unit the range is stated against'
     }
   });
 
-  it('never states a figure on a category whose sheets hold none', () => {
-    // The nine the issue behind this map named, plus BACKGROUND, ICON and PORTRAIT: nothing on any of
-    // their sheets is a figure, so the word must not reach section 2 on any of them.
+  it('never states a figure on a category that is not one, on any path through the function', () => {
+    // CHARACTER is the exception rather than the only category the word could honestly reach:
+    // `CATEGORY_ASSEMBLY` says in as many words that a creature is a figure for a generator's
+    // purposes, which is why the two share `no assembled figure`. CREATURE is held here anyway
+    // because section 2 has a noun of its own to use and no reason to borrow another category's.
+    //
+    // **Both answers to `statesAssembled`**, because the assembled wording is the path the first
+    // pass missed: `CUSTOM` on an OBJECT, ITEM or VEHICLE sheet read "the share of that figure it
+    // occupies" long after the three scale-bearing profiles had stopped saying it.
     for (const category of SUBJECT_CATEGORIES) {
       if (category === 'CHARACTER') continue;
-      for (const profile of SCALE_BEARING) {
-        expect(resolutionProfileDescription(profile, false, category)).not.toContain('figure');
+      for (const profile of RESOLUTION_PROFILES) {
+        for (const statesAssembled of [true, false]) {
+          const stated = resolutionProfileDescription(profile, statesAssembled, category);
+          expect(stated, `${category} / ${profile} / assembled=${statesAssembled}`).not.toContain('figure');
+        }
       }
     }
+  });
+
+  it('states the whole sentence a reader sees, not only the unit it was handed', () => {
+    // The assertion above reads the same map the function reads, so it can only catch the
+    // interpolation being deleted outright. These three are written out, so the wording is pinned by
+    // something that does not move when the map does — one unit of each shape the map holds: the
+    // un-drawn whole, a component the sheet draws, and a phrase built from two nouns.
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'CHARACTER')).toBe(
+      'High resolution — a full figure occupies 25–35% of the sheet height',
+    );
+    expect(resolutionProfileDescription('MID_RESOLUTION', false, 'FONT')).toBe(
+      'Mid resolution — one capital glyph occupies 18–25% of the sheet height',
+    );
+    expect(resolutionProfileDescription('RETRO_16_BIT', false, 'EFFECT')).toBe(
+      '16-bit retro scale — one frame of the effect is roughly 64–96 pixels tall',
+    );
+    expect(resolutionProfileDescription('CUSTOM', true, 'VEHICLE')).toBe(
+      'Custom — work to the target assembled size stated below, drawing every component at the share of a full vehicle it occupies',
+    );
   });
 
   it('keeps the range with the profile rather than the category', () => {

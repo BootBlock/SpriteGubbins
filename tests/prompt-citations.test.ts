@@ -4,7 +4,7 @@ import { PALETTES } from '../src/constants/palettes/index.ts';
 import * as promptText from '../src/constants/promptText/index.ts';
 import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
 import { SHEET_INDEX_RANGE, sheetPlanFor } from '../src/constants/sheetPlans/index.ts';
-import { DIRECTIONAL_MODES, DIRECTION_SETS } from '../src/types/output.ts';
+import { DIRECTIONAL_MODES, DIRECTION_SETS, RESOLUTION_PROFILES } from '../src/types/output.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 
 /**
@@ -90,7 +90,17 @@ function recordProse(): readonly string[] {
   return prose;
 }
 
-/** The two blocks a targeted machine adds to section 2, which exist only as a composer's return value. */
+/**
+ * The section-2 prose that exists only as a composer's return value — the two blocks a targeted
+ * machine adds, and the resolution profile.
+ *
+ * The profile joined this list when its map stopped being strings. `RESOLUTION_PROFILE_TEXT` is now
+ * keyed by profile onto a *function* of the category's own scale unit, and `recordProse` above skips
+ * a function by design — so all four of its sentences, and `CUSTOM`'s assembled wording, left this
+ * walk without anything failing. `resolutionProfileDescription` is the composer that puts them back,
+ * driven over every category and both answers to *does the stated size name the assembly*, which is
+ * the whole space the two branches of that function cover.
+ */
 function composedProse(): readonly string[] {
   return [
     ...Object.values(PALETTES).flatMap((palette) =>
@@ -98,6 +108,13 @@ function composedProse(): readonly string[] {
     ),
     ...Object.values(HARDWARE_PROFILES).flatMap((profile) =>
       profile === null ? [] : [promptText.describeHardware(profile)],
+    ),
+    ...SUBJECT_CATEGORIES.flatMap((category) =>
+      RESOLUTION_PROFILES.flatMap((profile) =>
+        [true, false].map((statesAssembled) =>
+          promptText.resolutionProfileDescription(profile, statesAssembled, category),
+        ),
+      ),
     ),
   ];
 }

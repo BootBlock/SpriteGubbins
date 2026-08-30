@@ -5,40 +5,26 @@ import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { modesFor, sheetSeriesFor } from '../sheetPlans/index.ts';
 import { DIRECTION_LISTS } from './camera.ts';
-import { CATEGORY_ASSEMBLY } from './categoryAssembly.ts';
 import { SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
- * Everything a category says about its own sheet — every plan, of every mode, under every direction
- * set the category can be asked for, plus the five voices it names its assembled whole in and the
- * name it goes by in the selector.
+ * Everything a category writes about its own subject — every sheet plan, of every mode, under every
+ * direction set it can be asked for, plus the name it goes by in the selector.
  *
  * Every sheet rather than the default one, because {@link SCALE_UNIT_TEXT} is a claim about the
  * category and not about one configuration: a unit that only appeared on the default pairing would
  * be a unit the other sheets of the same deliverable are not priced in.
  *
- * **`CATEGORY_ASSEMBLY` is in here because a unit is often the whole the parts assemble into**, and
- * a whole a sheet is forbidden to draw is a whole that sheet never names. CHARACTER is the case: its
- * plans list a head, a torso and limb variants and nothing on any of them is called a figure, while
- * `CATEGORY_ASSEMBLY.CHARACTER` writes `assembled figure` in all five. CREATURE needs the third
- * source for the mirrored reason: its plans list a head, a body and hindquarters, and its assembly
- * record deliberately says `figure` rather than `creature` — because that record names a *failure*
- * and the subject's own noun would be a synonym of the subject — so `Creature / Monster` in the
- * selector is the only place the category writes its own name.
- *
- * Widening the source this far and no further keeps the check on the original defect: none of the
- * nine categories the figure vocabulary reached writes the word in any of the three.
+ * **The selector's label is the second source because two categories are grounded by nothing else.**
+ * `creature` appears in no CREATURE plan — that category's plans list a head, a body, hindquarters
+ * and limb segments — and `building` in no BUILDING plan, whose plans list tiles, bays and roof
+ * sections. `Creature / Monster` and `Building / Environment Tile` are where each writes its own
+ * name. `CATEGORY_ASSEMBLY` was tried as a third source and grounds nothing that these two do not,
+ * so it is deliberately absent: a source that never decides an answer is a source nobody can tell
+ * has stopped working.
  */
-function planProseFor(category: SubjectCategory): string {
-  const { statement, instruction, exclusion, audit, negatives } = CATEGORY_ASSEMBLY[category];
-  const written: string[] = [
-    CATEGORY_OPTIONS[category].label,
-    statement,
-    instruction,
-    exclusion,
-    audit,
-    ...negatives,
-  ];
+function categoryProseFor(category: SubjectCategory): string {
+  const written: string[] = [CATEGORY_OPTIONS[category].label];
   for (const mode of modesFor(category)) {
     for (const set of Object.keys(DIRECTION_LISTS) as DirectionSet[]) {
       for (const plan of sheetSeriesFor(category, mode, set)) {
@@ -63,16 +49,39 @@ function nounsOf(unit: string): readonly string[] {
   return unit.split(' ').filter((word) => !SCAFFOLDING.has(word));
 }
 
+/**
+ * What the sheet *is*, as opposed to what is on it.
+ *
+ * A unit is a thing the sheet draws or the subject it draws parts of, never the surface itself — and
+ * every one of these words is written all over the plans, so the grounding check above would pass a
+ * unit reading `the whole sheet` without noticing. It is a rule rather than a list of rejected
+ * values: the three nouns are the app's own names for the delivered image, from the template's
+ * `sheet`, the aspect wording's `canvas` and `page`.
+ */
+const THE_SURFACE = new Set(['sheet', 'canvas', 'page']);
+
 describe('SCALE_UNIT_TEXT', () => {
   it('prices every category in a noun that category’s own sheets use', () => {
     // The defect this map removes: `a full figure` was the unit on all thirteen, and "figure" is a
-    // word nine of them never write anywhere. Matched with a leading boundary only, so a plan
-    // writing the plural — `tiles`, `widgets` — still grounds the singular the phrase is stated in.
+    // word ten of them never write anywhere. Matched with a leading boundary only, so a plan writing
+    // the plural — `tiles`, `widgets` — still grounds the singular the phrase is stated in.
+    //
+    // **FONT is the one category this cannot hold, and the reason is worth knowing**: its digit sheet
+    // writes "a column of figures", so `figure` grounds there in the *numeric* sense and the old flat
+    // wording would survive this check on the very category the defect was reported against. No word
+    // test can tell those two senses apart; what holds FONT is the literal assertion on the compiled
+    // line in `promptCompiler.test.ts`, which is why that one names the sentence rather than the map.
     for (const category of SUBJECT_CATEGORIES) {
-      const prose = planProseFor(category);
-      for (const noun of nounsOf(SCALE_UNIT_TEXT[category])) {
-        // `String.raw`, because a plain template literal reads \b as a backspace rather than as the
-        // word boundary — a regex that then matches nothing and passes every category by vacuum.
+      const prose = categoryProseFor(category);
+      const nouns = nounsOf(SCALE_UNIT_TEXT[category]);
+      // Without this the loop below asserts nothing on a unit built only of scaffolding — `the whole`
+      // is two words and no noun, and would pass silently.
+      expect(nouns.length, `${category}: the unit is all scaffolding and names nothing`).toBeGreaterThan(0);
+
+      for (const noun of nouns) {
+        expect(THE_SURFACE.has(noun), `${category}: “${noun}” is the sheet, not a thing on it`).toBe(false);
+        // `String.raw`, because a plain template literal reads \b as a backspace: the regex then
+        // matches nothing and every category fails at once, which is loud but for the wrong reason.
         const grounded = new RegExp(String.raw`\b${noun}`, 'i').test(prose);
         expect(grounded, `${category}: “${noun}” is a word this category never writes`).toBe(true);
       }

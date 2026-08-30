@@ -66,11 +66,19 @@ export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, (unit: 
  *
  * It states the assembly rather than falling silent because the assembly **is** the scale on that
  * sheet: the pieces are drawn at their share of one subject, which is what section 2's own line
- * already tells the generator. Falling back to *the sheet aspect* would throw away the only figure
- * the prompt has.
+ * already tells the generator. Falling back to *the sheet aspect* would throw away the only
+ * measurement the prompt has.
+ *
+ * **It names the assembled whole in the category's own word**, for the reason the three scale-bearing
+ * profiles do. It read "the share of that figure it occupies" on every category, and the five that
+ * reach it are CHARACTER, CREATURE, OBJECT, ITEM and VEHICLE — so an OBJECT part library and a
+ * VEHICLE rig were both told to work to the share of a figure they have none of. That is the same
+ * defect {@link SCALE_UNIT_TEXT} removes one line above, and leaving it here would have left section
+ * 2 saying *figure* on the one path the profiles no longer do.
  */
-const CUSTOM_ASSEMBLED_TEXT =
-  'Custom — work to the target assembled size stated below, drawing every component at the share of that figure it occupies';
+function customAssembledText(unit: string): string {
+  return `Custom — work to the target assembled size stated below, drawing every component at the share of ${unit} it occupies`;
+}
 
 /**
  * The resolution profile in the prose the prompt carries, for this sheet.
@@ -90,9 +98,10 @@ export function resolutionProfileDescription(
   // `promptTemplate.test.ts` walks that naming convention over `constants/promptText/`'s exports.
   // Listing the token as *computed* there instead would say the map does not exist, and drop the
   // check that it still does.
+  const unit = SCALE_UNIT_TEXT[category];
   return profile === 'CUSTOM' && statesAssembled
-    ? CUSTOM_ASSEMBLED_TEXT
-    : RESOLUTION_PROFILE_TEXT[profile](SCALE_UNIT_TEXT[category]);
+    ? customAssembledText(unit)
+    : RESOLUTION_PROFILE_TEXT[profile](unit);
 }
 
 /**
@@ -117,7 +126,7 @@ const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>,
  * two-pixel feature is affordable. Keying on height would call that component mid-resolution.
  *
  * Both boundaries are read off the profiles above rather than chosen. `RETRO_16_BIT` runs to 96 px
- * per figure and `MID_RESOLUTION` starts at roughly 184 on a 1024-pixel sheet, so the `1 × 1` rung
+ * per unit drawn and `MID_RESOLUTION` starts at roughly 184 on a 1024-pixel sheet, so the `1 × 1` rung
  * ends somewhere in that gap — 128 is the round number inside it, and is itself a size people draw
  * sprites at. `MID_RESOLUTION` tops out near 256 on the same sheet and `HIGH_RESOLUTION` begins at
  * that figure, so the second boundary is that number exactly.
@@ -166,7 +175,7 @@ const ASSEMBLED_MIN_FEATURE = CUSTOM_MIN_FEATURE[0].size;
  * never parsed out of the free-text field here, because *which quantity* the field names is a
  * question about the sheet plan rather than about the text, and the rung turns on the answer. Keying
  * the minimum on the profile alone
- * gave the one profile that can state *16 × 16* the same `2 × 2` floor as a 256-pixel figure, and a
+ * gave the one profile that can state *16 × 16* the same `2 × 2` floor as a 256-pixel component, and a
  * sprite sixteen pixels across whose smallest permitted feature is four of them is a contradiction
  * the generator resolves by discarding one half of it — silently, and in whichever direction it
  * likes.
