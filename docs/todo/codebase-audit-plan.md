@@ -1,0 +1,558 @@
+# Codebase audit plan
+
+> **Status:** 🟢 ACTIVE — no phase has run yet. Phase 1 is next.
+
+This is a living plan for a full audit of the Sprite Gubbins codebase. Its output is **GitHub
+issues**, one per confirmed root cause — not fixes. Each phase is one agent session, run from a
+prompt pasted into a fresh chat, and each session ends by updating the [phase log](#phase-log)
+below and landing that update, so the plan always records how far the audit has got and what it
+found.
+
+The audit looks for four kinds of problem, and only these:
+
+- **Mechanical** — code that is wrong: a bug, a broken invariant, an unhandled state, a defect a
+  test would have caught, a violation of a rule CLAUDE.md marks as mandatory.
+- **Functional** — behaviour that disagrees with the spec
+  ([sprite-gubbins-spec.md](sprite-gubbins-spec.md)), with a control's own guidance copy, or with
+  what the UI presents; a setting the compiler discards; a control that does not do what it says.
+- **Performance** — measurable waste: needless re-renders from wholesale store subscriptions,
+  quadratic work on the image pipeline's hot paths, main-thread work that belongs on a worker,
+  bundle weight, memory held past its lifetime.
+- **Prompt** — the compiled prompt contradicting itself, drifting from its mirror, stating a fact
+  two places disagree on, naming geometry loosely, or carrying wording a target's vendor does not
+  document. Prompt text is the product; these are functional defects of the highest order.
+
+## Ground rules (every phase)
+
+1. **Read [CLAUDE.md](../../CLAUDE.md) in full before auditing.** Most of what looks odd in this
+   codebase is a recorded decision with a docblock and a test behind it. A finding that
+   contradicts a documented decision is not a finding — unless the decision's own stated rationale
+   no longer holds, in which case the issue must quote the rationale and show why it fails.
+2. **Audit only your phase's scope.** A defect noticed outside it is written into the phase log's
+   Notes column for the owning phase, not investigated now and not filed now. Scope discipline is
+   what keeps each phase inside one session.
+3. **File issues; fix nothing.** The audit changes no source file. The only change a phase lands
+   is its edit to this document. Fix work happens later, per issue, in its own worktree.
+4. **Every finding is verified before it is filed.** The standard is in
+   [What counts as verified](#what-counts-as-verified). A suspicion that cannot be proven within
+   the session is recorded in the Notes column as unproven, never filed as an issue.
+5. **All work happens in a git worktree**, including the phase-log edit. Use
+   `.claude/worktrees/audit-p<N>` on branch `worktree-audit-p<N>`, land it (commit, merge to
+   `main`, push, remove the tree, delete the branch) before reporting the phase done.
+6. **No time estimates anywhere.** Effort labels on issues use the repository's own agent-time
+   taxonomy; the plan itself never scopes by time.
+7. **If the session runs out of room**, stop cleanly: file what is verified, mark the phase
+   **partial** in the log with a precise note of where the sweep stopped (directory and file), and
+   land the log update. The same phase prompt resumes from the note.
+
+## What counts as verified
+
+A finding is genuine when the session has **demonstrated** it, not inferred it. Acceptable
+demonstrations, by kind:
+
+- **A scratch test that fails.** Write a minimal test in the worktree exercising the real code
+  (not a re-implementation), run it with `npx vitest run <file>`, and paste the failure into the
+  issue. The scratch file is evidence, not a deliverable — do not commit it; the issue records the
+  repro so the fixing agent can rebuild it.
+- **A compiled-prompt excerpt.** For prompt findings, compile the configuration that produces the
+  contradiction (a scratch test calling the real compiler is the tool) and quote the two clauses
+  that disagree, verbatim, with the configuration that reaches them.
+- **A measurement.** For performance findings: a number, with the method. React re-renders are
+  counted with a render-count probe or the Profiler; pipeline hot paths are timed with
+  `performance.now()` around the real function on a real sheet from
+  [test_sprites/](../../test_sprites); bundle claims come from `npm run build` output or
+  `dist/` inspection. "This looks O(n²)" is not a finding; "this is O(n²) and costs Xms on
+  `armour.png` where the neighbouring pass costs Yms" is.
+- **A driven browser session.** For behavioural and accessibility findings that types and tests
+  cannot reach, drive the built app (the `verify` skill covers launching it and the
+  cross-origin-isolation gotcha) and describe the exact steps and the observed result. Keyboard
+  and screen-reader claims name the keys pressed and what happened.
+- **A build demonstration.** For token and Tailwind findings: build, then grep the emitted CSS
+  for the class in question — an unknown utility fails silently, so absence from `dist/` is the
+  proof.
+- **A vendor citation.** For model-wrapper findings: the claim that a wrapper line is
+  undocumented is proven by quoting what the vendor's documentation does say, with the URL the
+  wrapper file itself cites.
+
+Two proof obligations that are easy to skip and must not be:
+
+- **Prove a repro against the defect.** A scratch test that fails must fail *because of* the
+  defect: check that the assertion reads the real output, not a short-circuit.
+- **Check the decision record first.** Before filing, search CLAUDE.md, the file's own docblocks,
+  `docs/todo/`, and closed issues for the behaviour. Deliberate behaviour, filed as a bug, costs
+  a future session the work of rediscovering the rationale.
+
+**Not findings, ever:** style preferences the repository's rules do not state; speculative
+refactors; suggestions to add backwards compatibility (banned pre-1.0); missing features the spec
+does not describe (YAGNI); anything whose only evidence is that another codebase does it
+differently.
+
+## Issue-filing protocol
+
+For each confirmed root cause, in this order:
+
+1. **Dedupe.** Search open *and* closed issues (`gh issue list --state all --search "…"`), and
+   read this plan's phase log for issues earlier phases filed. A duplicate found closed means the
+   defect regressed or was never fixed — say which, in a new issue that links the old one.
+2. **One issue per root cause.** Five components copying one broken pattern is one issue listing
+   all five sites, not five issues. Two unrelated defects in one file are two issues.
+3. **Write the body to a file**, then `gh issue create --title "…" --body-file <file>` — never
+   inline quoting. The body carries, in prose: what is wrong; the verbatim evidence (test
+   failure, prompt excerpt, measurement, or steps); every affected file as a path with line
+   numbers; the root cause; the level the whole fix lives at (per CLAUDE.md's
+   "do the whole fix" rule); and **what was verified and how**, plainly separated from what was
+   inferred.
+4. **Reconcile the full label set in the same visit**, choosing only from `gh label list`:
+   every `type:` that applies, every `area:` touched, one `effort:` calibrated to agent
+   wall-clock, `status: ready` (the audit has already verified and scoped it — `triage` would be
+   false), a `priority:` only where it carries information, and `breaking change` where the fix
+   would touch stored data or established behaviour.
+5. **End the body with the attribution trailer** after a `---` rule:
+   `This issue was opened by an agent on behalf of @BootBlock.`
+
+## Phase-completion checklist
+
+Every phase ends with, in order:
+
+1. All verified findings filed per the protocol above; unproven suspicions and out-of-scope
+   observations written into the log's Notes column.
+2. This document's phase log row updated — status, date, issue numbers, notes — and the status
+   banner at the top updated to name the next phase. Nothing else in the plan is rewritten:
+   phase records are history, not documentation to polish.
+3. The edit landed from its worktree: committed (message via `git commit -F <file>`), merged to
+   `main`, pushed, worktree removed, branch deleted.
+4. The next phase's session prompt printed for the user **in a raw fenced markdown block**,
+   copied verbatim from this document. After Phase 10, print the wrap-up prompt.
+
+## Phase log
+
+| Phase | Status | Date | Issues filed | Notes |
+| --- | --- | --- | --- | --- |
+| 1 — Prompt compiler and prompt text | pending | | | |
+| 2 — Domain data and guidance copy | pending | | | |
+| 3 — Quantiser pipeline: geometry | pending | | | |
+| 4 — Quantiser pipeline: colour and auto-tune | pending | | | |
+| 5 — Encoders, file formats and atlas maths | pending | | | |
+| 6 — Stores, persistence and workers | pending | | | |
+| 7 — UI: primitives, chrome, modals and tabs | pending | | | |
+| 8 — UI: studio and quantise views | pending | | | |
+| 9 — Shell, PWA, tooling and types | pending | | | |
+| 10 — Test suite and documentation | pending | | | |
+| Wrap-up | pending | | | |
+
+Statuses: `pending` → `in-progress` → `complete`, with `partial` for a phase that stopped cleanly
+mid-sweep (its note says exactly where).
+
+---
+
+## Phase 1 — Prompt compiler and prompt text
+
+**Scope:** `src/utils/promptCompiler.ts`, `templateEngine.ts`, `promptBudget.ts`,
+`componentSet.ts`, `componentBudget.ts`, `componentSlots.ts`, `sheetBatch.ts`, `sheetRuns.ts`,
+`sheetDirections.ts`, `sheetLayout.ts`, `sheetIdentity.ts`, `describeSeries.ts`,
+`directionalRotation.ts`, `turntableSequence.ts`, the rig-mode paths through the compiler that
+`rigModes.test.ts` exercises, `resolveOutputForCategory.ts`, `additionalAnatomy.ts`, `identityDigest.ts`,
+`identitySubject.ts`, `studioDigests.ts`, `targetCapabilities.ts`, `targetSize.ts`,
+`targetSizeGrid.ts`, `modelWrappers.ts` and all of `src/utils/modelWrapperText/`;
+`src/constants/promptTemplate.ts`, `src/constants/promptText/`, `src/constants/sheetPlans/`,
+`src/constants/models.ts`, `src/constants/componentBudget.ts`, `sheetCanvas.ts`,
+`sheetIdentity.ts`, `sheetFormats.ts`; the mirror `docs/todo/baseline-prompt-new.md`.
+
+**Look for:** internal contradictions in a compiled prompt (section 4 requiring what section 8
+forbids; an inventory naming views section 3 does not list; anatomy appearing on a sheet that
+does not count it) under configurations the existing sweep may not pin; any hand-written fact a
+second place also states (counts, facings, yaw lists, series lists) that could drift; any
+Output Configuration control whose value the compiler discards or degrades without the digest
+reporting it; loose geometry (a named view with no yaw and no occlusion statement); wrapper
+lines with no vendor citation, or citations the cited page no longer supports; ceiling breaches
+(`PRACTICAL_COMPONENT_CEILING`, the five-view page limit, `coreFacingChunks`); capability-gated
+sections emitted to a target whose `models.ts` entry does not declare the capability; straight
+punctuation reaching compiled output outside the JSON manifest example; template/mirror
+divergence beyond what the character-for-character test proves.
+
+**Method:** drive the *real* compiler from scratch tests across category × target × mode ×
+direction set × sheet index combinations the shipped tests do not enumerate; diff compiled
+output against the spec's own statements; read every wrapper file against its cited vendor page
+(WebFetch).
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 1 — Prompt
+compiler and prompt text** of the codebase audit. Follow the plan's ground
+rules, verification standard, issue-filing protocol and phase-completion
+checklist exactly: audit only Phase 1's scope, prove every finding before
+filing it, file one GitHub issue per confirmed root cause with a reconciled
+label set and the attribution trailer, fix nothing, then update the plan's
+phase log in a worktree and land it. Finish by printing the Phase 2 session
+prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 2 — Domain data and guidance copy
+
+**Scope:** `src/constants/categories/`, `presets/`, `palettes/`, `hardware/`, `output/`,
+`styleReferences/`, `tooltips/`, `colors.ts`, `anatomy.ts`, `backgroundKeyColors.ts`,
+`categoryDirectionSets.ts`, `categoryProjections.ts`, `categoryStyleReferences.ts`,
+`subjectGroups.ts`, `about.ts`, `architecture.ts`, `ui.ts`, `settings.ts`, `session.ts`,
+`keyOffer.ts`, `identityCapture.ts`, `identityLock.ts`, `paletteExport.ts`, `paletteFiles.ts`,
+`paletteLock.ts`, `packImport.ts`, `previewModes.ts`, `spectrum.ts`, `studioHistory.ts`; the
+supporting utils `colorParser.ts`, `presetNames.ts`, `presetPack.ts`, `presetSearch.ts`,
+`paletteEntries.ts`, `paletteText.ts`, `slugify.ts`.
+
+**Look for:** option pools whose casing, sentinel handling or duplication the tests do not
+already pin; preset values that no longer match the pool spelling they pin (beyond the
+case-mismatch the tests catch — e.g. a renamed option a preset still names, which loads
+silently and compiles the retired term); palette data that misstates the hardware it claims
+(spot-check counts and known values against authoritative references); a select option over the
+50-character budget path the tests cannot see; guidance copy that is **untrue** of the control
+it describes (the tooltip suite checks shape, never truth — read each control's guidance
+against what the control actually does, sampling every `*_TOOLTIPS` record); a colour literal
+in a seventh location; guidance shapes the discovery walk does not reach and that are not in
+its hand-kept list; category fields whose sheet-plan coverage is incomplete for some mode.
+
+**Method:** read the data against the code that consumes it; scratch tests through the real
+parsers and compiler for suspected silent-degradation paths; the browser for guidance-truth
+checks where reading is inconclusive.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 2 — Domain
+data and guidance copy** of the codebase audit. Follow the plan's ground rules,
+verification standard, issue-filing protocol and phase-completion checklist
+exactly: audit only Phase 2's scope, prove every finding before filing it, file
+one GitHub issue per confirmed root cause with a reconciled label set and the
+attribution trailer, fix nothing, then update the plan's phase log in a
+worktree and land it. Finish by printing the Phase 3 session prompt from the
+plan in a raw fenced markdown block.
+````
+
+## Phase 3 — Quantiser pipeline: geometry
+
+**Scope:** the scale-and-structure half of `src/utils/`: `gridAlignment.ts`, `gridMesh.ts`,
+`gridInForce.ts`, `nativeGridScale.ts`, `componentGridScale.ts`, `pixelGrid.ts`,
+`pixelPeriod.ts`, `meshPeriod.ts`, `profilePeriod.ts`, `stepProfile.ts`, `bestPhase.ts`,
+`frameAlignment.ts`, `frameLattice.ts`, `frameRegister.ts`, `frameSnap.ts`, `exactSplit.ts`,
+`boundaryClusters.ts`, `boxClearance.ts`, `boxSeparation.ts`, `edgeClaims.ts`, `edgeRuns.ts`,
+`spriteCell.ts`, `spriteOutline.ts`, `spriteSegments.ts`, `spriteStrips.ts`, `cropImage.ts`,
+`cropSprite.ts`, `placeInCell.ts`, `duplicateSprites.ts`, `snapDuplicates.ts`,
+`mirrorPairs.ts`, `symmetryAxis.ts`, `symmetrySnap.ts`, `leadingSideLedger.ts`,
+`runningExtremum.ts`, `integralImage.ts`, `extremeNeighbour.ts`, `panGeometry.ts`,
+`upscaleNearest.ts`, `imageData.ts`, `imageConfig.ts`; their constants (`quantiser.ts`,
+`spriteCell.ts`, `spriteDuplicates.ts`, `spriteSegmentation.ts`, `spriteSymmetry.ts`,
+`frameAlignment.ts`, `sheetCanvas.ts` where geometric).
+
+**Look for:** off-by-one and boundary errors at image edges and non-dividing dimensions (no
+corpus sheet divides by its grid — exercise the remainder paths); calibration figures whose
+docblock names a sheet the figure no longer matches when re-measured; readings that answer
+confidently on inputs they should refuse; quadratic or per-pixel-allocating hot paths (measure
+on the corpus, compare against neighbouring passes); assumptions of a flat key colour or of
+alpha (the corpus is colour type 2 with a noisy magenta key); logic correct on `armour.png`
+but wrong on the other seven sheets — run candidates across all eight via
+`tests/sheetCorpus.ts`.
+
+**Method:** scratch tests through the real functions on the real corpus; timings with
+`performance.now()`; re-measure any doubted calibration figure the way the memory note
+"Calibrating quantiser changes against the reference sheet" describes.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 3 —
+Quantiser pipeline: geometry** of the codebase audit. Follow the plan's ground
+rules, verification standard, issue-filing protocol and phase-completion
+checklist exactly: audit only Phase 3's scope, prove every finding before
+filing it, file one GitHub issue per confirmed root cause with a reconciled
+label set and the attribution trailer, fix nothing, then update the plan's
+phase log in a worktree and land it. Finish by printing the Phase 4 session
+prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 4 — Quantiser pipeline: colour and auto-tune
+
+**Scope:** the colour half of `src/utils/`: `oklab.ts`, `oklabPlanes.ts`, `colorReduction.ts`,
+`applyPalette.ts`, `wuQuantiser.ts`, `wuBoxSearch.ts`, `wuMoments.ts`, `mergeColors.ts`,
+`mixingPlan.ts`, `blendHistogram.ts`, `coverageBlend.ts`, `kCentroidVote.ts`,
+`inkWeightedVote.ts`, `lineVote.ts`, `channelDepth.ts`, `channelLevels.ts`,
+`keyBackground.ts`, `keyDistance.ts`, `keyingInForce.ts`, `borderKeyShare.ts`,
+`antiAlias.ts`, `hardenSilhouette.ts`, `outlineExpansion.ts`, `outlinePolarity.ts`,
+`despeckle.ts`, `ditherImage.ts`, `ditherMatrix.ts`, `bayerMatrix.ts`, `voidAndCluster.ts`,
+`differenceMap.ts`, `heatmapImage.ts`, `ssim.ts`, `onionSkin.ts`, `pixelDistance.ts`,
+`quantiseImage.ts`, `quantiseSettings.ts`, `quantisedSheetCapture.ts`, `identityPalette.ts`,
+`lockedPalette.ts`, `swatchImage.ts`, and the auto-tune set: `autoTune.ts`, `tuneScore.ts`,
+`tuneStage.ts`, `tuneStages.ts`, `tuneAliasStages.ts`, `tuneCellStages.ts`,
+`tuneCandidate.ts`, `dialHistory.ts`; constants `autoTune.ts`, `quantiseDials.ts`,
+`quantisePresets.ts`, `differenceRamp.ts`, `antiAlias.ts`.
+
+**Look for:** colour-space maths that disagrees with the reference formulae (check OKLab
+round-trips and gamut handling numerically); palette reduction producing out-of-palette pixels
+or losing locked entries; dither matrices that do not normalise; keying tolerance behaviour at
+the corpus's measured key spread (`#db02d9`–`#f723fa`); SSIM or difference-map values outside
+their documented range; auto-tune scoring that can prefer a strictly worse candidate; sweep
+stages that skip dial combinations their docs claim to cover; hot-path performance (the sweep
+is seconds — find the dominant cost and any avoidable copy of the sheet); mirrored token
+triples in `differenceRamp.ts`/`spriteMarker.ts` drifting from `index.css`.
+
+**Method:** as Phase 3 — scratch tests on the real corpus, numeric checks against published
+formulae, timings.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 4 —
+Quantiser pipeline: colour and auto-tune** of the codebase audit. Follow the
+plan's ground rules, verification standard, issue-filing protocol and
+phase-completion checklist exactly: audit only Phase 4's scope, prove every
+finding before filing it, file one GitHub issue per confirmed root cause with
+a reconciled label set and the attribution trailer, fix nothing, then update
+the plan's phase log in a worktree and land it. Finish by printing the Phase 5
+session prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 5 — Encoders, file formats and atlas maths
+
+**Scope:** `src/utils/encodePng.ts`, `pngChunk.ts`, `pngFilter.ts`, `pngPalette.ts`,
+`deflate.ts`, `crc32.ts`, `byteWriter.ts`, `encodeAseprite.ts`, `aseHeader.ts`, `aseChunk.ts`,
+`aseCel.ts`, `aseLayer.ts`, `asePalette.ts`, `aseTags.ts`, `encodeSpritePack.ts`,
+`zipArchive.ts`, `writePalette.ts`, `writeSheet.ts`, `spriteManifest.ts`,
+`packImportSummary.ts`, `quantisePresetPack.ts`, `fileStem.ts`, `paletteFileName.ts`,
+`promptFileName.ts`, `atlasCalculator.ts`, `atlasBudget.ts`, `atlasFit.ts`,
+`componentTargetSize.ts`, `proxyCrops.ts`, `firstOfEachId.ts`, `sheetCoverage.ts`;
+constants `aseprite.ts`, `atlas.ts`, `paletteExport.ts` (writer side), `sheetFormats.ts`.
+
+**Look for:** emitted bytes that violate the format's specification — verify PNG output
+against the PNG spec (CRC, filter choice, IHDR consistency), `.aseprite` output against the
+published `.ase` file-format spec, and zip output against APPNOTE (open each in a real
+consumer where possible: an image viewer, Aseprite if available, an unzip tool); deflate
+correctness on incompressible and empty inputs; palette-file formats against their consumers'
+documented grammars; atlas maths whose fits are wrong at power-of-two boundaries or whose VRAM
+figures misstate the formats they name; filenames that collide or carry characters a filesystem
+rejects; manifest JSON that does not parse or disagrees with the sheet it describes.
+
+**Method:** scratch tests writing real files to the scratchpad and re-reading them with an
+independent decoder; external tools to open the outputs; spec citations in every format issue.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 5 —
+Encoders, file formats and atlas maths** of the codebase audit. Follow the
+plan's ground rules, verification standard, issue-filing protocol and
+phase-completion checklist exactly: audit only Phase 5's scope, prove every
+finding before filing it, file one GitHub issue per confirmed root cause with
+a reconciled label set and the attribution trailer, fix nothing, then update
+the plan's phase log in a worktree and land it. Finish by printing the Phase 6
+session prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 6 — Stores, persistence and workers
+
+**Scope:** all of `src/stores/`, `src/db/`, `src/workers/`; the store-facing utils
+`studioHistory.ts`, `dialHistory.ts` (store side); `src/types/` entries these consume.
+
+**Look for:** store actions that leave state inconsistent when a step throws mid-way; parsers
+in `src/db/` that accept a shape the type forbids or silently coerce instead of falling to the
+default (robustness against corrupt storage is specified; a compatibility arm for an old shape
+is banned — both directions are findings); the localStorage fallback diverging from the SQLite
+path in behaviour (both modes must work — exercise both); history eviction boundary behaviour;
+worker lifetime defects: a per-press thread not *ended* by whatever disowns it, a missing
+`abandonSweep`-style pair, a correlation id that discards answers but leaves the thread
+running, replies filed after release; message-protocol shapes the two ends disagree on;
+transferable buffers copied where they should transfer (measure); a "running" flag that
+survives navigation wrongly; store subscriptions in stores themselves creating update cycles.
+
+**Method:** scratch tests through the real stores and parsers; both persistence modes driven
+in the browser (the `verify` skill covers OPFS versus fallback); worker lifecycle traced by
+reading both ends of each wire and, where doubted, instrumented in a driven session.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 6 — Stores,
+persistence and workers** of the codebase audit. Follow the plan's ground
+rules, verification standard, issue-filing protocol and phase-completion
+checklist exactly: audit only Phase 6's scope, prove every finding before
+filing it, file one GitHub issue per confirmed root cause with a reconciled
+label set and the attribution trailer, fix nothing, then update the plan's
+phase log in a worktree and land it. Finish by printing the Phase 7 session
+prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 7 — UI: primitives, chrome, modals and tabs
+
+**Scope:** `src/components/common/`, `src/components/layout/`, `src/components/modals/`,
+`src/components/tabs/`; the interaction hooks they use: `useAnchoredSurface.ts`,
+`useTooltipReveal.ts`, `useComboBox.ts`, `useClipboard.ts`, `useCopyPrompt.ts`,
+`useShowToast.ts`, `useUndoShortcut.ts`, `useAdoptedStyles.ts`, `useDetachedWindow.ts`,
+`useDownload.ts`, `useFileSave.ts`, `useFileDropTarget.ts`.
+
+**Look for:** accessibility defects the linter cannot see: focus loss on unmount, focus traps
+that leak, `aria-activedescendant` pointing at a stale id, live regions that fail to announce,
+Escape-latch and outside-press behaviour diverging between the two tooltip triggers, keyboard
+paths through `ComboBox` (arrow, Escape, Enter, type-ahead) that desync from the visible
+state; a control shipped without guidance and without a recorded exemption; token violations —
+a raw value, an ad-hoc palette class, an unlisted duration rung, an ink tone on a solid role
+fill — in shapes the token tests' two sweeps cannot see (conditional class assembly, values
+built at runtime); a class name that emits no CSS (build and grep `dist/`); missing effect
+cleanup (listeners, timers, observers — Strict Mode double-invoke finds these); popover-API
+misuse the no-throw semantics hide; wholesale store subscriptions re-rendering the chrome on
+unrelated edits (count renders).
+
+**Method:** reading plus a driven browser session with the keyboard, a screen reader where a
+claim needs it, and render-count probes; `npm run build` plus grep for utility-emission
+checks.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 7 — UI:
+primitives, chrome, modals and tabs** of the codebase audit. Follow the plan's
+ground rules, verification standard, issue-filing protocol and
+phase-completion checklist exactly: audit only Phase 7's scope, prove every
+finding before filing it, file one GitHub issue per confirmed root cause with
+a reconciled label set and the attribution trailer, fix nothing, then update
+the plan's phase log in a worktree and land it. Finish by printing the Phase 8
+session prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 8 — UI: studio and quantise views
+
+**Scope:** `src/components/studio/`, `src/components/quantise/`; the hooks that serve them:
+`useQuantiseWork.ts`, `useImageFile.ts`, `useImageDownload.ts`, `useImagePaste.ts`,
+`useDragPan.ts`, `useLinkedPanes.ts`, `useCopiedSheets.ts`, `useIdentityPaletteCapture.ts`,
+`useSheetIdentity.ts`, `usePaletteDownload.ts`.
+
+**Look for:** everything Phase 7 looks for, in these two directories, plus: selector
+discipline (an atomic-selector violation in a form that re-renders the whole studio per
+keystroke — measure it); canvas work on the main thread that belongs on the worker, or redraws
+triggered by state that did not change the pixels; container-query versus viewport-breakpoint
+misuse inside split columns; the column-width budgets holding for any select or row control the
+derivation tests do not price; drag, pan, paste and drop paths at their edges (zero-size
+images, a paste that is not an image, a drag leaving the window); linked-pane
+synchronisation drift; stale-closure defects in the image hooks.
+
+**Method:** as Phase 7 — driven sessions (the memory note "Driving the studio with Playwright"
+records the locator traps), render counts, timings on real sheets from `test_sprites/`.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 8 — UI:
+studio and quantise views** of the codebase audit. Follow the plan's ground
+rules, verification standard, issue-filing protocol and phase-completion
+checklist exactly: audit only Phase 8's scope, prove every finding before
+filing it, file one GitHub issue per confirmed root cause with a reconciled
+label set and the attribution trailer, fix nothing, then update the plan's
+phase log in a worktree and land it. Finish by printing the Phase 9 session
+prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 9 — Shell, PWA, tooling and types
+
+**Scope:** `src/App.tsx`, `src/main.tsx`, `src/index.css`, `src/sw.ts`,
+`src/utils/isolationHeaders.ts`, `public/` (including `coi-bootstrap.js`), `index.html`,
+`vite.config.ts`, `tsconfig*.json`, `eslint.config.js`, `prettier.config.js`,
+`package.json` and `package-lock.json`, `scripts/`, `Run.bat`, `Run.ps1`, `AGENTS.md`,
+`.gitignore`, any GitHub Actions workflows, all of `src/types/`, and `repro.log` (decide
+whether it belongs in the repository at all).
+
+**Look for:** service-worker defects: precache manifest gaps against what the app actually
+requests offline (drive an offline session), stale-cache behaviour across a deploy, the
+same-origin gate on injected headers, update flow after a new deploy; the first-visit reload
+behaving as documented; token-layer defects in `index.css` itself — the reduced-motion
+catch-all pair diverging in a way the comparison test cannot see, tokens defined but emitted
+nowhere, contrast claims re-measured; dependency hygiene (unused, duplicated or unpinned
+dependencies; licence fields); tool-exclusion integrity for `.claude/worktrees/` across every
+root-walking tool, including any added since the table in CLAUDE.md; tsconfig strictness gaps;
+types in `src/types/` that are wider than the values they describe (a union member nothing
+produces, an optional field that is always present); build output anomalies (bundle size by
+chunk, assets shipped twice); secrets and personal data swept across the whole tree and
+history-visible files.
+
+**Method:** driven offline and update-flow sessions; `npm run build` inspection; config read
+against each tool's documentation; a secrets sweep with targeted greps.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 9 — Shell,
+PWA, tooling and types** of the codebase audit. Follow the plan's ground
+rules, verification standard, issue-filing protocol and phase-completion
+checklist exactly: audit only Phase 9's scope, prove every finding before
+filing it, file one GitHub issue per confirmed root cause with a reconciled
+label set and the attribution trailer, fix nothing, then update the plan's
+phase log in a worktree and land it. Finish by printing the Phase 10 session
+prompt from the plan in a raw fenced markdown block.
+````
+
+## Phase 10 — Test suite and documentation
+
+**Scope:** `tests/`, `src/test/`, every colocated `*.test.ts(x)` (as tests — their subjects
+were audited in Phases 1–9), `docs/` including `docs/todo/` and `docs/todo/done/`,
+`README.md`, `CLAUDE.md`, `LICENSE`, code comments as documentation.
+
+**Look for:** unfalsifiable tests — prove a sample of high-value guards against mutated code:
+temporarily break the invariant the test claims to hold and confirm the test fails (revert
+immediately; commit nothing); assertions that read a re-implementation instead of the real
+subject; suites whose file-discovery misses a directory added since (the hand-kept walks the
+tooltip suite documents are the known shape — look for others); meaningful behaviour with no
+test at all where CLAUDE.md says correctness lives in tests; fixtures that no longer match
+what the app writes; documentation that misdescribes the code as it now stands — every
+CLAUDE.md factual claim (counts, line numbers, named files, measured figures) spot-checked,
+README accuracy, spec status banners truthful against what has actually shipped, `done/`
+plans that are not in fact complete; stale comments that assert retired behaviour.
+
+**Method:** mutation spot-checks in a worktree with immediate reverts; doc claims verified
+against the tree with greps and re-measurement.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running **Phase 10 — Test
+suite and documentation** of the codebase audit. Follow the plan's ground
+rules, verification standard, issue-filing protocol and phase-completion
+checklist exactly: audit only Phase 10's scope, prove every finding before
+filing it, file one GitHub issue per confirmed root cause with a reconciled
+label set and the attribution trailer, fix nothing, then update the plan's
+phase log in a worktree and land it. Finish by printing the wrap-up session
+prompt from the plan in a raw fenced markdown block.
+````
+
+## Wrap-up
+
+**Scope:** the audit itself — no new source auditing.
+
+**Do, in order:**
+
+1. Read the whole phase log. Chase every `partial` row and every Notes entry that names an
+   unproven suspicion or an out-of-scope observation: verify or discard each, filing issues
+   for the ones that prove out, per the standard protocol.
+2. Sweep the filed issues as a set: dedupe across phases, cross-link related root causes,
+   confirm every label set is still true, and confirm no issue describes something a later
+   phase showed to be deliberate.
+3. Update this document a final time: complete the log, change the status banner to
+   `✅ COMPLETE` with a one-line summary of what the audit filed, and move the file to
+   `docs/todo/done/` in the same change, per the repository's plan-document rules.
+4. Land that change, then report to the user: how many issues, by type and area, with the
+   numbers of any `priority: high` or above.
+
+**Session prompt:**
+
+````markdown
+Work in p:\Source\TypeScript\SpriteGubbins. Read CLAUDE.md in full, then read
+docs/todo/codebase-audit-plan.md in full. You are running the **Wrap-up**
+phase of the codebase audit. Follow the wrap-up section's four steps exactly:
+resolve every partial row and logged suspicion, reconcile the filed issues as
+a set, mark the plan ✅ COMPLETE and move it to docs/todo/done/, land that
+change from a worktree, and report the audit's totals to the user.
+````
