@@ -10,8 +10,10 @@ import type { ResolutionProfile, TargetSize } from '../../types/output.ts';
  *
  * The gate mirrors `minFeatureSize`'s reasoning exactly: only `CUSTOM` consults the stated size,
  * because the other three profiles *are* a scale and state their own figure — and the coarsest of
- * those, `RETRO_16_BIT` at 64–96 pixels per figure, is well past sprite scale, so none of them can
- * ever need these bullets.
+ * those, `RETRO_16_BIT` at roughly 64–96 pixels per unit drawn, is well past sprite scale, so none
+ * of them can ever need these bullets. (*Per unit drawn* rather than *per figure*: which noun that
+ * range is stated against is the category's, from `SCALE_UNIT_TEXT`, and the range itself is what
+ * this gate reasons from.)
  *
  * **The size arrives resolved, from `componentTargetSize`.** These bullets are about how one
  * component is drawn, and on a sheet whose components are the parts one subject is cut into the

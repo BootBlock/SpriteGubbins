@@ -1,5 +1,7 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
+import { SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -32,16 +34,25 @@ export const SURFACE_DETAIL_TEXT: Readonly<Record<SurfaceDetail, string>> = {
 };
 
 /**
- * The scale the components are drawn at.
+ * The scale the components are drawn at, as a function of the unit this category's sheet is priced
+ * in.
  *
  * Stated in prose because v1 interpolated the identifier raw, so the prompt read
  * "Selected profile: `HIGH_RESOLUTION_PIXEL_ART`" — a token the model had to guess the meaning of.
+ *
+ * **A map of functions rather than of strings, because three of the four entries state a scale
+ * *against something*** — and that something was `a full figure` on all thirteen categories, so a
+ * glyph sheet, a tile field and a widget kit were each measured against a subject they cannot
+ * contain. {@link SCALE_UNIT_TEXT} is the noun each supplies; the ranges stay here because they are
+ * the profile's own and are what its option label states. `CUSTOM` carries no range and therefore
+ * takes no unit — it defers to the target-size line, which names its quantity itself.
  */
-export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, string>> = {
-  HIGH_RESOLUTION: 'High resolution — a full figure occupies 25–35% of the sheet height',
-  MID_RESOLUTION: 'Mid resolution — a full figure occupies 18–25% of the sheet height',
-  RETRO_16_BIT: '16-bit retro scale — a full figure is roughly 64–96 pixels tall',
-  CUSTOM: 'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
+export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, (unit: string) => string>> = {
+  HIGH_RESOLUTION: (unit) => `High resolution — ${unit} occupies 25–35% of the sheet height`,
+  MID_RESOLUTION: (unit) => `Mid resolution — ${unit} occupies 18–25% of the sheet height`,
+  RETRO_16_BIT: (unit) => `16-bit retro scale — ${unit} is roughly 64–96 pixels tall`,
+  CUSTOM: () =>
+    'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
 };
 
 /**
@@ -55,26 +66,42 @@ export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, string>
  *
  * It states the assembly rather than falling silent because the assembly **is** the scale on that
  * sheet: the pieces are drawn at their share of one subject, which is what section 2's own line
- * already tells the generator. Falling back to *the sheet aspect* would throw away the only figure
- * the prompt has.
+ * already tells the generator. Falling back to *the sheet aspect* would throw away the only
+ * measurement the prompt has.
+ *
+ * **It names the assembled whole in the category's own word**, for the reason the three scale-bearing
+ * profiles do. It read "the share of that figure it occupies" on every category, and the five that
+ * reach it are CHARACTER, CREATURE, OBJECT, ITEM and VEHICLE — so an OBJECT part library and a
+ * VEHICLE rig were both told to work to the share of a figure they have none of. That is the same
+ * defect {@link SCALE_UNIT_TEXT} removes one line above, and leaving it here would have left section
+ * 2 saying *figure* on the one path the profiles no longer do.
  */
-const CUSTOM_ASSEMBLED_TEXT =
-  'Custom — work to the target assembled size stated below, drawing every component at the share of that figure it occupies';
+function customAssembledText(unit: string): string {
+  return `Custom — work to the target assembled size stated below, drawing every component at the share of ${unit} it occupies`;
+}
 
 /**
  * The resolution profile in the prose the prompt carries, for this sheet.
  *
- * Three of the four profiles *are* a scale and read the same wherever they appear. `CUSTOM` is the
- * one that defers to the target-size field, so it is the one that has to agree with what that field
- * turns out to be naming.
+ * Three of the four profiles *are* a scale, and each states it against the unit this category's
+ * sheet is priced in — the category being what decides that noun, never the sheet, for the reason
+ * {@link SCALE_UNIT_TEXT} records. `CUSTOM` is the one that defers to the target-size field, so it
+ * is the one that has to agree with what that field turns out to be naming.
  */
-export function resolutionProfileDescription(profile: ResolutionProfile, statesAssembled: boolean): string {
+export function resolutionProfileDescription(
+  profile: ResolutionProfile,
+  statesAssembled: boolean,
+  category: SubjectCategory,
+): string {
   // `RESOLUTION_PROFILE_TEXT` stays exported even though nothing else imports it: it is still the map
   // `[DEFINE:RESOLUTION_PROFILE_DESCRIPTION]` is filled from for three of the four profiles, and
   // `promptTemplate.test.ts` walks that naming convention over `constants/promptText/`'s exports.
   // Listing the token as *computed* there instead would say the map does not exist, and drop the
   // check that it still does.
-  return profile === 'CUSTOM' && statesAssembled ? CUSTOM_ASSEMBLED_TEXT : RESOLUTION_PROFILE_TEXT[profile];
+  const unit = SCALE_UNIT_TEXT[category];
+  return profile === 'CUSTOM' && statesAssembled
+    ? customAssembledText(unit)
+    : RESOLUTION_PROFILE_TEXT[profile](unit);
 }
 
 /**
@@ -99,7 +126,7 @@ const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>,
  * two-pixel feature is affordable. Keying on height would call that component mid-resolution.
  *
  * Both boundaries are read off the profiles above rather than chosen. `RETRO_16_BIT` runs to 96 px
- * per figure and `MID_RESOLUTION` starts at roughly 184 on a 1024-pixel sheet, so the `1 × 1` rung
+ * per unit drawn and `MID_RESOLUTION` starts at roughly 184 on a 1024-pixel sheet, so the `1 × 1` rung
  * ends somewhere in that gap — 128 is the round number inside it, and is itself a size people draw
  * sprites at. `MID_RESOLUTION` tops out near 256 on the same sheet and `HIGH_RESOLUTION` begins at
  * that figure, so the second boundary is that number exactly.
@@ -148,7 +175,7 @@ const ASSEMBLED_MIN_FEATURE = CUSTOM_MIN_FEATURE[0].size;
  * never parsed out of the free-text field here, because *which quantity* the field names is a
  * question about the sheet plan rather than about the text, and the rung turns on the answer. Keying
  * the minimum on the profile alone
- * gave the one profile that can state *16 × 16* the same `2 × 2` floor as a 256-pixel figure, and a
+ * gave the one profile that can state *16 × 16* the same `2 × 2` floor as a 256-pixel component, and a
  * sprite sixteen pixels across whose smallest permitted feature is four of them is a contradiction
  * the generator resolves by discarding one half of it — silently, and in whichever direction it
  * likes.
