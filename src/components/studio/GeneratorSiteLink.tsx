@@ -17,11 +17,12 @@ interface GeneratorSiteLinkProps {
  * *generation* surface rather than the vendor's front page — ChatGPT Images, Midjourney's Create
  * page, the BFL Playground — because the next thing a reader does after Copy Prompt is paste it.
  *
- * **Three of the eleven targets have nowhere to open**, and the button stays rather than
- * disappearing: two of them are open weights people run themselves and the third names no model at
- * all, which is a finding the reader cannot infer from the name, and a control that comes and goes
- * as the select changes says nothing about why. So the `NONE` state renders the same button
- * disabled, carrying that entry's own note in its guidance. See {@link GeneratorSite}.
+ * **Four of the eleven targets have nowhere to open**, and the button stays rather than
+ * disappearing: two of them are open weights people run themselves, the third names no model at all,
+ * and the fourth is an API endpoint whose vendor runs no page in front of it. Each is a finding the
+ * reader cannot infer from the name, and a control that comes and goes as the select changes says
+ * nothing about why. So the `NONE` state renders the same button disabled, carrying that entry's own
+ * note in its guidance. See {@link GeneratorSite}.
  *
  * **An anchor, not a button with a handler**, because it is navigation: it opens in a new context
  * for the reason `ExternalLink` does — the app is installable, and in `standalone` display mode a

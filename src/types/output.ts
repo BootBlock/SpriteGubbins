@@ -258,16 +258,22 @@ export interface StatedTargetSize {
  * Where a reader can go and generate with this target, if anywhere.
  *
  * Two states rather than an optional URL, for the reason {@link PromptBudget} carries four rather
- * than one `null`: an absent link is two different findings, and they need different words. A
- * missing field reads as “nobody went and looked”, which is exactly what the three targets without a
+ * than one `null`: an absent link is several different findings, and they need different words. A
+ * missing field reads as “nobody went and looked”, which is exactly what the four targets without a
  * site are not — each of them was checked, and each has a reason a stranger cannot infer from the
  * name.
  *
  * - `PUBLIC` — the vendor runs a page a person can paste a prompt into, and `url` is it. Deliberately
  *   the *generation* surface rather than the marketing page or the API reference, because what the
  *   button is for is the next thing the reader does with the prompt they just copied.
- * - `NONE` — there is no such page, and `note` says why. Open weights you run yourself and a target
- *   that names no model are both this, and they are not the same reason.
+ * - `NONE` — there is no such page, and `note` says why. Open weights you run yourself, a target that
+ *   names no model, and an API endpoint the vendor runs no page in front of are all this, and they
+ *   are three different reasons.
+ *
+ * **A `PUBLIC` url belongs to one entry only.** A page the vendor runs is a surface with its own
+ * behaviour, so two entries naming it are two accounts of that behaviour and at most one can be
+ * right — which is what `GPT_IMAGE` and `CHATGPT_5_6_SOL` were, both pointing at ChatGPT Images
+ * while declaring opposite capabilities. `constants/models.test.ts` holds the urls apart.
  *
  * **A URL is a checkable claim about somebody else's product**, exactly as a capability or a prompt
  * budget is, so each carries its source in `constants/models.ts` beside the entry that states it.

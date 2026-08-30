@@ -144,15 +144,32 @@ describe('where each target model can be generated with', () => {
   });
 
   it('offers a link only where a vendor runs a page a reader can paste a prompt into', () => {
-    // Named rather than counted, because which three have nowhere to go is the claim: two are open
-    // weights people run themselves, and the third names no model at all. A fourth arriving here is
-    // either a vendor that has taken its generator down — worth knowing — or a search nobody
-    // finished.
+    // Named rather than counted, because which four have nowhere to go is the claim: two are open
+    // weights people run themselves, the third names no model at all, and the fourth is an API
+    // endpoint that takes a request rather than a person. A fifth arriving here is either a vendor
+    // that has taken its generator down — worth knowing — or a search nobody finished.
     const absent = TARGET_MODELS.filter((model) => model.generatorSite.kind === 'NONE').map(
       (model) => model.id,
     );
 
-    expect(absent.sort()).toEqual(['FLUX', 'GENERIC', 'STABLE_DIFFUSION'].sort());
+    expect(absent.sort()).toEqual(['FLUX', 'GENERIC', 'GPT_IMAGE', 'STABLE_DIFFUSION'].sort());
+  });
+
+  it('sends no two targets to the same page', () => {
+    // The defect this closes shipped: `GPT_IMAGE` and `CHATGPT_5_6_SOL` both named
+    // https://chatgpt.com/images while declaring opposite capabilities — one a single-pass image
+    // endpoint denied the self-audit and the component map, the other a thinking model that hands
+    // off to an image tool. A reader choosing between them was choosing between two descriptions of
+    // one page, and only one of them was true of it. An entry is a *surface* as much as a model, so
+    // two entries pointing at one surface is a contradiction rather than a duplicate.
+    const byUrl = new Map<string, string[]>();
+    for (const model of TARGET_MODELS) {
+      if (model.generatorSite.kind !== 'PUBLIC') continue;
+      const url = model.generatorSite.url;
+      byUrl.set(url, [...(byUrl.get(url) ?? []), model.id]);
+    }
+
+    expect([...byUrl].filter(([, ids]) => ids.length > 1)).toEqual([]);
   });
 
   // **The notes themselves are not checked here**, deliberately. Each is rendered to the reader in

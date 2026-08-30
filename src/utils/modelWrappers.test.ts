@@ -95,6 +95,20 @@ describe('wrapForModel', () => {
     expect(prompt.endsWith('Generate the sheet now.')).toBe(true);
   });
 
+  it('leaves GPT Image unwrapped, since OpenAI document no rewrite on the path it is sent along', () => {
+    // It carried the retired DALL·E 3 entry's directive prefix, justified by "the mainline model …
+    // will automatically revise your prompt for improved performance" — which OpenAI state for the
+    // image generation tool *in the Responses API* and for nothing else. This target is the Images
+    // API, whose own guide documents no revision, and the reason the two were ever confused is that
+    // the entry linked to ChatGPT: that surface is the Sol entry, and `constants/models.ts` now says
+    // so. With no documented rewrite there was nothing for terse absolute phrasing to survive, so
+    // the prefix went with the claim rather than outliving it.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
+
+    expect(prompt.startsWith('# MODULAR SPRITE-SHEET SPECIFICATION')).toBe(true);
+    expect(prompt.endsWith('Generate the sheet now.')).toBe(true);
+  });
+
   it('gives Midjourney flags, without the two that did nothing', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'MIDJOURNEY' }));
     expect(prompt).toContain('--ar 16:9');
