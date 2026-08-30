@@ -27,10 +27,11 @@ import type { SectionNumbers } from './templateEngine.ts';
  *
  * `GPT_IMAGE` is the third, and it is the one that had a wrapper and lost it. The prefix it carried
  * came from the retired DALL·E 3 entry and was justified by a prompt rewrite OpenAI document for the
- * Responses API's image tool — a surface this target is not. The Images API revises nothing OpenAI
- * describe, so there was no documented behaviour for terse absolute phrasing to survive, and a
- * directive with nothing behind it is the "repeated statement of the same rule" section 0 already
- * makes. See `constants/models.ts`.
+ * Responses API's image tool — a surface this target is not. OpenAI describe no revision for the
+ * GPT image models on the Images API; the one `revised_prompt` that reference documents belongs to
+ * the retired `dall-e-3`. So there was no documented behaviour for terse absolute phrasing to
+ * survive, and a directive with nothing behind it is the "repeated statement of the same rule"
+ * section 0 already makes. See `constants/models.ts`.
  *
  * The switch is exhaustive over `TargetModelId` with no `default`, so adding an id to the union is a
  * compile error here until it is answered. That is deliberate: the failure this pairing is most

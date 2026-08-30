@@ -96,7 +96,7 @@ describe('the generator link beside the target model', () => {
       render(<TargetModelSelector />);
 
       // A control that disappeared as the select changed would say nothing about *why* there is
-      // nowhere to go, which for two of these three is the finding that they are weights you run
+      // nowhere to go, which for two of these four is the finding that they are weights you run
       // yourself.
       expect(
         screen.getByRole('button', { name: `${model.name} has no generator site to open` }),

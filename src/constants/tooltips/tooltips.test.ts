@@ -100,7 +100,7 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ...TARGET_MODELS.map((model) => [`TARGET_MODELS.${model.id}`, model.description] as const),
   // The second thing that list carries, and it reaches the reader the same way the first does: a
   // target with nowhere to open renders its link button disabled, and this note is what the card
-  // says after the sentence every target shares. Two of the three are about open weights, which is
+  // says after the sentence every target shares. Two of the four are about open weights, which is
   // the pair the “no two controls share a sentence” check is for.
   ...TARGET_MODELS.flatMap((model) =>
     model.generatorSite.kind === 'NONE'

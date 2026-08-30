@@ -22,9 +22,10 @@
  * **`GPT_IMAGE` had a file here and lost it**, which is that bar applied in the other direction.
  * It carried DALL·E 3's directive prefix, and the prefix was justified by a prompt rewrite OpenAI
  * document for the Responses API's image tool and for nothing else. That target is the Images API,
- * where they document no revision at all, so the line traced to a behaviour of a surface the prompt
- * is never sent to — see `constants/models.ts` for what the two surfaces are and which entry holds
- * which.
+ * whose own guide documents no revision — the one `revised_prompt` its reference describes is
+ * `dall-e-3`'s, and `dall-e-3` is the model this target replaced. So the line traced to a behaviour
+ * of a surface the prompt is never sent to — see `constants/models.ts` for what the two surfaces
+ * are and which entry holds which.
  */
 
 export { wrapForFlux } from './flux.ts';

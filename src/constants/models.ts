@@ -35,8 +35,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Generic / Baseline Prompt',
     description:
       'Standard un-wrapped prompt suitable for ChatGPT, Claude, Gemini, or general LLM text-to-image workflows.',
-    // No model named, so no vendor to have a page. The other two `NONE` entries are open weights,
-    // which is a different finding wearing the same absence — see `GeneratorSite`.
+    // No model named, so no vendor to have a page. The other three `NONE` entries are two sets of
+    // open weights and an API endpoint, which are different findings wearing the same absence — see
+    // `GeneratorSite`.
     generatorSite: {
       kind: 'NONE',
       note: 'This target names no particular model, so there is no generator site to open.',
@@ -373,23 +374,24 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // way `FLUX` and `FLUX_API` are, by the surface a reader reaches the weights through.
     //
     // The model page settles both capability flags below. "Output modalities: image", so there is no
-    // channel a component map could come back through; and the endpoints it lists are
-    // `v1/images/generations` and `v1/images/edits`, which generate in one pass and give the model
-    // no step in which to check its own work. The deprecations page was cited here for the modality
-    // claim and does not carry it — it holds the shutdown table alone.
+    // channel a component map could come back through; and the endpoints it marks supported are
+    // `v1/images/generations`, `v1/images/edits` and Batch, with Chat Completions and Responses both
+    // marked unsupported — so there is no conversational pass in which it could check its own work.
+    // The deprecations page was cited here for the modality claim and does not carry it: that page
+    // is notice periods and shutdown tables, and describes no model's behaviour.
     // https://developers.openai.com/api/docs/models/gpt-image-2
     id: 'GPT_IMAGE',
     name: 'GPT Image 2 (OpenAI Images API)',
     description:
       'OpenAI’s current image model as the Images API serves it, replacing the retired DALL·E 3. It returns an image and nothing else, so it gets the specification without the self-audit or the component map. Pasting into ChatGPT is a different path with an entry of its own, and that entry is ChatGPT 5.6 Sol above.',
-    // **Checked, and there is none.** The model page lists `v1/images/generations` and
-    // `v1/images/edits` and no others, both of which take a request rather than a person, and OpenAI
-    // publish no playground for them — the API reference is documentation rather than a place to
-    // paste a prompt. ChatGPT Images is not this endpoint and cannot stand in for it: OpenAI's
-    // release notes describe that surface planning and refining before it generates — "When given
-    // more time to think, it can plan and refine image outputs before generating them" — which is
-    // the hand-off `CHATGPT_5_6_SOL` exists to describe, and the opposite of what the flags below
-    // declare. https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    // **Checked, and there is none.** Every endpoint the model page marks supported takes a request
+    // rather than a person, and OpenAI publish no playground in front of them — the API reference is
+    // documentation rather than a place to paste a prompt. ChatGPT Images is not this endpoint and
+    // cannot stand in for it: OpenAI's release notes give that surface *images with thinking*, where
+    // "When given more time to think, it can plan and refine image outputs before generating them"
+    // — on a paid plan, with a Thinking or Pro model selected. That is the hand-off
+    // `CHATGPT_5_6_SOL` exists to describe, and the opposite of what the flags below declare.
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
     generatorSite: {
       kind: 'NONE',
       note: 'OpenAI run no page that generates through the Images API, and ChatGPT’s own image surface is the ChatGPT 5.6 Sol target rather than this one.',

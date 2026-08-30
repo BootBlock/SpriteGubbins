@@ -1392,8 +1392,9 @@ phrasing survives better than elaborate structure — which is part of why secti
 > What the entry was actually describing was two products at once. `gpt-image-2`'s model page lists
 > `v1/images/generations` and `v1/images/edits` as its endpoints and "image" as its only output
 > modality — a single-pass endpoint, which is what the entry's capability flags declare — while its
-> `generatorSite` sent the reader to chatgpt.com/images, where OpenAI's release notes describe the
-> surface planning and refining before it draws. That surface already has an entry, and Sol's wrapper
+> `generatorSite` sent the reader to chatgpt.com/images, where OpenAI's release notes give the
+> surface *images with thinking* — planning and refining before it draws, when it is given more time
+> to think on a paid plan. That surface already has an entry, and Sol's wrapper
 > is the whole account of it. So `GPT_IMAGE` is now the Images API alone: its generator site is
 > `NONE` with the finding, the modality claim cites the model page rather than the deprecations page
 > (which carries only the shutdown table), and the directive prefix is deleted, because on the Images

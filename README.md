@@ -5,8 +5,8 @@ prompts for **game sprite sheets and texture atlases**.
 
 Pick a subject category, fill in the fields, choose your output constraints and target model,
 and Sprite Gubbins compiles a prompt shaped for that model's conventions — ChatGPT reasoning
-contracts, Midjourney flags, Stable Diffusion and Qwen-Image negative blocks, a GPT Image
-directive, a Seedream planning note, or plain text for the Gemini image models, which need none.
+contracts, Midjourney flags, Stable Diffusion and Qwen-Image negative blocks, a Seedream
+planning note, or plain text for GPT Image and the Gemini image models, which need none.
 It also warns when a prompt has outgrown what the chosen target is documented to read. It works
 out atlas grid layouts and VRAM budgets, and exports engine metadata for Godot, Unity and PixiJS.
 
