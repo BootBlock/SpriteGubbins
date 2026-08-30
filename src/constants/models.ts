@@ -381,7 +381,7 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'GPT_IMAGE',
     name: 'GPT Image 2 (OpenAI Images API)',
     description:
-      'OpenAI’s current image model as the Images API serves it, replacing the retired DALL·E 3. It returns an image and nothing else, so it gets the specification without the self-audit or the component map. Pasting into ChatGPT reaches the same renderer along a different path, and that path is the ChatGPT 5.6 Sol entry above.',
+      'OpenAI’s current image model as the Images API serves it, replacing the retired DALL·E 3. It returns an image and nothing else, so it gets the specification without the self-audit or the component map. Pasting into ChatGPT is a different path with an entry of its own, and that entry is ChatGPT 5.6 Sol above.',
     // **Checked, and there is none.** The model page lists `v1/images/generations` and
     // `v1/images/edits` and no others, both of which take a request rather than a person, and OpenAI
     // publish no playground for them — the API reference is documentation rather than a place to

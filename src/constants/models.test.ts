@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { measurePromptFit } from '../test/promptFit.ts';
+import { STUDIO_ACTION_TOOLTIPS } from './tooltips/index.ts';
 import type { PromptFit } from '../test/promptFit.ts';
 import type { TargetModelId } from '../types/output.ts';
 import { TARGET_MODELS } from './models.ts';
@@ -155,6 +156,17 @@ describe('where each target model can be generated with', () => {
     expect(absent.sort()).toEqual(['FLUX', 'GENERIC', 'GPT_IMAGE', 'STABLE_DIFFUSION'].sort());
   });
 
+  it('states in the shared guidance how many targets have nowhere to go', () => {
+    // The sentence every entry's own note is appended to states the count, and it was written when
+    // there were three. Nothing held it there: `GPT_IMAGE` became the fourth and the card went on
+    // saying three — a number the reader can check against the selector in front of them, and the
+    // only half of that card the entries do not write. So the word is read back out of the copy.
+    const stated = /(\w+) of the targets have no such page/.exec(STUDIO_ACTION_TOOLTIPS.openGenerator);
+    const absent = TARGET_MODELS.filter((model) => model.generatorSite.kind === 'NONE').length;
+
+    expect(stated?.[1]).toBe(COUNT_WORDS[absent]);
+  });
+
   it('sends no two targets to the same page', () => {
     // The defect this closes shipped: `GPT_IMAGE` and `CHATGPT_5_6_SOL` both named
     // https://chatgpt.com/images while declaring opposite capabilities — one a single-pass image
@@ -179,3 +191,6 @@ describe('where each target model can be generated with', () => {
   // the shape that suite exists to stop: the copies drift, and the half nobody restated — that no
   // two controls share a sentence — is the one that catches a note pasted from its neighbour.
 });
+
+/** How the guidance copy spells a count, indexed by it. Eleven targets, so eight is far enough. */
+const COUNT_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'] as const;
