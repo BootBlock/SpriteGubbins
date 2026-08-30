@@ -81,7 +81,10 @@ export const SURFACE_DETAIL_CHOICES: readonly OutputChoice<SurfaceDetail>[] = [
 export const RESOLUTION_PROFILE_CHOICES: readonly OutputChoice<ResolutionProfile>[] = [
   { value: 'HIGH_RESOLUTION', label: 'HIGH_RESOLUTION (25–35% of sheet height)' },
   { value: 'MID_RESOLUTION', label: 'MID_RESOLUTION (18–25% of sheet height)' },
-  { value: 'RETRO_16_BIT', label: 'RETRO_16_BIT (64–96 px per figure)' },
+  // No noun, as the two above carry none: the prompt states this range against the unit the chosen
+  // category's sheet is priced in — a glyph, a tile, a widget — and a label fixed here could only
+  // name one of them. It said "per figure", which is the same defect the prompt line carried.
+  { value: 'RETRO_16_BIT', label: 'RETRO_16_BIT (roughly 64–96 px tall)' },
   { value: 'CUSTOM', label: 'CUSTOM (work to the target size below)' },
 ];
 

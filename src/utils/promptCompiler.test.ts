@@ -140,6 +140,33 @@ describe('generatePrompt — the subject', () => {
       promptText.SCALE_EXAMPLE_TEXT.CHARACTER,
     );
   });
+
+  it('prices section 2’s resolution profile in the unit this category’s sheet is drawn in', () => {
+    // The same defect one section further down, and the one section 0's example was fixed without:
+    // all three scale-bearing profiles stated their range against "a full figure", so a FONT sheet of
+    // twenty-six glyphs and a TERRAIN blend set of twenty-three tiles were each measured against a
+    // subject they cannot hold.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const resolutionProfile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
+        const prompt = generatePrompt(
+          category,
+          defaultSubjectFor(category),
+          withOutput({ resolutionProfile }),
+        );
+        expect(prompt).toContain(
+          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, category)}`,
+        );
+      }
+    }
+
+    const font = generatePrompt(
+      'FONT',
+      defaultSubjectFor('FONT'),
+      withOutput({ resolutionProfile: 'HIGH_RESOLUTION' }),
+    );
+    expect(font).toContain('- Resolution profile: High resolution — one capital glyph');
+    expect(font).not.toContain('a full figure');
+  });
 });
 
 describe('generatePrompt — conditional blocks', () => {

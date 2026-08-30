@@ -430,9 +430,14 @@ export function generatePrompt(
     // at a size "stated below", and on a rig sheet with the box empty there is no line below — so
     // the sheet's answer would leave the prompt pointing at nothing. The base wording covers that
     // case as it always did, by saying *where one is stated*.
+    //
+    // The category is the third argument for the reason section 0's scale example takes one: the
+    // three profiles that state a scale state it against something, and that something was a figure
+    // on the nine categories whose sheets hold none.
     RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
       output.resolutionProfile,
       statedTarget?.quantity === 'ASSEMBLED',
+      category,
     ),
     // A function of the target size as well as the profile, because `CUSTOM` is the one profile
     // that carries no scale of its own — see `minFeatureSize`. It carries its own unit, from the

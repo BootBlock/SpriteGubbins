@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolutionProfile } from '../../types/output.ts';
+import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { minFeatureSize, resolutionProfileDescription } from './renderStyle.ts';
+import { SCALE_UNIT_TEXT } from './subject.ts';
+
+/** The three profiles that *are* a scale, and so state a range against a unit. `CUSTOM` is not one. */
+const SCALE_BEARING = ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const;
 
 /**
  * The figure alone, which is what the rungs below are about — the unit has its own test.
@@ -114,14 +119,71 @@ describe('minFeatureSize', () => {
   it('states what CUSTOM works to, and never names a component on a sheet that has no such size', () => {
     // The two are printed one line apart in section 2, so a flat lookup here told the generator to
     // work to a component size directly above a line stating a size and saying no component is it.
-    expect(resolutionProfileDescription('CUSTOM', false)).toContain('target component size');
-    expect(resolutionProfileDescription('CUSTOM', true)).toContain('target assembled size');
-    expect(resolutionProfileDescription('CUSTOM', true)).not.toContain('component size');
+    expect(resolutionProfileDescription('CUSTOM', false, 'CHARACTER')).toContain('target component size');
+    expect(resolutionProfileDescription('CUSTOM', true, 'CHARACTER')).toContain('target assembled size');
+    expect(resolutionProfileDescription('CUSTOM', true, 'CHARACTER')).not.toContain('component size');
 
     // The three that *are* a scale read the same either way — the assembled answer is CUSTOM's
     // alone, because CUSTOM is the only profile that defers to the field.
-    for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
-      expect(resolutionProfileDescription(profile, true)).toBe(resolutionProfileDescription(profile, false));
+    for (const profile of SCALE_BEARING) {
+      expect(resolutionProfileDescription(profile, true, 'CHARACTER')).toBe(
+        resolutionProfileDescription(profile, false, 'CHARACTER'),
+      );
+    }
+  });
+
+  it('states CUSTOM the same way for every category, because it names no unit at all', () => {
+    // `CUSTOM` defers to the target-size line, which names its own quantity — so it is the one
+    // profile the category cannot move, and a unit interpolated into it would be a second answer to
+    // a question that line has already answered.
+    for (const category of SUBJECT_CATEGORIES) {
+      expect(resolutionProfileDescription('CUSTOM', false, category)).toBe(
+        resolutionProfileDescription('CUSTOM', false, 'CHARACTER'),
+      );
+    }
+  });
+});
+
+/**
+ * The scale-bearing profiles against the unit each category's sheet is actually priced in.
+ *
+ * The defect: all three stated their range against `a full figure`, which is a referent nine of the
+ * thirteen categories have nothing to offer — a FONT sheet of twenty-six glyphs was told a full
+ * figure occupies 25–35% of its height.
+ */
+describe('resolutionProfileDescription — the unit the range is stated against', () => {
+  it('names this category’s own unit in every profile that carries a range', () => {
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const profile of SCALE_BEARING) {
+        expect(resolutionProfileDescription(profile, false, category)).toContain(SCALE_UNIT_TEXT[category]);
+      }
+    }
+  });
+
+  it('never states a figure on a category whose sheets hold none', () => {
+    // The nine the issue behind this map named, plus BACKGROUND, ICON and PORTRAIT: nothing on any of
+    // their sheets is a figure, so the word must not reach section 2 on any of them.
+    for (const category of SUBJECT_CATEGORIES) {
+      if (category === 'CHARACTER') continue;
+      for (const profile of SCALE_BEARING) {
+        expect(resolutionProfileDescription(profile, false, category)).not.toContain('figure');
+      }
+    }
+  });
+
+  it('keeps the range with the profile rather than the category', () => {
+    // `RESOLUTION_PROFILE_CHOICES` puts the range in the option's own label, so a range that moved
+    // with the category would make that label state something the prompt does not.
+    for (const category of SUBJECT_CATEGORIES) {
+      expect(resolutionProfileDescription('HIGH_RESOLUTION', false, category)).toContain(
+        '25–35% of the sheet height',
+      );
+      expect(resolutionProfileDescription('MID_RESOLUTION', false, category)).toContain(
+        '18–25% of the sheet height',
+      );
+      expect(resolutionProfileDescription('RETRO_16_BIT', false, category)).toContain(
+        'roughly 64–96 pixels tall',
+      );
     }
   });
 });

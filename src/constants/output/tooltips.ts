@@ -17,7 +17,7 @@ export const OUTPUT_TOOLTIPS = {
   surfaceDetail:
     'How much internal seam, panel and fold complexity to draw on each component, while still respecting the palette limit. MINIMAL keeps base colours and essential joints, which is what a small sprite needs before detail turns to noise; CLEAN_PRODUCTION is the usual choice; TEXTURED is for large pieces that will be seen close up.',
   resolutionProfile:
-    'The scale a full figure is drawn at, given as a share of the sheet height rather than in pixels, so it holds whatever canvas the generator returns. Independent of render style — a painted sheet and a pixel sheet can share a resolution. Pick CUSTOM when you have an exact component size in mind, and state it in Sprite Target Size.',
+    'The scale the sheet is drawn at, given as a share of the sheet height rather than in pixels, so it holds whatever canvas the generator returns. What that share is measured against follows the category, and the prompt names it in that category’s own words — a full figure for a character, one ground tile for a terrain, one capital glyph for a font. Independent of render style — a painted sheet and a pixel sheet can share a resolution. Pick CUSTOM when you have an exact component size in mind, and state it in Sprite Target Size.',
   paletteLimit:
     'The total colour budget across the whole sheet, which is what keeps every component looking like it came from one set. STRICT_32_COLOR and RESTRAINED_64_COLOR suit pixel work; painted, cel-shaded and 3D styles usually want UNRESTRICTED, because a hard colour count fights the blending they depend on.',
   outlineStyle:
