@@ -1,6 +1,6 @@
 # Codebase audit plan
 
-> **Status:** 🟢 ACTIVE — no phase has run yet. Phase 1 is next.
+> **Status:** 🟢 ACTIVE — Phase 1 complete (fifteen issues, #151–#165). Phase 2 is next.
 
 This is a living plan for a full audit of the Sprite Gubbins codebase. Its output is **GitHub
 issues**, one per confirmed root cause — not fixes. Each phase is one agent session, run from a
@@ -128,7 +128,7 @@ Every phase ends with, in order:
 
 | Phase | Status | Date | Issues filed | Notes |
 | --- | --- | --- | --- | --- |
-| 1 — Prompt compiler and prompt text | pending | | | |
+| 1 — Prompt compiler and prompt text | complete | 2026-08-30 | #151 #152 #153 #154 #155 #156 #157 #158 #159 #160 #161 #162 #163 #164 #165 | Sweeps: 46,464 prompts over category × anatomy × mode × direction set × sheet index × rig mode × target × companion outputs, and 5,005 over category × projection × elevation (incl. NaN, −5, 100) × direction set, checking section numbering, count agreement (contract / inventory heading / `componentCountFor`), ceiling, views per sheet, inventory facings ⊆ section 3, yaw list = covered facings, series rows / ordinal / marker, straight quotes, residual markers, `undefined`/`NaN`, rig depth line, anatomy in §1 ⇔ §4, wrapper citations in range — all clean except user-typed anatomy taking a 30-component OBJECT/VEHICLE five-view sheet to 45 (the budget notice covers it; not filed). Every wrapper file's citations fetched and read; models.ts capability and budget figures checked against the pages. **Unproven, for wrap-up:** whether Alibaba's "Other models accept up to 800 tokens" covers the Qwen 3.0 series (would contradict the 4,500 CEILING — noted in #153); how V8.2 reads a multi-word `--no` entry (unverifiable without a subscription, #152); INTERFACE §4 `Icon plate or slot: … filled` against §8 "any gameplay art, portrait or map inside a frame"; ICON §4 `Cooldown sweep ×2` against §8's timer ban (the rescue sentence names ring, halo and tier mark, not the sweep); VEHICLE's running gear split near/far on the part library and rig but one `Drive unit` per yaw on the directional sheet; `describeSeries` writing "drawn towards front" for FONT/EFFECT run sheets whose landmark text says the subject has no front; section 0's scale example naming pieces absent from the compiled sheet on BUILDING, TERRAIN and ITEM defaults (`SCALE_EXAMPLE_TEXT`'s docblock says "pieces the sheet actually contains" — read as the category's plans, not this sheet; not filed). **Out of scope, for Phase 2:** `TRANSPARENT` background is offered to every target though only the tooltip warns that most return a matte; VEHICLE `worn_details` options `Unit Numbers & Roundels` / `Nose Art & Panel Graffiti` are always overruled by §0's text ban. **For Phase 10:** `promptCompiler.ts` (602 lines), `templateEngine.ts` (339) and `promptTemplate.ts` (993) exceed the 150-line target; most of the excess is docblock and template text, so whether that rule reaches them is a Phase 10 call. `sheetLayout.ts` is listed in this phase's scope but is Aseprite frame geometry; read, nothing found, better placed with Phase 5. |
 | 2 — Domain data and guidance copy | pending | | | |
 | 3 — Quantiser pipeline: geometry | pending | | | |
 | 4 — Quantiser pipeline: colour and auto-tune | pending | | | |
