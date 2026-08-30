@@ -3,7 +3,6 @@ import type { RenderStyleSurface } from '../types/rendering.ts';
 import type { CategoryAssembly } from '../types/subject.ts';
 import {
   wrapForFlux,
-  wrapForGptImage,
   wrapForMidjourney,
   wrapForQwen,
   wrapForSeedream,
@@ -19,12 +18,20 @@ import type { SectionNumbers } from './templateEngine.ts';
  * beside the vendor documentation that justifies it. Splitting them keeps this file readable as
  * what it is: the one place to see, at a glance, that every id in `TARGET_MODELS` is accounted for.
  *
- * **Two branches return the prompt unchanged, and that is a finding rather than a gap.** The Gemini
+ * **Three branches return the prompt unchanged, and that is a finding rather than a gap.** The Gemini
  * image models read the prompt as a specification and think over it, which the *template* adapts to
  * by giving them the self-audit and the component map, so there is nothing left for a wrapper to
  * say that the specification does not already say better. `GENERIC` is unchanged for the opposite reason —
  * naming no model, it can have no model-specific text — and that is what makes it usable with
  * anything this app does not know about.
+ *
+ * `GPT_IMAGE` is the third, and it is the one that had a wrapper and lost it. The prefix it carried
+ * came from the retired DALL·E 3 entry and was justified by a prompt rewrite OpenAI document for the
+ * Responses API's image tool — a surface this target is not. OpenAI describe no revision for the
+ * GPT image models on the Images API; the one `revised_prompt` that reference documents belongs to
+ * the retired `dall-e-3`. So there was no documented behaviour for terse absolute phrasing to
+ * survive, and a directive with nothing behind it is the "repeated statement of the same rule"
+ * section 0 already makes. See `constants/models.ts`.
  *
  * The switch is exhaustive over `TargetModelId` with no `default`, so adding an id to the union is a
  * compile error here until it is answered. That is deliberate: the failure this pairing is most
@@ -159,8 +166,6 @@ export function wrapForModel(
       return wrapForSeedream(prompt, options.sectionNumbers);
 
     case 'GPT_IMAGE':
-      return wrapForGptImage(prompt);
-
     case 'GEMINI_FLASH_IMAGE':
     case 'GEMINI_PRO_IMAGE':
     case 'GENERIC':

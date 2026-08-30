@@ -1381,6 +1381,30 @@ phrasing survives better than elaborate structure — which is part of why secti
 > [gpt-image-2](https://developers.openai.com/api/docs/models/gpt-image-2),
 > [image generation guide](https://developers.openai.com/api/docs/guides/image-generation).
 
+> **Corrected again — the directive is gone, and the entry it defended was pointing at the wrong
+> surface.** The correction above rests on "which is the ChatGPT path this app's users are actually
+> on", and that step is the one that does not hold. OpenAI document the rewrite for the image
+> generation tool **in the Responses API** and for nothing else; no page says chatgpt.com does the
+> same, and the `CHATGPT_5_6_SOL` wrapper already records that gap in as many words — including that
+> an earlier draft of *it* asserted the same rewrite to the same surface and had to be corrected.
+> Two files beside each other, one holding the claim the other exists to keep out.
+>
+> What the entry was actually describing was two products at once. `gpt-image-2`'s model page lists
+> `v1/images/generations` and `v1/images/edits` as its endpoints and "image" as its only output
+> modality — a single-pass endpoint, which is what the entry's capability flags declare — while its
+> `generatorSite` sent the reader to chatgpt.com/images, where OpenAI's release notes give the
+> surface *images with thinking* — planning and refining before it draws, when it is given more time
+> to think on a paid plan. That surface already has an entry, and Sol's wrapper
+> is the whole account of it. So `GPT_IMAGE` is now the Images API alone: its generator site is
+> `NONE` with the finding, the modality claim cites the model page rather than the deprecations page
+> (which carries only the shutdown table), and the directive prefix is deleted, because on the Images
+> API there is no documented rewrite for terse absolute phrasing to survive. The split is the one
+> that already separates `FLUX` from `FLUX_API` — one model family, two surfaces, two entries.
+>
+> Sources: [gpt-image-2](https://developers.openai.com/api/docs/models/gpt-image-2),
+> [image generation guide](https://developers.openai.com/api/docs/guides/image-generation),
+> [ChatGPT release notes](https://help.openai.com/en/articles/6825453-chatgpt-release-notes).
+
 ### `CHATGPT_5_6_SOL` — keep the target, slim the wrapper
 
 ChatGPT 5.6 Sol is a current OpenAI frontier model (confirmed by the maintainer 2026-08-07; it

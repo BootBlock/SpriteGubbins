@@ -35,8 +35,9 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     name: 'Generic / Baseline Prompt',
     description:
       'Standard un-wrapped prompt suitable for ChatGPT, Claude, Gemini, or general LLM text-to-image workflows.',
-    // No model named, so no vendor to have a page. The other two `NONE` entries are open weights,
-    // which is a different finding wearing the same absence — see `GeneratorSite`.
+    // No model named, so no vendor to have a page. The other three `NONE` entries are two sets of
+    // open weights and an API endpoint, which are different findings wearing the same absence — see
+    // `GeneratorSite`.
     generatorSite: {
       kind: 'NONE',
       note: 'This target names no particular model, so there is no generator site to open.',
@@ -365,18 +366,36 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
   },
   {
-    // Replaces the DALL·E 3 entry, which OpenAI shut down on 12 May 2026. `gpt-image-2` lists
-    // "image" as its only output modality, so it cannot return a component map.
-    // https://developers.openai.com/api/docs/deprecations
+    // Replaces the DALL·E 3 entry, which OpenAI shut down on 12 May 2026. **This entry is the Images
+    // API endpoint, not ChatGPT** — a distinction it spent its first release blurring, by declaring
+    // the capabilities of `gpt-image-2` called directly while sending the reader to chatgpt.com,
+    // where the prompt is read by a thinking chat model and the picture arrives from a tool call.
+    // That arrangement already has an entry: it is `CHATGPT_5_6_SOL` above. So the two are split the
+    // way `FLUX` and `FLUX_API` are, by the surface a reader reaches the weights through.
+    //
+    // The model page settles both capability flags below. "Output modalities: image", so there is no
+    // channel a component map could come back through; and the endpoints it marks supported are
+    // `v1/images/generations`, `v1/images/edits` and Batch, with Chat Completions and Responses both
+    // marked unsupported — so there is no conversational pass in which it could check its own work.
+    // The deprecations page was cited here for the modality claim and does not carry it: that page
+    // is notice periods and shutdown tables, and describes no model's behaviour.
+    // https://developers.openai.com/api/docs/models/gpt-image-2
     id: 'GPT_IMAGE',
-    name: 'GPT Image 2 (OpenAI)',
+    name: 'GPT Image 2 (OpenAI Images API)',
     description:
-      'OpenAI’s current image model, replacing the retired DALL·E 3. Returns images only, so it gets the specification without the self-audit or the component map.',
-    // The same page as Sol above, and for the reason recorded there: ChatGPT's built-in image
-    // generation runs `gpt-image-2`, so ChatGPT Images is where this model is publicly usable by a
-    // person. OpenAI publish no playground URL for it on the model page, and the API reference is
-    // documentation rather than a place to paste a prompt.
-    generatorSite: { kind: 'PUBLIC', url: 'https://chatgpt.com/images' },
+      'OpenAI’s current image model as the Images API serves it, replacing the retired DALL·E 3. It returns an image and nothing else, so it gets the specification without the self-audit or the component map. Pasting into ChatGPT is a different path with an entry of its own, and that entry is ChatGPT 5.6 Sol above.',
+    // **Checked, and there is none.** Every endpoint the model page marks supported takes a request
+    // rather than a person, and OpenAI publish no playground in front of them — the API reference is
+    // documentation rather than a place to paste a prompt. ChatGPT Images is not this endpoint and
+    // cannot stand in for it: OpenAI's release notes give that surface *images with thinking*, where
+    // "When given more time to think, it can plan and refine image outputs before generating them"
+    // — on a paid plan, with a Thinking or Pro model selected. That is the hand-off
+    // `CHATGPT_5_6_SOL` exists to describe, and the opposite of what the flags below declare.
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    generatorSite: {
+      kind: 'NONE',
+      note: 'OpenAI run no page that generates through the Images API, and ChatGPT’s own image surface is the ChatGPT 5.6 Sol target rather than this one.',
+    },
     capabilities: {
       deliberates: false,
       emitsText: false,

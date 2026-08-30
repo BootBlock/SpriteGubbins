@@ -2317,7 +2317,8 @@ describe('generatePrompt — the self-audit, per target', () => {
   it('makes the prompt measurably shorter for a single-pass endpoint', () => {
     const singlePass = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
     const generic = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GENERIC' }));
-    // Compared on word count rather than characters, so the wrappers' own prefixes cannot mask it.
+    // Compared on word count rather than characters, so a wrapper's own prefix cannot mask it.
+    // Neither of these two carries one today, and the comparison is written not to depend on that.
     expect(countWords(singlePass)).toBeLessThan(countWords(generic));
   });
 
