@@ -1,7 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { PLACEHOLDER, SECRET_PATTERNS, isSuspect, scanAddedLines } from '../scripts/secretScan.ts';
+import {
+  PLACEHOLDER,
+  SECRET_PATTERNS,
+  binaryPaths,
+  isSuspect,
+  scanAddedLines,
+  scanBytes,
+} from '../scripts/secretScan.ts';
 
 /**
  * The secret scanner — the one automated check standing between a credential and a public,
@@ -19,6 +26,12 @@ import { PLACEHOLDER, SECRET_PATTERNS, isSuspect, scanAddedLines } from '../scri
  * — the statuses the runner asks git for, which omitted a rename — is in `secret-scan.ts`, and that
  * file has no seam this suite can reach, so it is verified by running the runner over a staged
  * rename instead.
+ *
+ * `scanBytes` and `binaryPaths` are #211, which is a false negative of a different kind: not a
+ * misjudged line but a file the scanner never saw a line of. A diff carries no `+` lines for a file
+ * git calls binary, so a token in a UTF-16LE file passed both modes while the identical token in a
+ * UTF-8 file was reported. Both halves of the answer are pure and are exercised below — what the
+ * bytes say, and which files the runner has to go and fetch.
  */
 
 /**
@@ -243,6 +256,114 @@ describe('scanAddedLines', () => {
       `const first = '${GITHUB_TOKEN}';`,
       `const second = '${OPENAI_KEY}';`,
     ]);
+  });
+});
+
+describe('scanBytes', () => {
+  /** `text` as the bytes of the named encoding, which is what the file on disk would hold. */
+  function bytes(text: string, encoding: 'ascii' | 'utf16le' | 'utf16be'): Uint8Array {
+    const little = Buffer.from(text, encoding === 'ascii' ? 'ascii' : 'utf16le');
+    if (encoding !== 'utf16be') return little;
+    const big = Buffer.alloc(little.length);
+    for (let i = 0; i < little.length; i += 2) {
+      big[i] = little[i + 1] ?? 0;
+      big[i + 1] = little[i] ?? 0;
+    }
+    return big;
+  }
+
+  it('reads a credential out of a UTF-16LE file, which is #211 as demonstrated', () => {
+    // The reported case. A UTF-16LE file carries a null byte after every ASCII character, so git
+    // calls it binary, empties the diff, and `scanAddedLines` is handed nothing to judge.
+    expect(scanBytes(bytes(`const t = '${GITHUB_TOKEN}';`, 'utf16le'))).toEqual([GITHUB_TOKEN]);
+  });
+
+  it('reads one out of a UTF-16BE file, which the other offset is for', () => {
+    // The same file with the byte pairs the other way round. Reading every second byte from offset
+    // 0 finds only the zeroes, so the walk reads from offset 1 as well.
+    expect(scanBytes(bytes(`const t = '${GITHUB_TOKEN}';`, 'utf16be'))).toEqual([GITHUB_TOKEN]);
+  });
+
+  it('reads one stored as plain bytes inside a genuinely binary file', () => {
+    // The general case behind the demonstrated one: any file git calls binary, whatever put the
+    // null byte there. A PNG text chunk, a `.pem` with a header, a SQLite page all look like this.
+    const file = Buffer.concat([
+      Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      Buffer.from(`const t = '${OPENAI_KEY}';`, 'ascii'),
+      Buffer.from([0x00, 0x00]),
+    ]);
+    expect(scanBytes(file)).toEqual([OPENAI_KEY]);
+  });
+
+  it('judges a value the same way the line walk does, so a placeholder is let through', () => {
+    // `suspectValues` is the one judgement both walks call. A second opinion about what a
+    // placeholder is — reachable only through a binary file — is what having two of them would be.
+    const placeholder = PLACEHOLDER_EXAMPLES['xxxx'] ?? '';
+    expect(scanBytes(bytes(`const t = '${placeholder}';`, 'utf16le'))).toEqual([]);
+  });
+
+  it('never matches across a run boundary', () => {
+    // Runs of printable bytes are judged one at a time rather than joined, so a value the file
+    // never actually held cannot be assembled out of two halves separated by a null byte. Each
+    // half is long enough to survive the minimum-run floor on its own.
+    const split = Buffer.concat([
+      Buffer.from(GITHUB_TOKEN.slice(0, 22), 'ascii'),
+      Buffer.from([0x00]),
+      Buffer.from(GITHUB_TOKEN.slice(22), 'ascii'),
+    ]);
+    expect(scanBytes(split)).toEqual([]);
+  });
+
+  it('reports each distinct value once, however many strides found it', () => {
+    // An ASCII run is read at every spacing, and a value repeated in a file is found again at each
+    // one. The runner prints what it is handed, so the de-duplication is here.
+    const twice = Buffer.from(`const a = '${OPENAI_KEY}'; const b = '${OPENAI_KEY}';`, 'ascii');
+    expect(scanBytes(twice)).toEqual([OPENAI_KEY]);
+  });
+
+  it('bounds what it reports, because the assignment pattern has no upper bound', () => {
+    // `[^"' ]{8,}` runs as far as the printable bytes do, and the runner writes the result into a
+    // CI log. A 400-character value comes back capped at 120.
+    const long = Buffer.from(`password:"${'k'.repeat(400)}"`, 'ascii');
+    const [reported] = scanBytes(long);
+    expect(reported).toHaveLength(120);
+  });
+
+  it('finds nothing in the repository’s own reference sprite sheet', () => {
+    // The false-positive half, on real compressed data rather than a fixture. Reading arbitrary
+    // bytes at a spacing of two invents text that was never in the file, so the claim that the
+    // fifteen-character floor makes that harmless is checked against 1.7 MB of PNG.
+    const sheet = readFileSync(resolve(process.cwd(), 'test_sprites/armour.png'));
+    expect(scanBytes(sheet)).toEqual([]);
+  });
+});
+
+describe('binaryPaths', () => {
+  it('names the binary files and no others', () => {
+    // git writes `-` for both counts when a file is binary — the same judgement that emptied the
+    // diff, which is why the runner asks for it rather than guessing at what "binary" means.
+    const numstat = ['3\t1\tsrc/App.tsx\0', '-\t-\tpublic/icon-192.png\0', '0\t7\tnotes.md\0'].join('');
+    expect(binaryPaths(numstat)).toEqual(['public/icon-192.png']);
+  });
+
+  it('takes the new path of a renamed binary file', () => {
+    // A rename or a copy writes an empty path field and follows it with the old path and the new
+    // one. Taking the old path would ask `cat-file` for a blob at a name that no longer exists —
+    // and a rename carrying an edit is exactly the case that retired the runner's status
+    // allow-list, so it cannot be dismissed as rare.
+    const numstat = '-\t-\t\0old/icon.ico\0new/icon.ico\0';
+    expect(binaryPaths(numstat)).toEqual(['new/icon.ico']);
+  });
+
+  it('reads a path carrying a space, a quote or a non-ASCII character', () => {
+    // `-z` is what makes this safe: the paths arrive raw. Without it git prints such a name in its
+    // own shell-quoted form, and the quotes would be read as part of the path.
+    const numstat = ['-\t-\ttest_sprites/a sheet.png\0', '-\t-\tpublic/wörk"s.ico\0'].join('');
+    expect(binaryPaths(numstat)).toEqual(['test_sprites/a sheet.png', 'public/wörk"s.ico']);
+  });
+
+  it('reads an empty listing as no files', () => {
+    expect(binaryPaths('')).toEqual([]);
   });
 });
 

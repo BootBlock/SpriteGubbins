@@ -37,12 +37,21 @@ concurrency:
 
 jobs:
   # This repository is PUBLIC, and a deploy is the moment a commit's contents become permanent, so
-  # this scans the WHOLE tree rather than a commit range. `.githooks/pre-commit` scans only the
-  # lines a commit adds — deliberately, so a value that has always lived in a committed fixture is
-  # not re-flagged forever — but it runs on one developer's machine and `git commit --no-verify`
-  # skips it entirely. Diffing against the empty tree makes every tracked line count as "added",
-  # so anything credential-shaped that ever slipped past the hook blocks the publish. Same pattern
-  # set as the hook (`scripts/secret-scan.ts`), so the two can never drift.
+  # this scans the WHOLE tree rather than a commit range. `.githooks/pre-commit` scans only what a
+  # commit adds — deliberately, so a value that has always lived in a committed fixture is not
+  # re-flagged forever — but it runs on one developer's machine and `git commit --no-verify` skips
+  # it entirely. Diffing against the empty tree makes every tracked line count as "added", and
+  # every tracked binary file count as newly added, so anything credential-shaped that ever slipped
+  # past the hook blocks the publish. Same scanner as the hook (`scripts/secret-scan.ts`), so the
+  # two can never drift.
+  #
+  # What "anything" does and does not cover, because a gate is worth only what it actually reads.
+  # A file git calls binary contributes no lines to a diff at all, so it is fetched whole and its
+  # bytes are scanned — at one-byte and two-byte spacings, which is what reads UTF-8, UTF-16LE and
+  # UTF-16BE alike (issue #211). That reaches any credential the file *stores*: a UTF-16 source
+  # file, a `.pem`, a SQLite page, a PNG text chunk. It does not reach one inside a compressed or
+  # encoded stream — a zip, a gzip, a PNG `IDAT` — because those bytes are not present until
+  # something decompresses them, and nothing here does.
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest

@@ -16,9 +16,24 @@
  * always lived in a committed fixture is not re-flagged on every unrelated change; only newly
  * introduced content is judged.
  *
- * This file is the runner alone: it resolves what to scan, asks git for the diff, and reports.
- * The judgement — which shapes count, and which values are placeholders — is `secretScan.ts`,
- * which is pure and is where `tests/secret-scan.test.ts` exercises it. TypeScript run by node
+ * **A file git calls binary contributes no lines to a diff, so it is fetched and scanned whole.**
+ * That is issue #211: git reports such a file as `Binary files a/… and b/… differ` with no `+`
+ * lines at all, so a credential in a UTF-16LE file — or in any file carrying a null byte in its
+ * first 8000 bytes, or marked `binary` by `.gitattributes` — passed both modes while the identical
+ * value in a UTF-8 file was reported. `--numstat` names those files, `git cat-file` fetches each
+ * one's blob, and `scanBytes` judges the bytes.
+ *
+ * Two consequences of that, both deliberate. There is no added-lines distinction available inside
+ * one of these, so the **whole** blob is judged: a binary file already carrying a credential-shaped
+ * value is re-reported on every commit that touches it, which is the safe direction for the one
+ * check standing between a secret and a public history. And it is the **blob** that is scanned
+ * rather than the working tree — `cat-file` applies no textconv and no smudge filter — because the
+ * blob is the thing that reaches that history.
+ *
+ * This file is the runner alone: it resolves what to scan, asks git for it, and reports. The
+ * judgement — which shapes count, which values are placeholders, which files git called binary, and
+ * what a run of bytes says — is `secretScan.ts`, which is pure and is where
+ * `tests/secret-scan.test.ts` exercises it. TypeScript run by node
  * directly, as `scripts/generate-icons.ts` is: node strips the types, and the file being in a
  * program is what type-checks the runner against the module it calls.
  *
@@ -29,7 +44,7 @@
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { scanAddedLines } from './secretScan.ts';
+import { binaryPaths, scanAddedLines, scanBytes } from './secretScan.ts';
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(scriptDir, '..');
@@ -41,6 +56,11 @@ function git(args: string[]): string {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
+}
+
+/** Run git in the repo root and return stdout as raw bytes, for a blob that is not text. */
+function gitBytes(args: string[]): Uint8Array {
+  return execFileSync('git', args, { cwd: repoRoot, maxBuffer: 256 * 1024 * 1024 });
 }
 
 /**
@@ -58,9 +78,14 @@ const args = process.argv.slice(2);
 const diffIndex = args.indexOf('--diff');
 
 let diff: string;
+let numstat: string;
+/** The revision a binary path's blob is read from — the index, or the tip being scanned. */
+let blobRev: string;
 let where: string;
 if (args.includes('--staged')) {
   diff = git(['diff', '--cached', '--no-color', '-U0', NOT_DELETED]);
+  numstat = git(['diff', '--cached', '--numstat', '-z', NOT_DELETED]);
+  blobRev = '';
   where = 'staged changes';
 } else if (diffIndex !== -1) {
   const baseRef = args[diffIndex + 1];
@@ -69,6 +94,8 @@ if (args.includes('--staged')) {
     process.exit(2);
   }
   diff = git(['diff', '--no-color', '-U0', NOT_DELETED, baseRef, 'HEAD']);
+  numstat = git(['diff', '--numstat', '-z', NOT_DELETED, baseRef, 'HEAD']);
+  blobRev = 'HEAD';
   where = `changes since ${baseRef}`;
 } else {
   console.error('secret-scan: usage — `--staged` or `--diff <baseRef>`.');
@@ -77,10 +104,21 @@ if (args.includes('--staged')) {
 
 const hits = scanAddedLines(diff);
 
+// The files the diff above could not carry. `blobRev` is empty in staged mode, so the spec is
+// `:path` — git's own name for the index copy — and `HEAD:path` otherwise.
+for (const path of binaryPaths(numstat)) {
+  for (const value of scanBytes(gitBytes(['cat-file', 'blob', `${blobRev}:${path}`]))) {
+    hits.push(`${path}: ${value}`);
+  }
+}
+
 if (hits.length > 0) {
-  console.error(`secret-scan: possible secret in ${where} — ${hits.length} suspect line(s).`);
+  console.error(
+    `secret-scan: possible secret in ${where} — ${hits.length} suspect entr${hits.length === 1 ? 'y' : 'ies'}.`,
+  );
   console.error('This is a PUBLIC repository; a secret is effectively permanent once pushed.');
-  console.error('Review each line and remove the secret or replace it with a placeholder:');
+  console.error('Each entry is an added line, or `<path>: <value>` read from a binary file.');
+  console.error('Review each one and remove the secret or replace it with a placeholder:');
   for (const hit of hits) console.error(`  ${hit.trim()}`);
   console.error('False positive? Use a placeholder (<YOUR_API_KEY>, sk-xxxx).');
   process.exit(1);

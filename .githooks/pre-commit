@@ -35,9 +35,10 @@ staged="$(git diff --cached --name-only --diff-filter=d)"
 
 # --- (a) Secret scan of the staged diff ------------------------------------------------
 # The credential patterns live in one place — `scripts/secretScan.ts`, which `secret-scan.ts` and
-# the CI job both call — so the hook and the publish gate cannot drift apart. The script scans only
-# ADDED lines, drops a match that is an obvious placeholder, and exits non-zero (printing the
-# suspect lines) if anything looks credential-shaped.
+# the CI job both call — so the hook and the publish gate cannot drift apart. The script scans the
+# ADDED lines of the staged diff, plus the whole staged blob of each file git calls binary (which
+# contributes no lines to a diff — issue #211). It drops a match that is an obvious placeholder,
+# and exits non-zero, printing what it found, if anything looks credential-shaped.
 if ! node scripts/secret-scan.ts --staged; then
   note 'In a genuine emergency this check can be skipped with `git commit --no-verify`.'
   fail=1
