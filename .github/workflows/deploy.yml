@@ -47,11 +47,12 @@ jobs:
   #
   # What "anything" does and does not cover, because a gate is worth only what it actually reads.
   # A file git calls binary contributes no lines to a diff at all, so it is fetched whole and its
-  # bytes are scanned — at one-byte and two-byte spacings, which is what reads UTF-8, UTF-16LE and
-  # UTF-16BE alike (issue #211). That reaches any credential the file *stores*: a UTF-16 source
-  # file, a `.pem`, a SQLite page, a PNG text chunk. It does not reach one inside a compressed or
-  # encoded stream — a zip, a gzip, a PNG `IDAT` — because those bytes are not present until
-  # something decompresses them, and nothing here does.
+  # bytes are scanned — at one-, two- and four-byte spacings, at every offset, which reads ASCII,
+  # UTF-8, UTF-16 and UTF-32 in either endianness (issue #211). That reaches a credential stored as
+  # one byte per ASCII character: a UTF-16 source file, a `.pem`, a SQLite page, a PNG text chunk.
+  # It does not reach one inside a compressed or encoded stream — a zip, a gzip, a PNG `IDAT` —
+  # because those bytes are not present until something decompresses them, and nothing here does;
+  # nor one in an encoding laid out some other way, such as EBCDIC.
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest

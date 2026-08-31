@@ -260,16 +260,25 @@ describe('scanAddedLines', () => {
 });
 
 describe('scanBytes', () => {
-  /** `text` as the bytes of the named encoding, which is what the file on disk would hold. */
-  function bytes(text: string, encoding: 'ascii' | 'utf16le' | 'utf16be'): Uint8Array {
-    const little = Buffer.from(text, encoding === 'ascii' ? 'ascii' : 'utf16le');
-    if (encoding !== 'utf16be') return little;
-    const big = Buffer.alloc(little.length);
-    for (let i = 0; i < little.length; i += 2) {
-      big[i] = little[i + 1] ?? 0;
-      big[i + 1] = little[i] ?? 0;
+  /**
+   * `text` as the bytes of the named encoding, which is what the file on disk would hold.
+   *
+   * Written out a character at a time rather than through `Buffer.from`, which knows `utf16le` and
+   * neither of the big-endian forms nor UTF-32 at all. Every fixture here is ASCII, so one code
+   * unit is one byte and the rest of each unit is zero — which is exactly the property `STRIDES`
+   * is built on, so the helper must not borrow it from the code under test.
+   */
+  function bytes(
+    text: string,
+    encoding: 'ascii' | 'utf16le' | 'utf16be' | 'utf32le' | 'utf32be',
+  ): Uint8Array {
+    const width = encoding === 'ascii' ? 1 : encoding.startsWith('utf16') ? 2 : 4;
+    const big = encoding.endsWith('be');
+    const out = Buffer.alloc(text.length * width);
+    for (let i = 0; i < text.length; i += 1) {
+      out[i * width + (big ? width - 1 : 0)] = text.charCodeAt(i);
     }
-    return big;
+    return out;
   }
 
   it('reads a credential out of a UTF-16LE file, which is #211 as demonstrated', () => {
@@ -282,6 +291,28 @@ describe('scanBytes', () => {
     // The same file with the byte pairs the other way round. Reading every second byte from offset
     // 0 finds only the zeroes, so the walk reads from offset 1 as well.
     expect(scanBytes(bytes(`const t = '${GITHUB_TOKEN}';`, 'utf16be'))).toEqual([GITHUB_TOKEN]);
+  });
+
+  it('reads one out of a UTF-32 file, in either endianness', () => {
+    // The gap the review pass found after #211 was closed with two-byte spacings alone. UTF-32
+    // spends four bytes on an ASCII character, so git calls such a file binary for the same reason
+    // it calls a UTF-16 one binary — with three null bytes per character rather than one — and the
+    // walk read straight past it. Covering every offset of every unit size is what closes it, and
+    // is why the two-byte and four-byte cases are one rule rather than four hand-written pairs.
+    for (const encoding of ['utf32le', 'utf32be'] as const) {
+      expect(scanBytes(bytes(`const t = '${GITHUB_TOKEN}';`, encoding)), encoding).toEqual([GITHUB_TOKEN]);
+    }
+  });
+
+  it('reads one out of a payload that does not begin where the file does', () => {
+    // Alignment is the other thing covering every offset buys. A UTF-16LE body after a three-byte
+    // header sits on the odd bytes, which is the offset UTF-16BE is read at — the walk does not
+    // need to know which of the two it is looking at, only that it tried both.
+    const shifted = Buffer.concat([
+      Buffer.from([0x00, 0x01, 0x02]),
+      bytes(`const t = '${GITHUB_TOKEN}';`, 'utf16le'),
+    ]);
+    expect(scanBytes(shifted)).toEqual([GITHUB_TOKEN]);
   });
 
   it('reads one stored as plain bytes inside a genuinely binary file', () => {

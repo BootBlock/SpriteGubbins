@@ -148,25 +148,33 @@ const MIN_RUN = 15;
 const REPORT_LIMIT = 120;
 
 /**
- * The byte spacings a run is read at: `[stride, offset]`.
- *
- * One byte at a time reads ASCII and UTF-8. Every second byte from offset 0 reads UTF-16LE, and
- * from offset 1 reads UTF-16BE — an ASCII character in either UTF-16 encoding is its own byte plus
- * a zero byte, so taking every second byte is what drops the zero. That covers the case #211
- * demonstrates without the walk detecting an encoding or carrying a decoder.
- *
- * It is deliberately a *superset* of the spacings that will ever be right. Reading ordinary bytes
- * at a spacing of two produces text that was never in the file, so in principle it could invent a
- * credential shape — but every shape here needs at least fifteen consecutive characters from a
- * narrow class, which random bytes reach about once in a million positions before the class
- * constraints are applied at all. A rare false positive is answered with a placeholder; a false
- * negative is a secret in a public history.
+ * How many bytes a Unicode encoding spends on one ASCII character: one for ASCII and UTF-8, two for
+ * UTF-16, four for UTF-32. In the wider two, the character is its own byte and one or three zero
+ * bytes, so reading every second or every fourth byte is what drops the zeroes — which is the whole
+ * of what the walk needs, and is why it carries no decoder and never has to detect an encoding.
  */
-const STRIDES: readonly (readonly [stride: number, offset: number])[] = [
-  [1, 0],
-  [2, 0],
-  [2, 1],
-];
+const UNICODE_UNIT_SIZES = [1, 2, 4] as const;
+
+/**
+ * The byte spacings a run is read at: `[stride, offset]`, every offset of every size above.
+ *
+ * Covering all of them is what makes endianness and alignment stop being questions the walk has to
+ * answer. UTF-16LE is read at `[2, 0]` and UTF-16BE at `[2, 1]`; UTF-32LE at `[4, 0]` and UTF-32BE
+ * at `[4, 3]`. So is a payload that does not begin where the file does — a UTF-16 body sitting
+ * after a three-byte header is read at `[2, 1]`, and nothing here is told about the header. Only
+ * `[2, 0]`, `[2, 1]` and `[1, 0]` were here when #211 was closed, which left a UTF-32 file — text
+ * git calls binary, for the same null bytes UTF-16 has three fewer of — passing the gate.
+ *
+ * The set is deliberately a *superset* of the spacings that will ever be right. Reading ordinary
+ * bytes at a spacing of two or four produces text that was never in the file, so in principle it
+ * could invent a credential shape — but every shape here needs at least fifteen consecutive
+ * characters from a narrow class, and a printable run that long turns up in random bytes about
+ * three times in ten million positions before the class constraints are applied at all. A rare
+ * false positive is answered with a placeholder; a false negative is a secret in a public history.
+ */
+const STRIDES: readonly (readonly [stride: number, offset: number])[] = UNICODE_UNIT_SIZES.flatMap((stride) =>
+  Array.from({ length: stride }, (_, offset) => [stride, offset] as const),
+);
 
 /**
  * The bytes from `start` (inclusive) to `end` (exclusive) at `stride`, as a string. Built in
@@ -201,12 +209,17 @@ function decodeRun(bytes: Uint8Array, start: number, end: number, stride: number
  * disagreeing about the bytes. A run boundary is a real boundary: runs are judged one at a time
  * rather than joined, so nothing matches across a gap the file never had.
  *
- * **What this does not reach, and cannot.** A credential inside a compressed or encoded stream — a
+ * **What this reaches, stated as the property rather than as a list.** It finds a value stored as
+ * one byte per ASCII character at a fixed spacing of one, two or four — which is ASCII, UTF-8,
+ * UTF-16 and UTF-32, either endianness, at any alignment. That covers a `.pem`, a SQLite file, a
+ * PNG text chunk, a UTF-16 source file, and the rest of what "text git happened to call binary"
+ * means in practice.
+ *
+ * **What it does not reach, and cannot.** A credential inside a compressed or encoded stream — a
  * zip, a gzip, a PNG `IDAT` — is not present as bytes at any spacing until something decompresses
- * it, and this does not. It closes every case where the value is *stored*, which is the whole of
- * the demonstrated defect and covers a `.pem`, a SQLite file, a PNG text chunk, and any file whose
- * content is text git happened to call binary. Anything wrapped in a codec still gets past, and
- * the comment in `.github/workflows/deploy.yml` says so rather than claiming the gate is total.
+ * it, and this does not. Nor is one in an encoding that is not an ASCII superset laid out this way,
+ * such as EBCDIC or the base64 runs of UTF-7. Both limits are named in
+ * `.github/workflows/deploy.yml` too, rather than letting the gate read as total.
  */
 export function scanBytes(bytes: Uint8Array): string[] {
   const found = new Set<string>();
