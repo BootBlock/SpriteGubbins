@@ -15,7 +15,8 @@ import { describe, expect, it } from 'vitest';
  * Both halves are machine-readable, so the drift does not have to be found in review. `CLAUDE.md`'s
  * `##` headings give the sections; each table row links the section it stands for, by the anchor
  * GitHub derives from that heading. This suite maps one onto the other and fails on a section with
- * no row, a row pointing at no section, and a section claimed by two rows.
+ * no row, a row carrying no anchor, a row pointing at no section, a section claimed by two rows,
+ * and a row saying "below" of a rule this page no longer reproduces.
  *
  * What it cannot judge is whether a row *describes* its section well, or whether a rule that
  * deserves repeating in full on the page has been. Those stay editorial.
@@ -69,9 +70,10 @@ interface RuleRow {
 }
 
 /**
- * The rows of the table under {@link TABLE_HEADING}, read from that heading to the next `##` one
- * so a second table added lower down the page is not swept in. Rows are taken positionally rather
- * than by a table parser: two columns, and the `| --- | --- |` separator discarded.
+ * The **data** rows of the table under {@link TABLE_HEADING}, read from that heading to the next
+ * `##` one so a second table added lower down the page is not swept in. Rows are taken
+ * positionally rather than by a table parser: two columns, and collection starts only after the
+ * `| --- | --- |` separator, so `| Rule | Where |` is not counted as a rule carrying no anchor.
  */
 function ruleRows(markdown: string): RuleRow[] {
   const lines = markdown.split('\n');
@@ -79,26 +81,49 @@ function ruleRows(markdown: string): RuleRow[] {
   if (start < 0) return [];
 
   const rows: RuleRow[] = [];
+  let inBody = false;
   for (const line of lines.slice(start + 1)) {
     if (line.startsWith('## ')) break;
     if (!line.startsWith('|')) continue;
     const cells = line.split('|').slice(1, -1);
     const rule = cells[0]?.trim() ?? '';
     const where = cells[1]?.trim() ?? '';
-    if (/^-+$/.test(rule)) continue; // the `| --- | --- |` separator
-    rows.push({ rule, where, anchors: [...where.matchAll(/CLAUDE\.md#([\w-]+)/g)].map((m) => m[1] ?? '') });
+    if (/^-+$/.test(rule)) {
+      inBody = true;
+      continue;
+    }
+    if (!inBody) continue; // the `| Rule | Where |` header, above the separator
+    rows.push({
+      rule,
+      where,
+      anchors: [...where.matchAll(/CLAUDE\.md#([\w-]+)/g)].map((m) => m[1] ?? ''),
+    });
   }
   return rows;
 }
 
 const rows = ruleRows(agentsText);
 
+/** The rows that also point at a section reproduced on the page, by its emoji. */
+const belowRows = rows.filter((row) => row.where.includes('below'));
+
 describe('AGENTS.md rule table', () => {
   it('finds both halves to compare', () => {
-    // Guards the suite itself: a renamed heading or a reformatted table would otherwise make every
-    // assertion below vacuous, and the drift this exists to catch would resume silently.
+    // Guards the suite itself. Every assertion below filters a list and expects nothing left, so
+    // each is satisfied by its input being empty — a renamed table heading, a heading walk that
+    // finds no sections, or a `Where` column that stops saying "below" would turn one green while
+    // the drift it exists to catch resumed silently. Each list this suite filters is named here.
     expect(claudeSections.length).toBeGreaterThan(0);
     expect(rows.length).toBeGreaterThan(0);
+    expect(belowRows.length).toBeGreaterThan(0);
+  });
+
+  it('gives every row an anchor to identify its section by', () => {
+    // A row is a promise that the rule is "one click away", and the anchor is the only part of it
+    // a reader or this suite can follow. A row carrying none describes a section nothing here can
+    // check, which is the state the whole table was in for the eight rules repeated on the page.
+    const unanchored = rows.filter((row) => row.anchors.length !== 1).map((row) => row.rule);
+    expect(unanchored, 'these rows link no single CLAUDE.md section').toEqual([]);
   });
 
   it('has a row for every section of CLAUDE.md', () => {
@@ -128,8 +153,7 @@ describe('AGENTS.md rule table', () => {
   it('only says "below" where the page really carries the rule', () => {
     // A row's emoji is its pointer to the section on this page. One naming a section that has been
     // removed sends a reader looking for a rule that is no longer there.
-    const orphaned = rows
-      .filter((row) => row.where.includes('below'))
+    const orphaned = belowRows
       .map((row) => ({ rule: row.rule, emoji: row.where.split(' ')[0] ?? '' }))
       .filter(({ emoji }) => !agentsSections.some((heading) => heading.startsWith(emoji)));
     expect(orphaned, 'these rows point at a section this page does not have').toEqual([]);
