@@ -17,18 +17,20 @@ interface SelectFieldProps<T extends string | number> {
    * description.
    *
    * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen: this is
-   * for the five selects whose options differ from each other in a way no single sentence can cover
-   * — the palette, the render style, the art style reference, the system profile and the target
-   * generator. Each of those has a table behind it holding a different account of what some of its
-   * options mean, and this is where the row for the chosen one is read out.
+   * for the six selects whose options differ from each other in a way no single sentence can cover
+   * — the palette, the render style, the art style reference, the system profile, the target
+   * generator and the sheet contents. Each of those has a table behind it holding a different
+   * account of what some of its options mean, and this is where the row for the chosen one is read
+   * out.
    *
-   * Optional because the other twenty-five have no such table, and twenty-five call sites passing a
-   * permanently-empty string would bury the five that do — while empty *is* still accepted from
-   * those five, as `CheckboxField`'s reason is, so a caller resolving the text out of its table can
-   * hand over what it found rather than choosing between a prop and no prop. Four of the five need
+   * Optional because the other twenty-four have no such table, and twenty-four call sites passing a
+   * permanently-empty string would bury the six that do — while empty *is* still accepted from
+   * those six, as `CheckboxField`'s reason is, so a caller resolving the text out of its table can
+   * hand over what it found rather than choosing between a prop and no prop. Four of the six need
    * that in earnest — their tables are keyed on something the select can hold and the table has no
-   * row for — and the target generator's is a guard over a miss its own call site records as
-   * unreachable.
+   * row for — and the other two never take it up: the target generator's is a guard over a miss its
+   * own call site records as unreachable, and the sheet contents' table has a row for every mode a
+   * category can offer, because both are keyed on the same closed union.
    */
   readonly description?: string;
   /**

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { defaultSubjectFor } from '../../constants/categories/index.ts';
-import { DEFAULT_OUTPUT_CONFIG } from '../../constants/output/index.ts';
+import { DEFAULT_OUTPUT_CONFIG, DIRECTIONAL_MODE_TOOLTIPS } from '../../constants/output/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { SheetFields } from './SheetFields.tsx';
@@ -19,6 +19,19 @@ import { SheetFields } from './SheetFields.tsx';
 const SHEET_CONTENTS = 'Sheet Contents';
 const INVENTORY_PART = 'Inventory Part';
 const RIG_SHEET = 'CUTOUT_RIG_SINGLE_DIRECTION';
+
+/**
+ * What a screen reader is told about the control, resolved through `aria-describedby` rather than
+ * read off the page.
+ *
+ * Asserting that the paragraph is *somewhere* leaves the wiring unchecked, and the wiring is the
+ * half that carries this to a reader who cannot see the two together — an attribute naming a stale
+ * node renders identically.
+ */
+function describedBy(control: HTMLElement): string {
+  const id = control.getAttribute('aria-describedby') ?? '';
+  return document.getElementById(id)?.textContent ?? '';
+}
 
 function chooseMode(mode: string): void {
   act(() => {
@@ -84,5 +97,21 @@ describe('SheetFields', () => {
     chooseMode(RIG_SHEET);
 
     expect(useOutputStore.getState().output.sheetIndex).toBe(0);
+  });
+
+  it('reads out the account of the sheet actually chosen', () => {
+    // The ⓘ used to carry the accounts of two of the four sheets, so a reader who had chosen a third
+    // was handed both to read past. What is rendered here is the row for the chosen mode alone, and it
+    // follows the control — which is why the assertion is on both halves of a change rather than on
+    // the opening state.
+    render(<SheetFields />);
+    const contents = screen.getByRole('combobox', { name: SHEET_CONTENTS });
+
+    expect(describedBy(contents)).toBe(DIRECTIONAL_MODE_TOOLTIPS.CORE_DIRECTIONAL_VARIANTS);
+
+    chooseMode(RIG_SHEET);
+
+    expect(describedBy(contents)).toBe(DIRECTIONAL_MODE_TOOLTIPS.CUTOUT_RIG_SINGLE_DIRECTION);
+    expect(screen.queryByText(DIRECTIONAL_MODE_TOOLTIPS.CORE_DIRECTIONAL_VARIANTS)).toBeNull();
   });
 });

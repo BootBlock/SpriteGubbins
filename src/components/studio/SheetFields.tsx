@@ -2,6 +2,7 @@ import { COMPONENT_BUDGET_RANGE } from '../../constants/componentBudget.ts';
 import {
   ASPECT_RATIO_CHOICES,
   BACKGROUND_KEY_CHOICES,
+  DIRECTIONAL_MODE_TOOLTIPS,
   directionalModeChoices,
   OUTPUT_TOOLTIPS,
   sheetChoices,
@@ -47,6 +48,12 @@ export function SheetFields() {
         tooltip={OUTPUT_TOOLTIPS.directionalMode}
         value={mode}
         choices={modeChoices}
+        // What the *chosen* sheet is, where the ⓘ above explains what the setting is. The four
+        // accounts differ from each other in a way no single sentence covers — one is a run list of
+        // one subject’s variants, one turns a subject, one draws rig pieces and settles Rig Mode,
+        // one tiles — which is the case this prop exists for, and the reason the ⓘ no longer recites
+        // two of them at whoever has chosen a third.
+        description={DIRECTIONAL_MODE_TOOLTIPS[mode]}
         onChange={(value) => {
           // The inventory part goes back to the first in the same write. Every mode has one, and a
           // stored index left pointing at a part the new mode does not have would put the select

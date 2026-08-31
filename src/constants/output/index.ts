@@ -22,6 +22,7 @@ export {
   SURFACE_DETAIL_CHOICES,
 } from './choices.ts';
 export { directionalModeChoices } from './directionalModeChoices.ts';
+export { DIRECTIONAL_MODE_TOOLTIPS } from './directionalModeTooltips.ts';
 export { directionSetChoices } from './directionSetChoices.ts';
 export { projectionChoices } from './projectionChoices.ts';
 export { rigModeChoices } from './rigModeChoices.ts';
