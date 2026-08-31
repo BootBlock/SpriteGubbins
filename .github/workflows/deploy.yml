@@ -42,7 +42,7 @@ jobs:
   # not re-flagged forever — but it runs on one developer's machine and `git commit --no-verify`
   # skips it entirely. Diffing against the empty tree makes every tracked line count as "added",
   # so anything credential-shaped that ever slipped past the hook blocks the publish. Same pattern
-  # set as the hook (`scripts/secret-scan.mjs`), so the two can never drift.
+  # set as the hook (`scripts/secret-scan.ts`), so the two can never drift.
   secret-scan:
     name: Secret scan
     runs-on: ubuntu-latest
@@ -52,7 +52,8 @@ jobs:
 
       - name: Set up Node
         # No `cache: npm` — this job installs nothing. The scanner has no dependencies and reads
-        # only git, so it needs neither the lockfile nor a recent Node.
+        # only git, so it needs no lockfile. It does need this Node: it is TypeScript run directly,
+        # so the runtime has to be one that strips types, which is why the version is still pinned.
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 25
@@ -61,7 +62,7 @@ jobs:
         # `git hash-object -t tree /dev/null` computes this repository's empty-tree id rather than
         # hard-coding 4b825dc…, which is correct only for a SHA-1 repository. Nothing is written:
         # without `-w` the id is calculated, not stored.
-        run: node scripts/secret-scan.mjs --diff "$(git hash-object -t tree /dev/null)"
+        run: node scripts/secret-scan.ts --diff "$(git hash-object -t tree /dev/null)"
 
   quality:
     name: Lint, format & type-check

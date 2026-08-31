@@ -33,7 +33,9 @@
      here: `src/`'s program carries no Node types, deliberately, so a `node:fs` import anywhere under
      it fails the type-check. Every other test lives beside its source under `src/`.
 
-     `scripts` is included as `*.ts` only: the standalone `.mjs` tools in there are run by node
-     directly and are not part of any TypeScript program. */
+     `scripts` is included as `*.ts` only, and everything in there now is: `generate-icons.ts` and
+     `secret-scan.ts` are run by node directly, which strips the types, and being in this program is
+     what type-checks each runner against the modules beside it. A `.js` or `.mjs` tool added there
+     would be in no program at all, which is what let `secret-scan` ship its #194 hole untested. */
   "include": ["vite.config.ts", "scripts/**/*.ts", "tests"]
 }
