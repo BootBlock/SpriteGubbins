@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
  * A tab's two-column split, read out of the classes that actually produce it.
  *
  * Two tabs now split, and both land a `SelectField` in a column — the studio's form and target
- * model, and the quantiser's grid, symmetry and frame-alignment panels. A native `<select>` sizes
+ * model, and four of the quantiser's control panels. A native `<select>` sizes
  * its selected option from its container and truncates rather than wrapping, so a column holding
  * one has a hard minimum — `SELECT_MIN_PX` in `selectLabelBudget.ts` — and a split that engages
  * below it creates the control that clips every label `select-option-labels.test.ts` approved. That

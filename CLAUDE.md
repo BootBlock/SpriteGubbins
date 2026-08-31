@@ -542,7 +542,7 @@ out of the class strings that produce them, and each tab's test asserts panel by
 control column is beside a sticky preview column for the reason the studio's form is, and
 `--breakpoint-quantise` lands at **1224px** rather than 1120px because the two tabs share out the
 width differently: both of the studio's columns hold a select, so an even split has to clear 442px
-twice, while all three of the quantiser's are on the left and the preview column holds none — which
+twice, while every one of the quantiser's is on the left and the preview column holds none — which
 is what pays for a 5/7 split, and why the tab spends the whole of `main`'s cap instead of holding
 itself to `max-w-6xl`. The derivation is shared rather than copied
 ([columnSplit.ts](tests/columnSplit.ts) parses the grid, page, span and panel classes; each tab's own

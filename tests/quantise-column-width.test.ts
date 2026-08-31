@@ -16,7 +16,9 @@ import { SELECT_MIN_PX } from './selectLabelBudget.ts';
  *
  * - the five-track control column still clears {@link SELECT_MIN_PX} at the width it appears, and so
  *   does the `max-w-*` wrapper each of its selects sits in — the wrapper is 6px from binding, and it
- *   is a construct the studio's panels do not have, so the shared derivation cannot see it;
+ *   is a construct the studio's panels do not have, so the shared derivation cannot see it. *Which*
+ *   selects those are is followed from the tab's own imports rather than listed, for the reason the
+ *   preview column's assertion is: a list written by hand goes stale in both directions at once;
  * - the seven-track preview column still holds no select, so the width it was given away is width
  *   nothing in it needs. A select added to the comparison toolbar would silently invalidate the
  *   breakpoint rather than fail anywhere, which is why that assertion follows the column's imports
@@ -28,14 +30,6 @@ import { SELECT_MIN_PX } from './selectLabelBudget.ts';
 const TAB_FILE = 'src/components/tabs/QuantiseTab.tsx';
 const PREVIEW_ROOT = 'src/components/quantise/ImageComparison.tsx';
 const SELECT_FIELD = 'src/components/common/SelectField.tsx';
-
-/** Every panel in the control column that holds a `SelectField`. */
-const SELECT_PANELS = [
-  'src/components/quantise/GridControls.tsx',
-  'src/components/quantise/DownscaleControls.tsx',
-  'src/components/quantise/SymmetryControls.tsx',
-  'src/components/quantise/FrameAlignmentControls.tsx',
-];
 
 /** The root font size every `rem` resolves against. */
 const ROOT_FONT_PX = 16;
@@ -50,20 +44,32 @@ const CONTAINER_WIDTHS_PX: Readonly<Record<string, number>> = {
   '2xl': 672,
 };
 
-const split = readColumnSplit({
-  tabFile: TAB_FILE,
-  // `DownscaleControls` is left out deliberately: it is not a panel, it renders inside
-  // `GridControls`, and the chrome that matters is the `<section>` around it.
-  panelFiles: [
-    'src/components/quantise/GridControls.tsx',
-    'src/components/quantise/SymmetryControls.tsx',
-    'src/components/quantise/FrameAlignmentControls.tsx',
-  ],
-  columns: 2,
-});
-
 function read(file: string): string {
   return readFileSync(resolve(process.cwd(), file), 'utf8');
+}
+
+/**
+ * Every file the tab can render, mapped to the file that renders it, through relative imports.
+ *
+ * The importer is recorded breadth-first, so a file's parent is the shallowest route to it — which
+ * is what lets a select nested inside another component be charged to the panel around it.
+ */
+function importGraph(entry: string): ReadonlyMap<string, string | undefined> {
+  const parents = new Map<string, string | undefined>([[entry, undefined]]);
+  const queue = [entry];
+  for (let index = 0; index < queue.length; index += 1) {
+    const file = queue[index];
+    if (file === undefined) continue;
+    for (const match of read(file).matchAll(/from '(\.[^']*\.tsx?)'/g)) {
+      const specifier = match[1];
+      if (specifier === undefined) continue;
+      const imported = relative(process.cwd(), resolve(dirname(file), specifier)).replaceAll('\\', '/');
+      if (parents.has(imported)) continue;
+      parents.set(imported, file);
+      queue.push(imported);
+    }
+  }
+  return parents;
 }
 
 /**
@@ -73,20 +79,52 @@ function read(file: string): string {
  * in the column today but whether *anything* reachable from it puts a native `<select>` in there.
  */
 function reachableFrom(entry: string): readonly string[] {
-  const seen = new Set<string>();
-  const queue = [entry];
-  while (queue.length > 0) {
-    const file = queue.pop();
-    if (file === undefined || seen.has(file)) continue;
-    seen.add(file);
-    for (const match of read(file).matchAll(/from '(\.[^']*\.tsx?)'/g)) {
-      const specifier = match[1];
-      if (specifier === undefined) continue;
-      queue.push(relative(process.cwd(), resolve(dirname(file), specifier)).replaceAll('\\', '/'));
-    }
-  }
-  return [...seen];
+  return [...importGraph(entry).keys()];
 }
+
+const TAB_GRAPH = importGraph(TAB_FILE);
+
+/**
+ * Every file the tab reaches that renders a `SelectField`, discovered rather than listed.
+ *
+ * A hand-kept list is the wrong instrument here for the reason it is wrong for the preview column,
+ * and this file already had the proof: the list named `GridControls`, which holds no select at all,
+ * and omitted `AntiAliasControls`, which holds two — so a third of the tab's selects had their
+ * wrapper priced by nothing, and one of the four iterations ran its body zero times. A panel added
+ * to the column now arrives checked, and one that loses its last select stops being iterated.
+ *
+ * The walk starts at the tab rather than at the control column, which is conservative in the only
+ * direction that matters: it cannot miss a control-column panel, and a select that turned up in the
+ * preview column would be priced here as well as failing the assertion written for it below.
+ */
+const SELECT_FILES = [...TAB_GRAPH.keys()].filter((file) => /<SelectField\b/.test(read(file))).sort();
+
+/**
+ * The panel a select's chrome is charged to: its own file, or the nearest importer holding a
+ * `<section>`.
+ *
+ * `DownscaleControls` is why this climbs rather than taking the file at face value — it is not a
+ * panel, it renders inside `GridControls`, and the chrome that matters is the `<section>` around it.
+ * A select in no panel at all throws, because `readColumnSplit` would then measure a column whose
+ * chrome nothing had accounted for.
+ */
+function panelOf(file: string): string {
+  let current: string | undefined = file;
+  while (current !== undefined) {
+    if (/<section className="/.test(read(current))) return current;
+    current = TAB_GRAPH.get(current);
+  }
+  throw new Error(`${file} renders a SelectField inside no panel whose chrome this can measure`);
+}
+
+/** The panels those selects are charged to, each measured on its own by `readColumnSplit`. */
+const SELECT_PANEL_FILES = [...new Set(SELECT_FILES.map(panelOf))].sort();
+
+const split = readColumnSplit({
+  tabFile: TAB_FILE,
+  panelFiles: SELECT_PANEL_FILES,
+  columns: 2,
+});
 
 describe('quantise column width', () => {
   /** The page padding the derivation reads is the `md:` one, which only holds if `md` is in force. */
@@ -113,7 +151,7 @@ describe('quantise column width', () => {
    * `max-w-sm` would truncate every budgeted label while every other test here stayed green.
    */
   it('gives a select its full budget inside its own wrapper', () => {
-    for (const file of SELECT_PANELS) {
+    for (const file of SELECT_FILES) {
       const source = read(file);
       const wrappers = [...source.matchAll(/className="([^"]*)">\s*<SelectField/g)].map((m) => m[1] ?? '');
       const selects = [...source.matchAll(/<SelectField\b/g)].length;
@@ -132,6 +170,20 @@ describe('quantise column width', () => {
         );
       }
     }
+  });
+
+  /**
+   * A discovery that found nothing would pass every assertion above it, so it is checked against
+   * both shapes it has to find: a panel rendering a select directly, and one rendering it through
+   * another component. `AntiAliasControls` is the first — it is also the panel the hand-kept list
+   * this replaced left out. `DownscaleControls` is the second, two imports deep, and its chrome is
+   * charged to the `GridControls` section around it rather than to a file that has none.
+   */
+  it('discovers the panels holding a select rather than naming them', () => {
+    expect(SELECT_FILES).toContain('src/components/quantise/AntiAliasControls.tsx');
+    expect(SELECT_FILES).toContain('src/components/quantise/DownscaleControls.tsx');
+    expect(SELECT_PANEL_FILES).toContain('src/components/quantise/GridControls.tsx');
+    expect(SELECT_PANEL_FILES).not.toContain('src/components/quantise/DownscaleControls.tsx');
   });
 
   /** The asymmetry the 5/7 split is spending: the wide column is the one with nothing to truncate. */
