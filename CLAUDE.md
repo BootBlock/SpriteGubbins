@@ -867,7 +867,14 @@ Three details of `ControlTooltip` are worth knowing before using it:
   wrapped control is the thing the press was *meant* for, so the guidance stands aside rather than
   sitting under the pointer describing a button already used.
 - **It cannot be reached by touch**, because a tap on a control runs the control — the second reason
-  a value keeps its ⓘ. The compensation is `aria-describedby`, which `ControlTooltip` puts on the
+  a value keeps its ⓘ. **That has to be enforced rather than assumed**, and for a long time it was
+  not: the wrapper tracked its hover with `onMouseEnter`, a browser answers a tap with the mouse
+  events an older page would have expected, and so the press dismissed the guidance and the
+  synthesised hover put it back 350ms later — over the control the tap had just used, on every one of
+  the fifty controls this wraps. A mouse event carries no `pointerType` and cannot tell the two
+  apart, so the hover is tracked with `onPointerEnter` / `onPointerLeave` and a `'touch'` pointer is
+  declined at both ends. A **pen** is not, because a digitizer hovers before it touches. The
+  compensation for the finger is `aria-describedby`, which `ControlTooltip` puts on the
   control while the card is up, so a screen reader announces the guidance on focus however the
   pointer situation stands. A **`disabled`** control is thinner still: it dispatches no pointer
   events and is out of the tab order, so the wrapper takes the pointer events off it to recover the

@@ -33,6 +33,23 @@ function renderControl() {
   return { control, wrapper: control.parentElement as HTMLElement };
 }
 
+/**
+ * The pointer arriving on the wrapper, as a stated kind of pointer.
+ *
+ * `fireEvent.mouseEnter` cannot express what this component now turns on: a mouse event carries no
+ * `pointerType`, which is exactly why the wrapper stopped listening for one. Every hover in this
+ * suite therefore says which pointer it is, and the mouse is the default because it is the route
+ * every other rule here is about.
+ */
+function pointerEnter(wrapper: HTMLElement, pointerType = 'mouse') {
+  fireEvent.pointerEnter(wrapper, { pointerType, isPrimary: true });
+}
+
+/** The pointer leaving it again, told apart the same way. */
+function pointerLeave(wrapper: HTMLElement, pointerType = 'mouse') {
+  fireEvent.pointerLeave(wrapper, { pointerType, isPrimary: true });
+}
+
 /** The pointer resting long enough that the guidance is asked for rather than merely crossed. */
 async function waitOutGracePeriod() {
   await act(async () => {
@@ -69,7 +86,7 @@ describe('ControlTooltip', () => {
   it('says nothing while the pointer is merely crossing the control', async () => {
     const { wrapper } = renderControl();
 
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
 
     // The reported defect. A toolbar is a row of controls and the one being reached for is usually
     // the far side of two others, so revealing on contact answered a journey with a paragraph —
@@ -89,12 +106,63 @@ describe('ControlTooltip', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent(GUIDANCE);
   });
 
+  it('declines a finger’s arrival rather than leaving the press to call the reveal off', async () => {
+    const { wrapper } = renderControl();
+
+    // No press in this sequence, deliberately. A touch delivers `pointerenter` *before*
+    // `pointerdown`, so the dismissal would cancel a scheduled reveal and the fix would look
+    // complete — with the component still unable to tell a finger from a mouse. What is asserted
+    // here is the knowledge, not the ordering that happens to cover for its absence.
+    pointerEnter(wrapper, 'touch');
+    await waitOutGracePeriod();
+
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
+  it('says nothing after a tap, though the browser answers one with a hover of its own', async () => {
+    const { control, wrapper } = renderControl();
+
+    // A whole tap, in the order a browser delivers it: the finger arrives, the press lands, the
+    // finger lifts and goes — and then the compatibility mouse events, which carry no
+    // `pointerType` and which this wrapper used to answer as an ordinary hover.
+    pointerEnter(wrapper, 'touch');
+    fireEvent.pointerDown(control, { pointerType: 'touch', isPrimary: true });
+    fireEvent.pointerUp(control, { pointerType: 'touch', isPrimary: true });
+    pointerLeave(wrapper, 'touch');
+    fireEvent.mouseEnter(wrapper);
+
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+    // The reported defect: around fifty controls take this treatment, so a card arriving one grace
+    // period after every press is a paragraph of prose following every press in the app — over the
+    // control the tap has just used, which is what the press-dismisses rule exists to prevent.
+    await waitOutGracePeriod();
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2_000);
+    });
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+
+  it('serves a pen like a mouse, because a digitizer hovers before it touches', async () => {
+    const { wrapper } = renderControl();
+
+    // Which pins the guard to touch alone. A pen reports its own `pointerType`, and a stylus held
+    // above the glass is a genuine hover with a genuine cursor — so declining anything that is not
+    // a mouse would take the guidance away from a route that can still use it.
+    pointerEnter(wrapper, 'pen');
+    await waitOutGracePeriod();
+
+    expect(screen.getByRole('tooltip')).toHaveTextContent(GUIDANCE);
+  });
+
   it('reveals the guidance on the control itself, with no ⓘ to find', async () => {
     const { wrapper } = renderControl();
 
     // The whole point of this component: there is exactly one thing on screen, and resting on it is
     // what asks for the explanation. A second glyph beside every button is what it exists to avoid.
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
 
     expect(screen.getByRole('tooltip')).toHaveTextContent(GUIDANCE);
@@ -104,8 +172,8 @@ describe('ControlTooltip', () => {
   it('never shows a card the pointer has already left', async () => {
     const { wrapper } = renderControl();
 
-    fireEvent.mouseEnter(wrapper);
-    fireEvent.mouseLeave(wrapper);
+    pointerEnter(wrapper);
+    pointerLeave(wrapper);
     await waitOutGracePeriod();
 
     // A wait that outlives the hover that started it is worse than no wait at all: the card arrives
@@ -116,7 +184,7 @@ describe('ControlTooltip', () => {
   it('does not arrive late over a control pressed during the wait', async () => {
     const { control, wrapper } = renderControl();
 
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     fireEvent.pointerDown(control, { pointerType: 'mouse', isPrimary: true, button: 0 });
     await waitOutGracePeriod();
 
@@ -130,12 +198,12 @@ describe('ControlTooltip', () => {
   it('restarts the wait rather than running two when the pointer returns mid-wait', async () => {
     const { wrapper } = renderControl();
 
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(TOOLTIP_HOVER_DELAY_MS - 50);
     });
-    fireEvent.mouseLeave(wrapper);
-    fireEvent.mouseEnter(wrapper);
+    pointerLeave(wrapper);
+    pointerEnter(wrapper);
 
     // The second arrival buys the full grace period again; the first one's remaining 50ms is gone
     // with the hover that started it.
@@ -150,7 +218,7 @@ describe('ControlTooltip', () => {
 
   it('stands aside once the control has been pressed', async () => {
     const { control, wrapper } = renderControl();
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
     expect(screen.getByRole('tooltip')).toBeInTheDocument();
 
@@ -164,13 +232,13 @@ describe('ControlTooltip', () => {
   it('comes back on a fresh hover after a press, rather than being spent', async () => {
     const { control, wrapper } = renderControl();
 
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
     fireEvent.pointerDown(control, { pointerType: 'mouse', isPrimary: true, button: 0 });
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 
-    fireEvent.mouseLeave(wrapper);
-    fireEvent.mouseEnter(wrapper);
+    pointerLeave(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
 
     // The dismissal is a latch. Without something to clear it, one press would silence a control's
@@ -181,7 +249,7 @@ describe('ControlTooltip', () => {
   it('describes the control while showing, so a screen reader announces it with the name', async () => {
     const { control, wrapper } = renderControl();
 
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
 
     // A hover-triggered card is one a screen-reader user can never trigger, so the description is
@@ -189,13 +257,13 @@ describe('ControlTooltip', () => {
     expect(control).toHaveAttribute('aria-describedby', screen.getByRole('tooltip').id);
     expect(control).toHaveAccessibleDescription(`Copy Prompt ${GUIDANCE}`);
 
-    fireEvent.mouseLeave(wrapper);
+    pointerLeave(wrapper);
     expect(control).not.toHaveAttribute('aria-describedby');
   });
 
   it('keeps the card inside the wrapper the hover is tracked on', async () => {
     const { control, wrapper } = renderControl();
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
 
     // WCAG 1.4.13 *Hoverable*, as far as this environment can state it — happy-dom performs no
@@ -210,7 +278,7 @@ describe('ControlTooltip', () => {
   it('floats the card in the top layer rather than inside the panel it belongs to', async () => {
     const { wrapper } = renderControl();
 
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
 
     // Guidance half-covered by the next panel down is guidance nobody can read, and that is not a
@@ -220,7 +288,7 @@ describe('ControlTooltip', () => {
 
   it('stays until it is dismissed, rather than timing out', async () => {
     const { wrapper } = renderControl();
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
 
     await act(async () => {
@@ -291,7 +359,7 @@ describe('ControlTooltip', () => {
     // the card already on screen.
     await user.tab();
     expect(screen.getByRole('tooltip')).toBeInTheDocument();
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
@@ -317,7 +385,7 @@ describe('ControlTooltip', () => {
     const elsewhere = screen.getByRole('button', { name: 'Somewhere else' });
     const wrapper = screen.getByRole('button', { name: 'Copy Prompt' }).parentElement as HTMLElement;
 
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     await waitOutGracePeriod();
     elsewhere.focus();
     expect(screen.getByRole('tooltip')).toBeInTheDocument();
@@ -335,15 +403,15 @@ describe('ControlTooltip', () => {
     // left. Treating that as the user asking again put the guidance back one hover delay after
     // Escape, with nothing having moved.
     const { wrapper } = renderControl();
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     act(() => {
       vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
     });
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 
-    // No `mouseLeave` in between: the pointer is where it always was.
-    fireEvent.mouseEnter(wrapper);
+    // No `pointerLeave` in between: the pointer is where it always was.
+    pointerEnter(wrapper);
     act(() => {
       vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
     });
@@ -354,14 +422,14 @@ describe('ControlTooltip', () => {
   it('comes back when the pointer genuinely leaves and returns after a dismissal', () => {
     // The other half of the rule above, and what keeps Escape from being permanent.
     const { wrapper } = renderControl();
-    fireEvent.mouseEnter(wrapper);
+    pointerEnter(wrapper);
     act(() => {
       vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
     });
     fireEvent.keyDown(document, { key: 'Escape' });
 
-    fireEvent.mouseLeave(wrapper);
-    fireEvent.mouseEnter(wrapper);
+    pointerLeave(wrapper);
+    pointerEnter(wrapper);
     act(() => {
       vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
     });
@@ -384,7 +452,7 @@ describe('ControlTooltip', () => {
       { container: view.document.body },
     );
     const inside = within(view.document.body);
-    fireEvent.mouseEnter(inside.getByRole('button', { name: 'Copy Prompt' }).parentElement as HTMLElement);
+    pointerEnter(inside.getByRole('button', { name: 'Copy Prompt' }).parentElement as HTMLElement);
     act(() => {
       vi.advanceTimersByTime(TOOLTIP_HOVER_DELAY_MS);
     });

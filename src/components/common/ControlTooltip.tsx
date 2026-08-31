@@ -76,6 +76,12 @@ interface ControlTooltipProps {
  * compensation is `aria-describedby`, which a screen reader announces on focus however the pointer
  * situation stands.
  *
+ * **So a touch is declined rather than merely unserved**, which is what the hover tracking below
+ * spends its `pointerType` on. A browser answers a tap with the mouse events an older page would
+ * have expected, and this wrapper used to hear them: the press dismissed the guidance and the
+ * synthesised hover put it back a grace period later, over the control the tap had just used. Touch
+ * was getting *every* card, unasked, rather than none.
+ *
  * **A `disabled` control dispatches no pointer events and cannot be focused**, so a card hung off
  * one would be unreachable by either route — and seven of these wrap a control that can be disabled,
  * two of which explain the very condition that disables them. The wrapper therefore takes the
@@ -102,10 +108,23 @@ export function ControlTooltip({
       //
       // `focus`/`blur` here rather than on the control for the same reason they are events that
       // bubble in React: the control inside is what actually takes focus, and this hears it.
-      onMouseEnter={() => {
+      // **Pointer events rather than mouse events**, because a `mouseenter` carries no
+      // `pointerType` — so a wrapper listening for one cannot tell a mouse from the compatibility
+      // events a browser synthesises after a tap, and used to answer both. The docblock above has
+      // what that cost. **A touch is not a hover**, and both ends say so: declining the arrival is
+      // what stops the card, and declining the departure is what keeps a finger from clearing hover
+      // state a mouse is genuinely holding on a device that has both. A pen stays on the mouse's
+      // side of it, because a digitizer hovers before it touches.
+      //
+      // Letting `pointerdown` cancel the pending reveal would look like it worked — `pointerenter`
+      // precedes the press for a touch, where the synthesised `mouseover` followed it — but that is
+      // the tap's own ordering standing in for the component knowing what a finger is.
+      onPointerEnter={(event) => {
+        if (event.pointerType === 'touch') return;
         guidance.reveal('hover');
       }}
-      onMouseLeave={() => {
+      onPointerLeave={(event) => {
+        if (event.pointerType === 'touch') return;
         guidance.release('hover');
       }}
       onFocus={(event) => {
