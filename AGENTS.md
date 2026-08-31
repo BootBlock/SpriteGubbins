@@ -11,28 +11,36 @@ inventory — is [docs/todo/sprite-gubbins-spec.md](docs/todo/sprite-gubbins-spe
 ## Mandatory rules — the complete list
 
 Every rule below is mandatory. The ones marked with an emoji appear on this page; the rest are one
-click away and are **equally binding** — "I only read AGENTS.md" is not a defence.
+click away and are **equally binding** — "I only read AGENTS.md" is not a defence. Every `##`
+section of [CLAUDE.md](CLAUDE.md) has a row here, and
+[tests/agents-rule-table.test.ts](tests/agents-rule-table.test.ts) fails the build when one does
+not — which is why each row links the section it stands for.
 
 | Rule | Where |
 | --- | --- |
-| All work happens in a git worktree | 🌿 below |
-| Work is not done until it has landed — commit, merge, remove the tree | 🏁 below |
-| No secrets in the repository | 🔒 below |
-| Public-repository hygiene | 🌐 below |
-| Attribution on GitHub issues and PRs you write | ✍️ below |
-| Do the whole fix, never the cheap one | 🎯 below |
+| All work happens in a git worktree | 🌿 below, [CLAUDE.md](CLAUDE.md#all-work-happens-in-a-git-worktree-mandatory) |
+| Work is not done until it has landed — commit, merge, remove the tree | 🏁 below, [CLAUDE.md](CLAUDE.md#work-is-not-done-until-it-has-landed-mandatory) |
+| No secrets in the repository | 🔒 below, [CLAUDE.md](CLAUDE.md#no-secrets-in-the-repository-mandatory) |
+| Public-repository hygiene | 🌐 below, [CLAUDE.md](CLAUDE.md#public-repository-hygiene-mandatory) |
+| Attribution on GitHub issues and PRs you write | ✍️ below, [CLAUDE.md](CLAUDE.md#agent-attribution-on-github-content-mandatory) |
+| Do the whole fix, never the cheap one | 🎯 below, [CLAUDE.md](CLAUDE.md#do-the-whole-fix-never-the-cheap-one-mandatory) |
 | Reconcile an issue's labels whenever you touch it | [CLAUDE.md](CLAUDE.md#reconcile-an-issues-labels-whenever-you-touch-it-mandatory) |
 | Close the issue you actioned; a comment on a closed one does not reopen it | [CLAUDE.md](CLAUDE.md#close-the-issue-you-actioned-mandatory) |
-| Design tokens, not hard-coded colour/motion values | [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists) |
-| No backwards compatibility, shims or data migrations before `1.0.0` | 🚧 below |
+| Design tokens, not hard-coded colour/motion values | ⚠️ below, [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists) |
+| Every control ships with guidance — `Tooltip` for a value, `ControlTooltip` for an action | [CLAUDE.md](CLAUDE.md#every-control-carries-guidance-and-there-are-two-ways-to-show-it) |
+| Prompt text is a contract — where the words live, and what may never be stated twice | [CLAUDE.md](CLAUDE.md#prompt-text-is-the-product-and-it-is-written-to-rules) |
+| No backwards compatibility, shims or data migrations before `1.0.0` | 🚧 below, [CLAUDE.md](CLAUDE.md#no-backwards-compatibility-before-100-mandatory) |
 | The structural laws — <150 lines, one thing per file, SoC by directory, YAGNI, DRY, no stubs | [CLAUDE.md](CLAUDE.md#architecture-the-specs-structural-laws) |
 | The banned patterns, and which ones the build catches | [CLAUDE.md](CLAUDE.md#banned-patterns-and-which-ones-the-build-catches) |
 | Cross-origin isolation — what it is for, and what actually depends on it | [CLAUDE.md](CLAUDE.md#cross-origin-isolation-and-what-actually-depends-on-it) |
 | Accessibility wiring — roles, labels, live regions, focus | [CLAUDE.md](CLAUDE.md#accessibility-is-not-optional) |
+| Anything needing a real sprite sheet takes one of the eight in `test_sprites/` | [CLAUDE.md](CLAUDE.md#the-test-sprite-sheets-live-in-test_sprites-mandatory) |
 | Plan docs under `docs/todo/` carry a status banner | [CLAUDE.md](CLAUDE.md#plan-docs-carry-a-status-docstodo) |
 | How to verify a change before calling it done | [CLAUDE.md](CLAUDE.md#verifying-a-change) |
+| Multi-line commit messages, PR bodies and comments go through a file | [CLAUDE.md](CLAUDE.md#multi-line-text-goes-through-a-file-not-inline-quoting) |
 
-**Adding a rule to CLAUDE.md? It belongs in that table too.**
+**Adding a section to CLAUDE.md? It belongs in that table too** — and the test says so before a
+reviewer has to.
 
 ## 🌿 All work happens in a git worktree (mandatory)
 
@@ -195,10 +203,13 @@ in [CLAUDE.md](CLAUDE.md#do-the-whole-fix-never-the-cheap-one-mandatory).
 
 ## ⚠️ Use design tokens, not hard-coded values
 
-Every colour and motion value in the UI must come from a **design token** in the `@theme` block
-of [src/index.css](src/index.css) — never a raw hex, `rgb()`/`oklch()` literal, or an ad-hoc
-Tailwind palette class. Unknown Tailwind utilities **fail silently**, so verify a new one
-actually emits CSS. Full table and the two documented exceptions in
+Every colour and motion value in the UI must come from a **design token** in one of the two
+`@theme` blocks of [src/index.css](src/index.css) — never a raw hex, `rgb()`/`oklch()` literal, or
+an ad-hoc Tailwind palette class. The first block is `@theme static` and holds the ten-stop hue
+wheel, which is reached only through `var()`: a plain `@theme` would let Tailwind tree-shake every
+stop away, and each surface painted in the view's colour would silently disappear. Unknown Tailwind
+utilities **fail silently** too, so verify a new one actually emits CSS. Full table and the four
+documented exemptions in
 [CLAUDE.md](CLAUDE.md#design-tokens-are-mandatory-where-one-exists).
 
 ## 🚧 No backwards compatibility before `1.0.0` (mandatory)
