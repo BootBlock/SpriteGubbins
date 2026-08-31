@@ -43,13 +43,24 @@ function git(args: string[]): string {
   });
 }
 
+/**
+ * Every status but a deletion, which is the only one that cannot introduce new content.
+ *
+ * Stated as an exclusion rather than as the allow-list `ACM` it used to be, because an allow-list
+ * silently omits whatever is not in it — and it had already silently omitted `R`. Rename detection
+ * is on by default, so a `git mv` and an edit in one commit made the whole file a rename the hook
+ * never looked at, whatever was added to it. Lower case is git's own spelling for "leave this
+ * status out".
+ */
+const NOT_DELETED = '--diff-filter=d';
+
 const args = process.argv.slice(2);
 const diffIndex = args.indexOf('--diff');
 
 let diff: string;
 let where: string;
 if (args.includes('--staged')) {
-  diff = git(['diff', '--cached', '--no-color', '-U0', '--diff-filter=ACM']);
+  diff = git(['diff', '--cached', '--no-color', '-U0', NOT_DELETED]);
   where = 'staged changes';
 } else if (diffIndex !== -1) {
   const baseRef = args[diffIndex + 1];
@@ -57,7 +68,7 @@ if (args.includes('--staged')) {
     console.error('secret-scan: --diff requires a base ref, e.g. `--diff origin/main`.');
     process.exit(2);
   }
-  diff = git(['diff', '--no-color', '-U0', '--diff-filter=ACM', baseRef, 'HEAD']);
+  diff = git(['diff', '--no-color', '-U0', NOT_DELETED, baseRef, 'HEAD']);
   where = `changes since ${baseRef}`;
 } else {
   console.error('secret-scan: usage — `--staged` or `--diff <baseRef>`.');

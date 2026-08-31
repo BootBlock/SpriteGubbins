@@ -15,9 +15,19 @@
  * `Record<string, string>` or inside an `<input …/>` was reported as clean. That is issue #194, and
  * the angle-bracket alternative is only the widest instance of it: the word `example` in a comment
  * at the end of a line exempted the same way. Testing the span a `SECRET_PATTERNS` entry actually
- * matched closes the general case, and it is why `PLACEHOLDER` no longer needs `<[^>]*>` (the value
- * `<YOUR_API_KEY>` still carries `YOUR_`) or `noreply` (which was there for the author's
- * `users.noreply.github.com` address, a line that matches no credential shape at all).
+ * matched closes the general case, and it is what retires two of the alternatives — for two
+ * different reasons. `noreply` was there for the author's `users.noreply.github.com` address, a
+ * line that matches no credential shape at all, so once the span is the unit it can never fire.
+ * `<[^>]*>` *can* fire inside a span, and goes on redundancy and breadth instead: `<YOUR_API_KEY>`
+ * is already caught by `your[_-]`, and every other angle-bracket pair it exempts is one the scanner
+ * should never have been asked about.
+ *
+ * **A line is added content because of where it sits in the diff, not because of what it starts
+ * with.** The header skip used to be a `startsWith('+++')` test, which also swallowed an added line
+ * whose own first two characters are `++` — so a credential on such a line went unreported in both
+ * modes, and a page quoting a unified diff is exactly where one would sit. Tightening the prefix to
+ * `'+++ '` does not fix it either, because content opening `++ ` produces the same thing. The walk
+ * tracks whether it is inside a hunk instead, which is a property of the format rather than a guess.
  */
 
 /**
@@ -32,9 +42,9 @@ const KV_PATTERN =
  * carry a placeholder in one position and a real value in another, so every match on a line is
  * judged rather than only the first. `String.prototype.matchAll` clones the expression before
  * iterating, so these are safe to share across calls — no `lastIndex` survives from one line to the
- * next.
+ * next. Nothing here may call `.exec` or `.test` on one of them, which would.
  */
-const SECRET_PATTERNS: readonly RegExp[] = [
+export const SECRET_PATTERNS: readonly RegExp[] = [
   /-----BEGIN[ A-Z]*PRIVATE KEY-----/gi,
   /AKIA[0-9A-Z]{16}/gi,
   /sk-[A-Za-z0-9]{20,}/gi,
@@ -52,41 +62,49 @@ const SECRET_PATTERNS: readonly RegExp[] = [
  * thing it is ever tested against. `example` earns its place on AWS's own documented key
  * (`AKIAIOSFODNN7EXAMPLE`); `xxxx` and `your[_-]` cover the two placeholders CLAUDE.md tells a
  * contributor to reach for (`sk-xxxx`, `<YOUR_API_KEY>`). An alternative that can only ever match
- * elsewhere on the line is not a placeholder rule — it is a hole, which is what the two removed in
- * #194 had become.
+ * elsewhere on the line is not a placeholder rule — it is a hole, and `tests/secret-scan.test.ts`
+ * fails on one rather than leaving the next addition to be judged by eye.
  */
 export const PLACEHOLDER = /xxxx|example|placeholder|your[_-]|changeme|redacted|dummy/i;
 
 /**
- * Every credential-shaped span on `line` that is not an obvious placeholder.
+ * True if `line` carries a credential-shaped value that is not an obvious placeholder.
  *
  * This is where #194's fix lives: the placeholder test is applied to `match[0]`, the substring a
  * pattern matched, and not to `line`. A generic, a JSX tag or a trailing comment on the same line
  * therefore has no bearing on the verdict.
  */
-function suspectSpans(line: string): string[] {
-  const spans: string[] = [];
+export function isSuspect(line: string): boolean {
   for (const pattern of SECRET_PATTERNS) {
     for (const match of line.matchAll(pattern)) {
-      if (!PLACEHOLDER.test(match[0])) spans.push(match[0]);
+      if (!PLACEHOLDER.test(match[0])) return true;
     }
   }
-  return spans;
-}
-
-/** True if `line` carries a credential-shaped value that is not an obvious placeholder. */
-export function isSuspect(line: string): boolean {
-  return suspectSpans(line).length > 0;
+  return false;
 }
 
 /**
- * The suspect added lines of a unified diff. `-U0` means no context lines, so every `+…` line
- * (other than the `+++ b/file` header) is genuinely new content.
+ * The suspect added lines of a unified diff.
+ *
+ * `-U0` means no context lines, so inside a hunk every `+…` line is genuinely new content. The two
+ * markers that bound a hunk are what says where "inside" is: `@@` opens one, and the `diff --git`
+ * of the next file closes it. Nothing else in the format can reach column zero with either prefix —
+ * an added line carrying one is written `+@@` or `+diff --git`, a removed line opens `-`, and with
+ * `-U0` there are no context lines at all.
  */
 export function scanAddedLines(diff: string): string[] {
   const hits: string[] = [];
+  let inHunk = false;
   for (const raw of diff.split('\n')) {
-    if (!raw.startsWith('+') || raw.startsWith('+++')) continue;
+    if (raw.startsWith('@@')) {
+      inHunk = true;
+      continue;
+    }
+    if (raw.startsWith('diff --git ')) {
+      inHunk = false;
+      continue;
+    }
+    if (!inHunk || !raw.startsWith('+')) continue;
     const line = raw.slice(1);
     if (isSuspect(line)) hits.push(line);
   }

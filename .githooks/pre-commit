@@ -26,8 +26,12 @@ fi
 note() { printf '%s\n' "$*" >&2; }
 err() { printf '%spre-commit: %s%s\n' "$red" "$*" "$reset" >&2; }
 
-# Staged files, Added/Copied/Modified only — a deletion can't introduce new content.
-staged="$(git diff --cached --name-only --diff-filter=ACM)"
+# Staged files, everything but a deletion — a deletion can't introduce new content. Stated as an
+# exclusion (git's lower case) rather than the allow-list `ACM` this used to be, for the reason
+# `scripts/secret-scan.ts` gives: an allow-list omits whatever is not in it, and this one omitted
+# `R`. Rename detection is on by default, so a `git mv` and an edit in one commit made the whole
+# file a rename — and it was then checked by neither Prettier nor ESLint below.
+staged="$(git diff --cached --name-only --diff-filter=d)"
 
 # --- (a) Secret scan of the staged diff ------------------------------------------------
 # The credential patterns live in one place — `scripts/secretScan.ts`, which `secret-scan.ts` and
