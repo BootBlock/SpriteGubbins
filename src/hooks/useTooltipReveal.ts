@@ -111,8 +111,9 @@ export function useTooltipReveal(
    * **A reveal for an input already held is not the user asking again.** A card can be placed over
    * the control it explains — the placement clamps into the viewport, and in a window too short to
    * fit the card either side of its anchor that is where it lands — so dismissing it changes what
-   * sits under the pointer, and the browser re-notifies the wrapper with a fresh `mouseenter` it
-   * never left. Clearing the dismissal there put the guidance back one hover delay after Escape,
+   * sits under the pointer, and the browser re-notifies the wrapper with a fresh arrival on an
+   * element it never left — a `pointerenter` for `ControlTooltip`, a `mouseenter` for the ⓘ.
+   * Clearing the dismissal there put the guidance back one hover delay after Escape,
    * with the pointer never having moved: content dismissed and then undismissed without the user
    * doing anything, which is exactly what WCAG 1.4.13 *dismissible* forbids. Measured in the
    * quantiser's detached preview window, where the short viewport makes the overlap the ordinary

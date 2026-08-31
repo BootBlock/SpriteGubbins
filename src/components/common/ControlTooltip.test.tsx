@@ -157,6 +157,23 @@ describe('ControlTooltip', () => {
     expect(screen.getByRole('tooltip')).toHaveTextContent(GUIDANCE);
   });
 
+  it('leaves a mouse’s hover where it is when a finger departs the same control', async () => {
+    const { wrapper } = renderControl();
+
+    pointerEnter(wrapper);
+    await waitOutGracePeriod();
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+
+    // The other end of the guard, and the half nothing else here would catch. A browser brackets a
+    // touch's boundary events around the press that dismisses anyway, so this is not a sequence a
+    // tap arrives by — it is the state the wrapper has to keep on a device carrying both pointers,
+    // where a finger's departure is not the mouse's and the hover the mouse is holding is not the
+    // finger's to end.
+    pointerLeave(wrapper, 'touch');
+
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+  });
+
   it('reveals the guidance on the control itself, with no ⓘ to find', async () => {
     const { wrapper } = renderControl();
 
@@ -399,7 +416,7 @@ describe('ControlTooltip', () => {
   it('stays dismissed when the pointer is re-announced without ever having left', () => {
     // A card can be placed over the control it explains — in a window too short to fit it either
     // side of its anchor, the clamp puts it there. Dismissing it then changes what sits under the
-    // pointer, and the browser answers with a fresh `mouseenter` on a wrapper the pointer never
+    // pointer, and the browser answers with a fresh `pointerenter` on a wrapper the pointer never
     // left. Treating that as the user asking again put the guidance back one hover delay after
     // Escape, with nothing having moved.
     const { wrapper } = renderControl();

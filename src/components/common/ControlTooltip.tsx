@@ -111,10 +111,16 @@ export function ControlTooltip({
       // **Pointer events rather than mouse events**, because a `mouseenter` carries no
       // `pointerType` — so a wrapper listening for one cannot tell a mouse from the compatibility
       // events a browser synthesises after a tap, and used to answer both. The docblock above has
-      // what that cost. **A touch is not a hover**, and both ends say so: declining the arrival is
-      // what stops the card, and declining the departure is what keeps a finger from clearing hover
-      // state a mouse is genuinely holding on a device that has both. A pen stays on the mouse's
-      // side of it, because a digitizer hovers before it touches.
+      // what that cost.
+      //
+      // **A touch is not a hover**, and both ends say so — but for two different reasons, and only
+      // the first is the reported defect. Declining the arrival is what stops the card. Declining
+      // the departure is symmetry: a browser brackets a touch's boundary events around the press
+      // that dismisses anyway, so no sequence traced here reaches it with anything visible to
+      // show for it. What it buys is that the wrapper's hover state is written and cleared by a
+      // pointer that can hold one, rather than by a finger crossing a control a mouse is resting
+      // on. A pen stays on the mouse's side of the line, because a digitizer hovers before it
+      // touches.
       //
       // Letting `pointerdown` cancel the pending reveal would look like it worked — `pointerenter`
       // precedes the press for a touch, where the synthesised `mouseover` followed it — but that is
