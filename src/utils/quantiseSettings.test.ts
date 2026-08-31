@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { QuantiseSettings, QuantiseTuning } from '../types/quantiser.ts';
-import { sameQuantiseSettings } from './quantiseSettings.ts';
+import type { QuantiseSettings, QuantiseSurroundings, QuantiseTuning } from '../types/quantiser.ts';
+import { sameQuantiseSettings, sameSurroundings } from './quantiseSettings.ts';
 
 const MAGENTA = { r: 255, g: 0, b: 255, a: 255 };
 const BLACK = { r: 0, g: 0, b: 0, a: 255 };
@@ -522,5 +522,80 @@ describe('sameQuantiseSettings — a locked palette', () => {
         { ...BASE, reduction: { kind: 'PALETTE', entries: ENTRIES } },
       ),
     ).toBe(false);
+  });
+});
+
+/**
+ * A second position for every field a sheet is transformed *inside*, as the move that reaches it.
+ *
+ * The same mapped type `MOVED` is, over the shape the tuning is subtracted from — so a field added
+ * to {@link QuantiseSettings} beyond the dials fails to compile here until it has been given a move,
+ * and fails in `sameSurroundings` until it has been given a comparison. That pairing is the point: a
+ * field this walk had been left behind by would be a way for an auto-tune report's premises to move
+ * without the panel noticing.
+ */
+const MOVED_SURROUNDINGS: {
+  readonly [K in keyof QuantiseSurroundings]: (from: QuantiseSurroundings) => QuantiseSurroundings;
+} = {
+  grid: (from) => ({ ...from, grid: 4 }),
+  key: (from) => ({ ...from, key: null }),
+  reduction: (from) => ({ ...from, reduction: { kind: 'MAX_COLORS', maxColors: 64 } }),
+};
+
+/**
+ * What an auto-tune report is withdrawn by.
+ *
+ * The sweep varies the dials and holds these three fixed, so every figure it reports — two likeness
+ * numbers, two colour counts, a crop cost and nine stage lines — is a measurement taken inside them.
+ * Too strict and a report vanishes the moment the reader touches anything; too loose and the panel
+ * states a likeness that was measured at a grid the sheet is no longer being cut on.
+ */
+describe('sameSurroundings', () => {
+  it('holds for two separately-built copies of the same three', () => {
+    expect(
+      sameSurroundings(BASE, {
+        grid: 8,
+        key: { color: { ...MAGENTA }, tolerance: 32 },
+        reduction: { kind: 'MAX_COLORS', maxColors: 32 },
+      }),
+    ).toBe(true);
+  });
+
+  it('separates every field a sheet is transformed inside, by walking them rather than naming them', () => {
+    for (const [field, move] of Object.entries(MOVED_SURROUNDINGS)) {
+      expect(sameSurroundings(BASE, move(BASE)), `${field} did not separate two surroundings`).toBe(false);
+    }
+  });
+
+  it('holds across every tuning dial, which is the half a report is about rather than measured inside', () => {
+    // A dial write retires the report at its source — see `useAutoTuneStore.stale` — and this must
+    // not retire it a second time, or the sweep's own answer would withdraw the report describing it
+    // the instant it landed on the dials.
+    //
+    // The walk is `MOVED`, which is keyed on `QuantiseTuning` rather than on `QuantiseDials`, and
+    // that is the honest claim: the three dials the tab has beyond the tuning reach the pipeline
+    // *inside* these fields — the two keying settings as the key, the palette snap inside the
+    // reduction — so each of those does separate two surroundings, and is answered by both routes.
+    for (const [dial, move] of Object.entries(MOVED)) {
+      expect(sameSurroundings(BASE, move(BASE)), `${dial} separated two identical surroundings`).toBe(true);
+    }
+  });
+
+  it('separates a locked palette from the budget it supersedes, and from a lock at another distance', () => {
+    // The two routes that reach the reduction without a dial moving: the lock below the panel, and
+    // the snap distance beside it.
+    const locked: QuantiseSurroundings = {
+      ...BASE,
+      reduction: { kind: 'LOCKED', entries: [BLACK, WHITE], snap: 20 },
+    };
+
+    expect(sameSurroundings(BASE, locked)).toBe(false);
+    expect(
+      sameSurroundings(locked, {
+        ...locked,
+        reduction: { kind: 'LOCKED', entries: [BLACK, WHITE], snap: 21 },
+      }),
+    ).toBe(false);
+    expect(sameSurroundings(locked, { ...locked, reduction: null })).toBe(false);
   });
 });

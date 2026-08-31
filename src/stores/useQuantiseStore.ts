@@ -170,6 +170,16 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
    * paragraph says they have just moved — so a reader who presses Undo or drags a slider makes all
    * of it false while it is still on screen. One funnel means no dial path can forget to. `bySweep`
    * is the single exception, for the obvious reason: that write *is* the report being applied.
+   *
+   * **It retires the report's *subject*, and nothing else does; its *premises* are decided
+   * elsewhere.** A report is a statement about where the dials stand **given a grid and a colour
+   * reduction**, and both of those move without a dial moving — `setGridOverride` and the two palette
+   * lock actions below are on this store and are not dial writes, the studio's colour budget is on
+   * another store entirely, and the grid in force changes with no write at all when the box is
+   * cleared and the worker's own reading of the sheet takes over. So the report carries the
+   * surroundings it was measured in and `AutoTuneControls` withdraws it when they no longer hold. A
+   * `stale()` added to the three writes here would answer the routes that happen to be writes, leave
+   * the studio's settings and the sheet's own reading, and give one rule two implementations.
    */
   const project = (history: DialHistory, bySweep = false) => {
     set({ ...currentDials(history), history });

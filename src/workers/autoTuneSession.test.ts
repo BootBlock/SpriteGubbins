@@ -60,9 +60,20 @@ function request(): AutoTuneRequest {
   return { image: createImage(2, 2), settings: SETTINGS };
 }
 
+/** What the store is holding, split back into the two things the panel reads off it. */
+function filedOutcome(): TuneOutcome | null {
+  const report = useAutoTuneStore.getState().report;
+  return report?.kind === 'settled' ? report.outcome : null;
+}
+
+function filedReason(): string | null {
+  const report = useAutoTuneStore.getState().report;
+  return report?.kind === 'failed' ? report.reason : null;
+}
+
 beforeEach(() => {
   FakeAutoTuneWorker.reset();
-  useAutoTuneStore.setState({ run: 0, tuning: false, outcome: null, error: null });
+  useAutoTuneStore.setState({ run: 0, tuning: false, report: null });
   vi.stubGlobal('Worker', FakeAutoTuneWorker);
 });
 
@@ -78,7 +89,7 @@ describe('tuneOffThread', () => {
     thread().answer({ kind: 'tuned', outcome: OUTCOME });
     await expect(sweeping).resolves.toEqual(OUTCOME);
     expect(thread().terminated).toBe(true);
-    expect(useAutoTuneStore.getState().outcome).toEqual(OUTCOME);
+    expect(filedOutcome()).toEqual(OUTCOME);
   });
 
   it('files the reason the sweep gave, resolves with nothing, and still ends the thread', async () => {
@@ -87,7 +98,7 @@ describe('tuneOffThread', () => {
 
     await expect(sweeping).resolves.toBeNull();
     expect(thread().terminated).toBe(true);
-    expect(useAutoTuneStore.getState().error).toBe('Array buffer allocation failed');
+    expect(filedReason()).toBe('Array buffer allocation failed');
     expect(useAutoTuneStore.getState().tuning).toBe(false);
   });
 
@@ -97,7 +108,7 @@ describe('tuneOffThread', () => {
 
     await expect(sweeping).resolves.toBeNull();
     expect(thread().terminated).toBe(true);
-    expect(useAutoTuneStore.getState().error).toMatch(/could not start/);
+    expect(filedReason()).toMatch(/could not start/);
   });
 
   it('settles when a reply arrives but will not deserialise', async () => {
@@ -108,7 +119,7 @@ describe('tuneOffThread', () => {
 
     await expect(sweeping).resolves.toBeNull();
     expect(thread().terminated).toBe(true);
-    expect(useAutoTuneStore.getState().error).toMatch(/could not be read back/);
+    expect(filedReason()).toMatch(/could not be read back/);
   });
 
   it('settles and ends the thread when the sheet will not cross the boundary', async () => {
@@ -118,7 +129,7 @@ describe('tuneOffThread', () => {
     // left running with nothing to answer unless the post is guarded.
     expect(thread().terminated).toBe(true);
     await expect(sweeping).resolves.toBeNull();
-    expect(useAutoTuneStore.getState().error).toBe('the sheet would not clone');
+    expect(filedReason()).toBe('the sheet would not clone');
   });
 
   it('settles rather than falling back to the main thread where a browser has no workers', async () => {
@@ -127,7 +138,7 @@ describe('tuneOffThread', () => {
     await expect(tuneOffThread(request())).resolves.toBeNull();
     expect(FakeAutoTuneWorker.started).toHaveLength(0);
     expect(useAutoTuneStore.getState().tuning).toBe(false);
-    expect(useAutoTuneStore.getState().error).toMatch(/would not start the thread/);
+    expect(filedReason()).toMatch(/would not start the thread/);
   });
 
   it('holds the tuning flag for exactly as long as the thread runs', async () => {
@@ -146,7 +157,7 @@ describe('tuneOffThread', () => {
     expect(FakeAutoTuneWorker.started).toHaveLength(1);
     // And the refusal leaves the flag it found set, so the panel keeps saying a sweep is running.
     expect(useAutoTuneStore.getState().tuning).toBe(true);
-    expect(useAutoTuneStore.getState().error).toBeNull();
+    expect(filedReason()).toBeNull();
 
     thread().answer({ kind: 'tuned', outcome: OUTCOME });
     await first;
@@ -165,7 +176,7 @@ describe('tuneOffThread', () => {
 
     expect(thread().terminated).toBe(true);
     await expect(sweeping).resolves.toBeNull();
-    expect(useAutoTuneStore.getState().outcome).toBeNull();
+    expect(filedOutcome()).toBeNull();
     expect(useAutoTuneStore.getState().tuning).toBe(false);
   });
 
@@ -200,7 +211,27 @@ describe('tuneOffThread', () => {
     worker.answer({ kind: 'tuned', outcome: OUTCOME });
 
     await expect(sweeping).resolves.toBeNull();
-    expect(useAutoTuneStore.getState().outcome).toBeNull();
+    expect(filedOutcome()).toBeNull();
+  });
+
+  it('files the settings each answer was asked at, a refusal as much as a report', async () => {
+    // What the panel withdraws a report by: the sweep holds the grid, the keying and the colour
+    // reduction fixed, so its figures are only true in those surroundings and neither the store nor
+    // the panel can reconstruct them afterwards — the grid in force has moved by then, which is the
+    // whole reason the question is being asked.
+    const sweeping = tuneOffThread(request());
+    thread().answer({ kind: 'tuned', outcome: OUTCOME });
+    await sweeping;
+
+    expect(useAutoTuneStore.getState().report?.surroundings).toEqual({ grid: 4, key: null, reduction: null });
+
+    useAutoTuneStore.setState({ run: 0, tuning: false, report: null });
+    FakeAutoTuneWorker.reset();
+    const failing = tuneOffThread(request());
+    thread().answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
+    await failing;
+
+    expect(useAutoTuneStore.getState().report?.surroundings).toEqual({ grid: 4, key: null, reduction: null });
   });
 
   it('disowns a failure the same way, rather than reporting it against the new sheet', async () => {
@@ -211,6 +242,6 @@ describe('tuneOffThread', () => {
     worker.answer({ kind: 'failed', reason: 'Array buffer allocation failed' });
 
     await expect(sweeping).resolves.toBeNull();
-    expect(useAutoTuneStore.getState().error).toBeNull();
+    expect(filedReason()).toBeNull();
   });
 });

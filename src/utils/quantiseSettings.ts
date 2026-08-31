@@ -1,4 +1,10 @@
-import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '../types/quantiser.ts';
+import type {
+  BackgroundKeying,
+  ColorReduction,
+  QuantiseSettings,
+  QuantiseSurroundings,
+  Rgba,
+} from '../types/quantiser.ts';
 
 /**
  * Whether two sets of quantiser settings would produce the same sheet.
@@ -26,7 +32,7 @@ import type { BackgroundKeying, ColorReduction, QuantiseSettings, Rgba } from '.
  */
 export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSettings): boolean {
   return (
-    left.grid === right.grid &&
+    sameSurroundings(left, right) &&
     left.silhouetteThreshold === right.silhouetteThreshold &&
     left.vote === right.vote &&
     left.outlineExpansion === right.outlineExpansion &&
@@ -49,7 +55,36 @@ export function sameQuantiseSettings(left: QuantiseSettings, right: QuantiseSett
     left.antiAliasThreshold === right.antiAliasThreshold &&
     left.antiAliasStrength === right.antiAliasStrength &&
     left.antiAliasRun === right.antiAliasRun &&
-    left.antiAliasPalette === right.antiAliasPalette &&
+    left.antiAliasPalette === right.antiAliasPalette
+  );
+}
+
+/**
+ * Whether two sets of settings put a sheet in the same surroundings — the same grid, the same
+ * background key, the same colour budget — whatever the tuning inside them is doing.
+ *
+ * The half of {@link sameQuantiseSettings} that the auto-tune sweep asks on its own, because the
+ * sweep's answer is *about* the dials and conditional on everything else: it re-draws each candidate
+ * at the grid in force and scores what the colour reduction left, so a likeness figure and a colour
+ * count measured at a grid of 6 say nothing about the same sheet at 4. The panel withdraws its report
+ * when this stops holding — see `AutoTuneControls`, and `useAutoTuneStore.stale` for the other half
+ * of that rule, which the dials go through instead.
+ *
+ * **The routes into these three do not all pass through a store `stale()` could be called from**,
+ * which is why this is a comparison rather than another call to it. The grid is `gridInForce`, so it
+ * moves when the reader overtypes the box and again when they clear it and the sheet's own reading
+ * takes over — and that second one is no write at all. The key is built from the studio's background
+ * colour and the two keying dials. The reduction is built from the palette lock and its snap, and
+ * from the studio's colour budget, which is edited on another tab. Only what is in force can answer
+ * for all of them.
+ *
+ * Written against {@link QuantiseSurroundings} rather than the whole settings, so a caller holding
+ * only the three can ask, and `quantiseSettings.test.ts` walks the shape's own keys — a fourth field
+ * added to the settings beyond the tuning fails there until it is compared here.
+ */
+export function sameSurroundings(left: QuantiseSurroundings, right: QuantiseSurroundings): boolean {
+  return (
+    left.grid === right.grid &&
     sameKeying(left.key, right.key) &&
     sameReduction(left.reduction, right.reduction)
   );

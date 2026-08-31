@@ -4,6 +4,7 @@ import { useAutoTuneStore } from '../../stores/useAutoTuneStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { TuneOutcome, TuneStageReport } from '../../types/autoTune.ts';
 import type { QuantiseSettings } from '../../types/quantiser.ts';
+import { sameSurroundings } from '../../utils/quantiseSettings.ts';
 import { tuneOffThread } from '../../workers/autoTuneSession.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -39,12 +40,36 @@ interface AutoTuneControlsProps {
  * undo stack, so a single press of Undo puts every dial back. Nothing here is remembered by a preset
  * or written to the database; what the sweep produces is dial positions, which the tab already knows
  * how to carry, save and step back through.
+ *
+ * **And it withdraws its report the moment that report stops being true**, by two routes rather than
+ * one. The dials it names are retired at the source, through `useQuantiseStore`'s one funnel — see
+ * `useAutoTuneStore.stale`. The surroundings it was measured in are compared here against the ones in
+ * force, because not every route into them is a write that funnel can be reached from: the grid
+ * changes with no write at all when the box is cleared and the sheet's own reading takes over, and
+ * the studio's colour budget and background key are on another store, edited on another tab.
  */
 export function AutoTuneControls({ image, settings }: AutoTuneControlsProps) {
   const tuning = useAutoTuneStore((state) => state.tuning);
-  const outcome = useAutoTuneStore((state) => state.outcome);
-  const error = useAutoTuneStore((state) => state.error);
+  const filed = useAutoTuneStore((state) => state.report);
   const autoTuned = useQuantiseStore((state) => state.autoTuned);
+
+  // Whether the report on file is still about the sheet being computed — the same comparison
+  // `useQuantiseWork` derives `busy` from, asked of the sweep's answer instead of the transform's.
+  // Every figure below was measured at one grid, against one background key, inside one colour
+  // budget, and each of those three can move without a dial moving: the grid box and the sheet's own
+  // reading, the palette lock beneath this panel, and the studio's colour budget and background key
+  // on another tab. A report left up through one of those states a likeness that was never measured.
+  //
+  // **`null` settings withdraw nothing**, and that is the one asymmetry here. A reader who clears the
+  // grid box has left the pipeline with nothing to compute rather than with something else to
+  // compute, so there is no configuration for this to disagree with — the panel keeps the report and
+  // says separately why the button is unavailable, which is the pair those two paragraphs were split
+  // into. A premise that moves while there is no grid is therefore not answered until one returns —
+  // which is the moment the comparison runs, on what is in force by then, and withdraws the report.
+  const report =
+    filed === null || settings === null || sameSurroundings(filed.surroundings, settings) ? filed : null;
+  const outcome = report?.kind === 'settled' ? report.outcome : null;
+  const error = report?.kind === 'failed' ? report.reason : null;
 
   const unavailable = image === null || settings === null || tuning;
 

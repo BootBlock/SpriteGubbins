@@ -648,6 +648,28 @@ export interface QuantiseSettings extends QuantiseTuning {
 }
 
 /**
+ * Everything a transform of this sheet is decided by beyond its {@link QuantiseTuning} — the grid it
+ * is cut on, the background it takes out, and the budget its colours are held to.
+ *
+ * **Beyond the tuning, which is not the same as "everything but the dials".** Three of the controls
+ * the quantiser tab calls dials reach the pipeline *inside* these fields rather than as fields of
+ * their own: the two keying settings arrive as the {@link BackgroundKeying}, and the palette snap
+ * inside the {@link ColorReduction}. See `QuantiseDials`, which is the tuning plus exactly those
+ * three — so a dial write can move a surroundings field, and one that does is answered twice over.
+ *
+ * Written as what {@link QuantiseSettings} has beyond {@link QuantiseTuning} rather than as a list of
+ * three fields, so a fourth field added to the settings is part of this the moment it exists. That
+ * matters because the one thing this shape is for is deciding whether an answer still applies, and a
+ * field this had been left behind by would be a way for the surroundings to move unnoticed.
+ *
+ * **They are what the sweep holds fixed.** `autoTuneWorker` varies the tuning inside them — they are
+ * measurements and decisions rather than positions to search — so every figure an auto-tune report
+ * carries is conditional on them, and the report is filed against a copy of them for that reason.
+ * See `sameSurroundings`, which is what withdraws it.
+ */
+export type QuantiseSurroundings = Omit<QuantiseSettings, keyof QuantiseTuning>;
+
+/**
  * How far each output pixel sits from the patch of source it replaced, one figure per pixel of
  * {@link QuantiseResult.image}, plus the two summaries that make a sheet's figures comparable.
  *

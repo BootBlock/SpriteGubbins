@@ -1,5 +1,6 @@
 import { useAutoTuneStore } from '../stores/useAutoTuneStore.ts';
 import type { TuneOutcome } from '../types/autoTune.ts';
+import type { QuantiseSurroundings } from '../types/quantiser.ts';
 import type { AutoTuneReply, AutoTuneRequest } from './autoTuneWorker.ts';
 
 /**
@@ -17,6 +18,12 @@ import type { AutoTuneReply, AutoTuneRequest } from './autoTuneWorker.ts';
  * same fact, and the press site would need a `catch` whose only job is to swallow it. Instead every
  * outcome resolves: an answer the tab still wants resolves to it, and everything else resolves to
  * `null` with the reason already filed where the panel is looking.
+ *
+ * **Every answer is filed against the settings it was asked at**, a refusal as much as a report. The
+ * sweep holds the grid, the keying and the colour reduction fixed and varies the dials inside them,
+ * so what comes back is only true in those surroundings — and this is the one place holding a copy of
+ * them that cannot have moved since the press. See `useAutoTuneStore.report`, which keeps them, and
+ * `AutoTuneControls`, which is where they are compared with what is in force.
  *
  * **Every exit that started a thread terminates it, and every call settles**, and the two go
  * together: a thread left running holds a copy of the sheet, and a promise left unsettled leaves the
@@ -44,6 +51,13 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
   // it with this would replace "a sweep is running" with "a sweep was refused" while one runs.
   if (tunes.tuning) return Promise.resolve(null);
 
+  // The three the sweep holds fixed, taken off the request rather than filed as the whole settings:
+  // what a report is conditional on is these, and a copy carrying the dials as well would file the
+  // report against the very positions it is about to replace. The annotation is what keeps the list
+  // honest — a fourth field added to `QuantiseSettings` beyond the tuning fails to compile here.
+  const { grid, key, reduction } = request.settings;
+  const surroundings: QuantiseSurroundings = { grid, key, reduction };
+
   return new Promise((resolve) => {
     let worker: Worker;
     try {
@@ -51,7 +65,7 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
     } catch {
       // A browser without module workers. Nothing is retried on the main thread: running the sweep
       // there is the freeze this file exists to prevent, and a reader is better told than frozen.
-      tunes.failed('This browser would not start the thread the sweep runs on');
+      tunes.failed('This browser would not start the thread the sweep runs on', surroundings);
       resolve(null);
       return;
     }
@@ -82,10 +96,10 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
       const reply = event.data;
       finish(() => {
         if (reply.kind === 'failed') {
-          useAutoTuneStore.getState().failed(reply.reason);
+          useAutoTuneStore.getState().failed(reply.reason, surroundings);
           return null;
         }
-        useAutoTuneStore.getState().settled(reply.outcome);
+        useAutoTuneStore.getState().settled(reply.outcome, surroundings);
         return reply.outcome;
       });
     });
@@ -93,7 +107,7 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
     // own listener — neither of which any reply can report.
     worker.addEventListener('error', () => {
       finish(() => {
-        useAutoTuneStore.getState().failed('The thread the sweep runs on could not start');
+        useAutoTuneStore.getState().failed('The thread the sweep runs on could not start', surroundings);
         return null;
       });
     });
@@ -101,7 +115,9 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
     // these, so without it the promise is never settled and the flag above is never cleared.
     worker.addEventListener('messageerror', () => {
       finish(() => {
-        useAutoTuneStore.getState().failed('The sweep’s answer could not be read back from its thread');
+        useAutoTuneStore
+          .getState()
+          .failed('The sweep’s answer could not be read back from its thread', surroundings);
         return null;
       });
     });
@@ -113,7 +129,9 @@ export function tuneOffThread(request: AutoTuneRequest): Promise<TuneOutcome | n
       // megabytes. Inside the `try` because a throw here reaches no listener, so the thread would be
       // left running with nothing ever to answer.
       finish(() => {
-        useAutoTuneStore.getState().failed(error instanceof Error ? error.message : String(error));
+        useAutoTuneStore
+          .getState()
+          .failed(error instanceof Error ? error.message : String(error), surroundings);
         return null;
       });
     }

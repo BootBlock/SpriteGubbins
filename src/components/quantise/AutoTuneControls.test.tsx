@@ -74,6 +74,31 @@ function show(overrides: Partial<Parameters<typeof AutoTuneControls>[0]> = {}) {
   render(<AutoTuneControls image={createImage(8, 8)} settings={SETTINGS} {...overrides} />);
 }
 
+/** The cost chip, which is the report's shortest whole sentence and so what these assert against. */
+const COST = '323 positions · 5 crops of 160 px · 2 rounds';
+
+const BLACK = { r: 0, g: 0, b: 0, a: 255 };
+const WHITE = { r: 255, g: 255, b: 255, a: 255 };
+
+/**
+ * A sweep run to completion in the given surroundings, with the report on screen.
+ *
+ * Answers with `rerender`, because what the tests below do to it is hand the panel a different set
+ * of settings — which is every route by which the grid, the key or the colour budget moves under a
+ * report, whether the write was a dial box on this tab, the palette lock beneath this panel, or the
+ * studio's colour budget on another tab.
+ */
+async function swept(settings: QuantiseSettings = SETTINGS) {
+  FakeAutoTuneWorker.respond = () => Promise.resolve({ kind: 'tuned', outcome: OUTCOME });
+  const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={settings} />);
+
+  await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+  await waitFor(() => {
+    expect(screen.getByText(COST)).toBeInTheDocument();
+  });
+  return rerender;
+}
+
 function thread(): FakeAutoTuneWorker {
   const started = FakeAutoTuneWorker.started.at(-1);
   if (started === undefined) throw new Error('no thread was started');
@@ -83,7 +108,7 @@ function thread(): FakeAutoTuneWorker {
 beforeEach(() => {
   FakeAutoTuneWorker.reset();
   useQuantiseStore.getState().clear();
-  useAutoTuneStore.setState({ run: 0, tuning: false, outcome: null, error: null });
+  useAutoTuneStore.setState({ run: 0, tuning: false, report: null });
   vi.stubGlobal('Worker', FakeAutoTuneWorker);
 });
 
@@ -238,7 +263,7 @@ describe('AutoTuneControls', () => {
       expect(useAutoTuneStore.getState().tuning).toBe(false);
     });
     expect(useQuantiseStore.getState().vote).toBe(QUANTISE_DEFAULT_DIALS.vote);
-    expect(useAutoTuneStore.getState().outcome).toBeNull();
+    expect(useAutoTuneStore.getState().report).toBeNull();
   });
 
   it('retires the report the moment a dial moves, rather than leaving it asserting where they are', async () => {
@@ -270,7 +295,99 @@ describe('AutoTuneControls', () => {
     await waitFor(() => {
       expect(useQuantiseStore.getState().vote).toBe('INK_WEIGHTED');
     });
-    expect(useAutoTuneStore.getState().outcome).toEqual(OUTCOME);
+    expect(useAutoTuneStore.getState().report).toEqual({
+      kind: 'settled',
+      surroundings: { grid: 4, key: null, reduction: null },
+      outcome: OUTCOME,
+    });
+  });
+
+  it('withdraws the report when the pixel grid moves, which every figure on it was measured at', async () => {
+    // A candidate is judged by re-drawing its result at the grid in force and comparing it with the
+    // artwork it came from, so the two likeness figures and the two colour counts are statements
+    // about one scale. Left up at another, the panel reports a likeness nothing ever measured.
+    const rerender = await swept();
+
+    rerender(<AutoTuneControls image={createImage(8, 8)} settings={{ ...SETTINGS, grid: 6 }} />);
+
+    expect(screen.queryByText(COST)).not.toBeInTheDocument();
+    expect(screen.queryByText('likeness 0.814 → 0.941')).not.toBeInTheDocument();
+    expect(screen.queryAllByRole('listitem')).toHaveLength(0);
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.idle)).toBeInTheDocument();
+  });
+
+  it('withdraws it when a palette is locked, which replaces the colour reduction it was swept inside', async () => {
+    // A lock supersedes the studio's colour setting outright while it is held, so the sweep's own
+    // chip — a colour count — describes a reduction that is no longer the one running.
+    const rerender = await swept();
+
+    rerender(
+      <AutoTuneControls
+        image={createImage(8, 8)}
+        settings={{ ...SETTINGS, reduction: { kind: 'LOCKED', entries: [BLACK, WHITE], snap: 20 } }}
+      />,
+    );
+
+    expect(screen.queryByText(COST)).not.toBeInTheDocument();
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.idle)).toBeInTheDocument();
+  });
+
+  it('withdraws it when that palette is let go again, for the same reason in reverse', async () => {
+    const locked = { ...SETTINGS, reduction: { kind: 'LOCKED', entries: [BLACK, WHITE], snap: 20 } } as const;
+    const rerender = await swept(locked);
+
+    rerender(<AutoTuneControls image={createImage(8, 8)} settings={{ ...locked, reduction: null }} />);
+
+    expect(screen.queryByText(COST)).not.toBeInTheDocument();
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.idle)).toBeInTheDocument();
+  });
+
+  it('withdraws it when the studio’s colour budget moves, which is edited on another tab entirely', async () => {
+    // The route no write on the quantiser's own store can reach, and the reason this is a comparison
+    // rather than another call to `stale()`: the budget lives in `useOutputStore`, and a reader
+    // changes it by leaving this tab and coming back.
+    const budgeted = { ...SETTINGS, reduction: { kind: 'MAX_COLORS', maxColors: 32 } } as const;
+    const rerender = await swept(budgeted);
+
+    rerender(
+      <AutoTuneControls
+        image={createImage(8, 8)}
+        settings={{ ...budgeted, reduction: { kind: 'MAX_COLORS', maxColors: 64 } }}
+      />,
+    );
+
+    expect(screen.queryByText(COST)).not.toBeInTheDocument();
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.idle)).toBeInTheDocument();
+  });
+
+  it('withdraws a refusal the same way, rather than blaming the settings now in force', async () => {
+    FakeAutoTuneWorker.respond = () =>
+      Promise.resolve({ kind: 'failed', reason: 'Array buffer allocation failed' });
+    const { rerender } = render(<AutoTuneControls image={createImage(8, 8)} settings={SETTINGS} />);
+    await userEvent.click(screen.getByRole('button', { name: /Auto/ }));
+    await waitFor(() => {
+      expect(screen.getByRole('alert')).toHaveTextContent('Array buffer allocation failed');
+    });
+
+    rerender(<AutoTuneControls image={createImage(8, 8)} settings={{ ...SETTINGS, grid: 6 }} />);
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.idle)).toBeInTheDocument();
+  });
+
+  it('brings it back whole when the surroundings it was measured in are put back', async () => {
+    // The report is filed rather than destroyed, which is what `useQuantiseWork` already does with
+    // the transform's own answer: it is true of those surroundings, and it is true of them again.
+    const rerender = await swept();
+
+    rerender(<AutoTuneControls image={createImage(8, 8)} settings={{ ...SETTINGS, grid: 6 }} />);
+    expect(screen.queryByText(COST)).not.toBeInTheDocument();
+
+    rerender(<AutoTuneControls image={createImage(8, 8)} settings={{ ...SETTINGS }} />);
+
+    expect(screen.getByText(COST)).toBeInTheDocument();
+    expect(screen.getByText('likeness 0.814 → 0.941')).toBeInTheDocument();
+    expect(screen.getByText(AUTO_TUNE_GUIDANCE.settled)).toBeInTheDocument();
   });
 
   it('says why the button is unavailable beside the report rather than instead of it', async () => {
