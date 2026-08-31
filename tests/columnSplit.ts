@@ -72,7 +72,12 @@ interface ColumnSplitOptions {
   /** The tab component whose grid, page position and column spans are being read. */
   readonly tabFile: string;
   /**
-   * Every panel in the split that holds a `SelectField`.
+   * Every panel whose chrome a select in the split is charged to.
+   *
+   * Not the same set as "every file holding a `SelectField`", and the difference is what the
+   * quantiser's `GridControls` is: it renders no select itself and wraps a component that renders
+   * two, so it is the `<section>` those two are measured inside. A caller that named only the files
+   * holding a select would leave that chrome unmeasured.
    *
    * Each is measured on its own, because chrome and any control sharing the select's row belong to
    * one panel apiece and the widest of each need not be the same panel. `contentWidthAt` still

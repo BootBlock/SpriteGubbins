@@ -94,8 +94,10 @@ const TAB_GRAPH = importGraph(TAB_FILE);
  * to the column now arrives checked, and one that loses its last select stops being iterated.
  *
  * The walk starts at the tab rather than at the control column, which is conservative in the only
- * direction that matters: it cannot miss a control-column panel, and a select that turned up in the
- * preview column would be priced here as well as failing the assertion written for it below.
+ * direction that matters: nothing either column renders is outside it, so a select that turned up
+ * in the preview column is caught here too rather than only by the assertion written for it below.
+ * What it follows is a static, relative `from '…'` specifier — an aliased or dynamically imported
+ * panel would be invisible to it, and neither exists anywhere the tab reaches.
  */
 const SELECT_FILES = [...TAB_GRAPH.keys()].filter((file) => /<SelectField\b/.test(read(file))).sort();
 
@@ -107,6 +109,11 @@ const SELECT_FILES = [...TAB_GRAPH.keys()].filter((file) => /<SelectField\b/.tes
  * panel, it renders inside `GridControls`, and the chrome that matters is the `<section>` around it.
  * A select in no panel at all throws, because `readColumnSplit` would then measure a column whose
  * chrome nothing had accounted for.
+ *
+ * The climb follows one importer per file, so a select put in a component that several panels share
+ * would be charged to whichever reaches it first. Nothing in `src/components/common/` renders one,
+ * and the four panels spend identical chrome, so the question does not arise today — but a shared
+ * control that grew a select would need a panel apiece rather than a deeper climb.
  */
 function panelOf(file: string): string {
   let current: string | undefined = file;
