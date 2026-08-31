@@ -4,17 +4,19 @@
  *
  * Sprite Gubbins is a PUBLIC repository where a committed secret is treated as build-breaking
  * and is effectively permanent once pushed (see CLAUDE.md). The hook is the fast, local first
- * line of defence — but it runs only on a developer's machine, only against staged lines, and can
- * be skipped with `git commit --no-verify` or simply by never running `npm install` (which is what
- * wires the hook). It is a safety net, not a guarantee; the `--diff` mode below is what backs the
- * CI gate, which diffs against the empty tree so every tracked line counts as added.
+ * line of defence — but it runs only on a developer's machine, only against what a commit stages,
+ * and can be skipped with `git commit --no-verify` or simply by never running `npm install` (which
+ * is what wires the hook). It is a safety net, not a guarantee; the `--diff` mode below is what
+ * backs the CI gate, which diffs against the empty tree so the whole tracked tree counts as added.
  *
- *   node scripts/secret-scan.ts --staged          # pre-commit: added lines of the staged diff
- *   node scripts/secret-scan.ts --diff <baseRef>  # added lines of <baseRef>..HEAD
+ *   node scripts/secret-scan.ts --staged          # pre-commit: what the staged diff adds
+ *   node scripts/secret-scan.ts --diff <baseRef>  # what <baseRef>..HEAD adds
  *
- * Both modes scan only *added* lines of a diff — never the whole tree — so a value that has
- * always lived in a committed fixture is not re-flagged on every unrelated change; only newly
- * introduced content is judged.
+ * Both modes judge only what a diff *adds* — never the whole tree — so a value that has always
+ * lived in a committed fixture is not re-flagged on every unrelated change. For a text file that
+ * means its added lines. For a file git calls binary it means the whole file, for the reason the
+ * next paragraph gives: git puts no lines of one into a diff at all, so there is no finer unit
+ * available than the file itself.
  *
  * **A file git calls binary contributes no lines to a diff, so it is fetched and scanned whole.**
  * That is issue #211: git reports such a file as `Binary files a/… and b/… differ` with no `+`
@@ -33,13 +35,14 @@
  * This file is the runner alone: it resolves what to scan, asks git for it, and reports. The
  * judgement — which shapes count, which values are placeholders, which files git called binary, and
  * what a run of bytes says — is `secretScan.ts`, which is pure and is where
- * `tests/secret-scan.test.ts` exercises it. TypeScript run by node
- * directly, as `scripts/generate-icons.ts` is: node strips the types, and the file being in a
- * program is what type-checks the runner against the module it calls.
+ * `tests/secret-scan.test.ts` exercises it. TypeScript run by node directly, as
+ * `scripts/generate-icons.ts` is: node strips the types, and the file being in a program is what
+ * type-checks the runner against the module it calls.
  *
- * Exits non-zero and prints every suspect line (not just the first) so one run gives the full
- * list. A false positive is resolved with an obvious placeholder (`<YOUR_API_KEY>`, `sk-xxxx`) —
- * the placeholder exclusions in `secretScan.ts` let example snippets through.
+ * Exits non-zero and prints every suspect entry (not just the first) so one run gives the full
+ * list — an added line, or `<path>: <value>` where the value came out of a binary file's bytes.
+ * A false positive is resolved with an obvious placeholder (`<YOUR_API_KEY>`, `sk-xxxx`) — the
+ * placeholder exclusions in `secretScan.ts` let example snippets through.
  */
 import { execFileSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
