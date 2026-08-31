@@ -870,8 +870,8 @@ Three details of `ControlTooltip` are worth knowing before using it:
   a value keeps its ⓘ. **That has to be enforced rather than assumed**, and for a long time it was
   not: the wrapper tracked its hover with `onMouseEnter`, a browser answers a tap with the mouse
   events an older page would have expected, and so the press dismissed the guidance and the
-  synthesised hover put it back 350ms later — over the control the tap had just used, on every one of
-  the seventy call sites this wraps. A mouse event carries no `pointerType` and cannot tell the two
+  synthesised hover put it back 350ms later — over the control the tap had just used, on every one
+  of the controls this wraps. A mouse event carries no `pointerType` and cannot tell the two
   apart, so the hover is tracked with `onPointerEnter` / `onPointerLeave` and a `'touch'` pointer is
   declined at both ends. A **pen** is not, because a digitizer hovers before it touches. The
   compensation for the finger is `aria-describedby`, which `ControlTooltip` puts on the
