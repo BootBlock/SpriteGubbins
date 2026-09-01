@@ -1,14 +1,94 @@
 import { describe, expect, it } from 'vitest';
-import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
+import * as AUTO_TUNE from '../constants/autoTune.ts';
+import { QUANTISE_DEFAULT_DIALS, QUANTISE_DIAL_KEYS } from '../constants/quantiseDials.ts';
 import {
+  ANTI_ALIAS_RUN_RANGE,
+  ANTI_ALIAS_STRENGTH_RANGE,
+  ANTI_ALIAS_THRESHOLD_RANGE,
+  CLEANUP_PASSES_RANGE,
   COLOR_MERGE_RANGE,
+  DUPLICATE_TOLERANCE_RANGE,
+  FILL_CLEANUP_RANGE,
+  FRAME_DRIFT_RANGE,
   INK_THRESHOLD_RANGE,
   KEY_TOLERANCES,
   LINE_STRENGTH_RANGE,
+  OUTLINE_EXPANSION_RANGE,
+  PALETTE_SNAP_RANGE,
+  SPRITE_GAP_RANGE,
+  SYMMETRY_CONFIDENCE_RANGE,
+  SYMMETRY_TOLERANCE_RANGE,
+  TRIM_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
-import { SYMMETRY_CONFIDENCE_RANGE } from '../constants/quantiser.ts';
 import { parseQuantiseDials } from './quantiseDialsParser.ts';
+
+/** A range as the parser reads it: three numbers, all three checked. */
+interface DialRange {
+  readonly min: number;
+  readonly max: number;
+  readonly step: number;
+}
+
+/**
+ * Every dial the parser reads as a position on a range, against the range that defines it.
+ *
+ * Written out so the sweep below can put an off-grid value on each in turn, and guarded for
+ * completeness by the assertion beside it: a dial added to {@link QUANTISE_DEFAULT_DIALS} as a
+ * number is either a ladder or belongs here, and until it is named the sweep would silently stop
+ * covering it.
+ */
+const RANGED_DIALS: Readonly<Record<string, DialRange>> = {
+  outlineExpansion: OUTLINE_EXPANSION_RANGE,
+  lineStrength: LINE_STRENGTH_RANGE,
+  trimStrength: TRIM_STRENGTH_RANGE,
+  inkThreshold: INK_THRESHOLD_RANGE,
+  fillCleanup: FILL_CLEANUP_RANGE,
+  colorMerge: COLOR_MERGE_RANGE,
+  cleanupPasses: CLEANUP_PASSES_RANGE,
+  paletteSnap: PALETTE_SNAP_RANGE,
+  spriteGap: SPRITE_GAP_RANGE,
+  symmetryTolerance: SYMMETRY_TOLERANCE_RANGE,
+  symmetryConfidence: SYMMETRY_CONFIDENCE_RANGE,
+  duplicateTolerance: DUPLICATE_TOLERANCE_RANGE,
+  frameDriftTolerance: FRAME_DRIFT_RANGE,
+  antiAliasThreshold: ANTI_ALIAS_THRESHOLD_RANGE,
+  antiAliasStrength: ANTI_ALIAS_STRENGTH_RANGE,
+  antiAliasRun: ANTI_ALIAS_RUN_RANGE,
+};
+
+/** The two numeric dials that are a ladder of named rungs rather than a range. */
+const LADDER_DIALS = ['keyTolerance', 'silhouetteThreshold'];
+
+/**
+ * Which dial each of the sweep's candidate ladders is a ladder of.
+ *
+ * The sweep writes its own positions straight onto the dials, so a candidate the parser refuses is
+ * a position the reader watches reset the next time the tab loads. The ladders themselves come from
+ * `constants/autoTune.ts`; only the pairing is written here, and the assertion below fails if a
+ * ladder is added there without one.
+ */
+const TUNE_LADDER_DIALS: Readonly<Record<string, string>> = {
+  TUNE_OUTLINE_EXPANSIONS: 'outlineExpansion',
+  TUNE_LINE_STRENGTHS: 'lineStrength',
+  TUNE_TRIM_STRENGTHS: 'trimStrength',
+  TUNE_INK_THRESHOLDS: 'inkThreshold',
+  TUNE_COLOR_MERGES: 'colorMerge',
+  TUNE_FILL_CLEANUPS: 'fillCleanup',
+  TUNE_CLEANUP_PASSES: 'cleanupPasses',
+  TUNE_ALIAS_THRESHOLDS: 'antiAliasThreshold',
+  TUNE_ALIAS_RUNS: 'antiAliasRun',
+  TUNE_ALIAS_STRENGTHS: 'antiAliasStrength',
+};
+
+/** Every ladder of numbers the sweep can settle a dial on, found rather than listed. */
+function tuneLadders(): readonly (readonly [string, readonly number[]])[] {
+  return Object.entries(AUTO_TUNE).flatMap(([name, value]) =>
+    Array.isArray(value) && value.every((entry) => typeof entry === 'number')
+      ? [[name, value as readonly number[]] as const]
+      : [],
+  );
+}
 
 /** A stored tuning that differs from the defaults in every field, so a fallback cannot hide. */
 const STORED: QuantiseDials = {
@@ -119,6 +199,67 @@ describe('parseQuantiseDials', () => {
     // identifier simply falls to the default.
     expect(parseQuantiseDials({ vote: 'MEDIAN' }).vote).toBe(QUANTISE_DEFAULT_DIALS.vote);
     expect(parseQuantiseDials({ dither: 'FLOYD_STEINBERG' }).dither).toBe(QUANTISE_DEFAULT_DIALS.dither);
+  });
+
+  it('names every dial that is read as a position on a range', () => {
+    // The sweep below is only as complete as this table, and a dial added to the parser with a new
+    // range would otherwise go uncovered without failing anything.
+    const numeric = QUANTISE_DIAL_KEYS.filter((key) => typeof QUANTISE_DEFAULT_DIALS[key] === 'number');
+
+    expect([...Object.keys(RANGED_DIALS), ...LADDER_DIALS].sort()).toEqual([...numeric].sort());
+  });
+
+  it('refuses a position off the grid its own control moves on, dial by dial', () => {
+    // The defect this replaced: bounds were checked and the step beside them was not, so an
+    // imported pack could name a line strength of 2.34567 that the panel then reported as `2.3×`
+    // and no drag of the slider could return to.
+    for (const [key, range] of Object.entries(RANGED_DIALS)) {
+      const offGrid = range.min + range.step / 2;
+      const onGrid = range.min + range.step;
+
+      expect({ [key]: parseQuantiseDials({ [key]: offGrid })[key as keyof QuantiseDials] }).toEqual({
+        [key]: QUANTISE_DEFAULT_DIALS[key as keyof QuantiseDials],
+      });
+      expect({ [key]: parseQuantiseDials({ [key]: onGrid })[key as keyof QuantiseDials] }).toEqual({
+        [key]: onGrid,
+      });
+    }
+  });
+
+  it('refuses the three figures an imported pack was reported carrying', () => {
+    // Read straight from the issue: two dials that move in tenths, and one whose grid is offset —
+    // it opens at 10 and moves in fives, so 37 is a position no drag reaches and 35 is one that is.
+    expect(parseQuantiseDials({ lineStrength: 2.34567 }).lineStrength).toBe(
+      QUANTISE_DEFAULT_DIALS.lineStrength,
+    );
+    expect(parseQuantiseDials({ trimStrength: 0.71828 }).trimStrength).toBe(
+      QUANTISE_DEFAULT_DIALS.trimStrength,
+    );
+    expect(parseQuantiseDials({ antiAliasStrength: 37 }).antiAliasStrength).toBe(
+      QUANTISE_DEFAULT_DIALS.antiAliasStrength,
+    );
+    expect(parseQuantiseDials({ antiAliasStrength: 35 }).antiAliasStrength).toBe(35);
+  });
+
+  it('keeps every opening position the app itself starts from', () => {
+    // A default off its own grid would be discarded by the read that is supposed to protect it, so
+    // a reader who changed nothing would still be handed a different dial on the next load.
+    expect(parseQuantiseDials(QUANTISE_DEFAULT_DIALS)).toEqual(QUANTISE_DEFAULT_DIALS);
+  });
+
+  it('keeps every position the auto-tune sweep can settle on', () => {
+    const ladders = tuneLadders();
+    expect(Object.keys(TUNE_LADDER_DIALS).sort()).toEqual(ladders.map(([name]) => name).sort());
+
+    for (const [name, values] of ladders) {
+      const key = TUNE_LADDER_DIALS[name];
+      if (key === undefined) throw new Error(`${name} has no dial.`);
+      for (const value of values) {
+        expect({ [key]: parseQuantiseDials({ [key]: value })[key as keyof QuantiseDials] }).toEqual({
+          [key]: value,
+        });
+      }
+    }
   });
 
   it('takes a boolean as a boolean and nothing else', () => {

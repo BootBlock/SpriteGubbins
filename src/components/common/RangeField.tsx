@@ -33,6 +33,16 @@ interface RangeFieldProps {
  * The thumb takes the `accent` token through the `accent-*` utility — interaction is the primary's
  * colour everywhere in the app — and the value parses through `Number(...)` from the DOM's string,
  * which for a range input is always a representable step position.
+ *
+ * **There is no step check on the value this is *handed*, and that is a claim about the boundary
+ * rather than an omission.** A range input snaps its thumb to the grid and leaves the value alone,
+ * so an off-grid position would show as its neighbour while the pipeline ran at what was stored —
+ * which is what an imported preset pack carrying a line strength of 2.34567 did. The refusal
+ * belongs where the value arrives, so `db/readers.ts` reads every dial with `pickSteppedNumber`,
+ * against the same `*_RANGE` the `step` below comes from; the sweep's own candidate ladders are
+ * swept through that parser by a test for the same reason. A second guard here would be a second
+ * opinion about a question already answered, and would have to invent an answer — snap, or refuse
+ * to render — that the storage layer has settled.
  */
 export function RangeField({ label, tooltip, value, min, max, step, format, onChange }: RangeFieldProps) {
   const inputId = useId();
