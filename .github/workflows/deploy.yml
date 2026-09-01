@@ -318,6 +318,15 @@ jobs:
   # not a branch, so re-dispatching against one would pass every gate, spend a full build, and
   # then be refused here. The policy is therefore set to `main` + tag `v*` — deliberately narrow,
   # so a dispatch of some unmerged branch still cannot reach users, while a rollback can.
+  #
+  # One record this job writes is knowingly one commit behind, and the tag is the answer to it.
+  # `actions/deploy-pages` takes the deployment's commit from the workflow run's own context and
+  # exposes no input to set it, so a run that wrote a version bump records the deployment against
+  # the ref it was dispatched from rather than against the commit it actually built. Measured on
+  # the 0.13.0 release: the environment names the parent while the artefact, and the bundle serving
+  # from it, are the bump. `v<version>` is therefore the *record* of what is deployed, which is what
+  # the `tag` job below exists for — read that, not the Deployments list, to answer "which commit is
+  # serving?".
   deploy:
     name: Deploy
     needs: build
