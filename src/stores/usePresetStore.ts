@@ -144,9 +144,11 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     try {
       const database = await getDatabase();
       await database.savePreset(preset);
-      // Re-read rather than appending in place: the two backends order this collection differently
-      // — SQLite by `updated_at DESC`, the fallback by insertion — so an optimistic append would put
-      // the new preset where only one of them agrees it belongs.
+      // Re-read rather than placing the preset in the list here: both backends now list this
+      // collection newest-first — SQLite by `updated_at DESC`, the fallback by the prepend in
+      // `savePreset` — and the backend is where that decision belongs. Reproducing it at this call
+      // site would be a second copy of the ordering rule, free to drift from the one that governs
+      // what is actually stored.
       set({ customPresets: await database.listPresets() });
       useUIStore
         .getState()
