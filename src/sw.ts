@@ -73,13 +73,27 @@ sw.addEventListener('install', (event) => {
     (async () => {
       const cache = await caches.open(CACHE);
       // Resolved against this worker's own URL so every entry tracks the `/SpriteGubbins/`
-      // base path. Revisioned entries may be served from the HTTP cache; unrevisioned ones
-      // (the shell) must come from the network or a stale copy would be precached as current.
+      // base path.
+      //
+      // `revision: null` is Workbox's marker for a URL that **already carries a content hash** —
+      // such an entry needs no separate revision, because a changed file arrives under a changed
+      // name. Those are immutable, so the HTTP cache may answer for them (`'default'`) — 39 of
+      // the 46 in this build. The other seven come from *stable* URLs and carry an MD5
+      // `revision`: `index.html`, `404.html`, `coi-bootstrap.js`, `favicon.ico`, the icons and
+      // the webmanifest. GitHub Pages sends `Cache-Control: max-age=600` on all of them, so an
+      // entry answered from the HTTP cache within ten minutes of a deploy precaches the
+      // **previous** build's shell beside this build's chunks — a shell naming an entry chunk
+      // that is in neither the precache nor on the host. That is a blank page no reload can
+      // clear, because `respond()` below answers every navigation from the precached shell.
+      //
+      // `'reload'` rather than `'no-store'`: both bypass the HTTP cache on the way out, and
+      // `'reload'` additionally writes the response back into it, so the page load that follows
+      // this install is served from cache rather than fetched a second time.
       await cache.addAll(
         PRECACHE_ENTRIES.map(
           ({ url, revision }) =>
             new Request(new URL(url, sw.location.href).href, {
-              cache: revision === null ? 'reload' : 'default',
+              cache: revision === null ? 'default' : 'reload',
             }),
         ),
       );
