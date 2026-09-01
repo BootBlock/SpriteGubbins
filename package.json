@@ -1,7 +1,7 @@
 {
   "name": "sprite-gubbins",
   "private": true,
-  "version": "0.12.0",
+  "version": "0.13.0",
   "releaseDate": "2026-08-17",
   "type": "module",
   "description": "Sprite Gubbins — an offline-capable PWA that composes precise, model-targeted prompts for generating game sprite sheets and texture atlases.",
