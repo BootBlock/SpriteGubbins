@@ -218,8 +218,8 @@ export class LocalStorageBackend implements PersistenceBackend {
 
   /*
    * The quantiser's presets are stored in the same `snake_case` row shape the SQLite table uses, as
-   * the history rows are, so `parseQuantisePresetRow` serves both backends and the two can never
-   * drift in what they accept.
+   * the history rows and the archetypes are, so `parseQuantisePresetRow` serves both backends and
+   * the two can never drift in what they accept.
    *
    * **No `updated_at`, and that is a real difference between the backends rather than an omission.**
    * The column exists on the other side because SQLite orders the collection with it; here the
@@ -268,7 +268,7 @@ export class LocalStorageBackend implements PersistenceBackend {
   /**
    * The settings, stored as the object itself rather than as a row.
    *
-   * The two collections above keep the SQLite table's `snake_case` shape so one parser can read
+   * All three collections above keep the SQLite table's `snake_case` shape so one parser can read
    * both backends; there is nothing to align here, because the SQLite side stores this same object
    * serialised into a single column. `parseSettings` is that shared parser — the SQLite backend
    * unwraps its row and hands the payload to it, and this hands over what it read.
