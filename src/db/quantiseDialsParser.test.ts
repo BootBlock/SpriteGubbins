@@ -21,6 +21,7 @@ import {
   TRIM_STRENGTH_RANGE,
 } from '../constants/quantiser.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
+import { isOnStep } from '../utils/isOnStep.ts';
 import { parseQuantiseDials } from './quantiseDialsParser.ts';
 
 /** A range as the parser reads it: three numbers, all three checked. */
@@ -214,11 +215,24 @@ describe('parseQuantiseDials', () => {
     // imported pack could name a line strength of 2.34567 that the panel then reported as `2.3×`
     // and no drag of the slider could return to.
     for (const [key, range] of Object.entries(RANGED_DIALS)) {
+      const fallback = QUANTISE_DEFAULT_DIALS[key as keyof QuantiseDials];
       const offGrid = range.min + range.step / 2;
-      const onGrid = range.min + range.step;
+      // Not `min + step`, which is the sprite gap's own default: a refusal returns the default, so
+      // an on-grid position that *is* the default cannot tell acceptance from rejection.
+      const onGrid =
+        range.min + range.step === fallback ? range.min + 2 * range.step : range.min + range.step;
+
+      // Both probes have to differ from what a refusal hands back, or the assertions below pass
+      // whatever the parser did — which is how this sweep would go quiet without failing.
+      expect({ key, offGridIsDefault: offGrid === fallback, onGridIsDefault: onGrid === fallback }).toEqual({
+        key,
+        offGridIsDefault: false,
+        onGridIsDefault: false,
+      });
+      expect(onGrid).toBeLessThanOrEqual(range.max);
 
       expect({ [key]: parseQuantiseDials({ [key]: offGrid })[key as keyof QuantiseDials] }).toEqual({
-        [key]: QUANTISE_DEFAULT_DIALS[key as keyof QuantiseDials],
+        [key]: fallback,
       });
       expect({ [key]: parseQuantiseDials({ [key]: onGrid })[key as keyof QuantiseDials] }).toEqual({
         [key]: onGrid,
@@ -241,10 +255,19 @@ describe('parseQuantiseDials', () => {
     expect(parseQuantiseDials({ antiAliasStrength: 35 }).antiAliasStrength).toBe(35);
   });
 
-  it('keeps every opening position the app itself starts from', () => {
-    // A default off its own grid would be discarded by the read that is supposed to protect it, so
-    // a reader who changed nothing would still be handed a different dial on the next load.
-    expect(parseQuantiseDials(QUANTISE_DEFAULT_DIALS)).toEqual(QUANTISE_DEFAULT_DIALS);
+  it('opens every dial on its own control’s grid', () => {
+    // Asserted against `isOnStep` rather than through the parser, because through the parser it
+    // cannot fail: every field falls back to the default it is being handed, so acceptance and
+    // rejection return the same number. A default off its grid is a real failure and a silent one —
+    // it would be admitted out of storage by the fallback and refused when it arrives as a value, so
+    // a preset naming it would read back at the default while the panel showed its neighbour.
+    for (const [key, range] of Object.entries(RANGED_DIALS)) {
+      const opening = QUANTISE_DEFAULT_DIALS[key as keyof QuantiseDials] as number;
+
+      expect({ key, onGrid: isOnStep(opening, range.min, range.step) }).toEqual({ key, onGrid: true });
+      expect(opening).toBeGreaterThanOrEqual(range.min);
+      expect(opening).toBeLessThanOrEqual(range.max);
+    }
   });
 
   it('keeps every position the auto-tune sweep can settle on', () => {
@@ -254,7 +277,17 @@ describe('parseQuantiseDials', () => {
     for (const [name, values] of ladders) {
       const key = TUNE_LADDER_DIALS[name];
       if (key === undefined) throw new Error(`${name} has no dial.`);
+      const range = RANGED_DIALS[key];
+      if (range === undefined) throw new Error(`${key} is not read as a position on a range.`);
+
       for (const value of values) {
+        // The grid claim directly, because a rung that happens to *be* the dial's default reads back
+        // as itself whether the parser accepted it or refused it.
+        expect({ key, value, onGrid: isOnStep(value, range.min, range.step) }).toEqual({
+          key,
+          value,
+          onGrid: true,
+        });
         expect({ [key]: parseQuantiseDials({ [key]: value })[key as keyof QuantiseDials] }).toEqual({
           [key]: value,
         });

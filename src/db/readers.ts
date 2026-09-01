@@ -58,11 +58,12 @@ export function pick<T extends string | number>(
 /**
  * Read a finite number, accepting it only within `[min, max]`.
  *
- * **Bounds alone, for the one kind of value whose grid this layer cannot know.** The camera
- * elevation is the case: its step depends on the projection stored beside it, and `TRUE_ISOMETRIC`
- * stands at 35.26°, so a grid check here would refuse a figure the app itself wrote. Anything read
- * from a range constant that carries a `step` takes {@link pickSteppedNumber} instead — the range
- * declares three numbers, and checking two of them admits positions the control cannot produce.
+ * **Bounds alone, for the one kind of value that is on no grid this layer could check it against.**
+ * The camera elevation is the case: the app itself writes 35.26° for `TRUE_ISOMETRIC`, which is off
+ * the 1° grid its control declares, and the bounds it is legal within are the projection's — a
+ * field this parser is not given. Anything read from a range constant that carries a `step` takes
+ * {@link pickSteppedNumber} instead: the range declares three numbers, and checking two of them
+ * admits positions the control cannot produce.
  */
 export function pickNumber(
   source: Record<string, unknown>,
@@ -106,9 +107,11 @@ export function pickSteppedNumber(
  * actively unsafe: a stored `0.5` floored to `0` becomes `NO_COMPONENT_BUDGET`, silently switching
  * a cap off rather than falling back to it.
  *
- * For a count whose range declares no step of its own — the component budget and the sheet index,
- * whose bounds are computed rather than written beside a slider. A range that does declare one is
- * read with {@link pickSteppedNumber}, which subsumes this check when that step is 1.
+ * **For a count whose range declares no step of its own**, which today is the component budget and
+ * the sheet index. That is the whole criterion, and the bounds have nothing to do with it: a range
+ * that grows a `step` moves to {@link pickSteppedNumber} in the same edit, which subsumes this
+ * check when that step is 1. Both controls hard-code a `step={1}` their range does not carry, so
+ * the number to move there is written at the call site rather than beside the bounds.
  */
 export function pickWholeNumber(
   source: Record<string, unknown>,

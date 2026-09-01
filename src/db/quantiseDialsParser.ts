@@ -50,8 +50,9 @@ import { isRecord, pick, pickBoolean, pickSteppedNumber } from './readers.ts';
  *
  * **A range is three numbers, and all three are checked.** Every one of the sixteen ranged dials
  * is read with `pickSteppedNumber`, which asks the `*_RANGE`'s own `step` where the position sits
- * as well as the bounds — so `lineStrength` moving in tenths, `antiAliasStrength` in fives from 10,
- * and the thirteen that count in ones are one check rather than three kinds of read. Bounds alone
+ * as well as the bounds — so `lineStrength` and `trimStrength` moving in tenths, `antiAliasStrength`
+ * in fives from 10, and the thirteen that count in ones are one check rather than three kinds of
+ * read. Bounds alone
  * had admitted an imported pack's `lineStrength` of 2.34567, which the panel then reported as
  * `2.3×` and no drag of the slider could return to. Reading the thirteen the same way is the half
  * that keeps working: the next dial given a step of 2 is checked by the edit that gives it one.
