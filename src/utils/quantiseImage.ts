@@ -335,19 +335,18 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
           // frame that is off its slot, which is the strictest position rather than an off one.
           settings.frameAlignment === 'SNAP' ? settings.frameDriftTolerance : null,
         );
-  // `snapFrames` hands back its argument by reference wherever no frame was marked, which is what
-  // makes the comparison below the cheap way to ask whether the sheet moved — the same contract
-  // `snapSymmetric` keeps, and the same reason: a re-segmentation is a linear pass nobody should pay
-  // for a sheet that did not change.
+  // `snapFrames` reports how many frames it carried, and `realigned` is that count as a question —
+  // the shape the fold above takes rather than the settle's, which asks by identity. The reason for
+  // asking at all is the one all three share: a re-segmentation is a linear pass nobody should pay
+  // for a sheet that did not change. The pass also hands back its argument by reference wherever no
+  // frame was marked, so a caller may ask either way; this one takes the count because the sheet it
+  // is about is compared with `output` at `sprites:` below, and one expression cannot answer for two
+  // passes — which is precisely what that field used to try. **This pass changes no silhouette, but
+  // it changes where one *is***, so every box a moved frame owns is at the position it left until
+  // the sheet is read again.
   const realignment = strips === null ? null : snapFrames(folded, strips);
   const realigned = realignment !== null && realignment.moved > 0;
   const aligned = realignment !== null && realigned ? realignment.image : folded;
-  // Re-read where a frame moved, and reused where none did — the same bargain the settle and the
-  // fold each strike above. This pass changes no silhouette, but it changes where one *is*, so every
-  // box a moved frame owns is at the position it left until the sheet is read again. It is a
-  // separate reading from the one taken over `output` below because the exemption there is about the
-  // anti-aliasing pass alone: `INTERIOR` skips that pass's re-reading and may never skip this one.
-  const alignedSprites = realigned ? spriteSegments(aligned, settings.spriteGap) : foldedSprites;
 
   // **The last pass of all, and the only one that puts smooth colour back.** Everything above takes
   // a resampled render apart into flat cells, which is what turns a returned sheet into pixel art
@@ -406,30 +405,42 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // the ones it arrived with; a moved frame keeps its silhouette and changes where it is. Either
     // way the sheet a reader downloads is the one these figures have to describe. Each re-reading is
     // a linear pass, and each is paid only by the reader who asked for the edit that made it
-    // necessary. `alignedSprites` is the second of those, taken over the sheet the frame alignment
-    // left, and this line reads on from it rather than from the fold's.
+    // necessary — which is why the inner arm below is nested rather than bound above it. Read
+    // eagerly, the frame alignment's re-reading would be computed and then thrown away by every
+    // reader who paired a move with a `SILHOUETTE` or `BOTH` softening, which is the one combination
+    // that takes the last arm.
     //
     // **Re-read once more where the anti-aliasing pass may have moved a silhouette.** The condition
-    // is the image's own identity against `aligned`, because `antiAlias` hands back its argument by
-    // reference wherever it changed nothing. A soft fringe is drawn artwork, since `spriteSegments`
-    // counts a pixel unless its alpha is exactly zero, so it grows each box by a pixel and that box
-    // is what an atlas cell has to seat.
+    // is the image's own identity against `aligned`, which `antiAlias` returns only from its two
+    // paths that allocate nothing — `OFF`, and a sweep that claimed no boundary. That is the
+    // implication this needs and it runs one way: handed back by reference, the sheet did not
+    // change. The converse does not hold, since a claim that resolves to the bytes it started from
+    // still allocates, and the cost of that is a re-segmentation nobody needed rather than a wrong
+    // answer. A soft fringe is drawn artwork, since `spriteSegments` counts a pixel unless its alpha
+    // is exactly zero, so it grows each box by a pixel and that box is what an atlas cell has to
+    // seat.
     //
-    // **`INTERIOR` is exempted, and provably rather than by assumption.** That position claims only
-    // boundaries whose two pixels are both non-clear — `inScope` in `edgeClaims` — and
+    // **`INTERIOR` is exempted, and provably rather than by assumption.** `inScope` in `edgeClaims`
+    // reads that position as `!silhouette`, so what it refuses is the boundary with one clear pixel
+    // and one drawn one — and both of the pairs it admits are safe. Where the two are drawn,
     // `coverageBlend` interpolates the two alphas, so the result is a convex combination of two
-    // values at or above one, which cannot round to zero. No pixel is cleared and no pixel stops
-    // being clear, so no box can move however many interior pixels changed. Without this the pass
-    // would pay a full linear re-segmentation for an answer identical to the one it already has.
+    // values at or above one and cannot round to zero. Where both are clear, the same interpolation
+    // is zero throughout and takes that function's `alpha <= 0` return, which writes a fully
+    // transparent pixel. No pixel is cleared and no pixel stops being clear either way, so no box
+    // can move however many interior pixels changed. Without this the pass would pay a full linear
+    // re-segmentation for an answer identical to the one it already has.
     //
-    // **The exemption is asked of `aligned`, and that is the whole of why the two readings are
-    // separate.** Written against the fold's sheet it also short-circuited the frame alignment's
-    // answer, which the proof above says nothing about — that pass moves whole frames, which is a
-    // box moving — so a snapped frame was reported at the position it left and cut there by the
-    // `.aseprite`, pack and manifest writers.
+    // **The exemption is asked of `aligned`, and that is the whole of why the arms are nested.**
+    // Written against the fold's sheet it also short-circuited the frame alignment's answer, which
+    // the proof above says nothing about — that pass moves whole frames, which is a box moving — so
+    // a snapped frame was reported at the position it left and cut there by the `.aseprite`, pack
+    // and manifest writers. The inner arm is that answer: the sheet the alignment left, read afresh
+    // where a frame moved and taken from the fold's reading where none did.
     sprites:
       output === aligned || settings.antiAlias === 'INTERIOR'
-        ? alignedSprites
+        ? realigned
+          ? spriteSegments(aligned, settings.spriteGap)
+          : foldedSprites
         : spriteSegments(output, settings.spriteGap),
     symmetry,
     // The finding, always as it stood on the sheet the reading was taken from — see
