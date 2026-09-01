@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PALETTE_COLOR_COUNTS } from '../constants/quantiser.ts';
 import { channels, imageFrom } from '../test/images.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
-import { VOTE_METHODS } from '../types/quantiser.ts';
+import { ANTI_ALIAS_MODES, VOTE_METHODS } from '../types/quantiser.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { channelLevels } from './channelLevels.ts';
 import { colorPlanFor } from './colorReduction.ts';
@@ -1619,6 +1619,20 @@ describe('quantiseImage frame alignment', () => {
     expect(moved.strips?.[0]?.frames.map((frame) => frame.drift.x)).toEqual([0, 2, 0]);
     expect(moved.strips?.[0]?.frames[1]?.snapped).toBe(true);
     // And the segmentation beside it describes the sheet the reader is given.
+    const boxes = moved.sprites.kind === 'SEGMENTED' ? moved.sprites.boxes : [];
+    expect(boxes.map((box) => box.left)).toEqual([2, 14, 26]);
+  });
+
+  it.each(ANTI_ALIAS_MODES)('reports the moved frame where it landed under antiAlias %s', (antiAlias) => {
+    // The move and the softening are separate passes, and only the second of them has an exemption.
+    // `INTERIOR` clears no pixel and makes no cleared pixel drawn, so it may skip its own re-reading
+    // of the sheet — but it may not skip the frame alignment's, which moves whole frames and so
+    // moves whole boxes. Asked of the folded sheet the exemption did exactly that, and every writer
+    // that cuts a frame out of `image` — the `.aseprite` document, the sprite pack, the manifest —
+    // cut the middle block at the position it left, clipping it and taking two columns of empty
+    // sheet in its place.
+    const moved = quantiseImage(DRIFTED, { ...settingsFor('SNAP', 0), antiAlias });
+
     const boxes = moved.sprites.kind === 'SEGMENTED' ? moved.sprites.boxes : [];
     expect(boxes.map((box) => box.left)).toEqual([2, 14, 26]);
   });
