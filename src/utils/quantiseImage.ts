@@ -342,6 +342,12 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
   const realignment = strips === null ? null : snapFrames(folded, strips);
   const realigned = realignment !== null && realignment.moved > 0;
   const aligned = realignment !== null && realigned ? realignment.image : folded;
+  // Re-read where a frame moved, and reused where none did — the same bargain the settle and the
+  // fold each strike above. This pass changes no silhouette, but it changes where one *is*, so every
+  // box a moved frame owns is at the position it left until the sheet is read again. It is a
+  // separate reading from the one taken over `output` below because the exemption there is about the
+  // anti-aliasing pass alone: `INTERIOR` skips that pass's re-reading and may never skip this one.
+  const alignedSprites = realigned ? spriteSegments(aligned, settings.spriteGap) : foldedSprites;
 
   // **The last pass of all, and the only one that puts smooth colour back.** Everything above takes
   // a resampled render apart into flat cells, which is what turns a returned sheet into pixel art
@@ -400,14 +406,14 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // the ones it arrived with; a moved frame keeps its silhouette and changes where it is. Either
     // way the sheet a reader downloads is the one these figures have to describe. Each re-reading is
     // a linear pass, and each is paid only by the reader who asked for the edit that made it
-    // necessary.
+    // necessary. `alignedSprites` is the second of those, taken over the sheet the frame alignment
+    // left, and this line reads on from it rather than from the fold's.
     //
-    // **Re-read once more where a silhouette may have moved.** The condition is the image's own
-    // identity, because `snapFrames` and `antiAlias` both hand back their argument by reference
-    // wherever they changed nothing — so comparing with the sheet the fold left covers both passes
-    // at once. A soft fringe is drawn artwork, since `spriteSegments` counts a pixel unless its
-    // alpha is exactly zero, so it grows each box by a pixel and that box is what an atlas cell has
-    // to seat.
+    // **Re-read once more where the anti-aliasing pass may have moved a silhouette.** The condition
+    // is the image's own identity against `aligned`, because `antiAlias` hands back its argument by
+    // reference wherever it changed nothing. A soft fringe is drawn artwork, since `spriteSegments`
+    // counts a pixel unless its alpha is exactly zero, so it grows each box by a pixel and that box
+    // is what an atlas cell has to seat.
     //
     // **`INTERIOR` is exempted, and provably rather than by assumption.** That position claims only
     // boundaries whose two pixels are both non-clear — `inScope` in `edgeClaims` — and
@@ -415,9 +421,15 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // values at or above one, which cannot round to zero. No pixel is cleared and no pixel stops
     // being clear, so no box can move however many interior pixels changed. Without this the pass
     // would pay a full linear re-segmentation for an answer identical to the one it already has.
+    //
+    // **The exemption is asked of `aligned`, and that is the whole of why the two readings are
+    // separate.** Written against the fold's sheet it also short-circuited the frame alignment's
+    // answer, which the proof above says nothing about — that pass moves whole frames, which is a
+    // box moving — so a snapped frame was reported at the position it left and cut there by the
+    // `.aseprite`, pack and manifest writers.
     sprites:
-      output === folded || settings.antiAlias === 'INTERIOR'
-        ? foldedSprites
+      output === aligned || settings.antiAlias === 'INTERIOR'
+        ? alignedSprites
         : spriteSegments(output, settings.spriteGap),
     symmetry,
     // The finding, always as it stood on the sheet the reading was taken from — see
