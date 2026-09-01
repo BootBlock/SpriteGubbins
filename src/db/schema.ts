@@ -149,8 +149,14 @@ export const DROP_TABLE_SQL = (table: string) => `DROP TABLE IF EXISTS ${table}`
 /**
  * Where the localStorage fallback keeps each of the tables above.
  *
- * `sprite_gubbins_custom_presets` is deliberately the key the single-file application used, so a
- * user who had presets saved in the original still has them here. The rest are named to match.
+ * `sprite_gubbins_custom_presets` is the key the single-file application used, and the rest are
+ * named to match it. **The key is inherited; the collection under it is not.** The original stored
+ * its archetypes as nested objects, and this fallback did too for as long as it read them with
+ * `parseImportedPreset`. It now stores every collection in the SQLite table's own `snake_case` row
+ * shape, so one parser reads a row from either backend — which is what makes the two accept the
+ * same stored collection and list it in the same order. A collection written in the older nested
+ * shape no longer parses and is discarded, which is the pre-1.0 policy rather than an oversight:
+ * see CLAUDE.md, “No backwards compatibility before 1.0.0”.
  */
 export const STORAGE_KEYS = {
   customPresets: 'sprite_gubbins_custom_presets',

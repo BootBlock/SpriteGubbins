@@ -5,7 +5,7 @@ import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
-import { parseHistoryRow, parseImportedPreset, parseQuantisePresetRow } from './rows.ts';
+import { parseHistoryRow, parsePresetRow, parseQuantisePresetRow } from './rows.ts';
 import { parseJson } from './readers.ts';
 import { HISTORY_STORAGE_BUDGET, evictionLengths, trimHistoryToBudget } from './historyEviction.ts';
 import { parseSession } from './sessionParser.ts';
@@ -164,32 +164,62 @@ export class LocalStorageBackend implements PersistenceBackend {
     return this.write(STORAGE_KEYS.promptHistory, []);
   }
 
-  savePreset(preset: PresetArchetype): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.customPresets, parseImportedPreset);
-    const next = [...existing.filter((entry) => entry.id !== preset.id), preset];
-    return this.write(STORAGE_KEYS.customPresets, next);
+  /*
+   * The archetypes are stored in the same `snake_case` row shape the SQLite table uses, as the
+   * history rows and the quantiser's presets are, so `parsePresetRow` serves both backends and the
+   * two can never drift in what they accept.
+   *
+   * **No `updated_at`, for the reason {@link toQuantiseRow} gives.** The column exists on the other
+   * side because SQLite orders the collection with it; here the order *is* the array's, kept
+   * newest-first by the prepend below. This backend rewrites the whole collection on every
+   * operation, so a timestamp written here would stamp every row with one instant on each write —
+   * a delete included — destroying exactly the per-entry time the field appears to promise.
+   */
+  private static toPresetRow(preset: PresetArchetype): Record<string, unknown> {
+    return {
+      id: preset.id,
+      name: preset.name,
+      description: preset.description,
+      category: preset.category,
+      // Serialised, not nested, so the shape matches the SQLite columns exactly and one parser
+      // reads both.
+      subject_json: JSON.stringify(preset.subject),
+      output_json: JSON.stringify(preset.output),
+    };
   }
 
+  savePreset(preset: PresetArchetype): Promise<void> {
+    const existing = this.read(STORAGE_KEYS.customPresets, parsePresetRow);
+    const next = [preset, ...existing.filter((entry) => entry.id !== preset.id)];
+    return this.write(STORAGE_KEYS.customPresets, next.map(LocalStorageBackend.toPresetRow));
+  }
+
+  /** In stored order, which the prepend above keeps newest-first — see {@link toPresetRow}. */
   listPresets(): Promise<PresetArchetype[]> {
-    return Promise.resolve(this.read(STORAGE_KEYS.customPresets, parseImportedPreset));
+    return Promise.resolve(this.read(STORAGE_KEYS.customPresets, parsePresetRow));
   }
 
   deletePreset(id: string): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.customPresets, parseImportedPreset);
+    const existing = this.read(STORAGE_KEYS.customPresets, parsePresetRow);
     return this.write(
       STORAGE_KEYS.customPresets,
-      existing.filter((entry) => entry.id !== id),
+      existing.filter((entry) => entry.id !== id).map(LocalStorageBackend.toPresetRow),
     );
   }
 
+  /**
+   * In the file's own order, which is the whole of what a pack says about order — see the
+   * `replacePresets` case in `sqliteWorker.ts`, which reaches the same answer by stamping every
+   * imported row with one instant.
+   */
   replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
-    return this.write(STORAGE_KEYS.customPresets, [...presets]);
+    return this.write(STORAGE_KEYS.customPresets, presets.map(LocalStorageBackend.toPresetRow));
   }
 
   /*
    * The quantiser's presets are stored in the same `snake_case` row shape the SQLite table uses, as
-   * the history rows are, so `parseQuantisePresetRow` serves both backends and the two can never
-   * drift in what they accept.
+   * the history rows and the archetypes are, so `parseQuantisePresetRow` serves both backends and
+   * the two can never drift in what they accept.
    *
    * **No `updated_at`, and that is a real difference between the backends rather than an omission.**
    * The column exists on the other side because SQLite orders the collection with it; here the
@@ -238,7 +268,7 @@ export class LocalStorageBackend implements PersistenceBackend {
   /**
    * The settings, stored as the object itself rather than as a row.
    *
-   * The two collections above keep the SQLite table's `snake_case` shape so one parser can read
+   * All three collections above keep the SQLite table's `snake_case` shape so one parser can read
    * both backends; there is nothing to align here, because the SQLite side stores this same object
    * serialised into a single column. `parseSettings` is that shared parser — the SQLite backend
    * unwraps its row and hands the payload to it, and this hands over what it read.
