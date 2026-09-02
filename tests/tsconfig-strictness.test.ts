@@ -33,9 +33,10 @@ const NODE_CONFIG = 'tsconfig.node.json';
  * so are correctly set in `tsconfig.app.json` alone.
  *
  * Both are properties of the code each program holds. `useDefineForClassFields` picks the class
- * field semantics the browser bundle is emitted against, and the Node-side program emits nothing.
- * `resolveJsonModule` lets `src/` import a `.json` file as a module, which nothing under `tests/`
- * or `scripts/` does — those read JSON off disk and parse it, as this file does.
+ * field semantics `src/` is compiled under, and it is Vite that compiles `src/` into the browser
+ * bundle — neither config emits anything, both being `noEmit`, so emission is not what separates
+ * them. `resolveJsonModule` lets `src/` import a `.json` file as a module, which nothing under
+ * `tests/` or `scripts/` does — those read JSON off disk and parse it, as this file does.
  *
  * An entry that has stopped describing a real difference fails below, so the list cannot rot into a
  * blanket permission: setting one of these in `tsconfig.node.json` means deleting its entry here.
@@ -47,8 +48,8 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null;
 }
 
-/** One config's `compilerOptions` as written — the file is JSONC, so it is parsed as such. */
-function compilerOptions(file: string): Readonly<Record<string, unknown>> {
+/** One config's whole object, as written — the file is JSONC, so it is parsed as such. */
+function declaration(file: string): Readonly<Record<string, unknown>> {
   const parsed = ts.parseConfigFileTextToJson(file, readFileSync(resolve(process.cwd(), file), 'utf8'));
   if (parsed.error) {
     throw new Error(
@@ -56,10 +57,15 @@ function compilerOptions(file: string): Readonly<Record<string, unknown>> {
     );
   }
   const config: unknown = parsed.config;
-  if (!isRecord(config) || !isRecord(config['compilerOptions'])) {
-    throw new Error(`${file} declares no compilerOptions object`);
-  }
-  return config['compilerOptions'];
+  if (!isRecord(config)) throw new Error(`${file} is not a JSON object`);
+  return config;
+}
+
+/** One config's `compilerOptions`, which is where every flag this suite compares is declared. */
+function compilerOptions(file: string): Readonly<Record<string, unknown>> {
+  const options: unknown = declaration(file)['compilerOptions'];
+  if (!isRecord(options)) throw new Error(`${file} declares no compilerOptions object`);
+  return options;
 }
 
 /** The options whose values are booleans, which is where every strictness flag lives. */
@@ -72,6 +78,17 @@ const app = booleanOptions(APP_CONFIG);
 const node = booleanOptions(NODE_CONFIG);
 
 describe('tsconfig strictness', () => {
+  it('compares two configs that declare their own options, rather than inheriting any', () => {
+    // The comparison reads what each file declares, because `parseConfigFileTextToJson` does not
+    // resolve `extends` — an inherited flag would be invisible to it, and a base config setting one
+    // config's strictness would take the comparison green while saying nothing about the other.
+    // Neither file extends anything today; the day one does, this suite has to learn to resolve it
+    // rather than go on reporting a pass it can no longer support.
+    for (const file of [APP_CONFIG, NODE_CONFIG]) {
+      expect(declaration(file)['extends'], `${file} must declare its own options`).toBeUndefined();
+    }
+  });
+
   it('reads both configs rather than agreeing perfectly on nothing', () => {
     expect(app.size).toBeGreaterThan(0);
     expect(node.size).toBeGreaterThan(0);

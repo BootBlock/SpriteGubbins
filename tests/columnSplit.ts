@@ -177,10 +177,17 @@ export function readColumnSplit({
   const capEntry = MAX_WIDTHS_PX[capToken];
   if (capEntry === undefined) throw new Error(`unrecognised page cap \`max-w-${capToken}\``);
   /*
-    Re-bound with the type the check just established, because `columnWidthAt` below closes over it
-    and TypeScript drops a `const`'s narrowing at a function boundary. Without the annotation the
-    closure sees `number | undefined` again, and the only ways past that are a cast or a fabricated
-    fallback — which is the fabricated input `capture` refuses on the same page.
+    Re-bound with the type the check just established, because `columnWidthAt` below reads it and is
+    a hoisted `function` declaration. TypeScript carries a `const`'s narrowing into a closure created
+    after the narrowing — measured on the repo's own 6.0.3, an arrow reading `capEntry` compiles
+    clean — but a hoisted declaration may run before the check, so the narrowing is dropped there and
+    the closure sees `number | undefined` again.
+
+    Annotating rather than turning `columnWidthAt` into a `const` arrow, which would also compile:
+    the annotation states what the reader needs at the point the value is bound, instead of resting
+    the file on a hoisting rule nothing in it mentions. It is not a cast — the compiler still checks
+    that `capEntry` is assignable here — and it invents no fallback, which is the fabricated input
+    `capture` refuses on the same page.
   */
   const pageCapPx: number = capEntry;
   /*
