@@ -19,7 +19,11 @@
     "jsx": "react-jsx",
 
     /* Strictness. The spec mandates the first six; the rest are the same bug-catching flags
-       the sibling Gubbins project runs, and cost nothing to hold to from day one. */
+       the sibling Gubbins project runs, and cost nothing to hold to from day one.
+
+       `tsconfig.node.json` carries the same block, so `vite.config.ts`, `scripts/` and `tests/`
+       are checked exactly as strictly as `src/`. A flag added here goes there too, and
+       `tests/tsconfig-strictness.test.ts` fails until it does. */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

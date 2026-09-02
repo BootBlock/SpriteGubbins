@@ -89,10 +89,22 @@ export function rasterise(size: number, palette: Record<string, IconColour>): Ui
   }
   const scale = size / GRID;
   const rgba = new Uint8Array(size * size * 4);
+  /*
+    The two absence checks below are what `noUncheckedIndexedAccess` asks of a computed index
+    rather than cases that arise: a `size` not divisible by GRID was refused above, so both indices
+    land inside `0 … GRID - 1`, and `tests/app-icons.test.ts` asserts the glyph is exactly GRID rows
+    of GRID characters. What they buy is the message. Edit the artwork to a shorter shape without
+    them and a missing row is a `TypeError` on `undefined`, while a short row reaches the palette
+    lookup and reports that the glyph "uses 'undefined'" — neither of which names the row.
+  */
   for (let y = 0; y < size; y += 1) {
-    const row = GLYPH[(y / scale) | 0];
+    const gridY = (y / scale) | 0;
+    const row = GLYPH[gridY];
+    if (row === undefined) throw new Error(`The glyph has no row ${gridY} — it is not ${GRID} rows tall`);
     for (let x = 0; x < size; x += 1) {
-      const key = row[(x / scale) | 0];
+      const gridX = (x / scale) | 0;
+      const key = row[gridX];
+      if (key === undefined) throw new Error(`Glyph row ${gridY} is shorter than ${GRID} characters`);
       const colour = palette[key];
       if (!colour) throw new Error(`Glyph uses '${key}', which has no palette entry`);
       rgba.set(colour, (y * size + x) * 4);

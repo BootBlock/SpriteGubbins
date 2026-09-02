@@ -99,6 +99,15 @@ describe('the app icon’s palette', () => {
     expect(new Set(Object.keys(ICON_PALETTE_TOKENS))).toEqual(new Set([...GLYPH.join('')]));
   });
 
+  it('holds the glyph to a square GRID of characters', () => {
+    // `rasterise` indexes the glyph at `(y / scale) | 0` for every pixel, and it throws on a row or
+    // a character that is not there. This is what says those throws describe an edit to the artwork
+    // rather than a case the generator can reach: a row added, dropped or mistyped fails here first,
+    // with the row named, instead of at whichever output size happens to be rendered next.
+    expect(GLYPH).toHaveLength(GRID);
+    expect(GLYPH.map((row) => row.length)).toStrictEqual(GLYPH.map(() => GRID));
+  });
+
   it('states a token name for every entry, never a colour of its own', () => {
     // The failure this whole change is about is a value typed here going stale. A name cannot: it
     // either resolves against the stylesheet's `@theme` block or `tokenHex` throws.

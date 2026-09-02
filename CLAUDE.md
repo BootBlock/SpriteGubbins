@@ -1261,7 +1261,7 @@ machine-enforced, the build fails — don't go looking for a way around it.
 | `as any`, `@ts-ignore`, `@ts-nocheck` | `@typescript-eslint/no-explicit-any`, `ban-ts-comment` |
 | `eslint-disable` comments | `linterOptions.noInlineConfig` — inline disables are **ignored**, so the rule still fires |
 | `forEach(async …)`, floating promises | `@typescript-eslint/no-floating-promises`, `no-misused-promises` |
-| Unsafe array indexing (`array[0].prop`) | `noUncheckedIndexedAccess` in `tsconfig.app.json` |
+| Unsafe array indexing (`array[0].prop`) | `noUncheckedIndexedAccess`, set in **both** tsconfigs — `src/` and the `vite.config.ts` / `scripts/` / `tests/` program alike. `tests/tsconfig-strictness.test.ts` fails if the two ever part company. |
 | Missing effect cleanup (listeners, timers, worker callbacks) | **Not machine-enforced.** Every `useEffect` that registers anything returns a cleanup function; React 19 Strict Mode double-invokes in dev, which is how you find the ones that don't. |
 | Prop-drilling through 3+ levels when a store exists | **Not machine-enforced.** Consume Zustand directly with atomic selectors — `useSubjectStore((s) => s.category)`, never `useSubjectStore()` wholesale, which re-renders on every unrelated field edit. |
 | Hardcoded magic values | See [design tokens](#design-tokens-are-mandatory-where-one-exists); non-visual constants live in `src/constants/`. |

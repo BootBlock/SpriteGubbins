@@ -68,11 +68,28 @@ function configBlock(name: string): string {
   throw new Error(`${name} is never closed in vite.config.ts`);
 }
 
+/**
+ * The one capture group a match carries, or the pattern that produced it has lost its group.
+ *
+ * Every pattern in this file has exactly one group and none of them is optional, so this never
+ * fires — but `noUncheckedIndexedAccess` is right to ask, and the answer must not be a cast. An
+ * `undefined` let through here would join the specifier set and be compared against `include` and
+ * `exclude` as though it were an import, which is a silently wrong pass rather than a failure.
+ */
+function group(match: RegExpMatchArray | RegExpExecArray, what: string): string {
+  const value = match[1];
+  if (value === undefined) throw new Error(`${what} matched with no capture group`);
+  return value;
+}
+
 /** Reads an array literal out of a block — `include: [...]` / `exclude: [...]`. */
 function configList(block: string, key: 'include' | 'exclude'): readonly string[] {
   const matched = new RegExp(`${key}:\\s*\\[([^\\]]*)\\]`, 'u').exec(block);
   if (!matched) throw new Error(`optimizeDeps.${key} must be present in vite.config.ts`);
-  return [...matched[1].matchAll(/['"]([^'"]+)['"]/gu)].map((match) => match[1]);
+  const entries = group(matched, `optimizeDeps.${key}`);
+  return [...entries.matchAll(/['"]([^'"]+)['"]/gu)].map((match) =>
+    group(match, `an entry of optimizeDeps.${key}`),
+  );
 }
 
 const optimizeDeps = configBlock('optimizeDeps');
@@ -86,8 +103,12 @@ function isBare(specifier: string): boolean {
 
 /** The package a specifier belongs to — `react/jsx-runtime` → `react`, scoped names keep two segments. */
 function packageOf(specifier: string): string {
-  const parts = specifier.split('/');
-  return specifier.startsWith('@') ? parts.slice(0, 2).join('/') : parts[0];
+  // Sliced rather than indexed, which says the same thing and asks nothing of an empty case that
+  // cannot arise: `''.split('/')` is `['']`, so a first segment always exists.
+  return specifier
+    .split('/')
+    .slice(0, specifier.startsWith('@') ? 2 : 1)
+    .join('/');
 }
 
 /**
@@ -120,7 +141,7 @@ const imported = new Set(
     .flatMap((file) => {
       const text = readFileSync(file, 'utf8');
       return [STATIC_IMPORT, RE_EXPORT, DYNAMIC_IMPORT].flatMap((pattern) =>
-        [...text.matchAll(pattern)].map((match) => match[1]),
+        [...text.matchAll(pattern)].map((match) => group(match, `an import in ${file}`)),
       );
     })
     .filter(isBare),

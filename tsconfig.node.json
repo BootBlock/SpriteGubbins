@@ -17,12 +17,23 @@
     "moduleDetection": "force",
     "noEmit": true,
 
-    /* Linting / strictness */
+    /* Strictness. This block is a copy of `tsconfig.app.json`'s, and being a copy is the point:
+       the two programs were configured independently and only one of them ever gained
+       `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes`, so `tests/` — where CLAUDE.md
+       says the app's correctness is established — was checked more loosely than the code it tests.
+       A guard that indexes an array wrongly asserts the wrong thing quietly. Both configs declared
+       `"strict": true`, which is why the gap read as no gap at all.
+
+       `tests/tsconfig-strictness.test.ts` compares the two blocks and fails on any key present in
+       one and absent from the other, so a flag added to either has to be added to both. */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
     "noUncheckedSideEffectImports": true,
+    "verbatimModuleSyntax": true,
 
     "types": ["node"]
   },

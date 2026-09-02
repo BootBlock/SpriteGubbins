@@ -174,8 +174,15 @@ export function readColumnSplit({
   // The page container the grid resolves against.
   const mainClasses = capture(app, /<main[^>]*className="([^"]*)"/, "the page container's classes");
   const capToken = capture(mainClasses, /\bmax-w-([\w-]+)\b/, "the page's width cap");
-  const pageCapPx = MAX_WIDTHS_PX[capToken];
-  if (pageCapPx === undefined) throw new Error(`unrecognised page cap \`max-w-${capToken}\``);
+  const capEntry = MAX_WIDTHS_PX[capToken];
+  if (capEntry === undefined) throw new Error(`unrecognised page cap \`max-w-${capToken}\``);
+  /*
+    Re-bound with the type the check just established, because `columnWidthAt` below closes over it
+    and TypeScript drops a `const`'s narrowing at a function boundary. Without the annotation the
+    closure sees `number | undefined` again, and the only ways past that are a cast or a fabricated
+    fallback — which is the fabricated input `capture` refuses on the same page.
+  */
+  const pageCapPx: number = capEntry;
   /*
     The page's padding is `--page-gutter`, not a spacing utility: `<main>` spends it, and so do the
     two sticky preview columns, which leave that much room above and below themselves. It is read
