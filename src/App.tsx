@@ -174,7 +174,8 @@ export function App() {
           without this, the next Tab carries on from the link and lands back in the chrome.
         */}
         {/*
-          The padding is `--page-gutter` rather than `p-4 md:p-6`, because it is not only this
+          The padding is `--page-gutter` rather than a padding utility with an `md:` step above it,
+          because it is not only this
           element's padding: all three sticky columns leave the same room above themselves, the two
           capped ones leave it below as well, and `DetachedPreview` pads its own window with it. One
           declaration in `index.css` carries the responsive step, and nothing here can drift from

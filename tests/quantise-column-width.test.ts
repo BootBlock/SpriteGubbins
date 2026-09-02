@@ -166,7 +166,8 @@ describe('quantise column width', () => {
    * a `max-w-md` wrapper so it does not stretch the width of a stacked panel, and 448px against a
    * 442px budget is six pixels of headroom — the tightest constraint in the tab, and one the shared
    * derivation never sees, because the studio's panels have no such wrapper. Narrowing it to
-   * `max-w-sm` would truncate every budgeted label while every other test here stayed green.
+   * the `sm` container size would truncate every budgeted label while every other test here
+   * stayed green.
    */
   it('gives a select its full budget inside its own wrapper', () => {
     for (const file of SELECT_FILES) {

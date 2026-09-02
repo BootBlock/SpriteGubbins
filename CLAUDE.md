@@ -705,12 +705,46 @@ the assertion that they exist; and **every `duration-*` under `src/` has to be o
 (293 / 390 / 585 / 975 / 1365 / 1440). The reduced-motion catch-alls still win over the default, since
 it and a `duration-*` compile to the same declaration and both blocks carry `!important`.
 
-**A whole class name may not be spelled in a comment.** Tailwind scans `src/` and `tests/` without
-caring what is code, so a class written in prose is a candidate the build emits — which is how a
-*retired* figure puts itself back into the bundle as dead CSS, as `.duration-500` did from
-`TabSwitcher`'s note on the pill's old speed. The rung scan therefore reads the **raw** source rather
-than blanking comments, which is what lets it catch that at all; the record stays honest by writing
-the figure and the utility in two halves, as that note and the test's own docblock now do.
+**A whole class name may not be spelled anywhere the app does not wear it.** Tailwind's content scan
+reads every file in the project as a template and emits a utility for each class name it finds,
+without caring whether that name was code, a docblock, a test's assertion string or an ordinary
+English sentence. So prose ships CSS. `TabSwitcher`'s note on the tab pill's retired speed put
+`.duration-500` back into the bundle long after the figure was corrected, and the ground/ink sweep in
+`tests/design-tokens.test.ts` was emitting `.bg-ink/60` from the paragraph explaining why nothing may
+wear one — the rule against ink on a role fill, shipping a working version of the class it bans.
+**The bytes are not the cost**, and `src/index.css` states the real one where it excludes the
+documentation: a class the app bans but the build emits *works*, so a component reaching for it
+renders correctly, and the thing that normally catches the mistake — an unknown utility emitting no
+CSS at all — never fires.
+
+**The build asks the general question, and [scripts/deadUtilities.ts](scripts/deadUtilities.ts) is
+where it lives.** It reads every class selector out of the emitted stylesheet and fails on any the
+app's own markup never spells. `appMarkup()` in [scripts/sourceFiles.ts](scripts/sourceFiles.ts) is
+that set — `src/` with the colocated tests taken out, plus `index.html`, comments blanked — and it is
+deliberately smaller than the `tailwindScanned()` beside it, because where a candidate may come
+*from* and where it may be *justified* are two different questions. It cannot be a Vitest suite,
+since Vitest never builds; it runs from a `closeBundle` hook for the reason that config records, and
+a failure there strands a written `dist/` that must not be served. Ten selectors failed it on the
+first run: seven spelled in comments, two in a test's assertion strings, and one from a regex whose
+escaped decimal point ended the candidate a character early. **The remedy is to write the name in two
+halves that are not a class apart** — as `TabSwitcher`'s note and the rung guard's own docblock do —
+or to give an assertion the variant prefix the app actually wears, which is the stronger claim as
+well as the quieter one.
+
+**`PROSE_COLLISIONS` is the only exemption, and it is six ordinary English words.** `shrink`,
+`invert`, `lowercase`, `isolate`, `sepia` and `backdrop-filter` are each a Tailwind utility *and* a
+word this repository's prose has to be able to use — in eight docblocks about flex layout, two about
+pixel data, the isolation bootstrap, the note saying why that colour is not in the vocabulary, and
+five explanations of the stacking context glass creates. Rewriting those sentences to dodge the
+scanner would make them worse English for a few hundred bytes. They are admissible because **none of
+them is a class this project bans**: each is unremarkable, a component reaching for one would be
+right, and so nothing hides behind the exemption — which is the test a seventh entry has to pass. An
+entry naming a class the app has since taken up for real fails, because the exemption is then
+covering nothing.
+
+The rung scan stays beside it and is a different claim. It reads the raw source for a `duration-` off
+the six-rung ladder, which is a *wrong speed* rather than a dead class, and it catches one written at
+a call site the app genuinely wears.
 
 **A page transition is the app's second speed, and it is a `view-*` token rather than a number.**
 Navigating is worth dwelling on, so the second pass gave it 1.6× where everything else took 1.3× —

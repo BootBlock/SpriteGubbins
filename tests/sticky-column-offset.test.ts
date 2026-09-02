@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { scannableSources } from './sourceFiles.ts';
+import { scannableSources } from '../scripts/sourceFiles.ts';
 
 /**
  * No sticky column may state how tall the header is.
@@ -65,6 +65,17 @@ function read(file: string): string {
  * constant is swept along with the JSX. Its own docblock names who else calls it; a count kept here
  * as well would be a second census, and the stale one is always the one being read.
  */
+/**
+ * The two arbitrary values a sticky column has to carry, held apart from the utility they belong to.
+ *
+ * Written whole they would be class names, and Tailwind reads this file as markup — so the suite
+ * asserting that no column states a length of its own would put two unprefixed lengths into the
+ * bundle for nothing to wear. The utility half is assembled at the call site with the column's own
+ * variant prefix in front of it, which is where the two become a class again.
+ */
+const OFFSET_VALUE = '[var(--sticky-column-top)]';
+const CAP_VALUE = '[var(--sticky-column-height)]';
+
 function stickyColumns(): readonly (readonly [string, string])[] {
   const found: (readonly [string, string])[] = [];
   for (const file of scannableSources()) {
@@ -103,8 +114,15 @@ describe('sticky column offset', () => {
        * previews do and the preset library's handful of rows does not.
        */
       it('takes its offset from the measured header', () => {
-        expect(classes).toContain('top-[var(--sticky-column-top)]');
-        if (/\bmax-h-/.test(classes)) expect(classes).toContain('max-h-[var(--sticky-column-height)]');
+        // Asserted with the column's own variant prefix in front of it, which is two things at
+        // once. It is the stronger claim — an offset applying at every width would clear a
+        // chrome the column is not yet sticky beneath — and it keeps this file from spelling a
+        // whole class name, since the unprefixed forms are worn by nothing and Tailwind would
+        // emit a rule for each of them from the assertion alone.
+        const prefix = /\b([a-z][\w-]*):sticky\b/.exec(classes)?.[1] ?? '';
+        expect(prefix, 'the sweep matched a prefixed `:sticky` this cannot read back').not.toBe('');
+        expect(classes).toContain(`${prefix}:top-` + OFFSET_VALUE);
+        if (/\bmax-h-/.test(classes)) expect(classes).toContain(`${prefix}:max-h-` + CAP_VALUE);
       });
 
       it('states no length of its own', () => {
@@ -112,8 +130,9 @@ describe('sticky column offset', () => {
         // Spelling either of them here would be worse than useless: Tailwind scans comments, so
         // the file whose purpose is that no figure survives would keep them alive in the bundle.
         expect(classes, 'a numeric `top-*` is a header height in disguise').not.toMatch(/\btop-\d/);
-        // Nothing here has ever worn `max-h-96`, and this is what keeps it that way: the cap is the
-        // same figure from the other end, and a spacing step states it just as firmly.
+        // Nothing here has ever worn a numeric `max-h-` step, and this is what keeps it that way:
+        // the cap is the same figure from the other end, and a spacing step states it just as
+        // firmly.
         expect(classes, 'a numeric `max-h-*` is the same figure from the other end').not.toMatch(
           /\bmax-h-\d/,
         );

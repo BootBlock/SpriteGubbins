@@ -200,7 +200,7 @@ export function readColumnSplit({
   /*
     The page cap is only the grid's cap while nothing between them narrows it. A `max-w-*` anywhere
     on the way down gives every column less than this arithmetic assumes — and the quantiser held
-    itself to `max-w-6xl` until the split arrived, where a 5/7 column could not have reached the
+    itself to the 6xl cap until the split arrived, where a 5/7 column could not have reached the
     budget at any viewport. So a cap is refused rather than quietly absorbed.
 
     **Every root on the way down is read, because they are not one element.** The studio returns its

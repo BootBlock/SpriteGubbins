@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { codeOnly } from './codeOnly';
-import { scannableSources } from './sourceFiles';
+import { codeOnly } from '../scripts/codeOnly.ts';
+import { scannableSources } from '../scripts/sourceFiles.ts';
 
 /**
  * Where a raw colour literal may appear in `src/`, and the rule that decides it.

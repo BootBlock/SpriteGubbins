@@ -159,8 +159,9 @@ export function CollapsibleSection({ id, defaultOpen, heading, digest, children 
         event.currentTarget.querySelector('summary')?.focus();
       }}
       // The last group's own bottom padding would otherwise stack on the panel's, leaving far more
-      // air under the final field than there is above the panel heading. Trimmed to `pb-1` rather
-      // than removed: `section-reveal` clips the block axis of `::details-content`, and clipping
+      // air under the final field than there is above the panel heading. Trimmed to the single step
+      // the class below states rather than removed: `section-reveal` clips the block axis of
+      // `::details-content`, and clipping
       // happens at the padding edge — so a final control sitting flush against it loses the bottom
       // stroke of its focus ring, which is drawn 4px outside its box. Those 4px are the clearance,
       // and they are 12px less air than the `pb-4` this is trimming.

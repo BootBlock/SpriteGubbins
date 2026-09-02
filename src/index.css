@@ -317,7 +317,7 @@
    *   width `C`, so C ≥ 1176px;
    * - `main` is `max-w-7xl` padded with `--page-gutter`, 1.5rem here, so C is the viewport less 48px → **1224px**.
    *
-   * The tab therefore spends the whole of `main`'s cap rather than the `max-w-6xl` it used to hold
+   * The tab therefore spends the whole of `main`'s cap rather than the 6xl cap it used to hold
    * itself to: at 6xl the content tops out at 1104px, and a 5/7 split could never reach the budget
    * at any viewport. Below this width the tab stacks, which is the layout it has always had.
    * `tests/quantise-column-width.test.ts` recomputes the figure from those same classes.

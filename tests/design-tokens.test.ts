@@ -2,8 +2,8 @@ import { readFileSync } from 'node:fs';
 import { basename, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { codeOnly } from './codeOnly';
-import { scannableSources, tailwindScanned } from './sourceFiles';
+import { codeOnly } from '../scripts/codeOnly.ts';
+import { scannableSources, tailwindScanned } from '../scripts/sourceFiles.ts';
 import { THEME_COLOR_PLACEHOLDER, themeColorHex } from '../scripts/themeColour.ts';
 
 /**
@@ -636,8 +636,18 @@ describe('the speed a transition runs at when its call site says nothing', () =>
     // had a default the caret was on Tailwind's stock ease; a default of `ease-emphasized` would
     // hand it the curve that rule rejects by name — 83% travelled in its first quarter — so the
     // panel would ease while the chevron snapped. It has to state the curve, as the height does.
+    //
+    // The caret is that file's one template-literal class string, and the pattern anchors on the
+    // template rather than on a size for the reason this whole suite exists: the anchor used to open
+    // with a `size-` value, a backslash ends a Tailwind candidate, and so the escaped decimal point
+    // put the half in front of it into the scanner's list. The build emitted a rule for a size
+    // nothing wears, from the file written to keep dead classes out of the bundle. The count is
+    // asserted because a second template literal in that component would silently change which
+    // string is being read.
     const source = resolve(process.cwd(), 'src/components/common/CollapsibleSection.tsx');
-    const classes = /className=\{`size-3\.5[^`]*`\}/.exec(readFileSync(source, 'utf8'))?.[0] ?? '';
+    const templates = [...readFileSync(source, 'utf8').matchAll(/className=\{`[^`]*`\}/g)];
+    expect(templates).toHaveLength(1);
+    const classes = templates[0]?.[0] ?? '';
 
     expect(classes).toContain('duration-585');
     expect(classes).toContain('ease-decelerate');
@@ -1404,8 +1414,9 @@ describe('a role colour used as a ground', () => {
     /(?<![\w-])(?:bg|from|to)-(?:accent(?:-strong|-soft)?|tab|gold|rose|emerald|neon(?:-deep)?)(?![\w/-])/;
 
   /**
-   * The ramp as class names. `bg-` as well as `text-`, because the countdown bar was `bg-ink/60` at
-   * 1.56:1 — a graphic on the ground rather than a label, failing the same way for the same reason.
+   * The ramp as class names. `bg-` as well as `text-`, because the countdown bar took the ramp's
+   * top tone as a `bg-` at 60% and measured 1.56:1 — a graphic on the ground rather than a label,
+   * failing the same way for the same reason.
    *
    * `ring-` is deliberately absent: a ring is drawn outside the element, over whatever surrounds it,
    * so `ring-ink ring-offset-foundry-800` on an accent swatch sits on the panel and is correct.

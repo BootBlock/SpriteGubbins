@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { relative, sep } from 'node:path';
 import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { scannableSources } from './sourceFiles.ts';
+import { scannableSources } from '../scripts/sourceFiles.ts';
 
 /**
  * Every string the app writes is set with typographic marks, and this is where the *interface* half
