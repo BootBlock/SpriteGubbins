@@ -6,6 +6,7 @@ import type { AppSettings } from '../types/settings.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
 import { parseHistoryRow, parsePresetRow, parseQuantisePresetRow } from './rows.ts';
+import { toHistoryRow, toPresetRow, toQuantisePresetRow } from './localStorageRows.ts';
 import { parseJson } from './readers.ts';
 import { HISTORY_STORAGE_BUDGET, evictionLengths, trimHistoryToBudget } from './historyEviction.ts';
 import { parseSession } from './sessionParser.ts';
@@ -88,25 +89,6 @@ export class LocalStorageBackend implements PersistenceBackend {
     return new Error(`Storage refused the write to “${key}”.`, { cause });
   }
 
-  /*
-   * History rows are stored in the same snake_case shape the SQLite table uses, so
-   * `parseHistoryRow` serves both backends and the two can never drift.
-   */
-  private static toRow(log: PromptHistoryLog): Record<string, unknown> {
-    return {
-      id: log.id,
-      category: log.category,
-      prompt_text: log.promptText,
-      created_at: log.createdAt,
-      word_count: log.wordCount,
-      model_used: log.modelUsed,
-      // Serialised, not nested, so the shape matches the SQLite columns exactly and one parser
-      // reads both.
-      subject_json: JSON.stringify(log.subject),
-      output_json: JSON.stringify(log.output),
-    };
-  }
-
   /**
    * Store the history, keeping as much of it as the browser will actually take.
    *
@@ -144,7 +126,7 @@ export class LocalStorageBackend implements PersistenceBackend {
   addHistoryLog(log: PromptHistoryLog): Promise<void> {
     const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
     const next = [log, ...existing.filter((entry) => entry.id !== log.id)].slice(0, HISTORY_LIMIT);
-    return this.writeHistory(next.map(LocalStorageBackend.toRow));
+    return this.writeHistory(next.map(toHistoryRow));
   }
 
   listHistoryLogs(): Promise<PromptHistoryLog[]> {
@@ -156,7 +138,7 @@ export class LocalStorageBackend implements PersistenceBackend {
     const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
     return this.write(
       STORAGE_KEYS.promptHistory,
-      existing.filter((entry) => entry.id !== id).map(LocalStorageBackend.toRow),
+      existing.filter((entry) => entry.id !== id).map(toHistoryRow),
     );
   }
 
@@ -164,37 +146,13 @@ export class LocalStorageBackend implements PersistenceBackend {
     return this.write(STORAGE_KEYS.promptHistory, []);
   }
 
-  /*
-   * The archetypes are stored in the same `snake_case` row shape the SQLite table uses, as the
-   * history rows and the quantiser's presets are, so `parsePresetRow` serves both backends and the
-   * two can never drift in what they accept.
-   *
-   * **No `updated_at`, for the reason {@link toQuantiseRow} gives.** The column exists on the other
-   * side because SQLite orders the collection with it; here the order *is* the array's, kept
-   * newest-first by the prepend below. This backend rewrites the whole collection on every
-   * operation, so a timestamp written here would stamp every row with one instant on each write —
-   * a delete included — destroying exactly the per-entry time the field appears to promise.
-   */
-  private static toPresetRow(preset: PresetArchetype): Record<string, unknown> {
-    return {
-      id: preset.id,
-      name: preset.name,
-      description: preset.description,
-      category: preset.category,
-      // Serialised, not nested, so the shape matches the SQLite columns exactly and one parser
-      // reads both.
-      subject_json: JSON.stringify(preset.subject),
-      output_json: JSON.stringify(preset.output),
-    };
-  }
-
   savePreset(preset: PresetArchetype): Promise<void> {
     const existing = this.read(STORAGE_KEYS.customPresets, parsePresetRow);
     const next = [preset, ...existing.filter((entry) => entry.id !== preset.id)];
-    return this.write(STORAGE_KEYS.customPresets, next.map(LocalStorageBackend.toPresetRow));
+    return this.write(STORAGE_KEYS.customPresets, next.map(toPresetRow));
   }
 
-  /** In stored order, which the prepend above keeps newest-first — see {@link toPresetRow}. */
+  /** In stored order, which the prepend above keeps newest-first — see `localStorageRows.ts`. */
   listPresets(): Promise<PresetArchetype[]> {
     return Promise.resolve(this.read(STORAGE_KEYS.customPresets, parsePresetRow));
   }
@@ -203,7 +161,7 @@ export class LocalStorageBackend implements PersistenceBackend {
     const existing = this.read(STORAGE_KEYS.customPresets, parsePresetRow);
     return this.write(
       STORAGE_KEYS.customPresets,
-      existing.filter((entry) => entry.id !== id).map(LocalStorageBackend.toPresetRow),
+      existing.filter((entry) => entry.id !== id).map(toPresetRow),
     );
   }
 
@@ -213,37 +171,16 @@ export class LocalStorageBackend implements PersistenceBackend {
    * imported row with one instant.
    */
   replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
-    return this.write(STORAGE_KEYS.customPresets, presets.map(LocalStorageBackend.toPresetRow));
-  }
-
-  /*
-   * The quantiser's presets are stored in the same `snake_case` row shape the SQLite table uses, as
-   * the history rows and the archetypes are, so `parseQuantisePresetRow` serves both backends and
-   * the two can never drift in what they accept.
-   *
-   * **No `updated_at`, and that is a real difference between the backends rather than an omission.**
-   * The column exists on the other side because SQLite orders the collection with it; here the
-   * order *is* the array's, kept newest-first by the prepend below, so a timestamp would be a
-   * number nothing reads. Writing one anyway would be worse than useless: this backend rewrites the
-   * whole collection on every operation, so each write — a delete included — would stamp every row
-   * with the same instant, destroying exactly the per-entry time the field appears to promise.
-   */
-  private static toQuantiseRow(preset: QuantisePreset): Record<string, unknown> {
-    return {
-      id: preset.id,
-      name: preset.name,
-      description: preset.description,
-      dials_json: JSON.stringify(preset.dials),
-    };
+    return this.write(STORAGE_KEYS.customPresets, presets.map(toPresetRow));
   }
 
   saveQuantisePreset(preset: QuantisePreset): Promise<void> {
     const existing = this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow);
     const next = [preset, ...existing.filter((entry) => entry.id !== preset.id)];
-    return this.write(STORAGE_KEYS.quantisePresets, next.map(LocalStorageBackend.toQuantiseRow));
+    return this.write(STORAGE_KEYS.quantisePresets, next.map(toQuantisePresetRow));
   }
 
-  /** In stored order, which the prepend above keeps newest-first — see {@link toQuantiseRow}. */
+  /** In stored order, which the prepend above keeps newest-first — see `localStorageRows.ts`. */
   listQuantisePresets(): Promise<QuantisePreset[]> {
     return Promise.resolve(this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow));
   }
@@ -252,7 +189,7 @@ export class LocalStorageBackend implements PersistenceBackend {
     const existing = this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow);
     return this.write(
       STORAGE_KEYS.quantisePresets,
-      existing.filter((entry) => entry.id !== id).map(LocalStorageBackend.toQuantiseRow),
+      existing.filter((entry) => entry.id !== id).map(toQuantisePresetRow),
     );
   }
 
@@ -262,7 +199,7 @@ export class LocalStorageBackend implements PersistenceBackend {
    * every imported row with one instant.
    */
   replaceQuantisePresets(presets: readonly QuantisePreset[]): Promise<void> {
-    return this.write(STORAGE_KEYS.quantisePresets, presets.map(LocalStorageBackend.toQuantiseRow));
+    return this.write(STORAGE_KEYS.quantisePresets, presets.map(toQuantisePresetRow));
   }
 
   /**

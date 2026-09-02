@@ -84,6 +84,19 @@ interface ColumnSplitOptions {
    * charges the widest chrome for the claims that are about a column rather than a control.
    */
   readonly panelFiles: readonly string[];
+  /**
+   * Where the grid itself is written, when a component below the tab holds it.
+   *
+   * Defaults to `tabFile`, which is the studio's arrangement: it returns its grid directly, so one
+   * file states the tab's position on the page and the split's own classes. The quantiser's grid is
+   * in `QuantiseWorkspace`, one component down, because everything the split holds only exists once
+   * a sheet is loaded.
+   *
+   * **Naming it does not move the cap refusal below off the tab.** That check walks from the page
+   * container to the grid, so a second component on that path is a second root that could cap the
+   * width — which is exactly what a split into two files adds. Both roots are read.
+   */
+  readonly splitFile?: string;
   /** How many `:col-span-*` children the grid is expected to have. */
   readonly columns: number;
 }
@@ -126,13 +139,18 @@ interface ColumnSplit {
   readonly contentWidthAt: (span: number, viewportPx: number) => number;
 }
 
-export function readColumnSplit({ tabFile, panelFiles, columns }: ColumnSplitOptions): ColumnSplit {
-  const tab = read(tabFile);
+export function readColumnSplit({
+  tabFile,
+  panelFiles,
+  splitFile = tabFile,
+  columns,
+}: ColumnSplitOptions): ColumnSplit {
+  const split = read(splitFile);
   const app = read('src/App.tsx');
   const css = read('src/index.css');
 
   // The grid: which variant splits it, how many tracks it has, and how wide the gutters are.
-  const gridClasses = capture(tab, /className="grid ([^"]*)"/, `the grid's classes in ${tabFile}`);
+  const gridClasses = capture(split, /className="grid ([^"]*)"/, `the grid's classes in ${splitFile}`);
   const variant = capture(gridClasses, /([a-z][\w-]*):grid-cols-\d+/, 'the variant the columns engage at');
   const trackCount = Number(capture(gridClasses, /:grid-cols-(\d+)/, "the grid's track count"));
   const gapPx = spacing(capture(gridClasses, /\bgap-(\d+)\b/, "the grid's gutter"));
@@ -142,12 +160,12 @@ export function readColumnSplit({ tabFile, panelFiles, columns }: ColumnSplitOpt
     and a tab that quietly grew a third would be measured against two. Both are the kind of input
     whose absence passes, so both throw.
   */
-  const spans = [...tab.matchAll(new RegExp(`${variant}:col-span-(\\d+)`, 'g'))].map((match) =>
+  const spans = [...split.matchAll(new RegExp(`${variant}:col-span-(\\d+)`, 'g'))].map((match) =>
     Number(match[1]),
   );
   if (spans.length !== columns) {
     throw new Error(
-      `expected ${String(columns)} \`${variant}:col-span-*\` columns in ${tabFile}, found ` +
+      `expected ${String(columns)} \`${variant}:col-span-*\` columns in ${splitFile}, found ` +
         `${String(spans.length)} — a column on another variant would appear and disappear at a ` +
         'different width from the grid',
     );
@@ -185,19 +203,26 @@ export function readColumnSplit({ tabFile, panelFiles, columns }: ColumnSplitOpt
     itself to `max-w-6xl` until the split arrived, where a 5/7 column could not have reached the
     budget at any viewport. So a cap is refused rather than quietly absorbed.
 
-    **The root and the grid are both read, because in one tab they are not the same element.** The
-    studio returns its grid directly, so reading the root reads the grid; the quantiser's grid is
-    nested inside a wrapper, and a cap written on the grid itself would have gone unseen — in exactly
-    the tab this guard was written for.
+    **Every root on the way down is read, because they are not one element.** The studio returns its
+    grid directly, so reading its root reads the grid; the quantiser's grid is nested inside a
+    wrapper, and a cap written on the grid itself would have gone unseen — in exactly the tab this
+    guard was written for. A tab whose split lives in a component of its own has **two** such roots,
+    and reading only the one holding the grid is the same hole one file down: measured, capping
+    `QuantiseTab`'s own root at `max-w-3xl` puts its 5/12 control column at ~300px against a 442px
+    budget, and every assertion in that tab's file still passed. So the list is built from the files
+    actually on the path, deduplicated where a tab states its own grid.
   */
-  const rootClasses = capture(tab, /return \(\s*<div className="([^"]*)"/, `${tabFile}'s root element`);
-  for (const [what, classes] of [
-    ['root element', rootClasses],
-    ['grid', gridClasses],
-  ] as const) {
+  const rootsOnThePath = [...new Set([tabFile, splitFile])].map(
+    (file) =>
+      [
+        `${file}'s root element`,
+        capture(read(file), /return \(\s*<div className="([^"]*)"/, `${file}'s root element`),
+      ] as const,
+  );
+  for (const [what, classes] of [...rootsOnThePath, [`${splitFile}'s grid`, gridClasses] as const]) {
     if (/\bmax-w-/.test(classes)) {
       throw new Error(
-        `${tabFile}'s ${what} caps its own width (\`${classes}\`) — its columns are then narrower ` +
+        `${what} caps its own width (\`${classes}\`) — the split's columns are then narrower ` +
           'than the page cap this derivation reads, so the breakpoint stops describing what a select gets',
       );
     }

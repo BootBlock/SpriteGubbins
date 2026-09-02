@@ -6,7 +6,7 @@ import { generatePrompt } from './promptCompiler.ts';
 import { describeOverage, describeUsage, readPromptBudget } from './promptBudget.ts';
 import { promptBudgetFigureFor } from './targetCapabilities.ts';
 import { TARGET_MODELS } from '../constants/models.ts';
-import { countWords } from './promptCompiler.ts';
+import { countWords } from './promptMetrics.ts';
 
 /**
  * A ceiling nobody publishes and a ceiling of zero must not be confused, and neither must be

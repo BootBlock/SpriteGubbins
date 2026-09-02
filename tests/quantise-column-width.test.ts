@@ -28,6 +28,16 @@ import { SELECT_MIN_PX } from './selectLabelBudget.ts';
  *   ever is — otherwise the split silently stacks the very panes it was built to keep in view.
  */
 const TAB_FILE = 'src/components/tabs/QuantiseTab.tsx';
+/**
+ * Where the split itself is written: the grid, both track spans and the sticky column.
+ *
+ * Not the tab, and the two are named apart on purpose. The import walks start at the tab, because
+ * what they ask is whether *anything* either column can render holds a select — a question the
+ * workspace's own imports would answer too narrowly the moment a panel moved. The measurements
+ * start here, because these are the classes that decide how wide a column is, and a derivation
+ * pointed at a file that no longer states them throws rather than measuring the wrong thing.
+ */
+const SPLIT_FILE = 'src/components/quantise/QuantiseWorkspace.tsx';
 const PREVIEW_ROOT = 'src/components/quantise/ImageComparison.tsx';
 const SELECT_FIELD = 'src/components/common/SelectField.tsx';
 
@@ -129,6 +139,7 @@ const SELECT_PANEL_FILES = [...new Set(SELECT_FILES.map(panelOf))].sort();
 
 const split = readColumnSplit({
   tabFile: TAB_FILE,
+  splitFile: SPLIT_FILE,
   panelFiles: SELECT_PANEL_FILES,
   columns: 2,
 });
@@ -213,7 +224,13 @@ describe('quantise column width', () => {
    * assertion above stops covering the column it claims to.
    */
   it('renders nothing in the preview column but the panel the walk starts from', () => {
-    const column = /quantise:sticky[^"]*"[^>]*>([\s\S]*?)\n {8}<\/div>/.exec(read(TAB_FILE))?.[1];
+    // Anchored on the closing tag's own indent, not `\s*`, and the difference is the whole of what
+    // this asserts. The capture is lazy, so a loose anchor stops at the *first* `</div>` inside the
+    // column — and since `<ImageComparison` is its first element, a second component added after a
+    // nested `<div>` would sit outside the capture and `toStrictEqual(['ImageComparison'])` would
+    // still pass. Six spaces because the column moved one component out of the tab, which is one
+    // level of indentation less than it had.
+    const column = /quantise:sticky[^"]*"[^>]*>([\s\S]*?)\n {6}<\/div>/.exec(read(SPLIT_FILE))?.[1];
     if (column === undefined) throw new Error('could not read the sticky column — its markup has changed');
     const rendered = [...new Set([...column.matchAll(/<([A-Z]\w*)/g)].map((match) => match[1]))];
     expect(rendered).toStrictEqual(['ImageComparison']);
@@ -237,7 +254,7 @@ describe('quantise column width', () => {
   });
 
   it('makes the preview sticky on the same condition as the split', () => {
-    const sticky = stickyVariantsOf(TAB_FILE);
+    const sticky = stickyVariantsOf(SPLIT_FILE);
     expect(sticky.sticky).toBe(split.variant);
     expect(sticky.scroll).toBe(split.variant);
   });

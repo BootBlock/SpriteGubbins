@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
-import { countWords, estimateTokens, generatePrompt } from '../../utils/promptCompiler.ts';
+import { generatePrompt } from '../../utils/promptCompiler.ts';
+import { countWords, estimateTokens } from '../../utils/promptMetrics.ts';
 import { Badge } from '../common/Badge.tsx';
 import { PromptActions } from './PromptActions.tsx';
 import { PromptBudgetNotice } from './PromptBudgetNotice.tsx';

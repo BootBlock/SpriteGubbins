@@ -5,7 +5,8 @@ import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
-import { countWords, generatePrompt } from '../../utils/promptCompiler.ts';
+import { generatePrompt } from '../../utils/promptCompiler.ts';
+import { countWords } from '../../utils/promptMetrics.ts';
 import { PromptPreview } from './PromptPreview.tsx';
 
 /**

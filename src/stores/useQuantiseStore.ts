@@ -3,20 +3,11 @@ import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
 import type { TunedDials } from '../types/autoTune.ts';
 import type { DialHistory, DialKey } from '../types/quantiseHistory.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
-import type {
-  AntiAliasMode,
-  AntiAliasPalette,
-  DitherPattern,
-  FrameAlignmentMode,
-  ImportedImage,
-  LockedPalette,
-  PixelGrid,
-  SymmetryMode,
-  VoteMethod,
-} from '../types/quantiser.ts';
+import type { ImportedImage, LockedPalette, PixelGrid } from '../types/quantiser.ts';
 import { currentDials, openHistory, recordDials, redoDials, undoDials } from '../utils/dialHistory.ts';
 import { abandonSweep } from '../workers/autoTuneSession.ts';
 import { loadSheet, releaseSheet } from '../workers/quantiseSession.ts';
+import { quantiseDialSetters, type QuantiseDialSetters } from './quantiseDialSetters.ts';
 import { useAutoTuneStore } from './useAutoTuneStore.ts';
 import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
 
@@ -39,7 +30,7 @@ import { useQuantiseAnswerStore } from './useQuantiseAnswerStore.ts';
  * the user's, this is a transform, and keeping sheets in OPFS is a different feature with its own
  * quota questions. This survives navigation, not a reload.
  */
-export interface QuantiseState extends QuantiseDials {
+export interface QuantiseState extends QuantiseDials, QuantiseDialSetters {
   readonly source: ImportedImage | null;
   /**
    * The scale the user asked for, or `null` to use whatever detection found.
@@ -73,36 +64,10 @@ export interface QuantiseState extends QuantiseDials {
 
   setSource(source: ImportedImage): void;
   setGridOverride(gridOverride: PixelGrid | null): void;
-  setKeyingEnabled(keyingEnabled: boolean): void;
-  setKeyTolerance(keyTolerance: number): void;
-  setSilhouetteThreshold(silhouetteThreshold: number): void;
-  setVote(vote: VoteMethod): void;
-  setOutlineExpansion(outlineExpansion: number): void;
-  setLineStrength(lineStrength: number): void;
-  setTrimStrength(trimStrength: number): void;
-  setInkThreshold(inkThreshold: number): void;
-  setFillCleanup(fillCleanup: number): void;
-  setColorMerge(colorMerge: number): void;
-  setCleanupPasses(cleanupPasses: number): void;
-  setDither(dither: DitherPattern): void;
   /** Hold this palette, replacing whichever one was held before. */
   lockPalette(lockedPalette: LockedPalette): void;
   /** Let the held palette go, handing the colour decision back to the studio. */
   unlockPalette(): void;
-  setPaletteSnap(paletteSnap: number): void;
-  setSpriteGap(spriteGap: number): void;
-  setSymmetry(symmetry: SymmetryMode): void;
-  setSymmetryTolerance(symmetryTolerance: number): void;
-  setSymmetryConfidence(symmetryConfidence: number): void;
-  setDuplicateTolerance(duplicateTolerance: number): void;
-  setDuplicateSnap(duplicateSnap: boolean): void;
-  setFrameAlignment(frameAlignment: FrameAlignmentMode): void;
-  setFrameDriftTolerance(frameDriftTolerance: number): void;
-  setAntiAlias(antiAlias: AntiAliasMode): void;
-  setAntiAliasThreshold(antiAliasThreshold: number): void;
-  setAntiAliasStrength(antiAliasStrength: number): void;
-  setAntiAliasRun(antiAliasRun: number): void;
-  setAntiAliasPalette(antiAliasPalette: AntiAliasPalette): void;
   /**
    * Put every dial where a saved preset says, in one move.
    *
@@ -208,6 +173,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
 
   return {
     ...EMPTY,
+    ...quantiseDialSetters(edit),
 
     // Clearing the override is part of taking a new image, not a separate step a caller can forget:
     // a grid chosen for the last sheet says nothing about this one, and carrying it over would show
@@ -244,116 +210,12 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
       set({ gridOverride });
     },
 
-    setKeyingEnabled: (keyingEnabled) => {
-      edit('keyingEnabled', { keyingEnabled });
-    },
-
-    setKeyTolerance: (keyTolerance) => {
-      edit('keyTolerance', { keyTolerance });
-    },
-
-    setSilhouetteThreshold: (silhouetteThreshold) => {
-      edit('silhouetteThreshold', { silhouetteThreshold });
-    },
-
-    setVote: (vote) => {
-      edit('vote', { vote });
-    },
-
-    setDither: (dither) => {
-      edit('dither', { dither });
-    },
-
-    setOutlineExpansion: (outlineExpansion) => {
-      edit('outlineExpansion', { outlineExpansion });
-    },
-
-    setLineStrength: (lineStrength) => {
-      edit('lineStrength', { lineStrength });
-    },
-
-    setTrimStrength: (trimStrength) => {
-      edit('trimStrength', { trimStrength });
-    },
-
-    setInkThreshold: (inkThreshold) => {
-      edit('inkThreshold', { inkThreshold });
-    },
-
-    setFillCleanup: (fillCleanup) => {
-      edit('fillCleanup', { fillCleanup });
-    },
-
-    setColorMerge: (colorMerge) => {
-      edit('colorMerge', { colorMerge });
-    },
-
-    setCleanupPasses: (cleanupPasses) => {
-      edit('cleanupPasses', { cleanupPasses });
-    },
-
     lockPalette: (lockedPalette) => {
       set({ lockedPalette });
     },
 
     unlockPalette: () => {
       set({ lockedPalette: null });
-    },
-
-    setPaletteSnap: (paletteSnap) => {
-      edit('paletteSnap', { paletteSnap });
-    },
-
-    setSpriteGap: (spriteGap) => {
-      edit('spriteGap', { spriteGap });
-    },
-
-    setSymmetry: (symmetry) => {
-      edit('symmetry', { symmetry });
-    },
-
-    setSymmetryTolerance: (symmetryTolerance) => {
-      edit('symmetryTolerance', { symmetryTolerance });
-    },
-
-    setSymmetryConfidence: (symmetryConfidence) => {
-      edit('symmetryConfidence', { symmetryConfidence });
-    },
-
-    setDuplicateTolerance: (duplicateTolerance) => {
-      edit('duplicateTolerance', { duplicateTolerance });
-    },
-
-    setDuplicateSnap: (duplicateSnap) => {
-      edit('duplicateSnap', { duplicateSnap });
-    },
-
-    setFrameAlignment: (frameAlignment) => {
-      edit('frameAlignment', { frameAlignment });
-    },
-
-    setFrameDriftTolerance: (frameDriftTolerance) => {
-      edit('frameDriftTolerance', { frameDriftTolerance });
-    },
-
-    setAntiAlias: (antiAlias) => {
-      edit('antiAlias', { antiAlias });
-    },
-
-    setAntiAliasThreshold: (antiAliasThreshold) => {
-      edit('antiAliasThreshold', { antiAliasThreshold });
-    },
-
-    setAntiAliasStrength: (antiAliasStrength) => {
-      edit('antiAliasStrength', { antiAliasStrength });
-    },
-
-    setAntiAliasRun: (antiAliasRun) => {
-      edit('antiAliasRun', { antiAliasRun });
-    },
-
-    setAntiAliasPalette: (antiAliasPalette) => {
-      edit('antiAliasPalette', { antiAliasPalette });
     },
 
     // The same write every other dial makes, under no key so it never coalesces with the gesture

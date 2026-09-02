@@ -1,22 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DEFAULT_DIFFERENCE_SCALE, DEFAULT_WIPE, PREVIEW_ZOOMS } from '../../constants/quantiser.ts';
 import { DEFAULT_SPRITE_CELL_CHOICE } from '../../constants/spriteCell.ts';
 import { useDetachedWindow } from '../../hooks/useDetachedWindow.ts';
 import { useLinkedPanes } from '../../hooks/useLinkedPanes.ts';
+import { useSecondPaneImage } from '../../hooks/useSecondPaneImage.ts';
 import type { TargetSize } from '../../types/output.ts';
 import type { PixelGrid, PreviewMode, Quantised, SheetScale } from '../../types/quantiser.ts';
 import { SHEET_FORMATS } from '../../types/sheetFormat.ts';
 import type { SheetFormat } from '../../types/sheetFormat.ts';
 import type { SpriteCellChoice } from '../../types/spriteCell.ts';
-import { heatmapImage } from '../../utils/heatmapImage.ts';
-import { onionSkin } from '../../utils/onionSkin.ts';
-import { outlineSprites } from '../../utils/spriteOutline.ts';
-import type { ComparisonPaneProps } from './ComparisonPane.tsx';
 import { ComparisonPane } from './ComparisonPane.tsx';
 import { ComparisonToolbar } from './ComparisonToolbar.tsx';
 import { DetachedNotice } from './DetachedNotice.tsx';
 import { DetachedPreview } from './DetachedPreview.tsx';
-import { emptyReason, secondCaption, sourceCaption } from './paneCaptions.tsx';
+import { sourcePane, secondPane } from './comparisonPanes.tsx';
 import { WipePanes } from './WipePanes.tsx';
 
 interface ImageComparisonProps {
@@ -85,8 +82,8 @@ interface ImageComparisonProps {
  * frames laid over one another; every value they are drawn from is the one the pair already uses.
  *
  * All four second images are one pixel per mesh cell, which is what lets them share every scrap of
- * the placement below: the magnification, the leading-cell inset and the clipping window are
- * computed once and none of them asks which picture it is placing.
+ * the placement `comparisonPanes.tsx` computes: the magnification, the leading-cell inset and the
+ * clipping window are worked out once and none of them asks which picture it is placing.
  */
 export function ImageComparison({
   sourceName,
@@ -131,49 +128,6 @@ export function ImageComparison({
   // magnification the result has outgrown: what the pills show is what the panel is actually doing.
   const shown: PreviewMode = quantised === null ? 'SIDE_BY_SIDE' : mode;
 
-  // Keyed on the map rather than on `quantised`, which the hook above rebuilds on every render —
-  // depending on that would repaint a full-size heatmap for a keystroke in the grid box.
-  const difference = quantised?.result.difference;
-  const heatmap = useMemo(
-    () =>
-      difference === undefined || shown !== 'DIFFERENCE' ? null : heatmapImage(difference, differenceScale),
-    [difference, shown, differenceScale],
-  );
-
-  // The same arrangement one mode over, and keyed the same way: on the values the drawing depends
-  // on, never on `quantised`. A **scattered** sheet is marked with no boxes rather than falling back
-  // to the plain result — the frame then says "here is the result, and nothing on it was read as a
-  // sprite", which is what the panel beside it is explaining. Falling back would instead show a
-  // picture the pane's own description no longer fits.
-  const resultImage = quantised?.result.image;
-  const sprites = quantised?.result.sprites;
-  // Drawn in the same pass as the boxes, so the result is copied once rather than twice. They are
-  // **not** the same reading, though, and `SpriteSymmetry` says why: under a snap the segmentation
-  // here is re-taken from the settled sheet while the axes describe the sheet the snap acted on, so
-  // the two box sets need not agree. That is why each axis carries its own box and this passes them
-  // whole rather than pairing them up by position. `null` is the pass being off — boxes, no marks.
-  const symmetry = quantised?.result.symmetry;
-  const marked = useMemo(
-    () =>
-      resultImage === undefined || sprites === undefined || shown !== 'SPRITES'
-        ? null
-        : outlineSprites(resultImage, sprites.kind === 'SEGMENTED' ? sprites.boxes : [], symmetry ?? []),
-    [resultImage, sprites, symmetry, shown],
-  );
-
-  // The same arrangement again, one mode further on, and keyed the same way. `null` where the
-  // alignment pass is off is deliberate rather than a fallback to the plain result: the stack is
-  // made *of* that reading, so with the pass off there is nothing to stack, and the caption says so
-  // rather than the pane quietly showing an ordinary result under a mode that promises a comparison.
-  const strips = quantised?.result.strips;
-  const stacked = useMemo(
-    () =>
-      resultImage === undefined || strips === undefined || strips === null || shown !== 'ONION'
-        ? null
-        : onionSkin(resultImage, strips),
-    [resultImage, strips, shown],
-  );
-
   // `zoom` is the scale for *both* panes, because it is measured per source pixel: the second canvas
   // is drawn `grid` times larger to arrive at the same number. See `src/utils/panGeometry.ts`.
   useLinkedPanes({
@@ -195,62 +149,27 @@ export function ImageComparison({
   // `putImageData` calls of up to 67 megabytes each, on the main thread, for every render of the
   // panel. The two elements are dependencies for the opposite reason: a canvas that has just been
   // mounted is blank, and the image it wants may not have changed at all.
-  const secondImage = heatmap ?? marked ?? stacked ?? resultImage;
-  // **What the frame is *called* follows the picture, not the pill.** Every other mode always draws
-  // its own second image while it is shown, so naming the frame after the mode says the same thing
-  // as naming it after the picture. The onion is the first that can be shown with nothing to stack —
-  // the alignment pass is off, which is how the mode is most often first reached — and there the
-  // canvas is holding the ordinary result. Announcing it as a stack of frames would tell a
-  // screen-reader user the image contains something it does not, and would contradict the caption
-  // beside it, which already says the pass is off.
-  const pictured: PreviewMode = shown === 'ONION' && stacked === null ? 'SIDE_BY_SIDE' : shown;
+  // What the right-hand canvas holds, and what that picture is — see `useSecondPaneImage`.
+  const { image: secondImage, pictured } = useSecondPaneImage(quantised, shown, differenceScale);
   useEffect(() => {
     paint(sourceCanvas, source);
     paint(resultCanvas, secondImage);
   }, [sourceCanvas, resultCanvas, source, secondImage]);
 
-  const first: ComparisonPaneProps = {
-    caption: sourceCaption(source, sourceColors),
-    label: 'Pan the sheet as it arrived',
-    viewportRef: setSourceView,
-    canvasRef: setSourceCanvas,
-    content: {
-      image: source,
-      magnification: zoom,
-      window: { width: source.width * zoom, height: source.height * zoom },
-      inset: { x: 0, y: 0 },
-    },
-    alt: 'The sheet as it arrived',
-    placeholder: null,
-  };
-
-  const second: ComparisonPaneProps = {
-    caption: secondCaption(shown, quantised, busy),
-    label: SECOND_PANE_LABELS[pictured],
-    viewportRef: setResultView,
-    canvasRef: setResultCanvas,
-    // One full-cell result pixel covers `grid` source pixels, so `zoom * grid` is what puts the two
-    // panes at the same scale — and a leading partial cell covers only `offset` of them, which is
-    // what the inset corrects for. Everything comes from the same value, so no half of the placement
-    // can go missing on its own, and the heatmap inherits all of it by being the same size.
-    content:
-      quantised === null || secondImage === undefined
-        ? null
-        : {
-            image: secondImage,
-            magnification: zoom * quantised.grid,
-            window: { width: source.width * zoom, height: source.height * zoom },
-            inset: {
-              x: quantised.result.offset.x > 0 ? (quantised.grid - quantised.result.offset.x) * zoom : 0,
-              y: quantised.result.offset.y > 0 ? (quantised.grid - quantised.result.offset.y) * zoom : 0,
-            },
-          },
-    alt: SECOND_PANE_ALT[pictured],
-    placeholder: (
-      // Its own padding, because `PanViewport` carries none — see the note on its geometry.
-      <p className="p-3 text-xs leading-relaxed text-ink-muted">{emptyReason(busy, grid, scale)}</p>
-    ),
-  };
+  const first = sourcePane(source, sourceColors, zoom, setSourceView, setSourceCanvas);
+  const second = secondPane(
+    source,
+    quantised,
+    secondImage,
+    shown,
+    pictured,
+    zoom,
+    busy,
+    grid,
+    scale,
+    setResultView,
+    setResultCanvas,
+  );
 
   const isDetached = detached.target !== null;
   const surface = (
@@ -284,7 +203,7 @@ export function ImageComparison({
         onDownloadFormatChange={setDownloadFormat}
         sourceName={sourceName}
         resultImage={quantised?.result.image ?? null}
-        sprites={sprites ?? null}
+        sprites={quantised?.result.sprites ?? null}
         duplicates={quantised?.result.duplicates ?? []}
         cellChoice={cellChoice}
         onCellChoiceChange={setCellChoice}
@@ -334,34 +253,6 @@ export function ImageComparison({
     </>
   );
 }
-
-/**
- * What the second frame is called, and what it is described as, per mode.
- *
- * **Keyed by what the frame is showing rather than by the mode chosen**, which are the same thing in
- * four of the five cases and are not in the fifth — see `pictured`, above, for the onion mode that
- * can be selected with nothing to stack.
- *
- * Records keyed by the union rather than a chain of ternaries at the two call sites, so a sixth mode
- * fails to compile until both halves have been written — which is the same property
- * `PREVIEW_MODE_LABELS` is a separate file to keep. `WIPE` names the result because that is what the
- * second frame holds there; the layout is what differs, not the picture.
- */
-const SECOND_PANE_LABELS: Readonly<Record<PreviewMode, string>> = {
-  SIDE_BY_SIDE: 'Pan the quantised sheet',
-  WIPE: 'Pan the quantised sheet',
-  DIFFERENCE: 'Pan the difference heatmap',
-  SPRITES: 'Pan the quantised sheet with its sprite bounds marked',
-  ONION: 'Pan the quantised sheet with each strip’s frames stacked on its first slot',
-};
-
-const SECOND_PANE_ALT: Readonly<Record<PreviewMode, string>> = {
-  SIDE_BY_SIDE: 'The sheet after grid alignment and palette reduction',
-  WIPE: 'The sheet after grid alignment and palette reduction',
-  DIFFERENCE: 'How far each drawn pixel sits from the patch of the sheet it stands for',
-  SPRITES: 'The quantised sheet, with a box drawn around each separate sprite found on it',
-  ONION: 'The quantised sheet, with every frame of each row of sprites laid over the first frame of that row',
-};
 
 /** Put the pixels on the canvas verbatim. A missing canvas is the pane that is showing its `<p>`. */
 function paint(canvas: HTMLCanvasElement | null, image: ImageData | undefined): void {

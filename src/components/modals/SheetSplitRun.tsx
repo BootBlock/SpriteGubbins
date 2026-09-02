@@ -6,7 +6,7 @@ import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import { exceedsComponentBudget } from '../../utils/componentBudget.ts';
 import { sheetComponentCount } from '../../utils/componentSet.ts';
-import { countWords } from '../../utils/promptCompiler.ts';
+import { countWords } from '../../utils/promptMetrics.ts';
 import { sheetCoverage } from '../../utils/sheetCoverage.ts';
 import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';

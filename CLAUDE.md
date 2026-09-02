@@ -1012,8 +1012,32 @@ below was bought with one of those.
 These are the spec's guardrails, restated here because they govern every change, not just the
 initial build. They are not stylistic preferences.
 
-- **No monolithic files.** Target **under 150 lines**. A file heading past that is telling you
-  it has taken on a second responsibility — split it.
+- **No monolithic files.** Target **under 150 lines of code** — the source with every comment
+  blanked and the blank lines dropped, which is what
+  [tests/module-size.test.ts](tests/module-size.test.ts) measures and fails on. A file heading past
+  that is telling you it has taken on a second responsibility — split it.
+
+  **The target counts code because the rationale is about responsibility, and in this repository
+  raw lines are not a proxy for it.** The house style is prose-heavy by design: the same document
+  asks for a docblock explaining every calibration figure, every exemption and every ordering
+  constraint, and those explanations are the bulk of the tree's length. Measured raw, 157 of 553
+  modules were past the target and only 56 were past it on code — so nine phases of the codebase
+  audit each recorded the overflow and each handed it on with the same three words, "mostly in
+  docblock", because the rule could not tell a 2,038-line calibration record carrying 279 lines of
+  code from a component that genuinely does two things. A structural law a quarter of the tree
+  ignores is worse than no law: it teaches a reader to skip the section.
+
+  **A file whose length is its own subject matter is exempt, and the test names each one.** A
+  category's option pool, a preset library, a sheet plan, a style reference, the prompt skeleton,
+  the quantiser's calibration record, the target models and the type vocabulary have no second
+  responsibility to separate, because
+  none of them has a first one in the sense this law means — there is no control flow to
+  disentangle and nothing to name and lift out. Splitting one scatters a single record across
+  files. `DECLARATION_PATHS` in that test is the list, each entry saying what kind of declaration
+  it holds; a directory entry covers a tenth category's pool without it having to argue the case
+  again, and a bare filename covers exactly that file. **`src/constants/` is not exempt wholesale** —
+  it holds small resolvers as well as declarations, and a long one of those is precisely what this
+  law is about.
 - **One thing per file.** Every component, hook, store, utility and type definition lives in
   its own dedicated file, named for the thing it exports.
 - **Separation of concerns is directory-enforced.** Domain and compiler logic in `src/utils/`;

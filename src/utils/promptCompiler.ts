@@ -1,70 +1,26 @@
-import {
-  ASPECT_TEXT,
-  BACKGROUND_KEY_TEXT,
-  CATEGORY_ASSEMBLY,
-  CATEGORY_AUDIT_TEXT,
-  CATEGORY_EXCLUSION_TEXT,
-  CATEGORY_GUARD_TEXT,
-  depthOrderText,
-  describeDirections,
-  describeHardware,
-  describePalette,
-  describeStyleReference,
-  FRAME_IS_A_COMPONENT,
-  isPlanView,
-  JOINT_CAP_TEXT,
-  LANDMARK_TEXT,
-  LETTERING_IS_A_COMPONENT,
-  LIGHTING_TEXT,
-  LIMBS_ARE_COMPONENTS,
-  minFeatureSize,
-  OUTLINE_TEXT,
-  OVERLAP_MARGIN_TEXT,
-  PALETTE_TEXT,
-  perComponentLimit,
-  PROJECTION_TEXT,
-  RENDER_STYLE_SURFACE,
-  RENDER_STYLE_TEXT,
-  resolutionProfileDescription,
-  resolveCameraElevation,
-  SCALE_EXAMPLE_TEXT,
-  smallScaleDiscipline,
-  SURFACE_DETAIL_TEXT,
-  VALIDATION_PASS_TEXT,
-  validationPassFor,
-} from '../constants/promptText/index.ts';
-import { CATEGORY_OPTIONS, fieldLabelFor } from '../constants/categories/index.ts';
-import { resolveProjection } from '../constants/categoryProjections.ts';
-import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { PROMPT_TEMPLATE } from '../constants/promptTemplate.ts';
-import { hardwareProfileFor } from '../constants/hardware/index.ts';
-import { paletteFor } from '../constants/palettes/index.ts';
-import { styleReferenceFor } from '../constants/styleReferences/index.ts';
+import {
+  CATEGORY_ASSEMBLY,
+  FRAME_IS_A_COMPONENT,
+  LETTERING_IS_A_COMPONENT,
+  LIMBS_ARE_COMPONENTS,
+  RENDER_STYLE_SURFACE,
+  BACKGROUND_KEY_TEXT,
+} from '../constants/promptText/index.ts';
 import type { OutputConfig } from '../types/output.ts';
-import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { resolveMode, resolveRigMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
-import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
-import { anatomyFacingsFor, componentBreakdownFor, componentCountFor } from './componentSet.ts';
-import { directionalRotation } from './directionalRotation.ts';
-import { leadingSideLedger } from './leadingSideLedger.ts';
-import { turntableSequence } from './turntableSequence.ts';
-import { describeMirrorPairs, mirrorPairs } from './mirrorPairs.ts';
-import { statedTargetSize, statesAssembledSize } from './componentTargetSize.ts';
-import { nativeGridScale } from './nativeGridScale.ts';
 import { wrapForModel } from './modelWrappers.ts';
-import { deliberates, returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
-import { describeSeries } from './describeSeries.ts';
-import { sheetBatch } from './sheetBatch.ts';
-import { sheetDirections } from './sheetDirections.ts';
+import { promptConditions } from './promptConditions.ts';
+import { sheetFacts } from './promptFacts.ts';
+import { promptValues } from './promptValues.ts';
 import {
   applyConditionals,
   applyNumbering,
   applyOptionals,
   applySectionNumbers,
-  sectionNumbers,
   assertBlocksResolved,
   resolveCitations,
+  sectionNumbers,
   substitute,
 } from './templateEngine.ts';
 
@@ -87,297 +43,13 @@ export function generatePrompt(
   subject: SubjectDefinition,
   output: OutputConfig,
 ): string {
-  // The sheet mode this category can actually produce, for the values below that are read from it
-  // directly — the plan, the inventory, the count and the anatomy's sheet. A stored configuration can
-  // name a mode its category has no plan for (a preset saved before the plans were split by category,
-  // or a hand-edited export), and a reader that skipped this would be describing a different sheet
-  // from the one beside it.
-  //
-  // Everything else here takes the **category** and resolves for itself, which is the stronger
-  // arrangement and the one this file is converging on: `sheetDirections` and `sheetBatch` below both
-  // do, so there is no way to reach them with an unresolved mode at all, where handing down a
-  // pre-resolved one only works for as long as every call site remembers to.
-  const mode = resolveMode(category, output.directionalMode);
+  // What this configuration is a sheet of, resolved once — see `promptFacts.ts` for why almost
+  // nothing below reads a stored field directly.
+  const facts = sheetFacts(category, subject, output);
 
-  // And the rig this sheet is actually drawn for, resolved for the same reason and against both
-  // axes: a stored configuration can name one its category has no joints for, and section 5 is what
-  // that decides. Unresolved, `POSE_LIBRARY` — the default — put "flexion comes from assembling
-  // separately oriented rigid segments around shared pivots" on a tileset, a nine-slice and a
-  // flipbook, and left the cut-out rig sheet itself — whose inventory *is* rig pieces — with no
-  // pivot registration, no overlap margin and no depth order at all. It takes the raw mode rather
-  // than the resolved one above for the reason that comment gives: a reader that resolves for
-  // itself cannot be reached with an unresolved argument.
-  const rigMode = resolveRigMode(category, output.directionalMode, output.rigMode);
-
-  // Which sheet of that pairing's series this is. Resolved here for the same reason the mode is: a
-  // stored index can name a second sheet on a pairing that has one, and `sheetPlanFor` answers with
-  // the series' first rather than with `undefined`.
-  const plan = sheetPlanFor(category, mode, output.directions, output.sheetIndex);
-
-  // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
-  // because the splitter labels its runs from the same answer, and two implementations of it would
-  // eventually disagree about the prompt one of them is describing. It takes the category rather than
-  // the `mode` above because it resolves the pairing itself, which is what stops the studio's own
-  // reading of that answer drifting from this one — and because the *direction set* is category-scoped
-  // as well: an INTERFACE or a TERRAIN has no facing to turn to, so a stored `THREE_CLASSIC` degrades
-  // there the way an unsupported mode does.
-  const { covered: coveredDirections, assembly: assemblyDirection } = sheetDirections(category, output, plan);
-
-  // The covered facings a mirrored copy could counterfeit — `west` flipped is a counterfeit `east`
-  // — which only the compass sets put on one sheet. Where a pair exists, section 3 and the
-  // directional audit both name it: the audit's other checks all pass a reflection, since it faces
-  // exactly where the turned view would, and only the named pair gives the generator a comparison
-  // that catches one.
-  const coveredMirrorPairs = mirrorPairs(coveredDirections);
-
-  // Which camera this sheet is drawn under, resolved through the category for the reason the mode
-  // and the direction set above are: a widget is screen-space art with no top surface and no depth
-  // axis, so a stored `THREE_QUARTER_TOPDOWN` on an INTERFACE puts `the vertical screen axis carries
-  // both height and depth` above an inventory of button states — one prompt disagreeing with itself.
-  const projection = resolveProjection(category, output.projection);
-
-  // Where that camera stands, resolved for the reason the mode above is: the projection *is* a
-  // camera, so all but the angled-overhead one fix the elevation, and a stored configuration can
-  // still be holding a number that projection cannot be drawn at. Section 3 prints the projection
-  // and the elevation as adjacent lines, so an unresolved one is two statements about one camera
-  // that disagree — and it decides section 3's occlusion contract as well, which is a good deal
-  // more than a line of prose: from directly overhead a yaw hides nothing, and the front/rear
-  // occlusions the oblique wording states are exactly what section 9 then audits for. It takes the
-  // projection resolved on the line above rather than the stored one, because resolving the two
-  // against different cameras is the same disagreement one step further back.
-  const cameraElevation = resolveCameraElevation(projection, output.cameraElevation);
-
-  // Which sheet of which batch this configuration is. Every prompt before this one described its
-  // sheet as the whole deliverable — the component count, the inventory's "do not omit entries" and
-  // the assembly capability all read as statements about the finished set — so sheet three
-  // of eight arrived claiming a count and a capability belonging to something else. The batch is
-  // enumerated rather than passed in because a configuration already *is* one sheet of one batch:
-  // the splitter varies nothing but the facing and the sheet index, and both are fields of `output`.
-  const batch = sheetBatch(category, output);
-
-  // Only a target that returns text alongside the image can honour a component map; asking a pure
-  // image endpoint for one just spends tokens on an instruction it will drop.
-  const emitComponentMap = output.emitComponentMap && returnsText(output.targetModel);
-
-  // The report needs *both* halves of that — a pass in which to re-read the specification against
-  // the pixels, and a channel to answer through — so it is gated on the conjunction rather than on
-  // either alone. The `deliberates` half is also what makes the section's wording safe: it points at
-  // the layout section's checks instead of restating them, and that section is a bare `LAYOUT`
-  // heading on a target that does not deliberate. That meeting of two separately-computed flags is
-  // asserted on the compiled prompt across every target, since here is where they meet rather than
-  // in either gate alone.
-  const emitPromptFeedback = output.emitPromptFeedback && supportsPromptFeedback(output.targetModel);
-
-  // Additional anatomy is separate pieces by section 1's own rule, so it is counted and listed
-  // rather than folded into a neighbouring component — otherwise the sheet asks for more pieces than
-  // the contract says it has, which is the one arithmetic the whole template rests on.
-  const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
-
-  // The machine and its colours, or `null` for `NONE`/`FREE`. Resolved once and read four times
-  // below, so the two blocks and the two flags that gate them cannot disagree about whether there
-  // is a machine — the failure mode being a heading with nothing under it.
-  const hardware = hardwareProfileFor(output.hardwareProfile);
-  const palette = paletteFor(output.palette);
-  // The look this sheet is drawn to match, or `null` for `NONE`. Resolved once and read three times
-  // below — the two values and the flag that gates their block — so a heading with nothing under it
-  // is not expressible, exactly as it is not for the two above.
-  //
-  // Narrowed through the category first, for the reason the projection above is: a reference states
-  // the camera it was rendered under, and its characteristics carry that camera into section 2 as a
-  // measurement no resolver downstream can edit. A Diablo II reference on an INTERFACE would put
-  // “a tile edge runs two pixels sideways for every one it drops” above `Flat front elevation`.
-  const reference = styleReferenceFor(resolveStyleReference(category, output.styleReference));
-
-  // Whether the render style withholds the surface rather than describing one, and what it withholds.
-  // Read four times below — three conditionals and the paragraph that stands in for the lines they
-  // drop — from one lookup, so the prompt cannot drop a line and then say nothing in its place.
-  const validationPass = validationPassFor(output.renderStyle);
-
-  // How many components this sheet asks for. Hoisted out of the values below because the scale the
-  // sheet presents its native grid at is a function of it: the canvas has to seat all of them, so a
-  // sheet of forty components is enlarged less than a sheet of twelve.
-  const componentCount = componentCountFor(category, mode, output.directions, output.sheetIndex, anatomy);
-
-  // The size the field states, with the quantity it is a size of, or `null` where it states none.
-  // Resolved once and read by every section-2 feature that turns on it, so they cannot disagree
-  // about what the reader named. The quantity is the sheet's answer, not the text's: a sheet whose
-  // components are the parts one subject is cut into states the size of the subject they assemble
-  // into — see `componentTargetSize.ts`.
-  const statedTarget = statedTargetSize(
-    category,
-    output.directionalMode,
-    output.directions,
-    output.sheetIndex,
-    output.spriteTargetSize,
-  );
-
-  // The same answer narrowed to a genuine component size, for the three readers that can do nothing
-  // with an assembly: each seats or measures one component, and an assembled figure fed to any of
-  // them prices a canvas of fifteen whole characters. `minFeatureSize` takes the wider value
-  // instead, because it has a defensible floor to state on such a sheet and no floor at all is worse
-  // than a permissive one.
-  const componentTarget = statedTarget?.quantity === 'COMPONENT' ? statedTarget.size : null;
-
-  // The whole-number enlargement the native pixel grid is delivered at, or `null` where this
-  // configuration has no native grid — a style that is not pixel art, a profile that states its own
-  // scale, no per-component size, or a component already large enough that there is nothing to
-  // enlarge. Read three times below — as the value, as the flag that gates the three places stating
-  // it, and as the unit the pixel-discipline section counts its minimum feature in — so the prompt
-  // cannot carry the carve-out without the figure it points at, nor name a native pixel where
-  // nothing defines one.
-  const nativeScale = nativeGridScale(
-    output.renderStyle,
-    output.resolutionProfile,
-    componentTarget,
-    output.aspectRatio,
-    componentCount,
-  );
-
-  // Rendered from the parse rather than passed through raw, so section 1 and section 4 describe the
-  // same anatomy: a field reading `Tail ×0` cannot say one thing at the top of the prompt and
-  // another in the inventory. It also empties for `NONE`, which drops the line entirely rather than
-  // putting a bare sentinel in the highest-weighted section.
-  //
-  // **And it empties on a sheet that does not carry the anatomy**, for the same reason and a sharper
-  // one. Section 1's own prose says additional anatomy is "the single exception" that section 4
-  // lists and counts separately — so naming a tail here on the articulation sheet, whose inventory
-  // has no tail in it and whose contract demands an exact count without one, is a contradiction
-  // inside one prompt. The generator resolves it by drawing an uncounted piece or by ignoring a
-  // line it was told was binding, and neither is recoverable.
-  //
-  // The facings are held rather than a boolean, because the exception sentence has two shapes: a
-  // multi-view sheet draws each piece at each of its facings, so its sentence has to say so, where
-  // a run sheet draws each piece once. Held in a local as well, because `config` below gates both on
-  // it and reading it back off `values` would come out `string | undefined`.
-  const anatomyFacings = anatomyFacingsFor(category, mode, output.directions, output.sheetIndex);
-  const additionalAnatomyLine = anatomyFacings !== null ? anatomy.map(formatAnatomyComponent).join(', ') : '';
-
-  const config: Record<string, string> = {
-    RENDER_STYLE: output.renderStyle,
-    RIG_MODE: rigMode,
-    // Which quantity section 2's target-size line names. A cut-out rig sheet draws a head, a torso,
-    // a pelvis and twelve limb segments, so a size stated for it is the figure those assemble into —
-    // and the shipped rig presets say so in the value itself, while the line above them called it a
-    // component size. One line contradicting itself, left for the generator to resolve.
-    //
-    // **Not `RIG_MODE`, even though section 5 is gated on that.** A FONT or ICON sheet may carry
-    // `CUTOUT_RIG` as a stored value while drawing whole glyphs, and a pose-library sheet may carry
-    // it as a perfectly legitimate request — its pieces do get bound to bones. The question here is
-    // which sheet is drawn, and `statesAssembledSize` asks the resolved sheet plan. It asks the plan
-    // alone, so it is right while the field is empty too — which is what this gate needs, since the
-    // `[OPTIONAL:…]` inside it is what decides whether there is a line at all.
-    ASSEMBLED_TARGET: statesAssembledSize(
-      category,
-      output.directionalMode,
-      output.directions,
-      output.sheetIndex,
-    )
-      ? 'yes'
-      : '',
-    // Gates four places at once: the precedence clause in section 0, the three surface lines and the
-    // surface-discipline block in section 2 — negated — and the paragraph that replaces them. One
-    // flag, because a style either states the surface itself or leaves those settings to state it.
-    // The two are answers to the same question, which is why they may not both be printed: a solid
-    // single-colour silhouette arrived under a sixteen-colour floor and an outline promising that
-    // "forms separate by value and hue contrast alone", and no setting a user could reach agreed
-    // with it.
-    VALIDATION_PASS: validationPass === null ? '' : 'yes',
-    // A second, narrower flag, because only one of the two passes takes the light with it. A clay
-    // render is lit — the key light is what makes its volumes readable, which is the whole of what
-    // it is run to check — while a flat fill of one colour has no surface for a light to fall on.
-    LIGHTING_STATED: validationPass?.withholdsLight === true ? '' : 'yes',
-    // Whether the target component size names a native pixel grid this sheet delivers enlarged.
-    // Gates three places at once: the carve-out in section 0's resampling rule, the block in
-    // section 2 that states the grid and the multiple, and the self-audit's check on what the
-    // finished sheet holds. One flag, because a sheet either has a native grid to present or does
-    // not — and the carve-out without the figure would be section 0 permitting an enlargement
-    // nothing else in the prompt asks for. The pixel-discipline minimum is a fourth mention and is
-    // deliberately not gated: it changes its unit rather than disappearing, which is why it reads
-    // the same `nativeScale` instead of this flag.
-    NATIVE_GRID: nativeScale === null ? '' : 'yes',
-    // Read from the resolved profile rather than from the stored id, so a configuration naming a
-    // machine this build no longer has emits no heading rather than an empty one — the same
-    // reasoning that makes `resolveMode` the single answer about the sheet mode.
-    HARDWARE_PROFILE: hardware === null ? '' : 'yes',
-    // Gates three places at once: the colour clause in section 0, the palette block in section 2,
-    // and the self-audit's colour check — and, negated, the palette-strategy line the pinned palette
-    // supersedes. One flag, because a pinned palette either governs the sheet's colour or does not.
-    PALETTE: palette === null ? '' : 'yes',
-    // A second, narrower flag, because the self-audit's per-component check cites a number section 2
-    // does not always print: seven of the nineteen palettes state no per-component cap, and an audit
-    // asking the reader to compare against an allowance that was never given cannot be worked.
-    // Read through `perComponentLimit` rather than off `colorsPerComponent`, so the gate answers
-    // whether the line was *emitted* rather than whether the field was set.
-    PALETTE_PER_COMPONENT: palette !== null && perComponentLimit(palette) !== null ? 'yes' : '',
-    // Read from the resolved reference rather than the stored id, for the reason `HARDWARE_PROFILE`
-    // is: a configuration naming a look this build no longer ships emits no heading rather than an
-    // empty one.
-    STYLE_REFERENCE: reference === null ? '' : 'yes',
-    // Nested inside that block in the template, so this only ever decides the naming *sentence* —
-    // never the characteristics, which are what actually carry the look. Conjoined here anyway, so
-    // the compiler's answer does not depend on the template's nesting: this flag means "name a game"
-    // and there is no game to name, which is true of the value whatever encloses it.
-    STYLE_REFERENCE_NAMED: reference !== null && output.nameStyleReference ? 'yes' : '',
-    // The rules about views *disagreeing* — landmarks, occlusion, no mirroring, the directional
-    // audit — only bite where one sheet carries more than one facing. On a single-facing sheet they
-    // would be forty lines of instruction about a comparison the generator cannot make.
-    MULTI_DIRECTION: coveredDirections.length > 1 ? 'yes' : '',
-    // Which of the two things a turn can be said to do. Below the vertical a yaw hides one set of
-    // surfaces and reveals another, and section 3's occlusion rules and section 9's audit of them
-    // both hold; at the vertical the same top surface faces the camera at every yaw, so the pair
-    // become an instruction to produce a difference the stated camera cannot make and a check that
-    // fails the sheet for not producing it. A generator that honours the camera fails the audit, one
-    // that honours the audit abandons the camera, and which arrives is not something the user chose.
-    PLAN_VIEW: isPlanView(cameraElevation) ? 'yes' : '',
-    // Narrower than MULTI_DIRECTION for the same reason that flag exists at all: the anti-reflection
-    // pair rules only bite where the sheet holds both members of a reflection pair, and on the
-    // classic sets — which never do — they would be instruction about views the sheet does not hold.
-    MIRROR_PAIRS: coveredMirrorPairs.length > 0 ? 'yes' : '',
-    // Section 1's "painted onto, never a separate piece" rule names its own exception, and the
-    // exception is a line that is often not there — cleared, `NONE`, or on an articulation sheet,
-    // which draws limbs for a trunk the core sheets carry. Naming an absent line is worse here than
-    // anywhere else in the prompt: the sentence is the one that decides how many components the
-    // sheet has. Read off the *rendered* value rather than the raw field, so the gate answers
-    // whether the line was emitted rather than whether the user typed something.
-    ADDITIONAL_ANATOMY: additionalAnatomyLine,
-    // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
-    // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view
-    // — so the sentence must say so, or section 1 promises a single drawing the inventory below it
-    // multiplies. A run sheet keeps the single-drawing sentence.
-    ANATOMY_PER_VIEW: anatomyFacings !== null && anatomyFacings !== 'run' ? 'yes' : '',
-    // Whether this sheet is one of several, which is a property of the configuration rather than a
-    // switch the user sets: the splitter's runs differ from the studio's own configuration only in
-    // fields `output` already carries, so a sheet compiled from the drawer and the same sheet
-    // compiled from the studio are the same prompt and say the same thing about their batch. A
-    // configuration that is one whole deliverable says nothing at all, and its prompt is unchanged.
-    SERIES: batch.sheets.length > 1 ? 'yes' : '',
-    IDENTITY_LOCK: output.identityLock,
-    SOCKETS: output.sockets,
-    EMIT_COMPONENT_MAP: emitComponentMap ? 'yes' : '',
-    // Read twice by the template: once for the report section itself, and once more by the closing
-    // line, which names the second deliverable so the last thing the target reads is not "generate
-    // the sheet now" alone.
-    EMIT_PROMPT_FEEDBACK: emitPromptFeedback ? 'yes' : '',
-    // The self-audit tells the reader to check the sheet and redraw before delivering. A
-    // single-pass diffusion endpoint has no such step, so on those targets it is the most
-    // rule-list-shaped block in the template sitting where attention is weakest. Same reasoning as
-    // MULTI_DIRECTION above, applied to what the *target* can do rather than what the sheet holds.
-    DELIBERATES: deliberates(output.targetModel) ? 'yes' : '',
-    // Section 0's category tripwire ends "say so rather than resolving it", which names a channel a
-    // pure image endpoint does not have. It is the same argument as DELIBERATES above, applied to
-    // the other capability: an instruction that cannot be carried out spends tokens in the
-    // highest-weighted section of the prompt to buy nothing. What it guards against is this app's
-    // own bug — the category and the inventory are compiled from one value, so they can only
-    // disagree if something here is wrong — and only a target with a text channel can report that.
-    RETURNS_TEXT: returnsText(output.targetModel) ? 'yes' : '',
-    // The one gate in this record that is a fact about the *subject* rather than about the target or
-    // the sheet, and the only one that relaxes a rule instead of adding one. Sections 0, 8 and 9 each
-    // ban text on the sheet, and on a glyph set that is the ban section 4 requires the reader to
-    // break — so each of the three carries a second wording that states where the exemption stops
-    // rather than going quiet. `LETTERING_IS_A_COMPONENT` is where the judgement lives, including why
-    // it is a record and not a test on the category here.
-    LETTERING_IS_A_COMPONENT: LETTERING_IS_A_COMPONENT[category] ? 'yes' : '',
-  };
+  // Which of the template's blocks survive, which is what the numbering and every citation are
+  // then resolved against.
+  const config = promptConditions(category, output, facts);
 
   // The conditioned template, and the number each of its surviving headings lands on. Three sets of
   // citations resolve against that one answer — the prompt body's own, which `applySectionNumbers`
@@ -388,178 +60,9 @@ export function generatePrompt(
   const numbers = sectionNumbers(conditioned);
   const cite = (text: string): string => resolveCitations(numbers, text);
 
-  // Every value below is the app's own prose, so each is resolved through `cite` once the record is
-  // built: a `[SEC:…]` written into one of the constants they read from is a citation of a heading,
-  // and `substitute` runs last, so nothing else would ever consume it. **The values carrying text
-  // the reader typed are assigned afterwards instead, and are never cited over** — that is where the
-  // app/user boundary sits, and it has to be a boundary between *values* rather than one drawn
-  // inside the record's keys: a subject field reading `[SEC:NOPE]` is an odd name, not a broken
-  // template, and resolving citations over it would throw out of the compiler mid-render.
-  const authored: Record<string, string> = {
-    CATEGORY: category,
-    // The article belongs to the category rather than to the sentence, and is written down in
-    // `CATEGORY_OPTIONS` rather than derived from the identifier's first letter — English picks it
-    // by sound. See `CategoryDefinition.article`.
-    CATEGORY_ARTICLE: CATEGORY_OPTIONS[category].article,
-    COMPONENT_COUNT: String(componentCount),
-    // Every one of these is now a function of the category as well as the mode. That is the whole
-    // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
-    // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
-    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category],
-    ASSEMBLY_POSES: plan.assembly,
-    CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
-    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
-    // The same claim in three sections, from the record that also feeds the wrappers' two negative
-    // channels — so a category names its assembled whole the same way wherever the prompt says it.
-    CATEGORY_ASSEMBLY_INSTRUCTION: CATEGORY_ASSEMBLY[category].instruction,
-    CATEGORY_ASSEMBLY_EXCLUSION: CATEGORY_ASSEMBLY[category].exclusion,
-    CATEGORY_ASSEMBLY_AUDIT: CATEGORY_ASSEMBLY[category].audit,
-    // Section 0's "one consistent scale" rule is abstract, and its worked example is what makes it
-    // land — so the example names pieces this category's sheet actually holds, rather than the hand
-    // and torso it named for every subject the app can describe.
-    SCALE_EXAMPLE_DESCRIPTION: SCALE_EXAMPLE_TEXT[category],
-
-    RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
-    SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
-    // Takes the same answer the target-size line does, because the two are printed one after the
-    // other and `CUSTOM` is the profile that defers to that line. Left as the flat lookup, it told
-    // the generator to work to a component size where one is stated, directly above a line stating a
-    // size and saying no component is it.
-    //
-    // **Keyed on the field, not on the sheet**, unlike the gate below. The assembled wording points
-    // at a size "stated below", and on a rig sheet with the box empty there is no line below — so
-    // the sheet's answer would leave the prompt pointing at nothing. The base wording covers that
-    // case as it always did, by saying *where one is stated*.
-    //
-    // The category is the third argument for the reason section 0's scale example takes one: the
-    // three profiles that state a scale state it against something, and that something was a figure
-    // on the nine categories whose sheets hold none.
-    RESOLUTION_PROFILE_DESCRIPTION: resolutionProfileDescription(
-      output.resolutionProfile,
-      statedTarget?.quantity === 'ASSEMBLED',
-      category,
-    ),
-    // A function of the target size as well as the profile, because `CUSTOM` is the one profile
-    // that carries no scale of its own — see `minFeatureSize`. It carries its own unit, from the
-    // same `nativeScale` answer `NATIVE_GRID` is: the figure counts native pixels only where the
-    // block defining a native pixel is emitted, and delivered pixels everywhere else. The bullet
-    // stated *native* unconditionally for as long as the two were separate, so every pixel-art
-    // prompt on a stock profile — the default among them — measured against a unit it never
-    // defined.
-    MIN_FEATURE_SIZE: minFeatureSize(output.resolutionProfile, statedTarget, nativeScale !== null),
-    // Sprite-scale bullets join the pixel discipline only when the stated component is small
-    // enough that silhouette carries the identity; `''` is what drops the optional line.
-    SMALL_SCALE_DISCIPLINE: smallScaleDiscipline(output.resolutionProfile, componentTarget),
-    // Emitted only where no palette is pinned, since a pinned one supersedes the budget outright —
-    // the value is still supplied because `substitute` throws on a token it has no value for, and
-    // the template's own `[IF:PALETTE!=yes]` is what decides whether the line survives to be filled.
-    PALETTE_DESCRIPTION: PALETTE_TEXT[output.paletteLimit],
-    OUTLINE_DESCRIPTION: OUTLINE_TEXT[output.outlineStyle],
-    LIGHTING_DESCRIPTION: LIGHTING_TEXT[output.lightingModel],
-    // Supplied for every style, as `PALETTE_DESCRIPTION` is, and `''` for the eight that describe a
-    // finished surface — the template's own `[IF:VALIDATION_PASS]` is what decides whether the token
-    // is still there to be filled.
-    VALIDATION_PASS_DESCRIPTION: VALIDATION_PASS_TEXT[output.renderStyle],
-    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: `substitute` throws
-    // on a token it has no value for, and the template's own `[IF:NATIVE_GRID]` is what decides
-    // whether the token is still there to be filled.
-    NATIVE_GRID_SCALE: nativeScale === null ? '' : String(nativeScale),
-
-    HARDWARE_NAME: hardware?.name ?? '',
-    HARDWARE_CONSTRAINTS: hardware === null ? '' : describeHardware(hardware),
-    PALETTE_NAME: palette?.name ?? '',
-    PALETTE_SPECIFICATION: palette === null ? '' : describePalette(palette),
-
-    STYLE_REFERENCE_NAME: reference?.name ?? '',
-    STYLE_REFERENCE_CHARACTERISTICS: reference === null ? '' : describeStyleReference(reference),
-
-    PROJECTION_DESCRIPTION: PROJECTION_TEXT[projection],
-    CAMERA_ELEVATION: String(cameraElevation),
-    DIRECTIONS_DESCRIPTION: describeDirections(coveredDirections),
-    // The fix for the defect that made a front-three-quarter, a right-side and a back-three-quarter
-    // head come back at the same angle: the facings are stated as object *yaws* beneath a camera the
-    // prompt separately pins, rather than as names a generator can satisfy with its favourite view.
-    // The elevation goes with them because what a yaw reveals is a function of both.
-    DIRECTIONAL_ROTATION: directionalRotation(coveredDirections, cameraElevation),
-    // The same facings related to each other rather than enumerated: cell N + 1 is cell N after a
-    // stated turn. The yaw list above is four independent descriptions, and a generator reads it as
-    // four independent pictures — which is how a sheet comes back with its asymmetries re-decided in
-    // every cell, each view facing correctly and none of them the same object.
-    TURNTABLE_SEQUENCE: turntableSequence(coveredDirections),
-    // Which of the subject's own sides each of those yaws brings towards the camera. Supplied
-    // whether or not the block survives, as `PALETTE_DESCRIPTION` is: the template gates it on
-    // `[IF:PLAN_VIEW!=yes]` *inside* `[IF:MULTI_DIRECTION]`, so a single-facing sheet drops it for
-    // having no second view to compare and a plan view drops it for having no near side at all.
-    LEADING_SIDE_LEDGER: leadingSideLedger(coveredDirections),
-    // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
-    // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
-    MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),
-    LANDMARK_DESCRIPTION: LANDMARK_TEXT[category],
-    // Spelled through the same function as the directions line two bullets above it, because on a
-    // single-facing sheet the two are the *same facing* and printed one after the other — the raw
-    // value gave `Directions required: Front` and `Primary assembly direction: front`, which reads
-    // as two different things. A `Direction` is stored lower case, so whichever bullet capitalises
-    // has to be the one both go through.
-    PRIMARY_DIRECTION: describeDirections([assemblyDirection]),
-    // A function of the elevation as well as the facing, for the same reason the yaw list is: which
-    // of a subject's pieces renders in front of its body is a near/far question, and directly
-    // overhead there is no near side to answer it with.
-    DEPTH_ORDER_DESCRIPTION: depthOrderText(assemblyDirection, cameraElevation),
-
-    BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
-    ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
-    JOINT_CAP_DESCRIPTION: JOINT_CAP_TEXT[output.jointCapStyle],
-    OVERLAP_MARGIN_DESCRIPTION: OVERLAP_MARGIN_TEXT[output.overlapMargin],
-
-    SERIES_POSITION: String(batch.ordinal),
-    SERIES_TOTAL: String(batch.sheets.length),
-    // Computed whether or not the block survives, as `PALETTE_DESCRIPTION` is: `substitute` throws
-    // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
-    // the token is still there to be filled.
-    SERIES_SHEETS: describeSeries(category, batch, anatomy),
-  };
-
-  // The sixteen field labels are the app's own words too, so they are cited over with the rest —
-  // their values, assigned below, are not. Read through `fieldLabelFor` so the prompt and the
-  // studio cannot drift apart: they are now the same string. Sixteen keys shared by six categories
-  // otherwise meant one category's vocabulary reaching all of them — a vehicle's *Service Condition*
-  // arriving as "Age / Vitality", its turret under "Anatomy base" and its vision slit under "Head &
-  // sensory features" — correct values, every one of them labelled from the category the keys were
-  // first designed for, in the section the template calls the sole authority for the subject's
-  // design and which forbids inferring anything it does not state.
-  for (const key of SUBJECT_FIELD_KEYS) {
-    authored[`${key.toUpperCase()}_LABEL`] = fieldLabelFor(category, key);
-  }
-
-  const values: Record<string, string> = Object.fromEntries(
-    Object.entries(authored).map(([token, text]) => [token, cite(text)]),
-  );
-
-  // Everything from here down carries text the reader typed, so none of it is cited over.
-  //
-  // The sixteen subject fields are keyed by the upper-case form of their own key rather than written
-  // out again — a field added to `SUBJECT_FIELD_KEYS` reaches the template without a second edit.
-  for (const key of SUBJECT_FIELD_KEYS) {
-    values[key.toUpperCase()] = subject[key];
-  }
-
-  values.SPRITE_TARGET_SIZE = output.spriteTargetSize;
-  values.SOCKETS = output.sockets;
-  values.IDENTITY_LOCK = output.identityLock;
-  values.ADDITIONAL_ANATOMY = additionalAnatomyLine;
-
-  // The one value that is both: an inventory of the app's own prose with the anatomy the reader named
-  // appended to it. It resolves its own citations over the app-authored half, before the reader's
-  // text is composed into it — which is what keeps the boundary above a boundary between strings
-  // rather than a hopeful exclusion.
-  values.COMPONENT_BREAKDOWN = componentBreakdownFor(
-    category,
-    mode,
-    output.directions,
-    output.sheetIndex,
-    anatomy,
-    cite,
-  );
+  // Every token the template substitutes, cited over on the app's own half and never on the
+  // reader's — see `promptValues.ts`, which is where that boundary lives.
+  const values = promptValues(category, subject, output, facts, cite);
 
   // Blocks, then sections, then optionals, then numbering, then substitution — see
   // `templateEngine.ts` for why that order. The first of those ran above, because the values had to
@@ -580,28 +83,12 @@ export function generatePrompt(
     surface: RENDER_STYLE_SURFACE[output.renderStyle],
     limbsAreComponents: LIMBS_ARE_COMPONENTS[category],
     assembly: CATEGORY_ASSEMBLY[category],
-    // The same two answers the template's own gates were given above, so a wrapper can never name a
-    // block the prompt it wraps does not carry.
-    nativeGrid: nativeScale !== null,
-    palette: palette !== null,
+    // The same two answers `promptConditions` gave the template's own gates, so a wrapper can never
+    // name a block the prompt it wraps does not carry.
+    nativeGrid: facts.nativeScale !== null,
+    palette: facts.palette !== null,
     // The headings' own numbers, from the same walk that resolved the prompt body's citations — so a
     // wrapper naming a section cannot come to name a different one than the prose does.
     sectionNumbers: numbers,
   });
-}
-
-/** Words in the compiled prompt, as the preview counts them. */
-export function countWords(prompt: string): number {
-  const trimmed = prompt.trim();
-  if (!trimmed) return 0;
-  return trimmed.split(/\s+/).length;
-}
-
-/**
- * A rough token estimate at the usual ~4-characters-per-token heuristic. Deliberately labelled as an
- * estimate in the UI — no tokeniser ships with the app, and the real count depends on which model
- * reads it.
- */
-export function estimateTokens(prompt: string): number {
-  return Math.round(prompt.length / 4);
 }

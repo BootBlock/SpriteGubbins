@@ -1,5 +1,5 @@
 import type { PromptBudgetFigure, TargetModelId } from '../types/output.ts';
-import { countWords, estimateTokens } from './promptCompiler.ts';
+import { countWords, estimateTokens } from './promptMetrics.ts';
 import { promptBudgetFigureFor } from './targetCapabilities.ts';
 
 /**

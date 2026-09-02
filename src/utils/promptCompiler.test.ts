@@ -30,7 +30,8 @@ import type { OutputConfig } from '../types/output.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { countWords, estimateTokens, generatePrompt } from './promptCompiler.ts';
+import { generatePrompt } from './promptCompiler.ts';
+import { countWords, estimateTokens } from './promptMetrics.ts';
 import { sheetDirections } from './sheetDirections.ts';
 import { styleReferencePatch } from './styleReferencePatch.ts';
 

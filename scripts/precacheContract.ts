@@ -207,8 +207,22 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * 2288.92 KiB, rebuilt from that commit with the same `node_modules` — the precache reaches
  * **2305.95 KiB**, a delta of 17.03. No file was added to or removed from the precache. The margin is
  * left at the same order as every raise above rather than widened.
+ *
+ * **Raised once more, from 2309, by splitting the twelve modules the code-line target flags.** This
+ * is the first raise bought by no content at all: no option, no guidance paragraph, no prompt text
+ * and no control. Twenty modules were cut out of twelve, and what a first visit pays for is the
+ * boilerplate a module boundary costs — the export bindings, the import records and the runtime's
+ * registration of each. Measured against the build immediately before it, from the same
+ * `node_modules`, the precache goes from **2308.87** to **2310.90 KiB**, a delta of 2.03 for twenty
+ * new files: roughly a tenth of a KiB each. No file was added to or removed from `PRECACHE_SHAPES`,
+ * and no chunk was renamed — the new modules land inside the chunks their callers were already in.
+ *
+ * The base figure is worth reading beside the ceiling it was under: 2308.87 against 2309 is
+ * **0.13 KiB of headroom**, which is the narrowest this margin has ever been and is why a change
+ * that adds no content at all crossed it. The margin is restored to the same order as every raise
+ * above, not widened.
  */
-export const PRECACHE_CEILING_KIB = 2309;
+export const PRECACHE_CEILING_KIB = 2314;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

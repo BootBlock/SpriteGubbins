@@ -5,6 +5,7 @@ import type { QuantisePreset } from '../types/quantisePreset.ts';
 import { describePackImported } from '../utils/packImportSummary.ts';
 import { findPresetByName } from '../utils/presetNames.ts';
 import { parseQuantisePresetPack, serialiseQuantisePresetPack } from '../utils/quantisePresetPack.ts';
+import { currentQuantiseDials } from './currentQuantiseDials.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 import { useUIStore } from './useUIStore.ts';
 
@@ -106,72 +107,15 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     if (!trimmed) return false;
 
     const existing = findPresetByName(get().presets, trimmed);
-    const {
-      keyingEnabled,
-      keyTolerance,
-      silhouetteThreshold,
-      vote,
-      outlineExpansion,
-      lineStrength,
-      trimStrength,
-      inkThreshold,
-      fillCleanup,
-      colorMerge,
-      cleanupPasses,
-      dither,
-      paletteSnap,
-      spriteGap,
-      symmetry,
-      symmetryTolerance,
-      symmetryConfidence,
-      duplicateTolerance,
-      duplicateSnap,
-      frameAlignment,
-      frameDriftTolerance,
-      antiAlias,
-      antiAliasThreshold,
-      antiAliasStrength,
-      antiAliasRun,
-      antiAliasPalette,
-    } = useQuantiseStore.getState();
 
     const preset: QuantisePreset = {
       id: existing?.id ?? `quantise-${crypto.randomUUID()}`,
       // The typed name wins, so re-saving "flat sheets" as "Flat sheets" fixes the capitalisation.
       name: trimmed,
       description: description.trim(),
-      // Named field by field rather than spread off the store, and that is the point: the store
-      // also holds a sheet, a grid and possibly a locked palette, and a spread would carry all
-      // three into storage. The compiler checks the set — a dial added to `QuantiseDials`, or to
-      // the pipeline's `QuantiseTuning` that it extends, fails here until it is listed.
-      dials: {
-        keyingEnabled,
-        keyTolerance,
-        silhouetteThreshold,
-        vote,
-        outlineExpansion,
-        lineStrength,
-        trimStrength,
-        inkThreshold,
-        fillCleanup,
-        colorMerge,
-        cleanupPasses,
-        dither,
-        paletteSnap,
-        spriteGap,
-        symmetry,
-        symmetryTolerance,
-        symmetryConfidence,
-        duplicateTolerance,
-        duplicateSnap,
-        frameAlignment,
-        frameDriftTolerance,
-        antiAlias,
-        antiAliasThreshold,
-        antiAliasStrength,
-        antiAliasRun,
-        antiAliasPalette,
-      },
+      // Read off the store at the moment of saving, and named field by field there rather than
+      // spread — see `currentQuantiseDials`.
+      dials: currentQuantiseDials(),
     };
 
     try {
