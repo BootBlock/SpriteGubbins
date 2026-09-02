@@ -28,7 +28,7 @@ import {
   SYMMETRY_MODES,
   VOTE_METHODS,
 } from '../types/quantiser.ts';
-import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './readers.ts';
+import { isRecord, pick, pickBoolean, pickSteppedNumber } from './readers.ts';
 
 /**
  * Turning a stored set of dial positions back into a {@link QuantiseDials}.
@@ -48,9 +48,14 @@ import { isRecord, pick, pickBoolean, pickNumber, pickWholeNumber } from './read
  * discarding the object would silently reset the other nineteen as well — and a preset whose ink
  * threshold was corrupted is still the preset the reader saved in every other respect.
  *
- * The two dials with a fractional step are read with `pickNumber` rather than
- * `pickWholeNumber`: `lineStrength` and `trimStrength` move in tenths, so 1.5 is an ordinary value
- * for them and a whole-number check would reject the default itself.
+ * **A range is three numbers, and all three are checked.** Every one of the sixteen ranged dials
+ * is read with `pickSteppedNumber`, which asks the `*_RANGE`'s own `step` where the position sits
+ * as well as the bounds — so `lineStrength` and `trimStrength` moving in tenths, `antiAliasStrength`
+ * in fives from 10, and the thirteen that count in ones are one check rather than three kinds of
+ * read. Bounds alone
+ * had admitted an imported pack's `lineStrength` of 2.34567, which the panel then reported as
+ * `2.3×` and no drag of the slider could return to. Reading the thirteen the same way is the half
+ * that keeps working: the next dial given a step of 2 is checked by the edit that gives it one.
  */
 export function parseQuantiseDials(value: unknown): QuantiseDials {
   if (!isRecord(value)) return QUANTISE_DEFAULT_DIALS;
@@ -68,55 +73,65 @@ export function parseQuantiseDials(value: unknown): QuantiseDials {
       SILHOUETTE_THRESHOLDS,
     ),
     vote: pick(value, 'vote', QUANTISE_DEFAULT_DIALS.vote, VOTE_METHODS),
-    outlineExpansion: pickWholeNumber(
+    outlineExpansion: pickSteppedNumber(
       value,
       'outlineExpansion',
       QUANTISE_DEFAULT_DIALS.outlineExpansion,
       OUTLINE_EXPANSION_RANGE,
     ),
-    lineStrength: pickNumber(value, 'lineStrength', QUANTISE_DEFAULT_DIALS.lineStrength, LINE_STRENGTH_RANGE),
-    trimStrength: pickNumber(value, 'trimStrength', QUANTISE_DEFAULT_DIALS.trimStrength, TRIM_STRENGTH_RANGE),
-    inkThreshold: pickWholeNumber(
+    lineStrength: pickSteppedNumber(
+      value,
+      'lineStrength',
+      QUANTISE_DEFAULT_DIALS.lineStrength,
+      LINE_STRENGTH_RANGE,
+    ),
+    trimStrength: pickSteppedNumber(
+      value,
+      'trimStrength',
+      QUANTISE_DEFAULT_DIALS.trimStrength,
+      TRIM_STRENGTH_RANGE,
+    ),
+    inkThreshold: pickSteppedNumber(
       value,
       'inkThreshold',
       QUANTISE_DEFAULT_DIALS.inkThreshold,
       INK_THRESHOLD_RANGE,
     ),
-    fillCleanup: pickWholeNumber(
+    fillCleanup: pickSteppedNumber(
       value,
       'fillCleanup',
       QUANTISE_DEFAULT_DIALS.fillCleanup,
       FILL_CLEANUP_RANGE,
     ),
-    colorMerge: pickWholeNumber(value, 'colorMerge', QUANTISE_DEFAULT_DIALS.colorMerge, COLOR_MERGE_RANGE),
-    cleanupPasses: pickWholeNumber(
+    colorMerge: pickSteppedNumber(value, 'colorMerge', QUANTISE_DEFAULT_DIALS.colorMerge, COLOR_MERGE_RANGE),
+    cleanupPasses: pickSteppedNumber(
       value,
       'cleanupPasses',
       QUANTISE_DEFAULT_DIALS.cleanupPasses,
       CLEANUP_PASSES_RANGE,
     ),
     dither: pick(value, 'dither', QUANTISE_DEFAULT_DIALS.dither, DITHER_PATTERNS),
-    paletteSnap: pickWholeNumber(
+    paletteSnap: pickSteppedNumber(
       value,
       'paletteSnap',
       QUANTISE_DEFAULT_DIALS.paletteSnap,
       PALETTE_SNAP_RANGE,
     ),
-    spriteGap: pickWholeNumber(value, 'spriteGap', QUANTISE_DEFAULT_DIALS.spriteGap, SPRITE_GAP_RANGE),
+    spriteGap: pickSteppedNumber(value, 'spriteGap', QUANTISE_DEFAULT_DIALS.spriteGap, SPRITE_GAP_RANGE),
     symmetry: pick(value, 'symmetry', QUANTISE_DEFAULT_DIALS.symmetry, SYMMETRY_MODES),
-    symmetryTolerance: pickWholeNumber(
+    symmetryTolerance: pickSteppedNumber(
       value,
       'symmetryTolerance',
       QUANTISE_DEFAULT_DIALS.symmetryTolerance,
       SYMMETRY_TOLERANCE_RANGE,
     ),
-    symmetryConfidence: pickWholeNumber(
+    symmetryConfidence: pickSteppedNumber(
       value,
       'symmetryConfidence',
       QUANTISE_DEFAULT_DIALS.symmetryConfidence,
       SYMMETRY_CONFIDENCE_RANGE,
     ),
-    duplicateTolerance: pickWholeNumber(
+    duplicateTolerance: pickSteppedNumber(
       value,
       'duplicateTolerance',
       QUANTISE_DEFAULT_DIALS.duplicateTolerance,
@@ -129,26 +144,26 @@ export function parseQuantiseDials(value: unknown): QuantiseDials {
       QUANTISE_DEFAULT_DIALS.frameAlignment,
       FRAME_ALIGNMENT_MODES,
     ),
-    frameDriftTolerance: pickWholeNumber(
+    frameDriftTolerance: pickSteppedNumber(
       value,
       'frameDriftTolerance',
       QUANTISE_DEFAULT_DIALS.frameDriftTolerance,
       FRAME_DRIFT_RANGE,
     ),
     antiAlias: pick(value, 'antiAlias', QUANTISE_DEFAULT_DIALS.antiAlias, ANTI_ALIAS_MODES),
-    antiAliasThreshold: pickWholeNumber(
+    antiAliasThreshold: pickSteppedNumber(
       value,
       'antiAliasThreshold',
       QUANTISE_DEFAULT_DIALS.antiAliasThreshold,
       ANTI_ALIAS_THRESHOLD_RANGE,
     ),
-    antiAliasStrength: pickWholeNumber(
+    antiAliasStrength: pickSteppedNumber(
       value,
       'antiAliasStrength',
       QUANTISE_DEFAULT_DIALS.antiAliasStrength,
       ANTI_ALIAS_STRENGTH_RANGE,
     ),
-    antiAliasRun: pickWholeNumber(
+    antiAliasRun: pickSteppedNumber(
       value,
       'antiAliasRun',
       QUANTISE_DEFAULT_DIALS.antiAliasRun,

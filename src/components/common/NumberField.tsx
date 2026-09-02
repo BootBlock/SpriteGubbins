@@ -1,4 +1,5 @@
 import { useId } from 'react';
+import { isOnStep } from '../../utils/isOnStep.ts';
 import { Tooltip } from './Tooltip.tsx';
 
 interface NumberFieldProps {
@@ -35,27 +36,13 @@ interface NumberFieldProps {
  * components, a degree of camera elevation, the side of a cell that becomes an `ImageData` — and the
  * component budget had grown its own `Number.isInteger` guard while the rest had not. A guard per
  * call site is a check three of four callers forget; one here is what makes the prop mean what it
- * says. The comparison is taken against `min` rather than
- * against zero, because a grid may be offset, and it carries a tolerance because binary floating
- * point cannot represent every step exactly.
+ * says. The question itself is `isOnStep`, shared with `db/readers.ts`, because a stored value
+ * never went through a control at all and so has had nothing check its step either.
  *
  * `disabledReason` is a string for the reason `CheckboxField` gives: a greyed-out control says
  * nothing about why. The camera elevation is fixed by six of the seven projections and free under
  * the seventh, so *which* setting has taken the number over is the whole of what a reader needs.
  */
-/**
- * Whether a value sits on the field's own step grid, counting from `min`.
- *
- * The tolerance is relative to the step, so it holds for a step far from 1 as well: at `step` 0.1,
- * `(0.3 - 0) / 0.1` comes to 2.9999999999999996 in binary floating point, and rounding that to 3
- * before comparing is what stops a value the reader typed exactly being refused.
- */
-function onStep(value: number, min: number, step: number): boolean {
-  if (step <= 0) return true;
-  const steps = (value - min) / step;
-  return Math.abs(steps - Math.round(steps)) < 1e-9;
-}
-
 export function NumberField({
   label,
   tooltip,
@@ -104,7 +91,7 @@ export function NumberField({
           const entered = event.target.value.trim();
           if (entered === '') return;
           const parsed = Number(entered);
-          if (Number.isFinite(parsed) && parsed >= min && parsed <= max && onStep(parsed, min, step)) {
+          if (Number.isFinite(parsed) && parsed >= min && parsed <= max && isOnStep(parsed, min, step)) {
             onChange(parsed);
           }
         }}

@@ -304,6 +304,48 @@ describe('LocalStorageBackend — presets', () => {
 
     expect((await backend.listPresets()).map((preset) => preset.id)).toEqual(['new']);
   });
+
+  it('lists the collection newest-first, as `SELECT_PRESETS_SQL` does', async () => {
+    // The order the Presets tab shows, and the one property this backend cannot get from a
+    // timestamp: it rewrites the whole collection on every operation, so the stored order is the
+    // order. See `toPresetRow`.
+    await backend.savePreset(customPreset({ id: 'a', name: 'Alpha' }));
+    await backend.savePreset(customPreset({ id: 'b', name: 'Bravo' }));
+    await backend.savePreset(customPreset({ id: 'c', name: 'Charlie' }));
+
+    expect((await backend.listPresets()).map((preset) => preset.id)).toEqual(['c', 'b', 'a']);
+  });
+
+  it('moves a renamed preset to the front, as a re-stamped `updated_at` does', async () => {
+    // `updateCustomPresetDetails` saves the whole preset back, so a rename is a save — and on the
+    // SQLite side that re-stamps `updated_at` and moves the row to the front. The two backends
+    // have to agree about that too, not only about a first save.
+    await backend.savePreset(customPreset({ id: 'a', name: 'Alpha' }));
+    await backend.savePreset(customPreset({ id: 'b', name: 'Bravo' }));
+    await backend.savePreset(customPreset({ id: 'c', name: 'Charlie' }));
+    await backend.savePreset(customPreset({ id: 'a', name: 'Alpha renamed' }));
+
+    const presets = await backend.listPresets();
+    expect(presets.map((preset) => preset.name)).toEqual(['Alpha renamed', 'Charlie', 'Bravo']);
+  });
+
+  it('stores the archetypes in the SQLite table’s own row shape', async () => {
+    // Not a detail of the encoding: it is what lets `parsePresetRow` read both backends, so the
+    // two cannot drift in what they accept. A nested `subject` here would parse on neither.
+    await backend.savePreset(customPreset({ id: 'a', name: 'Alpha' }));
+
+    const stored: unknown = JSON.parse(storage.getItem(STORAGE_KEYS.customPresets) ?? 'null');
+    expect(stored).toEqual([
+      {
+        id: 'a',
+        name: 'Alpha',
+        description: 'A preset of my own.',
+        category: customPreset().category,
+        subject_json: JSON.stringify(customPreset().subject),
+        output_json: JSON.stringify(customPreset().output),
+      },
+    ]);
+  });
 });
 
 describe('LocalStorageBackend — quantiser presets', () => {
@@ -452,8 +494,8 @@ describe('LocalStorageBackend — hostile storage', () => {
           id: 'partial',
           name: 'Partial',
           category: 'CHARACTER',
-          subject: { species: 'Android' },
-          output: {},
+          subject_json: JSON.stringify({ species: 'Android' }),
+          output_json: '{}',
         },
       ]),
     );
@@ -472,8 +514,29 @@ describe('LocalStorageBackend — hostile storage', () => {
     storage.setItem(
       STORAGE_KEYS.customPresets,
       JSON.stringify([
-        { name: 'No id', category: 'CHARACTER' },
-        { id: 'no-category', name: 'X' },
+        { name: 'No id', category: 'CHARACTER', subject_json: '{}', output_json: '{}' },
+        { id: 'no-category', name: 'X', subject_json: '{}', output_json: '{}' },
+      ]),
+    );
+    expect(await backend.listPresets()).toEqual([]);
+  });
+
+  it('rejects a collection stored in the older nested shape rather than half-reading it', async () => {
+    // What the single-file application wrote under this same key, and what this backend wrote
+    // before it aligned with the SQLite row shape. `parsePresetRow` requires the two payload
+    // columns, so such a collection is discarded — the pre-1.0 policy, not an oversight. Half of
+    // it is the outcome worth refusing: a preset whose configuration silently became the
+    // category's defaults still loads, and says nothing about what it lost.
+    storage.setItem(
+      STORAGE_KEYS.customPresets,
+      JSON.stringify([
+        {
+          id: 'nested',
+          name: 'Nested',
+          category: 'CHARACTER',
+          subject: { species: 'Android' },
+          output: {},
+        },
       ]),
     );
     expect(await backend.listPresets()).toEqual([]);
