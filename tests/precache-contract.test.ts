@@ -16,9 +16,34 @@ import {
  * cover, is the pure half: the hash-stripping, and the three conditions that throw.
  */
 
-/** A shape turned back into a plausible built URL. `*` stands where the content hash goes. */
+/** A content hash of the length and alphabet the build emits, standing in for a real one. */
+const STAND_IN_HASH = 'BVKGSWc-';
+
+/**
+ * A shape turned back into a plausible built URL. `*` stands where the content hash goes.
+ *
+ * Every fixture below rests on one property — `precacheShape(urlFor(shape))` is `shape` again —
+ * because `assertPrecacheContract` compares the shapes it strips from the URLs it is handed
+ * against `PRECACHE_SHAPES`. A helper that breaks that property does not fail: it builds a URL the
+ * contract reads back as some *other* shape, and the conforming manifest starts reporting a
+ * `+`/`-` pair for a list nobody changed.
+ *
+ * A shape carries at most one `*`, because `precacheShape` strips exactly one hash. So the two
+ * halves here are the whole of the property: `replaceAll` substitutes every `*` rather than the
+ * first, and the round trip is checked rather than assumed, which is what catches a shape carrying
+ * two — the case where no substitution can be faithful, and where a first-occurrence `replace`
+ * would carry a literal `*` into a URL that still looks like a plausible name.
+ */
 function urlFor(shape: string): string {
-  return shape.replace('*', 'BVKGSWc-');
+  const url = shape.replaceAll('*', STAND_IN_HASH);
+  const readBack = precacheShape(url);
+  if (readBack !== shape) {
+    throw new Error(
+      `urlFor built ${url} from ${shape}, which precacheShape reads back as ${readBack}. ` +
+        'A shape carries at most one * — the one hash precacheShape strips.',
+    );
+  }
+  return url;
 }
 
 /** A manifest matching the contract exactly, at a size well under the ceiling. */
@@ -57,6 +82,27 @@ describe('precacheShape', () => {
   it('does not mistake a short or long hyphenated segment for a hash', () => {
     expect(precacheShape('assets/thing-1234567.js')).toBe('assets/thing-1234567.js');
     expect(precacheShape('assets/thing-123456789.js')).toBe('assets/thing-123456789.js');
+  });
+});
+
+describe('urlFor', () => {
+  it('refuses a shape no single hash can stand in for', () => {
+    // No substitution is faithful here, because `precacheShape` strips one hash and this shape
+    // asks for two. The guard is what turns that into a stopped suite rather than a fixture the
+    // contract quietly reads as a third shape.
+    expect(() => urlFor('assets/index-*-*.js')).toThrow(/reads back as/);
+  });
+
+  it('substitutes every placeholder, and names the whole URL when it refuses one', () => {
+    // The CodeQL alert this helper was fixed for, and the only assertion that can see it. The
+    // refusal above fires under a first-occurrence `replace` too — a URL with a literal `*` left
+    // in it does not read back as its shape either — so the throw alone separates nothing. What
+    // separates them is the URL the refusal names: `replaceAll` reports a name with no `*` in it,
+    // where `replace` reports one still carrying the second placeholder, which is a diagnostic a
+    // reader would have to see through.
+    expect(() => urlFor('assets/index-*-*.js')).toThrow(
+      `urlFor built assets/index-${STAND_IN_HASH}-${STAND_IN_HASH}.js from assets/index-*-*.js`,
+    );
   });
 });
 
