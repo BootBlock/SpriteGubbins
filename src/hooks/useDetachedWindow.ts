@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useFileDropGuard } from './useFileDropGuard.ts';
 
 /** The size a detached window opens at, in CSS pixels. */
 interface WindowSize {
@@ -93,6 +94,13 @@ export function useDetachedWindow(title: string): DetachedWindow {
     },
     [adopt],
   );
+
+  // A window this app opened is a window this app has to answer for: nothing in the detached panel
+  // accepts a file, so every drop landing there keeps the browser's default and navigates the
+  // document the portal is rendering into. `useFileDropGuard` refuses it, and takes `target` rather
+  // than reading the global for the reason `useAnchoredSurface` sets out — a listener on the opener
+  // hears nothing dispatched in here.
+  useFileDropGuard(target);
 
   // Only the state. The window is closed by the effect below, once React has taken the panel's
   // elements back out of it — see there for why closing it here is not an option.

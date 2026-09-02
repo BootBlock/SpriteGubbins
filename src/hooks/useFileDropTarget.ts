@@ -13,9 +13,11 @@ import type { DragEventHandler } from 'react';
  * `dropHandlers` is spread onto whichever element draws the target; `isDraggedOver` is what that
  * element styles itself by.
  *
- * **This is the accepting half of a pair.** Everywhere the app does *not* draw a target, the same
- * navigation is refused instead — see `useFileDropGuard`, which the shell registers on the window.
- * The two do not overlap: the guard stands aside for any event a target here has already cancelled.
+ * **This is the accepting half of a pair.** Anywhere else a file can land — the rest of the page, and
+ * the window the comparison panel detaches into — the drop is refused instead, because otherwise the
+ * browser opens the file and navigates that window away. `useFileDropGuard` is the refusing half;
+ * `App` hands it the page's window and `useDetachedWindow` hands it whatever it opened. The two do
+ * not overlap: the guard stands aside for any event a target here has already cancelled.
  */
 export function useFileDropTarget(acceptFile: (file: File | null | undefined) => void): FileDropTarget {
   const [isDraggedOver, setIsDraggedOver] = useState(false);

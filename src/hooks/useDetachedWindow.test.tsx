@@ -75,6 +75,26 @@ describe('useDetachedWindow', () => {
     expect(open).toHaveBeenCalledWith('', '_blank', 'popup=yes,width=480,height=360');
   });
 
+  it('refuses a file dropped in the window it opened', () => {
+    const { result } = renderHook(() => useDetachedWindow('Preview'));
+
+    act(() => {
+      result.current.detach(anchorOf(900, 600));
+    });
+
+    // Nothing in a detached panel accepts a file, so the browser's default stands: it would open the
+    // file, replacing the very document the portal renders into. The guard is registered on this
+    // window rather than on the opener, which hears nothing dispatched in here.
+    const view = result.current.target;
+    const event = new DragEvent('dragover', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'dataTransfer', {
+      value: { types: ['Files'], dropEffect: 'copy' },
+    });
+    view?.document.body.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
+  });
+
   it('re-parses the popup with a doctype, which `about:blank` arrives without', () => {
     const { result } = renderHook(() => useDetachedWindow('Preview'));
 

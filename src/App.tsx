@@ -59,11 +59,11 @@ export function App() {
   const restoreSession = useSessionStore((state) => state.restoreSession);
   const fetchQuantisePresets = useQuantisePresetStore((state) => state.fetchQuantisePresets);
 
-  // Refuse a file dropped anywhere that is not a drop target, which is otherwise a navigation away
-  // from the app and the loss of everything the Quantise tab holds. Registered from the shell
-  // because the default it answers belongs to the document rather than to any element — see the
-  // hook, which is the whole explanation.
-  useFileDropGuard();
+  // Refuse a file dropped anywhere in the page that is not a drop target, which is otherwise a
+  // navigation away from the app and the loss of everything the Quantise tab holds. Registered from
+  // the shell because the default it answers belongs to the document rather than to any element, and
+  // handed this window explicitly because the app can open a second one — see the hook.
+  useFileDropGuard(window);
 
   // Catch the browser's install offer and hold on to it, so the app can make the offer itself at a
   // moment that makes sense rather than letting the mini-infobar interrupt.
