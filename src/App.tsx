@@ -175,9 +175,9 @@ export function App() {
         */}
         {/*
           The padding is `--page-gutter` rather than a padding utility with an `md:` step above it,
-          because it is not only this
-          element's padding: all three sticky columns leave the same room above themselves, the two
-          capped ones leave it below as well, and `DetachedPreview` pads its own window with it. One
+          because it is not only this element's padding: all three sticky columns leave the same
+          room above themselves, the two capped ones leave it below as well, and `DetachedPreview`
+          pads its own window with it. One
           declaration in `index.css` carries the responsive step, and nothing here can drift from
           it — a second padding utility beside the token is what `tests/sticky-column-offset.test.ts`
           refuses.

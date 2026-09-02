@@ -42,11 +42,10 @@ export function PromptPreview() {
 
       `lg:min-h-[24rem]` is a floor, and it is not decoration. This panel is `overflow-hidden`, so
       anything flex squeezes out of it is *clipped*, not scrolled — and with a zero block-size
-      minimum the squeeze
-      had no limit: measured, a 400px-tall window left the `<pre>` at zero and pushed the Copy Prompt
-      button past the panel's own edge. It is also the only child of the sticky column carrying that
-      minimum, so
-      it absorbed the whole deficit under browser zoom — nine lines of prompt left at 1024×600, from
+      minimum the squeeze had no limit: measured, a 400px-tall window left the `<pre>` at zero and
+      pushed the Copy Prompt button past the panel's own edge. It is also the only child of the
+      sticky column carrying that minimum, so it absorbed the whole deficit under browser zoom —
+      nine lines of prompt left at 1024×600, from
       a pre-change 576px. The floor keeps the toolbar and a readable run of prompt intact, and
       `StudioTab`'s column scrolls once the floor is what no longer fits. The `<pre>`'s
       `overflow-y-auto` gives it an automatic minimum size of zero, so it still absorbs the shrinking

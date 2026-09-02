@@ -1,12 +1,12 @@
 import { fileURLToPath } from 'node:url';
-import { copyFileSync, existsSync, readdirSync, readFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { configDefaults, defineConfig } from 'vitest/config';
 import type { Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
-import { assertNoDeadUtilities } from './scripts/deadUtilities.ts';
+import { deadUtilityPlugin } from './scripts/deadUtilities.ts';
 import { assertPrecacheContract } from './scripts/precacheContract.ts';
 import { THEME_COLOR_PLACEHOLDER, themeColorHex } from './scripts/themeColour.ts';
 
@@ -106,51 +106,6 @@ function spa404FallbackPlugin(): Plugin {
     closeBundle() {
       const index = resolve(outDir, 'index.html');
       if (existsSync(index)) copyFileSync(index, resolve(outDir, '404.html'));
-    },
-  };
-}
-
-/**
- * Hold the emitted stylesheet to what the app actually wears — see `scripts/deadUtilities.ts`.
- *
- * `closeBundle`, and not for the reason `spa404FallbackPlugin` above is there. The natural hook is
- * `generateBundle`, which runs before anything is written and already holds the CSS asset in its
- * final form — `@tailwindcss/vite` generates and optimises in a `transform`, so nothing downstream
- * touches a class name. **Rolldown discards the error, though.** Measured against this build: a
- * `throw` from `generateBundle`, and `this.error()` with it, stop the build and print nothing but
- * `Build failed` — the message never reaches the console, and a guard whose failure nobody can read
- * is no guard. The same throw from `closeBundle` prints in full.
- *
- * So the stylesheet is read back off disk, and a failure here leaves a written `dist/` that must
- * not be served — exactly the footing `assertPrecacheContract` documents for itself. Build again
- * after fixing rather than reaching for the directory.
- *
- * A worker build runs this plugin too — `worker.format` compiles the three threads through rollup
- * builds of their own — and none of them emits a stylesheet. Those are skipped on `config.isWorker`
- * rather than by finding no CSS and returning quietly, so that a client build that somehow emitted
- * none fails here instead of passing.
- */
-function deadUtilityPlugin(): Plugin {
-  let isWorker = false;
-  let outDir = 'dist';
-  return {
-    name: 'sprite-gubbins-dead-utilities',
-    apply: 'build',
-    configResolved(config) {
-      isWorker = config.isWorker;
-      outDir = config.build.outDir;
-    },
-    closeBundle() {
-      if (isWorker) return;
-      const assets = resolve(outDir, 'assets');
-      const sheets = existsSync(assets) ? readdirSync(assets).filter((name) => name.endsWith('.css')) : [];
-      if (sheets.length === 0) {
-        throw new Error(
-          `No stylesheet was written to ${assets}, so scripts/deadUtilities.ts had nothing to ` +
-            'check. That is a broken build, not an empty one.',
-        );
-      }
-      assertNoDeadUtilities(sheets.map((name) => readFileSync(resolve(assets, name), 'utf8')).join('\n'));
     },
   };
 }

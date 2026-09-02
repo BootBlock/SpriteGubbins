@@ -1,12 +1,21 @@
 import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-/** Every `.ts`, `.tsx` and `.css` file under `root`, resolved to an absolute path. */
-function filesUnder(root: string): string[] {
+/** The shell document, which is markup like any other and is not under a directory of its own. */
+const SHELL = 'index.html';
+
+/** Every file under `root` whose extension can carry a Tailwind class name, as an absolute path. */
+function filesUnder(root: string, extensions: RegExp): string[] {
   return readdirSync(resolve(process.cwd(), root), { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile() && /\.(tsx?|css)$/.test(entry.name))
+    .filter((entry) => entry.isFile() && extensions.test(entry.name))
     .map((entry) => resolve(entry.parentPath, entry.name));
 }
+
+/** What the app itself is written in. */
+const APP_SOURCE = /\.(tsx?|css)$/;
+
+/** That, plus the two extensions the tooling and the served files outside `src/` are written in. */
+const ANY_SOURCE = /\.(tsx?|jsx?|mjs|css|html)$/;
 
 /**
  * Every source file under `src/` that can carry a Tailwind class name.
@@ -33,54 +42,68 @@ function filesUnder(root: string): string[] {
  * the app's prose, and the size guard to the modules that are not themselves tests.
  */
 export function scannableSources(): string[] {
-  return filesUnder('src');
+  return filesUnder('src', APP_SOURCE);
 }
 
 /**
- * Everything Tailwind's content scan actually reads — `src/` **and** `tests/`.
+ * Where a Tailwind candidate can come *from* — every directory this repository writes prose or
+ * class strings in, plus the shell document.
  *
- * The two are not the same question, and conflating them is what let a dead class into the bundle.
- * `scannableSources()` asks what the *app* is styled with, so a test file is rightly outside it.
- * This asks what the *build emits from*, and Tailwind does not care which directory a candidate
- * came from or whether it was inside a comment: a whole class name written in a docblock under
- * `tests/` is compiled into the stylesheet exactly as one written in a `className` is.
+ * Tailwind's automatic content detection reads the whole non-ignored project, and `src/index.css`
+ * subtracts only the Markdown and the archived single-file app. So the scan is wider than `src/` in
+ * a way that matters: `.isolate` ships today from one word in `public/coi-bootstrap.js`, and the
+ * strings in `scripts/deadUtilities.ts`'s own exemption list are candidates in their own right.
+ * A list that stopped at `src/` and `tests/` would have said that word is spelled nowhere.
  *
- * That is not hypothetical. The rung guard's own docblock named `.duration-` and its retired figure
- * in full while explaining why nobody should, and the class it was warning about reappeared in
- * `dist/` — from the test written to keep it out. So a guard whose subject is the bundle walks this
- * list, and one whose subject is the app walks the one above.
+ * **It is still narrower than the scan, and the difference is deliberate.** The root configs,
+ * `.github/` and the non-Markdown files under `docs/` are read by Tailwind and are not walked here,
+ * because this list is consulted for two things that both tolerate the gap: the raw-source sweep
+ * for a `duration-` off the ladder, and the diagnostic naming where a dead class was spelled. **No
+ * guard's *verdict* rests on it** — `scripts/deadUtilities.ts` decides from the emitted stylesheet,
+ * so a class written anywhere at all still fails the build. Only the pointer would go quiet, and
+ * the message says so rather than claiming the name is spelled nowhere.
+ *
+ * The narrower question — what the app is styled *with* — is {@link appMarkup} below, and it is a
+ * strict subset of this.
  */
 export function tailwindScanned(): string[] {
-  return [...filesUnder('src'), ...filesUnder('tests')];
+  return [
+    ...filesUnder('src', ANY_SOURCE),
+    ...filesUnder('tests', ANY_SOURCE),
+    ...filesUnder('scripts', ANY_SOURCE),
+    ...filesUnder('public', ANY_SOURCE),
+    resolve(process.cwd(), SHELL),
+  ];
+}
+
+/** Whether `file` is a test rather than something the app renders. */
+function isTest(file: string): boolean {
+  return /\.test\.tsx?$/.test(file) || /[\\/]src[\\/]test[\\/]/.test(file);
 }
 
 /**
  * What the app is **actually styled with** — the only files whose class names have a right to be in
  * the stylesheet.
  *
- * The third answer to "what counts as source", and the three are genuinely three questions.
- * `tailwindScanned()` is where a candidate may come *from*, which is why it reaches `tests/` and
- * reads comments; this is where a candidate may be *justified*, which is a strictly smaller set.
- * `scripts/deadUtilities.ts` compares the two, so the difference between them is the dead CSS the
- * build ships — and every hole in this list is a utility that guard stops asking about.
+ * `tailwindScanned()` is where a candidate may come *from*; this is where one may be *justified*,
+ * and the difference between the two is the dead CSS the build ships. `scripts/deadUtilities.ts`
+ * compares them, so every hole in this list is a utility that guard stops asking about.
  *
- * Three inclusions decide it, and each is a class name the app really can carry:
+ * Two inclusions decide it, beyond the `.ts` as well as `.tsx` that `scannableSources` explains
+ * above: **`index.css`**, because `@utility glass-panel { … }` is where several of the app's own
+ * utilities are declared and nothing else spells them as a class; and **`index.html`**, the
+ * document the app renders into, which carries no class today and would have one reported as dead
+ * if it did.
  *
- * - **`.ts` as well as `.tsx`**, for the hoisted `className` constants, exactly as above.
- * - **`index.css`**, because `@utility glass-panel { … }` is where several of the app's own
- *   utilities are declared, and nothing else spells `bg-spectrum` or `section-reveal` as a class.
- * - **`index.html`**, the document the app renders into. It carries no class today and the guard
- *   would report one as dead if it did — which would be wrong, since the shell is markup like any
- *   other. Reading it costs one file.
- *
- * A colocated `*.test.tsx` is the one thing under `src/` left out. It renders nothing a reader
- * sees, so a class name it spells — in a fixture, an assertion or a docblock — is dead CSS on the
- * same footing as one spelled under `tests/`, and counting it as justification would be a hole
- * inside the very tree this list exists to speak for.
+ * **Two kinds of test are left out, and the second was a live hole.** A colocated `*.test.tsx`
+ * renders nothing a reader sees, so a class name it spells is dead CSS on the same footing as one
+ * spelled under `tests/`. `src/test/` is the same claim about the same kind of file, and matches
+ * neither that pattern nor the directory: its eighteen helpers are decoders and fakes, and one
+ * local variable in `pngScanlines.ts` was on its own justifying a `.filter` rule that the app has
+ * never worn. `module-size.test.ts` deliberately keeps `src/test/` *inside* its own walk, and that
+ * is not a disagreement — a decoder is app-shaped code whose length is worth bounding, and is still
+ * not markup.
  */
 export function appMarkup(): string[] {
-  return [
-    ...filesUnder('src').filter((file) => !/\.test\.tsx?$/.test(file)),
-    resolve(process.cwd(), 'index.html'),
-  ];
+  return [...filesUnder('src', APP_SOURCE).filter((file) => !isTest(file)), resolve(process.cwd(), SHELL)];
 }

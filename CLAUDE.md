@@ -720,27 +720,34 @@ CSS at all — never fires.
 **The build asks the general question, and [scripts/deadUtilities.ts](scripts/deadUtilities.ts) is
 where it lives.** It reads every class selector out of the emitted stylesheet and fails on any the
 app's own markup never spells. `appMarkup()` in [scripts/sourceFiles.ts](scripts/sourceFiles.ts) is
-that set — `src/` with the colocated tests taken out, plus `index.html`, comments blanked — and it is
-deliberately smaller than the `tailwindScanned()` beside it, because where a candidate may come
-*from* and where it may be *justified* are two different questions. It cannot be a Vitest suite,
-since Vitest never builds; it runs from a `closeBundle` hook for the reason that config records, and
-a failure there strands a written `dist/` that must not be served. Ten selectors failed it on the
-first run: seven spelled in comments, two in a test's assertion strings, and one from a regex whose
-escaped decimal point ended the candidate a character early. **The remedy is to write the name in two
-halves that are not a class apart** — as `TabSwitcher`'s note and the rung guard's own docblock do —
-or to give an assertion the variant prefix the app actually wears, which is the stronger claim as
-well as the quieter one.
+that set — `src/` with the tests taken out, both the colocated ones and `src/test/`, plus
+`index.html`, comments blanked — and it is a strict subset of the `tailwindScanned()` beside it,
+because where a candidate may come *from* and where it may be *justified* are two different
+questions. It cannot be a Vitest suite, since Vitest never builds; it runs from a `closeBundle` hook
+for the reason that file records, and a failure there strands a written `dist/` that must not be
+served. Ten selectors failed it on the first run: seven spelled in comments, two in a test's
+assertion strings, and one from a regex whose escaped decimal point ended the candidate a character
+early. **The remedy is to write the name in two halves that are not a class apart** — as
+`TabSwitcher`'s note and the rung guard's own docblock do — or to give an assertion the variant
+prefix the app actually wears, which is the stronger claim as well as the quieter one.
 
-**`PROSE_COLLISIONS` is the only exemption, and it is six ordinary English words.** `shrink`,
-`invert`, `lowercase`, `isolate`, `sepia` and `backdrop-filter` are each a Tailwind utility *and* a
-word this repository's prose has to be able to use — in eight docblocks about flex layout, two about
-pixel data, the isolation bootstrap, the note saying why that colour is not in the vocabulary, and
-five explanations of the stacking context glass creates. Rewriting those sentences to dodge the
-scanner would make them worse English for a few hundred bytes. They are admissible because **none of
-them is a class this project bans**: each is unremarkable, a component reaching for one would be
-right, and so nothing hides behind the exemption — which is the test a seventh entry has to pass. An
-entry naming a class the app has since taken up for real fails, because the exemption is then
-covering nothing.
+**What the guard reads is a string in a file, exactly as Tailwind does, and that is the edge of what
+it can claim.** It cannot tell a class name from an identifier that happens to spell one, so
+`const container` in `main.tsx` keeps a container rule in the stylesheet on its own. Closing that
+would take a parser that knows which strings are class strings, which is a different tool; what this
+one buys is that a class **the app never mentions at all** cannot ship.
+
+**`PROSE_COLLISIONS` is the only exemption, and it is seven ordinary words.** `shrink`, `invert`,
+`lowercase`, `isolate`, `sepia` and `backdrop-filter` are each a Tailwind utility *and* a word this
+repository's prose has to be able to use — `shrink` in ten comment blocks, four of them about a flex
+item and the rest about a border, a rescale, an outline and a truncated select. `filter` is the
+seventh and is not prose at all: it is the name a PNG scanline's filter byte carries in
+`src/test/pngScanlines.ts`, and an identifier is a candidate to the scanner exactly as a sentence is.
+Rewriting any of them to dodge Tailwind would make the code or the English worse for a few hundred
+bytes. They are admissible because **none of them is a class this project bans**: each is
+unremarkable, a component reaching for one would be right, and so nothing hides behind the
+exemption — which is the test an eighth entry has to pass. An entry naming a class the app has since
+taken up for real fails, because the exemption is then covering nothing.
 
 The rung scan stays beside it and is a different claim. It reads the raw source for a `duration-` off
 the six-rung ladder, which is a *wrong speed* rather than a dead class, and it catches one written at

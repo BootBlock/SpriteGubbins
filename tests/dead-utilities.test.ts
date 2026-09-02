@@ -17,9 +17,15 @@ import {
  * tests cover, is the reading: which selectors count as emitted, and what counts as a source
  * spelling one.
  *
- * **Every fixture class name below is deliberately not a utility.** Tailwind reads `tests/` as
- * markup, so a fixture naming a real one would emit a rule for it and this file would become the
- * next thing the build fails on — which is precisely the failure it is written to describe.
+ * **Every fixture below is written so that reverting the line it names changes the answer.** A
+ * parser test is unusually easy to write as theatre — the first draft of this file asserted the
+ * media-query and decimal cases with fixtures that returned the same list under every variant of
+ * the code, because the cursor and the at-rule skip had already handled them. Each fixture here
+ * therefore names the term it exercises, and was checked against a build with that term removed.
+ *
+ * **Every fixture class name is deliberately not a utility.** Tailwind reads `tests/` as markup, so
+ * a fixture naming a real one would emit a rule for it and this file would become the next thing
+ * the build fails on — which is precisely the failure it is written to describe.
  */
 
 /** A stylesheet fixture in the shape the build actually writes: minified, no whitespace. */
@@ -33,12 +39,24 @@ describe('emittedClassNames', () => {
   });
 
   it('reads a class nested inside a media query', () => {
-    // The condition this was got wrong under. Built CSS is minified, so cutting a prelude back to
-    // the last `}` alone leaves the inner rule reading as part of the `@media` line — and every
-    // class inside every media query in the sheet drops out of the guard's view in silence.
     expect(
       emittedClassNames(sheet('.zq-alpha{color:red}@media (min-width:80rem){.zq-beta{color:red}}')),
     ).toStrictEqual(['zq-alpha', 'zq-beta']);
+  });
+
+  it('cuts a prelude back past the declaration block before it', () => {
+    // The `}` term of the cut. Without it the prelude for the second rule opens inside the first
+    // rule's declarations, and the dot of a filename in a `url()` is read as a class.
+    expect(
+      emittedClassNames(sheet('.zq-alpha{background:url(sprite.zzz)}.zq-beta{color:red}')),
+    ).toStrictEqual(['zq-alpha', 'zq-beta']);
+  });
+
+  it('cuts a prelude back past a statement that closes with no brace', () => {
+    // The `;` term, and the built stylesheet contains exactly one prelude that needs it:
+    // `@layer components;@layer utilities`. Without it that prelude opens with the earlier
+    // statement, still reads as an at-rule, and every utility in the sheet is discarded with it.
+    expect(emittedClassNames(sheet('@layer zq-one;.zq-alpha{color:red}'))).toStrictEqual(['zq-alpha']);
   });
 
   it('undoes the escaping a selector needs, so a name reads as a className would write it', () => {
@@ -46,11 +64,29 @@ describe('emittedClassNames', () => {
     expect(emittedClassNames(sheet(String.raw`.zx\:zq-alpha{color:red}`))).toStrictEqual(['zx:zq-alpha']);
   });
 
-  it('does not read the decimal of a media condition as a class', () => {
-    // `(min-width:71.5rem)` carries a full stop followed by an identifier character, which is a
-    // class selector to anything matching on shape alone. Two things rule it out — the prelude
-    // opens with an at-rule, and a class may not begin with an unescaped digit — and the second is
-    // what still holds inside a condition the first does not cover.
+  it('reads a hexadecimal escape and its terminating space as one character', () => {
+    // How Tailwind writes any class opening with a digit: a backslash, the code point in hex, and
+    // one space. Read as a single-character escape instead, the match ends inside the name — a
+    // stock `2xl:` variant came back as the two hex digits, and the rest of the class was never
+    // checked at all.
+    expect(emittedClassNames(sheet(String.raw`.\32 zq\:alpha{color:red}`))).toStrictEqual(['2zq:alpha']);
+    expect(emittedClassNames(sheet(String.raw`.-\32 zq-alpha{color:red}`))).toStrictEqual(['-2zq-alpha']);
+  });
+
+  it('does not read the decimal of an attribute value as a class', () => {
+    // A class may not open with an unescaped digit, which is what rules this out. An attribute
+    // selector is the case the at-rule skip does not reach: its prelude opens with no `@`, so
+    // nothing else stops `.5` being taken for a class named `5rem`.
+    expect(emittedClassNames(sheet('[data-zq="1.5rem"] .zq-alpha{color:red}'))).toStrictEqual(['zq-alpha']);
+  });
+
+  it('does not read an at-rule prelude as a selector', () => {
+    // The narrowing above handles a media condition, whose decimal cannot open a class — so the
+    // skip has to be shown on a prelude carrying a dot in front of a *letter*. A condition naming
+    // a file does that, and without the skip its extension is reported as a class.
+    expect(emittedClassNames(sheet('@supports (background:url(a.zzz)){.zq-alpha{color:red}}'))).toStrictEqual(
+      ['zq-alpha'],
+    );
     expect(emittedClassNames(sheet('@media (min-width:71.5rem){.zq-alpha{color:red}}'))).toStrictEqual([
       'zq-alpha',
     ]);
@@ -82,7 +118,12 @@ describe('spelledIn', () => {
   });
 
   it('will not answer for a name that is only part of a variant', () => {
+    // Three characters open a candidate, so a class behind one of them is a different class. The
+    // container variants are the case that was missed: the app ships `@container`, and without the
+    // `@` it was answering for a plain container rule nothing wears.
     expect(spelledIn('zq-alpha', 'className="zx:zq-alpha"')).toBe(false);
+    expect(spelledIn('zq-alpha', 'className="@zq-alpha"')).toBe(false);
+    expect(spelledIn('zq-alpha', 'className="!zq-alpha"')).toBe(false);
   });
 
   it('answers for a name carrying characters a pattern would otherwise read', () => {
@@ -130,7 +171,7 @@ describe('PROSE_COLLISIONS', () => {
     expect([...new Set(PROSE_COLLISIONS)]).toHaveLength(PROSE_COLLISIONS.length);
   });
 
-  it('is kept in a reading order, so a seventh entry lands where it can be found', () => {
+  it('is kept in a reading order, so a new entry lands where it can be found', () => {
     expect([...PROSE_COLLISIONS]).toStrictEqual([...PROSE_COLLISIONS].sort());
   });
 });

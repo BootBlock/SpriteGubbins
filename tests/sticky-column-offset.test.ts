@@ -54,6 +54,17 @@ function read(file: string): string {
 }
 
 /**
+ * The two arbitrary values a sticky column has to carry, held apart from the utility they belong to.
+ *
+ * Written whole they would be class names, and Tailwind reads this file as markup — so the suite
+ * asserting that no column states a length of its own would put two unprefixed lengths into the
+ * bundle for nothing to wear. The utility half is assembled at the call site with the column's own
+ * variant prefix in front of it, which is where the two become a class again.
+ */
+const OFFSET_VALUE = '[var(--sticky-column-top)]';
+const CAP_VALUE = '[var(--sticky-column-height)]';
+
+/**
  * Every sticky column in the app, as `[file, class string]`.
  *
  * The header itself is deliberately outside this: it is `sticky top-0` with no variant prefix,
@@ -65,17 +76,6 @@ function read(file: string): string {
  * constant is swept along with the JSX. Its own docblock names who else calls it; a count kept here
  * as well would be a second census, and the stale one is always the one being read.
  */
-/**
- * The two arbitrary values a sticky column has to carry, held apart from the utility they belong to.
- *
- * Written whole they would be class names, and Tailwind reads this file as markup — so the suite
- * asserting that no column states a length of its own would put two unprefixed lengths into the
- * bundle for nothing to wear. The utility half is assembled at the call site with the column's own
- * variant prefix in front of it, which is where the two become a class again.
- */
-const OFFSET_VALUE = '[var(--sticky-column-top)]';
-const CAP_VALUE = '[var(--sticky-column-height)]';
-
 function stickyColumns(): readonly (readonly [string, string])[] {
   const found: (readonly [string, string])[] = [];
   for (const file of scannableSources()) {
@@ -119,8 +119,14 @@ describe('sticky column offset', () => {
         // chrome the column is not yet sticky beneath — and it keeps this file from spelling a
         // whole class name, since the unprefixed forms are worn by nothing and Tailwind would
         // emit a rule for each of them from the assertion alone.
-        const prefix = /\b([a-z][\w-]*):sticky\b/.exec(classes)?.[1] ?? '';
-        expect(prefix, 'the sweep matched a prefixed `:sticky` this cannot read back').not.toBe('');
+        //
+        // Read back rather than asserted. The sweep's own pattern embeds this one, so no string
+        // reaching here can fail to match — an `expect` on it would be an assertion nothing could
+        // trip. A `throw` says the same thing without pretending to be a test.
+        const prefix = /\b([a-z][\w-]*):sticky\b/.exec(classes)?.[1];
+        if (prefix === undefined) {
+          throw new Error(`${file}: the sweep matched a prefix this cannot read back`);
+        }
         expect(classes).toContain(`${prefix}:top-` + OFFSET_VALUE);
         if (/\bmax-h-/.test(classes)) expect(classes).toContain(`${prefix}:max-h-` + CAP_VALUE);
       });
