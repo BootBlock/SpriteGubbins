@@ -184,17 +184,27 @@ export interface SpriteManifest {
    * app and is read by something this repository does not contain.
    */
   readonly version: number;
-  /** The file the sprites are cut from, as the pack writes it beside this manifest. */
+  /**
+   * The file the sprites are cut from, as the pack writes it beside this manifest.
+   *
+   * **Read it rather than assuming a name**, for the reason {@link SpriteManifest.spriteDirectory}
+   * gives: it was always `sheet.png`, and it now carries whatever word tells this sheet apart from
+   * the rest of its batch — the facing where one names the sheet, its position in the batch where
+   * none does — so that a batch extracted into one directory leaves one sheet picture per
+   * generation rather than one in total. In a manifest written alone it is the PNG the same press
+   * would have produced, which the reader downloads separately.
+   */
   readonly image: string;
   /**
    * The directory inside the pack the cut-out sprites sit in, or `null` in a manifest written alone.
    *
    * **Stated because it stopped being a constant.** It was always `sprites`, so a consumer could
-   * hard-code the path; it is now the sheet's own facing wherever a facing distinguishes the sheet
-   * from the rest of its batch, which is what makes eight rig runs unzip into a tree keyed by facing.
-   * Whether a facing was a distinguishing one is a reading of the whole batch and is deliberately not
-   * derivable from {@link ManifestSheet.facings}, so a manifest that named neither would leave the
-   * one machine-readable index in the archive unable to find the files beside it.
+   * hard-code the path; it now carries the same word {@link SpriteManifest.image} does — the
+   * sheet's own facing where one names it, its position in the batch where none does — which is
+   * what makes eight rig runs unzip into a tree keyed by facing. Which of the two a sheet takes is
+   * a reading of the whole batch and is deliberately not derivable from
+   * {@link ManifestSheet.facings}, so a manifest that named neither would leave the one
+   * machine-readable index in the archive unable to find the files beside it.
    *
    * `null` where this manifest was downloaded on its own: it describes a PNG the reader takes
    * separately, and there are no sprite files for a directory to hold.

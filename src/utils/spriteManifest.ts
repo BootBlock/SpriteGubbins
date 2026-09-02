@@ -32,7 +32,7 @@ import { cellOffsets, cellPivot } from './spriteCell.ts';
 
 /** What the caller knows: the file, the sheet it holds, and what was read off it. */
 export interface ManifestInput {
-  /** The image the rects are into, as the pack names it beside this manifest. */
+  /** The image the rects are into, as `packLayout` named it beside this manifest. */
   readonly image: string;
   /** Where the pack puts the cut-out sprites, or `null` for a manifest written on its own. */
   readonly spriteDirectory: string | null;

@@ -17,9 +17,9 @@ import { slugify } from './slugify.ts';
  * as its own file named after whatever the browser saved — and until this reached the manifest,
  * nothing in any of those files said which sheet of which subject it held. The names are the other
  * half: section 4 fixes the inventory and the reading order, so the *n*th sprite is the *n*th
- * component, and `componentSlots` is what turns that into a list. The facing is the third: it names
- * the file the download arrives as and the directory a sprite pack lays its pieces out in, which is
- * what tells eight rig runs apart on disk.
+ * component, and `componentSlots` is what turns that into a list. The facing is the third: with the
+ * ordinal below it, it is what `sheetToken` names the download and every entry inside a sprite pack
+ * by, which is what tells the sheets of a batch apart on disk.
  *
  * **It is a statement about the studio, never a claim about the image.** Nothing can check that the
  * dropped sheet is the one the studio is composing — a reader may be quantising a sheet from last
@@ -48,7 +48,8 @@ export interface SheetIdentity {
    * batch of a single sheet has nothing to tell apart, a sheet drawing several facings is not any
    * one of them, and two sheets drawing the same lone facing — a directional core and its
    * articulation, both at `front` on a single-direction set — would be given one name twice. The
-   * download falls back to the ordinal in each, which every batch has and no two sheets share.
+   * download and the pack both fall back to the ordinal in each, through `sheetToken`, which every
+   * batch has and no two sheets share.
    */
   readonly facing: string | null;
   /**

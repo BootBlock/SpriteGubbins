@@ -4,8 +4,10 @@ import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet, SpriteManifest } from '../types/spriteManifest.ts';
 import { encodeAseprite } from './encodeAseprite.ts';
 import { encodePng } from './encodePng.ts';
-import { encodeSpritePack, PACK_SHEET_FILE, PACK_SPRITE_DIRECTORY } from './encodeSpritePack.ts';
+import { encodeSpritePack } from './encodeSpritePack.ts';
+import { packLayout } from './packLayout.ts';
 import { scaleBoxes } from './sheetLayout.ts';
+import { sheetToken } from './sheetToken.ts';
 import { oversizedSprites, oversizeReason } from './spriteCell.ts';
 import { buildManifest, encodeManifest } from './spriteManifest.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
@@ -69,10 +71,10 @@ export interface SheetWriteJob {
   /**
    * The facing that tells this sheet apart from the rest of its batch, or `null` where none does.
    *
-   * What a pack lays its sprites out under, and — on the far side of the press, where the file is
-   * named — what the download is called. Resolved by `sheetIdentity` rather than here, because it is
-   * a reading of the whole batch and not of this one sheet. Sent whatever the format is, for the
-   * reason {@link SheetWriteJob.boxes} is.
+   * The first half of what a pack names its entries by and what the download is called — see
+   * `sheetToken`, which falls back to {@link SheetWriteJob.sheet}'s ordinal where this is `null`.
+   * Resolved by `sheetIdentity` rather than here, because it is a reading of the whole batch and not
+   * of this one sheet. Sent whatever the format is, for the reason {@link SheetWriteJob.boxes} is.
    */
   readonly facing: string | null;
 }
@@ -92,13 +94,19 @@ export async function writeSheet(job: SheetWriteJob): Promise<WrittenSheet> {
   }
 
   if (format === 'SPRITE_PACK') {
-    // The facing where the sheet has one that names it, so eight rig runs expand into the per-facing
-    // tree an engine importer scans rather than into eight `sprites/` that overwrite one another. A
-    // sheet no facing distinguishes keeps the fixed directory — `SheetIdentity.facing` is where the
-    // three cases that come to `null` are set out. Resolved here rather than inside the encoder
-    // because the manifest states it too, and one archive may not describe its own layout twice.
-    const directory = job.facing ?? PACK_SPRITE_DIRECTORY;
-    return encodeSpritePack(magnify(image, scale), manifestFor(job, PACK_SHEET_FILE, directory), directory);
+    // All three of a pack's entry kinds are named by the word that tells this sheet apart from the
+    // rest of its batch, so that a batch expands into a tree an engine importer scans rather than
+    // colliding: the sprites in a directory that word names, and the sheet and the manifest at the
+    // archive root carrying it as a prefix. `sheetToken` decides the word — the same one the
+    // download itself is named by — and `packLayout` says why the two root files are prefixed rather
+    // than moved inside. Resolved here rather than inside the encoder because the manifest states
+    // two of the three names itself, and one archive may not describe its own layout twice.
+    const layout = packLayout(sheetToken(job.facing, job.sheet));
+    return encodeSpritePack(
+      magnify(image, scale),
+      manifestFor(job, layout.sheetFile, layout.spriteDirectory),
+      layout,
+    );
   }
 
   // No directory: this manifest describes a PNG the reader downloads separately, so no sprite files
@@ -121,9 +129,10 @@ function magnify(image: ImageData, scale: number): ImageData {
  * The manifest for this job, describing the file at the magnification it is written in.
  *
  * `image` and `spriteDirectory` differ between the two formats that build one and nothing else
- * does: inside a pack the sheet is a member of the archive under its own fixed name and the sprites
- * sit in a directory beside it, while a manifest downloaded alone describes the PNG the same press
- * would have written — so it names that file instead, and has no sprite files to point at.
+ * does: inside a pack the sheet is a member of the archive under the name `packLayout` gave it and
+ * the sprites sit in a directory beside it, while a manifest downloaded alone describes the PNG the
+ * same press would have written — so it names that file instead, and has no sprite files to point
+ * at.
  */
 function manifestFor(job: SheetWriteJob, image: string, spriteDirectory: string | null): SpriteManifest {
   return buildManifest({

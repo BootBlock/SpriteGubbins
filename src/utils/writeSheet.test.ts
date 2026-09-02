@@ -4,7 +4,8 @@ import { imageFrom } from '../test/images.ts';
 import { readZip } from '../test/readZip.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
 import type { SpriteCell } from '../types/spriteCell.ts';
-import { PACK_MANIFEST_FILE, PACK_SHEET_FILE, PACK_SPRITE_DIRECTORY } from './encodeSpritePack.ts';
+import type { ManifestSheet } from '../types/spriteManifest.ts';
+import { FLAT_PACK_LAYOUT } from './packLayout.ts';
 import { writeSheet } from './writeSheet.ts';
 import type { SheetWriteJob } from './writeSheet.ts';
 
@@ -39,6 +40,20 @@ const TIGHT_BOXES: readonly SpriteBox[] = [
 
 /** Wide enough that a cell-sized cut of `TIGHT` centred on either sprite reaches the other. */
 const WIDE: SpriteCell = { width: 6, height: 2, anchor: { x: 'CENTRE', y: 'BOTTOM' } };
+
+/** A directional core of a batch: several facings, so no one facing names it. */
+function core(ordinal: number, total = 10): ManifestSheet {
+  return {
+    category: 'CHARACTER',
+    plan: 'Directional core — cardinal facings',
+    ordinal,
+    total,
+    facings: ['south', 'west', 'north', 'east'],
+    assembly: 'south',
+    components: 2,
+    rigMode: 'CUTOUT_RIG',
+  };
+}
 
 function job(overrides: Partial<SheetWriteJob> = {}): SheetWriteJob {
   return {
@@ -77,10 +92,10 @@ describe('writeSheet', () => {
       const entries = readZip(written.bytes);
 
       expect(entries.map((entry) => entry.name)).toStrictEqual([
-        PACK_SHEET_FILE,
+        FLAT_PACK_LAYOUT.sheetFile,
         'sprites/01-heads-south.png',
         'sprites/02-heads-west.png',
-        PACK_MANIFEST_FILE,
+        FLAT_PACK_LAYOUT.manifestFile,
       ]);
       expect(written.format === 'SPRITE_PACK' && written.sprites).toBe(2);
     });
@@ -99,52 +114,84 @@ describe('writeSheet', () => {
 
     it('states inside its manifest what the pack itself is called', async () => {
       const written = await writeSheet(job({ format: 'SPRITE_PACK' }));
-      const entry = readZip(written.bytes).find((file) => file.name === PACK_MANIFEST_FILE);
+      const entry = readZip(written.bytes).find((file) => file.name === FLAT_PACK_LAYOUT.manifestFile);
       const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
 
       // The archive is self-contained, so the rects are into the sheet beside them rather than into
       // a file the reader would have had to download separately — and it says where the pieces sit,
       // which stopped being a constant the moment a facing could name that directory.
       expect(manifest).toMatchObject({
-        image: PACK_SHEET_FILE,
-        spriteDirectory: PACK_SPRITE_DIRECTORY,
+        image: FLAT_PACK_LAYOUT.sheetFile,
+        spriteDirectory: FLAT_PACK_LAYOUT.spriteDirectory,
         named: true,
       });
     });
 
-    it('lays the sprites out under the facing that names the sheet', async () => {
-      // The whole point of the change: eight rig runs expand into the per-facing tree an engine
-      // importer scans, rather than into eight `sprites/` that overwrite one another. The sheet and
-      // the manifest keep their fixed names, since one archive holds one of each.
+    it('names every entry after the facing that names the sheet', async () => {
+      // The whole point of the change: eight rig runs expand into a tree an engine importer scans,
+      // rather than colliding. The sprites take a directory the facing names, and the sheet and the
+      // manifest — which are one file each and were therefore left at the archive root — take the
+      // facing in their own names, since eight archives extracted into one root hold eight of each.
       const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'south-west' }));
 
       expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
-        PACK_SHEET_FILE,
+        'south-west-sheet.png',
         'south-west/01-heads-south.png',
         'south-west/02-heads-west.png',
-        PACK_MANIFEST_FILE,
+        'south-west-manifest.json',
       ]);
     });
 
-    it('states that directory in its manifest, which is the archive’s only index', async () => {
-      // Whether a facing distinguishes a sheet is a reading of the whole batch, so nothing inside the
-      // archive can re-derive it. A script that unzips a pack and reads `manifest.json` to find the
-      // pieces would otherwise have two candidate paths and no way to choose between them.
-      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'south-west' }));
-      const entry = readZip(written.bytes).find((file) => file.name === PACK_MANIFEST_FILE);
-      const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
+    it('shares no entry name with the pack for another facing of the same batch', async () => {
+      // The defect itself, stated as the reader meets it: two packs of one batch unzipped into one
+      // directory. Every name has to differ, not only the sprites' — a surviving `manifest.json` is
+      // an index to one of the eight sheets with nothing on disk saying which.
+      const south = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'south' }));
+      const north = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'north' }));
+      const names = readZip(north.bytes).map((entry) => entry.name);
 
-      expect(manifest).toMatchObject({ spriteDirectory: 'south-west' });
+      expect(readZip(south.bytes).filter((entry) => names.includes(entry.name))).toStrictEqual([]);
     });
 
-    it('keeps the fixed directory where no facing names the sheet', async () => {
-      // A tileset, and a run drawn at the one direction its set offers: a per-facing tree there
-      // would always hold exactly one directory, so the layout follows what the sheet actually is.
-      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: null }));
+    it('states the names it chose in its manifest, which is the archive’s only index', async () => {
+      // Whether a facing distinguishes a sheet is a reading of the whole batch, so nothing inside the
+      // archive can re-derive it. A script that unzips a pack and reads the manifest to find the
+      // sheet and the pieces would otherwise have two candidate paths for each and no way to choose.
+      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: 'south-west' }));
+      const entry = readZip(written.bytes).find((file) => file.name === 'south-west-manifest.json');
+      const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
 
-      expect(readZip(written.bytes).map((entry) => entry.name)).toContain(
-        `${PACK_SPRITE_DIRECTORY}/01-heads-south.png`,
-      );
+      expect(manifest).toMatchObject({ image: 'south-west-sheet.png', spriteDirectory: 'south-west' });
+    });
+
+    it('names a sheet no facing tells apart after its place in the batch', async () => {
+      // The two directional cores of an eight-compass batch draw four facings each, so neither has a
+      // facing to be named by — and both packs carried every entry name in common until the ordinal
+      // reached the layout. Their archives already differed, which is what hid it.
+      const first = await writeSheet(job({ format: 'SPRITE_PACK', facing: null, sheet: core(1) }));
+      const second = await writeSheet(job({ format: 'SPRITE_PACK', facing: null, sheet: core(2) }));
+      const names = readZip(second.bytes).map((entry) => entry.name);
+
+      expect(readZip(first.bytes).map((entry) => entry.name)).toStrictEqual([
+        'sheet-1-sheet.png',
+        'sheet-1/01-heads-south.png',
+        'sheet-1/02-heads-west.png',
+        'sheet-1-manifest.json',
+      ]);
+      expect(readZip(first.bytes).filter((entry) => names.includes(entry.name))).toStrictEqual([]);
+    });
+
+    it('keeps the flat layout where the batch holds one sheet, and nothing tells it apart', async () => {
+      // A tileset, and a studio composing a single sheet: there are no siblings to collide with, so
+      // naming everything after a series that does not exist would buy nothing.
+      const written = await writeSheet(job({ format: 'SPRITE_PACK', facing: null, sheet: core(1, 1) }));
+
+      expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
+        'sheet.png',
+        'sprites/01-heads-south.png',
+        'sprites/02-heads-west.png',
+        'manifest.json',
+      ]);
     });
 
     it('cuts every sprite into the cell where one was asked for, whatever its own box measured', async () => {
@@ -190,7 +237,7 @@ describe('writeSheet', () => {
 
     it('magnifies the cell with the artwork, so the pack states one cut at one set of coordinates', async () => {
       const written = await writeSheet(job({ format: 'SPRITE_PACK', cell: CELL, scale: 3 }));
-      const entry = readZip(written.bytes).find((file) => file.name === PACK_MANIFEST_FILE);
+      const entry = readZip(written.bytes).find((file) => file.name === FLAT_PACK_LAYOUT.manifestFile);
       const manifest: unknown = JSON.parse(new TextDecoder().decode(entry?.bytes));
 
       expect(manifest).toMatchObject({
@@ -211,10 +258,10 @@ describe('writeSheet', () => {
       const written = await writeSheet(job({ format: 'SPRITE_PACK', names: ['heads-south'] }));
 
       expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
-        PACK_SHEET_FILE,
+        FLAT_PACK_LAYOUT.sheetFile,
         'sprites/01.png',
         'sprites/02.png',
-        PACK_MANIFEST_FILE,
+        FLAT_PACK_LAYOUT.manifestFile,
       ]);
     });
   });
