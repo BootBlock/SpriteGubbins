@@ -1,5 +1,5 @@
-import { TOAST_DURATION_MS, TOAST_EXIT_MS } from '../../constants/ui.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
+import { ToastCard } from './ToastCard.tsx';
 import type { ToastTarget } from '../../types/ui.ts';
 
 interface ToastProps {
@@ -16,7 +16,8 @@ interface ToastProps {
 }
 
 /**
- * The app's notification surface, reading straight from the store.
+ * The app's notification region, reading straight from the store. `ToastCard` is the surface inside
+ * it, and holds everything about how the notification looks and moves.
  *
  * The live region is rendered **always**, with only its contents conditional. A region added to the
  * document at the same moment as its text is not reliably announced — assistive technology has to be
@@ -26,10 +27,10 @@ interface ToastProps {
  * There is no success or failure glyph. `showToast` carries a message and no severity, and a green
  * tick beside "Could not save that preset" would be a claim the message itself contradicts.
  *
- * It does carry a **countdown**, drawn along its lower edge, because the store dismisses it on a
- * timer and a notification that vanishes without warning reads as one that was missed. The bar is
- * decorative and hidden: the message is the announcement, and narrating a depleting progress bar to
- * a screen-reader user would talk over it.
+ * It does carry a **countdown**, drawn along the card's lower edge, because the store dismisses it
+ * on a timer and a notification that vanishes without warning reads as one that was missed. The bar
+ * is decorative and hidden: the message is the announcement, and narrating a depleting progress bar
+ * to a screen-reader user would talk over it.
  *
  * **It leaves the way it arrived.** Once the countdown runs out the store raises `isToastLeaving`
  * and holds the message mounted for the length of the fade, so the surface has something left to
@@ -46,19 +47,6 @@ interface ToastProps {
  * and one already two thirds of the way off the screen is not; there is no version of this where the
  * button stays live and the transparent card stops swallowing the clicks around it.
  *
- * **Everything on the card is near-black, and the card is where that is said.** The ground is a role
- * colour rather than a panel — `accent-strong` fading to `accent` — and both stops are *light*, so
- * the ink ramp cannot sit on either: `ink` measures 3.07:1 and 2.04:1 across the two, `ink-muted`
- * 1.71:1 and 1.14:1. The ✕ was `ink-muted`, which at the accent end is not dim but invisible. So the
- * surface takes `text-foundry-950`, which measures 5.34:1 and 8.04:1 — the same near-black every
- * other coloured fill in this app carries its label in, and for the same reason. It is declared once
- * on the card and inherited, so nothing inside has to remember; the countdown bar is the same tone
- * for the same reason, having been `ink/60` at 1.56:1 against the stop it was drawn on.
- *
- * That leaves the ✕ the same tone as the message beside it, and the hover is the `rotate-90` alone.
- * A resting tone that differs from the hover is what the muted ramp was buying, and there is no
- * darker tone to spend on it that keeps the glyph above 4.5:1 at both ends of the gradient.
- *
  * **A message it is not addressed to is not its to show.** More than one of these can be mounted at
  * once — the comparison panel's window has its own, because the panel's download button travels
  * there — and the store holds one message and one timer, so an ungated second surface would show and
@@ -66,11 +54,19 @@ interface ToastProps {
  * still rendered here either way, for the reason above: a region that appears with its text is not
  * reliably announced, and a document that only ever renders one when it has something to say never
  * announces anything.
+ *
+ * **A message does still change region when an overlay opens or closes**, because that is what moves
+ * the mount, and there is no arrangement in which it does not: `toastRaisedAt` says why the toast
+ * cannot be lifted clear of the boundary, and `ToastCard` says what crossing it now costs. Whether a
+ * screen reader announces the message a second time on the way out has not been measured, and the
+ * app's own reasoning about live regions makes it unreliable in either direction — so nothing here
+ * suppresses it, which would risk silencing a message that was never announced in the first place.
  */
 export function Toast({ target = 'page' }: ToastProps) {
   const addressed = useUIStore((state) => state.toastTarget === target);
   const message = useUIStore((state) => state.toastMessage);
   const toastId = useUIStore((state) => state.toastId);
+  const raisedAt = useUIStore((state) => state.toastRaisedAt);
   const isLeaving = useUIStore((state) => state.isToastLeaving);
   const dismissToast = useUIStore((state) => state.dismissToast);
 
@@ -82,43 +78,15 @@ export function Toast({ target = 'page' }: ToastProps) {
     >
       {addressed && message !== null && (
         // Keyed by the toast rather than by its wording, so a repeated message still restarts the
-        // entrance and the countdown instead of inheriting the previous one's progress.
-        <div
+        // entrance and the countdown instead of inheriting the previous one's progress — and so the
+        // offset `ToastCard` freezes as it mounts belongs to this notification and no other.
+        <ToastCard
           key={toastId}
-          inert={isLeaving}
-          // The exit's duration comes from the same constant the store's second timer is set from,
-          // for the reason the countdown below carries its own: `animate-toast-out` declares none.
-          style={isLeaving ? { animationDuration: `${TOAST_EXIT_MS}ms` } : undefined}
-          className={`${isLeaving ? 'animate-toast-out' : 'animate-toast-in'} pointer-events-auto relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent-soft/40 bg-gradient-to-r from-accent-strong to-accent px-5 py-3 text-foundry-950 shadow-2xl ring-1 ring-accent-soft/20 backdrop-blur-xl`}
-        >
-          <span className="text-xs font-semibold">{message}</span>
-          {/*
-            No guidance card, deliberately. This surface is on a three-second timer and goes `inert`
-            for the fade, so a card hung off it would be anchored to something that is leaving before
-            anyone finished reading — and it would have to open *upwards* over the page from the
-            bottom-right corner. There is also nothing to explain: the ✕ on a notification dismisses
-            the notification, and the `aria-label` says so.
-          */}
-          <button
-            type="button"
-            onClick={dismissToast}
-            aria-label="Dismiss notification"
-            className="transition-all duration-390 hover:rotate-90"
-          >
-            <span aria-hidden="true">✕</span>
-          </button>
-
-          {/*
-            The time left, as a bar. Its duration comes from the constant the store's timer is set
-            from — the animation token deliberately declares none — so the two cannot disagree about
-            when this disappears.
-          */}
-          <span
-            aria-hidden="true"
-            style={{ animationDuration: `${TOAST_DURATION_MS}ms` }}
-            className="animate-toast-timer absolute inset-x-0 bottom-0 h-0.5 origin-left bg-foundry-950/60"
-          />
-        </div>
+          message={message}
+          isLeaving={isLeaving}
+          raisedAt={raisedAt}
+          onDismiss={dismissToast}
+        />
       )}
     </div>
   );

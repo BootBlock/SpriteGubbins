@@ -35,6 +35,28 @@ export interface UIState {
    */
   readonly toastId: number;
   /**
+   * When the current message was raised, as `Date.now()`.
+   *
+   * The store's two timers run from this moment, and so does everything the toast *draws*: the
+   * entrance, and the countdown along its lower edge. They stayed in step for as long as the surface
+   * showing them stayed mounted, and that is not something the surface can promise. Exactly one
+   * `Toast` is mounted at a time and it is mounted in one of two mutually exclusive places — inside
+   * the `<dialog>` while an overlay is open, and in `AppOverlays` while none is — so opening or
+   * closing an overlay unmounts one and mounts the other. React cannot move a subtree between two
+   * parents, and a CSS animation belongs to the element it runs on, so a two-second-old notification
+   * slid in again and its countdown started over while this store went on removing it on the
+   * original schedule. It then vanished with the bar about a third drained, which is the exact thing
+   * a countdown exists to prevent.
+   *
+   * The mount cannot be made to survive that. The top layer is the reason the toast is inside the
+   * dialog at all, and it does not offer a way out: measured in Edge, a `popover='manual'` element
+   * shown before `showModal()` paints *beneath* the dialog and is inert, and re-showing it while the
+   * dialog is open leaves it beneath and inert; a `popover='auto'` one is closed outright. So the
+   * boundary stays, and what crosses it is a number — `ToastCard` reads this once as it mounts and
+   * anchors both animations to it, which is what makes a remount resume rather than restart.
+   */
+  readonly toastRaisedAt: number;
+  /**
    * Whether the visible toast is on its way out.
    *
    * A toast's life has two phases and only the first is a dwell: it announces for
@@ -178,6 +200,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   toastMessage: null,
   toastTarget: 'page',
   toastId: 0,
+  toastRaisedAt: 0,
   isToastLeaving: false,
   ...ALL_OVERLAYS_CLOSED,
   deferredPWAInstallPrompt: null,
@@ -198,6 +221,7 @@ export const useUIStore = create<UIState>((set, get) => ({
       toastMessage: message,
       toastTarget: target,
       toastId: state.toastId + 1,
+      toastRaisedAt: Date.now(),
       isToastLeaving: false,
     }));
 
