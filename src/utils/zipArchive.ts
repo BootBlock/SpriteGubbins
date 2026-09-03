@@ -33,7 +33,7 @@ import { crc32 } from './crc32.ts';
 
 /** One file in the archive: the name it takes, and the bytes it holds. */
 export interface ZipEntry {
-  /** A path relative to the archive root — `sprites/01-heads-south.png`. Forward slashes only. */
+  /** A path relative to the archive root — `sprites/04-left-upper-arm.png`. Forward slashes only. */
   readonly name: string;
   readonly bytes: Uint8Array;
 }

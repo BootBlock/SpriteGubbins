@@ -2,10 +2,15 @@
  * A sprite's place in the sheet's reading order, padded to sort in that order.
  *
  * **The ordinal leads every name a pack writes** — the entry a sprite's PNG takes in the archive,
- * and the positional name the manifest gives it where the sheet was not named — so that a file
- * listing, which is sorted lexically by every tool that produces one, comes out in the order the
- * sheet is read in. Padding is the whole of what buys that: unpadded, `10` sorts between `1` and
- * `2`, and the listing interleaves.
+ * and the positional name the manifest gives it where the sheet was not named — so that a listing
+ * sorted by name comes out in the order the sheet is read in. Padding is the whole of what buys
+ * that: unpadded, `10` sorts between `1` and `2`, and the listing interleaves.
+ *
+ * **A lexical sort is the one this is for**, which is most of the tools that produce a listing at
+ * all — `ls`, `unzip -l`, and an importer walking a directory. It is not all of them: Explorer and
+ * Finder sort numerically and are already in reading order without a pad, and an archive viewer
+ * showing the central directory's own order is not sorting at all. Neither is harmed by the
+ * pad, so the width is decided for the readers that need it.
  *
  * **The width is derived from the count, and it has to be.** Both call sites used to pad to a
  * literal two digits, which is a width neither of them got from anything that bounds the sprite
