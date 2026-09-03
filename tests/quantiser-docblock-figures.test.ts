@@ -8,11 +8,22 @@ import {
   DIFFERENCE_PRECISION,
   FILL_CLEANUP_RANGE,
 } from '../src/constants/quantiser.ts';
+import { nearestColor } from '../src/utils/applyPalette.ts';
 import { boundaryMesh } from '../src/utils/gridMesh.ts';
-import { CHANNELS_PER_PIXEL, countColors, fromHex, pixelOffset } from '../src/utils/imageData.ts';
+import {
+  CHANNELS_PER_PIXEL,
+  colorHistogram,
+  countColors,
+  fromHex,
+  pixelOffset,
+  unpackColor,
+} from '../src/utils/imageData.ts';
 import { lumaOfChannels } from '../src/utils/lineVote.ts';
+import { srgbToOklab } from '../src/utils/oklab.ts';
+import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
-import type { ColorReduction, QuantiseSettings, VoteMethod } from '../src/types/quantiser.ts';
+import { buildPalette } from '../src/utils/wuQuantiser.ts';
+import type { ColorReduction, QuantiseSettings, Rgba, VoteMethod } from '../src/types/quantiser.ts';
 
 /**
  * The calibration figures the quantiser's docblocks state, re-derived from the reference sheet.
@@ -218,6 +229,55 @@ describe('the figures the quantiser docblocks state', () => {
       },
       600_000,
     );
+  });
+
+  describe("wuQuantiser's error ladder", () => {
+    /**
+     * How far the average pixel sits from the palette entry it is drawn with, in scaled OKLab.
+     *
+     * Read off the histogram rather than the pixels, which is the same figure for a fraction of the
+     * work: a colour's distance to its entry is a property of the colour, so the sheet's 1.57
+     * million pixels are 218,978 conversions weighted by their own counts.
+     *
+     * **The histogram is the unweighted one, deliberately.** `blendWeightedHistogram` decides what a
+     * colour is worth while the palette is being *chosen*; this asks what the chosen palette cost
+     * the reader, and there every pixel counts once. Conflating the two is what would make the
+     * ladder a score the weighting could game.
+     *
+     * `pixelDistanceOf` rather than a distance spelled here, for the reason its own docblock gives.
+     * It measures coverage as a fourth axis, which costs nothing on this reading: the corpus sheets
+     * are truecolour, so every colour in the histogram is opaque, and every entry `buildPalette`
+     * returns is a colour the sheet holds.
+     */
+    function meanPaletteError(image: ImageData, palette: readonly Rgba[]): number {
+      let total = 0;
+      let pixels = 0;
+      for (const [key, count] of colorHistogram(image)) {
+        const color = unpackColor(key);
+        const entry = nearestColor(color, palette);
+        if (entry === null) throw new Error('an empty palette has no entry to measure against');
+        const from = srgbToOklab(color.r, color.g, color.b);
+        const to = srgbToOklab(entry.r, entry.g, entry.b);
+        total += count * pixelDistanceOf(from.L, from.a, from.b, color.a, to.L, to.a, to.b, entry.a);
+        pixels += count;
+      }
+      return total / pixels;
+    }
+
+    it('the four budgets the module docblock states', () => {
+      // The other two figures in the same sentence, which is the whole of what it states about the
+      // sheet: a ladder read off a different image is a different claim, and these say it is not.
+      expect(countColors(sheet)).toBe(218_978);
+      expect([sheet.width, sheet.height]).toEqual([1254, 1254]);
+
+      // Three decimals, because that is the precision the docblock states them to. Pinning fewer
+      // would let a restatement round its way out of a move the search had genuinely made.
+      expect(
+        [16, 32, 64, 256].map((budget) =>
+          Number(meanPaletteError(sheet, buildPalette(sheet, budget)).toFixed(3)),
+        ),
+      ).toEqual([4.697, 3.287, 2.447, 1.676]);
+    }, 240_000);
   });
 
   describe('the two dither tables', () => {

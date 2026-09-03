@@ -18,11 +18,21 @@ import { buildMoments, WU_SIDE, wuCell, wuCellOfKey, type WuBox } from './wuMome
  *
  * Wu, *Efficient Statistical Computations for Optimal Color Quantization*, Graphics Gems II (1991).
  *
- * **Measured on the reference armour sheet** — 1254 × 1254, 218,978 colours — against the median cut
- * it replaced, as mean OKLab distance from each pixel to the entry it is drawn with: at a budget of
- * 64, the app's default, the error falls from 3.59 to 2.47, a **31%** improvement; at 32 it is 36%
- * and at 16 it is 50%, and the gap narrows to 15% by 256, where a palette that large has room for
- * both algorithms to be nearly right. Those figures are deterministic and reproduce exactly.
+ * **Measured on the reference armour sheet** — 1254 × 1254, 218,978 colours — as mean OKLab
+ * distance from each pixel to the entry it is drawn with, each colour weighted by how many pixels
+ * carry it: **4.697** at a budget of 16, **3.287** at 32, **2.447** at 64, which is the app's
+ * default, and **1.676** at 256, where a palette that large has room to be nearly right everywhere.
+ * `tests/quantiser-docblock-figures.test.ts` re-derives all four, because the ladder these replace
+ * was read off this search before `blendWeightedHistogram` was put in front of it and every one of
+ * its numbers moved without anything failing.
+ *
+ * **It is a reading, not a score to minimise**, and the weighting is why. A per-pixel metric prices
+ * a fringe colour at the pixels that carry it, which is the accounting the weighted histogram exists
+ * to overrule — so against the same search reading an unweighted histogram, the weighting is ahead
+ * at 16, 32 and 64 and behind at 256, where it is spending slots on the art that a per-pixel error
+ * would sooner have spent on blends. The case for Wu over median cut is the paragraph above rather
+ * than this ladder: median cut was deleted by the change that introduced Wu, so nothing here can
+ * reproduce the before-and-after comparison the ladder once stated.
  *
  * It is also **roughly an order of magnitude faster on that sheet at every budget**, and the shape of
  * the cost is the part worth holding: the coarse pass's work is the moment table's, so it barely
