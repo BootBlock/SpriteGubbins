@@ -39,14 +39,15 @@ export interface UIState {
    *
    * The store's two timers run from this moment, and so does everything the toast *draws*: the
    * entrance, and the countdown along its lower edge. They stayed in step for as long as the surface
-   * showing them stayed mounted, and that is not something the surface can promise. Exactly one
-   * `Toast` is mounted at a time and it is mounted in one of two mutually exclusive places — inside
-   * the `<dialog>` while an overlay is open, and in `AppOverlays` while none is — so opening or
-   * closing an overlay unmounts one and mounts the other. React cannot move a subtree between two
-   * parents, and a CSS animation belongs to the element it runs on, so a two-second-old notification
-   * slid in again and its countdown started over while this store went on removing it on the
-   * original schedule. It then vanished with the bar about a third drained, which is the exact thing
-   * a countdown exists to prevent.
+   * showing them stayed mounted, and that is not something the surface can promise. The page's toast
+   * is mounted in one of two mutually exclusive places — inside the `<dialog>` while an overlay is
+   * open, and in `AppOverlays` while none is — so opening or closing an overlay unmounts one and
+   * mounts the other. (The detached preview's is a third mount and is not part of this: it is
+   * addressed to another document and there is no overlay in it to cross.) React cannot move a
+   * subtree between two parents, and a CSS animation belongs to the element it runs on, so a
+   * two-second-old notification slid in again and its countdown started over while this store went
+   * on removing it on the original schedule. It then vanished with the bar about a third drained,
+   * which is the exact thing a countdown exists to prevent.
    *
    * The mount cannot be made to survive that. The top layer is the reason the toast is inside the
    * dialog at all, and it does not offer a way out: measured in Edge, a `popover='manual'` element
@@ -61,8 +62,8 @@ export interface UIState {
    *
    * A toast's life has two phases and only the first is a dwell: it announces for
    * {@link TOAST_DURATION_MS}, then fades for {@link TOAST_EXIT_MS} with the message still mounted,
-   * because a surface cannot animate away after it has been removed. `Toast` reads this to swap the
-   * entrance animation for the exit and to make the card inert, which is what stops an invisible
+   * because a surface cannot animate away after it has been removed. `ToastCard` reads this to swap
+   * the entrance animation for the exit and to make itself inert, which is what stops an invisible
    * notification intercepting clicks in the corner of the page.
    */
   readonly isToastLeaving: boolean;
@@ -126,7 +127,7 @@ export interface UIState {
    * belongs to the *timer* expiring and not to the button — the deliberate departure is the one that
    * is worth animating.
    *
-   * In practice the button is only reachable during the dwell, because `Toast` makes the card inert
+   * In practice the button is only reachable during the dwell, because `ToastCard` goes inert
    * for the whole of the fade — verified in Edge, where a click on the ✕ mid-fade does nothing. That
    * is the intended trade and not an oversight: a surface that is already leaving has nothing left
    * to dismiss, and leaving it interactive is exactly what would make a transparent card swallow

@@ -220,15 +220,21 @@ describe('Toast', () => {
   it('gives each new message its own anchor rather than the one before it', () => {
     // The offset is frozen as the card mounts, and the card is keyed by the toast's id — so a second
     // notification raised over a stale first one starts at the beginning of its own countdown.
+    //
+    // The first message is raised *before* the render on purpose. Mounting it at an offset of zero
+    // would leave the assertion below true whether or not the key resets anything, which is exactly
+    // how a test named for the key comes to pass with the key deleted.
     vi.useFakeTimers();
     try {
-      render(<Toast />);
       act(() => {
         useUIStore.getState().showToast('Saved custom preset');
       });
       act(() => {
         vi.advanceTimersByTime(2000);
       });
+      render(<Toast />);
+      expect(cardFor('Saved custom preset')).toHaveStyle({ animationDelay: '-2000ms' });
+
       act(() => {
         useUIStore.getState().showToast('Saved a second custom preset');
       });
@@ -239,5 +245,54 @@ describe('Toast', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('keeps the offset it froze at mount when it merely re-renders', () => {
+    // The other half of the mechanism, and the reason the card is a component of its own. An
+    // animation's start time is fixed when it is created and the delay is subtracted from the time
+    // since, so a delay recomputed on a later render moves the animation forward a second time while
+    // its own clock is already carrying it — measured in Edge, a bar 587ms into a `-2000ms` resume
+    // and handed the `-2600ms` its elapsed time had reached by then jumped straight to the end.
+    vi.useFakeTimers();
+    try {
+      const { rerender } = render(<Toast />);
+      act(() => {
+        useUIStore.getState().showToast('Prompt copied to the clipboard');
+      });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      // A re-render, not a remount: same element type, same position, same key. The offset stands.
+      rerender(<Toast />);
+
+      const card = cardFor('Prompt copied to the clipboard');
+      expect(card).toHaveStyle({ animationDelay: '0ms' });
+      expect(countdownBar(card)).toHaveStyle({ animationDelay: '0ms' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('takes no offset from a message that was never raised through the store', () => {
+    // `toastRaisedAt` is 0 until `showToast` writes one, and a message put into the store directly —
+    // which the store's own tests do — leaves it there. Subtracting that from the clock would be an
+    // offset of the whole Unix epoch, which renders a notification that has only just appeared with
+    // its entrance skipped and its countdown already latched empty.
+    render(<Toast />);
+
+    act(() => {
+      // `toastRaisedAt` is set with the rest, because `dismissToast` leaves the last real raise
+      // time behind and this case is the store as it opens, before anything has been raised at all.
+      useUIStore.setState({
+        toastMessage: 'Raised without scheduling',
+        toastId: 7,
+        toastRaisedAt: 0,
+      });
+    });
+
+    const card = cardFor('Raised without scheduling');
+    expect(card).toHaveStyle({ animationDelay: '0ms' });
+    expect(countdownBar(card)).toHaveStyle({ animationDelay: '0ms' });
   });
 });

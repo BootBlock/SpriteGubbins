@@ -15,7 +15,7 @@ export const TOAST_DURATION_MS = 3000;
  * How long the toast then takes to fade off the screen.
  *
  * Read twice and it has to be the same number both times: the store keeps the message mounted for
- * this long after the dwell above expires, and `Toast` hands it to `animate-toast-out` as that
+ * this long after the dwell above expires, and `ToastCard` hands it to `animate-toast-out` as that
  * animation's duration — the token deliberately declares none. A drift between the two is silent
  * and visible, leaving either a notification cut off mid-fade or a transparent one still sitting in
  * the corner.

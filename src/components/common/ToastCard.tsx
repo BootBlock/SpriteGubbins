@@ -15,9 +15,9 @@ interface ToastCardProps {
  *
  * **Separate from `Toast` because a hook is what freezes the anchor, and only a remount resets one.**
  * The card is keyed by the toast’s id there, so each message gets its own instance of this and its
- * own `elapsedAtMount` — which is the whole mechanism. A `useState` initialiser inside `Toast`,
- * whose position in the tree never changes, would freeze the first notification of the session and
- * hand its offset to every one after it.
+ * own `elapsedAtMount` — which is the whole mechanism. `Toast` itself remounts at the boundary but
+ * not between one message and the next, so an initialiser held there would hand the first
+ * notification’s offset to every message raised during the same mount.
  *
  * **What the anchor is for.** The store’s timers run from the raise; these animations run from the
  * mount; and the mount does not survive an overlay opening or closing, because the app’s one toast
@@ -28,7 +28,8 @@ interface ToastCardProps {
  * negative `animation-delay` puts each of them where it would have been had nothing moved:
  * `toast-in` is 624ms, so anything mounted later than that arrives already arrived, and the bar
  * picks up its drain part-way through. Measured in Edge, a 3000ms bar carrying a `-2000ms` delay
- * renders at 69% of its travel and continues from there.
+ * opens two thirds drained — read at 0.690 of its travel 70ms after the mount — and continues from
+ * there rather than starting again.
  *
  * **The offset is frozen rather than recomputed, and that is not an optimisation.** An animation’s
  * start time is fixed when it is created, and the delay is subtracted from the time since — so a
@@ -42,6 +43,26 @@ interface ToastCardProps {
  * already right. One that mounted *during* the fade — an overlay closed over a notification two
  * seconds gone — would otherwise snap back to full opacity and fade again over a message the store
  * removes part-way through, which is the original defect wearing its other face.
+ *
+ * It does carry a **countdown**, drawn along the card's lower edge, because the store dismisses it
+ * on a timer and a notification that vanishes without warning reads as one that was missed. The bar
+ * is decorative and hidden: the message is the announcement, and narrating a depleting progress bar
+ * to a screen-reader user would talk over it.
+ *
+ * **It leaves the way it arrived.** Once the countdown runs out the store raises `isToastLeaving`
+ * and holds the message mounted for the length of the fade, so the surface has something left to
+ * animate — a toast removed from the tree cannot animate anything. `inert` goes on for exactly that
+ * window, and it is doing real work rather than tidying: the card is `pointer-events-auto` and sits
+ * over the bottom-right corner of the page, so a fully transparent one left interactive would
+ * swallow clicks meant for whatever is underneath it. Under `prefers-reduced-motion` that is not a
+ * corner case but the normal path — the catch-all in `index.css` collapses the fade to nothing while
+ * the store's timer still runs its full length, which is a couple of seconds of invisible toast.
+ * `inert` takes it out of the hit-testing, the tab order and the accessibility tree together.
+ *
+ * What that costs is the ✕ for the length of the fade — measured in Edge, a click on it mid-fade
+ * does nothing — and the trade is deliberate. Dismissing is for a notification that is in the way,
+ * and one already two thirds of the way off the screen is not; there is no version of this where the
+ * button stays live and the transparent card stops swallowing the clicks around it.
  *
  * **Everything on the card is near-black, and this is where that is said.** The ground is a role
  * colour rather than a panel — `accent-strong` fading to `accent` — and both stops are *light*, so
@@ -57,9 +78,11 @@ interface ToastCardProps {
  * darker tone to spend on it that keeps the glyph above 4.5:1 at both ends of the gradient.
  */
 export function ToastCard({ message, isLeaving, raisedAt, onDismiss }: ToastCardProps) {
-  // Read once, as this mounts. `Math.max` guards the one case that is not a clock: a message put
-  // into the store directly, without `showToast`, carries no raise time at all.
-  const [elapsedAtMount] = useState(() => Math.max(0, Date.now() - raisedAt));
+  // Read once, as this mounts, and only where there is an anchor to read. `toastRaisedAt` is 0 until
+  // the store raises something, so a message put in directly — which the store's own tests do — has
+  // no clock behind it and takes no offset, rather than an offset of the whole Unix epoch. Every
+  // other value was written by `showToast` as `Date.now()`, so it cannot be ahead of this render.
+  const [elapsedAtMount] = useState(() => (raisedAt === 0 ? 0 : Date.now() - raisedAt));
   const exitElapsed = Math.max(0, elapsedAtMount - TOAST_DURATION_MS);
 
   return (

@@ -17,7 +17,8 @@ interface ToastProps {
 
 /**
  * The app's notification region, reading straight from the store. `ToastCard` is the surface inside
- * it, and holds everything about how the notification looks and moves.
+ * it, and holds everything about how the notification looks and moves — the countdown, the fade, and
+ * the `inert` window that keeps a transparent card from swallowing the clicks around it.
  *
  * The live region is rendered **always**, with only its contents conditional. A region added to the
  * document at the same moment as its text is not reliably announced — assistive technology has to be
@@ -26,26 +27,6 @@ interface ToastProps {
  *
  * There is no success or failure glyph. `showToast` carries a message and no severity, and a green
  * tick beside "Could not save that preset" would be a claim the message itself contradicts.
- *
- * It does carry a **countdown**, drawn along the card's lower edge, because the store dismisses it
- * on a timer and a notification that vanishes without warning reads as one that was missed. The bar
- * is decorative and hidden: the message is the announcement, and narrating a depleting progress bar
- * to a screen-reader user would talk over it.
- *
- * **It leaves the way it arrived.** Once the countdown runs out the store raises `isToastLeaving`
- * and holds the message mounted for the length of the fade, so the surface has something left to
- * animate — a toast removed from the tree cannot animate anything. `inert` goes on for exactly that
- * window, and it is doing real work rather than tidying: the card is `pointer-events-auto` and sits
- * over the bottom-right corner of the page, so a fully transparent one left interactive would
- * swallow clicks meant for whatever is underneath it. Under `prefers-reduced-motion` that is not a
- * corner case but the normal path — the catch-all in `index.css` collapses the fade to nothing while
- * the store's timer still runs its full length, which is a couple of seconds of invisible toast.
- * `inert` takes it out of the hit-testing, the tab order and the accessibility tree together.
- *
- * What that costs is the ✕ for the length of the fade — measured in Edge, a click on it mid-fade
- * does nothing — and the trade is deliberate. Dismissing is for a notification that is in the way,
- * and one already two thirds of the way off the screen is not; there is no version of this where the
- * button stays live and the transparent card stops swallowing the clicks around it.
  *
  * **A message it is not addressed to is not its to show.** More than one of these can be mounted at
  * once — the comparison panel's window has its own, because the panel's download button travels
