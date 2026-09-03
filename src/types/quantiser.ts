@@ -670,6 +670,50 @@ export interface QuantiseSettings extends QuantiseTuning {
 export type QuantiseSurroundings = Omit<QuantiseSettings, keyof QuantiseTuning>;
 
 /**
+ * What a transform of a sheet knows before a single dial is read — the sheet as the key and the
+ * hardening left it, the mesh measured on that, and what the key took out.
+ *
+ * **A derived input rather than a setting.** Nothing here is typed or chosen: every field is a
+ * function of the image and three of the {@link QuantiseSettings} — {@link QuantiseSettings.key},
+ * {@link QuantiseTuning.silhouetteThreshold} and {@link QuantiseSettings.grid} — so `quantisePrologue`
+ * is the one place any of it is worked out and `quantiseImage` is the composition that does it for
+ * a caller with nothing to say about it.
+ *
+ * **It exists because one caller can say something about it.** The auto-tune sweep holds all three
+ * of those settings fixed by construction — none of them is in `TunedDials`, and the type records
+ * why each is a rule — so a prologue is constant across every candidate it runs. Handing it in is
+ * what turns three passes run once per candidate into three passes run once per crop; see
+ * `quantisePrologue`, which carries the measurement.
+ *
+ * **{@link source} is also what a candidate is scored against**, which is the same value arriving at
+ * its second use rather than a coincidence. A result has been keyed and hardened, so a reference
+ * that had not been would score every candidate against a field and a fringe none of them produces
+ * — the sweep therefore wants exactly the image the passes were handed, and `readCandidate` reads
+ * it from here.
+ */
+export interface QuantisePrologue {
+  /**
+   * The image every pass below the prologue walks: keyed where a key was given, and hardened
+   * either way.
+   *
+   * **Not the image the caller passed in**, and the difference is what the readings are about. It
+   * is also what {@link QuantiseResult.difference} is measured against, because the reduction that
+   * heatmap reports on ran on this rather than on the sheet as it arrived.
+   */
+  readonly source: ImageData;
+  /** Where every cell of {@link source} begins — measured on it, before anything moves a boundary. */
+  readonly mesh: GridMesh;
+  /**
+   * The fraction of the image the key removed, 0–1, and `0` where keying did not run.
+   *
+   * Carried here rather than measured again on the result, because it is a fact about the key and
+   * the key is the first thing in this shape. {@link QuantiseResult.keyedShare} is where it is
+   * reported and what it is for.
+   */
+  readonly keyedShare: number;
+}
+
+/**
  * How far each output pixel sits from the patch of source it replaced, one figure per pixel of
  * {@link QuantiseResult.image}, plus the two summaries that make a sheet's figures comparable.
  *
@@ -921,22 +965,30 @@ export interface SpriteStrip {
   readonly pitch: PixelShift;
 }
 
-/** What came back: the transformed image, and the numbers that say what it did. */
-export interface QuantiseResult {
+/**
+ * The transformed sheet, and every reading that falls out of producing it.
+ *
+ * **Separate from {@link QuantiseResult} because of what is missing, which is one field.** Every
+ * reading here is either free or already paid for: the segmentation and the three readings taken
+ * over it are what `settleSprites` had to have in order to edit the sheet at all, the colour count
+ * and the palette come from one histogram of a result the transform has just written, and the
+ * keyed share and the offset are facts the prologue already established. The difference map is the
+ * one reading that is a *second* walk, and it is over the source rather than the result — which at
+ * a grid of 6 is thirty-six times the pixels of everything above.
+ *
+ * So the split is a reading, not a knob: `quantiseSheet` answers everything the transform knows,
+ * and `quantiseImage` adds the one reading a caller has to ask for by asking for it. The auto-tune
+ * sweep reads {@link image} and {@link colors} and nothing else — measured on
+ * `test_sprites/armour.png` at a grid of 6, building that map for it was a tenth of the sweep — so
+ * it takes the narrower answer. Every other caller wants the map and takes the whole result.
+ */
+export interface QuantiseSheet {
   readonly image: ImageData;
-  /**
-   * What {@link image} cost, pixel by pixel — the preview's difference mode, as data.
-   *
-   * A fact of the result rather than something asked for separately, and deliberately: a heatmap
-   * computed on its own could describe an older result than the one beside it, which is precisely
-   * the failure the mode exists to expose. Travelling with the result, it cannot.
-   */
-  readonly difference: DifferenceMap;
   /**
    * The separate sprites on {@link image}, and how big each of them is.
    *
    * A fact of the result rather than something asked for separately, for the reason
-   * {@link difference} is: a segmentation computed on its own could describe an older result than
+   * {@link QuantiseResult.difference} is: a segmentation computed on its own could describe an older result than
    * the one beside it, and every consumer of this — the readout on the tab, the preview's outline
    * mode, the atlas calculator's count — is comparing it with something a dial has just moved.
    */
@@ -948,7 +1000,7 @@ export interface QuantiseResult {
    * statement — the pass ran and had no sprites to run on, which is what a solid or scattered sheet
    * gives it — and the panel says so rather than reporting "no symmetry found".
    *
-   * A fact of the result for the reason {@link difference} and {@link sprites} are: measured
+   * A fact of the result for the reason {@link QuantiseResult.difference} and {@link sprites} are: measured
    * separately it could describe an older result than the one beside it, and under `SNAP` it is the
    * record of what was rewritten in producing {@link image}.
    */
@@ -956,7 +1008,7 @@ export interface QuantiseResult {
   /**
    * Which of those sprites are the same sprite drawn more than once.
    *
-   * A fact of the result for the reason {@link sprites} and {@link difference} are, and one step
+   * A fact of the result for the reason {@link sprites} and {@link QuantiseResult.difference} are, and one step
    * further: it is a reading *of* that segmentation, so computed separately it could describe not
    * merely an older result but an older set of boxes — a group naming artwork that is no longer
    * where it says.
@@ -1045,6 +1097,23 @@ export interface QuantiseResult {
    * touched.
    */
   readonly keyedShare: number;
+}
+
+/** What came back: the transformed sheet, the numbers that say what it did, and what it cost. */
+export interface QuantiseResult extends QuantiseSheet {
+  /**
+   * What {@link QuantiseSheet.image} cost, pixel by pixel — the preview's difference mode, as data.
+   *
+   * A fact of the result rather than something asked for separately, and deliberately: a heatmap
+   * computed on its own could describe an older result than the one beside it, which is precisely
+   * the failure the mode exists to expose. Travelling with the result, it cannot.
+   *
+   * **That is why it is the field a caller opts into rather than one it may fetch afterwards.**
+   * `quantiseSheet` leaves it out and `quantiseImage` takes it in the same breath as the sheet it
+   * describes, so the pair cannot come apart; there is no third function offering to measure a map
+   * against a result somebody is holding.
+   */
+  readonly difference: DifferenceMap;
 }
 
 /**

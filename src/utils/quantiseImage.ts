@@ -1,27 +1,32 @@
-import type { ColorReduction, GridMesh, QuantiseResult, QuantiseSettings } from '../types/quantiser.ts';
+import type {
+  ColorReduction,
+  GridMesh,
+  QuantisePrologue,
+  QuantiseResult,
+  QuantiseSettings,
+  QuantiseSheet,
+} from '../types/quantiser.ts';
 import { applyPalette, applyRgbPalette } from './applyPalette.ts';
 import { snapToChannelDepth } from './channelDepth.ts';
 import { differenceMap } from './differenceMap.ts';
 import { alignToGrid, downscaleNearest } from './gridAlignment.ts';
-import { boundaryMesh } from './gridMesh.ts';
 import { despeckle } from './despeckle.ts';
 import { ditherImage } from './ditherImage.ts';
 import { ditherMatrix } from './ditherMatrix.ts';
 import { mergeColors } from './mergeColors.ts';
 import { colorHistogram } from './imageData.ts';
 import { paletteEntriesFrom } from './paletteEntries.ts';
+import { quantisePrologue } from './quantisePrologue.ts';
 import { settleSprites } from './settleSprites.ts';
 import { inkWeightedCells } from './inkWeightedVote.ts';
 import { kCentroidCells } from './kCentroidVote.ts';
-import { hardenSilhouette } from './hardenSilhouette.ts';
-import { keyBackground } from './keyBackground.ts';
 import { applyLockedPalette } from './lockedPalette.ts';
 import { outlineExpansion } from './outlineExpansion.ts';
 import { buildPalette } from './wuQuantiser.ts';
 
 /**
  * The whole pipeline: key, harden, measure the mesh, read the cells down to pixels — with the colour
- * reduction on whichever side of the vote the chosen reading demands.
+ * reduction on whichever side of the vote the chosen reading demands — and then read what it cost.
  *
  * ```
  * DOMINANT:                 ImageData → keyBackground → hardenSilhouette → outlineExpansion → reduceColors → alignToGrid → downscaleNearest
@@ -34,14 +39,24 @@ import { buildPalette } from './wuQuantiser.ts';
  * boundaryMesh reads the keyed source, before the expansion — see below.
  * ```
  *
+ * **The first three passes are `quantisePrologue` and the last one is the difference map, so this
+ * function is three lines.** The split is the pipeline's own seam rather than a filing decision:
+ * everything from the outline expansion down is a function of the dials, while the key, the
+ * hardening and the mesh are a function of the sheet and three settings — and the difference map is
+ * the one reading taken afterwards that nothing above it needs. A caller holding those three
+ * settings fixed while it moves the dials therefore has two thirds of its work already done, which
+ * is what the auto-tune sweep is; see `quantisePrologue` and {@link QuantiseSheet}, which carry the
+ * measurements. **Every caller that is not that sweep belongs here**, because this is the
+ * composition that cannot hand the transform a prologue measured on a different sheet.
+ *
  * Grid **detection** is not part of it. The grid is a setting because the user can overrule what
  * detection found — and must, when it found nothing — so resolving it belongs to the tab, and this
  * function is handed the answer. The key colour arrives the same way, from the studio setting the
  * prompt already stated it in.
  *
- * The **mesh** is the opposite: it is measured here, on the keyed sheet the readings are about to
- * walk — *before* the outline expansion moves anything, for the reason the comment beside it gives —
- * and it deliberately never becomes a setting. Measured once per transform, it is one
+ * The **mesh** is the opposite: it is measured in the prologue, on the keyed sheet the readings are
+ * about to walk — *before* the outline expansion moves anything, for the reason the comment beside
+ * it gives — and it deliberately never becomes a setting. Measured once per transform, it is one
  * mechanism serving all three ways a grid reaches this function — measured, clicked or typed — so
  * no two of them can disagree about where a cell begins; stored anywhere, it would be the stale
  * half of a pair the moment the user overtyped the grid beside it.
@@ -95,8 +110,8 @@ import { buildPalette } from './wuQuantiser.ts';
  * A sheet that arrives at its own pixel scale keeps whatever soft outline it was drawn with, because
  * at a grid of 1 the cell reading is a no-op and nothing else in the pipeline reaches a soft edge.
  * It goes behind the key so the two erosions cannot compound, and ahead of the mesh so the profile
- * weighs a hard boundary rather than a ramp — the same reason the key goes ahead of it. The call
- * site carries the argument in full.
+ * weighs a hard boundary rather than a ramp — the same reason the key goes ahead of it.
+ * `quantisePrologue` is where all three run, and it carries the rest of that argument.
  *
  * **The symmetry pass goes last, after everything, and that is not interchangeable either.** It
  * scores a mirror axis *inside a sprite's bounds*, so it needs the segmentation — which is taken
@@ -135,33 +150,46 @@ import { buildPalette } from './wuQuantiser.ts';
  * spinner.
  */
 export function quantiseImage(image: ImageData, settings: QuantiseSettings): QuantiseResult {
-  // `null` skips the pass outright rather than keying against some default colour: the studio's key
-  // may be `TRANSPARENT`, which names no colour at all, and the user may simply not have asked.
-  const keyed = settings.key === null ? null : keyBackground(image, settings.key);
-  // **Second, immediately behind the key and ahead of everything else**, because it answers the key's
-  // own question — what counts as background — by coverage where the key answers it by colour. It is
-  // the one pass that reaches a soft edge on a sheet already at its own pixel scale, where the mesh
-  // reading is a no-op; `hardenSilhouette` carries the rest of that argument.
-  //
-  // **After the key rather than before it**, and the order is not interchangeable. `keyBackground`
-  // admits an already-transparent pixel into its field and erodes one pixel inward from it, so a
-  // hardening that ran first would hand the key a wider field than the sheet has and the two erosions
-  // would compound into a silhouette neither dial asked for. Behind it, the key never sees a pixel
-  // this cleared. Nothing is lost by the order either: `keyBackground` writes only full transparency
-  // or the pixel it was handed, so there is no partial alpha of its own for this to threshold — the
-  // coverage it reads is always the sheet's own.
-  const source = hardenSilhouette(keyed?.image ?? image, settings.silhouetteThreshold);
-  const pixels = image.width * image.height;
+  const prologue = quantisePrologue(image, settings);
+  const sheet = quantiseSheet(prologue, settings);
 
-  // Measured on the un-reduced image: the reduction can merge two adjacent regions into one colour
-  // and erase the boundary between them, and a boundary the mesh cannot see is a cut it cannot snap.
-  //
-  // **And on the un-expanded one, for the mirror of that reason.** The reduction can *erase* a
-  // boundary; the outline expansion can **move** one, by up to its thickness and asymmetrically, in
-  // whichever direction the local polarity won. A mesh measured through that shift would place its
-  // cuts against a contour the artwork does not have — so the mesh reads the sheet as it arrived
-  // from the key, and every reading below walks that mesh over the expanded copy.
-  const mesh = boundaryMesh(source, settings.grid);
+  return {
+    ...sheet,
+    // Measured here rather than asked for later, and against the prologue's source rather than the
+    // image the caller handed in: the reduction this reports on is the one that ran, and the image
+    // it ran on is the keyed and hardened one every pass worked from. Keying's own cost is
+    // `keyedShare`, which the prologue carries for the same reason.
+    //
+    // **The source, not the expanded copy.** The outline expansion is part of what the reduction
+    // cost, not a new baseline to measure the rest of it against — a reader turning that dial up is
+    // asking what it did to their sheet, and a heatmap that had already accepted the thickened
+    // contour as the truth would answer by going darker the harder the pass worked.
+    difference: differenceMap(prologue.source, sheet.image, prologue.mesh),
+  };
+}
+
+/**
+ * The transform itself: everything from the outline expansion down, over a sheet whose key,
+ * hardening and mesh a caller has already established.
+ *
+ * **The narrow answer, for the one caller that reads a narrow part of it.** `readCandidate` reads
+ * {@link QuantiseSheet.image} and {@link QuantiseSheet.colors} and nothing else, and it runs this
+ * 2,015 times in a sweep of `test_sprites/armour.png` — so building a difference map for it walked
+ * the whole of every crop's source a second time to produce a value that was dropped on the next
+ * line. {@link QuantiseSheet} says why that reading is the only one worth withholding, and why the
+ * rest of them are free.
+ *
+ * **The prologue has to have been built from these settings.** Its three inputs are
+ * {@link QuantiseSettings.key}, `silhouetteThreshold` and {@link QuantiseSettings.grid}, and nothing
+ * here re-derives any of them to check — a mesh measured at another grid would cut this sheet into
+ * cells it does not have, and every reading below would be right about the wrong image.
+ * `quantiseImage` is the composition that gets this right by construction.
+ *
+ * The order of what follows, and the argument for each pass's position in it, is stated on
+ * `quantiseImage` — this is the middle of one pipeline rather than a pipeline of its own.
+ */
+export function quantiseSheet(prologue: QuantisePrologue, settings: QuantiseSettings): QuantiseSheet {
+  const { source, mesh } = prologue;
 
   // The one pass that runs ahead of the vote rather than after it, because it is the only one whose
   // failure the vote cannot undo: a contour one drawn pixel wide is a minority in its own cell under
@@ -258,22 +286,14 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
 
   return {
     image: output,
-    // Measured here rather than asked for later, and against `source` rather than `image`: the
-    // reduction this reports on is the one that ran, and the image it ran on is the keyed and
-    // hardened one every pass above worked from. Keying's own cost is `keyedShare`, two lines down.
-    //
-    // **`source`, not `expanded`.** The outline expansion is part of what the reduction cost, not a
-    // new baseline to measure the rest of it against — a reader turning that dial up is asking what
-    // it did to their sheet, and a heatmap that had already accepted the thickened contour as the
-    // truth would answer by going darker the harder the pass worked.
-    difference: differenceMap(source, output, mesh),
     // Read off the finished sheet, so what it counts is what the reader is looking at — and after
     // the cleanups, which is where a speck that would otherwise have been counted as a sprite goes.
-    // It runs unconditionally for the reason the difference map does: a reading fetched separately
-    // could describe an older result than the one beside it, and this one is compared against a
-    // dial that has just moved. See `spriteSegments` for what it does with each kind of sheet, and
-    // `settleSprites` for which of the four passes above force it to be re-taken and why each one
-    // is paid for only by the reader who asked for that edit.
+    // It is here unconditionally because `settleSprites` had to take it in order to edit the sheet
+    // at all, so no caller pays anything to be told: a reading fetched separately could describe an
+    // older result than the one beside it, and this one is compared against a dial that has just
+    // moved. See `spriteSegments` for what it does with each kind of sheet, and `settleSprites` for
+    // which of the four passes above force it to be re-taken and why each one is paid for only by
+    // the reader who asked for that edit.
     sprites: settled.sprites,
     symmetry: settled.symmetry,
     // The finding, always as it stood on the sheet the reading was taken from — see
@@ -294,10 +314,9 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
     // the whole result for an answer already in hand.
     colors: histogram.size,
     paletteEntries: paletteEntriesFrom(histogram),
-    // No zero-pixel guard: `ImageData`'s constructor throws `IndexSizeError` for a zero width or
-    // height, so an image with nothing in it cannot reach this line and a division by zero has no way
-    // to arise. A guard against it would be a comment claiming to protect against the impossible.
-    keyedShare: keyed === null ? 0 : keyed.keyedPixels / pixels,
+    // A fact the key established, so carried through from where the key ran rather than re-derived
+    // from a result every pass since has been editing.
+    keyedShare: prologue.keyedShare,
   };
 }
 

@@ -1,11 +1,9 @@
 import { PROXY_CROP_CELLS, PROXY_CROP_COUNT, TUNE_ROUNDS } from '../constants/autoTune.ts';
 import type { TuneOutcome, TuneStageName, TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings } from '../types/quantiser.ts';
-import { hardenSilhouette } from './hardenSilhouette.ts';
-import { keyBackground } from './keyBackground.ts';
 import { proxyCrops } from './proxyCrops.ts';
+import { quantisePrologue } from './quantisePrologue.ts';
 import { readCandidate } from './tuneCandidate.ts';
-import type { Sample } from './tuneCandidate.ts';
 import { chooseByElbow } from './tuneScore.ts';
 import { restoreSkipped, sameTunedDials, tunedDialsOf, withIncumbent } from './tuneStage.ts';
 import { TUNE_STAGES } from './tuneStages.ts';
@@ -68,21 +66,22 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
     throw new Error('This sheet is smaller than one cell of the grid in force, so there is nothing to sweep');
   }
 
-  const samples: readonly Sample[] = crops.map((crop) => ({
-    crop: crop.image,
-    // **The edge hardening is applied to the reference too**, and for the reason the keying is: a
-    // candidate's result has been hardened, so a reference that still carried its soft outline would
-    // score every candidate against a fringe none of them produces. Both sides in the same terms, in
-    // the pipeline's own order — key first, then harden.
-    reference: hardenSilhouette(
-      settings.key === null ? crop.image : keyBackground(crop.image, settings.key).image,
-      settings.silhouetteThreshold,
-    ),
-  }));
+  // **Once per crop, for the whole sweep**, and that is the point of the shape rather than a
+  // convenience. The prologue is the key, the edge hardening and the mesh — three passes whose only
+  // inputs are `key`, `silhouetteThreshold` and `grid`, none of which is in {@link TunedDials}, so
+  // every candidate below would measure the same three answers again. Measured on
+  // `test_sprites/armour.png` at a grid of 6, that was 2,015 measurements of five meshes.
+  //
+  // **It is also what each candidate is scored against.** A result has been keyed and hardened, so a
+  // reference that still carried the key field or the soft outline would score every candidate
+  // against something none of them produces. That used to be built here and the identical value
+  // built again inside every candidate; now it is one value, handed to `readCandidate` for both
+  // jobs — see {@link QuantisePrologue}.
+  const prologues = crops.map((crop) => quantisePrologue(crop.image, settings));
 
   const opening = tunedDialsOf(settings);
   let settled = opening;
-  const baseline = readCandidate(settled, samples, settings);
+  const baseline = readCandidate(settled, prologues, settings);
   let reading = baseline;
   // The starting position counts: it was run, and every stage below ranks it against its own.
   let candidates = 1;
@@ -124,7 +123,7 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
       }
 
       const tried = withIncumbent(plan.candidates, settled);
-      const readings = tried.map((dials) => readCandidate(dials, samples, settings));
+      const readings = tried.map((dials) => readCandidate(dials, prologues, settings));
       const chosenFirst = readings[0];
       // `tried` is a non-empty list by its own type, so this holds; the check is what
       // `noUncheckedIndexedAccess` asks of an index rather than a case that arises.

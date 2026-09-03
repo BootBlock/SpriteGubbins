@@ -6,10 +6,12 @@ import { TUNED_DIAL_KEYS, TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { autoTune } from './autoTune.ts';
+import { hardenSilhouette } from './hardenSilhouette.ts';
 import { keyBackground } from './keyBackground.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
 import { proxyCrops } from './proxyCrops.ts';
 import { quantiseImage } from './quantiseImage.ts';
+import { quantisePrologue } from './quantisePrologue.ts';
 import { meanSsim } from './ssim.ts';
 import { readCandidate } from './tuneCandidate.ts';
 import { tunedDialsOf } from './tuneStage.ts';
@@ -143,32 +145,30 @@ describe('autoTune', () => {
   });
 
   it('judges a keyed sheet against a keyed reference, not against the key field', () => {
-    // The comparison this guards: a candidate's result has its background cleared, so measuring it
-    // against a crop that still carries the magenta would score every candidate against a field none
-    // of them produces. Below is what that mistake would measure — far under what the sweep reports.
+    // The mistake this guards against: a candidate's result has its background cleared, so measuring
+    // it against a crop that still carries the magenta would score every candidate against a field
+    // none of them produces.
     //
-    // Scored through `readCandidate` rather than by hand, and handed the *raw* crop as its reference,
-    // which is precisely the mistake stated as data. A hand-rolled magnify-and-compare would be a
-    // second copy of that function's own seam, and the copy would not carry the trim it takes: the
-    // mesh is measured per transform, so a keyed crop's result need not be the crop's own edge over
-    // the grid.
-    const keyed: QuantiseSettings = { ...BASE, key: { color: MAGENTA, tolerance: 16 } };
+    // **It is now unrepresentable rather than merely wrong**, which is what changed when the sweep
+    // moved onto `quantisePrologue`. The reference and the image every pass walks used to be two
+    // values, built from the same three settings in two places, and this test was a measurement of
+    // what happens when they disagree — the gap on this fixture was about 0.19. There is one value
+    // now, so `readCandidate` cannot be handed a pair that disagrees, and what is left to assert is
+    // that the value is keyed at all.
+    const key = { color: MAGENTA, tolerance: 16 };
+    const keyed: QuantiseSettings = { ...BASE, key };
     const [crop] = proxyCrops(KEYED_SHEET, GRID, PROXY_CROP_CELLS, PROXY_CROP_COUNT);
     expect(crop).toBeDefined();
     if (crop === undefined) return;
 
-    const outcome = autoTune(KEYED_SHEET, keyed);
-    const score = (reference: ImageData): number =>
-      readCandidate(outcome.dials, [{ crop: crop.image, reference }], keyed).fidelity;
-
-    // The same crop, the same dials, the same magnification — only the reference differs, which is
-    // what makes the pair a measurement of the mistake rather than of two unrelated runs. The gap on
-    // this fixture is about 0.19, and the floor is a wide band below that rather than a tight fit:
-    // what is being asserted is that keying the reference is decisively better, not that it is worth
-    // one particular figure.
-    expect(score(keyBackground(crop.image, { color: MAGENTA, tolerance: 16 }).image)).toBeGreaterThan(
-      score(crop.image) + 0.1,
+    // The key reaches it, and the hardening behind the key — the pipeline's own order, which is what
+    // makes both sides of the comparison the same terms.
+    expect(quantisePrologue(crop.image, keyed).source).toEqual(
+      hardenSilhouette(keyBackground(crop.image, key).image, keyed.silhouetteThreshold),
     );
+    // And it is not simply the crop: a prologue that had skipped the key would hand the score the
+    // magenta this fixture is four cells deep in on every side.
+    expect(quantisePrologue(crop.image, keyed).source).not.toEqual(quantisePrologue(crop.image, BASE).source);
   });
 
   it('scores every candidate alike on the lattice while their fidelities differ', () => {
@@ -267,7 +267,7 @@ describe('autoTune', () => {
     // the pipeline's own gate, so moving a skipped stage's dials cannot change the result — which is
     // what lets `reading` stand while a later skip moves `settled` underneath it. Read through
     // `readCandidate` rather than by hand, so it is the sweep's own scorer that answers.
-    const sample = [{ crop: SHEET, reference: SHEET }];
+    const sample = [quantisePrologue(SHEET, BASE)];
     const alike = (a: TunedDials, b: TunedDials, settings: QuantiseSettings) => {
       expect(readCandidate(a, sample, settings)).toEqual(readCandidate(b, sample, settings));
     };
@@ -340,7 +340,9 @@ describe('autoTune against the anti-aliasing pass', () => {
   const DIALS: TunedDials = tunedDialsOf(QUANTISE_DEFAULT_DIALS);
 
   it('reads a candidate through the pass the reader asked for', () => {
-    const crop = { crop: STEPPED_SHEET, reference: STEPPED_SHEET };
+    // One prologue for both readings: `softened` differs from `BASE` only in where the reader
+    // pointed the anti-aliasing pass, and none of the prologue's three inputs is on that line.
+    const crop = quantisePrologue(STEPPED_SHEET, BASE);
 
     // The same dials read two ways, differing only in where the reader pointed the pass. They must
     // not agree: a reader with the pass on gets the fringe, and the two figures the panel reports
