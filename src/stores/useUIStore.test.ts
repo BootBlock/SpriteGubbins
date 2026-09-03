@@ -147,6 +147,23 @@ describe('useUIStore', () => {
     expect(useUIStore.getState().isHistoryModalOpen).toBe(false);
   });
 
+  it('records when each message was raised', () => {
+    // What `ToastCard` anchors its entrance and its countdown to. The app's one toast is mounted in
+    // one of two mutually exclusive places — inside an open overlay's `<dialog>`, or in the page —
+    // so opening or closing an overlay unmounts the card and mounts another. Without a raise time to
+    // read, the new one starts both animations over while these timers run on from the raise.
+    const before = Date.now();
+    useUIStore.getState().showToast('Prompt copied');
+    const raisedAt = useUIStore.getState().toastRaisedAt;
+    expect(raisedAt).toBeGreaterThanOrEqual(before);
+    expect(raisedAt).toBeLessThanOrEqual(Date.now());
+
+    vi.advanceTimersByTime(2000);
+    useUIStore.getState().showToast('Prompt copied');
+    // A repeated message is a new notification with a clock of its own, exactly as `toastId` says.
+    expect(useUIStore.getState().toastRaisedAt).toBe(raisedAt + 2000);
+  });
+
   it('addresses a toast to the page unless it is told otherwise', () => {
     useUIStore.getState().showToast('Prompt copied');
     expect(useUIStore.getState().toastTarget).toBe('page');
