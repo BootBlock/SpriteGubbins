@@ -33,7 +33,7 @@ export function ImageDropZone({ acceptFile, currentName, onClear }: ImageDropZon
   return (
     // The base rung rather than the 585 a drop zone used to take here: that figure was the panel
     // answering a drag, and the answer moved to the veil. What is left is an ordinary hover.
-    <section className="relative overflow-hidden rounded-2xl border-2 border-dashed border-foundry-600 bg-foundry-800/60 p-6 text-center transition-all hover:border-tab/50 hover:bg-foundry-800/80">
+    <section className="rounded-2xl border-2 border-dashed border-foundry-600 bg-foundry-800/60 p-6 text-center transition-all hover:border-tab/50 hover:bg-foundry-800/80">
       <p className="text-sm font-bold text-ink">
         {currentName === null ? 'Drop the sheet your model returned' : 'Drop another sheet to replace it'}
       </p>

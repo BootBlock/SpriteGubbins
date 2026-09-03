@@ -53,23 +53,30 @@ function read(relativePath: string): string {
 }
 
 /**
+ * Every class string a file puts on a bare `<div>`, which is where a width cap on the way down to a
+ * grid can be written.
+ *
+ * Empty is refused rather than returned, for the reason `capture` throws: a file that stopped
+ * stating its layout in `<div>`s would silently contribute no candidates, and the cap refusal below
+ * would go on passing while reading nothing at all.
+ */
+function divClasses(file: string): readonly string[] {
+  const classes = [...read(file).matchAll(/<div className="([^"]*)"/g)].map((match) => match[1] ?? '');
+  if (classes.length === 0) {
+    throw new Error(
+      `${file} states no \`<div className="…">\` at all — this derivation reads those for a width cap ` +
+        'on the way down to the grid, so a layout written any other way is unmeasured here',
+    );
+  }
+  return classes;
+}
+
+/**
  * The one capture group a pattern must find, or the layout this derivation describes has moved.
  *
  * Throwing rather than falling back is the point: a silent miss would feed the arithmetic a
  * fabricated input and report the result as a pass.
  */
-/**
- * The first element a tab's `return (` opens, whatever stands between the two.
- *
- * Whitespace, a block comment and a fragment are all skipped, and nothing else is: a tab whose
- * column content sits under a `<>` beside a page-level surface — `QuantiseTab`, whose drop veil is
- * `position: fixed` and must not take a `space-y-*` margin from the column — still has exactly one
- * element on the path down to the grid, and it is this one. Anything else opening the tree fails the
- * capture rather than being skipped past, because a second element there would be an ancestor this
- * derivation had stopped reading.
- */
-const ROOT_ELEMENT = /return \((?:\s|\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|<>)*<div className="([^"]*)"/;
-
 function capture(source: string, pattern: RegExp, what: string): string {
   const value = pattern.exec(source)?.[1];
   if (value === undefined) throw new Error(`could not read ${what} — what it describes has changed`);
@@ -229,20 +236,29 @@ export function readColumnSplit({
     itself to the 6xl cap until the split arrived, where a 5/7 column could not have reached the
     budget at any viewport. So a cap is refused rather than quietly absorbed.
 
-    **Every root on the way down is read, because they are not one element.** The studio returns its
+    **Both files on the way down are read, because they are not one element.** The studio returns its
     grid directly, so reading its root reads the grid; the quantiser's grid is nested inside a
     wrapper, and a cap written on the grid itself would have gone unseen — in exactly the tab this
-    guard was written for. A tab whose split lives in a component of its own has **two** such roots,
+    guard was written for. A tab whose split lives in a component of its own has **two** such files,
     and reading only the one holding the grid is the same hole one file down: measured, capping
     `QuantiseTab`'s own root at `max-w-3xl` puts its 5/12 control column at ~300px against a 442px
     budget, and every assertion in that tab's file still passed. So the list is built from the files
     actually on the path, deduplicated where a tab states its own grid.
+
+    **Every `<div>` in each of them is read, not the element the tree opens with.** Reading the root
+    alone rested on there being one, and `QuantiseTab` no longer has one — its page-level drop veil
+    sits beside the column under a fragment, because a `position: fixed` box inside a `space-y-*`
+    column takes a margin it cannot afford. "The first `<div>` after `return (`" then stops meaning
+    "the element the column hangs from": reorder those two children and the guard measures the veil
+    instead, silently, which is the same miss one level up. Reading every `<div>` is the stronger
+    claim as well as the unambiguous one — it refuses a cap wherever in these files it is written,
+    at the price of refusing one that is genuinely not an ancestor. That price is a loud failure
+    asking somebody to look, which is what this file does with every assumption it cannot check.
   */
-  const rootsOnThePath = [...new Set([tabFile, splitFile])].map(
-    (file) =>
-      [`${file}'s root element`, capture(read(file), ROOT_ELEMENT, `${file}'s root element`)] as const,
+  const capCandidates = [...new Set([tabFile, splitFile])].flatMap((file) =>
+    divClasses(file).map((classes) => [`a \`<div>\` in ${file}`, classes] as const),
   );
-  for (const [what, classes] of [...rootsOnThePath, [`${splitFile}'s grid`, gridClasses] as const]) {
+  for (const [what, classes] of [...capCandidates, [`${splitFile}'s grid`, gridClasses] as const]) {
     if (/\bmax-w-/.test(classes)) {
       throw new Error(
         `${what} caps its own width (\`${classes}\`) — the split's columns are then narrower ` +

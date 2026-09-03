@@ -107,11 +107,28 @@ describe('useImageDrop', () => {
       fireEvent(document.body, event);
     });
 
-    // The guard is registered first in this harness, as it is on every navigation to the tab, and it
-    // refuses a file drag the page has not claimed. This hook's capture-phase listener runs ahead of
-    // it, so the guard sees the cancellation and stands aside rather than writing `'none'` over the
-    // copy cursor.
+    // The guard is registered first here, as it is on every navigation to the tab, and it refuses a
+    // file drag the page has not claimed. Deliberately **not** an assertion about the capture phase:
+    // the two land on `'copy'` under either phase, by the two mechanisms this hook's docblock names.
+    // The test below is the one that fails when the phase changes.
     expect(transfer.dropEffect).toBe('copy');
+  });
+
+  it('hears a drag an element inside the tab has stopped from bubbling', () => {
+    const { acceptFile, tab } = harness();
+    // The one behaviour the capture phase actually buys, and the reason it is not merely tidier. A
+    // bubble listener on the window is downstream of every element on the page, so anything calling
+    // `stopPropagation()` takes the tab's claim away and the file is refused; a capture listener on
+    // the window is the first entry in the propagation path and cannot be cut off.
+    tab.addEventListener('drop', (event) => {
+      event.stopPropagation();
+    });
+
+    dispatch(() => {
+      fireEvent(tab, dragEvent('drop', ['Files'], SHEET).event);
+    });
+
+    expect(acceptFile).toHaveBeenCalledWith(SHEET);
   });
 
   it('reports a file over the window while one is in the air', async () => {
@@ -124,7 +141,7 @@ describe('useImageDrop', () => {
     expect(tab).toHaveAttribute('data-over', 'true');
   });
 
-  it('stops reporting one once the drag leaves the window', async () => {
+  it('holds the veil for a frame after a `dragleave`, then clears it', async () => {
     const { tab } = harness();
 
     dispatch(() => {
@@ -133,10 +150,16 @@ describe('useImageDrop', () => {
     dispatch(() => {
       fireEvent(document.body, dragEvent('dragleave', ['Files']).event);
     });
+
+    // Not yet, and this is the assertion the deferral exists for: a `dragleave` is a departure from
+    // an *element*, and this hook sits above every one of them. Clearing here would blink the veil
+    // off each time the drag crossed from one element to the next. `dispatch` is a synchronous
+    // `act`, so the frame this schedules has not run at this line.
+    expect(tab).toHaveAttribute('data-over', 'true');
+
     await nextFrame();
 
-    // A drag that has genuinely left re-claims nothing, so the deferred clear runs. *When* it runs
-    // is not asserted: `act` drives the environment's own task queue, which is what a frame is here.
+    // A drag that has genuinely left re-claims nothing, so the frame runs and the veil goes.
     expect(tab).toHaveAttribute('data-over', 'false');
   });
 
@@ -150,8 +173,33 @@ describe('useImageDrop', () => {
     });
     await nextFrame();
 
-    // The crossing is one `dragleave` and one `dragenter`, in whichever order the engine fires them.
-    // Deferring the clear by a frame is what makes both orderings read as *still over the window*.
+    // What this pins is the other half of the deferral: `claim` cancels the pending frame, so the
+    // re-claim wins rather than being undone a frame later. The crossing is one `dragleave` and one
+    // `dragenter`, in whichever order the engine fires them, and cancelling is what makes both
+    // orderings read as *still over the window*.
+    expect(tab).toHaveAttribute('data-over', 'true');
+  });
+
+  it('does not orphan a pending frame when two departures arrive in a row', async () => {
+    const { tab } = harness();
+
+    dispatch(() => {
+      fireEvent(document.body, dragEvent('dragenter', ['Files']).event);
+    });
+    dispatch(() => {
+      fireEvent(document.body, dragEvent('dragleave', ['Files']).event);
+    });
+    dispatch(() => {
+      fireEvent(document.body, dragEvent('dragleave', ['Files']).event);
+    });
+    dispatch(() => {
+      fireEvent(document.body, dragEvent('dragenter', ['Files']).event);
+    });
+    await nextFrame();
+
+    // `release` cancels before it schedules, as the other two handlers do. Without that the first
+    // frame is orphaned, the re-claim cancels only the second, and the orphan clears the veil while
+    // the file is still over the page.
     expect(tab).toHaveAttribute('data-over', 'true');
   });
 

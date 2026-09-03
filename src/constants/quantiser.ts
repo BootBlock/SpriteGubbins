@@ -1798,7 +1798,8 @@ export const QUANTISE_DEBOUNCE_MS = 250;
 export const QUANTISE_STEPS = [
   {
     title: 'Bring the sheet in',
-    detail: 'drop it here, paste it from the clipboard, or choose a file. It never leaves the tab.',
+    detail:
+      'drop it anywhere on this tab, paste it from the clipboard, or choose a file. It never leaves the tab.',
   },
   {
     title: 'Check the scale in the sheet',

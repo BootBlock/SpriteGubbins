@@ -690,7 +690,9 @@ beside it runs at the base rung on the signature curve. Before that they were le
 the preset cards, the atlas calculator — 2.6× faster than the commonest figure in the app, inside
 panels that eased. A default is the fix rather than 36 values, because **the value written at a call
 site is the thing that goes missing**. So write a `duration-*` only where the base rung is the wrong
-one — a panel answering a drag takes 585, as both drop zones do — and say at the call site why.
+one — a panel answering a drag takes 585, as the studio's identity-lock drop zone does — and say at
+the call site why. The quantiser's zone used to be the second, and states in its own file why it no
+longer names a figure: its tab answers the drag now, over the whole viewport.
 
 **The default is the entrance curve, so a transition whose *travel* is the information names its
 own.** That is the `ease-decelerate` row above, and the disclosure is the one place in `src/` it
@@ -818,7 +820,12 @@ positioned against.
 the whole document including an open modal `<dialog>`, and resolves `position: fixed` against the
 viewport. `useAnchoredSurface` owns
 that — a new floating surface uses it rather than a fourth spelling of the same problem — and **the
-lift is applied entirely from the hook**, attribute included. The call site still positions its
+lift is applied entirely from the hook**, attribute included. **A surface with no anchor is the one
+carve-out**, because the hook is an anchoring hook: everything but the attribute and the call is
+`getBoundingClientRect()` against an element, flipping and clamping, and `ImageDropVeil` is
+`fixed inset-0` with nothing to place. It repeats the two invariants — attribute with call, and the
+`typeof showPopover` guard — rather than inventing new ones, which is the test anything else
+claiming this carve-out has to pass. The call site still positions its
 surface inside its own panel the ordinary way, so a browser without the API keeps the surface it
 always had rather than losing it: an unguarded `showPopover()` throws inside React's commit phase,
 and with no error boundary above these components that unmounts the app. Two traps live in the

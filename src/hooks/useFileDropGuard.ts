@@ -7,11 +7,11 @@ import { useEffect } from 'react';
  * action, and by that model the action for a dragged file is to **open the file** — the window
  * navigates away and what it was showing is gone. Two hooks cancel both events where a file is
  * welcome: `useImageDrop` on the window while the Quantise tab is mounted, and `useFileDropTarget`
- * on the studio's identity-lock control. Everywhere else — the studio form around that control, a
- * preset card, the spec — nothing objected, so a drop landing an inch wide of one of them took the
- * session with it. Nothing in
- * `useQuantiseStore` is persisted, so what that costs is the loaded sheet, every dial position, the
- * auto-tune report and the quantiser's undo history, with nothing to restore them from.
+ * on the studio's identity-lock control. Everywhere else — the header, the studio form around that
+ * control, a preset card, the space beside a panel — nothing objected, so a drop landing an inch
+ * wide of one of them took the session with it. Nothing in `useQuantiseStore` is persisted, so what
+ * that costs is the loaded sheet, every dial position, the auto-tune report and the quantiser's undo
+ * history, with nothing to restore them from.
  *
  * The guard goes on a window rather than on the shell's outermost element because the behaviour it
  * answers is the **document's** default, not an element's: it applies wherever the page did not

@@ -15,10 +15,13 @@ import { useEffect, useState } from 'react';
  * `useFileDropGuard` is on the same window, refusing every file drag the page did not claim, and it
  * stands aside for anything already cancelled. On the bubble phase the two would run in registration
  * order, which is mount order — this tab mounts before the shell on a cold load and after it on
- * every navigation. Today they agree under either order, because the model reads `dropEffect` back
- * once the dispatch is over and whichever of them ran last had written `'copy'`; what capture buys
- * is that the agreement stops being a coincidence to re-derive whenever either hook changes, and
- * that an element inside the tab could not take the page's claim away with a `stopPropagation()`.
+ * every navigation — and they would land on `'copy'` either way, by **two different mechanisms**:
+ * with the guard first it writes `'none'` and this hook overwrites it before the model reads the
+ * attribute back, and with this hook first the guard's `defaultPrevented` check returns before it
+ * writes anything at all. What capture buys is that the agreement stops resting on two coincidences
+ * to re-derive whenever either hook changes, and that **an element inside the tab cannot take the
+ * page's claim away with a `stopPropagation()`** — which a bubble listener on the window would
+ * never hear. That last one is the property the test asserts, because it is the one that fails.
  *
  * **Only a drag carrying files is claimed**, on the guard's reasoning: dragging selected text into a
  * number field is an ordinary editing gesture whose default action is what inserts the text, and
@@ -64,6 +67,10 @@ export function useImageDrop(acceptFile: (file: File | null | undefined) => void
 
     function release(event: DragEvent) {
       if (fileTransfer(event) === null) return;
+      // Idempotent, as the other two handlers are: a second `dragleave` reaching here with no
+      // `dragover` between would otherwise orphan the first handle, and the orphan's callback then
+      // clears `clearing` out from under the live one — so the next claim cancels nothing.
+      cancelClearing();
       clearing = requestAnimationFrame(() => {
         clearing = null;
         setIsFileOver(false);

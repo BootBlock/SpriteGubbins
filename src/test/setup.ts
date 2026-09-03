@@ -18,10 +18,11 @@ afterEach(() => {
 /**
  * A stand-in for the popover API, which happy-dom does not implement.
  *
- * The app's two floating surfaces — the combo box's suggestion list and the tooltip's guidance
- * card — call `showPopover()` to reach the top layer (see `src/hooks/useAnchoredSurface.ts`). The
- * hook checks for the method before using it, so without these stubs the tests would silently take
- * the *un-lifted* path and stop covering the thing they are there to cover.
+ * Three surfaces call `showPopover()` to reach the top layer. Two of them — the combo box's
+ * suggestion list and the tooltip's guidance card — go through `src/hooks/useAnchoredSurface.ts`,
+ * and the quantiser's drop veil lifts itself, because it has no anchor for that hook to place it
+ * against. All three check for the method before using it, so without these stubs the tests would
+ * silently take the *un-lifted* path and stop covering the thing they are there to cover.
  *
  * Deliberately no-ops, and deliberately not state machines. The top layer is a paint concern no DOM
  * assertion can observe, and the platform's own guards are silent: measured in Edge, showing a
