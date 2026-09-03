@@ -235,9 +235,14 @@ describe('the figures the quantiser docblocks state', () => {
     /**
      * How far the average pixel sits from the palette entry it is drawn with, in scaled OKLab.
      *
-     * Read off the histogram rather than the pixels, which is the same figure for a fraction of the
-     * work: a colour's distance to its entry is a property of the colour, so the sheet's 1.57
-     * million pixels are 218,978 conversions weighted by their own counts.
+     * Read off the histogram rather than the pixels, which is cheaper and is also the right
+     * question. Cheaper because a colour's distance to its entry is a property of the colour, so the
+     * sheet's 1.57 million pixels are 218,978 conversions weighted by their own counts. Right
+     * because `colorHistogram` leaves fully transparent pixels out, and those are exactly the pixels
+     * `applyPalette` passes through untouched — a mean over the whole field would dilute the error
+     * with cleared ground nothing drew an entry on. That is also why `meanCellDistance` next door is
+     * not the seam to reach for here: it converts every pixel, so it agrees with this to six
+     * decimals on a truecolour sheet and parts company on a keyed one.
      *
      * **The histogram is the unweighted one, deliberately.** `blendWeightedHistogram` decides what a
      * colour is worth while the palette is being *chosen*; this asks what the chosen palette cost

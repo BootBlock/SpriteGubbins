@@ -27,12 +27,20 @@ import { buildMoments, WU_SIDE, wuCell, wuCellOfKey, type WuBox } from './wuMome
  * its numbers moved without anything failing.
  *
  * **It is a reading, not a score to minimise**, and the weighting is why. A per-pixel metric prices
- * a fringe colour at the pixels that carry it, which is the accounting the weighted histogram exists
- * to overrule — so against the same search reading an unweighted histogram, the weighting is ahead
- * at 16, 32 and 64 and behind at 256, where it is spending slots on the art that a per-pixel error
- * would sooner have spent on blends. The case for Wu over median cut is the paragraph above rather
- * than this ladder: median cut was deleted by the change that introduced Wu, so nothing here can
- * reproduce the before-and-after comparison the ladder once stated.
+ * a fringe colour at the pixels that carry it, which is the accounting `blendWeightedHistogram`
+ * exists to overrule. Measured against the same search reading an unweighted histogram, the
+ * weighting comes out ahead at 16, 32 and 64 and behind at 256, where it is spending slots on the
+ * art that a per-pixel error would sooner have spent on blends. That comparison is a reading rather
+ * than a consequence, and the suite does not hold it — an unweighted search is not something this
+ * file does. What holds it in practice is the four rungs above: retuning the weight moves them, and
+ * the failing test lands whoever did it on this paragraph.
+ *
+ * **A figure here is one this code can still produce**, which is what the retired ladder was not. It
+ * had stood since Wu replaced median cut and was quoted against it, and the same commit deleted
+ * `medianCut.ts` — so the before column cannot be recovered from any version of this file, and no
+ * percentage is stated in its place. The comparison survives in words instead, which is where it can
+ * be honest about being a recollection: **Why this and not median cut** at the top of this docblock,
+ * and the shape of the cost below.
  *
  * It is also **roughly an order of magnitude faster on that sheet at every budget**, and the shape of
  * the cost is the part worth holding: the coarse pass's work is the moment table's, so it barely
