@@ -271,8 +271,8 @@ export function quantiseFromPrologue(prologue: QuantisePrologue, settings: Quant
   // of them here would be the cleanup dial quietly editing the lock — and the sheets either side of
   // this one would keep the pair it removed.
   //
-  // **Both exemptions lift under a dither**, which `statedPalette` expresses rather than checks for:
-  // the reduction it is handed is `null` there, because the palette has not been applied yet, so
+  // **Both exemptions lift under a dither**, and `mergeIsExempt` gets that by testing the dither
+  // itself: under one the palette step has not run yet, so no pixel here is a palette entry and
   // there is no entry of the user's for a fold to edit.
   const merged = mergeIsExempt(settings) ? resolved : mergeColors(resolved, settings.colorMerge);
   const cleaned = despeckle(merged, settings.fillCleanup, settings.cleanupPasses);
@@ -415,9 +415,10 @@ function statedPalette(reduction: ColorReduction | null): boolean {
  * second copy of the condition is a second opinion about when the pass runs.
  */
 export function mergeIsExempt(settings: QuantiseSettings): boolean {
-  // The pipeline above expresses this as `statedPalette(reduction)`, where `reduction` is already
-  // `null` under a dither; the two forms agree because `statedPalette(null)` is false, and because a
-  // dither is only positional at all where a reduction is in force.
+  // Asked of the dither itself rather than of the pipeline's `positional` local, which a caller
+  // asking this from outside does not have. The two part company only where a dither is set with no
+  // reduction in force, and there `statedPalette(settings.reduction)` is false anyway — a dither is
+  // only positional at all where a reduction is in force.
   return ditherMatrix(settings.dither) === null && statedPalette(settings.reduction);
 }
 
