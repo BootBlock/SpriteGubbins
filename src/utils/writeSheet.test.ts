@@ -41,6 +41,20 @@ const TIGHT_BOXES: readonly SpriteBox[] = [
 /** Wide enough that a cell-sized cut of `TIGHT` centred on either sprite reaches the other. */
 const WIDE: SpriteCell = { width: 6, height: 2, anchor: { x: 'CENTRE', y: 'BOTTOM' } };
 
+/**
+ * A sheet holding more than ninety-nine sprites, which is what the two-digit ordinal could not name
+ * in order. 120 two-pixel-wide blocks a pixel apart — the shape a tileset ten across and eleven down
+ * has, and an ordinary sheet for a tab that reads whatever the reader drops in.
+ */
+const MANY_BOXES: readonly SpriteBox[] = Array.from({ length: 120 }, (_, index) => ({
+  left: index * 3,
+  top: 0,
+  width: 2,
+  height: 2,
+  pixels: 4,
+}));
+const MANY = imageFrom(MANY_BOXES.length * 3, 2, (x) => (x % 3 === 2 ? CLEAR : OPAQUE));
+
 /** A directional core of a batch: several facings, so no one facing names it. */
 function core(ordinal: number, total = 10): ManifestSheet {
   return {
@@ -93,8 +107,8 @@ describe('writeSheet', () => {
 
       expect(entries.map((entry) => entry.name)).toStrictEqual([
         FLAT_PACK_LAYOUT.sheetFile,
-        'sprites/01-heads-south.png',
-        'sprites/02-heads-west.png',
+        'sprites/1-heads-south.png',
+        'sprites/2-heads-west.png',
         FLAT_PACK_LAYOUT.manifestFile,
       ]);
       expect(written.format === 'SPRITE_PACK' && written.sprites).toBe(2);
@@ -103,7 +117,7 @@ describe('writeSheet', () => {
     it('cuts each sprite at its own box, at the magnification the sheet is written in', async () => {
       const written = await writeSheet(job({ format: 'SPRITE_PACK', scale: 2 }));
       const entries = readZip(written.bytes);
-      const sprite = entries.find((entry) => entry.name.startsWith('sprites/01'));
+      const sprite = entries.find((entry) => entry.name.startsWith('sprites/1'));
       if (sprite === undefined) throw new Error('the pack held no first sprite');
 
       // A 2 × 2 box on a sheet written at 2× is 4 × 4 of the file's own pixels.
@@ -136,8 +150,8 @@ describe('writeSheet', () => {
 
       expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
         'south-west-sheet.png',
-        'south-west/01-heads-south.png',
-        'south-west/02-heads-west.png',
+        'south-west/1-heads-south.png',
+        'south-west/2-heads-west.png',
         'south-west-manifest.json',
       ]);
     });
@@ -174,8 +188,8 @@ describe('writeSheet', () => {
 
       expect(readZip(first.bytes).map((entry) => entry.name)).toStrictEqual([
         'sheet-1-sheet.png',
-        'sheet-1/01-heads-south.png',
-        'sheet-1/02-heads-west.png',
+        'sheet-1/1-heads-south.png',
+        'sheet-1/2-heads-west.png',
         'sheet-1-manifest.json',
       ]);
       expect(readZip(first.bytes).filter((entry) => names.includes(entry.name))).toStrictEqual([]);
@@ -188,8 +202,8 @@ describe('writeSheet', () => {
 
       expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
         'sheet.png',
-        'sprites/01-heads-south.png',
-        'sprites/02-heads-west.png',
+        'sprites/1-heads-south.png',
+        'sprites/2-heads-west.png',
         'manifest.json',
       ]);
     });
@@ -223,7 +237,7 @@ describe('writeSheet', () => {
       const written = await writeSheet(
         job({ format: 'SPRITE_PACK', image: TIGHT, boxes: TIGHT_BOXES, cell: WIDE, names: [] }),
       );
-      const first = readZip(written.bytes).find((entry) => entry.name.startsWith('sprites/01'));
+      const first = readZip(written.bytes).find((entry) => entry.name.startsWith('sprites/1'));
       if (first === undefined) throw new Error('the pack held no first sprite');
       const decoded = await decodePng(first.bytes);
 
@@ -254,13 +268,33 @@ describe('writeSheet', () => {
       );
     });
 
+    it('names a sheet past ninety-nine so the archive’s own listing is its reading order', async () => {
+      // The ordinal was padded to a literal two digits while `spriteSegments` admits up to
+      // `SCATTERED_SPRITE_CEILING` sprites, so `100.png` sorted between `10.png` and `11.png` and a
+      // file listing interleaved. The width comes from this sheet's own sprite count instead.
+      const written = await writeSheet(
+        job({ format: 'SPRITE_PACK', image: MANY, boxes: MANY_BOXES, names: [] }),
+      );
+      const sprites = readZip(written.bytes)
+        .map((entry) => entry.name)
+        .filter((name) => name.startsWith(`${FLAT_PACK_LAYOUT.spriteDirectory}/`));
+
+      expect(sprites).toHaveLength(MANY_BOXES.length);
+      expect([sprites[0], sprites[99], sprites.at(-1)]).toStrictEqual([
+        'sprites/001.png',
+        'sprites/100.png',
+        'sprites/120.png',
+      ]);
+      expect([...sprites].sort()).toStrictEqual(sprites);
+    });
+
     it('numbers the files where the names do not match the sprites found', async () => {
       const written = await writeSheet(job({ format: 'SPRITE_PACK', names: ['heads-south'] }));
 
       expect(readZip(written.bytes).map((entry) => entry.name)).toStrictEqual([
         FLAT_PACK_LAYOUT.sheetFile,
-        'sprites/01.png',
-        'sprites/02.png',
+        'sprites/1.png',
+        'sprites/2.png',
         FLAT_PACK_LAYOUT.manifestFile,
       ]);
     });

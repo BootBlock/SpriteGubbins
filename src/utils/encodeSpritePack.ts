@@ -5,6 +5,7 @@ import { encodePng } from './encodePng.ts';
 import type { PackLayout } from './packLayout.ts';
 import { placeInCell } from './placeInCell.ts';
 import { encodeManifest } from './spriteManifest.ts';
+import { spriteOrdinal } from './spriteOrdinal.ts';
 import { zipArchive } from './zipArchive.ts';
 import type { ZipEntry } from './zipArchive.ts';
 
@@ -43,13 +44,14 @@ import type { ZipEntry } from './zipArchive.ts';
 /**
  * Where one sprite lands in the archive, derived from what the manifest already states.
  *
- * The ordinal leads so a file listing is in the sheet's own reading order, and it is padded so that
- * ten sorts after nine. The name follows it only where the sheet is named — a positional name is
- * the ordinal again, and `07-sprite-07.png` says nothing twice.
+ * The ordinal leads so a file listing is in the sheet's own reading order, and `spriteOrdinal` pads
+ * it to the width this sheet's own sprite count needs so that the listing stays in that order. The
+ * name follows it only where the sheet is named — a positional name is the ordinal again, and
+ * `07-sprite-07.png` says nothing twice.
  */
 function spriteFileName(manifest: SpriteManifest, index: number, directory: string): string {
   const sprite = manifest.sprites[index];
-  const ordinal = String(index + 1).padStart(2, '0');
+  const ordinal = spriteOrdinal(index, manifest.sprites.length);
   const name = manifest.named && sprite !== undefined ? `-${sprite.name}` : '';
   return `${directory}/${ordinal}${name}.png`;
 }

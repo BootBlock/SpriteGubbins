@@ -71,7 +71,12 @@ export interface ManifestSprite {
   /** Reading order, counting from one — the position section 4 identifies a component by. */
   readonly index: number;
   /**
-   * The inventory's name for this component, or `sprite-07` where the sheet was not named.
+   * The inventory's name for this component, or a positional name where the sheet was not named.
+   *
+   * The positional name is `sprite-` and this sprite's {@link ManifestSprite.index}, zero-padded to
+   * the width the sheet's own sprite count needs — `sprite-07` on a sheet of fifteen, `sprite-007`
+   * on a sheet of two hundred — so that the names sort into the sheet's reading order. It is the
+   * ordinal the pack's own file names lead with; see `spriteOrdinal`, which both take it from.
    *
    * Unique within a manifest, so it can be an identifier on the far side: a second component whose
    * inventory entry slugs to the same words takes a numeric suffix.

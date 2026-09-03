@@ -82,11 +82,25 @@ describe('buildManifest', () => {
     const manifest = buildManifest({ ...input, names: ['heads-south', 'heads-west'] });
 
     expect(manifest.named).toBe(false);
-    expect(manifest.sprites.map((sprite) => sprite.name)).toStrictEqual([
-      'sprite-01',
-      'sprite-02',
-      'sprite-03',
+    expect(manifest.sprites.map((sprite) => sprite.name)).toStrictEqual(['sprite-1', 'sprite-2', 'sprite-3']);
+  });
+
+  it('pads a positional name to the width the sheet’s own count needs', () => {
+    // The pad used to be a literal two digits while `spriteSegments` admits up to
+    // `SCATTERED_SPRITE_CEILING` sprites, so a sheet past ninety-nine sorted `sprite-100` between
+    // `sprite-10` and `sprite-11`. A tileset ten across and eleven down reaches this on its own.
+    const boxes = Array.from({ length: 120 }, (_, index) => box(index * 10, 0));
+    const manifest = buildManifest({ ...input, boxes, width: 1200 });
+    const names = manifest.sprites.map((sprite) => sprite.name);
+
+    expect(manifest.named).toBe(false);
+    expect([names[0], names[9], names[99], names[119]]).toStrictEqual([
+      'sprite-001',
+      'sprite-010',
+      'sprite-100',
+      'sprite-120',
     ]);
+    expect([...names].sort()).toStrictEqual(names);
   });
 
   it('links a duplicate to the sprite it repeats, by index', () => {

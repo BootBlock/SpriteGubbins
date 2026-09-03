@@ -3,6 +3,7 @@ import type { SpriteCell } from '../types/spriteCell.ts';
 import type { ManifestSheet, ManifestSprite, SpriteManifest } from '../types/spriteManifest.ts';
 import { scaleBoxes } from './sheetLayout.ts';
 import { cellOffsets, cellPivot } from './spriteCell.ts';
+import { spriteOrdinal } from './spriteOrdinal.ts';
 
 /**
  * The written sheet described as data: where every sprite sits, what it is called, and which sheet
@@ -113,7 +114,10 @@ export function buildManifest(input: ManifestInput): SpriteManifest {
 
   const sprites: readonly ManifestSprite[] = boxes.map((box, index) => ({
     index: index + 1,
-    name: named ? (input.names[index] ?? '') : `sprite-${String(index + 1).padStart(2, '0')}`,
+    // Padded to the width this sheet's own sprite count needs, by the same function the pack's
+    // file names take their ordinal from — so a reader matching a manifest entry to the PNG beside
+    // it is not reading one sprite numbered two ways. See `spriteOrdinal`.
+    name: named ? (input.names[index] ?? '') : `sprite-${spriteOrdinal(index, boxes.length)}`,
     x: box.left,
     y: box.top,
     width: box.width,
