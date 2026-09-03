@@ -69,8 +69,9 @@ export function autoTune(image: ImageData, settings: QuantiseSettings): TuneOutc
   // **Once per crop, for the whole sweep**, and that is the point of the shape rather than a
   // convenience. The prologue is the key, the edge hardening and the mesh — three passes whose only
   // inputs are `key`, `silhouetteThreshold` and `grid`, none of which is in {@link TunedDials}, so
-  // every candidate below would measure the same three answers again. Measured on
-  // `test_sprites/armour.png` at a grid of 6, that was 2,015 measurements of five meshes.
+  // every candidate below would measure the same three answers again. A sweep of
+  // `test_sprites/armour.png` at a grid of 6 runs 403 positions over 5 crops, so that was 2,015
+  // calls to `boundaryMesh` answering the five meshes those crops have.
   //
   // **It is also what each candidate is scored against.** A result has been keyed and hardened, so a
   // reference that still carried the key field or the soft outline would score every candidate

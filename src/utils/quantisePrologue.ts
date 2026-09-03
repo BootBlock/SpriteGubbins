@@ -12,17 +12,25 @@ import { keyBackground } from './keyBackground.ts';
  * answer "what is this sheet", and their only inputs are {@link QuantiseSettings.key},
  * {@link QuantiseSettings.silhouetteThreshold} and {@link QuantiseSettings.grid}. A caller that
  * holds all three fixed while it moves the dials — which is what the auto-tune sweep is — was
- * paying for the same three answers on every candidate: measured on `test_sprites/armour.png` at a
- * grid of 6, `boundaryMesh` alone was 2,015 measurements of one mesh, and on a keyed sheet the key
- * and the hardening were 2,015 rebuilds of a value `autoTune` had already built for its own
- * reference.
+ * paying for the same three answers on every candidate: a sweep of `test_sprites/armour.png` at a
+ * grid of 6 runs 403 positions over 5 crops, so `boundaryMesh` ran 2,015 times to answer the five
+ * meshes those crops have. Keying is worse again, because the key and the hardening produce the
+ * value the sweep scores against as well: `autoTune` built it once a crop and then rebuilt it
+ * inside every candidate.
  *
- * **The order is the pipeline's and it is not interchangeable** — `quantiseImage` carries the
- * argument for each step in full, and it is stated there rather than here because that is where the
- * whole order is stated. In short: the key goes first because a drifting key field is a cell full
- * of never-repeating colours that the vote resolves to the artwork; the hardening goes behind it so
- * the two erosions cannot compound; and the mesh is measured behind both so the step profile weighs
- * the art's own boundaries rather than the key's drift or a soft ramp.
+ * **The order is the pipeline's and it is not interchangeable.** `quantiseImage` states where these
+ * three sit in the whole order and why the mesh must be measured behind the key — a keyed field's
+ * drifting colours are steps the profile would otherwise count. The argument between the two passes
+ * here is this one:
+ *
+ * **The hardening goes behind the key, and the two erosions are why.** `keyBackground` admits an
+ * already-transparent pixel into its field and erodes one pixel inward from it, so a hardening that
+ * ran first would hand the key a wider field than the sheet has and the two erosions would compound
+ * into a silhouette neither dial asked for. Behind it, the key never sees a pixel this cleared.
+ * Nothing is lost by the order either: `keyBackground` writes only full transparency or the pixel it
+ * was handed, so there is no partial alpha of its own for this to threshold — the coverage it reads
+ * is always the sheet's own. The hardening then goes ahead of the mesh so the step profile weighs a
+ * hard boundary rather than a ramp, which is the same reason the key goes ahead of it.
  *
  * **The mesh is measured here rather than by whoever wants one, and that is the point of carrying
  * it.** It is what makes every reading in `gridAlignment.ts` agree about where a cell begins — so a

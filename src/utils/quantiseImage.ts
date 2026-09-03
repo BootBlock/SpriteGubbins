@@ -44,10 +44,16 @@ import { buildPalette } from './wuQuantiser.ts';
  * everything from the outline expansion down is a function of the dials, while the key, the
  * hardening and the mesh are a function of the sheet and three settings — and the difference map is
  * the one reading taken afterwards that nothing above it needs. A caller holding those three
- * settings fixed while it moves the dials therefore has two thirds of its work already done, which
- * is what the auto-tune sweep is; see `quantisePrologue` and {@link QuantiseSheet}, which carry the
- * measurements. **Every caller that is not that sweep belongs here**, because this is the
- * composition that cannot hand the transform a prologue measured on a different sheet.
+ * settings fixed while it moves the dials — which is what the auto-tune sweep is — therefore has
+ * the prologue in hand before it starts and never wants the map at all; see `quantisePrologue` and
+ * {@link QuantiseSheet}, which carry what each of those was costing. **Every caller that is not
+ * that sweep belongs here**, because this is the composition that cannot hand the transform a
+ * prologue measured on a different sheet.
+ *
+ * **{@link quantiseFromPrologue} shares this file rather than taking one of its own**, because the
+ * two are one pipeline: this is the composition and that is its body, and the order stated below is
+ * the order of both. Splitting them would leave the argument for every pass in a file holding none
+ * of them.
  *
  * Grid **detection** is not part of it. The grid is a setting because the user can overrule what
  * detection found — and must, when it found nothing — so resolving it belongs to the tab, and this
@@ -56,10 +62,10 @@ import { buildPalette } from './wuQuantiser.ts';
  *
  * The **mesh** is the opposite: it is measured in the prologue, on the keyed sheet the readings are
  * about to walk — *before* the outline expansion moves anything, for the reason the comment beside
- * it gives — and it deliberately never becomes a setting. Measured once per transform, it is one
- * mechanism serving all three ways a grid reaches this function — measured, clicked or typed — so
- * no two of them can disagree about where a cell begins; stored anywhere, it would be the stale
- * half of a pair the moment the user overtyped the grid beside it.
+ * it gives — and it deliberately never becomes a setting. Measured from the sheet it is about to be
+ * walked over, it is one mechanism serving all three ways a grid reaches this function — measured,
+ * clicked or typed — so no two of them can disagree about where a cell begins; stored anywhere, it
+ * would be the stale half of a pair the moment the user overtyped the grid beside it.
  *
  * **Which side of the vote the reduction runs on is the chosen reading's contract, not a fixed
  * order.** The dominant vote *selects* — a colour the cell already contains — and for it reducing
@@ -111,7 +117,7 @@ import { buildPalette } from './wuQuantiser.ts';
  * at a grid of 1 the cell reading is a no-op and nothing else in the pipeline reaches a soft edge.
  * It goes behind the key so the two erosions cannot compound, and ahead of the mesh so the profile
  * weighs a hard boundary rather than a ramp — the same reason the key goes ahead of it.
- * `quantisePrologue` is where all three run, and it carries the rest of that argument.
+ * `quantisePrologue` is where all three run, and it states what those two erosions are.
  *
  * **The symmetry pass goes last, after everything, and that is not interchangeable either.** It
  * scores a mirror axis *inside a sprite's bounds*, so it needs the segmentation — which is taken
@@ -151,7 +157,7 @@ import { buildPalette } from './wuQuantiser.ts';
  */
 export function quantiseImage(image: ImageData, settings: QuantiseSettings): QuantiseResult {
   const prologue = quantisePrologue(image, settings);
-  const sheet = quantiseSheet(prologue, settings);
+  const sheet = quantiseFromPrologue(prologue, settings);
 
   return {
     ...sheet,
@@ -188,7 +194,7 @@ export function quantiseImage(image: ImageData, settings: QuantiseSettings): Qua
  * The order of what follows, and the argument for each pass's position in it, is stated on
  * `quantiseImage` — this is the middle of one pipeline rather than a pipeline of its own.
  */
-export function quantiseSheet(prologue: QuantisePrologue, settings: QuantiseSettings): QuantiseSheet {
+export function quantiseFromPrologue(prologue: QuantisePrologue, settings: QuantiseSettings): QuantiseSheet {
   const { source, mesh } = prologue;
 
   // The one pass that runs ahead of the vote rather than after it, because it is the only one whose

@@ -21,8 +21,9 @@ export interface SettledSheet extends Pick<
  * The tail of the pipeline: the passes taken **over a reading** of the sheet, and the readings they
  * force.
  *
- * Split out of `quantiseImage`, which is the raster pipeline proper — key, harden, measure the mesh,
- * resolve the cells, reduce, clean and dither. **Three of the four passes here need the sheet to
+ * Split out of the raster pipeline proper — key, harden and measure the mesh in `quantisePrologue`,
+ * then resolve the cells, reduce, clean and dither in `quantiseFromPrologue`, which is what calls
+ * this. **Three of the four passes here need the sheet to
  * have been *segmented* first**, and none of the passes above them does: the symmetry settle scores
  * an axis inside a sprite's own bounds, the duplicate fold compares one sprite with another, and the
  * frame alignment fits a lattice to a row of them. That is the same line the pipeline's own docblock

@@ -6,11 +6,9 @@ import { TUNED_DIAL_KEYS, TUNE_STAGE_NAMES } from '../types/autoTune.ts';
 import type { TunedDials } from '../types/autoTune.ts';
 import type { QuantiseSettings, Rgba } from '../types/quantiser.ts';
 import { autoTune } from './autoTune.ts';
-import { hardenSilhouette } from './hardenSilhouette.ts';
-import { keyBackground } from './keyBackground.ts';
 import { oklabPlanes } from './oklabPlanes.ts';
 import { proxyCrops } from './proxyCrops.ts';
-import { quantiseImage } from './quantiseImage.ts';
+import { quantiseFromPrologue, quantiseImage } from './quantiseImage.ts';
 import { quantisePrologue } from './quantisePrologue.ts';
 import { meanSsim } from './ssim.ts';
 import { readCandidate } from './tuneCandidate.ts';
@@ -146,29 +144,32 @@ describe('autoTune', () => {
 
   it('judges a keyed sheet against a keyed reference, not against the key field', () => {
     // The mistake this guards against: a candidate's result has its background cleared, so measuring
-    // it against a crop that still carries the magenta would score every candidate against a field
+    // it against a sheet that still carries the magenta would score every candidate against a field
     // none of them produces.
     //
-    // **It is now unrepresentable rather than merely wrong**, which is what changed when the sweep
-    // moved onto `quantisePrologue`. The reference and the image every pass walks used to be two
-    // values, built from the same three settings in two places, and this test was a measurement of
-    // what happens when they disagree — the gap on this fixture was about 0.19. There is one value
-    // now, so `readCandidate` cannot be handed a pair that disagrees, and what is left to assert is
-    // that the value is keyed at all.
-    const key = { color: MAGENTA, tolerance: 16 };
-    const keyed: QuantiseSettings = { ...BASE, key };
-    const [crop] = proxyCrops(KEYED_SHEET, GRID, PROXY_CROP_CELLS, PROXY_CROP_COUNT);
-    expect(crop).toBeDefined();
-    if (crop === undefined) return;
+    // **The two references can no longer disagree**, which is what changed when the sweep moved onto
+    // `quantisePrologue`: the image every pass walks and the image a candidate is scored against
+    // used to be two values built from the same three settings in two places, and are now one. So
+    // the mistake cannot be handed to `readCandidate` — swapping its `source` swaps the transform's
+    // input with it. What can still be measured is what the keying is *worth*, and that is the pair
+    // below: the sweep's own scorer against the reference it uses, and the same result measured
+    // against the sheet as it arrived.
+    //
+    // **At a grid of 1 the magnification is the identity**, so the two sides are already the same
+    // size and the second reading needs no trim — which is why the counterfactual can be taken
+    // directly here rather than through a second copy of `readCandidate`'s seam.
+    const keyed: QuantiseSettings = { ...BASE, grid: 1, key: { color: MAGENTA, tolerance: 16 } };
+    const prologue = quantisePrologue(KEYED_SHEET, keyed);
+    const dials = tunedDialsOf(keyed);
 
-    // The key reaches it, and the hardening behind the key — the pipeline's own order, which is what
-    // makes both sides of the comparison the same terms.
-    expect(quantisePrologue(crop.image, keyed).source).toEqual(
-      hardenSilhouette(keyBackground(crop.image, key).image, keyed.silhouetteThreshold),
-    );
-    // And it is not simply the crop: a prologue that had skipped the key would hand the score the
-    // magenta this fixture is four cells deep in on every side.
-    expect(quantisePrologue(crop.image, keyed).source).not.toEqual(quantisePrologue(crop.image, BASE).source);
+    const scored = readCandidate(dials, [prologue], keyed).fidelity;
+    const result = quantiseFromPrologue(prologue, { ...keyed, ...dials }).image;
+    const againstTheField = meanSsim(KEYED_SHEET, result);
+
+    // The gap on this fixture is about 0.29, and the floor is a wide band below that rather than a
+    // tight fit: what is asserted is that scoring against the keyed sheet is decisively better, not
+    // that it is worth one particular figure.
+    expect(scored).toBeGreaterThan(againstTheField + 0.1);
   });
 
   it('scores every candidate alike on the lattice while their fidelities differ', () => {

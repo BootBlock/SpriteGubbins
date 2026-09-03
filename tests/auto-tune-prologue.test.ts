@@ -9,13 +9,13 @@ import { upscaleNearest } from '../src/utils/upscaleNearest.ts';
 /**
  * What the auto-tune sweep pays for the pipeline's prologue and its one trailing reading.
  *
- * **A count, not a wall clock.** The measurement that prompted this was 15.4 seconds of a 62.4-second
- * sweep of `test_sprites/armour.png` at a grid of 6 — a quarter of it — and not one of those seconds
- * reproduces on another machine, or under another Vitest worker load. What reproduces is what the
- * seconds were made of: `boundaryMesh` run 2,015 times where five runs answer the same question, and
- * `differenceMap` run 2,015 times for a value `readCandidate` never reads. `constants/autoTune.ts`
- * states the same rule for its own ladders — the count of positions is what a change here has to be
- * judged by — so this counts calls.
+ * **A count, not a wall clock.** What prompted this was a share of a sweep's running time, and no
+ * such share reproduces: it moves with the machine, and with how many Vitest workers are competing
+ * for it. What reproduces is what the seconds were made of — a sweep of `test_sprites/armour.png` at
+ * a grid of 6 runs 403 positions over 5 crops, so `boundaryMesh` ran 2,015 times to answer five
+ * meshes and `differenceMap` ran 2,015 times for a value `readCandidate` never reads.
+ * `constants/autoTune.ts` states the same rule for its own ladders — the count of positions is what
+ * a change here has to be judged by — so this counts calls.
  *
  * **The three prologue passes are once per crop and the difference map is never**, and both halves
  * follow from the same fact: the key, the edge hardening and the mesh depend on `key`,
@@ -81,8 +81,9 @@ const MAGENTA: Rgba = { r: 255, g: 0, b: 255, a: 255 };
  * Pixel art on a magenta field, big enough that the sweep reads more than one window.
  *
  * The window count is what makes "once per crop" a different claim from "once per sweep", so the
- * sheet is sized to give `proxyCrops` several non-overlapping windows rather than the single one a
- * fixture the size of a crop would return.
+ * sheet is sized to give `proxyCrops` more than one non-overlapping window rather than the single
+ * one a fixture the size of a crop would return. At a grid of 2 it yields two, at `(0, 40)` and
+ * `(80, 40)`.
  */
 const ART = imageFrom(80, 80, (x, y) => {
   if (x < 8 || x >= 72 || y < 8 || y >= 72) return MAGENTA;
@@ -112,16 +113,19 @@ describe('the auto-tune sweep against the pipeline prologue', () => {
     expect(outcome.crops).toBeGreaterThan(1);
     expect(outcome.candidates).toBeGreaterThan(100);
 
-    // Once a crop. Before the prologue was lifted out of `quantiseImage` each of these ran on every
-    // candidate on every crop, which is `outcome.candidates * outcome.crops` — three orders of
-    // magnitude more than the answers are worth, since none of their inputs can move.
+    // Once a crop, which is `outcome.candidates` times fewer than before: each of these used to run
+    // inside every candidate on every crop. Restoring that shape by hand — the raw crop handed to
+    // `quantiseImage`, as `readCandidate` used to hand it — this fixture reports 380 mesh
+    // measurements and 382 keyings and hardenings, the extra two being the reference `autoTune`
+    // built for itself and then had rebuilt underneath it.
     expect(counts.mesh).toBe(outcome.crops);
     expect(counts.key).toBe(outcome.crops);
     expect(counts.harden).toBe(outcome.crops);
 
-    // And never, because `readCandidate` reads the image and the colour count and nothing else. This
-    // is the one reading that costs a second walk over the source rather than falling out of the
-    // transform, which is why it is the field `quantiseSheet` leaves out.
+    // And never, where the same restoration reports 380. `readCandidate` reads the image and the
+    // colour count and nothing else, and this is the one reading that costs a second walk over the
+    // source rather than falling out of the transform — which is why it is the field
+    // `quantiseFromPrologue` leaves out.
     expect(counts.difference).toBe(0);
   });
 });

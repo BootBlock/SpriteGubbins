@@ -23,8 +23,10 @@ import { carriesKeyTint, keyBasis, keyDistanceSquared } from './keyDistance.ts';
  * exactly leaves a halo one to three pixels wide. A halo is worse than an unkeyed sheet, because it is
  * now baked into a file the user believes is clean.
  *
- * Pure, and deliberately so — no canvas, no store, one `ImageData` in and another out. `quantiseImage`
- * runs this **first**, before `alignToGrid`, and that ordering is load-bearing; the reasoning is there.
+ * Pure, and deliberately so — no canvas, no store, one `ImageData` in and another out.
+ * `quantisePrologue` runs this **first**, ahead of the hardening and the mesh and long before
+ * `alignToGrid`, and that ordering is load-bearing; the reasoning is there and in `quantiseImage`,
+ * which states the whole order.
  */
 
 /** The keyed image, and how much of it the key accounted for. */

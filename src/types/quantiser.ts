@@ -976,11 +976,11 @@ export interface SpriteStrip {
  * one reading that is a *second* walk, and it is over the source rather than the result — which at
  * a grid of 6 is thirty-six times the pixels of everything above.
  *
- * So the split is a reading, not a knob: `quantiseSheet` answers everything the transform knows,
- * and `quantiseImage` adds the one reading a caller has to ask for by asking for it. The auto-tune
- * sweep reads {@link image} and {@link colors} and nothing else — measured on
- * `test_sprites/armour.png` at a grid of 6, building that map for it was a tenth of the sweep — so
- * it takes the narrower answer. Every other caller wants the map and takes the whole result.
+ * So the split is a reading, not a knob: `quantiseFromPrologue` answers everything the transform
+ * knows, and `quantiseImage` adds the one reading a caller has to ask for by asking for it. The
+ * auto-tune sweep reads {@link image} and {@link colors} and nothing else, and over a sweep of
+ * `test_sprites/armour.png` at a grid of 6 that map was built 2,015 times and dropped 2,015 times —
+ * so it takes the narrower answer. Every other caller wants the map and takes the whole result.
  */
 export interface QuantiseSheet {
   readonly image: ImageData;
@@ -988,9 +988,10 @@ export interface QuantiseSheet {
    * The separate sprites on {@link image}, and how big each of them is.
    *
    * A fact of the result rather than something asked for separately, for the reason
-   * {@link QuantiseResult.difference} is: a segmentation computed on its own could describe an older result than
-   * the one beside it, and every consumer of this — the readout on the tab, the preview's outline
-   * mode, the atlas calculator's count — is comparing it with something a dial has just moved.
+   * {@link QuantiseResult.difference} is: a segmentation computed on its own could describe an older
+   * result than the one beside it, and every consumer of this — the readout on the tab, the
+   * preview's outline mode, the atlas calculator's count — is comparing it with something a dial has
+   * just moved.
    */
   readonly sprites: SpriteSegmentation;
   /**
@@ -1008,8 +1009,9 @@ export interface QuantiseSheet {
   /**
    * Which of those sprites are the same sprite drawn more than once.
    *
-   * A fact of the result for the reason {@link sprites} and {@link QuantiseResult.difference} are, and one step
-   * further: it is a reading *of* that segmentation, so computed separately it could describe not
+   * A fact of the result for the reason {@link sprites} and {@link QuantiseResult.difference} are,
+   * and one step further: it is a reading *of* that segmentation, so computed separately it could
+   * describe not
    * merely an older result but an older set of boxes — a group naming artwork that is no longer
    * where it says.
    *
@@ -1109,7 +1111,7 @@ export interface QuantiseResult extends QuantiseSheet {
    * the failure the mode exists to expose. Travelling with the result, it cannot.
    *
    * **That is why it is the field a caller opts into rather than one it may fetch afterwards.**
-   * `quantiseSheet` leaves it out and `quantiseImage` takes it in the same breath as the sheet it
+   * `quantiseFromPrologue` leaves it out and `quantiseImage` takes it in the same breath as the sheet it
    * describes, so the pair cannot come apart; there is no third function offering to measure a map
    * against a result somebody is holding.
    */

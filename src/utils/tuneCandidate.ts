@@ -1,7 +1,7 @@
 import type { TuneReading, TunedDials } from '../types/autoTune.ts';
 import type { QuantisePrologue, QuantiseSettings } from '../types/quantiser.ts';
 import { cropImage } from './cropImage.ts';
-import { quantiseSheet } from './quantiseImage.ts';
+import { quantiseFromPrologue } from './quantiseImage.ts';
 import { meanSsim } from './ssim.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 
@@ -15,7 +15,9 @@ import { upscaleNearest } from './upscaleNearest.ts';
  * **It is handed each crop's prologue rather than the crop**, which is one value doing both of the
  * jobs this function has. The keying, the hardening and the mesh are the same for every candidate —
  * none of their three settings is in {@link TunedDials} — so measuring them per candidate was
- * measuring one answer 2,015 times a sweep; and the image they produce is *also* what a candidate is
+ * measuring each crop's one answer once for every position tried: 2,015 calls to answer five meshes,
+ * over a sweep of `test_sprites/armour.png` at a grid of 6. The image they produce is *also* what a
+ * candidate is
  * scored against, because a result has been keyed and hardened and a reference that had not been
  * would score every candidate against a field and a fringe none of them produces. Those used to be
  * two values built from the same three settings in two places. {@link QuantisePrologue} is the one
@@ -60,13 +62,13 @@ export function readCandidate(
     // what puts badge and preview back in agreement, and the elbow is what stops the fringe being
     // bought at any price: every coverage it writes is a colour the trade has to pay for.
     //
-    // **`quantiseSheet` rather than `quantiseImage`**, because the two fields read below are the
-    // only ones this wants and the difference map is the one reading that costs a second walk over
-    // the source to produce — see {@link QuantiseSheet}.
-    const result = quantiseSheet(prologue, { ...settings, ...dials });
+    // **`quantiseFromPrologue` rather than `quantiseImage`**, because the two fields read below are
+    // the only ones this wants and the difference map is the one reading that costs a second walk
+    // over the source to produce — see {@link QuantiseSheet}.
+    const result = quantiseFromPrologue(prologue, { ...settings, ...dials });
     const magnified = upscaleNearest(result.image, settings.grid);
-    // The mesh is measured per transform and may cut a crop into a whole number of cells that is not
-    // the crop's own edge over the grid — a drifting sheet is exactly what `boundaryMesh` exists for.
+    // The mesh was measured on this crop, and may cut it into a whole number of cells that is not the
+    // crop's own edge over the grid — a drifting sheet is exactly what `boundaryMesh` exists for.
     // So the two are trimmed to what they share rather than assumed equal, and the trim is a copy
     // only where there is something to trim.
     const width = Math.min(magnified.width, prologue.source.width);

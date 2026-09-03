@@ -88,8 +88,8 @@ import { ANTI_ALIAS_PALETTES } from '../types/quantiser.ts';
 /**
  * How many cells of the grid in force one proxy crop spans, along each edge.
  *
- * The sweep reads crops rather than the sheet because it runs the whole pipeline once per candidate,
- * and the sheet can be 16.8 million pixels. Forty cells is the smallest crop that still answers the
+ * The sweep reads crops rather than the sheet because it runs the pipeline from `quantisePrologue`
+ * down once per candidate, and the sheet can be 16.8 million pixels. Forty cells is the smallest crop that still answers the
  * questions being asked of it: the mesh reader wants at least `FEWEST_SPACINGS` boundary
  * spacings before it will call a spacing a habit, the colour merge and the fill cleanup are
  * neighbourhood passes that need a neighbourhood, and forty cells gives every one of them several

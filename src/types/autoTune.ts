@@ -15,8 +15,9 @@ import type { QuantiseTuning } from './quantiser.ts';
  * - **The edge hardening**, which is the keying dials' third: it states what counts as background
  *   rather than answering a question about fidelity, and a score measured against the smooth source
  *   would answer `0` before it had looked at anything — hardening a soft outline is a move *away*
- *   from that source by construction. `autoTune` applies it to the reference instead, so it is
- *   constant across every candidate rather than something one of them could win by.
+ *   from that source by construction. It runs in `quantisePrologue` instead, which the sweep builds
+ *   once a crop — so the hardened sheet is both what every candidate is read from and what every
+ *   candidate is scored against, constant across all of them rather than something one could win by.
  * - **The dither.** A dither trades per-pixel accuracy for a local average on purpose — the figures
  *   under `DITHER_CHOICES` measure exactly that — so a fidelity score answers `NONE` before it has
  *   looked at anything. Sweeping it would dress a foregone conclusion as a measurement.
