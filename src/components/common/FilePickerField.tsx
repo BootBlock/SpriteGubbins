@@ -19,11 +19,12 @@ interface FilePickerFieldProps {
 /**
  * A labelled file input — the click-to-choose half of every drop target in the app.
  *
- * `useFileDropTarget` already owns the drag half for the same two callers; this is the other half,
- * and it was copied rather than shared the first time. The class string, the `input.value = ''`
- * reset and the label association are the solved problem, not the presentation: the quantiser's
- * drop zone and the studio's palette capture wrap this in quite different surfaces — one a tab's
- * primary panel, the other a compact row — and that difference stays with them.
+ * The drag half is owned elsewhere and differently for each of the two callers — `useImageDrop` on
+ * the window for the quantiser, `useFileDropTarget` on the element for the studio's palette capture
+ * — and this is the other half, which was copied rather than shared the first time. The class
+ * string, the `input.value = ''` reset and the label association are the solved problem, not the
+ * presentation: the two callers wrap this in quite different surfaces — one a tab's primary panel,
+ * the other a compact row — and that difference stays with them.
  *
  * The reset is why this is a component rather than a snippet. Without it, re-picking the *same*
  * file fires no `change` event at all, so a sheet read against the wrong background key could never

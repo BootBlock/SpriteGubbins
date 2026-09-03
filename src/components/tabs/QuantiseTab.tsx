@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { BACKGROUND_KEY_COLORS } from '../../constants/backgroundKeyColors.ts';
 import { KEY_OFFER_BORDER_SHARE } from '../../constants/keyOffer.ts';
+import { useImageDrop } from '../../hooks/useImageDrop.ts';
 import { useImageFile } from '../../hooks/useImageFile.ts';
 import { useImagePaste } from '../../hooks/useImagePaste.ts';
 import { useQuantiseTuning } from '../../hooks/useQuantiseTuning.ts';
@@ -16,6 +17,7 @@ import { statusOf } from '../../utils/quantiseStatus.ts';
 import { componentCountFor } from '../../utils/componentSet.ts';
 import { componentTargetSize } from '../../utils/componentTargetSize.ts';
 import { targetSizeGrid } from '../../utils/targetSizeGrid.ts';
+import { ImageDropVeil } from '../quantise/ImageDropVeil.tsx';
 import { ImageDropZone } from '../quantise/ImageDropZone.tsx';
 import { QuantiseGuide } from '../quantise/QuantiseGuide.tsx';
 import { QuantiseWorkspace } from '../quantise/QuantiseWorkspace.tsx';
@@ -84,9 +86,12 @@ export function QuantiseTab() {
   const clear = useQuantiseStore((state) => state.clear);
 
   const acceptFile = useImageFile(setSource);
-  // Claimed for the whole page, which is right here and nowhere else: this tab's only input is an
-  // image, so a paste anywhere in it is unambiguously meant for the drop zone.
+  // Both claimed for the whole page, which is right here and nowhere else: this tab's only input is
+  // an image, so a paste or a drop anywhere in it is unambiguously meant for the drop zone. The two
+  // hooks stay apart because the gestures are not alike — a drop has to say where it will land while
+  // the file is still in the air, and a paste has nothing to say until it has happened.
   useImagePaste(acceptFile);
+  const isFileOver = useImageDrop(acceptFile);
 
   // `null` on either count — the user has not asked, or the studio's key names no colour to match —
   // and the pipeline skips the pass entirely rather than keying against a default nobody chose. The
@@ -167,55 +172,70 @@ export function QuantiseTab() {
   );
 
   return (
-    <div className="animate-view-fade-in space-y-6">
-      <header className="space-y-1">
-        <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">Quantise a returned sheet</h2>
-        <p className="max-w-3xl text-xs leading-relaxed text-ink-muted">
-          Snap the image back to the pixel scale it was meant to be drawn at, bring its colours down to what
-          the prompt asked for, and turn the background key into transparency.
+    /*
+      The veil is outside the tab's own column, not the last panel in it. `space-y-6` puts a
+      `margin-bottom` on every child but the last, and a `position: fixed` box still carries the
+      margin it was given — so inside the column the veil measured 24px short of the viewport
+      whenever a sheet was loaded, leaving a strip of the page uncovered along the bottom edge.
+    */
+    <>
+      <div className="animate-view-fade-in space-y-6">
+        <header className="space-y-1">
+          <h2 className="heading-gradient animate-gradient-pan text-lg font-bold">
+            Quantise a returned sheet
+          </h2>
+          <p className="max-w-3xl text-xs leading-relaxed text-ink-muted">
+            Snap the image back to the pixel scale it was meant to be drawn at, bring its colours down to what
+            the prompt asked for, and turn the background key into transparency.
+          </p>
+        </header>
+
+        {/* The one place the tab's state is *spoken*. Three separate chips say it visually — the
+            scale badge, the keyed share, and the pulsing chip over the result — and none of
+            them is announced, so without this the tab goes silent for the debounce plus a job that
+            can run for seconds and then swaps the result underneath a screen-reader user. One region
+            rather than three, because three would talk over each other; rendered unconditionally,
+            because a live region has to be in the document *before* its content changes to be
+            announced at all. */}
+        <p role="status" className="sr-only">
+          {statusOf(busy, facts, grid, quantised)}
         </p>
-      </header>
 
-      {/* The one place the tab's state is *spoken*. Three separate chips say it visually — the
-          scale badge, the keyed share, and the pulsing chip over the result — and none of
-          them is announced, so without this the tab goes silent for the debounce plus a job that can
-          run for seconds and then swaps the result underneath a screen-reader user. One region rather
-          than three, because three would talk over each other; rendered unconditionally, because a
-          live region has to be in the document *before* its content changes to be announced at all. */}
-      <p role="status" className="sr-only">
-        {statusOf(busy, facts, grid, quantised)}
-      </p>
-
-      <QuantiseGuide
-        facts={facts}
-        hasSheet={source !== null}
-        target={target}
-        suggested={suggested}
-        grid={grid}
-        colorPlan={colorPlan}
-        dithered={dither !== 'NONE' && colorPlan.reduction !== null}
-      />
-
-      <ImageDropZone acceptFile={acceptFile} currentName={source?.name ?? null} onClear={clear} />
-
-      {source !== null && (
-        <QuantiseWorkspace
-          source={source}
+        <QuantiseGuide
           facts={facts}
-          grid={grid}
-          settings={settings}
-          quantised={quantised}
-          busy={busy}
-          error={error}
-          keying={keying}
-          keyOffered={keyOffered}
-          colorPlan={colorPlan}
+          hasSheet={source !== null}
           target={target}
           suggested={suggested}
-          expected={expected}
-          setGridOverride={setGridOverride}
+          grid={grid}
+          colorPlan={colorPlan}
+          dithered={dither !== 'NONE' && colorPlan.reduction !== null}
         />
-      )}
-    </div>
+
+        <ImageDropZone acceptFile={acceptFile} currentName={source?.name ?? null} onClear={clear} />
+
+        {source !== null && (
+          <QuantiseWorkspace
+            source={source}
+            facts={facts}
+            grid={grid}
+            settings={settings}
+            quantised={quantised}
+            busy={busy}
+            error={error}
+            keying={keying}
+            keyOffered={keyOffered}
+            colorPlan={colorPlan}
+            target={target}
+            suggested={suggested}
+            expected={expected}
+            setGridOverride={setGridOverride}
+          />
+        )}
+      </div>
+
+      {/* Mounted only while a file is over the window, which is what drives the top-layer lift
+          inside it — see `ImageDropVeil`, where the effect has no `isShowing` to watch. */}
+      {isFileOver && <ImageDropVeil currentName={source?.name ?? null} />}
+    </>
   );
 }

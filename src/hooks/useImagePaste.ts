@@ -12,6 +12,11 @@ import { useEffect } from 'react';
  * image — and wrong for one control among a form's many, where the user pasting a screenshot has no
  * reason to expect a field to change.
  *
+ * `useImageDrop` is the same claim for the other gesture, and it is deliberately a second hook: a
+ * drop has to answer for itself while the file is still in the air, so it reports whether one is
+ * over the window and cancels the browser's own navigation, neither of which a paste has any use
+ * for.
+ *
  * @param acceptFile must be stable — it is a dependency of the listener, so a fresh function every
  * render would tear the listener down and re-register it every render.
  */

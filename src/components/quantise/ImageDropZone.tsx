@@ -1,5 +1,4 @@
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
-import { useFileDropTarget } from '../../hooks/useFileDropTarget.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { FilePickerField } from '../common/FilePickerField.tsx';
 
@@ -18,41 +17,29 @@ interface ImageDropZoneProps {
  * split rig is eight sheets, worked through one after another, and hiding the way in behind an empty
  * state would make the second sheet harder to load than the first.
  *
- * The paste route has no visible control here by design: it is registered on the window by
- * `useImagePaste`, which the tab adds, so a pasted sheet lands wherever the caret is. It is named in
- * the copy, which is the only way anyone would know it exists.
+ * **Neither the drop nor the paste is registered here**, and the panel draws no drag state of its
+ * own. Both are window listeners the tab adds — `useImageDrop` and `useImagePaste` — because this
+ * tab's only input is an image, so either gesture anywhere in it is meant for this panel. What
+ * answers a file in the air is `ImageDropVeil`, over the whole viewport; a bloom on this panel
+ * beside it would be a second signal for one gesture, and a wrong one whenever the panel had been
+ * scrolled off the screen. Both routes are named in the copy, which is the only way anyone would
+ * know they exist.
  *
  * **Clear appears only once there is something to clear**, beside the way in rather than beside the
  * previews, because it is the opposite of the control next to it: this panel is where the sheet
  * arrives, so it is where the sheet leaves.
  */
 export function ImageDropZone({ acceptFile, currentName, onClear }: ImageDropZoneProps) {
-  const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
-
   return (
-    <section
-      {...dropHandlers}
-      className={`relative overflow-hidden rounded-2xl border-2 border-dashed p-6 text-center transition-all duration-585 ${
-        isDraggedOver
-          ? 'scale-[1.01] border-tab bg-tab/10 shadow-2xl ring-1 ring-tab/40'
-          : 'border-foundry-600 bg-foundry-800/60 hover:border-tab/50 hover:bg-foundry-800/80'
-      }`}
-    >
-      {/* A sheen crossing the zone for as long as a file is over it — the one moment this panel is
-          waiting on something, and the only one it moves for. */}
-      {isDraggedOver && (
-        <span
-          aria-hidden="true"
-          className="shimmer-surface animate-shimmer pointer-events-none absolute inset-0"
-        />
-      )}
-
+    // The base rung rather than the 585 a drop zone used to take here: that figure was the panel
+    // answering a drag, and the answer moved to the veil. What is left is an ordinary hover.
+    <section className="relative overflow-hidden rounded-2xl border-2 border-dashed border-foundry-600 bg-foundry-800/60 p-6 text-center transition-all hover:border-tab/50 hover:bg-foundry-800/80">
       <p className="text-sm font-bold text-ink">
         {currentName === null ? 'Drop the sheet your model returned' : 'Drop another sheet to replace it'}
       </p>
       <p className="mx-auto mt-1 max-w-xl text-xs leading-relaxed text-ink-muted">
-        Paste one from the clipboard, or choose a file. Nothing is uploaded — the image is decoded in this
-        tab, transformed here, and never leaves it.
+        Drop it anywhere on this tab, paste one from the clipboard, or choose a file. Nothing is uploaded —
+        the image is decoded in this tab, transformed here, and never leaves it.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">

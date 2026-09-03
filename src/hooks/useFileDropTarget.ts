@@ -5,19 +5,23 @@ import type { DragEventHandler } from 'react';
  * The drag-and-drop half of a drop target: whether a file is over it, and the handlers that keep
  * that answer right.
  *
- * Shared by the quantiser's drop zone and the studio's identity-lock control, which want the same
- * behaviour and quite different presentation — one is a tab's whole primary surface, the other a
- * compact row beside a text field. So the behaviour is here and each keeps its own layout and copy,
- * rather than one component growing props for both.
- *
  * `dropHandlers` is spread onto whichever element draws the target; `isDraggedOver` is what that
  * element styles itself by.
  *
- * **This is the accepting half of a pair.** Anywhere else a file can land — the rest of the page, and
- * the window the comparison panel detaches into — the drop is refused instead, because otherwise the
- * browser opens the file and navigates that window away. `useFileDropGuard` is the refusing half;
- * `App` hands it the page's window and `useDetachedWindow` hands it whatever it opened. The two do
- * not overlap: the guard stands aside for any event a target here has already cancelled.
+ * **One caller, and it stays a hook.** The quantiser's drop zone was the second, until the Quantise
+ * tab took the gesture for its whole page and left the studio's identity-lock control on its own —
+ * see `useImageDrop`, which says why the page-wide claim is right on that tab and wrong on a control
+ * in a form. What is left here is not a wrapped `useState`: the two `preventDefault()` calls and the
+ * `dragleave`-from-a-child test below are platform knowledge with a documented reason each, and the
+ * guard's own test renders a real target rather than a mime precisely so the composition it asserts
+ * is the one the app runs.
+ *
+ * **This is one of the two accepting halves of a pair.** Anywhere a file can land that neither this
+ * nor `useImageDrop` has claimed — the rest of the page, and the window the comparison panel
+ * detaches into — the drop is refused instead, because otherwise the browser opens the file and
+ * navigates that window away. `useFileDropGuard` is the refusing half; `App` hands it the page's
+ * window and `useDetachedWindow` hands it whatever it opened. They do not overlap: the guard stands
+ * aside for any event an accepting half has already cancelled.
  */
 export function useFileDropTarget(acceptFile: (file: File | null | undefined) => void): FileDropTarget {
   const [isDraggedOver, setIsDraggedOver] = useState(false);

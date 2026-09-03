@@ -372,6 +372,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A **cascade** across a grid of those | `stagger-children` on the list | per-child `animation-delay` at the call site |
 | A **notification** arriving from off the bottom edge | `animate-toast-in` | `animate-fade-in` |
 | An **overlay opening** — the panel, and the ground dimming behind it | `animate-modal-in` + `backdrop:animate-backdrop-in` | one fade on the `<dialog>`, which takes the backdrop with it |
+| A **full-viewport veil** — the page answering a file dragged over it | `animate-backdrop-in`, which is the same ground dimming without a `<dialog>` under it | `animate-fade-in`, whose 8px nudge uncovers the edge the veil exists to cover |
 | A glass surface materialising | `animate-tooltip-in` | a bespoke fade, or a keyframe on `filter` that flattens a nested `glass-*` surface |
 | A **timed notification's countdown** | `animate-toast-timer` + the duration from `TOAST_DURATION_MS` | a `3s` written into the token, free to drift from the timer that dismisses it |
 | A **notification leaving** — the only exit in the app | `animate-toast-out` + the duration from `TOAST_EXIT_MS`, and `inert` while it runs | unmounting it, which leaves the surface nothing to animate away with |

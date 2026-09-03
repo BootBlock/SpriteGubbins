@@ -26,8 +26,10 @@ import { QuantisedSheetCaptureButton } from './QuantisedSheetCaptureButton.tsx';
  * describing what a sheet *depicts* needs an outbound vision call, while its colours are simply in
  * the pixels.
  *
- * No paste route, unlike the Quantise tab: this is one control among a form's many, and a window
- * listener here would rewrite the lock when the user pasted a screenshot meant for somewhere else.
+ * No paste route and no page-wide drop, unlike the Quantise tab: this is one control among a form's
+ * many, and a window listener here would rewrite the lock when the user pasted or dropped something
+ * meant for somewhere else entirely. So the drag is answered on this element — see
+ * `useFileDropTarget`, whose one remaining caller this is.
  */
 export function IdentityPaletteCapture() {
   const capture = useIdentityPaletteCapture();
@@ -37,9 +39,9 @@ export function IdentityPaletteCapture() {
   return (
     <section
       {...dropHandlers}
-      // 585 rather than the layer default, which is the control rung: this is a drop *zone*, and the
-      // quantiser's takes the same figure for the same reason — the surface answering a drag is the
-      // panel, not a button on it.
+      // 585 rather than the layer default, which is the control rung: the surface answering a drag
+      // here is the panel, not a button on it. The quantiser's zone no longer states a figure
+      // because it no longer answers a drag — its tab does, over the whole viewport.
       className={`rounded-xl border border-dashed p-3 transition-colors duration-585 ${
         isDraggedOver ? 'border-tab bg-tab/10' : 'border-foundry-600 bg-foundry-800/60'
       }`}

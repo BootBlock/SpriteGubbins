@@ -15,9 +15,10 @@ import { useShowToast } from './useShowToast.ts';
  * is the one the no-network rule matters most for: an image the user is about to ship is exactly the
  * payload that must never go anywhere.
  *
- * Paste is deliberately **not** here — it is `useImagePaste`, which the caller adds where a pasted
- * image is unambiguously meant for it. A window listener bundled into this hook would fire on the
- * studio's identity-lock control while the user was somewhere else entirely on the page.
+ * Paste and the page-wide drop are deliberately **not** here — they are `useImagePaste` and
+ * `useImageDrop`, which a caller adds where an image arriving anywhere is unambiguously meant for
+ * it. A window listener bundled into this hook would fire on the studio's identity-lock control
+ * while the user was somewhere else entirely on the page.
  */
 export function useImageFile(
   onImport: (imported: ImportedImage) => void,

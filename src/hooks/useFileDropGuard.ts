@@ -5,10 +5,11 @@ import { useEffect } from 'react';
  *
  * Under the HTML drag-and-drop model a `drop` whose `dragover` was never cancelled keeps its default
  * action, and by that model the action for a dragged file is to **open the file** — the window
- * navigates away and what it was showing is gone. `useFileDropTarget` cancels both events on the two
- * elements that accept a file, which is what makes those two work; everywhere else on the page —
- * the header, the studio form, a preset card, the space beside a panel — nothing objected, so a drop
- * landing an inch wide of the quantiser's zone took the session with it. Nothing in
+ * navigates away and what it was showing is gone. Two hooks cancel both events where a file is
+ * welcome: `useImageDrop` on the window while the Quantise tab is mounted, and `useFileDropTarget`
+ * on the studio's identity-lock control. Everywhere else — the studio form around that control, a
+ * preset card, the spec — nothing objected, so a drop landing an inch wide of one of them took the
+ * session with it. Nothing in
  * `useQuantiseStore` is persisted, so what that costs is the loaded sheet, every dial position, the
  * auto-tune report and the quantiser's undo history, with nothing to restore them from.
  *
@@ -25,10 +26,13 @@ import { useEffect } from 'react';
  *
  * Three conditions decide whether a given drag is this hook's business, and each one is load-bearing:
  *
- * - **`defaultPrevented` means a drop target already claimed it.** React 19 delegates `onDragOver`
- *   and `onDrop` to the root container, which is inside this listener's window, so by the time the
- *   event arrives here the zone's own `preventDefault()` has already run and is visible. Without the
- *   check this guard would refuse the two drops the app exists to accept.
+ * - **`defaultPrevented` means something already claimed it.** React 19 delegates `onDragOver` and
+ *   `onDrop` to the root container, which is inside this listener's window, so by the time the event
+ *   arrives here the identity-lock control's own `preventDefault()` has already run and is visible.
+ *   The Quantise tab's window listener is on the **capture** phase, which is ahead of this bubble
+ *   one however the two were registered — see `useImageDrop`, which says why it cannot rely on
+ *   registration order. Without this check the guard would refuse the drops the app exists to
+ *   accept.
  * - **Only a drag carrying files is refused.** Dragging selected text into a text field is an
  *   ordinary editing gesture whose default action is what inserts the text, and the app has a form
  *   full of them. `types` naming `Files` is how the platform says a drag carries files. A drag

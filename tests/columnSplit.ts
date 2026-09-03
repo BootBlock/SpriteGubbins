@@ -58,6 +58,18 @@ function read(relativePath: string): string {
  * Throwing rather than falling back is the point: a silent miss would feed the arithmetic a
  * fabricated input and report the result as a pass.
  */
+/**
+ * The first element a tab's `return (` opens, whatever stands between the two.
+ *
+ * Whitespace, a block comment and a fragment are all skipped, and nothing else is: a tab whose
+ * column content sits under a `<>` beside a page-level surface — `QuantiseTab`, whose drop veil is
+ * `position: fixed` and must not take a `space-y-*` margin from the column — still has exactly one
+ * element on the path down to the grid, and it is this one. Anything else opening the tree fails the
+ * capture rather than being skipped past, because a second element there would be an ancestor this
+ * derivation had stopped reading.
+ */
+const ROOT_ELEMENT = /return \((?:\s|\/\*[\s\S]*?\*\/|\{\/\*[\s\S]*?\*\/\}|<>)*<div className="([^"]*)"/;
+
 function capture(source: string, pattern: RegExp, what: string): string {
   const value = pattern.exec(source)?.[1];
   if (value === undefined) throw new Error(`could not read ${what} — what it describes has changed`);
@@ -228,10 +240,7 @@ export function readColumnSplit({
   */
   const rootsOnThePath = [...new Set([tabFile, splitFile])].map(
     (file) =>
-      [
-        `${file}'s root element`,
-        capture(read(file), /return \(\s*<div className="([^"]*)"/, `${file}'s root element`),
-      ] as const,
+      [`${file}'s root element`, capture(read(file), ROOT_ELEMENT, `${file}'s root element`)] as const,
   );
   for (const [what, classes] of [...rootsOnThePath, [`${splitFile}'s grid`, gridClasses] as const]) {
     if (/\bmax-w-/.test(classes)) {

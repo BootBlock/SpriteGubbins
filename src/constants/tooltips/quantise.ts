@@ -9,7 +9,7 @@
  */
 export const QUANTISE_ACTION_TOOLTIPS = {
   chooseImage:
-    'Opens a file picker for the sheet your generator returned. Dropping the file anywhere on this panel does the same, and so does pasting one from the clipboard while this tab is open. The image is decoded in this tab, transformed here, and never leaves it — there is no server to send it to.',
+    'Opens a file picker for the sheet your generator returned. Dropping the file anywhere on this tab does the same, and so does pasting one from the clipboard while this tab is open. The image is decoded in this tab, transformed here, and never leaves it — there is no server to send it to.',
 
   clearImage:
     'Drops the loaded sheet and puts every control on this tab back to its default, so the next image is read fresh rather than through the grid and tolerance the last one needed. It discards nothing but this tab’s working state: the file on disk, the studio configuration and anything you have already downloaded are untouched. Loading another sheet over this one does not need it — dropping a new file replaces the old one.',
