@@ -13,6 +13,15 @@ import { LANDMARK_TEXT } from './landmarks.ts';
  * rest of a clause describes surfaces of that piece (the jaws, the dorsal ridge, the cut bank), and
  * those are anatomy rather than inventory lines: no plan lists them and none ever will.
  *
+ * **The force of this is against a foreign noun, and a category's own subject noun is nearly free.**
+ * EFFECT names “an effect” and ICON names “an icon”, and each of those words is written all over the
+ * plans that draw them — so those two ground almost by construction, and what the check actually
+ * decides there is that the sentence has not reached for somebody else's vocabulary. That is the
+ * defect it was built for: CHARACTER's sentence moved onto BUILDING fails on “head”, and VEHICLE's
+ * moved onto CREATURE fails on “hull”. Four categories name no piece at all — OBJECT, ITEM, BUILDING
+ * and PORTRAIT each state a front for the subject as a whole — and the shape assertion below is what
+ * stops that reading as coverage.
+ *
  * Both patterns read a lower-case article, the negative one reads `a` and `an` alone, and both bound
  * the subject at four words. That is what keeps EFFECT's second sentence out of the parse: “A radial
  * effect that is the same in every direction has no front axis at all” is a statement about the
