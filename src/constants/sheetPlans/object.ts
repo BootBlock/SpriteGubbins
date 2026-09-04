@@ -22,6 +22,8 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   assembly:
     'the complete object in its resting state, and in each state its moving parts allow — opened, activated, or mid-travel — without redrawing any part that does not move.',
   targetQuantity: 'ASSEMBLED',
+  // The hatch is drawn closed, part-open and fully open, and the subassembly at three points of its travel.
+  posing: 'PER_POSITION',
   groups: [
     {
       heading: null,
@@ -88,6 +90,8 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     assembly:
       'the complete object seen from each of the directions listed above, with its moving parts in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
+    // The moving parts are drawn once per facing in matching positions, which is the camera turning.
+    posing: 'UNSTATED',
     groups: [
       {
         heading: 'Directional core',
@@ -127,6 +131,8 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   assembly:
     'any state the rig produces by rotating its moving parts about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
   targetQuantity: 'ASSEMBLED',
+  // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
+  posing: 'AT_REST',
   groups: [
     {
       heading: null,

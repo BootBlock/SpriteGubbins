@@ -1,6 +1,6 @@
 import { resolveProjection } from '../../constants/categoryProjections.ts';
 import { depthOrderText, resolveCameraElevation } from '../../constants/promptText/index.ts';
-import { resolveRigMode } from '../../constants/sheetPlans/index.ts';
+import { resolveRigMode, sheetSeriesFor } from '../../constants/sheetPlans/index.ts';
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
@@ -62,7 +62,8 @@ interface SheetSplitRunProps {
  * library would describe something the sheet was never asked for — the same reason `RiggingFields`
  * hides the joint and overlap controls rather than leaving them visible and inert. The rig is read
  * through `resolveRigMode` rather than off the run, because that is what the compiler did to reach
- * the prompt in the disclosure below it.
+ * the prompt in the disclosure below it — and it is asked of the run's whole pairing rather than of
+ * the one sheet, because a rig is a claim about the set that assembles together.
  *
  * **The camera is resolved for the same reason, and it decides the sentence as well as whether it
  * appears.** Depth order is a near/far question, and directly overhead there is no near side — so
@@ -125,7 +126,11 @@ export function SheetSplitRun({
         {isOverBudget && <Badge tone="attention">Over budget</Badge>}
       </div>
 
-      {resolveRigMode(category, run.output.directionalMode, run.output.rigMode) === 'CUTOUT_RIG' && (
+      {resolveRigMode(
+        category,
+        sheetSeriesFor(category, run.output.directionalMode, run.output.directions),
+        run.output.rigMode,
+      ) === 'CUTOUT_RIG' && (
         <p className="mb-3 text-xs leading-relaxed text-ink-muted">
           {/* The elevation is resolved against the projection the *category* leaves, not the stored
               one: a camera the subject cannot be drawn under is degraded before the compiler prints

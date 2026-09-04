@@ -16,6 +16,7 @@ import { CATEGORY_EXCLUSION_TEXT, DIRECTION_LISTS, OBJECT_YAW } from '../constan
 import { sectionOf } from '../test/promptSections.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
+import type { SheetPlan } from '../types/components.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -107,6 +108,43 @@ const SHEETS: readonly {
   ),
 );
 
+/**
+ * The same sweep as {@link SHEETS}, carrying the plan itself.
+ *
+ * `SHEETS` deliberately holds the sheet's *name*, because that is what its `it.each` titles read and
+ * what a failure has to name; the checks on a plan's own declarations need the object. Both are one
+ * walk of the same three axes rather than two, so a pairing that grows a sheet arrives in each.
+ */
+const EVERY_SERIES: readonly {
+  category: SubjectCategory;
+  mode: DirectionalMode;
+  directions: DirectionSet;
+}[] = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].map((directions) => ({ category, mode, directions })),
+  ),
+);
+
+const EVERY_PLAN: readonly {
+  category: SubjectCategory;
+  mode: DirectionalMode;
+  directions: DirectionSet;
+  sheet: string;
+  plan: SheetPlan;
+}[] = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+      sheetSeriesFor(category, mode, directions).map((plan) => ({
+        category,
+        mode,
+        directions,
+        sheet: plan.name,
+        plan,
+      })),
+    ),
+  ),
+);
+
 function promptFor(
   category: SubjectCategory,
   mode: DirectionalMode,
@@ -137,6 +175,84 @@ describe('the plan table itself', () => {
     expect(modesFor(category).length).toBeGreaterThan(0);
     // If this ever failed, `sheetPlanFor` would throw for a pairing a user can reach.
     expect(supportsMode(category, DEFAULT_MODE_FOR[category])).toBe(true);
+  });
+
+  it('draws every moving part at rest on the rig sheets, and on no others', () => {
+    // The claim the rig table used to make as a `Record<DirectionalMode, RigMode>` with one entry in
+    // it, now that the answer sits on the plan instead. `fixedRigMode` reads `'AT_REST'` and hands
+    // back `CUTOUT_RIG` outright, so a plan that took that value without being a sheet of rig pieces
+    // would settle the rig for an inventory it does not describe — and a rig plan that lost it would
+    // put a rig-pieces inventory back above an assembly promise with no articulation section between
+    // them, which is the defect `rigModes.test.ts` is named for.
+    //
+    // Both directions, because either one alone passes on half a table.
+    const atRest = EVERY_PLAN.filter(({ plan }) => plan.posing === 'AT_REST');
+    const rigSheets = EVERY_PLAN.filter(({ mode }) => mode === 'CUTOUT_RIG_SINGLE_DIRECTION');
+
+    expect(atRest).toEqual(rigSheets);
+    expect(atRest.length).toBeGreaterThan(0);
+  });
+
+  it('never asks one pairing to be both a rig and its own posed artwork', () => {
+    // `resolveRigMode` reads both values off the whole series and answers `fixedRigMode` first, so a
+    // pairing carrying an `'AT_REST'` sheet *and* a `'PER_POSITION'` one would settle on
+    // `CUTOUT_RIG` while `offersRigMode` was withdrawing it — the two halves of one relation
+    // disagreeing, silently, in favour of the rig the posed sheet cannot draw. No pairing does that
+    // today, and a plan that made one has to be caught here rather than by whichever answer won.
+    for (const { category, mode, directions } of EVERY_SERIES) {
+      const series = sheetSeriesFor(category, mode, directions);
+      const both =
+        series.some((plan) => plan.posing === 'AT_REST') &&
+        series.some((plan) => plan.posing === 'PER_POSITION');
+
+      expect(both, `${category} / ${mode} / ${directions}`).toBe(false);
+    }
+  });
+
+  it('names the sheets whose artwork has already settled the motion', () => {
+    // The converse relation, and the one that decides whether a sheet can carry a cut-out rig at
+    // all: `'PER_POSITION'` says the inventory draws a moving part once per position it takes, so
+    // `offersRigMode` withdraws the rig whose first rule is that no piece commits to a position.
+    //
+    // **Written out rather than derived**, for the reason `rigModes.test.ts` writes out the nine
+    // categories that turn about nothing: the value is a judgement made at each plan and argued
+    // there, not a fact falling out of another list. Nothing mechanical can replace it, either — a
+    // line worth several components is equally how a tileset lists four corners, and the portrait's
+    // twelve expressions are twelve lines each worth exactly one. So what this holds is that a plan
+    // changing its answer is a deliberate edit that shows up here.
+    const posed = [
+      ...new Set(
+        EVERY_PLAN.filter(({ plan }) => plan.posing === 'PER_POSITION').map(
+          ({ category, sheet }) => `${category} / ${sheet}`,
+        ),
+      ),
+    ];
+
+    expect(posed).toEqual([
+      // The limb variants of both figure categories, on both of the modes that draw them.
+      'CHARACTER / Pose library',
+      'CHARACTER / Articulation',
+      'CREATURE / Pose library',
+      'CREATURE / Articulation',
+      // A hatch closed, part-open and fully open; a working end in two states; an entrance module
+      // closed and open; a mount stowed, traversed and elevated. Only two of these four categories
+      // articulate — `CATEGORY_RIG_MODES` gives ITEM and BUILDING `NONE` alone — which is the point
+      // the rest of this list makes as well: the value is a statement about an inventory, and a
+      // category with no joints still answers it truthfully.
+      'OBJECT / Part library',
+      'ITEM / Part library',
+      'BUILDING / Module library',
+      'VEHICLE / Part library',
+      // One phenomenon at successive moments, which is the same statement about time.
+      'EFFECT / Frame sequence',
+      // A button body in four states, a toggle in three; and the end caps and stretching middle of
+      // the nine-slice drawn again pressed.
+      'INTERFACE / State library',
+      'INTERFACE / Nine-slice set',
+      // One face drawn once per expression, and one overlay drawn at two stages of a cooldown.
+      'PORTRAIT / Expression set',
+      'ICON / Symbol set',
+    ]);
   });
 
   it('gives the tileset only to the categories that assemble from repeating pieces', () => {

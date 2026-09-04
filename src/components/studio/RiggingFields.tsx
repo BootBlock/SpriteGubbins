@@ -4,7 +4,14 @@ import {
   OVERLAP_MARGIN_CHOICES,
   rigModeChoices,
 } from '../../constants/output/index.ts';
-import { fixedRigMode, resolveMode, resolveRigMode } from '../../constants/sheetPlans/index.ts';
+import {
+  fixedRigMode,
+  offersRigMode,
+  resolveMode,
+  resolveRigMode,
+  sheetSeriesFor,
+  supportsRigMode,
+} from '../../constants/sheetPlans/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { SelectField } from '../common/SelectField.tsx';
@@ -35,25 +42,54 @@ import { TextField } from '../common/TextField.tsx';
  * three the category offers, and the three settings below appear with it. So the control stays on
  * screen showing that value, disabled and saying which setting took it over, exactly as the camera
  * elevation does under a projection that fixes it. Reverting the sheet mode hands the choice back.
+ *
+ * **And the sheet contents can rule one out without taking the control over**, which is the third
+ * case and the reason this control reads a whole series. A pose library, an articulation sheet and a
+ * part library each draw a moving part once per position it takes, so `CUTOUT_RIG` — whose first
+ * rule is that no piece commits to a position — would put section 5 at odds with the inventory
+ * section 4 already stated. `offersRigMode` drops it from the list, and the sentence under the
+ * select says so: an option that disappears without explanation reads as a control that failed to
+ * render.
+ *
+ * It asks about the whole pairing rather than the selected sheet, which is `resolveRigMode`'s own
+ * argument and has a consequence here: the answer does not move under the Inventory Part control, so
+ * the option cannot come back on one sheet of a series and go on the next. The sentence names the
+ * sheet that commits, since on a directional pairing that is the last of several.
  */
 export function RiggingFields() {
   const output = useOutputStore((state) => state.output);
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const category = useSubjectStore((state) => state.category);
 
-  const rigChoices = rigModeChoices(category);
   // Resolved rather than read raw, for the reason `SheetFields` resolves the sheet mode: a preset or
   // history row saved before these tables existed can name a rig its category has none of, and a
   // select whose value is not among its own options renders as though nothing were selected. The
-  // sheet mode is the second half of that resolution, and `fixedRigMode` is the half of it this
-  // control has to state rather than merely obey.
+  // sheet is the second half of that resolution, and `fixedRigMode` is the half of it this control
+  // has to state rather than merely obey.
   //
   // The sheet mode is resolved first and then named, rather than read raw twice: the sentence below
   // tells the user which sheet took the choice over, and it has to name the sheet `SheetFields` is
   // showing rather than the one a stale configuration asked for.
   const mode = resolveMode(category, output.directionalMode);
-  const rigMode = resolveRigMode(category, mode, output.rigMode);
-  const fixedBySheet = fixedRigMode(category, mode) !== undefined;
+  // Every sheet the pairing produces, because both halves of the rig relation are properties of the
+  // deliverable rather than of one of its sheets — `resolveRigMode` says why. `sheetSeriesFor`
+  // resolves the pairing and the direction set on the way, so a stored mode this category cannot
+  // produce shows the rig of the sheets the compiler is actually producing.
+  const series = sheetSeriesFor(category, mode, output.directions);
+  const rigChoices = rigModeChoices(category, series);
+  const rigMode = resolveRigMode(category, series, output.rigMode);
+  const fixedBySheet = fixedRigMode(series) !== undefined;
+  // The other direction, and the reason it is a description rather than a `disabledReason`: the
+  // sheet contents take one option away instead of taking the control over, so the select still has
+  // a choice to offer and what is missing is what needs saying. Asked as "the category has this rig
+  // and this pairing does not offer it" rather than as the posing value itself, so the sentence
+  // cannot appear beside a list nothing was dropped from.
+  const cutoutDroppedBySheet =
+    supportsRigMode(category, 'CUTOUT_RIG') && !offersRigMode(category, series, 'CUTOUT_RIG');
+  // The sheet the sentence names. A pairing can commit on a sheet that is not the one on screen —
+  // the character's directional core leaves the choice open and the articulation sheet behind it
+  // does not — so naming the *selected* sheet would point at the wrong inventory.
+  const posedSheet = series.find((plan) => plan.posing === 'PER_POSITION');
 
   return (
     <>
@@ -63,6 +99,15 @@ export function RiggingFields() {
           tooltip={OUTPUT_TOOLTIPS.rigMode}
           value={rigMode}
           choices={rigChoices}
+          // Written here beside the sentence below it rather than in `constants/`, because both are
+          // accounts of what this control is doing *right now* — which option the sheet took, and
+          // which it withdrew — rather than guidance about the setting. What the setting is stays
+          // behind the ⓘ, where every other control's does.
+          description={
+            cutoutDroppedBySheet && posedSheet !== undefined
+              ? `${mode} delivers a sheet that draws each moving part once per position it takes — ${posedSheet.name} — so CUTOUT_RIG is not offered here: a cut-out rig asks for every piece unposed instead, which is the opposite of what that inventory requires. Choose CUTOUT_RIG_SINGLE_DIRECTION under Sheet Contents for a sheet of rig pieces.`
+              : ''
+          }
           disabledReason={
             fixedBySheet
               ? `${mode} draws the rig pieces themselves, so the sheet has already said what they are for. Choose different Sheet Contents to set the rig yourself.`
