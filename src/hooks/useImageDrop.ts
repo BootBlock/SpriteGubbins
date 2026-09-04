@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react';
  * `useFileDropTarget` and gains nothing from this.
  *
  * **The capture phase, so nothing between the drag and this listener can change the answer.**
- * `useFileDropGuard` is on the same window, refusing every file drag the page did not claim, and it
+ * `useFileDropGuard` is on the same window, refusing every drag the page did not claim, and it
  * stands aside for anything already cancelled. On the bubble phase the two would run in registration
  * order, which is mount order — this tab mounts before the shell on a cold load and after it on
  * every navigation — and they would land on `'copy'` either way, by **two different mechanisms**:
@@ -23,9 +23,11 @@ import { useEffect, useState } from 'react';
  * page's claim away with a `stopPropagation()`** — which a bubble listener on the window would
  * never hear. That last one is the property the test asserts, because it is the one that fails.
  *
- * **Only a drag carrying files is claimed**, on the guard's reasoning: dragging selected text into a
- * number field is an ordinary editing gesture whose default action is what inserts the text, and
- * this tab has a column of them.
+ * **Only a drag carrying files is claimed.** Dragging selected text into a number field is an
+ * ordinary editing gesture whose default action is what inserts the text, and this tab has a column
+ * of them. What becomes of a drag this hook leaves alone is the guard's business and depends on
+ * where it landed — it stands aside over a field and refuses it anywhere else — so there is nothing
+ * for this hook to decide beyond the file.
  *
  * **A `dragleave` is a departure from an element, not from the window.** This listener sits above
  * every element on the page, so it hears one each time the drag crosses from one to the next — and

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { isTextEntry } from './isTextEntry.ts';
 
 /**
  * Ctrl+Z, Ctrl+Shift+Z and Ctrl+Y, claimed for the window on behalf of one tab's undo stack.
@@ -24,7 +25,7 @@ export function useUndoShortcut(undo: () => void, redo: () => void): void {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
-      if (isTextEntry(event.target)) return;
+      if (isTextEntry(event.target, window)) return;
       if (document.querySelector('dialog[open]') !== null) return;
 
       const key = event.key.toLowerCase();
@@ -44,32 +45,3 @@ export function useUndoShortcut(undo: () => void, redo: () => void): void {
     };
   }, [undo, redo]);
 }
-
-/**
- * Whether a keypress landed in something with an undo stack of its own.
- *
- * Text entry only, which is narrower than "an input": a range slider and a select are both form
- * controls and neither has a stack for the shortcut to belong to, and seventeen of the quantiser's
- * twenty dials are one or the other. A `type` a browser does not know falls back to `text`, so an
- * unknown one is treated as text entry — the safe direction, since the cost of being wrong that way
- * is a shortcut that does nothing rather than one that eats a reader's typing.
- */
-function isTextEntry(target: EventTarget | null): boolean {
-  if (target instanceof HTMLTextAreaElement) return true;
-  if (target instanceof HTMLElement && target.isContentEditable) return true;
-  if (!(target instanceof HTMLInputElement)) return false;
-  return !NON_TEXT_INPUT_TYPES.has(target.type);
-}
-
-/** The input types that hold no text, and therefore no undo of their own. */
-const NON_TEXT_INPUT_TYPES = new Set([
-  'button',
-  'checkbox',
-  'color',
-  'file',
-  'image',
-  'radio',
-  'range',
-  'reset',
-  'submit',
-]);
