@@ -28,7 +28,7 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * was unconditional by construction, so an entry would have ordered each of those an empty scabbard
  * and counted it into a contract that forbids omitting entries. That is no longer true: the pool
  * declares its `absentOption` and an entry marked `'entirely'` is taken out for a subject that
- * chooses it, which is what four other categories now rely on. So what holds the decision up is the
+ * chooses it, which is what BACKGROUND and VEHICLE now rely on. So what holds the decision up is the
  * content half alone, and it holds up on its own — reversing it would mean rewriting the field's
  * guidance a second time, which is a question for whoever asks it rather than a consequence of the
  * machinery existing.

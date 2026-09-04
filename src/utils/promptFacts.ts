@@ -274,12 +274,17 @@ export function sheetFacts(
   // thirteen draw it as components of their own, so the fixed sentence told the generator the
   // cladding was paint while section 4 listed a cladding panel beside the hull.
   //
-  // **A value of `NONE` still answers yes here, and that is deliberate.** The sentence is a statement
-  // about section 4 rather than about the value: the plan draws the cladding panel whatever the
-  // reader chose, so calling it paint on a `Bare Unclad Frame` would put the original contradiction
-  // straight back. What a sentinel argues with is the *entry*, which no gate here can reach — a plan
-  // is a function of the sheet and not of the subject. That is why ITEM's carry piece is guidance
-  // rather than an inventory line: see `sheetPlans/item.ts`.
+  // **A value meaning the subject has none answers *no*, and it does so without a gate here.** The
+  // sentence is a statement about section 4, and `plan` above is the plan *as this subject draws it*
+  // — so a `Bare Unclad Frame` has already taken the cladding panel out of it and there is nothing
+  // left for the exception to name. That is the whole of the arrangement: the pool declares the value,
+  // `planAsDrawn` drops the entries, and this line reads the result rather than re-deciding it. A
+  // second test against the value here would be that decision written twice, free to disagree with
+  // the inventory the reader is actually shown.
+  //
+  // **Where a category's pool offers no such value the question does not arise**, which is the answer
+  // ICON and INTERFACE take: their sheets draw the attribute whatever is chosen, so the exception is
+  // always right and there is no value that could make it wrong. See `sheetPlans/icon.ts`.
   const clothingIsAComponent = subject.clothing.trim() !== '' && planDrawsClothing(plan);
 
   return {

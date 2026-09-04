@@ -67,12 +67,13 @@ export function fieldLabelFor(category: SubjectCategory, key: SubjectFieldKey): 
  * The value this category's field offers for *the subject has none of this*, or `null` where the
  * pool offers no such thing.
  *
- * Read rather than recognised. There is no spelling a sentinel reliably takes — the nine pools that
- * carry one spell it `NONE`, `No Treatment`, `Clear — No Overlay`, `Bare Unclad Frame` and
- * `Bare Untouched Ground` — and guessing would be wrong in both directions: an INTERFACE
- * `Bare Machined Chamfer` is a real edge treatment and an OBJECT `Freestanding Base` is a real mount,
- * so a rule keyed on the word *bare* would take both of those for absences. Each pool names its own,
- * and `categories.test.ts` fails on one the pool does not offer.
+ * Read rather than recognised. There is no spelling a sentinel reliably takes: the eight pools that
+ * carry one spell it seven different ways — `NONE` twice, and `No Treatment`, `No Secondary Layer`,
+ * `Clear — No Overlay`, `Bare Shoulders`, `Bare Untouched Ground` and `Bare Unclad Frame` once each.
+ * Guessing would be wrong in both directions, too: an INTERFACE `Bare Machined Chamfer` is a real edge
+ * treatment and an OBJECT `Freestanding Base` is a real mount, so a rule keyed on the word *bare*
+ * would take both of those for absences. Each pool names its own, and `categories.test.ts` fails on
+ * one the pool does not offer.
  *
  * `null` rather than a throw, because most fields have no such value and asking is not an error —
  * which is the opposite of {@link fieldLabelFor}, where every category defines every key.

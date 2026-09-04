@@ -1102,12 +1102,20 @@ below was bought with one of those.
   A pool offering such a value names it as its `absentOption`, and `planAsDrawn` in
   `utils/sheetPlanClothing.ts` takes the entries marked `drawsClothing: 'entirely'` out of the plan
   before the count, the inventory prose, the manifest's slot names or section 1's exception sentence
-  walk it. Two consequences bind anything added here. **An entry that draws the attribute among
-  other things is `'partly'` and cannot be dropped**, so a category declaring an `absentOption` may
-  carry none — split the line instead, as VEHICLE's rig fittings and INTERFACE's trim were.
-  **Where the sheet draws the thing regardless, the pool is what gives**: ICON's plans draw a
-  disabled veil, a highlight halo and four tier marks whatever the reader picks, so its `No Overlay`
-  went rather than thirteen of twenty-seven components. `sheetPlanClothing.test.ts` holds both.
+  walk it. **The test of whether a pool may declare one is whether the reader who declines gets a
+  *plainer* sheet or an *incomplete* one**, and three things follow from it.
+  **An entry that draws the attribute among other things is `'partly'` and cannot be dropped**, so a
+  category declaring an `absentOption` may carry none — split the line instead, as VEHICLE's rig
+  fittings were. **No other field of that category may name a component the value deletes**, or the
+  contradiction simply moves: INTERFACE's *Slice Assembly Base* offers
+  `Nine-Slice With Fixed Corner Ornament` while its `Plain Untrimmed Edge` deleted the ornament, on
+  an untouched default. And **where the sheet draws the thing regardless, the pool is what gives** —
+  ICON's plans draw a disabled veil, a highlight halo and four tier marks whatever the reader picks,
+  so its `No Overlay` went rather than thirteen of twenty-eight components, and INTERFACE's
+  `Plain Untrimmed Edge` went for the same reason. That is why only two pools drop anything today,
+  and why BACKGROUND may do it on its own default: a clear scene without the atmosphere layer is the
+  plainer sheet, and *Extra Layers* is the route back for a reader who wants the wisps as sprites.
+  `sheetPlanClothing.test.ts` holds all three.
 - **Respect the ceiling and the reader.** `PRACTICAL_COMPONENT_CEILING` (43) bounds one generation;
   a multi-view sheet carries at most five views, and the eight-compass core splits into cardinals
   and diagonals (`coreFacingChunks`) because eight adjacent yaws on one page is exactly what a

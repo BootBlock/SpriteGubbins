@@ -23,6 +23,17 @@ import type { SheetPlan } from '../../types/components.ts';
  * field has. What it is *not* is an environment, so the pieces below carry the interface's own
  * vocabulary and none of BUILDING's — `sheetPlans.test.ts` checks that from the category's own
  * exclusions, which ban floors and walls here exactly as they do for the other five.
+ *
+ * **The corner ornament is a piece the kit always has, so *Ornament & Trim* offers no way to decline
+ * it.** Both plans draw one, and the reader's choice decides what is *on* it — rivets, scrollwork,
+ * braid — rather than whether it is there. The pool used to open with `Plain Untrimmed Edge`, so the
+ * untouched default deleted the ornament, and that put a fresh contradiction where the old one had
+ * just been: *Slice Assembly Base* offers `Nine-Slice With Fixed Corner Ornament`, so section 1 named
+ * an assembly built around a corner ornament while section 4 listed none. Removing the value is
+ * ICON's resolution reached the same way — an entry may only be taken out where the reader declining
+ * the attribute gets a *plainer* sheet, and here they would get an incomplete one. The
+ * `drawsClothing` marking stays, because section 4 does draw the trim as its own geometry and
+ * section 1's exception is right to say so; what changed is that no value asks for it to be dropped.
  */
 
 export const INTERFACE_STATE_LIBRARY: SheetPlan = {

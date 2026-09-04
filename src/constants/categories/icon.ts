@@ -221,7 +221,7 @@ export const ICON: CategoryDefinition = {
       key: 'clothing',
       label: 'Applied Overlay',
       tooltip:
-        'Which overlay the set is built around — the one whose weight, colour and margin the rest are matched to. Every icon sheet draws the whole overlay library, so this steers how those pieces look rather than which of them you get. That is also why the pool offers no “none”: the sheet would draw them regardless, and the prompt would then tell the generator the set has none and order eleven of them.',
+        'Which overlay the set is built around — the one whose weight, colour and margin the rest are matched to. Every icon sheet draws the whole overlay library, so this steers how those pieces look rather than which of them you get. That is also why the pool offers no “none”: the sheet would draw them regardless, and the prompt would then tell the generator the set has none and order thirteen of them.',
       options: [
         'Rarity Glow & Aura',
         'Locked Padlock Mark',

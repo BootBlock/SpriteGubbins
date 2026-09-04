@@ -200,6 +200,13 @@ describe('every shipped preset', () => {
       // are not reliably the cheaper ones: an eight-compass core arrives as two chunks that *each*
       // carry the subject's anatomy, redrawn at their own four facings, and the second chunk is the
       // one nobody thinks to count.
+      //
+      // **The preset's own `clothing` too, for the same reason its anatomy is read.** Two shipped
+      // presets pin the value their category offers for *the subject has none of this* — a bare
+      // unclad gunship and a plain-trimmed mobile UI kit — and their sheets no longer draw the
+      // entries that value declines. A `''` here would price a plan neither prompt asks for; the
+      // direction happens to be conservative, so it could not have let a real overrun through, but
+      // the assertion would have stopped measuring the preset.
       const anatomy = parseAdditionalAnatomy(preset.subject.additional_anatomy);
       const sheets = sheetCountFor(preset.category, preset.output.directionalMode, preset.output.directions);
 
@@ -210,7 +217,7 @@ describe('every shipped preset', () => {
             preset.output.directionalMode,
             preset.output.directions,
             sheetIndex,
-            '',
+            preset.subject.clothing,
             anatomy,
           ),
           `${preset.name} exceeds the practical ceiling on sheet ${String(sheetIndex + 1)} of ${String(sheets)}`,
@@ -276,7 +283,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
     expect(prompt).toContain('head, chest, back, hand_left, hand_right');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, '', []))} components`,
+      `Exactly ${String(componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, characterRig.subject.clothing, []))} components`,
     );
   });
 
@@ -301,7 +308,7 @@ describe('the Unsung Saviour presets', () => {
     expect(prompt).toContain('48 × 48 px per tile');
     expect(prompt).toContain('Seamless tiling');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('BUILDING', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, '', []))} components`,
+      `Exactly ${String(componentCountFor('BUILDING', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, tileset.subject.clothing, []))} components`,
     );
     // Not articulated, so neither rig section appears — named by their headings rather than by the
     // number, which the assembly capability takes once the rig section is dropped.

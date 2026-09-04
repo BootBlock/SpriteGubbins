@@ -307,15 +307,15 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * a cladding panel and forbade omitting it. What a first visit pays for is: an `absentOption` on the
  * nine pools that offer one and the resolver that reads it; `planAsDrawn` and `drawnPlanFor` in
  * `utils/sheetPlanClothing.ts`, which take the marked entries out before anything walks the plan; the
- * `clothing` argument threaded through the seven functions that count, name or render an inventory
- * and the eleven call sites that reach them; `drawsClothing` widening from `true` to
+ * `clothing` argument threaded through the nine functions that count, name or render an inventory
+ * and the call sites that reach them; `drawsClothing` widening from `true` to
  * `'entirely' | 'partly'` on 26 entries; two inventory lines split into four so the half a reader can
  * decline stands alone; ICON's rewritten tooltip, which is the one entry that grew rather than
  * moved; and the sentence in `constants/guidanceSentences.ts` that tells a reader the option takes
  * the pieces off the sheet, quoted by the three fields it is true of.
  *
  * Measured against main's own tip, rebuilt from the same `node_modules` — **2318.75 KiB** — the
- * merged build reports **2320.25**, a delta of 1.50 and 0.25 over the ceiling the two raises above
+ * merged build reports **2320.45**, a delta of 1.70 and 0.45 over the ceiling the two raises above
  * had bought. So 2323 restores a margin of the same order rather than widening it, exactly as those
  * two did. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
  *

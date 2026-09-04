@@ -15,6 +15,7 @@ import { componentCountFor, planComponentCount } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { declaresNoClothing, planAsDrawn, planDrawsClothing } from './sheetPlanClothing.ts';
+import { slugify } from './slugify.ts';
 
 /**
  * Section 1's paint rule against section 4's inventory, on every sheet the app can compile.
@@ -53,11 +54,10 @@ function sheetsOf(category: SubjectCategory) {
  *
  * **The pool's own `absentOption` is stepped over**, because it is a sentinel standing for "this
  * subject has none" rather than a description of anything, and every test above is about a subject
- * that *has* the attribute. Stepping over it is also what keeps those tests honest now that choosing
- * it takes the entries away: three of the nine pools that declare one declare their *first* option,
- * so a naive `options[0]` would compile every INTERFACE and BACKGROUND sheet with an inventory that
- * no longer draws the thing the assertion is about. The subject that does choose it has its own
- * block below.
+ * that *has* the attribute. Stepping over it is also what keeps those tests honest now that the value
+ * takes the entries away: half the pools that declare one declare their *first* option, so a naive
+ * `options[0]` would compile every BACKGROUND sheet with an inventory that no longer draws the thing
+ * the assertion is about. The subject that does carry it has its own block below.
  */
 function pooledClothing(category: SubjectCategory): string {
   const field = CATEGORY_OPTIONS[category].fields.find((option) => option.key === 'clothing');
@@ -185,22 +185,24 @@ describe('which categories draw the clothing value as components of their own', 
 
 describe('a subject that says it has none of the attribute', () => {
   /**
-   * The nine pools that offer a value meaning *the subject has none of this*, pinned so the content
+   * The pools that offer a value meaning *the subject has none of this*, pinned so the content
    * decision cannot drift.
    *
-   * The other four have no such value, and each is a judgement rather than an oversight: every
-   * option a CHARACTER's *Clothing / Armour* offers is something the subject wears, an OBJECT on a
-   * *Freestanding Base* is still mounted on something, a BUILDING always carries some addon, and
-   * ICON's *Applied Overlay* had one until the overlay library made it untrue — an icon sheet draws
-   * a disabled veil, a highlight halo and four tier marks whatever the reader picks, so a value
-   * promising none of them could only ever contradict the inventory. See `sheetPlans/icon.ts`.
+   * The five that do not are each a judgement rather than an oversight. Every option a CHARACTER's
+   * *Clothing / Armour* offers is something the subject wears, an OBJECT on a *Freestanding Base* is
+   * still mounted on something, and a BUILDING always carries some addon. **ICON and INTERFACE had
+   * one and lost it**, which is the second of the two answers this change gives: an entry may only be
+   * taken out where the reader declining the attribute gets a *plainer* sheet, and both of those
+   * would have handed them an incomplete one. An icon sheet draws a disabled veil, a highlight halo
+   * and four tier marks whatever is picked; a kit sheet draws the corner ornament the trim goes on,
+   * and *Slice Assembly Base* offers a variant built around it. See `sheetPlans/icon.ts` and
+   * `sheetPlans/interface.ts`.
    */
   const DECLARES_ABSENCE: Partial<Record<SubjectCategory, string>> = {
     BACKGROUND: 'Clear — No Overlay',
     CREATURE: 'NONE',
     EFFECT: 'No Secondary Layer',
     FONT: 'No Treatment',
-    INTERFACE: 'Plain Untrimmed Edge',
     ITEM: 'NONE',
     PORTRAIT: 'Bare Shoulders',
     TERRAIN: 'Bare Untouched Ground',
@@ -249,11 +251,10 @@ describe('a subject that says it has none of the attribute', () => {
   it('takes the lines the report named, and leaves their neighbours', () => {
     // The worked example, because a sweep asserting an absence passes just as well on a prompt that
     // lost more than it should have. Each pair is one line that goes and one that stays in the same
-    // group — the lamp housing beside the cladding panel, the divider rule beside the corner
-    // ornament — which is what those two entries were split apart for.
+    // group — the lamp housing beside the cladding panel — which is what VEHICLE's `Fittings:` line
+    // was split apart for.
     const cases = [
       { category: 'VEHICLE', gone: 'Cladding panel', kept: 'Lamp housing' },
-      { category: 'INTERFACE', gone: 'Corner ornament', kept: 'Divider rule' },
       { category: 'BACKGROUND', gone: 'Atmosphere veil', kept: 'Focal landmark' },
     ] as const;
 
@@ -343,6 +344,48 @@ describe('a subject that says it has none of the attribute', () => {
             entry.drawsClothing,
             `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)} — ${entry.text}`,
           ).not.toBe('partly');
+        }
+      }
+    }
+  });
+
+  it.each(SUBJECT_CATEGORIES)('lets no other %s field name a component this one deletes', (category) => {
+    // The defect this exists for, and the one the mechanism itself created. INTERFACE's
+    // *Ornament & Trim* used to open with `Plain Untrimmed Edge`, so the untouched default deleted
+    // the corner ornament — while *Slice Assembly Base* went on offering
+    // `Nine-Slice With Fixed Corner Ornament`. Section 1 then named an assembly built around a
+    // corner ornament and section 4 listed none: the same §1-names-it / §4-lacks-it contradiction
+    // this whole change removes, moved to a different pair of fields and reachable without the
+    // reader touching either control. Removing the pool value is what fixed it, and this is what
+    // would have caught it.
+    //
+    // **Matched on the entry's label rather than its prose**, because the label is the identifier
+    // the manifest and the sprite pack already key on, so a pool option that slugs to a string
+    // containing it is naming that component rather than merely using the same English words.
+    //
+    // **`additional_anatomy` is exempt, and it is the reason the rule is safe to state this
+    // strongly.** Naming a piece there *adds* it to the inventory and counts it — BACKGROUND's
+    // *Extra Layers* offers `Drifting Cloud Wisp ×2, Sun Disc ×1`, which is the route back for a
+    // reader who wants wisps on a clear scene, not a claim that the sheet already has them.
+    const absent = absentOptionFor(category, 'clothing');
+    if (absent === null) return;
+
+    const deleted = new Set(
+      sheetsOf(category).flatMap(({ plan }) =>
+        plan.groups.flatMap((group) =>
+          group.entries.filter((entry) => entry.drawsClothing === 'entirely').map((entry) => entry.label),
+        ),
+      ),
+    );
+
+    for (const field of CATEGORY_OPTIONS[category].fields) {
+      if (field.key === 'clothing' || field.key === 'additional_anatomy') continue;
+      for (const option of field.options) {
+        for (const label of deleted) {
+          expect(
+            slugify(option).includes(label),
+            `${category}.${field.key} offers “${option}”, which names the ${label} that ${absent} deletes`,
+          ).toBe(false);
         }
       }
     }

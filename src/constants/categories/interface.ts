@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ABSENT_OPTION_DROPS_THE_PIECES, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -204,10 +204,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'clothing',
       label: 'Ornament & Trim',
       tooltip:
-        'What is applied along the widget’s edge — rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame beneath it, so it is also the cheapest way to give one panel a rare and a common variant. ' +
-        ABSENT_OPTION_DROPS_THE_PIECES,
+        'What is applied along the widget’s edge — rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame beneath it, so it is also the cheapest way to give one panel a rare and a common variant. Every kit sheet draws the corner ornament that carries it, so this names the treatment rather than whether you get the piece, and the pool offers no “none”: an untrimmed edge would delete the ornament that Slice Assembly Base’s own nine-slice-with-corner variant is built around.',
       options: [
-        'Plain Untrimmed Edge',
         'Beaded Metal Rivets',
         'Filigree Corner Scrollwork',
         'Stitched Leather Binding',
@@ -219,7 +217,6 @@ export const INTERFACE: CategoryDefinition = {
         'Woven Braid Edging',
         'Bare Machined Chamfer',
       ],
-      absentOption: 'Plain Untrimmed Edge',
     },
     {
       key: 'worn_details',
