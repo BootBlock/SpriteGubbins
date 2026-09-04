@@ -24,8 +24,8 @@ import { componentCountFor } from '../src/utils/componentSet.ts';
  *
  * **It reads the compiled line, not the constants behind it.** `SHARE_RANGE` and the sheet's own
  * `scaleUnitFrame` are what produce that line, and a check that read them back would agree with
- * itself whatever the sentence said — the frame would decide both the wording and the formula. Parsing the sentence is
- * what makes the two independent: the arithmetic follows the words a generator is actually given,
+ * itself whatever the sentence said — the frame would decide both the wording and the formula.
+ * Parsing the sentence is what makes the two independent: the arithmetic follows the words a generator is actually given,
  * so a range moved into the wrong frame fails here rather than passing quietly.
  *
  * **What it deliberately does not claim.** A `SHEET` sheet draws at most one of its unit, so

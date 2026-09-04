@@ -267,10 +267,12 @@ describe('the plan table itself', () => {
   });
 
   it('states a frame for exactly the pairings the plan table holds', () => {
-    // The table above is a written-out claim, so a pairing missing from it would compare every sheet
-    // of that series against `undefined` and pass the moment the frames agreed with each other. A
-    // new mode has to be answered here, which is the point — the frame is a decision about what the
-    // sheet draws, not something a new plan inherits.
+    // The table above is a written-out claim, and this is what keeps it a claim about *this* plan
+    // table. A missing pairing fails the assertion above rather than passing — every sheet of that
+    // series would be compared against `[undefined]` — but the failure would read as a wrong frame
+    // rather than as a mode nobody answered, and a surplus entry left behind by a retired mode would
+    // not fail at all. A new mode has to be answered here, which is the point: the frame is a
+    // decision about what the sheet draws, not something a new plan inherits.
     for (const category of SUBJECT_CATEGORIES) {
       expect(Object.keys(PAIRING_FRAME[category]).sort(), category).toEqual([...modesFor(category)].sort());
     }

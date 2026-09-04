@@ -24,6 +24,18 @@ import { SCALE_UNIT_TEXT } from './subject.ts';
  * so it is deliberately absent: a source that never decides an answer is a source nobody can tell
  * has stopped working.
  */
+function categoryProseFor(category: SubjectCategory): string {
+  const written: string[] = [CATEGORY_OPTIONS[category].label];
+  for (const plan of everySheetOf(category)) {
+    written.push(plan.name, plan.assembly);
+    for (const group of plan.groups) {
+      written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
+      for (const entry of group.entries) written.push(entry.label, entry.text);
+    }
+  }
+  return written.join('\n');
+}
+
 /**
  * Every sheet the category can be asked for: each mode it supports, under each direction set, and
  * every sheet of the series that pairing produces.
@@ -38,18 +50,6 @@ function everySheetOf(category: SubjectCategory): readonly SheetPlan[] {
       ...sheetSeriesFor(category, mode, set),
     ]),
   );
-}
-
-function categoryProseFor(category: SubjectCategory): string {
-  const written: string[] = [CATEGORY_OPTIONS[category].label];
-  for (const plan of everySheetOf(category)) {
-    written.push(plan.name, plan.assembly);
-    for (const group of plan.groups) {
-      written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
-      for (const entry of group.entries) written.push(entry.label, entry.text);
-    }
-  }
-  return written.join('\n');
 }
 
 /**

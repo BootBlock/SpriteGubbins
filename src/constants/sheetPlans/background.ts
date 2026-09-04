@@ -170,10 +170,11 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // `'COMPONENT'` instead: a band loops against its own copy, so the scene it builds has no width.
   targetQuantity: 'ASSEMBLED',
   // The sheet, where the parallax set above takes the cell, and the pair is the split that made the
-  // frame per sheet. No band is drawn here — the entries are a sky plane, two masses and two edge
-  // occluders, and the assembly sentence says outright that nothing repeats — so there is no cell in
-  // this grid for one to be a share of. Claiming one would state a rule for a component the page does
-  // not hold, one line above the target-size line saying no component is the assembled size.
+  // frame per sheet. No band is drawn here — the scene panel is a sky plane, three masses and two
+  // edge occluders, with dressing and atmosphere over them, and the assembly sentence says outright
+  // that nothing repeats — so there is no cell in this grid for one to be a share of. Claiming one
+  // would state a rule for a component the page does not hold, one line above the target-size line
+  // saying no component is the assembled size.
   scaleUnitFrame: 'SHEET',
   groups: [
     {

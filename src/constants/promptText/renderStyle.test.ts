@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolutionProfile } from '../../types/output.ts';
 import { RESOLUTION_PROFILES } from '../../types/output.ts';
-import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import { SCALE_UNIT_FRAMES, SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { minFeatureSize, resolutionProfileDescription } from './renderStyle.ts';
@@ -17,8 +17,13 @@ const SCALE_BEARING = ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as c
  * so a test about the *unit* has to be run under both rather than under whichever one its category
  * happens to take. Which sheet takes which is pinned in `utils/sheetPlans.test.ts`, against a table
  * written out there for the reason this file writes its own sentences out.
+ *
+ * The union's own array rather than a pair written down here, because this is a *sweep domain* and
+ * not an expectation: a third frame has to reach every loop below, where a written-out pair would
+ * leave them all sweeping two and say nothing about it. `FRAMED` beneath is the opposite case and is
+ * written out on purpose.
  */
-const BOTH_FRAMES = ['CELL', 'SHEET'] as const;
+const BOTH_FRAMES = SCALE_UNIT_FRAMES;
 
 /**
  * The figure alone, which is what the rungs below are about — the unit has its own test.
@@ -210,9 +215,10 @@ describe('resolutionProfileDescription — the unit the range is stated against'
 
   it('states the whole sentence a reader sees, not only the unit it was handed', () => {
     // The assertion above reads the same map the function reads, so it can only catch the
-    // interpolation being deleted outright. These five are written out, so the wording is pinned by
+    // interpolation being deleted outright. These are written out, so the wording is pinned by
     // something that does not move when the map does — both frames, both share rungs, the absolute
-    // rung that takes no frame, and the assembled wording only `CUSTOM` reaches.
+    // rung that takes no frame, the assembled wording only `CUSTOM` reaches, and one category's unit
+    // under each frame, which is the pair issue #216 settled.
     expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'CHARACTER', 'SHEET')).toBe(
       'High resolution — a full figure occupies 25–35% of the sheet height',
     );

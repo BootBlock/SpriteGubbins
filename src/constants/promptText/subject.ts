@@ -109,11 +109,12 @@ export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   PORTRAIT: 'one portrait',
   ICON: 'one icon',
   // The band rather than the scene those bands stack into, though the two plans price differently —
-  // the parallax set states a band in its own cell and the layer library the assembled backdrop. `the finished scene`
-  // is this category's own name for the thing sections 4, 8 and 9 each forbid drawing, word for word,
-  // so section 2 measuring the sheet against it by name is the one place in the thirteen where the
-  // unit and the prohibition are the same string. Section 0's example for this category already hangs
-  // its proportions on a band, which is the agreement INTERFACE and TERRAIN also have.
+  // the parallax set states a band and the layer library the assembled backdrop.
+  // `the finished scene` is this category's own name for the thing sections 4, 8 and 9 each forbid
+  // drawing, word for word, so section 2 measuring the sheet against it by name is the one place in
+  // the thirteen where the unit and the prohibition are the same string. Section 0's example for
+  // this category already hangs its proportions on a band, which is the agreement INTERFACE and
+  // TERRAIN also have.
   BACKGROUND: 'one parallax band',
   // The capital rather than a glyph in general, because cap height is the measurement a font's
   // remaining metrics are set against and the one section 1 fixes.
