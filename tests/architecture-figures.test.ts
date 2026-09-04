@@ -1,6 +1,7 @@
-import { readdirSync, readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { scannableSources } from '../scripts/sourceFiles.ts';
 import { ARCHITECTURE_SECTIONS } from '../src/constants/architecture.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../src/types/subject.ts';
@@ -69,20 +70,40 @@ function spell(count: number): string {
   return unit === 0 ? tens : `${tens}-${unitWord(unit)}`;
 }
 
+/** Where a store is filed, once the walk's absolute paths are made relative and POSIX. */
+const STORES = 'src/stores/';
+
 /**
- * Every Zustand store in the app, by filename.
+ * What marks a file in there as a Zustand store: it imports `create` from the library.
  *
- * Read off disk rather than imported, because importing them is what the assertion is trying not to
- * depend on: a store nobody has wired up yet is still a store the sentence is counting, and a
- * barrel file listing them would be one more hand-kept list to drift. `= create<` is the one shape
- * every store in `src/stores/` is bound with, and the two helpers filed beside them — the dial
- * snapshot and its setters — bind no such call, which is what keeps them out.
+ * Reading the *binding* instead — `= create<` — would have read a spelling rather than a fact. A
+ * store written `create(persist<FooState>(…))`, or one whose type arrives as an annotation on the
+ * constant, makes a store and binds no such text, and that difference fails **open**: the count
+ * stays where it was, the prose still matches it, and the drift this suite exists to catch goes
+ * straight past. The import is the one thing every store has to do, however it is written, and
+ * an import nothing calls does not survive the lint gate.
+ */
+const MAKES_A_STORE = /import\s*\{[^}]*\bcreate\b[^}]*\}\s*from\s*'zustand'/;
+
+/**
+ * Every Zustand store in the app, by path.
+ *
+ * Read off disk rather than imported, because importing them is what the assertion is trying not
+ * to depend on: a store nobody has wired up yet is still a store the sentence is counting, and a
+ * barrel file listing them would be one more hand-kept list to drift. The walk is
+ * `scannableSources()`, this repository's one answer to what counts as source — a second walk
+ * here would be a second answer, and it would be the shallower of the two, blind to a store filed
+ * a directory further down.
+ *
+ * The two helpers filed beside the stores — the dial snapshot and its setters — import nothing
+ * from the library, which is what keeps them out. The colocated tests do import it, and are kept
+ * out by name: a suite exercising a store is not one.
  */
 function zustandStores(): string[] {
-  const directory = resolve(process.cwd(), 'src/stores');
-  return readdirSync(directory)
-    .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
-    .filter((name) => readFileSync(resolve(directory, name), 'utf8').includes('= create<'))
+  return scannableSources()
+    .map((file) => relative(process.cwd(), file).split(sep).join('/'))
+    .filter((path) => path.startsWith(STORES) && !path.endsWith('.test.ts'))
+    .filter((path) => MAKES_A_STORE.test(readFileSync(path, 'utf8')))
     .sort();
 }
 
