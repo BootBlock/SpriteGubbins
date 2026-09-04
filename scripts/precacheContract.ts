@@ -243,8 +243,9 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * into all thirteen entries of each record by a helper the entries call — prompt text, so constant
  * data the entry chunk reaches, on the footing every raise above stands on. Measured against the
  * build immediately before it, from the same `node_modules`, the precache goes from **2313.83** to
- * **2314.23 KiB**, a delta of 0.40. No file was added to or removed from `PRECACHE_SHAPES`, and no
- * chunk was renamed.
+ * **2314.23 KiB**, a delta of 0.40. Merged with the style-reference change that landed alongside it,
+ * which shortens a sentence, the build reports **2314.22**. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
  *
  * The delta is that small because each clause is written down **once**: the entries interpolate a
  * function rather than a literal, so the bundle carries the sentence a single time and each of the
