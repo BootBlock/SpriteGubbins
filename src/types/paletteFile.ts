@@ -26,8 +26,8 @@ export type PaletteFileFormat = (typeof PALETTE_FILE_FORMATS)[number];
  *
  * The name is what the file is named after and what a `.gpl` records inside itself, so it is the
  * reader’s own word for this palette — a machine, or the sheet the colours were taken from — rather
- * than an identifier. The entries are opaque and ordered; see `imagePaletteEntries` for the order
- * the two image-derived palettes arrive in.
+ * than an identifier. The entries are opaque and ordered; see `paletteEntriesFrom` for the order
+ * the two sheet-derived palettes arrive in.
  */
 export interface SettledPalette {
   readonly name: string;

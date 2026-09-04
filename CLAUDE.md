@@ -971,6 +971,42 @@ discoverable, so guidance that comes from a function or hangs off a list (`accen
 `APP_TAB_CHOICES`, `TARGET_MODELS`, a category's sixteen fields) is still named in that file, and a
 new shape of guidance has to be added to the walk by hand.
 
+**A sentence is what that check compares, and for a long time it was not.** The assertion was
+written against whole entries while the argument for it was written about sentences, so a card that
+borrowed one sentence from its neighbour differed everywhere else and the two were never equal.
+`OUTPUT_TOOLTIPS.hardwareProfile` carried the Art Style Reference control's own closing sentence for
+months — claiming a narrowing the machine list does not have — and the suite reported nothing about
+it. It splits on sentence-ending punctuation now, with **no minimum length**: the shortest sentence
+two cards actually share is “Ctrl+Shift+Z and Ctrl+Y both do the same.” at 41 characters, and
+measured over the whole corpus a floor of zero reports the same eleven repeats as a floor of twenty,
+so a floor would buy nothing and would step over the short sentences that travel most easily.
+
+**A fact that is true of two controls is written once, in
+[src/constants/guidanceSentences.ts](src/constants/guidanceSentences.ts)**, and quoted by every card
+that states it. That is what tells deliberate sharing apart from the copy-paste: the suite
+attributes such a sentence to the constant, which is one origin however many cards carry it. Its
+exports are discovered rather than listed, so the exemption cannot be widened without widening the
+app, and two guards stop it rotting — a constant fewer than two pieces of guidance carry fails, and
+a card built entirely out of shared sentences fails, because it has explained everything except the
+control it belongs to.
+
+**That suite reads the compiled values, so it cannot tell an import from a copy somebody typed
+out**, and a typed-out copy can be false of the control it lands on — `REDO_KEYBOARD_SHORTCUTS`
+pasted onto the Undo button beside Redo says something untrue and folds to the same origin.
+[tests/guidance-sentence-sharing.test.ts](tests/guidance-sentence-sharing.test.ts) reads the
+*source* instead, with comments blanked as the other sweeps do, and fails on any of these sentences
+written out anywhere but the file that defines it. The two halves together are the rule: a shared
+sentence reaches a card by being imported, or it does not reach it at all.
+
+**The one other origin is a template.** `accentSwatchGuidance` writes a three-sentence paragraph
+that nine swatches render, two of those sentences identical across all nine, so it is compared with
+the rest of the app once rather than nine times. The walk still feeds it all nine hues, and the
+folding is exactly what would hide a template that stopped substituting — nine cards reading “…to
+your chosen colour” — so a separate check requires a templated origin to render a *different* card
+for every argument. `presetCollectionGuidance` is deliberately not on that list: its two branches are
+two written-out strings, so a sentence in both of them is a copy-paste inside one file and is meant
+to fail, which is how the sentence about the search count came to be shared for real.
+
 **What counts as guidance is the surface, not the prop.** `TARGET_MODELS[].description` is walked
 because it is a control's own explanation rendered under the control instead of behind its ⓘ — the
 same words held to the same rules, shown a second way. The quantiser's `QUANTISE_SCALE_GUIDANCE` and

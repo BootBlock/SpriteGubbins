@@ -1,21 +1,27 @@
 import type { Rgba } from '../types/quantiser.ts';
-import { colorHistogram, FULLY_OPAQUE, fromHex, unpackColor } from './imageData.ts';
+import { FULLY_OPAQUE, fromHex, unpackColor } from './imageData.ts';
 
 /**
  * The colours a palette is made of, from the two places one arrives in this app.
  *
- * A palette reaches the interface either as an **image** — the sheet a reduction produced, or the
- * sheet a lock was taken from — or as a **list of hex**, which is how the machine palettes in
- * `src/constants/palettes/` are written down. Everything downstream of them wants one thing: an
- * ordered list of opaque colours. Both conversions used to sit inside the one caller that first
- * needed them, so a second caller had to either import that caller or write the walk again — and
- * the walk is where the two rules below live, neither of which is obvious from the outside.
+ * A palette reaches the interface either as a **sheet the quantiser has settled** — read there, off
+ * the histogram that pass takes anyway — or as a **list of hex**, which is how the machine palettes
+ * in `src/constants/palettes/` are written down. Everything downstream of them wants one thing: an
+ * ordered list of opaque colours, and the walk below is where the rules for that live.
  *
  * Pure, as everything in this directory is.
  */
 
 /**
- * The colours of an image, most-used first.
+ * The colours a histogram was taken over, most-used first.
+ *
+ * **A histogram rather than an image**, because the one caller that wants this already has one:
+ * `quantiseImage` reads `QuantiseResult.colors` off the same walk, and a second pass over a
+ * 16.8-megapixel result to answer a second question about its colours would be one pass too many.
+ * Everything that wants a settled sheet’s palette on the main thread takes
+ * `QuantiseResult.paletteEntries`, which is this function’s answer carried on the result — the lock
+ * panel, the export panel and the swatch writer all read that one list rather than each taking a
+ * reading of their own.
  *
  * **Deduplicated across alpha, and returned opaque.** A palette is a statement about colour, and an
  * image’s alpha is a statement about its silhouette: the same fill appears at full coverage inside a
@@ -25,22 +31,12 @@ import { colorHistogram, FULLY_OPAQUE, fromHex, unpackColor } from './imageData.
  * distinct pixel values, this is of distinct colours — and why anything showing both has to say
  * which it is showing.
  *
- * Fully transparent pixels take no part, exactly as they take no part in {@link colorHistogram} — a
- * pixel carrying no colour has no colour to name.
+ * Fully transparent pixels take no part, because `colorHistogram` leaves them out — a pixel
+ * carrying no colour has no colour to name, so a sheet the keying took whole yields no entries at
+ * all.
  *
  * Population order, ties broken by packed value, so the order is deterministic on every input. It is
  * what a swatch strip lists and what a written file carries, so the sheet’s dominant colours lead.
- */
-export function imagePaletteEntries(image: ImageData): readonly Rgba[] {
-  return paletteEntriesFrom(colorHistogram(image));
-}
-
-/**
- * The same reading, from a histogram already taken.
- *
- * Exported because the quantiser takes one anyway — `QuantiseResult.colors` is its size — and two
- * passes over a 16.8-megapixel result to answer two questions about its colours would be one pass
- * too many.
  */
 export function paletteEntriesFrom(histogram: ReadonlyMap<number, number>): readonly Rgba[] {
   const counts = new Map<number, number>();

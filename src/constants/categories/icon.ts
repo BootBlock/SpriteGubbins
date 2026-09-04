@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -277,7 +278,8 @@ export const ICON: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The one bright colour the motif and the rarity glow are carried in — the smallest area on the icon and the first thing the eye finds. A hex code pins it far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The one bright colour the motif and the rarity glow are carried in — the smallest area on the icon and the first thing the eye finds. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Health Red #EF4444',
         'Mana Blue #3B82F6',

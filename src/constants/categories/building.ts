@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -260,7 +261,8 @@ export const BUILDING: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The signage, lantern and window-light colours that make a structure read as occupied. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The signage, lantern and window-light colours that make a structure read as occupied. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Warm Lantern Orange #F97316',
         'Neon Pink Sign Glow #F43F5E',

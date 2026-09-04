@@ -28,10 +28,21 @@
  * icons. Whether the split's own chunks belong here as names, as a pattern, or not at all is a
  * decision about this contract rather than about the split, and is left to whoever owns it.
  *
+ * **Five of them arrived together with `constants/guidanceSentences.ts`**, and they are the cost that
+ * docblock predicts rather than a new file the app loads. That module holds the sentences more than
+ * one control's guidance states, so it is reached from the studio, the quantiser, the preset library
+ * and the settings dialog at once — which changes which entries reach a good many modules, and
+ * rolldown re-partitions around it. `about`, `dialogs`, `usePresetStore`, `useQuantisePresetStore`
+ * and `useSettingsStore` are chunks the app already downloaded inside larger ones: measured against
+ * the build immediately before, the precache goes from 48 entries at 2312.62 KiB to 53 at 2312.78,
+ * so what is added is five requests and 0.16 KiB, not five files of new code.
+ *
  * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
  * icons a second time, *after* the `manifestTransforms` step runs. So this list and the ceiling
- * under it describe the globbed precache — 15 of the shipped worker's 18 entries — and the three
- * they miss are fixed, small and not what a stray chunk arrives as.
+ * under it describe the globbed precache — every entry of the shipped worker but those three — and
+ * the three they miss are fixed, small and not what a stray chunk arrives as. Stated as a
+ * relationship rather than a pair of counts, because the counts move with every chunk the split
+ * produces and the paragraph above already names today's.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',
@@ -50,9 +61,11 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/SpecTab-*.js',
   'assets/StudioTab-*.js',
   'assets/Tooltip-*.js',
+  'assets/about-*.js',
   'assets/componentBudget-*.js',
   'assets/componentTargetSize-*.js',
   'assets/database-*.js',
+  'assets/dialogs-*.js',
   'assets/firstOfEachId-*.js',
   'assets/models-*.js',
   'assets/quantiseDials-*.js',
@@ -63,7 +76,10 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
+  'assets/usePresetStore-*.js',
+  'assets/useQuantisePresetStore-*.js',
   'assets/useQuantiseStore-*.js',
+  'assets/useSettingsStore-*.js',
   'assets/useShowToast-*.js',
   'assets/useUIStore-*.js',
   'assets/index-*.css',

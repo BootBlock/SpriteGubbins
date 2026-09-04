@@ -1,3 +1,5 @@
+import { COLLECTION_COUNT_FOLLOWS_SEARCH } from '../guidanceSentences.ts';
+
 /**
  * Guidance for the preset library's controls.
  *
@@ -70,6 +72,7 @@ export const PRESET_ACTION_TOOLTIPS = {
  */
 export function presetCollectionGuidance(label: string, isCustom: boolean): string {
   return isCustom
-    ? 'Shows the presets you have saved yourself, whatever category each one was saved under — “mine” is what you go looking for, and a knight of your own filed among a dozen built-in humanoids is one you would have to hunt for. The count beside it is how many match the search, where one is running.'
-    : `Shows the built-in presets written for the ${label} category. Loading any of them switches the studio to that category as well, so the field labels and option pools change with it. The count beside it is how many match the search, where one is running.`;
+    ? 'Shows the presets you have saved yourself, whatever category each one was saved under — “mine” is what you go looking for, and a knight of your own filed among a dozen built-in humanoids is one you would have to hunt for. ' +
+        COLLECTION_COUNT_FOLLOWS_SEARCH
+    : `Shows the built-in presets written for the ${label} category. Loading any of them switches the studio to that category as well, so the field labels and option pools change with it. ${COLLECTION_COUNT_FOLLOWS_SEARCH}`;
 }

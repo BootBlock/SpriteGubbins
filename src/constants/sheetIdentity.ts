@@ -1,3 +1,5 @@
+import { DOWNLOADS_RECORD_THE_STUDIO } from './guidanceSentences.ts';
+
 /**
  * What the Quantise tab's identity panel says about the sheet a download is about to record.
  *
@@ -17,9 +19,11 @@
 export const SHEET_IDENTITY_GUIDANCE = {
   /** A batch of more than one sheet, where stepping is available and getting it wrong is possible. */
   batch:
-    'Every download from this tab records the studio’s configuration beside the artwork, and this is what it will record. It is a statement about the studio, not a reading of your image — nothing here can tell whether the sheet you dropped is the one named above, so if you have come back with a sheet from earlier in the batch, step the position to match it before you save. The two buttons move the studio itself, exactly as the batch strip on the Studio tab does: the prompt recompiles for the sheet you land on, nothing is copied, and nothing you have already taken away is disturbed.',
+    DOWNLOADS_RECORD_THE_STUDIO +
+    ' It is a statement about the studio, not a reading of your image — nothing here can tell whether the sheet you dropped is the one named above, so if you have come back with a sheet from earlier in the batch, step the position to match it before you save. The two buttons move the studio itself, exactly as the batch strip on the Studio tab does: the prompt recompiles for the sheet you land on, nothing is copied, and nothing you have already taken away is disturbed.',
 
   /** A configuration that is one generation: nothing to step to, and nothing to get out of step. */
   single:
-    'Every download from this tab records the studio’s configuration beside the artwork, and this is what it will record. It is a statement about the studio, not a reading of your image — nothing here can tell whether the sheet you dropped is the one named above. This configuration is a single generation, so there is no position to keep in step; change the category or the direction set in the Studio tab and this line follows.',
+    DOWNLOADS_RECORD_THE_STUDIO +
+    ' It is a statement about the studio, not a reading of your image — nothing here can tell whether the sheet you dropped is the one named above. This configuration is a single generation, so there is no position to keep in step; change the category or the direction set in the Studio tab and this line follows.',
 } as const;

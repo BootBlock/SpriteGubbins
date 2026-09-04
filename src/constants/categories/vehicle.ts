@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -239,7 +240,8 @@ export const VEHICLE: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'Lamps, thruster glow, beacons and stripe work — the parts that read as emitting rather than reflecting. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'Lamps, thruster glow, beacons and stripe work — the parts that read as emitting rather than reflecting. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Headlamp Amber #F59E0B',
         'Thruster Plasma Blue #22D3EE',

@@ -105,8 +105,12 @@ export function QuantiseControlColumn({
         busy={busy}
         offered={keyOffered}
       />
+      {/* The colours rather than the sheet, and the two panels below take the same list for the
+        same reason — see `QuantiseResult.paletteEntries`. What it buys the lock is more than a walk
+        it need not do: an empty list is a sheet with nothing to hold, so the panel can shut its
+        button before the press instead of discovering it afterwards. */}
       <PaletteLockControls
-        resultImage={quantised?.result.image ?? null}
+        resultPalette={quantised?.result.paletteEntries ?? null}
         sheetName={source.name}
         studioSetting={colorPlan.studioSetting}
         superseded={colorPlan.superseded}
@@ -114,8 +118,7 @@ export function QuantiseControlColumn({
       />
       {/* Directly under the lock, because one of the two palettes it offers is that lock —
         and separate from it because a download does nothing to the next sheet, which is
-        what the panel above is entirely about. The colours are the transform's own answer
-        rather than a reading taken here; see `QuantiseResult.paletteEntries`. */}
+        what the panel above is entirely about. */}
       <PaletteExportControls
         resultPalette={quantised?.result.paletteEntries ?? null}
         sheetName={source.name}

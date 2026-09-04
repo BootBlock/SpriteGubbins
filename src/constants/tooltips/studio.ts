@@ -1,3 +1,5 @@
+import { REDO_KEYBOARD_SHORTCUTS } from '../guidanceSentences.ts';
+
 /**
  * Guidance for the studio's actions — the controls that *do* something rather than hold a value.
  *
@@ -17,7 +19,8 @@ export const STUDIO_ACTION_TOOLTIPS = {
     'Puts the subject back the way it was before your last category switch, Randomise, Reset, preset load or restore from the prompt history — the whole studio as it stood then, Output Configuration included, because a category switch moves those settings along with the answers. Those acts are the only things recorded, because each replaces the whole subject at once; editing a single field records nothing, and an edit you made after one of them is not lost either, because Redo brings the studio back exactly as you left it. Nothing outside the Studio tab moves. Ctrl+Z does the same thing, except while you are typing in a box, where it undoes your typing as it always has, and while a dialog is open, where the page behind it is not what your keyboard is aimed at.',
 
   redoSubject:
-    'Steps forward again into a subject you have just stepped back from, which is the way out of an undo pressed once too often. Switching category, randomising, resetting or loading a subject from anywhere after stepping back replaces what was ahead of you, so this is offered only until you do. Ctrl+Shift+Z and Ctrl+Y both do the same.',
+    'Steps forward again into a subject you have just stepped back from, which is the way out of an undo pressed once too often. Switching category, randomising, resetting or loading a subject from anywhere after stepping back replaces what was ahead of you, so this is offered only until you do. ' +
+    REDO_KEYBOARD_SHORTCUTS,
 
   expandAll:
     'Opens or shuts every group in this panel at once. Folding hides the controls and never the configuration — a shut group states its current values in its own header — so this is about how much of the form you want to look at, and changes nothing that reaches the prompt.',
