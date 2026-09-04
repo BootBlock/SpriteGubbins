@@ -4,6 +4,7 @@ import { imageFrom, soften } from '../test/images.ts';
 import { estimateMeshPeriod } from './meshPeriod.ts';
 import { estimateProfilePeriod } from './profilePeriod.ts';
 import { measureSheetScale } from './pixelGrid.ts';
+import { stepProfile } from './stepProfile.ts';
 
 describe('estimateProfilePeriod', () => {
   it('reads a detailed drifting sheet through the detail its interior marks put on both axes', () => {
@@ -15,7 +16,7 @@ describe('estimateProfilePeriod', () => {
     // detail rides on top — which is why this reading answered the sheet first.
     const sheet = detailedSheet(detailedMarks);
 
-    expect(estimateProfilePeriod(sheet)).toBe(6);
+    expect(estimateProfilePeriod(stepProfile(sheet))).toBe(6);
     expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'REPEAT_DISTANCE' });
 
     // The line-list reading refused this sheet for as long as its chance floor was the axis mean:
@@ -24,7 +25,7 @@ describe('estimateProfilePeriod', () => {
     // mean the boundaries survive, so the two readings now answer the same sheet the same way —
     // which is the agreement `boundaryClusters` exists to make possible, and the reason its own
     // suite asserts the line positions rather than only the pitch they imply.
-    expect(estimateMeshPeriod(sheet)).toBe(6);
+    expect(estimateMeshPeriod(stepProfile(sheet))).toBe(6);
   });
 
   it('reads the same sheet wherever the marks fall, not just where the fixture put them', () => {
@@ -32,7 +33,7 @@ describe('estimateProfilePeriod', () => {
     // the mark placement rather than the pitch would answer one of these and refuse the other,
     // which is a coin flip wearing a threshold's clothes.
     const shifted = detailedSheet((cellX, cellY) => cellX % 4 === 3 && cellY % 3 === 0);
-    expect(estimateProfilePeriod(shifted)).toBe(6);
+    expect(estimateProfilePeriod(stepProfile(shifted))).toBe(6);
   });
 
   it('never lets one axis’s detail cancel the other’s fundamental into a doubled offer', () => {
@@ -43,10 +44,10 @@ describe('estimateProfilePeriod', () => {
     // disagrees or refuses, and either way no doubled offer survives; whether the answer is the
     // true 6 or an honest refusal, it must never be the ghost.
     const alternatingColumns = detailedSheet((cellX) => cellX % 2 === 0);
-    expect(estimateProfilePeriod(alternatingColumns)).not.toBe(13);
+    expect(estimateProfilePeriod(stepProfile(alternatingColumns))).not.toBe(13);
 
     const alternatingBoth = detailedSheet((cellX, cellY) => cellX % 2 === 0 && cellY % 2 === 0);
-    expect(estimateProfilePeriod(alternatingBoth)).not.toBe(13);
+    expect(estimateProfilePeriod(stepProfile(alternatingBoth))).not.toBe(13);
   });
 
   it('settles a fractional pitch on a neighbouring integer, not on its doubled ghost', () => {
@@ -71,7 +72,7 @@ describe('estimateProfilePeriod', () => {
       }),
     );
 
-    const period = estimateProfilePeriod(sheet);
+    const period = estimateProfilePeriod(stepProfile(sheet));
     expect(period === 6 || period === 7, `settled on ${String(period)}`).toBe(true);
   });
 
@@ -96,7 +97,7 @@ describe('estimateProfilePeriod', () => {
       }),
     );
 
-    const period = estimateProfilePeriod(sheet);
+    const period = estimateProfilePeriod(stepProfile(sheet));
     expect(period === 4 || period === 5, `settled on ${String(period)}`).toBe(true);
   });
 
@@ -122,7 +123,7 @@ describe('estimateProfilePeriod', () => {
       }),
     );
 
-    expect(estimateProfilePeriod(sheet)).toBe(6);
+    expect(estimateProfilePeriod(stepProfile(sheet))).toBe(6);
     expect(measureSheetScale(sheet)).toEqual({ grid: 6, measurement: 'REPEAT_DISTANCE' });
   });
 
@@ -134,7 +135,7 @@ describe('estimateProfilePeriod', () => {
       a: 255,
     }));
 
-    expect(estimateProfilePeriod(gradient)).toBeNull();
+    expect(estimateProfilePeriod(stepProfile(gradient))).toBeNull();
     expect(measureSheetScale(gradient)).toBeNull();
   });
 
@@ -146,7 +147,7 @@ describe('estimateProfilePeriod', () => {
       a: 255,
     }));
 
-    expect(estimateProfilePeriod(noise)).toBeNull();
+    expect(estimateProfilePeriod(stepProfile(noise))).toBeNull();
   });
 
   it('refuses edges at assorted spacings, which fit no period', () => {
@@ -161,7 +162,7 @@ describe('estimateProfilePeriod', () => {
       return { r: (index * 71 + 40) % 256, g: (index * 149 + 80) % 256, b: (index * 37 + 120) % 256, a: 255 };
     });
 
-    expect(estimateProfilePeriod(sheet)).toBeNull();
+    expect(estimateProfilePeriod(stepProfile(sheet))).toBeNull();
   });
 
   it('refuses a component layout masquerading as a pixel pitch, via the repeat floor', () => {
@@ -179,7 +180,7 @@ describe('estimateProfilePeriod', () => {
     // 0.508 — identically, because the layout is the same on both. Neither can vouch for it (its
     // double at 80 carries nothing), and two axes that cannot corroborate nothing, however exactly
     // they agree. That is the refusal, and it is the one this reading owes a content periodicity.
-    expect(estimateProfilePeriod(sheet)).toBeNull();
+    expect(estimateProfilePeriod(stepProfile(sheet))).toBeNull();
   });
 
   it('reads a pitch of two, which the lattice reading’s borrowed floor could not reach', () => {
@@ -193,7 +194,7 @@ describe('estimateProfilePeriod', () => {
       return { r: (index * 71 + 40) % 200, g: (index * 149 + 80) % 200, b: (index * 37 + 120) % 200, a: 255 };
     });
 
-    expect(estimateProfilePeriod(sheet)).toBe(2);
+    expect(estimateProfilePeriod(stepProfile(sheet))).toBe(2);
   });
 
   it('descends to the comb’s own tooth, never into the gap between two of them', () => {
@@ -214,7 +215,7 @@ describe('estimateProfilePeriod', () => {
       return { r: (index * 83 + 30) % 220, g: (index * 151 + 90) % 220, b: (index * 47 + 140) % 220, a: 255 };
     });
 
-    expect(estimateProfilePeriod(sheet)).toBe(2);
+    expect(estimateProfilePeriod(stepProfile(sheet))).toBe(2);
   });
 
   it('reads plain regular pitch too, where the earlier readings would normally answer first', () => {
@@ -230,6 +231,6 @@ describe('estimateProfilePeriod', () => {
       }),
     );
 
-    expect(estimateProfilePeriod(sheet)).toBe(8);
+    expect(estimateProfilePeriod(stepProfile(sheet))).toBe(8);
   });
 });

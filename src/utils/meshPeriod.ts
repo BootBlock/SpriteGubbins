@@ -6,7 +6,7 @@ import {
 } from '../constants/quantiser.ts';
 import type { PixelGrid } from '../types/quantiser.ts';
 import { boundaryClusters } from './boundaryClusters.ts';
-import { stepProfile } from './stepProfile.ts';
+import type { StepProfile } from './stepProfile.ts';
 
 /**
  * The scale of art whose blocks repeat at *almost* a period, on a sheet too **small** for the
@@ -46,8 +46,7 @@ import { stepProfile } from './stepProfile.ts';
  */
 
 /** The scale a drifting sheet's boundary spacings imply, or `null` where they imply none. */
-export function estimateMeshPeriod(image: ImageData): PixelGrid | null {
-  const profile = stepProfile(image);
+export function estimateMeshPeriod(profile: StepProfile): PixelGrid | null {
   const spacings = [
     ...axisSpacings(boundaryClusters(profile.columns).map((line) => line.position)),
     ...axisSpacings(boundaryClusters(profile.rows).map((line) => line.position)),
@@ -57,7 +56,12 @@ export function estimateMeshPeriod(image: ImageData): PixelGrid | null {
   const sorted = [...spacings].sort((a, b) => a - b);
   const median = sorted[Math.floor(sorted.length / 2)] ?? 0;
   const period = Math.round(median);
-  if (period < MIN_ESTIMATED_GRID || period > measurableGridCeiling(image.width, image.height)) return null;
+  if (
+    period < MIN_ESTIMATED_GRID ||
+    period > measurableGridCeiling(profile.columns.length, profile.rows.length)
+  ) {
+    return null;
+  }
 
   const agreeing = spacings.filter((spacing) => Math.abs(spacing - median) <= 1).length;
   return agreeing / spacings.length >= SPACING_AGREEMENT ? period : null;

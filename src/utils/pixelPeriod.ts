@@ -6,7 +6,6 @@ import {
 } from '../constants/quantiser.ts';
 import type { PixelGrid } from '../types/quantiser.ts';
 import type { StepProfile } from './stepProfile.ts';
-import { stepProfile } from './stepProfile.ts';
 
 /**
  * Finding the scale of art that was drawn at one and then **resampled about a lattice it kept**.
@@ -77,8 +76,7 @@ interface LatticeFit {
  * `null` for an image with no steps at all, for the same reason the exact detector answers `null` to
  * one flat colour: there is no scale in it, and every candidate would fit it equally.
  */
-export function estimatePixelGrid(image: ImageData): PixelGrid | null {
-  const profile = stepProfile(image);
+export function estimatePixelGrid(profile: StepProfile): PixelGrid | null {
   if (profile.total === 0) return null;
 
   // Each axis's own total, computed once rather than per candidate: the qualification below reads
@@ -86,7 +84,11 @@ export function estimatePixelGrid(image: ImageData): PixelGrid | null {
   const columnsTotal = axisTotal(profile.columns);
   const rowsTotal = profile.total - columnsTotal;
 
-  for (let grid = measurableGridCeiling(image.width, image.height); grid >= MIN_ESTIMATED_GRID; grid -= 1) {
+  for (
+    let grid = measurableGridCeiling(profile.columns.length, profile.rows.length);
+    grid >= MIN_ESTIMATED_GRID;
+    grid -= 1
+  ) {
     if (fitsLattice(profile, columnsTotal, rowsTotal, grid)) return grid;
   }
   return null;

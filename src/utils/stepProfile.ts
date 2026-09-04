@@ -27,11 +27,24 @@ import { CHANNELS_PER_PIXEL } from './imageData.ts';
  * about 8.6 × 10⁹, where a `Uint32Array` element stops at 4.29 × 10⁹. A square sheet never comes
  * close, which is exactly why the bound has to be read off the cap that exists rather than the
  * proportions one imagines.
+ *
+ * **It carries the image's dimensions**, one per axis, in the lengths of its two arrays — which is
+ * why the three estimated readings in `measureSheetScale` take a profile rather than an image and
+ * still know how large a scale the sheet could hold. Taking both would let a caller hand one
+ * reading a profile of some *other* image, and there is nothing in either value that would catch
+ * it; taking the profile alone makes that pairing unrepresentable, and the survey then walks the
+ * sheet once for all three.
  */
 export interface StepProfile {
-  /** `columns[x]` — how much pixel `x` differs from pixel `x - 1`, down the whole column. Index 0 is unused. */
+  /**
+   * `columns[x]` — how much pixel `x` differs from pixel `x - 1`, down the whole column. Index 0 is
+   * unused, and the length is the image's width.
+   */
   readonly columns: Float64Array;
-  /** `rows[y]` — how much row `y` differs from row `y - 1`, across the whole row. Index 0 is unused. */
+  /**
+   * `rows[y]` — how much row `y` differs from row `y - 1`, across the whole row. Index 0 is unused,
+   * and the length is the image's height.
+   */
   readonly rows: Float64Array;
   /** Every step in the image, both directions together. */
   readonly total: number;
