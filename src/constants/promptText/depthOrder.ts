@@ -62,7 +62,76 @@ export const DEPTH_ORDER_TEXT: Readonly<Record<Direction, string>> = {
 export const PLAN_DEPTH_ORDER_TEXT =
   'Directly overhead there is no near side and no far one: pieces render in order of how high they sit above the ground, so the highest draws over everything beneath it and the order is the same at every facing this sheet covers. A piece carried on the front or the side of the body is beside it in plan rather than in front of it, and draws over the body only where it is genuinely higher.';
 
-/** The depth order this camera actually produces for this facing. */
-export function depthOrderText(direction: Direction, cameraElevation: number): string {
-  return isPlanView(cameraElevation) ? PLAN_DEPTH_ORDER_TEXT : DEPTH_ORDER_TEXT[direction];
+/** One facing's answer, for a camera that has a near side to answer with. */
+export interface DepthOrderFacing {
+  readonly facing: Direction;
+  readonly text: string;
+}
+
+/**
+ * What section 5 has to say about depth order on one sheet, in the shape that sheet's own camera and
+ * coverage decide.
+ *
+ * A discriminated pair rather than a string, because two readers state the same answer in two
+ * notations — the prompt writes markdown and the split drawer writes JSX — and each has to know
+ * whether it is presenting one statement or a line per facing. Deriving that from a string's shape at
+ * the call site is how the two would come to disagree about a sheet they are both describing.
+ *
+ * `perFacing: false` covers the two cameras that settle the question once for the whole sheet: a plan
+ * view, where {@link PLAN_DEPTH_ORDER_TEXT} answers at every yaw at once, and a sheet that draws a
+ * single facing, where there is only one answer to give.
+ */
+export type DepthOrder =
+  | { readonly perFacing: false; readonly text: string }
+  | {
+      readonly perFacing: true;
+      readonly facings: readonly [DepthOrderFacing, DepthOrderFacing, ...DepthOrderFacing[]];
+    };
+
+/**
+ * The depth order this camera actually produces, for every facing this sheet covers.
+ *
+ * **Asked of the coverage, never of the assembly facing alone.** A cut-out rig was once always a
+ * single-facing run sheet, so section 5 stated one facing's depth order and that was the whole sheet;
+ * `resolveRigMode` later let the rig reach a multi-view directional core, where section 3 lists five
+ * object yaws and section 4 draws every piece at each of them. Stating the first facing's answer
+ * there is a claim the sheet contradicts four times over — "renders in front of it" for a piece the
+ * same prompt has turned to the rear — and the vocabulary above already holds the right answer for
+ * each of them.
+ */
+export function depthOrder(
+  covered: readonly [Direction, ...Direction[]],
+  cameraElevation: number,
+): DepthOrder {
+  if (isPlanView(cameraElevation)) return { perFacing: false, text: PLAN_DEPTH_ORDER_TEXT };
+
+  const [first, second, ...rest] = covered;
+  if (second === undefined) return { perFacing: false, text: DEPTH_ORDER_TEXT[first] };
+
+  return {
+    perFacing: true,
+    facings: [
+      { facing: first, text: DEPTH_ORDER_TEXT[first] },
+      { facing: second, text: DEPTH_ORDER_TEXT[second] },
+      ...rest.map((facing) => ({ facing, text: DEPTH_ORDER_TEXT[facing] })),
+    ],
+  };
+}
+
+/**
+ * The same answer as the prompt's own text, one line per facing in the order section 3 lists them.
+ *
+ * The bullet form is `leadingSideLedger`'s, for the same facings and the same reason: a reader and a
+ * generator both take a list of one-line facts as a set of separate requirements, where a paragraph
+ * covering five views reads as one. Each line carries its facing's sentence **verbatim** from
+ * {@link DEPTH_ORDER_TEXT}, so the sheet's vocabulary is stated once and quoted here rather than
+ * rewritten per sheet.
+ */
+export function depthOrderDescription(
+  covered: readonly [Direction, ...Direction[]],
+  cameraElevation: number,
+): string {
+  const order = depthOrder(covered, cameraElevation);
+  if (!order.perFacing) return order.text;
+  return order.facings.map(({ facing, text }) => `- **${facing}** — ${text}`).join('\n');
 }

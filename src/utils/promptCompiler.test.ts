@@ -2,10 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
+import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
-import { resolveMode, SHEET_INDEX_RANGE, sheetPlanFor } from '../constants/sheetPlans/index.ts';
+import {
+  resolveMode,
+  resolveRigMode,
+  SHEET_INDEX_RANGE,
+  sheetPlanFor,
+  sheetSeriesFor,
+} from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
@@ -33,6 +40,7 @@ import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { countWords, estimateTokens } from './promptMetrics.ts';
 import { sheetDirections } from './sheetDirections.ts';
+import { sheetRuns } from './sheetRuns.ts';
 import { styleReferencePatch } from './styleReferencePatch.ts';
 
 /**
@@ -988,6 +996,44 @@ describe('generatePrompt — the facing the sheet is for', () => {
     expect(prompt).toContain('- Primary assembly direction: North-west');
     expect(prompt).toContain('- Directions required: North-west');
     expect(prompt).toContain(promptText.DEPTH_ORDER_TEXT['north-west']);
+  });
+
+  it.each(SUBJECT_CATEGORIES)('states %s’s depth order for every facing its rig sheets cover', (category) => {
+    // The reported failure: `resolveRigMode` lets a cut-out rig reach a multi-view directional core,
+    // where section 3 lists five object yaws and section 4 draws every trunk piece at each of them —
+    // and section 5 stated the assembly facing's depth order alone, which is false for the four the
+    // sheet has turned away from. OBJECT and VEHICLE are the two categories that reach it today, and
+    // the pairing is walked rather than named so a third cannot arrive unchecked.
+    //
+    // Every sheet of every direction set the category offers, because the eight-compass core splits
+    // into two sheets whose facings differ — the case where the two rows of the split drawer are
+    // distinguished by nothing else.
+    for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+      const output = withOutput({ directions, rigMode: 'CUTOUT_RIG' });
+      if (
+        resolveRigMode(
+          category,
+          sheetSeriesFor(category, output.directionalMode, directions),
+          'CUTOUT_RIG',
+        ) !== 'CUTOUT_RIG'
+      ) {
+        continue;
+      }
+
+      for (const run of sheetRuns(category, defaultSubjectFor(category), output)) {
+        const heading =
+          run.covered.length > 1
+            ? '### Depth order for each direction this sheet covers'
+            : '### Depth order for this direction';
+        expect(run.promptText, `${category} ${directions} ${run.plan.name}`).toContain(heading);
+
+        for (const facing of run.covered) {
+          expect(run.promptText, `${category} ${directions} ${facing}`).toContain(
+            promptText.DEPTH_ORDER_TEXT[facing],
+          );
+        }
+      }
+    }
   });
 });
 

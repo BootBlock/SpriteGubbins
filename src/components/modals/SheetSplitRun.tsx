@@ -1,5 +1,3 @@
-import { resolveProjection } from '../../constants/categoryProjections.ts';
-import { depthOrderText, resolveCameraElevation } from '../../constants/promptText/index.ts';
 import { resolveRigMode, sheetSeriesFor } from '../../constants/sheetPlans/index.ts';
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import type { AnatomyComponent } from '../../types/anatomy.ts';
@@ -11,6 +9,7 @@ import { sheetCoverage } from '../../utils/sheetCoverage.ts';
 import type { SheetRun } from '../../utils/sheetRuns.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
+import { DepthOrderNote } from './DepthOrderNote.tsx';
 
 interface SheetSplitRunProps {
   readonly run: SheetRun;
@@ -52,7 +51,7 @@ interface SheetSplitRunProps {
  * and rendering one conditionally would need the row to be told what the rest of the batch looks
  * like.
  *
- * The depth order is shown because it is the thing that actually differs between facings — the
+ * The depth order is shown because it is the thing that actually differs between the sheets — the
  * pieces are identical, and which side renders in front of the body is what makes a west-facing
  * sheet not simply a mirrored east-facing one. A row that named only the facing would leave the user
  * unable to tell whether the split had done anything.
@@ -65,11 +64,11 @@ interface SheetSplitRunProps {
  * the prompt in the disclosure below it — and it is asked of the run's whole pairing rather than of
  * the one sheet, because a rig is a claim about the set that assembles together.
  *
- * **The camera is resolved for the same reason, and it decides the sentence as well as whether it
- * appears.** Depth order is a near/far question, and directly overhead there is no near side — so
- * the row asks `depthOrderText` rather than reading the per-facing record, exactly as the compiler
- * does. Reading the record would put "pieces on the left render in front of the body" immediately
- * above a prompt saying the pieces stack by height instead.
+ * **What it says is `DepthOrderNote`'s, and it is asked of everything the sheet covers.** A rig on a
+ * multi-view core draws every piece at each of the yaws section 3 lists, so a single sentence there
+ * is four false claims and a true one — and the two sheets of an eight-compass core differ from each
+ * other in exactly this, which is what the row exists to show. That component resolves the camera
+ * too, since a plan view has no near side for the question to be about.
  *
  * The prompt itself sits behind a `<details>` rather than being laid out in full. Eight prompts of
  * a thousand words each is not a list anybody can scan, and the summary is what the user is choosing
@@ -130,21 +129,7 @@ export function SheetSplitRun({
         category,
         sheetSeriesFor(category, run.output.directionalMode, run.output.directions),
         run.output.rigMode,
-      ) === 'CUTOUT_RIG' && (
-        <p className="mb-3 text-xs leading-relaxed text-ink-muted">
-          {/* The elevation is resolved against the projection the *category* leaves, not the stored
-              one: a camera the subject cannot be drawn under is degraded before the compiler prints
-              it, and a depth-order note reading the raw field would describe a different camera to
-              the sheet it is labelling. */}
-          {depthOrderText(
-            run.assembly,
-            resolveCameraElevation(
-              resolveProjection(category, run.output.projection),
-              run.output.cameraElevation,
-            ),
-          )}
-        </p>
-      )}
+      ) === 'CUTOUT_RIG' && <DepthOrderNote run={run} category={category} />}
 
       <div className="flex flex-wrap items-center gap-3">
         <ControlTooltip hint="Copy this sheet" text={DIALOG_TOOLTIPS.copySheetPrompt}>

@@ -19,7 +19,7 @@ import type { SubjectCategory } from '../types/subject.ts';
 export interface SheetDirections {
   /** Every facing this one sheet draws, in the order the prompt lists them. */
   readonly covered: readonly [Direction, ...Direction[]];
-  /** The facing the components assemble towards, which fixes the depth order. */
+  /** The facing the components assemble towards, which section 3 states as the primary one. */
   readonly assembly: Direction;
 }
 

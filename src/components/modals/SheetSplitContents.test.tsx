@@ -153,6 +153,47 @@ describe('SheetSplitContents', () => {
     }
   });
 
+  it('gives a row covering several facings the depth order of each of them', () => {
+    // The reported failure, on the surface that shows it: a cut-out rig reaching a multi-view
+    // directional core, where the row stated the *assembly* facing's depth order for a sheet that
+    // draws five. An eight-compass core is the case the drawer is actually for — its two sheets take
+    // the cardinals and the diagonals, and the depth order is the only thing on the row that
+    // distinguishes them.
+    useSubjectStore.setState({ category: 'OBJECT', subject: defaultSubjectFor('OBJECT') });
+    useOutputStore.setState({
+      output: {
+        ...DEFAULT_OUTPUT_CONFIG,
+        directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
+        rigMode: 'CUTOUT_RIG',
+        directions: 'EIGHT_COMPASS',
+      },
+    });
+    render(<SheetSplitContents />);
+
+    const runs = sheetRuns('OBJECT', defaultSubjectFor('OBJECT'), useOutputStore.getState().output);
+    const rows = screen.getAllByRole('listitem');
+    expect(runs.length).toBeGreaterThan(1);
+
+    for (const [index, run] of runs.entries()) {
+      const row = rows[index];
+      if (row === undefined) throw new Error('the drawer should render one row per sheet of the batch.');
+      expect(run.covered.length).toBeGreaterThan(1);
+
+      for (const facing of run.covered) {
+        // The name leads its own line, so the sentence and the facing it belongs to are one element
+        // apart rather than one row apart.
+        expect(within(row).getByText(facing)).toBeInTheDocument();
+        expect(row.textContent, `${run.plan.name} ${facing}`).toContain(DEPTH_ORDER_TEXT[facing]);
+      }
+
+      // And what the other sheet of the series covers is not on this one, which is the whole of what
+      // the split is showing the reader.
+      for (const facing of FACINGS.filter((other) => !run.covered.includes(other))) {
+        expect(within(row).queryByText(facing), `${run.plan.name} ${facing}`).toBeNull();
+      }
+    }
+  });
+
   it('flags the sheet of a series that is over the budget, and only that one', () => {
     // The gap this closes: `exceedsComponentBudget` was only ever asked about the sheet the studio's
     // own control was pointed at. On the facing axis that checks everything, because all eight runs

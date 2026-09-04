@@ -6,7 +6,7 @@ import {
   CATEGORY_AUDIT_TEXT,
   CATEGORY_EXCLUSION_TEXT,
   CATEGORY_GUARD_TEXT,
-  depthOrderText,
+  depthOrderDescription,
   describeDirections,
   describeHardware,
   describePalette,
@@ -206,10 +206,15 @@ export function promptValues(
     // as two different things. A `Direction` is stored lower case, so whichever bullet capitalises
     // has to be the one both go through.
     PRIMARY_DIRECTION: describeDirections([assemblyDirection]),
-    // A function of the elevation as well as the facing, for the same reason the yaw list is: which
+    // A function of the elevation as well as the facings, for the same reason the yaw list is: which
     // of a subject's pieces renders in front of its body is a near/far question, and directly
     // overhead there is no near side to answer it with.
-    DEPTH_ORDER_DESCRIPTION: depthOrderText(assemblyDirection, cameraElevation),
+    //
+    // **Asked of the whole coverage, not of the assembly facing.** A cut-out rig used to be a
+    // single-facing run sheet and this read `assemblyDirection`, which is that sheet's only facing;
+    // once the rig reached a multi-view core the same call stated the *first* facing's depth order
+    // for a sheet section 3 turns to five yaws, contradicting itself at four of them.
+    DEPTH_ORDER_DESCRIPTION: depthOrderDescription(coveredDirections, cameraElevation),
 
     BACKGROUND_KEY_DESCRIPTION: BACKGROUND_KEY_TEXT[output.backgroundKey],
     ASPECT_DESCRIPTION: ASPECT_TEXT[output.aspectRatio],
