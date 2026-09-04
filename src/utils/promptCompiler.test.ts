@@ -442,7 +442,9 @@ describe('generatePrompt — section 0’s category tripwire, per target', () =>
     expect(prompt).toContain('**Where two instructions pull against each other**');
     // The category guard proper lives in section 4 and states what the components *are*, which is
     // conditioning every target can use.
-    expect(prompt).toContain(promptText.CATEGORY_GUARD_TEXT.CHARACTER);
+    // `null`, because the default subject names no additional anatomy — so the sheet appends no
+    // block and the guard carries no exemption for one.
+    expect(prompt).toContain(promptText.CATEGORY_GUARD_TEXT.CHARACTER(null));
   });
 
   it('never leaves the precedence list carrying an exception the prompt has dropped', () => {

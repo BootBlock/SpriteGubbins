@@ -26,7 +26,7 @@ import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
-import { componentCountFor } from './componentSet.ts';
+import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
@@ -313,23 +313,24 @@ describe('no category calls the subject’s own additions an error in the specif
    *
    * EFFECT carried the only carve-out, written on the reading that a character's extra horn is still
    * anatomy and a vehicle's extra pod is still a part. That is a judgement about two *options*, and
-   * the pools hold `Floating Rune Sigil ×3` and `Empty Saddle ×1, Stirrup ×2, Rein Strap ×1`, and
-   * `Speaking Mouth Shapes ×4` — which is the one that was reported. So the exemption is stated by
-   * every category, and this suite walks the pools rather than naming the categories it believes
-   * need it: the judgement is what rots, and a pool that gains an option fails nothing.
+   * the pools hold `Floating Rune Sigil ×3`, `Empty Saddle ×1, Stirrup ×2, Rein Strap ×1` and
+   * `Speaking Mouth Shapes ×4` — the last of which is the one that was reported. So the exemption is
+   * available to every category, and this suite walks the pools rather than naming the categories it
+   * believes need it: the judgement is what rots, and a pool that gains an option fails nothing.
    */
   const EXEMPTS = {
-    guard: 'apart from the additional elements the subject named',
-    audit: 'or one of the additional elements the subject named',
+    guard: (label: string) => `, apart from the pieces named under ${label}`,
+    audit: (label: string) => `, or one of the pieces named under ${label}`,
   } as const;
 
   /**
-   * Every value a reader reaches by picking rather than typing, paired with the category offering it.
-   *
-   * Quoted from the pools rather than from the two constants `exclusions.ts` interpolates, which are
-   * module-private on purpose: an import would compare each record with the thing that wrote it and
-   * pass whatever either said. What is asserted here is the wording that reaches a prompt.
+   * Written out rather than imported from `exclusions.ts`, whose two helpers are module-private on
+   * purpose: importing them would compare each record with the thing that wrote it and pass whatever
+   * either said. What is asserted here is the wording that reaches a prompt.
    */
+  const labelFor = (category: SubjectCategory) => fieldLabelFor(category, 'additional_anatomy');
+
+  /** Every value a reader reaches by picking rather than typing, with the category offering it. */
   const POOLED: readonly { category: SubjectCategory; option: string }[] = SUBJECT_CATEGORIES.flatMap(
     (category) =>
       (CATEGORY_OPTIONS[category].fields.find((field) => field.key === 'additional_anatomy')?.options ?? [])
@@ -337,9 +338,32 @@ describe('no category calls the subject’s own additions an error in the specif
         .map((option) => ({ category, option })),
   );
 
-  it.each(SUBJECT_CATEGORIES)('%s exempts them in its guard and in its audit', (category) => {
-    expect(CATEGORY_GUARD_TEXT[category]).toContain(EXEMPTS.guard);
-    expect(CATEGORY_AUDIT_TEXT[category]).toContain(EXEMPTS.audit);
+  /** Every sheet that appends no block, so no sentence on it may except one. */
+  const APPENDS_NOTHING = SHEETS.filter(
+    ({ category, mode, directions, sheetIndex }) =>
+      anatomyFacingsFor(category, mode, directions, sheetIndex) === null,
+  );
+
+  it.each(SUBJECT_CATEGORIES)('%s splices the exemption into its opening claim', (category) => {
+    const label = labelFor(category);
+    for (const [sentence, clause] of [
+      [CATEGORY_GUARD_TEXT[category], EXEMPTS.guard(label)],
+      [CATEGORY_AUDIT_TEXT[category], EXEMPTS.audit(label)],
+    ] as const) {
+      // Containment alone would pass on a clause that had drifted out of the opening claim into some
+      // later sentence of the same entry, which is what the retired EFFECT-only test pinned with a
+      // pair of negatives written against its own join. Take the clause back out and what is left
+      // has to *open* with the sentence the record states without one — so the join is asserted,
+      // without this suite having to restate thirteen prefixes it would then have to keep in step.
+      //
+      // `startsWith` rather than equality, because a category may also answer the exemption in its
+      // own terms: PORTRAIT's audit ends by saying what an extra piece *is* held to, since the
+      // sentence before it asks every component to be the same face at the same crop, and a sweat
+      // drop is not. That addendum is the only thing this allows past the join.
+      expect(sentence(null)).not.toContain('the pieces named under');
+      expect(sentence(label)).toContain(clause);
+      expect(sentence(label).replace(clause, '').startsWith(sentence(null))).toBe(true);
+    }
   });
 
   it('has a pooled addition to walk under every category', () => {
@@ -352,14 +376,16 @@ describe('no category calls the subject’s own additions an error in the specif
     '$category / $option arrives counted, under a guard that admits it',
     ({ category, option }) => {
       const mode = DEFAULT_MODE_FOR[category];
+      const label = labelFor(category);
       const pieces = parseAdditionalAnatomy(option);
       const prompt = promptFor(category, mode, option);
       const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
 
-      // The contradiction needs both halves in the prompt to exist at all: §4 has to be asking for the
-      // pieces before the guard over them can be condemning anything. The count is derived rather than
-      // written down, so a category whose appended block stopped being counted fails here too.
-      expect(inventory).toContain(`#### ${fieldLabelFor(category, 'additional_anatomy')} —`);
+      // The contradiction needs both halves in the prompt to exist at all: §4 has to be asking for
+      // the pieces before the guard over them can be condemning anything. The count is derived
+      // rather than written down, so a category whose appended block stopped being counted fails
+      // here too.
+      expect(inventory).toContain(`#### ${label} —`);
       for (const piece of pieces) {
         expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
       }
@@ -370,8 +396,24 @@ describe('no category calls the subject’s own additions an error in the specif
       // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
       // be over the inventory it exempts, and the audit's has to be in the list the reader works
       // through before delivering.
-      expect(inventory).toContain(EXEMPTS.guard);
-      expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')).toContain(EXEMPTS.audit);
+      expect(inventory).toContain(EXEMPTS.guard(label));
+      expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')).toContain(EXEMPTS.audit(label));
+    },
+  );
+
+  it.each(APPENDS_NOTHING)(
+    'excepts nothing on $category / $mode / $directions / $sheet, which appends no block',
+    ({ category, mode, directions, sheetIndex }) => {
+      // The other half of the rule, and the one an unconditional clause got wrong: these sheets omit
+      // the block deliberately — a later sheet of a series draws the trunk's articulation, and a tail
+      // beside it would hang on nothing — so §1's line is blanked and the count excludes the pieces.
+      // A sentence excepting them there names a class the rest of the prompt never mentions.
+      const option = POOLED.find((row) => row.category === category)?.option;
+      expect(option).toBeDefined();
+
+      const prompt = promptFor(category, mode, option, sheetIndex, directions);
+      expect(prompt).not.toContain('the pieces named under');
+      expect(sectionOf(prompt, 'COMPONENT INVENTORY')).not.toContain(`#### ${labelFor(category)} —`);
     },
   );
 });

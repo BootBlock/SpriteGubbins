@@ -238,17 +238,23 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * that adds no content at all crossed it. The margin is restored to the same order as every raise
  * above, not widened.
  *
- * **Raised once more, from 2314, by the exemption every category's §4 guard and §9 audit now state
- * for the pieces the subject itself named.** Two clauses, interpolated into all thirteen entries of
- * each record in `constants/promptText/exclusions.ts` — prompt text, so constant data the entry
- * chunk reaches, on the footing every raise above stands on. Measured against the build immediately
- * before it, from the same `node_modules`, the precache goes from **2313.83** to **2314.17 KiB**, a
- * delta of 0.34. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ * **Raised once more, from 2314, by the exemption a category's §4 guard and §9 audit now carry for
+ * the pieces the subject itself named.** Two clauses in `constants/promptText/exclusions.ts`, spliced
+ * into all thirteen entries of each record by a helper the entries call — prompt text, so constant
+ * data the entry chunk reaches, on the footing every raise above stands on. Measured against the
+ * build immediately before it, from the same `node_modules`, the precache goes from **2313.83** to
+ * **2314.23 KiB**, a delta of 0.40. No file was added to or removed from `PRECACHE_SHAPES`, and no
+ * chunk was renamed.
+ *
+ * The delta is that small because each clause is written down **once**: the entries interpolate a
+ * function rather than a literal, so the bundle carries the sentence a single time and each of the
+ * twenty-six splices costs a call. Written out at the call sites it would have been twenty-six
+ * copies of about fifty characters.
  *
  * The base is again worth reading beside the ceiling it was under: 2313.83 against 2314 is
- * **0.17 KiB of headroom**, the second-narrowest this margin has been, and it is why a third of a
- * KiB of prose crossed it. The margin is restored to the same order as every raise above rather than
- * widened.
+ * **0.17 KiB of headroom**, the second-narrowest this margin has been, and it is why four tenths of
+ * a KiB of prose crossed it. The margin is restored to the same order as every raise above rather
+ * than widened.
  */
 export const PRECACHE_CEILING_KIB = 2317;
 
