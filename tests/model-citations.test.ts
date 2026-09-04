@@ -27,6 +27,13 @@ import { scannableSources } from '../scripts/sourceFiles.ts';
  * says in words that it is not a vendor statement, which is all this repository asks of a
  * second-hand source. A host joining this list has to fail a different test from that one: it has to
  * be a generated substitute for a primary source that is itself public.
+ *
+ * **The sweep stops at `src/`, and the one file outside it that still carries such a link is why.**
+ * `docs/todo/baseline-prompt-new.md` records the change that first wrote the deepwiki citation, and
+ * a plan's record of what it did is evidence — CLAUDE.md forbids rewriting one to match current
+ * practice. So the correction is written beside it rather than over it, which leaves the retired URL
+ * in the document on purpose. Widening this walk to `docs/` would fail on exactly the thing that is
+ * supposed to still be there.
  */
 const GENERATED_WIKIS = ['deepwiki.com', 'zread.ai'];
 

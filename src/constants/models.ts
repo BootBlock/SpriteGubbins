@@ -330,13 +330,15 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     //
     // **What Black Forest Labs say about negative prompts is written for the hosted tier**, and
     // this entry is not it. Their prompting guide is titled "Prompting Guide - FLUX.2 [pro] &
-    // [max]", names no open weight anywhere, and states no token limit; the FLUX.2 [dev] model card
-    // says nothing about prompting at all. What is checkable for the weights is the reference
-    // implementation, and it settles the question on its own: the CLI exposes no negative field,
-    // and classifier-free guidance runs its unconditional branch on the empty string, which
-    // `denoise_cfg` documents as the concatenation of an empty prompt with the real one. So the
-    // description below argues from the code rather than borrowing a sentence scoped to two models
-    // this entry does not cover. https://docs.bfl.ai/guides/prompting_guide_flux2
+    // [max]", states no token limit, and addresses no open weight in any of its advice — the one
+    // place [dev] appears at all is a multi-reference count in the Quick Reference table, which is a
+    // capability figure rather than guidance. The FLUX.2 [dev] model card says nothing about
+    // prompting either. What is checkable for the weights is the reference implementation, and it
+    // settles the question on its own: the CLI exposes no negative field, and classifier-free
+    // guidance runs its unconditional branch on the empty string, which `denoise_cfg` documents as
+    // the concatenation of an empty prompt with the real one. So the description below argues from
+    // the code rather than borrowing a sentence from a page written for models this entry does not
+    // cover. https://docs.bfl.ai/guides/prompting_guide_flux2
     id: 'FLUX',
     name: 'Flux (open weights — FLUX.2 dev / klein)',
     description:
@@ -377,16 +379,17 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // bind. If a per-variant figure is ever published, cite that and delete this paragraph.
     // https://docs.bfl.ai/quick_start/generating_images
     //
-    // **The negative-prompt claim is scoped to the guide that makes it.** That guide is titled
-    // "Prompting Guide - FLUX.2 [pro] & [max]", so [flex] is an extension this entry makes rather
-    // than a vendor statement. Nothing in Black Forest Labs' documentation contradicts it — no
-    // FLUX.2 endpoint they document takes a negative prompt parameter — and the wrapper's positive
-    // restatement costs a [flex] user nothing if it turns out to be over-cautious.
+    // **The negative-prompt claim is scoped to the guide that makes it**, and this entry is the
+    // three models that guide speaks to. Its title names [pro] and [max], and its Quick Reference
+    // addresses [flex] directly — a guidance range, a step count and a multi-reference figure — so
+    // all three variants named here are inside what it advises. What it advises nowhere is an open
+    // weight, which is why the `FLUX` entry above argues from the inference code instead. No FLUX.2
+    // endpoint Black Forest Labs document takes a negative prompt parameter either.
     // https://docs.bfl.ai/guides/prompting_guide_flux2
     id: 'FLUX_API',
     name: 'Flux (BFL API — FLUX.2 pro / max / flex)',
     description:
-      'Black Forest Labs’ hosted FLUX.2 tier, which reads 32K tokens — so the whole specification fits. The same positive restatement as the open weights, since the prompting guide for [pro] and [max] states that FLUX.2 does not support negative prompts.',
+      'Black Forest Labs’ hosted FLUX.2 tier, which reads 32K tokens — so the whole specification fits. The same positive restatement as the open weights, since Black Forest Labs’ prompting guide for this tier states that FLUX.2 does not support negative prompts.',
     // The BFL Playground, which Black Forest Labs name as the place to try the hosted tier without
     // writing code. https://help.bfl.ai/articles/8667153955-what-is-the-bfl-playground
     generatorSite: { kind: 'PUBLIC', url: 'https://playground.bfl.ai/' },

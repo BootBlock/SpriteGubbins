@@ -67,8 +67,8 @@ export type ScaleUnitFrame = (typeof SCALE_UNIT_FRAMES)[number];
  *
  * **One record rather than five, because they are one claim.** Two of the five are the wrappers'
  * channels, for the reason `RenderStyleSurface` carries both of its: a generator is reached through a
- * positive channel where Flux is told what the sheet is *not* in prose, because Black Forest Labs
- * document that Flux discards a negative prompt, and a negative one where Stable Diffusion and Qwen
+ * positive channel where Flux is told what the sheet is *not* in prose, because no FLUX.2 model
+ * takes a negative prompt to discard it with, and a negative one where Stable Diffusion and Qwen
  * take bare terms. The other three are the prompt body, which reaches **every** target rather than
  * three, and which stated all of this in a figure's vocabulary on all nine categories long after the
  * wrappers had stopped. Filing any of the five apart from the others is what lets a category name one
