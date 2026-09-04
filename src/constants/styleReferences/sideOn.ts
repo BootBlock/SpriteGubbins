@@ -49,7 +49,14 @@ const SHOVEL_KNIGHT: StyleReference = {
     'The virtual frame is 400 × 240 pixels — the same rendered height as an NES but deliberately wider, for a 16:9 presentation.',
     'Background tiles are 16 × 16 pixels, as most artwork for that machine was.',
     'No sprite carries more than five colours plus transparency, where the machine being imitated allowed three plus transparency.',
-    'Four colours outside that machine’s 54-colour hardware palette are used — a dark purple, a deep red, a beige and a light brown — for gradients and for skin tones the original palette could not reach.',
+    // No count of that machine's palette, deliberately. How many colours an NES holds is stated
+    // once, by the NES entry in `constants/palettes/`, and a reader may pin that palette and this
+    // reference in one configuration — so a figure here can only agree with the table four lines
+    // above it in the compiled prompt, or contradict it. Yacht Club Games publish 54 and Lospec's
+    // table has 55, both defensibly: the PPU emits composite rather than RGB, so the count depends
+    // on the decoding and on how the duplicate and unstable slots are counted. What this sentence
+    // is for survives without it.
+    'Four colours outside that machine’s own hardware palette are used — a dark purple, a deep red, a beige and a light brown — for gradients and for skin tones the original palette could not reach.',
   ],
   settings: {
     renderStyle: 'RETRO_PIXEL_ART',
