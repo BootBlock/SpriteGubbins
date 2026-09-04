@@ -238,21 +238,41 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * that adds no content at all crossed it. The margin is restored to the same order as every raise
  * above, not widened.
  *
- * **Raised once more, from 2314, by the rig relation moving onto the sheet plans.** A cut-out rig
+ * **Raised once more, from 2314, by the exemption a category's §4 guard and §9 audit now carry for
+ * the pieces the subject itself named.** Two clauses in `constants/promptText/exclusions.ts`, spliced
+ * into all thirteen entries of each record by a helper the entries call — prompt text, so constant
+ * data the entry chunk reaches, on the footing every raise above stands on. Measured against the
+ * build immediately before it, from the same `node_modules`, the precache goes from **2313.83** to
+ * **2314.23 KiB**, a delta of 0.40. Merged with the style-reference change that landed alongside it,
+ * which shortens a sentence, the build reports **2314.22**. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * The delta is that small because each clause is written down **once**: the entries interpolate a
+ * function rather than a literal, so the bundle carries the sentence a single time and each of the
+ * twenty-six splices costs a call. Written out at the call sites it would have been twenty-six
+ * copies of about fifty characters.
+ *
+ * The base is again worth reading beside the ceiling it was under: 2313.83 against 2314 is
+ * **0.17 KiB of headroom**, the second-narrowest this margin has been, and it is why four tenths of
+ * a KiB of prose crossed it. The margin is restored to the same order as every raise above rather
+ * than widened.
+ *
+ * **Raised once more, from 2317, by the rig relation moving onto the sheet plans.** A cut-out rig
  * could be asked for on a deliverable that already draws each moving part once per position it
  * takes, so section 5 forbade what section 4 required; the fix is a `posing` field on every one of
  * the thirty-two sheet plans, a second resolver beside `fixedRigMode`, and the sentence the rig
  * select now shows when the sheet contents withdraw the option. All of it is constant data or studio
- * code the entry chunk reaches, which is the footing every raise above stands on. Measured against
- * the build immediately before it — 2313.82 KiB, rebuilt from that commit with the same
- * `node_modules` — the precache reaches **2315.86 KiB**, a delta of 2.04. No file was added to or
- * removed from the precache, and no chunk was renamed.
+ * code the entry chunk reaches, which is the footing every raise above stands on. Measured on its
+ * own base before this branch met main — 2313.82 KiB — the precache reached **2315.86**, a delta of
+ * 2.04; merged with the guard exemption the paragraph above records, the build reports **2316.25**,
+ * which is that paragraph's own merged 2314.22 plus the same delta to within 0.01. No file was added
+ * to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
  *
- * That base sat 0.18 KiB under the old ceiling, which is the second-narrowest this margin has been
- * and is why a delta of two KiB crossed it at all. The margin is restored to the same order as every
- * raise above rather than widened.
+ * Both raises were bought from the same 2314, which is why this one names 2317 rather than 2314 as
+ * the figure it lifts: two branches each found 0.18 KiB of headroom under it and each crossed it.
+ * The margin is restored to the same order as every raise above rather than widened.
  */
-export const PRECACHE_CEILING_KIB = 2319;
+export const PRECACHE_CEILING_KIB = 2320;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

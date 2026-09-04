@@ -208,9 +208,12 @@ describe('CATEGORY_ASSEMBLY', () => {
     // words is a judgement no run-length can hold, which is why each entry records its own.
     const { audit, exclusion, instruction } = CATEGORY_ASSEMBLY[category];
     for (const [form, neighbour, where] of [
-      [instruction, CATEGORY_GUARD_TEXT[category], 'the section 4 guard'],
+      // `null` is the sentence without the additions exemption — this category's own words, which
+      // is what a restatement would be a restatement of. The clause is shared by all thirteen, so
+      // comparing against the exempting form would hand every category the same four-word runs.
+      [instruction, CATEGORY_GUARD_TEXT[category](null), 'the section 4 guard'],
       [exclusion, CATEGORY_EXCLUSION_TEXT[category], 'the section 8 exclusion line'],
-      [audit, CATEGORY_AUDIT_TEXT[category], 'the section 9 category check'],
+      [audit, CATEGORY_AUDIT_TEXT[category](null), 'the section 9 category check'],
     ] as const) {
       const shared = [...runsOf(form, 4)].filter((run) => runsOf(neighbour, 4).has(run));
       expect(shared, `${category} repeats ${where}: “${shared.join('”, “')}”`).toEqual([]);

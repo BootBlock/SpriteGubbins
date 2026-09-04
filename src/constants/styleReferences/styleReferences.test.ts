@@ -60,6 +60,28 @@ const SETTING_IDENTIFIER = /\b[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+\b/;
  */
 const FACING_VOCABULARY = /\b(facing|facings|mirror|mirrored|mirroring|flipped|flipping)\b/i;
 
+/**
+ * A count of a machine’s own hardware palette, which a characteristic may never state.
+ *
+ * That figure is stated once, by the machine’s entry in `constants/palettes/` — its label, its
+ * docblock, and where the space is `FIXED` the length of the table itself. A palette and an art
+ * style reference are independent controls, so one prompt can carry both blocks: Shovel Knight’s
+ * characteristics said the NES holds 54 colours four lines under a table the NES palette introduces
+ * as 55, and the generator resolves that disagreement however it likes. Neither figure was careless
+ * — the reference’s publisher says 54 and the palette takes Lospec’s published table — which is the
+ * whole argument for the sentence not counting at all.
+ *
+ * **The word `hardware` is the anchor, and that is narrower than the rule it serves.** The size of a
+ * palette *a game* built for itself is a fact about the game and belongs here — Age of Empires II
+ * really does index one 256-colour palette — so this cannot simply refuse a number beside the word
+ * `palette`. What it reaches is a machine’s palette counted in the two orders English offers; a
+ * sentence phrased around neither, or counting the machine’s slots without the word, passes it. As
+ * with the two assertions above, the mechanical half is what is written down and the rest is a
+ * review responsibility.
+ */
+const HARDWARE_PALETTE_COUNT =
+  /\d[\d,]*[\s-]colours? hardware palette|hardware palette (?:of|holds|has|carries) \d/i;
+
 describe('every art style reference', () => {
   it('defines every id but NONE, and NONE alone', () => {
     expect(STYLE_REFERENCES.NONE).toBeNull();
@@ -103,6 +125,14 @@ describe('every art style reference', () => {
     expect(
       facings,
       `${reference.name} states a facing scheme, which the direction set already decides — put it on the preset card instead`,
+    ).toEqual([]);
+  });
+
+  it.each(REFERENCES)('$name never counts a machine’s hardware palette', (reference) => {
+    const counting = reference.characteristics.filter((line) => HARDWARE_PALETTE_COUNT.test(line));
+    expect(
+      counting,
+      `${reference.name} counts a machine’s hardware palette, which the palette library already states — say what the look does with that palette and leave the figure to the table`,
     ).toEqual([]);
   });
 

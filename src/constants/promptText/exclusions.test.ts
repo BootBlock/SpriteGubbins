@@ -151,7 +151,7 @@ describe('EFFECT’s exclusions against the effect types it offers', () => {
     // than on having checked nothing. That is the stronger of the two positions and it is why the
     // assertion is written as a set: restoring a noun list here puts the terms back and fails, which
     // is the regression worth catching, and a reader can tell the difference from the message.
-    const audit = CATEGORY_AUDIT_TEXT.EFFECT;
+    const audit = CATEGORY_AUDIT_TEXT.EFFECT(null);
     const unnamed = collisionsWith(audit).filter((term) => !audit.toLowerCase().includes(term));
 
     expect(unnamed, 'the audit bans an effect type’s own noun without naming it as the effect').toEqual([]);
