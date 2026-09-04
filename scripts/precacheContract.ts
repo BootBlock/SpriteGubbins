@@ -34,8 +34,8 @@
  * and the settings dialog at once — which changes which entries reach a good many modules, and
  * rolldown re-partitions around it. `about`, `dialogs`, `usePresetStore`, `useQuantisePresetStore`
  * and `useSettingsStore` are chunks the app already downloaded inside larger ones: measured against
- * the build immediately before, the precache goes from 48 entries at 2312.62 KiB to 53 at 2312.79,
- * so what is added is five requests and 0.17 KiB, not five files of new code.
+ * the build immediately before, the precache goes from 48 entries at 2312.62 KiB to 53 at 2312.78,
+ * so what is added is five requests and 0.16 KiB, not five files of new code.
  *
  * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
  * icons a second time, *after* the `manifestTransforms` step runs. So this list and the ceiling
