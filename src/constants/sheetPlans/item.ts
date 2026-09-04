@@ -16,13 +16,22 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * **Neither plan draws the carry piece, and the field that named one now says so.** `clothing` is
  * *Scabbard / Holster* here, and its guidance used to promise a sheath "emitted as its own
  * component" while section 4 carried no entry for it on either sheet — so a reader who asked for a
- * matched scabbard was told they would get one and handed a sheet with nowhere for it. The
- * inventory is the half that cannot move. A plan entry is unconditional by construction, and this
- * pool offers `NONE`: two shipped presets pin it, a flat vector keycard among them, and an entry
- * would order each of them an empty scabbard and count it into a contract that forbids omitting
- * entries. What the reader who genuinely needs a separable carrier has is *Detachable Parts*, which
- * section 1 excepts and section 4 counts because they named it — so the guidance points there, and
- * the field itself now describes how the item is stowed rather than a second sprite.
+ * matched scabbard was told they would get one and handed a sheet with nowhere for it. The guidance
+ * is the half that moved: an item is drawn stowed with whatever carries it rather than beside a
+ * second sprite of it, so the field describes how the item is stowed and shapes its design without
+ * costing a component. What the reader who genuinely needs a separable carrier has is *Detachable
+ * Parts*, which section 1 excepts and section 4 counts because they named it, and the guidance
+ * points there.
+ *
+ * **The original argument for it was partly mechanical, and that half has since gone.** This pool
+ * offers `NONE` — two shipped presets pin it, a flat vector keycard among them — and a plan entry
+ * was unconditional by construction, so an entry would have ordered each of those an empty scabbard
+ * and counted it into a contract that forbids omitting entries. That is no longer true: the pool
+ * declares its `absentOption` and an entry marked `'entirely'` is taken out for a subject that
+ * chooses it, which is what BACKGROUND and VEHICLE now rely on. So what holds the decision up is the
+ * content half alone, and it holds up on its own — reversing it would mean rewriting the field's
+ * guidance a second time, which is a question for whoever asks it rather than a consequence of the
+ * machinery existing.
  */
 
 export const ITEM_PART_LIBRARY: SheetPlan = {

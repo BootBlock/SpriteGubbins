@@ -205,6 +205,7 @@ export const ITEM: CategoryDefinition = {
         'Oilcloth Roll & Ties',
         'Woven Basket & Cloth Cover',
       ],
+      absentOption: 'NONE',
     },
     {
       key: 'worn_details',

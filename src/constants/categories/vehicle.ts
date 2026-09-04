@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ABSENT_OPTION_DROPS_THE_PIECES, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -189,7 +189,8 @@ export const VEHICLE: CategoryDefinition = {
       key: 'clothing',
       label: 'Armour & Cladding',
       tooltip:
-        'What is bolted over the bare frame — plating, fairings, improvised scrap. Cladding is drawn as separate geometry from the hull beneath it, so it is also the cheapest way to give one chassis an up-armoured variant.',
+        'What is bolted over the bare frame — plating, fairings, improvised scrap. Cladding is drawn as separate geometry from the hull beneath it, so it is also the cheapest way to give one chassis an up-armoured variant. ' +
+        ABSENT_OPTION_DROPS_THE_PIECES,
       options: [
         'Bolted Applique Plating',
         'Reactive Armour Blocks',
@@ -201,6 +202,7 @@ export const VEHICLE: CategoryDefinition = {
         'Canvas Tilt Over Hoops',
         'Mud Guards & Splash Flaps',
       ],
+      absentOption: 'Bare Unclad Frame',
     },
     {
       key: 'worn_details',

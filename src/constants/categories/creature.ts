@@ -224,6 +224,7 @@ export const CREATURE: CategoryDefinition = {
         'Bell Collar & Lead Rope',
         'Grafted Bio-Armour Plates',
       ],
+      absentOption: 'NONE',
     },
     {
       key: 'worn_details',

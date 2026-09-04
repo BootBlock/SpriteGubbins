@@ -80,6 +80,7 @@ function distinguishingFacing(sheets: readonly BatchSheet[], current: BatchSheet
 export function sheetIdentity(
   category: SubjectCategory,
   output: OutputConfig,
+  clothing: string,
   additionalAnatomy: string,
 ): SheetIdentity {
   const anatomy = parseAdditionalAnatomy(additionalAnatomy);
@@ -105,7 +106,14 @@ export function sheetIdentity(
   );
 
   return {
-    names: componentSlots(category, mode, current.output.directions, current.output.sheetIndex, anatomy),
+    names: componentSlots(
+      category,
+      mode,
+      current.output.directions,
+      current.output.sheetIndex,
+      clothing,
+      anatomy,
+    ),
     facing: distinguishingFacing(sheets, current),
     sheet: {
       category,
@@ -114,7 +122,7 @@ export function sheetIdentity(
       total: sheets.length,
       facings: current.covered,
       assembly: current.assembly,
-      components: sheetComponentCount(category, current, anatomy),
+      components: sheetComponentCount(category, current, clothing, anatomy),
       rigMode,
     },
   };

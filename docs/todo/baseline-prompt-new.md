@@ -1674,6 +1674,54 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > a model that drops by *choice* can be told what to drop, where a truncating encoder cuts by
 > position and cannot.
 
+> **Corrected by [issue #157](https://github.com/BootBlock/SpriteGubbins/issues/157) — three claims
+> above are cited to pages that do not carry them, or to nothing.** The record stands as it was
+> written; what follows is what it should have said. The pattern is the one issue #155 found, one
+> generation on: a fact checked once, cited to the nearest page rather than the page that states it,
+> and then left where nothing reads it again.
+>
+> **Sol and the thinking tier** — "So choosing Sol puts the user on a thinking tier, which is the
+> documented switch for the image model's own planning pass", above, is the one that *decayed*
+> rather than the one that was wrong, which makes it the more useful of the three. It quotes
+> [GPT-5.6 in ChatGPT](https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt) fairly for
+> what that page said when it was written. That page now reads "GPT-5.6 Sol powers **Instant**,
+> Medium, High, and Extra High on eligible paid plans", and describes Instant as "Fast responses for
+> everyday questions" — so Sol reaches the picker's non-thinking option and the inference no longer
+> holds. The API side agrees, and always did: `reasoning.effort` on
+> [`gpt-5.6-sol`](https://developers.openai.com/api/docs/models/gpt-5.6-sol) accepts `none`. What
+> survives is the release-notes sentence on its own: images with thinking is on every paid plan and
+> is conditioned on the *model you pick*, not on Sol. `CHATGPT_5_6_SOL`'s description now says that
+> and no more.
+>
+> **Seedream's "5.0 Pro became the flagship on 8 July 2026"** is cited above to a fal.ai guide that
+> carries no release dates at all. BytePlus date the Lite half themselves — "On February 24,
+> Seedream 5.0 Lite … became available via API on
+> [ModelArk](https://www.byteplus.com/en/blog/seedream5-0-lite)" — and announce no release day for
+> Pro anywhere. What their own [Seedream 5.0 Pro
+> page](https://ai.byteplus.com/en/activity/seedream5-0) carries is the model id
+> `dola-seedream-5-0-pro-260628`, a 2026-06-28 date code, and the line "From July 8, Seedream 5.0
+> Pro images work seamlessly across Seedance 2.5, 2.0, Fast, and Mini". Late June to early July is
+> what those two support. The conclusion the paragraph draws from the date — that 4.5 is superseded,
+> and that adding it would have reproduced the Flux defect — is unaffected.
+>
+> **"`QWEN_IMAGE` (Qwen-Image 3.0, 21 July 2026)"** has no source, and is a third figure: launch
+> write-ups say 22 July, and Alibaba's own [model lifecycle
+> table](https://help.aliyun.com/en/model-studio/newly-released-models) dates `qwen-image-3.0-pro` —
+> the id whose page carries the 4.5K ceiling — to **2026-07-20**, with the plain `qwen-image-3.0`
+> following on 2026-08-04. The vendor's table over a write-up, and the id named, because the two ids
+> did not ship on the same day.
+>
+> Two further findings from the same issue do not touch this document, and are recorded here for the
+> reason the three above are. `src/utils/targetCapabilities.ts` justified gating the self-audit with
+> "which is exactly what the guidance for Imagen warns against" — pointing, through a target removed
+> above, at this document's own `GOOGLE_IMAGEN` note that Imagen "handles descriptive natural
+> language well and long rule lists poorly", which traces to nothing Google published. The gate is
+> right without it; the appeal is gone. And `models.ts` described FLUX 3 Video as generally
+> available and FLUX 3 Image as in limited early access, where [the
+> announcement](https://bfl.ai/blog/flux-3) puts every capability behind an early access phase and
+> the [release notes](https://docs.bfl.ai/release-notes) date Video to 4 August 2026 "as a preview"
+> and announce Image nowhere.
+
 > The V8.1 date above was first recorded here as 11 June 2026; Midjourney's
 > [Version](https://docs.midjourney.com/hc/en-us/articles/32199405667853-Version) page dates the
 > switch to **10 June 2026**, and it is corrected in place because it is an external fact this

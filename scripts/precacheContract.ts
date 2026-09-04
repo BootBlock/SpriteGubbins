@@ -37,6 +37,18 @@
  * the build immediately before, the precache goes from 48 entries at 2312.62 KiB to 53 at 2312.78,
  * so what is added is five requests and 0.16 KiB, not five files of new code.
  *
+ * **`isTextEntry` arrived the same way, and is one module rather than five.** It holds the predicate
+ * that tells a box which edits text from every other control, which `useUndoShortcut` asks for the
+ * keyboard's sake and `useFileDropGuard` for the drag's — a hook reached from the studio's history
+ * controls and a hook reached from the shell, so rolldown cuts it out of both into a chunk they
+ * share and names the chunk after it. Measured against the build immediately before, from the same
+ * `node_modules`, the precache goes from 2318.71 to **2319.14 KiB** across 53 entries and then 54:
+ * what a first visit gains is one request and 0.43 KiB, not a file of new code. Merged with the
+ * `--color-tab` cyan guard that landed alongside it, the build reports **2319.18**. No chunk was
+ * renamed, and the ceiling is left where it stands — on 0.82 KiB of headroom, which is the
+ * narrowest this margin has been and is worth reading before the next base figure is taken for
+ * slack.
+ *
  * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
  * icons a second time, *after* the `manifestTransforms` step runs. So this list and the ceiling
  * under it describe the globbed precache — every entry of the shipped worker but those three — and
@@ -67,6 +79,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/database-*.js',
   'assets/dialogs-*.js',
   'assets/firstOfEachId-*.js',
+  'assets/isTextEntry-*.js',
   'assets/models-*.js',
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',
@@ -299,8 +312,41 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **Three branches found headroom under 2314 within a day and all three reached for it**, which is
  * what a margin of that order buys — not a reason to widen it, but worth knowing before reading the
  * next base figure as slack.
+ *
+ * **2320 → 2323, bought by letting a subject decline a component its sheet plan ordered anyway.** A
+ * plan is addressed by category, mode, direction set and sheet index, so its entries were
+ * unconditional — and four `clothing` pools offered a value meaning the subject has none of what the
+ * field describes, so section 1 stated `Armour & Cladding: Bare Unclad Frame` while section 4 ordered
+ * a cladding panel and forbade omitting it. What a first visit pays for is: an `absentOption` on the
+ * nine pools that offer one and the resolver that reads it; `planAsDrawn` and `drawnPlanFor` in
+ * `utils/sheetPlanClothing.ts`, which take the marked entries out before anything walks the plan; the
+ * `clothing` argument threaded through the nine functions that count, name or render an inventory
+ * and the call sites that reach them; `drawsClothing` widening from `true` to
+ * `'entirely' | 'partly'` on 26 entries; two inventory lines split into four so the half a reader can
+ * decline stands alone; ICON's rewritten tooltip, which is the one entry that grew rather than
+ * moved; and the sentence in `constants/guidanceSentences.ts` that tells a reader the option takes
+ * the pieces off the sheet, quoted by the three fields it is true of.
+ *
+ * Measured against the main tip this branch started from (`0dbcb2f`), rebuilt from the same
+ * `node_modules` — **2318.75 KiB** — the branch merged onto it reports **2320.45**, a delta of 1.70
+ * and 0.45 over the ceiling the two raises above had bought. So 2323 restores a margin of the same
+ * order rather than widening it, exactly as those two did. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed **by this change**.
+ *
+ * **The figure a build reports today is higher than that, and none of the difference is this
+ * change's.** Main moved twice while the branch was in flight, and the second merge brought a
+ * 54th entry with it, so the tip this landed on builds at **2320.93**. The base is named above for
+ * exactly that reason: a delta is only checkable against the commit it was taken from, and a bare
+ * "main's own tip" stops identifying one the moment somebody else lands.
+ *
+ * **The delta is data and threading, not a new module**, which is why it is larger than the paint-rule
+ * change it builds on: that one added a flag and read it, where this one adds a value a plan is
+ * resolved *through* and has to carry the subject to every reader of an inventory. The nine
+ * `absentOption` declarations are the cheapest part of it and the part that does the most — six of
+ * the nine are categories no plan of which draws the attribute today, and they are declared so the
+ * invariant reaches them before an entry does.
  */
-export const PRECACHE_CEILING_KIB = 2320;
+export const PRECACHE_CEILING_KIB = 2323;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

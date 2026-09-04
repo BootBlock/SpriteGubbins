@@ -98,16 +98,35 @@ export interface ComponentEntry {
   readonly count: number;
   readonly kind: ComponentKind;
   /**
-   * Set where this entry draws what the subject's `clothing` field describes as a piece of its own,
-   * rather than as paint on the piece it sits against.
+   * How much of this entry draws what the subject's `clothing` field describes, on an entry that
+   * draws it as a piece of its own rather than as paint on the piece it sits against.
    *
-   * **The test is whether the entry draws what that category's `clothing` field describes**, with the
-   * pool as the evidence rather than the criterion. INTERFACE's field is what is applied along the
-   * widget's edge, so the nine-slice set's corner ornament carries this and its divider rail does
-   * not — a rule between two sections is not an edge treatment, and nothing the pool offers is a
-   * divider. An entry that draws the attribute **among** other things carries it too: VEHICLE's rig
-   * line is `Fittings: cladding panel ×1, lamp housing ×1`, and the cladding panel in it is a piece
-   * the reader's choice describes whatever the lamp beside it is.
+   * **`'entirely'` means the entry is the attribute and nothing else** — VEHICLE's
+   * `Cladding panel or fairing ×1`, BACKGROUND's `Atmosphere veil ×1`, INTERFACE's
+   * `Corner ornament ×1`. **`'partly'` means it draws the attribute among other things**:
+   * OBJECT's `Fittings: handle ×1, latch or catch ×1, mounting bracket ×2` is the *Mounting /
+   * Framework* the reader chose in its brackets and a handle and a latch besides, and BUILDING's
+   * `Façade fittings` line is the *Awning & Addons* in its awning and a sign board and a
+   * projecting fixture besides.
+   *
+   * **The distinction decides whether the entry can be taken away**, which is what makes it a
+   * separate value rather than a note. A pool that offers an `absentOption` — `Bare Unclad Frame`,
+   * `Clear — No Overlay` — lets the reader say the subject has none, and section 4 has to stop
+   * ordering one: `planAsDrawn` in `utils/sheetPlanClothing.ts` drops the `'entirely'` entries and
+   * the count, the inventory prose and the manifest's slot names all follow, because all three walk
+   * one structure. A `'partly'` entry cannot be dropped without taking a handle and a latch with it,
+   * and it cannot be kept without ordering a mounting bracket for a subject that has no mount — so
+   * **a category declaring an `absentOption` for `clothing` may carry no `'partly'` entry at all**,
+   * and `sheetPlanClothing.test.ts` fails on one. The remedy is to split the line, which is what
+   * VEHICLE's rig fittings and INTERFACE's trim were: two entries where the cladding panel and the
+   * corner ornament each stand alone, and the lamp housing and the divider rule beside them are
+   * ordinary components that were never the reader's to decline.
+   *
+   * **The test of which value an entry takes is what that category's `clothing` field describes**,
+   * with the pool as the evidence rather than the criterion. INTERFACE's field is what is applied
+   * along the widget's edge, so the nine-slice set's corner ornament carries this and its divider
+   * rail does not — a rule between two sections is not an edge treatment, and nothing the pool
+   * offers is a divider.
    *
    * Section 1 states that every fitted, applied and worn attribute it lists is painted onto the
    * component it sits on and never drawn as a separate piece. That rule was written for a
@@ -123,7 +142,9 @@ export interface ComponentEntry {
    * section 1 emits is a fact about one *sheet* — does this inventory draw the attribute
    * separately? — and `planDrawsClothing` in `utils/sheetPlanClothing.ts` derives that from the
    * entries below, rather than a flag on the plan asserting something no entry anchors. A plan that
-   * drops its cladding panel therefore stops claiming the exception in the same edit.
+   * drops its cladding panel therefore stops claiming the exception in the same edit — which is
+   * also how a subject declaring none stops being told the attribute is excepted, since that
+   * sentence is derived from the plan *as drawn*.
    *
    * **It is a property of the sheet and not of the category**, which is what BUILDING shows: its
    * module library draws the awning as a façade fitting, while its directional views and its tile
@@ -136,11 +157,11 @@ export interface ComponentEntry {
    * does — the flag rides on the awning, which is what *Awning & Addons* offers, and the sign board
    * beside it is a fitting either field could claim. `additional_anatomy` is excepted by its own
    * machinery in `utils/componentSet.ts`, which appends the reader's pieces to the inventory and
-   * counts them, and ITEM is the category that has neither: its `clothing` pool offers `NONE`, an
-   * entry is unconditional, so its guidance sends a reader who needs a separable carrier to
-   * *Detachable Parts* instead — see `sheetPlans/item.ts`.
+   * counts them, and ITEM is the category that has neither: its *Scabbard / Holster* pool offers
+   * `NONE` and neither plan draws a carry piece, so its guidance sends a reader who needs a
+   * separable carrier to *Detachable Parts* instead — see `sheetPlans/item.ts`.
    */
-  readonly drawsClothing?: true;
+  readonly drawsClothing?: 'entirely' | 'partly';
 }
 
 /** A headed run of entries — the inventory's own structure, as section 4 renders it. */

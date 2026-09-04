@@ -25,6 +25,19 @@ import type { SheetPlan } from '../../types/components.ts';
  * **Nothing here carries lettering**, and the sheet says it twice for the reason
  * `CATEGORY_EXCLUSION_TEXT` gives: a stack count, a cooldown and a keybind are drawn by the engine at
  * runtime over the top of the sprite, and every real icon appears to carry them.
+ *
+ * **The overlay library is unconditional, and the field that offered a way out of it no longer
+ * does.** *Applied Overlay* used to open with `No Overlay`, which is what a reader who never touched
+ * the control got: section 1 then stated the set carried no overlay while the nine entries below
+ * ordered a disabled veil, a cooldown sweep, four tier marks and a flare, and section 4's closing
+ * rule forbade dropping any of them. The other three categories that offered such a value answer it
+ * by taking the entries away — see `ComponentEntry.drawsClothing` — and that answer is wrong here:
+ * these thirteen components are the state and overlay half of the sheet, and a reader who left the
+ * default alone would have lost a highlight, a selection and a disabled state they never declined.
+ * So the value went instead, and the field now names the overlay the set is designed around rather
+ * than promising that none is drawn. It is ITEM's resolution reached from the other side: there the
+ * guidance promised a component no plan carried, here it promised the absence of components every
+ * plan carries, and in both the inventory is the half that could not move.
  */
 
 export const ICON_SYMBOL_SET: SheetPlan = {
@@ -66,21 +79,21 @@ if it is redrawn:`,
           text: 'Disabled veil ×1 — what is laid over an icon to read as unavailable',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'highlight-halo',
           text: 'Highlight halo ×1 — what marks the icon under the pointer',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'selected-ring',
           text: 'Selected ring ×1 — what marks the icon currently chosen',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'cooldown-sweep',
@@ -88,7 +101,7 @@ if it is redrawn:`,
           text: 'Cooldown sweep ×2: a quarter elapsed, and three quarters',
           count: 2,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'changed-state-pair',
@@ -109,35 +122,35 @@ it can be placed on any of them:`,
           text: 'Tier marks ×4: one per rarity step above the common one',
           count: 4,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'rarity-glow',
           text: 'Rarity glow ×1 — the aura the highest tier carries',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'locked-mark',
           text: 'Locked mark ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'new-item-flare',
           text: 'New item flare ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'broken-overlay',
           text: 'Broken or damaged overlay ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'empty-mark',

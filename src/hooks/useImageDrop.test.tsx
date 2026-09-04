@@ -12,11 +12,20 @@ import { useImageDrop } from './useImageDrop.ts';
  * refuse the drag before the accept is heard from. What has to come out of that is a copy cursor and
  * a delivered file, and a stand-in for either half would prove nothing about the composition that
  * produces them.
+ *
+ * The field is there because the guard's answer to a drag carrying no file depends on where it
+ * landed — it stands aside over a box that edits text and refuses it anywhere else — and this tab
+ * has a column of number fields a reader can legitimately drop a value into.
  */
 function Harness({ acceptFile }: { readonly acceptFile: (file: File | null | undefined) => void }) {
   useFileDropGuard(window);
   const isFileOver = useImageDrop(acceptFile);
-  return <div data-testid="tab" data-over={isFileOver} />;
+  return (
+    <>
+      <div data-testid="tab" data-over={isFileOver} />
+      <input aria-label="field" />
+    </>
+  );
 }
 
 /** The three members of `DataTransfer` the guard and this hook between them read. */
@@ -218,11 +227,12 @@ describe('useImageDrop', () => {
 
   it('leaves a drag carrying no file alone, so text can still be dropped into a field', async () => {
     const { acceptFile, tab } = harness();
+    const field = screen.getByRole('textbox', { name: 'field' });
     const { event } = dragEvent('dragover', ['text/plain']);
 
     dispatch(() => {
-      fireEvent(document.body, event);
-      fireEvent(document.body, dragEvent('drop', ['text/plain'], SHEET).event);
+      fireEvent(field, event);
+      fireEvent(field, dragEvent('drop', ['text/plain'], SHEET).event);
     });
 
     expect(event.defaultPrevented).toBe(false);

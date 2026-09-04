@@ -202,6 +202,7 @@ export const EFFECT: CategoryDefinition = {
         'Rising Bubble Stream',
         'Splashing Droplets & Ripples',
       ],
+      absentOption: 'No Secondary Layer',
     },
     {
       key: 'worn_details',

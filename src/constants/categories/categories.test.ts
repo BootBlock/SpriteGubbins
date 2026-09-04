@@ -83,6 +83,21 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
     }
   });
 
+  it('names an absent option the pool actually offers', () => {
+    // `absentOption` is how a pool says it offers a value meaning *the subject has none of this*,
+    // and it is what lets a sheet plan drop the entries drawing that attribute — see
+    // `utils/sheetPlanClothing.ts`. A value the pool does not offer would silently never match,
+    // which fails as an absence of behaviour rather than as an error: the reader would pick the
+    // option they can see and the inventory would go on ordering the component anyway, which is the
+    // defect the declaration exists to remove.
+    for (const field of fields) {
+      if (field.absentOption === undefined) continue;
+      expect(field.options, `${category}.${field.key} names an absent option it does not offer`).toContain(
+        field.absentOption,
+      );
+    }
+  });
+
   it('writes every option in the app’s own casing, and shouts only the sentinel', () => {
     // The defect this pins: the `anatomy` pool of all nine categories was written in full capitals,
     // so `STANDARD HUMANOID` sat one row under `Athletic & Slender` in the same column of the

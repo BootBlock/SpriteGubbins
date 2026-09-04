@@ -140,7 +140,7 @@ function sheetsOf(category: SubjectCategory): readonly Sheet[] {
           // An index past the end of a short series resolves to the first sheet, in both of these —
           // so the plan and the count stay the same sheet's whatever the loop asks for.
           plan: sheetPlanFor(category, mode, directions, sheetIndex),
-          components: componentCountFor(category, mode, directions, sheetIndex, []),
+          components: componentCountFor(category, mode, directions, sheetIndex, '', []),
         });
       }
     }

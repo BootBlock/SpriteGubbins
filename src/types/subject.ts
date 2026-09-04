@@ -202,6 +202,29 @@ export interface FieldOption {
   readonly label: string;
   readonly tooltip: string;
   readonly options: readonly string[];
+  /**
+   * The one option in the pool above that means *the subject has none of what this field
+   * describes* — `Bare Unclad Frame`, `Clear — No Overlay`, `NONE`.
+   *
+   * **It is declared because a sheet plan cannot see the subject.** A plan's entries are a function
+   * of the category, the mode, the direction set and the sheet index, so every one of them is
+   * unconditional: an inventory that lists a cladding panel lists it for a vehicle whose reader has
+   * just said it has no cladding, section 1 states the subject has none, and section 4's closing
+   * rule forbids omitting the entry. Naming the value here is what lets
+   * `planAsDrawn` in `utils/sheetPlanClothing.ts` take the entry out, so the two sections agree.
+   *
+   * **A pool declaring one may not carry a `partly` entry**, which is the invariant that makes the
+   * arrangement complete rather than nearly complete — see `ComponentEntry.drawsClothing`. Left
+   * undeclared where the pool offers no such value, which is most of them: every option a
+   * CHARACTER's *Clothing / Armour* offers is something the subject wears, and an OBJECT standing on
+   * a *Freestanding Base* is still mounted on something.
+   *
+   * **Only the `clothing` key consumes it today**, because that is the only field any plan draws as
+   * components of its own. It is declared on the field rather than on the category so a second such
+   * field would need no new machinery, and so the declaration sits against the pool it names a
+   * member of — which is what `categories.test.ts` checks.
+   */
+  readonly absentOption?: string;
 }
 
 /**

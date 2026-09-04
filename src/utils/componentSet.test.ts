@@ -65,7 +65,10 @@ describe('component counts', () => {
       // A subject naming no additional anatomy, so the plan's own count is the whole count here. The
       // block below covers what happens when a subject adds to it.
       const subject = { ...defaultSubjectFor(category), additional_anatomy: NONE_ANATOMY };
-      const count = componentCountFor(category, mode, directions, sheetIndex, []);
+      // The subject's own `clothing` value, because the count is a function of it: BACKGROUND and
+      // INTERFACE both *default* to the value meaning the subject has none of what the field
+      // describes, so a `''` here would price a sheet the prompt below no longer asks for.
+      const count = componentCountFor(category, mode, directions, sheetIndex, subject.clothing, []);
       expect(Number.isInteger(count) && count > 0).toBe(true);
 
       // The prompt states it twice — once as the contract, once as the self-audit — and both must
@@ -100,7 +103,7 @@ describe('component counts', () => {
     // character's five-view core and its limbs are forty-nine together and neither is over.
     for (const { category, mode, directions, sheetIndex, sheet } of SHEETS) {
       expect(
-        componentCountFor(category, mode, directions, sheetIndex, []),
+        componentCountFor(category, mode, directions, sheetIndex, '', []),
         `${category}/${mode}/${directions}/${sheet} exceeds the practical ceiling`,
       ).toBeLessThanOrEqual(PRACTICAL_COMPONENT_CEILING);
     }
@@ -120,12 +123,12 @@ describe('component counts', () => {
     for (const { category, mode, directions } of SHEETS) {
       const output = withOutput({ directionalMode: mode, directions });
       const { sheets } = sheetBatch(category, output);
-      const choice = directionalModeChoices(category, output, []).find(
+      const choice = directionalModeChoices(category, output, '', []).find(
         (candidate) => candidate.value === mode,
       );
 
       expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
-        String(batchComponentCount(category, sheets, [])),
+        String(batchComponentCount(category, sheets, '', [])),
       );
       if (sheets.length > 1) {
         expect(choice?.label, `${category}/${mode}/${directions}`).toContain(
@@ -139,7 +142,7 @@ describe('component counts', () => {
     // The figure from the report, spelled out rather than derived, so the two axes cannot both move
     // and keep the assertion green: 1 trunk sheet + 5 articulation runs, and 15 + 5 × 34 components.
     const output = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FIVE_CLASSIC' });
-    const label = directionalModeChoices('CHARACTER', output, []).find(
+    const label = directionalModeChoices('CHARACTER', output, '', []).find(
       (choice) => choice.value === 'CORE_DIRECTIONAL_VARIANTS',
     )?.label;
 
@@ -163,15 +166,15 @@ describe('component counts', () => {
     const stale = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', sheetIndex: 1 });
 
     expect(sheetCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC')).toBe(1);
-    expect(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1, anatomy)).toBe(
-      componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy),
+    expect(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 1, '', anatomy)).toBe(
+      componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, '', anatomy),
     );
 
     const prompt = generatePrompt('OBJECT', subject, stale);
     // Fifteen, not three: a five-view core draws the three named pieces at each of its facings.
     expect(prompt).toContain('#### Deployable Modules — 15');
     expect(prompt).toContain(
-      `Exactly ${String(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, anatomy))} components`,
+      `Exactly ${String(componentCountFor('OBJECT', 'CORE_DIRECTIONAL_VARIANTS', 'FIVE_CLASSIC', 0, '', anatomy))} components`,
     );
   });
 
@@ -205,9 +208,9 @@ describe('component counts', () => {
       if (plan === undefined) throw new Error('unreachable: SHEETS is built from the series');
       const views = plan.facings === 'run' ? (sheetIndex === 0 ? 1 : 0) : plan.facings.length;
       expect(
-        componentCountFor(category, mode, directions, sheetIndex, anatomy),
+        componentCountFor(category, mode, directions, sheetIndex, '', anatomy),
         `${category}/${mode}/${directions}/${plan.name}`,
-      ).toBe(componentCountFor(category, mode, directions, sheetIndex, []) + 3 * views);
+      ).toBe(componentCountFor(category, mode, directions, sheetIndex, '', []) + 3 * views);
     }
   });
 
@@ -218,7 +221,14 @@ describe('component counts', () => {
     // so the series totals the anatomy once per core view and never on a run.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
     const at = (sheetIndex: number, additional: readonly AnatomyComponent[]) =>
-      componentCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS', sheetIndex, additional);
+      componentCountFor(
+        'CHARACTER',
+        'CORE_DIRECTIONAL_VARIANTS',
+        'EIGHT_COMPASS',
+        sheetIndex,
+        '',
+        additional,
+      );
 
     expect(sheetCountFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'EIGHT_COMPASS')).toBe(3);
     expect(at(0, anatomy)).toBe(at(0, []) + 3 * 4);
@@ -232,8 +242,8 @@ describe('component counts', () => {
       directions: 'EIGHT_COMPASS',
     });
     const { sheets } = sheetBatch('CHARACTER', eightWay);
-    expect(batchComponentCount('CHARACTER', sheets, anatomy)).toBe(
-      batchComponentCount('CHARACTER', sheets, []) + 3 * 8,
+    expect(batchComponentCount('CHARACTER', sheets, '', anatomy)).toBe(
+      batchComponentCount('CHARACTER', sheets, '', []) + 3 * 8,
     );
   });
 
@@ -327,7 +337,7 @@ describe('the count once a subject names anatomy of its own', () => {
   /** `CUTOUT_RIG_SINGLE_DIRECTION`: fifteen pieces, and room to add to them. */
   const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' });
   // Derived, not restated: the plan is the only place the figure lives now.
-  const BASE = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, []);
+  const BASE = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, '', []);
 
   function withAnatomy(additional_anatomy: string): SubjectDefinition {
     return { ...SUBJECT, additional_anatomy };
@@ -399,11 +409,18 @@ describe('the count once a subject names anatomy of its own', () => {
     // prompt contracts for one sheet's worth and the label states all five, and a label repeating
     // the prompt's figure would be advertising a fifth of what the user is about to generate.
     const anatomy = parseAdditionalAnatomy('Demon Horn ×2, Tail ×1');
-    const count = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, anatomy);
+    const count = componentCountFor(
+      'CHARACTER',
+      'CUTOUT_RIG_SINGLE_DIRECTION',
+      'FIVE_CLASSIC',
+      0,
+      '',
+      anatomy,
+    );
     expect(count).toBe(BASE + 3);
 
     const rigOutput = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' });
-    const label = directionalModeChoices('CHARACTER', rigOutput, anatomy).find(
+    const label = directionalModeChoices('CHARACTER', rigOutput, '', anatomy).find(
       (choice) => choice.value === 'CUTOUT_RIG_SINGLE_DIRECTION',
     )?.label;
     const facings = DIRECTION_LISTS.FIVE_CLASSIC.length;
@@ -467,10 +484,10 @@ describe('what a whole batch asks for', () => {
    * fifteen while the user was about to generate eight of them.
    */
   const RIG = withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', rigMode: 'CUTOUT_RIG' });
-  const PER_SHEET = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, []);
+  const PER_SHEET = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'FIVE_CLASSIC', 0, '', []);
 
   function batchTotal(output: OutputConfig, additional: readonly AnatomyComponent[]): number {
-    return batchComponentCount('CHARACTER', sheetBatch('CHARACTER', output).sheets, additional);
+    return batchComponentCount('CHARACTER', sheetBatch('CHARACTER', output).sheets, '', additional);
   }
 
   it.each([...DIRECTION_SETS])('prices a rig over %s at one sheet per facing of it', (directions) => {
@@ -508,11 +525,12 @@ describe('what a whole batch asks for', () => {
       for (const mode of modesFor(category)) {
         const output = withOutput({ directionalMode: mode, directions: 'SINGLE_FRONT' });
         const parts = sheetSeriesFor(category, mode, 'SINGLE_FRONT').reduce(
-          (total, _plan, index) => total + componentCountFor(category, mode, 'SINGLE_FRONT', index, anatomy),
+          (total, _plan, index) =>
+            total + componentCountFor(category, mode, 'SINGLE_FRONT', index, '', anatomy),
           0,
         );
         expect(
-          batchComponentCount(category, sheetBatch(category, output).sheets, anatomy),
+          batchComponentCount(category, sheetBatch(category, output).sheets, '', anatomy),
           `${category}/${mode}`,
         ).toBe(parts);
       }
@@ -531,12 +549,13 @@ describe('what a whole batch asks for', () => {
         'CORE_DIRECTIONAL_VARIANTS',
         'EIGHT_COMPASS',
         sheet.output.sheetIndex,
+        '',
         [],
       ),
     );
 
     expect(new Set(perSheet).size).toBe(2);
-    expect(batchComponentCount('CHARACTER', sheets, [])).toBe(
+    expect(batchComponentCount('CHARACTER', sheets, '', [])).toBe(
       perSheet.reduce((total, count) => total + count, 0),
     );
   });
