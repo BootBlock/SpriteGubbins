@@ -15,6 +15,10 @@ import { PaletteLockControls } from './PaletteLockControls.tsx';
  * holds the colours of the sheet beside it rather than of some earlier one, that a re-lock records
  * the studio setting in force rather than the lock it replaces, and that the notice about a studio
  * setting the lock has overtaken appears exactly when the plan says it should.
+ *
+ * And the three states in which no lock may be taken, since the button is the only thing that can
+ * report them: no result, a newer one on its way, and a result with no colours in it. The last was
+ * the one this panel could not see, and answered a press to with silence.
  */
 
 /**
