@@ -39,13 +39,31 @@ import { disjointSet } from './unionFind.ts';
  *
  * **Requiring equal extents instead would have been much simpler, and it was measured and
  * rejected.** It makes the comparison a straight per-cell reading with nothing invented, and it
- * makes the snap a plain block copy. But on the reference sheet, quantised at a grid of 6 and keyed
- * at tolerance 24, perturbing the artwork by four parts in 255 per channel left only 4 of its 15
- * sprites with the drawn extent they had before. A sprite thirty drawn pixels across loses or gains
- * one the moment a single contour pixel crosses the keying threshold — so a rule turning on exact
- * extents would fire on repeats that came back byte-identical and on almost nothing else, which is a
- * dial that appears not to work. The union box costs an extra row about one unit of the mean on a
- * sprite that size, which is inside the dial's range rather than past it.
+ * makes the snap a plain block copy. But on the reference sheet — `test_sprites/armour.png`,
+ * quantised at a grid of 6, keyed on `#FF00FF` at tolerance 24, with no palette step — adding four
+ * to every colour channel of every pixel left only **3 of its 15** sprites with the drawn extent
+ * they had before, and subtracting four left **6**. A sprite thirty drawn pixels across loses or
+ * gains one the moment a single contour pixel crosses the keying threshold — so a rule turning on
+ * exact extents would fire on repeats that came back byte-identical and on almost nothing else,
+ * which is a dial that appears not to work. The union box costs an extra row about one unit of the
+ * mean on a sprite that size, which is inside the dial's range rather than past it.
+ *
+ * **Both directions are stated because the sign of the perturbation moves the answer, and the
+ * figure recorded here before named neither.** "Four parts in 255 per channel" says how far and
+ * neither which way nor with what distribution, and the readings a maintainer might take from it
+ * disagree: nine of them — the two flat shifts, per-pixel random of that magnitude at three seeds,
+ * alternating by channel, and uniform over that interval at three seeds — run from **1 to 6** of the
+ * 15 sprites keeping their extent, and none of them is 4. The conclusion above survives every one,
+ * which is why the design was never in question; but a figure offered as evidence has to be
+ * reproducible from what it states, and the number this paragraph carried was reproducible from
+ * none of them. `tests/quantiser-docblock-figures.test.ts` pins both directions against the
+ * construction named above.
+ *
+ * **A sprite is identified across the perturbation by its centre, not by its position in the list.**
+ * A shifted sheet meshes differently, the bottom row's tops move by different amounts, and that row
+ * re-sorts — so the nth box either side is not the same piece of artwork. Measured by list position
+ * the two flat readings still come to 3 and 6, but by cancelling errors rather than by measuring
+ * what they claim to.
  *
  * **Two readings of "the same", and the panel shows both.** Byte equality is what the hash buckets
  * find, and it is free — an identical frame is the commonest case and it needs no distance measured
@@ -112,13 +130,47 @@ export function duplicateSprites(
   // 512 boxes, so this walk is at most a hundred and thirty thousand comparisons, and each of them
   // abandons as soon as the running sum can no longer come under the tolerance.
   //
-  // Measured at that ceiling — 512 sprites of 20 × 20 drawn pixels, none of them exact, so every
-  // pair has to be measured until it is rejected — the whole pass costs a fraction of a second at
-  // the top of the dial's range and an order of magnitude less at the bottom, where a pair is
-  // rejected at its first differing cell. It runs on a worker behind the tab's own debounce, so that
-  // is comfortably inside one dial movement. The figures are a shape rather than a budget: this
-  // machine's wall-clock moved several-fold between runs of the same code, and what matters is that
-  // the cost is quadratic in a count something else already bounds.
+  // **At that ceiling the pass costs seconds, and the top of the dial is not where it is worst.**
+  // Built to the ceiling — 512 sprites of 20 × 20 drawn pixels filled with per-channel noise, so no
+  // pair is byte-identical and the hash pass collapses none of them — the cost climbs steadily with
+  // the dial and then falls off its last rung. Against the dial's floor, where a pair is rejected at
+  // its first differing cell, it is roughly **60× at tolerance 6, 130× at 12, and 230× at its peak
+  // around 21** — then about **100× at the top rung**, which is well under half the peak.
+  //
+  // **The top rung is cheaper than the peak, and the reason is this walk's own machinery.** The
+  // expensive case is a pair close enough to be walked a long way before its running sum passes the
+  // budget and not close enough to group. Nothing at all groups from the floor to tolerance 22; at
+  // 23 the noise's spread starts bringing pairs under the threshold, in seven small groups holding
+  // 15 sprites between them; and at 24 those chain into a single group of 488, after which
+  // `find(left) === find(right)` disposes of most of the remaining pairs without measuring them. So
+  // grouping is what makes the top rung affordable rather than the absence of it, and a sheet whose
+  // sprites sat astride the threshold *at* the top rung would cost there what this one costs at 22.
+  //
+  // **The figures are ratios because absolute wall-clock does not reproduce, and this fixture is
+  // where that was measured rather than assumed.** The same rung on the same fixture on this machine
+  // differed by three to four times between a cold single sweep and a warmed one, and adjacent warm
+  // runs of one rung differed by two — so a millisecond figure written here would be a claim that
+  // fails on re-measurement, which is the defect this paragraph was rewritten to correct. The order
+  // of magnitude is what survives: seconds at the ceiling, not a fraction of one.
+  //
+  // **No sheet this project has comes near it.** All eight in `test_sprites/`, quantised at a grid of
+  // 6 and keyed on `#FF00FF` at tolerance 24 with no palette step, segment into between 15 and 42
+  // sprites, and the pass costs single-digit to low-tens of milliseconds on each — two to three
+  // orders of magnitude under the fixture, because the pair count is quadratic in a figure an order
+  // of magnitude smaller and because a real sprite's margins are transparent on both sides and cost
+  // nothing to compare. `SCATTERED_SPRITE_CEILING` says the same of its own number: 512 is far above
+  // every real sheet, and what sits between is pathology rather than artwork.
+  //
+  // So the pass is inside one dial movement on every sheet measured, and it is nowhere near it at
+  // the ceiling — and **neither the worker nor the debounce changes that**, which is what the note
+  // here used to claim. The worker keeps the tab painting and answering while the work runs, and the
+  // debounce drops the intermediate values of a drag; neither makes the work itself shorter. What
+  // the ceiling buys is that the pathological case is *bounded*, not that it is fast.
+  //
+  // `tests/quantiser-docblock-figures.test.ts` holds the deterministic half of all of this: the
+  // corpus's own sprite counts, and this fixture's grouping at four rungs — nothing at the floor,
+  // nothing at the peak, the seven small groups at 23, the 488 at 24 — which is what says the
+  // expensive rungs really are walking every pair rather than skipping them.
   for (const [position, left] of representatives.entries()) {
     for (let step = position + 1; step < representatives.length; step += 1) {
       const right = representatives[step];

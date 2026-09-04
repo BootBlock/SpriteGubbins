@@ -61,7 +61,7 @@ export function SheetSplitContents() {
   // nothing in the app was saying: the studio reports what *this sheet* asks for, which is true of
   // each of the eight and no help to someone deciding whether to start a job of one hundred and
   // twenty.
-  const batchTotal = batchComponentCount(category, runs, additional);
+  const batchTotal = batchComponentCount(category, runs, subject.clothing, additional);
 
   // The cap is stated once here rather than on each of the rows that may be over it: every sheet of
   // a batch is the same configuration bar a facing and a sheet index, so they all share one budget,
@@ -118,6 +118,7 @@ export function SheetSplitContents() {
             key={`${run.assembly}::${run.plan.name}`}
             run={run}
             category={category}
+            clothing={subject.clothing}
             additional={additional}
             ordinal={index + 1}
             total={runs.length}

@@ -13,6 +13,7 @@ import type { SubjectCategory } from '../types/subject.ts';
 import { countAnatomyComponents, formatAnatomyComponent } from './additionalAnatomy.ts';
 import { componentTotal } from './componentTotal.ts';
 import type { BatchSheet } from './sheetBatch.ts';
+import { drawnPlanFor } from './sheetPlanClothing.ts';
 
 /**
  * The components one sheet actually asks for: its plan's entries, plus whatever anatomy the subject
@@ -36,6 +37,14 @@ import type { BatchSheet } from './sheetBatch.ts';
  * `batchComponentCount` is the whole job, facings and all, and the split drawer and the mode
  * selector both take it: eight facings of a fifteen-piece rig is one hundred and twenty components,
  * and until it was summed that figure appeared nowhere the app computed it.
+ *
+ * **Both of them are functions of the subject, on two fields rather than one.** The anatomy is the
+ * obvious half — the reader's own pieces, appended and counted. The `clothing` value is the other,
+ * and it *removes*: where a category's pool offers a value meaning the subject has none of what the
+ * field describes, choosing it takes the entries drawing that attribute out of the plan before any
+ * of this walks it. So every function below takes the value, and `drawnPlanFor` is the one place the
+ * two resolutions meet — see `sheetPlanClothing.ts` for what a plan a subject has cut into is, and
+ * why an inventory reader may not reach for the declared one.
  *
  * **There used to be a third, and it was the middle one.** `seriesComponentCount` summed the
  * *inventory* axis — every part of a pairing's plan, each counted once — and the mode selector was
@@ -101,9 +110,10 @@ export function componentCountFor(
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
+  clothing: string,
   additional: readonly AnatomyComponent[],
 ): number {
-  const plan = sheetPlanFor(category, mode, directions, sheetIndex);
+  const plan = drawnPlanFor(category, mode, directions, sheetIndex, clothing);
   const facings = anatomyFacingsFor(category, mode, directions, sheetIndex);
   return planComponentCount(plan) + (facings === null ? 0 : anatomyCountAt(facings, additional));
 }
@@ -144,6 +154,7 @@ export function sheetCountFor(
 export function sheetComponentCount(
   category: SubjectCategory,
   sheet: BatchSheet,
+  clothing: string,
   additional: readonly AnatomyComponent[],
 ): number {
   return componentCountFor(
@@ -151,6 +162,7 @@ export function sheetComponentCount(
     resolveMode(category, sheet.output.directionalMode),
     sheet.output.directions,
     sheet.output.sheetIndex,
+    clothing,
     additional,
   );
 }
@@ -180,9 +192,13 @@ export function sheetComponentCount(
 export function batchComponentCount(
   category: SubjectCategory,
   sheets: readonly BatchSheet[],
+  clothing: string,
   additional: readonly AnatomyComponent[],
 ): number {
-  return sheets.reduce((total, sheet) => total + sheetComponentCount(category, sheet, additional), 0);
+  return sheets.reduce(
+    (total, sheet) => total + sheetComponentCount(category, sheet, clothing, additional),
+    0,
+  );
 }
 
 /** One group as the Markdown section 4 carries, with its total written from its own entries. */
@@ -248,11 +264,12 @@ export function componentBreakdownFor(
   mode: DirectionalMode,
   directions: DirectionSet,
   sheetIndex: number,
+  clothing: string,
   additional: readonly AnatomyComponent[],
   cite: (text: string) => string,
 ): string {
-  const plan = sheetPlanFor(category, mode, directions, sheetIndex);
-  const total = componentCountFor(category, mode, directions, sheetIndex, additional);
+  const plan = drawnPlanFor(category, mode, directions, sheetIndex, clothing);
+  const total = componentCountFor(category, mode, directions, sheetIndex, clothing, additional);
 
   const inventory = `### Component inventory: ${plan.name} — ${String(total)} in total
 

@@ -31,6 +31,8 @@ export function ComponentBudgetNotice() {
   const directions = useOutputStore((state) => state.output.directions);
   const componentBudget = useOutputStore((state) => state.output.componentBudget);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  // The other subject field the count reads — see `componentSet.ts`.
+  const clothing = useSubjectStore((state) => state.subject.clothing);
   const category = useSubjectStore((state) => state.category);
 
   // The same sum the prompt, the inventory heading and the atlas grid all state, read through the
@@ -50,6 +52,7 @@ export function ComponentBudgetNotice() {
     directionalMode,
     directions,
     sheetIndex,
+    clothing,
     parseAdditionalAnatomy(additionalAnatomy),
   );
 

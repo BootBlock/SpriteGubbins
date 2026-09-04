@@ -38,9 +38,10 @@ import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts'
 /**
  * The two materials the blend set joins, one entry each.
  *
- * Hoisted because the transition group's intro counts them: the sixteen an autotiler indexes is the
- * transitions plus **one primary per material**, so the arithmetic reads the length of this list
- * rather than a figure written beside it. A third material would move both halves together.
+ * Hoisted because three sentences on this sheet count them: this group's own intro opens on how many
+ * materials the set joins, the transition group's intro adds one primary per material to reach the
+ * sixteen an autotiler indexes, and that group's outro says how many tiles repeat against themselves.
+ * All three read the length of this list, so a third material moves every one of them.
  */
 const MATERIAL_ENTRIES: readonly ComponentEntry[] = [
   {
@@ -106,7 +107,7 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `The two materials the set joins. The variants carry the subject’s scatter layer — the pebbles, tufts
+      intro: `The ${spellNumber(MATERIAL_ENTRIES.length)} materials the set joins. The variants carry the subject’s scatter layer — the pebbles, tufts
 and drift that keep a field of one material from reading as a single tile stamped in rows — so they
 differ in what is scattered across them and in nothing else:`,
       entries: MATERIAL_ENTRIES,
@@ -119,7 +120,7 @@ in the tile, never a different boundary:`,
       entries: TRANSITION_ENTRIES,
       outro: `Seamlessness here is an agreement about *edges*, not a property any one tile has on its own: each tile
 edge carries either the base material or the second, drawn to the same profile every time it appears,
-so two tiles whose facing edges carry the same material meet without a join. The two pure tiles
+so two tiles whose facing edges carry the same material meet without a join. The ${spellNumber(MATERIAL_ENTRIES.length)} pure tiles
 therefore repeat against themselves on both axes, and every transition meets whichever neighbours its
 own edges allow — which is what the autotiler is choosing between. No tile carries a landmark — a
 distinctive rock, a bright tuft, a crack that reads as a line — that a viewer could pick out twice

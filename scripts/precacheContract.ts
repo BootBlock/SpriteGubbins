@@ -313,13 +313,47 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * what a margin of that order buys — not a reason to widen it, but worth knowing before reading the
  * next base figure as slack.
  *
- * **Raised once more, from 2320, by the sheet-plan prose deriving the counts it states.** Sixteen
- * sentences across six plan files stated a figure their own entries also stated, each written out by
- * hand beside entries that summed to it. What a first visit now pays for is three modules — a
- * number-to-word speller, the one place entries are summed, and the builder for the second side of a
- * limb pair — plus the interpolation at each call site. Measured against main's own tip, rebuilt from
- * the same `node_modules` — **2319.23 KiB across 54 entries** — the merged build reports **2320.06**,
- * a delta of 0.83. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed:
+ * **2320 → 2323, bought by letting a subject decline a component its sheet plan ordered anyway.** A
+ * plan is addressed by category, mode, direction set and sheet index, so its entries were
+ * unconditional — and four `clothing` pools offered a value meaning the subject has none of what the
+ * field describes, so section 1 stated `Armour & Cladding: Bare Unclad Frame` while section 4 ordered
+ * a cladding panel and forbade omitting it. What a first visit pays for is: an `absentOption` on the
+ * nine pools that offer one and the resolver that reads it; `planAsDrawn` and `drawnPlanFor` in
+ * `utils/sheetPlanClothing.ts`, which take the marked entries out before anything walks the plan; the
+ * `clothing` argument threaded through the nine functions that count, name or render an inventory
+ * and the call sites that reach them; `drawsClothing` widening from `true` to
+ * `'entirely' | 'partly'` on 26 entries; two inventory lines split into four so the half a reader can
+ * decline stands alone; ICON's rewritten tooltip, which is the one entry that grew rather than
+ * moved; and the sentence in `constants/guidanceSentences.ts` that tells a reader the option takes
+ * the pieces off the sheet, quoted by the three fields it is true of.
+ *
+ * Measured against the main tip this branch started from (`0dbcb2f`), rebuilt from the same
+ * `node_modules` — **2318.75 KiB** — the branch merged onto it reports **2320.45**, a delta of 1.70
+ * and 0.45 over the ceiling the two raises above had bought. So 2323 restores a margin of the same
+ * order rather than widening it, exactly as those two did. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed **by this change**.
+ *
+ * **The figure a build reports today is higher than that, and none of the difference is this
+ * change's.** Main moved twice while the branch was in flight, and the second merge brought a
+ * 54th entry with it, so the tip this landed on builds at **2320.93**. The base is named above for
+ * exactly that reason: a delta is only checkable against the commit it was taken from, and a bare
+ * "main's own tip" stops identifying one the moment somebody else lands.
+ *
+ * **The delta is data and threading, not a new module**, which is why it is larger than the paint-rule
+ * change it builds on: that one added a flag and read it, where this one adds a value a plan is
+ * resolved *through* and has to carry the subject to every reader of an inventory. The nine
+ * `absentOption` declarations are the cheapest part of it and the part that does the most — six of
+ * the nine are categories no plan of which draws the attribute today, and they are declared so the
+ * invariant reaches them before an entry does.
+ *
+ * **The sheet-plan prose deriving its own counts raises nothing, and spends 0.84 of the raise above.**
+ * Nineteen figures, in seventeen sentences across seven plan files, were written out by hand beside
+ * entries that summed to them. What a first visit now pays for is three
+ * modules — a number-to-word speller, the one place entries are summed, and the builder for the
+ * second side of a limb pair — plus the interpolation at each call site. Measured against the main
+ * tip this branch merged (`43ea460`), rebuilt from the same `node_modules` — **2320.93 KiB across 54
+ * entries** — the merged build reports **2321.77**, which leaves 1.23 under the 2323 the paragraph
+ * above bought. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed:
  * the three modules land inside the chunks their callers were already in.
  *
  * **Almost none of it is content, which is what makes the figure worth reading.** The compiled prompt
@@ -327,13 +361,16 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * every category, mode and direction set before and after — the sentences say the same words, they
  * are simply no longer written out. The one exception is the trunk-termination paragraph, which grew
  * 78 bytes in each of CHARACTER and CREATURE (0.15 KiB between them) because it had to stop citing a
- * list one of the three sheets carrying it does not have. So roughly 0.68 KiB buys the machinery and
+ * list one of the three sheets carrying it does not have. So roughly 0.69 KiB buys the machinery and
  * 0.15 buys the correction, which puts this beside the module-splitting raise at 2309 as the second
- * time a raise was bought by no new option, guidance paragraph or prompt text at all.
+ * time this figure moved on no new option, guidance paragraph or prompt text at all.
  *
- * The base is again worth reading beside the ceiling it was under: 2319.23 against 2320 is **0.77 KiB
- * of headroom**, which the paragraph above the raise to 2320 had already called the narrowest the
- * margin had been. The margin is restored to the same order as every raise above rather than widened.
+ * **It very nearly raised the ceiling, and is recorded for the reason the paint-rule change is.** The
+ * branch was written against `e02ed3e`, where the build reported 2319.23 under a ceiling of 2320, so
+ * it crossed by 0.06 and carried a raise to 2323 of its own. The `absentOption` work landed first and
+ * bought that same figure for a different reason, so the raise became a no-op and the paragraph
+ * arguing for it would have claimed a base and a headroom main no longer had. Two branches reaching
+ * for one raise is the third time this has happened under a margin of this order.
  */
 export const PRECACHE_CEILING_KIB = 2323;
 

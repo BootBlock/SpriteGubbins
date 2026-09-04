@@ -42,12 +42,13 @@ import type { OutputChoice } from './choices.ts';
 export function directionalModeChoices(
   category: SubjectCategory,
   output: OutputConfig,
+  clothing: string,
   additional: readonly AnatomyComponent[],
 ): readonly OutputChoice<DirectionalMode>[] {
   return modesFor(category).map((mode) => {
     const { sheets: batch } = sheetBatch(category, { ...output, directionalMode: mode });
     const sheets = batch.length;
-    const total = String(batchComponentCount(category, batch, additional));
+    const total = String(batchComponentCount(category, batch, clothing, additional));
     // The unit gives way to the sheet count rather than joining it: `SINGLE_DIRECTION_POSE_LIBRARY`
     // leaves 18 characters inside its parenthesis against this file's 50-character budget, and a
     // four-digit total with both spelled out is 27. Which one to drop is not a close call — that a

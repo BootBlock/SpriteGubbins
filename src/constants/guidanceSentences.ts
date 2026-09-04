@@ -85,3 +85,24 @@ export const COLLECTION_COUNT_FOLLOWS_SEARCH =
  */
 export const DOWNLOADS_RECORD_THE_STUDIO =
   'Every download from this tab records the studio’s configuration beside the artwork, and this is what it will record.';
+
+/**
+ * What a value meaning *the subject has none of this* does to the sheet, on the two fields whose
+ * inventory draws the attribute as pieces of its own and offers a way to decline it.
+ *
+ * A sheet plan is otherwise unconditional, so a vehicle's cladding panel and a background's
+ * atmosphere layer were ordered whatever the reader had chosen — the prompt stating in section 1
+ * that the subject had none and in section 4 that it was to be drawn. The entries are dropped now,
+ * which changes the component count, and that is the one thing about the behaviour a reader cannot
+ * see from the field: it is the same fact in the same words because it is the same mechanism. See
+ * `utils/sheetPlanClothing.ts`.
+ *
+ * **It says *a value*, not *choosing one*, because BACKGROUND's is its default** — a reader who
+ * never opens the field has already declined the atmosphere layer, and a sentence about choosing
+ * would describe a state that is in force before they arrive.
+ *
+ * The six pools that offer such a value on a category whose plans draw nothing are deliberately not
+ * among them: nothing is dropped there, so the sentence would be false.
+ */
+export const ABSENT_OPTION_DROPS_THE_PIECES =
+  'A value meaning there is none takes these pieces off the sheet, and the component count falls with them.';

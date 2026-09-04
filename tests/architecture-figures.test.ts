@@ -5,6 +5,7 @@ import { scannableSources } from '../scripts/sourceFiles.ts';
 import { ARCHITECTURE_SECTIONS } from '../src/constants/architecture.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../src/types/subject.ts';
+import { spellNumber } from '../src/utils/numberWords.ts';
 
 /**
  * The counts the Architecture tab states, re-derived from the tree it is describing.
@@ -26,49 +27,20 @@ import { SUBJECT_FIELD_KEYS } from '../src/types/subject.ts';
  * an author changing it is an author reading the count as they go.
  */
 
-/** English number words, as the sections spell them. The tables cover every count up to 99. */
-const UNITS = [
-  'zero',
-  'one',
-  'two',
-  'three',
-  'four',
-  'five',
-  'six',
-  'seven',
-  'eight',
-  'nine',
-  'ten',
-  'eleven',
-  'twelve',
-  'thirteen',
-  'fourteen',
-  'fifteen',
-  'sixteen',
-  'seventeen',
-  'eighteen',
-  'nineteen',
-] as const;
-
-const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'] as const;
-
-function unitWord(value: number): string {
-  const word = UNITS[value];
-  if (word === undefined) throw new Error(`No word for ${value}: extend UNITS.`);
-  return word;
-}
-
-/** `13` becomes `thirteen`, `28` becomes `twenty-eight`. Prose spells a count; this is how. */
-function spell(count: number): string {
-  if (!Number.isInteger(count) || count < 0 || count > 99) {
-    throw new Error(`spell() covers 0 to 99, and was asked for ${count}: extend the tables.`);
-  }
-  if (count < 20) return unitWord(count);
-
-  const tens = TENS[Math.floor(count / 10)] ?? '';
-  const unit = count % 10;
-  return unit === 0 ? tens : `${tens}-${unitWord(unit)}`;
-}
+/**
+ * The app's own speller, rather than a second copy of one.
+ *
+ * This file used to carry its own `UNITS`/`TENS` tables and a speller over them. When the sheet
+ * plans stopped writing their counts out by hand they needed the same thing, and a helper two test
+ * files and seven plan files all want belongs in `src/utils/` — so the tables moved there and this
+ * reads them. The two spelled identically over 1–99, which is the whole range either asks for: the
+ * three call sites below count stores, subject fields and output settings, none of which can be
+ * zero without the assertion around it being meaningless.
+ *
+ * `spellNumber` refuses zero where the retired copy named it, and that is the right direction for a
+ * count of things a file walk found: a section claiming “zero independent Zustand stores” is a
+ * sentence nobody should be able to satisfy.
+ */
 
 /** Where a store is filed, once the walk's absolute paths are made relative and POSIX. */
 const STORES = 'src/stores/';
@@ -115,7 +87,7 @@ function sectionStating(phrase: string): string | undefined {
 describe('the figures the Architecture tab states', () => {
   it('counts the Zustand stores the app is built on', () => {
     const stores = zustandStores();
-    const phrase = `${spell(stores.length)} independent Zustand stores`;
+    const phrase = `${spellNumber(stores.length)} independent Zustand stores`;
 
     expect(
       sectionStating(phrase),
@@ -125,7 +97,7 @@ describe('the figures the Architecture tab states', () => {
 
   it('counts the subject fields and the output settings the compiler is a function of', () => {
     const settings = Object.keys(DEFAULT_OUTPUT_CONFIG);
-    const phrase = `${spell(SUBJECT_FIELD_KEYS.length)} subject fields and the ${spell(settings.length)} output settings`;
+    const phrase = `${spellNumber(SUBJECT_FIELD_KEYS.length)} subject fields and the ${spellNumber(settings.length)} output settings`;
 
     expect(
       sectionStating(phrase),

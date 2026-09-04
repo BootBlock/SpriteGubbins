@@ -67,6 +67,8 @@ export function QuantiseTab() {
   const directions = useOutputStore((state) => state.output.directions);
   const backgroundKey = useOutputStore((state) => state.output.backgroundKey);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  // The other subject field the count reads — see `componentSet.ts`.
+  const clothing = useSubjectStore((state) => state.subject.clothing);
   const category = useSubjectStore((state) => state.category);
   // In a store rather than here, because the workflow crosses tabs: the colour budget, the target
   // size and the background key are studio settings, and `App` unmounts this view when the user goes
@@ -162,9 +164,10 @@ export function QuantiseTab() {
         directionalMode,
         directions,
         sheetIndex,
+        clothing,
         parseAdditionalAnatomy(additionalAnatomy),
       ),
-    [category, directionalMode, directions, sheetIndex, additionalAnatomy],
+    [category, directionalMode, directions, sheetIndex, clothing, additionalAnatomy],
   );
   const suggested = useMemo(
     () => (source === null || target === null ? null : targetSizeGrid(source.image, target, expected)),

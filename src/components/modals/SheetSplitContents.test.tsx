@@ -84,7 +84,7 @@ function sheetsOnScreen(): readonly RowUnderTest[] {
   return runs.map((run, index) => {
     const row = rows[index];
     if (row === undefined) throw new Error('the drawer should render one row per sheet of the batch.');
-    return { name: run.plan.name, count: sheetComponentCount('CHARACTER', run, []), row };
+    return { name: run.plan.name, count: sheetComponentCount('CHARACTER', run, '', []), row };
   });
 }
 
@@ -116,8 +116,15 @@ describe('SheetSplitContents', () => {
     render(<SheetSplitContents />);
 
     const runs = sheetRuns('CHARACTER', defaultSubjectFor('CHARACTER'), useOutputStore.getState().output);
-    const perSheet = componentCountFor('CHARACTER', 'CUTOUT_RIG_SINGLE_DIRECTION', 'EIGHT_COMPASS', 0, []);
-    const total = batchComponentCount('CHARACTER', runs, []);
+    const perSheet = componentCountFor(
+      'CHARACTER',
+      'CUTOUT_RIG_SINGLE_DIRECTION',
+      'EIGHT_COMPASS',
+      0,
+      '',
+      [],
+    );
+    const total = batchComponentCount('CHARACTER', runs, '', []);
 
     expect(total).toBe(perSheet * FACINGS.length);
     expect(screen.getByText(`${String(total)} components`)).toBeInTheDocument();

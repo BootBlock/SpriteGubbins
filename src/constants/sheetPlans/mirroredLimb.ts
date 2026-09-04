@@ -10,7 +10,8 @@ import { spellNumber } from '../../utils/numberWords.ts';
  * total in words: `The same eight variants as the left arm, redrawn for the right side`, written out
  * beside a `count: 8` and three entries summing to eight. Three statements of one figure, none of
  * them derived, and the same sentence again for the leg and twice more in the creature spelling. A
- * fourth upper-arm variant would have made every one of them false, and no test read the words.
+ * fourth upper-arm variant would have left the character's arm sentence saying eight of nine, and no
+ * test read the words.
  *
  * **The sentence is now a function of the entries it mirrors**, so the four wordings move with the
  * side they describe or they do not move at all. The four call sites differ only in the limb noun,

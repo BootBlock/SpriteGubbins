@@ -1094,6 +1094,28 @@ below was bought with one of those.
   name views section 3 does not list; anatomy appears only on the sheet that counts it. When adding
   a rule, grep for the sections that state its neighbours and check the pair under every category
   and every direction set — `sheetPlans.test.ts` and `componentSet.test.ts` walk all of them.
+- **A plan entry is unconditional, so an option pool that offers an absence has to be declared.** A
+  sheet plan is addressed by category, mode, direction set and sheet index and never by the subject,
+  which is right while a pool describes *which kind* of a thing the sheet always draws and wrong the
+  moment it also offers *no thing at all*: section 1 stated `Armour & Cladding: Bare Unclad Frame`
+  while section 4 ordered a cladding panel and closed by forbidding the generator to omit an entry.
+  A pool offering such a value names it as its `absentOption`, and `planAsDrawn` in
+  `utils/sheetPlanClothing.ts` takes the entries marked `drawsClothing: 'entirely'` out of the plan
+  before the count, the inventory prose, the manifest's slot names or section 1's exception sentence
+  walk it. **The test of whether a pool may declare one is whether the reader who declines gets a
+  *plainer* sheet or an *incomplete* one**, and three things follow from it.
+  **An entry that draws the attribute among other things is `'partly'` and cannot be dropped**, so a
+  category declaring an `absentOption` may carry none — split the line instead, as VEHICLE's rig
+  fittings were. **No other field of that category may name a component the value deletes**, or the
+  contradiction simply moves: INTERFACE's *Slice Assembly Base* offers
+  `Nine-Slice With Fixed Corner Ornament` while its `Plain Untrimmed Edge` deleted the ornament, on
+  an untouched default. And **where the sheet draws the thing regardless, the pool is what gives** —
+  ICON's plans draw a disabled veil, a highlight halo and four tier marks whatever the reader picks,
+  so its `No Overlay` went rather than thirteen of twenty-eight components, and INTERFACE's
+  `Plain Untrimmed Edge` went for the same reason. That is why only two pools drop anything today,
+  and why BACKGROUND may do it on its own default: a clear scene without the atmosphere layer is the
+  plainer sheet, and *Extra Layers* is the route back for a reader who wants the wisps as sprites.
+  `sheetPlanClothing.test.ts` holds all three.
 - **Respect the ceiling and the reader.** `PRACTICAL_COMPONENT_CEILING` (43) bounds one generation;
   a multi-view sheet carries at most five views, and the eight-compass core splits into cardinals
   and diagonals (`coreFacingChunks`) because eight adjacent yaws on one page is exactly what a

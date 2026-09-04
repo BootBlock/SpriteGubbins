@@ -20,6 +20,14 @@ interface SheetSplitRunProps {
    */
   readonly category: SubjectCategory;
   /**
+   * The subject's `clothing` value, which is the other subject field the count reads: a category
+   * whose pool offers a value meaning the subject has none of what the field describes draws fewer
+   * components when the reader chooses it. Passed down rather than read from the store for the
+   * reason the anatomy below is — every row and the batch total above have to be sums over one
+   * subject, not over whatever the store held when each of them asked.
+   */
+  readonly clothing: string;
+  /**
    * The subject's own additional anatomy, parsed — the half of this sheet's component count that the
    * plan does not supply. Passed in rather than read from the store because the row is handed
    * everything else it draws, and parsing it once for the whole drawer is also what keeps the figure
@@ -93,6 +101,7 @@ interface SheetSplitRunProps {
 export function SheetSplitRun({
   run,
   category,
+  clothing,
   additional,
   ordinal,
   total,
@@ -100,7 +109,7 @@ export function SheetSplitRun({
   isCopied,
   onCopy,
 }: SheetSplitRunProps) {
-  const componentCount = sheetComponentCount(category, run, additional);
+  const componentCount = sheetComponentCount(category, run, clothing, additional);
   const isOverBudget = exceedsComponentBudget(componentCount, run.output.componentBudget);
 
   return (

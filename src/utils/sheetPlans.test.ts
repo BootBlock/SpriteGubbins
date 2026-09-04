@@ -171,6 +171,19 @@ function promptFor(
   });
 }
 
+/**
+ * The `clothing` value every prompt in this suite is compiled with — the category's own default,
+ * since `promptFor` builds its subject from `defaultSubjectFor`.
+ *
+ * Stated rather than passed as `''`, because the count is a function of it: BACKGROUND and INTERFACE
+ * both default to the value meaning the subject has none of what the field describes, so their plans
+ * lose the entries drawing it, and a count taken against the declared plan would be a figure no
+ * prompt in this file states.
+ */
+function defaultClothing(category: SubjectCategory): string {
+  return defaultSubjectFor(category).clothing;
+}
+
 describe('the plan table itself', () => {
   it('files no plan under a category that cannot contain it', () => {
     // Structural, not textual: an entry of kind `tile` under CHARACTER is the contamination, and it
@@ -596,7 +609,7 @@ describe('no category calls the subject’s own additions an error in the specif
         expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
       }
       expect(prompt).toContain(
-        `Exactly ${String(componentCountFor(category, mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces))} components`,
+        `Exactly ${String(componentCountFor(category, mode, DEFAULT_OUTPUT_CONFIG.directions, 0, defaultClothing(category), pieces))} components`,
       );
 
       // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
@@ -663,7 +676,7 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
   it('cannot be configured at all — the mode is not offered to a character', () => {
     expect(supportsMode('CHARACTER', 'TILESET_MODULAR')).toBe(false);
     expect(
-      directionalModeChoices('CHARACTER', DEFAULT_OUTPUT_CONFIG, []).map((choice) => choice.value),
+      directionalModeChoices('CHARACTER', DEFAULT_OUTPUT_CONFIG, '', []).map((choice) => choice.value),
     ).not.toContain('TILESET_MODULAR');
   });
 
@@ -774,7 +787,7 @@ describe('the declared count is the inventory’s own length', () => {
     '$category / $mode / $directions / $sheet',
     ({ category, mode, directions, sheetIndex, sheet }) => {
       const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions);
-      const expected = componentCountFor(category, mode, directions, sheetIndex, [
+      const expected = componentCountFor(category, mode, directions, sheetIndex, defaultClothing(category), [
         { name: 'Demon Horn', count: 2 },
         { name: 'Tail', count: 1 },
       ]);
@@ -892,13 +905,16 @@ describe('every inventory line carries an identifier the manifest can use', () =
  * The plans derive these now, so the drift is prevented rather than detected. What this suite adds
  * is the check that the derivation is still in place and still produces the figure the entries
  * carry, and it reaches that figure by a second path — summing the entries itself and spelling the
- * result from its own table. A literal typed back over any of these sentences fails here.
+ * result from its own table. What that catches is a figure that *disagrees* with the entries — a
+ * derivation replaced by a literal passes while the literal is still right, and fails on the next
+ * count change, which is the moment the drift would otherwise reach a prompt.
  *
  * **The table is deliberately small and throws on a miss.** It holds the figures the plans actually
  * produce, so a count that changes to a value nobody has spelled stops the suite with a message
  * naming the number rather than quietly agreeing with whatever the plan now says.
  */
 const FIGURE_WORDS: Readonly<Record<number, string>> = {
+  2: 'two',
   6: 'six',
   8: 'eight',
   9: 'nine',
@@ -930,8 +946,7 @@ function figureWordCapitalised(count: number): string {
 
 /** Every sheet of one pairing, at the first direction set its category offers. */
 function seriesOf(category: SubjectCategory, mode: DirectionalMode): readonly SheetPlan[] {
-  const [directions] = CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[];
-  if (directions === undefined) throw new Error(`${category} offers no direction set`);
+  const [directions] = CATEGORY_DIRECTION_SETS[category];
   return sheetSeriesFor(category, mode, directions);
 }
 
@@ -1004,18 +1019,19 @@ describe('no count in a plan’s prose contradicts the entries it describes', ()
     expect(residue.outro).toContain(`returning ${figureWord(totalOf(residue))} fewer components`);
   });
 
-  it('counts TERRAIN’s transition tiles, and the autotiler set they complete', () => {
-    // The sixteen is the transitions plus one primary per material, so both halves move together if
-    // a third material is ever added.
+  it('counts TERRAIN’s materials, its transition tiles, and the autotiler set they complete', () => {
+    // Three sentences on this sheet count the same two lists, and the sixteen is the transitions plus
+    // one primary per material — so a third material has to move all three together.
     const plan = sheetNamed('TERRAIN', 'TILESET_MODULAR', 'Blend set');
     const materials = groupNamed(plan, null);
     const transitions = groupNamed(plan, 'Transition set');
     const carried = totalOf(transitions);
+    const joined = materials.entries.length;
 
+    expect(materials.intro).toContain(`The ${figureWord(joined)} materials the set joins`);
     expect(transitions.intro).toContain(`${figureWordCapitalised(carried)} tiles carrying the boundary`);
-    expect(transitions.intro).toContain(
-      `complete the ${figureWord(carried + materials.entries.length)} an autotiler indexes`,
-    );
+    expect(transitions.intro).toContain(`complete the ${figureWord(carried + joined)} an autotiler indexes`);
+    expect(transitions.outro).toContain(`The ${figureWord(joined)} pure tiles`);
   });
 
   it('states ICON’s family size where the sheet opens, and where a redrawn state is priced', () => {
@@ -1127,8 +1143,8 @@ describe('the trunk-termination paragraph is true on every sheet that carries it
  * `ComponentEntry.count` is carried rather than parsed back out of `text`, for the reason its own
  * docblock gives — a line reading `Wall top corners ×4` is one line and four components, and reading
  * the words to work that out is the arithmetic that used to be done twice. But the line still states
- * the figure, so the two can still disagree, and 331 entries state one this way with nothing reading
- * them. The group intros and outros derive their counts now; an entry's text is authored, so this is
+ * the figure, so the two can still disagree, and 112 of the 331 distinct lines state one this way
+ * with nothing reading them — 106 with a `×N` marker, 10 with a bare integer, and 4 with both. The group intros and outros derive their counts now; an entry's text is authored, so this is
  * what holds it to the number the compiler will actually contract for.
  *
  * **Two notations, and both are checked.** A `×N` marker is the inventory's own, and where a line
@@ -1140,7 +1156,16 @@ describe('the trunk-termination paragraph is true on every sheet that carries it
  */
 const CROSS_MARKER = /×(\d+)/g;
 
-/** A bare integer that is not a `×` marker and not part of a codepoint like `U+002E`. */
+/**
+ * A bare integer that is not a `×` marker and is followed by a space.
+ *
+ * The trailing `(?=\s)` is what keeps the codepoint lines out, and it is worth stating plainly
+ * because the obvious reading of it is wrong: `Full stop — U+002E` is skipped because `002` is
+ * followed by `E`, but `Exclamation mark — U+0021` and every `Digit 0`…`Digit 9` line are skipped
+ * only because the figure ends the string. So the rule this encodes is **a figure at the end of a
+ * line is never read**, and a line like `Wall segments 4` against a `count` of 5 would go unchecked.
+ * None exists today; a new one would need this widened rather than trusted.
+ */
 const BARE_FIGURE = /(?:^|[^×\w])(\d+)(?=\s)/g;
 
 /**

@@ -19,6 +19,7 @@ const RIG = componentCountFor(
   'CUTOUT_RIG_SINGLE_DIRECTION',
   DEFAULT_OUTPUT_CONFIG.directions,
   0,
+  '',
   [],
 );
 

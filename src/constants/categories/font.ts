@@ -244,6 +244,7 @@ export const FONT: CategoryDefinition = {
         'Chromatic Split Fringe',
         'Rough Stencil Bridges',
       ],
+      absentOption: 'No Treatment',
     },
     {
       key: 'worn_details',

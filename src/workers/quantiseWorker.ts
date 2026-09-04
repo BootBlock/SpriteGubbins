@@ -8,16 +8,24 @@ import type { QuantiseCall, QuantiseReply } from './quantiseProtocol.ts';
 /**
  * The quantiser's pipeline, off the thread that has to stay responsive.
  *
- * Every pass in `quantiseImage` is linear in the pixel count, and `MAX_IMAGE_PIXELS` admits 16.8
- * million of them — so on the main thread the transform is not slow, it is a **freeze**: nothing
- * paints, nothing scrolls, no spinner can turn, and the browser offers to kill the page. Measured on
- * a 4096 × 4096 sheet before this worker existed, one keystroke in the grid box blocked the main
- * thread for 28 seconds, because typing "16" passes through "1" and a grid of 1 aligns every pixel as
- * a cell of its own.
+ * Most of `quantiseImage` is linear in the pixel count, and `MAX_IMAGE_PIXELS` admits 16.8 million of
+ * them — so on the main thread the transform is not slow, it is a **freeze**: nothing paints, nothing
+ * scrolls, no spinner can turn, and the browser offers to kill the page. Measured on a 4096 × 4096
+ * sheet before this worker existed, one keystroke in the grid box blocked the main thread for 28
+ * seconds, because typing "16" passes through "1" and a grid of 1 aligns every pixel as a cell of its
+ * own.
  *
  * Two things make that number smaller and this file is only one of them — the pipeline's own passes
  * no longer allocate an object per pixel, which is where most of the 28 seconds went. The worker is
  * what makes the remainder *invisible*: the tab can say it is working, and mean it.
+ *
+ * **Three passes are worse than linear, and they are bounded by a sprite count rather than by the
+ * pixels**: the box merge in `mergeNearbyBoxes`, the duplicate walk in `duplicateSprites` and the
+ * strip reading in `frameLattice`. The last two are quadratic in a figure `SCATTERED_SPRITE_CEILING`
+ * caps at 512; the merge is quadratic per round and iterates to a fixed point, so its own worst case
+ * is worse again. `duplicateSprites` records what that costs — seconds to tens of seconds at the
+ * ceiling, milliseconds on every sheet in `test_sprites/`. Each is a further reason for this thread
+ * rather than an exception to it, and `MAX_IMAGE_PIXELS` is not what bounds any of them.
  *
  * **The worker owns the sheet.** It is sent once when the user drops it and kept for as long as this
  * thread runs, so the settings that change — the grid, the tolerance — cross the boundary as three

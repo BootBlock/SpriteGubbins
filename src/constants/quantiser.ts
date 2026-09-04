@@ -1039,9 +1039,13 @@ export const SMALLEST_SPRITE_PIXELS = 4;
 /**
  * How many separate pieces a sheet may break into before the reading refuses to call them sprites.
  *
- * Two things at once, and the second is the reason for the figure. It **bounds the merge**, whose
- * rounds are quadratic in the pieces still standing, so a pathological sheet cannot turn a keystroke
- * in the grid box into minutes of work. And it **bounds the claim**: past some count, "sprites" is
+ * Two things at once, and the second is the reason for the figure. It **bounds every pass whose cost
+ * is in the sprite count rather than the pixel count**, so a pathological sheet cannot turn a
+ * keystroke in the grid box into minutes of work. There are three of them, and this is the only
+ * thing bounding any: the box merge in `mergeNearbyBoxes`, whose rounds are quadratic in the pieces
+ * still standing and which iterates to a fixed point; the duplicate walk in `duplicateSprites`,
+ * which records what it costs here; and the strip reading in `frameLattice`. And it **bounds the
+ * claim**: past some count, "sprites" is
  * the wrong word for what was found, and a number a reader would act on — a component count, an
  * atlas plan — must not be produced from a sheet that plainly has not been keyed into anything.
  *
@@ -1531,10 +1535,11 @@ export const WIPE_STEP_COARSE = 0.1;
 /**
  * The tolerances the keying control offers, as the distance `keyDistanceSquared` measures.
  *
- * **A ladder rather than a slider**, and the reason is the pipeline: every pass in it is linear in an
- * image that may be {@link MAX_IMAGE_PIXELS}, so a range input would recompute the whole transform on
- * every pointer move of a drag. Stepped values reach the same range in one click each, and match what
- * this tab already does twice over — the zoom levels and the grid candidates.
+ * **A ladder rather than a slider**, and the reason is the pipeline: its cheapest pass is already
+ * linear in an image that may be {@link MAX_IMAGE_PIXELS} and three of them are worse, so a range
+ * input would recompute the whole transform on every pointer move of a drag. Stepped values reach
+ * the same range in one click each, and match what this tab already does twice over — the zoom
+ * levels and the grid candidates.
  *
  * `0` is on the ladder because "exact match only" is a real request, and it is the one setting that
  * also switches the fringe pass off — stated outright in `keyBackground`, because that pass's hue
@@ -1590,9 +1595,9 @@ export const DEFAULT_KEY_TOLERANCE = 24;
 /**
  * The coverage thresholds the edge-hardening control offers, as percentages of a pixel.
  *
- * **A ladder rather than a slider**, for the reason {@link KEY_TOLERANCES} is one: every pass in this
- * pipeline is linear in an image that may be {@link MAX_IMAGE_PIXELS}, so a range input would recompute
- * the whole transform on each pointer move of a drag.
+ * **A ladder rather than a slider**, for the reason {@link KEY_TOLERANCES} is one: this pipeline's
+ * cheapest pass is already linear in an image that may be {@link MAX_IMAGE_PIXELS}, so a range input
+ * would recompute the whole transform on each pointer move of a drag.
  *
  * `0` is on the ladder because it is the off position, and it is the position the tab opens at — see
  * {@link DEFAULT_SILHOUETTE_THRESHOLD}. The rest are read as “a pixel this covered is artwork”: at
@@ -1739,9 +1744,12 @@ export const KEY_TINT_OFF_HUE = 0.35;
 /**
  * The largest image the tab will accept, in pixels.
  *
- * Every pass in the pipeline is linear in this number, so it is what bounds the work one job asks
- * for. The honest response to a 40000 × 40000 PNG is to decline it with a message, not to appear to
- * hang — the same reasoning that bounds the anatomy multiplier.
+ * Most passes in the pipeline are linear in this number, so it is what bounds the bulk of the work
+ * one job asks for. **It is not the only bound**, and reading it as one is how a cost gets missed:
+ * three passes are quadratic in a sprite count {@link SCATTERED_SPRITE_CEILING} caps instead, and
+ * `duplicateSprites` records what those come to at that ceiling. The honest response to a
+ * 40000 × 40000 PNG is still to decline it with a message rather than appear to hang — the same
+ * reasoning that bounds the anatomy multiplier.
  *
  * The pipeline runs in a worker now, so exceeding this no longer freezes the page — but the limit is
  * not therefore redundant. A sheet this size still costs a second of real work per settings change
