@@ -397,9 +397,9 @@ export const CHARACTER: CategoryDefinition = {
         // First, and that is a decision rather than an ordering: `defaultSubjectFor` builds the
         // subject a category switch installs out of every pool's leading option, so this one is
         // read against `Holstered Sidearm & Pouch` — the leading `worn_details`. `No weapons, no
-        // floor shadows` used to sit here, which made the default CHARACTER subject ask for a
-        // sidearm in section 1 and remove it in section 8. Floor shadows alone is also what this
-        // field's own tooltip calls the usual offender, and the weapons ban keeps its place one
+        // floor shadows` here makes the default CHARACTER subject ask for a sidearm in section 1
+        // and remove it in section 8. Floor shadows alone is also the first of the two this
+        // field's own tooltip calls the usual offenders, and the weapons ban keeps its place one
         // line down for whoever wants it.
         'No floor shadows',
         'No weapons, no floor shadows',

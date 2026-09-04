@@ -27,6 +27,14 @@ import type { SubjectDefinition, SubjectFieldKey } from '../../types/subject.ts'
  * bare `weapon`, `pauldron` or `eye` on the ban side would read all three backwards, so the ban side
  * quotes the pool and the `names` side carries the vocabulary.
  *
+ * **`promptText/exclusions.test.ts` answers the neighbouring question and cannot answer this one.**
+ * That suite derives its collisions by *stem overlap* between EFFECT's own ban line and its
+ * `species` pool, which is enough there because `muzzle` and `Muzzle Flash` share the word. Every
+ * pairing here is a synonym — `sidearm` against `weapons`, `cloak` against `cape`, `plinth` against
+ * `pedestal` — so a stem comparison returns nothing on all five, which is exactly why they had to be
+ * found by reading. The two are the same shape of check over two different collision sets, and
+ * neither one's mechanism finds the other's.
+ *
  * **Every term is matched whole-word, with an optional plural**, which is what keeps `eye` out of
  * `Eyeless Sensing Slits` and `face` out of `Faceplate & Optic Lenses`. It is also why `holster` and
  * `holstered` are both listed: a trailing `s` is the only ending the match forgives.

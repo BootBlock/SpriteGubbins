@@ -34,10 +34,10 @@ export const CHARACTER_RIG_PRESETS: readonly PresetArchetype[] = [
       primary_colours: 'Pearl White & Chrome',
       accent_colours: 'Plasma Cyan',
       materials: 'Reinforced Composites & Alloy',
-      // The rig's own ban rather than `No cape, no facial features`, which removed the
+      // The rig's own ban rather than `No cape, no facial features`, which removes the
       // `Monocular Cyber Eye` above — the one feature this android's head has. What a cut-out
-      // sheet actually needs excluded is the assembled figure and anything already plugged into
-      // the four sockets below.
+      // sheet needs excluded is the assembled figure and anything already plugged into the four
+      // sockets below.
       exclusions: 'No baked shadow of any kind, no assembled figure, no equipment in the sockets',
       additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
