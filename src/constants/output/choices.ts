@@ -78,9 +78,15 @@ export const SURFACE_DETAIL_CHOICES: readonly OutputChoice<SurfaceDetail>[] = [
   { value: 'TEXTURED', label: 'TEXTURED (controlled surface texturing)' },
 ];
 
+// **Neither of the two share rungs states its range**, and that is what having two frames costs. A
+// share is measured against the sheet height where the category's scale unit is a whole the sheet
+// never draws, and against the unit's own cell where the sheet draws one per component — so there
+// are two ranges per rung, and a label naming one of them describes the prompt on six categories and
+// misdescribes it on seven. The numbers are in the field's own guidance, which has no width to run
+// out of; what the label owes a reader here is which rung is the larger.
 export const RESOLUTION_PROFILE_CHOICES: readonly OutputChoice<ResolutionProfile>[] = [
-  { value: 'HIGH_RESOLUTION', label: 'HIGH_RESOLUTION (25–35% of sheet height)' },
-  { value: 'MID_RESOLUTION', label: 'MID_RESOLUTION (18–25% of sheet height)' },
+  { value: 'HIGH_RESOLUTION', label: 'HIGH_RESOLUTION (the largest fixed scale)' },
+  { value: 'MID_RESOLUTION', label: 'MID_RESOLUTION (a step smaller than high)' },
   // No noun, as the two above carry none: the prompt states this range against the unit the chosen
   // category's sheet is priced in — a glyph, a tile, a widget — and a label fixed here could only
   // name one of them. It said "per figure", which is the same defect the prompt line carried.

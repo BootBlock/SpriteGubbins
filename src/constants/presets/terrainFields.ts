@@ -13,7 +13,10 @@ import type { PresetArchetype } from '../../types/preset.ts';
  *
  * Every one states its tile size outright, for the reason the building tile sets do: a tile that does
  * not match the engine's grid is not a stylistic miss, it is unusable, and no resolution profile can
- * say it, since a profile states a share of the sheet height rather than an absolute size.
+ * say it, since a profile states a share rather than an absolute size. On this category the share is
+ * of the tile's own cell in the exploded grid — a ground tile is a component the sheet draws, so
+ * `SCALE_UNIT_FRAME` prices it against its cell and not against the sheet — which is a share either
+ * way, and still not a pixel count an engine can be handed.
  *
  * **The cliff preset is the one that is not a blend set**, and it is here to show where the blend set
  * stops. A cliff is a change in height rather than in material, so it needs an exposed face that a

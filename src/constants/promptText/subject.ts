@@ -1,4 +1,4 @@
-import type { SubjectCategory } from '../../types/subject.ts';
+import type { ScaleUnitKind, SubjectCategory } from '../../types/subject.ts';
 
 /**
  * Section 0's worked example of one consistent scale, per category.
@@ -52,11 +52,12 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * example and `[DEFINE:*_LABEL]` removed from section 1's field names, each label being filled from
  * the category's own field definitions for the same reason.
  *
- * **The range stays on the profile and only the noun is the category's**, which is what decides the
- * shape of this map. `RESOLUTION_PROFILE_CHOICES` puts the range in the option's own label — a
- * reader picks `HIGH_RESOLUTION (25–35% of sheet height)` — so a range that moved with the category
- * would make that label state something the prompt does not. The noun is named nowhere in the
- * interface, so it is free to be the category's own.
+ * **The noun is the category's and the range is the profile's, but the *frame* that range is stated
+ * against belongs to neither** — it is {@link SCALE_UNIT_FRAME}'s answer, and stating it against the
+ * sheet height on all thirteen is the defect that record removes. `RESOLUTION_PROFILE_CHOICES` used
+ * to put the range in the option's own label, which is why the first pass at this map left both
+ * ranges where they were; the label states the rung rather than a number now, precisely because
+ * there are two of each and a label cannot state one of them without lying about the other.
  *
  * **One unit per category rather than one per sheet plan, and the batch is why.** A profile is
  * chosen once and every sheet of a deliverable is generated under it, so a unit that changed between
@@ -72,8 +73,9 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * below records at its worst. What every one of them names is a whole the sheet is forbidden to draw,
  * which is the point: a reference nothing on the page *is* cannot argue with the component count.
  *
- * Each entry is a singular noun phrase carrying its own article, so it reads in both frames — "…
- * occupies 25–35% of the sheet height" and "… is roughly 64–96 pixels tall".
+ * Each entry is a singular noun phrase carrying its own article, so it reads in all three frames —
+ * "… occupies 25–35% of the sheet height", "… occupies 65–85% of its cell height in the exploded
+ * grid" and "… is roughly 64–96 pixels tall".
  */
 export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   CHARACTER: 'a full figure',
@@ -113,4 +115,42 @@ export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // The capital rather than a glyph in general, because cap height is the measurement a font's
   // remaining metrics are set against and the one section 1 fixes.
   FONT: 'one capital glyph',
+};
+
+/**
+ * Whether each category's sheet *draws* the unit above, which is what the share-bearing profiles
+ * state their range against.
+ *
+ * **The split is the one {@link SCALE_UNIT_TEXT}'s own entries already fall into**, and it is
+ * written down rather than inferred from them for the reason `ScaleUnitKind` records: the six
+ * `a full X` phrases mark the reference frame today by accident of wording, and a unit reworded
+ * later would move a category between frames with nothing to say it had.
+ *
+ * **`REFERENCE` is the safe reading, and the six that take it are safe for one reason only** — each
+ * names a whole every one of sections 4, 8 and 9 forbids the sheet to draw. A share of the sheet
+ * height is then a statement about a thing that is not on the page, so no arithmetic connects it to
+ * the component count: a hand is drawn at whatever fraction of that figure it occupies, and thirty
+ * such pieces still fit.
+ *
+ * **`DRAWN` is the seven whose components are not pieces of each other.** An effect's frames, a
+ * widget kit, a tile set, a portrait's expressions, an icon set, a parallax stack and an alphabet
+ * each put the unit on the page `N` times, so `N` copies at the stated share have to fit beside each
+ * other — and at the counts these plans actually carry they do not. INTERFACE is `DRAWN` although its
+ * unit is the single largest widget rather than a repeated one: the panel frame is still a component
+ * the sheet draws, so it is charged a cell like every other entry in the grid.
+ */
+export const SCALE_UNIT_FRAME: Readonly<Record<SubjectCategory, ScaleUnitKind>> = {
+  CHARACTER: 'REFERENCE',
+  CREATURE: 'REFERENCE',
+  OBJECT: 'REFERENCE',
+  ITEM: 'REFERENCE',
+  BUILDING: 'REFERENCE',
+  VEHICLE: 'REFERENCE',
+  EFFECT: 'DRAWN',
+  INTERFACE: 'DRAWN',
+  TERRAIN: 'DRAWN',
+  PORTRAIT: 'DRAWN',
+  ICON: 'DRAWN',
+  BACKGROUND: 'DRAWN',
+  FONT: 'DRAWN',
 };

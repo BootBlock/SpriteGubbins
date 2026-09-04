@@ -5,7 +5,7 @@ import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { modesFor, sheetSeriesFor } from '../sheetPlans/index.ts';
 import { DIRECTION_LISTS } from './camera.ts';
-import { SCALE_UNIT_TEXT } from './subject.ts';
+import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
  * Everything a category writes about its own subject — every sheet plan, of every mode, under every
@@ -88,10 +88,10 @@ describe('SCALE_UNIT_TEXT', () => {
     }
   });
 
-  it('gives each unit a leading article, so it reads in both of the frames that carry it', () => {
-    // The phrase completes "… occupies 25–35% of the sheet height" and "… is roughly 64–96 pixels
-    // tall", so it is a singular noun phrase carrying its own article and nothing else — no leading
-    // capital, no trailing stop.
+  it('gives each unit a leading article, so it reads in all three of the frames that carry it', () => {
+    // The phrase completes "… occupies 25–35% of the sheet height", "… occupies 65–85% of its cell
+    // height in the exploded grid" and "… is roughly 64–96 pixels tall", so it is a singular noun
+    // phrase carrying its own article and nothing else — no leading capital, no trailing stop.
     for (const category of SUBJECT_CATEGORIES) {
       const unit = SCALE_UNIT_TEXT[category];
       expect(unit, category).toMatch(/^(a|an|one|the) [a-z]/);
@@ -102,5 +102,35 @@ describe('SCALE_UNIT_TEXT', () => {
   it('gives no two categories the same unit, which would be one of them priced in the other’s words', () => {
     const units = SUBJECT_CATEGORIES.map((category) => SCALE_UNIT_TEXT[category]);
     expect(new Set(units).size).toBe(units.length);
+  });
+});
+
+/**
+ * Which frame the share-bearing profiles state their range in, per category.
+ *
+ * The record is what stops section 2 telling twenty-eight icons to occupy a quarter of the sheet
+ * each. Whether a given category sits on the right side of it is a claim about that category's own
+ * sheets, and `tests/resolution-profile-fit.test.ts` is where it is checked arithmetically — these
+ * two assertions hold the shape the arithmetic depends on.
+ */
+describe('SCALE_UNIT_FRAME', () => {
+  it('uses both frames, so a record that has collapsed to one is not silently in force', () => {
+    const frames = new Set(SUBJECT_CATEGORIES.map((category) => SCALE_UNIT_FRAME[category]));
+    expect(frames).toEqual(new Set(['DRAWN', 'REFERENCE']));
+  });
+
+  it('never calls a unit drawn when the unit names a whole the sheet is forbidden to draw', () => {
+    // One direction only, and deliberately. `a full X` is how the six reference categories are
+    // worded today, and a unit spelled that way names the thing sections 4, 8 and 9 each ban from
+    // the page — so it cannot be a component charged a cell in the grid. The converse is not a rule:
+    // a reference unit is free to be worded some other way, and the record is where that is decided
+    // rather than in the phrasing.
+    for (const category of SUBJECT_CATEGORIES) {
+      const unit = SCALE_UNIT_TEXT[category];
+      if (!unit.startsWith('a full ')) continue;
+      expect(SCALE_UNIT_FRAME[category], `${category}: “${unit}” is a whole the sheet never draws`).toBe(
+        'REFERENCE',
+      );
+    }
   });
 });

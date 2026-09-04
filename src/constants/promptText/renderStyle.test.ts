@@ -5,7 +5,7 @@ import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { minFeatureSize, resolutionProfileDescription } from './renderStyle.ts';
-import { SCALE_UNIT_TEXT } from './subject.ts';
+import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
 
 /** The three profiles that *are* a scale, and so state a range against a unit. `CUSTOM` is not one. */
 const SCALE_BEARING = ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const;
@@ -183,14 +183,17 @@ describe('resolutionProfileDescription — the unit the range is stated against'
 
   it('states the whole sentence a reader sees, not only the unit it was handed', () => {
     // The assertion above reads the same map the function reads, so it can only catch the
-    // interpolation being deleted outright. These three are written out, so the wording is pinned by
+    // interpolation being deleted outright. These four are written out, so the wording is pinned by
     // something that does not move when the map does — one unit of each shape the map holds: the
     // un-drawn whole, a component the sheet draws, and a phrase built from two nouns.
     expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'CHARACTER')).toBe(
       'High resolution — a full figure occupies 25–35% of the sheet height',
     );
     expect(resolutionProfileDescription('MID_RESOLUTION', false, 'FONT')).toBe(
-      'Mid resolution — one capital glyph occupies 18–25% of the sheet height',
+      'Mid resolution — one capital glyph occupies 45–65% of its cell height in the exploded grid',
+    );
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'ICON')).toBe(
+      'High resolution — one icon occupies 65–85% of its cell height in the exploded grid',
     );
     expect(resolutionProfileDescription('RETRO_16_BIT', false, 'EFFECT')).toBe(
       '16-bit retro scale — one frame of the effect is roughly 64–96 pixels tall',
@@ -200,19 +203,47 @@ describe('resolutionProfileDescription — the unit the range is stated against'
     );
   });
 
-  it('keeps the range with the profile rather than the category', () => {
-    // `RESOLUTION_PROFILE_CHOICES` puts the range in the option's own label, so a range that moved
-    // with the category would make that label state something the prompt does not.
+  it('gives each frame one range per profile, whatever category is asking', () => {
+    // The range belongs to the profile *within a frame*: it is the frame that follows the category,
+    // and only because a share of the sheet height cannot be stated about a unit the sheet draws
+    // `N` of. A range that varied by category inside one frame would be a third thing moving.
+    const FRAMED = {
+      REFERENCE: {
+        HIGH_RESOLUTION: '25–35% of the sheet height',
+        MID_RESOLUTION: '18–25% of the sheet height',
+      },
+      DRAWN: {
+        HIGH_RESOLUTION: '65–85% of its cell height in the exploded grid',
+        MID_RESOLUTION: '45–65% of its cell height in the exploded grid',
+      },
+    } as const;
+
     for (const category of SUBJECT_CATEGORIES) {
-      expect(resolutionProfileDescription('HIGH_RESOLUTION', false, category)).toContain(
-        '25–35% of the sheet height',
-      );
-      expect(resolutionProfileDescription('MID_RESOLUTION', false, category)).toContain(
-        '18–25% of the sheet height',
-      );
+      const frame = SCALE_UNIT_FRAME[category];
+      for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const) {
+        expect(resolutionProfileDescription(profile, false, category), `${category} / ${profile}`).toContain(
+          FRAMED[frame][profile],
+        );
+      }
+      // The absolute rung takes no frame at all, which is why it is the one the defect never reached.
       expect(resolutionProfileDescription('RETRO_16_BIT', false, category)).toContain(
         'roughly 64–96 pixels tall',
       );
+    }
+  });
+
+  it('never prices a unit the sheet draws against the sheet itself', () => {
+    // The defect: twenty-eight icons were each told to occupy 25–35% of the sheet height, which is
+    // 1.75 sheet heights squared of artwork on a 16:9 page measuring 1.78 — the whole surface, with
+    // nothing left for the spacing the same prompt asks for two sections later. The arithmetic is
+    // held in `tests/resolution-profile-fit.test.ts`; this is the wording half of the same claim.
+    for (const category of SUBJECT_CATEGORIES) {
+      if (SCALE_UNIT_FRAME[category] !== 'DRAWN') continue;
+      for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const) {
+        expect(resolutionProfileDescription(profile, false, category), category).not.toContain(
+          'of the sheet height',
+        );
+      }
     }
   });
 });

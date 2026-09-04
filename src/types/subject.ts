@@ -35,6 +35,29 @@ export const SUBJECT_CATEGORIES = [
 export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
 
 /**
+ * Whether the sheet draws the unit section 2 prices its scale in, which is what decides the frame
+ * that share can honestly be stated against.
+ *
+ * `SCALE_UNIT_TEXT` gives every category the noun its own sheet is priced in, and the two profiles
+ * that state a *share* stated it against the sheet height for all thirteen. That reading is only
+ * safe where the unit is a whole the sheet is forbidden to draw: nothing on the page *is* one, so
+ * no arithmetic relates the share to the component count. Where the unit is a component the sheet
+ * draws many of, the same range argues with section 4 — twenty-eight icons at the bottom of
+ * `25–35%` need 1.75 sheet heights squared against a 16:9 sheet's 1.78, which is the whole page
+ * with nothing left for the spacing section 8 asks for in the same prompt.
+ *
+ * **`DRAWN` and `REFERENCE` split exactly where `SCALE_UNIT_TEXT`'s wording already splits**, and
+ * the record is written down rather than read off that phrasing: `a full X` happens to mark the six
+ * today, and a unit reworded tomorrow would move a category between frames without anything saying
+ * so. The seven `DRAWN` categories are the ones whose components are not pieces of each other —
+ * frames of one effect, widgets, tiles, expressions, icons, bands and glyphs — so the unit is on the
+ * page `N` times and the count bounds how large each can be.
+ */
+export const SCALE_UNIT_KINDS = ['DRAWN', 'REFERENCE'] as const;
+
+export type ScaleUnitKind = (typeof SCALE_UNIT_KINDS)[number];
+
+/**
  * How *this* sheet's assembled-whole failure — exploded parts drawn as one finished thing — is named
  * in each of the five voices the app states it in.
  *

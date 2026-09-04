@@ -1,7 +1,7 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
-import { SCALE_UNIT_TEXT } from './subject.ts';
+import type { ScaleUnitKind, SubjectCategory } from '../../types/subject.ts';
+import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -33,9 +33,66 @@ export const SURFACE_DETAIL_TEXT: Readonly<Record<SurfaceDetail, string>> = {
   TEXTURED: 'Textured — controlled surface texturing, still inside the palette limit',
 };
 
+/** The two profiles that state their scale as a *share*, and so have a frame to state it against. */
+type ShareProfile = 'HIGH_RESOLUTION' | 'MID_RESOLUTION';
+
+/**
+ * The share each of those two permits, per frame, as the two percentages the prose reads out.
+ *
+ * **Numbers rather than four written sentences, because the fit these ranges have to satisfy is
+ * arithmetic** — `N` units at the bottom of a range have to leave the sheet room for the spacing the
+ * layout section asks for in the same prompt. The figures are one record here rather than four
+ * sentences so that changing a rung is one edit and the two frames stay comparable; what checks the
+ * arithmetic is `tests/resolution-profile-fit.test.ts`, and it reads the *compiled line* rather than
+ * this record, because what a generator acts on is the sentence and not the constant behind it.
+ *
+ * **`REFERENCE` keeps the pair that shipped**, because on a sheet whose unit is a whole nothing on
+ * the page *is*, the sheet height is a frame no component count can argue with. `DRAWN` is the new
+ * pair, and every figure in it is derived from that one rather than chosen:
+ *
+ * - The frame is the unit's **own cell** in the exploded grid. Cells tile the sheet by construction,
+ *   so `N` units each filling `f` of their cell cover `f²` of the page whatever `N` is and whatever
+ *   aspect the reader picked — which is the property that makes the contradiction impossible rather
+ *   than merely smaller.
+ * - The two rungs stay **contiguous**, as `25–35` and `18–25` are, so the ladder has no gap for a
+ *   configuration to fall into.
+ * - `MID`'s midpoint is 0.73 of `HIGH`'s, against the 0.72 the sheet-height pair carries. The
+ *   profile is a choice about relative size, and that ratio is what the choice has always been.
+ * - `HIGH` tops out at 85% rather than higher because the top of the top rung is the tightest grid
+ *   the profile permits, and it still has to read as "generously and uniformly spaced": 0.85² is
+ *   0.72 of the page covered, which the fit test holds under three-quarters.
+ */
+const SHARE_RANGE: Readonly<
+  Record<ShareProfile, Readonly<Record<ScaleUnitKind, readonly [number, number]>>>
+> = {
+  HIGH_RESOLUTION: { DRAWN: [65, 85], REFERENCE: [25, 35] },
+  MID_RESOLUTION: { DRAWN: [45, 65], REFERENCE: [18, 25] },
+};
+
+/**
+ * What each frame measures that share against.
+ *
+ * The reference frame is the sheet, which is the wording that shipped. The drawn frame is the unit's
+ * own cell, and it names the grid rather than citing the layout section by number: `[SEC:LAYOUT]`
+ * cannot be used here, because both of that heading's declarations sit inside an `[IF:…]` and
+ * `tests/prompt-citations.test.ts` admits only a heading no configuration can drop. "The exploded
+ * grid" is that section's own phrase for it, so the reference survives whatever number the heading
+ * takes.
+ */
+const SHARE_FRAME: Readonly<Record<ScaleUnitKind, (range: string) => string>> = {
+  DRAWN: (range) => `occupies ${range} of its cell height in the exploded grid`,
+  REFERENCE: (range) => `occupies ${range} of the sheet height`,
+};
+
+/** The pair as the reader sees it, with the en dash every other range in the prompt is written with. */
+function shareText(profile: ShareProfile, frame: ScaleUnitKind): string {
+  const [low, high] = SHARE_RANGE[profile][frame];
+  return SHARE_FRAME[frame](`${String(low)}–${String(high)}%`);
+}
+
 /**
  * The scale the components are drawn at, as a function of the unit this category's sheet is priced
- * in.
+ * in and of the frame that unit can honestly be measured in.
  *
  * Stated in prose because v1 interpolated the identifier raw, so the prompt read
  * "Selected profile: `HIGH_RESOLUTION_PIXEL_ART`" — a token the model had to guess the meaning of.
@@ -43,13 +100,19 @@ export const SURFACE_DETAIL_TEXT: Readonly<Record<SurfaceDetail, string>> = {
  * **A map of functions rather than of strings, because three of the four entries state a scale
  * *against something*** — and that something was `a full figure` on all thirteen categories, so a
  * glyph sheet, a tile field and a widget kit were each measured against a subject they cannot
- * contain. {@link SCALE_UNIT_TEXT} is the noun each supplies; the ranges stay here because they are
- * the profile's own and are what its option label states. `CUSTOM` carries no range and therefore
- * takes no unit — it defers to the target-size line, which names its quantity itself.
+ * contain. {@link SCALE_UNIT_TEXT} is the noun each supplies and {@link SCALE_UNIT_FRAME} the frame.
+ * `CUSTOM` carries no range and therefore takes neither — it defers to the target-size line, which
+ * names its quantity itself.
+ *
+ * **`RETRO_16_BIT` takes the unit and not the frame**, and it is the one rung that never needed one:
+ * "roughly 64–96 pixels tall" is an absolute height, so it survived being re-pointed at a component
+ * exactly as it stood.
  */
-export const RESOLUTION_PROFILE_TEXT: Readonly<Record<ResolutionProfile, (unit: string) => string>> = {
-  HIGH_RESOLUTION: (unit) => `High resolution — ${unit} occupies 25–35% of the sheet height`,
-  MID_RESOLUTION: (unit) => `Mid resolution — ${unit} occupies 18–25% of the sheet height`,
+export const RESOLUTION_PROFILE_TEXT: Readonly<
+  Record<ResolutionProfile, (unit: string, frame: ScaleUnitKind) => string>
+> = {
+  HIGH_RESOLUTION: (unit, frame) => `High resolution — ${unit} ${shareText('HIGH_RESOLUTION', frame)}`,
+  MID_RESOLUTION: (unit, frame) => `Mid resolution — ${unit} ${shareText('MID_RESOLUTION', frame)}`,
   RETRO_16_BIT: (unit) => `16-bit retro scale — ${unit} is roughly 64–96 pixels tall`,
   CUSTOM: () =>
     'Custom — work to the target component size where one is stated, and to the sheet aspect otherwise',
@@ -101,7 +164,7 @@ export function resolutionProfileDescription(
   const unit = SCALE_UNIT_TEXT[category];
   return profile === 'CUSTOM' && statesAssembled
     ? customAssembledText(unit)
-    : RESOLUTION_PROFILE_TEXT[profile](unit);
+    : RESOLUTION_PROFILE_TEXT[profile](unit, SCALE_UNIT_FRAME[category]);
 }
 
 /**
@@ -130,6 +193,17 @@ const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>,
  * ends somewhere in that gap — 128 is the round number inside it, and is itself a size people draw
  * sprites at. `MID_RESOLUTION` tops out near 256 on the same sheet and `HIGH_RESOLUTION` begins at
  * that figure, so the second boundary is that number exactly.
+ *
+ * **Those two landmarks are the `REFERENCE` frame's reading, and the `DRAWN` frame's is lower.** A
+ * default ICON sheet is twenty-eight components on a 16:9 page, so its grid is about seven cells by
+ * four and a cell on a 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then 115–166 px and
+ * `HIGH_RESOLUTION` 166–218. The gap the first boundary sits in narrows to 96–115 on such a sheet,
+ * and 128 is above it rather than inside it. **The rungs are unchanged anyway**, and deliberately:
+ * these two boundaries key on a size the *reader* typed into the target-size field, which no category
+ * and no profile moves — the profiles are landmarks that were used to pick a round number, not inputs.
+ * Re-cutting the ladder because one landmark moved would change what `CUSTOM` answers for every
+ * stated size in the app, which is a different question from the one section 2's share was wrong
+ * about.
  */
 const CUSTOM_MIN_FEATURE = [
   { upTo: 128, size: '1 × 1' },
