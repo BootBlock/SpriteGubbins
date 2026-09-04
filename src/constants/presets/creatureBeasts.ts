@@ -47,7 +47,10 @@ export const CREATURE_BEAST_PRESETS: readonly PresetArchetype[] = [
       primary_colours: 'Obsidian Black & Deep Purple',
       accent_colours: 'Plasma Cyan #22D3EE',
       materials: 'Rusting Scrap & Wiring',
-      exclusions: 'No human clothing, no weapons',
+      // The pool's leading `No human clothing, no weapons` removed the `Mounted Energy Cannons`
+      // above, which are what makes this an attack drone. A flying machine has no rider and no
+      // human gear to keep off it either way, so this is the ban that leaves the subject intact.
+      exclusions: 'No rider, no floor shadows',
       additional_anatomy: 'Insectoid Wing ×4',
     },
     output: {
