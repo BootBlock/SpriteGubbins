@@ -5,13 +5,15 @@
  * options it explains — and a fact that is true of two controls belongs to neither filing. So it
  * lives here, on neutral ground, and each entry is imported by every card that states it.
  *
- * **This file is what makes a repeated sentence legible.** `constants/tooltips/tooltips.test.ts`
- * fails when one sentence turns up under two names, because that is the copy-paste that leaves one
- * control describing another and reads correctly at each call site on its own. A sentence that is
- * genuinely true of several controls has to be told apart from that, and the way it is told apart is
- * that it is *written once* and quoted, rather than typed out again — so the test attributes such a
- * sentence to the constant it came from, and a constant is one origin however many cards carry it.
- * A sentence typed out twice has two origins and fails, which is the whole check.
+ * **This file is what makes a repeated sentence legible**, and it takes two checks rather than one.
+ * `constants/tooltips/tooltips.test.ts` fails when a sentence turns up under two names, because that
+ * is the copy-paste that leaves one control describing another and reads correctly at each call site
+ * on its own; a sentence traced back to a constant here is one origin however many cards carry it,
+ * which is how deliberate sharing is told apart from that. But that check reads the compiled
+ * *values*, so it recognises a sentence by its text and cannot tell an import from a copy somebody
+ * typed out — and a typed-out copy can be false of the control it lands on.
+ * `tests/guidance-sentence-sharing.test.ts` reads the *source* and fails on any of these sentences
+ * written out anywhere but this file, so the exemption reaches what was imported and nothing else.
  *
  * Two consequences worth holding on to:
  *
@@ -29,7 +31,7 @@
 /**
  * What the `NONE` option of a template control does, on the two controls that offer one.
  *
- * The Target Machine and Art Style Reference controls both fill several other controls in when a
+ * The System Profile and Art Style Reference controls both fill several other controls in when a
  * value is chosen, so both owe the reader the same reassurance about the option that fills in
  * nothing. It is the same promise in the same words because it is the same behaviour.
  */

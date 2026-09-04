@@ -186,9 +186,10 @@ const SHORTEST_USEFUL = 60;
  * this app's rules and errs towards *smaller* pieces where an abbreviation intervenes — an “e.g.”
  * ends a piece early. That only makes the comparison below stricter, since a borrowed sentence is
  * borrowed in pieces too, so there is nothing to correct for and no minimum length to pick. A floor
- * would be the more obvious design and it is the wrong one: the shortest sentence in the app,
- * “Ctrl+Shift+Z and Ctrl+Y both do the same.”, is the kind that travels between two cards most
- * easily, and a floor high enough to be worth having would step over it.
+ * would be the more obvious design and it is the wrong one: the shortest sentence two cards actually
+ * share is “Ctrl+Shift+Z and Ctrl+Y both do the same.” at 41 characters, and a short sentence is the
+ * kind that travels between two cards most easily. Measured over the whole corpus a floor of zero
+ * reports the same eleven as a floor of twenty, so there is nothing a floor would buy either.
  */
 function sentences(text: string): string[] {
   return text
@@ -227,6 +228,14 @@ function originOf(name: string): string {
  * sentence traced back to that file has a single origin however many cards carry it, which is what
  * tells deliberate sharing apart from the copy-paste this suite is named for — and the constants are
  * discovered rather than listed, so the exemption cannot be widened without widening the app.
+ *
+ * **This matches on the text, so on its own it would excuse a hand-typed copy as readily as an
+ * import**, and a hand-typed one can be false of the control it lands on — `REDO_KEYBOARD_SHORTCUTS`
+ * pasted onto an Undo button says something untrue and would fold to the same origin.
+ * `tests/guidance-sentence-sharing.test.ts` is the half that closes it: it reads the source rather
+ * than the values, and fails on any of these sentences written out anywhere but the file that
+ * defines it. So the exemption reaches what was imported, which is the claim this function's
+ * docblock could not make alone.
  */
 function attribute(sentence: string): string | undefined {
   return Object.entries(SHARED_SENTENCES).find(([, shared]) => shared === sentence)?.[0];
@@ -256,10 +265,18 @@ describe('control guidance', () => {
     expect(text).not.toContain('"');
   });
 
-  it.each(TEMPLATED_ORIGINS)('%s is written once and rendered several times', (origin) => {
-    // A template listed here that produces one entry has stopped being a template, and the entry it
-    // does produce is then exempt from the check below for no reason anybody stated.
-    expect(GUIDANCE.filter(([name]) => originOf(name) === origin).length).toBeGreaterThan(1);
+  it.each(TEMPLATED_ORIGINS)('%s renders a different card for every argument', (origin) => {
+    // Two claims, and the second is the one the folding below takes away. A template listed here
+    // that produces one entry has stopped being a template, and the entry it does produce is then
+    // exempt from the sentence check for no reason anybody stated. And because every card from this
+    // origin is compared with the rest of the app *once*, nothing else would notice if the argument
+    // stopped reaching the words — nine swatches all reading “Sets the primary action … to your
+    // chosen colour.” is exactly the substitution failure `GUIDANCE` feeds it nine hues to catch,
+    // and it is invisible to a check that has already agreed to see the nine as one.
+    const texts = GUIDANCE.filter(([name]) => originOf(name) === origin).map(([, text]) => text);
+
+    expect(texts.length).toBeGreaterThan(1);
+    expect(new Set(texts).size).toBe(texts.length);
   });
 
   it.each(Object.entries(SHARED_SENTENCES))(

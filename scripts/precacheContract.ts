@@ -39,8 +39,10 @@
  *
  * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
  * icons a second time, *after* the `manifestTransforms` step runs. So this list and the ceiling
- * under it describe the globbed precache — 15 of the shipped worker's 18 entries — and the three
- * they miss are fixed, small and not what a stray chunk arrives as.
+ * under it describe the globbed precache — every entry of the shipped worker but those three — and
+ * the three they miss are fixed, small and not what a stray chunk arrives as. Stated as a
+ * relationship rather than a pair of counts, because the counts move with every chunk the split
+ * produces and the paragraph above already names today's.
  */
 export const PRECACHE_SHAPES: readonly string[] = [
   '404.html',

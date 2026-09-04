@@ -259,7 +259,7 @@ export const INTERFACE: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The state and emphasis colour — the hue a hover, a fill or an alert is carried in. ' +
+        'The state and emphasis colour — what a hover, a fill or an alert is carried in. ' +
         HEX_CODE_PINS_THE_HUE,
       options: [
         'Interface Cyan #22D3EE',

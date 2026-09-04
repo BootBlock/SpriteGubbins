@@ -27,19 +27,21 @@ const ANY_SOURCE = /\.(tsx?|jsx?|mjs|css|html)$/;
  * leave the one place a size could hide from the guard: `src/constants/`, which is exactly where
  * CLAUDE.md's directory rule sends a hoisted constant.
  *
- * Six suites walk the tree this way — `design-tokens.test.ts` for a bracketed font size and for a
+ * Seven suites walk the tree this way — `design-tokens.test.ts` for a bracketed font size and for a
  * `duration-` off the motion ladder, `raw-colour-literals.test.ts` for a hex a component wrote
  * instead of taking a token, `sticky-column-offset.test.ts` for a sticky column that clears the
  * wrong height, `interface-punctuation.test.ts` for a straight quote in a string a reader sees,
- * `module-size.test.ts` for a file that has taken on a second responsibility, and
- * `select-call-site-counts.test.ts` for a select nobody budgeted — which is why the walk is a
- * module rather than a function inside one of them. A second copy would be a second answer to
+ * `module-size.test.ts` for a file that has taken on a second responsibility,
+ * `select-call-site-counts.test.ts` for a select nobody budgeted, and
+ * `guidance-sentence-sharing.test.ts` for a shared guidance sentence typed out instead of imported
+ * — which is why the walk is a module rather than a function inside one of them. A second copy would be a second answer to
  * "what counts as source", and the one that went stale would fail open: a directory the copy never
  * learned about is a directory its guard silently stops covering.
  *
- * Two of them filter this list down themselves rather than asking for a seventh walk — the
+ * Three of them filter this list down themselves rather than asking for a walk apiece — the
  * punctuation sweep to the `.ts` and `.tsx` that carry authored strings, since `.css` holds none of
- * the app's prose, and the size guard to the modules that are not themselves tests.
+ * the app's prose, the size guard to the modules that are not themselves tests, and the sharing
+ * sweep to everything but the one file those sentences are defined in.
  */
 export function scannableSources(): string[] {
   return filesUnder('src', APP_SOURCE);
