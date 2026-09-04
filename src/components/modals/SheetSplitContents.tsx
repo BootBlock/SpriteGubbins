@@ -48,8 +48,8 @@ export function SheetSplitContents() {
 
   // Which row the studio is on, so the drawer can mark it. Asked of `sheetBatch` rather than
   // recovered from the runs above, because the ordinal is that module's own answer — the same one
-  // the assembly-capability section of every prompt in the batch states — and a second search for it
-  // second definition of where the user is.
+  // the assembly-capability section of every prompt in the batch states — and deriving it a second
+  // way here would be a second definition of where the user is, free to disagree with the first.
   const { ordinal } = useMemo(() => sheetBatch(category, output), [category, output]);
 
   // Parsed once for the drawer and handed down, so the total below and the per-sheet figure on every
