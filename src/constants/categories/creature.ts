@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Monsters and beasts — non-humanoid limb layouts, biological rather than worn detail. */
@@ -272,7 +273,8 @@ export const CREATURE: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The bioluminescent or warning colours — the parts meant to be seen and understood instantly. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The bioluminescent or warning colours — the parts meant to be seen and understood instantly. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Acidic Lime Green #84CC16',
         'Magma Orange Glow #F97316',

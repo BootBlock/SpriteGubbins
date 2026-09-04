@@ -4,6 +4,7 @@ import { ANTI_ALIAS_GUIDANCE } from '../antiAlias.ts';
 import { AUTO_TUNE_GUIDANCE } from '../autoTune.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { DIAL_HISTORY_GUIDANCE } from '../dialHistory.ts';
+import * as SHARED_SENTENCES from '../guidanceSentences.ts';
 import { TARGET_MODELS } from '../models.ts';
 import { PALETTE_EXPORT_GUIDANCE } from '../paletteExport.ts';
 import { accentSwatchGuidance } from '../settings.ts';
@@ -178,6 +179,59 @@ function records(sets: Record<string, Readonly<Record<string, string>>>): (reado
  */
 const SHORTEST_USEFUL = 60;
 
+/**
+ * The sentences a piece of guidance is made of.
+ *
+ * A split on sentence-ending punctuation followed by whitespace, which is exact for prose written to
+ * this app's rules and errs towards *smaller* pieces where an abbreviation intervenes — an “e.g.”
+ * ends a piece early. That only makes the comparison below stricter, since a borrowed sentence is
+ * borrowed in pieces too, so there is nothing to correct for and no minimum length to pick. A floor
+ * would be the more obvious design and it is the wrong one: the shortest sentence in the app,
+ * “Ctrl+Shift+Z and Ctrl+Y both do the same.”, is the kind that travels between two cards most
+ * easily, and a floor high enough to be worth having would step over it.
+ */
+function sentences(text: string): string[] {
+  return text
+    .split(/(?<=[.?!])\s+/)
+    .map((piece) => piece.trim())
+    .filter((piece) => piece.length > 0);
+}
+
+/**
+ * The guidance that is *written* by a function rather than typed out, named by that function.
+ *
+ * `GUIDANCE` feeds each of these every argument it takes, because a template with a substitution in
+ * it is exactly the shape that reads fine in the abstract and produces something broken on the one
+ * input nobody tried. That is what the length, prose and punctuation checks want. The check on
+ * repeated sentences wants the opposite: nine cards drawn from one template literal are nine
+ * renderings of one piece of writing, not nine controls that were given the same sentence, so they
+ * are attributed to the function and compared with the rest of the app once.
+ *
+ * **A function is not automatically one origin, and `presetCollectionGuidance` is why this is a list
+ * rather than a rule about names.** Its two branches are two written-out strings, so a sentence
+ * appearing in both of them is a copy-paste inside one file and is meant to fail — which is how the
+ * sentence about the search count came to be in `constants/guidanceSentences.ts`.
+ */
+const TEMPLATED_ORIGINS = ['accentSwatchGuidance'] as const;
+
+/** Where an entry's words are written: the entry itself, unless a template above wrote them. */
+function originOf(name: string): string {
+  return TEMPLATED_ORIGINS.find((origin) => name.startsWith(`${origin}(`)) ?? name;
+}
+
+/**
+ * The constant a sentence was quoted from, where it was quoted from one.
+ *
+ * `constants/guidanceSentences.ts` holds the facts that are true of more than one control, written
+ * down once so that every card stating one is stating the same thing rather than a copy of it. A
+ * sentence traced back to that file has a single origin however many cards carry it, which is what
+ * tells deliberate sharing apart from the copy-paste this suite is named for — and the constants are
+ * discovered rather than listed, so the exemption cannot be widened without widening the app.
+ */
+function attribute(sentence: string): string | undefined {
+  return Object.entries(SHARED_SENTENCES).find(([, shared]) => shared === sentence)?.[0];
+}
+
 describe('control guidance', () => {
   it('finds every set filed under src/constants/', () => {
     expect(Object.keys(TOOLTIP_SETS).length).toBeGreaterThanOrEqual(FEWEST_SETS);
@@ -202,12 +256,56 @@ describe('control guidance', () => {
     expect(text).not.toContain('"');
   });
 
-  it('never repeats itself', () => {
-    // Two controls sharing a sentence is the copy-paste that leaves one of them describing the
-    // other — and it is invisible in review, because each call site reads correctly on its own.
-    const byText = new Map<string, string[]>();
-    for (const [name, text] of GUIDANCE) byText.set(text, [...(byText.get(text) ?? []), name]);
+  it.each(TEMPLATED_ORIGINS)('%s is written once and rendered several times', (origin) => {
+    // A template listed here that produces one entry has stopped being a template, and the entry it
+    // does produce is then exempt from the check below for no reason anybody stated.
+    expect(GUIDANCE.filter(([name]) => originOf(name) === origin).length).toBeGreaterThan(1);
+  });
 
-    expect([...byText.values()].filter((names) => names.length > 1)).toEqual([]);
+  it.each(Object.entries(SHARED_SENTENCES))(
+    '%s is one sentence, carried by more than one control',
+    (_name, sentence) => {
+      // One sentence per constant, because a constant holding two lets the second travel silently
+      // wherever the first was wanted; and stated once in that file, because a second constant with
+      // the same words is the copy-paste this whole check is for, one level further back.
+      expect(sentences(sentence)).toEqual([sentence]);
+      expect(Object.values(SHARED_SENTENCES).filter((other) => other === sentence)).toHaveLength(1);
+
+      const carriers = new Set(
+        GUIDANCE.filter(([, text]) => sentences(text).includes(sentence)).map(([name]) => originOf(name)),
+      );
+      expect(carriers.size).toBeGreaterThan(1);
+    },
+  );
+
+  it.each(GUIDANCE)('%s says something of its own', (_name, text) => {
+    // A card built entirely out of the shared sentences has explained the things this control has in
+    // common with others and nothing about the control itself — which is the one way an entry could
+    // pass the check below while saying nothing.
+    const shared: readonly string[] = Object.values(SHARED_SENTENCES);
+    expect(sentences(text).some((sentence) => !shared.includes(sentence))).toBe(true);
+  });
+
+  it('never repeats a sentence', () => {
+    // Two controls sharing a sentence is the copy-paste that leaves one of them describing the
+    // other — and it is invisible in review, because each call site reads correctly on its own. It is
+    // also invisible to a check on whole entries, which is what this used to be: an entry carrying a
+    // borrowed sentence differs from the one it borrowed from everywhere else, so the two are never
+    // equal. `OUTPUT_TOOLTIPS.hardwareProfile` carried the Art Style Reference control's own closing
+    // sentence for months, claiming a narrowing the machine list does not have, and this suite
+    // reported nothing about it.
+    const origins = new Map<string, Set<string>>();
+    for (const [name, text] of GUIDANCE) {
+      for (const sentence of sentences(text)) {
+        const origin = attribute(sentence) ?? originOf(name);
+        origins.set(sentence, (origins.get(sentence) ?? new Set()).add(origin));
+      }
+    }
+
+    const repeated = [...origins.entries()]
+      .filter(([, origins]) => origins.size > 1)
+      .map(([sentence, origins]) => `${[...origins].join(' + ')}: ${sentence}`);
+
+    expect(repeated).toEqual([]);
   });
 });

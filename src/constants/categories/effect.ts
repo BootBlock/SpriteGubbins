@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -242,7 +243,8 @@ export const EFFECT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The hottest and coolest extremes — the core flash, the spark tips, the scorch left behind. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The hottest and coolest extremes — the core flash, the spark tips, the scorch left behind. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Core Flash White #FFFFFF',
         'Spark Yellow #FDE047',

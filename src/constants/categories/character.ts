@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Humanoid characters — the default category, and the one the component-count model was built around. */
@@ -343,7 +344,8 @@ export const CHARACTER: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The high-contrast remainder — roughly 20% — for energy lines, eyes, trim and glows. A hex code pins the colour far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The high-contrast remainder — roughly 20% — for energy lines, eyes, trim and glows. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Cyan Neon #06B6D4',
         'Polished Gold #F59E0B',

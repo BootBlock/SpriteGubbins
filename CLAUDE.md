@@ -959,6 +959,29 @@ three-word stub, prose shape, the punctuation above, and that no two controls sh
 which is the copy-paste that leaves one of them describing the other and is invisible in review.
 Whether the words are *true* is still yours.
 
+**A sentence is what that last check compares, and for a long time it was not.** The assertion was
+written against whole entries while the argument for it was written about sentences, so a card that
+borrowed one sentence from its neighbour differed everywhere else and the two were never equal.
+`OUTPUT_TOOLTIPS.hardwareProfile` carried the Art Style Reference control's own closing sentence for
+months — claiming a narrowing the machine list does not have — and the suite reported nothing about
+it. It splits on sentence-ending punctuation now, with **no minimum length**, because the shortest
+sentence in the app is “Ctrl+Shift+Z and Ctrl+Y both do the same.” and a short sentence is the kind
+that travels between two cards most easily.
+
+**A fact that is true of two controls is written once, in
+[src/constants/guidanceSentences.ts](src/constants/guidanceSentences.ts)**, and quoted by every card
+that states it. That is what tells deliberate sharing apart from the copy-paste: the test attributes
+such a sentence to the constant, which is one origin however many cards carry it, while a sentence
+typed out twice has two and fails. The file is discovered rather than listed, so the exemption
+cannot be widened without widening the app, and two guards stop it rotting — a constant fewer than
+two pieces of guidance carry fails, and a card built entirely out of shared sentences fails, because
+it has explained everything except the control it belongs to. **The one other origin is a
+template**: `accentSwatchGuidance` writes one sentence that nine swatches render, so the walk feeds
+it all nine hues for the length, prose and punctuation checks and compares it with the rest of the
+app once. `presetCollectionGuidance` is deliberately *not* on that list — its two branches are two
+written-out strings, so a sentence in both of them is a copy-paste inside one file and is meant to
+fail, which is how the sentence about the search count came to be shared for real.
+
 **It finds the guidance rather than listing it**, because guidance is filed in two places and a
 hand-kept walk only ever tracked one. Its imports were the six sets in `src/constants/tooltips/`,
 which left 190 entries unchecked — every setting's guidance, filed beside its options — and two

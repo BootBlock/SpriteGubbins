@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -258,7 +259,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The state and emphasis colour — the hue a hover, a fill or an alert is carried in. A hex code pins it far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The state and emphasis colour — the hue a hover, a fill or an alert is carried in. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Interface Cyan #22D3EE',
         'Confirm Green #10B981',

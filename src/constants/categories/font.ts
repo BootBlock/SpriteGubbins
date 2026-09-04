@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -285,7 +286,8 @@ export const FONT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The one bright colour the outline, the inline or the glow is carried in — the smallest area on each glyph and the thing that separates this set from a plain one. A hex code pins it far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The one bright colour the outline, the inline or the glow is carried in — the smallest area on each glyph and the thing that separates this set from a plain one. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Legendary Gold #D4AF37',
         'Warning Amber #F59E0B',

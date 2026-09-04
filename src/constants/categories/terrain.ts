@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -253,7 +254,8 @@ export const TERRAIN: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The few saturated notes the field is allowed — flowering, mineral veins, lava in a crack, bioluminescence. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The few saturated notes the field is allowed — flowering, mineral veins, lava in a crack, bioluminescence. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Wildflower Yellow #FACC15',
         'Lava Crack Orange #EA580C',

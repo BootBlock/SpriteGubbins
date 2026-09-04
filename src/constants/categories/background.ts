@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -275,7 +276,7 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The small bright notes carried by lit windows, lanterns and reflections. A hex code pins it far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The small bright notes carried by lit windows, lanterns and reflections. ' + HEX_CODE_PINS_THE_HUE,
       options: [
         'Lantern Amber #F59E0B',
         'Lit Window Warm White',

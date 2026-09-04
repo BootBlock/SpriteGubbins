@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -279,7 +280,8 @@ export const OBJECT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The status LEDs, wiring and screen light — the parts that read as emitting rather than reflecting. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The status LEDs, wiring and screen light — the parts that read as emitting rather than reflecting. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Alert Orange LEDs #F97316',
         'Laser Green Glow #10B981',

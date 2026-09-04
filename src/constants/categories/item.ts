@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -247,7 +248,8 @@ export const ITEM: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The enchantment glow and energy colours that signal an item is magical or powered. A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The enchantment glow and energy colours that signal an item is magical or powered. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Ethereal Arcane Purple #8B5CF6',
         'Plasma Blue Glow #22D3EE',

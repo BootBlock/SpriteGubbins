@@ -1,4 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
+import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -383,7 +384,8 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'accent_colours',
       label: 'Accent Colours',
       tooltip:
-        'The one or two colours carried by the eyes, the jewellery and the trim — the smallest areas on the portrait and the ones the eye goes to first. A hex code pins it far more tightly than a name does, and the swatch beside this field previews whatever it recognises.',
+        'The one or two colours carried by the eyes, the jewellery and the trim — the smallest areas on the portrait and the ones the eye goes to first. ' +
+        HEX_CODE_PINS_THE_HUE,
       options: [
         'Amber Eyes #F59E0B',
         'Emerald Eyes #10B981',
