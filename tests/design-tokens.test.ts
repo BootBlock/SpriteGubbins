@@ -355,29 +355,63 @@ describe('design tokens', () => {
 
   it('never lets a `--color-tab` rest on the stop the palette reserves for the live state', () => {
     // `neon` is the live signal — auto-sync, generating, recomputing as you type — and the wheel's
-    // cyan stop sits 10° from it, against the 26° `index.css` says it keeps every view clear of.
+    // nearest stop sits 10° from it, against the 26° `index.css` says it keeps every view clear of.
     // A surface resting there reads as mid-generation.
     //
     // The rule is written in `index.css` about the *custom property*, not about views, and for a
     // while it was enforced about views alone: the assertion above was built from the `[data-tab]`
-    // rules, so it never reached `spectrumStopAt`, which handed one preset card in ten the cyan
+    // rules, so it never reached `spectrumStopAt`, which handed one preset card in ten the reserved
     // stop. Ten shipped cards painted their edge, their hover bloom, their heading and their
     // `action-tab` load button in the live colour. So this sweeps **every** assignment of the
     // property the app makes, and the claim and the enforcement now cover the same set.
     //
-    // Each one has to be a stop written here or the one function that allocates one. A sixth way of
-    // setting the property fails this rather than slipping past it, which is the half that was
-    // missing before.
+    // Which stop is reserved is *found* rather than named. Writing the word here would put a third
+    // hand-kept copy of it beside the module's and the palette's, and the two on this side would
+    // move together and cancel: a wheel stop renamed would leave the allocator offering the live
+    // hue under a new name, with the assertion comparing that name against itself. The hue is what
+    // decides, so the nearest stop to `neon` is the reserved one however it is spelled.
+    const hueOf = (token: string) =>
+      Number(new RegExp(`${token}: oklch\\([\\d.]+ [\\d.]+ ([\\d.]+)\\)`).exec(stylesheet)?.[1]);
+    const reference = (stop: string | undefined) => `var(--color-spectrum-${stop})`;
+
+    const neonHue = hueOf('--color-neon');
+    const separations = SPECTRUM_STOPS.map((stop) => {
+      const apart = Math.abs(hueOf(`--color-spectrum-${stop}`) - neonHue);
+      return { stop, degrees: Math.min(apart, 360 - apart) };
+    });
+    const reserved = separations.reduce((nearest, stop) => (stop.degrees < nearest.degrees ? stop : nearest));
+
+    // Both floors first: an unparsed hue is `NaN`, which loses every comparison above and would
+    // hand this the last stop on the wheel rather than the reserved one.
+    expect(Number.isFinite(neonHue)).toBe(true);
+    expect(separations.every((stop) => Number.isFinite(stop.degrees))).toBe(true);
+
+    // And that there is a stop to reserve at all: the one the views hold 26° clear of is inside
+    // that margin itself, which is what makes it the stop this rule is about.
+    expect(reserved.degrees).toBeLessThan(26);
+
+    // Every assignment the app makes, in the shapes it can take: a CSS declaration, an object key
+    // in an inline `style`, and a `setProperty` call — which the app already uses for three other
+    // custom properties, so it is the route a fourth would most likely arrive by.
     const assignments = appMarkup().flatMap((file) => {
       const source = codeOnly(readFileSync(file, 'utf8'));
-      return [...source.matchAll(/--color-tab['"]?\s*:\s*([^;,}\s]+)/g)].map((match) => ({
+      const written = [...source.matchAll(/--color-tab['"]?\s*:\s*([^;,}]+)/g)];
+      const called = [...source.matchAll(/setProperty\(\s*['"]--color-tab['"]\s*,([^)]*\)?[^)]*)\)/g)];
+
+      return [...written, ...called].map((match) => ({
         where: relative(process.cwd(), file),
-        value: match[1] ?? '',
+        // A trailing `]` closes a Tailwind arbitrary property, and a quoted value is what both the
+        // object key and the `setProperty` call carry. Neither belongs to the colour.
+        value: (match[1] ?? '')
+          .trim()
+          .replace(/]$/, '')
+          .replace(/^(['"])(.*)\1$/, '$2'),
       }));
     });
 
-    // A floor, because a regex that matched nothing would find no offending stop either.
-    expect(assignments.length).toBeGreaterThanOrEqual(SPECTRUM_STOPS.length / 2);
+    // A floor, because a regex that matched nothing would find no offending stop either. Six today:
+    // the `@theme` default, the four `[data-tab]` rules, and the allocator in `PresetCard`.
+    expect(assignments.length).toBeGreaterThanOrEqual(6);
 
     for (const { where, value } of assignments) {
       const stop = /^var\(--color-spectrum-(\w+)\)$/.exec(value)?.[1];
@@ -389,22 +423,32 @@ describe('design tokens', () => {
         continue;
       }
 
-      expect(stop, where).not.toBe('cyan');
+      expect(stop, where).not.toBe(reserved.stop);
     }
 
     // And the allocator itself, driven rather than parsed: it is the one assignment above whose
-    // value this file cannot read off the page. Two rounds of the wheel, so a pool that had stopped
-    // wrapping would show up as a missing stop rather than as a shorter list.
-    const allocated = [
-      ...new Set(Array.from({ length: SPECTRUM_STOPS.length * 2 }, (_, index) => spectrumStopAt(index))),
-    ];
+    // value this file cannot read off the page. One round of the pool, which is the wheel less the
+    // stop it reserves.
+    const round = (offset: number) =>
+      Array.from({ length: SPECTRUM_STOPS.length - 1 }, (_, index) => spectrumStopAt(offset + index));
+    const allocated = round(0);
 
-    expect(allocated).not.toContain('var(--color-spectrum-cyan)');
+    expect(allocated).not.toContain(reference(reserved.stop));
+    expect(new Set(allocated).size).toBe(allocated.length);
     expect(new Set(allocated)).toStrictEqual(
-      new Set(
-        SPECTRUM_STOPS.filter((stop) => stop !== 'cyan').map((stop) => `var(--color-spectrum-${stop})`),
-      ),
+      new Set(separations.filter((stop) => stop.stop !== reserved.stop).map((stop) => reference(stop.stop))),
     );
+
+    // The wrap, compared round against round rather than as a set: an unplaceable index falls back
+    // to the pool's own first stop, so a modulo that had gone missing would answer the whole second
+    // round with that one value while the first round still offered every stop.
+    expect(round(SPECTRUM_STOPS.length - 1)).toStrictEqual(allocated);
+
+    // The fallback, which is the one branch no array index reaches. It has to stay inside the pool:
+    // a reserved stop that moved to the wheel's first position would otherwise come back here.
+    for (const index of [-1, 1.5, Number.NaN]) {
+      expect(spectrumStopAt(index)).not.toBe(reference(reserved.stop));
+    }
   });
 
   it('keeps documentation out of the content scan', () => {
@@ -1645,9 +1689,11 @@ describe('forced colours and the sticky header', () => {
  * them: the ramp names each token it mirrors, and the triple beside it has to be the triple the
  * stylesheet declares, digit for digit.
  *
- * Read from disk rather than imported, as everything else in this file is — `tests/` is the
- * Node-side program, whose library has no DOM in it and whose reach into `src/` is deliberately
- * limited to modules that need none.
+ * Read from disk rather than imported — what is asserted is what the module *declares*, so a stop
+ * that stopped being declared has to fail here rather than resolve. `spectrumStopAt` is the one
+ * module this file imports, because the value it hands out is computed and cannot be read off the
+ * page; `tests/` is the Node-side program, whose reach into `src/` stays limited to modules that
+ * need no DOM.
  */
 describe('the difference heatmap’s ramp', () => {
   const ramp = readFileSync(resolve(process.cwd(), 'src/constants/differenceRamp.ts'), 'utf8');

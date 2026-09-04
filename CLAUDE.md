@@ -411,8 +411,10 @@ is the reading it was given for a while: the assertion covered the four `[data-t
 so `spectrumStopAt` went on handing one preset card in ten the cyan stop, and ten shipped cards
 painted their edge, their hover bloom, their heading and their `action-tab` button in the live
 colour. The pool that function draws from is therefore the wheel **less** that stop — nine, not
-ten — and the test now sweeps every assignment of the property in `src/`, so a sixth way of setting
-it has to be a stop written down or the allocator itself. **The settings dialog cannot reach it
+ten — and the test now sweeps every assignment of the property in `src/`, in each of the three
+shapes one can take: a CSS declaration, an object key in an inline `style`, and a `setProperty`
+call. A new way of setting it has to be a stop written down or the allocator itself. **The settings
+dialog cannot reach it
 either**: the accent is the one role colour a user may repoint, and cyan is missing from the nine
 hues it offers, for exactly this reason.
 

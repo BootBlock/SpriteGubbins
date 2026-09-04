@@ -29,11 +29,12 @@ interface PresetCardProps {
  * spectrum rather than a grid of one colour repeated. Which stops are on offer is `spectrumStopAt`'s
  * to decide, and it is nine rather than ten: the cyan stop is the live colour, which a card's edge,
  * bloom, heading and load button may not rest on any more than a whole view may.
- * Nothing below had to change for that: the
- * card's edge, its hover bloom, its title and its load button all reach for `*-tab` utilities, and
- * those resolve against whichever element last set the property. Assigning it here rather than
- * passing a colour down is what keeps a card's decoration out of its props — and it is why the
- * button needs no prop either: `action-tab` picks up the card's stop, not the presets view's.
+ *
+ * Nothing below had to change for either: the card's edge, its hover bloom, its title and its load
+ * button all reach for `*-tab` utilities, and those resolve against whichever element last set the
+ * property. Assigning it here rather than passing a colour down is what keeps a card's decoration
+ * out of its props — and it is why the button needs no prop either: `action-tab` picks up the
+ * card's stop, not the presets view's.
  */
 export function PresetCard({ preset, index, onLoad, onUpdateDetails, onDelete }: PresetCardProps) {
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
