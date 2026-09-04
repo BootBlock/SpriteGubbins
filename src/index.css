@@ -116,8 +116,11 @@
    * gold means "attention", emerald means "valid — it fits, it parsed, it is clean", rose means
    * "problem".
    *
-   * Cyan is also why no view owns the cyan stop: `--color-tab` resting on the live colour would
-   * make every panel in that view look like it was recomputing. The nearest view hue is 26° off it.
+   * Cyan is also why **nothing that takes `--color-tab` may rest on the cyan stop** — a surface
+   * resting on the live colour would look like it was recomputing. The nearest view hue is 26° off
+   * it. That is a rule about the custom property rather than about views, so it reaches the one
+   * place outside this file that assigns it: a preset card, which takes its stop from
+   * `spectrumStopAt` in `src/constants/spectrum.ts`, whose pool is the wheel less this stop.
    */
   --color-accent: oklch(0.72 0.133 274);
   --color-accent-strong: oklch(0.62 0.188 274);
