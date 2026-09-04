@@ -1,4 +1,6 @@
-import type { SheetPlan } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import { componentTotal } from '../../utils/componentTotal.ts';
+import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
 
 /**
  * What a TERRAIN sheet asks for, per sheet mode.
@@ -33,6 +35,65 @@ import type { SheetPlan } from '../../types/components.ts';
  * section 4 requires is the contradiction these per-category plans exist to remove.
  */
 
+/**
+ * The two materials the blend set joins, one entry each.
+ *
+ * Hoisted because the transition group's intro counts them: the sixteen an autotiler indexes is the
+ * transitions plus **one primary per material**, so the arithmetic reads the length of this list
+ * rather than a figure written beside it. A third material would move both halves together.
+ */
+const MATERIAL_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'base-material-tile',
+    text: 'Base material tile ×6: the primary, and five variants differing only in surface scatter',
+    count: 6,
+    kind: 'tile',
+  },
+  {
+    label: 'second-material-tile',
+    text: 'Second material tile ×3: the primary, and two variants',
+    count: 3,
+    kind: 'tile',
+  },
+];
+
+/** The tiles carrying the boundary, which the group's own intro counts twice over. */
+const TRANSITION_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'straight-transitions',
+    parts: [
+      'straight-transition-north',
+      'straight-transition-east',
+      'straight-transition-south',
+      'straight-transition-west',
+    ],
+    text: 'Straight transitions ×4: the boundary crossing the tile from the north, east, south and west edge',
+    count: 4,
+    kind: 'tile',
+  },
+  {
+    label: 'outer-corner-transitions',
+    text: 'Outer corner transitions ×4: the second material turning a convex corner, once per corner',
+    count: 4,
+    kind: 'tile',
+  },
+  {
+    label: 'inner-corner-transitions',
+    text: 'Inner corner transitions ×4: the second material turning a concave corner, once per corner',
+    count: 4,
+    kind: 'tile',
+  },
+  {
+    label: 'enclosed-transitions',
+    parts: ['enclosed-second-material', 'enclosed-base-material'],
+    text: 'Enclosed transitions ×2: an isolated patch of the second material, and an isolated patch of the base within it',
+    count: 2,
+    kind: 'tile',
+  },
+];
+
+const TRANSITION_TILE_COUNT = componentTotal(TRANSITION_ENTRIES);
+
 export const TERRAIN_BLEND_SET: SheetPlan = {
   name: 'Blend set',
   facings: 'run',
@@ -48,59 +109,14 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
       intro: `The two materials the set joins. The variants carry the subject’s scatter layer — the pebbles, tufts
 and drift that keep a field of one material from reading as a single tile stamped in rows — so they
 differ in what is scattered across them and in nothing else:`,
-      entries: [
-        {
-          label: 'base-material-tile',
-          text: 'Base material tile ×6: the primary, and five variants differing only in surface scatter',
-          count: 6,
-          kind: 'tile',
-        },
-        {
-          label: 'second-material-tile',
-          text: 'Second material tile ×3: the primary, and two variants',
-          count: 3,
-          kind: 'tile',
-        },
-      ],
+      entries: MATERIAL_ENTRIES,
     },
     {
       heading: 'Transition set',
-      intro: `Fourteen tiles carrying the boundary between the two, which with the *primary* tile of each material
-above complete the sixteen an autotiler indexes. Each is that same boundary at a different position
+      intro: `${spellNumberCapitalised(TRANSITION_TILE_COUNT)} tiles carrying the boundary between the two, which with the *primary* tile of each material
+above complete the ${spellNumber(TRANSITION_TILE_COUNT + MATERIAL_ENTRIES.length)} an autotiler indexes. Each is that same boundary at a different position
 in the tile, never a different boundary:`,
-      entries: [
-        {
-          label: 'straight-transitions',
-          parts: [
-            'straight-transition-north',
-            'straight-transition-east',
-            'straight-transition-south',
-            'straight-transition-west',
-          ],
-          text: 'Straight transitions ×4: the boundary crossing the tile from the north, east, south and west edge',
-          count: 4,
-          kind: 'tile',
-        },
-        {
-          label: 'outer-corner-transitions',
-          text: 'Outer corner transitions ×4: the second material turning a convex corner, once per corner',
-          count: 4,
-          kind: 'tile',
-        },
-        {
-          label: 'inner-corner-transitions',
-          text: 'Inner corner transitions ×4: the second material turning a concave corner, once per corner',
-          count: 4,
-          kind: 'tile',
-        },
-        {
-          label: 'enclosed-transitions',
-          parts: ['enclosed-second-material', 'enclosed-base-material'],
-          text: 'Enclosed transitions ×2: an isolated patch of the second material, and an isolated patch of the base within it',
-          count: 2,
-          kind: 'tile',
-        },
-      ],
+      entries: TRANSITION_ENTRIES,
       outro: `Seamlessness here is an agreement about *edges*, not a property any one tile has on its own: each tile
 edge carries either the base material or the second, drawn to the same profile every time it appears,
 so two tiles whose facing edges carry the same material meet without a join. The two pure tiles

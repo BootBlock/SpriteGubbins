@@ -1,6 +1,7 @@
-import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
+import { mirroredLimb } from './mirroredLimb.ts';
 import { RIG_PIECES_OUTRO } from './rigPieces.ts';
 
 /**
@@ -15,10 +16,6 @@ import { RIG_PIECES_OUTRO } from './rigPieces.ts';
  * total, so a heading cannot claim a figure its own bullets contradict.
  */
 
-/** The articulation variants both single-direction modes share for a limb pair's second side. */
-const MIRRORED_ARM = 'The same eight variants as the left arm, redrawn for the right side';
-const MIRRORED_LEG = 'The same nine variants as the left leg, redrawn for the right side';
-
 /**
  * The poses a full set of a character's components has to reach, worded as one sentence fragment so
  * both modes that promise them promise the same seven.
@@ -32,13 +29,22 @@ const CHARACTER_POSES =
  * arms*, so trunk sheets came back wearing limbs the inventory never listed. Section 4's generic
  * boundary rule states the principle; this names the joins in the category's own vocabulary, which
  * is what a generator can actually check a drawing against.
+ *
+ * **The closing sentence is about the series, not about this sheet's own list**, and that is the
+ * correction rather than a nicety. It read "has merged entries the inventory lists separately",
+ * which is true on the pose library and the rig — both of which list the limbs — and false on the
+ * directional core, whose inventory is heads, torsos and pelvises alone. The limbs are on the
+ * articulation sheet there, so the sentence justified a real rule by naming a list the sheet
+ * carrying it does not have. What is true on all three is that the limbs are counted somewhere in
+ * the series, and a trunk that arrives wearing one has taken a component that was counted twice.
  */
 const TRUNK_TERMINATION = `Each of these is a severed, isolated piece of one figure — never the whole figure with the other
 parts faded or hidden. A head ends at the neck, with no torso below it. A torso ends at the neck
 opening, the two shoulder openings and the waist, and carries **no head, no arms and no legs**: each
 opening is a clean, capped joint socket, never a stump trailing into a limb. A pelvis ends at the
-waist and the two hip openings, and carries **no legs**. A trunk piece that arrives wearing any limb
-has merged entries the inventory lists separately, and breaks the count in section [SEC:CONTRACT].`;
+waist and the two hip openings, and carries **no legs**. Every limb is a component counted in its own
+right, on this sheet or on another of this series, so a trunk piece that arrives wearing one has
+merged two components into one and breaks the count in section [SEC:CONTRACT].`;
 
 export const CHARACTER_POSE_LIBRARY: SheetPlan = {
   name: 'Pose library',
@@ -166,6 +172,62 @@ facing the same way are all failures of this entry, however well drawn.`,
 }
 
 /**
+ * The left arm, as the three entries the right arm's single line counts.
+ *
+ * Hoisted rather than written inside its group because `mirroredLimb` reads it: the sentence the
+ * right side carries states this side's total, so the total has to be summed from here rather than
+ * spelled out beside it. The same applies to the leg below.
+ */
+const LEFT_ARM_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'left-upper-arms',
+    parts: ['left-upper-arm-neutral', 'left-upper-arm-forward-diagonal', 'left-upper-arm-raised'],
+    text: 'Upper arms: neutral lowered, forward-diagonal, raised',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-lower-arms',
+    parts: ['left-lower-arm-extension', 'left-lower-arm-moderate-flexion', 'left-lower-arm-strong-flexion'],
+    text: 'Lower arms: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-hands',
+    parts: ['left-hand-relaxed', 'left-hand-closed'],
+    text: 'Hands: relaxed empty, closed/grip-ready empty',
+    count: 2,
+    kind: 'anatomy',
+  },
+];
+
+/** The left leg, as the three entries the right leg's single line counts. */
+const LEFT_LEG_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'left-upper-legs',
+    parts: ['left-upper-leg-neutral', 'left-upper-leg-forward', 'left-upper-leg-backward'],
+    text: 'Upper legs: neutral vertical, forward, backward',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-lower-legs',
+    parts: ['left-lower-leg-extension', 'left-lower-leg-moderate-flexion', 'left-lower-leg-strong-flexion'],
+    text: 'Lower legs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-feet',
+    parts: ['left-foot-planted', 'left-foot-heel-strike', 'left-foot-toe-off'],
+    text: 'Feet: flat planted, forward-step/heel-strike, rear-step/toe-off',
+    count: 3,
+    kind: 'anatomy',
+  },
+];
+
+/**
  * The limbs, one facing per generation.
  *
  * These thirty-four variants were never directional, which is exactly why they are the half that
@@ -183,41 +245,14 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
   posing: 'PER_POSITION',
   scaleUnitFrame: 'SHEET',
   groups: [
-    {
-      heading: 'Left arm',
-      entries: [
-        {
-          label: 'left-upper-arms',
-          parts: ['left-upper-arm-neutral', 'left-upper-arm-forward-diagonal', 'left-upper-arm-raised'],
-          text: 'Upper arms: neutral lowered, forward-diagonal, raised',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-lower-arms',
-          parts: [
-            'left-lower-arm-extension',
-            'left-lower-arm-moderate-flexion',
-            'left-lower-arm-strong-flexion',
-          ],
-          text: 'Lower arms: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-hands',
-          parts: ['left-hand-relaxed', 'left-hand-closed'],
-          text: 'Hands: relaxed empty, closed/grip-ready empty',
-          count: 2,
-          kind: 'anatomy',
-        },
-      ],
-    },
+    { heading: 'Left arm', entries: LEFT_ARM_ENTRIES },
     {
       heading: 'Right arm',
       entries: [
-        {
+        mirroredLimb({
           label: 'right-arm',
+          mirrors: 'the left arm',
+          of: LEFT_ARM_ENTRIES,
           parts: [
             'right-upper-arm-neutral',
             'right-upper-arm-forward-diagonal',
@@ -228,47 +263,17 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
             'right-hand-relaxed',
             'right-hand-closed',
           ],
-          text: MIRRORED_ARM,
-          count: 8,
-          kind: 'anatomy',
-        },
+        }),
       ],
     },
-    {
-      heading: 'Left leg',
-      entries: [
-        {
-          label: 'left-upper-legs',
-          parts: ['left-upper-leg-neutral', 'left-upper-leg-forward', 'left-upper-leg-backward'],
-          text: 'Upper legs: neutral vertical, forward, backward',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-lower-legs',
-          parts: [
-            'left-lower-leg-extension',
-            'left-lower-leg-moderate-flexion',
-            'left-lower-leg-strong-flexion',
-          ],
-          text: 'Lower legs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-feet',
-          parts: ['left-foot-planted', 'left-foot-heel-strike', 'left-foot-toe-off'],
-          text: 'Feet: flat planted, forward-step/heel-strike, rear-step/toe-off',
-          count: 3,
-          kind: 'anatomy',
-        },
-      ],
-    },
+    { heading: 'Left leg', entries: LEFT_LEG_ENTRIES },
     {
       heading: 'Right leg',
       entries: [
-        {
+        mirroredLimb({
           label: 'right-leg',
+          mirrors: 'the left leg',
+          of: LEFT_LEG_ENTRIES,
           parts: [
             'right-upper-leg-neutral',
             'right-upper-leg-forward',
@@ -280,10 +285,7 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
             'right-foot-heel-strike',
             'right-foot-toe-off',
           ],
-          text: MIRRORED_LEG,
-          count: 9,
-          kind: 'anatomy',
-        },
+        }),
       ],
     },
   ],

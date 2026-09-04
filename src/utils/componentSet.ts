@@ -11,6 +11,7 @@ import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import { countAnatomyComponents, formatAnatomyComponent } from './additionalAnatomy.ts';
+import { componentTotal } from './componentTotal.ts';
 import type { BatchSheet } from './sheetBatch.ts';
 
 /**
@@ -47,7 +48,7 @@ import type { BatchSheet } from './sheetBatch.ts';
 
 /** What one group contributes, summing its entries rather than trusting a number in its heading. */
 function groupTotal(group: ComponentGroup): number {
-  return group.entries.reduce((total, entry) => total + entry.count, 0);
+  return componentTotal(group.entries);
 }
 
 /** What one sheet's plan contributes, before the subject's own anatomy. */

@@ -1,4 +1,6 @@
-import type { SheetPlan } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import { componentTotal } from '../../utils/componentTotal.ts';
+import { spellNumber } from '../../utils/numberWords.ts';
 
 /**
  * What an EFFECT sheet asks for.
@@ -40,6 +42,73 @@ import type { SheetPlan } from '../../types/components.ts';
  * out and left the sentence alone would have made section 1 false, in the same way an unqualified
  * section 8 made the particle ban false.
  */
+
+/**
+ * The effect's own body, frame by frame.
+ *
+ * Hoisted because two sentences on this sheet count it and neither may be written out: the residue
+ * group's intro says which frame number that group opens on, and it is this run's length plus one.
+ * That sentence read “frame eleven follows frame ten” against a group summing to ten — correct, and
+ * one added expansion frame away from telling the generator to leave a gap in its own sequence.
+ */
+const CORE_SEQUENCE_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'onset',
+    parts: ['onset-first-visible', 'onset-building'],
+    text: 'Onset: first visible frame, building frame',
+    count: 2,
+    kind: 'frame',
+  },
+  {
+    label: 'expansion',
+    parts: ['expansion-early', 'expansion-mid', 'expansion-late'],
+    text: 'Expansion: early, mid, late',
+    count: 3,
+    kind: 'frame',
+  },
+  {
+    label: 'peak-frame',
+    text: 'Peak frame ×1, at the widest extent and brightest core the sequence reaches',
+    count: 1,
+    kind: 'frame',
+  },
+  {
+    label: 'decay',
+    parts: ['decay-early', 'decay-mid', 'decay-late'],
+    text: 'Decay: early, mid, late',
+    count: 3,
+    kind: 'frame',
+  },
+  { label: 'dissipation', text: 'Dissipation: final visible frame', count: 1, kind: 'frame' },
+];
+
+/** How many frames the core run holds, which is where the residue group's numbering starts from. */
+const CORE_SEQUENCE_LENGTH = componentTotal(CORE_SEQUENCE_ENTRIES);
+
+/**
+ * The frames after the core has burnt out, which its own outro counts.
+ *
+ * That outro tells the generator how short a sheet that dropped them would be, and the figure is
+ * this group's total — so it is summed here rather than spelled beside it.
+ */
+const RESIDUE_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'core-spent',
+    parts: ['core-spent-last-visible', 'core-spent-first-absent'],
+    text: 'Core spent: the last frame the core is visible in, and the first without it',
+    count: 2,
+    kind: 'frame',
+  },
+  { label: 'residue-at-full-extent', text: 'Residue at full extent ×1', count: 1, kind: 'frame' },
+  {
+    label: 'clearing',
+    parts: ['clearing-early', 'clearing-mid', 'clearing-late'],
+    text: 'Clearing: early, mid, late',
+    count: 3,
+    kind: 'frame',
+  },
+];
+
 export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   name: 'Frame sequence',
   facings: 'run',
@@ -55,36 +124,7 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
       intro: `The effect’s own body, one component per phase of its life, read left to right as time. Every
 frame is a **complete state** of the effect and not a layer to be stacked on another: a frame that
 only makes sense composited over its neighbour is a failure of this group.`,
-      entries: [
-        {
-          label: 'onset',
-          parts: ['onset-first-visible', 'onset-building'],
-          text: 'Onset: first visible frame, building frame',
-          count: 2,
-          kind: 'frame',
-        },
-        {
-          label: 'expansion',
-          parts: ['expansion-early', 'expansion-mid', 'expansion-late'],
-          text: 'Expansion: early, mid, late',
-          count: 3,
-          kind: 'frame',
-        },
-        {
-          label: 'peak-frame',
-          text: 'Peak frame ×1, at the widest extent and brightest core the sequence reaches',
-          count: 1,
-          kind: 'frame',
-        },
-        {
-          label: 'decay',
-          parts: ['decay-early', 'decay-mid', 'decay-late'],
-          text: 'Decay: early, mid, late',
-          count: 3,
-          kind: 'frame',
-        },
-        { label: 'dissipation', text: 'Dissipation: final visible frame', count: 1, kind: 'frame' },
-      ],
+      entries: CORE_SEQUENCE_ENTRIES,
       outro: `Consecutive frames must differ in **shape**, not only in brightness or opacity: two frames
 separated by a fade are one frame drawn twice, and the engine can produce that fade itself for free.
 No frame may be a scaled, rotated or mirrored copy of another for the same reason — those are
@@ -94,30 +134,14 @@ The peak frame fixes the extent every other frame is drawn inside, so nothing ov
     {
       heading: 'Residue and clearing',
       intro: `The **later frames of that same sequence**, after the core has burnt out. They continue the run
-above without a break — frame eleven follows frame ten — and what carries them is whatever secondary
+above without a break — frame ${spellNumber(CORE_SEQUENCE_LENGTH + 1)} follows frame ${spellNumber(CORE_SEQUENCE_LENGTH)} — and what carries them is whatever secondary
 layer the subject named, painted into these frames exactly as it is painted into the ones before.
 This is a stretch of time, not a second layer to composite: the effect simply outlives its own core,
 which is what the trailing smoke, debris or sparks are for.`,
-      entries: [
-        {
-          label: 'core-spent',
-          parts: ['core-spent-last-visible', 'core-spent-first-absent'],
-          text: 'Core spent: the last frame the core is visible in, and the first without it',
-          count: 2,
-          kind: 'frame',
-        },
-        { label: 'residue-at-full-extent', text: 'Residue at full extent ×1', count: 1, kind: 'frame' },
-        {
-          label: 'clearing',
-          parts: ['clearing-early', 'clearing-mid', 'clearing-late'],
-          text: 'Clearing: early, mid, late',
-          count: 3,
-          kind: 'frame',
-        },
-      ],
+      entries: RESIDUE_ENTRIES,
       outro: `Where the subject names no secondary layer, these frames carry the core’s own lingering residue
 instead — the last of the glow, the settling motes — rather than being dropped: the count section [SEC:CONTRACT]
-contracts for is exact, and a sheet returning six fewer components than it promised fails that
+contracts for is exact, and a sheet returning ${spellNumber(componentTotal(RESIDUE_ENTRIES))} fewer components than it promised fails that
 contract whatever the subject said. A looping effect has no residue to clear, so these are the frames
 that carry it back round to its first.`,
     },

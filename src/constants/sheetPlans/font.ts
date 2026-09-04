@@ -1,4 +1,6 @@
 import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import { componentTotal } from '../../utils/componentTotal.ts';
+import { spellNumber } from '../../utils/numberWords.ts';
 
 /**
  * What a FONT sheet asks for — the printable ASCII set, across four sheets.
@@ -151,7 +153,7 @@ export const FONT_CAPITALS: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `The twenty-six Latin capitals, in this order. Each is drawn once, and the set is drawn together
+      intro: `The ${spellNumber(componentTotal(CAPITAL_ENTRIES))} Latin capitals, in this order. Each is drawn once, and the set is drawn together
 because what makes a font work is the agreement between its letters rather than the quality of any
 one of them:`,
       entries: CAPITAL_ENTRIES,
@@ -174,7 +176,7 @@ export const FONT_LOWER_CASE: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `The twenty-six Latin lower-case letters, in this order. They are drawn to sit beside the capitals of
+      intro: `The ${spellNumber(componentTotal(LOWER_CASE_ENTRIES))} Latin lower-case letters, in this order. They are drawn to sit beside the capitals of
 the same font, so their height against the baseline — and how far any ascender rises or any descender
 drops — is what the vertical metrics in section [SEC:SUBJECT] fix, rather than whatever this sheet
 arrives at on its own. Where those metrics allow a letter no ascender or no descender, it has none:`,
@@ -198,13 +200,13 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   groups: [
     {
       heading: 'Digits',
-      intro: `The ten Western Arabic digits, in this order. They are drawn to one width and one height whatever the
+      intro: `The ${spellNumber(componentTotal(DIGIT_ENTRIES))} Western Arabic digits, in this order. They are drawn to one width and one height whatever the
 rest of the set does, so a column of figures lines up:`,
       entries: DIGIT_ENTRIES,
     },
     {
       heading: 'Sentence punctuation',
-      intro: `The eleven marks a sentence is set with. Each sits at the height its use asks for rather than centred in
+      intro: `The ${spellNumber(componentTotal(SENTENCE_MARK_ENTRIES))} marks a sentence is set with. Each sits at the height its use asks for rather than centred in
 its cell — a full stop rests on the baseline, a quotation mark hangs from the cap height, and a
 hyphen crosses at the middle:`,
       entries: SENTENCE_MARK_ENTRIES,
@@ -227,7 +229,7 @@ export const FONT_SYMBOLS: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `The twenty-one printable ASCII characters the three sheets before this one do not carry, in this
+      intro: `The ${spellNumber(componentTotal(SYMBOL_ENTRIES))} printable ASCII characters the three sheets before this one do not carry, in this
 order. The space at U+0020 is not among them: it is drawn as nothing, and an engine renders it by
 advancing rather than by cutting a sprite out:`,
       entries: SYMBOL_ENTRIES,

@@ -1,4 +1,6 @@
-import type { SheetPlan } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import { componentTotal } from '../../utils/componentTotal.ts';
+import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts';
 
 /**
  * What an ICON sheet asks for.
@@ -27,6 +29,25 @@ import type { SheetPlan } from '../../types/components.ts';
  * runtime over the top of the sprite, and every real icon appears to carry them.
  */
 
+/**
+ * The icons themselves, as one line drawing the whole family.
+ *
+ * Hoisted because two sentences on this sheet count it, and neither is beside it: its own group's
+ * intro opens on the figure, and the state group's intro two groups down prices a redrawn state
+ * against it — “costs one component here and twelve if it is redrawn”, which is an argument that
+ * stops being true the moment the family grows and nothing carries the change down to it.
+ */
+const CORE_ICON_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'core-icon',
+    text: 'Core icons ×12: twelve distinct subjects from the stated family, each drawn once',
+    count: 12,
+    kind: 'structure',
+  },
+];
+
+const CORE_ICON_COUNT = componentTotal(CORE_ICON_ENTRIES);
+
 export const ICON_SYMBOL_SET: SheetPlan = {
   name: 'Symbol set',
   facings: 'run',
@@ -39,17 +60,10 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `Twelve members of the one family, each a different subject and none a restyling of another. They are
+      intro: `${spellNumberCapitalised(CORE_ICON_COUNT)} members of the one family, each a different subject and none a restyling of another. They are
 drawn as a set because what makes an icon grid work is the agreement between its members, not the
 quality of any one of them:`,
-      entries: [
-        {
-          label: 'core-icon',
-          text: 'Core icons ×12: twelve distinct subjects from the stated family, each drawn once',
-          count: 12,
-          kind: 'structure',
-        },
-      ],
+      entries: CORE_ICON_ENTRIES,
       outro: `Every icon fills the same cell to the same margin, carries the same outline weight, and is lit from
 the same direction — an icon that is heavier, larger or lit differently from the rest reads as
 belonging to another pack, which is the failure this sheet has. No icon carries a letter, a numeral,
@@ -58,7 +72,7 @@ a stack count or a key name: those are drawn by the engine at runtime over the t
     {
       heading: 'State pieces',
       intro: `Drawn once and applied by the engine over any icon above, rather than as greyed or brightened copies
-of each of them. A state that is a treatment of the same drawing costs one component here and twelve
+of each of them. A state that is a treatment of the same drawing costs one component here and ${spellNumber(CORE_ICON_COUNT)}
 if it is redrawn:`,
       entries: [
         {

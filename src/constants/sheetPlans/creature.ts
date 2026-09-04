@@ -1,6 +1,7 @@
-import type { SheetPlan, SheetSeries } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan, SheetSeries } from '../../types/components.ts';
 import type { FacingTuple } from './directionalViews.ts';
 import { chunkName, coreFacingChunks, viewsOf } from './directionalViews.ts';
+import { mirroredLimb } from './mirroredLimb.ts';
 import { RIG_PIECES_OUTRO } from './rigPieces.ts';
 
 /**
@@ -18,9 +19,6 @@ import { RIG_PIECES_OUTRO } from './rigPieces.ts';
  * ones through its additional-anatomy field, where they are counted as their own components.
  */
 
-const MIRRORED_FORELIMB = 'The same eight variants as the left forelimb, redrawn for the right side';
-const MIRRORED_HINDLIMB = 'The same nine variants as the left hindlimb, redrawn for the right side';
-
 /** The gaits a full set of a creature's components has to reach, shared by both modes that promise them. */
 const CREATURE_GAITS =
   'a neutral standing stance; an alert stance; a lowered stalking crouch; a walking gait with opposing limbs; a running gait with full limb extension; and a rearing or lunging pose';
@@ -29,14 +27,20 @@ const CREATURE_GAITS =
  * Where each trunk piece ends — the creature spelling of the character plans' own paragraph, and
  * there for the same reason: a generator's prior for "body" is a body *with legs*, so trunk sheets
  * come back wearing limbs the inventory never listed unless the joins are named.
+ *
+ * Its closing sentence is about the series rather than about this sheet's own list, for the reason
+ * the character spelling records: the directional core's inventory is heads, bodies and
+ * hindquarters, so a sentence citing the limbs "the inventory lists separately" named a list that
+ * sheet does not have.
  */
 const TRUNK_TERMINATION = `Each of these is a severed, isolated piece of one animal — never the whole animal with the other
 parts faded or hidden. A head ends at the neck, with no body behind it. A body ends at the neck
 join, the two forelimb shoulder joins and the join to the hindquarters, and carries **no head and no
 limbs**: each join is a clean, capped socket, never a stump trailing into a limb. A hindquarters
 ends at the body join and the two hindlimb hip joins, and carries **no limbs** — and no tail, unless
-the inventory lists a tail as its own component. A trunk piece that arrives wearing any limb has
-merged entries the inventory lists separately, and breaks the count in section [SEC:CONTRACT].`;
+the inventory lists a tail as its own component. Every limb is a component counted in its own right,
+on this sheet or on another of this series, so a trunk piece that arrives wearing one has merged two
+components into one and breaks the count in section [SEC:CONTRACT].`;
 
 export const CREATURE_POSE_LIBRARY: SheetPlan = {
   name: 'Pose library',
@@ -157,6 +161,73 @@ or views facing the same way are all failures of this entry, however well drawn.
   };
 }
 
+/**
+ * The left forelimb, as the three entries the right forelimb's single line counts.
+ *
+ * Hoisted for the reason the character spelling records: `mirroredLimb` sums it, so the total the
+ * mirrored sentence states comes from here rather than being written out beside it.
+ */
+const LEFT_FORELIMB_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'left-fore-upper-limbs',
+    parts: [
+      'left-fore-upper-limb-neutral',
+      'left-fore-upper-limb-forward-diagonal',
+      'left-fore-upper-limb-raised',
+    ],
+    text: 'Upper limbs: neutral lowered, forward-diagonal, raised',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-fore-lower-limbs',
+    parts: [
+      'left-fore-lower-limb-extension',
+      'left-fore-lower-limb-moderate-flexion',
+      'left-fore-lower-limb-strong-flexion',
+    ],
+    text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-fore-feet',
+    parts: ['left-fore-foot-relaxed', 'left-fore-foot-spread'],
+    text: 'Feet or claws: relaxed, spread/grip-ready',
+    count: 2,
+    kind: 'anatomy',
+  },
+];
+
+/** The left hindlimb, as the three entries the right hindlimb's single line counts. */
+const LEFT_HINDLIMB_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'left-hind-upper-limbs',
+    parts: ['left-hind-upper-limb-neutral', 'left-hind-upper-limb-forward', 'left-hind-upper-limb-backward'],
+    text: 'Upper limbs: neutral vertical, forward, backward',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-hind-lower-limbs',
+    parts: [
+      'left-hind-lower-limb-extension',
+      'left-hind-lower-limb-moderate-flexion',
+      'left-hind-lower-limb-strong-flexion',
+    ],
+    text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
+    count: 3,
+    kind: 'anatomy',
+  },
+  {
+    label: 'left-hind-feet',
+    parts: ['left-hind-foot-planted', 'left-hind-foot-forward-step', 'left-hind-foot-push-off'],
+    text: 'Feet or claws: flat planted, forward-step, rear-step/push-off',
+    count: 3,
+    kind: 'anatomy',
+  },
+];
+
 /** The limbs, one facing per generation — the creature spelling of the character articulation run. */
 export const CREATURE_ARTICULATION: SheetPlan = {
   name: 'Articulation',
@@ -167,45 +238,14 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   posing: 'PER_POSITION',
   scaleUnitFrame: 'SHEET',
   groups: [
-    {
-      heading: 'Left forelimb',
-      entries: [
-        {
-          label: 'left-fore-upper-limbs',
-          parts: [
-            'left-fore-upper-limb-neutral',
-            'left-fore-upper-limb-forward-diagonal',
-            'left-fore-upper-limb-raised',
-          ],
-          text: 'Upper limbs: neutral lowered, forward-diagonal, raised',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-fore-lower-limbs',
-          parts: [
-            'left-fore-lower-limb-extension',
-            'left-fore-lower-limb-moderate-flexion',
-            'left-fore-lower-limb-strong-flexion',
-          ],
-          text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-fore-feet',
-          parts: ['left-fore-foot-relaxed', 'left-fore-foot-spread'],
-          text: 'Feet or claws: relaxed, spread/grip-ready',
-          count: 2,
-          kind: 'anatomy',
-        },
-      ],
-    },
+    { heading: 'Left forelimb', entries: LEFT_FORELIMB_ENTRIES },
     {
       heading: 'Right forelimb',
       entries: [
-        {
+        mirroredLimb({
           label: 'right-forelimb',
+          mirrors: 'the left forelimb',
+          of: LEFT_FORELIMB_ENTRIES,
           parts: [
             'right-fore-upper-limb-neutral',
             'right-fore-upper-limb-forward-diagonal',
@@ -216,51 +256,17 @@ export const CREATURE_ARTICULATION: SheetPlan = {
             'right-fore-foot-relaxed',
             'right-fore-foot-spread',
           ],
-          text: MIRRORED_FORELIMB,
-          count: 8,
-          kind: 'anatomy',
-        },
+        }),
       ],
     },
-    {
-      heading: 'Left hindlimb',
-      entries: [
-        {
-          label: 'left-hind-upper-limbs',
-          parts: [
-            'left-hind-upper-limb-neutral',
-            'left-hind-upper-limb-forward',
-            'left-hind-upper-limb-backward',
-          ],
-          text: 'Upper limbs: neutral vertical, forward, backward',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-hind-lower-limbs',
-          parts: [
-            'left-hind-lower-limb-extension',
-            'left-hind-lower-limb-moderate-flexion',
-            'left-hind-lower-limb-strong-flexion',
-          ],
-          text: 'Lower limbs: extension-compatible, moderate-flexion-compatible, strong-flexion-compatible',
-          count: 3,
-          kind: 'anatomy',
-        },
-        {
-          label: 'left-hind-feet',
-          parts: ['left-hind-foot-planted', 'left-hind-foot-forward-step', 'left-hind-foot-push-off'],
-          text: 'Feet or claws: flat planted, forward-step, rear-step/push-off',
-          count: 3,
-          kind: 'anatomy',
-        },
-      ],
-    },
+    { heading: 'Left hindlimb', entries: LEFT_HINDLIMB_ENTRIES },
     {
       heading: 'Right hindlimb',
       entries: [
-        {
+        mirroredLimb({
           label: 'right-hindlimb',
+          mirrors: 'the left hindlimb',
+          of: LEFT_HINDLIMB_ENTRIES,
           parts: [
             'right-hind-upper-limb-neutral',
             'right-hind-upper-limb-forward',
@@ -272,10 +278,7 @@ export const CREATURE_ARTICULATION: SheetPlan = {
             'right-hind-foot-forward-step',
             'right-hind-foot-push-off',
           ],
-          text: MIRRORED_HINDLIMB,
-          count: 9,
-          kind: 'anatomy',
-        },
+        }),
       ],
     },
   ],

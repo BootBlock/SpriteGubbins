@@ -22,7 +22,7 @@ import {
 import { sectionOf } from '../test/promptSections.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
-import type { SheetPlan } from '../types/components.ts';
+import type { ComponentEntry, ComponentGroup, SheetPlan } from '../types/components.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { ScaleUnitFrame, SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -876,5 +876,360 @@ describe('every inventory line carries an identifier the manifest can use', () =
         labels.length,
       );
     }
+  });
+});
+
+/**
+ * The counts a plan's prose states, checked against the entries those sentences describe.
+ *
+ * **The defect this exists for.** A plan's group intros and outros state figures its own entries
+ * also state — `Fourteen tiles carrying the boundary`, `a sheet returning six fewer components`,
+ * `The same eight variants as the left arm` — and every one of them was written out by hand beside
+ * entries summing to the same number. Correct on the day, one edit from a prompt whose prose
+ * contradicts its own inventory, and nothing read the words: the count assertion above checks the
+ * three places the *compiler* writes the total and never looks at a sentence.
+ *
+ * The plans derive these now, so the drift is prevented rather than detected. What this suite adds
+ * is the check that the derivation is still in place and still produces the figure the entries
+ * carry, and it reaches that figure by a second path — summing the entries itself and spelling the
+ * result from its own table. A literal typed back over any of these sentences fails here.
+ *
+ * **The table is deliberately small and throws on a miss.** It holds the figures the plans actually
+ * produce, so a count that changes to a value nobody has spelled stops the suite with a message
+ * naming the number rather than quietly agreeing with whatever the plan now says.
+ */
+const FIGURE_WORDS: Readonly<Record<number, string>> = {
+  6: 'six',
+  8: 'eight',
+  9: 'nine',
+  10: 'ten',
+  11: 'eleven',
+  12: 'twelve',
+  14: 'fourteen',
+  16: 'sixteen',
+  21: 'twenty-one',
+  26: 'twenty-six',
+};
+
+/** The figure as this suite spells it — its own table, so the check is not the plan's own arithmetic. */
+function figureWord(count: number): string {
+  const word = FIGURE_WORDS[count];
+  if (word === undefined) {
+    throw new Error(
+      `No spelling for ${String(count)} — add it to FIGURE_WORDS and read the prose it lands in`,
+    );
+  }
+  return word;
+}
+
+/** The same word opening a sentence. */
+function figureWordCapitalised(count: number): string {
+  const word = figureWord(count);
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+/** Every sheet of one pairing, at the first direction set its category offers. */
+function seriesOf(category: SubjectCategory, mode: DirectionalMode): readonly SheetPlan[] {
+  const [directions] = CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[];
+  if (directions === undefined) throw new Error(`${category} offers no direction set`);
+  return sheetSeriesFor(category, mode, directions);
+}
+
+/** One sheet of a pairing, by the name its inventory heading carries. */
+function sheetNamed(category: SubjectCategory, mode: DirectionalMode, name: string): SheetPlan {
+  const plan = seriesOf(category, mode).find((sheet) => sheet.name === name);
+  if (plan === undefined) throw new Error(`${category}/${mode} has no sheet named ${name}`);
+  return plan;
+}
+
+/** One group of a sheet, by the heading it renders under. */
+function groupNamed(plan: SheetPlan, heading: string | null): ComponentGroup {
+  const group = plan.groups.find((candidate) => candidate.heading === heading);
+  if (group === undefined) throw new Error(`${plan.name} has no group headed ${heading ?? '(none)'}`);
+  return group;
+}
+
+/** What a group's entries are worth, summed here rather than taken from the app's own helper. */
+function totalOf(group: ComponentGroup): number {
+  return group.entries.reduce((total, entry) => total + entry.count, 0);
+}
+
+/** The one entry a group holds, where the group exists to carry a single mirrored line. */
+function onlyEntryOf(group: ComponentGroup): ComponentEntry {
+  const [entry] = group.entries;
+  if (entry === undefined || group.entries.length !== 1) {
+    throw new Error(
+      `expected one entry under ${group.heading ?? '(none)'}, found ${String(group.entries.length)}`,
+    );
+  }
+  return entry;
+}
+
+describe('no count in a plan’s prose contradicts the entries it describes', () => {
+  it.each([
+    { category: 'CHARACTER', mirrored: 'Right arm', from: 'Left arm', limb: 'the left arm' },
+    { category: 'CHARACTER', mirrored: 'Right leg', from: 'Left leg', limb: 'the left leg' },
+    {
+      category: 'CREATURE',
+      mirrored: 'Right forelimb',
+      from: 'Left forelimb',
+      limb: 'the left forelimb',
+    },
+    {
+      category: 'CREATURE',
+      mirrored: 'Right hindlimb',
+      from: 'Left hindlimb',
+      limb: 'the left hindlimb',
+    },
+  ] as const)('$category’s $mirrored states the total of $from', ({ category, mirrored, from, limb }) => {
+    const plan = sheetNamed(category, 'CORE_DIRECTIONAL_VARIANTS', 'Articulation');
+    const expected = totalOf(groupNamed(plan, from));
+    const entry = onlyEntryOf(groupNamed(plan, mirrored));
+
+    expect(entry.count).toBe(expected);
+    expect(entry.text).toBe(
+      `The same ${figureWord(expected)} variants as ${limb}, redrawn for the right side`,
+    );
+  });
+
+  it('numbers EFFECT’s residue frames on from the length of its core run', () => {
+    // The residue group continues the core group's own sequence, so the frame it opens on is the
+    // core's length plus one. A frame added to the core and not carried here would tell the
+    // generator to leave a gap in a run whose whole point is that it has none.
+    const plan = sheetNamed('EFFECT', 'SINGLE_DIRECTION_POSE_LIBRARY', 'Frame sequence');
+    const core = totalOf(groupNamed(plan, 'Core sequence'));
+    const residue = groupNamed(plan, 'Residue and clearing');
+
+    expect(residue.intro).toContain(`frame ${figureWord(core + 1)} follows frame ${figureWord(core)}`);
+    expect(residue.outro).toContain(`returning ${figureWord(totalOf(residue))} fewer components`);
+  });
+
+  it('counts TERRAIN’s transition tiles, and the autotiler set they complete', () => {
+    // The sixteen is the transitions plus one primary per material, so both halves move together if
+    // a third material is ever added.
+    const plan = sheetNamed('TERRAIN', 'TILESET_MODULAR', 'Blend set');
+    const materials = groupNamed(plan, null);
+    const transitions = groupNamed(plan, 'Transition set');
+    const carried = totalOf(transitions);
+
+    expect(transitions.intro).toContain(`${figureWordCapitalised(carried)} tiles carrying the boundary`);
+    expect(transitions.intro).toContain(
+      `complete the ${figureWord(carried + materials.entries.length)} an autotiler indexes`,
+    );
+  });
+
+  it('states ICON’s family size where the sheet opens, and where a redrawn state is priced', () => {
+    const plan = sheetNamed('ICON', 'SINGLE_DIRECTION_POSE_LIBRARY', 'Symbol set');
+    const icons = groupNamed(plan, null);
+    const family = totalOf(icons);
+
+    expect(icons.intro).toContain(`${figureWordCapitalised(family)} members of the one family`);
+    expect(groupNamed(plan, 'State pieces').intro).toContain(
+      `costs one component here and ${figureWord(family)}`,
+    );
+  });
+
+  it('states PORTRAIT’s expression count in the sentence a reader checks the delivery against', () => {
+    const plan = sheetNamed('PORTRAIT', 'SINGLE_DIRECTION_POSE_LIBRARY', 'Expression set');
+    const expressions = groupNamed(plan, null);
+
+    expect(expressions.outro).toContain(
+      `${figureWordCapitalised(totalOf(expressions))} competent portraits that are not recognisably one character`,
+    );
+  });
+
+  it.each([
+    { sheet: 'Capitals', heading: null, opens: 'Latin capitals, in this order' },
+    { sheet: 'Lower case', heading: null, opens: 'Latin lower-case letters, in this order' },
+    {
+      sheet: 'Digits and sentence punctuation',
+      heading: 'Digits',
+      opens: 'Western Arabic digits, in this order',
+    },
+    {
+      sheet: 'Digits and sentence punctuation',
+      heading: 'Sentence punctuation',
+      opens: 'marks a sentence is set with',
+    },
+    {
+      sheet: 'Symbols and operators',
+      heading: null,
+      opens: 'printable ASCII characters the three sheets before this one do not carry',
+    },
+  ] as const)('counts the glyphs FONT’s $sheet sheet lists under $heading', ({ sheet, heading, opens }) => {
+    const group = groupNamed(sheetNamed('FONT', 'SINGLE_DIRECTION_POSE_LIBRARY', sheet), heading);
+
+    expect(group.intro).toContain(`The ${figureWord(totalOf(group))} ${opens}`);
+  });
+});
+
+/**
+ * Where a limb is drawn, as opposed to a trunk piece.
+ *
+ * Deliberately not `LIMB_VOCABULARY` above, which matches `pelvis` and `hindquarters` — both trunk
+ * pieces, and both on the one sheet whose inventory has no limb at all. A probe that answered "yes"
+ * there would make the property below vacuous exactly where the defect was.
+ */
+const LIMB_ENTRY = /\b(arms?|legs?|hands?|feet|foot|forelimbs?|hindlimbs?)\b/i;
+
+describe('the trunk-termination paragraph is true on every sheet that carries it', () => {
+  /** The three sheets a category emits it on, and its claim has to hold on all three. */
+  const TRUNK_SHEETS = [
+    { category: 'CHARACTER', mode: 'CORE_DIRECTIONAL_VARIANTS', sheet: 'Directional core' },
+    { category: 'CHARACTER', mode: 'SINGLE_DIRECTION_POSE_LIBRARY', sheet: 'Pose library' },
+    { category: 'CHARACTER', mode: 'CUTOUT_RIG_SINGLE_DIRECTION', sheet: 'Rig pieces' },
+    { category: 'CREATURE', mode: 'CORE_DIRECTIONAL_VARIANTS', sheet: 'Directional core' },
+    { category: 'CREATURE', mode: 'SINGLE_DIRECTION_POSE_LIBRARY', sheet: 'Pose library' },
+    { category: 'CREATURE', mode: 'CUTOUT_RIG_SINGLE_DIRECTION', sheet: 'Rig pieces' },
+  ] as const;
+
+  /** Every outro on that sheet which is the paragraph, so a moved one fails rather than being skipped. */
+  function terminationParagraphs(category: SubjectCategory, mode: DirectionalMode, sheet: string): string[] {
+    return sheetNamed(category, mode, sheet)
+      .groups.map((group) => group.outro ?? '')
+      .filter((outro) => outro.includes('is a severed, isolated piece'));
+  }
+
+  it.each(TRUNK_SHEETS)('is emitted on $category’s $sheet sheet', ({ category, mode, sheet }) => {
+    // The property below is vacuous if the paragraph has moved or been reworded out of recognition,
+    // so its premise is asserted first rather than assumed.
+    expect(terminationParagraphs(category, mode, sheet)).toHaveLength(1);
+  });
+
+  it('has a sheet whose inventory lists no limb, which is what the old wording was false on', () => {
+    // The reported defect: the paragraph read "has merged entries the inventory lists separately",
+    // which is true of the pose library and the rig — both of which list the limbs — and false on
+    // the directional core, whose inventory is the trunk alone. A real rule justified by a list that
+    // sheet does not have. This pins the asymmetry, so the check below is answering something.
+    const listsALimb = TRUNK_SHEETS.map(({ category, mode, sheet }) =>
+      sheetNamed(category, mode, sheet)
+        .groups.flatMap((group) => group.entries)
+        .some((entry) => LIMB_ENTRY.test(entry.label) || LIMB_ENTRY.test(entry.text)),
+    );
+
+    expect(listsALimb).toStrictEqual([false, true, true, false, true, true]);
+  });
+
+  it.each(TRUNK_SHEETS)(
+    'justifies the rule by the series rather than by $category’s $sheet own list',
+    ({ category, mode, sheet }) => {
+      for (const paragraph of terminationParagraphs(category, mode, sheet)) {
+        expect(paragraph).toContain('on this sheet or on another of this series');
+        expect(paragraph).not.toContain('the inventory lists separately');
+      }
+    },
+  );
+});
+
+/**
+ * The counts an entry's own line states, against the `count` beside it.
+ *
+ * `ComponentEntry.count` is carried rather than parsed back out of `text`, for the reason its own
+ * docblock gives — a line reading `Wall top corners ×4` is one line and four components, and reading
+ * the words to work that out is the arithmetic that used to be done twice. But the line still states
+ * the figure, so the two can still disagree, and 331 entries state one this way with nothing reading
+ * them. The group intros and outros derive their counts now; an entry's text is authored, so this is
+ * what holds it to the number the compiler will actually contract for.
+ *
+ * **Two notations, and both are checked.** A `×N` marker is the inventory's own, and where a line
+ * carries several they enumerate its parts — `Fittings: handle ×1, latch or catch ×1, mounting
+ * bracket ×2` is one line and four components — so they have to sum to the count. A bare integer is
+ * the character and creature pose libraries' spelling, where a line either opens on its own total
+ * (`8 left-arm articulation variants`) or lists its pieces (`1 head, 1 torso, 1 pelvis`), so either
+ * the first equals the count or all of them sum to it.
+ */
+const CROSS_MARKER = /×(\d+)/g;
+
+/** A bare integer that is not a `×` marker and not part of a codepoint like `U+002E`. */
+const BARE_FIGURE = /(?:^|[^×\w])(\d+)(?=\s)/g;
+
+/**
+ * The one line whose `×` markers deliberately do not cover it, and why.
+ *
+ * `Slider track ×1, slider handle: at rest, held` is worth three components: one track, and a handle
+ * drawn in two states. The marker prices the track alone and the handle is enumerated by naming its
+ * states, which is how every unmarked line in the directory reads — so the markers sum to one where
+ * the count is three, and the line is right. Adding `×2` to it would be rewriting prompt text to
+ * suit a test rather than to say anything a generator does not already read off `at rest, held`.
+ *
+ * It buys the exemption at the cost of covering that line, which is the trade an exemption always
+ * is. The guard below keeps it honest: an entry listed here that no longer needs it fails.
+ */
+const UNMARKED_REMAINDER = ['Slider track ×1, slider handle: at rest, held'];
+
+/**
+ * Every distinct inventory line the table produces, whatever pairing or direction set reaches it.
+ *
+ * Keyed on the text because the directional plans are functions of the chosen facings, so one
+ * authored line arrives once per set — deduplicating keeps a failure report readable without
+ * narrowing what is walked.
+ */
+function everyEntryText(): readonly ComponentEntry[] {
+  const seen = new Map<string, ComponentEntry>();
+  for (const category of SUBJECT_CATEGORIES) {
+    for (const mode of modesFor(category)) {
+      for (const directions of CATEGORY_DIRECTION_SETS[category] as readonly DirectionSet[]) {
+        for (const plan of sheetSeriesFor(category, mode, directions)) {
+          for (const entry of plan.groups.flatMap((group) => group.entries)) {
+            if (!seen.has(entry.text)) seen.set(entry.text, entry);
+          }
+        }
+      }
+    }
+  }
+  return [...seen.values()];
+}
+
+/** The figures a line states in one notation. */
+function figuresIn(text: string, pattern: RegExp): number[] {
+  return [...text.matchAll(pattern)].map(([, digits]) => Number(digits));
+}
+
+/** Whether this line's `×` markers account for its count. */
+function crossMarkersAgree(entry: ComponentEntry): boolean {
+  const markers = figuresIn(entry.text, CROSS_MARKER);
+  if (markers.length === 0) return true;
+  return markers.reduce((total, marker) => total + marker, 0) === entry.count;
+}
+
+describe('an inventory line states the count the compiler contracts for', () => {
+  it('reads a corpus rather than a handful', () => {
+    // Every check below filters this list, so a walk that returned nothing would pass all of them
+    // while reading no inventory at all.
+    expect(everyEntryText().length).toBeGreaterThan(300);
+  });
+
+  it('sums every ×N marker on a line to that line’s own count', () => {
+    const offenders = everyEntryText()
+      .filter((entry) => !UNMARKED_REMAINDER.includes(entry.text))
+      .filter((entry) => !crossMarkersAgree(entry))
+      .map((entry) => `${entry.text} [count ${String(entry.count)}]`);
+
+    expect(offenders).toStrictEqual([]);
+  });
+
+  it('reads every bare figure on a line as its total or as one of its pieces', () => {
+    const offenders = everyEntryText()
+      .filter((entry) => {
+        const figures = figuresIn(entry.text, BARE_FIGURE);
+        if (figures.length === 0) return false;
+        const summed = figures.reduce((total, figure) => total + figure, 0);
+        return summed !== entry.count && figures[0] !== entry.count;
+      })
+      .map((entry) => `${entry.text} [count ${String(entry.count)}]`);
+
+    expect(offenders).toStrictEqual([]);
+  });
+
+  it('still has a line behind the exemption it grants', () => {
+    // An exemption that has stopped suppressing anything is a hole: it reads as a standing
+    // permission while covering nothing. Each entry earns its place by still being a line the rule
+    // above would otherwise report.
+    const exercised = UNMARKED_REMAINDER.filter((text) => {
+      const entry = everyEntryText().find((candidate) => candidate.text === text);
+      return entry !== undefined && !crossMarkersAgree(entry);
+    });
+
+    expect(exercised).toStrictEqual(UNMARKED_REMAINDER);
   });
 });

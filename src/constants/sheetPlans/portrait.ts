@@ -1,4 +1,6 @@
-import type { SheetPlan } from '../../types/components.ts';
+import type { ComponentEntry, SheetPlan } from '../../types/components.ts';
+import { componentTotal } from '../../utils/componentTotal.ts';
+import { spellNumberCapitalised } from '../../utils/numberWords.ts';
 
 /**
  * What a PORTRAIT sheet asks for.
@@ -34,6 +36,34 @@ import type { SheetPlan } from '../../types/components.ts';
  * portraits that are not of one character.
  */
 
+/**
+ * The expressions, one drawing each.
+ *
+ * Hoisted because the group's own outro counts them, and the sentence it counts them in is this
+ * sheet's contract: “twelve competent portraits that are not recognisably one character is the
+ * failure this sheet has”. An expression added or dropped would have left that figure describing a
+ * set nobody asked for, in the one sentence a reader is told to check the delivery against.
+ */
+const EXPRESSION_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'resting-portrait',
+    text: 'Resting portrait ×1 — neutral, level gaze, the reference for every expression below',
+    count: 1,
+    kind: 'anatomy',
+  },
+  { label: 'pleased', text: 'Pleased or smiling ×1', count: 1, kind: 'anatomy' },
+  { label: 'laughing', text: 'Laughing or delighted ×1', count: 1, kind: 'anatomy' },
+  { label: 'angry', text: 'Angry ×1', count: 1, kind: 'anatomy' },
+  { label: 'sad', text: 'Sad or downcast ×1', count: 1, kind: 'anatomy' },
+  { label: 'surprised', text: 'Surprised ×1', count: 1, kind: 'anatomy' },
+  { label: 'afraid', text: 'Afraid ×1', count: 1, kind: 'anatomy' },
+  { label: 'disgusted', text: 'Disgusted ×1', count: 1, kind: 'anatomy' },
+  { label: 'thoughtful', text: 'Thoughtful or uncertain ×1', count: 1, kind: 'anatomy' },
+  { label: 'determined', text: 'Determined or resolved ×1', count: 1, kind: 'anatomy' },
+  { label: 'hurt', text: 'Hurt or exhausted ×1', count: 1, kind: 'anatomy' },
+  { label: 'suspicious', text: 'Suspicious or narrowed ×1', count: 1, kind: 'anatomy' },
+];
+
 export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   name: 'Expression set',
   facings: 'run',
@@ -48,31 +78,13 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
       heading: null,
       intro: `One person, drawn once for each expression. The first is the resting portrait every other is
 measured against, so it is drawn first and the rest are drawn as departures from it:`,
-      entries: [
-        {
-          label: 'resting-portrait',
-          text: 'Resting portrait ×1 — neutral, level gaze, the reference for every expression below',
-          count: 1,
-          kind: 'anatomy',
-        },
-        { label: 'pleased', text: 'Pleased or smiling ×1', count: 1, kind: 'anatomy' },
-        { label: 'laughing', text: 'Laughing or delighted ×1', count: 1, kind: 'anatomy' },
-        { label: 'angry', text: 'Angry ×1', count: 1, kind: 'anatomy' },
-        { label: 'sad', text: 'Sad or downcast ×1', count: 1, kind: 'anatomy' },
-        { label: 'surprised', text: 'Surprised ×1', count: 1, kind: 'anatomy' },
-        { label: 'afraid', text: 'Afraid ×1', count: 1, kind: 'anatomy' },
-        { label: 'disgusted', text: 'Disgusted ×1', count: 1, kind: 'anatomy' },
-        { label: 'thoughtful', text: 'Thoughtful or uncertain ×1', count: 1, kind: 'anatomy' },
-        { label: 'determined', text: 'Determined or resolved ×1', count: 1, kind: 'anatomy' },
-        { label: 'hurt', text: 'Hurt or exhausted ×1', count: 1, kind: 'anatomy' },
-        { label: 'suspicious', text: 'Suspicious or narrowed ×1', count: 1, kind: 'anatomy' },
-      ],
+      entries: EXPRESSION_ENTRIES,
       outro: `Every expression is that same person changed, never a second design of them: the bone structure, the
 hair, the marks on the skin, the garments at the shoulders and the position of the head all hold
 across the set, and only what the feeling itself moves — the brows, the eyes, the mouth, the set of
 the jaw — is redrawn. The crop is identical in every one, measured from the top of the head, so the
 eyes fall at the same height on every drawing and a portrait swapped in at runtime does not jump.
-Twelve competent portraits that are not recognisably one character is the failure this sheet has, and
+${spellNumberCapitalised(componentTotal(EXPRESSION_ENTRIES))} competent portraits that are not recognisably one character is the failure this sheet has, and
 it is the one to check for before delivering.`,
     },
   ],
