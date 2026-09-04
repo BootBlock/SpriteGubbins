@@ -4,6 +4,7 @@ import { upscaleNearest } from './upscaleNearest.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { pixelOffset, readPixel } from './imageData.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
+import { stepProfile } from './stepProfile.ts';
 
 /**
  * A source whose cells carry **many different** colours, so the boundaries in the image differ in
@@ -54,16 +55,16 @@ describe('estimatePixelGrid', () => {
     // these, because a three-tap softening puts a transition on every column. The scale is still in
     // the image — it is the spacing the softening repeats at — and these are the sizes a sheet
     // actually comes back at.
-    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(32), 4)))).toBe(4);
-    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(16), 8)))).toBe(8);
-    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(8), 16)))).toBe(16);
+    expect(estimatePixelGrid(stepProfile(soften(upscaleNearest(variedCells(32), 4))))).toBe(4);
+    expect(estimatePixelGrid(stepProfile(soften(upscaleNearest(variedCells(16), 8))))).toBe(8);
+    expect(estimatePixelGrid(stepProfile(soften(upscaleNearest(variedCells(8), 16))))).toBe(16);
   });
 
   it('measures sprite-scale softening, past the old fixed ceiling', () => {
     // Eight cells a side drawn at 64 and then resampled — a 512-pixel sheet of 8 × 8 logical
     // pixels. Under a fixed ceiling of 32 no candidate could reach the truth, and the answer for a
     // sheet this coarse was a divisor at best and `null` at worst.
-    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(8), 64)))).toBe(64);
+    expect(estimatePixelGrid(stepProfile(soften(upscaleNearest(variedCells(8), 64))))).toBe(64);
   });
 
   it('answers the scale the art was drawn at, not a multiple of it', () => {
@@ -79,7 +80,7 @@ describe('estimatePixelGrid', () => {
     // Only the sheet's own scale comes back.
     for (const grid of [4, 8, 16]) {
       const sheet = soften(upscaleNearest(variedCells(96 / grid), grid));
-      expect({ grid, measured: estimatePixelGrid(sheet) }).toEqual({ grid, measured: grid });
+      expect({ grid, measured: estimatePixelGrid(stepProfile(sheet)) }).toEqual({ grid, measured: grid });
     }
   });
 
@@ -105,7 +106,7 @@ describe('estimatePixelGrid', () => {
       ),
     };
     for (const [name, sheet] of Object.entries(sheets)) {
-      expect({ name, measured: estimatePixelGrid(sheet) }).toEqual({ name, measured: null });
+      expect({ name, measured: estimatePixelGrid(stepProfile(sheet)) }).toEqual({ name, measured: null });
     }
   });
 
@@ -114,10 +115,10 @@ describe('estimatePixelGrid', () => {
     // is not a lattice line either — nothing precedes the first pixel for it to differ from — so
     // there is no evidence here at any scale.
     expect(
-      estimatePixelGrid(imageFrom(2, 2, (x, y) => ({ r: x * 200, g: y * 200, b: 50, a: 255 }))),
+      estimatePixelGrid(stepProfile(imageFrom(2, 2, (x, y) => ({ r: x * 200, g: y * 200, b: 50, a: 255 })))),
     ).toBeNull();
     expect(
-      estimatePixelGrid(imageFrom(3, 3, (x, y) => ({ r: x * 100, g: y * 100, b: 50, a: 255 }))),
+      estimatePixelGrid(stepProfile(imageFrom(3, 3, (x, y) => ({ r: x * 100, g: y * 100, b: 50, a: 255 })))),
     ).toBeNull();
   });
 
@@ -126,7 +127,7 @@ describe('estimatePixelGrid', () => {
     // cells a side has exactly one interior boundary each way, so no adjacency can ever be observed
     // in it — but the one line its scale offers is the one line the art used, and there is no
     // reading of the smallest periodic sheet that could ask for more.
-    expect(estimatePixelGrid(soften(upscaleNearest(variedCells(2), 32)))).toBe(32);
+    expect(estimatePixelGrid(stepProfile(soften(upscaleNearest(variedCells(2), 32))))).toBe(32);
   });
 
   it('reads a two-colour sheet, where every boundary carries the same contrast', () => {
@@ -137,7 +138,7 @@ describe('estimatePixelGrid', () => {
         ? { r: 20, g: 30, b: 40, a: 255 }
         : { r: 220, g: 210, b: 200, a: 255 },
     );
-    expect(estimatePixelGrid(soften(checker))).toBe(8);
+    expect(estimatePixelGrid(stepProfile(soften(checker)))).toBe(8);
   });
 
   it('measures the art rather than the empty space around it', () => {
@@ -149,7 +150,7 @@ describe('estimatePixelGrid', () => {
     const sheet = imageFrom(256, 256, (x, y) =>
       x < sprite.width && y < sprite.height ? pixelAt(sprite, x, y) : { r: 255, g: 0, b: 255, a: 255 },
     );
-    expect(estimatePixelGrid(sheet)).toBe(4);
+    expect(estimatePixelGrid(stepProfile(sheet))).toBe(4);
   });
 
   it('reads a silhouette against transparency, where alpha is the only thing that changes', () => {
@@ -163,14 +164,14 @@ describe('estimatePixelGrid', () => {
         ? { r: (cellX * 29 + cellY * 71) % 256, g: 120, b: 200, a: 255 }
         : { r: 0, g: 0, b: 0, a: 0 };
     });
-    expect(estimatePixelGrid(soften(silhouette))).toBe(8);
+    expect(estimatePixelGrid(stepProfile(soften(silhouette)))).toBe(8);
   });
 
   it('measures crisp art too, rather than depending on the softening', () => {
     // It is a period measurement, not a blur detector. Nothing about it requires the edges to have
     // been destroyed first — `measureSheetScale` reaches for it only when the exact reading found
     // nothing, but that is a rule about which question to ask, not a limit on this one.
-    expect(estimatePixelGrid(upscaleNearest(variedCells(16), 8))).toBe(8);
+    expect(estimatePixelGrid(stepProfile(upscaleNearest(variedCells(16), 8)))).toBe(8);
   });
 
   it('answers null for smooth artwork rather than inventing a scale', () => {
@@ -178,8 +179,8 @@ describe('estimatePixelGrid', () => {
     // than its own width would collect by chance — which the score subtracts. A wrong scale offered
     // is worse than no scale offered: the user clicks it and gets a sheet reduced by the wrong
     // factor with nothing on screen saying so.
-    expect(estimatePixelGrid(GRADIENT)).toBeNull();
-    expect(estimatePixelGrid(soften(GRADIENT))).toBeNull();
+    expect(estimatePixelGrid(stepProfile(GRADIENT))).toBeNull();
+    expect(estimatePixelGrid(stepProfile(soften(GRADIENT)))).toBeNull();
   });
 
   it('measures inset art at its own scale, wherever it sits against the corner', () => {
@@ -196,11 +197,11 @@ describe('estimatePixelGrid', () => {
     const crisp = upscaleNearest(variedCells(16), 8);
     const softened = soften(crisp);
     for (const inset of [1, 2, 3, 4, 5, 6, 7]) {
-      expect({ inset, measured: estimatePixelGrid(shifted(crisp, inset)) }).toEqual({
+      expect({ inset, measured: estimatePixelGrid(stepProfile(shifted(crisp, inset))) }).toEqual({
         inset,
         measured: 8,
       });
-      expect({ inset, measured: estimatePixelGrid(shifted(softened, inset)) }).toEqual({
+      expect({ inset, measured: estimatePixelGrid(stepProfile(shifted(softened, inset))) }).toEqual({
         inset,
         measured: 8,
       });
@@ -215,14 +216,19 @@ describe('estimatePixelGrid', () => {
     // snap to either.
     for (const grid of [8, 12, 16]) {
       const twiceSoftened = soften(soften(upscaleNearest(variedCells(96 / grid), grid)));
-      expect({ grid, measured: estimatePixelGrid(twiceSoftened) }).toEqual({ grid, measured: null });
+      expect({ grid, measured: estimatePixelGrid(stepProfile(twiceSoftened)) }).toEqual({
+        grid,
+        measured: null,
+      });
     }
   });
 
   it('answers null for an image with nothing in it to measure', () => {
     // One flat colour edge to edge has no steps at all, so there is no scale in it and every
     // candidate would fit equally — the same honesty `detectPixelGrid` shows on the same image.
-    expect(estimatePixelGrid(imageFrom(64, 64, () => ({ r: 10, g: 20, b: 30, a: 255 })))).toBeNull();
+    expect(
+      estimatePixelGrid(stepProfile(imageFrom(64, 64, () => ({ r: 10, g: 20, b: 30, a: 255 })))),
+    ).toBeNull();
   });
 
   it('refuses a lone edge on a tiny sheet, with or without a noise floor under it', () => {
@@ -244,7 +250,7 @@ describe('estimatePixelGrid', () => {
         return { r: base + wobble(1), g: base + wobble(2), b: base + wobble(3), a: 255 };
       });
 
-    expect(estimatePixelGrid(split(false))).toBeNull();
-    expect(estimatePixelGrid(split(true))).toBeNull();
+    expect(estimatePixelGrid(stepProfile(split(false)))).toBeNull();
+    expect(estimatePixelGrid(stepProfile(split(true)))).toBeNull();
   });
 });

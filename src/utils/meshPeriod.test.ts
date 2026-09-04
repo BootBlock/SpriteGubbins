@@ -4,6 +4,7 @@ import { estimateMeshPeriod } from './meshPeriod.ts';
 import { estimatePixelGrid } from './pixelPeriod.ts';
 import { estimateProfilePeriod } from './profilePeriod.ts';
 import { measureSheetScale } from './pixelGrid.ts';
+import { stepProfile } from './stepProfile.ts';
 
 /** Cells of distinct colours whose column and row boundaries sit at the positions given. */
 function sheetWithBoundaries(size: number, starts: readonly number[]): ImageData {
@@ -27,17 +28,17 @@ describe('estimateMeshPeriod', () => {
     // this image": the spacings wander between 6 and 7, so no lattice at any phase collects nine
     // tenths of the change — but the boundaries are plainly there, and their median gap is the
     // scale the art was drawn at.
-    const sheet = sheetWithBoundaries(57, DRIFTING);
+    const profile = stepProfile(sheetWithBoundaries(57, DRIFTING));
 
-    expect(estimatePixelGrid(sheet)).toBeNull();
-    expect(estimateMeshPeriod(sheet)).toBe(6);
+    expect(estimatePixelGrid(profile)).toBeNull();
+    expect(estimateMeshPeriod(profile)).toBe(6);
   });
 
   it('reads the same sheet through the softening a model applies', () => {
-    const sheet = soften(sheetWithBoundaries(57, DRIFTING));
+    const profile = stepProfile(soften(sheetWithBoundaries(57, DRIFTING)));
 
-    expect(estimatePixelGrid(sheet)).toBeNull();
-    expect(estimateMeshPeriod(sheet)).toBe(6);
+    expect(estimatePixelGrid(profile)).toBeNull();
+    expect(estimateMeshPeriod(profile)).toBe(6);
   });
 
   it('reaches the tab through the fourth reading of measureSheetScale, hedged as an estimate', () => {
@@ -48,7 +49,7 @@ describe('estimateMeshPeriod', () => {
     // hedge because a median carries the drift's own tolerance.
     const small = sheetWithBoundaries(35, [0, 4, 9, 13, 17, 22, 26, 31]);
 
-    expect(estimateProfilePeriod(small)).toBeNull();
+    expect(estimateProfilePeriod(stepProfile(small))).toBeNull();
     expect(measureSheetScale(small)).toEqual({ grid: 5, measurement: 'BOUNDARY_SPACING' });
   });
 
@@ -58,11 +59,11 @@ describe('estimateMeshPeriod', () => {
     // edges, no period, and a confident number here would mean nothing.
     const sheet = sheetWithBoundaries(64, [0, 5, 9, 17, 31, 40, 44, 58]);
 
-    expect(estimateMeshPeriod(sheet)).toBeNull();
+    expect(estimateMeshPeriod(stepProfile(sheet))).toBeNull();
   });
 
   it('offers nothing where there are too few spacings to call a habit', () => {
-    expect(estimateMeshPeriod(sheetWithBoundaries(64, [0, 30]))).toBeNull();
+    expect(estimateMeshPeriod(stepProfile(sheetWithBoundaries(64, [0, 30])))).toBeNull();
   });
 
   it('offers nothing for smooth artwork with no boundaries in it at all', () => {
@@ -73,7 +74,7 @@ describe('estimateMeshPeriod', () => {
       a: 255,
     }));
 
-    expect(estimateMeshPeriod(gradient)).toBeNull();
+    expect(estimateMeshPeriod(stepProfile(gradient))).toBeNull();
     expect(measureSheetScale(gradient)).toBeNull();
   });
 });

@@ -4,6 +4,7 @@ import { detectPixelGrid, measureSheetScale } from '../src/utils/pixelGrid.ts';
 import { estimateMeshPeriod } from '../src/utils/meshPeriod.ts';
 import { estimatePixelGrid } from '../src/utils/pixelPeriod.ts';
 import { estimateProfilePeriod } from '../src/utils/profilePeriod.ts';
+import { stepProfile } from '../src/utils/stepProfile.ts';
 import type { SheetScale } from '../src/types/quantiser.ts';
 
 /**
@@ -199,11 +200,14 @@ describe('the scale readings, over the eight reference sheets', () => {
     for (const name of CORPUS_SHEETS) {
       const image = corpus.get(name);
       if (image === undefined) throw new Error(`${name} did not decode`);
+      // The one walk all three estimated readings answer from, exactly as `measureSheetScale` hands
+      // it down — computing it per reading would walk each of these sheets three times over.
+      const profile = stepProfile(image);
       actual.set(name, {
         detected: detectPixelGrid(image),
-        estimated: estimatePixelGrid(image),
-        correlated: estimateProfilePeriod(image),
-        drifting: estimateMeshPeriod(image),
+        estimated: estimatePixelGrid(profile),
+        correlated: estimateProfilePeriod(profile),
+        drifting: estimateMeshPeriod(profile),
         offered: measureSheetScale(image),
       });
     }

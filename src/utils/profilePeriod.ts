@@ -15,7 +15,7 @@ import {
   divisionsOf,
   windowedMass,
 } from './correlationPeaks.ts';
-import { stepProfile } from './stepProfile.ts';
+import type { StepProfile } from './stepProfile.ts';
 
 /**
  * The scale of a sheet read from the *whole* step profile, by autocorrelation — one axis at a time.
@@ -63,15 +63,13 @@ import { stepProfile } from './stepProfile.ts';
  * and refused outright for profiles with too little structure, too weak a settled peak, or too few
  * repeats of the pitch across the sheet; the constants each say why.
  */
-export function estimateProfilePeriod(image: ImageData): PixelGrid | null {
-  const profile = stepProfile(image);
+export function estimateProfilePeriod(profile: StepProfile): PixelGrid | null {
   if (profile.total === 0) return null;
 
-  const shortest = Math.min(image.width, image.height);
-  const ceiling = Math.min(
-    measurableGridCeiling(image.width, image.height),
-    Math.floor(shortest / ACF_FEWEST_REPEATS),
-  );
+  const width = profile.columns.length;
+  const height = profile.rows.length;
+  const shortest = Math.min(width, height);
+  const ceiling = Math.min(measurableGridCeiling(width, height), Math.floor(shortest / ACF_FEWEST_REPEATS));
   if (ceiling < MIN_CORRELATED_PERIOD) return null;
 
   const across = axisPeriod(profile.columns, ceiling);

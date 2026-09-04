@@ -1,7 +1,34 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { detailedMarks, detailedSheet } from '../test/detailedSheet.ts';
 import { imageFrom, soften } from '../test/images.ts';
 import { upscaleNearest } from './upscaleNearest.ts';
 import { detectPixelGrid, measureSheetScale } from './pixelGrid.ts';
+
+/**
+ * How many times the survey has walked an image, counted at `stepProfile` itself.
+ *
+ * `vi.hoisted` because the factory below is lifted above every import, so a plain `const` declared
+ * here would not exist yet when it runs.
+ */
+const walks = vi.hoisted(() => ({ count: 0 }));
+
+/**
+ * The real `stepProfile`, counted.
+ *
+ * `pixelGrid.ts` is the only module in this file's graph that imports the *value* — the three
+ * estimated readings take a `StepProfile` and import the type alone — so the count is exactly what
+ * one `measureSheetScale` cost.
+ */
+vi.mock('./stepProfile.ts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./stepProfile.ts')>();
+  return {
+    ...actual,
+    stepProfile: (image: ImageData) => {
+      walks.count += 1;
+      return actual.stepProfile(image);
+    },
+  };
+});
 
 /** A 16 × 16 source in which every pixel is a different colour, so no block of two is ever uniform. */
 const PIXEL_SOURCE = imageFrom(16, 16, (x, y) => ({ r: x * 16 + 1, g: y * 16 + 1, b: 64, a: 255 }));
@@ -186,5 +213,26 @@ describe('measureSheetScale', () => {
       a: 255,
     }));
     expect(measureSheetScale(gradient)).toBeNull();
+  });
+
+  it('walks the image once for the three estimated readings, wherever in the chain it answers', () => {
+    // Each estimated reading used to derive the step profile for itself, so the chain paid for the
+    // same linear pass again at every refusal: two walks for a sheet answering on the correlation
+    // and three for a sheet answering on nothing. Measured over the eight sheets in
+    // `test_sprites/`, that repeated pass was 82–88% of the whole survey.
+    const survey = (image: ImageData): number => {
+      walks.count = 0;
+      measureSheetScale(image);
+      return walks.count;
+    };
+
+    // A crisp sheet still pays for none of it. `detectPixelGrid` counts transitions through its own
+    // `edgeLattice` and shares nothing with the profile, so the survey answers before computing one.
+    expect(survey(upscaleNearest(PIXEL_SOURCE, 8))).toBe(0);
+
+    // One walk where the second reading answers, where the third does, and where none of them does.
+    expect(survey(soften(upscaleNearest(PIXEL_SOURCE, 8)))).toBe(1);
+    expect(survey(detailedSheet(detailedMarks))).toBe(1);
+    expect(survey(imageFrom(64, 64, (x, y) => ({ r: x * 4, g: y * 4, b: 128, a: 255 })))).toBe(1);
   });
 });
