@@ -312,8 +312,30 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **Three branches found headroom under 2314 within a day and all three reached for it**, which is
  * what a margin of that order buys — not a reason to widen it, but worth knowing before reading the
  * next base figure as slack.
+ *
+ * **Raised once more, from 2320, by the sheet-plan prose deriving the counts it states.** Sixteen
+ * sentences across six plan files stated a figure their own entries also stated, each written out by
+ * hand beside entries that summed to it. What a first visit now pays for is three modules — a
+ * number-to-word speller, the one place entries are summed, and the builder for the second side of a
+ * limb pair — plus the interpolation at each call site. Measured against main's own tip, rebuilt from
+ * the same `node_modules` — **2319.23 KiB across 54 entries** — the merged build reports **2320.06**,
+ * a delta of 0.83. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed:
+ * the three modules land inside the chunks their callers were already in.
+ *
+ * **Almost none of it is content, which is what makes the figure worth reading.** The compiled prompt
+ * is byte-identical to what shipped, verified by dumping every group's intro, entry and outro across
+ * every category, mode and direction set before and after — the sentences say the same words, they
+ * are simply no longer written out. The one exception is the trunk-termination paragraph, which grew
+ * 78 bytes in each of CHARACTER and CREATURE (0.15 KiB between them) because it had to stop citing a
+ * list one of the three sheets carrying it does not have. So roughly 0.68 KiB buys the machinery and
+ * 0.15 buys the correction, which puts this beside the module-splitting raise at 2309 as the second
+ * time a raise was bought by no new option, guidance paragraph or prompt text at all.
+ *
+ * The base is again worth reading beside the ceiling it was under: 2319.23 against 2320 is **0.77 KiB
+ * of headroom**, which the paragraph above the raise to 2320 had already called the narrowest the
+ * margin had been. The margin is restored to the same order as every raise above rather than widened.
  */
-export const PRECACHE_CEILING_KIB = 2320;
+export const PRECACHE_CEILING_KIB = 2323;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
