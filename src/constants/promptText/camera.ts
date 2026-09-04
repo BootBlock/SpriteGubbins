@@ -89,7 +89,10 @@ export const PROJECTION_TEXT: Readonly<Record<Projection, string>> = {
  * The facings each set resolves to, in the order the sheet covers them.
  *
  * Order matters twice over: the first entry is the primary assembly direction the prompt names, and
- * for a cut-out rig it is the only direction on the sheet.
+ * it is the order section 5 states the depth order in — one line per facing, for every facing the
+ * sheet covers. A cut-out rig was once always a single-facing run sheet, which is where the second
+ * half of that used to read “it is the only direction on the sheet”; `resolveRigMode` lets the rig
+ * reach a multi-view core, so it is not.
  *
  * Typed as a non-empty tuple so the compiler can take `[0]` as a `Direction` rather than reaching
  * for a fallback that could never fire — a set with no directions would be a direction set that
@@ -99,8 +102,8 @@ export const DIRECTION_LISTS: Readonly<Record<DirectionSet, readonly [Direction,
   SINGLE_FRONT: ['front'],
   THREE_CLASSIC: ['front-three-quarter', 'right side', 'back-three-quarter'],
   // Ascending by yaw, which puts `front` first — and first is load-bearing here rather than merely
-  // tidy: the leading entry is the facing the sheet assembles towards and fixes its depth order from,
-  // and a set that exists to reach the camera-facing view should assemble towards it.
+  // tidy: the leading entry is the facing the sheet assembles towards, and a set that exists to reach
+  // the camera-facing view should assemble towards it.
   FIVE_CLASSIC: ['front', 'front-three-quarter', 'right side', 'back-three-quarter', 'back'],
   FOUR_CARDINAL: ['south', 'west', 'north', 'east'],
   EIGHT_COMPASS: ['south', 'south-west', 'west', 'north-west', 'north', 'north-east', 'east', 'south-east'],

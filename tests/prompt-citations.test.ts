@@ -25,7 +25,7 @@ import { SCALE_UNIT_FRAMES, SUBJECT_CATEGORIES } from '../src/types/subject.ts';
  *
  * It walks *values* rather than source text, so a comment discussing section 4 is not a finding and
  * no comment-stripping has to be trusted. What that costs is the prose a composer builds from
- * fragments it never exports — `describeDirections`, `depthOrderText` and the rest are opaque here,
+ * fragments it never exports — `describeDirections`, `depthOrderDescription` and the rest are opaque here,
  * whatever they say. The two hardware blocks are called below because they are the composers that
  * actually cite a section; a new one that starts to needs the same line adding.
  */

@@ -161,7 +161,7 @@ export interface ManifestSheet {
   readonly total: number;
   /** Every facing this sheet draws, in the order the inventory lists them. */
   readonly facings: readonly Direction[];
-  /** The facing this sheet assembles towards, which fixes its depth order. */
+  /** The facing this sheet assembles towards, which section 3 states as the primary one. */
   readonly assembly: Direction;
   /** How many components the prompt for this sheet contracted for. */
   readonly components: number;

@@ -65,7 +65,7 @@ export interface BatchSheet {
    * articulation sheet beneath it and claim the same coverage.
    */
   readonly covered: readonly [Direction, ...Direction[]];
-  /** The facing this sheet assembles towards, which fixes its depth order. */
+  /** The facing this sheet assembles towards, which section 3 states as the primary one. */
   readonly assembly: Direction;
 }
 

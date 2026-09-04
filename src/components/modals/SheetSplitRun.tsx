@@ -66,9 +66,11 @@ interface SheetSplitRunProps {
  *
  * **What it says is `DepthOrderNote`'s, and it is asked of everything the sheet covers.** A rig on a
  * multi-view core draws every piece at each of the yaws section 3 lists, so a single sentence there
- * is four false claims and a true one — and the two sheets of an eight-compass core differ from each
- * other in exactly this, which is what the row exists to show. That component resolves the camera
- * too, since a plan view has no near side for the question to be about.
+ * is four false claims and a true one. On an eight-compass core the two sheets are already told
+ * apart by `chunkName` in the label above — cardinal facings against diagonal — and what the depth
+ * order adds is *what that difference does to the artwork*, which is the same thing it adds on a
+ * facing split. That component resolves the camera too, since a plan view has no near side for the
+ * question to be about.
  *
  * The prompt itself sits behind a `<details>` rather than being laid out in full. Eight prompts of
  * a thousand words each is not a list anybody can scan, and the summary is what the user is choosing

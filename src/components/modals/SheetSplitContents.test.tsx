@@ -156,9 +156,9 @@ describe('SheetSplitContents', () => {
   it('gives a row covering several facings the depth order of each of them', () => {
     // The reported failure, on the surface that shows it: a cut-out rig reaching a multi-view
     // directional core, where the row stated the *assembly* facing's depth order for a sheet that
-    // draws five. An eight-compass core is the case the drawer is actually for — its two sheets take
-    // the cardinals and the diagonals, and the depth order is the only thing on the row that
-    // distinguishes them.
+    // draws five. An eight-compass core is the case with two sheets to compare — one takes the
+    // cardinals and the other the diagonals — so a row that named one facing's answer described
+    // three of its own four wrongly, and described the other sheet's four not at all.
     useSubjectStore.setState({ category: 'OBJECT', subject: defaultSubjectFor('OBJECT') });
     useOutputStore.setState({
       output: {
@@ -180,10 +180,14 @@ describe('SheetSplitContents', () => {
       expect(run.covered.length).toBeGreaterThan(1);
 
       for (const facing of run.covered) {
-        // The name leads its own line, so the sentence and the facing it belongs to are one element
-        // apart rather than one row apart.
-        expect(within(row).getByText(facing)).toBeInTheDocument();
-        expect(row.textContent, `${run.plan.name} ${facing}`).toContain(DEPTH_ORDER_TEXT[facing]);
+        // Asserted on the note's own line rather than on the row, because the row also holds the
+        // whole prompt inside its `<details>` — and the prompt now carries every covered facing's
+        // sentence, which is the fix. A `toContain` over `row.textContent` would therefore pass with
+        // the note rendering one facing, or none at all.
+        const line = within(row).getByText(facing).closest('p');
+        expect(line?.textContent, `${run.plan.name} ${facing}`).toBe(
+          `${facing} — ${DEPTH_ORDER_TEXT[facing]}`,
+        );
       }
 
       // And what the other sheet of the series covers is not on this one, which is the whole of what

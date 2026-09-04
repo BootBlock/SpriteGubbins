@@ -794,6 +794,11 @@ and section [SEC:CAMERA] forbids producing one by mirroring another.
 Keep these regions clear of fine detail and busy contrast, so equipment can be overlaid later
 without fighting what is underneath: [DEFINE:SOCKETS]
 [/IF]
+[IF:PLAN_VIEW]
+
+### Depth order for this sheet
+[/IF]
+[IF:PLAN_VIEW!=yes]
 [IF:MULTI_DIRECTION]
 
 ### Depth order for each direction this sheet covers
@@ -801,6 +806,7 @@ without fighting what is underneath: [DEFINE:SOCKETS]
 [IF:MULTI_DIRECTION!=yes]
 
 ### Depth order for this direction
+[/IF]
 [/IF]
 
 [DEFINE:DEPTH_ORDER_DESCRIPTION]

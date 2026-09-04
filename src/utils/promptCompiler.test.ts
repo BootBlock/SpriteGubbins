@@ -61,6 +61,15 @@ function withOutput(overrides: Partial<OutputConfig>): OutputConfig {
   return { ...OUTPUT, ...overrides };
 }
 
+/**
+ * Section 5's plural depth-order heading, which appears exactly when the body is a line per facing.
+ *
+ * Named once because two assertions read it and because the point of the check is the *pairing* with
+ * `depthOrder`'s own answer, not the wording — a heading reworded in the template and here still has
+ * to appear under the same conditions.
+ */
+const PER_DIRECTION_DEPTH_HEADING = '### Depth order for each direction this sheet covers';
+
 /** Every field cleared — the case v1 filled with `DEFINED` tokens. */
 const EMPTY_SUBJECT: SubjectDefinition = Object.fromEntries(
   SUBJECT_FIELD_KEYS.map((key) => [key, '']),
@@ -998,7 +1007,7 @@ describe('generatePrompt — the facing the sheet is for', () => {
     expect(prompt).toContain(promptText.DEPTH_ORDER_TEXT['north-west']);
   });
 
-  it.each(SUBJECT_CATEGORIES)('states %s’s depth order for every facing its rig sheets cover', (category) => {
+  it('states the depth order for every facing a cut-out rig sheet covers', () => {
     // The reported failure: `resolveRigMode` lets a cut-out rig reach a multi-view directional core,
     // where section 3 lists five object yaws and section 4 draws every trunk piece at each of them —
     // and section 5 stated the assembly facing's depth order alone, which is false for the four the
@@ -1006,34 +1015,67 @@ describe('generatePrompt — the facing the sheet is for', () => {
     // the pairing is walked rather than named so a third cannot arrive unchecked.
     //
     // Every sheet of every direction set the category offers, because the eight-compass core splits
-    // into two sheets whose facings differ — the case where the two rows of the split drawer are
-    // distinguished by nothing else.
-    for (const directions of CATEGORY_DIRECTION_SETS[category]) {
-      const output = withOutput({ directions, rigMode: 'CUTOUT_RIG' });
-      if (
-        resolveRigMode(
-          category,
-          sheetSeriesFor(category, output.directionalMode, directions),
-          'CUTOUT_RIG',
-        ) !== 'CUTOUT_RIG'
-      ) {
-        continue;
-      }
+    // into two sheets covering different facings — and every projection, because the camera outranks
+    // the coverage: directly overhead there is no near side, so the answer collapses to one paragraph
+    // however many facings the sheet draws.
+    let sheetsChecked = 0;
 
-      for (const run of sheetRuns(category, defaultSubjectFor(category), output)) {
-        const heading =
-          run.covered.length > 1
-            ? '### Depth order for each direction this sheet covers'
-            : '### Depth order for this direction';
-        expect(run.promptText, `${category} ${directions} ${run.plan.name}`).toContain(heading);
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+        if (
+          resolveRigMode(
+            category,
+            sheetSeriesFor(category, DEFAULT_OUTPUT_CONFIG.directionalMode, directions),
+            'CUTOUT_RIG',
+          ) !== 'CUTOUT_RIG'
+        ) {
+          continue;
+        }
 
-        for (const facing of run.covered) {
-          expect(run.promptText, `${category} ${directions} ${facing}`).toContain(
-            promptText.DEPTH_ORDER_TEXT[facing],
-          );
+        for (const projection of CATEGORY_PROJECTIONS[category]) {
+          const output = withOutput({
+            directions,
+            rigMode: 'CUTOUT_RIG',
+            projection,
+            cameraElevation: DEFAULT_CAMERA_ELEVATIONS[projection],
+          });
+
+          for (const run of sheetRuns(category, defaultSubjectFor(category), output)) {
+            const where = `${category} ${directions} ${projection} ${run.plan.name}`;
+            const order = promptText.depthOrder(
+              run.covered,
+              promptText.resolveCameraElevation(projection, output.cameraElevation),
+            );
+
+            // The heading and the body are two statements about one shape, and before this they were
+            // decided by two different predicates: the heading counted the facings while the body asked
+            // the camera first, so a plan-view core promised a line per direction over a single
+            // paragraph. Asserted as a pairing rather than against a literal per case, so the check
+            // cannot restate whichever predicate the template happens to use.
+            expect(run.promptText.includes(PER_DIRECTION_DEPTH_HEADING), where).toBe(order.perFacing);
+            expect(run.promptText.match(/^### Depth order .*$/gm)?.length, where).toBe(1);
+
+            if (order.perFacing) {
+              for (const facing of run.covered) {
+                expect(run.promptText, `${where} ${facing}`).toContain(promptText.DEPTH_ORDER_TEXT[facing]);
+              }
+            } else {
+              expect(run.promptText, where).toContain(order.text);
+            }
+
+            sheetsChecked += 1;
+          }
         }
       }
     }
+
+    // Most categories reach no cut-out rig on a directional pairing, so most of the walk asserts
+    // nothing — which is right, and useless on its own. Without this line a regression in
+    // `resolveRigMode` that stopped answering `CUTOUT_RIG` anywhere would leave the case green having
+    // executed no assertion at all, and the defect this exists for would be back. The figure is a
+    // floor rather than the exact count, so a category gaining the pairing does not fail a test about
+    // what the prompt says.
+    expect(sheetsChecked).toBeGreaterThan(1);
   });
 });
 
