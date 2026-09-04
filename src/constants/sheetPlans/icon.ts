@@ -35,6 +35,7 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // The cooldown sweep is drawn at two stages, and the changed-state pair active and inactive.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,

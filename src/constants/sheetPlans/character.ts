@@ -47,6 +47,7 @@ export const CHARACTER_POSE_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // Eight arm and nine leg variants a side: one limb segment per orientation it is drawn at.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -146,6 +147,7 @@ function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTup
     targetQuantity: 'ASSEMBLED',
     // One head, one torso and one pelvis, repeated across yaws — the camera turning, not the trunk moving.
     posing: 'UNSTATED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: null,
@@ -179,6 +181,7 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The same thirty-four orientations as the pose library's limbs, which is what this sheet is.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: 'Left arm',
@@ -305,6 +308,7 @@ export const CHARACTER_CUTOUT_RIG: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,

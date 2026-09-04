@@ -48,6 +48,7 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // One phenomenon, one component per phase of its life: the artwork is the motion here.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Core sequence',

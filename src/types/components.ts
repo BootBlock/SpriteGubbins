@@ -34,6 +34,7 @@
  * a hatch and a footing.
  */
 import type { Direction } from './rendering.ts';
+import type { ScaleUnitFrame } from './subject.ts';
 
 export const COMPONENT_KINDS = ['anatomy', 'appendage', 'mechanism', 'structure', 'tile', 'frame'] as const;
 
@@ -289,6 +290,33 @@ export interface SheetPlan {
    * reader, and what it decides is which rigs the sheet can be asked for.
    */
   readonly posing: InventoryPosing;
+  /**
+   * What section 2's share-bearing profiles measure this category's scale unit against, on this
+   * sheet — see {@link ScaleUnitFrame}, which states the test.
+   *
+   * **Per sheet rather than per category, and BACKGROUND is why.** The unit is the category's, for
+   * the reason `SCALE_UNIT_TEXT` records: a profile is chosen once and a whole series is generated
+   * under it, so a noun that changed between the sheets of one deliverable would price sheet one
+   * against a wall bay and sheet two against a floor tile. The *frame* is not bound by that
+   * argument, because a series is one (category, mode) pairing and a batch never spans two modes —
+   * so the two frames a category's modes may need cannot meet inside one batch. `sheetPlans.test.ts`
+   * holds that, asserting every sheet of every series agrees.
+   *
+   * BACKGROUND is the pairing that needs the split. Its parallax set draws nine band-shaped
+   * components and its layer library draws none, so one frame is false on one plan whichever is
+   * chosen for the category: `SHEET` states a share of the page nine times over, and `CELL` claims a
+   * cell for a band the layer library never puts in the grid, one line above that plan's own
+   * target-size line saying no component is the assembled size.
+   *
+   * **The shape of a component never enters it**, which is what the per-sheet answer buys. A cell is
+   * `SHEET_CELL_PITCH` times its own component on each axis, so it carries that component's aspect —
+   * a share of a cell is therefore true of a strip, a square and a tall figure alike. A share of the
+   * *sheet* is not: turning it into an area needs the unit to be about as square as the page, which
+   * is the approximation `tests/resolution-profile-fit.test.ts` makes and the one a full-bleed
+   * parallax band breaks. That is why the frame is the answer to issue #216 and a recorded aspect is
+   * not.
+   */
+  readonly scaleUnitFrame: ScaleUnitFrame;
 }
 
 /**

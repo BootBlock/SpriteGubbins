@@ -45,6 +45,7 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // Eight fore and nine hind variants a side: one limb segment per orientation it is drawn at.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -138,6 +139,7 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
     targetQuantity: 'ASSEMBLED',
     // One head, one body and one hindquarters, repeated across yaws — the camera turning, not the trunk.
     posing: 'UNSTATED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: null,
@@ -163,6 +165,7 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The creature spelling of the character articulation run, and posed for the same reason.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: 'Left forelimb',
@@ -297,6 +300,7 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,

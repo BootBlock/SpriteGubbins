@@ -29,6 +29,7 @@ export const BUILDING_TILESET: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Every tile is a different tile: the floor variants differ in scatter, and the corners in which corner they turn.
   posing: 'UNSTATED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -91,6 +92,7 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // The entrance module is drawn closed and open, which is one part at the two positions it takes.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -160,6 +162,7 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     targetQuantity: 'COMPONENT',
     // A yaw is the camera turning rather than the bay moving, so the repeated entries are views.
     posing: 'UNSTATED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: 'Directional core',

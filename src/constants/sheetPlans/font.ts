@@ -143,6 +143,11 @@ export const FONT_CAPITALS: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
+  // The cell, on this sheet and on the three after it, although only this one draws a capital. Every
+  // glyph in the series is set to the cap height a capital fixes and is given a cell of its own, so a
+  // share of that cell is the same instruction on all four — which is what a series needs, the frame
+  // being fixed for a whole batch the way the unit is.
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,
@@ -165,6 +170,7 @@ export const FONT_LOWER_CASE: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,
@@ -188,6 +194,7 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Digits and marks, each drawn once.
   posing: 'UNSTATED',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Digits',
@@ -216,6 +223,7 @@ export const FONT_SYMBOLS: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Symbols and operators, each drawn once.
   posing: 'UNSTATED',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,

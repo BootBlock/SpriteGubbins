@@ -1,7 +1,7 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
 import type { ScaleUnitFrame, SubjectCategory } from '../../types/subject.ts';
-import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
+import { SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
  * How the sheet is drawn, in the prose the prompt carries.
@@ -106,7 +106,8 @@ function shareText(profile: ShareProfile, frame: ScaleUnitFrame): string {
  * **A map of functions rather than of strings, because three of the four entries state a scale
  * *against something*** — and that something was `a full figure` on all thirteen categories, so a
  * glyph sheet, a tile field and a widget kit were each measured against a subject they cannot
- * contain. {@link SCALE_UNIT_TEXT} is the noun each supplies and {@link SCALE_UNIT_FRAME} the frame.
+ * contain. {@link SCALE_UNIT_TEXT} is the noun each supplies and `SheetPlan.scaleUnitFrame` the
+ * frame.
  * `CUSTOM` carries no range and therefore takes neither — it defers to the target-size line, which
  * names its quantity itself.
  *
@@ -156,11 +157,17 @@ function customAssembledText(unit: string): string {
  * sheet is priced in — the category being what decides that noun, never the sheet, for the reason
  * {@link SCALE_UNIT_TEXT} records. `CUSTOM` is the one that defers to the target-size field, so it
  * is the one that has to agree with what that field turns out to be naming.
+ *
+ * **The frame is handed in rather than looked up, and it is the sheet's answer where the noun is the
+ * category's** — see `SheetPlan.scaleUnitFrame`, which argues it sheet by sheet. A lookup here would
+ * have to be keyed on the category alone, which is the reading issue #216 was opened against: it has
+ * no answer that is true of both of BACKGROUND's plans.
  */
 export function resolutionProfileDescription(
   profile: ResolutionProfile,
   statesAssembled: boolean,
   category: SubjectCategory,
+  frame: ScaleUnitFrame,
 ): string {
   // `RESOLUTION_PROFILE_TEXT` stays exported even though nothing else imports it: it is still the map
   // `[DEFINE:RESOLUTION_PROFILE_DESCRIPTION]` is filled from for three of the four profiles, and
@@ -170,7 +177,7 @@ export function resolutionProfileDescription(
   const unit = SCALE_UNIT_TEXT[category];
   return profile === 'CUSTOM' && statesAssembled
     ? customAssembledText(unit)
-    : RESOLUTION_PROFILE_TEXT[profile](unit, SCALE_UNIT_FRAME[category]);
+    : RESOLUTION_PROFILE_TEXT[profile](unit, frame);
 }
 
 /**

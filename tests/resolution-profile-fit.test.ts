@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { resolutionProfileDescription } from '../src/constants/promptText/renderStyle.ts';
-import { SCALE_UNIT_FRAME } from '../src/constants/promptText/subject.ts';
 import { SHEET_CELL_PITCH } from '../src/constants/sheetCanvas.ts';
-import { modesFor, SHEET_INDEX_RANGE } from '../src/constants/sheetPlans/index.ts';
+import { modesFor, SHEET_INDEX_RANGE, sheetPlanFor } from '../src/constants/sheetPlans/index.ts';
+import type { SheetPlan } from '../src/types/components.ts';
 import { ASPECT_RATIOS, DIRECTION_SETS } from '../src/types/output.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import type { SubjectCategory } from '../src/types/subject.ts';
@@ -22,19 +22,25 @@ import { componentCountFor } from '../src/utils/componentSet.ts';
  * section asks for in the same prompt. Nothing in the app noticed, because the two facts were stated
  * in different sections by different records and neither had ever been multiplied out.
  *
- * **It reads the compiled line, not the constants behind it.** `SHARE_RANGE` and `SCALE_UNIT_FRAME`
- * are what produce that line, and a check that read them back would agree with itself whatever the
- * sentence said — the frame would decide both the wording and the formula. Parsing the sentence is
- * what makes the two independent: the arithmetic follows the words a generator is actually given,
- * so a range moved into the wrong frame fails here rather than passing quietly.
+ * **It reads the compiled line, not the constants behind it.** `SHARE_RANGE` and the sheet's own
+ * `scaleUnitFrame` are what produce that line, and a check that read them back would agree with
+ * itself whatever the sentence said — the frame would decide both the wording and the formula.
+ * Parsing the sentence is what makes the two independent: the arithmetic follows the words a
+ * generator is actually given, so a range moved into the wrong frame fails here rather than passing
+ * quietly.
  *
- * **What it deliberately does not claim.** A `SHEET` category draws at most one of its unit, so
- * `unitsDrawn` scores it zero and no assertion here reaches it — the claim that *this* category may
- * use that frame is `SCALE_UNIT_FRAME`'s to make, argued plan by plan, and `renderStyle.test.ts`
- * pins the answer it gave. BACKGROUND is where that silence is doing real work: its parallax set
- * draws nine band-shaped components, and a band is full-bleed wide and short, so the square-unit
- * approximation below would price it as though nine squares were on the page. Sizing a strip is a
- * question this model cannot answer, and issue #216 is where it is written down rather than guessed.
+ * **What it deliberately does not claim.** A `SHEET` sheet draws at most one of its unit, so
+ * `unitsDrawn` scores it zero and no assertion here reaches it — the claim that *this* sheet may use
+ * that frame is `SheetPlan.scaleUnitFrame`'s to make, argued sheet by sheet, and
+ * `utils/sheetPlans.test.ts` pins the answer each one gave.
+ *
+ * **BACKGROUND's parallax set is where that silence used to do real work, and it no longer has to.**
+ * Nine band-shaped components were priced against the sheet height, and a band is full-bleed wide and
+ * short, so the square-unit approximation below would have read nine squares onto the page — a
+ * shape this model cannot size, which is what issue #216 was opened to record. The answer was the
+ * frame rather than a recorded aspect: a cell is `SHEET_CELL_PITCH` times its own component on each
+ * axis, so a share of one carries no claim about shape at all, and the `CELL` arm below is the arm
+ * with no aspect in it.
  */
 
 /** The share the sentence states, as a fraction, at each end of its range. */
@@ -72,8 +78,8 @@ function shareOf(sentence: string): Share {
  * unit, so no number of components makes a share of the sheet height too large. The pieces on the
  * page are fractions of it, not copies of it.
  */
-function unitsDrawn(category: SubjectCategory, components: number): number {
-  return SCALE_UNIT_FRAME[category] === 'CELL' ? components : 0;
+function unitsDrawn(plan: SheetPlan, components: number): number {
+  return plan.scaleUnitFrame === 'CELL' ? components : 0;
 }
 
 /**
@@ -111,17 +117,35 @@ function coverage(share: number, framedBy: Share['framedBy'], units: number, asp
  */
 const COVERAGE_CEILING = 1 / SHEET_CELL_PITCH ** 2;
 
-/** Every sheet a category can be asked for, which is where the component count comes from. */
-function componentCounts(category: SubjectCategory): readonly number[] {
-  const counts: number[] = [];
+/** One sheet, with the count it asks for and the frame it prices that count in. */
+interface Sheet {
+  readonly plan: SheetPlan;
+  readonly components: number;
+}
+
+/**
+ * Every sheet a category can be asked for, which is where both halves of the arithmetic come from.
+ *
+ * The plan travels with its count rather than being looked up beside it, because the frame is the
+ * *sheet's* answer and not the category's — see `SheetPlan.scaleUnitFrame`. Pairing a count from one
+ * pairing with a frame from another is exactly the mistake that would hide the case this suite
+ * exists for.
+ */
+function sheetsOf(category: SubjectCategory): readonly Sheet[] {
+  const sheets: Sheet[] = [];
   for (const mode of modesFor(category)) {
     for (const directions of DIRECTION_SETS) {
       for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
-        counts.push(componentCountFor(category, mode, directions, sheetIndex, []));
+        sheets.push({
+          // An index past the end of a short series resolves to the first sheet, in both of these —
+          // so the plan and the count stay the same sheet's whatever the loop asks for.
+          plan: sheetPlanFor(category, mode, directions, sheetIndex),
+          components: componentCountFor(category, mode, directions, sheetIndex, []),
+        });
       }
     }
   }
-  return counts;
+  return sheets;
 }
 
 describe('the resolution profile against the component count', () => {
@@ -132,17 +156,19 @@ describe('the resolution profile against the component count', () => {
     let scored = 0;
 
     for (const category of SUBJECT_CATEGORIES) {
-      for (const components of componentCounts(category)) {
-        const units = unitsDrawn(category, components);
+      for (const { plan, components } of sheetsOf(category)) {
+        const units = unitsDrawn(plan, components);
         for (const profile of SHARE_BEARING) {
-          const { low, high, framedBy } = shareOf(resolutionProfileDescription(profile, false, category));
+          const { low, high, framedBy } = shareOf(
+            resolutionProfileDescription(profile, false, category, plan.scaleUnitFrame),
+          );
           for (const ratio of ASPECT_RATIOS) {
             for (const share of [low, high]) {
               const spent = coverage(share, framedBy, units, widthBiasFor(ratio));
               if (units > 0) scored += 1;
               if (spent <= COVERAGE_CEILING) continue;
               breaches.push(
-                `${category} / ${profile} / ${ratio}: ${String(components)} components at ` +
+                `${category} / ${plan.name} / ${profile} / ${ratio}: ${String(components)} components at ` +
                   `${String(Math.round(share * 100))}% of the ${framedBy === 'CELL' ? 'cell' : 'sheet'} ` +
                   `cover ${spent.toFixed(2)} of the page`,
               );
@@ -152,12 +178,12 @@ describe('the resolution profile against the component count', () => {
       }
     }
 
-    // Non-vacuous: the sheet-framed categories score zero by construction, so a run that scored
-    // nothing at all would mean the cell-framed ones had stopped being reached rather than that they
-    // all fit. Run against the wording this suite was written for — every category framed by the
-    // sheet, on the ranges that shipped — it reports all seven then framed that way, on all four
-    // aspect ratios each.
-    expect(scored, 'no category was scored as drawing its own scale unit').toBeGreaterThan(0);
+    // Non-vacuous: the sheet-framed sheets score zero by construction, so a run that scored nothing
+    // at all would mean the cell-framed ones had stopped being reached rather than that they all
+    // fit. Run against the wording this suite was written for — every category framed by the sheet,
+    // on the ranges that shipped — it reports all seven then framed that way, on all four aspect
+    // ratios each.
+    expect(scored, 'no sheet was scored as drawing its own scale unit').toBeGreaterThan(0);
     expect(breaches, `the stated scale does not fit:\n${breaches.join('\n')}`).toEqual([]);
   });
 });

@@ -33,6 +33,7 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The working end is drawn in two states, and the consumable part full and depleted.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -81,6 +82,7 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     targetQuantity: 'ASSEMBLED',
     // A yaw is the camera turning rather than the item moving, so the repeated entries are views.
     posing: 'UNSTATED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: 'Directional core',

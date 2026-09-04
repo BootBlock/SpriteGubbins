@@ -37,6 +37,18 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   // Every ×2 and ×3 entry is a set of distinct pieces — two band profiles, a broad shaft and a
   // narrow one — rather than one piece drawn at the positions it takes.
   posing: 'UNSTATED',
+  // The cell, and this plan is why the frame is the sheet's answer rather than the category's. Its
+  // `Depth bands` group draws nine bands, so nine copies of the scale unit are on the page — and a
+  // share of the *sheet* height is a rule the component count then contradicts, which is what left
+  // this entry settled by the lesser of two wrong answers until issue #216. A share of a band's own
+  // cell cannot be contradicted that way: cells tile the page by construction, so N of them spend
+  // the same fraction of it whatever N is.
+  //
+  // It is also the only frame a band can be stated in at all. A cell is `SHEET_CELL_PITCH` times its
+  // component on each axis, so it carries that component's aspect — where turning a share of the
+  // sheet into an area needs the unit to be about as square as the page, and a band is full-bleed
+  // wide and short by definition.
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Depth bands',
@@ -167,6 +179,13 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // The ×2 and ×3 entries name pieces that differ from each other — the left half of the scene and
   // the right, three sizes of standing feature — rather than one piece at several positions.
   posing: 'UNSTATED',
+  // The sheet, where the parallax set above takes the cell, and the pair is the split that made the
+  // frame per sheet. No band is drawn here — the scene panel is a sky plane, three masses and two
+  // edge occluders, with dressing and atmosphere over them, and the assembly sentence says outright
+  // that nothing repeats — so there is no cell in this grid for one to be a share of. Claiming one
+  // would state a rule for a component the page does not hold, one line above the target-size line
+  // saying no component is the assembled size.
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: 'Scene panel',

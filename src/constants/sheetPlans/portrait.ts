@@ -42,6 +42,7 @@ export const PORTRAIT_EXPRESSION_LIBRARY: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // One face, drawn once for each expression it wears.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,

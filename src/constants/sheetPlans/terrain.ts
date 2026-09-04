@@ -41,6 +41,7 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   targetQuantity: 'COMPONENT',
   // Every tile is a different tile: the variants differ in scatter, the transitions in which edge they carry.
   posing: 'UNSTATED',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,
@@ -120,6 +121,11 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
   // The ×2 and ×3 entries are distinct pieces — a straight run and one that breaks the line, a full
   // drop and a half-height ledge, three sizes of boulder — not one piece at several positions.
   posing: 'UNSTATED',
+  // The cell, as the blend set takes, although this sheet draws no ground tile by name. Every piece
+  // on it — a lip, a face, a foot strip — is a tile-scale thing standing on the ground plane, which
+  // is what the category guard means by “a ground tile or a landform piece”. Each gets a cell the
+  // unit's own size, so a share of that cell says the same thing on both sheets of this category.
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Elevation edge',

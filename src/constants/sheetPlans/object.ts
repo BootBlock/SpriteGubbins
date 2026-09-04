@@ -24,6 +24,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The hatch is drawn closed, part-open and fully open, and the subassembly at three points of its travel.
   posing: 'PER_POSITION',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -99,6 +100,7 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     targetQuantity: 'ASSEMBLED',
     // The moving parts are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: 'Directional core',
@@ -143,6 +145,7 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   targetQuantity: 'ASSEMBLED',
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,

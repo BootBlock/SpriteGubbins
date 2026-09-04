@@ -1,15 +1,29 @@
 import { describe, expect, it } from 'vitest';
 import type { ResolutionProfile } from '../../types/output.ts';
 import { RESOLUTION_PROFILES } from '../../types/output.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
-import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
+import { SCALE_UNIT_FRAMES, SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { statedTargetSize } from '../../utils/componentTargetSize.ts';
 import { parseTargetSize } from '../../utils/targetSize.ts';
 import { minFeatureSize, resolutionProfileDescription } from './renderStyle.ts';
-import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
+import { SCALE_UNIT_TEXT } from './subject.ts';
 
 /** The three profiles that *are* a scale, and so state a range against a unit. `CUSTOM` is not one. */
 const SCALE_BEARING = ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const;
+
+/**
+ * Both frames, for the assertions the frame is not the subject of.
+ *
+ * The frame is the sheet's answer and no longer the category's — see `SheetPlan.scaleUnitFrame` —
+ * so a test about the *unit* has to be run under both rather than under whichever one its category
+ * happens to take. Which sheet takes which is pinned in `utils/sheetPlans.test.ts`, against a table
+ * written out there for the reason this file writes its own sentences out.
+ *
+ * The union's own array rather than a pair written down here, because this is a *sweep domain* and
+ * not an expectation: a third frame has to reach every loop below, where a written-out pair would
+ * leave them all sweeping two and say nothing about it. `FRAMED` beneath is the opposite case and is
+ * written out on purpose.
+ */
+const BOTH_FRAMES = SCALE_UNIT_FRAMES;
 
 /**
  * The figure alone, which is what the rungs below are about — the unit has its own test.
@@ -121,27 +135,38 @@ describe('minFeatureSize', () => {
   it('states what CUSTOM works to, and never names a component on a sheet that has no such size', () => {
     // The two are printed one line apart in section 2, so a flat lookup here told the generator to
     // work to a component size directly above a line stating a size and saying no component is it.
-    expect(resolutionProfileDescription('CUSTOM', false, 'CHARACTER')).toContain('target component size');
-    expect(resolutionProfileDescription('CUSTOM', true, 'CHARACTER')).toContain('target assembled size');
-    expect(resolutionProfileDescription('CUSTOM', true, 'CHARACTER')).not.toContain('component size');
+    expect(resolutionProfileDescription('CUSTOM', false, 'CHARACTER', 'SHEET')).toContain(
+      'target component size',
+    );
+    expect(resolutionProfileDescription('CUSTOM', true, 'CHARACTER', 'SHEET')).toContain(
+      'target assembled size',
+    );
+    expect(resolutionProfileDescription('CUSTOM', true, 'CHARACTER', 'SHEET')).not.toContain(
+      'component size',
+    );
 
     // The three that *are* a scale read the same either way — the assembled answer is CUSTOM's
     // alone, because CUSTOM is the only profile that defers to the field.
     for (const profile of SCALE_BEARING) {
-      expect(resolutionProfileDescription(profile, true, 'CHARACTER')).toBe(
-        resolutionProfileDescription(profile, false, 'CHARACTER'),
-      );
+      for (const frame of BOTH_FRAMES) {
+        expect(resolutionProfileDescription(profile, true, 'CHARACTER', frame)).toBe(
+          resolutionProfileDescription(profile, false, 'CHARACTER', frame),
+        );
+      }
     }
   });
 
   it('states CUSTOM the same way for every category, because it names no unit at all', () => {
     // `CUSTOM` defers to the target-size line, which names its own quantity — so it is the one
     // profile the category cannot move, and a unit interpolated into it would be a second answer to
-    // a question that line has already answered.
+    // a question that line has already answered. The frame cannot move it either, for the same
+    // reason: `CUSTOM` states no share, so it has nothing to measure against anything.
     for (const category of SUBJECT_CATEGORIES) {
-      expect(resolutionProfileDescription('CUSTOM', false, category)).toBe(
-        resolutionProfileDescription('CUSTOM', false, 'CHARACTER'),
-      );
+      for (const frame of BOTH_FRAMES) {
+        expect(resolutionProfileDescription('CUSTOM', false, category, frame)).toBe(
+          resolutionProfileDescription('CUSTOM', false, 'CHARACTER', 'SHEET'),
+        );
+      }
     }
   });
 });
@@ -157,7 +182,11 @@ describe('resolutionProfileDescription — the unit the range is stated against'
   it('names this category’s own unit in every profile that carries a range', () => {
     for (const category of SUBJECT_CATEGORIES) {
       for (const profile of SCALE_BEARING) {
-        expect(resolutionProfileDescription(profile, false, category)).toContain(SCALE_UNIT_TEXT[category]);
+        for (const frame of BOTH_FRAMES) {
+          expect(resolutionProfileDescription(profile, false, category, frame)).toContain(
+            SCALE_UNIT_TEXT[category],
+          );
+        }
       }
     }
   });
@@ -175,8 +204,10 @@ describe('resolutionProfileDescription — the unit the range is stated against'
       if (category === 'CHARACTER') continue;
       for (const profile of RESOLUTION_PROFILES) {
         for (const statesAssembled of [true, false]) {
-          const stated = resolutionProfileDescription(profile, statesAssembled, category);
-          expect(stated, `${category} / ${profile} / assembled=${statesAssembled}`).not.toContain('figure');
+          for (const frame of BOTH_FRAMES) {
+            const stated = resolutionProfileDescription(profile, statesAssembled, category, frame);
+            expect(stated, `${category} / ${profile} / assembled=${statesAssembled}`).not.toContain('figure');
+          }
         }
       }
     }
@@ -184,53 +215,44 @@ describe('resolutionProfileDescription — the unit the range is stated against'
 
   it('states the whole sentence a reader sees, not only the unit it was handed', () => {
     // The assertion above reads the same map the function reads, so it can only catch the
-    // interpolation being deleted outright. These five are written out, so the wording is pinned by
+    // interpolation being deleted outright. These are written out, so the wording is pinned by
     // something that does not move when the map does — both frames, both share rungs, the absolute
-    // rung that takes no frame, and the assembled wording only `CUSTOM` reaches.
-    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'CHARACTER')).toBe(
+    // rung that takes no frame, the assembled wording only `CUSTOM` reaches, and one category's unit
+    // under each frame, which is the pair issue #216 settled.
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'CHARACTER', 'SHEET')).toBe(
       'High resolution — a full figure occupies 25–35% of the sheet height',
     );
-    expect(resolutionProfileDescription('MID_RESOLUTION', false, 'FONT')).toBe(
+    expect(resolutionProfileDescription('MID_RESOLUTION', false, 'FONT', 'CELL')).toBe(
       'Mid resolution — one capital glyph occupies 35–50% of its cell height in the exploded grid',
     );
-    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'ICON')).toBe(
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'ICON', 'CELL')).toBe(
       'High resolution — one icon occupies 50–65% of its cell height in the exploded grid',
     );
-    expect(resolutionProfileDescription('RETRO_16_BIT', false, 'EFFECT')).toBe(
+    // The sentence the parallax set now carries, which is what issue #216 settled: the same category
+    // reads the second way on its layer library, where no band is drawn.
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'BACKGROUND', 'CELL')).toBe(
+      'High resolution — one parallax band occupies 50–65% of its cell height in the exploded grid',
+    );
+    expect(resolutionProfileDescription('HIGH_RESOLUTION', false, 'BACKGROUND', 'SHEET')).toBe(
+      'High resolution — one parallax band occupies 25–35% of the sheet height',
+    );
+    expect(resolutionProfileDescription('RETRO_16_BIT', false, 'EFFECT', 'CELL')).toBe(
       '16-bit retro scale — one frame of the effect is roughly 64–96 pixels tall',
     );
-    expect(resolutionProfileDescription('CUSTOM', true, 'VEHICLE')).toBe(
+    expect(resolutionProfileDescription('CUSTOM', true, 'VEHICLE', 'SHEET')).toBe(
       'Custom — work to the target assembled size stated below, drawing every component at the share of a full vehicle it occupies',
     );
   });
 
   /**
-   * Which frame each category takes, written out rather than read back off `SCALE_UNIT_FRAME`.
+   * The two sentences each frame produces, written out rather than read back off `SHARE_RANGE`.
    *
-   * **The whole claim of the change is in this column**, so an expectation chosen by consulting the
-   * same record `resolutionProfileDescription` consults asserts nothing about it — both sides move
-   * together, and a category flipped back to `SHEET` passes. That is exactly the defect: TERRAIN put
-   * back on the sheet frame is the twenty-three-tile case the fix was reported for.
-   *
-   * The two entries worth reading are INTERFACE and BACKGROUND. Each draws its unit on one of its two
-   * plans and assembles into it on the other, so each takes `SHEET` — `SCALE_UNIT_FRAME` argues both.
+   * **The whole claim of the frame is in these four strings**, so an expectation built from the same
+   * record `resolutionProfileDescription` reads would assert nothing: both sides move together, and
+   * a rung swapped between the frames passes. Which *sheet* is owed which frame is the other half,
+   * and it is pinned in `utils/sheetPlans.test.ts` — a table written out there for this reason, and
+   * kept there because it is a claim about what each plan draws rather than about wording.
    */
-  const CATEGORY_FRAME: Readonly<Record<SubjectCategory, 'CELL' | 'SHEET'>> = {
-    CHARACTER: 'SHEET',
-    CREATURE: 'SHEET',
-    OBJECT: 'SHEET',
-    ITEM: 'SHEET',
-    BUILDING: 'SHEET',
-    VEHICLE: 'SHEET',
-    EFFECT: 'CELL',
-    INTERFACE: 'SHEET',
-    TERRAIN: 'CELL',
-    PORTRAIT: 'CELL',
-    ICON: 'CELL',
-    BACKGROUND: 'SHEET',
-    FONT: 'CELL',
-  };
-
   const FRAMED = {
     SHEET: {
       HIGH_RESOLUTION: '25–35% of the sheet height',
@@ -242,42 +264,35 @@ describe('resolutionProfileDescription — the unit the range is stated against'
     },
   } as const;
 
-  it('states each category’s range in the frame that category is owed', () => {
-    // The range belongs to the profile *within a frame*: it is the frame that follows the category,
-    // and only because a share of the sheet height cannot be stated about a unit the sheet draws one
-    // of per component. A range that varied by category inside one frame would be a third thing
-    // moving.
+  it('states the range in the frame it is handed, for every category', () => {
+    // The range belongs to the profile *within a frame*: it is the frame that follows the sheet, and
+    // only because a share of the sheet height cannot be stated about a unit that sheet draws one of
+    // per component. A range that varied by category inside one frame would be a third thing moving.
     for (const category of SUBJECT_CATEGORIES) {
-      for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const) {
-        expect(resolutionProfileDescription(profile, false, category), `${category} / ${profile}`).toContain(
-          FRAMED[CATEGORY_FRAME[category]][profile],
+      for (const frame of BOTH_FRAMES) {
+        for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const) {
+          expect(
+            resolutionProfileDescription(profile, false, category, frame),
+            `${category} / ${profile} / ${frame}`,
+          ).toContain(FRAMED[frame][profile]);
+        }
+        // The absolute rung takes no frame at all, which is why it is the one the defect never
+        // reached — and why it reads the same under both.
+        expect(resolutionProfileDescription('RETRO_16_BIT', false, category, frame)).toContain(
+          'roughly 64–96 pixels tall',
         );
       }
-      // The absolute rung takes no frame at all, which is why it is the one the defect never reached.
-      expect(resolutionProfileDescription('RETRO_16_BIT', false, category)).toContain(
-        'roughly 64–96 pixels tall',
-      );
     }
   });
 
-  it('agrees with the record the compiler actually reads', () => {
-    // The table above is the claim; this is what stops it becoming a second, silently diverging copy
-    // of `SCALE_UNIT_FRAME`. Moving a category has to be done in both places, which is the point —
-    // one of them is a decision and the other is the record of it.
-    for (const category of SUBJECT_CATEGORIES) {
-      expect(SCALE_UNIT_FRAME[category], category).toBe(CATEGORY_FRAME[category]);
-    }
-  });
-
-  it('never prices a unit the sheet draws per component against the sheet itself', () => {
+  it('never prices a unit against the sheet when it was handed the cell', () => {
     // The defect: twenty-eight icons were each told to occupy 25–35% of the sheet height, which is
     // 1.75 sheet heights squared of artwork on a 16:9 page measuring 1.78 — more than the whole
     // surface, with nothing left for the spacing the same prompt asks for two sections later. The
     // arithmetic is held in `tests/resolution-profile-fit.test.ts`; this is the wording half of it.
     for (const category of SUBJECT_CATEGORIES) {
-      if (CATEGORY_FRAME[category] !== 'CELL') continue;
       for (const profile of ['HIGH_RESOLUTION', 'MID_RESOLUTION'] as const) {
-        expect(resolutionProfileDescription(profile, false, category), category).not.toContain(
+        expect(resolutionProfileDescription(profile, false, category, 'CELL'), category).not.toContain(
           'of the sheet height',
         );
       }

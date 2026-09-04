@@ -5,7 +5,7 @@ import * as promptText from '../src/constants/promptText/index.ts';
 import { PROMPT_TEMPLATE } from '../src/constants/promptTemplate.ts';
 import { SHEET_INDEX_RANGE, sheetPlanFor } from '../src/constants/sheetPlans/index.ts';
 import { DIRECTIONAL_MODES, DIRECTION_SETS, RESOLUTION_PROFILES } from '../src/types/output.ts';
-import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
+import { SCALE_UNIT_FRAMES, SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 
 /**
  * Whether any prose the prompt interpolates still writes a section number by hand.
@@ -109,10 +109,15 @@ function composedProse(): readonly string[] {
     ...Object.values(HARDWARE_PROFILES).flatMap((profile) =>
       profile === null ? [] : [promptText.describeHardware(profile)],
     ),
+    // Both frames, because the frame is the sheet's answer rather than the category's and either can
+    // reach any category's unit — see `SheetPlan.scaleUnitFrame`. Sweeping one would leave the cell
+    // wording, which is the half that names the exploded grid, uncited-for.
     ...SUBJECT_CATEGORIES.flatMap((category) =>
       RESOLUTION_PROFILES.flatMap((profile) =>
-        [true, false].map((statesAssembled) =>
-          promptText.resolutionProfileDescription(profile, statesAssembled, category),
+        [true, false].flatMap((statesAssembled) =>
+          SCALE_UNIT_FRAMES.map((frame) =>
+            promptText.resolutionProfileDescription(profile, statesAssembled, category, frame),
+          ),
         ),
       ),
     ),
