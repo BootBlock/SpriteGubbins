@@ -38,7 +38,7 @@ interface PaletteLockControlsProps {
    */
   readonly superseded: string | null;
   /**
-   * Whether a newer result is on its way, which is what {@link resultImage} may be lagging behind.
+   * Whether a newer result is on its way, which is what {@link resultPalette} may be lagging behind.
    *
    * Locking is refused while it is, and that is not tidiness: the preview deliberately keeps the
    * previous sheet up while the next is computed, so a reader who moves a dial and presses Lock in

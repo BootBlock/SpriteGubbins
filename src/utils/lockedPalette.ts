@@ -80,7 +80,7 @@ export function locateEntries(entries: readonly Rgba[]): readonly LocatedEntry[]
  *
  * Squared, because the caller compares it with a squared threshold: the square root would be one per
  * distinct colour of a sheet and would change no comparison, distance being monotonic in its square.
- * The earliest entry takes a tie, which under {@link lockPaletteFrom}'s population order means the
+ * The earliest entry takes a tie, which under `paletteEntriesFrom`'s population order means the
  * more-used of two equidistant colours wins.
  *
  * **Colour only, coverage left out**, as the lock itself is: the entries were made opaque when they

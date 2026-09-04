@@ -16,7 +16,7 @@ import { createImage, FULLY_OPAQUE, pixelOffset, writePixel } from './imageData.
  *
  * **Every block is fully opaque.** A palette says which colours exist; how much of one a pixel gets
  * is a statement about a silhouette, which belongs to the artwork. The entries arrive opaque from
- * `imagePaletteEntries` in any case, and a swatch drawn with a partial alpha would come back from a
+ * `paletteEntriesFrom` in any case, and a swatch drawn with a partial alpha would come back from a
  * sampler as a colour nobody chose.
  *
  * **How wide it may get is the caller’s to decide**, and `PaletteDownload` decides it: the swatch is
@@ -26,7 +26,7 @@ import { createImage, FULLY_OPAQUE, pixelOffset, writePixel } from './imageData.
  * **A palette with no entries is not this function’s to handle**, and no guard is written for one.
  * A browser’s `ImageData` refuses a zero width outright, so the only thing a guard could return is a
  * picture of nothing under a name that says it is a palette. `PaletteDownload` renders no button
- * without colours to write, exactly as the lock button refuses a sheet with nothing opaque in it.
+ * without colours to write, exactly as the lock button is held shut on a sheet with no colours in it.
  *
  * Pure, as everything in this directory is.
  */

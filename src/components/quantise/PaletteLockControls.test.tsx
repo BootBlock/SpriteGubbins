@@ -20,7 +20,7 @@ import { PaletteLockControls } from './PaletteLockControls.tsx';
 /**
  * The colours a settled result was read to hold, in the order the transform reports them.
  *
- * The reading itself is `imagePaletteEntries` and is tested there. What this panel is answerable
+ * The reading itself is `paletteEntriesFrom` and is tested there. What this panel is answerable
  * for is holding exactly the list it was handed, in the order it arrived.
  */
 const RESULT: readonly Rgba[] = [
@@ -145,7 +145,11 @@ describe('PaletteLockControls', () => {
     rerender(panel({ resultPalette: [] }));
 
     expect(useQuantiseStore.getState().lockedPalette?.entries).toEqual(RESULT);
+    // The badge still names what is held, the re-lock is shut, and the reason is stated — a held
+    // palette does not suppress the notice, which is the reader most likely to want it.
+    expect(screen.getByText(/2 entries held from armour.png/)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Re-lock from this sheet' })).toBeDisabled();
+    expect(screen.getByText(PALETTE_LOCK_GUIDANCE.noColours)).toBeInTheDocument();
   });
 
   it('names the studio setting the held palette has overtaken, and only then', () => {

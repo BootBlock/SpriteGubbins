@@ -229,7 +229,7 @@ export type ColorReduction =
  * fact about that sheet, not about this one's palette.
  */
 export interface LockedPalette {
-  /** The colours, most-used first, opaque — see `lockPaletteFrom` for the order and the dedupe. */
+  /** The colours, most-used first, opaque — see `paletteEntriesFrom` for the order and the dedupe. */
   readonly entries: readonly Rgba[];
   /** The name of the studio colour setting in force when the palette was taken — a `ColorPlan.setting`. */
   readonly setting: string;

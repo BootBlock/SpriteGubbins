@@ -37,15 +37,20 @@ export const PALETTE_LOCK_GUIDANCE = {
    * There is a result, and it has no colours in it, so there is nothing a lock could hold.
    *
    * Shown rather than left to the greyed-out button, and the wording is why: the state is not the
-   * control being unavailable but the *sheet* being empty, and the two ways into it are both
-   * things the reader can act on. A blank generation is a common first result, and a key colour
-   * tolerance high enough to take the whole sheet is a dial three panels up — neither is
+   * control being unavailable but the *sheet* being empty, and what emptied it is usually
+   * something the reader can act on. A blank generation is a likely first result, and a key colour
+   * tolerance set high enough to take the artwork is a dial three panels up — neither is
    * discoverable from a button that has simply stopped responding.
+   *
+   * **The two causes are named as symptoms, not as a diagnosis**, because the panel cannot tell
+   * which it is looking at and keying need not even be on: a source that arrived transparent
+   * reaches the same state by neither route, and a notice that sent that reader to the tolerance
+   * would be pointing at a control the pipeline never ran.
    *
    * The condition is literally that every pixel of the result is transparent. `colorHistogram`
    * counts a partly-transparent pixel, so a sheet at half coverage still has colours and still
-   * locks; only a field the keying took whole reaches this.
+   * locks; only a sheet with nothing left on it reaches this.
    */
   noColours:
-    'This sheet’s result has no colours to hold, because every pixel of it is transparent. Either the generation came back as nothing but its background key, or the key colour tolerance is taking the whole sheet.',
+    'This sheet’s result has no colours to hold, because every pixel of it is transparent. A generation that came back as nothing but its background key reads this way, and so does a key colour tolerance set high enough to take the artwork along with the field.',
 } as const;
