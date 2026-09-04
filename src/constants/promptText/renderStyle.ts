@@ -1,6 +1,6 @@
 import type { RenderStyle } from '../../types/rendering.ts';
 import type { ResolutionProfile, StatedTargetSize, SurfaceDetail } from '../../types/output.ts';
-import type { ScaleUnitKind, SubjectCategory } from '../../types/subject.ts';
+import type { ScaleUnitFrame, SubjectCategory } from '../../types/subject.ts';
 import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
@@ -39,34 +39,40 @@ type ShareProfile = 'HIGH_RESOLUTION' | 'MID_RESOLUTION';
 /**
  * The share each of those two permits, per frame, as the two percentages the prose reads out.
  *
- * **Numbers rather than four written sentences, because the fit these ranges have to satisfy is
- * arithmetic** — `N` units at the bottom of a range have to leave the sheet room for the spacing the
- * layout section asks for in the same prompt. The figures are one record here rather than four
- * sentences so that changing a rung is one edit and the two frames stay comparable; what checks the
- * arithmetic is `tests/resolution-profile-fit.test.ts`, and it reads the *compiled line* rather than
- * this record, because what a generator acts on is the sentence and not the constant behind it.
+ * **Numbers rather than four written sentences**, so that changing a rung is one edit and the two
+ * frames stay comparable. What checks them is `tests/resolution-profile-fit.test.ts`, and it reads
+ * the *compiled line* rather than this record, because what a generator acts on is the sentence and
+ * not the constant behind it.
  *
- * **`REFERENCE` keeps the pair that shipped**, because on a sheet whose unit is a whole nothing on
- * the page *is*, the sheet height is a frame no component count can argue with. `DRAWN` is the new
- * pair, and every figure in it is derived from that one rather than chosen:
+ * **`SHEET` keeps the pair that shipped**, because on a sheet that draws at most one of its unit the
+ * sheet height is a frame no component count can argue with. `CELL` is the new pair, and every
+ * figure in it is derived rather than chosen:
  *
  * - The frame is the unit's **own cell** in the exploded grid. Cells tile the sheet by construction,
  *   so `N` units each filling `f` of their cell cover `f²` of the page whatever `N` is and whatever
  *   aspect the reader picked — which is the property that makes the contradiction impossible rather
  *   than merely smaller.
+ * - **The top comes from `SHEET_CELL_PITCH` in `constants/sheetCanvas.ts`, which is where this app
+ *   already answers the question.** That constant gives each component a cell 1.5× its own size, and
+ *   says in as many words that the half-a-component gutter it buys "is what generously spaced looks
+ *   like at sprite scale" — the layout section's own phrase, and the same exploded grid
+ *   `nativeGridScale` seats one cell per component in. So a component may fill at most `1 / 1.5` of
+ *   its cell, and 65 is the round number under that. Re-deriving a spacing budget here instead is how
+ *   two constants in `src` end up answering one template sentence with different numbers, which is
+ *   what the first pass at this record did. **The figure is written out and the coupling is held by
+ *   the fit test**, whose ceiling is `1 / SHEET_CELL_PITCH ** 2`: a rung raised past 67% fails there.
+ *   An expression here would compute a round number from a constant that is not itself round, which
+ *   is a worse thing for a reader to meet in the prose the prompt carries.
  * - The two rungs stay **contiguous**, as `25–35` and `18–25` are, so the ladder has no gap for a
  *   configuration to fall into.
- * - `MID`'s midpoint is 0.73 of `HIGH`'s, against the 0.72 the sheet-height pair carries. The
+ * - `MID`'s midpoint is then 0.74 of `HIGH`'s, against the 0.72 the sheet-height pair carries. The
  *   profile is a choice about relative size, and that ratio is what the choice has always been.
- * - `HIGH` tops out at 85% rather than higher because the top of the top rung is the tightest grid
- *   the profile permits, and it still has to read as "generously and uniformly spaced": 0.85² is
- *   0.72 of the page covered, which the fit test holds under three-quarters.
  */
 const SHARE_RANGE: Readonly<
-  Record<ShareProfile, Readonly<Record<ScaleUnitKind, readonly [number, number]>>>
+  Record<ShareProfile, Readonly<Record<ScaleUnitFrame, readonly [number, number]>>>
 > = {
-  HIGH_RESOLUTION: { DRAWN: [65, 85], REFERENCE: [25, 35] },
-  MID_RESOLUTION: { DRAWN: [45, 65], REFERENCE: [18, 25] },
+  HIGH_RESOLUTION: { CELL: [50, 65], SHEET: [25, 35] },
+  MID_RESOLUTION: { CELL: [35, 50], SHEET: [18, 25] },
 };
 
 /**
@@ -79,13 +85,13 @@ const SHARE_RANGE: Readonly<
  * grid" is that section's own phrase for it, so the reference survives whatever number the heading
  * takes.
  */
-const SHARE_FRAME: Readonly<Record<ScaleUnitKind, (range: string) => string>> = {
-  DRAWN: (range) => `occupies ${range} of its cell height in the exploded grid`,
-  REFERENCE: (range) => `occupies ${range} of the sheet height`,
+const SHARE_FRAME: Readonly<Record<ScaleUnitFrame, (range: string) => string>> = {
+  CELL: (range) => `occupies ${range} of its cell height in the exploded grid`,
+  SHEET: (range) => `occupies ${range} of the sheet height`,
 };
 
 /** The pair as the reader sees it, with the en dash every other range in the prompt is written with. */
-function shareText(profile: ShareProfile, frame: ScaleUnitKind): string {
+function shareText(profile: ShareProfile, frame: ScaleUnitFrame): string {
   const [low, high] = SHARE_RANGE[profile][frame];
   return SHARE_FRAME[frame](`${String(low)}–${String(high)}%`);
 }
@@ -109,7 +115,7 @@ function shareText(profile: ShareProfile, frame: ScaleUnitKind): string {
  * exactly as it stood.
  */
 export const RESOLUTION_PROFILE_TEXT: Readonly<
-  Record<ResolutionProfile, (unit: string, frame: ScaleUnitKind) => string>
+  Record<ResolutionProfile, (unit: string, frame: ScaleUnitFrame) => string>
 > = {
   HIGH_RESOLUTION: (unit, frame) => `High resolution — ${unit} ${shareText('HIGH_RESOLUTION', frame)}`,
   MID_RESOLUTION: (unit, frame) => `Mid resolution — ${unit} ${shareText('MID_RESOLUTION', frame)}`,
@@ -194,16 +200,17 @@ const PROFILE_MIN_FEATURE: Readonly<Record<Exclude<ResolutionProfile, 'CUSTOM'>,
  * sprites at. `MID_RESOLUTION` tops out near 256 on the same sheet and `HIGH_RESOLUTION` begins at
  * that figure, so the second boundary is that number exactly.
  *
- * **Those two landmarks are the `REFERENCE` frame's reading, and the `DRAWN` frame's is lower.** A
- * default ICON sheet is twenty-eight components on a 16:9 page, so its grid is about seven cells by
- * four and a cell on a 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then 115–166 px and
- * `HIGH_RESOLUTION` 166–218. The gap the first boundary sits in narrows to 96–115 on such a sheet,
- * and 128 is above it rather than inside it. **The rungs are unchanged anyway**, and deliberately:
- * these two boundaries key on a size the *reader* typed into the target-size field, which no category
- * and no profile moves — the profiles are landmarks that were used to pick a round number, not inputs.
- * Re-cutting the ladder because one landmark moved would change what `CUSTOM` answers for every
- * stated size in the app, which is a different question from the one section 2's share was wrong
- * about.
+ * **Those two landmarks are the `SHEET` frame's reading, and the `CELL` frame's is lower.** A default
+ * ICON sheet is twenty-eight components on a 16:9 page, so its grid is about seven cells by four and
+ * a cell on the same 1024-pixel sheet is 256 px tall: `MID_RESOLUTION` is then 90–128 px and
+ * `HIGH_RESOLUTION` 128–166. Both landmarks move — the gap the first boundary sat in closes, since
+ * 128 now lands exactly where `MID_RESOLUTION` gives way to `HIGH_RESOLUTION`, and `RETRO_16_BIT`'s
+ * 64–96 overlaps the bottom of `MID_RESOLUTION` rather than sitting clear below it. **The rungs are
+ * unchanged anyway**, and deliberately: these two boundaries key on a size the *reader* typed into
+ * the target-size field, which no category and no profile moves — the profiles are landmarks that
+ * were used to pick a round number, not inputs. Re-cutting the ladder because a landmark moved would
+ * change what `CUSTOM` answers for every stated size in the app, which is a different question from
+ * the one section 2's share was wrong about.
  */
 const CUSTOM_MIN_FEATURE = [
   { upTo: 128, size: '1 × 1' },

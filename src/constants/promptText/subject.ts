@@ -1,4 +1,4 @@
-import type { ScaleUnitKind, SubjectCategory } from '../../types/subject.ts';
+import type { ScaleUnitFrame, SubjectCategory } from '../../types/subject.ts';
 
 /**
  * Section 0's worked example of one consistent scale, per category.
@@ -74,7 +74,7 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * which is the point: a reference nothing on the page *is* cannot argue with the component count.
  *
  * Each entry is a singular noun phrase carrying its own article, so it reads in all three frames —
- * "… occupies 25–35% of the sheet height", "… occupies 65–85% of its cell height in the exploded
+ * "… occupies 25–35% of the sheet height", "… occupies 50–65% of its cell height in the exploded
  * grid" and "… is roughly 64–96 pixels tall".
  */
 export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
@@ -118,39 +118,56 @@ export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
 };
 
 /**
- * Whether each category's sheet *draws* the unit above, which is what the share-bearing profiles
- * state their range against.
+ * What the share-bearing profiles measure the unit above against, per category.
  *
- * **The split is the one {@link SCALE_UNIT_TEXT}'s own entries already fall into**, and it is
- * written down rather than inferred from them for the reason `ScaleUnitKind` records: the six
- * `a full X` phrases mark the reference frame today by accident of wording, and a unit reworded
- * later would move a category between frames with nothing to say it had.
+ * **The test is the one {@link ScaleUnitFrame} states, and it is asked of every plan the category
+ * has**: a category takes `CELL` only where no plan makes its unit a whole the components assemble
+ * into. A share of a cell is a claim that the unit is in the grid; on a plan where it is the thing
+ * being built, that claim has no referent — which is the same defect this whole record removes,
+ * moved one frame along.
  *
- * **`REFERENCE` is the safe reading, and the six that take it are safe for one reason only** — each
- * names a whole every one of sections 4, 8 and 9 forbids the sheet to draw. A share of the sheet
- * height is then a statement about a thing that is not on the page, so no arithmetic connects it to
- * the component count: a hand is drawn at whatever fraction of that figure it occupies, and thirty
- * such pieces still fit.
+ * **The record is written down rather than read off `SCALE_UNIT_TEXT`'s wording.** `a full X` marks
+ * six of the eight `SHEET` categories, and the two it misses are the two the plans have to be read
+ * to settle — so a rule taken from the phrasing would look mechanical and be wrong exactly where the
+ * question is live.
  *
- * **`DRAWN` is the seven whose components are not pieces of each other.** An effect's frames, a
- * widget kit, a tile set, a portrait's expressions, an icon set, a parallax stack and an alphabet
- * each put the unit on the page `N` times, so `N` copies at the stated share have to fit beside each
- * other — and at the counts these plans actually carry they do not. INTERFACE is `DRAWN` although its
- * unit is the single largest widget rather than a repeated one: the panel frame is still a component
- * the sheet draws, so it is charged a cell like every other entry in the grid.
+ * **The six `a full X` categories are the easy half.** Each names a whole sections 4, 8 and 9 all
+ * forbid the sheet to draw, so no arithmetic connects the share to the count: a hand is drawn at
+ * whatever fraction of that figure it occupies, and thirty such pieces still fit.
+ *
+ * **INTERFACE and BACKGROUND are `SHEET` although a plan of each draws the unit**, and they are the
+ * two entries this record exists to get right:
+ *
+ * - INTERFACE's nine-slice set draws four corners, four edges and a centre fill — the panel frame is
+ *   what those twenty pieces *assemble into*, named as such by that plan's own required-assembly
+ *   line, and a corner is a small fraction of it. Pricing a corner's cell as a share of a panel frame
+ *   would ask for a corner several times its own size. The state library draws one panel frame among
+ *   twenty widgets, and one of anything cannot argue with a count — so the sheet frame is true on
+ *   both plans and the cell frame on neither.
+ * - BACKGROUND's layer library is the only plan outside the six that states an **assembled** target
+ *   size, and it draws a sky plane, masses and occluders rather than bands. Under the cell frame
+ *   section 2 would say a band fills its own cell one line above the target-size line saying no
+ *   component is the assembled size — two rules for one quantity, printed together.
+ *
+ * **TERRAIN and FONT come nearest to the same fate and stay `CELL`, for the same reason.** Neither
+ * of TERRAIN's landform pieces nor FONT's digits and symbols is a *piece of* the unit: a lip, a face
+ * and a foot strip are tile-scale things standing on the ground plane, which is what the category
+ * guard means by "a ground tile or a landform piece", and every glyph in a font's series is set to
+ * the cap height one capital fixes. Each gets a cell the unit's own size, so the reading holds on the
+ * plans that draw no unit by name.
  */
-export const SCALE_UNIT_FRAME: Readonly<Record<SubjectCategory, ScaleUnitKind>> = {
-  CHARACTER: 'REFERENCE',
-  CREATURE: 'REFERENCE',
-  OBJECT: 'REFERENCE',
-  ITEM: 'REFERENCE',
-  BUILDING: 'REFERENCE',
-  VEHICLE: 'REFERENCE',
-  EFFECT: 'DRAWN',
-  INTERFACE: 'DRAWN',
-  TERRAIN: 'DRAWN',
-  PORTRAIT: 'DRAWN',
-  ICON: 'DRAWN',
-  BACKGROUND: 'DRAWN',
-  FONT: 'DRAWN',
+export const SCALE_UNIT_FRAME: Readonly<Record<SubjectCategory, ScaleUnitFrame>> = {
+  CHARACTER: 'SHEET',
+  CREATURE: 'SHEET',
+  OBJECT: 'SHEET',
+  ITEM: 'SHEET',
+  BUILDING: 'SHEET',
+  VEHICLE: 'SHEET',
+  EFFECT: 'CELL',
+  INTERFACE: 'SHEET',
+  TERRAIN: 'CELL',
+  PORTRAIT: 'CELL',
+  ICON: 'CELL',
+  BACKGROUND: 'SHEET',
+  FONT: 'CELL',
 };
