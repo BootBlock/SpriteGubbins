@@ -96,13 +96,25 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
           count: 3,
           kind: 'structure',
         },
+        // Split from the corner ornament below rather than bundled with it, because the pool this
+        // category's `clothing` field offers includes `Plain Untrimmed Edge` — a reader who chooses
+        // it has said the widget carries no trim, and a bundled line could only be dropped by
+        // taking a divider rule and a resize grip with it. Neither of those is trim: a rule between
+        // two sections and the grip a window is resized by are furniture the widget has whatever
+        // its edge is treated with. See `ComponentEntry.drawsClothing`.
         {
-          label: 'trim',
-          parts: ['divider-rule', 'corner-ornament', 'resize-grip'],
-          text: 'Trim: divider rule ×1, corner ornament ×1, scroll or resize grip ×1',
-          count: 3,
+          label: 'divider-and-grip',
+          parts: ['divider-rule', 'resize-grip'],
+          text: 'Divider rule ×1, scroll or resize grip ×1',
+          count: 2,
           kind: 'structure',
-          drawsClothing: true,
+        },
+        {
+          label: 'corner-ornament',
+          text: 'Corner ornament ×1',
+          count: 1,
+          kind: 'structure',
+          drawsClothing: 'entirely',
         },
       ],
       outro: `Every state of a widget is that same widget changed, never a second design of it: the silhouette,
@@ -216,7 +228,7 @@ its resting one shifts on the screen when it is pressed.`,
           text: 'Corner ornament ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
       ],
     },

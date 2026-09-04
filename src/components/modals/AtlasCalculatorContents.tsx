@@ -62,6 +62,10 @@ export function AtlasCalculatorContents() {
   const spriteTargetSize = useOutputStore((state) => state.output.spriteTargetSize);
   const directions = useOutputStore((state) => state.output.directions);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  // Read for the same reason the anatomy is: the count is a function of the subject on both fields,
+  // and a category whose `clothing` pool offers a value meaning the subject has none of what it
+  // describes draws fewer components when the reader chooses it.
+  const clothing = useSubjectStore((state) => state.subject.clothing);
   const category = useSubjectStore((state) => state.category);
   const toggleAtlasModal = useUIStore((state) => state.toggleAtlasModal);
   const copyText = useClipboard();
@@ -79,6 +83,7 @@ export function AtlasCalculatorContents() {
       directionalMode,
       directions,
       sheetIndex,
+      clothing,
       parseAdditionalAnatomy(additionalAnatomy),
     ),
     widthBias: widthBiasFor(aspectRatio),

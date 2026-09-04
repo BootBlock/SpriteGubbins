@@ -218,6 +218,7 @@ export const INTERFACE: CategoryDefinition = {
         'Woven Braid Edging',
         'Bare Machined Chamfer',
       ],
+      absentOption: 'Plain Untrimmed Edge',
     },
     {
       key: 'worn_details',

@@ -213,7 +213,7 @@ describe('sheetRuns', () => {
     const [first] = runs;
     if (!first) throw new Error('the rig should split into runs.');
 
-    expect(batchComponentCount('CHARACTER', runs, [])).toBe(stated);
+    expect(batchComponentCount('CHARACTER', runs, '', [])).toBe(stated);
     // And it is emphatically not the per-sheet figure the studio reports beside the prompt, which is
     // the whole of the gap: "this sheet asks for 15" is true of all eight of them.
     expect(stated).toBeGreaterThan(statedCount(first.promptText));
@@ -227,9 +227,9 @@ describe('sheetRuns', () => {
     const runs = sheetRuns('CHARACTER', subject, EIGHT_WAY_RIG);
     const anatomy = parseAdditionalAnatomy(subject.additional_anatomy);
 
-    const total = batchComponentCount('CHARACTER', runs, anatomy);
+    const total = batchComponentCount('CHARACTER', runs, '', anatomy);
     expect(total).toBe(runs.reduce((sum, run) => sum + statedCount(run.promptText), 0));
-    expect(total).toBe(batchComponentCount('CHARACTER', runs, []) + 3 * runs.length);
+    expect(total).toBe(batchComponentCount('CHARACTER', runs, '', []) + 3 * runs.length);
   });
 
   it('sums the sheets of a series, which do not cost the same', () => {
@@ -242,7 +242,7 @@ describe('sheetRuns', () => {
     const stated = runs.map((run) => statedCount(run.promptText));
 
     expect(new Set(stated).size).toBe(2);
-    expect(batchComponentCount('CHARACTER', runs, [])).toBe(
+    expect(batchComponentCount('CHARACTER', runs, '', [])).toBe(
       stated.reduce((total, count) => total + count, 0),
     );
   });

@@ -139,7 +139,7 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
           text: 'Façade fittings: awning ×1, sign board ×1, projecting fixture ×1',
           count: 3,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'partly',
         },
       ],
       outro: `Modules butt against their neighbours on a shared module width, so a wall bay drawn here can sit

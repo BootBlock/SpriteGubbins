@@ -36,7 +36,7 @@ describe('describeSeries', () => {
 
     // The articulation sheet is a run now — one generation per facing of the chosen set — so the
     // five-classic pairing is six sheets, and the selected one is the run at the set's first facing.
-    expect(describeSeries('CHARACTER', batch, NO_ANATOMY)).toBe(
+    expect(describeSeries('CHARACTER', batch, '', NO_ANATOMY)).toBe(
       [
         '- **Sheet 1 — Directional core**: 15 components, covering front, front-three-quarter, right side, back-three-quarter, back.',
         '- **Sheet 2 — Articulation** *(this sheet)*: 34 components, drawn towards front.',
@@ -51,7 +51,7 @@ describe('describeSeries', () => {
   it('marks exactly one line as this sheet, whichever facing of a run list it is', () => {
     for (const facing of DIRECTION_LISTS.EIGHT_COMPASS) {
       const batch = sheetBatch('CHARACTER', { ...EIGHT_WAY_RIG, primaryDirection: facing });
-      const lines = describeSeries('CHARACTER', batch, NO_ANATOMY).split('\n');
+      const lines = describeSeries('CHARACTER', batch, '', NO_ANATOMY).split('\n');
 
       expect(lines, facing).toHaveLength(8);
       expect(
@@ -72,7 +72,7 @@ describe('describeSeries', () => {
     // one section 0 states.
     const anatomy = parseAdditionalAnatomy('Tail ×2, Wing ×1');
     const batch = sheetBatch('CHARACTER', TWO_SHEET_SERIES);
-    const lines = describeSeries('CHARACTER', batch, anatomy).split('\n');
+    const lines = describeSeries('CHARACTER', batch, '', anatomy).split('\n');
 
     expect(lines[0]).toContain('30 components');
     expect(lines[1]).toContain('34 components');

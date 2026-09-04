@@ -29,7 +29,12 @@ function eightCompassCharacter(): readonly OutputConfig[] {
 
 describe('sheetIdentity', () => {
   it('names the sheet the studio is composing, and its place in the batch', () => {
-    const { sheet } = sheetIdentity('CHARACTER', config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }), '');
+    const { sheet } = sheetIdentity(
+      'CHARACTER',
+      config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
+      '',
+      '',
+    );
 
     expect(sheet).toMatchObject({
       category: 'CHARACTER',
@@ -48,6 +53,7 @@ describe('sheetIdentity', () => {
       'CHARACTER',
       config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
       '',
+      '',
     );
 
     // The property a manifest's naming rests on: as many names as the prompt asked for components.
@@ -59,6 +65,7 @@ describe('sheetIdentity', () => {
     const { names, sheet } = sheetIdentity(
       'CHARACTER',
       config({ directions: 'EIGHT_COMPASS', sheetIndex: 1 }),
+      '',
       '',
     );
 
@@ -74,6 +81,7 @@ describe('sheetIdentity', () => {
       'CHARACTER',
       config({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', rigMode: 'POSE_LIBRARY' }),
       '',
+      '',
     );
 
     expect(sheet?.rigMode).toBe('CUTOUT_RIG');
@@ -82,7 +90,7 @@ describe('sheetIdentity', () => {
   it('degrades a rig the category cannot honour, as every other digest does', () => {
     // A stored pairing from an older build, a preset or a hand-edited export: TERRAIN articulates
     // about nothing, so a manifest claiming a rig for it would be a claim the prompt never made.
-    const { sheet } = sheetIdentity('TERRAIN', config({ rigMode: 'CUTOUT_RIG' }), '');
+    const { sheet } = sheetIdentity('TERRAIN', config({ rigMode: 'CUTOUT_RIG' }), '', '');
 
     expect(sheet?.rigMode).toBe('NONE');
   });
@@ -92,7 +100,9 @@ describe('sheetIdentity', () => {
       // The batch this whole feature is measured against: two core sheets, then one run per facing.
       // The runs are what a reader downloads eight of, and until this they were eight archives of
       // fifteen identically-named files.
-      const facings = eightCompassCharacter().map((output) => sheetIdentity('CHARACTER', output, '').facing);
+      const facings = eightCompassCharacter().map(
+        (output) => sheetIdentity('CHARACTER', output, '', '').facing,
+      );
 
       expect(facings).toStrictEqual([
         null,
@@ -115,6 +125,7 @@ describe('sheetIdentity', () => {
         'CHARACTER',
         config({ directions: 'EIGHT_COMPASS', sheetIndex: 0 }),
         '',
+        '',
       );
 
       expect(sheet?.facings).toHaveLength(4);
@@ -124,7 +135,7 @@ describe('sheetIdentity', () => {
     it('withholds it where the batch is one sheet, which has nothing to be told apart from', () => {
       // A ground tile narrows every stored set to a single direction and produces one sheet, so a
       // per-facing tree would always hold exactly one directory.
-      const { sheet, facing } = sheetIdentity('TERRAIN', config({ directions: 'EIGHT_COMPASS' }), '');
+      const { sheet, facing } = sheetIdentity('TERRAIN', config({ directions: 'EIGHT_COMPASS' }), '', '');
 
       expect(sheet?.total).toBe(1);
       expect(facing).toBeNull();
@@ -133,7 +144,7 @@ describe('sheetIdentity', () => {
     it('withholds it where two sheets of a batch draw the same lone facing', () => {
       // FONT is four sheets of glyphs, every one of them at `front`: the facing is real and names
       // none of them. Naming the files by it would give four downloads one name.
-      const sheets = [0, 1, 2, 3].map((sheetIndex) => sheetIdentity('FONT', config({ sheetIndex }), ''));
+      const sheets = [0, 1, 2, 3].map((sheetIndex) => sheetIdentity('FONT', config({ sheetIndex }), '', ''));
 
       expect(sheets.map((entry) => entry.sheet?.facings)).toStrictEqual([
         ['front'],
@@ -154,7 +165,7 @@ describe('sheetIdentity', () => {
           for (const directions of DIRECTION_SETS) {
             const batch = config({ directionalMode, directions });
             const named = sheetBatch(category, batch)
-              .sheets.map((sheet) => sheetIdentity(category, { ...batch, ...sheet.output }, '').facing)
+              .sheets.map((sheet) => sheetIdentity(category, { ...batch, ...sheet.output }, '', '').facing)
               .filter((facing): facing is string => facing !== null);
 
             expect(new Set(named).size, `${category} / ${directionalMode} / ${directions}`).toBe(
@@ -170,6 +181,7 @@ describe('sheetIdentity', () => {
     const { names, sheet } = sheetIdentity(
       'CREATURE',
       config({ directions: 'FOUR_CARDINAL', sheetIndex: 0 }),
+      '',
       'Tail ×1',
     );
 

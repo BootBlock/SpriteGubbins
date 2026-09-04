@@ -201,6 +201,7 @@ export const VEHICLE: CategoryDefinition = {
         'Canvas Tilt Over Hoops',
         'Mud Guards & Splash Flaps',
       ],
+      absentOption: 'Bare Unclad Frame',
     },
     {
       key: 'worn_details',

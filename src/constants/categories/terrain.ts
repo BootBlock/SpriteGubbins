@@ -210,6 +210,7 @@ export const TERRAIN: CategoryDefinition = {
         'Dropped Fruit & Windfall',
         'Bare Untouched Ground',
       ],
+      absentOption: 'Bare Untouched Ground',
     },
     {
       key: 'worn_details',

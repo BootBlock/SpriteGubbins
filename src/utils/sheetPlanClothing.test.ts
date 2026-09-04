@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
-import { CATEGORY_OPTIONS, defaultSubjectFor, fieldLabelFor } from '../constants/categories/index.ts';
+import {
+  absentOptionFor,
+  CATEGORY_OPTIONS,
+  defaultSubjectFor,
+  fieldLabelFor,
+} from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { modesFor, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory } from '../types/subject.ts';
+import { componentCountFor, planComponentCount } from './componentSet.ts';
+import { componentSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { planDrawsClothing } from './sheetPlanClothing.ts';
+import { declaresNoClothing, planAsDrawn, planDrawsClothing } from './sheetPlanClothing.ts';
 
 /**
  * Section 1's paint rule against section 4's inventory, on every sheet the app can compile.
@@ -44,12 +51,18 @@ function sheetsOf(category: SubjectCategory) {
  * A value this category's own `clothing` pool offers, so the line section 1 carries is one a reader
  * could have produced by choosing rather than typing.
  *
- * `NONE` is stepped over because it is a sentinel standing for "this subject has none" rather than a
- * description of anything, and what these tests are about is the field.
+ * **The pool's own `absentOption` is stepped over**, because it is a sentinel standing for "this
+ * subject has none" rather than a description of anything, and every test above is about a subject
+ * that *has* the attribute. Stepping over it is also what keeps those tests honest now that choosing
+ * it takes the entries away: three of the nine pools that declare one declare their *first* option,
+ * so a naive `options[0]` would compile every INTERFACE and BACKGROUND sheet with an inventory that
+ * no longer draws the thing the assertion is about. The subject that does choose it has its own
+ * block below.
  */
 function pooledClothing(category: SubjectCategory): string {
   const field = CATEGORY_OPTIONS[category].fields.find((option) => option.key === 'clothing');
-  const value = field?.options.find((option) => option !== 'NONE');
+  const absent = absentOptionFor(category, 'clothing');
+  const value = field?.options.find((option) => option !== absent);
   if (value === undefined) throw new Error(`No clothing option for ${category}.`);
   return value;
 }
@@ -133,9 +146,10 @@ describe('which categories draw the clothing value as components of their own', 
    * font's applied treatment "goes into the glyph", and TERRAIN's scatter layer and EFFECT's
    * secondary layer both record having met this rule and restructured their plans to obey it.
    * PORTRAIT shows a collar inside a chest crop, and CREATURE's harness is fitted to the animal
-   * rather than separable from it. ITEM is the one that turned on the inventory rather than on the
-   * subject — its *Scabbard / Holster* pool offers `NONE` and a plan entry is unconditional, so an
-   * entry would order a flat vector keycard an empty scabbard and count it. See `sheetPlans/item.ts`.
+   * rather than separable from it. ITEM is the one whose guidance moved rather than its inventory:
+   * an item is drawn stowed with whatever carries it, so its *Scabbard / Holster* shapes the design
+   * without costing a component, and a reader who needs a separable carrier is sent to *Detachable
+   * Parts*. See `sheetPlans/item.ts`.
    */
   const DRAWN_SEPARATELY: readonly SubjectCategory[] = [
     'OBJECT',
@@ -154,13 +168,173 @@ describe('which categories draw the clothing value as components of their own', 
   it('never orders a component for an item’s carry piece', () => {
     // The half of the defect that was a missing component rather than a wrong sentence, settled the
     // other way: ITEM's guidance promised a sheath "emitted as its own component" and neither plan
-    // carried one. The two shipped presets that pin `NONE` — a flat vector keycard among them — are
-    // why the inventory could not be the half that moved.
+    // carried one, so the guidance is what changed. Pinned because the content decision is what
+    // holds it — the mechanism that once also forbade the entry no longer does, since the pool
+    // declares its `absentOption` and an `'entirely'` entry would be dropped for the two shipped
+    // presets that pin it.
     for (const { plan } of sheetsOf('ITEM')) {
       for (const group of plan.groups) {
         for (const entry of group.entries) {
           expect(entry.text.toLowerCase()).not.toContain('scabbard');
           expect(entry.text.toLowerCase()).not.toContain('holster');
+        }
+      }
+    }
+  });
+});
+
+describe('a subject that says it has none of the attribute', () => {
+  /**
+   * The nine pools that offer a value meaning *the subject has none of this*, pinned so the content
+   * decision cannot drift.
+   *
+   * The other four have no such value, and each is a judgement rather than an oversight: every
+   * option a CHARACTER's *Clothing / Armour* offers is something the subject wears, an OBJECT on a
+   * *Freestanding Base* is still mounted on something, a BUILDING always carries some addon, and
+   * ICON's *Applied Overlay* had one until the overlay library made it untrue — an icon sheet draws
+   * a disabled veil, a highlight halo and four tier marks whatever the reader picks, so a value
+   * promising none of them could only ever contradict the inventory. See `sheetPlans/icon.ts`.
+   */
+  const DECLARES_ABSENCE: Partial<Record<SubjectCategory, string>> = {
+    BACKGROUND: 'Clear — No Overlay',
+    CREATURE: 'NONE',
+    EFFECT: 'No Secondary Layer',
+    FONT: 'No Treatment',
+    INTERFACE: 'Plain Untrimmed Edge',
+    ITEM: 'NONE',
+    PORTRAIT: 'Bare Shoulders',
+    TERRAIN: 'Bare Untouched Ground',
+    VEHICLE: 'Bare Unclad Frame',
+  };
+
+  it.each(SUBJECT_CATEGORIES)('%s declares the value its own pool offers, or none', (category) => {
+    expect(absentOptionFor(category, 'clothing')).toBe(DECLARES_ABSENCE[category] ?? null);
+  });
+
+  it.each(SUBJECT_CATEGORIES)('orders no component a %s subject has just declined', (category) => {
+    // The defect, swept: section 1 stated `Armour & Cladding: Bare Unclad Frame` while section 4
+    // ordered `Cladding panel or fairing ×1` and closed by forbidding the generator to omit an
+    // entry. Three of the four categories carrying it declared the absence by *default*, so this is
+    // what a reader got before touching anything.
+    const absent = absentOptionFor(category, 'clothing');
+    if (absent === null) return;
+    const label = fieldLabelFor(category, 'clothing');
+
+    for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+      const prompt = generatePrompt(
+        category,
+        { ...defaultSubjectFor(category), clothing: absent },
+        { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
+      );
+      const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
+      const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
+
+      // Section 1 still states the value — it is the subject's own answer — and stops excepting it
+      // from the paint rule, because there is nothing left in section 4 for the exception to name.
+      expect(subjectSection, where).toContain(`- ${label}: ${absent}`);
+      expect(subjectSection.includes(`**${label}** is excepted`), where).toBe(false);
+
+      // And the inventory carries none of the lines that drew it. Read off the *declared* plan, so
+      // the assertion is against what the sheet used to ask for rather than against what it asks
+      // for now — which is the only way round that can fail if the filter stops working.
+      for (const group of plan.groups) {
+        for (const entry of group.entries) {
+          if (entry.drawsClothing === undefined) continue;
+          expect(prompt, `${where} — ${entry.text}`).not.toContain(entry.text);
+        }
+      }
+    }
+  });
+
+  it('takes the lines the report named, and leaves their neighbours', () => {
+    // The worked example, because a sweep asserting an absence passes just as well on a prompt that
+    // lost more than it should have. Each pair is one line that goes and one that stays in the same
+    // group — the lamp housing beside the cladding panel, the divider rule beside the corner
+    // ornament — which is what those two entries were split apart for.
+    const cases = [
+      { category: 'VEHICLE', gone: 'Cladding panel', kept: 'Lamp housing' },
+      { category: 'INTERFACE', gone: 'Corner ornament', kept: 'Divider rule' },
+      { category: 'BACKGROUND', gone: 'Atmosphere veil', kept: 'Focal landmark' },
+    ] as const;
+
+    for (const { category, gone, kept } of cases) {
+      const absent = absentOptionFor(category, 'clothing') ?? '';
+      const chosen = defaultSubjectFor(category);
+      const declined = generatePrompt(category, { ...chosen, clothing: absent }, DEFAULT_OUTPUT_CONFIG);
+
+      // The kept line proves the fixture reaches the group at all: an assertion that a string is
+      // absent from a prompt that never had it is unfalsifiable.
+      expect(declined, `${category} kept ${kept}`).toContain(kept);
+      expect(declined, `${category} dropped ${gone}`).not.toContain(gone);
+
+      // And the same sheet compiled from any other value in the pool still draws it, which is what
+      // makes the assertion above a statement about the reader's choice rather than about the plan.
+      expect(
+        generatePrompt(category, { ...chosen, clothing: pooledClothing(category) }, DEFAULT_OUTPUT_CONFIG),
+        `${category} draws ${gone} for a subject that has one`,
+      ).toContain(gone);
+    }
+  });
+
+  it('counts, names and describes one sheet, never two', () => {
+    // The three walks over a plan have to agree about which entries are on it: the count section 0
+    // contracts for, the prose section 4 lists, and the slot names a manifest keys a sprite pack by.
+    // A name list of a different length from the count maps every sprite after the divergence onto
+    // the wrong component, which is the failure the whole arrangement is arranged against — and a
+    // filter applied to two of the three would produce exactly that.
+    for (const category of SUBJECT_CATEGORIES) {
+      const absent = absentOptionFor(category, 'clothing');
+      if (absent === null) continue;
+
+      for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+        const count = componentCountFor(category, mode, directions, sheetIndex, absent, []);
+        const names = componentSlots(category, mode, directions, sheetIndex, absent, []);
+        const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
+
+        expect(names, where).toHaveLength(count);
+        expect(planComponentCount(planAsDrawn(plan, category, absent)), where).toBe(count);
+
+        const prompt = generatePrompt(
+          category,
+          { ...defaultSubjectFor(category), clothing: absent },
+          { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
+        );
+        expect(prompt, where).toContain(`Exactly ${String(count)} components`);
+        expect(prompt, where).toContain(`Component count is exactly ${String(count)}.`);
+      }
+    }
+  });
+
+  it('recognises the value however the reader typed it, and nothing beside it', () => {
+    // The control is an unfiltered combo box, so the same choice arrives with a stray space or in
+    // another case. What is deliberately *not* recognised is a sentence saying the same thing in the
+    // reader's own words: telling that from `Reactive Armour Blocks` would take a guess, and a wrong
+    // guess here takes components off a sheet somebody is about to pay a generation for.
+    expect(declaresNoClothing('VEHICLE', 'Bare Unclad Frame')).toBe(true);
+    expect(declaresNoClothing('VEHICLE', '  bare unclad frame ')).toBe(true);
+    expect(declaresNoClothing('VEHICLE', 'No cladding at all')).toBe(false);
+    expect(declaresNoClothing('VEHICLE', '')).toBe(false);
+    // A category whose pool offers no such value cannot reach the filter at all, whatever is typed —
+    // which is what ICON's own resolution rests on.
+    expect(declaresNoClothing('ICON', 'No Overlay')).toBe(false);
+  });
+
+  it.each(SUBJECT_CATEGORIES)('gives %s no entry it can neither keep nor drop', (category) => {
+    // The invariant that makes the arrangement complete rather than nearly complete. A `'partly'`
+    // entry draws the attribute among other things — OBJECT's `Fittings: handle ×1, latch or catch
+    // ×1, mounting bracket ×2` — so it cannot be dropped without taking a handle and a latch with
+    // it, and cannot be kept without ordering a mounting bracket for a subject that has no mount. A
+    // pool offering the absence beside a plan carrying such an entry is the original defect, and
+    // the remedy is to split the line: VEHICLE's rig fittings and INTERFACE's trim both were.
+    if (absentOptionFor(category, 'clothing') === null) return;
+
+    for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+      for (const group of plan.groups) {
+        for (const entry of group.entries) {
+          expect(
+            entry.drawsClothing,
+            `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)} — ${entry.text}`,
+          ).not.toBe('partly');
         }
       }
     }

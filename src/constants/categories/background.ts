@@ -234,6 +234,7 @@ export const BACKGROUND: CategoryDefinition = {
         'Lightning Flash Frames',
         'Rolling Sea Spray',
       ],
+      absentOption: 'Clear — No Overlay',
     },
     {
       key: 'worn_details',

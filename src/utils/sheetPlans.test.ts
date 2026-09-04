@@ -171,6 +171,19 @@ function promptFor(
   });
 }
 
+/**
+ * The `clothing` value every prompt in this suite is compiled with — the category's own default,
+ * since `promptFor` builds its subject from `defaultSubjectFor`.
+ *
+ * Stated rather than passed as `''`, because the count is a function of it: BACKGROUND and INTERFACE
+ * both default to the value meaning the subject has none of what the field describes, so their plans
+ * lose the entries drawing it, and a count taken against the declared plan would be a figure no
+ * prompt in this file states.
+ */
+function defaultClothing(category: SubjectCategory): string {
+  return defaultSubjectFor(category).clothing;
+}
+
 describe('the plan table itself', () => {
   it('files no plan under a category that cannot contain it', () => {
     // Structural, not textual: an entry of kind `tile` under CHARACTER is the contamination, and it
@@ -596,7 +609,7 @@ describe('no category calls the subject’s own additions an error in the specif
         expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
       }
       expect(prompt).toContain(
-        `Exactly ${String(componentCountFor(category, mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces))} components`,
+        `Exactly ${String(componentCountFor(category, mode, DEFAULT_OUTPUT_CONFIG.directions, 0, defaultClothing(category), pieces))} components`,
       );
 
       // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
@@ -663,7 +676,7 @@ describe('the reported failure: a CHARACTER asked for a tileset', () => {
   it('cannot be configured at all — the mode is not offered to a character', () => {
     expect(supportsMode('CHARACTER', 'TILESET_MODULAR')).toBe(false);
     expect(
-      directionalModeChoices('CHARACTER', DEFAULT_OUTPUT_CONFIG, []).map((choice) => choice.value),
+      directionalModeChoices('CHARACTER', DEFAULT_OUTPUT_CONFIG, '', []).map((choice) => choice.value),
     ).not.toContain('TILESET_MODULAR');
   });
 
@@ -774,7 +787,7 @@ describe('the declared count is the inventory’s own length', () => {
     '$category / $mode / $directions / $sheet',
     ({ category, mode, directions, sheetIndex, sheet }) => {
       const prompt = promptFor(category, mode, 'Demon Horn ×2, Tail ×1', sheetIndex, directions);
-      const expected = componentCountFor(category, mode, directions, sheetIndex, [
+      const expected = componentCountFor(category, mode, directions, sheetIndex, defaultClothing(category), [
         { name: 'Demon Horn', count: 2 },
         { name: 'Tail', count: 1 },
       ]);

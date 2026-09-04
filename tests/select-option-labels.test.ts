@@ -86,7 +86,7 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   // facing at a time.
   modeChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-      directionalModeChoices(category, { ...DEFAULT_OUTPUT_CONFIG, directions }, HEAVY_ANATOMY).map(
+      directionalModeChoices(category, { ...DEFAULT_OUTPUT_CONFIG, directions }, '', HEAVY_ANATOMY).map(
         (choice) => choice.label,
       ),
     ),
@@ -120,7 +120,7 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   inventoryParts: SUBJECT_CATEGORIES.flatMap((category) =>
     modesFor(category).flatMap((mode) =>
       CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
-        sheetChoices(category, mode, directions).map((choice) => choice.label),
+        sheetChoices(category, mode, directions, '').map((choice) => choice.label),
       ),
     ),
   ),

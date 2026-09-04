@@ -35,6 +35,10 @@ export function SheetFields() {
   const setOutputField = useOutputStore((state) => state.setOutputField);
   const setOutputConfig = useOutputStore((state) => state.setOutputConfig);
   const additionalAnatomy = useSubjectStore((state) => state.subject.additional_anatomy);
+  // Both lists count the subject's own pieces into their totals, and a category whose `clothing`
+  // pool offers a value meaning the subject has none of what the field describes draws fewer
+  // components when the reader chooses it — so both read that field too.
+  const clothing = useSubjectStore((state) => state.subject.clothing);
   const category = useSubjectStore((state) => state.category);
 
   // Only the modes this category can actually produce. Offering the others is what put a tileset's
@@ -43,8 +47,13 @@ export function SheetFields() {
   // of them takes — the mode list through the whole configuration, since a batch is a property of
   // one and `sheetBatch` is where that expansion is written down.
   const mode = resolveMode(category, output.directionalMode);
-  const modeChoices = directionalModeChoices(category, output, parseAdditionalAnatomy(additionalAnatomy));
-  const inventoryParts = sheetChoices(category, mode, output.directions);
+  const modeChoices = directionalModeChoices(
+    category,
+    output,
+    clothing,
+    parseAdditionalAnatomy(additionalAnatomy),
+  );
+  const inventoryParts = sheetChoices(category, mode, output.directions, clothing);
 
   return (
     <>

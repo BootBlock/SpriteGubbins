@@ -73,7 +73,7 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
           text: 'Cladding panel or fairing ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
         {
           label: 'fittings',
@@ -126,7 +126,7 @@ same way are all failures of this entry.`,
       {
         heading: 'Fittings',
         entries: [
-          { ...atEachYaw('Cladding panel or fairing', 'structure', chunk), drawsClothing: true },
+          { ...atEachYaw('Cladding panel or fairing', 'structure', chunk), drawsClothing: 'entirely' },
           atEachYaw('Lamp housing', 'structure', chunk),
         ],
       },
@@ -186,14 +186,19 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
           count: 1,
           kind: 'mechanism',
         },
+        // Two entries rather than one `Fittings:` line, because the pool this category's `clothing`
+        // field offers includes `Bare Unclad Frame` — a reader who chooses it has said the hull
+        // carries no cladding, and a bundled line could only be dropped by taking the lamp housing
+        // with it. A lamp is a fitting whatever the frame is clad in. See
+        // `ComponentEntry.drawsClothing`.
         {
-          label: 'fittings',
-          parts: ['cladding-panel', 'lamp-housing'],
-          text: 'Fittings: cladding panel ×1, lamp housing ×1',
-          count: 2,
+          label: 'cladding-panel',
+          text: 'Cladding panel ×1',
+          count: 1,
           kind: 'structure',
-          drawsClothing: true,
+          drawsClothing: 'entirely',
         },
+        { label: 'lamp-housing', text: 'Lamp housing ×1', count: 1, kind: 'structure' },
       ],
       outro: `Each moving piece carries its pivot at the joint it turns about, matched in diameter to the piece
 it turns against, exactly as any other articulated segment on a rigged sheet would. Where a drive has

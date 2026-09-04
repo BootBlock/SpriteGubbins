@@ -221,9 +221,8 @@ export const ICON: CategoryDefinition = {
       key: 'clothing',
       label: 'Applied Overlay',
       tooltip:
-        'What is laid over the finished icon as its own separate piece — a rarity glow, a lock, a cooldown veil, a new-item flare. Kept apart from the icon itself so the engine can draw it over any icon in the set, which is the whole reason to draw it separately.',
+        'Which overlay the set is built around — the one whose weight, colour and margin the rest are matched to. Every icon sheet draws the whole overlay library, so this steers how those pieces look rather than which of them you get. That is also why the pool offers no “none”: the sheet would draw them regardless, and the prompt would then tell the generator the set has none and order eleven of them.',
       options: [
-        'No Overlay',
         'Rarity Glow & Aura',
         'Locked Padlock Mark',
         'Cooldown Dimming Veil',

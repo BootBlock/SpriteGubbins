@@ -320,6 +320,7 @@ export const PORTRAIT: CategoryDefinition = {
         'Mail Coif & Surcoat Shoulders',
         'Patched Travelling Cloak',
       ],
+      absentOption: 'Bare Shoulders',
     },
     {
       key: 'worn_details',

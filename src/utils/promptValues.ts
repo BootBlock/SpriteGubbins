@@ -226,7 +226,7 @@ export function promptValues(
     // Computed whether or not the block survives, as `PALETTE_DESCRIPTION` is: `substitute` throws
     // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
     // the token is still there to be filled.
-    SERIES_SHEETS: describeSeries(category, batch, anatomy),
+    SERIES_SHEETS: describeSeries(category, batch, subject.clothing, anatomy),
   };
 
   // The sixteen field labels are the app's own words too, so they are cited over with the rest —
@@ -267,6 +267,7 @@ export function promptValues(
     mode,
     output.directions,
     output.sheetIndex,
+    subject.clothing,
     anatomy,
     cite,
   );
