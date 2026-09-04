@@ -17,7 +17,7 @@
  */
 export const LOCKED_SWATCHES_SHOWN = 64;
 
-/** What the lock panel says: the paragraph under it, and the one press it has to refuse. */
+/** What the lock panel says: the paragraph under it, and the two states it has to report. */
 export const PALETTE_LOCK_GUIDANCE = {
   /** Nothing held: what locking would do, and why anyone would want it. */
   open: 'A sprite sheet series is generated one sheet at a time, and a palette chosen afresh from each of them drifts — two sheets of one character come back with two sets of greens that are near-identical and not the same, so the armour changes shade between the walk sheet and the run sheet. Lock the colours of a sheet you are happy with, then drop the next sheet in: each of its colours that comes near a held one is taken to it, so the two sheets share a palette. The lock stays until you unlock it or clear the tab, and it takes over from the studio’s colour setting while it is held.',
