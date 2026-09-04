@@ -12,6 +12,27 @@ import { atEachYaw, chunkName, coreFacingChunks, viewsOf } from './directionalVi
  * The working end is named as such rather than as a blade, head or muzzle. Section 1 forbids
  * inferring equipment from a role, and an inventory entry reading "blade" would do exactly that
  * inferring on the template's behalf for every item that has no blade.
+ *
+ * **Both plans draw the carry piece, and until they did the prompt promised one nobody listed.** The
+ * `clothing` field is *Scabbard / Holster* here, and its own guidance says the sheath is "emitted as
+ * its own component" — while section 4 carried no entry for it on either sheet and section 1's paint
+ * rule said every applied attribute was painted onto the piece it sits on. So a reader who asked for
+ * a matched scabbard was told twice that they would get one and handed a sheet with nowhere for it.
+ * It is a component rather than paint because that is the whole reason to ask for one: the item has
+ * to appear worn on a character as well as sitting in an inventory slot, which needs the two
+ * separable. It is drawn **empty** for the reason section 4's boundary rule gives — a sheath with the
+ * blade in it merges two entries the count lists separately — and it is named for the carry piece
+ * rather than for a scabbard, because the pool offers a display case, an oilcloth roll and a woven
+ * basket beside the sheath.
+ *
+ * **The part library carries it and the directional sheet does not**, which is the same division
+ * that already keeps the pommel, the binding and the detachable part off the directional sheet: the
+ * directional core draws the four pieces whose appearance a yaw actually changes, and every entry
+ * there costs one drawing at each facing. It is also what the ceiling allows — five entries at five
+ * facings is 25 before a single named piece is counted, and `Emblazoned Tower Shield` is a shipped
+ * preset that spends the remaining 20 on four pieces at all five. A reader who needs the carry piece
+ * turned has the part library, whose facings are a **run list**: one generation per direction, each
+ * drawing every part at that facing.
  */
 
 export const ITEM_PART_LIBRARY: SheetPlan = {
@@ -48,6 +69,13 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
           text: 'Fittings: pommel or cap ×1, binding or wrap ×1, fixing ×1',
           count: 3,
           kind: 'structure',
+        },
+        {
+          label: 'scabbard-holster-or-carry-piece',
+          text: 'Scabbard, holster or carry piece ×1, drawn empty',
+          count: 1,
+          kind: 'structure',
+          drawsClothing: true,
         },
       ],
     },

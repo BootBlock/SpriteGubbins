@@ -176,8 +176,8 @@ describe('component counts', () => {
   });
 
   it('says nothing about anatomy on a sheet of the series that does not carry it', () => {
-    // Section 1's own prose calls additional anatomy "the single exception" that section 4 lists and
-    // counts separately. Naming a tail on the articulation sheet — whose inventory has no tail and
+    // Section 1's own prose excepts additional anatomy from its paint rule, as the field section 4
+    // lists and counts separately. Naming a tail on the articulation sheet — whose inventory has no tail and
     // whose contract demands an exact count without one — is a contradiction inside one prompt, and
     // the generator resolves it by drawing an uncounted piece or ignoring a binding line.
     const subject = { ...SUBJECT, additional_anatomy: 'Tail ×1' };
@@ -382,7 +382,7 @@ describe('the count once a subject names anatomy of its own', () => {
       // onto the component it sits on", and it now names the line it excepts by that line's own
       // label — so with no line above it, it would be a rule about an attribute the prompt never
       // states, in the section that opens by forbidding any inference from what is not stated.
-      expect(prompt).not.toContain('is the single exception');
+      expect(prompt).not.toContain('**Additional Genuine Anatomy** is excepted');
       expect(prompt).not.toContain(NO_ADDITIONAL_ANATOMY);
     }
   });

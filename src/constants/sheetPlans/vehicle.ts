@@ -70,6 +70,7 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
           text: 'Cladding panel or fairing ×1',
           count: 1,
           kind: 'structure',
+          drawsClothing: true,
         },
         {
           label: 'fittings',
@@ -119,7 +120,7 @@ same way are all failures of this entry.`,
       {
         heading: 'Fittings',
         entries: [
-          atEachYaw('Cladding panel or fairing', 'structure', chunk),
+          { ...atEachYaw('Cladding panel or fairing', 'structure', chunk), drawsClothing: true },
           atEachYaw('Lamp housing', 'structure', chunk),
         ],
       },
@@ -182,6 +183,7 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
           text: 'Fittings: cladding panel ×1, lamp housing ×1',
           count: 2,
           kind: 'structure',
+          drawsClothing: true,
         },
       ],
       outro: `Each moving piece carries its pivot at the joint it turns about, matched in diameter to the piece

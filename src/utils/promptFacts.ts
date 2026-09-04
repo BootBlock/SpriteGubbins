@@ -28,6 +28,7 @@ import { nativeGridScale } from './nativeGridScale.ts';
 import { sheetBatch } from './sheetBatch.ts';
 import type { SheetBatch } from './sheetBatch.ts';
 import { sheetDirections } from './sheetDirections.ts';
+import { planDrawsClothing } from './sheetPlanClothing.ts';
 import { returnsText, supportsPromptFeedback } from './targetCapabilities.ts';
 
 /**
@@ -69,6 +70,16 @@ export interface SheetFacts {
   readonly anatomyFacings: ReturnType<typeof anatomyFacingsFor>;
   /** The anatomy rendered from the parse, or empty on a sheet that does not carry it. */
   readonly additionalAnatomyLine: string;
+  /**
+   * Whether section 1 excepts the `clothing` line from its paint rule on this sheet.
+   *
+   * Both halves have to hold. The **plan** has to draw the attribute as pieces of its own, which is
+   * a fact about the sheet rather than the category — see `sheetPlanClothing.ts`. And the **line**
+   * has to have been emitted at all: a cleared field puts nothing in section 1, and an exception
+   * paragraph naming an attribute nobody stated names an absent line in the section the template
+   * calls the sole authority for the subject's design.
+   */
+  readonly clothingIsAComponent: boolean;
 }
 
 /** Resolve one studio configuration into the facts every phase below it reads. */
@@ -229,8 +240,8 @@ export function sheetFacts(
   // putting a bare sentinel in the highest-weighted section.
   //
   // **And it empties on a sheet that does not carry the anatomy**, for the same reason and a sharper
-  // one. Section 1's own prose says additional anatomy is "the single exception" that section 4
-  // lists and counts separately — so naming a tail here on the articulation sheet, whose inventory
+  // one. Section 1's own prose excepts additional anatomy from its paint rule, as the field section
+  // 4 lists and counts separately — so naming a tail here on the articulation sheet, whose inventory
   // has no tail in it and whose contract demands an exact count without one, is a contradiction
   // inside one prompt. The generator resolves it by drawing an uncounted piece or by ignoring a
   // line it was told was binding, and neither is recoverable.
@@ -241,6 +252,13 @@ export function sheetFacts(
   // it and reading it back off `values` would come out `string | undefined`.
   const anatomyFacings = anatomyFacingsFor(category, mode, output.directions, output.sheetIndex);
   const additionalAnatomyLine = anatomyFacings !== null ? anatomy.map(formatAnatomyComponent).join(', ') : '';
+
+  // The second attribute section 1's paint rule has to except, and the reason that rule is no longer
+  // written as having exactly one exception. `clothing` is a different thing in every category —
+  // cladding on a vehicle, an applied overlay on an icon, trim on an interface — and seven of the
+  // thirteen draw it as components of their own, so the fixed sentence told the generator the
+  // cladding was paint while section 4 listed a cladding panel beside the hull.
+  const clothingIsAComponent = subject.clothing.trim() !== '' && planDrawsClothing(plan);
 
   return {
     mode,
@@ -265,5 +283,6 @@ export function sheetFacts(
     nativeScale,
     anatomyFacings,
     additionalAnatomyLine,
+    clothingIsAComponent,
   };
 }

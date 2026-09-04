@@ -33,7 +33,13 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
           count: 1,
           kind: 'structure',
         },
-        { label: 'base', text: 'Base, mount or footing ×1', count: 1, kind: 'structure' },
+        {
+          label: 'base',
+          text: 'Base, mount or footing ×1',
+          count: 1,
+          kind: 'structure',
+          drawsClothing: true,
+        },
         {
           label: 'access-panel',
           parts: ['access-panel-closed', 'access-panel-part-open', 'access-panel-fully-open'],
@@ -65,6 +71,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
           text: 'Fittings: handle ×1, latch or catch ×1, mounting bracket ×2',
           count: 4,
           kind: 'structure',
+          drawsClothing: true,
         },
       ],
     },
@@ -94,7 +101,10 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
         intro: `One view of **one** housing and **one** base per facing: the same piece of geometry drawn at each
 object yaw section [SEC:CAMERA] lists, in that order. Separate designs, mirrored copies, or views facing the
 same way are all failures of this entry.`,
-        entries: [viewsOf('Housings', 'structure', chunk), viewsOf('Bases', 'structure', chunk)],
+        entries: [
+          viewsOf('Housings', 'structure', chunk),
+          { ...viewsOf('Bases', 'structure', chunk), drawsClothing: true },
+        ],
       },
       {
         heading: 'Moving parts',
@@ -138,7 +148,13 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
           count: 1,
           kind: 'structure',
         },
-        { label: 'base', text: 'Base, mount or footing ×1', count: 1, kind: 'structure' },
+        {
+          label: 'base',
+          text: 'Base, mount or footing ×1',
+          count: 1,
+          kind: 'structure',
+          drawsClothing: true,
+        },
         {
           label: 'access-panel',
           text: 'Access panel, lid or hatch ×1, drawn closed',

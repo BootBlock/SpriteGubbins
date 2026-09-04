@@ -320,16 +320,19 @@ not an omission to be filled dramatically.
 [OPTIONAL:MATERIALS           | - [DEFINE:MATERIALS_LABEL]: [DEFINE:MATERIALS]]
 [OPTIONAL:ADDITIONAL_ANATOMY  | - [DEFINE:ADDITIONAL_ANATOMY_LABEL]: [DEFINE:ADDITIONAL_ANATOMY]]
 
-Every fitted, applied and worn attribute listed above — cladding, armour, harness, markings and
-surface detail alike — is **painted onto** the component it sits on, never drawn as a separate piece.
+Every fitted, applied and worn attribute listed above is **painted onto** the component it sits on,
+never drawn as a separate piece, except where named below.
+[IF:CLOTHING_IS_A_COMPONENT]
+**[DEFINE:CLOTHING_LABEL]** is excepted: section [SEC:INVENTORY] draws and counts it as components of its own.
+[/IF]
 [IF:ADDITIONAL_ANATOMY]
 [IF:ANATOMY_PER_VIEW]
-**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section [SEC:INVENTORY] lists each piece named there
+**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is excepted: section [SEC:INVENTORY] lists each piece named there
 separately, drawn at every facing this sheet covers and counted once per view, like the components
 beside it.
 [/IF]
 [IF:ANATOMY_PER_VIEW!=yes]
-**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is the single exception: section [SEC:INVENTORY] lists each piece named there
+**[DEFINE:ADDITIONAL_ANATOMY_LABEL]** is excepted: section [SEC:INVENTORY] lists each piece named there
 separately and counts it as a component of its own.
 [/IF]
 [/IF]

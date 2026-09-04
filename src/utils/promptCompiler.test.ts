@@ -112,10 +112,10 @@ describe('generatePrompt — the subject', () => {
   });
 
   it('names the separately-counted field by the label its own category gives it', () => {
-    // Section 1's "painted onto the component it sits on" rule has exactly one exception, and the
-    // sentence stating it has to name the line it excepts — otherwise a reader cannot tell which of
-    // the fifteen attributes above is the one section 4 counts separately. So the sentence takes the
-    // same per-category label the line does: *Attached Modules* on a vehicle, not "anatomy".
+    // Section 1's "painted onto the component it sits on" rule excepts what a paragraph below it
+    // names, and each such paragraph has to name the line it excepts — otherwise a reader cannot
+    // tell which of the fifteen attributes above section 4 counts separately. So the sentence takes
+    // the same per-category label the line does: *Attached Modules* on a vehicle, not "anatomy".
     const vehicle = generatePrompt(
       'VEHICLE',
       { ...defaultSubjectFor('VEHICLE'), additional_anatomy: 'Missile Pod ×2' },
@@ -123,7 +123,7 @@ describe('generatePrompt — the subject', () => {
     );
 
     expect(vehicle).toContain('- Attached Modules: Missile Pod ×2');
-    expect(vehicle).toContain('**Attached Modules** is the single exception');
+    expect(vehicle).toContain('**Attached Modules** is excepted');
     expect(vehicle).not.toContain('anatomical');
   });
 

@@ -38,6 +38,7 @@ export function promptConditions(
     nativeScale,
     anatomyFacings,
     additionalAnatomyLine,
+    clothingIsAComponent,
   } = facts;
 
   const config: Record<string, string> = {
@@ -121,13 +122,19 @@ export function promptConditions(
     // pair rules only bite where the sheet holds both members of a reflection pair, and on the
     // classic sets — which never do — they would be instruction about views the sheet does not hold.
     MIRROR_PAIRS: coveredMirrorPairs.length > 0 ? 'yes' : '',
-    // Section 1's "painted onto, never a separate piece" rule names its own exception, and the
-    // exception is a line that is often not there — cleared, `NONE`, or on an articulation sheet,
-    // which draws limbs for a trunk the core sheets carry. Naming an absent line is worse here than
-    // anywhere else in the prompt: the sentence is the one that decides how many components the
-    // sheet has. Read off the *rendered* value rather than the raw field, so the gate answers
-    // whether the line was emitted rather than whether the user typed something.
+    // Section 1's "painted onto, never a separate piece" rule names its exceptions, and each of them
+    // is a line that is often not there — cleared, `NONE`, or on an articulation sheet, which draws
+    // limbs for a trunk the core sheets carry. Naming an absent line is worse here than anywhere
+    // else in the prompt: the sentence is the one that decides how many components the sheet has.
+    // Read off the *rendered* value rather than the raw field, so the gate answers whether the line
+    // was emitted rather than whether the user typed something.
     ADDITIONAL_ANATOMY: additionalAnatomyLine,
+    // The rule's other exception, and the one the template used to deny it had: seven categories
+    // draw the `clothing` value as pieces of their own, so a fixed "single exception" sentence had
+    // section 1 calling a vehicle's cladding paint while section 4 listed a cladding panel. Both
+    // halves of the answer are resolved in `sheetFacts` — whether the sheet draws it, and whether
+    // the line was emitted at all.
+    CLOTHING_IS_A_COMPONENT: clothingIsAComponent ? 'yes' : '',
     // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
     // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view
     // — so the sentence must say so, or section 1 promises a single drawing the inventory below it

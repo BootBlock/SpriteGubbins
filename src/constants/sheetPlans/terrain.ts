@@ -23,15 +23,14 @@ import type { SheetPlan } from '../../types/components.ts';
  * and two generations do not hold that agreement. So the transition group draws the boundary cases an
  * autotiler indexes and leaves the blob set's redundant permutations to the tool that assembles them.
  *
- * **The scatter layer is carried by the base tile's variants rather than by overlay components**, and
- * that is a constraint from the template rather than a preference: section 1 states that every
- * fitted, applied and worn attribute it lists is painted onto the component it sits on and never
- * drawn as a separate piece, naming the additional-anatomy field as the single exception. `clothing`
- * is *Scatter Layer* in this category, so six scatter overlays in section 4 would be a second
- * exception — and a sheet whose section 1 forbids what its section 4 requires is the contradiction
- * these per-category plans exist to remove. Variants are also the honest answer for a tile set: an
- * overlay decal that must never reach a tile edge is one more thing that can be recognised twice
- * across a field.
+ * **The scatter layer is carried by the base tile's variants rather than by overlay components.**
+ * `clothing` is *Scatter Layer* in this category, and the honest answer for a tile set is paint: an
+ * overlay decal that must never reach a tile edge is one more thing a player can recognise twice
+ * across a field, where a variant is a difference they cannot. Section 1 then says so — its paint
+ * rule excepts only what a plan draws as components of its own, and no entry below does, so a
+ * TERRAIN prompt tells the generator the pebbles and tufts are painted onto the tiles. That
+ * agreement between the two sections is the point: a sheet whose section 1 forbids what its
+ * section 4 requires is the contradiction these per-category plans exist to remove.
  */
 
 export const TERRAIN_BLEND_SET: SheetPlan = {

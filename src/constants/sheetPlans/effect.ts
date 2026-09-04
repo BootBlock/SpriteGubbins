@@ -31,13 +31,14 @@ import type { SheetPlan } from '../../types/components.ts';
  * and portal that is neither.
  *
  * **The two groups are two stretches of one sequence, not two layers to composite**, and that is a
- * correction rather than a nicety. Section 1 states that every applied attribute is painted onto the
- * component it sits on and that the additional-elements field is "the single exception" — so a plan
- * that broke the subject's Secondary Layer out into six components of its own would have made that
- * sentence false, in the same way an unqualified section 8 made the particle ban false. It is also
- * the wrong shape for the deliverable: one flipbook is what a generation can register against a
- * single point, and a user who genuinely wants a separable shockwave ring or debris chunk has the
- * additional-elements field, which is exactly what section 1 exempts.
+ * correction rather than a nicety. It is the wrong shape for the deliverable: one flipbook is what a
+ * generation can register against a single point, and a user who genuinely wants a separable
+ * shockwave ring or debris chunk has the additional-elements field, which section 1 excepts from its
+ * paint rule. So the Secondary Layer is painted into the frames rather than broken out into six
+ * components of its own — and section 1 says exactly that, because its paint rule excepts only what
+ * a plan draws separately and no entry below is the subject's secondary layer. A plan that broke it
+ * out and left the sentence alone would have made section 1 false, in the same way an unqualified
+ * section 8 made the particle ban false.
  */
 export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   name: 'Frame sequence',

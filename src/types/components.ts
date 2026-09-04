@@ -96,6 +96,44 @@ export interface ComponentEntry {
   readonly text: string;
   readonly count: number;
   readonly kind: ComponentKind;
+  /**
+   * Set where this entry draws what the subject's `clothing` field describes as a piece of its own,
+   * rather than as paint on the piece it sits against.
+   *
+   * **The test is whether an option from that category's own `clothing` pool lands in this entry.**
+   * *Shafts Of Light Through Gaps* is one of BACKGROUND's, so the parallax set's light shaft carries
+   * this; the nine-slice set's divider rail does not, because nothing INTERFACE offers under
+   * *Ornament & Trim* is a divider. An entry that draws the attribute **among** other things carries
+   * it too — VEHICLE's rig line is `Fittings: cladding panel ×1, lamp housing ×1`, and the cladding
+   * panel in it is a piece the reader's choice describes whatever the lamp beside it is.
+   *
+   * Section 1 states that every fitted, applied and worn attribute it lists is painted onto the
+   * component it sits on and never drawn as a separate piece. That rule was written for a
+   * character's armour and fixed in the template, and the `clothing` key is a different thing in
+   * each category: *Armour & Cladding* on a vehicle, *Applied Overlay* on an icon, *Applied
+   * Atmosphere* on a background, *Ornament & Trim* on an interface, *Awning & Addons* on a
+   * building, *Mounting / Framework* on an object, *Scabbard / Holster* on an item. Every one of
+   * those is a piece the inventory draws in its own right — so the prompt told the generator the
+   * cladding was paint and then listed a cladding panel as a component, which is exactly the
+   * §1-forbids / §4-requires contradiction the per-category plans exist to remove.
+   *
+   * **The exception is declared here, on the entry, so nothing states it twice.** The sentence
+   * section 1 emits is a fact about one *sheet* — does this inventory draw the attribute
+   * separately? — and `planDrawsClothing` in `utils/sheetPlanClothing.ts` derives that from the
+   * entries below, rather than a flag on the plan asserting something no entry anchors. A plan that
+   * drops its cladding panel therefore stops claiming the exception in the same edit.
+   *
+   * **It is a property of the sheet and not of the category**, which is what BUILDING shows: its
+   * module library draws the awning as a façade fitting, while its directional views and its tile
+   * set have no fitting at all and paint whatever the reader asked for onto the bay. Both readings
+   * are right for the sheet they belong to.
+   *
+   * **`worn_details` never carries it**, on any of the thirteen categories — markings, motifs,
+   * runes, texture and interior detail are paint by their own guidance everywhere — and
+   * `additional_anatomy` is excepted by its own machinery in `utils/componentSet.ts`, which appends
+   * the reader's pieces to the inventory and counts them.
+   */
+  readonly drawsClothing?: true;
 }
 
 /** A headed run of entries — the inventory's own structure, as section 4 renders it. */

@@ -94,6 +94,7 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
           text: 'Trim: divider rule ×1, corner ornament ×1, scroll or resize grip ×1',
           count: 3,
           kind: 'structure',
+          drawsClothing: true,
         },
       ],
       outro: `Every state of a widget is that same widget changed, never a second design of it: the silhouette,
@@ -195,7 +196,13 @@ its resting one shifts on the screen when it is pressed.`,
         },
         // Not a tile: an ornament is laid over a corner the frame has already drawn, so it neither
         // repeats nor has to butt against anything.
-        { label: 'corner-ornament', text: 'Corner ornament ×1', count: 1, kind: 'structure' },
+        {
+          label: 'corner-ornament',
+          text: 'Corner ornament ×1',
+          count: 1,
+          kind: 'structure',
+          drawsClothing: true,
+        },
       ],
     },
   ],
