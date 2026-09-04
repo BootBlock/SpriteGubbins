@@ -4,8 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
 import { DEFAULT_PALETTE_SNAP } from '../../constants/quantiser.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import { useUIStore } from '../../stores/useUIStore.ts';
-import { imageFrom } from '../../test/images.ts';
+import type { Rgba } from '../../types/quantiser.ts';
 import { PaletteLockControls } from './PaletteLockControls.tsx';
 
 /**
@@ -18,20 +17,23 @@ import { PaletteLockControls } from './PaletteLockControls.tsx';
  * setting the lock has overtaken appears exactly when the plan says it should.
  */
 
-/** Twelve of one colour and four of another, so the held order is a fact and not a coincidence. */
-const RESULT = imageFrom(4, 4, (_x, y) =>
-  y === 0 ? { r: 200, g: 100, b: 50, a: 255 } : { r: 40, g: 160, b: 60, a: 255 },
-);
-
-/** A result the keying took whole — every pixel transparent, which is what locks nothing. */
-const BLANK = imageFrom(4, 4, () => ({ r: 0, g: 0, b: 0, a: 0 }));
+/**
+ * The colours a settled result was read to hold, in the order the transform reports them.
+ *
+ * The reading itself is `imagePaletteEntries` and is tested there. What this panel is answerable
+ * for is holding exactly the list it was handed, in the order it arrived.
+ */
+const RESULT: readonly Rgba[] = [
+  { r: 40, g: 160, b: 60, a: 255 },
+  { r: 200, g: 100, b: 50, a: 255 },
+];
 
 type Props = Partial<Parameters<typeof PaletteLockControls>[0]>;
 
 function panel(overrides: Props = {}) {
   return (
     <PaletteLockControls
-      resultImage={RESULT}
+      resultPalette={RESULT}
       sheetName="armour.png"
       studioSetting="RESTRAINED_64_COLOR"
       superseded={null}
@@ -49,7 +51,6 @@ function show(overrides: Props = {}) {
 describe('PaletteLockControls', () => {
   beforeEach(() => {
     useQuantiseStore.getState().clear();
-    useUIStore.setState({ toastMessage: null });
   });
 
   it('holds nothing until it is asked to, and says so', () => {
@@ -65,11 +66,7 @@ describe('PaletteLockControls', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
     const lock = useQuantiseStore.getState().lockedPalette;
-    // Most-used first: the twelve-pixel green leads the four-pixel orange.
-    expect(lock?.entries).toEqual([
-      { r: 40, g: 160, b: 60, a: 255 },
-      { r: 200, g: 100, b: 50, a: 255 },
-    ]);
+    expect(lock?.entries).toEqual(RESULT);
     expect(lock?.sheetName).toBe('armour.png');
     expect(lock?.setting).toBe('RESTRAINED_64_COLOR');
   });
@@ -107,7 +104,7 @@ describe('PaletteLockControls', () => {
   });
 
   it('refuses to lock while there is no result to take one from', () => {
-    show({ resultImage: null });
+    show({ resultPalette: null });
 
     expect(screen.getByRole('button', { name: 'Lock this palette' })).toBeDisabled();
   });
@@ -121,30 +118,34 @@ describe('PaletteLockControls', () => {
     expect(screen.getByRole('button', { name: 'Lock this palette' })).toBeDisabled();
   });
 
-  it('says so rather than answering with silence when the result has nothing opaque in it', async () => {
-    // The button cannot be disabled for this one: whether a result holds an opaque pixel is only
-    // known after `lockPaletteFrom` has walked it, which is after the press. Before the refusal was
-    // reported, the press held nothing, changed no badge and announced nothing at all.
-    show({ resultImage: BLANK });
+  it('holds the button shut on a result with no colours in it, and says why', () => {
+    // The state this panel used to answer with silence: the button was live, the press held
+    // nothing, and no badge, notice or announcement changed. A sheet the keying took whole is a
+    // likely first result of a series, so it is a state a reader meets this control in.
+    show({ resultPalette: [] });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
-
-    expect(useQuantiseStore.getState().lockedPalette).toBeNull();
-    expect(useUIStore.getState().toastMessage).toBe(PALETTE_LOCK_GUIDANCE.refused('armour.png'));
-    expect(screen.getByText('No palette held')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Lock this palette' })).toBeDisabled();
+    expect(screen.getByText(PALETTE_LOCK_GUIDANCE.noColours)).toBeInTheDocument();
   });
 
-  it('leaves a held palette alone when a blank result is locked over it', async () => {
-    // Worse than a silent press: a refusal that cleared the lock would throw away the colours of a
-    // good sheet because a failed one was read after it.
+  it('says nothing about an empty sheet while there is no result at all', () => {
+    // Waiting for a sheet is not the same finding as a sheet with nothing in it, and a notice
+    // naming the keying before anything had been keyed would be the panel inventing a diagnosis.
+    show({ resultPalette: null });
+
+    expect(screen.queryByText(PALETTE_LOCK_GUIDANCE.noColours)).toBeNull();
+  });
+
+  it('leaves a held palette alone when the sheet beside it empties', async () => {
+    // Worse than a silent press: a lock dropped because a *later* sheet came back blank would throw
+    // away the colours the rest of the series is being held to.
     const { rerender } = show();
     await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
 
-    rerender(panel({ resultImage: BLANK }));
-    await userEvent.click(screen.getByRole('button', { name: 'Re-lock from this sheet' }));
+    rerender(panel({ resultPalette: [] }));
 
-    expect(useQuantiseStore.getState().lockedPalette?.entries).toHaveLength(2);
-    expect(useUIStore.getState().toastMessage).toBe(PALETTE_LOCK_GUIDANCE.refused('armour.png'));
+    expect(useQuantiseStore.getState().lockedPalette?.entries).toEqual(RESULT);
+    expect(screen.getByRole('button', { name: 'Re-lock from this sheet' })).toBeDisabled();
   });
 
   it('names the studio setting the held palette has overtaken, and only then', () => {

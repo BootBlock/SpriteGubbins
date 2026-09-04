@@ -34,14 +34,18 @@ export const PALETTE_LOCK_GUIDANCE = {
   superseded: (setting: string): string =>
     `The studio’s colour setting is now ${setting}, which is not the one this palette was locked under — the held colours are being applied instead of it. Re-lock from this sheet to take the setting’s own colours, or unlock to hand the decision back to it.`,
   /**
-   * The press that cannot be honoured: this result has no opaque pixel to take a colour from.
+   * There is a result, and it has no colours in it, so there is nothing a lock could hold.
    *
-   * A notification rather than a disabled button, because it is the one refusal the panel cannot
-   * see coming — whether a result holds an opaque pixel is only known after the walk
-   * `lockPaletteFrom` does, and the button’s `disabled` covers what the props say. It is worded as
-   * `useIdentityPaletteCapture`’s refusal is, because it is the same event on the app’s other
-   * capture control: a sheet that came back empty, read by someone who wanted its colours.
+   * Shown rather than left to the greyed-out button, and the wording is why: the state is not the
+   * control being unavailable but the *sheet* being empty, and the two ways into it are both
+   * things the reader can act on. A blank generation is a common first result, and a key colour
+   * tolerance high enough to take the whole sheet is a dial three panels up — neither is
+   * discoverable from a button that has simply stopped responding.
+   *
+   * The condition is literally that every pixel of the result is transparent. `colorHistogram`
+   * counts a partly-transparent pixel, so a sheet at half coverage still has colours and still
+   * locks; only a field the keying took whole reaches this.
    */
-  refused: (sheetName: string): string =>
-    `${sheetName} has nothing opaque left in it — there are no colours to lock`,
+  noColours:
+    'This sheet’s result has no colours to hold, because every pixel of it is transparent. Either the generation came back as nothing but its background key, or the key colour tolerance is taking the whole sheet.',
 } as const;

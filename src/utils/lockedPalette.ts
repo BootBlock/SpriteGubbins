@@ -1,17 +1,23 @@
-import type { LockedPalette, Rgba } from '../types/quantiser.ts';
+import type { Rgba } from '../types/quantiser.ts';
 import { remapColors } from './imageData.ts';
 import { type Oklab, srgbToOklab } from './oklab.ts';
-import { imagePaletteEntries } from './paletteEntries.ts';
 
 /**
- * The two halves of a sheet palette lock: taking the colours off one result, and redrawing the next
- * sheet in them.
+ * Redrawing a sheet in the colours a previous one was locked at.
  *
- * They live together because the *entries* are the contract between them — what counts as one
- * colour, and in what order — and a second answer to either question in the other half is how a
- * locked palette comes to hold thirty entries the panel calls twenty-seven. Alpha is where that
- * bites: a result carries the same green at several coverages along an anti-aliased edge, and those
- * are one colour, not five.
+ * **The colours themselves are not taken here.** A lock holds `QuantiseResult.paletteEntries`,
+ * which the transform already read off the finished sheet — the entries are the contract between
+ * the two halves of this feature, so a second reading taken on the main thread would be a second
+ * answer to what counts as one colour, and is how a locked palette comes to hold thirty entries the
+ * panel calls twenty-seven. Alpha is where that bites: a result carries the same green at several
+ * coverages along an anti-aliased edge, and those are one colour, not five. `paletteEntries` says
+ * why it is carried on the result rather than measured where it is wanted.
+ *
+ * A result with no entries locks nothing rather than an empty palette: an empty lock would map
+ * every colour onto no colour at all, which {@link applyLockedPalette} would have to answer by
+ * returning the sheet unchanged — a lock that silently does nothing while the panel says one is
+ * held. `PaletteLockControls` holds the button shut in that state and names the reason, which it
+ * can do because the entries are a prop rather than something a press discovers.
  *
  * **Distance is measured in scaled OKLab**, as every colour gate in this tab now is — see
  * `oklab.ts`. It is not a refinement here but the whole mechanism: the lock's job is to decide
@@ -19,29 +25,6 @@ import { imagePaletteEntries } from './paletteEntries.ts';
  * cube answers that question differently in the darks than in the lights, so one escape distance
  * could never mean one thing across a sheet.
  */
-
-/**
- * The colours a quantised result is made of, most-used first, as a lock that names where they came
- * from.
- *
- * The reading itself is {@link imagePaletteEntries}, which is also what the export panel writes to a
- * file and what says why the entries are deduplicated across alpha and returned opaque —
- * {@link applyLockedPalette} keeps each pixel’s own alpha for the same reason. What this adds is the
- * provenance a lock needs and a palette on its own does not: which sheet the colours were taken
- * from, and the studio setting in force when they were.
- *
- * A sheet with nothing opaque in it locks nothing rather than an empty palette: an empty lock would
- * map every colour onto no colour at all, which {@link applyLockedPalette} would have to answer by
- * returning the sheet unchanged — a lock that silently does nothing while the panel says one is
- * held. `PaletteLockControls` answers the `null` with a notification naming the sheet, rather than
- * a press that appears to do nothing — which is the state a reader is likeliest to be in when they
- * reach for this control, since a generation that came back as its own key field is a common first
- * result.
- */
-export function lockPaletteFrom(image: ImageData, sheetName: string, setting: string): LockedPalette | null {
-  const entries = imagePaletteEntries(image);
-  return entries.length === 0 ? null : { entries, setting, sheetName };
-}
 
 /**
  * The image with every pixel taking its nearest locked colour, unless it sits further than `escape`

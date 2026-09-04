@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { channels, imageFrom } from '../test/images.ts';
 import type { Rgba } from '../types/quantiser.ts';
 import { colorHistogram, packColor, readPixel } from './imageData.ts';
-import { applyLockedPalette, lockPaletteFrom } from './lockedPalette.ts';
+import { applyLockedPalette } from './lockedPalette.ts';
 import { srgbToOklab } from './oklab.ts';
 
 const RED: Rgba = { r: 200, g: 40, b: 40, a: 255 };
@@ -18,33 +18,6 @@ const SHEET = imageFrom(6, 4, (x, y) => {
   if (n < 20) return GREEN;
   if (n < 22) return BLUE;
   return { r: 255, g: 0, b: 255, a: 0 };
-});
-
-describe('lockPaletteFrom', () => {
-  it('holds one entry per colour, most-used first, whatever coverage it was found at', () => {
-    const lock = lockPaletteFrom(SHEET, 'sheet.png', 'RESTRAINED_64_COLOR');
-
-    // Three colours, not five: the green appears at three different alphas and is one colour. Red
-    // leads on twelve pixels, green follows on eight — six opaque and the two partial ones, which
-    // count towards it — and blue trails on two.
-    expect(lock?.entries).toEqual([RED, GREEN, BLUE]);
-    expect(lock?.sheetName).toBe('sheet.png');
-    expect(lock?.setting).toBe('RESTRAINED_64_COLOR');
-  });
-
-  it('returns every entry opaque, so a coverage of one sheet cannot be written onto another', () => {
-    const lock = lockPaletteFrom(SHEET, 'sheet.png', 'UNRESTRICTED');
-
-    for (const entry of lock?.entries ?? []) expect(entry.a).toBe(255);
-  });
-
-  it('locks nothing at all from a sheet with no colour in it', () => {
-    // Not an empty palette: mapping onto no colours would leave every sheet unchanged while the
-    // panel said a palette was held.
-    const blank = imageFrom(4, 4, () => ({ r: 255, g: 0, b: 255, a: 0 }));
-
-    expect(lockPaletteFrom(blank, 'blank.png', 'UNRESTRICTED')).toBeNull();
-  });
 });
 
 describe('applyLockedPalette', () => {
