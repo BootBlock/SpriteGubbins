@@ -16,12 +16,13 @@ import type { DragEventHandler } from 'react';
  * guard's own test renders a real target rather than a mime precisely so the composition it asserts
  * is the one the app runs.
  *
- * **This is one of the two accepting halves of a pair.** Anywhere a file can land that neither this
+ * **This is one of the two accepting halves of a pair.** Anywhere a drag can land that neither this
  * nor `useImageDrop` has claimed — the rest of the page, and the window the comparison panel
- * detaches into — the drop is refused instead, because otherwise the browser opens the file and
- * navigates that window away. `useFileDropGuard` is the refusing half; `App` hands it the page's
- * window and `useDetachedWindow` hands it whatever it opened. They do not overlap: the guard stands
- * aside for any event an accepting half has already cancelled.
+ * detaches into — it is refused instead, because otherwise the browser opens the file, or follows
+ * the link, and navigates that window away. `useFileDropGuard` is the refusing half; `App` hands it
+ * the page's window and `useDetachedWindow` hands it whatever it opened. They do not overlap: the
+ * guard stands aside for any event an accepting half has already cancelled, and for a drag carrying
+ * no file that landed in a box which edits text.
  */
 export function useFileDropTarget(acceptFile: (file: File | null | undefined) => void): FileDropTarget {
   const [isDraggedOver, setIsDraggedOver] = useState(false);

@@ -4,17 +4,25 @@ import { useFileDropGuard } from './useFileDropGuard.ts';
 import { useFileDropTarget } from './useFileDropTarget.ts';
 
 /**
- * The shell and one drop target, which is the arrangement the guard has to be right inside.
+ * The shell, a drop target, a text field, a read-only field and a slider — every place a drag lands.
  *
  * The target is real rather than mimed, because the property that keeps the two from fighting is a
  * propagation order — React delegates `onDragOver` to the root container, and the guard listens on
  * the window above it — and a stand-in that called `preventDefault()` itself would prove nothing
- * about where React actually attaches.
+ * about where React actually attaches. The three inputs are plain `<input>`s for the opposite
+ * reason: nothing about them is the app's, and what the guard reads is each control's own kind.
  */
 function Harness({ acceptFile }: { readonly acceptFile: (file: File | null | undefined) => void }) {
   useFileDropGuard(window);
   const { isDraggedOver, dropHandlers } = useFileDropTarget(acceptFile);
-  return <div aria-label="zone" role="group" data-over={isDraggedOver} {...dropHandlers} />;
+  return (
+    <>
+      <div aria-label="zone" role="group" data-over={isDraggedOver} {...dropHandlers} />
+      <input aria-label="field" />
+      <input aria-label="dial" type="range" />
+      <input aria-label="locked" readOnly value="" onChange={() => undefined} />
+    </>
+  );
 }
 
 /** The three members of `DataTransfer` the guard and the drop target between them read. */
@@ -96,13 +104,73 @@ describe('useFileDropGuard', () => {
     expect(acceptFile).toHaveBeenCalledWith(sheet);
   });
 
-  it('leaves a drag carrying no file alone, so text can still be dropped into a field', () => {
+  it('leaves a drag carrying no file alone where it lands in a field', () => {
     harness();
-    const { event } = dragEvent('dragover', ['text/plain']);
+    const field = screen.getByRole('textbox', { name: 'field' });
+    const { event, transfer } = dragEvent('dragover', ['text/plain']);
+
+    fireEvent(field, event);
+
+    // Dropping selected text or a link into a box that edits text is what the default action is
+    // for, and `'copy'` is left as it arrived so the cursor still says the field will take it.
+    expect(event.defaultPrevented).toBe(false);
+    expect(transfer.dropEffect).toBe('copy');
+  });
+
+  it('refuses a link dragged onto anything that cannot use it, which would navigate the page away', () => {
+    harness();
+    const { event, transfer } = dragEvent('dragover', ['text/uri-list', 'text/plain']);
 
     fireEvent(document.body, event);
 
-    expect(event.defaultPrevented).toBe(false);
+    expect(event.defaultPrevented).toBe(true);
+    expect(transfer.dropEffect).toBe('none');
+  });
+
+  it('cancels a link drop as well, so a delivered one navigates nowhere', () => {
+    harness();
+    const { event, transfer } = dragEvent('drop', ['text/uri-list']);
+
+    fireEvent(document.body, event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(transfer.dropEffect).toBe('none');
+  });
+
+  it('refuses a file dragged into a field, which navigates just as it does anywhere else', () => {
+    harness();
+    const field = screen.getByRole('textbox', { name: 'field' });
+    const sheet = new File([new Uint8Array([1])], 'sheet.png', { type: 'image/png' });
+    const { event, transfer } = dragEvent('dragover', ['Files'], sheet);
+
+    fireEvent(field, event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(transfer.dropEffect).toBe('none');
+  });
+
+  it('refuses a link dragged onto a read-only field, which will not take it either', () => {
+    harness();
+    const locked = screen.getByRole('textbox', { name: 'locked' });
+    const { event, transfer } = dragEvent('dragover', ['text/uri-list']);
+
+    fireEvent(locked, event);
+
+    // `NumberField` renders its unavailable state as `readOnly` and keeps the control in the tab
+    // order, so this is a box the Quantise tab really shows and a drag can really land on.
+    expect(event.defaultPrevented).toBe(true);
+    expect(transfer.dropEffect).toBe('none');
+  });
+
+  it('refuses a link dragged onto a slider, which is a control with nowhere to put it', () => {
+    harness();
+    const dial = screen.getByRole('slider', { name: 'dial' });
+    const { event, transfer } = dragEvent('dragover', ['text/uri-list']);
+
+    fireEvent(dial, event);
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(transfer.dropEffect).toBe('none');
   });
 
   it('leaves a drag carrying no transfer at all alone', () => {
