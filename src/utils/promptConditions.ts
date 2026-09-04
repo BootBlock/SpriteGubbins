@@ -135,13 +135,6 @@ export function promptConditions(
     // the answer are resolved in `sheetFacts` — whether the sheet draws it, and whether the line was
     // emitted at all.
     CLOTHING_IS_A_COMPONENT: clothingIsAComponent ? 'yes' : '',
-    // Whether *either* paragraph below the paint rule fires, which is what decides the rule's own
-    // closing clause. The sentence ends by pointing at the exceptions named under it, and that clause
-    // was fixed while both paragraphs were gated — so 71 of the 118 sheets this app can compile
-    // promised a named exception and named none, leaving the next line, "Do not infer props, weapons
-    // or equipment from the role", as the only candidate for the exemption. A forward reference to
-    // nothing is the same defect as naming an absent line, arriving from the other end.
-    PAINT_EXCEPTIONS: clothingIsAComponent || additionalAnatomyLine.trim() !== '' ? 'yes' : '',
     // Which shape that exception sentence takes. On a multi-view sheet the anatomy turns with the
     // trunk — section 4 lists each piece at every one of the sheet's facings and counts it per view
     // — so the sentence must say so, or section 1 promises a single drawing the inventory below it

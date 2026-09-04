@@ -77,6 +77,12 @@ export function promptValues(
     additionalAnatomyLine,
   } = facts;
 
+  // Empty on exactly the sheets that append no additional-anatomy block: the subject named nothing,
+  // or this is a later sheet of a series, where `anatomyFacingsFor` answers `null` and the pieces are
+  // left off deliberately. That is the one question the two sentences below have to ask, so it is
+  // asked once here rather than twice there.
+  const listedAdditions = additionalAnatomyLine === '' ? null : fieldLabelFor(category, 'additional_anatomy');
+
   // Every value below is the app's own prose, so each is resolved through `cite` once the record is
   // built: a `[SEC:…]` written into one of the constants they read from is a citation of a heading,
   // and `substitute` runs last, so nothing else would ever consume it. **The values carrying text
@@ -94,10 +100,15 @@ export function promptValues(
     // Every one of these is now a function of the category as well as the mode. That is the whole
     // correction: an inventory, an assembly sentence and an exclusion list that knew only the mode
     // are what let a CHARACTER sheet ask for floors and walls and then forbid them.
-    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category],
+    //
+    // The two that take `listedAdditions` are functions of the *sheet* as well, because each opens
+    // by saying what every component of it is, and section 4 appends the subject's own pieces to
+    // that list — see `guardExemption`. They are handed the heading those pieces arrive under, or
+    // `null` where this sheet appends none.
+    CATEGORY_GUARD: CATEGORY_GUARD_TEXT[category](listedAdditions),
     ASSEMBLY_POSES: plan.assembly,
     CATEGORY_EXCLUSIONS: CATEGORY_EXCLUSION_TEXT[category],
-    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category],
+    CATEGORY_AUDIT: CATEGORY_AUDIT_TEXT[category](listedAdditions),
     // The same claim in three sections, from the record that also feeds the wrappers' two negative
     // channels — so a category names its assembled whole the same way wherever the prompt says it.
     CATEGORY_ASSEMBLY_INSTRUCTION: CATEGORY_ASSEMBLY[category].instruction,

@@ -5,7 +5,7 @@ import type { HardwareProfile } from '../types/hardware.ts';
 import { paletteFor } from '../constants/palettes/index.ts';
 import type { Palette } from '../types/palette.ts';
 import { resolveCameraElevation, validationPassFor } from '../constants/promptText/index.ts';
-import { resolveMode, resolveRigMode, sheetPlanFor } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import type { StyleReference } from '../types/styleReference.ts';
 import type {
@@ -100,20 +100,23 @@ export function sheetFacts(
   // pre-resolved one only works for as long as every call site remembers to.
   const mode = resolveMode(category, output.directionalMode);
 
+  // Every sheet the pairing produces, and then the one this prompt is for. The series is what the
+  // rig is a claim about — see `resolveRigMode` — and the index is resolved through it for the same
+  // reason the mode is: a stored index can name a second sheet on a pairing that has one, and
+  // `sheetPlanFor` answers with the series' first rather than with `undefined`.
+  const series = sheetSeriesFor(category, mode, output.directions);
+  const plan = sheetPlanFor(category, mode, output.directions, output.sheetIndex);
+
   // And the rig this sheet is actually drawn for, resolved for the same reason and against both
   // axes: a stored configuration can name one its category has no joints for, and section 5 is what
   // that decides. Unresolved, `POSE_LIBRARY` — the default — put "flexion comes from assembling
   // separately oriented rigid segments around shared pivots" on a tileset, a nine-slice and a
   // flipbook, and left the cut-out rig sheet itself — whose inventory *is* rig pieces — with no
-  // pivot registration, no overlap margin and no depth order at all. It takes the raw mode rather
-  // than the resolved one above for the reason that comment gives: a reader that resolves for
-  // itself cannot be reached with an unresolved argument.
-  const rigMode = resolveRigMode(category, output.directionalMode, output.rigMode);
-
-  // Which sheet of that pairing's series this is. Resolved here for the same reason the mode is: a
-  // stored index can name a second sheet on a pairing that has one, and `sheetPlanFor` answers with
-  // the series' first rather than with `undefined`.
-  const plan = sheetPlanFor(category, mode, output.directions, output.sheetIndex);
+  // pivot registration, no overlap margin and no depth order at all. It takes the *series* rather
+  // than the mode for the reason that comment gives one layer in: what a rig is a claim about is the
+  // set of sheets that assemble together, and only the series can be reached with the pairing and
+  // the direction set already resolved.
+  const rigMode = resolveRigMode(category, series, output.rigMode);
 
   // Which facings this sheet covers and which it assembles towards — resolved in `sheetDirections`
   // because the splitter labels its runs from the same answer, and two implementations of it would

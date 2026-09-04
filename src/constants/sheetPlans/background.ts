@@ -34,6 +34,9 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   assembly:
     'a scene of any width scrolling behind the playfield — each band looping against its own copy with no visible join, the bands stacked front to back with no gap showing between them, and the loose pieces placed over whichever band they belong to.',
   targetQuantity: 'COMPONENT',
+  // Every ×2 and ×3 entry is a set of distinct pieces — two band profiles, a broad shaft and a
+  // narrow one — rather than one piece drawn at the positions it takes.
+  posing: 'UNSTATED',
   groups: [
     {
       heading: 'Depth bands',
@@ -161,6 +164,9 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // is what a reader typing `640 × 360 px` here is describing. The parallax set above answers
   // `'COMPONENT'` instead: a band loops against its own copy, so the scene it builds has no width.
   targetQuantity: 'ASSEMBLED',
+  // The ×2 and ×3 entries name pieces that differ from each other — the left half of the scene and
+  // the right, three sizes of standing feature — rather than one piece at several positions.
+  posing: 'UNSTATED',
   groups: [
     {
       heading: 'Scene panel',

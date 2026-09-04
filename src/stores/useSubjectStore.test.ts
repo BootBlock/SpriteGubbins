@@ -180,8 +180,12 @@ describe('useSubjectStore', () => {
     });
 
     it('keeps a rig the new category shares, rather than resetting for its own sake', () => {
+      // VEHICLE rather than CREATURE, because the rig survives a switch only where the *pairing*
+      // can carry it as well as the category: the default sheet mode is `CORE_DIRECTIONAL_VARIANTS`,
+      // and a creature's is a directional core followed by an articulation sheet whose limb variants
+      // rule the cut-out rig out. A vehicle's is directional views throughout.
       useOutputStore.setState({ output: { ...DEFAULT_OUTPUT_CONFIG, rigMode: 'CUTOUT_RIG' } });
-      useSubjectStore.getState().setCategory('CREATURE');
+      useSubjectStore.getState().setCategory('VEHICLE');
 
       expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
     });

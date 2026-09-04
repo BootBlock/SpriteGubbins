@@ -29,6 +29,10 @@ beforeEach(() => {
 
 describe('RiggingFields', () => {
   it('leaves the rig open on a sheet that does not settle it', () => {
+    // An OBJECT, whose directional pairing turns its moving parts with the camera and so leaves all
+    // three rigs standing. A CHARACTER's pairing delivers an articulation sheet of posed limbs, so
+    // the cut-out rig is not among its options there — which the test below this one covers.
+    useSubjectStore.setState({ category: 'OBJECT' });
     render(<RiggingFields />);
 
     expect(rigSelect()).toHaveValue('POSE_LIBRARY');

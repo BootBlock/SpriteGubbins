@@ -238,26 +238,69 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * that adds no content at all crossed it. The margin is restored to the same order as every raise
  * above, not widened.
  *
- * **Raised once more, from 2314, by making section 1's paint rule state its exceptions per sheet.**
- * The rule — every fitted, applied and worn attribute is painted onto the component it sits on — was
+ * **Raised once more, from 2314, by the exemption a category's §4 guard and §9 audit now carry for
+ * the pieces the subject itself named.** Two clauses in `constants/promptText/exclusions.ts`, spliced
+ * into all thirteen entries of each record by a helper the entries call — prompt text, so constant
+ * data the entry chunk reaches, on the footing every raise above stands on. Measured against the
+ * build immediately before it, from the same `node_modules`, the precache goes from **2313.83** to
+ * **2314.23 KiB**, a delta of 0.40. Merged with the style-reference change that landed alongside it,
+ * which shortens a sentence, the build reports **2314.22**. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * The delta is that small because each clause is written down **once**: the entries interpolate a
+ * function rather than a literal, so the bundle carries the sentence a single time and each of the
+ * twenty-six splices costs a call. Written out at the call sites it would have been twenty-six
+ * copies of about fifty characters.
+ *
+ * The base is again worth reading beside the ceiling it was under: 2313.83 against 2314 is
+ * **0.17 KiB of headroom**, the second-narrowest this margin has been, and it is why four tenths of
+ * a KiB of prose crossed it. The margin is restored to the same order as every raise above rather
+ * than widened.
+ *
+ * **Raised once more, from 2317, by the rig relation moving onto the sheet plans.** A cut-out rig
+ * could be asked for on a deliverable that already draws each moving part once per position it
+ * takes, so section 5 forbade what section 4 required; the fix is a `posing` field on every one of
+ * the thirty-two sheet plans, a second resolver beside `fixedRigMode`, and the sentence the rig
+ * select now shows when the sheet contents withdraw the option. All of it is constant data or studio
+ * code the entry chunk reaches, which is the footing every raise above stands on. Measured on its
+ * own base before this branch met main — 2313.82 KiB — the precache reached **2315.86**, a delta of
+ * 2.04; merged with the guard exemption the paragraph above records, the build reports **2316.25**,
+ * which is that paragraph's own merged 2314.22 plus the same delta to within 0.01. No file was added
+ * to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * Both raises were bought from the same 2314, which is why this one names 2317 rather than 2314 as
+ * the figure it lifts: two branches each found 0.18 KiB of headroom under it and each crossed it.
+ * The margin is restored to the same order as every raise above rather than widened.
+ *
+ * **The paint-rule change raises nothing, and is recorded here because it nearly did.** Section 1's
+ * rule — every fitted, applied and worn attribute is painted onto the component it sits on — was
  * fixed in the template with exactly one exception named, while six categories draw their `clothing`
  * value as components of their own, so a VEHICLE prompt called the cladding paint and then listed a
- * cladding panel. What a first visit now pays for is a `drawsClothing` flag on the **26** inventory
+ * cladding panel. What a first visit pays for is a `drawsClothing` flag on the **26** inventory
  * entries that draw one — nine on ICON, seven on BACKGROUND, four on OBJECT, three on VEHICLE, two
- * on INTERFACE and one on BUILDING — the four lines that carry the answer from the plan to the
- * template (`utils/sheetPlanClothing.ts`, one field on `SheetFacts` and two gates in
- * `promptConditions`), and one rewritten tooltip. The template is close to a wash: two gated forms
- * of the rule's own sentence and a two-line exception paragraph, against a fixed clause that named
- * five example attributes, three of which were the very things being excepted. Measured against the
- * build immediately before it, from the same `node_modules`, the precache goes from **2313.82** to
- * **2314.92 KiB**, a delta of 1.10. No file was added to or removed from `PRECACHE_SHAPES`, and no
- * chunk was renamed.
+ * on INTERFACE and one on BUILDING — the three lines that carry the answer from the plan to the
+ * template (`utils/sheetPlanClothing.ts`, one field on `SheetFacts` and one gate in
+ * `promptConditions`), and one rewritten tooltip. The template is close to a wash: a one-line
+ * exception paragraph against a fixed clause that named five example attributes, three of which were
+ * the very things being excepted.
  *
- * That base of 2313.82 sat 0.18 KiB under the ceiling above it — the second-narrowest this margin
- * has been, after the 0.13 the previous paragraph records — which is why 1.10 KiB crossed it. The
- * margin is restored to the same order as every raise above, not widened.
+ * Measured against main's own tip, rebuilt from the same `node_modules` — **2316.39 KiB** — the
+ * merged build reports **2317.23**, a delta of 0.84 and 2.77 inside the 2320 the two raises above
+ * had already bought. So the figure is left where they set it. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **It very nearly did raise it, and the review is why it did not.** A first draft closed the rule
+ * with "… except where named below" while both exception paragraphs stayed gated, so on 71 of the
+ * 118 sheets this app can compile the sentence promised a named exception and named none. Removing
+ * that clause is what returned the sentence to its old self-contained form and took the cost with
+ * it: on the pre-merge base of 2313.82 the drafted shape measured 2314.92, which crossed the 2314
+ * that base sat 0.18 under and had this branch raising the ceiling to 2318 on its own.
+ *
+ * **Three branches found headroom under 2314 within a day and all three reached for it**, which is
+ * what a margin of that order buys — not a reason to widen it, but worth knowing before reading the
+ * next base figure as slack.
  */
-export const PRECACHE_CEILING_KIB = 2318;
+export const PRECACHE_CEILING_KIB = 2320;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

@@ -89,13 +89,15 @@ export type AspectRatio = (typeof ASPECT_RATIOS)[number];
  * contract, CLI flags, a negative-prompt block, or a directive prefix — so this changes the shape of
  * the output, not just its wording.
  *
- * `FLUX` is separate from `STABLE_DIFFUSION` because one wrapper cannot serve both: Black Forest
- * Labs state outright that "FLUX.2 does not support negative prompts", so SD's negative block is
- * silently discarded there.
+ * `FLUX` is separate from `STABLE_DIFFUSION` because one wrapper cannot serve both: no FLUX.2 model
+ * takes a negative prompt, so SD's negative block is silently discarded there. The two Flux entries
+ * in `constants/models.ts` establish that separately, and say why — Black Forest Labs state it for
+ * the hosted tier, and their own inference code offers no negative channel for the weights.
  *
  * **`FLUX` and `FLUX_API` are the same model family split by how much of the prompt reaches it**,
- * which is the only difference this app can act on: Black Forest Labs' hosted tier reads 32K tokens
- * while their own open-weight inference code stops tokenising at 512. One entry would have to state
+ * which is the only difference this app can act on: Black Forest Labs advertise 32K text input
+ * tokens for FLUX.2 while their own open-weight inference code stops tokenising at 512, so the
+ * figure can only be the hosted tier's. One entry would have to state
  * one of those and be wrong for the other half of Flux's users — and the wrong half is the one that
  * gets told a prompt it can read is seven times over budget.
  */

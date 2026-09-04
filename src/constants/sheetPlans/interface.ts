@@ -31,6 +31,8 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
   assembly:
     'the complete interface in each state a player can put it in — a resting screen, a button under the pointer and again pressed, a bar part-filled, a toggle switched, a slot occupied — without redrawing any piece that does not change between them.',
   targetQuantity: 'COMPONENT',
+  // A button body in four states, a toggle in three, a slider handle at rest and held.
+  posing: 'PER_POSITION',
   groups: [
     {
       heading: null,
@@ -113,6 +115,8 @@ export const INTERFACE_NINE_SLICE: SheetPlan = {
   // Cut into corners, edges and a centre, and still a component size: what the nine assemble into is
   // “a panel at any width and height”, so there is no assembled figure for a reader to price.
   targetQuantity: 'COMPONENT',
+  // The end caps and the stretching middle are each drawn again in the pressed state.
+  posing: 'PER_POSITION',
   groups: [
     {
       heading: 'Panel nine-slice',

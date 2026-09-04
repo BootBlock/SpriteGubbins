@@ -320,16 +320,10 @@ not an omission to be filled dramatically.
 [OPTIONAL:MATERIALS           | - [DEFINE:MATERIALS_LABEL]: [DEFINE:MATERIALS]]
 [OPTIONAL:ADDITIONAL_ANATOMY  | - [DEFINE:ADDITIONAL_ANATOMY_LABEL]: [DEFINE:ADDITIONAL_ANATOMY]]
 
-[IF:PAINT_EXCEPTIONS]
-Every fitted, applied and worn attribute listed above is **painted onto** the component it sits on,
-never drawn as a separate piece, except where named below.
-[/IF]
-[IF:PAINT_EXCEPTIONS!=yes]
 Every fitted, applied and worn attribute listed above is **painted onto** the component it sits on,
 never drawn as a separate piece.
-[/IF]
 [IF:CLOTHING_IS_A_COMPONENT]
-**[DEFINE:CLOTHING_LABEL]** is excepted: section [SEC:INVENTORY] draws and counts it as components of its own.
+**[DEFINE:CLOTHING_LABEL]** is excepted: section [SEC:INVENTORY] draws it as components of its own.
 [/IF]
 [IF:ADDITIONAL_ANATOMY]
 [IF:ANATOMY_PER_VIEW]

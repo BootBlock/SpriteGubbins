@@ -125,6 +125,77 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
 };
 
 /**
+ * The exemption a guard and an audit carry for the pieces the subject itself named.
+ *
+ * Section 4 appends whatever the `additional_anatomy` field holds to the inventory, under the
+ * category's own label for it, counted and slotted like every entry above. So a guard reading
+ * “every entry below is X” is a claim about a list this record does not wholly write — and it is
+ * false wherever that pool offers something which is not X. The field is a combo box, so free text
+ * always can be.
+ *
+ * EFFECT is where that first cost something: a shockwave ring is not a frame, so the unqualified
+ * guard called the sheet's last components “an error in this specification, not an instruction to
+ * follow”, and the unqualified audit failed the sheet for drawing them. The carve-out was written
+ * into EFFECT alone, on the reading that a character's extra horn is still anatomy and a vehicle's
+ * extra pod is still a part. That is true of those two options and not of the pools they sit in:
+ * `Floating Rune Sigil ×3` and `Mainspring Escapement ×1, Satchel ×1` are CHARACTER's,
+ * `Empty Saddle ×1, Stirrup ×2, Rein Strap ×1` is CREATURE's, and `Speaking Mouth Shapes ×4` is
+ * PORTRAIT's — which is the one that was reported.
+ *
+ * So the exemption is available to every category, rather than to the ones somebody has judged to
+ * need it. That judgement is what rots: it has to be re-made every time a pool gains an option, and
+ * nothing fails when it is not.
+ *
+ * **It is a function of the sheet, not a sentence the record states.** The block it exempts is
+ * conditional — `componentBreakdownFor` appends nothing when the subject named no pieces, and
+ * `anatomyFacingsFor` returns `null` on every sheet of a series but the first, which is what keeps a
+ * tail off the articulation sheets that would have nothing to hang it on. An unconditional clause
+ * therefore shipped an exception with no members on the commonest prompt the app composes — the
+ * default subject names none — and on every later sheet of a series besides: the character and
+ * creature articulation sheets under each of their five direction sets, and the font's three
+ * continuation sheets. There §1's line is blanked and the count excludes the pieces, so the sentence
+ * told a reader that some entry below is not what it had just said it was, and gave them nowhere to
+ * look. `promptValues` passes the label where the sheet lists the block and `null` where it does
+ * not, so the sentence is the one this record has always stated unless there is something to
+ * except.
+ *
+ * **It names the heading the reader will actually meet**, which is the category's own label for the
+ * field — `#### Extra Expressions — 4`, `#### Attached Modules — 1` — rather than a class the prompt
+ * never uses. “Additional elements” read as a cross-reference while the clause was EFFECT's alone,
+ * because that is EFFECT's label; it is the label of no other category, and twelve of the thirteen
+ * would have been pointed at a name their own prompt does not contain.
+ *
+ * **It costs the guard nothing it was doing.** What a reader acts on is the sentence after this
+ * clause — an entry describing a floor tile or a wall “is an error in this specification” — and the
+ * subject's own words are never another category's plan leaking into this one, which is the
+ * contamination that sentence exists to catch.
+ *
+ * **The guard clause is as short as it is because one shipped preset pays for it.** It lands in
+ * every prompt whose sheet lists the block, and `Side-On Rail Gun Car` — which names
+ * `Towed Trailer Section ×1` — is the only preset in the library sitting near a ceiling: 3,582
+ * estimated tokens against the 3,600 `MAX_BUDGET_SHARE` leaves of Qwen's documented 4,500. A first
+ * draft read “apart from the additional elements the subject itself named, which are listed and
+ * counted separately at the end”, which measures 3,610 and fails `presetCoverage.test.ts`. The tail
+ * was the half to drop rather than the exemption: section 4 heads the appended block with that same
+ * label and a count, and says outright that the pieces come last, so the clause was restating what
+ * the reader meets a little further down the same section. The audit clause is not measured by that
+ * preset at all — Qwen declares `deliberates: false`, so section 9 is not in its prompt — and it is
+ * the wording EFFECT already carried.
+ */
+const guardExemption = (label: string | null): string =>
+  label === null ? '' : `, apart from the pieces named under ${label}`;
+
+/** The same exemption, worded for a check the reader performs rather than a claim they read. */
+const auditExemption = (label: string | null): string =>
+  label === null ? '' : `, or one of the pieces named under ${label}`;
+
+/**
+ * One category's sentence, given the label of the field whose pieces this sheet lists — or `null`
+ * where it lists none, which is the form the record has always stated.
+ */
+type CategorySentence = (additions: string | null) => string;
+
+/**
  * The category guard section 4 carries — a plain statement of what the inventory may contain.
  *
  * Defence in depth, and deliberately cheap: the plan tables already make a contaminated inventory
@@ -133,55 +204,56 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
  * above it saying so, and a reasoning target can act on the contradiction rather than dutifully
  * drawing walls for a character.
  */
-export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
-  CHARACTER:
-    'Every entry below is character anatomy. An entry describing a floor tile, wall, terrain piece, building module or other environment component does not belong to this sheet and is an error in this specification, not an instruction to follow.',
-  CREATURE:
-    'Every entry below is creature anatomy. An entry describing a floor tile, wall, terrain piece, building module or other environment component does not belong to this sheet and is an error in this specification, not an instruction to follow.',
-  OBJECT:
-    'Every entry below is a part of this one object. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
-  ITEM: 'Every entry below is a part of this one item. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
-  BUILDING:
-    'Every entry below is a structural or tile component. An entry describing a head, limb, hand or other anatomy does not belong to this sheet and is an error in this specification, not an instruction to follow.',
-  VEHICLE:
-    'Every entry below is a part of this one vehicle. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
-  // The one guard that has to name the exception, because this is the one category whose additional
-  // elements are *not* the same kind of thing as its components. A character's extra horn is still
-  // anatomy and a vehicle's extra pod is still a part, so "every entry below is anatomy" stays true
-  // above the appended block in both. An effect's shockwave ring and scorch decal are not frames —
-  // section 4's own additional-anatomy block lists and counts them right below this sentence, so an
-  // unqualified "every entry below is a frame" would call the sheet's last components an error in
-  // the specification, which is exactly what the sentence tells the reader to act on.
-  EFFECT:
-    'Every entry below is one frame of this one effect’s sequence — a moment in time, not a piece of a machine — apart from the additional elements the subject itself named, which are listed and counted separately at the end. An entry describing anatomy, a housing, a hatch, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, CategorySentence>> = {
+  CHARACTER: (additions) =>
+    `Every entry below is character anatomy${guardExemption(additions)}. An entry describing a floor tile, wall, terrain piece, building module or other environment component does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
+  CREATURE: (additions) =>
+    `Every entry below is creature anatomy${guardExemption(additions)}. An entry describing a floor tile, wall, terrain piece, building module or other environment component does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
+  OBJECT: (additions) =>
+    `Every entry below is a part of this one object${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
+  ITEM: (additions) =>
+    `Every entry below is a part of this one item${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
+  BUILDING: (additions) =>
+    `Every entry below is a structural or tile component${guardExemption(additions)}. An entry describing a head, limb, hand or other anatomy does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
+  VEHICLE: (additions) =>
+    `Every entry below is a part of this one vehicle${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
+  // The em-dash aside is this category's own, and it is why the exemption joins with a comma here
+  // rather than closing a bracketing pair: a frame is a moment in time, and the failure this guard
+  // answers is a reader taking "frame" for a housing or a bezel. The exemption itself is every
+  // category's — see `guardExemption`, which records what an effect's shockwave ring cost before it
+  // was.
+  EFFECT: (additions) =>
+    `Every entry below is one frame of this one effect’s sequence — a moment in time, not a piece of a machine${guardExemption(additions)}. An entry describing anatomy, a housing, a hatch, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
   // The second sentence is this category's alone, and it is load-bearing rather than reassurance:
   // this is the one subject whose components *are* frames and borders, and section 0 forbids drawing
   // one around the image or around a component. Those are two different things, and saying so where
   // the inventory is about to list a panel frame is what stops a generator resolving the apparent
   // conflict by delivering a panel with no edge.
-  INTERFACE:
-    'Every entry below is a piece of this one interface. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The frames, borders and panel edges it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.',
-  TERRAIN:
-    'Every entry below is a ground tile or a landform piece. An entry describing anatomy, a wall, a roof, a building module or a vehicle part does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  INTERFACE: (additions) =>
+    `Every entry below is a piece of this one interface${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The frames, borders and panel edges it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.`,
+  TERRAIN: (additions) =>
+    `Every entry below is a ground tile or a landform piece${guardExemption(additions)}. An entry describing anatomy, a wall, a roof, a building module or a vehicle part does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
   // “One expression of this one person” rather than “portrait anatomy”, because the failure this
   // sheet actually has is twelve competent portraits of twelve different people — which “anatomy”
   // would not name at all. The floor-tile clause is the shared half every guard carries.
-  PORTRAIT:
-    'Every entry below is one expression of this one person’s portrait, drawn to the same crop as the rest. An entry describing a floor tile, a wall, a terrain piece, a building module or a second person does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  PORTRAIT: (additions) =>
+    `Every entry below is one expression of this one person’s portrait${guardExemption(additions)}, drawn to the same crop as the rest. An entry describing a floor tile, a wall, a terrain piece, a building module or a second person does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
   // The second sentence is this category’s own and is load-bearing rather than reassurance: an icon
   // set’s inventory names overlays and marks that sit on top of an icon, and section 0 forbids
   // annotation drawn over the image. Those are two different things, and saying so where the
   // inventory is about to list a locked mark is what stops a generator resolving the apparent
   // conflict by omitting the overlays.
-  ICON: 'Every entry below is one member of this one icon set, or a piece laid over one. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.',
-  BACKGROUND:
-    'Every entry below is a band of this one backdrop, or a loose piece laid over one. An entry describing anatomy, a wall the player walks against, a platform, a vehicle part or an interface element does not belong to this sheet and is an error in this specification, not an instruction to follow.',
+  ICON: (additions) =>
+    `Every entry below is one member of this one icon set, or a piece laid over one${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The overlays and marks it does list are components — the subject of the sheet, not the annotation section [SEC:CONTRACT] forbids.`,
+  BACKGROUND: (additions) =>
+    `Every entry below is a band of this one backdrop, or a loose piece laid over one${guardExemption(additions)}. An entry describing anatomy, a wall the player walks against, a platform, a vehicle part or an interface element does not belong to this sheet and is an error in this specification, not an instruction to follow.`,
   // The second sentence is this category's own and is the load-bearing one in the whole record: it is
   // the only place in a compiled prompt where the reader is told, at the point of listing ninety-four
   // letters, that the lettering below is the subject rather than the thing section 0 forbids.
   // INTERFACE's and ICON's guards make the same move for frames and overlays; this one makes it for
   // the ban those two only ever strengthened.
-  FONT: 'Every entry below is one character of this one font. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The letters, digits and marks it does list are components — the subject of the sheet, and the one thing section [SEC:CONTRACT] permits it to carry — not the annotation that section forbids.',
+  FONT: (additions) =>
+    `Every entry below is one character of this one font${guardExemption(additions)}. An entry describing anatomy, a floor tile, a wall or a terrain piece does not belong to this sheet and is an error in this specification, not an instruction to follow. The letters, digits and marks it does list are components — the subject of the sheet, and the one thing section [SEC:CONTRACT] permits it to carry — not the annotation that section forbids.`,
 };
 
 /**
@@ -191,22 +263,24 @@ export const CATEGORY_GUARD_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * sheet was *well-formed* without ever asking whether it was the right subject. A character sheet
  * that came back as sixteen wall tiles passed every one of those checks.
  */
-export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
-  CHARACTER:
-    'Every component is character anatomy — no floor tiles, walls, terrain, building modules or scenery anywhere on the sheet.',
-  CREATURE:
-    'Every component is creature anatomy — no floor tiles, walls, terrain, building modules or scenery anywhere on the sheet.',
-  OBJECT: 'Every component is a part of this one object — no anatomy, tiles, terrain or scenery.',
-  ITEM: 'Every component is a part of this one item — no anatomy, tiles, terrain or scenery.',
-  BUILDING:
-    'Every component is a structural or tile piece — no characters, creatures, anatomy or loose props.',
+export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, CategorySentence>> = {
+  CHARACTER: (additions) =>
+    `Every component is character anatomy${auditExemption(additions)} — no floor tiles, walls, terrain, building modules or scenery anywhere on the sheet.`,
+  CREATURE: (additions) =>
+    `Every component is creature anatomy${auditExemption(additions)} — no floor tiles, walls, terrain, building modules or scenery anywhere on the sheet.`,
+  OBJECT: (additions) =>
+    `Every component is a part of this one object${auditExemption(additions)} — no anatomy, tiles, terrain or scenery.`,
+  ITEM: (additions) =>
+    `Every component is a part of this one item${auditExemption(additions)} — no anatomy, tiles, terrain or scenery.`,
+  BUILDING: (additions) =>
+    `Every component is a structural or tile piece${auditExemption(additions)} — no characters, creatures, anatomy or loose props.`,
   // Every noun here carries its own qualifier, and that is load-bearing rather than wordy: the part
   // library asks for an "exhaust or vent" as a component, so an audit reading "no exhaust" would
   // fail the sheet on an entry section 4 required. The exclusion above states the same ban and gets it
   // right; this line dropped the qualifiers and reintroduced the §4-requires/§9-forbids
   // contradiction these per-category records exist to remove.
-  VEHICLE:
-    'Every component is a part of this one vehicle — no anatomy, tiles, terrain, scenery or crew, and no exhaust plume, dust trail, wake or motion effect drawn as though it were a component.',
+  VEHICLE: (additions) =>
+    `Every component is a part of this one vehicle${auditExemption(additions)} — no anatomy, tiles, terrain, scenery or crew, and no exhaust plume, dust trail, wake or motion effect drawn as though it were a component.`,
   // Qualified the way VEHICLE's is, and for the same reason: this sheet's components *are* sparks,
   // smoke and glow, so an unqualified "no effects" would fail every sheet on the entries section 4
   // required. What is checked instead is that nothing the effect plays against got drawn with it,
@@ -223,13 +297,13 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // of things to look for, and the exclusion above is where the vocabulary belongs. So the derived
   // check in `exclusions.test.ts` finds nothing to rescue here, which is the stronger of the two
   // positions rather than a gap — putting a noun list back puts the collisions back and fails it.
-  EFFECT:
-    'Every component is a frame of this one effect, or one of the additional elements the subject named — no anatomy, machine parts, tiles, terrain or scenery, and nothing the effect issues from or lands on. No two frames are the same drawing at a different brightness, scale, rotation or mirroring.',
+  EFFECT: (additions) =>
+    `Every component is a frame of this one effect${auditExemption(additions)} — no anatomy, machine parts, tiles, terrain or scenery, and nothing the effect issues from or lands on. No two frames are the same drawing at a different brightness, scale, rotation or mirroring.`,
   // "No floor or terrain tiles" rather than "no tiles", for the same reason VEHICLE's line qualifies
   // every noun in it: a nine-slice sheet's components *are* tiles, so an audit reading "no tiles"
   // would fail a sheet on the entries section 4 required.
-  INTERFACE:
-    'Every component is a piece of this one interface — no anatomy, floor or terrain tiles, scenery, or gameplay art inside a frame — and no component carries lettering, a numeral or a caption.',
+  INTERFACE: (additions) =>
+    `Every component is a piece of this one interface${auditExemption(additions)} — no anatomy, floor or terrain tiles, scenery, or gameplay art inside a frame — and no component carries lettering, a numeral or a caption.`,
   // The second half is this category's own, and it is the check no generic audit can stand in for: a
   // terrain sheet can pass every count, background and ordering test and still be unusable, because
   // seamlessness only shows up when the tiles are laid together. It is stated as an agreement about
@@ -242,26 +316,27 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // items above this one in the same list — the one-camera check sits between them — for the reason
   // the same clause left `CATEGORY_EXCLUSION_TEXT`: it is this category's assembly failure rather than
   // a subject check, and this record was only ever where a per-category line existed to hold it.
-  TERRAIN:
-    'Every component is a ground tile or a landform piece — no characters, creatures, anatomy, buildings or vehicles. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.',
+  TERRAIN: (additions) =>
+    `Every component is a ground tile or a landform piece${auditExemption(additions)} — no characters, creatures, anatomy, buildings or vehicles. Every tile edge carrying a given material is drawn to the same profile wherever it appears, so any two tiles meeting on that material show no seam, and no tile carries a mark that would be recognised twice across a field.`,
   // The second half is this category’s own and is the check no generic audit can stand in for: a
   // portrait sheet can pass every count, background and ordering test and still be unusable, because
   // whether it is one person only shows up when the drawings are compared with each other. It is
   // stated as an agreement between the expressions rather than as “every component is identical”,
   // which would be this record’s VEHICLE mistake again — the expressions are meant to differ, and an
   // audit demanding they do not fails the sheet on the twelve drawings section 4 requires.
-  PORTRAIT:
-    'Every component is one expression of this one person — no second figure, no scenery, no anatomy below the stated crop, and no name plate, caption or speech bubble. Any two expressions are recognisably the same person, drawn to the same crop with the eyes at the same height, differing only in what the feeling itself moves.',
+  PORTRAIT: (additions) =>
+    `Every component is one expression of this one person${auditExemption(additions)} — no second figure, no scenery, no anatomy below the stated crop, and no name plate, caption or speech bubble. Any two expressions are recognisably the same person, drawn to the same crop with the eyes at the same height, differing only in what the feeling itself moves.${additions === null ? '' : ' A piece named there is not held to that: it is a loose piece drawn to register over that same head, never a portrait of its own.'}`,
   // Qualified throughout, as VEHICLE’s and INTERFACE’s are: this sheet’s components include marks
   // and overlays, so an unqualified “no marks” would fail it on the entries section 4 required. The
   // second half is the check this deliverable actually needs — an icon grid fails by disagreeing
   // with itself about weight and margin, and that only shows when the members are seen together.
-  ICON: 'Every component is a member of this one icon set or a piece laid over one — no anatomy, floor or terrain tiles, scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.',
+  ICON: (additions) =>
+    `Every component is a member of this one icon set or a piece laid over one${auditExemption(additions)} — no anatomy, floor or terrain tiles, scenery, and no interface panel or slot plate drawn behind an icon — and no component carries a letter, a numeral, a stack count or a key name. Every icon fills the same cell to the same margin at the same outline weight and under the same light, so no member reads as belonging to a different set.`,
   // The seam check is scoped to bands meant to loop for the reason TERRAIN’s edge check is scoped to
   // tiles: the layer library’s panels do not loop, and an audit demanding a seamless join would fail
   // that sheet on the six pieces section 4 requires.
-  BACKGROUND:
-    'Every component is a band of this one backdrop or a loose piece laid over one — nothing drawn at the playfield’s own scale, no interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup. Every band meant to loop carries the same profile, materials and values at its left edge as at its right, so a run of it shows no join, and no looping band carries a mark that would be recognised twice across a scroll.',
+  BACKGROUND: (additions) =>
+    `Every component is a band of this one backdrop or a loose piece laid over one${auditExemption(additions)} — nothing drawn at the playfield’s own scale, no interface or lettering, and nothing a player could mistake for a platform, a ledge or a pickup. Every band meant to loop carries the same profile, materials and values at its left edge as at its right, so a run of it shows no join, and no looping band carries a mark that would be recognised twice across a scroll.`,
   // Qualified throughout, as VEHICLE's and ICON's are, and here the qualifier does the most work in
   // the record: every component of this sheet *is* lettering, so an unqualified “no lettering” — the
   // clause BACKGROUND's line above carries — would fail the sheet on all ninety-four entries section 4
@@ -272,7 +347,8 @@ export const CATEGORY_AUDIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // The second half is the check no generic audit can stand in for: a font sheet passes every count,
   // background and ordering test and is still unusable if one glyph sits a pixel off the baseline,
   // and that only shows when the characters are compared with each other.
-  FONT: 'Every component is one character of this one font — no anatomy, tiles, terrain or scenery, and no page, plate or panel drawn behind a component. Every character stands on the same baseline at the same cap height and stroke weight under the same light, so no component reads as belonging to a different font.',
+  FONT: (additions) =>
+    `Every component is one character of this one font${auditExemption(additions)} — no anatomy, tiles, terrain or scenery, and no page, plate or panel drawn behind a component. Every character stands on the same baseline at the same cap height and stroke weight under the same light, so no component reads as belonging to a different font.`,
 };
 
 /**

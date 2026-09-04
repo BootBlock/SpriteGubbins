@@ -92,29 +92,31 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
     }
   });
 
-  it.each(SUBJECT_CATEGORIES)('promises an exception on a %s sheet only where one follows', (category) => {
-    // The rule's closing clause points forward at the paragraphs beneath it, and both of those are
-    // gated. Left fixed, the clause promised a named exception on 71 of the 118 sheets this app can
-    // compile and named none — leaving "Do not infer props, weapons or equipment from the role", the
-    // next line, as the only candidate for the exemption it had just announced. That inverts the
-    // rule, so the clause is gated on the same answer the paragraphs are.
-    for (const { mode, directions, sheetIndex } of sheetsOf(category)) {
-      for (const anatomy of ['', 'Extra Piece ×2']) {
-        for (const clothing of ['', pooledClothing(category)]) {
-          const prompt = generatePrompt(
-            category,
-            { ...defaultSubjectFor(category), clothing, additional_anatomy: anatomy },
-            { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
-          );
-          const section = sectionOf(prompt, 'SUBJECT DEFINITION');
-          const where = `${category} / ${mode} / sheet ${String(sheetIndex + 1)}`;
+  it.each(SUBJECT_CATEGORIES)(
+    'states the paint rule on a %s sheet without promising anything',
+    (category) => {
+      // The rule has to stand on its own, because both paragraphs under it are gated. A first draft of
+      // this change closed it with "… except where named below", which on 71 of the 118 sheets this app
+      // can compile promised a named exception and named none — leaving "Do not infer props, weapons or
+      // equipment from the role", the next line, as the only candidate for the exemption it had just
+      // announced. The full stop is what makes the sentence true whether or not a paragraph follows.
+      for (const { mode, directions, sheetIndex } of sheetsOf(category)) {
+        for (const anatomy of ['', 'Extra Piece ×2']) {
+          for (const clothing of ['', pooledClothing(category)]) {
+            const prompt = generatePrompt(
+              category,
+              { ...defaultSubjectFor(category), clothing, additional_anatomy: anatomy },
+              { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
+            );
+            const section = sectionOf(prompt, 'SUBJECT DEFINITION');
+            const where = `${category} / ${mode} / sheet ${String(sheetIndex + 1)}`;
 
-          expect(section, where).toContain('painted onto');
-          expect(section.includes('except where named below'), where).toBe(section.includes('is excepted'));
+            expect(section, where).toContain('never drawn as a separate piece.\n');
+          }
         }
       }
-    }
-  });
+    },
+  );
 });
 
 describe('which categories draw the clothing value as components of their own', () => {

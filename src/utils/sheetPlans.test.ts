@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
-import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { CATEGORY_OPTIONS, defaultSubjectFor, fieldLabelFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { directionalModeChoices } from '../constants/output/index.ts';
 import {
@@ -12,14 +12,22 @@ import {
   supportsMode,
 } from '../constants/sheetPlans/index.ts';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
-import { CATEGORY_EXCLUSION_TEXT, DIRECTION_LISTS, OBJECT_YAW } from '../constants/promptText/index.ts';
+import {
+  CATEGORY_AUDIT_TEXT,
+  CATEGORY_EXCLUSION_TEXT,
+  CATEGORY_GUARD_TEXT,
+  DIRECTION_LISTS,
+  OBJECT_YAW,
+} from '../constants/promptText/index.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
+import type { SheetPlan } from '../types/components.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
-import { componentCountFor } from './componentSet.ts';
+import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
+import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
@@ -107,6 +115,43 @@ const SHEETS: readonly {
   ),
 );
 
+/**
+ * The same sweep as {@link SHEETS}, carrying the plan itself.
+ *
+ * `SHEETS` deliberately holds the sheet's *name*, because that is what its `it.each` titles read and
+ * what a failure has to name; the checks on a plan's own declarations need the object. Both are one
+ * walk of the same three axes rather than two, so a pairing that grows a sheet arrives in each.
+ */
+const EVERY_SERIES: readonly {
+  category: SubjectCategory;
+  mode: DirectionalMode;
+  directions: DirectionSet;
+}[] = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].map((directions) => ({ category, mode, directions })),
+  ),
+);
+
+const EVERY_PLAN: readonly {
+  category: SubjectCategory;
+  mode: DirectionalMode;
+  directions: DirectionSet;
+  sheet: string;
+  plan: SheetPlan;
+}[] = SUBJECT_CATEGORIES.flatMap((category) =>
+  modesFor(category).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+      sheetSeriesFor(category, mode, directions).map((plan) => ({
+        category,
+        mode,
+        directions,
+        sheet: plan.name,
+        plan,
+      })),
+    ),
+  ),
+);
+
 function promptFor(
   category: SubjectCategory,
   mode: DirectionalMode,
@@ -137,6 +182,84 @@ describe('the plan table itself', () => {
     expect(modesFor(category).length).toBeGreaterThan(0);
     // If this ever failed, `sheetPlanFor` would throw for a pairing a user can reach.
     expect(supportsMode(category, DEFAULT_MODE_FOR[category])).toBe(true);
+  });
+
+  it('draws every moving part at rest on the rig sheets, and on no others', () => {
+    // The claim the rig table used to make as a `Record<DirectionalMode, RigMode>` with one entry in
+    // it, now that the answer sits on the plan instead. `fixedRigMode` reads `'AT_REST'` and hands
+    // back `CUTOUT_RIG` outright, so a plan that took that value without being a sheet of rig pieces
+    // would settle the rig for an inventory it does not describe — and a rig plan that lost it would
+    // put a rig-pieces inventory back above an assembly promise with no articulation section between
+    // them, which is the defect `rigModes.test.ts` is named for.
+    //
+    // Both directions, because either one alone passes on half a table.
+    const atRest = EVERY_PLAN.filter(({ plan }) => plan.posing === 'AT_REST');
+    const rigSheets = EVERY_PLAN.filter(({ mode }) => mode === 'CUTOUT_RIG_SINGLE_DIRECTION');
+
+    expect(atRest).toEqual(rigSheets);
+    expect(atRest.length).toBeGreaterThan(0);
+  });
+
+  it('never asks one pairing to be both a rig and its own posed artwork', () => {
+    // `resolveRigMode` reads both values off the whole series and answers `fixedRigMode` first, so a
+    // pairing carrying an `'AT_REST'` sheet *and* a `'PER_POSITION'` one would settle on
+    // `CUTOUT_RIG` while `offersRigMode` was withdrawing it — the two halves of one relation
+    // disagreeing, silently, in favour of the rig the posed sheet cannot draw. No pairing does that
+    // today, and a plan that made one has to be caught here rather than by whichever answer won.
+    for (const { category, mode, directions } of EVERY_SERIES) {
+      const series = sheetSeriesFor(category, mode, directions);
+      const both =
+        series.some((plan) => plan.posing === 'AT_REST') &&
+        series.some((plan) => plan.posing === 'PER_POSITION');
+
+      expect(both, `${category} / ${mode} / ${directions}`).toBe(false);
+    }
+  });
+
+  it('names the sheets whose artwork has already settled the motion', () => {
+    // The converse relation, and the one that decides whether a sheet can carry a cut-out rig at
+    // all: `'PER_POSITION'` says the inventory draws a moving part once per position it takes, so
+    // `offersRigMode` withdraws the rig whose first rule is that no piece commits to a position.
+    //
+    // **Written out rather than derived**, for the reason `rigModes.test.ts` writes out the nine
+    // categories that turn about nothing: the value is a judgement made at each plan and argued
+    // there, not a fact falling out of another list. Nothing mechanical can replace it, either — a
+    // line worth several components is equally how a tileset lists four corners, and the portrait's
+    // twelve expressions are twelve lines each worth exactly one. So what this holds is that a plan
+    // changing its answer is a deliberate edit that shows up here.
+    const posed = [
+      ...new Set(
+        EVERY_PLAN.filter(({ plan }) => plan.posing === 'PER_POSITION').map(
+          ({ category, sheet }) => `${category} / ${sheet}`,
+        ),
+      ),
+    ];
+
+    expect(posed).toEqual([
+      // The limb variants of both figure categories, on both of the modes that draw them.
+      'CHARACTER / Pose library',
+      'CHARACTER / Articulation',
+      'CREATURE / Pose library',
+      'CREATURE / Articulation',
+      // A hatch closed, part-open and fully open; a working end in two states; an entrance module
+      // closed and open; a mount stowed, traversed and elevated. Only two of these four categories
+      // articulate — `CATEGORY_RIG_MODES` gives ITEM and BUILDING `NONE` alone — which is the point
+      // the rest of this list makes as well: the value is a statement about an inventory, and a
+      // category with no joints still answers it truthfully.
+      'OBJECT / Part library',
+      'ITEM / Part library',
+      'BUILDING / Module library',
+      'VEHICLE / Part library',
+      // One phenomenon at successive moments, which is the same statement about time.
+      'EFFECT / Frame sequence',
+      // A button body in four states, a toggle in three; and the end caps and stretching middle of
+      // the nine-slice drawn again pressed.
+      'INTERFACE / State library',
+      'INTERFACE / Nine-slice set',
+      // One face drawn once per expression, and one overlay drawn at two stages of a cooldown.
+      'PORTRAIT / Expression set',
+      'ICON / Symbol set',
+    ]);
   });
 
   it('gives the tileset only to the categories that assemble from repeating pieces', () => {
@@ -269,34 +392,6 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
     expect(exclusions).not.toContain('silhouette, particle effects');
   });
 
-  it('does not call the subject’s own additional elements an error in the specification', () => {
-    // EFFECT is the only category whose additional-anatomy field holds something that is *not* the
-    // kind its components are: a character's extra horn is still anatomy and a vehicle's extra pod
-    // is still a part, so those guards stay true above the appended block. A shockwave ring is not
-    // a frame — and §4's guard tells the reader that an entry which does not belong "is an error in
-    // this specification, not an instruction to follow", while §9's audit is a check they perform.
-    // Unqualified, both would condemn components §4 had just required, which is the §4-requires /
-    // §9-forbids contradiction the per-category records exist to remove. Five of the eight shipped
-    // EFFECT presets name additional elements, so this shipped in the box or not at all.
-    const subject = { ...defaultSubjectFor('EFFECT'), additional_anatomy: 'Shockwave Ring ×1' };
-    const { prompt, inventory } = sectionsOf(subject);
-
-    expect(inventory).toContain('- Shockwave Ring ×1.');
-    expect(prompt).toContain('Exactly 17 components');
-    for (const exempting of [
-      'apart from the additional elements the subject itself named',
-      'or one of the additional elements the subject named',
-    ]) {
-      expect(prompt).toContain(exempting);
-    }
-    // The unqualified forms are what made §4 and §9 contradict each other. Both negatives name the
-    // *join* the exemption clause was spliced into rather than a whole sentence, so dropping the
-    // clause trips them — a negative written against a sentence nobody would regress to would assert
-    // nothing at all.
-    expect(prompt).not.toContain('not a piece of a machine. An entry describing');
-    expect(prompt).not.toContain('Every component is a frame of this one effect —');
-  });
-
   it('still bans the source the effect plays against, which is this category’s own hazard', () => {
     // Asked for a muzzle flash, a generator draws the gun; asked for an impact spark, the thing
     // being hit. Neither is scenery, so the environment ban the other categories carry misses both.
@@ -321,6 +416,123 @@ describe('an EFFECT sheet does not forbid in section 8 what it requires in secti
     expect(inventory).not.toContain('particle');
     expect(inventory).not.toContain('spark');
   });
+});
+
+describe('no category calls the subject’s own additions an error in the specification', () => {
+  /**
+   * The §4-requires/§9-forbids contradiction, arriving from the field rather than from the plan.
+   *
+   * Section 4 appends whatever `additional_anatomy` holds to the inventory, counted and slotted like
+   * every entry above it. The guard directly over that list says “every entry below is X” and then
+   * tells the reader that an entry which does not belong “is an error in this specification, not an
+   * instruction to follow”; the §9 audit is the same claim as a check they perform before
+   * delivering. Unqualified, both condemn components §4 had just required.
+   *
+   * EFFECT carried the only carve-out, written on the reading that a character's extra horn is still
+   * anatomy and a vehicle's extra pod is still a part. That is a judgement about two *options*, and
+   * the pools hold `Floating Rune Sigil ×3`, `Empty Saddle ×1, Stirrup ×2, Rein Strap ×1` and
+   * `Speaking Mouth Shapes ×4` — the last of which is the one that was reported. So the exemption is
+   * available to every category, and this suite walks the pools rather than naming the categories it
+   * believes need it: the judgement is what rots, and a pool that gains an option fails nothing.
+   */
+  const EXEMPTS = {
+    guard: (label: string) => `, apart from the pieces named under ${label}`,
+    audit: (label: string) => `, or one of the pieces named under ${label}`,
+  } as const;
+
+  /**
+   * Written out rather than imported from `exclusions.ts`, whose two helpers are module-private on
+   * purpose: importing them would compare each record with the thing that wrote it and pass whatever
+   * either said. What is asserted here is the wording that reaches a prompt.
+   */
+  const labelFor = (category: SubjectCategory) => fieldLabelFor(category, 'additional_anatomy');
+
+  /** Every value a reader reaches by picking rather than typing, with the category offering it. */
+  const POOLED: readonly { category: SubjectCategory; option: string }[] = SUBJECT_CATEGORIES.flatMap(
+    (category) =>
+      (CATEGORY_OPTIONS[category].fields.find((field) => field.key === 'additional_anatomy')?.options ?? [])
+        .filter((option) => option !== NO_ADDITIONAL_ANATOMY)
+        .map((option) => ({ category, option })),
+  );
+
+  /** Every sheet that appends no block, so no sentence on it may except one. */
+  const APPENDS_NOTHING = SHEETS.filter(
+    ({ category, mode, directions, sheetIndex }) =>
+      anatomyFacingsFor(category, mode, directions, sheetIndex) === null,
+  );
+
+  it.each(SUBJECT_CATEGORIES)('%s splices the exemption into its opening claim', (category) => {
+    const label = labelFor(category);
+    for (const [sentence, clause] of [
+      [CATEGORY_GUARD_TEXT[category], EXEMPTS.guard(label)],
+      [CATEGORY_AUDIT_TEXT[category], EXEMPTS.audit(label)],
+    ] as const) {
+      // Containment alone would pass on a clause that had drifted out of the opening claim into some
+      // later sentence of the same entry, which is what the retired EFFECT-only test pinned with a
+      // pair of negatives written against its own join. Take the clause back out and what is left
+      // has to *open* with the sentence the record states without one — so the join is asserted,
+      // without this suite having to restate thirteen prefixes it would then have to keep in step.
+      //
+      // `startsWith` rather than equality, because a category may also answer the exemption in its
+      // own terms: PORTRAIT's audit ends by saying what an extra piece *is* held to, since the
+      // sentence before it asks every component to be the same face at the same crop, and a sweat
+      // drop is not. That addendum is the only thing this allows past the join.
+      expect(sentence(null)).not.toContain('the pieces named under');
+      expect(sentence(label)).toContain(clause);
+      expect(sentence(label).replace(clause, '').startsWith(sentence(null))).toBe(true);
+    }
+  });
+
+  it('has a pooled addition to walk under every category', () => {
+    // The walk below is `it.each`, which asserts nothing at all for a category contributing no rows
+    // — so a field that lost its pool would take its category out of this suite silently.
+    expect(new Set(POOLED.map(({ category }) => category)).size).toBe(SUBJECT_CATEGORIES.length);
+  });
+
+  it.each(POOLED)(
+    '$category / $option arrives counted, under a guard that admits it',
+    ({ category, option }) => {
+      const mode = DEFAULT_MODE_FOR[category];
+      const label = labelFor(category);
+      const pieces = parseAdditionalAnatomy(option);
+      const prompt = promptFor(category, mode, option);
+      const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
+
+      // The contradiction needs both halves in the prompt to exist at all: §4 has to be asking for
+      // the pieces before the guard over them can be condemning anything. The count is derived
+      // rather than written down, so a category whose appended block stopped being counted fails
+      // here too.
+      expect(inventory).toContain(`#### ${label} —`);
+      for (const piece of pieces) {
+        expect(inventory).toContain(`- ${formatAnatomyComponent(piece)}`);
+      }
+      expect(prompt).toContain(
+        `Exactly ${String(componentCountFor(category, mode, DEFAULT_OUTPUT_CONFIG.directions, 0, pieces))} components`,
+      );
+
+      // Sliced by section rather than searched for in the whole prompt: the guard's exemption has to
+      // be over the inventory it exempts, and the audit's has to be in the list the reader works
+      // through before delivering.
+      expect(inventory).toContain(EXEMPTS.guard(label));
+      expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')).toContain(EXEMPTS.audit(label));
+    },
+  );
+
+  it.each(APPENDS_NOTHING)(
+    'excepts nothing on $category / $mode / $directions / $sheet, which appends no block',
+    ({ category, mode, directions, sheetIndex }) => {
+      // The other half of the rule, and the one an unconditional clause got wrong: these sheets omit
+      // the block deliberately — a later sheet of a series draws the trunk's articulation, and a tail
+      // beside it would hang on nothing — so §1's line is blanked and the count excludes the pieces.
+      // A sentence excepting them there names a class the rest of the prompt never mentions.
+      const option = POOLED.find((row) => row.category === category)?.option;
+      expect(option).toBeDefined();
+
+      const prompt = promptFor(category, mode, option, sheetIndex, directions);
+      expect(prompt).not.toContain('the pieces named under');
+      expect(sectionOf(prompt, 'COMPONENT INVENTORY')).not.toContain(`#### ${labelFor(category)} —`);
+    },
+  );
 });
 
 describe('no category emits another category’s components', () => {

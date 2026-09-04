@@ -58,8 +58,31 @@ describe('SheetFields', () => {
   });
 
   it('hands the rig back with the sheet that took it', () => {
-    // The value stands where the category can honour it, exactly as a category switch keeps a rig
-    // the new category has joints for. What may not survive is a rig its own sheet contradicts.
+    // The value stands where the category can honour it *and* the pairing being chosen can be drawn
+    // for it, exactly as a category switch keeps a rig the new category has joints for. An object's
+    // directional views turn its moving parts with the camera rather than posing them, so that
+    // pairing settles nothing and the rig the sheet had taken over survives the hand-back.
+    useSubjectStore.setState({ category: 'OBJECT', subject: defaultSubjectFor('OBJECT') });
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, directionalMode: RIG_SHEET, rigMode: 'CUTOUT_RIG' },
+    });
+    render(<SheetFields />);
+
+    chooseMode('CORE_DIRECTIONAL_VARIANTS');
+
+    expect(useOutputStore.getState().output.directionalMode).toBe('CORE_DIRECTIONAL_VARIANTS');
+    expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
+  });
+
+  it('drops the cut-out rig on a pairing whose artwork already carries the poses', () => {
+    // What may not survive is a rig the pairing's own sheets contradict, and this is the store half
+    // of that fix. A pose library asks in section 4 for each limb segment at three orientations; a
+    // cut-out rig then asks in section 5 for every piece straight and unposed, and section 9 audits
+    // for it. Landing on that sheet with `CUTOUT_RIG` still in the store is what used to compile a
+    // prompt requiring what it forbids, so the write that changes the sheet contents degrades the
+    // rig with it — to `POSE_LIBRARY`, which is what a set of separately oriented rigid segments
+    // actually is, rather than to `NONE`, which would leave that inventory with no articulation
+    // section at all.
     useOutputStore.setState({
       output: { ...DEFAULT_OUTPUT_CONFIG, directionalMode: RIG_SHEET, rigMode: 'CUTOUT_RIG' },
     });
@@ -68,7 +91,24 @@ describe('SheetFields', () => {
     chooseMode('SINGLE_DIRECTION_POSE_LIBRARY');
 
     expect(useOutputStore.getState().output.directionalMode).toBe('SINGLE_DIRECTION_POSE_LIBRARY');
-    expect(useOutputStore.getState().output.rigMode).toBe('CUTOUT_RIG');
+    expect(useOutputStore.getState().output.rigMode).toBe('POSE_LIBRARY');
+  });
+
+  it('drops it on the directional pairing too, where a later sheet is the one that poses', () => {
+    // The half a per-sheet answer could not give, and the reason the resolver reads a whole series:
+    // a character's `CORE_DIRECTIONAL_VARIANTS` delivers a trunk sheet that settles nothing *and* an
+    // articulation sheet of thirty-four limb variants, and those two assemble together. Answered per
+    // sheet, the trunk compiled a cut-out rig — stating a joint cap style and an overlap margin —
+    // while the sheet supplying the limbs those caps meet compiled a pose library and was told
+    // neither.
+    useOutputStore.setState({
+      output: { ...DEFAULT_OUTPUT_CONFIG, directionalMode: RIG_SHEET, rigMode: 'CUTOUT_RIG' },
+    });
+    render(<SheetFields />);
+
+    chooseMode('CORE_DIRECTIONAL_VARIANTS');
+
+    expect(useOutputStore.getState().output.rigMode).toBe('POSE_LIBRARY');
   });
 
   it('names the two selects for the two different axes they count', () => {

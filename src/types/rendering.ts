@@ -60,8 +60,8 @@ export interface ValidationPass {
  * What a target model's wrapper is allowed to say about the way *this* sheet is drawn.
  *
  * The wrappers reach a generator through two channels and the same render style has to be
- * expressible in both: a positive one, where Flux is told what the sheet is because Black Forest
- * Labs document that Flux discards a negative prompt, and a negative one, where Stable Diffusion and
+ * expressible in both: a positive one, where Flux is told what the sheet is because no FLUX.2 model
+ * takes a negative prompt to discard it with, and a negative one, where Stable Diffusion and
  * Qwen are told what it is not. So one entry per style carries both halves, for the reason
  * {@link ValidationPass} carries both of its: a style whose statement and whose negations were filed
  * apart is free to assert soft blending in one channel and forbid it in the other.

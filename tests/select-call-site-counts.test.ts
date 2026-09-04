@@ -8,7 +8,8 @@ import { scannableSources } from '../scripts/sourceFiles.ts';
  * The call-site counts `SelectField`’s docblock states, re-counted from the components themselves.
  *
  * That docblock argues its two optional props into existence by counting: `description` is optional
- * because only six of the app’s selects have a table behind them to read out, and `disabledReason`
+ * because only seven of the app’s selects have anything to say under them — six reading a row out of
+ * a table behind them, and the rig mode saying which sheet withdrew an option — and `disabledReason`
  * because exactly one has a setting above it that takes its value over. The counts *are* the
  * argument — at one exception, the claim that a permanently-empty string everywhere else would bury
  * it is self-evident, and at half the call sites it would be false — so a figure that has drifted is
@@ -24,23 +25,30 @@ import { scannableSources } from '../scripts/sourceFiles.ts';
  * paragraphs, which is the step that was being skipped; whether the restated argument still holds at
  * the new figure is a judgement no assertion can make. The two exception lists are pinned by name as
  * well as by length, so a select that swaps one exception for another — leaving the totals alone —
- * fails here too, and the docblock’s account of *which* six they are stays true with them.
+ * fails here too, and the docblock’s account of *which* seven they are stays true with them.
  */
 
 /** Every `<SelectField>` the app renders. */
 const CALL_SITE_COUNT = 30;
 
-/** Where a `description` is passed: the docblock’s six, by the file that renders each. */
+/** Where a `description` is passed: the docblock’s seven, by the file that renders each. */
 const DESCRIPTION_CALL_SITES = [
   'src/components/studio/PaletteField.tsx',
   'src/components/studio/RenderStyleFields.tsx',
+  'src/components/studio/RiggingFields.tsx',
   'src/components/studio/SheetFields.tsx',
   'src/components/studio/StyleReferenceField.tsx',
   'src/components/studio/SystemProfileField.tsx',
   'src/components/studio/TargetModelSelector.tsx',
 ];
 
-/** Where a `disabledReason` is passed: the rig mode, which the sheet contents can fix. */
+/**
+ * Where a `disabledReason` is passed: the rig mode, which the sheet contents can fix.
+ *
+ * The same file now appears in both lists, which is the pairing worth noticing rather than a
+ * duplicate: one sheet takes the rig choice over outright, and another withdraws one option from it,
+ * so the control says both things through the two props that exist for them.
+ */
 const DISABLED_REASON_CALL_SITES = ['src/components/studio/RiggingFields.tsx'];
 
 /**

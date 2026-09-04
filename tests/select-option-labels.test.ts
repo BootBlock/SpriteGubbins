@@ -25,7 +25,7 @@ import {
   SYMMETRY_MODE_CHOICES,
   VOTE_METHOD_CHOICES,
 } from '../src/constants/quantiser.ts';
-import { modesFor } from '../src/constants/sheetPlans/index.ts';
+import { modesFor, sheetSeriesFor } from '../src/constants/sheetPlans/index.ts';
 import { OPENING_VIEW_CHOICES } from '../src/constants/settings.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import { LABEL_BUDGET } from './selectLabelBudget.ts';
@@ -102,10 +102,17 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   cameraChoices: SUBJECT_CATEGORIES.flatMap((category) =>
     projectionChoices(category).map((choice) => choice.label),
   ),
-  // Scoped to the category like the modes above, so the labels are budgeted per category rather
-  // than once — nine of them offer a single rig and never render this control at all.
+  // Scoped to the category like the modes above, and to the pairing as well — nine categories offer
+  // a single rig and never render this control at all, and a pairing that delivers a sheet drawing
+  // each moving part once per position it takes drops the cut-out rig from the list. Every pairing
+  // over every direction set, so a series that narrows the list differently is budgeted the moment
+  // it exists.
   rigChoices: SUBJECT_CATEGORIES.flatMap((category) =>
-    rigModeChoices(category).map((choice) => choice.label),
+    modesFor(category).flatMap((mode) =>
+      CATEGORY_DIRECTION_SETS[category].flatMap((directions) =>
+        rigModeChoices(category, sheetSeriesFor(category, mode, directions)).map((choice) => choice.label),
+      ),
+    ),
   ),
   // One list per pairing, so an inventory that grows a part is budgeted the moment it exists. No
   // anatomy: this list distinguishes the parts of one inventory from each other, and the subject's
