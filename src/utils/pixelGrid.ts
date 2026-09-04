@@ -50,9 +50,9 @@ import { stepProfile } from './stepProfile.ts';
  * sheet answering on the correlation walked the image twice over and a sheet refusing every reading
  * walked it three times — and that one pass was 82–88% of the whole survey. Measured over the eight
  * sheets in `test_sprites/`, sharing it takes the survey from 311–464ms to 176–213ms, a saving of
- * 97–279ms or 31–61% per sheet. The walk is linear in the pixel count and these sheets are 1.0–1.6
- * megapixels against the 16.8 `MAX_IMAGE_PIXELS` admits, so what it saves on the largest sheet the
- * app accepts is of the order of seconds.
+ * 97–279ms or 31–61% per sheet. The walk is linear in the pixel count and every one of those sheets
+ * is about 1.6 megapixels against the 16.8 `MAX_IMAGE_PIXELS` admits, so what it saves on the
+ * largest sheet the app accepts is of the order of seconds.
  *
  * **The profile is still computed lazily**, after the exact detector has refused, because that one
  * counts transitions through its own `edgeLattice` and shares nothing with it — so a crisp sheet

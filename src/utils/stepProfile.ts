@@ -4,11 +4,12 @@ import { CHANNELS_PER_PIXEL } from './imageData.ts';
  * How much an image changes at each column and row, as summed magnitude.
  *
  * The one measurement every soft-edged reading is answered from, which is why it has a module of
- * its own: `estimatePixelGrid` reads it for the *period* the change repeats at, `boundaryClusters`
- * for *which positions* are boundaries — feeding `boundaryMesh` and `estimateMeshPeriod` — and
- * `bestPhase` for where a regular lattice best sits when no boundaries anchor a mesh. All of them
- * walk the same totals, and a second implementation of the walk would eventually disagree with the
- * first about the same sheet.
+ * its own: `estimatePixelGrid` reads it for the *period* the change repeats at,
+ * `estimateProfilePeriod` correlates it against a shifted copy of itself for the *distance* the
+ * change repeats over, `boundaryClusters` reads it for *which positions* are boundaries — feeding
+ * `boundaryMesh` and `estimateMeshPeriod` — and `bestPhase` for where a regular lattice best sits
+ * when no boundaries anchor a mesh. All of them walk the same totals, and a second implementation
+ * of the walk would eventually disagree with the first about the same sheet.
  *
  * It differs from `edgeLattice` next to the exact detector in the one way that matters: that asks
  * *whether* two neighbouring pixels differ, which a softened ramp answers "yes" to three times
