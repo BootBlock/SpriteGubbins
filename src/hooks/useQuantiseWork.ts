@@ -61,9 +61,10 @@ export interface QuantiseWork {
 /**
  * The tab's reading of a pipeline that is neither on this thread nor inside this component.
  *
- * The transform runs on a worker because every pass in it is linear in a pixel count that reaches
- * 16.8 million: on the main thread a keystroke in the grid box blocked the page for as long as 28
- * seconds. See `src/workers/quantiseWorker.ts` for that measurement, and `quantiseSession.ts` for why
+ * The transform runs on a worker because its cheapest pass is already linear in a pixel count that
+ * reaches 16.8 million, and three of them are quadratic in a sprite count instead: on the main thread
+ * a keystroke in the grid box blocked the page for as long as 28 seconds. See
+ * `src/workers/quantiseWorker.ts` for that measurement, and `quantiseSession.ts` for why
  * the thread is owned outside React — in short, because `App` unmounts this view whenever the user
  * goes to change one of the studio settings the quantiser reads, and a pipeline owned by an effect
  * starts again from nothing on the way back.

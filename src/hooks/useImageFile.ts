@@ -65,9 +65,9 @@ async function decodeImage(file: File): Promise<Decoded> {
   }
 
   try {
-    // Checked from the bitmap rather than the file size, because it is the pixel count every pass in
-    // the pipeline is linear in. Declining is the honest response to an image that would freeze the
-    // tab; appearing to hang is not.
+    // Checked from the bitmap rather than the file size, because it is the pixel count most of the
+    // pipeline is linear in. Declining is the honest response to an image that would freeze the tab;
+    // appearing to hang is not.
     if (bitmap.width * bitmap.height > MAX_IMAGE_PIXELS) {
       return {
         ok: false,

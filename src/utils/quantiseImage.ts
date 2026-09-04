@@ -151,9 +151,10 @@ import { buildPalette } from './wuQuantiser.ts';
  *
  * Pure, and deliberately so — which is what let it move into `src/workers/quantiseWorker.ts` without
  * a line of it changing when a large sheet did stall. It no longer runs on the main thread at all:
- * every pass is linear, or near it, in a pixel count this app admits up to 16.8 million of, and a transform that
- * re-runs on each keystroke of the grid box has no business holding the one thread that could paint a
- * spinner.
+ * most passes are linear in a pixel count this app admits up to 16.8 million of, three of them are
+ * quadratic in a sprite count `SCATTERED_SPRITE_CEILING` caps at 512 instead — see
+ * `quantiseWorker.ts`, which names them — and a transform that re-runs on each keystroke of the grid
+ * box has no business holding the one thread that could paint a spinner.
  */
 export function quantiseImage(image: ImageData, settings: QuantiseSettings): QuantiseResult {
   const prologue = quantisePrologue(image, settings);
