@@ -7,12 +7,22 @@ import type { SubjectCategory } from '../../types/subject.ts';
  * and "front" is not the same landmark for a creature, a doorway and a pistol. Keyed by category
  * rather than written once generically, because the generic version — "its forward-facing surface" —
  * is precisely the loose wording that let three views face the same way.
+ *
+ * **A landmark names its pieces in the vocabulary that category's own sheet plans use.** The sentence
+ * lands in section 3 and the inventory it is a rule about lands in section 4 of the same prompt, so a
+ * piece named here and listed there under another word is a rule the generator has nothing to attach
+ * — which is what the CREATURE entry below records. `landmarks.test.ts` holds it: every piece a
+ * sentence names has to be a word that category's plans, or the guard above its inventory, write.
  */
 export const LANDMARK_TEXT: Readonly<Record<SubjectCategory, string>> = {
   CHARACTER:
     'a head’s front is the face and its rear the back of the skull and the neck socket; a torso’s front is the chest and its rear the spine and shoulder blades; a pelvis’s front is the abdomen and its rear the seat and the small of the back; a foot’s front is the toes.',
+  // The nouns are the creature plans’ own — a body and a hindquarters, never a torso and a pelvis.
+  // This entry was drafted from CHARACTER’s and kept its vocabulary, so section 3 named two pieces the
+  // inventory in section 4 does not list, and the landmark rule reached the generator in words it had
+  // nothing to attach them to.
   CREATURE:
-    'a head’s front is the jaws, beak, muzzle or mandibles and its rear the back of the skull and the neck socket; a torso’s front is the chest and forward shoulder girdle and its rear the dorsal ridge and the rear body join; a pelvis’s front is the join to the torso and its rear the hind or tail end.',
+    'a head’s front is the jaws, beak, muzzle or mandibles and its rear the back of the skull and the neck socket; a body’s front is the chest and forward shoulder girdle and its rear the dorsal ridge and the join to the hindquarters; a hindquarters’ front is the join to the body and its rear the hind or tail end.',
   OBJECT:
     'the front is the face the object presents in use or on display; the rear is what sits behind it — the back panel, the mounting side, the surface never meant to be seen.',
   ITEM: 'the front is the working or presenting end — the blade, the muzzle, the face of the dial, the opening; the rear is the butt, the grip end, or the closed back.',
