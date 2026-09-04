@@ -17,7 +17,7 @@
  */
 export const LOCKED_SWATCHES_SHOWN = 64;
 
-/** The paragraph under the lock panel, keyed to whether a palette is held. */
+/** What the lock panel says: the paragraph under it, and the one press it has to refuse. */
 export const PALETTE_LOCK_GUIDANCE = {
   /** Nothing held: what locking would do, and why anyone would want it. */
   open: 'A sprite sheet series is generated one sheet at a time, and a palette chosen afresh from each of them drifts — two sheets of one character come back with two sets of greens that are near-identical and not the same, so the armour changes shade between the walk sheet and the run sheet. Lock the colours of a sheet you are happy with, then drop the next sheet in: each of its colours that comes near a held one is taken to it, so the two sheets share a palette. The lock stays until you unlock it or clear the tab, and it takes over from the studio’s colour setting while it is held.',
@@ -33,4 +33,24 @@ export const PALETTE_LOCK_GUIDANCE = {
    */
   superseded: (setting: string): string =>
     `The studio’s colour setting is now ${setting}, which is not the one this palette was locked under — the held colours are being applied instead of it. Re-lock from this sheet to take the setting’s own colours, or unlock to hand the decision back to it.`,
+  /**
+   * There is a result, and it has no colours in it, so there is nothing a lock could hold.
+   *
+   * Shown rather than left to the greyed-out button, and the wording is why: the state is not the
+   * control being unavailable but the *sheet* being empty, and what emptied it is usually
+   * something the reader can act on. A blank generation is a likely first result, and a key colour
+   * tolerance set high enough to take the artwork is a dial three panels up — neither is
+   * discoverable from a button that has simply stopped responding.
+   *
+   * **The two causes are named as symptoms, not as a diagnosis**, because the panel cannot tell
+   * which it is looking at and keying need not even be on: a source that arrived transparent
+   * reaches the same state by neither route, and a notice that sent that reader to the tolerance
+   * would be pointing at a control the pipeline never ran.
+   *
+   * The condition is literally that every pixel of the result is transparent. `colorHistogram`
+   * counts a partly-transparent pixel, so a sheet at half coverage still has colours and still
+   * locks; only a sheet with nothing left on it reaches this.
+   */
+  noColours:
+    'This sheet’s result has no colours to hold, because every pixel of it is transparent. A generation that came back as nothing but its background key reads this way, and so does a key colour tolerance set high enough to take the artwork along with the field.',
 } as const;

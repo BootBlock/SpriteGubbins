@@ -2,15 +2,23 @@ import { PALETTE_SNAP_RANGE, QUANTISE_TOOLTIPS } from '../../constants/quantiser
 import { PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
-import { lockPaletteFrom } from '../../utils/lockedPalette.ts';
+import type { Rgba } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { RangeField } from '../common/RangeField.tsx';
 import { LockedSwatches } from './LockedSwatches.tsx';
 
 interface PaletteLockControlsProps {
-  /** The quantised sheet a lock would be taken from, or `null` while there is no result. */
-  readonly resultImage: ImageData | null;
+  /**
+   * The colours a lock would hold, or `null` while there is no result.
+   *
+   * The transform’s own reading rather than one taken here — `QuantiseResult.paletteEntries` says
+   * why it is carried on the result, and it is the same list `PaletteExportControls` writes to a
+   * file. Taking it as a prop is also what lets this panel decide whether a lock is *possible*
+   * before the press: an empty list is a sheet with nothing left on it, and a button that answered
+   * that with silence is the failure this prop exists to make impossible.
+   */
+  readonly resultPalette: readonly Rgba[] | null;
   /** The dropped file's name, which is what the lock records the colours as coming from. */
   readonly sheetName: string;
   /**
@@ -30,7 +38,7 @@ interface PaletteLockControlsProps {
    */
   readonly superseded: string | null;
   /**
-   * Whether a newer result is on its way, which is what {@link resultImage} may be lagging behind.
+   * Whether a newer result is on its way, which is what {@link resultPalette} may be lagging behind.
    *
    * Locking is refused while it is, and that is not tidiness: the preview deliberately keeps the
    * previous sheet up while the next is computed, so a reader who moves a dial and presses Lock in
@@ -57,7 +65,7 @@ interface PaletteLockControlsProps {
  * no other control does: which colours are held, how many, and which sheet they came from.
  */
 export function PaletteLockControls({
-  resultImage,
+  resultPalette,
   sheetName,
   studioSetting,
   superseded,
@@ -69,12 +77,22 @@ export function PaletteLockControls({
   const unlockPalette = useQuantiseStore((state) => state.unlockPalette);
   const setPaletteSnap = useQuantiseStore((state) => state.setPaletteSnap);
 
+  // A result with no colours in it is a sheet with nothing left on it — the keying took it whole,
+  // or it arrived transparent — and locking one would hold an empty palette, which
+  // `applyLockedPalette` could only answer by returning the next sheet unchanged while this panel
+  // said a lock was held. It is a *third* reason the button is shut, alongside no result and a
+  // recompute in flight, and it is named below rather than left to the greyed-out button: a control
+  // that appears to do nothing is the worst outcome available. `PALETTE_LOCK_GUIDANCE.noColours`
+  // says why the notice names the causes as symptoms rather than deciding between them.
+  const emptySheet = resultPalette !== null && resultPalette.length === 0;
+  const takeable = resultPalette !== null && resultPalette.length > 0 && !busy;
+
   const take = () => {
-    // Refused rather than guarded against: the button is disabled while there is no settled result,
-    // and a sheet with nothing opaque in it locks nothing — see `lockPaletteFrom`.
-    if (resultImage === null || busy) return;
-    const taken = lockPaletteFrom(resultImage, sheetName, studioSetting);
-    if (taken !== null) lockPalette(taken);
+    // Everything `disabled` covers, so this arm is unreachable from a press and is here for the
+    // type. The three conditions are one expression, deliberately: two spellings of when a lock may
+    // be taken is how a button comes to offer a press its handler declines.
+    if (!takeable) return;
+    lockPalette({ entries: resultPalette, setting: studioSetting, sheetName });
   };
 
   return (
@@ -96,7 +114,7 @@ export function PaletteLockControls({
         >
           <button
             type="button"
-            disabled={resultImage === null || busy}
+            disabled={!takeable}
             onClick={take}
             className="action-tab rounded-lg px-3.5 py-1.5 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
           >
@@ -144,6 +162,14 @@ export function PaletteLockControls({
         <p className="mt-3 text-xs leading-relaxed text-gold">
           {PALETTE_LOCK_GUIDANCE.superseded(superseded)}
         </p>
+      )}
+
+      {/* Not a live region either, and for a reason the notice above does not have: the tab already
+          announces every settled result, colour count included, so a second announcement of the
+          same fact would say `0 colours` twice. This is here for the reader who has looked at the
+          shut button and wants to know what would open it. */}
+      {emptySheet && (
+        <p className="mt-3 text-xs leading-relaxed text-gold">{PALETTE_LOCK_GUIDANCE.noColours}</p>
       )}
 
       <p className="mt-3 text-xs leading-relaxed text-ink-muted">

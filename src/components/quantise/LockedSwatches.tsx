@@ -4,7 +4,7 @@ import { toHex } from '../../utils/imageData.ts';
 import { ColorSwatch } from '../common/ColorSwatch.tsx';
 
 interface LockedSwatchesProps {
-  /** The held colours, most-used first — see `lockPaletteFrom` for the order. */
+  /** The held colours, most-used first — see `paletteEntriesFrom` for the order. */
   readonly entries: readonly Rgba[];
 }
 
