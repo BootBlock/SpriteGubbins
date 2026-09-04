@@ -95,11 +95,12 @@ export function useDetachedWindow(title: string): DetachedWindow {
     [adopt],
   );
 
-  // A window this app opened is a window this app has to answer for: nothing in the detached panel
-  // accepts a file, so every drop landing there keeps the browser's default and navigates the
-  // document the portal is rendering into. `useFileDropGuard` refuses it, and takes `target` rather
-  // than reading the global for the reason `useAnchoredSurface` sets out — a listener on the opener
-  // hears nothing dispatched in here.
+  // A window this app opened is a window this app has to answer for: the detached panel accepts
+  // nothing dropped and holds no box that edits text, so every drop landing there keeps the
+  // browser's default and navigates the document the portal is rendering into — opening the file, or
+  // following the link. `useFileDropGuard` refuses the lot, and takes `target` rather than reading
+  // the global for the reason `useAnchoredSurface` sets out — a listener on the opener hears nothing
+  // dispatched in here, and `instanceof` in here answers for the wrong realm.
   useFileDropGuard(target);
 
   // Only the state. The window is closed by the effect below, once React has taken the panel's
