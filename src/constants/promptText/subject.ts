@@ -1,4 +1,4 @@
-import type { ScaleUnitFrame, SubjectCategory } from '../../types/subject.ts';
+import type { SubjectCategory } from '../../types/subject.ts';
 
 /**
  * Section 0's worked example of one consistent scale, per category.
@@ -53,8 +53,8 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * the category's own field definitions for the same reason.
  *
  * **The noun is the category's and the range is the profile's, but the *frame* that range is stated
- * against belongs to neither** — it is {@link SCALE_UNIT_FRAME}'s answer, and stating it against the
- * sheet height on all thirteen is the defect that record removes. `RESOLUTION_PROFILE_CHOICES` used
+ * against belongs to neither** — it is `SheetPlan.scaleUnitFrame`'s answer, and stating it against
+ * the sheet height on all thirteen is the defect that field removes. `RESOLUTION_PROFILE_CHOICES` used
  * to put the range in the option's own label, which is why the first pass at this map left both
  * ranges where they were; the label states the rung rather than a number now, precisely because
  * there are two of each and a label cannot state one of them without lying about the other.
@@ -65,6 +65,9 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * two scales for one building, which is exactly the disagreement section 0's rule exists to stop.
  * `SheetPlan.targetQuantity` is per plan and is a different question: it asks whether the whole the
  * components assemble into has one definite size, which is what a reader's *stated* size names.
+ * `SheetPlan.scaleUnitFrame` is per plan too, and the batch argument above does not reach it: a
+ * series is one (category, mode) pairing, so two plans of one category can only be framed
+ * differently where a reader would have to choose a different mode to meet the second.
  *
  * **The six categories whose components are parts of one subject take `a full X`**, which is
  * CHARACTER's own shipped wording and not a form chosen fresh. The alternative, `the whole X`, echoes
@@ -106,7 +109,7 @@ export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   PORTRAIT: 'one portrait',
   ICON: 'one icon',
   // The band rather than the scene those bands stack into, though the two plans price differently —
-  // the parallax set states a band and the layer library the assembled backdrop. `the finished scene`
+  // the parallax set states a band in its own cell and the layer library the assembled backdrop. `the finished scene`
   // is this category's own name for the thing sections 4, 8 and 9 each forbid drawing, word for word,
   // so section 2 measuring the sheet against it by name is the one place in the thirteen where the
   // unit and the prohibition are the same string. Section 0's example for this category already hangs
@@ -115,59 +118,4 @@ export const SCALE_UNIT_TEXT: Readonly<Record<SubjectCategory, string>> = {
   // The capital rather than a glyph in general, because cap height is the measurement a font's
   // remaining metrics are set against and the one section 1 fixes.
   FONT: 'one capital glyph',
-};
-
-/**
- * What the share-bearing profiles measure the unit above against, per category.
- *
- * **The test is the one {@link ScaleUnitFrame} states, and it is asked of every plan the category
- * has**: a category takes `CELL` only where no plan makes its unit a whole the components assemble
- * into. A share of a cell is a claim that the unit is in the grid; on a plan where it is the thing
- * being built, that claim has no referent — which is the same defect this whole record removes,
- * moved one frame along.
- *
- * **The record is written down rather than read off `SCALE_UNIT_TEXT`'s wording.** `a full X` marks
- * six of the eight `SHEET` categories, and the two it misses are the two the plans have to be read
- * to settle — so a rule taken from the phrasing would look mechanical and be wrong exactly where the
- * question is live.
- *
- * **The six `a full X` categories are the easy half.** Each names a whole sections 4, 8 and 9 all
- * forbid the sheet to draw, so no arithmetic connects the share to the count: a hand is drawn at
- * whatever fraction of that figure it occupies, and thirty such pieces still fit.
- *
- * **INTERFACE and BACKGROUND are `SHEET` although a plan of each draws the unit**, and they are the
- * two entries this record exists to get right:
- *
- * - INTERFACE's nine-slice set draws four corners, four edges and a centre fill — the panel frame is
- *   what those twenty pieces *assemble into*, named as such by that plan's own required-assembly
- *   line, and a corner is a small fraction of it. Pricing a corner's cell as a share of a panel frame
- *   would ask for a corner several times its own size. The state library draws one panel frame among
- *   twenty widgets, and one of anything cannot argue with a count — so the sheet frame is true on
- *   both plans and the cell frame on neither.
- * - BACKGROUND's layer library is the only plan outside the six that states an **assembled** target
- *   size, and it draws a sky plane, masses and occluders rather than bands. Under the cell frame
- *   section 2 would say a band fills its own cell one line above the target-size line saying no
- *   component is the assembled size — two rules for one quantity, printed together.
- *
- * **TERRAIN and FONT come nearest to the same fate and stay `CELL`, for the same reason.** Neither
- * of TERRAIN's landform pieces nor FONT's digits and symbols is a *piece of* the unit: a lip, a face
- * and a foot strip are tile-scale things standing on the ground plane, which is what the category
- * guard means by "a ground tile or a landform piece", and every glyph in a font's series is set to
- * the cap height one capital fixes. Each gets a cell the unit's own size, so the reading holds on the
- * plans that draw no unit by name.
- */
-export const SCALE_UNIT_FRAME: Readonly<Record<SubjectCategory, ScaleUnitFrame>> = {
-  CHARACTER: 'SHEET',
-  CREATURE: 'SHEET',
-  OBJECT: 'SHEET',
-  ITEM: 'SHEET',
-  BUILDING: 'SHEET',
-  VEHICLE: 'SHEET',
-  EFFECT: 'CELL',
-  INTERFACE: 'SHEET',
-  TERRAIN: 'CELL',
-  PORTRAIT: 'CELL',
-  ICON: 'CELL',
-  BACKGROUND: 'SHEET',
-  FONT: 'CELL',
 };

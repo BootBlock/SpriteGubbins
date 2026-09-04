@@ -22,6 +22,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   assembly:
     'the complete object in its resting state, and in each state its moving parts allow — opened, activated, or mid-travel — without redrawing any part that does not move.',
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -88,6 +89,7 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     assembly:
       'the complete object seen from each of the directions listed above, with its moving parts in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: 'Directional core',
@@ -127,6 +129,7 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   assembly:
     'any state the rig produces by rotating its moving parts about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,

@@ -33,6 +33,7 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   assembly:
     'a full grid of icons at one cell size — every member filling the same margin at the same visual weight, readable from its silhouette alone at the smallest size the game shows it, and swappable one for another without the grid changing character.',
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,

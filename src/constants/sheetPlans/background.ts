@@ -34,6 +34,18 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   assembly:
     'a scene of any width scrolling behind the playfield — each band looping against its own copy with no visible join, the bands stacked front to back with no gap showing between them, and the loose pieces placed over whichever band they belong to.',
   targetQuantity: 'COMPONENT',
+  // The cell, and this plan is why the frame is the sheet's answer rather than the category's. Its
+  // `Depth bands` group draws nine bands, so nine copies of the scale unit are on the page — and a
+  // share of the *sheet* height is a rule the component count then contradicts, which is what left
+  // this entry settled by the lesser of two wrong answers until issue #216. A share of a band's own
+  // cell cannot be contradicted that way: cells tile the page by construction, so N of them spend
+  // the same fraction of it whatever N is.
+  //
+  // It is also the only frame a band can be stated in at all. A cell is `SHEET_CELL_PITCH` times its
+  // component on each axis, so it carries that component's aspect — where turning a share of the
+  // sheet into an area needs the unit to be about as square as the page, and a band is full-bleed
+  // wide and short by definition.
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Depth bands',
@@ -157,6 +169,12 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // is what a reader typing `640 × 360 px` here is describing. The parallax set above answers
   // `'COMPONENT'` instead: a band loops against its own copy, so the scene it builds has no width.
   targetQuantity: 'ASSEMBLED',
+  // The sheet, where the parallax set above takes the cell, and the pair is the split that made the
+  // frame per sheet. No band is drawn here — the entries are a sky plane, two masses and two edge
+  // occluders, and the assembly sentence says outright that nothing repeats — so there is no cell in
+  // this grid for one to be a share of. Claiming one would state a rule for a component the page does
+  // not hold, one line above the target-size line saying no component is the assembled size.
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: 'Scene panel',

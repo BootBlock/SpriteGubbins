@@ -27,6 +27,7 @@ export const BUILDING_TILESET: SheetPlan = {
   assembly:
     'a continuous floor field, a straight wall run, and both outer and inner corners, with no visible join where tiles meet.',
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -87,6 +88,7 @@ export const BUILDING_MODULE_LIBRARY: SheetPlan = {
   // module width and a longer façade is the same bay repeated, so what they assemble into has no
   // size to state. The shipped street preset prices one of them — `96 × 128 px per bay`.
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -153,6 +155,7 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     assembly:
       'the complete structure seen from each of the directions listed above, with its module courses aligning across those views.',
     targetQuantity: 'COMPONENT',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: 'Directional core',

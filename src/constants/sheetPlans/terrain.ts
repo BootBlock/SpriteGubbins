@@ -40,6 +40,7 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   assembly:
     'a continuous field of the base material with the second washing into it across any area — every straight boundary, every corner of both senses, and an isolated patch of either — with no seam where tiles meet and nothing a viewer can recognise twice.',
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,
@@ -116,6 +117,11 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
   assembly:
     'a stretch of ground standing one level above the field around it — its lip, its face, both corner senses and the foot where the face lands — with the standing features and openings placed on either level.',
   targetQuantity: 'COMPONENT',
+  // The cell, as the blend set takes, although this sheet draws no ground tile by name. Every piece
+  // on it — a lip, a face, a foot strip — is a tile-scale thing standing on the ground plane, which
+  // is what the category guard means by “a ground tile or a landform piece”. Each gets a cell the
+  // unit's own size, so a share of that cell says the same thing on both sheets of this category.
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Elevation edge',

@@ -141,6 +141,11 @@ export const FONT_CAPITALS: SheetPlan = {
   assembly:
     'a run of set text at any size — every capital sharing one baseline and one cap height, so no letter sits high, low or heavy against the ones beside it, and each cuts out of the sheet as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
+  // The cell, on this sheet and on the three after it, although only this one draws a capital. Every
+  // glyph in the series is set to the cap height a capital fixes and is given a cell of its own, so a
+  // share of that cell is the same instruction on all four — which is what a series needs, the frame
+  // being fixed for a whole batch the way the unit is.
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,
@@ -161,6 +166,7 @@ export const FONT_LOWER_CASE: SheetPlan = {
   assembly:
     'a run of set text at any size — every lower-case letter sharing one baseline and one height against it, with any ascender or descender reaching the same distance throughout, and each cutting out of the sheet as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,
@@ -182,6 +188,7 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   assembly:
     'a run of set text carrying numbers and punctuation — the digits aligning with each other in a column of figures, and each mark sitting at the height against the baseline that its own use asks for.',
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Digits',
@@ -208,6 +215,7 @@ export const FONT_SYMBOLS: SheetPlan = {
   assembly:
     'the rest of a printable ASCII set — every symbol drawn to the same construction and weight as the letters it will be set among, so none of them reads as borrowed from another font.',
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: null,

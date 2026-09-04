@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import type { SheetPlan } from '../../types/components.ts';
 import type { DirectionSet } from '../../types/rendering.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { modesFor, sheetSeriesFor } from '../sheetPlans/index.ts';
 import { DIRECTION_LISTS } from './camera.ts';
-import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
+import { SCALE_UNIT_TEXT } from './subject.ts';
 
 /**
  * Everything a category writes about its own subject — every sheet plan, of every mode, under every
@@ -23,17 +24,29 @@ import { SCALE_UNIT_FRAME, SCALE_UNIT_TEXT } from './subject.ts';
  * so it is deliberately absent: a source that never decides an answer is a source nobody can tell
  * has stopped working.
  */
+/**
+ * Every sheet the category can be asked for: each mode it supports, under each direction set, and
+ * every sheet of the series that pairing produces.
+ *
+ * Both claims this file makes are about the category rather than about one configuration, so both
+ * are asked of all of them — a unit grounded only in the default pairing is a unit the rest of the
+ * deliverable is not priced in, and a frame answered only there is one the later sheets contradict.
+ */
+function everySheetOf(category: SubjectCategory): readonly SheetPlan[] {
+  return modesFor(category).flatMap((mode) =>
+    (Object.keys(DIRECTION_LISTS) as DirectionSet[]).flatMap((set) => [
+      ...sheetSeriesFor(category, mode, set),
+    ]),
+  );
+}
+
 function categoryProseFor(category: SubjectCategory): string {
   const written: string[] = [CATEGORY_OPTIONS[category].label];
-  for (const mode of modesFor(category)) {
-    for (const set of Object.keys(DIRECTION_LISTS) as DirectionSet[]) {
-      for (const plan of sheetSeriesFor(category, mode, set)) {
-        written.push(plan.name, plan.assembly);
-        for (const group of plan.groups) {
-          written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
-          for (const entry of group.entries) written.push(entry.label, entry.text);
-        }
-      }
+  for (const plan of everySheetOf(category)) {
+    written.push(plan.name, plan.assembly);
+    for (const group of plan.groups) {
+      written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
+      for (const entry of group.entries) written.push(entry.label, entry.text);
     }
   }
   return written.join('\n');
@@ -106,35 +119,31 @@ describe('SCALE_UNIT_TEXT', () => {
 });
 
 /**
- * Which frame the share-bearing profiles state their range in, per category.
+ * Which frame the share-bearing profiles state their range in, against the unit that range names.
  *
- * The record is what stops section 2 telling twenty-eight icons to occupy a quarter of the sheet
- * each. Which side a given category belongs on is a claim about that category's own plans, argued
- * one by one in `SCALE_UNIT_FRAME`'s docblock and pinned as a written-out column in
- * `renderStyle.test.ts` — an expectation derived from this record could not pin it, because both
- * sides of the comparison would move together. These two assertions hold the shape the rest depends
- * on.
+ * The frame is `SheetPlan.scaleUnitFrame` and is answered sheet by sheet, so which side a given
+ * sheet belongs on is pinned in `utils/sheetPlans.test.ts` — a written-out table, because an
+ * expectation derived from the plans could not pin it. What belongs *here* is the one thing the two
+ * records say about each other: a unit worded as a whole the sheet never draws cannot be given a
+ * cell in that sheet's grid.
  */
-describe('SCALE_UNIT_FRAME', () => {
-  it('uses both frames, so a record that has collapsed to one is not silently in force', () => {
-    const frames = new Set(SUBJECT_CATEGORIES.map((category) => SCALE_UNIT_FRAME[category]));
-    expect(frames).toEqual(new Set(['CELL', 'SHEET']));
-  });
-
+describe('the scale unit against the frame it is measured in', () => {
   it('never charges a cell to a unit whose own name says the sheet does not draw it', () => {
     // One direction only, and deliberately. `a full X` is how the six whole-subject categories are
     // worded today, and a unit spelled that way names the thing sections 4, 8 and 9 each ban from
-    // the page — so it cannot be a component the grid gives a cell to. The converse is not a rule and
-    // is where the interesting cases are: INTERFACE and BACKGROUND take the sheet frame with no
-    // `a full` in sight, because one of each category's two plans makes the unit a whole its
-    // components assemble into. That is a question about the plans, not about the phrasing, which is
-    // why the record decides it rather than a word test.
+    // the page — so no sheet of that category can give it a cell. The converse is not a rule and is
+    // where the interesting cases are: INTERFACE and BACKGROUND each take the sheet frame on one
+    // plan with no `a full` in sight, because that plan makes the unit a whole its components
+    // assemble into. That is a question about the plans, not about the phrasing, which is why the
+    // field decides it rather than a word test.
     for (const category of SUBJECT_CATEGORIES) {
       const unit = SCALE_UNIT_TEXT[category];
       if (!unit.startsWith('a full ')) continue;
-      expect(SCALE_UNIT_FRAME[category], `${category}: “${unit}” is a whole the sheet never draws`).toBe(
-        'SHEET',
-      );
+      for (const plan of everySheetOf(category)) {
+        expect(plan.scaleUnitFrame, `${category} / ${plan.name}: “${unit}” is never on the page`).toBe(
+          'SHEET',
+        );
+      }
     }
   });
 });

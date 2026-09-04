@@ -43,6 +43,7 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
   facings: 'run',
   assembly: `${CREATURE_GAITS}.`,
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -134,6 +135,7 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
     assembly:
       'one head, one body and one hindquarters seen at each of the directions listed above, reading as one animal turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
     targetQuantity: 'ASSEMBLED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: null,
@@ -157,6 +159,7 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   facings: 'run',
   assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, at the single direction listed above.`,
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: 'Left forelimb',
@@ -289,6 +292,7 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
   assembly:
     'any gait the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.',
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,

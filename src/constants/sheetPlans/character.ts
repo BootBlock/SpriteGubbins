@@ -45,6 +45,7 @@ export const CHARACTER_POSE_LIBRARY: SheetPlan = {
   facings: 'run',
   assembly: `${CHARACTER_POSES}.`,
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,
@@ -142,6 +143,7 @@ function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTup
     assembly:
       'one head, one torso and one pelvis seen at each of the directions listed above, reading as one body turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
     targetQuantity: 'ASSEMBLED',
+    scaleUnitFrame: 'SHEET',
     groups: [
       {
         heading: null,
@@ -173,6 +175,7 @@ export const CHARACTER_ARTICULATION: SheetPlan = {
   facings: 'run',
   assembly: `the limbs of ${CHARACTER_POSES} — each fitted to the trunk drawn on the directional core sheets, at the single direction listed above.`,
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: 'Left arm',
@@ -297,6 +300,7 @@ export const CHARACTER_CUTOUT_RIG: SheetPlan = {
   assembly:
     'any pose the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.',
   targetQuantity: 'ASSEMBLED',
+  scaleUnitFrame: 'SHEET',
   groups: [
     {
       heading: null,

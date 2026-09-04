@@ -45,6 +45,7 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   assembly:
     'one continuous animation played in the order the inventory lists — every frame a complete state of the effect, sharing one registration point, one cell scale and one camera, and none of them a layer to be stacked on another. Where the subject asks for a loop, that same run is a cycle whose final frame reads back into its first with no visible seam.',
   targetQuantity: 'COMPONENT',
+  scaleUnitFrame: 'CELL',
   groups: [
     {
       heading: 'Core sequence',

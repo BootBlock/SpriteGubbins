@@ -5,7 +5,7 @@ import { HARDWARE_PROFILES } from '../constants/hardware/index.ts';
 import { CATEGORY_PROJECTIONS } from '../constants/categoryProjections.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { PALETTES } from '../constants/palettes/index.ts';
-import { SHEET_INDEX_RANGE, sheetPlanFor } from '../constants/sheetPlans/index.ts';
+import { resolveMode, SHEET_INDEX_RANGE, sheetPlanFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { NATIVE_GRID_HEADING } from '../constants/promptTemplate.ts';
@@ -147,7 +147,17 @@ describe('generatePrompt — the subject', () => {
     // all three scale-bearing profiles stated their range against "a full figure", so a FONT sheet of
     // twenty-six glyphs and a TERRAIN blend set of twenty-three tiles were each measured against a
     // subject they cannot hold.
+    //
+    // The frame is the *sheet's* answer where the unit is the category's, so it is resolved here the
+    // way the compiler resolves it — through the pairing this configuration actually reaches. A
+    // frame written down instead would make this a second copy of the table in `sheetPlans.test.ts`.
     for (const category of SUBJECT_CATEGORIES) {
+      const { scaleUnitFrame } = sheetPlanFor(
+        category,
+        resolveMode(category, OUTPUT.directionalMode),
+        OUTPUT.directions,
+        OUTPUT.sheetIndex,
+      );
       for (const resolutionProfile of ['HIGH_RESOLUTION', 'MID_RESOLUTION', 'RETRO_16_BIT'] as const) {
         const prompt = generatePrompt(
           category,
@@ -155,7 +165,7 @@ describe('generatePrompt — the subject', () => {
           withOutput({ resolutionProfile }),
         );
         expect(prompt).toContain(
-          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, category)}`,
+          `- Resolution profile: ${promptText.resolutionProfileDescription(resolutionProfile, false, category, scaleUnitFrame)}`,
         );
       }
     }

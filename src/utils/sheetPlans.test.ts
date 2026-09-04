@@ -24,7 +24,7 @@ import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import type { DirectionSet } from '../types/rendering.ts';
 import { SUBJECT_CATEGORIES } from '../types/subject.ts';
-import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
+import type { ScaleUnitFrame, SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnatomy.ts';
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
@@ -192,6 +192,93 @@ describe('the plan table itself', () => {
     expect(modesFor('EFFECT')).toEqual(['SINGLE_DIRECTION_POSE_LIBRARY']);
     const [sequence] = sheetSeriesFor('EFFECT', 'SINGLE_DIRECTION_POSE_LIBRARY', 'EIGHT_COMPASS');
     expect(sequence.facings).toBe('run');
+  });
+
+  /**
+   * Which frame each pairing's sheets state section 2's share in, written out rather than read back
+   * off the plans.
+   *
+   * **The whole claim of issue #216 is in this column**, so an expectation gathered from the plans
+   * themselves would assert nothing about it — both sides would move together, and a sheet flipped
+   * back to the reading that was false on it would pass. BACKGROUND is the pair to read: its
+   * parallax set draws nine bands and takes the cell, its layer library draws none and takes the
+   * sheet, and no single answer is true of both — which is what the per-category record it replaces
+   * had to settle for. INTERFACE has the same two modes and takes the sheet on both, because its
+   * state library draws exactly one panel frame and one of anything cannot argue with a count.
+   *
+   * **One entry per pairing, and that is the granularity the frame is allowed.** A profile is chosen
+   * once and a whole series is generated under it, so the frame may not change between the sheets of
+   * one batch — a series is one pairing, so this table has room for exactly one answer per batch and
+   * the assertion below is what holds the plans to it.
+   */
+  const PAIRING_FRAME: Readonly<
+    Record<SubjectCategory, Readonly<Partial<Record<DirectionalMode, ScaleUnitFrame>>>>
+  > = {
+    CHARACTER: {
+      SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET',
+      CORE_DIRECTIONAL_VARIANTS: 'SHEET',
+      CUTOUT_RIG_SINGLE_DIRECTION: 'SHEET',
+    },
+    CREATURE: {
+      SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET',
+      CORE_DIRECTIONAL_VARIANTS: 'SHEET',
+      CUTOUT_RIG_SINGLE_DIRECTION: 'SHEET',
+    },
+    OBJECT: {
+      SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET',
+      CORE_DIRECTIONAL_VARIANTS: 'SHEET',
+      CUTOUT_RIG_SINGLE_DIRECTION: 'SHEET',
+    },
+    ITEM: { SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET', CORE_DIRECTIONAL_VARIANTS: 'SHEET' },
+    BUILDING: {
+      SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET',
+      CORE_DIRECTIONAL_VARIANTS: 'SHEET',
+      TILESET_MODULAR: 'SHEET',
+    },
+    VEHICLE: {
+      SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET',
+      CORE_DIRECTIONAL_VARIANTS: 'SHEET',
+      CUTOUT_RIG_SINGLE_DIRECTION: 'SHEET',
+    },
+    EFFECT: { SINGLE_DIRECTION_POSE_LIBRARY: 'CELL' },
+    INTERFACE: { SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET', TILESET_MODULAR: 'SHEET' },
+    TERRAIN: { SINGLE_DIRECTION_POSE_LIBRARY: 'CELL', TILESET_MODULAR: 'CELL' },
+    PORTRAIT: { SINGLE_DIRECTION_POSE_LIBRARY: 'CELL' },
+    ICON: { SINGLE_DIRECTION_POSE_LIBRARY: 'CELL' },
+    BACKGROUND: { SINGLE_DIRECTION_POSE_LIBRARY: 'SHEET', TILESET_MODULAR: 'CELL' },
+    FONT: { SINGLE_DIRECTION_POSE_LIBRARY: 'CELL' },
+  };
+
+  it('answers the scale frame once per pairing, on every sheet of every series', () => {
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const mode of modesFor(category)) {
+        // Every direction set the category offers, because the set decides how many sheets a series
+        // holds — an eight-compass core is two, and a frame written into one half of a generated
+        // pair would be invisible to a check that only read the first.
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          const frames = new Set(sheetSeriesFor(category, mode, directions).map((p) => p.scaleUnitFrame));
+          expect(frames.size, `${category} / ${mode} / ${directions}`).toBe(1);
+          expect([...frames], `${category} / ${mode} / ${directions}`).toEqual([
+            PAIRING_FRAME[category][mode],
+          ]);
+        }
+      }
+    }
+  });
+
+  it('states a frame for exactly the pairings the plan table holds', () => {
+    // The table above is a written-out claim, so a pairing missing from it would compare every sheet
+    // of that series against `undefined` and pass the moment the frames agreed with each other. A
+    // new mode has to be answered here, which is the point — the frame is a decision about what the
+    // sheet draws, not something a new plan inherits.
+    for (const category of SUBJECT_CATEGORIES) {
+      expect(Object.keys(PAIRING_FRAME[category]).sort(), category).toEqual([...modesFor(category)].sort());
+    }
+  });
+
+  it('uses both frames, so a table that has collapsed to one is not silently in force', () => {
+    const frames = new Set(SUBJECT_CATEGORIES.flatMap((c) => Object.values(PAIRING_FRAME[c])));
+    expect(frames).toEqual(new Set(['CELL', 'SHEET']));
   });
 
   it('splits the eight-compass core by yaw parity, and the halves partition the set', () => {

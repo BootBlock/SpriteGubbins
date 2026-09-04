@@ -46,16 +46,22 @@ export type SubjectCategory = (typeof SUBJECT_CATEGORIES)[number];
  * for in the same prompt.
  *
  * **`CELL` is the narrower claim and it has to be earned.** It says the unit is one of the things
- * the exploded grid holds, so it has a cell to be a share of — and a category earns it only when
- * **no plan of that category makes the unit a whole its components assemble into**. That is a rule
- * about the plans rather than about the noun, which is why the answer is written down in
- * {@link SCALE_UNIT_FRAME} and argued there category by category: reading it off `SCALE_UNIT_TEXT`'s
- * `a full X` phrasing gets six of the eight right and both of the interesting ones wrong.
+ * the exploded grid holds, so it has a cell to be a share of — and a sheet earns it only when it
+ * does **not** make the unit a whole its components assemble into. That is a rule about the sheet
+ * rather than about the noun, which is why the answer is written down as `SheetPlan.scaleUnitFrame`
+ * and argued there sheet by sheet: reading it off `SCALE_UNIT_TEXT`'s `a full X` phrasing gets the
+ * six whole-subject categories right and both of the interesting ones wrong.
  *
- * **Named for the box rather than for the category's nature**, because `REFERENCE` — the first name
+ * **It is the sheet's answer and not the category's**, which is the correction issue #216 asked for.
+ * A frame held per category has to be true of every plan that category has, and BACKGROUND's two
+ * plans admit no such answer — so the record settled for the reading that was false in the fewer
+ * places. A series is one (category, mode) pairing, so a per-sheet frame still cannot change under a
+ * reader mid-batch, which is the property the per-category record was protecting.
+ *
+ * **Named for the box rather than for the sheet's nature**, because `REFERENCE` — the first name
  * this pair carried — asserted the sheet never draws the unit, and INTERFACE's state library draws
- * one panel frame. What is true of every `SHEET` category is the weaker claim above: the sheet draws
- * at most one, so no count can argue with the share.
+ * one panel frame. What is true of every `SHEET` sheet is the weaker claim above: it draws at most
+ * one, so no count can argue with the share.
  */
 export const SCALE_UNIT_FRAMES = ['CELL', 'SHEET'] as const;
 
