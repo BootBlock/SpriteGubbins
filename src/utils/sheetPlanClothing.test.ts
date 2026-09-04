@@ -294,6 +294,14 @@ describe('a subject that says it has none of the attribute', () => {
         expect(names, where).toHaveLength(count);
         expect(planComponentCount(planAsDrawn(plan, category, absent)), where).toBe(count);
 
+        // And the sheet is still a sheet. `planAsDrawn` drops a group that has nothing left in it,
+        // so a plan whose every entry drew the attribute would resolve to an inventory of nothing —
+        // a prompt contracting for zero components, which every assertion below would pass. None of
+        // the three plans this reaches is anywhere near that today; the claim is that the next one
+        // cannot be.
+        expect(planAsDrawn(plan, category, absent).groups.length, where).toBeGreaterThan(0);
+        expect(count, where).toBeGreaterThan(0);
+
         const prompt = generatePrompt(
           category,
           { ...defaultSubjectFor(category), clothing: absent },

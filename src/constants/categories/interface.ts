@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ABSENT_OPTION_DROPS_THE_PIECES, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -204,7 +204,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'clothing',
       label: 'Ornament & Trim',
       tooltip:
-        'What is applied along the widget’s edge — rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame beneath it, so it is also the cheapest way to give one panel a rare and a common variant.',
+        'What is applied along the widget’s edge — rivets, scrollwork, piping, binding. Trim is drawn as its own geometry over the frame beneath it, so it is also the cheapest way to give one panel a rare and a common variant. ' +
+        ABSENT_OPTION_DROPS_THE_PIECES,
       options: [
         'Plain Untrimmed Edge',
         'Beaded Metal Rivets',

@@ -299,8 +299,34 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **Three branches found headroom under 2314 within a day and all three reached for it**, which is
  * what a margin of that order buys — not a reason to widen it, but worth knowing before reading the
  * next base figure as slack.
+ *
+ * **2320 → 2323, bought by letting a subject decline a component its sheet plan ordered anyway.** A
+ * plan is addressed by category, mode, direction set and sheet index, so its entries were
+ * unconditional — and four `clothing` pools offered a value meaning the subject has none of what the
+ * field describes, so section 1 stated `Armour & Cladding: Bare Unclad Frame` while section 4 ordered
+ * a cladding panel and forbade omitting it. What a first visit pays for is: an `absentOption` on the
+ * nine pools that offer one and the resolver that reads it; `planAsDrawn` and `drawnPlanFor` in
+ * `utils/sheetPlanClothing.ts`, which take the marked entries out before anything walks the plan; the
+ * `clothing` argument threaded through the seven functions that count, name or render an inventory
+ * and the eleven call sites that reach them; `drawsClothing` widening from `true` to
+ * `'entirely' | 'partly'` on 26 entries; two inventory lines split into four so the half a reader can
+ * decline stands alone; ICON's rewritten tooltip, which is the one entry that grew rather than
+ * moved; and the sentence in `constants/guidanceSentences.ts` that tells a reader the option takes
+ * the pieces off the sheet, quoted by the three fields it is true of.
+ *
+ * Measured against main's own tip, rebuilt from the same `node_modules` — **2318.75 KiB** — the
+ * merged build reports **2320.25**, a delta of 1.50 and 0.25 over the ceiling the two raises above
+ * had bought. So 2323 restores a margin of the same order rather than widening it, exactly as those
+ * two did. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **The delta is data and threading, not a new module**, which is why it is larger than the paint-rule
+ * change it builds on: that one added a flag and read it, where this one adds a value a plan is
+ * resolved *through* and has to carry the subject to every reader of an inventory. The nine
+ * `absentOption` declarations are the cheapest part of it and the part that does the most — six of
+ * the nine are categories no plan of which draws the attribute today, and they are declared so the
+ * invariant reaches them before an entry does.
  */
-export const PRECACHE_CEILING_KIB = 2320;
+export const PRECACHE_CEILING_KIB = 2323;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

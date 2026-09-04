@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ABSENT_OPTION_DROPS_THE_PIECES, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -220,7 +220,8 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'clothing',
       label: 'Applied Atmosphere',
       tooltip:
-        'What is laid over the band as its own separate piece — a fog bank, a rain veil, shafts of light, drifting motes. Kept apart from the band itself so the engine can scroll it at a different rate or fade it out, which is the whole reason to draw it separately.',
+        'What is laid over the band as its own separate piece — a fog bank, a rain veil, shafts of light, drifting motes. Kept apart from the band itself so the engine can scroll it at a different rate or fade it out, which is the whole reason to draw it separately. ' +
+        ABSENT_OPTION_DROPS_THE_PIECES,
       options: [
         'Clear — No Overlay',
         'Low Fog Bank',

@@ -85,3 +85,20 @@ export const COLLECTION_COUNT_FOLLOWS_SEARCH =
  */
 export const DOWNLOADS_RECORD_THE_STUDIO =
   'Every download from this tab records the studio’s configuration beside the artwork, and this is what it will record.';
+
+/**
+ * What the option meaning *the subject has none of this* does to the sheet, on the three fields
+ * whose inventory draws the attribute as pieces of its own.
+ *
+ * A sheet plan is otherwise unconditional, so a vehicle's cladding panel, a background's atmosphere
+ * layer and an interface's corner ornament were all ordered whatever the reader had chosen — the
+ * prompt stating in section 1 that the subject had none and in section 4 that it was to be drawn.
+ * The entries are dropped now, which changes the component count, and that is the one thing about
+ * the behaviour a reader cannot see from the field: it is the same fact in the same words because it
+ * is the same mechanism. See `utils/sheetPlanClothing.ts`.
+ *
+ * The six other pools that offer such a value are deliberately not among them — no plan of theirs
+ * draws the attribute, so nothing is dropped and the sentence would be false.
+ */
+export const ABSENT_OPTION_DROPS_THE_PIECES =
+  'Choosing the option that means there is none takes these pieces off the sheet, and the component count falls with them.';
