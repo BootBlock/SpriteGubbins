@@ -33,9 +33,22 @@ function capabilitiesFor(target: TargetModelId): TargetCapabilities {
  *
  * What it gates is instruction the target cannot carry out: the self-audit tells the reader
  * to check the sheet against the specification and redraw before delivering, which a single-pass
- * diffusion endpoint has no step for. Emitting it there spends tokens at the *end* of the prompt —
- * where attention is weakest — on the most rule-list-shaped block in the template, which is exactly
- * what the guidance for Imagen warns against.
+ * diffusion endpoint has no step for. Emitting it there spends tokens on the most
+ * rule-list-shaped block in the template for no return.
+ *
+ * That is the whole argument, and it used to close on a second one — that the tokens are spent at
+ * the end of the prompt, where attention is weakest, "which is exactly what the guidance for Imagen
+ * warns against". Two things were wrong with it. **Imagen has not been a target since it was
+ * retired** (see the header of `constants/models.ts`), so the clause justified a live gate by a
+ * product this app no longer writes for. And **the "guidance for Imagen" is this repository's own
+ * note, not a vendor's**: `docs/todo/baseline-prompt-new.md`'s `GOOGLE_IMAGEN` section says Imagen
+ * "handles descriptive natural language well and long rule lists poorly", and traces that to
+ * nothing Google published. The one Imagen page the repository does cite — the Imagen guide, in
+ * that document's migration-target paragraph — is quoted for which model to migrate to, and says
+ * none of this.
+ *
+ * The gate is right either way, because the argument above stands on its own for every
+ * single-pass endpoint. What went is an appeal to a source that was never the source it named.
  */
 export function deliberates(target: TargetModelId): boolean {
   return capabilitiesFor(target).deliberates;
