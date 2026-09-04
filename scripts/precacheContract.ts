@@ -327,10 +327,17 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * moved; and the sentence in `constants/guidanceSentences.ts` that tells a reader the option takes
  * the pieces off the sheet, quoted by the three fields it is true of.
  *
- * Measured against main's own tip, rebuilt from the same `node_modules` — **2318.75 KiB** — the
- * merged build reports **2320.45**, a delta of 1.70 and 0.45 over the ceiling the two raises above
- * had bought. So 2323 restores a margin of the same order rather than widening it, exactly as those
- * two did. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ * Measured against the main tip this branch started from (`0dbcb2f`), rebuilt from the same
+ * `node_modules` — **2318.75 KiB** — the branch merged onto it reports **2320.45**, a delta of 1.70
+ * and 0.45 over the ceiling the two raises above had bought. So 2323 restores a margin of the same
+ * order rather than widening it, exactly as those two did. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed **by this change**.
+ *
+ * **The figure a build reports today is higher than that, and none of the difference is this
+ * change's.** Main moved twice while the branch was in flight, and the second merge brought a
+ * 54th entry with it, so the tip this landed on builds at **2320.93**. The base is named above for
+ * exactly that reason: a delta is only checkable against the commit it was taken from, and a bare
+ * "main's own tip" stops identifying one the moment somebody else lands.
  *
  * **The delta is data and threading, not a new module**, which is why it is larger than the paint-rule
  * change it builds on: that one added a flag and read it, where this one adds a value a plan is
