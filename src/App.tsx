@@ -59,8 +59,9 @@ export function App() {
   const restoreSession = useSessionStore((state) => state.restoreSession);
   const fetchQuantisePresets = useQuantisePresetStore((state) => state.fetchQuantisePresets);
 
-  // Refuse a file dropped anywhere in the page that is not a drop target, which is otherwise a
-  // navigation away from the app and the loss of everything the Quantise tab holds. Registered from
+  // Refuse a file, or a link, dropped anywhere in the page that can make no use of it, which is
+  // otherwise a navigation away from the app and the loss of everything the Quantise tab holds. A
+  // box that edits text is the exception, and the hook says how it tells one. Registered from
   // the shell because the default it answers belongs to the document rather than to any element, and
   // handed this window explicitly because the app can open a second one — see the hook.
   useFileDropGuard(window);

@@ -37,6 +37,18 @@
  * the build immediately before, the precache goes from 48 entries at 2312.62 KiB to 53 at 2312.78,
  * so what is added is five requests and 0.16 KiB, not five files of new code.
  *
+ * **`isTextEntry` arrived the same way, and is one module rather than five.** It holds the predicate
+ * that tells a box which edits text from every other control, which `useUndoShortcut` asks for the
+ * keyboard's sake and `useFileDropGuard` for the drag's — a hook reached from the studio's history
+ * controls and a hook reached from the shell, so rolldown cuts it out of both into a chunk they
+ * share and names the chunk after it. Measured against the build immediately before, from the same
+ * `node_modules`, the precache goes from 2318.71 to **2319.14 KiB** across 53 entries and then 54:
+ * what a first visit gains is one request and 0.43 KiB, not a file of new code. Merged with the
+ * `--color-tab` cyan guard that landed alongside it, the build reports **2319.18**. No chunk was
+ * renamed, and the ceiling is left where it stands — on 0.82 KiB of headroom, which is the
+ * narrowest this margin has been and is worth reading before the next base figure is taken for
+ * slack.
+ *
  * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
  * icons a second time, *after* the `manifestTransforms` step runs. So this list and the ceiling
  * under it describe the globbed precache — every entry of the shipped worker but those three — and
@@ -67,6 +79,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/database-*.js',
   'assets/dialogs-*.js',
   'assets/firstOfEachId-*.js',
+  'assets/isTextEntry-*.js',
   'assets/models-*.js',
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',

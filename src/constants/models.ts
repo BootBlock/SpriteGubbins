@@ -25,9 +25,15 @@ export const MIDJOURNEY_VERSION = '--v 8.2';
  * half-applied edit this pairing is most prone to.
  *
  * **Every capability and ceiling here is a checkable claim about somebody else's product, so each
- * carries its source.** Two entries were removed once checked rather than left to rot: Google
- * Imagen (Imagen 3 shut down 10 November 2025; Imagen 4 shuts down 17 August 2026) and DALL·E 3
- * (shut down 12 May 2026). Both had been dead or dying while the app went on offering them.
+ * carries its source** — and a claim whose nearest page does not actually state it is worse than
+ * one with no citation at all, because the link makes it look checked. Two entries were removed
+ * once checked rather than left to rot, and both retirements are on a vendor deprecation table:
+ * Google Imagen (`imagen-3.0-generate-002` shut down 10 November 2025; the three
+ * `imagen-4.0-*-001` endpoints shut down 17 August 2026, replacement `gemini-3.1-flash-image`)
+ * and DALL·E 3 (`dall-e-2` and `dall-e-3` removed from the API on 12 May 2026, replacements
+ * `gpt-image-2` / `gpt-image-1` / `gpt-image-1-mini`). Both had been dead or dying while the app
+ * went on offering them. https://ai.google.dev/gemini-api/docs/deprecations and
+ * https://developers.openai.com/api/docs/deprecations
  */
 export const TARGET_MODELS: readonly TargetModel[] = [
   {
@@ -72,10 +78,27 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // it answers in text. What they do not say is that the *picture* comes from a second model on
     // the far side of a tool call, which is what its wrapper in `utils/modelWrapperText/sol.ts`
     // says.
+    //
+    // **The description's images-with-thinking sentence is the release notes' own claim and no
+    // more.** They say: "Images with thinking is available on all paid ChatGPT plans. It is
+    // available when you select Thinking and Pro models."
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    //
+    // For a while this description read that choosing Sol "puts you on a thinking tier", and **that
+    // was true when it was written and is not true now** — which is the more useful failure of the
+    // two, because nothing about it decayed visibly. It rested on OpenAI's GPT-5.6 help page, which
+    // then said Sol powered the Medium, High and Extra High reasoning options while Instant was
+    // GPT-5.5 Instant. That page now says "GPT-5.6 Sol powers Instant, Medium, High, and Extra High
+    // on eligible paid plans", and describes Instant as "Fast responses for everyday questions".
+    // Sol reaches the picker's *non*-thinking option, so picking Sol settles nothing about the tier.
+    // The API side agrees: `reasoning.effort` on `gpt-5.6-sol` accepts `none`. The sentence now
+    // points the reader at the picker, which is what OpenAI make the feature conditional on.
+    // https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt and
+    // https://developers.openai.com/api/docs/models/gpt-5.6-sol
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. Choosing Sol in ChatGPT also puts you on a thinking tier, which is what enables images with thinking on a paid plan. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. OpenAI put images with thinking on every paid ChatGPT plan, and say it applies when you pick one of their Thinking or Pro models, so check which model the picker is on. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
     // ChatGPT's own image surface, which is where a person rather than an API client reaches this
     // model. OpenAI announce it as “ChatGPT Images 2.0” and the page is indexed under that name.
     // https://openai.com/index/introducing-chatgpt-images-2-0/
@@ -100,10 +123,16 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
   },
   {
-    // Google names this the migration target for the retired Imagen models. It is a *thinking*
-    // model — "Gemini 3 image models are thinking models that use a reasoning process ('Thinking')
-    // for complex prompts", and it cannot be disabled — and it returns interleaved text and images,
-    // so unlike Imagen it can both work through the specification and hand back a component map.
+    // Google name this the migration target for the retired Imagen models: their deprecation table
+    // gives `gemini-3.1-flash-image` as the replacement against all three `imagen-4.0-*-001`
+    // endpoints. https://ai.google.dev/gemini-api/docs/deprecations
+    //
+    // It is a *thinking* model — "Gemini 3 image models are thinking models that use a reasoning
+    // process ('Thinking') for complex prompts", and it cannot be disabled — and it returns
+    // interleaved text and images, so unlike Imagen it can both work through the specification and
+    // hand back a component map. That page states the thinking pass; what it does not do is name
+    // Gemini as Imagen's replacement — its one mention of Imagen is a line under "Other image
+    // generation modes" — which is why the sentence above is cited to the deprecation table instead.
     // https://ai.google.dev/gemini-api/docs/image-generation
     id: 'GEMINI_FLASH_IMAGE',
     name: 'Gemini 3.1 Flash Image / Nano Banana 2',
@@ -172,10 +201,18 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // outright, cite that instead; if the pass turns out to be marketing, this flag is what to
     // revisit. https://fal.ai/learn/tools/how-to-use-seedream-5-0-pro-v2
     //
-    // Deliberately **5.0**, not the 4.5 this app was first going to carry: 5.0 Lite shipped in
-    // February 2026 and 5.0 Pro became the flagship on 8 July 2026. Adding 4.5 would have repeated
-    // the Flux mistake below in the same change that fixed it.
-    // https://fal.ai/learn/tools/how-to-use-seedream-5-0-pro-v2
+    // Deliberately **5.0**, not the 4.5 this app was first going to carry: adding 4.5 would have
+    // repeated the Flux mistake below in the same change that fixed it. BytePlus date the Lite
+    // release themselves — "On February 24, Seedream 5.0 Lite, the latest generation of BytePlus'
+    // image creation model, became available via API on ModelArk" — so that half is quoted rather
+    // than inferred. https://www.byteplus.com/en/blog/seedream5-0-lite
+    //
+    // **Pro's date is an inference and is recorded as one.** No BytePlus page announces a release
+    // day for it; what their Seedream 5.0 Pro page carries is the model id
+    // `dola-seedream-5-0-pro-260628` — a 2026-06-28 date code — and the line "From July 8,
+    // Seedream 5.0 Pro images work seamlessly across Seedance 2.5, 2.0, Fast, and Mini". Late June
+    // to early July 2026 is what those two support; a stated launch date is not.
+    // https://ai.byteplus.com/en/activity/seedream5-0
     id: 'SEEDREAM',
     name: 'Seedream 5.0 (ByteDance)',
     description:
@@ -213,9 +250,15 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     },
   },
   {
-    // Alibaba's Qwen-Image 3.0, released 21 July 2026, and the tightest published ceiling this app
-    // has anything to say to: 4.5K tokens, against a library running ~3,100 to ~7,900 estimated
-    // tokens.
+    // Alibaba's Qwen-Image 3.0, and the tightest published ceiling this app has anything to say to:
+    // 4.5K tokens, against a library running ~3,100 to ~7,900 estimated tokens.
+    //
+    // **The date is the one Alibaba's own lifecycle table gives, and it is per model id.** That
+    // table dates `qwen-image-3.0-pro` — the id whose page carries the ceiling below — to
+    // **2026-07-20**, and the plain `qwen-image-3.0` to 2026-08-04. This comment said "released 21
+    // July 2026" with nothing behind it, which is a third figure; launch write-ups say 22 July. Take
+    // the vendor's table over a write-up, and name the id, because the two ids did not ship on the
+    // same day. https://help.aliyun.com/en/model-studio/newly-released-models
     //
     // **The description below said the whole specification fits inside it, and it does not.** The
     // studio's opening configuration compiles to ~6,800 — half as long again as the budget — so the
@@ -308,12 +351,23 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   },
   {
     // **FLUX 3 was announced on 23 July 2026 and is not yet what these two entries should name.**
-    // Only FLUX 3 Video is generally available; FLUX 3 Image is in limited early access and the
-    // open-weight FLUX 3 Dev is slated for later in 2026. Recorded here because the whole lesson of
-    // this entry is that a third-party version is a claim with an expiry date — this one's is
-    // visible in advance, so re-check it rather than waiting to be surprised again.
+    // The announcement post puts the whole model in early access and sets out a launch plan whose
+    // capabilities each arrive "after an early access phase": video and audio first, then action
+    // prediction, then FLUX 3 Image, and last an open-weight backbone it names FLUX 3 Dev. Of those,
+    // only the first has shipped — the release notes date FLUX 3 Video to 4 August 2026 on
+    // `POST /v1/flux-3-video`, and describe it as "available now as a preview". Nothing announces
+    // FLUX 3 Image or FLUX 3 Dev, so neither has a date to record and this entry stays on FLUX.2.
+    // Recorded here because the whole lesson of this entry is that a third-party version is a claim
+    // with an expiry date — this one's is visible in advance, so re-check it rather than waiting to
+    // be surprised again. https://bfl.ai/blog/flux-3 and https://docs.bfl.ai/release-notes
     //
-    // **This entry described FLUX.1 for eight months after FLUX.2 replaced it** (25 November 2025).
+    // **A previous wording said FLUX 3 Video was "generally available" and FLUX 3 Image "in limited
+    // early access", and the pages say neither.** It was written uncited and a citation was added
+    // to it later without re-reading the paragraph against the page, which is the very failure the
+    // header above names: a link makes a claim look checked whether or not it was.
+    //
+    // **This entry described FLUX.1 for eight months after FLUX.2 replaced it** (25 November 2025,
+    // https://bfl.ai/blog/flux-2).
     // Its note named a T5 encoder and a 77-token CLIP window, and FLUX.2 has neither: `flux.2-dev`
     // loads `Mistral3SmallEmbedder` and every `flux.2-klein-*` loads `Qwen3Embedder`, with no CLIP
     // in the stack at all. The 512 survived the generation change by coincidence rather than by
