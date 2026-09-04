@@ -404,11 +404,17 @@ cannot quietly undo it.
 selection, the background glow. Cyan marks something *live*: auto-syncing, generating,
 recomputing as the user types. The `pulse-glow` animation deliberately blooms from one to the
 other because that transition is the signal. Using cyan for an ordinary button, or indigo for a
-live badge, quietly destroys that distinction. It is also why **no view owns the cyan stop** —
-`--color-tab` resting there would make every panel in that view look like it was recomputing, and
-a unit test asserts it never does. **The settings dialog cannot reach it either**: the accent is
-the one role colour a user may repoint, and cyan is missing from the nine hues it offers, for
-exactly this reason.
+live badge, quietly destroys that distinction. It is also why **nothing that takes `--color-tab`
+may rest on the cyan stop** — a surface resting there would look like it was recomputing, and a
+unit test asserts it never does. **The rule is about the custom property, not about views**, which
+is the reading it was given for a while: the assertion covered the four `[data-tab]` rules alone,
+so `spectrumStopAt` went on handing one preset card in ten the cyan stop, and ten shipped cards
+painted their edge, their hover bloom, their heading and their `action-tab` button in the live
+colour. The pool that function draws from is therefore the wheel **less** that stop — nine, not
+ten — and the test now sweeps every assignment of the property in `src/`, so a sixth way of setting
+it has to be a stop written down or the allocator itself. **The settings dialog cannot reach it
+either**: the accent is the one role colour a user may repoint, and cyan is missing from the nine
+hues it offers, for exactly this reason.
 
 **The accent is settable, and that changes nothing a component does.** A reader picks one of nine
 hues in the settings dialog; `App` puts it on the shell as `data-accent`, and the `[data-accent]`

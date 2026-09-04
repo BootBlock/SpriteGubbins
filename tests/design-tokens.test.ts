@@ -3,8 +3,9 @@ import { basename, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { codeOnly } from '../scripts/codeOnly.ts';
-import { scannableSources, tailwindScanned } from '../scripts/sourceFiles.ts';
+import { appMarkup, scannableSources, tailwindScanned } from '../scripts/sourceFiles.ts';
 import { THEME_COLOR_PLACEHOLDER, themeColorHex } from '../scripts/themeColour.ts';
+import { spectrumStopAt } from '../src/constants/spectrum.ts';
 
 /**
  * The design-token contract.
@@ -324,11 +325,11 @@ describe('design tokens', () => {
     expect(new Set(lightnesses)).toStrictEqual(new Set(['0.76']));
   });
 
-  it('gives every view its own stop, and never the one reserved for the live state', () => {
+  it('gives every view its own stop', () => {
     // A view added to `AppTab` without a rule here inherits studio's colour rather than getting its
     // own, which looks like a design decision instead of an omission. The list is read from disk
-    // for the same reason the stylesheet is — `tests/` is the Node-side program and does not import
-    // application modules.
+    // rather than imported for the same reason the stylesheet is: `APP_TABS` is what the module
+    // *declares*, and a rule that stopped naming a tab has to fail here rather than resolve.
     //
     // Read from `APP_TABS`, the `as const` array, rather than from the `AppTab` type it derives:
     // the union became an array when the opening view started being persisted, since a stored tab
@@ -346,11 +347,64 @@ describe('design tokens', () => {
       return rule.exec(stylesheet)?.[1];
     });
 
-    // Every view resolved, all of them different, and none of them cyan — `neon` is the live-state
-    // signal, and a view resting on it would make every panel look like it was recomputing.
+    // Every view resolved, and all of them different. Which stops they may *take* is the next test
+    // down, because that rule reaches further than the view rules do.
     expect(assigned).not.toContain(undefined);
     expect(new Set(assigned).size).toBe(tabs.length);
-    expect(assigned).not.toContain('cyan');
+  });
+
+  it('never lets a `--color-tab` rest on the stop the palette reserves for the live state', () => {
+    // `neon` is the live signal — auto-sync, generating, recomputing as you type — and the wheel's
+    // cyan stop sits 10° from it, against the 26° `index.css` says it keeps every view clear of.
+    // A surface resting there reads as mid-generation.
+    //
+    // The rule is written in `index.css` about the *custom property*, not about views, and for a
+    // while it was enforced about views alone: the assertion above was built from the `[data-tab]`
+    // rules, so it never reached `spectrumStopAt`, which handed one preset card in ten the cyan
+    // stop. Ten shipped cards painted their edge, their hover bloom, their heading and their
+    // `action-tab` load button in the live colour. So this sweeps **every** assignment of the
+    // property the app makes, and the claim and the enforcement now cover the same set.
+    //
+    // Each one has to be a stop written here or the one function that allocates one. A sixth way of
+    // setting the property fails this rather than slipping past it, which is the half that was
+    // missing before.
+    const assignments = appMarkup().flatMap((file) => {
+      const source = codeOnly(readFileSync(file, 'utf8'));
+      return [...source.matchAll(/--color-tab['"]?\s*:\s*([^;,}\s]+)/g)].map((match) => ({
+        where: relative(process.cwd(), file),
+        value: match[1] ?? '',
+      }));
+    });
+
+    // A floor, because a regex that matched nothing would find no offending stop either.
+    expect(assignments.length).toBeGreaterThanOrEqual(SPECTRUM_STOPS.length / 2);
+
+    for (const { where, value } of assignments) {
+      const stop = /^var\(--color-spectrum-(\w+)\)$/.exec(value)?.[1];
+
+      if (stop === undefined) {
+        // Not a stop written on the page, so it has to be the allocator — whose pool is driven
+        // below. Anything else is a route this test cannot see the colour of.
+        expect(value, where).toMatch(/^spectrumStopAt\(/);
+        continue;
+      }
+
+      expect(stop, where).not.toBe('cyan');
+    }
+
+    // And the allocator itself, driven rather than parsed: it is the one assignment above whose
+    // value this file cannot read off the page. Two rounds of the wheel, so a pool that had stopped
+    // wrapping would show up as a missing stop rather than as a shorter list.
+    const allocated = [
+      ...new Set(Array.from({ length: SPECTRUM_STOPS.length * 2 }, (_, index) => spectrumStopAt(index))),
+    ];
+
+    expect(allocated).not.toContain('var(--color-spectrum-cyan)');
+    expect(new Set(allocated)).toStrictEqual(
+      new Set(
+        SPECTRUM_STOPS.filter((stop) => stop !== 'cyan').map((stop) => `var(--color-spectrum-${stop})`),
+      ),
+    );
   });
 
   it('keeps documentation out of the content scan', () => {
