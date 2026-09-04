@@ -1,4 +1,4 @@
-import { resolveMode, resolveRigMode } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { ManifestSheet } from '../types/spriteManifest.ts';
 import type { SubjectCategory } from '../types/subject.ts';
@@ -98,7 +98,11 @@ export function sheetIdentity(
   // Resolved rather than read raw, as every other field the digests state is: a stored `CUTOUT_RIG`
   // on a category that articulates about nothing is not what the prompt for this sheet carries, and
   // the manifest must record the sheet that was asked for rather than the field that was stored.
-  const rigMode = resolveRigMode(category, current.output.directionalMode, current.output.rigMode);
+  const rigMode = resolveRigMode(
+    category,
+    sheetSeriesFor(category, current.output.directionalMode, current.output.directions),
+    current.output.rigMode,
+  );
 
   return {
     names: componentSlots(category, mode, current.output.directions, current.output.sheetIndex, anatomy),

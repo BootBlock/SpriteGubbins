@@ -2,17 +2,26 @@ import type { RenderStyleSurface } from '../../types/rendering.ts';
 import type { CategoryAssembly } from '../../types/subject.ts';
 
 /**
- * Flux, which is **not** Stable Diffusion for this purpose: Black Forest Labs' own prompting guide
- * states that "FLUX.2 does not support negative prompts. Focus on describing what you want, not what
- * you don't want" — so SD's negative block would be silently discarded, and the same two failures
- * are stated positively instead.
+ * Flux, which is **not** Stable Diffusion for this purpose: neither tier takes a negative prompt, so
+ * SD's negative block would be silently discarded and the same two failures are stated positively
+ * instead. **The two tiers establish that separately**, because the one vendor page that says it
+ * outright is written for the hosted one. Black Forest Labs state that "FLUX.2 does not support
+ * negative prompts. Focus on describing what you want, not what you don't want" — in a guide titled
+ * for [pro] and [max], whose Quick Reference addresses [flex] as well, and which advises no open
+ * weight anywhere. https://docs.bfl.ai/guides/prompting_guide_flux2
+ *
+ * For [dev] and [klein] that guide says nothing, and the reference implementation settles it on its
+ * own: the CLI exposes no negative field, and classifier-free guidance runs its unconditional branch
+ * on an empty prompt rather than on anything the caller supplies.
+ * https://github.com/black-forest-labs/flux2/blob/main/scripts/cli.py
  *
  * **It leads the prompt rather than trailing it, and that is a fix rather than a preference.** On
  * the open-weight target this restatement was unreachable: tokenisation stops at 512 tokens and the
  * specification runs to roughly 3,600, so the one sentence written specifically to survive Flux's
- * missing negative prompt was the one sentence guaranteed to be truncated away first. Leading also
- * matches what Black Forest Labs document about attention: "Word order matters — FLUX.2 pays more
- * attention to what comes first." https://docs.bfl.ai/guides/prompting_guide_flux2
+ * missing negative prompt was the one sentence guaranteed to be truncated away first. That argument
+ * is the weights' own and borrows nothing. On the hosted tier, where the whole specification is
+ * read, leading is instead what Black Forest Labs document about attention — "Word order matters —
+ * FLUX.2 pays more attention to what comes first." — in the guide written for that tier.
  *
  * **Which is exactly why the second sentence states the style.** Section 2's `Style:` line sits
  * around token 1,070, so on the open-weight tier it is never read — and this wrapper opened by

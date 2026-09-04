@@ -163,6 +163,52 @@ export type SheetFacings = 'run' | readonly [Direction, ...Direction[]];
 export type TargetQuantity = 'COMPONENT' | 'ASSEMBLED';
 
 /**
+ * In what position this sheet's inventory draws each part that moves.
+ *
+ * **The statement that relates a plan's entries to the rig section beside them.** `rigMode` decides
+ * whether section 5 asks for a cut-out rig, and a cut-out rig's first rule is that every piece is
+ * drawn in its neutral rest orientation, straight along its own long axis and never pre-bent. A pose
+ * library, an articulation sheet and a part library each ask for the opposite in section 4 — `Upper
+ * arms: neutral lowered, forward-diagonal, raised`, `Access panel, lid or hatch: closed, part-open,
+ * fully open`, `Turret, weapon or working mount: stowed, traversed, elevated` — and nothing related
+ * the two, so the pairing compiled: section 4 requiring the orientations, section 5 forbidding them,
+ * and section 9 auditing for "straight and unposed". One prompt disagreeing with itself, which the
+ * generator then resolves however it likes.
+ *
+ * It is a property of the *sheet* and not of the mode, which is why it could not be another row of
+ * the rig table `rigModes.ts` used to key on `DirectionalMode`: a CHARACTER on
+ * `CORE_DIRECTIONAL_VARIANTS` draws a trunk at each chosen yaw on its first sheet and thirty-four
+ * limb variants on its last, so one mode holds both answers.
+ *
+ * **Its reader asks the question of a whole series**, though, because a pairing is one deliverable
+ * whose sheets assemble together — `resolveRigMode` argues that, and it is why the character
+ * pairing above answers as its articulation sheet does rather than sheet by sheet.
+ *
+ * **It is declared rather than derived**, for the reason {@link ComponentEntry.parts} is: reading
+ * the answer out of an entry's prose or its part names would put the plan's rig at the mercy of its
+ * wording, and `Feet: flat planted, forward-step/heel-strike, rear-step/toe-off` is three positions
+ * of one part where `Floor ×4: one base tile and three low-frequency variants` is four different
+ * tiles.
+ *
+ * **A view is not a position.** The directional plans draw one head at each yaw section 3 lists,
+ * which is the camera turning rather than the part, so they answer `'UNSTATED'` — and that is what
+ * keeps a cut-out rig's trunk drawable at every facing of a chosen set.
+ *
+ * The answer is about the inventory alone, so a category that articulates about nothing still gives
+ * a truthful one — a BUILDING entrance module is drawn closed and open, and an INTERFACE button body
+ * in four states. It changes nothing there: `resolveRigMode` does read it for every category, and
+ * the `supportsRigMode` guard beside it is what makes the answer `NONE` regardless, because
+ * `CATEGORY_RIG_MODES` has already settled that those sheets carry no rig at all.
+ */
+export type InventoryPosing =
+  /** A part that moves appears once per position or state it takes: the artwork settles the motion. */
+  | 'PER_POSITION'
+  /** Every part that moves appears once, at rest: a rig settles the motion, and section 5 says how. */
+  | 'AT_REST'
+  /** No part is drawn twice for a position it takes, so the inventory settles nothing about motion. */
+  | 'UNSTATED';
+
+/**
  * One sheet: what it asks for, how many facings it draws, and what its components must assemble into.
  *
  * The assembly sentence lives here rather than in a table of its own because it is the same
@@ -192,6 +238,14 @@ export interface SheetPlan {
    * `'COMPONENT'`.
    */
   readonly targetQuantity: TargetQuantity;
+  /**
+   * In what position this sheet draws each part that moves — see {@link InventoryPosing}.
+   *
+   * It sits beside {@link SheetPlan.targetQuantity} because it is the same kind of statement: a fact
+   * about the inventory that a table outside this directory has to read. `rigModes.ts` is that
+   * reader, and what it decides is which rigs the sheet can be asked for.
+   */
+  readonly posing: InventoryPosing;
   /**
    * What section 2's share-bearing profiles measure this category's scale unit against, on this
    * sheet — see {@link ScaleUnitFrame}, which states the test.

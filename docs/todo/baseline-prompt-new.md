@@ -1616,6 +1616,20 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > support negative prompts" — was **appended**, roughly 3,600 tokens into a prompt the open weights
 > stop reading at 512. It could not reach the model it was written for. It now leads, which is also
 > what BFL's own "word order matters — FLUX.2 pays more attention to what comes first" calls for.
+>
+> **Corrected again by [issue #155](https://github.com/BootBlock/SpriteGubbins/issues/155) — two of
+> the citations above do not carry what the sentences beside them claim.** The record stands as it
+> was written; what follows is what it should have cited. The text-encoder link is a deepwiki page,
+> which is a generated reading of Black Forest Labs' repository rather than the repository, and the
+> primary source for both the encoder stack and the 512 is
+> [`src/flux2/text_encoder.py`](https://github.com/black-forest-labs/flux2/blob/main/src/flux2/text_encoder.py),
+> where `MAX_LENGTH` is declared and both embedders tokenise against it. The prompting guide is
+> titled *Prompting Guide - FLUX.2 [pro] & [max]* and advises no open weight anywhere, so it does not
+> reach the tier the appended-restatement finding is about; what settles that tier is the same
+> repository's CLI, which exposes no negative field at all and runs classifier-free guidance on an
+> empty prompt. And the **32K** figure is stated on bfl.ai/models/flux-2 without naming a variant, so
+> reading it as the hosted tier's is this app's own inference — a sound one, because the 512 rules
+> the weights out, but an inference rather than a quotation.
 
 > **Two targets added: `QWEN_IMAGE` and `SEEDREAM`.** Both were checked for currency *first*, which
 > is the habit the Flux and Midjourney findings above earned. That check immediately changed one of

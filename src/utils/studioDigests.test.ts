@@ -298,10 +298,14 @@ describe('riggingDigest', () => {
   });
 
   it('adds the joint, overlap and socket settings for a cut-out rig', () => {
+    // On the sheet that is a rig, because a character's directional pairing delivers an articulation
+    // sheet of posed limbs and `resolveRigMode` substitutes a pose library there — which this digest
+    // reports faithfully, and is `rigModes.test.ts`'s subject rather than this one's.
     const digest = riggingDigest(
       'CHARACTER',
       withOutput({
         rigMode: 'CUTOUT_RIG',
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
         jointCapStyle: 'ROUNDED',
         overlapMargin: 'HALF_CAP',
         sockets: 'head, chest',
@@ -311,9 +315,16 @@ describe('riggingDigest', () => {
   });
 
   it('omits empty sockets rather than trailing a separator', () => {
-    expect(riggingDigest('CHARACTER', withOutput({ rigMode: 'CUTOUT_RIG', sockets: '' }))).not.toMatch(
-      /·\s*$/,
-    );
+    expect(
+      riggingDigest(
+        'CHARACTER',
+        withOutput({
+          rigMode: 'CUTOUT_RIG',
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+          sockets: '',
+        }),
+      ),
+    ).not.toMatch(/·\s*$/);
   });
 
   it('names the rig the sheet actually gets, not the one the configuration was left holding', () => {

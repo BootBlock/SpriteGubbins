@@ -43,6 +43,8 @@ export const CREATURE_POSE_LIBRARY: SheetPlan = {
   facings: 'run',
   assembly: `${CREATURE_GAITS}.`,
   targetQuantity: 'ASSEMBLED',
+  // Eight fore and nine hind variants a side: one limb segment per orientation it is drawn at.
+  posing: 'PER_POSITION',
   scaleUnitFrame: 'SHEET',
   groups: [
     {
@@ -135,6 +137,8 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
     assembly:
       'one head, one body and one hindquarters seen at each of the directions listed above, reading as one animal turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
     targetQuantity: 'ASSEMBLED',
+    // One head, one body and one hindquarters, repeated across yaws — the camera turning, not the trunk.
+    posing: 'UNSTATED',
     scaleUnitFrame: 'SHEET',
     groups: [
       {
@@ -159,6 +163,8 @@ export const CREATURE_ARTICULATION: SheetPlan = {
   facings: 'run',
   assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, at the single direction listed above.`,
   targetQuantity: 'ASSEMBLED',
+  // The creature spelling of the character articulation run, and posed for the same reason.
+  posing: 'PER_POSITION',
   scaleUnitFrame: 'SHEET',
   groups: [
     {
@@ -292,6 +298,8 @@ export const CREATURE_CUTOUT_RIG: SheetPlan = {
   assembly:
     'any gait the rig produces by rotating the pieces about their pivots. The artwork commits to none of them, which is why every piece is drawn unposed.',
   targetQuantity: 'ASSEMBLED',
+  // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
+  posing: 'AT_REST',
   scaleUnitFrame: 'SHEET',
   groups: [
     {

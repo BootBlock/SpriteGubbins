@@ -1,7 +1,6 @@
-import type { DirectionalMode } from '../../types/output.ts';
+import type { SheetSeries } from '../../types/components.ts';
 import type { RigMode } from '../../types/rigging.ts';
 import type { SubjectCategory } from '../../types/subject.ts';
-import { resolveMode } from './modes.ts';
 
 /**
  * Which rig each category can actually be asked for.
@@ -87,62 +86,128 @@ export function supportsRigMode(category: SubjectCategory, rigMode: RigMode): bo
 }
 
 /**
- * The rig a sheet has already decided, because its inventory *is* that rig.
+ * Whether any sheet of this deliverable has already committed a moving part to a position.
+ *
+ * **The question is asked of the series and not of one sheet, and that is the second half of the
+ * defect.** A pairing is a *deliverable*: `CHARACTER_ARTICULATION`'s assembly promise is "the limbs
+ * of … each fitted to the trunk drawn on the directional core sheets", and the core's own promise
+ * calls itself "the trunk the articulation sheets hang their limbs on". They are two halves of one
+ * set, generated separately and assembled together.
+ *
+ * Asked per sheet, the answer split that set in two: a character on `CORE_DIRECTIONAL_VARIANTS`
+ * carrying `CUTOUT_RIG` compiled a cut-out rig for the trunk sheets and a pose library for the
+ * limbs. Each prompt was internally consistent, and the pair was not —
+ * `[DEFINE:JOINT_CAP_DESCRIPTION]` and `[DEFINE:OVERLAP_MARGIN_DESCRIPTION]` appear only inside the
+ * cut-out rig block, so the trunk was drawn to a stated cap style and overlap margin while the sheet
+ * supplying the limbs those caps have to meet was told neither. That is the reported failure one
+ * level up rather than a fix for it.
+ *
+ * Nothing is put out of reach by asking the wider question. A cut-out rig for a figure is
+ * `CUTOUT_RIG_SINGLE_DIRECTION`, which draws the trunk *and* the limbs once each per facing and
+ * settles the rig itself; the directional pairing is a pose-library deliverable, which is what its
+ * own two assembly strings say.
+ */
+function artworkSettlesMotion(series: SheetSeries): boolean {
+  return series.some((plan) => plan.posing === 'PER_POSITION');
+}
+
+/**
+ * The rig a deliverable has already decided, because its inventory *is* that rig.
  *
  * **The other half of the relation `CATEGORY_RIG_MODES` opened**, and the converse of the defect
  * that table fixed. That one stopped section 5's pivot rules reaching a sheet with no joints;
- * nothing stopped a sheet that is *entirely* joints reaching a prompt with no pivot rules.
- * `CUTOUT_RIG_SINGLE_DIRECTION` draws one direction's worth of rig pieces and promises, in its
- * plan's own assembly string, "any pose the rig produces by rotating the pieces about their
- * pivots" — while the rig mode beside it stayed a free choice against a default of `POSE_LIBRARY`.
- * So the studio's own defaults compiled a sheet of rig pieces with no pivot registration, no
- * overlap margin, no depth order and no sockets: the geometry that makes those pieces rotatable,
- * which is the whole reason such a sheet is generated. Setting the rig to `NONE` dropped section 5
- * altogether, leaving a rig-pieces inventory above a rig assembly promise with no articulation
- * instruction between them.
+ * nothing stopped a sheet that is *entirely* joints reaching a prompt with no pivot rules. The
+ * cut-out rig plans draw one direction's worth of rig pieces and promise, in their own assembly
+ * string, "any pose the rig produces by rotating the pieces about their pivots" — while the rig mode
+ * beside them stayed a free choice against a default of `POSE_LIBRARY`. So the studio's own defaults
+ * compiled a sheet of rig pieces with no pivot registration, no overlap margin, no depth order and
+ * no sockets: the geometry that makes those pieces rotatable, which is the whole reason such a sheet
+ * is generated. Setting the rig to `NONE` dropped section 5 altogether, leaving a rig-pieces
+ * inventory above a rig assembly promise with no articulation instruction between them.
  *
- * A sheet mode listed here is not a free choice against the rig: it has already said what the
+ * An `'AT_REST'` deliverable is not a free choice against the rig: it has already said what the
  * pieces are for, so the rig mode is *reported* rather than asked for, and the joint-cap, overlap
- * and socket settings it gates come with it. Every other mode leaves the choice open — a
- * directional core or a pose library is drawn for either kind of rig, or for none.
+ * and socket settings it gates come with it.
  *
- * One entry, because one sheet mode is a rig. It is a table rather than an equality test so that a
- * second such mode is an entry rather than a second condition to find.
- */
-const SHEET_MODE_RIG: Readonly<Partial<Record<DirectionalMode, RigMode>>> = {
-  CUTOUT_RIG_SINGLE_DIRECTION: 'CUTOUT_RIG',
-};
-
-/**
- * The rig this pairing fixes, or `undefined` where the sheet leaves the choice open.
- *
- * The sheet mode is resolved first, so a stored one this category cannot produce fixes nothing —
- * an ITEM carrying `CUTOUT_RIG_SINGLE_DIRECTION` from an older build draws a directional core, and
- * a rig it has no joints for may not arrive with it. That resolution is the reason this lives
- * beside the sheet table rather than deriving the answer from the raw field.
+ * **It reads the plans rather than the sheet mode**, which is what made room for {@link
+ * offersRigMode} beside it. The two are one question asked in both directions — what has this
+ * deliverable's artwork already settled about motion — and the sheet mode cannot answer either,
+ * because the answer lives in the inventories the mode produces rather than in the mode's name.
  *
  * Exported because the studio needs the same answer for a different purpose: `RiggingFields` shows
  * the rig select disabled, and says which sheet took the choice over, wherever this returns one.
  */
-export function fixedRigMode(category: SubjectCategory, mode: DirectionalMode): RigMode | undefined {
-  return SHEET_MODE_RIG[resolveMode(category, mode)];
+export function fixedRigMode(series: SheetSeries): RigMode | undefined {
+  return series.some((plan) => plan.posing === 'AT_REST') ? 'CUTOUT_RIG' : undefined;
 }
 
 /**
- * The rig actually used for this sheet — the one its contents demand where they demand one, the one
- * asked for where the category can honour it, and `NONE` otherwise.
+ * Whether this deliverable can be asked for this rig — the category's answer, less what its own
+ * inventories rule out.
  *
- * The studio prevents both mismatches, exactly as it does for the sheet mode, and this exists for
- * the same reason `resolveMode` does: a preset written before these tables existed, a history row
- * from an older build, or a hand-edited export can each arrive carrying a pairing that was legal
+ * **A cut-out rig is a claim that the artwork commits to no position**, which is exactly what a
+ * `'PER_POSITION'` inventory has already done. With `rigMode: 'CUTOUT_RIG'` on a pose library, an
+ * articulation sheet or a part library, section 4 required each part in several orientations or
+ * states, section 5's rest-orientation rule then forbade a pre-bent segment and required every
+ * articulation left at its neutral angle, and section 9 audited the result for "straight and
+ * unposed". One prompt requiring what it forbids, on four categories, reachable from the studio's
+ * own controls — and the pairing was expressible because the rig table read the sheet *mode* while
+ * the contradiction lived in the sheets' entries.
+ *
+ * The refusal is narrow on purpose. `POSE_LIBRARY` is what such a deliverable is — its variants are
+ * separately oriented rigid segments meeting at shared pivots, which is that section's own
+ * wording — and `NONE` stays available for a reader who wants no articulation section at all. What
+ * goes is the one pairing that cannot be drawn.
+ *
+ * A reader who wants a cut-out rig for one of these subjects has the sheet that is one:
+ * `CUTOUT_RIG_SINGLE_DIRECTION` draws every moving part once, at rest, and {@link fixedRigMode}
+ * settles the rig on it outright. So this takes nothing away that the app does not offer better one
+ * control along.
+ */
+export function offersRigMode(category: SubjectCategory, series: SheetSeries, rigMode: RigMode): boolean {
+  if (!supportsRigMode(category, rigMode)) return false;
+  return rigMode !== 'CUTOUT_RIG' || !artworkSettlesMotion(series);
+}
+
+/**
+ * The rig actually used for this deliverable — the one its contents demand where they demand one,
+ * the one asked for where the sheets and the category can honour it, and the nearest truthful answer
+ * otherwise.
+ *
+ * The studio prevents all three mismatches, exactly as it does for the sheet mode, and this exists
+ * for the same reason `resolveMode` does: a preset written before these tables existed, a history
+ * row from an older build, or a hand-edited export can each arrive carrying a pairing that was legal
  * when it was saved. Every reader of `rigMode` goes through here — the compiler, the collapsed
  * studio digest, the split drawer's depth-order note and the control itself — so a stale value
  * degrades to one answer rather than to four.
  *
- * The two clauses are ordered, and the order is the fix: the sheet's own demand outranks the stored
+ * The clauses are ordered, and the order is the fix: the inventory's own demand outranks the stored
  * field, because a sheet of rig pieces is not a configuration that can be overridden into something
- * else. Where no sheet demands one, the stored value stands or falls on the category alone.
+ * else. Where nothing demands a rig, the stored value stands or falls on the inventories and the
+ * category together.
+ *
+ * **It answers for the whole pairing rather than for the selected sheet**, which is what keeps the
+ * answer out of the sheet index. A rig that changed under the Inventory Part control would let a
+ * reader leave `CUTOUT_RIG` in the store against an articulation sheet and save that pair as a
+ * preset — the disagreement `presetCoverage.test.ts` refuses for the shipped library, arriving
+ * through the one write that sets nothing but an index.
+ *
+ * **The two refusals degrade differently, because they are two different refusals.** "Your category
+ * has no joints" leaves `NONE`, which is the truth about a tileset and the safe direction to fall
+ * in — it asks for less than the configuration said, where `POSE_LIBRARY` would add articulation
+ * rules nobody selected. "This deliverable's artwork already carries the poses" leaves
+ * `POSE_LIBRARY`, which is the truth about *it*: its inventories are rigid segments that register at
+ * shared pivots, and falling to `NONE` there would drop the only section saying so, leaving a pose
+ * library's assembly promise with no articulation instruction under it — the very defect
+ * {@link fixedRigMode} exists to stop on the rig sheet. It is still a fall rather than an upgrade,
+ * because everything `POSE_LIBRARY` asks for, `CUTOUT_RIG` asked for too.
  */
-export function resolveRigMode(category: SubjectCategory, mode: DirectionalMode, rigMode: RigMode): RigMode {
-  return fixedRigMode(category, mode) ?? (supportsRigMode(category, rigMode) ? rigMode : 'NONE');
+export function resolveRigMode(category: SubjectCategory, series: SheetSeries, rigMode: RigMode): RigMode {
+  const fixed = fixedRigMode(series);
+  if (fixed !== undefined) return fixed;
+  if (offersRigMode(category, series, rigMode)) return rigMode;
+  // Guarded on the category as well as the inventories, because posed artwork is not by itself a
+  // promise that the subject articulates: an ITEM part library and an INTERFACE state library are
+  // both drawn per state, and neither may be handed a rig its own table withholds.
+  return artworkSettlesMotion(series) && supportsRigMode(category, 'POSE_LIBRARY') ? 'POSE_LIBRARY' : 'NONE';
 }

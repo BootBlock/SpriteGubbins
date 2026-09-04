@@ -31,6 +31,8 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
   assembly:
     'the complete interface in each state a player can put it in — a resting screen, a button under the pointer and again pressed, a bar part-filled, a toggle switched, a slot occupied — without redrawing any piece that does not change between them.',
   targetQuantity: 'COMPONENT',
+  // A button body in four states, a toggle in three, a slider handle at rest and held.
+  posing: 'PER_POSITION',
   // The sheet, although this is the one plan in the app that draws its own scale unit *and* takes
   // this frame. One panel frame is on the page among twenty-odd widgets, and one of anything cannot
   // argue with a count — so the shipped reading stays true here, and every other widget is drawn at
@@ -118,6 +120,8 @@ export const INTERFACE_NINE_SLICE: SheetPlan = {
   // Cut into corners, edges and a centre, and still a component size: what the nine assemble into is
   // “a panel at any width and height”, so there is no assembled figure for a reader to price.
   targetQuantity: 'COMPONENT',
+  // The end caps and the stretching middle are each drawn again in the pressed state.
+  posing: 'PER_POSITION',
   // The sheet, and here for the plainer of the two reasons: the panel frame is what these twenty
   // pieces *assemble into*, named as such by the assembly sentence above, so no cell in this grid
   // holds one. Pricing a corner's cell as a share of a panel frame would ask for a corner several

@@ -166,8 +166,9 @@ describe('wrapForModel', () => {
   it('puts the Flux restatement where a 512-token encoder will actually reach it', () => {
     // The defect this pins: appended, the restatement sat ~3,600 tokens into a prompt an open-weight
     // Flux stops reading at 512, so the one sentence written to cover Flux's missing negative prompt
-    // was the one sentence guaranteed to be cut. Asserted for both tiers — Black Forest Labs' own
-    // word-order guidance applies to the hosted one too.
+    // was the one sentence guaranteed to be cut. Asserted for both tiers, which reach the same
+    // placement from different directions: the 512-token ceiling decides it for the weights, and
+    // Black Forest Labs' word-order guidance decides it for the hosted tier.
     for (const targetModel of ['FLUX', 'FLUX_API'] as const) {
       const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel }));
       expect(prompt.startsWith('The sheet shows only disconnected individual parts'), targetModel).toBe(true);
@@ -693,8 +694,9 @@ describe('what a wrapper says about the assembled whole', () => {
  * `text`, `labels` and `captions` are things to avoid on twelve categories and the subject itself on
  * the thirteenth, and a negative channel names a thing rather than a placement — the limit
  * `FRAME_IS_A_COMPONENT` was introduced for, arriving at four wrappers instead of one. Flux carries
- * `no text` in the leading sentence Black Forest Labs' word-order guidance makes the strongest
- * position in the prompt, so on a glyph set it would spend that position negating the sheet.
+ * `no text` in its leading sentence, which is the strongest position in the prompt on either tier —
+ * by the 512-token ceiling on the weights, and by Black Forest Labs' word-order guidance on the
+ * hosted one — so on a glyph set it would spend that position negating the sheet.
  *
  * **The two terms that stay are what makes this a boundary rather than a hole.** A watermark and a
  * signature are not characters of a font, so no reading of the exemption reaches them, and a signed

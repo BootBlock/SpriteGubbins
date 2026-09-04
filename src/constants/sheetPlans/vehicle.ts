@@ -26,6 +26,8 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
   assembly:
     'the complete vehicle at rest, and in each state its moving parts allow — mount traversed or elevated, hatch open, drive at rest and at mid-travel — without redrawing any part that does not move.',
   targetQuantity: 'ASSEMBLED',
+  // The mount is drawn stowed, traversed and elevated, the hatch closed and open, each drive at rest and mid-travel.
+  posing: 'PER_POSITION',
   scaleUnitFrame: 'SHEET',
   groups: [
     {
@@ -96,6 +98,8 @@ function vehicleDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTupl
     assembly:
       'the complete vehicle seen from each of the directions listed above, reading as one machine turned rather than several drawings of it, with its drive and mount in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
+    // The drive and the mount are drawn once per facing in matching positions, which is the camera turning.
+    posing: 'UNSTATED',
     scaleUnitFrame: 'SHEET',
     groups: [
       {
@@ -145,6 +149,8 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
   assembly:
     'any state the rig produces by rotating its drive and its mount about their pivots. The artwork commits to none of them, which is why every piece is drawn in its rest position.',
   targetQuantity: 'ASSEMBLED',
+  // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
+  posing: 'AT_REST',
   scaleUnitFrame: 'SHEET',
   groups: [
     {

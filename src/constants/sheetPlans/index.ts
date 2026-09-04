@@ -13,7 +13,13 @@ export { CATEGORY_SHEET_PLANS, DEFAULT_MODE_FOR, modesFor, resolveMode, supports
 // The second category-scoped table, kept in its own file because it answers a different question —
 // which categories articulate, rather than which sheets they produce — and surfaced here because
 // every caller already reaches this directory through its index.
-export { CATEGORY_RIG_MODES, fixedRigMode, resolveRigMode, supportsRigMode } from './rigModes.ts';
+export {
+  CATEGORY_RIG_MODES,
+  fixedRigMode,
+  offersRigMode,
+  resolveRigMode,
+  supportsRigMode,
+} from './rigModes.ts';
 
 /**
  * What a stored sheet index is allowed to be, bounded by the longest series any pairing produces
