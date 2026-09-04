@@ -182,7 +182,14 @@ describe('generatePrompt — conditional blocks', () => {
   });
 
   it('includes the cut-out rig section only for a cut-out rig', () => {
-    const rig = generatePrompt('CHARACTER', SUBJECT, withOutput({ rigMode: 'CUTOUT_RIG' }));
+    // The cut-out rig is asked for on the sheet that is one. A character's directional pairing
+    // delivers an articulation sheet of posed limbs, so `resolveRigMode` substitutes a pose library
+    // there — which is what `rigModes.test.ts` is about, and not what this is testing.
+    const rig = generatePrompt(
+      'CHARACTER',
+      SUBJECT,
+      withOutput({ rigMode: 'CUTOUT_RIG', directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION' }),
+    );
     expect(rig).toContain('## 5. CUT-OUT RIG REQUIREMENTS');
     expect(rig).toContain('### Depth order for this direction');
 
@@ -217,7 +224,11 @@ describe('generatePrompt — conditional blocks', () => {
     const prompt = generatePrompt(
       'CHARACTER',
       SUBJECT,
-      withOutput({ rigMode: 'CUTOUT_RIG', sockets: 'head, chest' }),
+      withOutput({
+        rigMode: 'CUTOUT_RIG',
+        sockets: 'head, chest',
+        directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+      }),
     );
     expect(prompt).toContain('Attachment sockets');
     expect(prompt).toContain('head, chest');
@@ -2317,13 +2328,17 @@ describe('generatePrompt — the self-audit, per target', () => {
   });
 
   it('keeps those same nested checks for a deliberating target', () => {
+    // An OBJECT, because this needs all three at once and a CHARACTER cannot give them: its
+    // directional pairing delivers an articulation sheet, so a cut-out rig resolves away there, and
+    // its rig sheet draws one facing and so carries no directional audit. An object's moving parts
+    // turn with the camera, so its directional pairing carries the rig and the audit together.
     const output = withOutput({
       targetModel: 'CHATGPT_5_6_SOL',
       rigMode: 'CUTOUT_RIG',
       renderStyle: 'PIXEL_ART',
       directionalMode: 'CORE_DIRECTIONAL_VARIANTS',
     });
-    const prompt = generatePrompt('CHARACTER', SUBJECT, output);
+    const prompt = generatePrompt('OBJECT', defaultSubjectFor('OBJECT'), output);
 
     expect(prompt).toContain('Every articulated segment is straight and unposed');
     expect(prompt).toContain('One pixel grid and density throughout');

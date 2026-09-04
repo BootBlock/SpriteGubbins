@@ -7,7 +7,12 @@ import {
   OUTPUT_TOOLTIPS,
   sheetChoices,
 } from '../../constants/output/index.ts';
-import { resolveMode, resolveRigMode, resolveSheetIndex } from '../../constants/sheetPlans/index.ts';
+import {
+  resolveMode,
+  resolveRigMode,
+  resolveSheetIndex,
+  sheetSeriesFor,
+} from '../../constants/sheetPlans/index.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { parseAdditionalAnatomy } from '../../utils/additionalAnatomy.ts';
@@ -68,7 +73,15 @@ export function SheetFields() {
           setOutputConfig({
             ...output,
             directionalMode: value,
-            rigMode: resolveRigMode(category, value, output.rigMode),
+            // Against the sheets the new mode produces rather than against the mode's name,
+            // because the rig a pairing can carry is its inventories' answer. This is the only
+            // control that can change it: the rig belongs to the whole series, so the Inventory Part
+            // select below cannot leave the store holding one its own sheets refuse.
+            rigMode: resolveRigMode(
+              category,
+              sheetSeriesFor(category, value, output.directions),
+              output.rigMode,
+            ),
             sheetIndex: 0,
           });
         }}

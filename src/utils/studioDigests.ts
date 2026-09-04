@@ -203,7 +203,8 @@ export function projectionDigest(category: SubjectCategory, output: OutputConfig
  * that is what its own inventory is.
  */
 export function riggingDigest(category: SubjectCategory, output: OutputConfig): string {
-  const rigMode = resolveRigMode(category, output.directionalMode, output.rigMode);
+  const mode = resolveMode(category, output.directionalMode);
+  const rigMode = resolveRigMode(category, sheetSeriesFor(category, mode, output.directions), output.rigMode);
   if (rigMode !== 'CUTOUT_RIG') return rigMode;
   return join([rigMode, output.jointCapStyle, output.overlapMargin, output.sockets]);
 }

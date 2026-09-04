@@ -13,24 +13,32 @@ interface SelectFieldProps<T extends string | number> {
   readonly value: T;
   readonly choices: readonly SelectChoice<T>[];
   /**
-   * What the *current* selection means, shown under the control and wired as its accessible
-   * description.
+   * What this control is doing *right now* — which is usually what the current selection means, and
+   * once what the list is missing — shown under the control and wired as its accessible description.
    *
-   * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen: this is
-   * for the six selects whose options differ from each other in a way no single sentence can cover
-   * — the palette, the render style, the art style reference, the system profile, the target
-   * generator and the sheet contents. Each of those has a table behind it holding a different
-   * account of what some of its options mean, and this is where the row for the chosen one is read
-   * out.
+   * Orthogonal to `tooltip`, which explains the field and reads the same whatever is chosen. Six of
+   * the seven call sites are selects whose options differ from each other in a way no single
+   * sentence can cover — the palette, the render style, the art style reference, the system profile,
+   * the target generator and the sheet contents. Each of those has a table behind it holding a
+   * different account of what some of its options mean, and this is where the row for the chosen one
+   * is read out.
    *
-   * Optional because the other twenty-four have no such table, and twenty-four call sites passing a
-   * permanently-empty string would bury the six that do — while empty *is* still accepted from
-   * those six, as `CheckboxField`'s reason is, so a caller resolving the text out of its table can
-   * hand over what it found rather than choosing between a prop and no prop. Four of the six need
-   * that in earnest — their tables are keyed on something the select can hold and the table has no
-   * row for — and the other two never take it up: the target generator's is a guard over a miss its
-   * own call site records as unreachable, and the sheet contents' table has a row for every mode a
-   * category can offer, because both are keyed on the same closed union.
+   * **The seventh is the rig mode, and it reads the other way.** Its options need no per-option
+   * account, but its *list* narrows: sheet contents that deliver a sheet drawing each moving part
+   * once per position it takes do not offer the cut-out rig, because that rig's first rule is that
+   * no piece commits to a position. An option that disappears with no explanation reads as a control
+   * that failed to render, so the sentence naming the sheet that withdrew it goes here — where a
+   * screen reader announces it with the control, rather than in a paragraph beside it.
+   *
+   * Optional because the other twenty-three have nothing of either kind to say, and twenty-three
+   * call sites passing a permanently-empty string would bury the seven that do — while empty *is*
+   * still accepted from those seven, as `CheckboxField`'s reason is, so a caller resolving the text
+   * out of its table can hand over what it found rather than choosing between a prop and no prop.
+   * Five of the seven need that in earnest — four whose tables are keyed on something the select can
+   * hold and the table has no row for, and the rig mode, whose sentence applies to some sheets and
+   * not others — and the other two never take it up: the target generator's is a guard over a miss
+   * its own call site records as unreachable, and the sheet contents' table has a row for every mode
+   * a category can offer, because both are keyed on the same closed union.
    */
   readonly description?: string;
   /**
@@ -39,7 +47,10 @@ interface SelectFieldProps<T extends string | number> {
    *
    * Optional here where those two require it, for the reason `description` is: one of the app's
    * thirty selects — the rig mode — has a setting above it that takes its value over, and the other
-   * twenty-nine passing a permanently-empty string would bury the one that does.
+   * twenty-nine passing a permanently-empty string would bury the one that does. It is the same
+   * select that carries the seventh `description`, and the two say different things: this one is the
+   * sheet taking the choice over, that one the sheet withdrawing an option from a choice the reader
+   * still has.
    */
   readonly disabledReason?: string;
   /**

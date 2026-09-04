@@ -256,8 +256,23 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **0.17 KiB of headroom**, the second-narrowest this margin has been, and it is why four tenths of
  * a KiB of prose crossed it. The margin is restored to the same order as every raise above rather
  * than widened.
+ *
+ * **Raised once more, from 2317, by the rig relation moving onto the sheet plans.** A cut-out rig
+ * could be asked for on a deliverable that already draws each moving part once per position it
+ * takes, so section 5 forbade what section 4 required; the fix is a `posing` field on every one of
+ * the thirty-two sheet plans, a second resolver beside `fixedRigMode`, and the sentence the rig
+ * select now shows when the sheet contents withdraw the option. All of it is constant data or studio
+ * code the entry chunk reaches, which is the footing every raise above stands on. Measured on its
+ * own base before this branch met main — 2313.82 KiB — the precache reached **2315.86**, a delta of
+ * 2.04; merged with the guard exemption the paragraph above records, the build reports **2316.25**,
+ * which is that paragraph's own merged 2314.22 plus the same delta to within 0.01. No file was added
+ * to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * Both raises were bought from the same 2314, which is why this one names 2317 rather than 2314 as
+ * the figure it lifts: two branches each found 0.18 KiB of headroom under it and each crossed it.
+ * The margin is restored to the same order as every raise above rather than widened.
  */
-export const PRECACHE_CEILING_KIB = 2317;
+export const PRECACHE_CEILING_KIB = 2320;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

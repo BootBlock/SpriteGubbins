@@ -2,7 +2,7 @@ import { resolveDirectionSet } from '../constants/categoryDirectionSets.ts';
 import { resolveProjection } from '../constants/categoryProjections.ts';
 import { resolveStyleReference } from '../constants/categoryStyleReferences.ts';
 import { resolveCameraElevation } from '../constants/promptText/index.ts';
-import { resolveMode, resolveRigMode } from '../constants/sheetPlans/index.ts';
+import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 
@@ -29,21 +29,29 @@ export function resolveOutputForCategory(category: SubjectCategory, output: Outp
   // CREATURE should not silently reset a cut-out rig — and falls back to that category's default
   // only where it genuinely cannot be honoured.
   const directionalMode = resolveMode(category, output.directionalMode);
-  // The rig travels with it, for the same reason and against the same table: a rig is a claim about
-  // how the subject is built, so it does not survive becoming a different kind of subject.
-  // `resolveRigMode` keeps a cut-out rig across CHARACTER → CREATURE and drops it to `NONE` on the
-  // five categories that articulate about nothing — which is what stops a preset saved after such a
-  // switch persisting a rig its own category has no joints for. It reads the mode resolved on the
-  // line above rather than the stored one, because the cut-out rig *sheet* decides the rig outright:
-  // a switch that keeps that sheet keeps the rig its inventory is made of, and one that loses it
-  // hands the choice back.
-  const rigMode = resolveRigMode(category, directionalMode, output.rigMode);
-  // And the direction set, the third of these and the last one that used to survive untouched:
-  // switching to INTERFACE re-resolved the mode and left `directions` on `THREE_CLASSIC`, so the
-  // panel offered "Split into 3 sheets" and the first of those asked for a button at object yaw 45°.
-  // `resolveDirectionSet` keeps the set wherever the new subject can be turned to it — seven of the
-  // thirteen categories can be turned to all of them — and falls back only where it cannot.
+  // The direction set, which used to survive untouched: switching to INTERFACE re-resolved the mode
+  // and left `directions` on `THREE_CLASSIC`, so the panel offered "Split into 3 sheets" and the
+  // first of those asked for a button at object yaw 45°. `resolveDirectionSet` keeps the set
+  // wherever the new subject can be turned to it — seven of the thirteen categories can be turned to
+  // all of them — and falls back only where it cannot.
+  //
+  // It is resolved before the rig rather than after it because the rig now reads the pairing's own
+  // *sheets*, and which sheets a pairing has is a property of the chosen set as well as of the
+  // pairing.
   const directions = resolveDirectionSet(category, output.directions);
+  // The rig travels with the mode, for the same reason and against the same table: a rig is a claim
+  // about how the subject is built, so it does not survive becoming a different kind of subject.
+  // `resolveRigMode` keeps a cut-out rig across CHARACTER → CREATURE and drops it to `NONE` on the
+  // nine categories that articulate about nothing — which is what stops a preset saved after such a
+  // switch persisting a rig its own category has no joints for. It reads the sheets resolved from
+  // the two lines above rather than the stored fields, because they decide the rig outright in both
+  // directions: a switch that keeps the cut-out rig sheet keeps the rig its inventory is made of,
+  // and one that lands on a pairing of posed variants drops a cut-out rig those variants forbid.
+  const rigMode = resolveRigMode(
+    category,
+    sheetSeriesFor(category, directionalMode, directions),
+    output.rigMode,
+  );
   // And the projection, the fourth and last of the claims a category can refuse. It is the one that
   // failed loudest: an INTERFACE arriving from a default session kept `THREE_QUARTER_TOPDOWN` and
   // compiled `Angled overhead … the vertical screen axis carries both height and depth` above an

@@ -25,7 +25,7 @@ import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { supportsDirectionSet } from '../categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { DIRECTION_LISTS } from '../promptText/index.ts';
-import { resolveRigMode, supportsMode, supportsRigMode } from '../sheetPlans/index.ts';
+import { resolveRigMode, sheetSeriesFor, supportsMode, supportsRigMode } from '../sheetPlans/index.ts';
 import { PRESETS } from './index.ts';
 
 /**
@@ -185,8 +185,14 @@ describe('no shipped preset contradicts itself', () => {
     // there, and `POSE_LIBRARY` would still be silently overruled by the sheet. Every shipped preset
     // on that mode already pairs it with `CUTOUT_RIG`, so what this pins is that the library keeps
     // stating outright what the compiler would otherwise have to infer for it.
-    const { directionalMode, rigMode } = preset.output;
-    expect(resolveRigMode(preset.category, directionalMode, rigMode)).toBe(rigMode);
+    //
+    // It reads the pairing's own sheets rather than the mode because the disagreement runs both
+    // ways: a preset pinning `CUTOUT_RIG` against a pose library, an articulation sheet or a part
+    // library names a rig whose rest-orientation rule that inventory's own entries break, and the
+    // compiler would substitute `POSE_LIBRARY` behind the card's back.
+    const { directionalMode, directions, rigMode } = preset.output;
+    const series = sheetSeriesFor(preset.category, directionalMode, directions);
+    expect(resolveRigMode(preset.category, series, rigMode)).toBe(rigMode);
   });
 
   it.each(PRESETS)('$name names a facing its own direction set contains', (preset) => {

@@ -20,6 +20,8 @@ export const ITEM_PART_LIBRARY: SheetPlan = {
   assembly:
     'the complete item as held or stowed, and in each state its parts allow — sheathed, drawn, opened, or expended — without redrawing any part that does not change.',
   targetQuantity: 'ASSEMBLED',
+  // The working end is drawn in two states, and the consumable part full and depleted.
+  posing: 'PER_POSITION',
   groups: [
     {
       heading: null,
@@ -66,6 +68,8 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     assembly:
       'the complete item seen from each of the directions listed above, reading as one object turned rather than several drawings of it.',
     targetQuantity: 'ASSEMBLED',
+    // A yaw is the camera turning rather than the item moving, so the repeated entries are views.
+    posing: 'UNSTATED',
     groups: [
       {
         heading: 'Directional core',

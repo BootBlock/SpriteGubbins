@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defaultSubjectFor } from '../constants/categories/index.ts';
+import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
 import { DEFAULT_OUTPUT_CONFIG, rigModeChoices } from '../constants/output/index.ts';
 import { JOINT_CAP_TEXT, OVERLAP_MARGIN_TEXT } from '../constants/promptText/index.ts';
 import {
@@ -7,9 +8,11 @@ import {
   fixedRigMode,
   modesFor,
   resolveRigMode,
+  sheetSeriesFor,
   supportsMode,
   supportsRigMode,
 } from '../constants/sheetPlans/index.ts';
+import type { SheetSeries } from '../types/components.ts';
 import type { DirectionalMode } from '../types/output.ts';
 import { RIG_MODES } from '../types/rigging.ts';
 import type { RigMode } from '../types/rigging.ts';
@@ -34,6 +37,15 @@ import { generatePrompt } from './promptCompiler.ts';
  * stayed free. Selecting it from a fresh studio compiled that inventory and that promise with no
  * pivot registration, no overlap margin, no depth order and no sockets — and with the rig set to
  * `NONE`, with no articulation section at all, the prompt running `## 4` straight to `## 6`.
+ *
+ * **A sheet of posed variants, with the rig that forbids them.** The third, and the one the first
+ * two left standing: a pose library, an articulation sheet and a part library each require a moving
+ * part in several orientations or states in section 4, while `CUTOUT_RIG`'s section 5 requires every
+ * piece drawn in its neutral rest orientation and forbids a pre-bent segment, and section 9 then
+ * audits the result for "straight and unposed". The studio offers that pairing on all four
+ * articulating categories, so it compiled — one prompt requiring what it forbids, which the
+ * generator resolves however it likes. The rig table could not see it, because it read the sheet
+ * *mode* while the contradiction lived in the sheet's entries.
  *
  * What is pinned here is the property rather than those examples: the rig section a prompt carries is
  * the one its own sheet and category call for, from every route into `rigMode` — the control, a
@@ -70,11 +82,67 @@ const RIG_SHEET_CATEGORIES = SUBJECT_CATEGORIES.filter((category) => supportsMod
 /** The mode the studio opens on, which is what makes the reported failure one click away. */
 const DEFAULT_MODE = DEFAULT_OUTPUT_CONFIG.directionalMode;
 
-function promptFor(category: SubjectCategory, mode: DirectionalMode, rigMode: RigMode): string {
+/**
+ * One pairing's sheets, at the direction set the studio opens on.
+ *
+ * The rig is a property of the whole deliverable rather than of the mode's name or of one sheet, so
+ * every assertion below that used to name a mode now names a series — and `sheetSeriesFor` is what
+ * resolves the pairing and the set on the way, exactly as the compiler does.
+ */
+function seriesFor(category: SubjectCategory, mode: DirectionalMode = DEFAULT_MODE): SheetSeries {
+  return sheetSeriesFor(category, mode, DEFAULT_OUTPUT_CONFIG.directions);
+}
+
+/** Every series every pairing of this category produces, over every direction set it offers. */
+function everySeries(category: SubjectCategory): readonly SheetSeries[] {
+  return modesFor(category).flatMap((mode) =>
+    CATEGORY_DIRECTION_SETS[category].map((directions) => sheetSeriesFor(category, mode, directions)),
+  );
+}
+
+/** What the rig control offers for one pairing, in the order it shows them. */
+function valuesFor(category: SubjectCategory, mode: DirectionalMode = DEFAULT_MODE): readonly RigMode[] {
+  return rigModeChoices(category, seriesFor(category, mode)).map((choice) => choice.value);
+}
+
+/** One sheet whose inventory draws a moving part once per position it takes, and where it sits. */
+interface PosedSheet {
+  readonly mode: DirectionalMode;
+  readonly index: number;
+  readonly name: string;
+}
+
+/**
+ * Every such sheet of a category, at the direction set the studio opens on.
+ *
+ * The mode and the index come back with the name because the compiler is addressed by those two and
+ * not by the plan — and the index is derived rather than written down, since a series' length is a
+ * property of the chosen set as well as of the pairing.
+ */
+function posedSheets(category: SubjectCategory): readonly PosedSheet[] {
+  return modesFor(category).flatMap((mode) =>
+    seriesFor(category, mode).flatMap((plan, index) =>
+      plan.posing === 'PER_POSITION' ? [{ mode, index, name: plan.name }] : [],
+    ),
+  );
+}
+
+/** The pairings of a category whose artwork has already settled the motion. */
+function posedModes(category: SubjectCategory): readonly DirectionalMode[] {
+  return [...new Set(posedSheets(category).map((sheet) => sheet.mode))];
+}
+
+function promptFor(
+  category: SubjectCategory,
+  mode: DirectionalMode,
+  rigMode: RigMode,
+  sheetIndex = 0,
+): string {
   return generatePrompt(category, defaultSubjectFor(category), {
     ...DEFAULT_OUTPUT_CONFIG,
     directionalMode: mode,
     rigMode,
+    sheetIndex,
   });
 }
 
@@ -134,13 +202,19 @@ describe('a stored rig its category has no joints for', () => {
     // The route the studio cannot close: a preset written before this table existed, a history row
     // from an older build, or a hand-edited export. `parseOutputConfig` validates `rigMode` against
     // the union and has no category to check it against, so this is where it is caught.
-    expect(resolveRigMode(category, DEFAULT_MODE, 'POSE_LIBRARY')).toBe('NONE');
-    expect(resolveRigMode(category, DEFAULT_MODE, 'CUTOUT_RIG')).toBe('NONE');
+    expect(resolveRigMode(category, seriesFor(category), 'POSE_LIBRARY')).toBe('NONE');
+    expect(resolveRigMode(category, seriesFor(category), 'CUTOUT_RIG')).toBe('NONE');
   });
 
   it.each(ARTICULATED)('is left alone on %s, which can honour it', (category) => {
-    expect(resolveRigMode(category, DEFAULT_MODE, 'POSE_LIBRARY')).toBe('POSE_LIBRARY');
-    expect(resolveRigMode(category, DEFAULT_MODE, 'CUTOUT_RIG')).toBe('CUTOUT_RIG');
+    // `POSE_LIBRARY` stands on every pairing these four can produce. `CUTOUT_RIG` stands only where
+    // the pairing delivers no sheet of posed variants, which on the studio's default mode is OBJECT
+    // and VEHICLE — CHARACTER and CREATURE pair their directional core with an articulation sheet,
+    // and that is one deliverable rather than two.
+    expect(resolveRigMode(category, seriesFor(category), 'POSE_LIBRARY')).toBe('POSE_LIBRARY');
+    expect(resolveRigMode(category, seriesFor(category), 'CUTOUT_RIG')).toBe(
+      posedModes(category).includes(DEFAULT_MODE) ? 'POSE_LIBRARY' : 'CUTOUT_RIG',
+    );
   });
 });
 
@@ -150,17 +224,20 @@ describe('the sheet whose inventory is the rig', () => {
     // a fresh studio switched to this sheet compiled rig pieces against `POSE_LIBRARY` — and against
     // `NONE`, which the control offers on all four of these categories, with no rig section at all.
     for (const rigMode of RIG_MODES) {
-      expect(resolveRigMode(category, RIG_SHEET, rigMode)).toBe('CUTOUT_RIG');
+      expect(resolveRigMode(category, seriesFor(category, RIG_SHEET), rigMode)).toBe('CUTOUT_RIG');
     }
-    expect(fixedRigMode(category, RIG_SHEET)).toBe('CUTOUT_RIG');
+    expect(fixedRigMode(seriesFor(category, RIG_SHEET))).toBe('CUTOUT_RIG');
   });
 
-  it.each(SUBJECT_CATEGORIES)('settles nothing on %s that its own sheets do not demand', (category) => {
-    // Every other mode leaves the choice open, because a directional core or a pose library is drawn
-    // for either kind of rig or for none. Derived from the category's own list rather than named, so
-    // a mode that grows a rig demand has to be admitted here rather than silently exempted.
-    for (const mode of modesFor(category).filter((candidate) => candidate !== RIG_SHEET)) {
-      expect(fixedRigMode(category, mode)).toBeUndefined();
+  it.each(SUBJECT_CATEGORIES)('demands a rig on no sheet but that one, on %s', (category) => {
+    // Only a sheet whose whole inventory is rig pieces settles the rig outright. Every other sheet
+    // either leaves the choice open or narrows it, which is a different relation and is checked
+    // below. Derived from the category's own sheets rather than named, so a plan that grows a rig
+    // demand has to be admitted here rather than silently exempted — and swept over every sheet of
+    // every series, because a mode holds more than one and they need not agree.
+    for (const series of everySeries(category)) {
+      if (series.some((plan) => plan.posing === 'AT_REST')) continue;
+      expect(fixedRigMode(series)).toBeUndefined();
     }
   });
 
@@ -169,8 +246,8 @@ describe('the sheet whose inventory is the rig', () => {
     // ITEM or a BUILDING carrying this mode from an older build draws its category's default sheet,
     // and may not be handed a rig it has no joints for on the way.
     expect(supportsMode(category, RIG_SHEET)).toBe(false);
-    expect(fixedRigMode(category, RIG_SHEET)).toBeUndefined();
-    expect(resolveRigMode(category, RIG_SHEET, 'CUTOUT_RIG')).toBe('NONE');
+    expect(fixedRigMode(seriesFor(category, RIG_SHEET))).toBeUndefined();
+    expect(resolveRigMode(category, seriesFor(category, RIG_SHEET), 'CUTOUT_RIG')).toBe('NONE');
   });
 
   it('only ever settles on a rig the category supports', () => {
@@ -179,8 +256,8 @@ describe('the sheet whose inventory is the rig', () => {
     // cannot honour. The entailment above is what makes that safe, and this is where it is checked as
     // a property of the resolution rather than of the two tables.
     for (const category of SUBJECT_CATEGORIES) {
-      for (const mode of modesFor(category)) {
-        const fixed = fixedRigMode(category, mode);
+      for (const series of everySeries(category)) {
+        const fixed = fixedRigMode(series);
         if (fixed !== undefined) expect(supportsRigMode(category, fixed)).toBe(true);
       }
     }
@@ -216,9 +293,15 @@ describe('the reported failure: a rig section on a sheet with no joints', () => 
 
   it.each(ARTICULATED)('%s still gets the rig section it asked for', (category) => {
     // The repair may not have taken section 5 away from the categories it was always right for.
-    for (const rigMode of ['POSE_LIBRARY', 'CUTOUT_RIG'] as const) {
-      expect(promptFor(category, DEFAULT_MODE, rigMode)).toContain(RIG_SECTIONS[rigMode]);
-    }
+    // Each rig is asked for on a pairing that can carry it: `POSE_LIBRARY` on every one, and the
+    // cut-out rig on the first pairing whose artwork settles nothing — which for OBJECT and VEHICLE
+    // is the default sheet mode and for CHARACTER and CREATURE is the rig sheet, since their
+    // directional pairing delivers an articulation sheet.
+    const unposed = modesFor(category).find((mode) => !posedModes(category).includes(mode));
+    if (unposed === undefined) throw new Error(`${category} has no pairing that leaves the rig open.`);
+
+    expect(promptFor(category, DEFAULT_MODE, 'POSE_LIBRARY')).toContain(RIG_SECTIONS.POSE_LIBRARY);
+    expect(promptFor(category, unposed, 'CUTOUT_RIG')).toContain(RIG_SECTIONS.CUTOUT_RIG);
     expectNoRigSection(promptFor(category, DEFAULT_MODE, 'NONE'));
   });
 });
@@ -292,15 +375,146 @@ describe('the reported failure: a rig sheet with no rig geometry in it', () => {
   });
 });
 
-describe('the control offers what the category can be given', () => {
-  const valuesFor = (category: SubjectCategory) => rigModeChoices(category).map((choice) => choice.value);
+describe('the reported failure: a cut-out rig on a sheet of posed variants', () => {
+  it('is the six sheets named here, so the sweeps below are not vacuous', () => {
+    // Named rather than derived, because a filter that has stopped matching would leave every
+    // assertion in this block passing over an empty list. These are the plans the report quoted:
+    // the character's and creature's pose libraries and articulation sheets, and the object's and
+    // vehicle's part libraries.
+    expect(ARTICULATED.flatMap((category) => posedSheets(category).map((sheet) => sheet.name))).toEqual([
+      'Pose library',
+      'Articulation',
+      'Pose library',
+      'Articulation',
+      'Part library',
+      'Part library',
+    ]);
+  });
 
+  it('reaches five pairings, two of which commit on a sheet that is not their first', () => {
+    // The distinction the per-sheet answer got wrong, pinned as its own claim: a character's and a
+    // creature's directional pairing deliver a trunk sheet that settles nothing *and* an
+    // articulation sheet that settles everything, and it is the pairing that has to answer. Written
+    // out, so a series that stops mixing the two shows up here rather than quietly widening what the
+    // cut-out rig is offered on.
+    expect(ARTICULATED.map((category) => posedModes(category))).toEqual([
+      ['SINGLE_DIRECTION_POSE_LIBRARY', 'CORE_DIRECTIONAL_VARIANTS'],
+      ['SINGLE_DIRECTION_POSE_LIBRARY', 'CORE_DIRECTIONAL_VARIANTS'],
+      ['SINGLE_DIRECTION_POSE_LIBRARY'],
+      ['SINGLE_DIRECTION_POSE_LIBRARY'],
+    ]);
+    expect(posedSheets('CHARACTER').map((sheet) => sheet.index)).toEqual([0, 1]);
+  });
+
+  it.each(ARTICULATED)('%s resolves the cut-out rig away on every pairing that has one', (category) => {
+    // The defect at the level it lives. Section 4 requires each part in several orientations or
+    // states, section 5's rest-orientation rule then forbids a pre-bent segment and requires every
+    // articulation left at its neutral angle, and section 9 audits the result for "straight and
+    // unposed" — one prompt requiring what it forbids, because nothing related a plan's entries to
+    // the rig section beside them.
+    //
+    // It lands on `POSE_LIBRARY` rather than `NONE` because that is what such a deliverable *is*:
+    // its variants are separately oriented rigid segments meeting at shared pivots, which is that
+    // section's own wording. Falling to `NONE` would drop the only section saying so.
+    for (const mode of posedModes(category)) {
+      expect(resolveRigMode(category, seriesFor(category, mode), 'CUTOUT_RIG')).toBe('POSE_LIBRARY');
+    }
+  });
+
+  it.each(SUBJECT_CATEGORIES)('never leaves a cut-out rig on a posed pairing of %s', (category) => {
+    // The same claim as a property, over every pairing and every direction set — which is what
+    // covers the sheets no assertion above names, and the ones a future plan adds.
+    for (const series of everySeries(category)) {
+      if (!series.some((plan) => plan.posing === 'PER_POSITION')) continue;
+
+      for (const rigMode of RIG_MODES) {
+        expect(resolveRigMode(category, series, rigMode)).not.toBe('CUTOUT_RIG');
+      }
+    }
+  });
+
+  it.each(ARTICULATED)('%s compiles the same prompt whichever of the two it was left holding', (category) => {
+    // The strongest form of the fix, and the one that needs no quoted sentence: a stored
+    // `CUTOUT_RIG` reaching one of these pairings produces the *identical* document a stored
+    // `POSE_LIBRARY` produces, so there is nothing of the cut-out rig left anywhere in it — not the
+    // section, not the audit item, and not the joint-cap, overlap or socket settings it gates.
+    //
+    // **Every sheet of the pairing, not only the posed one**, which is the half a per-sheet answer
+    // could not give: a character's trunk sheets used to compile a cut-out rig while the
+    // articulation sheet behind them compiled a pose library, so the trunk was drawn to a stated cap
+    // style and overlap margin that the sheet supplying its limbs was never told.
+    for (const mode of posedModes(category)) {
+      seriesFor(category, mode).forEach((_plan, index) => {
+        expect(promptFor(category, mode, 'CUTOUT_RIG', index)).toBe(
+          promptFor(category, mode, 'POSE_LIBRARY', index),
+        );
+      });
+    }
+  });
+
+  it.each(ARTICULATED)('%s carries neither rule the inventory contradicts', (category) => {
+    // The two sentences the report quoted, named so a revert surfaces as this test rather than as a
+    // prompt that merely differs. The pose-library heading beside them is what makes their absence a
+    // substituted section rather than a dropped one.
+    for (const mode of posedModes(category)) {
+      seriesFor(category, mode).forEach((_plan, index) => {
+        const prompt = promptFor(category, mode, 'CUTOUT_RIG', index);
+
+        expect(prompt).not.toContain('neutral rest orientation');
+        expect(prompt).not.toContain('straight and unposed');
+        expect(prompt).toContain(RIG_SECTIONS.POSE_LIBRARY);
+      });
+    }
+  });
+
+  it('still asks for the orientations the inventory was written for', () => {
+    // The other half, and the one that would catch a "fix" that resolved the contradiction by
+    // trimming section 4 instead. These are the report's own excerpts, from the two categories it
+    // quoted: the articulation sheet the studio reaches from `CORE_DIRECTIONAL_VARIANTS`, and the
+    // object part library.
+    const articulation = posedSheets('CHARACTER').find((sheet) => sheet.mode === 'CORE_DIRECTIONAL_VARIANTS');
+    if (articulation === undefined) {
+      throw new Error('The character directional series no longer carries a sheet of posed variants.');
+    }
+
+    const limbs = promptFor('CHARACTER', 'CORE_DIRECTIONAL_VARIANTS', 'CUTOUT_RIG', articulation.index);
+    expect(limbs).toContain('Upper arms: neutral lowered, forward-diagonal, raised');
+    expect(limbs).toContain('Feet: flat planted, forward-step/heel-strike, rear-step/toe-off');
+
+    const parts = promptFor('OBJECT', 'SINGLE_DIRECTION_POSE_LIBRARY', 'CUTOUT_RIG');
+    expect(parts).toContain('Access panel, lid or hatch: closed, part-open, fully open');
+    expect(parts).toContain('Primary moving subassembly: rest, mid-travel, full-travel');
+  });
+
+  it.each(ARTICULATED)('%s does not offer it on those pairings either', (category) => {
+    // The studio half. Resolving silently would leave the control offering a value the compiler
+    // discards, which is the "a setting the compiler discards" defect rather than a fix for it.
+    for (const mode of posedModes(category)) {
+      expect(valuesFor(category, mode)).toEqual(['POSE_LIBRARY', 'NONE']);
+    }
+  });
+
+  it('leaves the choice alone on the pairings that can honour it', () => {
+    // The refusal is narrow: it is about what a deliverable's artwork has already committed to, not
+    // about the category. An OBJECT and a VEHICLE turn their moving parts with the camera and draw
+    // no posed sheet at all, so all three stand on their directional pairing — and every category's
+    // rig sheet keeps the whole list, with the select disabled at the value its own inventory
+    // settles.
+    expect(valuesFor('OBJECT', DEFAULT_MODE)).toEqual(['POSE_LIBRARY', 'CUTOUT_RIG', 'NONE']);
+    expect(valuesFor('VEHICLE', DEFAULT_MODE)).toEqual(['POSE_LIBRARY', 'CUTOUT_RIG', 'NONE']);
+    for (const category of ARTICULATED) {
+      expect(valuesFor(category, RIG_SHEET)).toEqual(['POSE_LIBRARY', 'CUTOUT_RIG', 'NONE']);
+    }
+  });
+});
+
+describe('the control offers what the category can be given', () => {
   it('offers the three in the order the control shows them, not the order the table lists them', () => {
     // Written out rather than derived, and unsorted, because both halves are the assertion. Compared
     // against `CATEGORY_RIG_MODES` this would pass on a wrong table — the filter and the expectation
     // read the same row — and sorting it would drop the only thing the labels list decides, which is
     // that the two rigs come before the answer for a sheet that has none.
-    expect(valuesFor('CHARACTER')).toEqual(['POSE_LIBRARY', 'CUTOUT_RIG', 'NONE']);
+    expect(valuesFor('CHARACTER', RIG_SHEET)).toEqual(['POSE_LIBRARY', 'CUTOUT_RIG', 'NONE']);
     expect(valuesFor('BUILDING')).toEqual(['NONE']);
   });
 
@@ -308,13 +522,20 @@ describe('the control offers what the category can be given', () => {
     // The wiring check the two literals above cannot generalise: every row reaches the control
     // intact, so a category added to the table without a label is a missing option rather than a
     // silently shorter list.
-    expect([...valuesFor(category)].sort()).toEqual([...CATEGORY_RIG_MODES[category]].sort());
+    //
+    // Asked on the rig sheet, which is the one pairing that narrows nothing — it settles the rig
+    // rather than withdrawing an option, and `rigModeChoices` deliberately leaves its list whole so
+    // the control can show the value disabled. For the nine categories that do not produce it, the
+    // mode resolves to their own default and the row is `NONE` alone, which nothing can shorten.
+    expect([...valuesFor(category, RIG_SHEET)].sort()).toEqual([...CATEGORY_RIG_MODES[category]].sort());
   });
 
   it('leaves nothing to choose where the category has one answer', () => {
     // Which is what `RiggingFields` reads to put a sentence there instead of a single-option select.
     for (const category of UNARTICULATED) {
-      expect(rigModeChoices(category)).toHaveLength(1);
+      for (const series of everySeries(category)) {
+        expect(rigModeChoices(category, series)).toHaveLength(1);
+      }
     }
   });
 });
