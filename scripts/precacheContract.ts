@@ -237,8 +237,20 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **0.13 KiB of headroom**, which is the narrowest this margin has ever been and is why a change
  * that adds no content at all crossed it. The margin is restored to the same order as every raise
  * above, not widened.
+ *
+ * **Raised once more, from 2314, by the exemption every category's §4 guard and §9 audit now state
+ * for the pieces the subject itself named.** Two clauses, interpolated into all thirteen entries of
+ * each record in `constants/promptText/exclusions.ts` — prompt text, so constant data the entry
+ * chunk reaches, on the footing every raise above stands on. Measured against the build immediately
+ * before it, from the same `node_modules`, the precache goes from **2313.83** to **2314.17 KiB**, a
+ * delta of 0.34. No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * The base is again worth reading beside the ceiling it was under: 2313.83 against 2314 is
+ * **0.17 KiB of headroom**, the second-narrowest this margin has been, and it is why a third of a
+ * KiB of prose crossed it. The margin is restored to the same order as every raise above rather than
+ * widened.
  */
-export const PRECACHE_CEILING_KIB = 2314;
+export const PRECACHE_CEILING_KIB = 2317;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
