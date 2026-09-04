@@ -7,6 +7,7 @@ import { generatePrompt } from '../../utils/promptCompiler.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 import { contradictionsIn } from '../categories/exclusionElements.ts';
+import { letteringAskedFor } from '../categories/letteringMarks.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING, resolveCameraElevation } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
@@ -234,6 +235,20 @@ describe('every shipped preset', () => {
     );
 
     expect(contradictions, `${preset.name} cancels itself: “${preset.subject.exclusions}”`).toEqual([]);
+  });
+
+  it.each(PRESETS)('$name asks for no lettering its own contract forbids', (preset) => {
+    // The neighbouring defect, one level up: section 0 bans text on every category but FONT, and
+    // that ban is in the template rather than in any pool, so nothing connected it to the values a
+    // preset pins. Six shipped presets named unit numbers, serial numbers, stencils or graffiti
+    // under it — three vehicles, two machines and a rifle — and each compiled a prompt asking for a
+    // marking its own opening section removed. `categories/letteringMarks.ts` is where the words are
+    // written down, and its suite is what holds them against the pools these values are drawn from.
+    const asking = letteringAskedFor(preset.category, preset.subject).map(
+      ({ field, value, term }) => `${field} “${value}” asks for lettering (${term})`,
+    );
+
+    expect(asking, `${preset.name} asks for what section 0 bans`).toEqual([]);
   });
 
   it.each(PRESETS)('$name leaves the companion outputs to the user', (preset) => {

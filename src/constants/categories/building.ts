@@ -232,7 +232,7 @@ export const BUILDING: CategoryDefinition = {
         'Atmospheric Haze Banding',
         'Washing Lines & Shutters',
         'Votive Candles & Offerings',
-        'Chalked Prices & Notices',
+        'Chalk Board & Produce Baskets',
         'Soot Streaks Above Windows',
         'Nesting Birds & Droppings',
       ],

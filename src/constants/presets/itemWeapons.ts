@@ -66,7 +66,7 @@ export const ITEM_WEAPON_PRESETS: readonly PresetArchetype[] = [
       face_head: 'Ergonomic Synthetic Grip',
       anatomy: 'Weapon With Detachable Mag',
       clothing: 'Magnetic Back Sling',
-      worn_details: 'Serial Numbers & Barcode',
+      worn_details: 'Factory Barcode & Batch Marks',
       primary_colours: 'Titanium Grey & Black',
       accent_colours: 'Plasma Blue Glow #22D3EE',
       materials: 'Plasma Conduit & Polymer',

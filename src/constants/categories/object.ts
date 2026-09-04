@@ -186,7 +186,7 @@ export const OBJECT: CategoryDefinition = {
         'Glowing Monitor Array',
         'Lever & Valve Array',
         'White-Hot Core Flash',
-        'Stencilled Cargo Panel',
+        'Painted Cargo Panel',
         'Open Flame & Cook Pot',
         // For a sheet whose subject has no focal element at all — an effect, a particle set, a
         // silhouette pass — because leaving the field empty would invite one to be invented.
@@ -235,14 +235,14 @@ export const OBJECT: CategoryDefinition = {
       key: 'worn_details',
       label: 'Utility Markings',
       tooltip:
-        'Hazard stripes, stencils, engravings, exposed cabling and wear. These are what make an industrial prop believable, but each costs palette budget — a few well-placed marks read better than full coverage.',
+        'Hazard stripes, chevrons, engravings, exposed cabling and wear. These are what make an industrial prop believable, but each costs palette budget — a few well-placed marks read better than full coverage.',
       options: [
         'Hazard Stripes & Decals',
-        'Warning Stencils & LEDs',
+        'Warning Chevrons & LEDs',
         'Runic Engravings',
         'Coolant Pipe Joints',
         'Exposed Circuit Wiring',
-        'Graffiti & Scratches',
+        'Spray-Paint Marks & Scratches',
         'Moss & Vines',
         'Ember Sparks & Shockwave Ring',
         'Splash Crowns & Settle Drifts',

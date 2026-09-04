@@ -210,15 +210,15 @@ export const ITEM: CategoryDefinition = {
       key: 'worn_details',
       label: 'Runes & Engravings',
       tooltip:
-        'Etched runes, serial numbers or energy conduits across the item’s surface. They read as provenance and power, and at inventory scale one bold motif carries much further than a fine repeated pattern.',
+        'Etched runes, maker’s marks or energy conduits across the item’s surface. They read as provenance and power, and at inventory scale one bold motif carries much further than a fine repeated pattern.',
       options: [
         'Etched Luminous Runes',
-        'Serial Numbers & Barcode',
+        'Factory Barcode & Batch Marks',
         'Filigree Gold Inlay',
         'Energy Conduits',
         'Blood Groove & Notch Marks',
         'Circuit Traces',
-        'Handwritten Apothecary Label',
+        'Apothecary Tag & Wax Seal',
         'Tally Notches & Wear Marks',
         'Line Guides & Whipped Thread',
         'Maker’s Stamp & Guild Mark',

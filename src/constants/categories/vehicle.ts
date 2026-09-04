@@ -206,14 +206,14 @@ export const VEHICLE: CategoryDefinition = {
       key: 'worn_details',
       label: 'Markings & Service Wear',
       tooltip:
-        'Unit numbers, stencils, grime and weld seams across the hull. These are what make a vehicle look operated rather than modelled — but each costs palette budget, so a few bold marks carry further than full coverage at any sprite size.',
+        'Roundels, chevrons, grime and weld seams across the hull. These are what make a vehicle look operated rather than modelled — but each costs palette budget, so a few bold marks carry further than full coverage at any sprite size.',
       options: [
-        'Unit Numbers & Roundels',
-        'Hazard Stripes & Stencils',
+        'Roundels & Squadron Flashes',
+        'Hazard Stripes & Chevrons',
         'Mud Splatter & Road Grime',
         'Kill Tally Marks',
         'Exposed Cabling & Hoses',
-        'Nose Art & Panel Graffiti',
+        'Nose Art & Panel Murals',
         'Scorch Marks & Weld Seams',
         'Straw, Chaff & Field Mud',
         'Chipped Paint Over Primer',
