@@ -100,22 +100,23 @@ export interface ComponentEntry {
    * Set where this entry draws what the subject's `clothing` field describes as a piece of its own,
    * rather than as paint on the piece it sits against.
    *
-   * **The test is whether an option from that category's own `clothing` pool lands in this entry.**
-   * *Shafts Of Light Through Gaps* is one of BACKGROUND's, so the parallax set's light shaft carries
-   * this; the nine-slice set's divider rail does not, because nothing INTERFACE offers under
-   * *Ornament & Trim* is a divider. An entry that draws the attribute **among** other things carries
-   * it too — VEHICLE's rig line is `Fittings: cladding panel ×1, lamp housing ×1`, and the cladding
-   * panel in it is a piece the reader's choice describes whatever the lamp beside it is.
+   * **The test is whether the entry draws what that category's `clothing` field describes**, with the
+   * pool as the evidence rather than the criterion. INTERFACE's field is what is applied along the
+   * widget's edge, so the nine-slice set's corner ornament carries this and its divider rail does
+   * not — a rule between two sections is not an edge treatment, and nothing the pool offers is a
+   * divider. An entry that draws the attribute **among** other things carries it too: VEHICLE's rig
+   * line is `Fittings: cladding panel ×1, lamp housing ×1`, and the cladding panel in it is a piece
+   * the reader's choice describes whatever the lamp beside it is.
    *
    * Section 1 states that every fitted, applied and worn attribute it lists is painted onto the
    * component it sits on and never drawn as a separate piece. That rule was written for a
    * character's armour and fixed in the template, and the `clothing` key is a different thing in
    * each category: *Armour & Cladding* on a vehicle, *Applied Overlay* on an icon, *Applied
-   * Atmosphere* on a background, *Ornament & Trim* on an interface, *Awning & Addons* on a
-   * building, *Mounting / Framework* on an object, *Scabbard / Holster* on an item. Every one of
-   * those is a piece the inventory draws in its own right — so the prompt told the generator the
-   * cladding was paint and then listed a cladding panel as a component, which is exactly the
-   * §1-forbids / §4-requires contradiction the per-category plans exist to remove.
+   * Atmosphere* on a background, *Ornament & Trim* on an interface, *Awning & Addons* on a building,
+   * *Mounting / Framework* on an object. Every one of those is a piece the inventory draws in its own
+   * right — so the prompt told the generator the cladding was paint and then listed a cladding panel
+   * as a component, which is exactly the §1-forbids / §4-requires contradiction the per-category
+   * plans exist to remove.
    *
    * **The exception is declared here, on the entry, so nothing states it twice.** The sentence
    * section 1 emits is a fact about one *sheet* — does this inventory draw the attribute
@@ -128,10 +129,15 @@ export interface ComponentEntry {
    * set have no fitting at all and paint whatever the reader asked for onto the bay. Both readings
    * are right for the sheet they belong to.
    *
-   * **`worn_details` never carries it**, on any of the thirteen categories — markings, motifs,
-   * runes, texture and interior detail are paint by their own guidance everywhere — and
-   * `additional_anatomy` is excepted by its own machinery in `utils/componentSet.ts`, which appends
-   * the reader's pieces to the inventory and counts them.
+   * **No entry carries it for `worn_details`**, on any of the thirteen categories: that field is the
+   * marks, motifs, runes and texture a surface holds, and every plan paints them. BUILDING is the
+   * one worth naming, because its *Facade Details* reach the same `Façade fittings` line the awning
+   * does — the flag rides on the awning, which is what *Awning & Addons* offers, and the sign board
+   * beside it is a fitting either field could claim. `additional_anatomy` is excepted by its own
+   * machinery in `utils/componentSet.ts`, which appends the reader's pieces to the inventory and
+   * counts them, and ITEM is the category that has neither: its `clothing` pool offers `NONE`, an
+   * entry is unconditional, so its guidance sends a reader who needs a separable carrier to
+   * *Detachable Parts* instead — see `sheetPlans/item.ts`.
    */
   readonly drawsClothing?: true;
 }

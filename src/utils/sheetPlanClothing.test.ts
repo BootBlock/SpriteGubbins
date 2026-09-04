@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CATEGORY_DIRECTION_SETS } from '../constants/categoryDirectionSets.ts';
-import { defaultSubjectFor, fieldLabelFor } from '../constants/categories/index.ts';
+import { CATEGORY_OPTIONS, defaultSubjectFor, fieldLabelFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { modesFor, sheetPlanFor, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { sectionOf } from '../test/promptSections.ts';
@@ -14,11 +14,11 @@ import { planDrawsClothing } from './sheetPlanClothing.ts';
  *
  * The defect this suite exists for: section 1 closed with a sentence fixed in the template — every
  * fitted, applied and worn attribute is painted onto the component it sits on, and the
- * additional-anatomy field is "the single exception" — while seven categories draw their `clothing`
+ * additional-anatomy field is "the single exception" — while six categories draw their `clothing`
  * value as components in their own right. So a VEHICLE prompt said the cladding was paint and then
- * listed a cladding panel beside the hull; an ICON prompt said the overlay was paint and listed the
- * veil, the sweep and the flare. One prompt, contradicting itself, in the two sections that decide
- * what the sheet contains and how many components it has.
+ * listed a cladding panel beside the hull, and an ICON prompt said the overlay was paint and listed
+ * the veil, the sweep and the flare. One prompt, contradicting itself, in the two sections that
+ * decide what the sheet contains and how many components it has.
  *
  * It sweeps rather than sampling because the answer is a property of the *sheet*: BUILDING draws the
  * awning as a façade fitting on its module library and has no fitting at all on its directional
@@ -40,31 +40,43 @@ function sheetsOf(category: SubjectCategory) {
   );
 }
 
+/**
+ * A value this category's own `clothing` pool offers, so the line section 1 carries is one a reader
+ * could have produced by choosing rather than typing.
+ *
+ * `NONE` is stepped over because it is a sentinel standing for "this subject has none" rather than a
+ * description of anything, and what these tests are about is the field.
+ */
+function pooledClothing(category: SubjectCategory): string {
+  const field = CATEGORY_OPTIONS[category].fields.find((option) => option.key === 'clothing');
+  const value = field?.options.find((option) => option !== 'NONE');
+  if (value === undefined) throw new Error(`No clothing option for ${category}.`);
+  return value;
+}
+
 describe('section 1 excepts from its paint rule exactly what section 4 draws', () => {
   it.each(SUBJECT_CATEGORIES)('holds on every %s sheet', (category) => {
     const label = fieldLabelFor(category, 'clothing');
+    const clothing = pooledClothing(category);
 
     for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
       const prompt = generatePrompt(
         category,
-        // A value the category's own pool offers, so the line section 1 carries is one a reader
-        // could actually have produced. The default is never `NONE` on the seven categories that
-        // draw it, and the sentence is about the field rather than about any one value.
-        { ...defaultSubjectFor(category), clothing: 'Fitted Test Layer' },
+        { ...defaultSubjectFor(category), clothing },
         { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
       );
       const subjectSection = sectionOf(prompt, 'SUBJECT DEFINITION');
       const where = `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)}`;
 
-      expect(subjectSection, where).toContain(`- ${label}: Fitted Test Layer`);
+      expect(subjectSection, where).toContain(`- ${label}: ${clothing}`);
       expect(subjectSection.includes(`**${label}** is excepted`), where).toBe(planDrawsClothing(plan));
     }
   });
 
   it.each(SUBJECT_CATEGORIES)('says nothing about a %s clothing line nobody wrote', (category) => {
     // A cleared field emits no line, so an exception paragraph naming it would name an absent line
-    // in the section the template calls the sole authority for the subject's design — the reason
-    // the additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
+    // in the section the template calls the sole authority for the subject's design — the reason the
+    // additional-anatomy paragraph is gated on its own rendered value rather than on the plan.
     const label = fieldLabelFor(category, 'clothing');
 
     for (const { mode, directions, sheetIndex } of sheetsOf(category)) {
@@ -79,28 +91,52 @@ describe('section 1 excepts from its paint rule exactly what section 4 draws', (
       expect(subjectSection).not.toContain(`**${label}** is excepted`);
     }
   });
+
+  it.each(SUBJECT_CATEGORIES)('promises an exception on a %s sheet only where one follows', (category) => {
+    // The rule's closing clause points forward at the paragraphs beneath it, and both of those are
+    // gated. Left fixed, the clause promised a named exception on 71 of the 118 sheets this app can
+    // compile and named none — leaving "Do not infer props, weapons or equipment from the role", the
+    // next line, as the only candidate for the exemption it had just announced. That inverts the
+    // rule, so the clause is gated on the same answer the paragraphs are.
+    for (const { mode, directions, sheetIndex } of sheetsOf(category)) {
+      for (const anatomy of ['', 'Extra Piece ×2']) {
+        for (const clothing of ['', pooledClothing(category)]) {
+          const prompt = generatePrompt(
+            category,
+            { ...defaultSubjectFor(category), clothing, additional_anatomy: anatomy },
+            { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions, sheetIndex },
+          );
+          const section = sectionOf(prompt, 'SUBJECT DEFINITION');
+          const where = `${category} / ${mode} / sheet ${String(sheetIndex + 1)}`;
+
+          expect(section, where).toContain('painted onto');
+          expect(section.includes('except where named below'), where).toBe(section.includes('is excepted'));
+        }
+      }
+    }
+  });
 });
 
 describe('which categories draw the clothing value as components of their own', () => {
   /**
    * The content decision, pinned so it cannot drift back.
    *
-   * Seven of the thirteen draw it: the *Armour & Cladding* a vehicle's hull is clad in, the
-   * *Applied Overlay* an engine lays over any icon in the set, the *Applied Atmosphere* a
-   * background scrolls at its own rate, the *Ornament & Trim* over an interface frame, the
-   * *Awning & Addons* on a building's façade, the *Mounting / Framework* an object stands on, and
-   * the *Scabbard / Holster* an item is stowed in. Every one of those fields says so in its own
-   * guidance, and each is a piece an engine has a reason to composite or leave out.
+   * Six of the thirteen draw it: the *Armour & Cladding* a vehicle's hull is clad in, the *Applied
+   * Overlay* an engine lays over any icon in the set, the *Applied Atmosphere* a background scrolls
+   * at its own rate, the *Ornament & Trim* over an interface frame, the *Awning & Addons* on a
+   * building's façade, and the *Mounting / Framework* an object stands on. Each is a piece an engine
+   * has a reason to composite or to leave out, and each is one section 4 already listed.
    *
-   * The other six are paint by their own guidance too: a character's clothing is "drawn into the
-   * limb and torso surfaces", a font's applied treatment "goes into the glyph", and TERRAIN's
-   * scatter layer and EFFECT's secondary layer both record having met this rule and restructured
-   * their plans to obey it. PORTRAIT shows a collar inside a chest crop, and CREATURE's harness is
-   * fitted to the animal rather than separable from it.
+   * The other seven are paint: a character's clothing is "drawn into the limb and torso surfaces", a
+   * font's applied treatment "goes into the glyph", and TERRAIN's scatter layer and EFFECT's
+   * secondary layer both record having met this rule and restructured their plans to obey it.
+   * PORTRAIT shows a collar inside a chest crop, and CREATURE's harness is fitted to the animal
+   * rather than separable from it. ITEM is the one that turned on the inventory rather than on the
+   * subject — its *Scabbard / Holster* pool offers `NONE` and a plan entry is unconditional, so an
+   * entry would order a flat vector keycard an empty scabbard and count it. See `sheetPlans/item.ts`.
    */
   const DRAWN_SEPARATELY: readonly SubjectCategory[] = [
     'OBJECT',
-    'ITEM',
     'BUILDING',
     'VEHICLE',
     'INTERFACE',
@@ -113,16 +149,18 @@ describe('which categories draw the clothing value as components of their own', 
     expect(drawn).toBe(DRAWN_SEPARATELY.includes(category));
   });
 
-  it('gives an item’s carry piece somewhere to be drawn', () => {
-    // The half of the defect that was a missing component rather than a wrong sentence: ITEM's field
-    // guidance promised a sheath "emitted as its own component" and neither plan carried one, so a
-    // reader who asked for a matched scabbard was told twice they would get one and handed a sheet
-    // with nowhere for it. The part library is where it lives — see `sheetPlans/item.ts` for why the
-    // directional core does not carry it.
-    const partLibrary = sheetPlanFor('ITEM', 'SINGLE_DIRECTION_POSE_LIBRARY', 'FIVE_CLASSIC', 0);
-    const entries = partLibrary.groups.flatMap((group) => group.entries);
-    const carryPiece = entries.find((entry) => entry.drawsClothing === true);
-
-    expect(carryPiece?.text).toBe('Scabbard, holster or carry piece ×1, drawn empty');
+  it('never orders a component for an item’s carry piece', () => {
+    // The half of the defect that was a missing component rather than a wrong sentence, settled the
+    // other way: ITEM's guidance promised a sheath "emitted as its own component" and neither plan
+    // carried one. The two shipped presets that pin `NONE` — a flat vector keycard among them — are
+    // why the inventory could not be the half that moved.
+    for (const { plan } of sheetsOf('ITEM')) {
+      for (const group of plan.groups) {
+        for (const entry of group.entries) {
+          expect(entry.text.toLowerCase()).not.toContain('scabbard');
+          expect(entry.text.toLowerCase()).not.toContain('holster');
+        }
+      }
+    }
   });
 });

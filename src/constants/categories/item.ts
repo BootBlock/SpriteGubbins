@@ -193,7 +193,7 @@ export const ITEM: CategoryDefinition = {
       key: 'clothing',
       label: 'Scabbard / Holster',
       tooltip:
-        'An optional matching sheath or holster, emitted as its own component. Worth asking for when the item has to appear worn on a character as well as sitting in an inventory slot.',
+        'How the item is stowed when it is not in hand — a sheath, a holster, a roll, a case. It is drawn together with the item rather than as a sprite of its own, so it shapes the item’s design without costing you a component. Name the empty carrier under Detachable Parts as well when a character has to be seen wearing it while the item is elsewhere.',
       options: [
         'Matched Scabbard / Sheath',
         'Magnetic Back Sling',

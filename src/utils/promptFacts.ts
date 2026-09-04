@@ -255,9 +255,16 @@ export function sheetFacts(
 
   // The second attribute section 1's paint rule has to except, and the reason that rule is no longer
   // written as having exactly one exception. `clothing` is a different thing in every category —
-  // cladding on a vehicle, an applied overlay on an icon, trim on an interface — and seven of the
+  // cladding on a vehicle, an applied overlay on an icon, trim on an interface — and six of the
   // thirteen draw it as components of their own, so the fixed sentence told the generator the
   // cladding was paint while section 4 listed a cladding panel beside the hull.
+  //
+  // **A value of `NONE` still answers yes here, and that is deliberate.** The sentence is a statement
+  // about section 4 rather than about the value: the plan draws the cladding panel whatever the
+  // reader chose, so calling it paint on a `Bare Unclad Frame` would put the original contradiction
+  // straight back. What a sentinel argues with is the *entry*, which no gate here can reach — a plan
+  // is a function of the sheet and not of the subject. That is why ITEM's carry piece is guidance
+  // rather than an inventory line: see `sheetPlans/item.ts`.
   const clothingIsAComponent = subject.clothing.trim() !== '' && planDrawsClothing(plan);
 
   return {

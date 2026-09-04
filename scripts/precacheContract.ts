@@ -240,20 +240,22 @@ export const PRECACHE_SHAPES: readonly string[] = [
  *
  * **Raised once more, from 2314, by making section 1's paint rule state its exceptions per sheet.**
  * The rule — every fitted, applied and worn attribute is painted onto the component it sits on — was
- * fixed in the template with exactly one exception named, while seven categories draw their
- * `clothing` value as components of their own, so a VEHICLE prompt called the cladding paint and
- * then listed a cladding panel. What a first visit now pays for is a `drawsClothing` flag on the
- * twenty inventory entries that draw one, the ITEM part library's carry piece, and the three lines
- * that carry the answer from the plan to the template — `utils/sheetPlanClothing.ts`, one field on
- * `SheetFacts` and one gate in `promptConditions`. The template itself is a wash: the new exception
- * paragraph is two lines and the fixed clause it replaced named five example attributes, three of
- * which were the very things being excepted. Measured against the build immediately before it, from
- * the same `node_modules`, the precache goes from **2313.82** to **2314.66 KiB**, a delta of 0.84.
- * No file was added to or removed from `PRECACHE_SHAPES`, and no chunk was renamed.
+ * fixed in the template with exactly one exception named, while six categories draw their `clothing`
+ * value as components of their own, so a VEHICLE prompt called the cladding paint and then listed a
+ * cladding panel. What a first visit now pays for is a `drawsClothing` flag on the **26** inventory
+ * entries that draw one — nine on ICON, seven on BACKGROUND, four on OBJECT, three on VEHICLE, two
+ * on INTERFACE and one on BUILDING — the four lines that carry the answer from the plan to the
+ * template (`utils/sheetPlanClothing.ts`, one field on `SheetFacts` and two gates in
+ * `promptConditions`), and one rewritten tooltip. The template is close to a wash: two gated forms
+ * of the rule's own sentence and a two-line exception paragraph, against a fixed clause that named
+ * five example attributes, three of which were the very things being excepted. Measured against the
+ * build immediately before it, from the same `node_modules`, the precache goes from **2313.82** to
+ * **2314.92 KiB**, a delta of 1.10. No file was added to or removed from `PRECACHE_SHAPES`, and no
+ * chunk was renamed.
  *
- * That base of 2313.82 sat 0.18 KiB under the ceiling above it — narrower still than the 0.13 the
- * previous paragraph calls the narrowest ever — which is why 0.84 KiB crossed it. The margin is
- * restored to the same order as every raise above, not widened.
+ * That base of 2313.82 sat 0.18 KiB under the ceiling above it — the second-narrowest this margin
+ * has been, after the 0.13 the previous paragraph records — which is why 1.10 KiB crossed it. The
+ * margin is restored to the same order as every raise above, not widened.
  */
 export const PRECACHE_CEILING_KIB = 2318;
 
