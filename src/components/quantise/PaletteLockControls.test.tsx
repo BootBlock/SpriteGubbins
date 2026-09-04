@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
 import { DEFAULT_PALETTE_SNAP } from '../../constants/quantiser.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
+import { useUIStore } from '../../stores/useUIStore.ts';
 import { imageFrom } from '../../test/images.ts';
 import { PaletteLockControls } from './PaletteLockControls.tsx';
 
@@ -21,8 +23,13 @@ const RESULT = imageFrom(4, 4, (_x, y) =>
   y === 0 ? { r: 200, g: 100, b: 50, a: 255 } : { r: 40, g: 160, b: 60, a: 255 },
 );
 
-function show(overrides: Partial<Parameters<typeof PaletteLockControls>[0]> = {}) {
-  render(
+/** A result the keying took whole — every pixel transparent, which is what locks nothing. */
+const BLANK = imageFrom(4, 4, () => ({ r: 0, g: 0, b: 0, a: 0 }));
+
+type Props = Partial<Parameters<typeof PaletteLockControls>[0]>;
+
+function panel(overrides: Props = {}) {
+  return (
     <PaletteLockControls
       resultImage={RESULT}
       sheetName="armour.png"
@@ -30,13 +37,19 @@ function show(overrides: Partial<Parameters<typeof PaletteLockControls>[0]> = {}
       superseded={null}
       busy={false}
       {...overrides}
-    />,
+    />
   );
+}
+
+/** The panel, and the handle to hand it a new result without mounting a second copy of it. */
+function show(overrides: Props = {}) {
+  return render(panel(overrides));
 }
 
 describe('PaletteLockControls', () => {
   beforeEach(() => {
     useQuantiseStore.getState().clear();
+    useUIStore.setState({ toastMessage: null });
   });
 
   it('holds nothing until it is asked to, and says so', () => {
@@ -106,6 +119,32 @@ describe('PaletteLockControls', () => {
     show({ busy: true });
 
     expect(screen.getByRole('button', { name: 'Lock this palette' })).toBeDisabled();
+  });
+
+  it('says so rather than answering with silence when the result has nothing opaque in it', async () => {
+    // The button cannot be disabled for this one: whether a result holds an opaque pixel is only
+    // known after `lockPaletteFrom` has walked it, which is after the press. Before the refusal was
+    // reported, the press held nothing, changed no badge and announced nothing at all.
+    show({ resultImage: BLANK });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+
+    expect(useQuantiseStore.getState().lockedPalette).toBeNull();
+    expect(useUIStore.getState().toastMessage).toBe(PALETTE_LOCK_GUIDANCE.refused('armour.png'));
+    expect(screen.getByText('No palette held')).toBeInTheDocument();
+  });
+
+  it('leaves a held palette alone when a blank result is locked over it', async () => {
+    // Worse than a silent press: a refusal that cleared the lock would throw away the colours of a
+    // good sheet because a failed one was read after it.
+    const { rerender } = show();
+    await userEvent.click(screen.getByRole('button', { name: 'Lock this palette' }));
+
+    rerender(panel({ resultImage: BLANK }));
+    await userEvent.click(screen.getByRole('button', { name: 'Re-lock from this sheet' }));
+
+    expect(useQuantiseStore.getState().lockedPalette?.entries).toHaveLength(2);
+    expect(useUIStore.getState().toastMessage).toBe(PALETTE_LOCK_GUIDANCE.refused('armour.png'));
   });
 
   it('names the studio setting the held palette has overtaken, and only then', () => {

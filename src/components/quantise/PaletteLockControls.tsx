@@ -1,6 +1,7 @@
 import { PALETTE_SNAP_RANGE, QUANTISE_TOOLTIPS } from '../../constants/quantiser.ts';
 import { PALETTE_LOCK_GUIDANCE } from '../../constants/paletteLock.ts';
 import { QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useShowToast } from '../../hooks/useShowToast.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import { lockPaletteFrom } from '../../utils/lockedPalette.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -68,13 +69,26 @@ export function PaletteLockControls({
   const lockPalette = useQuantiseStore((state) => state.lockPalette);
   const unlockPalette = useQuantiseStore((state) => state.unlockPalette);
   const setPaletteSnap = useQuantiseStore((state) => state.setPaletteSnap);
+  const showToast = useShowToast();
 
   const take = () => {
-    // Refused rather than guarded against: the button is disabled while there is no settled result,
-    // and a sheet with nothing opaque in it locks nothing — see `lockPaletteFrom`.
+    // The two the button's `disabled` already covers, so this arm is unreachable from a press and is
+    // here for the type: there is no result, or a newer one is on its way.
     if (resultImage === null || busy) return;
+
     const taken = lockPaletteFrom(resultImage, sheetName, studioSetting);
-    if (taken !== null) lockPalette(taken);
+
+    // The third refusal, and the only one the panel cannot see coming: a result with nothing opaque
+    // in it locks nothing — see `lockPaletteFrom` — and whether it holds an opaque pixel is only
+    // known after that walk. So it is answered where the answer arrives, and it is *said*: a
+    // control that appears to do nothing is the worst outcome available, and the reader pressing
+    // this one is likeliest to be looking at exactly such a sheet.
+    if (taken === null) {
+      showToast(PALETTE_LOCK_GUIDANCE.refused(sheetName));
+      return;
+    }
+
+    lockPalette(taken);
   };
 
   return (

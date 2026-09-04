@@ -17,7 +17,7 @@
  */
 export const LOCKED_SWATCHES_SHOWN = 64;
 
-/** The paragraph under the lock panel, keyed to whether a palette is held. */
+/** What the lock panel says: the paragraph under it, and the one press it has to refuse. */
 export const PALETTE_LOCK_GUIDANCE = {
   /** Nothing held: what locking would do, and why anyone would want it. */
   open: 'A sprite sheet series is generated one sheet at a time, and a palette chosen afresh from each of them drifts — two sheets of one character come back with two sets of greens that are near-identical and not the same, so the armour changes shade between the walk sheet and the run sheet. Lock the colours of a sheet you are happy with, then drop the next sheet in: each of its colours that comes near a held one is taken to it, so the two sheets share a palette. The lock stays until you unlock it or clear the tab, and it takes over from the studio’s colour setting while it is held.',
@@ -33,4 +33,15 @@ export const PALETTE_LOCK_GUIDANCE = {
    */
   superseded: (setting: string): string =>
     `The studio’s colour setting is now ${setting}, which is not the one this palette was locked under — the held colours are being applied instead of it. Re-lock from this sheet to take the setting’s own colours, or unlock to hand the decision back to it.`,
+  /**
+   * The press that cannot be honoured: this result has no opaque pixel to take a colour from.
+   *
+   * A notification rather than a disabled button, because it is the one refusal the panel cannot
+   * see coming — whether a result holds an opaque pixel is only known after the walk
+   * `lockPaletteFrom` does, and the button’s `disabled` covers what the props say. It is worded as
+   * `useIdentityPaletteCapture`’s refusal is, because it is the same event on the app’s other
+   * capture control: a sheet that came back empty, read by someone who wanted its colours.
+   */
+  refused: (sheetName: string): string =>
+    `${sheetName} has nothing opaque left in it — there are no colours to lock`,
 } as const;

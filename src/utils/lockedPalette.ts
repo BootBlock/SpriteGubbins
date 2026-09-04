@@ -33,7 +33,10 @@ import { imagePaletteEntries } from './paletteEntries.ts';
  * A sheet with nothing opaque in it locks nothing rather than an empty palette: an empty lock would
  * map every colour onto no colour at all, which {@link applyLockedPalette} would have to answer by
  * returning the sheet unchanged — a lock that silently does nothing while the panel says one is
- * held. The control that offers this refuses instead.
+ * held. `PaletteLockControls` answers the `null` with a notification naming the sheet, rather than
+ * a press that appears to do nothing — which is the state a reader is likeliest to be in when they
+ * reach for this control, since a generation that came back as its own key field is a common first
+ * result.
  */
 export function lockPaletteFrom(image: ImageData, sheetName: string, setting: string): LockedPalette | null {
   const entries = imagePaletteEntries(image);
