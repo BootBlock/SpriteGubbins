@@ -6,6 +6,7 @@ import { withCompanionOutputs } from '../../utils/imageConfig.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
+import { contradictionsIn } from '../categories/exclusionElements.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../output/index.ts';
 import { LIGHTING_TEXT, PRACTICAL_COMPONENT_CEILING, resolveCameraElevation } from '../promptText/index.ts';
 import { PRESETS } from './index.ts';
@@ -215,6 +216,25 @@ describe('every shipped preset', () => {
       }
     },
   );
+
+  it.each(PRESETS)('$name does not ban an element its own fields ask for', (preset) => {
+    // Section 0 ranks the two and section 8 restates it, so a preset holding both halves of a
+    // pairing does not read ambiguously — it reads as an instruction to draw the thing and then a
+    // later one to remove it. Five shipped presets did, the studio's own opening state among them:
+    // a `Holstered Sidearm & Pouch` under `No weapons`, a `Cloak` under `No cape`, `Mounted Energy
+    // Cannons` under `No weapons`, a `Monocular Cyber Eye` under `No facial features`, and a
+    // `Shared Backing` under a ban on the plate behind the icon.
+    //
+    // None of the five shared a word between its two halves — `sidearm` against `weapons`, `cloak`
+    // against `cape` — which is why a bare sweep over the library reported nothing and all of them
+    // had to be found by reading. `EXCLUDED_ELEMENTS` is where that reading is written down, and
+    // `categories/exclusionElements.test.ts` is what holds it against the pools.
+    const contradictions = contradictionsIn(preset.subject).map(
+      ({ element, field, value, term }) => `${field} “${value}” asks for a ${element} (${term})`,
+    );
+
+    expect(contradictions, `${preset.name} cancels itself: “${preset.subject.exclusions}”`).toEqual([]);
+  });
 
   it.each(PRESETS)('$name leaves the companion outputs to the user', (preset) => {
     // The type says a preset holds the image alone, and structural typing means the type alone

@@ -394,6 +394,14 @@ export const CHARACTER: CategoryDefinition = {
       tooltip:
         'Negative rules compiled into the prompt to keep unrequested things out of the sheet. Floor shadows and stray props are the usual offenders — both fuse a component to its background and leave nothing clean to key out.',
       options: [
+        // First, and that is a decision rather than an ordering: `defaultSubjectFor` builds the
+        // subject a category switch installs out of every pool's leading option, so this one is
+        // read against `Holstered Sidearm & Pouch` — the leading `worn_details`. `No weapons, no
+        // floor shadows` here makes the default CHARACTER subject ask for a sidearm in section 1
+        // and remove it in section 8. Floor shadows alone is also the first of the two this
+        // field's own tooltip calls the usual offenders, and the weapons ban keeps its place one
+        // line down for whoever wants it.
+        'No floor shadows',
         'No weapons, no floor shadows',
         'No oversized pauldrons',
         'No cape, no facial features',

@@ -37,7 +37,12 @@ const CYBERPUNK_KATANA: PresetArchetype = {
     face_head: 'Neon Visor & Undercut',
     anatomy: 'Standard Humanoid',
     clothing: 'Tactical Kevlar & Plates',
-    worn_details: 'Holstered Sidearm & Pouch',
+    // Cabling rather than the pool's leading `Holstered Sidearm & Pouch`, which `exclusions`
+    // below removes again: section 8 outranks section 1, so a sidearm here leaves the studio's
+    // opening prompt asking for a weapon and cancelling it. The role stays a Katana Specialist,
+    // which costs nothing — section 1 ends “Do not infer props, weapons or equipment from the
+    // role”.
+    worn_details: 'Fibre-Optic Cabling',
     primary_colours: 'Matte Charcoal Black & Gunmetal',
     accent_colours: 'Cyan Neon #06B6D4',
     materials: 'Reinforced Composites & Alloy',
@@ -79,7 +84,9 @@ export const CHARACTER_CORE_PRESETS: readonly PresetArchetype[] = [
       face_head: 'Full Enclosed Helmet',
       anatomy: 'Standard Humanoid',
       clothing: 'Gothic Plate Armour',
-      worn_details: 'Shoulder Pauldrons & Cloak',
+      // Belts rather than a cloak, which the `No cape` below removes. The other half of that ban
+      // is the one this preset is for and it stands: the helmet above is fully enclosed.
+      worn_details: 'Ammunition Belts',
       primary_colours: 'Royal Navy & Deep Silver',
       accent_colours: 'Safety Crimson #EF4444',
       materials: 'Burnished Steel & Leather',
