@@ -142,20 +142,26 @@ export const PROXY_CROP_STRIDE = 0.5;
  * pipeline with rather than against the ones the tab opened at.
  *
  * **This is a ceiling and not a cost**, because the sweep stops as soon as a round ends anywhere the
- * descent has already stood — see `autoTune`. Measured over the whole corpus at the grids
- * `tests/sheet-scale-corpus.test.ts` reads for them, every dial at its opening position, no keying
- * and no colour budget:
+ * descent has already stood — see `autoTune`. Measured over the whole corpus, every dial at its
+ * opening position, no keying and no colour budget:
  *
- * | Sheet | Rounds | Positions |
- * | --- | --- | --- |
- * | `armour.png` (grid 6) | **6** | 403 |
- * | `character_space_marine_blue.png` (5) | 4 | 181 |
- * | `vehicles_and_props.png` (5) | 4 | 185 |
- * | `cyborg_black_red.png` (6) | 3 | 142 |
- * | `three-quarter-view_tiles1.png` (5) | 3 | 142 |
- * | `ui_elements1.png` (4) | 3 | 142 |
- * | `cyborg_monk.png` (4) | 3 | 134 |
- * | `cyborg_healer.png` (4) | 3 | 134 |
+ * | Sheet | Grid the run was given | Rounds | Positions |
+ * | --- | --- | --- | --- |
+ * | `armour.png` | 6 | **6** | 403 |
+ * | `character_space_marine_blue.png` | 5 | 4 | 181 |
+ * | `vehicles_and_props.png` | 5 | 4 | 185 |
+ * | `cyborg_black_red.png` | 6 | 3 | 142 |
+ * | `three-quarter-view_tiles1.png` | 5 | 3 | 142 |
+ * | `ui_elements1.png` | 4 | 3 | 142 |
+ * | `cyborg_monk.png` | 4 | 3 | 134 |
+ * | `cyborg_healer.png` | 4 | 3 | 134 |
+ *
+ * **The grid column is the run's own input, not a reading of the sheet.** Each grid was chosen
+ * coarse enough that forty cells of it span something worth reading — see {@link PROXY_CROP_CELLS},
+ * which states the reference sheet's crop at this same grid of 6 and says in as many words that the
+ * figure is a worked example rather than a property of the sheet. What the readings *offer* is a
+ * different number and is held in `tests/sheet-scale-corpus.test.ts`: 3 for the reference sheet, and
+ * nothing at all for five of these eight.
  *
  * **Eight is the worst of those eight plus headroom, and the headroom is the point.** A cap that a
  * sheet exactly reaches cannot be told apart from one that cut it short — and a cut descent does not
