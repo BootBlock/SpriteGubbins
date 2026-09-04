@@ -43,8 +43,9 @@
  * controls and a hook reached from the shell, so rolldown cuts it out of both into a chunk they
  * share and names the chunk after it. Measured against the build immediately before, from the same
  * `node_modules`, the precache goes from 2318.71 to **2319.14 KiB** across 53 entries and then 54:
- * what a first visit gains is one request and 0.43 KiB, not a file of new code. No chunk was
- * renamed, and the ceiling is left where it stands — on 0.86 KiB of headroom, which is the
+ * what a first visit gains is one request and 0.43 KiB, not a file of new code. Merged with the
+ * `--color-tab` cyan guard that landed alongside it, the build reports **2319.18**. No chunk was
+ * renamed, and the ceiling is left where it stands — on 0.82 KiB of headroom, which is the
  * narrowest this margin has been and is worth reading before the next base figure is taken for
  * slack.
  *
