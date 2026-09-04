@@ -141,8 +141,11 @@ export function wrapForModel(
       );
 
     // One wrapper for both Flux tiers. They differ only in how much of the prompt is read, which is
-    // a budget fact rather than a wrapping one — and the restatement leads for both, since Black
-    // Forest Labs' word-order guidance applies to the hosted tier just as it does to the weights.
+    // a budget fact rather than a wrapping one — and the restatement leads for both, though the two
+    // tiers reach that from opposite directions. Black Forest Labs' word-order guidance is written
+    // for the hosted tier, so leading is what they document there; on the weights it is the 512-token
+    // ceiling that decides it, since a restatement placed last is truncated away. Neither argument is
+    // borrowed from the other — see `modelWrapperText/flux.ts`, which states both.
     case 'FLUX':
     case 'FLUX_API':
       return wrapForFlux(
