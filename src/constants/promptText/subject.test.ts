@@ -1,56 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { SheetPlan } from '../../types/components.ts';
-import type { DirectionSet } from '../../types/rendering.ts';
-import type { SubjectCategory } from '../../types/subject.ts';
+import { categoryProseFor, everySheetOf } from '../../test/categoryProse.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
-import { CATEGORY_OPTIONS } from '../categories/index.ts';
-import { modesFor, sheetSeriesFor } from '../sheetPlans/index.ts';
-import { DIRECTION_LISTS } from './camera.ts';
 import { SCALE_UNIT_TEXT } from './subject.ts';
-
-/**
- * Everything a category writes about its own subject — every sheet plan, of every mode, under every
- * direction set it can be asked for, plus the name it goes by in the selector.
- *
- * Every sheet rather than the default one, because {@link SCALE_UNIT_TEXT} is a claim about the
- * category and not about one configuration: a unit that only appeared on the default pairing would
- * be a unit the other sheets of the same deliverable are not priced in.
- *
- * **The selector's label is the second source because two categories are grounded by nothing else.**
- * `creature` appears in no CREATURE plan — that category's plans list a head, a body, hindquarters
- * and limb segments — and `building` in no BUILDING plan, whose plans list tiles, bays and roof
- * sections. `Creature / Monster` and `Building / Environment Tile` are where each writes its own
- * name. `CATEGORY_ASSEMBLY` was tried as a third source and grounds nothing that these two do not,
- * so it is deliberately absent: a source that never decides an answer is a source nobody can tell
- * has stopped working.
- */
-function categoryProseFor(category: SubjectCategory): string {
-  const written: string[] = [CATEGORY_OPTIONS[category].label];
-  for (const plan of everySheetOf(category)) {
-    written.push(plan.name, plan.assembly);
-    for (const group of plan.groups) {
-      written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
-      for (const entry of group.entries) written.push(entry.label, entry.text);
-    }
-  }
-  return written.join('\n');
-}
-
-/**
- * Every sheet the category can be asked for: each mode it supports, under each direction set, and
- * every sheet of the series that pairing produces.
- *
- * Both claims this file makes are about the category rather than about one configuration, so both
- * are asked of all of them — a unit grounded only in the default pairing is a unit the rest of the
- * deliverable is not priced in, and a frame answered only there is one the later sheets contradict.
- */
-function everySheetOf(category: SubjectCategory): readonly SheetPlan[] {
-  return modesFor(category).flatMap((mode) =>
-    (Object.keys(DIRECTION_LISTS) as DirectionSet[]).flatMap((set) => [
-      ...sheetSeriesFor(category, mode, set),
-    ]),
-  );
-}
 
 /**
  * The words of the unit phrase that have to be grounded — everything but the articles and the
