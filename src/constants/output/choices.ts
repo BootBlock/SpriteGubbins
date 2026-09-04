@@ -79,11 +79,11 @@ export const SURFACE_DETAIL_CHOICES: readonly OutputChoice<SurfaceDetail>[] = [
 ];
 
 // **Neither of the two share rungs states its range**, and that is what having two frames costs. A
-// share is measured against the sheet height where the category's scale unit is a whole the sheet
-// never draws, and against the unit's own cell where the sheet draws one per component — so there
-// are two ranges per rung, and a label naming one of them describes the prompt on six categories and
-// misdescribes it on seven. The numbers are in the field's own guidance, which has no width to run
-// out of; what the label owes a reader here is which rung is the larger.
+// share is measured against the sheet height where the sheet draws at most one of the category's
+// scale unit, and against that unit's own cell where the sheet draws one per component — so there
+// are two ranges per rung, and a label naming one of them describes the prompt on eight categories
+// and misdescribes it on five. The numbers are in the field's own guidance, which has no width to
+// run out of; what the label owes a reader here is which rung is the larger.
 export const RESOLUTION_PROFILE_CHOICES: readonly OutputChoice<ResolutionProfile>[] = [
   { value: 'HIGH_RESOLUTION', label: 'HIGH_RESOLUTION (the largest fixed scale)' },
   { value: 'MID_RESOLUTION', label: 'MID_RESOLUTION (a step smaller than high)' },
