@@ -15,7 +15,7 @@ interface PaletteLockControlsProps {
    * The transform’s own reading rather than one taken here — `QuantiseResult.paletteEntries` says
    * why it is carried on the result, and it is the same list `PaletteExportControls` writes to a
    * file. Taking it as a prop is also what lets this panel decide whether a lock is *possible*
-   * before the press: an empty list is a sheet the keying took whole, and a button that answered
+   * before the press: an empty list is a sheet with nothing left on it, and a button that answered
    * that with silence is the failure this prop exists to make impossible.
    */
   readonly resultPalette: readonly Rgba[] | null;
@@ -77,11 +77,13 @@ export function PaletteLockControls({
   const unlockPalette = useQuantiseStore((state) => state.unlockPalette);
   const setPaletteSnap = useQuantiseStore((state) => state.setPaletteSnap);
 
-  // A result with no colours in it is a sheet the keying took whole, and locking it would hold an
-  // empty palette — see `applyLockedPalette`, which could only answer one by returning the next
-  // sheet unchanged while this panel said a lock was held. It is a *third* reason the button is
-  // shut, alongside no result and a recompute in flight, and it is named below rather than left to
-  // the greyed-out button: a control that appears to do nothing is the worst outcome available.
+  // A result with no colours in it is a sheet with nothing left on it — the keying took it whole,
+  // or it arrived transparent — and locking one would hold an empty palette, which
+  // `applyLockedPalette` could only answer by returning the next sheet unchanged while this panel
+  // said a lock was held. It is a *third* reason the button is shut, alongside no result and a
+  // recompute in flight, and it is named below rather than left to the greyed-out button: a control
+  // that appears to do nothing is the worst outcome available. `PALETTE_LOCK_GUIDANCE.noColours`
+  // says why the notice names the causes as symptoms rather than deciding between them.
   const emptySheet = resultPalette !== null && resultPalette.length === 0;
   const takeable = resultPalette !== null && resultPalette.length > 0 && !busy;
 
