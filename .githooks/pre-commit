@@ -11,7 +11,8 @@
 # It is a local first line of defence, not a guarantee — a --no-verify commit, or a clone that
 # never ran `npm install`, skips it entirely. `npm run lint`, `npm run format:check` and
 # `node scripts/secret-scan.ts --diff <base>` are the authoritative equivalents, and they are what
-# the gate jobs in `.github/workflows/deploy.yml` run before a publish.
+# the gate jobs in `.github/workflows/tests.yml` run on every push to `main`, on every pull request,
+# and again on the commit a deploy is about to publish.
 
 set -u
 
