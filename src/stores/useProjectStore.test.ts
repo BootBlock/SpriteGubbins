@@ -243,25 +243,47 @@ describe('deleteProject', () => {
 
   it('refuses the Default project, which is where a save goes when nothing else is chosen', async () => {
     await seedDefault();
+    await useProjectStore.getState().createProject('Harbour', '');
     await backend.savePreset(preset(DEFAULT_PROJECT_ID, 'kept'));
     await usePresetStore.getState().fetchCustomPresets();
 
     await useProjectStore.getState().deleteProject(DEFAULT_PROJECT_ID);
 
-    expect(useProjectStore.getState().projects).toHaveLength(1);
+    expect(useProjectStore.getState().projects).toHaveLength(2);
     await expect(backend.listPresets()).resolves.toHaveLength(1);
-    expect(useUIStore.getState().toastMessage).toBe('The Default project cannot be deleted');
+    expect(useUIStore.getState().toastMessage).toMatch(/^The Default project cannot be deleted/);
+  });
+
+  it('refuses the last project even where it is not the Default one', async () => {
+    // A library pack replaces every project with the ones it carries, and carries a Default only
+    // where something in it needed re-filing — so an install can hold exactly one project that is
+    // not the Default. Deleting it left both save panels with nothing to file into and their
+    // buttons disabled, until a reload rebuilt the Default.
+    await backend.replaceLibrary({
+      projects: [{ id: 'harbour', name: 'Harbour', description: '', createdAt: 1, updatedAt: 1 }],
+      presets: [],
+      quantisePresets: [],
+    });
+    await useProjectStore.getState().fetchProjects();
+    expect(useProjectStore.getState().projects.map((project) => project.id)).toEqual(['harbour']);
+
+    await useProjectStore.getState().deleteProject('harbour');
+
+    expect(useProjectStore.getState().projects).toHaveLength(1);
+    await expect(backend.listProjects()).resolves.toHaveLength(1);
+    expect(useUIStore.getState().toastMessage).toMatch(/^This is your only project/);
   });
 
   it('reports a failed delete, and keeps showing the project', async () => {
+    await seedDefault();
     await useProjectStore.getState().createProject('Harbour', '');
-    const [harbour] = useProjectStore.getState().projects;
+    const harbour = useProjectStore.getState().projects.find((project) => project.name === 'Harbour');
     if (!harbour) throw new Error('the project should have been created.');
     backend = createFailingBackend();
 
     await useProjectStore.getState().deleteProject(harbour.id);
 
-    expect(useProjectStore.getState().projects).toHaveLength(1);
+    expect(useProjectStore.getState().projects).toHaveLength(2);
     expect(useUIStore.getState().toastMessage).toBe('Could not delete that project');
   });
 });

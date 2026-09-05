@@ -12,9 +12,9 @@
  * a project's *name* to find it, and nothing may start to: the name is a label a person chose, and
  * two projects are free to carry the same one.
  *
- * The colour is deliberately not a field. It is derived from the id by `projectStopAt`, so it is as
- * fixed as the id is and cannot be edited into a duplicate of the project beside it — see
- * `constants/projects.ts`.
+ * The colour is deliberately not a field. It is derived from the id by `projectStopIndex`, so it is
+ * as fixed as the id is and cannot be edited into a duplicate of the project beside it — see
+ * `utils/projectStopIndex.ts`.
  */
 export interface Project {
   /** A GUID, minted once and never rewritten. See the note above. */

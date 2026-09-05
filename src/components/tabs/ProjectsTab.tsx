@@ -76,7 +76,17 @@ export function ProjectsTab() {
       {active !== undefined && (
         <>
           <ProjectList projects={projects} counts={counts} active={active.id} onSelect={setChosen} />
-          <ProjectPanel project={active} presets={presetsHere} quantisePresets={dialsHere} />
+          {/*
+            **Keyed by the project, which is what makes opening another one a fresh panel.** The
+            panel and its header hold state about the project on screen — an open name editor with
+            its two drafts, and an armed delete confirmation — and React keeps a component's state
+            across a prop change. Without the key, switching project left the editor mounted holding
+            the *previous* project's drafts against the new project's id, so saving renamed the
+            wrong project; and an armed confirmation stood over a project the reader had never
+            pressed Delete on. A key is the whole fix, because it is what says these are two
+            different panels rather than one panel showing something else.
+          */}
+          <ProjectPanel key={active.id} project={active} presets={presetsHere} quantisePresets={dialsHere} />
         </>
       )}
     </div>

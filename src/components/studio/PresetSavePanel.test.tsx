@@ -158,6 +158,43 @@ describe('PresetSavePanel', () => {
     expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
   });
 
+  it('adopts the other project’s description when the project changes under the same name', async () => {
+    // The adoption lived in the name box's handler alone, so switching project moved the target
+    // without moving what the box held: the button read Update over the *other* project's sentence,
+    // and pressing it wrote that sentence onto this project's preset.
+    const user = userEvent.setup();
+    useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
+    usePresetStore.setState({
+      customPresets: [
+        EXISTING,
+        { ...EXISTING, id: 'custom-2', projectId: 'harbour', description: 'For the harbour.' },
+      ],
+    });
+    render(<PresetSavePanel />);
+
+    await user.type(nameBox(), 'My Knight');
+    expect(descriptionBox()).toHaveValue('For the town scenes.');
+
+    await user.selectOptions(screen.getByLabelText('Save into'), 'harbour');
+
+    expect(descriptionBox()).toHaveValue('For the harbour.');
+  });
+
+  it('leaves the box alone when the new project holds nothing under that name', async () => {
+    const user = userEvent.setup();
+    useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
+    usePresetStore.setState({ customPresets: [EXISTING] });
+    render(<PresetSavePanel />);
+
+    await user.type(nameBox(), 'My Knight');
+    await user.selectOptions(screen.getByLabelText('Save into'), 'harbour');
+
+    // A new preset in Harbour, and the box holds what Save is about to write — which is the
+    // sentence the reader can see rather than a blank they did not ask for.
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    expect(descriptionBox()).toHaveValue('For the town scenes.');
+  });
+
   it('keeps the project chosen after a save, since two saves in a row share one', async () => {
     const user = userEvent.setup();
     useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });

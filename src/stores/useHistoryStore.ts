@@ -33,7 +33,7 @@ export interface HistoryState {
    * there because the history is the one collection the user cannot rebuild — it is capped at
    * {@link HISTORY_LIMIT}, and OPFS may be evicted under storage pressure without asking.
    *
-   * Returns the text rather than performing the download, as `usePresetStore.exportPresetsJSON`
+   * Returns the text rather than performing the download, as `useLibraryTransferStore.exportLibraryJSON`
    * does and for the same reason: the anchor element is the DOM's job, and a string is something
    * a test can assert on.
    */

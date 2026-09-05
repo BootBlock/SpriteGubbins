@@ -57,6 +57,30 @@ export function isDefaultProject(id: string): boolean {
   return id === DEFAULT_PROJECT_ID;
 }
 
+/**
+ * Why this project may not be deleted, or `null` where it may.
+ *
+ * **Two refusals, one invariant: a save has to have somewhere to go.** The Default project is the
+ * one the app makes for itself, so it is never removed — and the *last* project is refused for the
+ * same reason even when it is not the Default, because an install can legitimately have no Default
+ * at all: a library pack replaces every project with the ones it carries, and it carries a Default
+ * only where something in it needed re-filing. Deleting the last project then left both save panels
+ * with nothing to file into and their buttons disabled, until a reload rebuilt the Default.
+ *
+ * Returned as the sentence rather than as a boolean, and read by both the store and the panel, so
+ * the button a reader can see and the action behind it cannot disagree about which projects are
+ * removable — or say two different things about why.
+ */
+export function projectDeletionRefusal(id: string, projectCount: number): string | null {
+  if (isDefaultProject(id)) {
+    return 'The Default project cannot be deleted — it is where a save goes when you have chosen nothing else. You can still rename it.';
+  }
+  if (projectCount <= 1) {
+    return 'This is your only project, so it cannot be deleted — everything you save has to be filed somewhere. Make another one first, or rename this one.';
+  }
+  return null;
+}
+
 /** The Default project as a row, for the boot that finds no projects stored at all. */
 export function createDefaultProject(now: number): Project {
   return {

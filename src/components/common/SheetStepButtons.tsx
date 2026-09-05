@@ -11,7 +11,7 @@ import { ControlTooltip } from './ControlTooltip.tsx';
  * are reached often enough that it is a state rather than an edge.
  *
  * Its disabled treatment is the app's, not a second one: `text-ink-faint` with the hover suppressed,
- * as `HistoryFooter` and `PresetTransferControls` both spell it. An `opacity-50` layered on top of
+ * as `HistoryFooter` spells it. An `opacity-50` layered on top of
  * that ink would composite to roughly 2.4:1 against `foundry-950` — a third of the contrast every
  * other disabled control in the app is rendered at, and on the state a user *starts* every batch in.
  */

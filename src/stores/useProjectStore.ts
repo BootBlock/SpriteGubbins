@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { createDefaultProject, isDefaultProject } from '../constants/projects.ts';
+import { createDefaultProject, projectDeletionRefusal } from '../constants/projects.ts';
 import { getDatabase } from '../db/database.ts';
 import type { Project } from '../types/project.ts';
 import { findByName } from '../utils/findByName.ts';
@@ -61,8 +61,9 @@ export interface ProjectState {
    * collection stores are holding rows this may have deleted, so both are asked to re-read rather
    * than being filtered in place — the backend is where that collection's membership is decided.
    *
-   * The Default project is refused, because it is where a save goes when nothing else is chosen and
-   * an install with no projects at all has nowhere to put one.
+   * Which projects may be deleted at all is `projectDeletionRefusal`'s to say, and it is read here
+   * and by the panel's own button so the two cannot disagree — the Default project and the last one
+   * are both refused, for the one reason it states.
    */
   deleteProject(id: string): Promise<void>;
 }
@@ -160,8 +161,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   deleteProject: async (id) => {
     const { showToast } = useUIStore.getState();
-    if (isDefaultProject(id)) {
-      showToast('The Default project cannot be deleted');
+    const refusal = projectDeletionRefusal(id, get().projects.length);
+    if (refusal !== null) {
+      showToast(refusal);
       return;
     }
 

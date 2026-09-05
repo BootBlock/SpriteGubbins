@@ -58,14 +58,6 @@ export const QUANTISE_ACTION_TOOLTIPS = {
     'Offers to remove this saved set of dial positions from the collection. The row turns into a confirmation first, so a press here changes nothing on its own — and nothing about the sheet on screen changes either way, since a saved set is a record of where the dials were rather than anything the artwork depends on.',
   confirmDeleteQuantisePreset:
     'Removes this set of dial positions for good. There is no undo and nothing else holds a copy, so if you may want these settings again, cancel and save them under a second name first. The dials themselves stay exactly where they are — only the saved record of them goes.',
-  exportQuantisePresets:
-    'Downloads every set of dial positions you have saved as one JSON file. The collection otherwise lives only in this browser’s storage, so this is how it survives clearing that storage, reaches a second machine, or reaches somebody else working on the same artwork. The file holds the dials and their names — no images, and nothing about the sheet each set was found on.',
-  importQuantisePresets:
-    'Reads a file exported from this tab and offers to put its saved settings in place of yours. It says how many sets the file carries and how many of your own would go, and nothing is deleted until you agree to it. The dials on this tab do not move, and the sheet on screen is not re-read, until you load one of the sets that arrives.',
-  confirmImportQuantisePresets:
-    'Puts the file’s saved settings in place of your collection, for good. Every set you have saved goes from this browser’s storage and there is no undo, so cancel and download your own collection first if you may want it back. The dials on this tab stay where they are either way, and the sheet on screen is not re-read.',
-  cancelImportQuantisePresets:
-    'Leaves your collection where it is and forgets the file. None of it was read in, none of yours was removed, and the transfer buttons come back so you can choose a different file.',
   cancelDeleteQuantisePreset:
     'Leaves the saved set where it is and puts the row back to its ordinary buttons. Nothing was removed, and the dials on this tab were never touched.',
   undoDials:

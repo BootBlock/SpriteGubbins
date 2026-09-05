@@ -69,9 +69,14 @@ export function parseHistoryRow(row: unknown): PromptHistoryLog | null {
  *
  * Rejected for want of an **id or a name**, which are the two things nothing can be invented for:
  * the id is what every preset in the project refers to, and the name is the whole of what the
- * reader picks the project out of a list by. The description is allowed to be empty, and the two
- * timestamps fall back to each other — a row that has one but not the other is still a project
- * somebody made, and the pair only has to be ordered and displayable.
+ * reader picks the project out of a list by.
+ *
+ * **Nothing else is grounds for rejection, and a timestamp least of all.** Dropping a project row
+ * does not lose one row: every preset filed under it then names a project that is not there, and
+ * the Projects view draws a preset under the project it belongs to — so a missing date would take
+ * the reader's saved work off the screen with it. The description defaults to empty, and the two
+ * timestamps fall back to each other and then to zero. A project dated 1970 is a cosmetic wrong
+ * answer; a project that vanished is not.
  */
 export function parseProjectRow(row: unknown): Project | null {
   if (!isRecord(row)) return null;
@@ -82,7 +87,6 @@ export function parseProjectRow(row: unknown): Project | null {
 
   const createdAt = readNumber(row, 'created_at');
   const updatedAt = readNumber(row, 'updated_at');
-  if (createdAt === null && updatedAt === null) return null;
 
   return {
     id,

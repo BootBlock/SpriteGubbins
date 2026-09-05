@@ -13,8 +13,8 @@ import { CATEGORY_OPTIONS } from '../categories/index.ts';
  * **There is no collection for the reader's own presets, and there used to be.** Everything a
  * reader saves is now filed under a project and shown on the Projects view, which is a taxonomy
  * they wrote rather than one the app imposed — so this library is the built-in archetypes alone,
- * and every collection here is a category. That is why `presetCollectionOf` is simply a preset's
- * category rather than a rule with an exception in it.
+ * and every collection here is a category. So a preset's collection is now simply its category, read
+ * where it is needed rather than through a function standing for a field read.
  *
  * The labels come from `CATEGORY_OPTIONS` for the same reason. They are what the studio's own
  * category selector says, so the collection a user picks here is named the same as the category

@@ -207,7 +207,7 @@ export function App() {
             view does not — the switcher already claims `aria-current="page"` for these, and this is
             the heading that claim implies.
 
-            Screen-reader-only, because it is not a title the layout is missing. Three of the four
+            Screen-reader-only, because it is not a title the layout is missing. Four of the five
             views already paint their own title, and the studio deliberately opens straight on its
             two panels; a visible heading above them would be a design change smuggled in behind an
             accessibility fix. What is repaired is the outline and the heading-navigation shortcut,
@@ -220,7 +220,7 @@ export function App() {
           <h1 className="sr-only">{APP_TAB_CHOICE_BY_ID[activeTab].label}</h1>
 
           {/*
-            One Suspense boundary for every view, rather than one per view: navigating is a synchronous
+            One Suspense boundary for all of them, rather than one per view: navigating is a synchronous
             update rather than a transition, so React shows this fallback for whichever view is
             arriving — driven in Edge, with and without a `key` on the boundary, and the placeholder
             appears either way. The label is read from the tab being navigated *to*, which is what

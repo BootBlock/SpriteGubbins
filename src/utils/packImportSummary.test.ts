@@ -18,8 +18,11 @@ describe('countPackItems', () => {
     expect(countPackItems(11, LIBRARY_PACK_ITEMS)).toBe('11 saved items');
   });
 
-  it('speaks each collection’s own word for its members', () => {
-    expect(countPackItems(2, LIBRARY_PACK_ITEMS)).toBe('2 saved items');
+  it('speaks the word it was handed rather than one of its own', () => {
+    // The app has one pack and therefore one noun, so this passes a noun the app does not use: a
+    // count that had stopped reading its argument would still answer “2 saved items” against
+    // `LIBRARY_PACK_ITEMS` and would fail here.
+    expect(countPackItems(2, { singular: 'widget', plural: 'widgets' })).toBe('2 widgets');
   });
 });
 

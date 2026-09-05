@@ -385,7 +385,8 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * — one file carrying the projects and both saved collections, because a preset names its project
  * and neither half is meaningful alone. Measured against the main tip this branch started from
  * (`752c674`), rebuilt from the same `node_modules` — **2321.77 KiB across 54 entries** — this build
- * reports **2346.47 across 60**, a delta of 24.70.
+ * reports **2344.52 across 60**, a delta of 22.75 — after eight guidance paragraphs whose controls
+ * this change deletes went with them.
  *
  * **About a third of it is prose**, which is the cost this repository's own guidance rule imposes on
  * a feature with twenty new controls in it: the twenty entries of
@@ -393,7 +394,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * the entry chunk reaches, so it is paid for on a first visit exactly as an option pool is. The rest
  * is the view, its six panels, the two stores and the pack format.
  *
- * **Six of the nine `+` lines above are the split re-cutting itself, not new files**, which is the
+ * **Seven of the nine `+` lines above are the split re-cutting itself, not new files**, which is the
  * `+`/`-` shape the note on `PRECACHE_SHAPES` warns reads like a stray chunk and is not one. Three
  * views now reach the project dropdown and two reach a saved row, so rolldown cuts
  * `ProjectSelectField`, `QuantisePresetRow`, `PresetCardSpecs`, `presets`, `useSubjectStore`,

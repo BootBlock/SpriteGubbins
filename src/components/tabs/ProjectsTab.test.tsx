@@ -229,6 +229,54 @@ describe('ProjectsTab', () => {
     expect(screen.getByRole('button', { name: /Import JSON/ })).toBeInTheDocument();
   });
 
+  it('opens another project on a fresh panel, carrying no editor or confirmation across', async () => {
+    // React keeps a component's state across a prop change, so without a `key` the header's open
+    // editor and armed confirmation survived a project switch — and both then acted on the project
+    // the reader had just moved to. The editor is the sharper half: its drafts are `useState`
+    // initialisers, so it held the previous project's name against the new project's id.
+    const user = userEvent.setup();
+    const updateProjectDetails = vi.fn().mockResolvedValue(true);
+    useProjectStore.setState({ updateProjectDetails });
+
+    render(<ProjectsTab />);
+    await user.click(projectButton('Harbour'));
+    await user.click(screen.getByRole('button', { name: /^Edit the name and description/ }));
+    await user.clear(screen.getByRole('textbox', { name: 'New name for the project Harbour' }));
+    await user.type(screen.getByRole('textbox', { name: 'New name for the project Harbour' }), 'Renamed');
+
+    await user.click(projectButton('Default'));
+
+    // The editor is gone rather than pointed at Default, so there is nothing left to submit at the
+    // wrong project.
+    expect(screen.queryByRole('textbox', { name: /^New name for the project/ })).toBeNull();
+    expect(updateProjectDetails).not.toHaveBeenCalled();
+  });
+
+  it('carries an armed delete confirmation to no other project', async () => {
+    const user = userEvent.setup();
+    const deleteProject = vi.fn().mockResolvedValue(undefined);
+    useProjectStore.setState({ deleteProject });
+
+    render(<ProjectsTab />);
+    await user.click(projectButton('Harbour'));
+    await user.click(screen.getByRole('button', { name: /^Delete the project/ }));
+    await user.click(projectButton('Default'));
+
+    expect(screen.queryByRole('button', { name: /^Delete “/ })).toBeNull();
+    expect(deleteProject).not.toHaveBeenCalled();
+  });
+
+  it('offers no delete on the only project, whichever one it is', () => {
+    // Not the Default: an imported pack can leave an install holding one named project and no
+    // Default at all, and deleting it would leave every save panel with nowhere to file into.
+    useProjectStore.setState({ projects: [HARBOUR] });
+
+    render(<ProjectsTab />);
+
+    expect(screen.queryByRole('button', { name: /^Delete the project/ })).toBeNull();
+    expect(screen.getByText(/This is your only project/)).toBeInTheDocument();
+  });
+
   it('falls back to the first project when the one being shown is deleted', async () => {
     const user = userEvent.setup();
     render(<ProjectsTab />);

@@ -122,6 +122,27 @@ describe('replaceLibrary on the fallback', () => {
     expect((await backend.listQuantisePresets()).map((entry) => entry.id)).toEqual(['imported-dials']);
   });
 
+  it('stores the projects most-recently-edited first, as the other backend lists them', async () => {
+    // The two preset collections keep the file's order; the projects cannot, because they carry
+    // their own timestamps and the SQLite side lists them `ORDER BY updated_at DESC`. A pack in any
+    // other order would come back one way there and another here.
+    await backend.replaceLibrary({
+      projects: [
+        { id: 'oldest', name: 'Oldest', description: '', createdAt: 1, updatedAt: 1 },
+        { id: 'newest', name: 'Newest', description: '', createdAt: 2, updatedAt: 9 },
+        { id: 'middle', name: 'Middle', description: '', createdAt: 3, updatedAt: 5 },
+      ],
+      presets: [],
+      quantisePresets: [],
+    });
+
+    expect((await backend.listProjects()).map((project) => project.id)).toEqual([
+      'newest',
+      'middle',
+      'oldest',
+    ]);
+  });
+
   it('puts back what it had when a write partway through is refused', async () => {
     // The keys are written projects-first, so refusing the archetypes is a refusal *after* the
     // projects have already been replaced — the state that would otherwise leave every preset the

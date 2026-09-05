@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { isDefaultProject } from '../../constants/projects.ts';
+import { projectDeletionRefusal } from '../../constants/projects.ts';
 import { PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { useProjectStore } from '../../stores/useProjectStore.ts';
 import type { Project } from '../../types/project.ts';
@@ -22,12 +22,16 @@ interface ProjectPanelHeaderProps {
  *
  * **Delete says how much goes with it.** The count is the whole warning — a project holding nothing
  * is a container and a project holding twelve saves is twelve pieces of work, and the two deserve
- * different amounts of hesitation from the reader. The Default project offers no delete at all and
- * says so in its place, because a control that cannot ever be used is worse than a sentence
- * explaining why there is none.
+ * different amounts of hesitation from the reader. A project that cannot be deleted offers no delete
+ * at all and says why in its place, because a control that can never be used is worse than a
+ * sentence explaining that there is none. Which projects those are is `projectDeletionRefusal`'s to
+ * decide, and the store reads the same function, so the button and the action cannot disagree.
  */
 export function ProjectPanelHeader({ project, savedCount }: ProjectPanelHeaderProps) {
   const deleteProject = useProjectStore((state) => state.deleteProject);
+  // A count, not the array: this reads how many projects there are and nothing about any of them.
+  const projectCount = useProjectStore((state) => state.projects.length);
+  const refusal = projectDeletionRefusal(project.id, projectCount);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
@@ -103,11 +107,8 @@ export function ProjectPanelHeader({ project, savedCount }: ProjectPanelHeaderPr
             </button>
           </ControlTooltip>
 
-          {isDefaultProject(project.id) ? (
-            <p className="text-xs text-ink-faint">
-              The Default project cannot be deleted — it is where a save goes when you have chosen nothing
-              else. You can still rename it.
-            </p>
+          {refusal !== null ? (
+            <p className="text-xs text-ink-faint">{refusal}</p>
           ) : (
             <ControlTooltip hint="Delete project" text={PROJECT_ACTION_TOOLTIPS.deleteProject}>
               <button

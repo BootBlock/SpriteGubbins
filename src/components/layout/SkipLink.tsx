@@ -1,7 +1,7 @@
 /**
  * The keyboard bypass: one link, ahead of everything else, straight to the view.
  *
- * Nine controls stand between the top of the document and the first control the page is *about* —
+ * Ten controls stand between the top of the document and the first control the page is *about* —
  * the wordmark, five tabs and four chrome actions — and they are there again on every navigation
  * and every reload, because the chrome is what the app renders around each view. Tabbing past them
  * to reach a form is what WCAG 2.4.1 (Bypass Blocks, level A) exists to spare someone.

@@ -18,5 +18,5 @@ export const QUANTISE_PRESET_GUIDANCE = {
 
   /** At least one saved. */
   saved:
-    'Loading a preset moves the dials and leaves everything else alone, so the sheet you are looking at is re-read at the saved settings rather than replaced. Saving under a name already in the list updates that entry instead of adding a second one you could only tell apart by which sorted newer. The collection lives in this browser’s own storage, beside your prompt history and your archetypes, so nothing reaches another browser or another machine on its own — exporting it is what moves it, and what keeps a copy that outlives this browser’s storage.',
+    'Loading a preset moves the dials and leaves everything else alone, so the sheet you are looking at is re-read at the saved settings rather than replaced. The list holds every set you have saved, whichever project each was filed in, and each row says which one that is. Saving under a name the chosen project already holds updates that set instead of adding a second one. The collection lives in this browser’s own storage, beside your prompt history and your archetypes, so nothing reaches another browser or another machine on its own — exporting your library from the Projects tab is what moves it, and what keeps a copy that outlives this browser’s storage.',
 } as const;

@@ -46,9 +46,15 @@ export async function deleteProjectFrom(port: CollectionPort, id: string): Promi
 }
 
 /**
- * Replace all three collections with an imported pack's, in the file's own order — which is the
- * whole of what a pack says about order, and the same answer the SQLite side reaches by stamping
- * every imported row with one instant.
+ * Replace all three collections with an imported pack's.
+ *
+ * The two preset collections keep the file's own order, which is the whole of what a pack says
+ * about them, and is the same answer the SQLite side reaches by stamping every imported row with
+ * one instant. **The projects do not, because they carry their own timestamps**: the other side
+ * inserts those verbatim and lists the table `ORDER BY updated_at DESC`, so a pack written in any
+ * other order would come back one way on SQLite and another here. Sorting on the way in is what
+ * makes the two agree, and it is done here rather than in the pack because the order a collection
+ * is *stored* in is this backend's answer to a question SQLite answers with a clause.
  *
  * **There is no transaction here, so this puts one back by hand.** The three keys are read first,
  * written in turn, and — if any write is refused — restored from those copies before the refusal
@@ -72,7 +78,8 @@ export async function replaceLibraryIn(port: CollectionPort, pack: LibraryPack):
   ];
 
   try {
-    await port.write(STORAGE_KEYS.projects, pack.projects.map(toProjectRow));
+    const projects = [...pack.projects].sort((left, right) => right.updatedAt - left.updatedAt);
+    await port.write(STORAGE_KEYS.projects, projects.map(toProjectRow));
     await port.write(STORAGE_KEYS.customPresets, pack.presets.map(toPresetRow));
     await port.write(STORAGE_KEYS.quantisePresets, pack.quantisePresets.map(toQuantisePresetRow));
   } catch (error) {

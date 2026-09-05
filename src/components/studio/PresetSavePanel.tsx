@@ -68,6 +68,36 @@ export function PresetSavePanel() {
 
   const target = projects.some((project) => project.id === projectId) ? projectId : (projects[0]?.id ?? '');
 
+  /**
+   * Point the description box at whatever `nextName` names inside `nextProject`, adopting that
+   * preset's own sentence where the box was not already following it.
+   *
+   * **Both boxes that decide the target call this, and that is the fix rather than a tidy-up.** The
+   * adoption lived in the name box's handler alone, so choosing a different project moved the
+   * target without moving what the box held: type a name both projects use, switch project, and the
+   * button read Update over the *other* project's sentence — pressing it wrote that sentence onto
+   * this project's preset, which is exactly the silent overwrite the description state exists to
+   * prevent. A target is a name *and* a project, so anything that changes either has to re-derive
+   * what Save is about to write.
+   *
+   * Naming nothing releases the follow and leaves the box alone: the reader is making a new preset,
+   * and what they can see is what will be stored.
+   */
+  const followTarget = (nextName: string, nextProject: string) => {
+    const adopted = findByName(
+      customPresets.filter((preset) => preset.projectId === nextProject),
+      nextName,
+    );
+    if (adopted === undefined) {
+      setFollowedId(null);
+      return;
+    }
+    // Adopt once per target rather than once per keystroke — see `followedId`.
+    if (adopted.id === followedId) return;
+    setFollowedId(adopted.id);
+    setDescription(adopted.description);
+  };
+
   // Derived during render, by the rule the store saves by — including the project, since a name is
   // unique inside one project and not across the library. So the button cannot promise one thing
   // and the store do another, and saying "Update" before the press is what makes a confirm
@@ -102,19 +132,8 @@ export function PresetSavePanel() {
             value={presetName}
             placeholder="Preset name"
             onChange={(event) => {
-              const nextName = event.target.value;
-              const adopted = findByName(
-                customPresets.filter((preset) => preset.projectId === target),
-                nextName,
-              );
-              setPresetName(nextName);
-              // Adopt once, when the name starts naming a preset it was not naming before. Matched
-              // by the rule the store saves by, so what the box shows and what Update writes are
-              // decided by one function rather than by two that could disagree.
-              if (adopted !== undefined && adopted.id !== followedId) {
-                setFollowedId(adopted.id);
-                setDescription(adopted.description);
-              }
+              setPresetName(event.target.value);
+              followTarget(event.target.value, target);
             }}
             className="w-full rounded-lg border border-foundry-600 bg-foundry-800 px-3 py-1.5 text-xs text-ink transition-colors focus:border-accent"
           />
@@ -147,10 +166,8 @@ export function PresetSavePanel() {
             value={target}
             onChange={(next) => {
               setProjectId(next);
-              // The adoption above is scoped to a project, so a preset adopted from the project
-              // being left has nothing to do with the one being entered. Releasing it here is what
-              // lets the box adopt again from whatever the new project holds under this name.
-              setFollowedId(null);
+              // The other half of the target. `followTarget` says why both have to re-derive it.
+              followTarget(presetName, next);
             }}
           />
         </div>

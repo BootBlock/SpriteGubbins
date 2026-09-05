@@ -501,6 +501,21 @@ describe('LocalStorageBackend — hostile storage', () => {
     expect(logs.map((entry) => entry.id)).toEqual(['good']);
   });
 
+  it('keeps a project whose row carries no timestamps rather than orphaning its presets', async () => {
+    // Dropping a project row does not lose one row: every preset filed under it then names a
+    // project that is not there, and the Projects view draws a preset under the project it belongs
+    // to — so the reader's saved work would go off the screen with it.
+    storage.setItem(
+      STORAGE_KEYS.projects,
+      JSON.stringify([{ id: 'harbour', name: 'Harbour', description: 'The town scenes.' }]),
+    );
+
+    const [stored] = await backend.listProjects();
+    expect(stored?.id).toBe('harbour');
+    expect(stored?.createdAt).toBe(0);
+    expect(stored?.updatedAt).toBe(0);
+  });
+
   it('repairs a preset that predates a field rather than discarding the user’s work', async () => {
     storage.setItem(
       STORAGE_KEYS.customPresets,
