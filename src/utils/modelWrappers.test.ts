@@ -230,6 +230,12 @@ describe('wrapForModel', () => {
     // intact while section 2's native-grid block — which it did not name — was compressed to "at
     // least 7x" and lost both of its checkable sentences. The sheet came back with no native pixel
     // grid in it at all.
+    //
+    // What this asserts is that the entry is in the directive, which is what the wrapper controls.
+    // It is not a claim about the delivered sheet: three later runs whose directive named this block
+    // still missed the grid — three to five times the ceiling on the median — and none of the three
+    // returned a hand-off, so where they lost it is unknown. `modelWrapperText/sol.ts` records both
+    // that and the composition test the entry was added on.
     const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), withOutput(NATIVE_GRID_SHEET));
 
     expect(wrapperOnly(prompt)).toContain(

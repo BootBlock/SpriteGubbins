@@ -23,7 +23,8 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * already records in the other direction. The instruction now names only the hand-off itself,
  * which is certain on both paths, and says what any call must still carry.
  *
- * **The must-carry list is the whole of what this wrapper does, and it is now known to work.** A
+ * **The must-carry list is the whole of what this wrapper does, and it is known to work on the call
+ * it names.** A
  * sheet generated on chatgpt.com was traced back to the arguments Sol actually passed to the image
  * tool, and they were Sol's own ~700-word composition rather than the ~40,000-character
  * specification it was given. The three things this wrapper names all arrived intact — the exact
@@ -34,13 +35,46 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * native pixel grid in it at all. That is as close to a controlled result as this can get: same run,
  * four blocks of the same specification, and the one omission is the one that failed.
  *
- * **Adding the block to the list was then confirmed to work, by asking Sol to compose its hand-off
- * without rendering.** Both sentences that had been lost came back — "each logical native pixel must
- * appear as one solid square block of identical delivered pixels" and "no feature, contour, marking,
- * material detail, or colour boundary may be finer than one native pixel" — along with the self-audit's
- * check that every colour boundary falls on that grid, and an unprompted clarification that the stated
- * size is not the delivered size of a severed component. So the mechanism is established in both
- * directions: what this list names survives, and what it does not name does not.
+ * **Adding the block to the list was then confirmed to reach the image call, by asking Sol to compose
+ * its hand-off without rendering.** Both sentences that had been lost came back — "each logical native
+ * pixel must appear as one solid square block of identical delivered pixels" and "no feature, contour,
+ * marking, material detail, or colour boundary may be finer than one native pixel" — along with the
+ * self-audit's check that every colour boundary falls on that grid, and an unprompted clarification
+ * that the stated size is not the delivered size of a severed component. So the mechanism is
+ * established in both directions **at the hand-off**: what this list names survives the composition,
+ * and what it does not name does not.
+ *
+ * **It is not established at the sheet, and three sheets say the naming did not reach one.** The
+ * paragraph above used to end "the mechanism is established in both directions" with nothing scoping
+ * it, which reads as a claim about what comes back — and it was a *composition* test, which read the
+ * arguments Sol wrote rather than the image a GPT Image model drew from them. Three GPT-5.6 Sol runs
+ * of a BUILDING scenario whose directive named this block by heading all miss the grid. Section 2
+ * asked those runs for a 16 × 24 native grid delivered 5× or more by a whole number, so a component
+ * 16 native pixels wide permits at most 15 interior colour transitions; counting strong transitions
+ * along every row through the middle 60% of a representative panel gives a median of 69 and a maximum
+ * of 116 on run A, 41 and 60 on run B, and 41 and 73 on run C. Resampling on the way out of a
+ * generator removes transitions and never adds them, so each count is a floor on what the art
+ * carried. **Three to five times the ceiling on the median, and up to eight times on the worst row.**
+ * Issue #247 holds the figures.
+ *
+ * **Where those three sheets lost it is not known, and this file may not guess.** All three of that
+ * scenario's interrogations failed — a false denial, a caption, and an `Edit Image A…` call for a
+ * render that never happened — so no run returned a hand-off and none of the three losses can be
+ * attributed to the composition or to the render. That is the pack's own rule for a scenario with no
+ * readable first composition, and it is worth stating here because this file's whole subject is the
+ * call. What the one hypothetical transcript does show is not encouraging: it carries neither the
+ * grid nor the whole-number multiple, only "crisp enlarged pixels, no antialiasing" — the same
+ * compression, in a run whose directive named the block by heading.
+ *
+ * **The entry stays, and nothing else here changes, because neither remaining lever has anything
+ * behind it either.** Naming the block costs one line, is the whole of what this wrapper can do, and
+ * the composition test that put it there is sound on its own terms — issue #247 says outright not to
+ * remove it on this evidence. The block's own wording already carries both operative sentences. And
+ * the self-audit's check that every colour boundary falls on the grid was in all three of those
+ * prompts: that check is addressed to **Sol**, which is the model that reads this specification and
+ * decides what to deliver, so it was read and the sheets went out anyway. Whether the renderer ever
+ * saw it is the same unknown as everything else above. **What this file may not do is describe a
+ * hand-off result as a sheet result**, which is the error the correction removes.
  *
  * **The same answer settles what the compression was.** That restatement is roughly twice the length
  * of the one the failing run produced, from the same specification, so Sol was not up against a limit
