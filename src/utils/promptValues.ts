@@ -11,6 +11,7 @@ import {
   describeHardware,
   describePalette,
   describeStyleReference,
+  isPlanView,
   JOINT_CAP_TEXT,
   LANDMARK_TEXT,
   LIGHTING_TEXT,
@@ -33,6 +34,7 @@ import { componentBreakdownFor } from './componentSet.ts';
 import { describeSeries } from './describeSeries.ts';
 import { directionalRotation } from './directionalRotation.ts';
 import { leadingSideLedger } from './leadingSideLedger.ts';
+import { oneSidedFeatureLedger } from './oneSidedFeatureLedger.ts';
 import { describeMirrorPairs } from './mirrorPairs.ts';
 import type { SheetFacts } from './promptFacts.ts';
 import { turntableSequence } from './turntableSequence.ts';
@@ -75,6 +77,7 @@ export function promptValues(
     componentTarget,
     nativeScale,
     additionalAnatomyLine,
+    oneSidedFeatures,
   } = facts;
 
   // Empty on exactly the sheets that append no additional-anatomy block: the subject named nothing,
@@ -196,6 +199,20 @@ export function promptValues(
     // `[IF:PLAN_VIEW!=yes]` *inside* `[IF:MULTI_DIRECTION]`, so a single-facing sheet drops it for
     // having no second view to compare and a plan view drops it for having no near side at all.
     LEADING_SIDE_LEDGER: leadingSideLedger(coveredDirections),
+    // What each of those yaws leaves of the features this subject carries on one flank only. Supplied
+    // whether or not the block survives, as the ledger above it is: the template's own
+    // `[IF:ONE_SIDED_FEATURES]` decides whether a token remains to be filled, and an empty list
+    // renders an empty string rather than a heading with nothing under it.
+    //
+    // **The plan-view flag is passed rather than gated on**, unlike the leading-side ledger. Overhead
+    // there is no near side to name, so the per-facing visibility genuinely has nothing to say — but
+    // *which* attributes are one-sided still does, because the mirrored copy section 3's plan-view
+    // bullet forbids is exactly the one that moves a left-sided feature onto the subject's right.
+    ONE_SIDED_FEATURE_LEDGER: oneSidedFeatureLedger(
+      oneSidedFeatures,
+      coveredDirections,
+      isPlanView(cameraElevation),
+    ),
     // Supplied whether or not the blocks survive, as `PALETTE_DESCRIPTION` is: the template's own
     // `[IF:MIRROR_PAIRS]` decides whether a token remains to be filled.
     MIRROR_PAIRS_DESCRIPTION: describeMirrorPairs(coveredMirrorPairs),

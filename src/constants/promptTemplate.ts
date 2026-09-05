@@ -137,6 +137,45 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * measure the template's wording against the ceiling rather than choose it for the sheet. That
  * cannot be the answer twice: the preset gave the margin back instead, and says so in its own file.
  *
+ * **Section 3 names this subject's one-sided features, and section 9 stopped asking the model to
+ * choose one.** The old bullet read "pick one feature the subject carries on one side and not the
+ * other — its **chirality witness** — and trace that one feature through every view", and measured
+ * across 27 real GPT-5.6 Sol sheets it fails twice over. It picks **one**, so a subject carrying two
+ * left the second unconstrained: on `S1-cardinals` the holstered sidearm was drawn on the west torso
+ * and pelvis and absent from the east ones, exactly as asked, while the head went on reflecting.
+ * And a witness to a prohibition is a rule with the figure taken out of it — one composition named
+ * the undercut unprompted and the delivered heads were still a reflection, so naming it is necessary
+ * and is not sufficient. Every measurable opposite-turn pair in that pack is a reflection: 12 of 12.
+ *
+ * The compiler names them instead, per feature and per facing, from `utils/oneSidedFeatureLedger.ts`
+ * — which is a derivation rather than a second statement of the leading side, exactly as the
+ * leading-side ledger further down this section is. **The delegation survives as the other branch and that is not a
+ * compatibility path**: the fields are unfiltered combo boxes, so a reader can describe a one-sided
+ * feature in their own words, and the compiler can only enumerate what a pool declared. A subject it
+ * cannot read still has to be checked, and asking for a witness is all that is left for it. Both
+ * branches are gated on the one flag, so a prompt never carries both and never carries neither.
+ *
+ * **The block sits outside `[IF:MULTI_DIRECTION]`, unlike the leading-side ledger beside it**, and
+ * that is the case `S3-cutout-rig` bought: it draws one facing, has no opposite-turn pair at all,
+ * and still failed the same rule two runs of three — once by duplicating the holster onto both
+ * thighs, once by splitting the sidearm and the pouch one to each flank. A sheet with nothing to
+ * compare still has to be told which attribute is one-sided. What it drops there is one sentence —
+ * the one comparing a view with the view opposite it, which is gated on `MIRROR_PAIRS` because that
+ * is when the sheet holds such a pair at all; the two instructions beside it, not to rotate the
+ * feature into shot and not to draw a second copy on the other flank, are what a single-facing sheet
+ * needs most. Under a plan view the per-facing visibility goes instead, since a turn occludes
+ * nothing there, and the naming sentence stays — the mirrored copy that camera invites is precisely
+ * the one that moves a left-sided feature onto the right.
+ *
+ * **The block yields to the identity lock, which is the one route by which a side is already
+ * settled.** Section 3's own default is conditional — it applies "where section 1 names such a
+ * feature without saying which side carries it" — and section 7 says that where the lock fixes a
+ * side "this sheet does not choose one". No pool value names a side, so the survey behind
+ * `oneSidedOptions` cannot reach that case; the lock is free text and can. A first draft stated the
+ * left flatly and produced one prompt whose section 7 said right, whose section 3 said left, and
+ * whose section 9 audited against the left. The precedence sentence is gated on `IDENTITY_LOCK`, so
+ * it costs nothing on the twelve sheets in thirteen that carry no lock.
+ *
  * **The native grid is stated in three places, and the split is what makes each of them necessary.**
  * Section 0's item requiring every component to be rendered at the delivered output resolution is
  * a rule about *resampling*, and as written it read as a ban on the one
@@ -529,6 +568,34 @@ each sheet picks for itself is a side they pick differently. Hold it there for e
 every drawing, and never resolve it by giving the subject a matching copy on the other side: a
 one-sided feature stays one-sided, and where a turn takes it out of view, letting it be hidden is the
 correct answer.
+[IF:ONE_SIDED_FEATURES]
+
+### The one-sided features this subject carries
+
+Section [SEC:SUBJECT] names the following, and each is on the subject’s left by the rule above. This is not a
+summary of that rule but the answer it produces for this subject, so draw each one exactly as stated
+here in every component that carries it, and expect a delivered sheet to be checked against it line
+by line.
+
+[DEFINE:ONE_SIDED_FEATURE_LEDGER]
+[IF:IDENTITY_LOCK]
+
+**Where the identity lock in section [SEC:SUBJECT] fixes one of these to the subject’s right, the lock wins and this
+entry is read with its two flanks exchanged** — the feature is then fully presented in the view named
+above as hiding it, and hidden in the view named as presenting it. The lock records what the earlier
+sheets actually drew; the list above is what the default settles on where nothing else has.
+[/IF]
+[IF:PLAN_VIEW!=yes]
+
+**Where a view leaves one of them hidden, hidden is the finished answer.** Do not rotate it into
+shot, do not slide it round the body, and do not draw a second copy on the other flank to keep the
+composition balanced.
+[IF:MIRROR_PAIRS]
+A view in which one of these reads at the same prominence as the view opposite it is a reflection,
+whatever else about the two is correct.
+[/IF]
+[/IF]
+[/IF]
 
 [IF:MULTI_DIRECTION]
 ### The object yaws this sheet requires
@@ -896,6 +963,18 @@ each of its views and confirm:
 - The rear view is the same top surface turned end for end: what the front view put towards the
   bottom of the frame points towards the top, and nothing has been redrawn to tell the two apart.
 [/IF]
+[IF:ONE_SIDED_FEATURES]
+- Trace **every** feature section [SEC:CAMERA] lists as one-sided — all of them, not one — through every view of
+  every component that carries it, and confirm each view matches what that list states for that view.
+  Each is on the same physical side of the subject in all of them, and where it lands in the frame
+  follows from that side and the view’s own yaw.
+[IF:PLAN_VIEW!=yes]
+- No two views leading with opposite sides show one of them at the same prominence, and none of them
+  carries a second copy on the other flank. Either is a failed rotation, however correctly each of the
+  views faces.
+[/IF]
+[/IF]
+[IF:ONE_SIDED_FEATURES!=yes]
 - Pick one feature the subject carries on one side and not the other — its **chirality witness** —
   and trace that one feature through every view of its component. It is on the same physical side of
   the subject in all of them, and where it lands in the frame follows from that side and the view’s
@@ -905,6 +984,7 @@ each of its views and confirm:
 - The witness is at its most visible in the views that turn its side towards the camera, and reduced
   or gone in the views that turn that side away. Equal prominence in two views leading with opposite
   sides is a failed rotation, however correctly each of the two faces.
+[/IF]
 [/IF]
 [IF:MIRROR_PAIRS]
 [IF:PLAN_VIEW!=yes]

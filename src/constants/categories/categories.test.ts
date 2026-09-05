@@ -29,6 +29,17 @@ import { CATEGORY_OPTIONS, defaultSubjectFor } from './index.ts';
  */
 const LOWER_CASE_WORD = /(?<![\p{L}\p{N}'’])\p{Ll}[\p{L}\p{N}]*/gu;
 
+/**
+ * A pooled value in the form the prompt reads it, for comparing a declared phrase with its option.
+ *
+ * `&` is how a pool spells it and `and` is how `oneSidedFeatureLedger` writes it out, so the two
+ * would never match literally — and the case differs by design, since a pool is title case and a
+ * phrase is written to sit mid-sentence.
+ */
+function comparable(text: string): string {
+  return text.toLowerCase().replaceAll('&', 'and').replaceAll(/\s+/g, ' ');
+}
+
 /** Every field set to its `pick`th option, wrapping round the shorter pools. */
 function subjectAt(category: SubjectCategory, pick: number): SubjectDefinition {
   const subject = { ...defaultSubjectFor(category) };
@@ -96,6 +107,36 @@ describe.each(SUBJECT_CATEGORIES)('%s options', (category) => {
         field.absentOption,
       );
     }
+  });
+
+  it('declares one-sided options the pool offers, each naming part of its own value', () => {
+    // `oneSidedOptions` is how a pool says which of its values name something the subject carries on
+    // one flank and not the other, and it is what lets the compiler enumerate a per-facing visibility
+    // statement instead of asking the model to pick a witness — see `utils/oneSidedFeatureLedger.ts`.
+    //
+    // Two things can go wrong silently. A key the pool does not offer never matches, so the
+    // enumeration quietly does not happen and the reader gets the delegation back with nothing
+    // saying so. And a phrase that names nothing inside its option would put a sentence into section
+    // 3 about something section 1 never mentioned — `Neon Visor & Undercut` declares `undercut`
+    // because the visor is symmetric, so the phrase is a *part* of the value rather than the whole
+    // of it, and `&` in a pool is `and` in the prompt.
+    for (const field of fields) {
+      for (const [option, phrase] of Object.entries(field.oneSidedOptions ?? {})) {
+        const where = `${category}.${field.key}: “${option}” declares “${phrase}”`;
+        expect(field.options, where).toContain(option);
+        expect(comparable(option), where).toContain(comparable(phrase));
+        expect(phrase, where).toBe(phrase.toLowerCase());
+      }
+    }
+  });
+
+  it('declares nothing under additional_anatomy, whose entries are components of their own', () => {
+    // The one field-wide exclusion, and it is about where the thing is drawn rather than about
+    // whether it is one-sided. An attached module is an inventory entry in its own cell — `Missile
+    // Pod ×2` is two components — so a per-facing statement about a trunk it is not attached to
+    // would be false of it however one-sided the module happens to be.
+    const attached = fields.find((field) => field.key === 'additional_anatomy');
+    expect(attached?.oneSidedOptions).toBeUndefined();
   });
 
   it('writes every option in the app’s own casing, and shouts only the sentinel', () => {

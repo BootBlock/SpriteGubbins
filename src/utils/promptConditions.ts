@@ -39,6 +39,7 @@ export function promptConditions(
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,
+    oneSidedFeatures,
   } = facts;
 
   const config: Record<string, string> = {
@@ -122,6 +123,15 @@ export function promptConditions(
     // pair rules only bite where the sheet holds both members of a reflection pair, and on the
     // classic sets — which never do — they would be instruction about views the sheet does not hold.
     MIRROR_PAIRS: coveredMirrorPairs.length > 0 ? 'yes' : '',
+    // Whether the compiler can name what this subject carries on one flank, which decides section 3's
+    // ledger and which of section 9's two chirality checks the sheet gets. Only the option pools can
+    // answer it: nothing in `Holstered Sidearm & Pouch` distinguishes it from `Tactical Kevlar &
+    // Plates` but knowing what the words mean, so the fields are unfiltered combo boxes and a typed
+    // value derives nothing. **That is why the delegation survives as the other branch** rather than
+    // being deleted — a subject the compiler cannot read still has to be checked, and asking the model
+    // to pick a witness is all that is left for it. See `utils/oneSidedFeatureLedger.ts` for what the
+    // named branch says instead, and why it is the better half.
+    ONE_SIDED_FEATURES: oneSidedFeatures.length > 0 ? 'yes' : '',
     // Section 1's "painted onto, never a separate piece" rule names its exceptions, and this one is a
     // line that is often not there — cleared, `NONE`, or on an articulation sheet, which draws limbs
     // for a trunk the core sheets carry. Naming an absent line is worse here than anywhere else in

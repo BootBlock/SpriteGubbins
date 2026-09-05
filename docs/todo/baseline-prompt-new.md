@@ -594,6 +594,34 @@ each sheet picks for itself is a side they pick differently. Hold it there for e
 every drawing, and never resolve it by giving the subject a matching copy on the other side: a
 one-sided feature stays one-sided, and where a turn takes it out of view, letting it be hidden is the
 correct answer.
+[IF:ONE_SIDED_FEATURES]
+
+### The one-sided features this subject carries
+
+Section [SEC:SUBJECT] names the following, and each is on the subject’s left by the rule above. This is not a
+summary of that rule but the answer it produces for this subject, so draw each one exactly as stated
+here in every component that carries it, and expect a delivered sheet to be checked against it line
+by line.
+
+[DEFINE:ONE_SIDED_FEATURE_LEDGER]
+[IF:IDENTITY_LOCK]
+
+**Where the identity lock in section [SEC:SUBJECT] fixes one of these to the subject’s right, the lock wins and this
+entry is read with its two flanks exchanged** — the feature is then fully presented in the view named
+above as hiding it, and hidden in the view named as presenting it. The lock records what the earlier
+sheets actually drew; the list above is what the default settles on where nothing else has.
+[/IF]
+[IF:PLAN_VIEW!=yes]
+
+**Where a view leaves one of them hidden, hidden is the finished answer.** Do not rotate it into
+shot, do not slide it round the body, and do not draw a second copy on the other flank to keep the
+composition balanced.
+[IF:MIRROR_PAIRS]
+A view in which one of these reads at the same prominence as the view opposite it is a reflection,
+whatever else about the two is correct.
+[/IF]
+[/IF]
+[/IF]
 
 [IF:MULTI_DIRECTION]
 ### The object yaws this sheet requires
@@ -961,6 +989,18 @@ each of its views and confirm:
 - The rear view is the same top surface turned end for end: what the front view put towards the
   bottom of the frame points towards the top, and nothing has been redrawn to tell the two apart.
 [/IF]
+[IF:ONE_SIDED_FEATURES]
+- Trace **every** feature section [SEC:CAMERA] lists as one-sided — all of them, not one — through every view of
+  every component that carries it, and confirm each view matches what that list states for that view.
+  Each is on the same physical side of the subject in all of them, and where it lands in the frame
+  follows from that side and the view’s own yaw.
+[IF:PLAN_VIEW!=yes]
+- No two views leading with opposite sides show one of them at the same prominence, and none of them
+  carries a second copy on the other flank. Either is a failed rotation, however correctly each of the
+  views faces.
+[/IF]
+[/IF]
+[IF:ONE_SIDED_FEATURES!=yes]
 - Pick one feature the subject carries on one side and not the other — its **chirality witness** —
   and trace that one feature through every view of its component. It is on the same physical side of
   the subject in all of them, and where it lands in the frame follows from that side and the view’s
@@ -970,6 +1010,7 @@ each of its views and confirm:
 - The witness is at its most visible in the views that turn its side towards the camera, and reduced
   or gone in the views that turn that side away. Equal prominence in two views leading with opposite
   sides is a failed rotation, however correctly each of the two faces.
+[/IF]
 [/IF]
 [IF:MIRROR_PAIRS]
 [IF:PLAN_VIEW!=yes]

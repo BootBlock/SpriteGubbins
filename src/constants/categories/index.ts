@@ -82,6 +82,30 @@ export function absentOptionFor(category: SubjectCategory, key: SubjectFieldKey)
   return CATEGORY_OPTIONS[category].fields.find((candidate) => candidate.key === key)?.absentOption ?? null;
 }
 
+/**
+ * The phrase naming what this value carries on one of the subject's own flanks, or `null` where the
+ * pool declares nothing for it.
+ *
+ * Read rather than recognised, for the reason {@link absentOptionFor} is: nothing in the words
+ * `Holstered Sidearm & Pouch` distinguishes it from `Tactical Kevlar & Plates` but knowing what they
+ * mean, and a rule keyed on a word would be wrong in both directions — `Shoulder Pauldrons & Cloak`
+ * is a pair and `Bandolier Of Vials` is not. Each pool names its own, and `categories.test.ts` fails
+ * on a value the pool does not offer or a phrase the value does not contain.
+ *
+ * **Exact rather than fuzzy, which is what bounds the claim.** Every subject field is an unfiltered
+ * combo box, so a typed value matches nothing here and the compiler derives no feature from it —
+ * which is what section 9's second branch is for. See `FieldOption.oneSidedOptions` for what may be
+ * declared and why the undeclared case is the safe one.
+ */
+export function oneSidedFeatureFor(
+  category: SubjectCategory,
+  key: SubjectFieldKey,
+  value: string,
+): string | null {
+  const field = CATEGORY_OPTIONS[category].fields.find((candidate) => candidate.key === key);
+  return field?.oneSidedOptions?.[value] ?? null;
+}
+
 /** A field's first option — the value that field defaults to. */
 function firstOption(fields: readonly FieldOption[], key: SubjectFieldKey): string {
   // Every pool in this folder is non-empty, but `noUncheckedIndexedAccess` is right to insist:

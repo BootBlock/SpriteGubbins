@@ -266,6 +266,11 @@ export const PORTRAIT: CategoryDefinition = {
         'Freckled Face & Sun-Bleached Plait',
         'Broken Nose & Cauliflower Ear',
       ],
+      oneSidedOptions: {
+        'Chrome Optic Implant & Undercut': 'chrome optic implant and undercut',
+        'Cheap Prosthetic Eye & Scarred Cheek': 'cheap prosthetic eye and scarred cheek',
+        'Broken Nose & Cauliflower Ear': 'cauliflower ear',
+      },
     },
     {
       key: 'anatomy',
@@ -320,6 +325,9 @@ export const PORTRAIT: CategoryDefinition = {
         'Mail Coif & Surcoat Shoulders',
         'Patched Travelling Cloak',
       ],
+      oneSidedOptions: {
+        'Corporate Suit & Lapel Badge': 'lapel badge',
+      },
       absentOption: 'Bare Shoulders',
     },
     {
@@ -354,6 +362,12 @@ export const PORTRAIT: CategoryDefinition = {
         'Chapped Lips & Wind Rash',
         'Pilgrim Badge Pinned At The Collar',
       ],
+      oneSidedOptions: {
+        'Bandages Over One Eye': 'bandages over one eye',
+        'Neural Jack Behind The Ear': 'neural jack behind the ear',
+        'Ink Stains At The Temple': 'ink stains at the temple',
+        'Pilgrim Badge Pinned At The Collar': 'pilgrim badge pinned at the collar',
+      },
     },
     {
       key: 'primary_colours',

@@ -184,6 +184,9 @@ export const CREATURE: CategoryDefinition = {
         'Beaked Cephalopod Mouth',
         'Frilled Neck & Warning Display',
       ],
+      oneSidedOptions: {
+        'Single Glowing Monocular Sensor': 'single glowing monocular sensor',
+      },
     },
     {
       key: 'anatomy',
@@ -248,6 +251,9 @@ export const CREATURE: CategoryDefinition = {
         'Venom Spurs & Wet Glands',
         'Territorial Claw Rakes',
       ],
+      oneSidedOptions: {
+        'Healed Brand Scar': 'healed brand scar',
+      },
     },
     {
       key: 'primary_colours',

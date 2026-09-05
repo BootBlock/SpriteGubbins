@@ -171,6 +171,9 @@ export const ITEM: CategoryDefinition = {
         'Turned Roller Knob & Wax Seal',
         'Bound Cloth Grip & Iron Ferrule',
       ],
+      oneSidedOptions: {
+        'Cork Handle & Brass Reel': 'brass reel',
+      },
     },
     {
       key: 'anatomy',
