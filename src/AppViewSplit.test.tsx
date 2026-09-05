@@ -6,7 +6,7 @@ import { useUIStore } from './stores/useUIStore.ts';
 import { APP_TABS } from './types/ui.ts';
 
 /**
- * The four views are each in a chunk of their own, so the shell mounts a placeholder first and the
+ * Every view is in a chunk of its own, so the shell mounts a placeholder first and the
  * view once its chunk lands. These assertions are what would catch a static import being put back:
  * with one, the view is there in the first commit and there is no placeholder to find.
  *

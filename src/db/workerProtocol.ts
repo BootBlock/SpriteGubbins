@@ -1,5 +1,7 @@
 import type { PromptHistoryLog } from '../types/history.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import type { LibraryPack } from '../types/libraryPack.ts';
+import type { CustomArchetype } from '../types/preset.ts';
+import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
@@ -19,14 +21,16 @@ export type WorkerRequest =
   | { readonly kind: 'listHistoryLogs' }
   | { readonly kind: 'deleteHistoryLog'; readonly logId: string }
   | { readonly kind: 'clearHistoryLogs' }
-  | { readonly kind: 'savePreset'; readonly preset: PresetArchetype }
+  | { readonly kind: 'listProjects' }
+  | { readonly kind: 'saveProject'; readonly project: Project }
+  | { readonly kind: 'deleteProject'; readonly projectId: string }
+  | { readonly kind: 'savePreset'; readonly preset: CustomArchetype }
   | { readonly kind: 'listPresets' }
   | { readonly kind: 'deletePreset'; readonly presetId: string }
-  | { readonly kind: 'replacePresets'; readonly presets: readonly PresetArchetype[] }
   | { readonly kind: 'saveQuantisePreset'; readonly preset: QuantisePreset }
   | { readonly kind: 'listQuantisePresets' }
   | { readonly kind: 'deleteQuantisePreset'; readonly presetId: string }
-  | { readonly kind: 'replaceQuantisePresets'; readonly presets: readonly QuantisePreset[] }
+  | { readonly kind: 'replaceLibrary'; readonly pack: LibraryPack }
   | { readonly kind: 'loadSettings' }
   | { readonly kind: 'saveSettings'; readonly settings: AppSettings }
   | { readonly kind: 'loadSession' }

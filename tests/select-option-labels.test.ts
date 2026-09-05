@@ -26,6 +26,7 @@ import {
   VOTE_METHOD_CHOICES,
 } from '../src/constants/quantiser.ts';
 import { modesFor, sheetSeriesFor } from '../src/constants/sheetPlans/index.ts';
+import { PROJECT_NAME_MAX_LENGTH } from '../src/constants/projects.ts';
 import { OPENING_VIEW_CHOICES } from '../src/constants/settings.ts';
 import { SUBJECT_CATEGORIES } from '../src/types/subject.ts';
 import { LABEL_BUDGET } from './selectLabelBudget.ts';
@@ -66,6 +67,17 @@ const LABELS: Readonly<Record<string, readonly string[]>> = {
   HARDWARE_PROFILE_CHOICES: HARDWARE_PROFILE_CHOICES.map((choice) => choice.label),
   MODEL_CHOICES: TARGET_MODELS.map((model) => model.name),
   OPENING_VIEW_CHOICES: OPENING_VIEW_CHOICES.map((choice) => choice.label),
+  /*
+   * The one list whose labels the app does not write: a project's name is typed by the reader, and
+   * the four dropdowns that file a save into a project offer it verbatim.
+   *
+   * So what is budgeted is the *limit* rather than a list — the longest name the app will accept,
+   * as a label of exactly that length. `PROJECT_NAME_MAX_LENGTH` is the enforcement, in the boxes
+   * that type a name and in the parser that reads one out of an imported pack, and the assertion
+   * below pins it to the same budget every other option list is held to. A cap raised past it would
+   * fail here rather than by clipping a project name in the control that has to tell two apart.
+   */
+  projectChoices: ['x'.repeat(PROJECT_NAME_MAX_LENGTH)],
   PALETTE_CHOICES: PALETTE_CHOICES.map((choice) => choice.label),
   // The third list naming a real thing rather than a stored identifier — a published game, where the
   // two above name a machine and its colours. Same budget, same reason: the column is measured in
@@ -153,6 +165,18 @@ const wiredSources = [
 ].sort();
 
 describe('select option labels', () => {
+  /**
+   * The project names' cap is the budget, not merely under it.
+   *
+   * The row above budgets a label of exactly `PROJECT_NAME_MAX_LENGTH` characters, so a cap that
+   * had drifted *below* the budget would pass every assertion here while quietly shortening what a
+   * reader may call a project. Stating the equality is what makes the app's own limit the same
+   * decision as this file's.
+   */
+  it('caps a project name at the budget every other label is held to', () => {
+    expect(PROJECT_NAME_MAX_LENGTH).toBe(LABEL_BUDGET);
+  });
+
   /**
    * The completeness half. Budgeting the lists this file happens to import would go stale the first
    * time a select was added — so the covered set has to equal the wired set exactly, in both

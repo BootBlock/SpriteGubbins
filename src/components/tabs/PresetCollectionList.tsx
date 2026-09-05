@@ -1,8 +1,4 @@
-import {
-  CUSTOM_COLLECTION_ID,
-  PRESET_COLLECTION_IDS,
-  presetCollectionLabel,
-} from '../../constants/presets/collections.ts';
+import { PRESET_COLLECTION_IDS, presetCollectionLabel } from '../../constants/presets/collections.ts';
 import type { PresetCollectionId } from '../../constants/presets/collections.ts';
 import { presetCollectionGuidance } from '../../constants/tooltips/index.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -24,11 +20,10 @@ interface PresetCollectionListProps {
  * revealing one of several panels that all exist at once, so claiming a tabpanel relationship would
  * promise assistive technology a structure the page does not have.
  *
- * **An empty collection is only unreachable while a query is live.** With no query, "Your presets" has
- * to stay selectable even holding nothing, because its empty state is the one place the app explains
- * how to put something in it — redirecting that click to Characters would answer a question the user
- * did not ask. While filtering, the opposite is true: a collection with no matches has nothing to show
- * and selecting it would blank the panel.
+ * **An empty collection is only unreachable while a query is live.** Every collection here holds
+ * built-in presets and none of them is empty with no query running, so the rule has nothing to act
+ * on in that case; while filtering, a collection with no matches has nothing to show and selecting
+ * it would blank the panel.
  */
 export function PresetCollectionList({ counts, active, isFiltering, onSelect }: PresetCollectionListProps) {
   return (
@@ -52,7 +47,7 @@ export function PresetCollectionList({ counts, active, isFiltering, onSelect }: 
                   button is told to fill the wrapper. */}
               <ControlTooltip
                 hint={label}
-                text={presetCollectionGuidance(label, collection === CUSTOM_COLLECTION_ID)}
+                text={presetCollectionGuidance(label)}
                 className="relative flex w-full"
               >
                 <button

@@ -4,6 +4,7 @@ import type { PersistenceBackend } from '../db/backend.ts';
 import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
+import { DEFAULT_PROJECT_ID } from '../constants/projects.ts';
 import type { QuantiseDials } from '../types/quantisePreset.ts';
 import { useQuantisePresetStore } from './useQuantisePresetStore.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
@@ -51,16 +52,12 @@ const TUNED: QuantiseDials = {
   antiAliasPalette: 'SNAP' as const,
 };
 
-/** A pack of saved settings, as the file a reader would hand back to the app. */
-function packFile(presets: readonly unknown[]): File {
-  return new File([JSON.stringify(presets)], 'sprite-gubbins-quantiser-settings.json', {
-    type: 'application/json',
-  });
-}
+/** A second project, so the rules that are scoped to one can be told from the rules that are not. */
+const HARBOUR = 'project-harbour';
 
 beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
-  useQuantisePresetStore.setState({ presets: [], isTransferring: false, pendingImport: null });
+  useQuantisePresetStore.setState({ presets: [] });
   useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
   useUIStore.getState().dismissToast();
 });
@@ -73,7 +70,7 @@ describe('saveQuantisePreset', () => {
   it('stores the dials as they stand in the tab, not as they were passed in', async () => {
     useQuantiseStore.setState({ ...TUNED });
 
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
 
     const [stored] = await backend.listQuantisePresets();
     expect(stored?.dials).toEqual(TUNED);
@@ -95,7 +92,7 @@ describe('saveQuantisePreset', () => {
     // only place the extra keys are still visible.
     const written = vi.spyOn(backend, 'saveQuantisePreset');
 
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
 
     // `toEqual` on the whole object fails on any extra key, which is what makes this an assertion
     // about the *set* rather than about three named absences.
@@ -103,7 +100,9 @@ describe('saveQuantisePreset', () => {
   });
 
   it('stores the description beside the name, trimmed', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('  Flat sheets  ', '  Line art.  ');
+    await useQuantisePresetStore
+      .getState()
+      .saveQuantisePreset('  Flat sheets  ', '  Line art.  ', DEFAULT_PROJECT_ID);
 
     const [stored] = await backend.listQuantisePresets();
     expect(stored?.name).toBe('Flat sheets');
@@ -111,23 +110,25 @@ describe('saveQuantisePreset', () => {
   });
 
   it('lets a preset be saved with no description at all', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
 
     expect((await backend.listQuantisePresets())[0]?.description).toBe('');
   });
 
   it('ignores a blank name without touching storage', async () => {
-    expect(await useQuantisePresetStore.getState().saveQuantisePreset('   ', 'x')).toBe(false);
+    expect(await useQuantisePresetStore.getState().saveQuantisePreset('   ', 'x', DEFAULT_PROJECT_ID)).toBe(
+      false,
+    );
     expect(await backend.listQuantisePresets()).toEqual([]);
   });
 
   it('updates the preset of that name rather than adding a second one', async () => {
     const store = useQuantisePresetStore.getState();
-    await store.saveQuantisePreset('Flat sheets', 'First');
+    await store.saveQuantisePreset('Flat sheets', 'First', DEFAULT_PROJECT_ID);
     const first = useQuantisePresetStore.getState().presets[0];
 
     useQuantiseStore.setState({ ...TUNED });
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', 'Second');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', 'Second', DEFAULT_PROJECT_ID);
 
     const stored = await backend.listQuantisePresets();
     expect(stored).toHaveLength(1);
@@ -137,8 +138,8 @@ describe('saveQuantisePreset', () => {
   });
 
   it('treats a differently-cased name as the same one, and adopts the new spelling', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('flat sheets', '');
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat Sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('flat sheets', '', DEFAULT_PROJECT_ID);
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat Sheets', '', DEFAULT_PROJECT_ID);
 
     const stored = await backend.listQuantisePresets();
     expect(stored).toHaveLength(1);
@@ -146,17 +147,19 @@ describe('saveQuantisePreset', () => {
   });
 
   it('says it saved when the name is new, and updated when it is not', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
     expect(useUIStore.getState().toastMessage).toContain('Saved');
 
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
     expect(useUIStore.getState().toastMessage).toContain('Updated');
   });
 
   it('reports a failed write instead of showing a preset that was never saved', async () => {
     backend = createFailingBackend();
 
-    expect(await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '')).toBe(false);
+    expect(
+      await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID),
+    ).toBe(false);
     expect(useQuantisePresetStore.getState().presets).toEqual([]);
     expect(useUIStore.getState().toastMessage).toBe('Could not save those settings');
   });
@@ -165,7 +168,7 @@ describe('saveQuantisePreset', () => {
 describe('loadQuantisePreset', () => {
   it('moves every dial to the saved position', async () => {
     useQuantiseStore.setState({ ...TUNED });
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
     useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
 
     const preset = useQuantisePresetStore.getState().presets[0];
@@ -189,26 +192,78 @@ describe('loadQuantisePreset', () => {
     };
     useQuantiseStore.setState({ gridOverride: 6, lockedPalette });
 
-    useQuantisePresetStore
-      .getState()
-      .loadQuantisePreset({ id: 'quantise-1', name: 'Flat sheets', description: '', dials: TUNED });
+    useQuantisePresetStore.getState().loadQuantisePreset({
+      id: 'quantise-1',
+      projectId: DEFAULT_PROJECT_ID,
+      name: 'Flat sheets',
+      description: '',
+      dials: TUNED,
+    });
 
     expect(useQuantiseStore.getState().gridOverride).toBe(6);
     expect(useQuantiseStore.getState().lockedPalette).toBe(lockedPalette);
   });
 
   it('names the preset it loaded, so a click on the wrong row is visible', () => {
-    useQuantisePresetStore
-      .getState()
-      .loadQuantisePreset({ id: 'quantise-1', name: 'Flat sheets', description: '', dials: TUNED });
+    useQuantisePresetStore.getState().loadQuantisePreset({
+      id: 'quantise-1',
+      projectId: DEFAULT_PROJECT_ID,
+      name: 'Flat sheets',
+      description: '',
+      dials: TUNED,
+    });
 
     expect(useUIStore.getState().toastMessage).toContain('Flat sheets');
   });
 });
 
+describe('moveQuantisePreset', () => {
+  it('re-files a set without touching its dials', async () => {
+    useQuantiseStore.setState({ ...TUNED });
+    await useQuantisePresetStore
+      .getState()
+      .saveQuantisePreset('Flat sheets', 'Line art.', DEFAULT_PROJECT_ID);
+    const saved = useQuantisePresetStore.getState().presets[0];
+    if (!saved) throw new Error('the preset should have been saved.');
+
+    await useQuantisePresetStore.getState().moveQuantisePreset(saved.id, HARBOUR);
+
+    const stored = await backend.listQuantisePresets();
+    expect(stored).toHaveLength(1);
+    // The id is what everything refers to, so a move may not mint a new one.
+    expect(stored[0]?.id).toBe(saved.id);
+    expect(stored[0]?.projectId).toBe(HARBOUR);
+    expect(stored[0]?.dials).toEqual(TUNED);
+    expect(useUIStore.getState().toastMessage).toBe('Moved “Flat sheets”');
+  });
+
+  it('says nothing and writes nothing when the set is already there', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
+    const saved = useQuantisePresetStore.getState().presets[0];
+    if (!saved) throw new Error('the preset should have been saved.');
+    useUIStore.getState().dismissToast();
+
+    await useQuantisePresetStore.getState().moveQuantisePreset(saved.id, DEFAULT_PROJECT_ID);
+
+    expect(useUIStore.getState().toastMessage).toBeNull();
+  });
+
+  it('reports a failed write and leaves the set where it was', async () => {
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
+    const saved = useQuantisePresetStore.getState().presets[0];
+    if (!saved) throw new Error('the preset should have been saved.');
+    backend = createFailingBackend();
+
+    await useQuantisePresetStore.getState().moveQuantisePreset(saved.id, HARBOUR);
+
+    expect(useQuantisePresetStore.getState().presets[0]?.projectId).toBe(DEFAULT_PROJECT_ID);
+    expect(useUIStore.getState().toastMessage).toBe('Could not move those settings');
+  });
+});
+
 describe('deleteQuantisePreset', () => {
   it('removes it from the store and from storage', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
     const id = useQuantisePresetStore.getState().presets[0]?.id ?? '';
 
     await useQuantisePresetStore.getState().deleteQuantisePreset(id);
@@ -218,7 +273,7 @@ describe('deleteQuantisePreset', () => {
   });
 
   it('reports a failed delete, and keeps showing the preset', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '');
+    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', '', DEFAULT_PROJECT_ID);
     backend = createFailingBackend();
 
     await useQuantisePresetStore.getState().deleteQuantisePreset('quantise-1');
@@ -231,7 +286,9 @@ describe('deleteQuantisePreset', () => {
 describe('fetchQuantisePresets', () => {
   it('brings the stored collection into the store', async () => {
     useQuantiseStore.setState({ ...TUNED });
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', 'Line art.');
+    await useQuantisePresetStore
+      .getState()
+      .saveQuantisePreset('Flat sheets', 'Line art.', DEFAULT_PROJECT_ID);
     useQuantisePresetStore.setState({ presets: [] });
 
     await useQuantisePresetStore.getState().fetchQuantisePresets();
@@ -246,207 +303,5 @@ describe('fetchQuantisePresets', () => {
     await useQuantisePresetStore.getState().fetchQuantisePresets();
 
     expect(useUIStore.getState().toastMessage).toBe('Could not load your saved quantiser settings');
-  });
-});
-
-describe('exportQuantisePresetsJSON', () => {
-  it('writes the collection as it stands, so what is downloaded is what is on screen', async () => {
-    useQuantiseStore.setState({ ...TUNED });
-    await useQuantisePresetStore.getState().saveQuantisePreset('Flat sheets', 'For armour.');
-
-    const parsed: unknown = JSON.parse(useQuantisePresetStore.getState().exportQuantisePresetsJSON());
-
-    expect(Array.isArray(parsed) && parsed).toHaveLength(1);
-  });
-});
-
-describe('importQuantisePresetsJSON', () => {
-  it('replaces the stored collection once the replacement is confirmed', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Will be replaced', '');
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    const { presets, isTransferring, pendingImport } = useQuantisePresetStore.getState();
-    expect(presets.map((preset) => preset.name)).toEqual(['Arrived']);
-    expect(isTransferring).toBe(false);
-    expect(pendingImport).toBeNull();
-    await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
-  });
-
-  it('round-trips its own export, dials and all', async () => {
-    useQuantiseStore.setState({ ...TUNED });
-    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', 'Kept.');
-    const exported: unknown = JSON.parse(useQuantisePresetStore.getState().exportQuantisePresetsJSON());
-    if (!Array.isArray(exported)) throw new Error('the export should be an array.');
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile(exported));
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    const [reimported] = useQuantisePresetStore.getState().presets;
-    expect(reimported?.name).toBe('Mine');
-    expect(reimported?.description).toBe('Kept.');
-    expect(reimported?.dials).toEqual(TUNED);
-  });
-
-  it('leaves the dials on the tab exactly where they are', async () => {
-    // Importing changes the collection, never the tab: the sheet on screen is still being read at
-    // the positions the reader chose until they load one of the sets that arrived.
-    useQuantiseStore.setState({ ...TUNED });
-    const arriving = {
-      id: 'quantise-imported',
-      name: 'Arrived',
-      description: '',
-      dials: QUANTISE_DEFAULT_DIALS,
-    };
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    expect(useQuantiseStore.getState().colorMerge).toBe(TUNED.colorMerge);
-    expect(useQuantiseStore.getState().vote).toBe(TUNED.vote);
-  });
-
-  it('refuses an empty pack rather than deleting everything', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Keep me', '');
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([]));
-
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Keep me']);
-    expect(useUIStore.getState().toastMessage).toBe('No saved settings found in that file');
-  });
-
-  it('refuses a pack of studio archetypes rather than importing twenty defaulted dials', async () => {
-    // The two files land in the same folder and look alike. An archetype carries no `dials`, which
-    // is what the parser requires — see `parseImportedQuantisePreset`.
-    await useQuantisePresetStore.getState().saveQuantisePreset('Keep me', '');
-    const archetype = { id: 'custom-1', name: 'My Knight', description: '', category: 'CHARACTER' };
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([archetype]));
-
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Keep me']);
-    expect(useUIStore.getState().toastMessage).toBe('That file is not a Sprite Gubbins quantiser pack');
-  });
-
-  it('rejects a file that is not JSON at all, and clears the busy flag', async () => {
-    const notJson = new File(['<html>not a pack</html>'], 'page.html', { type: 'text/html' });
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(notJson);
-
-    expect(useUIStore.getState().toastMessage).toBe('That file is not a Sprite Gubbins quantiser pack');
-    expect(useQuantisePresetStore.getState().isTransferring).toBe(false);
-  });
-
-  it('drops entries it cannot vouch for and keeps the rest', async () => {
-    const pack = [{ id: 'quantise-good', name: 'Good', description: '', dials: TUNED }, { id: 42 }, null];
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile(pack));
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Good']);
-  });
-
-  it('reports a pack it could not store, and clears the busy flag', async () => {
-    backend = createFailingBackend();
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    expect(useQuantisePresetStore.getState().presets).toHaveLength(0);
-    expect(useUIStore.getState().toastMessage).toBe('Could not import that quantiser pack');
-    // The flag has to come back down, or both transfer controls stay disabled for the session.
-    expect(useQuantisePresetStore.getState().isTransferring).toBe(false);
-    expect(useQuantisePresetStore.getState().pendingImport).toBeNull();
-  });
-
-  /*
-   * The same defect the studio's library had, in the tab that shares the control: one press, one
-   * file, and every set of dial positions the reader had found was gone with no way back.
-   */
-  it('stages the pack and deletes nothing until the reader agrees', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-
-    expect(useQuantisePresetStore.getState().pendingImport?.map((preset) => preset.name)).toEqual([
-      'Arrived',
-    ]);
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Mine']);
-    await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
-  });
-
-  it('leaves the stored rows exactly as they were when the replacement is declined', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
-    const before = await backend.listQuantisePresets();
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-
-    useQuantisePresetStore.getState().cancelQuantisePresetImport();
-
-    expect(useQuantisePresetStore.getState().pendingImport).toBeNull();
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Mine']);
-    await expect(backend.listQuantisePresets()).resolves.toEqual(before);
-    expect(useUIStore.getState().toastMessage).toBe('Import cancelled, and nothing you saved was deleted');
-  });
-
-  it('replaces nothing when nothing is staged', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
-
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Mine']);
-    await expect(backend.listQuantisePresets()).resolves.toHaveLength(1);
-  });
-
-  it('closes the question before the write, so a second press cannot replace twice', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('First', '');
-    await useQuantisePresetStore.getState().saveQuantisePreset('Second', '');
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-
-    const writing = useQuantisePresetStore.getState().confirmQuantisePresetImport();
-    expect(useQuantisePresetStore.getState().pendingImport).toBeNull();
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-    await writing;
-
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Arrived']);
-    expect(useUIStore.getState().toastMessage).toBe('Imported 1 saved setting, replacing 2');
-  });
-
-  it('says nothing when there is no question left to cancel', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('Mine', '');
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-    const writing = useQuantisePresetStore.getState().confirmQuantisePresetImport();
-    useUIStore.getState().dismissToast();
-
-    useQuantisePresetStore.getState().cancelQuantisePresetImport();
-
-    expect(useUIStore.getState().toastMessage).toBeNull();
-    await writing;
-    expect(useQuantisePresetStore.getState().presets.map((preset) => preset.name)).toEqual(['Arrived']);
-  });
-
-  it('says how many it deleted as well as how many arrived', async () => {
-    await useQuantisePresetStore.getState().saveQuantisePreset('First', '');
-    await useQuantisePresetStore.getState().saveQuantisePreset('Second', '');
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    expect(useUIStore.getState().toastMessage).toBe('Imported 1 saved setting, replacing 2');
-  });
-
-  it('reports the arrival alone when there was nothing saved to replace', async () => {
-    const arriving = { id: 'quantise-imported', name: 'Arrived', description: '', dials: TUNED };
-    await useQuantisePresetStore.getState().importQuantisePresetsJSON(packFile([arriving]));
-
-    await useQuantisePresetStore.getState().confirmQuantisePresetImport();
-
-    expect(useUIStore.getState().toastMessage).toBe('Imported 1 saved setting');
   });
 });

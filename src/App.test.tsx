@@ -12,7 +12,7 @@ import type { AppTab } from './types/ui.ts';
  * `<h1>` in the shell rather than one per view, so these assertions are about the shell: that it
  * renders exactly one, and that the one it renders says which view is showing.
  *
- * **Every case here waits for the view before asserting**, because the four views are behind
+ * **Every case here waits for the view before asserting**, because the views are each behind
  * `React.lazy`. Asserting synchronously would not merely check less — the dynamic import it starts
  * settles after the case has finished, and Vitest tears the module registry down under it, which
  * surfaces as `Element type is invalid … got: undefined` in whichever case happened to be last.
@@ -27,7 +27,7 @@ async function renderApp(tab: AppTab) {
   useUIStore.getState().setActiveTab(tab);
   const result = render(<App />);
 
-  // The placeholder's own label, not `role="status"` in general: two of the four views render a
+  // The placeholder's own label, not `role="status"` in general: two of the views render a
   // live region of their own once they are up, so "no status anywhere" is never true for those and
   // the wait would run to its timeout. A tab whose chunk has already resolved in this file shows no
   // placeholder at all and renders in the first commit, which this passes through immediately.
@@ -52,7 +52,7 @@ describe('App', () => {
 
   // The class rather than a computed style, because the tests render without the stylesheet — and
   // the class *is* the mechanism, so this is the assertion that would catch the heading being turned
-  // into a visible title. It is deliberately not one: three of the four views already paint their
+  // into a visible title. It is deliberately not one: most of the views already paint their
   // own, and the studio opens straight on its two panels, so painting this would be a design change
   // riding in behind an accessibility fix.
   it('leaves the heading unpainted, so no view gains a title it was not designed with', async () => {

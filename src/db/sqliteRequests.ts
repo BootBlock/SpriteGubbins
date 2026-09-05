@@ -1,18 +1,25 @@
 import type { Database } from '@sqlite.org/sqlite-wasm';
 import { HISTORY_LIMIT } from './backend.ts';
+import { presetBindings, projectBindings, quantisePresetBindings, transact } from './sqliteBindings.ts';
 import {
   DELETE_ALL_HISTORY_SQL,
   DELETE_ALL_PRESETS_SQL,
+  DELETE_ALL_PROJECTS_SQL,
   DELETE_ALL_QUANTISE_PRESETS_SQL,
   DELETE_HISTORY_SQL,
   DELETE_PRESET_SQL,
+  DELETE_PRESETS_BY_PROJECT_SQL,
+  DELETE_PROJECT_SQL,
   DELETE_QUANTISE_PRESET_SQL,
+  DELETE_QUANTISE_PRESETS_BY_PROJECT_SQL,
   INSERT_HISTORY_SQL,
   INSERT_PRESET_SQL,
+  INSERT_PROJECT_SQL,
   INSERT_QUANTISE_PRESET_SQL,
   PROMPT_HISTORY_TABLE,
   SELECT_HISTORY_SQL,
   SELECT_PRESETS_SQL,
+  SELECT_PROJECTS_SQL,
   SELECT_QUANTISE_PRESETS_SQL,
   SELECT_SESSION_SQL,
   SELECT_SETTINGS_SQL,
@@ -79,21 +86,29 @@ export function handleRequest(database: Database, request: WorkerCall['request']
       database.exec(DELETE_ALL_HISTORY_SQL);
       return undefined;
 
-    case 'savePreset': {
-      const { preset } = request;
-      database.exec(INSERT_PRESET_SQL, {
-        bind: [
-          preset.id,
-          preset.name,
-          preset.description,
-          preset.category,
-          JSON.stringify(preset.subject),
-          JSON.stringify(preset.output),
-          Date.now(),
-        ],
+    case 'listProjects':
+      return select(database, SELECT_PROJECTS_SQL);
+
+    case 'saveProject':
+      database.exec(INSERT_PROJECT_SQL, { bind: projectBindings(request.project) });
+      return undefined;
+
+    case 'deleteProject': {
+      // The cascade, and the reason it is a transaction rather than three statements: a project
+      // removed while its presets survived would leave every one of them naming a container that is
+      // no longer there, and nothing above this can show or repair that.
+      const { projectId } = request;
+      transact(database, () => {
+        database.exec(DELETE_PRESETS_BY_PROJECT_SQL, { bind: [projectId] });
+        database.exec(DELETE_QUANTISE_PRESETS_BY_PROJECT_SQL, { bind: [projectId] });
+        database.exec(DELETE_PROJECT_SQL, { bind: [projectId] });
       });
       return undefined;
     }
+
+    case 'savePreset':
+      database.exec(INSERT_PRESET_SQL, { bind: presetBindings(request.preset, Date.now()) });
+      return undefined;
 
     case 'listPresets':
       return select(database, SELECT_PRESETS_SQL);
@@ -102,41 +117,11 @@ export function handleRequest(database: Database, request: WorkerCall['request']
       database.exec(DELETE_PRESET_SQL, { bind: [request.presetId] });
       return undefined;
 
-    case 'replacePresets': {
-      // One transaction: an import that failed halfway would otherwise leave part of the old
-      // collection and part of the new, with no way to tell which.
-      database.exec('BEGIN');
-      try {
-        database.exec(DELETE_ALL_PRESETS_SQL);
-        const updatedAt = Date.now();
-        for (const preset of request.presets) {
-          database.exec(INSERT_PRESET_SQL, {
-            bind: [
-              preset.id,
-              preset.name,
-              preset.description,
-              preset.category,
-              JSON.stringify(preset.subject),
-              JSON.stringify(preset.output),
-              updatedAt,
-            ],
-          });
-        }
-        database.exec('COMMIT');
-      } catch (error) {
-        database.exec('ROLLBACK');
-        throw error;
-      }
-      return undefined;
-    }
-
-    case 'saveQuantisePreset': {
-      const { preset } = request;
+    case 'saveQuantisePreset':
       database.exec(INSERT_QUANTISE_PRESET_SQL, {
-        bind: [preset.id, preset.name, preset.description, JSON.stringify(preset.dials), Date.now()],
+        bind: quantisePresetBindings(request.preset, Date.now()),
       });
       return undefined;
-    }
 
     case 'listQuantisePresets':
       return select(database, SELECT_QUANTISE_PRESETS_SQL);
@@ -145,28 +130,31 @@ export function handleRequest(database: Database, request: WorkerCall['request']
       database.exec(DELETE_QUANTISE_PRESET_SQL, { bind: [request.presetId] });
       return undefined;
 
-    case 'replaceQuantisePresets': {
-      // One transaction, as `replacePresets` above is and for the same reason: an import that
-      // failed halfway would leave part of the old collection and part of the new, with nothing to
-      // say which rows were which.
-      database.exec('BEGIN');
-      try {
+    case 'replaceLibrary': {
+      // All three collections in one transaction, because they refer to one another: an import that
+      // failed between them would leave presets naming projects the file was about to replace.
+      const { pack } = request;
+      transact(database, () => {
+        database.exec(DELETE_ALL_PROJECTS_SQL);
+        database.exec(DELETE_ALL_PRESETS_SQL);
         database.exec(DELETE_ALL_QUANTISE_PRESETS_SQL);
-        // One instant for every row, so an imported collection arrives in the order the file lists
-        // it rather than in one the clock decided between inserts. `SELECT … ORDER BY updated_at
-        // DESC` then leaves that order to SQLite's own tie-breaking, which is the same answer the
-        // fallback gives: a pack is a collection, not a sequence of saves.
-        const updatedAt = Date.now();
-        for (const preset of request.presets) {
-          database.exec(INSERT_QUANTISE_PRESET_SQL, {
-            bind: [preset.id, preset.name, preset.description, JSON.stringify(preset.dials), updatedAt],
-          });
+        // Each project's own timestamps travel with it, so an imported library keeps the order it
+        // was exported in rather than being flattened to the moment of the import.
+        for (const project of pack.projects) {
+          database.exec(INSERT_PROJECT_SQL, { bind: projectBindings(project) });
         }
-        database.exec('COMMIT');
-      } catch (error) {
-        database.exec('ROLLBACK');
-        throw error;
-      }
+        // One instant for every row of both preset collections, so each arrives in the order the
+        // file lists it rather than in one the clock decided between inserts. `SELECT … ORDER BY
+        // updated_at DESC` then leaves that order to SQLite's own tie-breaking, which is the same
+        // answer the fallback gives: a pack is a collection, not a sequence of saves.
+        const updatedAt = Date.now();
+        for (const preset of pack.presets) {
+          database.exec(INSERT_PRESET_SQL, { bind: presetBindings(preset, updatedAt) });
+        }
+        for (const preset of pack.quantisePresets) {
+          database.exec(INSERT_QUANTISE_PRESET_SQL, { bind: quantisePresetBindings(preset, updatedAt) });
+        }
+      });
       return undefined;
     }
 

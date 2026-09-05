@@ -1,11 +1,8 @@
 import { create } from 'zustand';
-import { PRESET_PACK_ITEMS } from '../constants/packImport.ts';
 import { getDatabase } from '../db/database.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import type { CustomArchetype, PresetArchetype } from '../types/preset.ts';
 import { toImageConfig } from '../utils/imageConfig.ts';
-import { findPresetByName } from '../utils/presetNames.ts';
-import { describePackImported } from '../utils/packImportSummary.ts';
-import { parsePresetPack, serialisePresetPack } from '../utils/presetPack.ts';
+import { findByName } from '../utils/findByName.ts';
 import { useOutputStore } from './useOutputStore.ts';
 import { useSubjectStore } from './useSubjectStore.ts';
 import { useUIStore } from './useUIStore.ts';
@@ -21,25 +18,16 @@ import { useUIStore } from './useUIStore.ts';
  *
  * Only *custom* presets live here. The built-ins are a compile-time constant and are never stored,
  * copied, or editable.
+ *
+ * **Every preset here belongs to a project, and this store never chooses which.** The project is an
+ * argument to the two actions that write one, because the control that asked is where the reader
+ * made that choice — a store that reached into `useProjectStore` for a "current" project would be
+ * inventing a piece of state the app deliberately does not have. Moving the library in and out is
+ * `useProjectStore`'s too, for the reason `LibraryPack` gives: a pack carries the projects as well,
+ * and a store that could replace only this collection could not import one.
  */
 export interface PresetState {
-  readonly customPresets: readonly PresetArchetype[];
-  /**
-   * Whether a preset-pack transfer is running — the flag the Presets tab disables both transfer
-   * controls on. Only the import direction can actually be in flight (`exportPresetsJSON` serialises
-   * synchronously), which is what stops an export racing a half-replaced collection.
-   */
-  readonly isExporting: boolean;
-  /**
-   * The presets a parsed pack holds, waiting for the reader to agree to the replacement — `null`
-   * whenever no import is being asked about.
-   *
-   * Staged in the store rather than held by the transfer control, because the answer decides what
-   * happens to stored rows and the control that asked is free to unmount before it arrives. It also
-   * keeps the parse and the replace in one place: a pack that fails to parse never reaches here, so
-   * the malformed-file and empty-file paths report exactly as they did before, without a prompt.
-   */
-  readonly pendingImport: readonly PresetArchetype[] | null;
+  readonly customPresets: readonly CustomArchetype[];
 
   /** Load the stored custom presets into the store. Called once on boot. */
   fetchCustomPresets(): Promise<void>;
@@ -51,49 +39,51 @@ export interface PresetState {
    */
   loadPreset(preset: PresetArchetype): void;
   /**
-   * Save the studio's current configuration under `name`, with `description` as the sentence its
-   * card carries; a blank name is ignored, and a blank description is a preset that simply has none.
-   * Returns whether it was stored, so the caller can keep the name in the box to retry rather than
-   * clearing a field whose contents were never persisted.
+   * Save the studio's current configuration into `projectId` under `name`, with `description` as
+   * the sentence its card carries; a blank name is ignored, and a blank description is a preset
+   * that simply has none. Returns whether it was stored, so the caller can keep the name in the box
+   * to retry rather than clearing a field whose contents were never persisted.
    *
-   * A name already in the library **updates** that preset rather than adding a second one under the
-   * same name. Minting an id unconditionally is what made "load a preset, adjust a field, save it
-   * again" produce two cards the user could tell apart only by which sorted newer.
+   * A name already used **in that project** updates that preset rather than adding a second one
+   * under the same name. Minting an id unconditionally is what made "load a preset, adjust a field,
+   * save it again" produce two cards the user could tell apart only by which sorted newer.
+   *
+   * **Per project, not across the library**, which is the rule projects changed: two games are
+   * each free to have their own "Hero", and a save into one of them may not silently overwrite the
+   * other's. The panel that offers Save says which of the two it is about to do, and it decides
+   * that by the same rule.
    */
-  saveCustomPreset(name: string, description: string): Promise<boolean>;
+  saveCustomPreset(name: string, description: string, projectId: string): Promise<boolean>;
   /**
-   * Change one custom preset's name and description, leaving the configuration behind them alone.
-   * Returns whether it was stored, so the caller can keep its editor open on a refusal instead of
-   * closing over a change that did not happen.
+   * Change one custom preset's name and description, leaving the configuration and the project
+   * behind them alone. Returns whether it was stored, so the caller can keep its editor open on a
+   * refusal instead of closing over a change that did not happen.
    *
    * Both at once rather than one action each, because they are one edit: they are shown in one form
    * and a reader correcting a name is usually correcting the sentence under it in the same breath.
    * It is also the *only* way to reach a description without touching the configuration — saving
    * over a preset by name writes the studio as it stands, which is a different intention entirely.
+   *
+   * Re-filing is {@link moveCustomPreset} and not part of this, because it is one choice from a
+   * dropdown rather than something typed: a reader moving a preset between projects is not editing
+   * its name, and asking them to open a form to do it would be two steps for one decision.
    */
   updateCustomPresetDetails(id: string, name: string, description: string): Promise<boolean>;
+  /**
+   * File one preset under a different project, leaving everything else about it alone.
+   *
+   * The preset keeps its id, so nothing that refers to it is disturbed — and it may land in a
+   * project that already holds a preset of the same name, which is deliberately *not* refused: the
+   * two are different configurations that happen to share a label, and folding one into the other
+   * would destroy whichever the reader did not have in mind. Saving is where a name decides an
+   * update; moving is not saving.
+   */
+  moveCustomPreset(id: string, projectId: string): Promise<void>;
   deleteCustomPreset(id: string): Promise<void>;
-  /**
-   * The preset pack as JSON, built-ins included, for the caller to offer as a download. Returns the
-   * text rather than performing the download: building and clicking an anchor element would be the
-   * DOM's job, and a string is something a test can assert on.
-   */
-  exportPresetsJSON(): string;
-  /**
-   * Read the pack in `file` and stage it for confirmation. Nothing stored changes here — the
-   * replacement itself is {@link PresetState.confirmPresetImport}.
-   */
-  importPresetsJSON(file: File): Promise<void>;
-  /** Replace the stored custom presets with the staged pack. */
-  confirmPresetImport(): Promise<void>;
-  /** Discard the staged pack, leaving the stored presets exactly as they are. */
-  cancelPresetImport(): void;
 }
 
 export const usePresetStore = create<PresetState>((set, get) => ({
   customPresets: [],
-  isExporting: false,
-  pendingImport: null,
 
   fetchCustomPresets: async () => {
     try {
@@ -116,16 +106,18 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     ui.showToast(`Loaded preset: ${preset.name}`);
   },
 
-  saveCustomPreset: async (name, description) => {
+  saveCustomPreset: async (name, description, projectId) => {
     const trimmed = name.trim();
     if (!trimmed) return false;
 
     const { category, subject } = useSubjectStore.getState();
     // Reusing the id is the whole mechanism: `savePreset` is an upsert by id on both backends.
-    // Only custom presets are candidates — a built-in is never stored, so nothing can overwrite it.
-    const existing = findPresetByName(get().customPresets, trimmed);
-    const preset: PresetArchetype = {
+    // Only custom presets are candidates — a built-in is never stored, so nothing can overwrite it —
+    // and only those in the project being saved into, so one project's names cannot reach another's.
+    const existing = findByName(presetsIn(get().customPresets, projectId), trimmed);
+    const preset: CustomArchetype = {
       id: existing?.id ?? `custom-${crypto.randomUUID()}`,
+      projectId,
       // The typed name wins, so re-saving "my knight" as "My Knight" fixes the capitalisation.
       name: trimmed,
       // What the box holds, whatever the preset being updated held before. The panel shows that
@@ -169,10 +161,11 @@ export const usePresetStore = create<PresetState>((set, get) => ({
 
     // Refused rather than merged: folding one preset into another would destroy whichever
     // configuration the user did not have in mind. A preset matches itself, so fixing your own
-    // capitalisation is not a collision.
-    const clash = findPresetByName(get().customPresets, trimmed);
+    // capitalisation is not a collision — and the comparison is inside this preset's own project,
+    // by the rule saving follows.
+    const clash = findByName(presetsIn(get().customPresets, preset.projectId), trimmed);
     if (clash !== undefined && clash.id !== id) {
-      useUIStore.getState().showToast(`A preset named “${clash.name}” already exists`);
+      useUIStore.getState().showToast(`A preset named “${clash.name}” already exists here`);
       return false;
     }
 
@@ -190,6 +183,22 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     }
   },
 
+  moveCustomPreset: async (id, projectId) => {
+    const preset = get().customPresets.find((candidate) => candidate.id === id);
+    // Already there is not a failure and not a write: the dropdown reports the preset's current
+    // project as its selected value, so choosing it again is the reader confirming what they see.
+    if (!preset || preset.projectId === projectId) return;
+
+    try {
+      const database = await getDatabase();
+      await database.savePreset({ ...preset, projectId });
+      set({ customPresets: await database.listPresets() });
+      useUIStore.getState().showToast(`Moved “${preset.name}”`);
+    } catch {
+      useUIStore.getState().showToast('Could not move that preset');
+    }
+  },
+
   deleteCustomPreset: async (id) => {
     try {
       const database = await getDatabase();
@@ -200,72 +209,15 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       useUIStore.getState().showToast('Could not delete that preset');
     }
   },
-
-  exportPresetsJSON: () => serialisePresetPack(get().customPresets),
-
-  importPresetsJSON: async (file) => {
-    const { showToast } = useUIStore.getState();
-    set({ isExporting: true });
-    try {
-      const imported = parsePresetPack(await file.text());
-      if (imported === null) {
-        showToast('That file is not a Sprite Gubbins preset pack');
-        return;
-      }
-
-      // Importing replaces the collection, so an empty result is refused rather than obeyed: a
-      // pack of nothing but built-ins would otherwise silently delete every preset the user has.
-      if (imported.length === 0) {
-        showToast('No custom presets found in that file');
-        return;
-      }
-
-      // Staged, not applied. Everything past this point is the reader's decision, and it is asked
-      // on screen rather than in a tooltip — the tooltip said what an import costs, and
-      // `ControlTooltip` cannot be reached by touch at all, so on a phone the only warning the app
-      // gave was one nobody could open.
-      set({ pendingImport: imported });
-    } catch {
-      showToast('Could not import that preset pack');
-    } finally {
-      set({ isExporting: false });
-    }
-  },
-
-  confirmPresetImport: async () => {
-    const imported = get().pendingImport;
-    if (imported === null) return;
-
-    const { showToast } = useUIStore.getState();
-    // Counted here rather than when the pack was parsed, so the sentence reports the collection as
-    // it stands at the moment it is replaced.
-    const replacing = get().customPresets.length;
-    // **Cleared before the first await, not in the `finally`.** The staged pack is this action's
-    // own guard, and clearing it afterwards left the guard open across the whole database write: a
-    // second press ran a second replace, and a press of Cancel in the same window answered "nothing
-    // of yours was deleted" over a deletion already dispatched. Closing it here hands the question
-    // back to the two transfer buttons, which `isExporting` disables for the rest of the write —
-    // one flag governing the whole flow, as it did before the confirmation existed.
-    set({ isExporting: true, pendingImport: null });
-    try {
-      const database = await getDatabase();
-      await database.replacePresets(imported);
-      set({ customPresets: imported });
-      showToast(describePackImported(imported.length, replacing, PRESET_PACK_ITEMS));
-    } catch {
-      // Reported and left there: the reader retries from the button, rather than being asked the
-      // same question again over a collection nothing happened to.
-      showToast('Could not import that preset pack');
-    } finally {
-      set({ isExporting: false });
-    }
-  },
-
-  cancelPresetImport: () => {
-    // Nothing staged is nothing to cancel, so it says nothing — a toast here would answer a
-    // question the reader had already answered.
-    if (get().pendingImport === null) return;
-    set({ pendingImport: null });
-    useUIStore.getState().showToast('Import cancelled, and nothing of yours was deleted');
-  },
 }));
+
+/**
+ * The presets filed under one project — the set a name is unique within.
+ *
+ * A function rather than an inline filter at each of the two call sites, because the two are one
+ * rule: the name a save updates and the name an edit is refused for have to be decided over the
+ * same collection, or a rename could produce the duplicate a save is careful never to make.
+ */
+function presetsIn(presets: readonly CustomArchetype[], projectId: string): readonly CustomArchetype[] {
+  return presets.filter((preset) => preset.projectId === projectId);
+}

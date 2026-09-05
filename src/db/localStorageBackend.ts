@@ -1,17 +1,20 @@
 import type { PromptHistoryLog } from '../types/history.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import type { LibraryPack } from '../types/libraryPack.ts';
+import type { CustomArchetype } from '../types/preset.ts';
+import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import { HISTORY_LIMIT, type PersistenceBackend } from './backend.ts';
 import { STORAGE_KEYS } from './schema.ts';
-import { parseHistoryRow, parsePresetRow, parseQuantisePresetRow } from './rows.ts';
-import { toHistoryRow, toPresetRow, toQuantisePresetRow } from './localStorageRows.ts';
+import { parseHistoryRow, parsePresetRow, parseProjectRow, parseQuantisePresetRow } from './rows.ts';
+import { toHistoryRow, toPresetRow, toProjectRow, toQuantisePresetRow } from './localStorageRows.ts';
+import { deleteProjectFrom, replaceLibraryIn, type CollectionPort } from './localStorageLibrary.ts';
 import { parseJson } from './readers.ts';
-import { HISTORY_STORAGE_BUDGET, evictionLengths, trimHistoryToBudget } from './historyEviction.ts';
+import { writeHistoryRows } from './historyEviction.ts';
 import { parseSession } from './sessionParser.ts';
 import { parseSettings } from './settingsParser.ts';
-import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
+import { resolveWebStorage, storageRefusal, type WebStorageLike } from './webStorage.ts';
 
 /**
  * The fallback used when SQLite/OPFS is unavailable — a private browsing session, a browser
@@ -27,8 +30,9 @@ import { resolveWebStorage, type WebStorageLike } from './webStorage.ts';
  * The prompt history is the one collection that does not fit at the size the rest of the app
  * assumes. `HISTORY_LIMIT` is a count and the quota is a size, and a couple of hundred compiled
  * prompts is several times what a browser will store — so history is written through
- * {@link writeHistory}, which trims it to a budget and evicts oldest-first when storage refuses it
- * anyway. See `historyEviction.ts` for why the count alone wedged the store.
+ * `writeHistoryRows`, which trims it to a budget and evicts oldest-first when storage refuses it
+ * anyway. See `historyEviction.ts`, which holds that write beside the two functions deciding its
+ * shape, and says why the count alone wedged the store.
  */
 export class LocalStorageBackend implements PersistenceBackend {
   readonly kind = 'localstorage' as const;
@@ -80,53 +84,28 @@ export class LocalStorageBackend implements PersistenceBackend {
       this.storage.setItem(key, JSON.stringify(value));
       return Promise.resolve();
     } catch (error) {
-      return Promise.reject(LocalStorageBackend.refusal(key, error));
+      return Promise.reject(storageRefusal(key, error));
     }
-  }
-
-  /** One spelling of the refusal, so {@link write} and {@link writeHistory} cannot drift. */
-  private static refusal(key: string, cause: unknown): Error {
-    return new Error(`Storage refused the write to “${key}”.`, { cause });
   }
 
   /**
-   * Store the history, keeping as much of it as the browser will actually take.
+   * This instance's reader and writer, as the port the multi-collection operations take.
    *
-   * `rows` is newest-first, so every prefix of it is the newest *n* prompts and evicting is a
-   * matter of shortening it. The budget decides the first attempt; a refusal past that is storage
-   * telling us the budget was optimistic here, and the answer is to try again with fewer entries
-   * rather than to lose the prompt the reader just asked for.
-   *
-   * Nothing is written until an attempt succeeds, so a history too large to store at any length
-   * leaves what was already there untouched and rejects — the reader keeps the prompts they had.
+   * Bound methods rather than the store itself, so those two go on reading through the same
+   * parsers, the same quota handling and the same refusal as every method here — which is what
+   * keeps "the fallback rewrites the whole collection" one behaviour rather than two.
    */
-  private writeHistory(rows: readonly Record<string, unknown>[]): Promise<void> {
-    const affordable = trimHistoryToBudget(rows);
-    if (affordable.length === 0) {
-      return Promise.reject(
-        new Error(
-          `A single prompt exceeds the ${HISTORY_STORAGE_BUDGET}-character budget the history may occupy.`,
-        ),
-      );
-    }
-
-    let refusal: unknown;
-    for (const length of evictionLengths(affordable.length)) {
-      try {
-        this.storage.setItem(STORAGE_KEYS.promptHistory, JSON.stringify(affordable.slice(0, length)));
-        return Promise.resolve();
-      } catch (error) {
-        refusal = error;
-      }
-    }
-
-    return Promise.reject(LocalStorageBackend.refusal(STORAGE_KEYS.promptHistory, refusal));
+  private port(): CollectionPort {
+    return {
+      read: (key, parse) => this.read(key, parse),
+      write: (key, value) => this.write(key, value),
+    };
   }
 
   addHistoryLog(log: PromptHistoryLog): Promise<void> {
     const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
     const next = [log, ...existing.filter((entry) => entry.id !== log.id)].slice(0, HISTORY_LIMIT);
-    return this.writeHistory(next.map(toHistoryRow));
+    return writeHistoryRows(this.storage, next.map(toHistoryRow));
   }
 
   listHistoryLogs(): Promise<PromptHistoryLog[]> {
@@ -135,71 +114,101 @@ export class LocalStorageBackend implements PersistenceBackend {
   }
 
   deleteHistoryLog(id: string): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.promptHistory, parseHistoryRow);
-    return this.write(
-      STORAGE_KEYS.promptHistory,
-      existing.filter((entry) => entry.id !== id).map(toHistoryRow),
-    );
+    return this.removeById(STORAGE_KEYS.promptHistory, parseHistoryRow, toHistoryRow, id);
   }
 
   clearHistoryLogs(): Promise<void> {
     return this.write(STORAGE_KEYS.promptHistory, []);
   }
 
-  savePreset(preset: PresetArchetype): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.customPresets, parsePresetRow);
-    const next = [preset, ...existing.filter((entry) => entry.id !== preset.id)];
-    return this.write(STORAGE_KEYS.customPresets, next.map(toPresetRow));
+  /**
+   * Write one entry to the front of a collection, replacing whatever stood under its id.
+   *
+   * The fallback's whole answer to `INSERT OR REPLACE … ORDER BY updated_at DESC`, and it is one
+   * method rather than three because the three collections keyed by id want exactly the same
+   * behaviour: the prepend is what keeps them newest-first, since a stored order is all this
+   * backend has — see `localStorageRows.ts`, which says why no timestamp is written here.
+   */
+  private upsert<T extends { readonly id: string }>(
+    key: string,
+    parse: (value: unknown) => T | null,
+    toRow: (entry: T) => Record<string, unknown>,
+    entry: T,
+  ): Promise<void> {
+    const existing = this.read(key, parse);
+    return this.write(key, [entry, ...existing.filter((held) => held.id !== entry.id)].map(toRow));
   }
 
-  /** In stored order, which the prepend above keeps newest-first — see `localStorageRows.ts`. */
-  listPresets(): Promise<PresetArchetype[]> {
+  /** Remove one entry by id. An id nothing holds rewrites the collection unchanged, as SQL does. */
+  private removeById<T extends { readonly id: string }>(
+    key: string,
+    parse: (value: unknown) => T | null,
+    toRow: (entry: T) => Record<string, unknown>,
+    id: string,
+  ): Promise<void> {
+    return this.write(
+      key,
+      this.read(key, parse)
+        .filter((entry) => entry.id !== id)
+        .map(toRow),
+    );
+  }
+
+  /** In stored order, which {@link upsert}'s prepend keeps most-recently-edited first. */
+  listProjects(): Promise<Project[]> {
+    return Promise.resolve(this.read(STORAGE_KEYS.projects, parseProjectRow));
+  }
+
+  saveProject(project: Project): Promise<void> {
+    return this.upsert(STORAGE_KEYS.projects, parseProjectRow, toProjectRow, project);
+  }
+
+  /**
+   * Remove the project and everything filed under it.
+   *
+   * The work is `localStorageLibrary.ts`'s, along with the ordering that is the whole of what this
+   * backend can promise without a transaction. What stays here is the port: the private reader and
+   * writer above, bound to this instance's store.
+   */
+  deleteProject(id: string): Promise<void> {
+    return deleteProjectFrom(this.port(), id);
+  }
+
+  savePreset(preset: CustomArchetype): Promise<void> {
+    return this.upsert(STORAGE_KEYS.customPresets, parsePresetRow, toPresetRow, preset);
+  }
+
+  /** In stored order, which {@link upsert}'s prepend keeps newest-first. */
+  listPresets(): Promise<CustomArchetype[]> {
     return Promise.resolve(this.read(STORAGE_KEYS.customPresets, parsePresetRow));
   }
 
   deletePreset(id: string): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.customPresets, parsePresetRow);
-    return this.write(
-      STORAGE_KEYS.customPresets,
-      existing.filter((entry) => entry.id !== id).map(toPresetRow),
-    );
-  }
-
-  /**
-   * In the file's own order, which is the whole of what a pack says about order — see the
-   * `replacePresets` case in `sqliteWorker.ts`, which reaches the same answer by stamping every
-   * imported row with one instant.
-   */
-  replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
-    return this.write(STORAGE_KEYS.customPresets, presets.map(toPresetRow));
+    return this.removeById(STORAGE_KEYS.customPresets, parsePresetRow, toPresetRow, id);
   }
 
   saveQuantisePreset(preset: QuantisePreset): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow);
-    const next = [preset, ...existing.filter((entry) => entry.id !== preset.id)];
-    return this.write(STORAGE_KEYS.quantisePresets, next.map(toQuantisePresetRow));
+    return this.upsert(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow, toQuantisePresetRow, preset);
   }
 
-  /** In stored order, which the prepend above keeps newest-first — see `localStorageRows.ts`. */
+  /** In stored order, which {@link upsert}'s prepend keeps newest-first. */
   listQuantisePresets(): Promise<QuantisePreset[]> {
     return Promise.resolve(this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow));
   }
 
   deleteQuantisePreset(id: string): Promise<void> {
-    const existing = this.read(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow);
-    return this.write(
-      STORAGE_KEYS.quantisePresets,
-      existing.filter((entry) => entry.id !== id).map(toQuantisePresetRow),
-    );
+    return this.removeById(STORAGE_KEYS.quantisePresets, parseQuantisePresetRow, toQuantisePresetRow, id);
   }
 
   /**
-   * In the file's own order, which is the whole of what a pack says about order — see the
-   * `replaceQuantisePresets` case in `sqliteWorker.ts`, which reaches the same answer by stamping
-   * every imported row with one instant.
+   * Replace all three collections with an imported pack's.
+   *
+   * `localStorageLibrary.ts` again, for the reason the delete above gives, and it is the operation
+   * whose promise is the more carefully hedged of the two — read it there rather than assuming a
+   * transaction.
    */
-  replaceQuantisePresets(presets: readonly QuantisePreset[]): Promise<void> {
-    return this.write(STORAGE_KEYS.quantisePresets, presets.map(toQuantisePresetRow));
+  replaceLibrary(pack: LibraryPack): Promise<void> {
+    return replaceLibraryIn(this.port(), pack);
   }
 
   /**

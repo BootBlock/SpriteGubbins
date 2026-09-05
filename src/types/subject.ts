@@ -11,7 +11,7 @@
  * survives being dropped into a sentence, not an internal code. The article in front of it is the
  * category's own, from `CategoryDefinition.article`, and not a word fixed in the template.
  *
- * **A new category appends.** This order is the category selector's, the Presets tab's collection
+ * **A new category appends.** This order is the category selector's, the preset library's collection
  * list, and the order `PRESETS` concatenates its collections in; a preset's position in that array
  * is in turn the stop it takes on the hue wheel. Inserting mid-list would therefore re-colour every
  * collection after the insertion point to express an ordering the list has never claimed to carry.

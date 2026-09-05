@@ -30,7 +30,7 @@ interface SelectFieldProps<T extends string | number> {
    * that failed to render, so the sentence naming the sheet that withdrew it goes here — where a
    * screen reader announces it with the control, rather than in a paragraph beside it.
    *
-   * Optional because the other twenty-three have nothing of either kind to say, and twenty-three
+   * Optional because the other twenty-four have nothing of either kind to say, and twenty-four
    * call sites passing a permanently-empty string would bury the seven that do — while empty *is*
    * still accepted from those seven, as `CheckboxField`'s reason is, so a caller resolving the text
    * out of its table can hand over what it found rather than choosing between a prop and no prop.
@@ -46,8 +46,8 @@ interface SelectFieldProps<T extends string | number> {
    * `NumberField` and `CheckboxField` both show theirs.
    *
    * Optional here where those two require it, for the reason `description` is: one of the app's
-   * thirty selects — the rig mode — has a setting above it that takes its value over, and the other
-   * twenty-nine passing a permanently-empty string would bury the one that does. It is the same
+   * thirty-one selects — the rig mode — has a setting above it that takes its value over, and the other
+   * thirty passing a permanently-empty string would bury the one that does. It is the same
    * select that carries the seventh `description`, and the two say different things: this one is the
    * sheet taking the choice over, that one the sheet withdrawing an option from a choice the reader
    * still has.
@@ -73,9 +73,9 @@ interface SelectFieldProps<T extends string | number> {
 /**
  * A labelled dropdown over a closed set of choices.
  *
- * Thirty controls in this app are exactly this — the studio's output settings, the category, the
+ * Thirty-one controls in this app are exactly this — the studio's output settings, the category, the
  * target model, the quantiser's dials, the atlas calculator's two and the settings dialog's one — so
- * it is one component rather than thirty copies of the same label, tooltip and `<select>` markup.
+ * it is one component rather than thirty-one copies of the same label, tooltip and `<select>` markup.
  *
  * A native `<select>` on purpose. It is keyboard-operable, type-to-select, and renders as the
  * platform's own picker on touch devices; `ComboBox` exists for the fields where free text is
@@ -122,7 +122,7 @@ export function SelectField<T extends string | number>({
       {/*
         The row the control and its action share. Always rendered, rather than only where an action
         was passed: a single-child flex row lays a `w-full` select out exactly as a bare one, so one
-        path serves all thirty call sites and there is no second arrangement to keep in step.
+        path serves all thirty-one call sites and there is no second arrangement to keep in step.
       */}
       <div className="flex items-center gap-2">
         <select

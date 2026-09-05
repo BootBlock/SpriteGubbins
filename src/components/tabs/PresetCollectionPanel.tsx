@@ -1,6 +1,5 @@
-import { CUSTOM_COLLECTION_ID, presetCollectionLabel } from '../../constants/presets/collections.ts';
+import { presetCollectionLabel } from '../../constants/presets/collections.ts';
 import type { PresetCollectionId } from '../../constants/presets/collections.ts';
-import type { PresetArchetype } from '../../types/preset.ts';
 import type { PresetEntry } from '../../utils/presetSearch.ts';
 import { PresetCard } from './PresetCard.tsx';
 
@@ -14,21 +13,15 @@ interface PresetCollectionPanelProps {
    *
    * One nullable prop rather than a query string this panel re-tests, because "there is text in the
    * box" and "the library was narrowed" are different facts and only the matcher knows the second.
-   * Deriving it here from the query would have an empty "Your presets" report a failed search instead
-   * of explaining how to save a preset, the moment the box held something like `-`.
+   * Deriving it here from the query would report a failed search over a collection nothing had
+   * filtered, the moment the box held something like `-`.
    */
   readonly narrowedBy: string | null;
-  readonly onLoad: (preset: PresetArchetype) => void;
-  readonly onUpdateDetails: (preset: PresetArchetype, name: string, description: string) => Promise<boolean>;
-  readonly onDelete: (preset: PresetArchetype) => void;
 }
 
 /** What to say when there is nothing to show, which is a different thing in each case. */
-function emptyMessage(collection: PresetCollectionId, narrowedBy: string | null): string {
+function emptyMessage(narrowedBy: string | null): string {
   if (narrowedBy !== null) return `No preset matches “${narrowedBy}”. Try a shorter search.`;
-  if (collection === CUSTOM_COLLECTION_ID) {
-    return 'Nothing saved yet. Set the studio up how you want it, then name it and press Save above — it will appear here.';
-  }
   // Not reachable while the coverage suite holds: it requires four presets per category, and every
   // built-in is filed under its own. Kept so the function is total rather than as a state to expect —
   // the invariant lives in a test, and a message is a better answer than a blank panel if it ever moves.
@@ -48,14 +41,7 @@ function emptyMessage(collection: PresetCollectionId, narrowedBy: string | null)
  * Only the active collection is rendered, which is the other half of what makes this cheap: the grid
  * is a dozen cards rather than the whole library, whatever the library grows to.
  */
-export function PresetCollectionPanel({
-  collection,
-  entries,
-  narrowedBy,
-  onLoad,
-  onUpdateDetails,
-  onDelete,
-}: PresetCollectionPanelProps) {
+export function PresetCollectionPanel({ collection, entries, narrowedBy }: PresetCollectionPanelProps) {
   return (
     <section className="space-y-4" aria-label={presetCollectionLabel(collection)}>
       <div className="flex items-baseline gap-2">
@@ -67,7 +53,7 @@ export function PresetCollectionPanel({
 
       {entries.length === 0 ? (
         <p className="glass-panel rounded-2xl border border-foundry-700 p-6 text-xs text-ink-muted">
-          {emptyMessage(collection, narrowedBy)}
+          {emptyMessage(narrowedBy)}
         </p>
       ) : (
         /*
@@ -80,14 +66,7 @@ export function PresetCollectionPanel({
         */
         <ul className="stagger-children grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {entries.map((entry) => (
-            <PresetCard
-              key={entry.preset.id}
-              preset={entry.preset}
-              index={entry.index}
-              onLoad={onLoad}
-              onUpdateDetails={onUpdateDetails}
-              onDelete={onDelete}
-            />
+            <PresetCard key={entry.preset.id} preset={entry.preset} index={entry.index} />
           ))}
         </ul>
       )}

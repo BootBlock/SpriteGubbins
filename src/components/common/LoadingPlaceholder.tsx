@@ -11,7 +11,7 @@ interface LoadingPlaceholderProps {
 /**
  * The stand-in for a chunk that has not arrived yet.
  *
- * `App` and `AppOverlays` split the four views and the four overlays into chunks of their own, so
+ * `App` and `AppOverlays` split every view and every overlay into a chunk of its own, so
  * between a reader pressing a tab and that view's code being parsed there is a gap — sub-frame once
  * the service worker has precached everything, and a real wait on a first visit. This is what
  * occupies the space meanwhile: the app's own loading treatment, which the history drawer's empty

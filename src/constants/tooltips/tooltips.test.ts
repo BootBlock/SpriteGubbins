@@ -110,8 +110,7 @@ const GUIDANCE: readonly (readonly [string, string])[] = [
   ),
   ...APP_TAB_CHOICES.map((tab) => [`APP_TAB_CHOICES.${tab.id}`, tab.guidance] as const),
   ...ACCENT_HUES.map((hue) => [`accentSwatchGuidance(${hue})`, accentSwatchGuidance(hue)] as const),
-  ['presetCollectionGuidance(built-in)', presetCollectionGuidance('Humanoid Character', false)],
-  ['presetCollectionGuidance(custom)', presetCollectionGuidance('Your presets', true)],
+  ['presetCollectionGuidance', presetCollectionGuidance('Humanoid Character')],
   // Two of `AUTO_TUNE_GUIDANCE`'s five, and the split is the rule this suite is named for: what
   // counts is the surface, not the filing. `idle` says what pressing Auto does and `waiting` says
   // why it is unavailable — both are the control's own explanation rendered under it rather than

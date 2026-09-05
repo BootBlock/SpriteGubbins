@@ -1,6 +1,5 @@
 import { APP_TAB_CHOICES } from '../../constants/ui.ts';
 import { PRESETS } from '../../constants/presets/index.ts';
-import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { useUIStore } from '../../stores/useUIStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 
@@ -24,7 +23,7 @@ const COLUMN_TEMPLATE = `repeat(${APP_TAB_CHOICES.length}, minmax(0, 1fr))`;
 const SLOT_WIDTH = `${100 / APP_TAB_CHOICES.length}%`;
 
 /**
- * Moving between the four views.
+ * Moving between the views.
  *
  * A `<nav>` of buttons marked with `aria-current`, not an ARIA tablist. These swap the whole main
  * region rather than revealing panels that all exist at once, so navigation is what they actually
@@ -41,8 +40,6 @@ const SLOT_WIDTH = `${100 / APP_TAB_CHOICES.length}%`;
 export function TabSwitcher() {
   const activeTab = useUIStore((state) => state.activeTab);
   const setActiveTab = useUIStore((state) => state.setActiveTab);
-  // A count, not the array: this must not re-render when a preset's *contents* change.
-  const customPresetCount = usePresetStore((state) => state.customPresets.length);
 
   const activeIndex = APP_TAB_CHOICES.findIndex((tab) => tab.id === activeTab);
 
@@ -123,9 +120,14 @@ export function TabSwitcher() {
               */}
               <span className="sr-only gap-2 sm:not-sr-only sm:flex sm:items-center">
                 {tab.label}
-                {tab.id === 'presets' && (
-                  <span className="font-mono">({PRESETS.length + customPresetCount})</span>
-                )}
+                {/*
+                  The built-in library's own size, and nothing else. It used to add the reader's
+                  saved presets to this figure, which was right while they were a collection on that
+                  tab and is wrong now they are filed under projects: the number beside a tab has to
+                  count what pressing it shows. It is also a constant again, so the switcher no
+                  longer re-renders when a preset is saved.
+                */}
+                {tab.id === 'presets' && <span className="font-mono">({PRESETS.length})</span>}
               </span>
             </button>
           </ControlTooltip>

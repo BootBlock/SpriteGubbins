@@ -1,5 +1,7 @@
 import type { PromptHistoryLog } from '../types/history.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import type { LibraryPack } from '../types/libraryPack.ts';
+import type { CustomArchetype } from '../types/preset.ts';
+import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
@@ -7,11 +9,12 @@ import type { PersistenceBackend } from './backend.ts';
 import {
   parseHistoryRow,
   parsePresetRow,
+  parseProjectRow,
   parseQuantisePresetRow,
   parseSessionRow,
   parseSettingsRow,
 } from './rows.ts';
-import { isWorkerHandshake, isWorkerReply } from './workerProtocol.ts';
+import { isWorkerReply } from './workerProtocol.ts';
 import type { WorkerCall, WorkerRequest } from './workerProtocol.ts';
 
 /** Said where the thread stopped answering, which is terminal for this backend and so for the app. */
@@ -33,15 +36,17 @@ const REPLY_UNREADABLE = 'A database reply could not be read back from its threa
  * Rows come back raw and are validated here by `db/rows.ts` — the same parsers the localStorage
  * fallback uses, so the two backends cannot drift in what they accept.
  *
- * Construction is via {@link openSqliteBackend}, which resolves to `null` rather than throwing when
- * the database cannot be opened, so `database.ts` can fall back.
+ * Construction is via `openSqliteBackend`, in a file of its own, which resolves to `null` rather
+ * than throwing when the database cannot be opened, so `database.ts` can fall back. The two are
+ * filed apart because they are different jobs: this is the bridge a call travels over, and that is
+ * the handshake that decides whether there is a bridge at all.
  *
  * **Every call settles, by whichever of five routes it takes**: the worker's answer, the worker's
  * refusal, a reply that would not deserialise, the thread dying, and a call made after it died. The
  * middle two are what the listeners below are for, and neither can be reported as a reply — one
  * carries no correlation id and the other arrives with the thread already gone. A call left
  * unsettled is invisible rather than loud, which is the failure {@link SqliteBackend.die} describes
- * at length. {@link openSqliteBackend} owes the same of the handshake, and says so there.
+ * at length. `openSqliteBackend` owes the same of the handshake, and says so there.
  */
 export class SqliteBackend implements PersistenceBackend {
   readonly kind = 'sqlite-opfs' as const;
@@ -68,7 +73,7 @@ export class SqliteBackend implements PersistenceBackend {
       else waiting.reject(new Error(reply.error));
     });
     // Fires where an exception escaped the worker's own listener, or the module stopped evaluating —
-    // an out-of-memory in the WebAssembly heap on a large `replacePresets` is the realistic one. The
+    // an out-of-memory in the WebAssembly heap on a large `replaceLibrary` is the realistic one. The
     // worker answers every call it takes, so nothing that reaches here can be reported as a reply,
     // and the database's state after it is unknowable from this side.
     this.worker.addEventListener('error', () => {
@@ -144,21 +149,30 @@ export class SqliteBackend implements PersistenceBackend {
     await this.request({ kind: 'clearHistoryLogs' });
   }
 
-  async savePreset(preset: PresetArchetype): Promise<void> {
+  async listProjects(): Promise<Project[]> {
+    const rows = await this.requestRows({ kind: 'listProjects' });
+    return rows.map(parseProjectRow).filter((project): project is Project => project !== null);
+  }
+
+  async saveProject(project: Project): Promise<void> {
+    await this.request({ kind: 'saveProject', project });
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    await this.request({ kind: 'deleteProject', projectId: id });
+  }
+
+  async savePreset(preset: CustomArchetype): Promise<void> {
     await this.request({ kind: 'savePreset', preset });
   }
 
-  async listPresets(): Promise<PresetArchetype[]> {
+  async listPresets(): Promise<CustomArchetype[]> {
     const rows = await this.requestRows({ kind: 'listPresets' });
-    return rows.map(parsePresetRow).filter((preset): preset is PresetArchetype => preset !== null);
+    return rows.map(parsePresetRow).filter((preset): preset is CustomArchetype => preset !== null);
   }
 
   async deletePreset(id: string): Promise<void> {
     await this.request({ kind: 'deletePreset', presetId: id });
-  }
-
-  async replacePresets(presets: readonly PresetArchetype[]): Promise<void> {
-    await this.request({ kind: 'replacePresets', presets });
   }
 
   async saveQuantisePreset(preset: QuantisePreset): Promise<void> {
@@ -174,8 +188,8 @@ export class SqliteBackend implements PersistenceBackend {
     await this.request({ kind: 'deleteQuantisePreset', presetId: id });
   }
 
-  async replaceQuantisePresets(presets: readonly QuantisePreset[]): Promise<void> {
-    await this.request({ kind: 'replaceQuantisePresets', presets });
+  async replaceLibrary(pack: LibraryPack): Promise<void> {
+    await this.request({ kind: 'replaceLibrary', pack });
   }
 
   async loadSettings(): Promise<AppSettings> {
@@ -197,53 +211,4 @@ export class SqliteBackend implements PersistenceBackend {
   async saveSession(session: StudioSession): Promise<void> {
     await this.request({ kind: 'saveSession', session });
   }
-}
-
-/**
- * Start the worker and wait for it to report whether it has a database.
- *
- * Resolves to `null` — rather than throwing — for every failure, because none of them is an error
- * the app should surface: OPFS is legitimately unavailable in a private window, in a browser without
- * it, and where the storage quota is exhausted. The answer is always the same, and it is
- * `database.ts`'s to give: use localStorage instead.
- *
- * Cross-origin isolation is **not** on that list, though it once was. The SAH-pool VFS needs a
- * worker rather than `SharedArrayBuffer`, so it succeeds on a first, un-isolated load like any
- * other — which makes the fallback a narrower path than "before the first reload", and one worth
- * exercising deliberately rather than assuming every visitor passes through it.
- */
-export function openSqliteBackend(): Promise<SqliteBackend | null> {
-  let worker: Worker;
-  try {
-    worker = new Worker(new URL('./sqliteWorker.ts', import.meta.url), { type: 'module' });
-  } catch {
-    return Promise.resolve(null);
-  }
-
-  return new Promise((resolve) => {
-    const settle = (backend: SqliteBackend | null) => {
-      worker.removeEventListener('message', onMessage);
-      worker.removeEventListener('error', onFailure);
-      worker.removeEventListener('messageerror', onFailure);
-      if (backend === null) worker.terminate();
-      resolve(backend);
-    };
-
-    function onMessage(event: MessageEvent<unknown>) {
-      if (!isWorkerHandshake(event.data)) return;
-      settle(event.data.ready ? new SqliteBackend(worker) : null);
-    }
-
-    // Both non-replies settle to `null`, which is the answer every other failure here gets: use
-    // localStorage instead. `messageerror` matters more than its likelihood suggests — `getDatabase`
-    // memoises *this* promise, so one left unsettled hangs every store's hydration for the session,
-    // and never reaches the fallback this whole function exists to make possible.
-    function onFailure() {
-      settle(null);
-    }
-
-    worker.addEventListener('message', onMessage);
-    worker.addEventListener('error', onFailure);
-    worker.addEventListener('messageerror', onFailure);
-  });
 }

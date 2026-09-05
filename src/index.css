@@ -877,12 +877,19 @@
    * Each view owns a stop on the wheel, and the whole page follows it.
    *
    * This is the reference design's own allocation idea — a family owns a contiguous arc, and the
-   * families sit far enough apart to read as separate — applied to the four things this app is.
+   * families sit far enough apart to read as separate — applied to the five things this app is.
    * Panels, headings, the switcher's pill, the dot grid and the ambient wash all draw from
    * `--color-tab`, so moving between views re-lights the page rather than swapping one highlight.
    *
-   * The four are ≥72° apart, which is what keeps them nameable rather than four similar blues, and
-   * none of them is the cyan stop — see the note on `neon` above.
+   * **Four of the five are ≥72° apart, and Projects sits 36° from the studio's violet because no
+   * free stop is further away.** That spacing was the rule while there were four views, and it is
+   * not reachable at five: the wheel offers nine assignable stops, the four already allocated sit at
+   * ember, jade, azure and violet, and every remaining stop is one position from one of them. The
+   * magenta chosen is the wheel's highest-chroma stop against violet's lowest but one, which is what
+   * keeps the pair apart in practice — and the two are never on screen together, since a view's
+   * colour is only ever the active one's. Widening the gap again would mean re-colouring a view
+   * that already has one, which costs more than it buys. None of the five is the cyan stop — see
+   * the note on `neon` above.
    *
    * Each view also names two companions, three and seven stops along, so `bg-aurora` can wash the
    * page in an even triad rather than one hue smeared across it. They are written out per view
@@ -948,6 +955,12 @@
     --color-tab: var(--color-spectrum-ember);
     --tab-chord-a: var(--color-spectrum-jade);
     --tab-chord-b: var(--color-spectrum-violet);
+  }
+
+  [data-tab='projects'] {
+    --color-tab: var(--color-spectrum-magenta);
+    --tab-chord-a: var(--color-spectrum-gold);
+    --tab-chord-b: var(--color-spectrum-azure);
   }
 
   [data-tab='spec'] {

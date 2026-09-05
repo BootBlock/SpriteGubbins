@@ -8,6 +8,7 @@ import { PWAInstallBanner } from './components/layout/PWAInstallBanner.tsx';
 import { SkipLink } from './components/layout/SkipLink.tsx';
 import { APP_TAB_CHOICE_BY_ID } from './constants/ui.ts';
 import { useFileDropGuard } from './hooks/useFileDropGuard.ts';
+import { useProjectStore } from './stores/useProjectStore.ts';
 import { usePresetStore } from './stores/usePresetStore.ts';
 import { useQuantisePresetStore } from './stores/useQuantisePresetStore.ts';
 import { useSessionStore } from './stores/useSessionStore.ts';
@@ -24,7 +25,7 @@ import type { AppTab } from './types/ui.ts';
  * tab that navigates to nothing.
  *
  * `lazy` is what splits them. The shell mounts exactly one of these at a time, so a reader opening
- * the app to compose one prompt was parsing all four before the studio painted — the quantiser's
+ * the app to compose one prompt was parsing every view before the studio painted — the quantiser's
  * whole image pipeline included, which the studio never calls. Each `lazy` here is a dynamic import,
  * which is the seam the bundler splits on, and the service worker precaches every chunk it emits —
  * so the split costs a network request on a first visit and nothing at all after it.
@@ -37,6 +38,7 @@ const VIEWS = {
   studio: lazy(() => import('./components/tabs/StudioTab.tsx').then((m) => ({ default: m.StudioTab }))),
   quantise: lazy(() => import('./components/tabs/QuantiseTab.tsx').then((m) => ({ default: m.QuantiseTab }))),
   presets: lazy(() => import('./components/tabs/PresetsTab.tsx').then((m) => ({ default: m.PresetsTab }))),
+  projects: lazy(() => import('./components/tabs/ProjectsTab.tsx').then((m) => ({ default: m.ProjectsTab }))),
   spec: lazy(() => import('./components/tabs/SpecTab.tsx').then((m) => ({ default: m.SpecTab }))),
 } satisfies Record<AppTab, ComponentType>;
 
@@ -52,6 +54,7 @@ export function App() {
   const activeTab = useUIStore((state) => state.activeTab);
   const setInstallPrompt = useUIStore((state) => state.setInstallPrompt);
   const fetchCustomPresets = usePresetStore((state) => state.fetchCustomPresets);
+  const fetchProjects = useProjectStore((state) => state.fetchProjects);
   const accentHue = useSettingsStore((state) => state.settings.accentHue);
   const motion = useSettingsStore((state) => state.settings.motion);
   const ambientBackdrop = useSettingsStore((state) => state.settings.ambientBackdrop);
@@ -84,6 +87,14 @@ export function App() {
   useEffect(() => {
     void fetchCustomPresets();
   }, [fetchCustomPresets]);
+
+  // …and the projects both collections are filed under, which also makes the Default project on an
+  // install that has none. It is fetched here rather than by the Projects tab for the reason the
+  // two collections are: the save panels in the Studio and the Quantise tab both offer the list, so
+  // it has to be loaded whether or not that tab has ever been opened.
+  useEffect(() => {
+    void fetchProjects();
+  }, [fetchProjects]);
 
   // …and the quantiser's, here rather than when that tab mounts: `App` swaps the whole view on
   // navigation, so a fetch on mount would re-read the collection on every trip to the studio and
@@ -190,7 +201,7 @@ export function App() {
         >
           {/*
             The page's only `<h1>`, and the top of an outline every view then continues at `<h2>`.
-            It is here rather than in the four views for two reasons: it is the one place that can
+            It is here rather than in each view for two reasons: it is the one place that can
             guarantee exactly one of them exists, so a view added later cannot arrive without one;
             and the heading has to say *where the reader is*, which is a fact the shell holds and a
             view does not — the switcher already claims `aria-current="page"` for these, and this is
@@ -209,7 +220,7 @@ export function App() {
           <h1 className="sr-only">{APP_TAB_CHOICE_BY_ID[activeTab].label}</h1>
 
           {/*
-            One Suspense boundary for all four, rather than one per view: navigating is a synchronous
+            One Suspense boundary for every view, rather than one per view: navigating is a synchronous
             update rather than a transition, so React shows this fallback for whichever view is
             arriving — driven in Edge, with and without a `key` on the boundary, and the placeholder
             appears either way. The label is read from the tab being navigated *to*, which is what

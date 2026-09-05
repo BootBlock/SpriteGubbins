@@ -1,5 +1,7 @@
 import type { PromptHistoryLog } from '../types/history.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import type { LibraryPack } from '../types/libraryPack.ts';
+import type { CustomArchetype } from '../types/preset.ts';
+import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
@@ -30,27 +32,53 @@ export interface PersistenceBackend {
   deleteHistoryLog(id: string): Promise<void>;
   clearHistoryLogs(): Promise<void>;
 
-  savePreset(preset: PresetArchetype): Promise<void>;
-  listPresets(): Promise<PresetArchetype[]>;
+  /**
+   * The projects the two saved collections below are filed under.
+   *
+   * There is no `replaceProjects` beside these: a project is deleted one at a time, and the only
+   * thing that replaces the whole set is an import, which replaces all three collections together
+   * through {@link replaceLibrary}.
+   */
+  listProjects(): Promise<Project[]>;
+  /** Write one, replacing whatever stood under that id — both making and renaming go through it. */
+  saveProject(project: Project): Promise<void>;
+  /**
+   * Remove one project **and everything filed under it**, in one transaction.
+   *
+   * The cascade is the backend's rather than the store's, and it has to be: two deletes issued from
+   * above could leave a project gone with its presets still naming it, and there is no state the
+   * app could show for that. Deleting an id that is not there is a no-op, not an error.
+   */
+  deleteProject(id: string): Promise<void>;
+
+  savePreset(preset: CustomArchetype): Promise<void>;
+  listPresets(): Promise<CustomArchetype[]>;
   deletePreset(id: string): Promise<void>;
-  /** Replace the whole custom-preset collection — what importing a preset pack does. */
-  replacePresets(presets: readonly PresetArchetype[]): Promise<void>;
 
   /**
    * The quantiser's saved dial positions.
    *
    * A collection of its own rather than more of {@link savePreset}'s, because the two hold
    * different things: an archetype describes a subject to *generate*, and one of these describes how
-   * to read a raster that came **back**. They are moved between installs by two separate packs for
-   * that same reason — see `utils/quantisePresetPack.ts`, which states why one file holding both
-   * would make every import a decision about the collection it was not for.
+   * to read a raster that came **back**. They are separate collections and separate stores for that
+   * reason, and they travel together in one file only because both are filed under the same
+   * projects — see `types/libraryPack.ts`.
    */
   saveQuantisePreset(preset: QuantisePreset): Promise<void>;
   listQuantisePresets(): Promise<QuantisePreset[]>;
   /** Remove one. Deleting an id that is not there is a no-op, not an error. */
   deleteQuantisePreset(id: string): Promise<void>;
-  /** Replace the whole collection — what importing a pack of dial positions does. */
-  replaceQuantisePresets(presets: readonly QuantisePreset[]): Promise<void>;
+
+  /**
+   * Replace the projects and both saved collections with the contents of an imported pack, in one
+   * transaction.
+   *
+   * One method rather than three replaces, for the reason {@link LibraryPack} gives: a preset names
+   * its project by id, so a partial replacement is a library that does not hold together. An
+   * implementation that cannot offer a transaction has to reach the same end state or none of it —
+   * see the fallback, which rewrites all three keys and says what it can and cannot promise.
+   */
+  replaceLibrary(pack: LibraryPack): Promise<void>;
 
   /**
    * The stored interface settings, or the defaults where nothing has been stored.

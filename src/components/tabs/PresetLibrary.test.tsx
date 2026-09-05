@@ -3,6 +3,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DEFAULT_PRESET, PRESETS } from '../../constants/presets/index.ts';
 import { PRESET_COLLECTION_IDS, presetCollectionLabel } from '../../constants/presets/collections.ts';
+import { DEFAULT_PROJECT_ID } from '../../constants/projects.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { PresetLibrary } from './PresetLibrary.tsx';
 
@@ -56,8 +57,8 @@ function characterCount(): number {
   return PRESETS.filter((preset) => preset.category === 'CHARACTER').length;
 }
 
-// The store is a module singleton, so a test that seeds a saved preset would leave it for the next
-// one — and "Your presets is empty" is an assertion two of these make.
+// The store is a module singleton, so the one test that seeds a saved preset would leave it for
+// the next — and what that test asserts is that the library shows none of them.
 afterEach(() => {
   usePresetStore.setState({ customPresets: [] });
 });
@@ -169,16 +170,15 @@ describe('PresetLibrary', () => {
     const user = userEvent.setup();
     render(<PresetLibrary />);
 
-    await user.click(collectionButton('custom'));
+    await user.click(collectionButton('ITEM'));
     // Punctuation survives `trim()` and not normalisation, so this is text in the box and no terms to
     // match on. Reading "is filtering" off the query rather than off the matcher put the two in
     // disagreement: the panel showed every preset while the list disabled the collections it thought
-    // had none — including the empty one the user had just chosen.
+    // had none — including the one the user had just chosen.
     await user.type(screen.getByRole('searchbox', { name: 'Search presets' }), '-');
 
-    expect(collectionButton('custom')).toHaveAttribute('aria-current', 'true');
-    expect(collectionButton('custom')).not.toBeDisabled();
-    expect(screen.getByText(/Nothing saved yet/)).toBeInTheDocument();
+    expect(collectionButton('ITEM')).toHaveAttribute('aria-current', 'true');
+    expect(collectionButton('ITEM')).not.toBeDisabled();
     expect(collectionButton('CHARACTER')).toHaveAccessibleName(new RegExp(String(characterCount())));
   });
 
@@ -194,18 +194,6 @@ describe('PresetLibrary', () => {
     // or it falls to the document and a keyboard user's next Tab restarts from the top of the page.
     expect(search).toHaveFocus();
     expect(search).toHaveValue('');
-  });
-
-  it('leaves an empty collection selectable when nothing is being filtered', async () => {
-    const user = userEvent.setup();
-    render(<PresetLibrary />);
-
-    // Nobody has saved a preset, and "Your presets" still has to open — its empty state is the only
-    // place the app says how to put something in it.
-    await user.click(collectionButton('custom'));
-
-    expect(collectionButton('custom')).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByText(/Nothing saved yet/)).toBeInTheDocument();
   });
 
   it('says so when nothing in the library matches at all', async () => {
@@ -243,63 +231,25 @@ describe('PresetLibrary', () => {
     expect(within(cardFor(DEFAULT_PRESET.name)).getByText(DEFAULT_PRESET.description)).toBeInTheDocument();
   });
 
-  it('names the subject on a card whose preset has no description', async () => {
-    const user = userEvent.setup();
-    usePresetStore.setState({
-      customPresets: [
-        { ...DEFAULT_PRESET, id: 'custom-1', name: 'Bare Knight', description: '', isCustom: true },
-      ],
-    });
-
-    render(<PresetLibrary />);
-    await user.click(collectionButton('custom'));
-
-    // The box is optional, so an empty one is ordinary — and a gap where the sentence would go says
-    // less about the preset than its species and setting do.
-    const { species, setting } = DEFAULT_PRESET.subject;
-    expect(within(cardFor('Bare Knight')).getByText(`${species} — ${setting}`)).toBeInTheDocument();
-  });
-
-  it('opens the details editor on both the name and the description', async () => {
-    const user = userEvent.setup();
+  it('shows only the built-in archetypes, whatever the reader has saved', () => {
+    // The reader's own presets used to be a collection here. They are filed under projects now and
+    // are shown on the Projects view, so this library is the shipped archetypes alone — a card here
+    // for a saved preset would be one the reader cannot edit, delete or re-file.
     usePresetStore.setState({
       customPresets: [
         {
           ...DEFAULT_PRESET,
           id: 'custom-1',
+          projectId: DEFAULT_PROJECT_ID,
           name: 'My Knight',
-          description: 'For the town scenes.',
           isCustom: true,
         },
       ],
     });
 
     render(<PresetLibrary />);
-    await user.click(collectionButton('custom'));
-    await user.click(screen.getByRole('button', { name: 'Edit details for preset My Knight' }));
 
-    // Both boxes open on what the preset holds. The description is the half that only this editor
-    // can reach: saving over a preset by name writes the studio as it stands, which is a different
-    // intention entirely.
-    expect(screen.getByRole('textbox', { name: 'New name for My Knight' })).toHaveValue('My Knight');
-    expect(screen.getByRole('textbox', { name: 'Description for My Knight' })).toHaveValue(
-      'For the town scenes.',
-    );
-  });
-
-  it('files a saved preset under the user’s own collection', async () => {
-    const user = userEvent.setup();
-    usePresetStore.setState({
-      customPresets: [{ ...DEFAULT_PRESET, id: 'custom-1', name: 'My Knight', isCustom: true }],
-    });
-
-    render(<PresetLibrary />);
-
-    // Not among the built-in humanoids it was saved from — "mine" is what a user goes looking for.
     expect(screen.queryByRole('heading', { name: 'My Knight' })).not.toBeInTheDocument();
-    expect(collectionButton('custom')).toHaveAccessibleName(/1/);
-
-    await user.click(collectionButton('custom'));
-    expect(screen.getByRole('heading', { name: 'My Knight' })).toBeInTheDocument();
+    expect(cards()).toHaveLength(characterCount());
   });
 });

@@ -15,8 +15,11 @@ interface QuantisePresetListProps {
  * *name they gave it*, which is why the name and the sentence under it are the whole row.
  *
  * Split out of `QuantisePresetControls` because that panel's job is putting settings *into* the
- * collection and this one's is taking them out — the same division the Presets tab makes between
- * its save panel and its library.
+ * collection and this one's is taking them out.
+
+ * **The same row is what the Projects view lists**, which is why `QuantisePresetRow` is a component
+ * of its own rather than markup inside this file: a saved set is loaded from here while working and
+ * re-filed from there while organising, and both are the same row.
  *
  * **No `stagger-children`**, deliberately. That utility's delays are fractions of `view-pop-in`,
  * the page-transition entrance, and its own comment says so — the preset library wears it because

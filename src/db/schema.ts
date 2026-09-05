@@ -14,6 +14,7 @@ export const DATABASE_FILENAME = '/sprite-gubbins.sqlite3';
 /** The OPFS SAH pool this app's database lives in. Namespaced so it can't collide. */
 export const OPFS_POOL_NAME = 'sprite-gubbins-pool';
 
+export const PROJECTS_TABLE = 'projects';
 export const PROMPT_HISTORY_TABLE = 'prompt_history';
 export const CUSTOM_PRESETS_TABLE = 'custom_presets';
 export const APP_SETTINGS_TABLE = 'app_settings';
@@ -51,6 +52,14 @@ export const SESSION_ROW_ID = 1;
  * incompatible database is discarded rather than translated.
  */
 export const CREATE_TABLES_SQL = `
+CREATE TABLE IF NOT EXISTS ${PROJECTS_TABLE} (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS ${PROMPT_HISTORY_TABLE} (
   id TEXT PRIMARY KEY,
   category TEXT NOT NULL,
@@ -64,6 +73,7 @@ CREATE TABLE IF NOT EXISTS ${PROMPT_HISTORY_TABLE} (
 
 CREATE TABLE IF NOT EXISTS ${CUSTOM_PRESETS_TABLE} (
   id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   category TEXT NOT NULL,
@@ -86,6 +96,7 @@ CREATE TABLE IF NOT EXISTS ${STUDIO_SESSION_TABLE} (
 
 CREATE TABLE IF NOT EXISTS ${QUANTISE_PRESETS_TABLE} (
   id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL,
   name TEXT NOT NULL,
   description TEXT NOT NULL,
   dials_json TEXT NOT NULL,
@@ -118,6 +129,7 @@ CREATE INDEX IF NOT EXISTS idx_prompt_history_created_at
  * fails unless the two agree, so the drift this would otherwise invite is caught at build time.
  */
 export const TABLE_COLUMNS = {
+  [PROJECTS_TABLE]: ['id', 'name', 'description', 'created_at', 'updated_at'],
   [PROMPT_HISTORY_TABLE]: [
     'id',
     'category',
@@ -130,6 +142,7 @@ export const TABLE_COLUMNS = {
   ],
   [CUSTOM_PRESETS_TABLE]: [
     'id',
+    'project_id',
     'name',
     'description',
     'category',
@@ -139,7 +152,7 @@ export const TABLE_COLUMNS = {
   ],
   [APP_SETTINGS_TABLE]: ['id', 'settings_json'],
   [STUDIO_SESSION_TABLE]: ['id', 'category', 'subject_json', 'output_json'],
-  [QUANTISE_PRESETS_TABLE]: ['id', 'name', 'description', 'dials_json', 'updated_at'],
+  [QUANTISE_PRESETS_TABLE]: ['id', 'project_id', 'name', 'description', 'dials_json', 'updated_at'],
 } as const satisfies Record<string, readonly string[]>;
 
 /** What the stored table's columns are read with, and what a mismatched one is dropped by. */
@@ -159,12 +172,56 @@ export const DROP_TABLE_SQL = (table: string) => `DROP TABLE IF EXISTS ${table}`
  * see CLAUDE.md, “No backwards compatibility before 1.0.0”.
  */
 export const STORAGE_KEYS = {
+  projects: 'sprite_gubbins_projects',
   customPresets: 'sprite_gubbins_custom_presets',
   promptHistory: 'sprite_gubbins_prompt_history',
   appSettings: 'sprite_gubbins_app_settings',
   studioSession: 'sprite_gubbins_studio_session',
   quantisePresets: 'sprite_gubbins_quantise_presets',
 } as const;
+
+/**
+ * Every project, most recently edited first.
+ *
+ * The same ordering the two preset collections use, and for the reason given there: a reader who
+ * has just renamed or made one is looking for it. `updated_at` moves only when the project’s own
+ * name or description changes — saving a preset into a project does not touch it — so the list is
+ * stable while somebody is working inside a project rather than reshuffling under them.
+ */
+export const SELECT_PROJECTS_SQL = `
+SELECT id, name, description, created_at, updated_at
+FROM ${PROJECTS_TABLE}
+ORDER BY updated_at DESC
+`;
+
+/**
+ * Write one, replacing whatever stood under that id.
+ *
+ * `INSERT OR REPLACE` against the project’s own GUID, so making a project and renaming one are the
+ * same statement — which is what lets the store decide between them by *reusing the id*, and is
+ * what makes a rename incapable of changing the thing every preset refers to.
+ */
+export const INSERT_PROJECT_SQL = `
+INSERT OR REPLACE INTO ${PROJECTS_TABLE} (id, name, description, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?)
+`;
+
+export const DELETE_PROJECT_SQL = `DELETE FROM ${PROJECTS_TABLE} WHERE id = ?`;
+
+/**
+ * The two statements that make deleting a project delete what is in it.
+ *
+ * The cascade is written here rather than declared with `REFERENCES … ON DELETE CASCADE`, because
+ * SQLite enforces foreign keys only where `PRAGMA foreign_keys = ON` is set on the connection —
+ * it is off by default, and a constraint that is silently not enforced is worse than none. The
+ * worker runs these three inside one transaction instead, which the localStorage fallback matches
+ * by rewriting both collections; see `sqliteRequests.ts`.
+ */
+export const DELETE_PRESETS_BY_PROJECT_SQL = `DELETE FROM ${CUSTOM_PRESETS_TABLE} WHERE project_id = ?`;
+export const DELETE_QUANTISE_PRESETS_BY_PROJECT_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE} WHERE project_id = ?`;
+
+/** Empty the collection — the first third of importing a library pack. */
+export const DELETE_ALL_PROJECTS_SQL = `DELETE FROM ${PROJECTS_TABLE}`;
 
 /** Newest first — the order the history drawer lists entries in. */
 export const SELECT_HISTORY_SQL = `
@@ -186,15 +243,15 @@ export const DELETE_HISTORY_SQL = `DELETE FROM ${PROMPT_HISTORY_TABLE} WHERE id 
 export const DELETE_ALL_HISTORY_SQL = `DELETE FROM ${PROMPT_HISTORY_TABLE}`;
 
 export const SELECT_PRESETS_SQL = `
-SELECT id, name, description, category, subject_json, output_json, updated_at
+SELECT id, project_id, name, description, category, subject_json, output_json, updated_at
 FROM ${CUSTOM_PRESETS_TABLE}
 ORDER BY updated_at DESC
 `;
 
 export const INSERT_PRESET_SQL = `
 INSERT OR REPLACE INTO ${CUSTOM_PRESETS_TABLE}
-  (id, name, description, category, subject_json, output_json, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+  (id, project_id, name, description, category, subject_json, output_json, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 `;
 
 export const DELETE_PRESET_SQL = `DELETE FROM ${CUSTOM_PRESETS_TABLE} WHERE id = ?`;
@@ -240,7 +297,7 @@ VALUES (${SESSION_ROW_ID}, ?, ?, ?)
  * explains.
  */
 export const SELECT_QUANTISE_PRESETS_SQL = `
-SELECT id, name, description, dials_json, updated_at
+SELECT id, project_id, name, description, dials_json, updated_at
 FROM ${QUANTISE_PRESETS_TABLE}
 ORDER BY updated_at DESC
 `;
@@ -254,8 +311,8 @@ ORDER BY updated_at DESC
  */
 export const INSERT_QUANTISE_PRESET_SQL = `
 INSERT OR REPLACE INTO ${QUANTISE_PRESETS_TABLE}
-  (id, name, description, dials_json, updated_at)
-VALUES (?, ?, ?, ?, ?)
+  (id, project_id, name, description, dials_json, updated_at)
+VALUES (?, ?, ?, ?, ?, ?)
 `;
 
 export const DELETE_QUANTISE_PRESET_SQL = `DELETE FROM ${QUANTISE_PRESETS_TABLE} WHERE id = ?`;

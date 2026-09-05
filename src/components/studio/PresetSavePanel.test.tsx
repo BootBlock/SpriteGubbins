@@ -1,8 +1,10 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { DEFAULT_PRESET } from '../../constants/presets/index.ts';
+import { DEFAULT_PROJECT_ID, createDefaultProject } from '../../constants/projects.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
+import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { PresetSavePanel } from './PresetSavePanel.tsx';
 
 /**
@@ -15,25 +17,36 @@ import { PresetSavePanel } from './PresetSavePanel.tsx';
  * stored.
  */
 
+const HARBOUR = { id: 'harbour', name: 'Harbour', description: '', createdAt: 0, updatedAt: 0 } as const;
+
 const EXISTING = {
   ...DEFAULT_PRESET,
   id: 'custom-1',
+  projectId: DEFAULT_PROJECT_ID,
   name: 'My Knight',
   description: 'For the town scenes.',
   isCustom: true,
 } as const;
 
 function nameBox(): HTMLElement {
-  return screen.getByLabelText('Save the current studio setup as');
+  return screen.getByLabelText('Save as');
 }
 
 function descriptionBox(): HTMLElement {
   return screen.getByLabelText('Describe it (optional)');
 }
 
-// The store is a module singleton, so a seeded preset would otherwise outlive the test that set it.
+// A save has to have somewhere to go, and the panel disables its button while it has not. `App`
+// writes this project on boot; here it is put in place directly, since what is under test is the
+// panel rather than the fetch.
+beforeEach(() => {
+  useProjectStore.setState({ projects: [createDefaultProject(0)] });
+});
+
+// The stores are module singletons, so a seeded preset would otherwise outlive the test that set it.
 afterEach(() => {
   usePresetStore.setState({ customPresets: [] });
+  useProjectStore.setState({ projects: [] });
   vi.restoreAllMocks();
 });
 
@@ -97,7 +110,7 @@ describe('PresetSavePanel', () => {
 
     // Removing a description has to remain possible, which is why the box is not simply ignored
     // when it is empty — a blank box means one thing, and this is it.
-    expect(saveCustomPreset).toHaveBeenCalledWith('My Knight', '');
+    expect(saveCustomPreset).toHaveBeenCalledWith('My Knight', '', DEFAULT_PROJECT_ID);
   });
 
   it('saves the name and the description together, and clears both on success', async () => {
@@ -110,9 +123,52 @@ describe('PresetSavePanel', () => {
     await user.type(descriptionBox(), 'A new one.');
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(saveCustomPreset).toHaveBeenCalledWith('Fresh', 'A new one.');
+    expect(saveCustomPreset).toHaveBeenCalledWith('Fresh', 'A new one.', DEFAULT_PROJECT_ID);
     expect(nameBox()).toHaveValue('');
     expect(descriptionBox()).toHaveValue('');
+  });
+
+  it('files the save into the project the dropdown names', async () => {
+    const user = userEvent.setup();
+    const saveCustomPreset = vi.fn().mockResolvedValue(true);
+    useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
+    usePresetStore.setState({ saveCustomPreset });
+    render(<PresetSavePanel />);
+
+    await user.selectOptions(screen.getByLabelText('Save into'), 'harbour');
+    await user.type(nameBox(), 'Fresh');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(saveCustomPreset).toHaveBeenCalledWith('Fresh', '', 'harbour');
+  });
+
+  it('judges Update against the chosen project, not the whole library', async () => {
+    // A name is unique inside one project, so the same name in another project is a new preset
+    // rather than an overwrite — and the button has to answer by the rule the store saves by.
+    const user = userEvent.setup();
+    useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
+    usePresetStore.setState({ customPresets: [EXISTING] });
+    render(<PresetSavePanel />);
+
+    await user.type(nameBox(), 'My Knight');
+    expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('Save into'), 'harbour');
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
+  });
+
+  it('keeps the project chosen after a save, since two saves in a row share one', async () => {
+    const user = userEvent.setup();
+    useProjectStore.setState({ projects: [createDefaultProject(0), HARBOUR] });
+    usePresetStore.setState({ saveCustomPreset: vi.fn().mockResolvedValue(true) });
+    render(<PresetSavePanel />);
+
+    await user.selectOptions(screen.getByLabelText('Save into'), 'harbour');
+    await user.type(nameBox(), 'Fresh');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(screen.getByLabelText('Save into')).toHaveValue('harbour');
   });
 
   it('keeps both boxes when the write was refused', async () => {

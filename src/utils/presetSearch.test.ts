@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { PRESETS } from '../constants/presets/index.ts';
 import { DEFAULT_PRESET } from '../constants/presets/index.ts';
-import type { PresetArchetype } from '../types/preset.ts';
 import { countByCollection, indexPresetLibrary, matchPresetEntries } from './presetSearch.ts';
 
 /**
@@ -12,9 +11,6 @@ import { countByCollection, indexPresetLibrary, matchPresetEntries } from './pre
  * re-styled out from under one of them fails here rather than quietly returning nothing in the app.
  */
 const LIBRARY = indexPresetLibrary(PRESETS);
-
-/** A saved preset, which is filed by ownership rather than by category. */
-const MINE: PresetArchetype = { ...DEFAULT_PRESET, id: 'custom-1', name: 'My Knight', isCustom: true };
 
 function namesFor(query: string): readonly string[] {
   return matchPresetEntries(LIBRARY, query).map((entry) => entry.preset.name);
@@ -27,13 +23,7 @@ describe('indexPresetLibrary', () => {
     expect(LIBRARY.map((entry) => entry.index)).toEqual(PRESETS.map((_, index) => index));
   });
 
-  it('files a saved preset under the user’s own collection, not its category', () => {
-    const [entry] = indexPresetLibrary([MINE]);
-    expect(entry?.collection).toBe('custom');
-    expect(MINE.category).toBe('CHARACTER');
-  });
-
-  it('files a built-in under its category', () => {
+  it('files a preset under its category', () => {
     const entry = LIBRARY.find((candidate) => candidate.preset.id === DEFAULT_PRESET.id);
     expect(entry?.collection).toBe('CHARACTER');
   });
@@ -130,10 +120,10 @@ describe('countByCollection', () => {
   it('counts what each collection holds and omits the ones holding nothing', () => {
     const counts = countByCollection(LIBRARY);
 
-    // Every category ships presets; nobody has saved one, so `custom` is absent rather than zero.
+    // Every category ships presets, and every collection here is a category: the reader's own
+    // saved presets are filed under projects and are not in this library at all.
     expect(counts.get('CHARACTER')).toBeGreaterThan(0);
     expect(counts.get('ITEM')).toBeGreaterThan(0);
-    expect(counts.has('custom')).toBe(false);
 
     expect([...counts.values()].reduce((total, count) => total + count, 0)).toBe(PRESETS.length);
   });

@@ -1,10 +1,7 @@
 import { create } from 'zustand';
-import { QUANTISE_PACK_ITEMS } from '../constants/packImport.ts';
 import { getDatabase } from '../db/database.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
-import { describePackImported } from '../utils/packImportSummary.ts';
-import { findPresetByName } from '../utils/presetNames.ts';
-import { parseQuantisePresetPack, serialiseQuantisePresetPack } from '../utils/quantisePresetPack.ts';
+import { findByName } from '../utils/findByName.ts';
 import { currentQuantiseDials } from './currentQuantiseDials.ts';
 import { useQuantiseStore } from './useQuantiseStore.ts';
 import { useUIStore } from './useUIStore.ts';
@@ -26,27 +23,12 @@ import { useUIStore } from './useUIStore.ts';
  * **Saving reads the store rather than taking an argument**, which is what makes "save these
  * settings" mean the settings on screen and not a copy the panel was holding when it last
  * rendered. The tab's dials move under a debounce, and a preset saved from a stale prop would
- * record a position the reader had already moved past.
+ * record a position the reader had already moved past. The project is the exception and *is* an
+ * argument, for the reason `usePresetStore` gives: it is a choice the reader made in the control
+ * that asked, not a piece of state the app holds.
  */
 export interface QuantisePresetState {
   readonly presets: readonly QuantisePreset[];
-  /**
-   * Whether a transfer is in flight, which is what both transfer controls disable on.
-   *
-   * Only the import direction can actually be in flight — `exportQuantisePresetsJSON` serialises
-   * synchronously — and the flag covers both anyway, which is what stops an export racing a
-   * half-replaced collection. The studio's library keeps the same flag under its older name
-   * `isExporting`, and the two are separate flags rather than one because the two collections are
-   * replaced independently.
-   */
-  readonly isTransferring: boolean;
-  /**
-   * The sets a parsed pack holds, waiting for the reader to agree to the replacement — `null`
-   * whenever no import is being asked about. The studio's library stages its own the same way, and
-   * for the reason given there: the answer decides what happens to stored rows, and a pack that
-   * fails to parse never reaches here.
-   */
-  readonly pendingImport: readonly QuantisePreset[] | null;
 
   /** Load the stored presets. Called once on boot, beside the studio's. */
   fetchQuantisePresets(): Promise<void>;
@@ -59,34 +41,29 @@ export interface QuantisePresetState {
    */
   loadQuantisePreset(preset: QuantisePreset): void;
   /**
-   * Save the tab's current dials under `name`, with `description` as the sentence its row carries.
-   * A blank name is ignored, and a blank description is a preset that simply has none. Returns
-   * whether it was stored, so the caller can keep the name in the box to retry rather than clearing
-   * a field whose contents were never persisted.
+   * Save the tab's current dials into `projectId` under `name`, with `description` as the sentence
+   * its row carries. A blank name is ignored, and a blank description is a preset that simply has
+   * none. Returns whether it was stored, so the caller can keep the name in the box to retry rather
+   * than clearing a field whose contents were never persisted.
    *
-   * A name already in the library **updates** that preset rather than adding a second one under the
-   * same name — the same rule the studio's library follows, reached the same way: by reusing the
-   * existing id, which both backends upsert on.
+   * A name already used **in that project** updates that preset rather than adding a second one
+   * under the same name — the same rule the studio's library follows, reached the same way: by
+   * reusing the existing id, which both backends upsert on.
    */
-  saveQuantisePreset(name: string, description: string): Promise<boolean>;
-  deleteQuantisePreset(id: string): Promise<void>;
-  /** The whole collection as a pack file's text. */
-  exportQuantisePresetsJSON(): string;
+  saveQuantisePreset(name: string, description: string, projectId: string): Promise<boolean>;
   /**
-   * Read the pack in `file` and stage it for confirmation. Nothing stored changes here — the
-   * replacement itself is {@link QuantisePresetState.confirmQuantisePresetImport}.
+   * File one set under a different project, leaving its dials and its name alone.
+   *
+   * The studio's library has the same action for the same reason, and the same non-rule about
+   * names: a set landing beside one that shares its name is two different readings of two sheets,
+   * and merging them would destroy one.
    */
-  importQuantisePresetsJSON(file: File): Promise<void>;
-  /** Replace the stored collection with the staged pack. */
-  confirmQuantisePresetImport(): Promise<void>;
-  /** Discard the staged pack, leaving the stored collection exactly as it is. */
-  cancelQuantisePresetImport(): void;
+  moveQuantisePreset(id: string, projectId: string): Promise<void>;
+  deleteQuantisePreset(id: string): Promise<void>;
 }
 
 export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => ({
   presets: [],
-  isTransferring: false,
-  pendingImport: null,
 
   fetchQuantisePresets: async () => {
     try {
@@ -102,14 +79,19 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     useUIStore.getState().showToast(`Loaded quantiser preset: ${preset.name}`);
   },
 
-  saveQuantisePreset: async (name, description) => {
+  saveQuantisePreset: async (name, description, projectId) => {
     const trimmed = name.trim();
     if (!trimmed) return false;
 
-    const existing = findPresetByName(get().presets, trimmed);
+    // Inside the project being saved into, so one project's names cannot reach another's.
+    const existing = findByName(
+      get().presets.filter((preset) => preset.projectId === projectId),
+      trimmed,
+    );
 
     const preset: QuantisePreset = {
       id: existing?.id ?? `quantise-${crypto.randomUUID()}`,
+      projectId,
       // The typed name wins, so re-saving "flat sheets" as "Flat sheets" fixes the capitalisation.
       name: trimmed,
       description: description.trim(),
@@ -137,6 +119,22 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     }
   },
 
+  moveQuantisePreset: async (id, projectId) => {
+    const preset = get().presets.find((candidate) => candidate.id === id);
+    // Already there is not a failure and not a write — the dropdown shows the set's current project
+    // as its selected value, so choosing it again is the reader confirming what they see.
+    if (!preset || preset.projectId === projectId) return;
+
+    try {
+      const database = await getDatabase();
+      await database.saveQuantisePreset({ ...preset, projectId });
+      set({ presets: await database.listQuantisePresets() });
+      useUIStore.getState().showToast(`Moved “${preset.name}”`);
+    } catch {
+      useUIStore.getState().showToast('Could not move those settings');
+    }
+  },
+
   deleteQuantisePreset: async (id) => {
     try {
       const database = await getDatabase();
@@ -146,64 +144,5 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     } catch {
       useUIStore.getState().showToast('Could not delete that preset');
     }
-  },
-
-  exportQuantisePresetsJSON: () => serialiseQuantisePresetPack(get().presets),
-
-  importQuantisePresetsJSON: async (file) => {
-    const { showToast } = useUIStore.getState();
-    set({ isTransferring: true });
-    try {
-      const imported = parseQuantisePresetPack(await file.text());
-      if (imported === null) {
-        showToast('That file is not a Sprite Gubbins quantiser pack');
-        return;
-      }
-
-      // Importing replaces the collection, so an empty pack is refused rather than obeyed: a file
-      // exported from an install that had saved nothing would otherwise delete every set of dial
-      // positions this one holds.
-      if (imported.length === 0) {
-        showToast('No saved settings found in that file');
-        return;
-      }
-
-      // Staged, not applied — the studio's library does the same, and this is one flow written
-      // twice rather than two decisions. Whichever tab the reader is on, replacing a collection
-      // they built is asked on screen.
-      set({ pendingImport: imported });
-    } catch {
-      showToast('Could not import that quantiser pack');
-    } finally {
-      set({ isTransferring: false });
-    }
-  },
-
-  confirmQuantisePresetImport: async () => {
-    const imported = get().pendingImport;
-    if (imported === null) return;
-
-    const { showToast } = useUIStore.getState();
-    const replacing = get().presets.length;
-    // Cleared before the first await, for the reason `confirmPresetImport` gives: the staged pack
-    // is this action's guard, and leaving it open across the write let a second press replace
-    // twice and let Cancel report a deletion as though it had not happened.
-    set({ isTransferring: true, pendingImport: null });
-    try {
-      const database = await getDatabase();
-      await database.replaceQuantisePresets(imported);
-      set({ presets: imported });
-      showToast(describePackImported(imported.length, replacing, QUANTISE_PACK_ITEMS));
-    } catch {
-      showToast('Could not import that quantiser pack');
-    } finally {
-      set({ isTransferring: false });
-    }
-  },
-
-  cancelQuantisePresetImport: () => {
-    if (get().pendingImport === null) return;
-    set({ pendingImport: null });
-    useUIStore.getState().showToast('Import cancelled, and nothing you saved was deleted');
   },
 }));

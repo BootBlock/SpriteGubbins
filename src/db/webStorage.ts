@@ -45,3 +45,19 @@ export function resolveWebStorage(): WebStorageLike {
   }
   return createMemoryStorage();
 }
+
+/**
+ * The error a refused write travels as.
+ *
+ * One spelling, because two callers raise it — the backend's own `write`, and the history writer
+ * that bypasses it to retry at shorter lengths — and a message that differed between them would
+ * make the same failure look like two. A refusal is ordinary rather than exceptional here: Safari's
+ * private mode throws on the write itself, and the roughly 5 MB quota is not far away when a
+ * compiled prompt runs to a couple of thousand words.
+ *
+ * The original error travels as `cause`. Nothing reads it today, since the stores show their own
+ * copy, but discarding *why* storage refused is not something to do on the way past.
+ */
+export function storageRefusal(key: string, cause: unknown): Error {
+  return new Error(`Storage refused the write to “${key}”.`, { cause });
+}

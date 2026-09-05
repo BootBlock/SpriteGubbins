@@ -18,5 +18,6 @@ export { DIALOG_TOOLTIPS } from './dialogs.ts';
 export { HISTORY_ACTION_TOOLTIPS } from './history.ts';
 export { PALETTE_EXPORT_TOOLTIPS } from './paletteExport.ts';
 export { PRESET_ACTION_TOOLTIPS, presetCollectionGuidance } from './presets.ts';
+export { PROJECT_ACTION_TOOLTIPS } from './projects.ts';
 export { QUANTISE_ACTION_TOOLTIPS } from './quantise.ts';
 export { STUDIO_ACTION_TOOLTIPS } from './studio.ts';

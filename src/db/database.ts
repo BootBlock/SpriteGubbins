@@ -1,6 +1,6 @@
 import type { PersistenceBackend } from './backend.ts';
 import { LocalStorageBackend } from './localStorageBackend.ts';
-import { openSqliteBackend } from './sqliteBackend.ts';
+import { openSqliteBackend } from './openSqliteBackend.ts';
 
 /**
  * The app's one entry point to storage.

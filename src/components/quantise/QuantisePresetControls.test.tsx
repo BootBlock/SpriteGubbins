@@ -3,6 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QUANTISE_PRESET_GUIDANCE } from '../../constants/quantisePresets.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../../constants/quantiseDials.ts';
+import { DEFAULT_PROJECT_ID, createDefaultProject } from '../../constants/projects.ts';
+import { useProjectStore } from '../../stores/useProjectStore.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
@@ -20,6 +22,7 @@ import { QuantisePresetControls } from './QuantisePresetControls.tsx';
 
 const saved: QuantisePreset = {
   id: 'quantise-1',
+  projectId: DEFAULT_PROJECT_ID,
   name: 'Flat sheets',
   description: 'Line art.',
   dials: QUANTISE_DEFAULT_DIALS,
@@ -28,6 +31,10 @@ const saved: QuantisePreset = {
 beforeEach(() => {
   useQuantisePresetStore.setState({ presets: [] });
   useQuantiseStore.setState({ ...QUANTISE_DEFAULT_DIALS });
+  // A save has to have somewhere to go, and the panel disables its button while it has not. `App`
+  // writes this project on boot; here it is put in place directly, since what is under test is the
+  // panel rather than the fetch.
+  useProjectStore.setState({ projects: [createDefaultProject(0)] });
 });
 
 describe('QuantisePresetControls', () => {
@@ -38,11 +45,19 @@ describe('QuantisePresetControls', () => {
     expect(screen.getByText(QUANTISE_PRESET_GUIDANCE.empty)).toBeInTheDocument();
   });
 
-  it('offers the transfer controls, so the collection can leave this browser', () => {
+  it('offers the project the save will be filed under', () => {
     render(<QuantisePresetControls />);
 
-    expect(screen.getByRole('button', { name: /Export JSON/ })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Import JSON/ })).toBeInTheDocument();
+    expect(screen.getByLabelText('Save into')).toHaveValue(DEFAULT_PROJECT_ID);
+  });
+
+  it('no longer carries the transfer controls, which moved to the Projects view', () => {
+    // The pack carries the projects and both saved collections together now, so a control that
+    // could replace only this collection would be offering an import this file cannot describe.
+    render(<QuantisePresetControls />);
+
+    expect(screen.queryByRole('button', { name: /Export JSON/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Import JSON/ })).toBeNull();
   });
 
   it('counts what is saved, and lists it by name', () => {
@@ -65,7 +80,7 @@ describe('QuantisePresetControls', () => {
     expect(save).toBeEnabled();
   });
 
-  it('says Update before the press when the name is one already saved', async () => {
+  it('says Update before the press when the name is one already saved in that project', async () => {
     useQuantisePresetStore.setState({ presets: [saved] });
     render(<QuantisePresetControls />);
 
@@ -75,6 +90,36 @@ describe('QuantisePresetControls', () => {
 
     expect(screen.getByRole('button', { name: 'Update' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save' })).toBeNull();
+  });
+
+  it('says Save for a name another project holds, since a name is unique inside one', async () => {
+    // The rule projects changed. Two games are each free to have their own “Flat sheets”, and a
+    // save into one may not silently overwrite the other's — so the button has to answer by the
+    // project as well as by the name, or it promises an update the store will not perform.
+    const elsewhere: QuantisePreset = { ...saved, projectId: 'another-project' };
+    useQuantisePresetStore.setState({ presets: [elsewhere] });
+    render(<QuantisePresetControls />);
+
+    await userEvent.type(screen.getByLabelText('Save these settings as'), 'Flat sheets');
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
+  });
+
+  it('re-files a saved set from its own row, without touching what it holds', async () => {
+    const moveQuantisePreset = vi.fn().mockResolvedValue(undefined);
+    useProjectStore.setState({
+      projects: [
+        createDefaultProject(0),
+        { id: 'harbour', name: 'Harbour', description: '', createdAt: 0, updatedAt: 0 },
+      ],
+    });
+    useQuantisePresetStore.setState({ presets: [saved], moveQuantisePreset });
+    render(<QuantisePresetControls />);
+
+    await userEvent.selectOptions(screen.getByLabelText('Project'), 'harbour');
+
+    expect(moveQuantisePreset).toHaveBeenCalledWith('quantise-1', 'harbour');
   });
 
   it('empties both boxes once the settings were actually stored', async () => {
@@ -87,7 +132,7 @@ describe('QuantisePresetControls', () => {
     await userEvent.type(screen.getByLabelText('Describe it (optional)'), 'Line art.');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(saveQuantisePreset).toHaveBeenCalledWith('Flat sheets', 'Line art.');
+    expect(saveQuantisePreset).toHaveBeenCalledWith('Flat sheets', 'Line art.', DEFAULT_PROJECT_ID);
     expect(name).toHaveValue('');
   });
 

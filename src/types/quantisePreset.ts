@@ -76,5 +76,15 @@ export interface QuantisePreset {
   readonly name: string;
   /** The sentence the row carries, or empty for a preset that simply has none. */
   readonly description: string;
+  /**
+   * The project this set is filed under, by that project’s id — never by its name.
+   *
+   * Required rather than optional, which is where this differs from the studio’s archetypes: every
+   * set of dial positions is one the reader saved, so there is no built-in arm of the type with no
+   * project to belong to. The rules are otherwise the studio’s — deleting a project deletes its
+   * sets, and an imported set naming a project the file did not carry is re-filed under the Default
+   * project.
+   */
+  readonly projectId: string;
   readonly dials: QuantiseDials;
 }

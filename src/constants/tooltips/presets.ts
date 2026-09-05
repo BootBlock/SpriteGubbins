@@ -1,5 +1,3 @@
-import { COLLECTION_COUNT_FOLLOWS_SEARCH } from '../guidanceSentences.ts';
-
 /**
  * Guidance for the preset library's controls.
  *
@@ -65,14 +63,18 @@ export const PRESET_ACTION_TOOLTIPS = {
 /**
  * What a collection button in the library's sidebar says, given the collection's own name.
  *
- * A function rather than a record, because the collections are the app's subject categories plus one
- * — a set that grows when a category is added — and a record keyed by hand is the copy that would be
+ * A function rather than a record, because the collections are the app's subject categories — a set
+ * that grows when a category is added — and a record keyed by hand is the copy that would be
  * missing an entry the first time one is. The label is passed in rather than looked up so this file
  * knows nothing about where the names come from.
+ *
+ * **One branch, where there were two.** The second described the collection holding the reader's
+ * own saved presets, and there is no such collection any more: everything a reader saves is filed
+ * under a project and shown on the Projects view. The closing sentence came from
+ * `constants/guidanceSentences.ts` while the two branches both stated it; with one branch left it
+ * is carried by one control, so it is written out here and the constant is gone — a shared sentence
+ * with a single carrier is a fact stated once in a file nothing else reads.
  */
-export function presetCollectionGuidance(label: string, isCustom: boolean): string {
-  return isCustom
-    ? 'Shows the presets you have saved yourself, whatever category each one was saved under — “mine” is what you go looking for, and a knight of your own filed among a dozen built-in humanoids is one you would have to hunt for. ' +
-        COLLECTION_COUNT_FOLLOWS_SEARCH
-    : `Shows the built-in presets written for the ${label} category. Loading any of them switches the studio to that category as well, so the field labels and option pools change with it. ${COLLECTION_COUNT_FOLLOWS_SEARCH}`;
+export function presetCollectionGuidance(label: string): string {
+  return `Shows the built-in presets written for the ${label} category. Loading any of them switches the studio to that category as well, so the field labels and option pools change with it. The count beside it is how many match the search, where one is running.`;
 }

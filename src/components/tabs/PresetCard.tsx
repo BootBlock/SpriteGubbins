@@ -1,29 +1,27 @@
-import { useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { spectrumStopAt } from '../../constants/spectrum.ts';
 import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { usePresetStore } from '../../stores/usePresetStore.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { PresetCardSpecs } from './PresetCardSpecs.tsx';
-import { PresetDetailsForm } from './PresetDetailsForm.tsx';
 
 interface PresetCardProps {
   readonly preset: PresetArchetype;
   /** Where in the library this card sits, which is what decides its stop on the wheel. */
   readonly index: number;
-  readonly onLoad: (preset: PresetArchetype) => void;
-  /** Resolves to whether the edit was stored, so a refused one keeps the editor open. */
-  readonly onUpdateDetails: (preset: PresetArchetype, name: string, description: string) => Promise<boolean>;
-  readonly onDelete: (preset: PresetArchetype) => void;
 }
 
 /**
- * One archetype in the library.
+ * One built-in archetype in the library.
  *
- * Only the user's own presets offer an edit and a delete: a built-in is a compile-time constant
- * that is never stored, while a custom one is work the user did that nothing else holds a copy of —
- * which is why the delete confirms first and the edit does not need to.
+ * **It offers a load and nothing else**, where it once carried an edit and a delete for the
+ * reader's own presets. Those are on the Projects view now, as rows rather than cards, because a
+ * saved preset carries a dropdown that re-files it and a card in a three-column grid is too narrow
+ * to render a project name whole. What is left here is the browsing surface for the archetypes the
+ * app ships, which cannot be edited or deleted in any case: they are a compile-time constant and
+ * are never stored.
  *
  * **Each card re-points `--color-tab` to its own stop on the wheel**, so the library reads as a
  * spectrum rather than a grid of one colour repeated. Which stops are on offer is `spectrumStopAt`'s
@@ -36,17 +34,8 @@ interface PresetCardProps {
  * out of its props — and it is why the button needs no prop either: `action-tab` picks up the
  * card's stop, not the presets view's.
  */
-export function PresetCard({ preset, index, onLoad, onUpdateDetails, onDelete }: PresetCardProps) {
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const editButtonRef = useRef<HTMLButtonElement>(null);
-
-  // Focused *before* the state change, not after: the edit button never unmounts, so it can take
-  // focus now and still hold it once the editor goes. Otherwise focus would fall to the document.
-  const closeEditor = () => {
-    editButtonRef.current?.focus();
-    setIsEditing(false);
-  };
+export function PresetCard({ preset, index }: PresetCardProps) {
+  const loadPreset = usePresetStore((state) => state.loadPreset);
 
   return (
     <li
@@ -67,26 +56,12 @@ export function PresetCard({ preset, index, onLoad, onUpdateDetails, onDelete }:
       />
 
       <div className="relative space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <Badge tone="view">{preset.category}</Badge>
-          <Badge>{preset.isCustom === true ? 'Your preset' : 'Built-in'}</Badge>
-        </div>
+        <Badge tone="view">{preset.category}</Badge>
 
-        {isEditing ? (
-          <PresetDetailsForm preset={preset} onUpdateDetails={onUpdateDetails} onClose={closeEditor} />
-        ) : (
-          <h3 className="text-base font-bold text-ink transition-colors duration-585 group-hover:text-tab">
-            {preset.name}
-          </h3>
-        )}
+        <h3 className="text-base font-bold text-ink transition-colors duration-585 group-hover:text-tab">
+          {preset.name}
+        </h3>
         {/*
-          The description where there is one, and the subject where there is not.
-
-          Not both: the line is the card's one sentence, and a preset that describes itself has
-          already said the useful half of "Human — Dark Fantasy". Every built-in carries a
-          description, so the fallback is reached only by a preset of the user's own saved with the
-          box left empty — and naming its species and setting is a better answer there than a gap.
-
           **Six lines, and that number is the copy's rather than the layout's.** The clamp is a
           guard against a description somebody pasted a paragraph into, not a budget the built-ins
           are written to: at the narrowest the card ever gets — three columns inside the page's
@@ -94,104 +69,35 @@ export function PresetCard({ preset, index, onLoad, onUpdateDetails, onDelete }:
           at needs six. Two was right for "species — setting", which never reached a third line;
           carrying that figure over to prose is what truncated every built-in description mid-clause.
         */}
-        <p className="line-clamp-6 text-xs text-ink-muted">
-          {preset.description === ''
-            ? `${preset.subject.species} — ${preset.subject.setting}`
-            : preset.description}
-        </p>
+        <p className="line-clamp-6 text-xs text-ink-muted">{preset.description}</p>
         <PresetCardSpecs category={preset.category} output={preset.output} />
       </div>
 
-      {isConfirmingDelete ? (
-        <div className="relative flex gap-2">
-          {/* `flex-1` travels with the button to the wrapper, which is the flex item in this row. */}
-          <ControlTooltip
-            hint={`Delete “${preset.name}”`}
-            text={PRESET_ACTION_TOOLTIPS.confirmDeletePreset}
-            className="relative flex flex-1"
+      <div className="relative flex gap-2">
+        <ControlTooltip
+          hint="Load preset"
+          text={PRESET_ACTION_TOOLTIPS.loadPreset}
+          className="relative flex flex-1"
+        >
+          <button
+            type="button"
+            onClick={() => {
+              loadPreset(preset);
+            }}
+            className="action-tab group/load flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
           >
-            <button
-              type="button"
-              onClick={() => {
-                setIsConfirmingDelete(false);
-                onDelete(preset);
-              }}
-              className="w-full rounded-xl bg-rose py-2 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
+            {/* Named group: the card is already a `group`, and an unnamed one here would follow the
+                card's hover rather than this button's. */}
+            <span
+              aria-hidden="true"
+              className="inline-block transition-transform duration-585 group-hover/load:scale-125"
             >
-              Delete “{preset.name}”
-            </button>
-          </ControlTooltip>
-          <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelDeletePreset}>
-            <button
-              type="button"
-              onClick={() => {
-                setIsConfirmingDelete(false);
-              }}
-              className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
-            >
-              Cancel
-            </button>
-          </ControlTooltip>
-        </div>
-      ) : (
-        <div className="relative flex gap-2">
-          <ControlTooltip
-            hint="Load preset"
-            text={PRESET_ACTION_TOOLTIPS.loadPreset}
-            className="relative flex flex-1"
-          >
-            <button
-              type="button"
-              onClick={() => {
-                onLoad(preset);
-              }}
-              className="action-tab group/load flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition-all duration-390 active:scale-[0.98]"
-            >
-              {/* Named group: the card is already a `group`, and an unnamed one here would follow the
-                  card's hover rather than this button's. */}
-              <span
-                aria-hidden="true"
-                className="inline-block transition-transform duration-585 group-hover/load:scale-125"
-              >
-                ⚡
-              </span>
-              Load preset
-            </button>
-          </ControlTooltip>
-
-          {preset.isCustom === true && (
-            <>
-              <ControlTooltip hint="Edit details" text={PRESET_ACTION_TOOLTIPS.editPresetDetails}>
-                <button
-                  ref={editButtonRef}
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(true);
-                  }}
-                  aria-label={`Edit details for preset ${preset.name}`}
-                  className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-ink-muted transition-all duration-390 hover:-translate-y-px hover:border-tab/50 hover:bg-foundry-700 active:translate-y-0"
-                >
-                  <span aria-hidden="true">✏️</span>
-                </button>
-              </ControlTooltip>
-              <ControlTooltip hint="Delete" text={PRESET_ACTION_TOOLTIPS.deletePreset}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    // The editor would otherwise sit above a confirm asking to delete what it edits.
-                    setIsEditing(false);
-                    setIsConfirmingDelete(true);
-                  }}
-                  aria-label={`Delete preset ${preset.name}`}
-                  className="rounded-xl border border-foundry-600 px-3 py-2 text-xs font-semibold text-rose transition-all duration-390 hover:-translate-y-px hover:border-rose/50 hover:bg-foundry-700 active:translate-y-0"
-                >
-                  <span aria-hidden="true">🗑</span>
-                </button>
-              </ControlTooltip>
-            </>
-          )}
-        </div>
-      )}
+              ⚡
+            </span>
+            Load preset
+          </button>
+        </ControlTooltip>
+      </div>
     </li>
   );
 }

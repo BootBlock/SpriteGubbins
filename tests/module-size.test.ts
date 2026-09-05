@@ -62,6 +62,12 @@ const DECLARATION_PATHS = [
   'src/constants/quantiser.ts',
   // What each target model is, and what it can be asked to do.
   'src/constants/models.ts',
+  // The database's data definition: the DDL, the columns each table declares, the storage keys the
+  // fallback uses, and every statement the worker runs. There is no control flow in it and nothing
+  // to name and lift out — splitting it would put a table's shape in one file and the statements
+  // that read that shape in another, which is the drift the file's own `TABLE_COLUMNS` exists to
+  // stop.
+  'src/db/schema.ts',
   // The type vocabulary. A type is a declaration by construction.
   'src/types/',
 ];

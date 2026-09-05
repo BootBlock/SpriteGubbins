@@ -7,7 +7,8 @@ import { LocalStorageBackend } from '../db/localStorageBackend.ts';
 import { createMemoryStorage } from '../db/webStorage.ts';
 import { createFailingBackend } from '../test/backendDoubles.ts';
 import { createRefusingStorage } from '../test/storageDoubles.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import { DEFAULT_PROJECT_ID } from '../constants/projects.ts';
+import type { CustomArchetype } from '../types/preset.ts';
 import { withCompanionOutputs } from '../utils/imageConfig.ts';
 import { canUndoStudio } from '../utils/studioHistory.ts';
 import { useOutputStore } from './useOutputStore.ts';
@@ -29,16 +30,10 @@ vi.mock('../db/database.ts', () => ({
   getDatabase: () => Promise.resolve(backend),
 }));
 
-/** The pack the app itself exports, as a file the user would hand back to it. */
-function packFile(presets: readonly unknown[]): File {
-  return new File([JSON.stringify(presets)], 'sprite-gubbins-presets.json', {
-    type: 'application/json',
-  });
-}
-
-function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype {
+function customPreset(overrides: Partial<CustomArchetype> = {}): CustomArchetype {
   return {
     id: 'custom-imported-1',
+    projectId: DEFAULT_PROJECT_ID,
     name: 'Imported Knight',
     description: '',
     category: 'CHARACTER',
@@ -49,9 +44,12 @@ function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype
   };
 }
 
+/** A second project, so the rules that are scoped to one can be told from the rules that are not. */
+const HARBOUR = 'project-harbour';
+
 beforeEach(() => {
   backend = new LocalStorageBackend(createMemoryStorage());
-  usePresetStore.setState({ customPresets: [], isExporting: false, pendingImport: null });
+  usePresetStore.setState({ customPresets: [] });
   useSubjectStore.setState({ category: DEFAULT_PRESET.category, subject: DEFAULT_PRESET.subject });
   useOutputStore.setState({ output: DEFAULT_OUTPUT_CONFIG });
   useUIStore.getState().dismissToast();
@@ -136,7 +134,7 @@ describe('loadPreset', () => {
 describe('saveCustomPreset', () => {
   it('persists the studio state under the given name', async () => {
     useSubjectStore.getState().setField('role', 'Lamplighter');
-    await usePresetStore.getState().saveCustomPreset('  My Archetype  ', '');
+    await usePresetStore.getState().saveCustomPreset('  My Archetype  ', '', DEFAULT_PROJECT_ID);
 
     const [saved] = usePresetStore.getState().customPresets;
     expect(saved?.name).toBe('My Archetype');
@@ -154,7 +152,7 @@ describe('saveCustomPreset', () => {
       output: { ...DEFAULT_OUTPUT_CONFIG, emitComponentMap: true, emitPromptFeedback: true },
     });
 
-    await usePresetStore.getState().saveCustomPreset('My Archetype', '');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', '', DEFAULT_PROJECT_ID);
 
     const [saved] = await backend.listPresets();
     expect(Object.keys(saved?.output ?? {})).not.toContain('emitComponentMap');
@@ -162,7 +160,9 @@ describe('saveCustomPreset', () => {
   });
 
   it('stores the description beside the name, trimmed', async () => {
-    await usePresetStore.getState().saveCustomPreset('Described', '  A knight for the town scenes  ');
+    await usePresetStore
+      .getState()
+      .saveCustomPreset('Described', '  A knight for the town scenes  ', DEFAULT_PROJECT_ID);
 
     const [saved] = await backend.listPresets();
     expect(saved?.description).toBe('A knight for the town scenes');
@@ -171,15 +171,15 @@ describe('saveCustomPreset', () => {
   it('lets a preset be saved with no description at all', async () => {
     // Optional means optional: the card names the subject and setting instead, and the pack format
     // carries the empty string rather than dropping the field.
-    await usePresetStore.getState().saveCustomPreset('Bare', '   ');
+    await usePresetStore.getState().saveCustomPreset('Bare', '   ', DEFAULT_PROJECT_ID);
 
     const [saved] = await backend.listPresets();
     expect(saved?.description).toBe('');
   });
 
   it('writes the description it was given when it updates an existing preset', async () => {
-    await usePresetStore.getState().saveCustomPreset('My Archetype', 'First wording');
-    await usePresetStore.getState().saveCustomPreset('My Archetype', 'Second wording');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', 'First wording', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('My Archetype', 'Second wording', DEFAULT_PROJECT_ID);
 
     const stored = await backend.listPresets();
     expect(stored).toHaveLength(1);
@@ -187,14 +187,14 @@ describe('saveCustomPreset', () => {
   });
 
   it('ignores a blank name without touching storage', async () => {
-    await usePresetStore.getState().saveCustomPreset('   ', '');
+    await usePresetStore.getState().saveCustomPreset('   ', '', DEFAULT_PROJECT_ID);
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     await expect(backend.listPresets()).resolves.toHaveLength(0);
   });
 
   it('reports a failed write instead of showing a preset that was never saved', async () => {
     backend = createFailingBackend();
-    await usePresetStore.getState().saveCustomPreset('Doomed', '');
+    await usePresetStore.getState().saveCustomPreset('Doomed', '', DEFAULT_PROJECT_ID);
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not save that preset');
@@ -208,12 +208,12 @@ describe('saveCustomPreset', () => {
    */
   it('updates the preset of that name rather than adding a second one', async () => {
     useSubjectStore.getState().setField('role', 'Lamplighter');
-    await usePresetStore.getState().saveCustomPreset('My Archetype', '');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', '', DEFAULT_PROJECT_ID);
     const [first] = usePresetStore.getState().customPresets;
     if (!first) throw new Error('the preset should have been saved.');
 
     useSubjectStore.getState().setField('role', 'Bellfounder');
-    await usePresetStore.getState().saveCustomPreset('My Archetype', '');
+    await usePresetStore.getState().saveCustomPreset('My Archetype', '', DEFAULT_PROJECT_ID);
 
     const { customPresets } = usePresetStore.getState();
     expect(customPresets).toHaveLength(1);
@@ -226,16 +226,16 @@ describe('saveCustomPreset', () => {
   });
 
   it('says it saved when the name is new, and updated when it is not', async () => {
-    await usePresetStore.getState().saveCustomPreset('Fresh', '');
+    await usePresetStore.getState().saveCustomPreset('Fresh', '', DEFAULT_PROJECT_ID);
     expect(useUIStore.getState().toastMessage).toBe('Saved custom preset “Fresh”');
 
-    await usePresetStore.getState().saveCustomPreset('Fresh', '');
+    await usePresetStore.getState().saveCustomPreset('Fresh', '', DEFAULT_PROJECT_ID);
     expect(useUIStore.getState().toastMessage).toBe('Updated custom preset “Fresh”');
   });
 
   it('treats a differently-cased name as the same one, and adopts the new spelling', async () => {
-    await usePresetStore.getState().saveCustomPreset('my knight', '');
-    await usePresetStore.getState().saveCustomPreset('My Knight', '');
+    await usePresetStore.getState().saveCustomPreset('my knight', '', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('My Knight', '', DEFAULT_PROJECT_ID);
 
     const { customPresets } = usePresetStore.getState();
     expect(customPresets).toHaveLength(1);
@@ -243,8 +243,8 @@ describe('saveCustomPreset', () => {
   });
 
   it('still creates a new preset under a name nothing holds', async () => {
-    await usePresetStore.getState().saveCustomPreset('First', '');
-    await usePresetStore.getState().saveCustomPreset('Second', '');
+    await usePresetStore.getState().saveCustomPreset('First', '', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('Second', '', DEFAULT_PROJECT_ID);
 
     expect(
       usePresetStore
@@ -254,11 +254,30 @@ describe('saveCustomPreset', () => {
     ).toEqual(['First', 'Second']);
   });
 
+  it('files the preset under the project it was given', async () => {
+    await usePresetStore.getState().saveCustomPreset('Mine', '', HARBOUR);
+
+    const [saved] = await backend.listPresets();
+    expect(saved?.projectId).toBe(HARBOUR);
+  });
+
+  it('adds a second preset for a name another project already holds', async () => {
+    // The rule projects changed. A name identifies a preset *inside a project*, so two games are
+    // each free to have their own “Hero” — and a save into one may never overwrite the other's.
+    await usePresetStore.getState().saveCustomPreset('Hero', 'The first', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('Hero', 'The second', HARBOUR);
+
+    const stored = await backend.listPresets();
+    expect(stored).toHaveLength(2);
+    expect(stored.map((preset) => preset.projectId).sort()).toEqual([DEFAULT_PROJECT_ID, HARBOUR].sort());
+    expect(useUIStore.getState().toastMessage).toBe('Saved custom preset “Hero”');
+  });
+
   it('does not write over a built-in, which is not stored and cannot be overwritten', async () => {
     const builtIn = PRESETS[0];
     if (!builtIn) throw new Error('PRESETS must not be empty.');
 
-    await usePresetStore.getState().saveCustomPreset(builtIn.name, '');
+    await usePresetStore.getState().saveCustomPreset(builtIn.name, '', DEFAULT_PROJECT_ID);
 
     // A custom preset of that name is created; the built-in constant is untouched. The library
     // tells them apart by its Built-in / Your preset badge, which is why this is not the duplicate
@@ -273,7 +292,7 @@ describe('saveCustomPreset', () => {
 describe('updateCustomPresetDetails', () => {
   it('renames in the store and in storage, keeping the configuration', async () => {
     useSubjectStore.getState().setField('role', 'Lamplighter');
-    await usePresetStore.getState().saveCustomPreset('Before', 'Was this');
+    await usePresetStore.getState().saveCustomPreset('Before', 'Was this', DEFAULT_PROJECT_ID);
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
@@ -294,7 +313,7 @@ describe('updateCustomPresetDetails', () => {
     // Saving over a preset by name writes the studio as it stands, so it is no use to somebody who
     // wants to fix a sentence and change nothing else. This is the path that exists for that.
     useSubjectStore.getState().setField('role', 'Lamplighter');
-    await usePresetStore.getState().saveCustomPreset('Kept', 'First wording');
+    await usePresetStore.getState().saveCustomPreset('Kept', 'First wording', DEFAULT_PROJECT_ID);
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
     useSubjectStore.getState().setField('role', 'Bellfounder');
@@ -309,9 +328,28 @@ describe('updateCustomPresetDetails', () => {
     expect(stored[0]?.subject.role).toBe('Lamplighter');
   });
 
-  it('refuses a name another preset already holds, and changes nothing', async () => {
-    await usePresetStore.getState().saveCustomPreset('Taken', '');
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
+  it('leaves a name alone that only another project holds', async () => {
+    // The collision rule follows the save rule: names are unique inside a project, so renaming to
+    // one that another project uses is not a collision and may not be refused.
+    await usePresetStore.getState().saveCustomPreset('Taken', '', HARBOUR);
+    await usePresetStore.getState().saveCustomPreset('Mine', '', DEFAULT_PROJECT_ID);
+    const mine = usePresetStore.getState().customPresets.find((preset) => preset.name === 'Mine');
+    if (!mine) throw new Error('the preset should have been saved.');
+
+    await expect(usePresetStore.getState().updateCustomPresetDetails(mine.id, 'Taken', '')).resolves.toBe(
+      true,
+    );
+    expect(
+      usePresetStore
+        .getState()
+        .customPresets.map((preset) => preset.name)
+        .sort(),
+    ).toEqual(['Taken', 'Taken']);
+  });
+
+  it('refuses a name another preset in the same project already holds, and changes nothing', async () => {
+    await usePresetStore.getState().saveCustomPreset('Taken', '', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('Mine', '', DEFAULT_PROJECT_ID);
     const mine = usePresetStore.getState().customPresets.find((preset) => preset.name === 'Mine');
     if (!mine) throw new Error('the preset should have been saved.');
 
@@ -325,12 +363,12 @@ describe('updateCustomPresetDetails', () => {
         .customPresets.map((preset) => preset.name)
         .sort(),
     ).toEqual(['Mine', 'Taken']);
-    expect(useUIStore.getState().toastMessage).toBe('A preset named “Taken” already exists');
+    expect(useUIStore.getState().toastMessage).toBe('A preset named “Taken” already exists here');
   });
 
   it('refuses a collision that differs only in case', async () => {
-    await usePresetStore.getState().saveCustomPreset('Taken', '');
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
+    await usePresetStore.getState().saveCustomPreset('Taken', '', DEFAULT_PROJECT_ID);
+    await usePresetStore.getState().saveCustomPreset('Mine', '', DEFAULT_PROJECT_ID);
     const mine = usePresetStore.getState().customPresets.find((preset) => preset.name === 'Mine');
     if (!mine) throw new Error('the preset should have been saved.');
 
@@ -341,7 +379,7 @@ describe('updateCustomPresetDetails', () => {
   });
 
   it('lets a preset be recapitalised, because it is not a collision with itself', async () => {
-    await usePresetStore.getState().saveCustomPreset('my knight', '');
+    await usePresetStore.getState().saveCustomPreset('my knight', '', DEFAULT_PROJECT_ID);
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
@@ -352,7 +390,7 @@ describe('updateCustomPresetDetails', () => {
   });
 
   it('refuses a blank name without touching storage', async () => {
-    await usePresetStore.getState().saveCustomPreset('Kept', '');
+    await usePresetStore.getState().saveCustomPreset('Kept', '', DEFAULT_PROJECT_ID);
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
@@ -371,7 +409,7 @@ describe('updateCustomPresetDetails', () => {
   });
 
   it('reports a failed write and keeps showing the old name', async () => {
-    await usePresetStore.getState().saveCustomPreset('Before', '');
+    await usePresetStore.getState().saveCustomPreset('Before', '', DEFAULT_PROJECT_ID);
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
@@ -398,7 +436,9 @@ describe('on a fallback whose storage refuses writes', () => {
   });
 
   it('reports a preset it could not save', async () => {
-    await expect(usePresetStore.getState().saveCustomPreset('Doomed', '')).resolves.toBe(false);
+    await expect(usePresetStore.getState().saveCustomPreset('Doomed', '', DEFAULT_PROJECT_ID)).resolves.toBe(
+      false,
+    );
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     expect(useUIStore.getState().toastMessage).toBe('Could not save that preset');
@@ -412,23 +452,75 @@ describe('on a fallback whose storage refuses writes', () => {
     expect(useUIStore.getState().toastMessage).toBe('Could not delete that preset');
   });
 
-  it('reports a pack it could not import', async () => {
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-    await usePresetStore.getState().confirmPresetImport();
+  it('reports a preset it could not re-file, and leaves it where it was', async () => {
+    usePresetStore.setState({ customPresets: [customPreset({ id: 'kept' })] });
+    await usePresetStore.getState().moveCustomPreset('kept', HARBOUR);
 
-    expect(usePresetStore.getState().customPresets).toHaveLength(0);
-    expect(useUIStore.getState().toastMessage).toBe('Could not import that preset pack');
-    // The flag has to come back down, or both transfer controls stay disabled for the session.
-    expect(usePresetStore.getState().isExporting).toBe(false);
-    // And the question goes with it — a failed replace is retried from the button, not by being
-    // asked again over a collection nothing happened to.
-    expect(usePresetStore.getState().pendingImport).toBeNull();
+    expect(usePresetStore.getState().customPresets[0]?.projectId).toBe(DEFAULT_PROJECT_ID);
+    expect(useUIStore.getState().toastMessage).toBe('Could not move that preset');
+  });
+});
+
+describe('moveCustomPreset', () => {
+  it('re-files a preset without touching anything else about it', async () => {
+    useSubjectStore.getState().setField('role', 'Lamplighter');
+    await usePresetStore.getState().saveCustomPreset('Mine', 'Kept wording', DEFAULT_PROJECT_ID);
+    const [saved] = usePresetStore.getState().customPresets;
+    if (!saved) throw new Error('the preset should have been saved.');
+
+    await usePresetStore.getState().moveCustomPreset(saved.id, HARBOUR);
+
+    const stored = await backend.listPresets();
+    expect(stored).toHaveLength(1);
+    // The id is what everything refers to, so a move may not mint a new one.
+    expect(stored[0]?.id).toBe(saved.id);
+    expect(stored[0]?.projectId).toBe(HARBOUR);
+    expect(stored[0]?.name).toBe('Mine');
+    expect(stored[0]?.description).toBe('Kept wording');
+    expect(stored[0]?.subject.role).toBe('Lamplighter');
+    expect(useUIStore.getState().toastMessage).toBe('Moved “Mine”');
+  });
+
+  it('lets a preset land beside one of the same name, rather than folding the two together', async () => {
+    // The opposite of what saving does, and deliberately: a name decides an update when it is being
+    // *typed*, and a move is not a save. Folding them would destroy whichever the reader did not
+    // have in mind, and neither of them asked for it.
+    await usePresetStore.getState().saveCustomPreset('Hero', 'Theirs', HARBOUR);
+    await usePresetStore.getState().saveCustomPreset('Hero', 'Mine', DEFAULT_PROJECT_ID);
+    const mine = usePresetStore
+      .getState()
+      .customPresets.find((preset) => preset.projectId === DEFAULT_PROJECT_ID);
+    if (!mine) throw new Error('the preset should have been saved.');
+
+    await usePresetStore.getState().moveCustomPreset(mine.id, HARBOUR);
+
+    const stored = await backend.listPresets();
+    expect(stored).toHaveLength(2);
+    expect(stored.every((preset) => preset.projectId === HARBOUR)).toBe(true);
+  });
+
+  it('says nothing and writes nothing when the preset is already there', async () => {
+    // The dropdown shows a preset's current project as its selected value, so choosing it again is
+    // the reader confirming what they see rather than asking for anything.
+    await usePresetStore.getState().saveCustomPreset('Mine', '', DEFAULT_PROJECT_ID);
+    const [saved] = usePresetStore.getState().customPresets;
+    if (!saved) throw new Error('the preset should have been saved.');
+    useUIStore.getState().dismissToast();
+
+    await usePresetStore.getState().moveCustomPreset(saved.id, DEFAULT_PROJECT_ID);
+
+    expect(useUIStore.getState().toastMessage).toBeNull();
+  });
+
+  it('refuses an id nothing holds rather than inventing a preset', async () => {
+    await usePresetStore.getState().moveCustomPreset('never-existed', HARBOUR);
+    await expect(backend.listPresets()).resolves.toHaveLength(0);
   });
 });
 
 describe('deleteCustomPreset', () => {
   it('removes it from the store and from storage', async () => {
-    await usePresetStore.getState().saveCustomPreset('Temporary', '');
+    await usePresetStore.getState().saveCustomPreset('Temporary', '', DEFAULT_PROJECT_ID);
     const [saved] = usePresetStore.getState().customPresets;
     if (!saved) throw new Error('the preset should have been saved.');
 
@@ -436,159 +528,6 @@ describe('deleteCustomPreset', () => {
 
     expect(usePresetStore.getState().customPresets).toHaveLength(0);
     await expect(backend.listPresets()).resolves.toHaveLength(0);
-  });
-});
-
-describe('exportPresetsJSON', () => {
-  it('includes the built-ins alongside the custom presets', async () => {
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
-
-    const parsed: unknown = JSON.parse(usePresetStore.getState().exportPresetsJSON());
-    expect(Array.isArray(parsed)).toBe(true);
-    expect(parsed).toHaveLength(PRESETS.length + 1);
-  });
-});
-
-describe('importPresetsJSON', () => {
-  it('replaces the stored collection once the replacement is confirmed', async () => {
-    await usePresetStore.getState().saveCustomPreset('Will be replaced', '');
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-    await usePresetStore.getState().confirmPresetImport();
-
-    const { customPresets, isExporting, pendingImport } = usePresetStore.getState();
-    expect(customPresets.map((preset) => preset.name)).toEqual(['Imported Knight']);
-    expect(isExporting).toBe(false);
-    expect(pendingImport).toBeNull();
-    await expect(backend.listPresets()).resolves.toHaveLength(1);
-  });
-
-  /*
-   * The defect this two-step flow exists for: one press of Import, one file picked, and every
-   * preset the reader had saved was gone. The only warning was the button's tooltip, which
-   * `ControlTooltip` cannot show on a touchscreen at all.
-   */
-  it('stages the pack and deletes nothing until the reader agrees', async () => {
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
-
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-
-    expect(usePresetStore.getState().pendingImport?.map((preset) => preset.name)).toEqual([
-      'Imported Knight',
-    ]);
-    // Neither the store nor storage has moved — the question is all that has happened.
-    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Mine']);
-    await expect(backend.listPresets()).resolves.toHaveLength(1);
-    expect((await backend.listPresets())[0]?.name).toBe('Mine');
-  });
-
-  it('leaves the stored rows exactly as they were when the replacement is declined', async () => {
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
-    const before = await backend.listPresets();
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-
-    usePresetStore.getState().cancelPresetImport();
-
-    expect(usePresetStore.getState().pendingImport).toBeNull();
-    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Mine']);
-    await expect(backend.listPresets()).resolves.toEqual(before);
-    expect(useUIStore.getState().toastMessage).toBe('Import cancelled, and nothing of yours was deleted');
-  });
-
-  it('replaces nothing when nothing is staged', async () => {
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
-
-    await usePresetStore.getState().confirmPresetImport();
-
-    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Mine']);
-    await expect(backend.listPresets()).resolves.toHaveLength(1);
-  });
-
-  it('closes the question before the write, so a second press cannot replace twice', async () => {
-    await usePresetStore.getState().saveCustomPreset('First', '');
-    await usePresetStore.getState().saveCustomPreset('Second', '');
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-
-    const writing = usePresetStore.getState().confirmPresetImport();
-    // Already closed, with the write still in flight — which is what makes the second press a no-op.
-    expect(usePresetStore.getState().pendingImport).toBeNull();
-    await usePresetStore.getState().confirmPresetImport();
-    await writing;
-
-    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Imported Knight']);
-    // One replace, so one truthful sentence — a second would have reported deleting two presets
-    // that the first had already deleted.
-    expect(useUIStore.getState().toastMessage).toBe('Imported 1 custom preset, replacing 2');
-  });
-
-  it('says nothing when there is no question left to cancel', async () => {
-    // Cancel used to answer “nothing of yours was deleted” over a deletion already dispatched.
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-    const writing = usePresetStore.getState().confirmPresetImport();
-    useUIStore.getState().dismissToast();
-
-    usePresetStore.getState().cancelPresetImport();
-
-    expect(useUIStore.getState().toastMessage).toBeNull();
-    await writing;
-    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Imported Knight']);
-  });
-
-  it('says how many it deleted as well as how many arrived', async () => {
-    // "Imported 1 custom preset" is true of a library that had two and now has one, and it was all
-    // the old toast said.
-    await usePresetStore.getState().saveCustomPreset('First', '');
-    await usePresetStore.getState().saveCustomPreset('Second', '');
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-
-    await usePresetStore.getState().confirmPresetImport();
-
-    expect(useUIStore.getState().toastMessage).toBe('Imported 1 custom preset, replacing 2');
-  });
-
-  it('reports the arrival alone when there was nothing of the reader’s to replace', async () => {
-    await usePresetStore.getState().importPresetsJSON(packFile([customPreset()]));
-
-    await usePresetStore.getState().confirmPresetImport();
-
-    expect(useUIStore.getState().toastMessage).toBe('Imported 1 custom preset');
-  });
-
-  it('skips built-ins, so re-importing an export does not duplicate them', async () => {
-    await usePresetStore.getState().saveCustomPreset('Mine', '');
-    const exported: unknown = JSON.parse(usePresetStore.getState().exportPresetsJSON());
-    if (!Array.isArray(exported)) throw new Error('the export should be an array.');
-
-    await usePresetStore.getState().importPresetsJSON(packFile(exported));
-    await usePresetStore.getState().confirmPresetImport();
-
-    const { customPresets } = usePresetStore.getState();
-    expect(customPresets).toHaveLength(1);
-    expect(customPresets[0]?.name).toBe('Mine');
-  });
-
-  it('refuses a pack with no custom presets rather than deleting everything', async () => {
-    await usePresetStore.getState().saveCustomPreset('Keep me', '');
-    await usePresetStore.getState().importPresetsJSON(packFile(PRESETS));
-
-    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Keep me']);
-    expect(useUIStore.getState().toastMessage).toBe('No custom presets found in that file');
-  });
-
-  it('rejects a file that is not JSON at all, and clears the busy flag', async () => {
-    const notJson = new File(['<html>not a pack</html>'], 'page.html', { type: 'text/html' });
-    await usePresetStore.getState().importPresetsJSON(notJson);
-
-    expect(useUIStore.getState().toastMessage).toBe('That file is not a Sprite Gubbins preset pack');
-    expect(usePresetStore.getState().isExporting).toBe(false);
-  });
-
-  it('drops entries it cannot vouch for and keeps the rest', async () => {
-    const pack = [customPreset({ id: 'custom-good', name: 'Good' }), { id: 42 }, null];
-    await usePresetStore.getState().importPresetsJSON(packFile(pack));
-    await usePresetStore.getState().confirmPresetImport();
-
-    expect(usePresetStore.getState().customPresets.map((preset) => preset.name)).toEqual(['Good']);
   });
 });
 

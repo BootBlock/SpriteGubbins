@@ -1,35 +1,36 @@
 import { useCallback, useState } from 'react';
-import { PRESET_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
-import type { PresetArchetype } from '../../types/preset.ts';
+import { PROJECT_NAME_MAX_LENGTH } from '../../constants/projects.ts';
+import { PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useProjectStore } from '../../stores/useProjectStore.ts';
+import type { Project } from '../../types/project.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
 import { Tooltip } from '../common/Tooltip.tsx';
 
-interface PresetDetailsFormProps {
-  readonly preset: PresetArchetype;
-  /** Resolves to whether the edit was stored. A refusal keeps this form open. */
-  readonly onUpdateDetails: (preset: PresetArchetype, name: string, description: string) => Promise<boolean>;
-  /** Close without saving. The card uses this to put focus back where it came from. */
+interface ProjectDetailsFormProps {
+  readonly project: Project;
+  /** Close without saving. The panel uses this to put focus back where it came from. */
   readonly onClose: () => void;
 }
 
 /**
- * Editing one preset's name and the sentence under it, in place of its heading.
+ * Editing one project's name and the sentence under it, in place of its heading.
  *
  * Its own file because it is a small state machine rather than a control: two drafts, an in-flight
- * write, a submit that may be refused, and focus to place — none of which the card around it needs
+ * write, a submit that may be refused, and focus to place — none of which the panel around it needs
  * to know about.
  *
- * **Both fields together, and this is the only place the description can be reached.** Saving over a
- * preset by name writes whatever the studio currently holds, so it is no use to somebody who wants
- * to fix a sentence and change nothing else — and the name and the description are one thought
- * anyway, which is why they are one form and one write rather than two.
+ * **Nothing filed in the project moves**, and that is the point of a project being addressed by an
+ * id: a preset refers to the container, not to what it is called, so a rename is a change to a
+ * label and to nothing else.
  *
  * A real `<form>`, so Enter submits without a keydown handler re-implementing what the platform
  * already does.
  */
-export function PresetDetailsForm({ preset, onUpdateDetails, onClose }: PresetDetailsFormProps) {
-  const [draftName, setDraftName] = useState(preset.name);
-  const [draftDescription, setDraftDescription] = useState(preset.description);
+export function ProjectDetailsForm({ project, onClose }: ProjectDetailsFormProps) {
+  const updateProjectDetails = useProjectStore((state) => state.updateProjectDetails);
+
+  const [draftName, setDraftName] = useState(project.name);
+  const [draftDescription, setDraftDescription] = useState(project.description);
   const [isSaving, setIsSaving] = useState(false);
 
   /**
@@ -50,9 +51,9 @@ export function PresetDetailsForm({ preset, onUpdateDetails, onClose }: PresetDe
         event.preventDefault();
         setIsSaving(true);
         try {
-          // Closed only when it was actually stored. The store refuses a name another preset holds
+          // Closed only when it was actually stored. The store refuses a name another project holds
           // and says so; closing anyway would hide that nothing happened.
-          if (await onUpdateDetails(preset, draftName, draftDescription)) onClose();
+          if (await updateProjectDetails(project.id, draftName, draftDescription)) onClose();
         } finally {
           setIsSaving(false);
         }
@@ -61,17 +62,17 @@ export function PresetDetailsForm({ preset, onUpdateDetails, onClose }: PresetDe
       {/*
         The ⓘ rather than a card on each box, for the reason every other value field in the app takes
         one — and here the reason is sharper than consistency. The first field is focused the instant
-        it appears, so guidance revealed by focus would open unasked over the card below every time
-        this editor is opened. The ⓘ is also the only affordance a finger can reach, and it needs no
-        label beside it: it names itself.
+        it appears, so guidance revealed by focus would open unasked over the panel below every time
+        this editor is opened.
       */}
       <div className="flex items-center gap-2">
-        <Tooltip text={PRESET_ACTION_TOOLTIPS.detailsNameBox} hint="New name" />
+        <Tooltip text={PROJECT_ACTION_TOOLTIPS.projectNameBox} hint="New name" />
         <input
           ref={focusOnMount}
           type="text"
           value={draftName}
-          aria-label={`New name for ${preset.name}`}
+          maxLength={PROJECT_NAME_MAX_LENGTH}
+          aria-label={`New name for the project ${project.name}`}
           onChange={(event) => {
             setDraftName(event.target.value);
           }}
@@ -83,12 +84,12 @@ export function PresetDetailsForm({ preset, onUpdateDetails, onClose }: PresetDe
       </div>
 
       <div className="flex items-center gap-2">
-        <Tooltip text={PRESET_ACTION_TOOLTIPS.detailsDescriptionBox} hint="Description" />
+        <Tooltip text={PROJECT_ACTION_TOOLTIPS.projectDescriptionBox} hint="Description" />
         <input
           type="text"
           value={draftDescription}
-          placeholder="What it is for"
-          aria-label={`Description for ${preset.name}`}
+          placeholder="What this project covers"
+          aria-label={`Description for the project ${project.name}`}
           onChange={(event) => {
             setDraftDescription(event.target.value);
           }}
@@ -100,16 +101,16 @@ export function PresetDetailsForm({ preset, onUpdateDetails, onClose }: PresetDe
       </div>
 
       <div className="flex justify-end gap-2">
-        <ControlTooltip hint="Save" text={PRESET_ACTION_TOOLTIPS.confirmDetails}>
+        <ControlTooltip hint="Save" text={PROJECT_ACTION_TOOLTIPS.confirmProjectDetails}>
           <button
             type="submit"
             disabled={isSaving || draftName.trim() === ''}
-            className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-390 active:scale-[0.98] disabled:cursor-not-allowed"
+            className="action-tab rounded-lg px-2.5 py-1 text-xs font-semibold transition-all active:scale-[0.98] disabled:cursor-not-allowed"
           >
             {isSaving ? 'Saving…' : 'Save'}
           </button>
         </ControlTooltip>
-        <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelDetails}>
+        <ControlTooltip hint="Cancel" text={PROJECT_ACTION_TOOLTIPS.cancelProjectDetails}>
           <button
             type="button"
             onClick={onClose}

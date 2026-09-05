@@ -32,6 +32,7 @@ const split = readColumnSplit({
     'src/components/studio/SubjectForm.tsx',
     'src/components/studio/OutputConfig.tsx',
     'src/components/studio/TargetModelSelector.tsx',
+    'src/components/studio/PresetSavePanel.tsx',
   ],
   columns: 2,
 });

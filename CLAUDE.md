@@ -1160,7 +1160,8 @@ initial build. They are not stylistic preferences.
   `src/hooks/`; worker entry points, their protocols and the near side that speaks them in
   `src/workers/`; constants in
   `src/constants/`; types in `src/types/`; UI primitives in `src/components/common/`; studio panels
-  in `src/components/studio/`; the quantiser's image panels in `src/components/quantise/`; modals in
+  in `src/components/studio/`; the quantiser's image panels in `src/components/quantise/`; the
+  projects view's panels in `src/components/projects/`; modals in
   `src/components/modals/`; tab views in `src/components/tabs/`; chrome in
   `src/components/layout/`. A file in the wrong directory is a design error, not a filing error.
 - **`src/workers/` holds threads, not logic.** A file there is a `new Worker(…)` target, the message

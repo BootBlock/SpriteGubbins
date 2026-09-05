@@ -14,8 +14,13 @@
  * a browser that offers less, a user near the edge — by retrying the write with fewer entries until
  * one is accepted.
  *
- * Both are pure and take their numbers as arguments, so the tests drive them without a browser.
+ * The two are pure and take their numbers as arguments, so the tests drive them without a browser.
+ * {@link writeHistoryRows} is the third and is not pure — it is the write those two decide the
+ * shape of, and it lives here rather than in the backend because the retry loop is the second half
+ * of the same defence.
  */
+import { STORAGE_KEYS } from './schema.ts';
+import { storageRefusal, type WebStorageLike } from './webStorage.ts';
 
 /**
  * How much of the store the prompt history may occupy, in UTF-16 code units — the unit
@@ -92,4 +97,44 @@ export function evictionLengths(count: number): number[] {
   if (lengths[lengths.length - 1] !== 1) lengths.push(1);
 
   return lengths;
+}
+
+/**
+ * Store the history in `storage`, keeping as much of it as the browser will actually take.
+ *
+ * `rows` is newest-first, so every prefix of it is the newest *n* prompts and evicting is a matter
+ * of shortening it. The budget decides the first attempt; a refusal past that is storage telling us
+ * the budget was optimistic here, and the answer is to try again with fewer entries rather than to
+ * lose the prompt the reader just asked for.
+ *
+ * Nothing is written until an attempt succeeds, so a history too large to store at any length
+ * leaves what was already there untouched and rejects — the reader keeps the prompts they had.
+ *
+ * Rejects rather than throwing synchronously, because the backend's interface promises a `Promise`
+ * and a caller attaching `.catch()` to one is entitled to have it run.
+ */
+export function writeHistoryRows(
+  storage: WebStorageLike,
+  rows: readonly Record<string, unknown>[],
+): Promise<void> {
+  const affordable = trimHistoryToBudget(rows);
+  if (affordable.length === 0) {
+    return Promise.reject(
+      new Error(
+        `A single prompt exceeds the ${HISTORY_STORAGE_BUDGET}-character budget the history may occupy.`,
+      ),
+    );
+  }
+
+  let refusal: unknown;
+  for (const length of evictionLengths(affordable.length)) {
+    try {
+      storage.setItem(STORAGE_KEYS.promptHistory, JSON.stringify(affordable.slice(0, length)));
+      return Promise.resolve();
+    } catch (error) {
+      refusal = error;
+    }
+  }
+
+  return Promise.reject(storageRefusal(STORAGE_KEYS.promptHistory, refusal));
 }

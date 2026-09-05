@@ -62,9 +62,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/AtlasCalculatorContents-*.js',
   'assets/Badge-*.js',
   'assets/CheckboxField-*.js',
-  'assets/JsonPackTransfer-*.js',
+  'assets/PresetCardSpecs-*.js',
   'assets/PresetsTab-*.js',
+  'assets/ProjectSelectField-*.js',
+  'assets/ProjectsTab-*.js',
   'assets/PromptHistoryContents-*.js',
+  'assets/QuantisePresetRow-*.js',
   'assets/QuantiseTab-*.js',
   'assets/SelectField-*.js',
   'assets/SettingsContents-*.js',
@@ -78,9 +81,9 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/componentTargetSize-*.js',
   'assets/database-*.js',
   'assets/dialogs-*.js',
-  'assets/firstOfEachId-*.js',
   'assets/isTextEntry-*.js',
   'assets/models-*.js',
+  'assets/presets-*.js',
   'assets/quantiseDials-*.js',
   'assets/rolldown-runtime-*.js',
   'assets/sheetCanvas-*.js',
@@ -89,11 +92,14 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
+  'assets/useFileDropGuard-*.js',
+  'assets/useFileSave-*.js',
   'assets/usePresetStore-*.js',
-  'assets/useQuantisePresetStore-*.js',
+  'assets/useProjectStore-*.js',
   'assets/useQuantiseStore-*.js',
   'assets/useSettingsStore-*.js',
   'assets/useShowToast-*.js',
+  'assets/useSubjectStore-*.js',
   'assets/useUIStore-*.js',
   'assets/index-*.css',
   'assets/index-*.js',
@@ -371,8 +377,32 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * bought that same figure for a different reason, so the raise became a no-op and the paragraph
  * arguing for it would have claimed a base and a headroom main no longer had. Two branches reaching
  * for one raise is the third time this has happened under a margin of this order.
+ *
+ * **Raised from 2323 by the Projects view, and it is the largest raise this figure has taken for a
+ * single change.** Everything a reader saves is now filed under a project: a fifth view to make,
+ * rename and delete one, a project dropdown on both save panels and on every saved row, two stores,
+ * a `projects` table with its cascade, and the library pack that replaced the two array-shaped packs
+ * — one file carrying the projects and both saved collections, because a preset names its project
+ * and neither half is meaningful alone. Measured against the main tip this branch started from
+ * (`752c674`), rebuilt from the same `node_modules` — **2321.77 KiB across 54 entries** — this build
+ * reports **2346.47 across 60**, a delta of 24.70.
+ *
+ * **About a third of it is prose**, which is the cost this repository's own guidance rule imposes on
+ * a feature with twenty new controls in it: the twenty entries of
+ * `constants/tooltips/projects.ts` measure **5.69 KiB** between them, and guidance is constant data
+ * the entry chunk reaches, so it is paid for on a first visit exactly as an option pool is. The rest
+ * is the view, its six panels, the two stores and the pack format.
+ *
+ * **Six of the nine `+` lines above are the split re-cutting itself, not new files**, which is the
+ * `+`/`-` shape the note on `PRECACHE_SHAPES` warns reads like a stray chunk and is not one. Three
+ * views now reach the project dropdown and two reach a saved row, so rolldown cuts
+ * `ProjectSelectField`, `QuantisePresetRow`, `PresetCardSpecs`, `presets`, `useSubjectStore`,
+ * `useFileDropGuard` and `useFileSave` out of the views that share them and names chunks after
+ * them — while `JsonPackTransfer`, `firstOfEachId` and `useQuantisePresetStore` gave their names up
+ * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
+ * left at the same order as every raise above rather than widened.
  */
-export const PRECACHE_CEILING_KIB = 2323;
+export const PRECACHE_CEILING_KIB = 2350;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

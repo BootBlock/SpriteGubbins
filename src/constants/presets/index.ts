@@ -43,7 +43,7 @@ export { DEFAULT_PRESET } from './characterCore.ts';
  * under the control, and applies the settings that go with it. `presetCoverage.test.ts` says so where
  * it declines to cover them, and their own libraries carry their own contracts.
  *
- * Filed one module per theme, grouped by category in the order the Presets tab lists them, because a
+ * Filed one module per theme, grouped by category in the order the preset library lists them, because a
  * single file holding fifty complete subjects would be unreadable and unreviewable. Order matters in
  * exactly two ways: `DEFAULT_PRESET` is first, since it is the studio's opening state, and the
  * position of a preset in this list is the stop it takes on the hue wheel — so keeping a category's

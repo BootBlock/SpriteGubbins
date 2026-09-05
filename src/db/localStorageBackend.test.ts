@@ -9,8 +9,10 @@ import { defaultSubjectFor } from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { DEFAULT_PRESET, PRESETS } from '../constants/presets/index.ts';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
+import { DEFAULT_PROJECT_ID, createDefaultProject } from '../constants/projects.ts';
 import type { PromptHistoryLog } from '../types/history.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import type { CustomArchetype } from '../types/preset.ts';
+import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import type { StudioSession } from '../types/session.ts';
 import { QUANTISE_DEFAULT_DIALS } from '../constants/quantiseDials.ts';
@@ -57,12 +59,13 @@ function legacyRow(): Record<string, unknown> {
   };
 }
 
-function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype {
+function customPreset(overrides: Partial<CustomArchetype> = {}): CustomArchetype {
   const base = PRESETS[0];
   if (!base) throw new Error('PRESETS must not be empty.');
   return {
     ...base,
     id: 'custom-1',
+    projectId: DEFAULT_PROJECT_ID,
     name: 'My Preset',
     description: 'A preset of my own.',
     isCustom: true,
@@ -74,11 +77,17 @@ function customPreset(overrides: Partial<PresetArchetype> = {}): PresetArchetype
 function quantisePreset(overrides: Partial<QuantisePreset> = {}): QuantisePreset {
   return {
     id: 'quantise-1',
+    projectId: DEFAULT_PROJECT_ID,
     name: 'Flat sheets',
     description: 'Line art.',
     dials: QUANTISE_DEFAULT_DIALS,
     ...overrides,
   };
+}
+
+/** A project, which both collections above are filed under. */
+function project(overrides: Partial<Project> = {}): Project {
+  return { ...createDefaultProject(1_000), ...overrides };
 }
 
 let storage: WebStorageLike;
@@ -298,15 +307,19 @@ describe('LocalStorageBackend — presets', () => {
     expect((await backend.listPresets()).map((preset) => preset.id)).toEqual(['b']);
   });
 
-  it('replaces the whole collection on import', async () => {
+  it('replaces the whole library on import', async () => {
     await backend.savePreset(customPreset({ id: 'old', name: 'Old' }));
-    await backend.replacePresets([customPreset({ id: 'new', name: 'New' })]);
+    await backend.replaceLibrary({
+      projects: [project()],
+      presets: [customPreset({ id: 'new', name: 'New' })],
+      quantisePresets: [],
+    });
 
     expect((await backend.listPresets()).map((preset) => preset.id)).toEqual(['new']);
   });
 
   it('lists the collection newest-first, as `SELECT_PRESETS_SQL` does', async () => {
-    // The order the Presets tab shows, and the one property this backend cannot get from a
+    // The order both views list a collection in, and the one property this backend cannot get from a
     // timestamp: it rewrites the whole collection on every operation, so the stored order is the
     // order. See `toPresetRow`.
     await backend.savePreset(customPreset({ id: 'a', name: 'Alpha' }));
@@ -338,6 +351,7 @@ describe('LocalStorageBackend — presets', () => {
     expect(stored).toEqual([
       {
         id: 'a',
+        project_id: DEFAULT_PROJECT_ID,
         name: 'Alpha',
         description: 'A preset of my own.',
         category: customPreset().category,
@@ -392,6 +406,7 @@ describe('LocalStorageBackend — quantiser presets', () => {
       JSON.stringify([
         {
           id: 'a',
+          project_id: DEFAULT_PROJECT_ID,
           name: 'Flat sheets',
           description: '',
           dials_json: JSON.stringify({ ...QUANTISE_DEFAULT_DIALS, colorMerge: 'lots' }),
@@ -492,6 +507,7 @@ describe('LocalStorageBackend — hostile storage', () => {
       JSON.stringify([
         {
           id: 'partial',
+          project_id: DEFAULT_PROJECT_ID,
           name: 'Partial',
           category: 'CHARACTER',
           subject_json: JSON.stringify({ species: 'Android' }),
@@ -584,8 +600,12 @@ describe('LocalStorageBackend — a refused write', () => {
     await expect(promise).rejects.toThrow(/refused the write/i);
   });
 
-  it('rejects when an imported pack cannot replace the collection', async () => {
-    const promise = backend.replacePresets([customPreset()]);
+  it('rejects when an imported pack cannot replace the library', async () => {
+    const promise = backend.replaceLibrary({
+      projects: [project()],
+      presets: [customPreset()],
+      quantisePresets: [],
+    });
     await expect(promise).rejects.toThrow(/refused the write/i);
   });
 

@@ -4,9 +4,9 @@
  */
 
 /**
- * The four top-level views. The studio is the app and the quantiser is what happens to what comes
- * back from it; presets and the architecture spec are reference material reached from the same
- * header.
+ * The five top-level views. The studio is the app and the quantiser is what happens to what comes
+ * back from it; the preset library and the architecture spec are reference material reached from
+ * the same header, and the projects view is where everything a reader has saved is organised.
  *
  * An `as const` array, like the closed sets in `types/output.ts`, because the tab **is** persisted:
  * the settings carry the view the app opens on, so `db/settingsParser.ts` has to validate a stored
@@ -17,7 +17,7 @@
  * The order is the union's alone and says nothing about the interface. `APP_TAB_CHOICES` in
  * `constants/ui.ts` is what decides the order the switcher shows them in.
  */
-export const APP_TABS = ['studio', 'presets', 'spec', 'quantise'] as const;
+export const APP_TABS = ['studio', 'presets', 'projects', 'spec', 'quantise'] as const;
 export type AppTab = (typeof APP_TABS)[number];
 
 /**

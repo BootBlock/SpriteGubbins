@@ -1,6 +1,7 @@
 import type { PromptHistoryLog } from '../types/history.ts';
+import type { Project } from '../types/project.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
-import type { PresetArchetype } from '../types/preset.ts';
+import type { CustomArchetype } from '../types/preset.ts';
 import type { StudioSession } from '../types/session.ts';
 import type { AppSettings } from '../types/settings.ts';
 import {
@@ -23,7 +24,8 @@ import { parseSettings } from './settingsParser.ts';
  * never cast into a shape it doesn't have and left to explode somewhere unrelated.
  *
  * The narrowing primitives are in `readers.ts` and the two payload parsers in `configParsers.ts`;
- * this file is only the row shapes.
+ * this file is only the row shapes. The entries of an imported **pack** are `importedRows.ts`,
+ * which is a different set of rules on the same shapes — see the note there.
  */
 
 /**
@@ -62,21 +64,60 @@ export function parseHistoryRow(row: unknown): PromptHistoryLog | null {
   };
 }
 
-/** Parse a `custom_presets` row, including its two JSON payload columns. */
-export function parsePresetRow(row: unknown): PresetArchetype | null {
+/**
+ * Parse a `projects` row.
+ *
+ * Rejected for want of an **id or a name**, which are the two things nothing can be invented for:
+ * the id is what every preset in the project refers to, and the name is the whole of what the
+ * reader picks the project out of a list by. The description is allowed to be empty, and the two
+ * timestamps fall back to each other — a row that has one but not the other is still a project
+ * somebody made, and the pair only has to be ordered and displayable.
+ */
+export function parseProjectRow(row: unknown): Project | null {
   if (!isRecord(row)) return null;
 
   const id = readString(row, 'id');
+  const name = readString(row, 'name');
+  if (id === null || name === null) return null;
+
+  const createdAt = readNumber(row, 'created_at');
+  const updatedAt = readNumber(row, 'updated_at');
+  if (createdAt === null && updatedAt === null) return null;
+
+  return {
+    id,
+    name,
+    description: readString(row, 'description') ?? '',
+    createdAt: createdAt ?? updatedAt ?? 0,
+    updatedAt: updatedAt ?? createdAt ?? 0,
+  };
+}
+
+/**
+ * Parse a `custom_presets` row, including its two JSON payload columns.
+ *
+ * The project id is **required**, not repaired to the Default project. A row is only reachable here
+ * because the table's columns matched the DDL exactly — the worker drops a table whose shape has
+ * drifted — so a row without one is storage that has been hand-edited, and quietly re-filing it
+ * would move somebody's preset into a project they never chose. A pack file is the opposite case
+ * and does repair it: see {@link parseImportedPreset}.
+ */
+export function parsePresetRow(row: unknown): CustomArchetype | null {
+  if (!isRecord(row)) return null;
+
+  const id = readString(row, 'id');
+  const projectId = readString(row, 'project_id');
   const name = readString(row, 'name');
   const category = row['category'];
   const subjectJson = readString(row, 'subject_json');
   const outputJson = readString(row, 'output_json');
 
   if (id === null || name === null || subjectJson === null || outputJson === null) return null;
-  if (!isSubjectCategory(category)) return null;
+  if (projectId === null || !isSubjectCategory(category)) return null;
 
   return {
     id,
+    projectId,
     name,
     // Absent means the empty string rather than a rejected row: the box is optional, so a preset
     // saved without one is the ordinary case and has nothing to say here.
@@ -134,33 +175,6 @@ export function parseSessionRow(row: unknown): StudioSession | null {
 }
 
 /**
- * Parse a preset from an imported JSON file.
- *
- * Same shape as a row, but the fields arrive already nested rather than as JSON strings. A preset
- * without a usable id or name is rejected; anything else is repaired from defaults, so a partially
- * hand-written pack still imports.
- */
-export function parseImportedPreset(value: unknown): PresetArchetype | null {
-  if (!isRecord(value)) return null;
-
-  const id = readString(value, 'id');
-  const name = readString(value, 'name');
-  const category = value['category'];
-  if (id === null || name === null || !isSubjectCategory(category)) return null;
-
-  return {
-    id,
-    name,
-    // As in {@link parsePresetRow}: optional in the app, so optional in a hand-written pack too.
-    description: readString(value, 'description') ?? '',
-    category,
-    subject: parseSubject(value['subject'], category),
-    output: parseImageConfig(value['output']),
-    isCustom: true,
-  };
-}
-
-/**
  * Parse a `quantise_presets` row.
  *
  * Rejected only for want of an **id or a name**, which are the two things nothing can be invented
@@ -177,47 +191,16 @@ export function parseQuantisePresetRow(row: unknown): QuantisePreset | null {
   if (!isRecord(row)) return null;
 
   const id = readString(row, 'id');
+  const projectId = readString(row, 'project_id');
   const name = readString(row, 'name');
-  if (id === null || name === null) return null;
+  if (id === null || projectId === null || name === null) return null;
 
   const tuningJson = readString(row, 'dials_json');
   return {
     id,
+    projectId,
     name,
     description: readString(row, 'description') ?? '',
     dials: parseQuantiseDials(tuningJson === null ? undefined : parseJson(tuningJson)),
-  };
-}
-
-/**
- * Parse a quantiser preset from an imported JSON file.
- *
- * The twin of {@link parseImportedPreset}, and it differs from {@link parseQuantisePresetRow} in
- * the same way that one differs from {@link parsePresetRow}: a stored row carries the dials as a
- * JSON *string* under `dials_json`, while a pack carries them already nested under `dials`.
- *
- * **A `dials` record is required, and that requirement is what tells the two packs apart.** Both
- * files are JSON arrays of objects with an id, a name and a description, so without it a pack of
- * studio archetypes would import here as a collection of presets whose every dial had been
- * repaired to its default — twenty settings nobody chose, under names that promise otherwise.
- * `parseQuantiseDials` repairs field by field by design, so the discrimination cannot come from
- * inside it. The archetypes refuse a pack of these by the same rule from the other side: a
- * quantiser preset has no `category`, which {@link parseImportedPreset} requires.
- *
- * Beyond that the rule is the row's — rejected only for want of an id or a name, and everything
- * else repaired, so a partially hand-written pack still imports.
- */
-export function parseImportedQuantisePreset(value: unknown): QuantisePreset | null {
-  if (!isRecord(value)) return null;
-
-  const id = readString(value, 'id');
-  const name = readString(value, 'name');
-  if (id === null || name === null || !isRecord(value['dials'])) return null;
-
-  return {
-    id,
-    name,
-    description: readString(value, 'description') ?? '',
-    dials: parseQuantiseDials(value['dials']),
   };
 }

@@ -73,10 +73,6 @@ export const REDO_KEYBOARD_SHORTCUTS = 'Ctrl+Shift+Z and Ctrl+Y both do the same
 export const HEX_CODE_PINS_THE_HUE =
   'A hex code pins the hue far more tightly than a name does, and the swatch beside this field previews whatever it recognises.';
 
-/** What the number on a preset collection button counts, which is the same for either collection. */
-export const COLLECTION_COUNT_FOLLOWS_SEARCH =
-  'The count beside it is how many match the search, where one is running.';
-
 /**
  * What the sheet identity panel is for, on both the batch and the single-generation card.
  *

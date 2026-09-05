@@ -1,5 +1,6 @@
 import { ComponentBudgetNotice } from '../studio/ComponentBudgetNotice.tsx';
 import { OutputConfig } from '../studio/OutputConfig.tsx';
+import { PresetSavePanel } from '../studio/PresetSavePanel.tsx';
 import { PromptPreview } from '../studio/PromptPreview.tsx';
 import { SubjectForm } from '../studio/SubjectForm.tsx';
 import { SubjectHistoryControls } from '../studio/SubjectHistoryControls.tsx';
@@ -56,6 +57,13 @@ export function StudioTab() {
         <SubjectHistoryControls />
         <SubjectForm />
         <OutputConfig />
+        {/*
+          Last in the column, because it is what you do when the two panels above are how you want
+          them. It used to be the first thing on the Presets tab, which meant naming a configuration
+          from a page that does not show it — and the project a save is filed under made that worse,
+          since it is a third decision about a studio you can no longer see.
+        */}
+        <PresetSavePanel />
       </div>
 
       {/*

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { PRESET_PACK_ITEMS } from '../../constants/packImport.ts';
+import { LIBRARY_PACK_ITEMS } from '../../constants/packImport.ts';
 import { PackImportConfirm } from './PackImportConfirm.tsx';
 
 /**
@@ -16,7 +16,7 @@ function renderConfirm(overrides: { readonly replacing?: number } = {}) {
     <PackImportConfirm
       incoming={4}
       replacing={overrides.replacing ?? 11}
-      noun={PRESET_PACK_ITEMS}
+      noun={LIBRARY_PACK_ITEMS}
       confirmGuidance="Replaces them for good."
       cancelGuidance="Leaves them alone."
       onConfirm={onConfirm}
@@ -32,8 +32,8 @@ describe('PackImportConfirm', () => {
     // reached by touch at all.
     renderConfirm();
 
-    expect(screen.getByText(/4 custom presets/)).toBeInTheDocument();
-    expect(screen.getByText(/11 custom presets/)).toBeInTheDocument();
+    expect(screen.getByText(/4 saved items/)).toBeInTheDocument();
+    expect(screen.getByText(/11 saved items/)).toBeInTheDocument();
   });
 
   it('names both figures on each button, because the sentence cannot be attached to one', async () => {
@@ -43,11 +43,11 @@ describe('PackImportConfirm', () => {
 
     expect(
       screen.getByRole('button', {
-        name: 'Replace your custom presets with the 4 custom presets in this file',
+        name: 'Replace your saved items with the 4 saved items in this file',
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('button', { name: 'Cancel the import and keep your 11 custom presets' }),
+      screen.getByRole('button', { name: 'Cancel the import and keep your 11 saved items' }),
     ).toBeInTheDocument();
   });
 

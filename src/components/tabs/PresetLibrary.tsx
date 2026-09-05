@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { DEFAULT_PRESET_COLLECTION, PRESET_COLLECTION_IDS } from '../../constants/presets/collections.ts';
 import type { PresetCollectionId } from '../../constants/presets/collections.ts';
 import { PRESETS } from '../../constants/presets/index.ts';
-import { usePresetStore } from '../../stores/usePresetStore.ts';
 import { countByCollection, indexPresetLibrary, matchPresetEntries } from '../../utils/presetSearch.ts';
 import { PresetCollectionList } from './PresetCollectionList.tsx';
 import { PresetCollectionPanel } from './PresetCollectionPanel.tsx';
@@ -17,23 +16,22 @@ import { PresetSearchField } from './PresetSearchField.tsx';
  * once rather than only what is on screen — because the whole reason to search is that you do not know
  * which collection the thing is in.
  *
- * **The derivations are a chain, and each link is memoised against only what it reads.** The index is
- * rebuilt when the user's saved presets change and at no other time; the match, the per-collection
- * counts and the visible slice each recompute when the query moves. A keystroke therefore costs one
+ * **The derivations are a chain, and each link is memoised against only what it reads.** The library
+ * is a compile-time constant, so the index is built once and never again; the match, the
+ * per-collection counts and the visible slice each recompute when the query moves. A keystroke therefore costs one
  * `includes` per preset over strings that were lower-cased once — never a re-walk of every field of
  * every preset — and the panel below re-keys nothing: `matchPresetEntries` filters the index rather
  * than rebuilding it, so a card that still matches is handed the identical entry it had before.
  */
 export function PresetLibrary() {
-  const customPresets = usePresetStore((state) => state.customPresets);
-  const loadPreset = usePresetStore((state) => state.loadPreset);
-  const updateCustomPresetDetails = usePresetStore((state) => state.updateCustomPresetDetails);
-  const deleteCustomPreset = usePresetStore((state) => state.deleteCustomPreset);
-
   const [query, setQuery] = useState('');
   const [chosen, setChosen] = useState<PresetCollectionId>(DEFAULT_PRESET_COLLECTION);
 
-  const library = useMemo(() => indexPresetLibrary([...PRESETS, ...customPresets]), [customPresets]);
+  // Built once for the life of the module rather than per render: `PRESETS` is a compile-time
+  // constant, so an empty dependency list is the honest statement of what this reads. It used to
+  // depend on the reader's own saved presets, which were listed here in a collection of their own;
+  // those are filed under projects now and are shown on the Projects view.
+  const library = useMemo(() => indexPresetLibrary(PRESETS), []);
   const matches = useMemo(() => matchPresetEntries(library, query), [library, query]);
   const counts = useMemo(() => countByCollection(matches), [matches]);
 
@@ -44,9 +42,8 @@ export function PresetLibrary() {
    * — and a query can be non-empty and still yield none, because terms are what survives
    * normalisation and `-` survives nothing. A separate `query.trim() !== ''` test would therefore
    * disagree with the matcher for exactly those queries, and the disagreement is not cosmetic: it
-   * would redirect the user out of an empty "Your presets" and disable the row they had just clicked,
-   * on the strength of a filter that is not in effect. One definition, read from the thing that
-   * actually filtered.
+   * would disable the row the reader had just clicked, on the strength of a filter that is not in
+   * effect. One definition, read from the thing that actually filtered.
    */
   const isFiltering = matches !== library;
 
@@ -55,7 +52,7 @@ export function PresetLibrary() {
    *
    * The click is the user's intent and is kept as-is, so clearing the search puts them back where they
    * were. While a query is live the view follows the results instead: typing "ramen" from Characters
-   * should land on the kiosk rather than on an empty Characters panel, and the collection list makes
+   * should land on the vendor rather than on an empty Characters panel, and the collection list makes
    * the same distinction by disabling the collections that have nothing in them.
    *
    * Derived during render rather than synchronised in an effect — the anti-pattern the structural laws
@@ -102,13 +99,6 @@ export function PresetLibrary() {
           collection={active}
           entries={visible}
           narrowedBy={isFiltering ? query.trim() : null}
-          onLoad={loadPreset}
-          onUpdateDetails={(target, name, description) =>
-            updateCustomPresetDetails(target.id, name, description)
-          }
-          onDelete={(target) => {
-            void deleteCustomPreset(target.id);
-          }}
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { presetCollectionLabel, presetCollectionOf } from '../constants/presets/collections.ts';
+import { presetCollectionLabel } from '../constants/presets/collections.ts';
 import type { PresetCollectionId } from '../constants/presets/collections.ts';
 import type { PresetArchetype } from '../types/preset.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
@@ -82,7 +82,10 @@ function haystackFor(preset: PresetArchetype, collection: PresetCollectionId): s
 /** Index the library for searching. Call once per library, not once per keystroke. */
 export function indexPresetLibrary(presets: readonly PresetArchetype[]): readonly PresetEntry[] {
   return presets.map((preset, index) => {
-    const collection = presetCollectionOf(preset);
+    // The collection *is* the category, now that the reader's own presets live under projects
+    // instead of in a collection of their own. Read here rather than through a helper, because a
+    // one-line function standing for a field read is the abstraction soup the structural laws ban.
+    const collection = preset.category;
     return { preset, collection, index, haystack: haystackFor(preset, collection) };
   });
 }

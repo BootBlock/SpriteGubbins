@@ -1,36 +1,31 @@
-import type { PresetArchetype } from '../../types/preset.ts';
 import { SUBJECT_CATEGORIES } from '../../types/subject.ts';
 import { CATEGORY_OPTIONS } from '../categories/index.ts';
 
 /**
  * How the Presets tab divides the library into the list it puts down its left-hand side.
  *
- * The divisions are the app's own subject categories plus one for the user's own presets, and
- * that is deliberate rather than convenient: a preset's category already decides which field labels
- * and option pools apply to it, so it is the one axis along which two presets in the same group are
- * genuinely comparable. Inventing a second taxonomy — "sci-fi", "technical", "showcase" — would give
- * the same library two contradictory shapes and leave every new preset needing a judgement call.
+ * The divisions are the app's own subject categories, and that is deliberate rather than
+ * convenient: a preset's category already decides which field labels and option pools apply to it,
+ * so it is the one axis along which two presets are genuinely comparable. Inventing a second
+ * taxonomy — "sci-fi", "technical", "showcase" — would give the same library two contradictory
+ * shapes and leave every new preset needing a judgement call.
  *
- * The labels come from `CATEGORY_OPTIONS` for the same reason. They are what the studio's own category
- * selector says, so the collection a user picks here is named the same as the category they land in
- * over there; a shorter wording invented for the sidebar would be a second vocabulary for one concept.
+ * **There is no collection for the reader's own presets, and there used to be.** Everything a
+ * reader saves is now filed under a project and shown on the Projects view, which is a taxonomy
+ * they wrote rather than one the app imposed — so this library is the built-in archetypes alone,
+ * and every collection here is a category. That is why `presetCollectionOf` is simply a preset's
+ * category rather than a rule with an exception in it.
+ *
+ * The labels come from `CATEGORY_OPTIONS` for the same reason. They are what the studio's own
+ * category selector says, so the collection a user picks here is named the same as the category
+ * they land in over there; a shorter wording invented for the sidebar would be a second vocabulary
+ * for one concept.
  */
 
-/** The collection every user-saved preset belongs to, whatever category it was saved under. */
-export const CUSTOM_COLLECTION_ID = 'custom';
+export type PresetCollectionId = (typeof SUBJECT_CATEGORIES)[number];
 
-export type PresetCollectionId = (typeof SUBJECT_CATEGORIES)[number] | typeof CUSTOM_COLLECTION_ID;
-
-/**
- * Every collection, in the order the list shows them.
- *
- * The categories come first in their own canonical order, and the user's presets last — a growing,
- * initially-empty group belongs at the end of a list, not in the middle of one.
- */
-export const PRESET_COLLECTION_IDS: readonly PresetCollectionId[] = [
-  ...SUBJECT_CATEGORIES,
-  CUSTOM_COLLECTION_ID,
-];
+/** Every collection, in the categories' own canonical order. */
+export const PRESET_COLLECTION_IDS: readonly PresetCollectionId[] = SUBJECT_CATEGORIES;
 
 /**
  * The collection the tab opens on.
@@ -43,16 +38,5 @@ export const DEFAULT_PRESET_COLLECTION: PresetCollectionId = 'CHARACTER';
 
 /** What the list calls a collection. */
 export function presetCollectionLabel(id: PresetCollectionId): string {
-  return id === CUSTOM_COLLECTION_ID ? 'Your presets' : CATEGORY_OPTIONS[id].label;
-}
-
-/**
- * Which collection a preset belongs to.
- *
- * A custom preset goes to `custom` regardless of its category, because "mine" is the thing a user is
- * looking for when they go looking — a saved knight filed under Humanoid Character among a dozen
- * built-in humanoids is a preset they have to hunt for in a list they did not write.
- */
-export function presetCollectionOf(preset: PresetArchetype): PresetCollectionId {
-  return preset.isCustom === true ? CUSTOM_COLLECTION_ID : preset.category;
+  return CATEGORY_OPTIONS[id].label;
 }

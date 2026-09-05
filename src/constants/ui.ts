@@ -61,7 +61,7 @@ export interface AppTabChoice {
    * dialog's opening-view field is built from this same table — and a view added to the app should
    * arrive with its own description rather than needing a second file remembered.
    *
-   * A single word on a tab cannot say what a view does, and one of the four is genuinely opaque
+   * A single word on a tab cannot say what a view does, and one of the five is genuinely opaque
    * from its label: "Architecture" reads as a setting until you have opened it once.
    */
   readonly guidance: string;
@@ -95,7 +95,14 @@ export const APP_TAB_CHOICE_BY_ID = {
     label: 'Presets',
     icon: '⚡',
     guidance:
-      'The archetype library: built-in configurations covering every subject category, plus anything you have saved yourself. Loading one replaces the whole studio setup, so it is a starting point to work from rather than a finished answer. The count beside the label is how many the library holds.',
+      'The archetype library: the configurations this app ships with, covering every subject category. Loading one replaces the whole studio setup, so it is a starting point to work from rather than a finished answer. The count beside the label is how many it holds, and it never moves — what you save yourself is filed under a project and lives on the Projects view.',
+  },
+  projects: {
+    id: 'projects',
+    label: 'Projects',
+    icon: '🗂️',
+    guidance:
+      'Everything you have saved, grouped by the game or job it was saved for — the studio archetypes and the quantiser dial positions alike. Make a project here, rename or describe one, re-file a save into another, or delete a project and its contents together. This is also where the whole library is exported to a file and read back in; nothing on this view alters the prompt or the studio until you load one of the saves it lists.',
   },
   spec: {
     id: 'spec',
@@ -107,18 +114,21 @@ export const APP_TAB_CHOICE_BY_ID = {
 } satisfies Record<AppTab, AppTabChoice>;
 
 /**
- * The four views, in the order the switcher shows them.
+ * The five views, in the order the switcher shows them.
  *
  * Quantise sits beside the studio rather than at the end, because it is the second half of the same
  * job: compose the prompt here, and bring what the model returned back to the tab next door.
+ * Projects follows the preset library for the same kind of reason — one holds the archetypes the
+ * app ships and the other holds the ones the reader made, so they read as a pair.
  *
  * Assembled from the record above rather than restating it, so a view cannot be called one thing in
  * the switcher and another in the heading. Order is the only thing this list contributes — the
- * union in `APP_TABS` declares the same four in a different one, and says so.
+ * union in `APP_TABS` declares the same five in a different one, and says so.
  */
 export const APP_TAB_CHOICES: readonly AppTabChoice[] = [
   APP_TAB_CHOICE_BY_ID.studio,
   APP_TAB_CHOICE_BY_ID.quantise,
   APP_TAB_CHOICE_BY_ID.presets,
+  APP_TAB_CHOICE_BY_ID.projects,
   APP_TAB_CHOICE_BY_ID.spec,
 ];

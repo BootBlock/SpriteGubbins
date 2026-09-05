@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_SETTINGS } from '../constants/settings.ts';
 import { FakeDatabaseWorker } from '../test/fakeDatabaseWorker.ts';
-import { openSqliteBackend } from './sqliteBackend.ts';
+import { openSqliteBackend } from './openSqliteBackend.ts';
 import type { SqliteBackend } from './sqliteBackend.ts';
 
 /** The thread the backend started, which every test here has to have got one of. */
