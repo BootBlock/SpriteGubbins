@@ -7,6 +7,7 @@ import type { Palette } from '../types/palette.ts';
 import { resolveCameraElevation, validationPassFor } from '../constants/promptText/index.ts';
 import { resolveMode, resolveRigMode, sheetSeriesFor } from '../constants/sheetPlans/index.ts';
 import { styleReferenceFor } from '../constants/styleReferences/index.ts';
+import { oneSidedFeatures } from './oneSidedFeatures.ts';
 import type { StyleReference } from '../types/styleReference.ts';
 import type {
   Direction,
@@ -80,6 +81,15 @@ export interface SheetFacts {
    * calls the sole authority for the subject's design.
    */
   readonly clothingIsAComponent: boolean;
+  /**
+   * Everything this subject carries on one flank and not the other, named — see
+   * `utils/oneSidedFeatures.ts`, and `FieldOption.oneSidedOptions` for what may be declared.
+   *
+   * A fact rather than a value because two phases read it: `promptConditions` decides which of
+   * section 9's two chirality checks the sheet gets, and `promptValues` fills section 3's ledger.
+   * Deriving it twice is how those two come to disagree about whether the sheet names any.
+   */
+  readonly oneSidedFeatures: readonly string[];
 }
 
 /** Resolve one studio configuration into the facts every phase below it reads. */
@@ -311,5 +321,9 @@ export function sheetFacts(
     anatomyFacings,
     additionalAnatomyLine,
     clothingIsAComponent,
+    // Asked of the subject rather than of the plan, because a one-sided feature is an attribute the
+    // reader chose and every component carrying it is drawn at every facing the sheet covers. The
+    // pools are what bound it — see `utils/oneSidedFeatures.ts`.
+    oneSidedFeatures: oneSidedFeatures(category, subject),
   };
 }

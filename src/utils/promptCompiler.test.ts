@@ -1321,7 +1321,7 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(diagonals).toContain('- Turn it a further 90° for **south-east**, object yaw 315°.');
   });
 
-  it('names which side each yaw brings towards the camera, and audits the witness against it', () => {
+  it('names which side each yaw brings towards the camera', () => {
     // The mechanical half of the same fix. Naming the near side per facing is what turns "an
     // asymmetric feature must stay put" into something checkable: the feature is exposed while its
     // own side leads and reduced once it does not, and equal prominence in two opposite turns is the
@@ -1336,8 +1336,6 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(cardinals).toContain('- **west** — the subject’s **left** side is the near one');
     expect(cardinals).toContain('- **east** — the subject’s **right** side is the near one');
     expect(cardinals).toContain('- **south** — neither side leads');
-    expect(cardinals).toContain('**chirality witness**');
-    expect(cardinals).toContain('Equal prominence in two views leading with opposite');
   });
 
   it('never asks a plan-view sheet for an occlusion its own camera cannot produce', () => {
@@ -1375,15 +1373,23 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
     expect(overhead).not.toContain('Equal prominence in two views leading with opposite');
     expect(overhead).toContain('### The subject’s own left and right');
     expect(overhead).toContain('### One turntable, not several drawings');
-    expect(overhead).toContain('**chirality witness**');
+    // The one-sided ledger keeps its naming sentence overhead and loses its per-facing list, for the
+    // same reason: the side a feature belongs to is what a plan view can still get wrong, and how
+    // much of it a turn hides is what that camera cannot vary.
+    expect(overhead).toContain('on its left, and nowhere on its right');
+    expect(overhead).not.toContain('its own side squarely faces the camera');
 
     // And the closing invariants, which are the same claim a third time in the highest-weighted
     // position in the document — the last block before "Generate the sheet now". The ledger and the
     // witness check were gated here from the start; the invariant restating them was not, so it
     // reached every overhead sheet asking for a change in visibility this camera cannot produce.
-    expect(overhead).toContain('## 10. RENDER-CRITICAL INVARIANTS');
-    expect(overhead).not.toContain('changes how much of it shows');
-    expect(overhead).toContain('where it lands in the frame follows from that side');
+    // Sliced rather than searched whole, because section 9's own chirality check words the same
+    // claim: the assertion below used to match that copy instead, and passed whichever of the two
+    // the template happened to carry.
+    const invariants = sectionOf(overhead, 'RENDER-CRITICAL INVARIANTS');
+    expect(invariants).not.toBe('');
+    expect(invariants).not.toContain('changes how much of it shows');
+    expect(invariants).toContain('follows from that side and the view’s own yaw');
   });
 
   it('settles an unstated side the same way on every sheet rather than leaving it to be chosen', () => {
@@ -1585,6 +1591,185 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
       withOutput({ directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION', directions: 'FOUR_CARDINAL' }),
     );
     expect(rig).not.toContain('A component the inventory lists in more than one direction');
+  });
+});
+
+describe('generatePrompt — the subject’s one-sided features, named rather than delegated', () => {
+  /**
+   * The configuration the pack measured, and the two attributes it measured failing on.
+   *
+   * `S1-cardinals` ran a CHARACTER directional core carrying `Neon Visor & Undercut` and
+   * `Holstered Sidearm & Pouch`. Every opposite-turn pair on every readable sheet came back a
+   * horizontal reflection — 12 of 12 across the pack — and what distinguished a sheet the earlier
+   * by-eye reading called compliant from one it called broken was only which feature the *model*
+   * happened to name for itself. Section 9 asked it to pick one; it picked the holster; the head
+   * went on reflecting.
+   */
+  const BOTH = withOutput({ directionalMode: 'CORE_DIRECTIONAL_VARIANTS', directions: 'FOUR_CARDINAL' });
+
+  /** The same sheet for a subject whose two one-sided fields are free text no pool declares. */
+  const TYPED: SubjectDefinition = {
+    ...defaultSubjectFor('CHARACTER'),
+    face_head: 'A neon visor with the hair shaved back on one side',
+    worn_details: 'A holstered sidearm on the left hip',
+  };
+
+  it('enumerates every declared feature per facing, rather than asking for one witness', () => {
+    const prompt = generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), BOTH);
+    const camera = sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION');
+
+    expect(camera).toContain('### The one-sided features this subject carries');
+    for (const feature of ['undercut', 'holstered sidearm and pouch']) {
+      expect(camera, feature).toContain(
+        `**The subject carries the ${feature} on its left, and nowhere on its right.**`,
+      );
+    }
+    // Four facings for each of the two, which is the half the delegation could never produce: it
+    // asked for one feature and the second was left unconstrained however well the first was traced.
+    // Counted inside this subsection alone — the leading-side ledger elsewhere in this section is a
+    // list of the same shape, and a count over the whole section would pass on either of them.
+    const subsection = camera.slice(camera.indexOf('### The one-sided features this subject carries'));
+    const lines = subsection.slice(0, subsection.indexOf('\n### ', 1)).split('\n');
+    expect(lines.filter((line) => line.startsWith('- **'))).toHaveLength(8);
+  });
+
+  it('replaces section 9’s witness bullet where it has something to name', () => {
+    const audit = sectionOf(
+      generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), BOTH),
+      'LAYOUT AND SELF-AUDIT',
+    );
+
+    expect(audit).toContain('Trace **every** feature section 3 lists as one-sided');
+    expect(audit).not.toContain('**chirality witness**');
+  });
+
+  it('keeps the witness bullet where the subject is free text it cannot read', () => {
+    // The bound, and the reason the delegation is not deleted. Every subject field is an unfiltered
+    // combo box, so a reader can describe a one-sided feature in their own words — and a sheet whose
+    // compiler derived nothing would otherwise lose the chirality check altogether.
+    const prompt = generatePrompt('CHARACTER', TYPED, BOTH);
+
+    expect(sectionOf(prompt, 'LAYOUT AND SELF-AUDIT')).toContain('**chirality witness**');
+    expect(sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION')).not.toContain(
+      'The one-sided features this subject carries',
+    );
+  });
+
+  it('pairs the ledger with the audit wherever there is a second view to compare', () => {
+    // The pairing is what makes the sheet checkable: section 3 says what each view holds and section
+    // 9 asks for it to be traced. They part company in exactly one place and it is deliberate — the
+    // directional audit is gated on the sheet holding more than one facing, and the ledger is not,
+    // because a single-facing sheet still has to be told which attribute is one-sided. `S3-cutout-rig`
+    // is why: it failed two runs of three by duplicating the holster onto both thighs and by
+    // splitting the sidearm and the pouch one to each flank, on a sheet with nothing to compare.
+    for (const directions of DIRECTION_SETS) {
+      for (const subject of [defaultSubjectFor('CHARACTER'), TYPED]) {
+        const prompt = generatePrompt('CHARACTER', subject, withOutput({ ...BOTH, directions }));
+        const named = sectionOf(prompt, 'PROJECTION, CAMERA AND OBJECT ORIENTATION').includes(
+          'The one-sided features this subject carries',
+        );
+        const audit = sectionOf(prompt, 'LAYOUT AND SELF-AUDIT');
+        const traced = audit.includes('Trace **every** feature section 3 lists as one-sided');
+        const where = `${directions}: ledger ${String(named)}, audit ${String(traced)}`;
+
+        // Declared or free text decides the ledger, and it decides which of section 9's two
+        // chirality bullets appears — never neither, wherever there is a directional audit at all.
+        expect(named, where).toBe(subject !== TYPED);
+        if (audit.includes('### Directional audit')) {
+          expect(traced, where).toBe(named);
+          expect(audit.includes('**chirality witness**'), where).toBe(!named);
+        } else {
+          expect(traced, where).toBe(false);
+        }
+      }
+    }
+  });
+
+  it('yields to an identity lock, which is the one route by which a side is already settled', () => {
+    // The self-contradiction this closes. Section 3's own default applies "where section 1 names
+    // such a feature without saying which side carries it", and section 7 says that where the lock
+    // fixes a side "this sheet does not choose one" — so a block stating the left flatly produced
+    // one prompt whose section 7 said right, whose section 3 said left, and whose section 9 audited
+    // against the left. No pool value names a side, so the survey behind `oneSidedOptions` cannot
+    // reach this; the lock is free text and can.
+    const locked = generatePrompt(
+      'CHARACTER',
+      defaultSubjectFor('CHARACTER'),
+      withOutput({ ...BOTH, identityLock: 'The undercut is shaved on the subject’s right side.' }),
+    );
+    const camera = sectionOf(locked, 'PROJECTION, CAMERA AND OBJECT ORIENTATION');
+
+    expect(camera).toContain('the lock wins and this');
+    expect(camera).toContain('read with its two flanks exchanged');
+  });
+
+  it('says nothing about the lock on the twelve sheets in thirteen that carry none', () => {
+    const camera = sectionOf(
+      generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), BOTH),
+      'PROJECTION, CAMERA AND OBJECT ORIENTATION',
+    );
+
+    expect(camera).toContain('The one-sided features this subject carries');
+    expect(camera).not.toContain('the lock wins');
+  });
+
+  it('compares a view with its opposite only where the sheet holds such a pair', () => {
+    // `MIRROR_PAIRS` rather than `MULTI_DIRECTION`, for the reason `promptConditions.ts` gives about
+    // that flag: the classic sets turn one way only, so no view there leads with the flank another
+    // leads with, and the sentence would be instruction about a comparison the sheet cannot make.
+    // The two instructions beside it — do not rotate it into shot, do not draw a second copy — are
+    // what a sheet with one facing needs most, so they are not gated with it.
+    const OPPOSITE = 'reads at the same prominence as the view opposite';
+    const subject = defaultSubjectFor('CHARACTER');
+
+    const seen = new Set<boolean>();
+    for (const directions of DIRECTION_SETS) {
+      const camera = sectionOf(
+        generatePrompt('CHARACTER', subject, withOutput({ ...BOTH, directions })),
+        'PROJECTION, CAMERA AND OBJECT ORIENTATION',
+      );
+      const holdsPair = camera.includes('This sheet holds both members of an opposite-turn pair');
+      seen.add(holdsPair);
+
+      expect(camera.includes(OPPOSITE), `${directions}: pair ${String(holdsPair)}`).toBe(holdsPair);
+      expect(camera, directions).toContain('do not draw a second copy on the other flank');
+    }
+    // Both sides of the gate reached, or the assertion above is agreeing with itself: every set
+    // holding a pair would make it a check that the sentence is always there, and none holding one
+    // would make it a check that it never is.
+    expect(seen, 'the sweep reached only one side of the gate').toEqual(new Set([true, false]));
+  });
+
+  it('drops the per-facing visibility overhead and keeps the side, which that camera can still lose', () => {
+    // From the vertical a turn hides nothing, so there is no visibility to enumerate — and the
+    // mirrored copy section 3's plan-view bullet forbids is precisely the one that moves a left-sided
+    // feature onto the subject's right, so naming it still matters.
+    const overhead = generatePrompt(
+      'CHARACTER',
+      defaultSubjectFor('CHARACTER'),
+      withOutput({ ...BOTH, projection: 'PURE_TOPDOWN', cameraElevation: 90 }),
+    );
+    const camera = sectionOf(overhead, 'PROJECTION, CAMERA AND OBJECT ORIENTATION');
+
+    expect(camera).toContain('**The subject carries the undercut on its left, and nowhere on its right.**');
+    expect(camera).not.toContain('its own side squarely faces the camera');
+  });
+
+  it('still states the side on a sheet with one facing, which is where it was measured failing', () => {
+    // Deliberately not gated on `MULTI_DIRECTION`, unlike the leading-side ledger beside it: a
+    // single-facing sheet has no pair to compare and still has to be told which attribute is
+    // one-sided. `S3-cutout-rig` is why — it draws one facing and failed the same rule two runs of
+    // three, once by duplicating the holster onto both thighs and once by splitting the sidearm and
+    // the pouch one to each flank. The list is one line long there, and that line is the answer.
+    const single = generatePrompt(
+      'CHARACTER',
+      defaultSubjectFor('CHARACTER'),
+      withOutput({ directions: 'SINGLE_FRONT' }),
+    );
+    const camera = sectionOf(single, 'PROJECTION, CAMERA AND OBJECT ORIENTATION');
+
+    expect(camera).toContain('**The subject carries the undercut on its left, and nowhere on its right.**');
+    expect(camera).toContain('- **front** — both flanks are edge-on');
   });
 });
 

@@ -42,7 +42,7 @@ export { DEFAULT_CAMERA_ELEVATIONS, DIRECTION_LISTS, describeDirections, PROJECT
 export { depthOrder, depthOrderDescription, DEPTH_ORDER_TEXT, PLAN_DEPTH_ORDER_TEXT } from './depthOrder.ts';
 export { cameraElevationRange, isPlanView, resolveCameraElevation } from './elevation.ts';
 export { FACING_TEXT, facingText, OBJECT_YAW } from './rotation.ts';
-export { leadingSide } from './chirality.ts';
+export { leadingSide, signedObjectYaw } from './chirality.ts';
 export { LANDMARK_TEXT } from './landmarks.ts';
 export { ASPECT_TEXT, BACKGROUND_KEY_TEXT } from './sheet.ts';
 // `SCALE_UNIT_TEXT` is exported here although nothing imports it *through* this barrel — every

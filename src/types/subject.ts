@@ -225,6 +225,57 @@ export interface FieldOption {
    * member of — which is what `categories.test.ts` checks.
    */
   readonly absentOption?: string;
+  /**
+   * The values in the pool above that name something the subject carries on **one of its own two
+   * flanks and not the other**, each mapped to the phrase the prompt calls that thing.
+   *
+   * **The defect this exists to answer.** Section 3 forbids an opposite-turn pair being reflections
+   * of one another, and measured across 27 real GPT-5.6 Sol sheets every pair that could be
+   * measured is one — 12 of 12 — with the rule carried verbatim into 7 of the 7 readable
+   * compositions that state it. What separates a sheet that satisfies the rule from one that
+   * breaks it is not the rule: it is whether some *named* one-sided feature is drawn on the near
+   * flank and absent from the far one. On the sheets that satisfy it, the holstered sidearm is on
+   * the west torso and not the east. On the sheets that do not, nothing was named.
+   *
+   * The prompt used to ask the model to supply that itself — "pick one feature the subject carries
+   * on one side and not the other" — which fails in two ways at once. It picks *one*, so a second
+   * one-sided attribute is left free, and the head went on reflecting while the torso and pelvis
+   * held. And it asks for a witness to a prohibition, which is a rule with no figure in it: the
+   * object yaws survive the hand-off because they carry degrees. `utils/oneSidedFeatureLedger.ts`
+   * is what replaced it, and this record is the half a compiler cannot work out for itself —
+   * nothing in `Holstered Sidearm & Pouch` distinguishes it from `Tactical Kevlar & Plates` but
+   * knowing what the words mean.
+   *
+   * **A map rather than a list, because only part of a value is usually the one-sided part.** The
+   * visor of `Neon Visor & Undercut` is symmetric and the undercut is not, so the phrase is
+   * `undercut` and the prompt reads "The undercut is on the subject's left". `categories.test.ts`
+   * holds every phrase to naming something inside the option it is keyed by, with `&` read as
+   * `and`, so a phrase cannot drift from the value it describes.
+   *
+   * **What may be declared, which is deliberately narrower than what might be asymmetric.** The
+   * test is section 3's own sentence: does the subject carry this on one flank and not the other?
+   * Three shapes pass it — the singular of something paired (`Monocular Cyber Eye`,
+   * `Clockwork Prosthetic Hand`, `Bandages Over One Eye`), a thing worn across or at one flank by
+   * construction (`Holstered Sidearm & Pouch`, `Bandolier Of Vials`, `Scabbard & Strap Rig`), and
+   * a single mark or fitting in a place there are two of (`Ink Stains At The Temple`,
+   * `Lapel Badge`). Everything else is left undeclared, and the *undeclared* case is today's
+   * behaviour rather than a gap: a wrong declaration puts a false sentence about the subject into
+   * section 3, which is worse than silence.
+   *
+   * **Two near misses say where the boundary is.** `Asymmetrical Pauldrons` and
+   * `Split-Dyed Hair & Shaved Sides` are chiral but not one-sided — the subject has both, arranged
+   * differently — so the sentence this record produces would be false of them, and section 3's
+   * rules against swapping the subject's own left and right already cover them. And
+   * `additional_anatomy` declares nothing at all, on any category: its entries are drawn as
+   * **separate components in their own cells**, so there is no trunk for a per-facing visibility
+   * statement to be about.
+   *
+   * **The pools are what this covers, and free text is what it does not.** Every subject field is
+   * an unfiltered combo box, so a reader may type a one-sided feature nobody declared. That is why
+   * section 9 keeps its "pick one feature" bullet for a subject the compiler derives nothing from —
+   * see `promptTemplate.ts`, which states both branches and why each exists.
+   */
+  readonly oneSidedOptions?: Readonly<Record<string, string>>;
 }
 
 /**

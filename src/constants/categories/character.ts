@@ -231,6 +231,11 @@ export const CHARACTER: CategoryDefinition = {
         'Rolled Headscarf & Weary Smile',
         'Halo Ring & Blank Serene Face',
       ],
+      oneSidedOptions: {
+        'Neon Visor & Undercut': 'undercut',
+        'Monocular Cyber Eye': 'monocular cyber eye',
+        'Wild Mane & Scarred Cheek': 'scarred cheek',
+      },
     },
     {
       key: 'anatomy',
@@ -253,6 +258,9 @@ export const CHARACTER: CategoryDefinition = {
         'Hybrid Half-Beast Form',
         'Digitigrade Beastfolk Legs',
       ],
+      oneSidedOptions: {
+        'Humanoid With Prosthetic Limb': 'prosthetic limb',
+      },
     },
     {
       key: 'clothing',
@@ -315,6 +323,12 @@ export const CHARACTER: CategoryDefinition = {
         'Rolled Blanket & Cook Pot',
         'Six-Gun Belt & Spur Straps',
       ],
+      oneSidedOptions: {
+        'Holstered Sidearm & Pouch': 'holstered sidearm and pouch',
+        'Scabbard & Strap Rig': 'scabbard',
+        'Bandolier Of Vials': 'bandolier of vials',
+        'Clockwork Prosthetic Hand': 'clockwork prosthetic hand',
+      },
     },
     {
       key: 'primary_colours',

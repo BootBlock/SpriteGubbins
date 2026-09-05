@@ -195,6 +195,9 @@ export const OBJECT: CategoryDefinition = {
         'Carved Stone Face & Offering Bowl',
         'Rope Drum & Hand Crank',
       ],
+      oneSidedOptions: {
+        'Rope Drum & Hand Crank': 'hand crank',
+      },
     },
     {
       key: 'anatomy',
