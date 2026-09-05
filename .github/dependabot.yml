@@ -1,0 +1,49 @@
+# Version updates, which are a different thing from the security updates this repository already
+# had. Dependabot's security alerts only open a pull request once an advisory names a version in
+# the lockfile; nothing was watching for an ordinary release, so the dependency surface only ever
+# moved when something was found wrong with it.
+#
+# The `github-actions` ecosystem is the half that matters most here. `deploy.yml` and `tests.yml`
+# pin every action to a full commit SHA, and the repository now requires that — which is the right
+# posture and is also the one that rots silently, because a pinned SHA never resolves to anything
+# newer on its own. Dependabot rewrites the SHA and the `# v7.0.1` comment beside it together.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Every pull request now runs the full gate through `tests.yml`, so a bump that breaks the
+    # build says so before it is merged rather than at the next release.
+    labels:
+      - dependencies
+      - 'area: dependencies'
+      - 'type: chore'
+    # One pull request for all the minor and patch bumps of a week, and one per major. A major is
+    # where a breaking change lives, so it is worth reading on its own; the rest are noise when
+    # they arrive as fifteen separate pull requests, and noise is what stops them being read at all.
+    groups:
+      npm-minor-and-patch:
+        patterns:
+          - '*'
+        update-types:
+          - minor
+          - patch
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels:
+      - dependencies
+      - 'area: ci'
+      - 'type: chore'
+    groups:
+      actions:
+        patterns:
+          - '*'
+    open-pull-requests-limit: 5

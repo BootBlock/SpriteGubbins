@@ -6,7 +6,7 @@
  * "is this line credential-shaped, and is what it carries a real value or an example?" — kept pure
  * and separate from `secret-scan.ts`, which is the runner that asks git for a diff and prints the
  * answer. Both consumers of the scanner go through this file, so the local `.githooks/pre-commit`
- * hook and the `secret-scan` job in `.github/workflows/deploy.yml` cannot drift apart.
+ * hook and the `secret-scan` job in `.github/workflows/tests.yml` cannot drift apart.
  *
  * **The placeholder test judges the matched value, never the line it sits on.** It used to judge
  * the line: any placeholder word anywhere on a line excused everything else on it. One of the
@@ -219,7 +219,7 @@ function decodeRun(bytes: Uint8Array, start: number, end: number, stride: number
  * zip, a gzip, a PNG `IDAT` — is not present as bytes at any spacing until something decompresses
  * it, and this does not. Nor is one in an encoding that is not an ASCII superset laid out this way,
  * such as EBCDIC or the base64 runs of UTF-7. Both limits are named in
- * `.github/workflows/deploy.yml` too, rather than letting the gate read as total.
+ * `.github/workflows/tests.yml` too, rather than letting the gate read as total.
  */
 export function scanBytes(bytes: Uint8Array): string[] {
   const found = new Set<string>();

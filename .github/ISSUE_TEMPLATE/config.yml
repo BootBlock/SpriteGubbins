@@ -1,0 +1,14 @@
+# A blank issue stays available on purpose. Most issues here are opened by the maintainer or by an
+# agent working on their behalf, often against one of the 58 labels rather than against a form, and
+# a form is a poor fit for "the ICON sheet plan contradicts section 8". The two forms below are for
+# a reader who has met the app rather than the codebase.
+blank_issues_enabled: true
+
+contact_links:
+  - name: Ask a question or share a sheet
+    url: https://github.com/BootBlock/SpriteGubbins/discussions
+    about: For anything that is not a defect or a request. Prompts that worked, prompts that did not, and how you drove the app.
+
+  - name: Report a security problem
+    url: https://github.com/BootBlock/SpriteGubbins/security/policy
+    about: Please do not open a public issue for a vulnerability. The security policy says how to report one privately.

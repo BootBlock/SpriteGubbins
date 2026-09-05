@@ -1,0 +1,212 @@
+name: Tests
+
+# The verification gate CLAUDE.md requires locally, run by GitHub on every push and every pull
+# request — and, through `workflow_call`, on the exact commit `deploy.yml` is about to publish.
+#
+# Until this file existed the gate ran in one place only: a manual deploy. CodeQL ran on every
+# push and nothing else did, so a commit that failed to type-check, lint, format, test or build
+# could sit on `main` for days, and the first thing that would report it was a release somebody
+# had to dispatch by hand. Several agents land into `main` concurrently and each verifies its own
+# worktree, so the combination that actually reaches the branch is the one nobody ran the gate
+# against. This runs it there.
+#
+# It does not replace the local gate. A push that fails here has already reached `main`; the point
+# is that it is reported in four minutes rather than at the next release.
+on:
+  # `main` is where the gap was: several agents merge into it locally and push, so the combination
+  # that lands is one nobody ran the gate against. Other branches are covered as pull requests
+  # instead of as pushes, which is also what stops a same-repository pull request — every Dependabot
+  # bump is one — being checked twice for one commit.
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+    inputs:
+      sha:
+        description: 'Commit to check out. Leave empty to gate the commit that triggered the run.'
+        required: false
+        default: ''
+        type: string
+      upload-dist:
+        description: 'Upload the built dist/ as an artifact named "dist", for a caller that deploys it.'
+        required: false
+        default: false
+        type: boolean
+
+# Least privilege, and it is what the caller's own grant is narrowed to: every job here only reads
+# the tree. `deploy.yml` grants `pages: write` and `id-token: write` for the jobs it keeps to
+# itself, and calling this workflow cannot pass them on.
+permissions:
+  contents: read
+
+# A newer push supersedes an older one on the same ref, because only the newest commit is worth a
+# verdict. A `workflow_call` run is deliberately in a different group and is never cancelled: it is
+# the gate a release is waiting on, and `github.event_name` inside a called workflow is the
+# caller's event, so a push landing on `main` mid-release cannot cancel the deploy's gate.
+concurrency:
+  group: tests-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'push' || github.event_name == 'pull_request' }}
+
+jobs:
+  # This repository is PUBLIC, and a commit's contents are permanent from the moment they are
+  # pushed, so this scans the WHOLE tree rather than a commit range. `.githooks/pre-commit` scans
+  # only what a commit adds — deliberately, so a value that has always lived in a committed fixture
+  # is not re-flagged forever — but it runs on one developer's machine and `git commit --no-verify`
+  # skips it entirely. Diffing against the empty tree makes every tracked line count as "added", and
+  # every tracked binary file count as newly added, so anything credential-shaped that ever slipped
+  # past the hook is reported here. Same scanner as the hook (`scripts/secret-scan.ts`), so the two
+  # can never drift.
+  #
+  # What "anything" does and does not cover, because a gate is worth only what it actually reads.
+  # A file git calls binary contributes no lines to a diff at all, so it is fetched whole and its
+  # bytes are scanned — at one-, two- and four-byte spacings, at every offset, which reads ASCII,
+  # UTF-8, UTF-16 and UTF-32 in either endianness (issue #211). That reaches a credential stored as
+  # one byte per ASCII character: a UTF-16 source file, a `.pem`, a SQLite page, a PNG text chunk.
+  # It does not reach one inside a compressed or encoded stream — a zip, a gzip, a PNG `IDAT` —
+  # because those bytes are not present until something decompresses them, and nothing here does;
+  # nor one in an encoding laid out some other way, such as EBCDIC.
+  #
+  # Running it on every push and every pull request is the change: the deploy ran this against the
+  # commit it was about to publish, which is the last moment it can be asked, and by then the value
+  # has been on `main` for however long it sat there.
+  # Every job checks out `inputs.sha || github.sha`: the commit `deploy.yml` resolved when this
+  # workflow was called, and the commit the event names otherwise. The two differ whenever a release
+  # wrote a version bump, and gating the wrong one of them is the failure that expression exists to
+  # prevent.
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set up Node
+        # No `cache: npm` — this job installs nothing. The scanner has no dependencies and reads
+        # only git. It does need this Node: it is TypeScript run directly, so the runtime has to be
+        # one that strips types, which is why the version is still pinned.
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 25
+
+      - name: Scan the tree for credential-shaped content
+        # `git hash-object -t tree /dev/null` computes this repository's empty-tree id rather than
+        # hard-coding 4b825dc…, which is correct only for a SHA-1 repository. Nothing is written:
+        # without `-w` the id is calculated, not stored.
+        run: node scripts/secret-scan.ts --diff "$(git hash-object -t tree /dev/null)"
+
+  quality:
+    name: Lint, format & type-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # Node 25, matching `.nvmrc` and the local dev toolchain, so `npm ci` resolves the
+          # lockfile identically to a developer's machine.
+          node-version: 25
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fail fast on types first, then lint, then formatting — cheapest signal last.
+      - name: Type-check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+  test:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 25
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The pure utilities — the prompt compiler and the atlas maths — are where this app's
+      # correctness actually lives.
+      - name: Run unit tests
+        run: npm run test:run
+
+  # `npm run build` is a check in its own right and not only a way to get a bundle. The build's own
+  # `closeBundle` guards — the dead-utility sweep and the precache contract — fail there and nowhere
+  # else, because Vitest never builds, so a tree that type-checks, lints and tests green can still
+  # fail here. `tests/dead-utilities.test.ts` says the same thing from the other side: it drives the
+  # pure half of that guard precisely because the whole question can only be asked at build time.
+  #
+  # It is also the job that produces the bundle a release publishes. `upload-dist` is how the deploy
+  # asks for it, and the artefact it uploads is the one every check above has just been run against.
+  build:
+    name: Build
+    needs: [secret-scan, quality, test]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - name: Set up Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 25
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `vite.config.ts` pins `base: '/SpriteGubbins/'`, so the build needs no environment at all.
+      # This app handles no API key by design, so there is deliberately no secret to wire in here.
+      - name: Build
+        run: npm run build
+
+      # Three production-only mechanisms have no unit test that can catch their absence, and all of
+      # them fail silently. `404.html` is the byte copy of the app shell that makes a refresh or a
+      # shared deep link resolve on GitHub Pages. `sw.js` is the `injectManifest` worker that adds
+      # the cross-origin isolation headers Pages itself will never send. `manifest.webmanifest` is
+      # what makes the app installable. A build that emitted none of them would still exit 0.
+      - name: Verify the build output
+        run: |
+          missing=0
+          for artefact in index.html 404.html sw.js manifest.webmanifest; do
+            if [ ! -s "dist/$artefact" ]; then
+              echo "::error title=Missing build output::dist/$artefact was not emitted, or is empty."
+              missing=1
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          echo "dist/ carries the app shell, the SPA 404 fallback, the service worker and the manifest."
+
+      # Only for a caller that is going to publish it. A push or a pull request leaves the input at
+      # its default and uploads nothing, so the ordinary gate costs no storage — and a release gets
+      # to deploy the exact bytes every check above was run against, rather than a second build of
+      # the same commit that nothing checked. One day is long enough: the artefact is consumed by
+      # the next job in the same run and is of no use afterwards.
+      - name: Upload the built bundle
+        if: inputs.upload-dist
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: dist
+          retention-days: 1

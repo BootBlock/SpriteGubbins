@@ -945,7 +945,8 @@ the plan in a raw fenced markdown block.
 **Scope:** `src/sw.ts`, `src/utils/isolationHeaders.ts`, `public/` (including
 `coi-bootstrap.js`), `index.html`, `vite.config.ts`, `tsconfig*.json`, `eslint.config.js`,
 `prettier.config.js`, `package.json` and `package-lock.json`, `scripts/`, `.githooks/pre-commit`,
-`.github/workflows/deploy.yml`, `Run.bat`, `Run.ps1`, `.gitignore`, `AGENTS.md`, all of
+all of `.github/` — both workflows, `dependabot.yml`, the issue forms and the community health
+files — `Run.bat`, `Run.ps1`, `.gitignore`, `AGENTS.md`, all of
 `src/types/`, `src/index.css` as a stylesheet, `repro.log` and any other file at the root whose
 presence in the repository is unexplained, and the `PWAInstallBanner`.
 
@@ -957,8 +958,9 @@ driven through first visit, the isolation reload, install, offline (network disa
 driven browser), a second deploy with a changed asset, and the update flow — recording what the
 reader sees at each step and what the worker precached against what the app requested; the
 precache contract's figures re-derived; the same-origin gate on injected headers probed with a
-cross-origin request the way CLAUDE.md describes the measurement; the deploy workflow read job by
-job for a gate a dispatch can skip; the pre-commit hook against the CI gate for drift; every
+cross-origin request the way CLAUDE.md describes the measurement; both workflows read job by job
+for a gate a dispatch can skip and for a claim a comment makes that the YAML does not keep; the
+pre-commit hook against the CI gate for drift; every
 dependency's declared version against the lock and against the vendor's current release, and any
 advisory (`npm audit` output pasted); the secret scanner run over the whole tree and history (`git
 log -p` piped through it) with any hit examined; the tool-exclusion table in CLAUDE.md re-probed
