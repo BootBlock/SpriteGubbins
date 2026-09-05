@@ -1,0 +1,92 @@
+name: Bug report
+description: Something in the app behaves differently from how it is documented or described.
+labels: ['type: bug', 'status: triage']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Everything runs in your browser. There is no server and no account, so nothing about your
+        session reaches anybody unless you paste it here. Please do paste the parts that matter:
+        the app version, what you had configured, and anything the browser console said.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What the app did.
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-was-expected
+    attributes:
+      label: What you expected instead
+      description: What you thought it would do, and what made you think so.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to reproduce it
+      description: Every step from opening the app, so that somebody else can arrive where you did.
+      placeholder: |
+        1. Open the Studio tab
+        2. Choose the CHARACTER category
+        3. …
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where in the app
+      description: The nearest one. Leave it if none of them fits.
+      options:
+        - Studio — subject fields, output configuration, the compiled prompt
+        - Quantise — keying, pixel snapping, palette reduction, the written files
+        - Presets — saving, loading, importing, exporting
+        - Atlas calculator — layouts, VRAM budgets, engine metadata
+        - Sheet splitter — cutting a sheet into runs
+        - History — what the app remembers between sessions
+        - Settings, chrome or navigation
+        - Installing the app, or using it offline
+        - Somewhere else
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: The version shown in the About section of the Architecture tab.
+      placeholder: 0.13.0
+    validations:
+      required: true
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and operating system
+      placeholder: Edge 141 on Windows 11
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Anything the console said
+      description: Open the developer tools and copy any message that appeared. Leave this empty if there was none.
+      render: text
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you open this
+      options:
+        - label: I searched the open issues and this is not one of them.
+          required: true
+        - label: There is no API key, password or personal data in what I have pasted above.
+          required: true

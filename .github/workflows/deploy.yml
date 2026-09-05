@@ -14,17 +14,17 @@ name: Deploy to GitHub Pages
 # can actually *reach* production — see the note on the `deploy` job below.
 #
 # `workflow_dispatch` lets the operator pick any ref — including an unmerged branch nothing has
-# ever checked — and this is the app's only publish path, so the three gate jobs below run the
-# checks CLAUDE.md requires locally (secret scan, types, lint, formatting, unit tests) against
-# exactly the commit being deployed, and `build` needs all of them. That is the only thing stopping
-# a broken or credential-carrying commit reaching every user's device in one click. Every job takes
-# its checkout from `needs.release.outputs.sha` for that reason, rather than from the dispatched
-# ref, which the version bump moves out from under the run.
+# ever checked — and this is the app's only publish path, so the `gate` job below runs the checks
+# CLAUDE.md requires locally (secret scan, types, lint, formatting, unit tests, build) against
+# exactly the commit being deployed, and everything after it needs the gate. That is the only thing
+# stopping a broken or credential-carrying commit reaching every user's device in one click. The
+# gate takes the commit from `needs.release.outputs.sha`, and hands it to every job it runs, rather
+# than taking the dispatched ref — which the version bump moves out from under the run.
 #
-# Ported from the sibling Gubbins repository, where the same gate lives in a reusable Tests
-# workflow that the deploy invokes. Sprite Gubbins has no push/PR workflow to delegate to, so the
-# jobs are inlined here — which also keeps the promise above literally true: nothing in this
-# directory runs unless a human dispatches it.
+# The gate itself is `tests.yml`, as it is in the sibling Gubbins repository: a reusable workflow
+# this one invokes, which also runs on every push to `main` and on every pull request. Only that
+# second half is new here. Publishing is still manual and still this file's alone — what changed is
+# that a commit no longer waits for a release to find out whether it passes.
 on:
   workflow_dispatch:
     inputs:
@@ -162,147 +162,45 @@ jobs:
             echo "version=$version"
           } >> "$GITHUB_OUTPUT"
 
-  # This repository is PUBLIC, and a deploy is the moment a commit's contents become permanent, so
-  # this scans the WHOLE tree rather than a commit range. `.githooks/pre-commit` scans only what a
-  # commit adds — deliberately, so a value that has always lived in a committed fixture is not
-  # re-flagged forever — but it runs on one developer's machine and `git commit --no-verify` skips
-  # it entirely. Diffing against the empty tree makes every tracked line count as "added", and
-  # every tracked binary file count as newly added, so anything credential-shaped that ever slipped
-  # past the hook blocks the publish. Same scanner as the hook (`scripts/secret-scan.ts`), so the
-  # two can never drift.
+  # The gate, which is now one definition rather than this file's own copy of it.
   #
-  # What "anything" does and does not cover, because a gate is worth only what it actually reads.
-  # A file git calls binary contributes no lines to a diff at all, so it is fetched whole and its
-  # bytes are scanned — at one-, two- and four-byte spacings, at every offset, which reads ASCII,
-  # UTF-8, UTF-16 and UTF-32 in either endianness (issue #211). That reaches a credential stored as
-  # one byte per ASCII character: a UTF-16 source file, a `.pem`, a SQLite page, a PNG text chunk.
-  # It does not reach one inside a compressed or encoded stream — a zip, a gzip, a PNG `IDAT` —
-  # because those bytes are not present until something decompresses them, and nothing here does;
-  # nor one in an encoding laid out some other way, such as EBCDIC.
-  secret-scan:
-    name: Secret scan
+  # These jobs used to be inlined here, with a note saying they were inlined because Sprite Gubbins
+  # had no push or pull-request workflow to delegate to. It has one now — `tests.yml` runs the same
+  # secret scan, type-check, lint, format check, unit tests and build on every push to `main` and on
+  # every pull request — so the deploy calls it instead of restating it. One definition means a
+  # check added to the gate is a check a release runs, without anybody remembering to add it twice.
+  #
+  # `sha` is what makes the promise above literally true: every job in the called workflow checks
+  # out the commit `release` resolved, which is the version bump rather than the dispatched ref
+  # whenever the version box asked for one.
+  gate:
+    name: Gate
     needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ needs.release.outputs.sha }}
+    uses: ./.github/workflows/tests.yml
+    with:
+      sha: ${{ needs.release.outputs.sha }}
+      upload-dist: true
 
-      - name: Set up Node
-        # No `cache: npm` — this job installs nothing. The scanner has no dependencies and reads
-        # only git, so it needs no lockfile. It does need this Node: it is TypeScript run directly,
-        # so the runtime has to be one that strips types, which is why the version is still pinned.
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 25
-
-      - name: Scan the tree for credential-shaped content
-        # `git hash-object -t tree /dev/null` computes this repository's empty-tree id rather than
-        # hard-coding 4b825dc…, which is correct only for a SHA-1 repository. Nothing is written:
-        # without `-w` the id is calculated, not stored.
-        run: node scripts/secret-scan.ts --diff "$(git hash-object -t tree /dev/null)"
-
-  quality:
-    name: Lint, format & type-check
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ needs.release.outputs.sha }}
-
-      - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          # Node 25, matching `.nvmrc` and the local dev toolchain, so `npm ci` resolves the
-          # lockfile identically to a developer's machine.
-          node-version: 25
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # Fail fast on types first, then lint, then formatting — cheapest signal last.
-      - name: Type-check
-        run: npm run type-check
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Check formatting
-        run: npm run format:check
-
-  test:
-    name: Unit tests
-    needs: release
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ needs.release.outputs.sha }}
-
-      - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 25
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # The pure utilities — the prompt compiler and the atlas maths — are where this app's
-      # correctness actually lives, so publishing past a red suite is never right.
-      - name: Run unit tests
-        run: npm run test:run
-
+  # Package what the gate built, and hand it to Pages.
+  #
+  # This job used to build the tree itself, which meant a release published a *second* build of the
+  # commit — one that no check had been run against. The gate uploads its `dist/` when the deploy
+  # asks for it (`upload-dist: true`), so the bytes that reach a reader's device are the bytes the
+  # secret scan, the type-check, the lint, the tests and the build's own guards were run over. A
+  # push or a pull request leaves that input alone and uploads nothing.
+  #
+  # Nothing here needs a checkout: `actions/download-artifact` fetches the bundle from the gate,
+  # which ran in this same workflow run, and the two Pages actions read only that directory.
   build:
-    name: Build
-    needs: [release, secret-scan, quality, test]
+    name: Package for Pages
+    needs: [release, gate]
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download the built bundle
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          ref: ${{ needs.release.outputs.sha }}
-
-      - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: 25
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # `vite.config.ts` pins `base: '/SpriteGubbins/'`, which is what a project site is served
-      # from — so the build needs no environment at all. This app handles no API key by design
-      # (it composes prompt *text* for the user to paste elsewhere and makes no outbound model
-      # calls), so there is deliberately no secret or variable to wire in here.
-      - name: Build
-        run: npm run build
-
-      # Three production-only mechanisms have no unit test that can catch their absence, and all
-      # of them fail silently. `404.html` is the byte copy of the app shell that makes a refresh
-      # or a shared deep link resolve on GitHub Pages. `sw.js` is the `injectManifest` worker that
-      # adds the cross-origin isolation headers Pages itself will never send — without it the app
-      # is neither isolated nor offline-capable. `manifest.webmanifest` is what makes it
-      # installable. A build that emitted none of them would still exit 0, so assert them here
-      # rather than publishing an app whose offline, deep-link and install behaviour only appears
-      # to exist.
-      - name: Verify the build output
-        run: |
-          missing=0
-          for artefact in index.html 404.html sw.js manifest.webmanifest; do
-            if [ ! -s "dist/$artefact" ]; then
-              echo "::error title=Missing build output::dist/$artefact was not emitted, or is empty."
-              missing=1
-            fi
-          done
-          [ "$missing" -eq 0 ] || exit 1
-          echo "dist/ carries the app shell, the SPA 404 fallback, the service worker and the manifest."
+          name: dist
+          path: dist
 
       - name: Configure Pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
@@ -334,6 +232,10 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    # Published for the release body, which quotes where this run actually deployed to rather than
+    # restating the project site's address and hoping the two agree.
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
@@ -343,8 +245,18 @@ jobs:
   # commit reached production", not "someone tried". That gives the rollback story its missing
   # first half: `git tag` lists every release, `v<version>` names the commit serving right now,
   # and re-running this workflow against an earlier tag redeploys it.
+  #
+  # The Release is the same record, published where a reader will actually meet it. A bare tag is
+  # invisible from the repository's front page and carries only the one line this job writes into
+  # it, so for four releases the Releases page said nothing at all. The tag stays the machine-
+  # readable answer to "which commit is serving?"; the Release is the human-readable one, and
+  # GitHub writes its body from the commits since the previous tag.
+  #
+  # Both steps are idempotent and independent. Re-dispatching an existing tag leaves the tag alone
+  # and still publishes a Release if one is missing, which is what makes this job able to catch up
+  # a release that was tagged before it published anything.
   tag:
-    name: Tag the release
+    name: Tag and publish the release
     needs: [release, build, deploy]
     runs-on: ubuntu-latest
     permissions:
@@ -374,3 +286,54 @@ jobs:
           git tag -a "$TAG" -m "Sprite Gubbins $VERSION — deployed to GitHub Pages by run $GITHUB_RUN_ID."
           git push origin "refs/tags/$TAG"
           echo "Recorded release $TAG at $(git rev-parse HEAD)."
+
+      - name: Publish the release
+        env:
+          TAG: ${{ needs.release.outputs.tag }}
+          VERSION: ${{ needs.release.outputs.version }}
+          PAGE_URL: ${{ needs.deploy.outputs.page_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "$TAG is already published — nothing to do."
+            exit 0
+          fi
+
+          # The release before this one, which is the highest tag sorting BELOW it — not the highest
+          # other tag. Those differ whenever the tag being published is not the newest, which is both
+          # of the cases this has to get right: a rollback re-deploying an older tag, and a catch-up
+          # publish of a tag pushed before this step existed. Taking the maximum of the rest would
+          # hand GitHub a *newer* start tag and produce an empty set of notes.
+          #
+          # `--refs` drops the peeled `^{}` entries these annotated tags also publish. `sort -V` is
+          # not semver: it orders `v1.0.0-rc.1` after `v1.0.0` rather than before it, so a
+          # prerelease can be chosen as the predecessor of the release that followed it. That costs
+          # a slightly short range of notes and nothing else.
+          remote_tags="$(git ls-remote --tags --refs origin 'refs/tags/v*' | awk '{print $2}' | sed 's#refs/tags/##')"
+          previous="$({ echo "$remote_tags"; echo "$TAG"; } | sort -V -u | awk -v tag="$TAG" '$0 == tag { print prev; exit } { prev = $0 }')"
+
+          # GitHub writes the body from the commits between the two tags. Passing the start tag
+          # rather than letting it be inferred is what keeps that range right when releases and
+          # tags disagree about which is newest.
+          notes_args="-f tag_name=$TAG"
+          if [ -n "$previous" ]; then
+            notes_args="$notes_args -f previous_tag_name=$previous"
+          fi
+          # Word splitting is what builds the argument list here, and every value in it is a version
+          # string this workflow already refused unless it matched MAJOR.MINOR.PATCH.
+          # shellcheck disable=SC2086
+          gh api "repos/$GITHUB_REPOSITORY/releases/generate-notes" $notes_args --jq .body > "$RUNNER_TEMP/notes.md"
+
+          # What was deployed, above the generated list, because that is the question a reader opens
+          # a release to answer. Both files are written to the runner's temp directory rather than
+          # into the checkout, which is a git working tree this job has no business dirtying.
+          {
+            echo "Deployed to ${PAGE_URL:-https://bootblock.github.io/SpriteGubbins/} from commit $(git rev-parse HEAD) by run $GITHUB_RUN_ID."
+            echo
+            cat "$RUNNER_TEMP/notes.md"
+          } > "$RUNNER_TEMP/body.md"
+
+          # `--verify-tag` refuses to invent a tag: this publishes the one the step above pushed, or
+          # it fails.
+          gh release create "$TAG" --verify-tag --title "Sprite Gubbins $VERSION" --notes-file "$RUNNER_TEMP/body.md"
+          echo "Published $TAG."

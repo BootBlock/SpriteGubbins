@@ -135,9 +135,14 @@ Vite, React 19, TypeScript (strict, with `noUncheckedIndexedAccess` and
 
 ## Contributing
 
-Working conventions — design tokens, the structural laws, the banned patterns and the
-verification gate — are in [CLAUDE.md](CLAUDE.md), with a short index in
-[AGENTS.md](AGENTS.md).
+Start with [CONTRIBUTING.md](.github/CONTRIBUTING.md) — how to run the app, the gate a change has
+to pass, and what tends to get merged. The working conventions behind it — design tokens, the
+structural laws, the banned patterns and the verification gate — are in [CLAUDE.md](CLAUDE.md),
+with a short index in [AGENTS.md](AGENTS.md).
+
+Please report a security problem privately rather than in an issue:
+[SECURITY.md](.github/SECURITY.md) says how. The
+[code of conduct](.github/CODE_OF_CONDUCT.md) applies wherever the project is.
 
 ## Licence
 

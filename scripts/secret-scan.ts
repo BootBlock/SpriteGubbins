@@ -1,6 +1,6 @@
 /**
  * Credential-shaped secret scanner, used by the local `.githooks/pre-commit` hook and by the
- * `secret-scan` job in `.github/workflows/deploy.yml`.
+ * `secret-scan` job in `.github/workflows/tests.yml`.
  *
  * Sprite Gubbins is a PUBLIC repository where a committed secret is treated as build-breaking
  * and is effectively permanent once pushed (see CLAUDE.md). The hook is the fast, local first

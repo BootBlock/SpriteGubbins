@@ -1502,6 +1502,21 @@ commit, merge into `main`, remove the worktree and delete its branch — as desc
 [work is not done until it has landed](#work-is-not-done-until-it-has-landed-mandatory). A verified
 change nobody merged is indistinguishable, from `main`, from a change that was never made.
 
+**GitHub runs the same gate again, and it is not a substitute for running it here.**
+[.github/workflows/tests.yml](.github/workflows/tests.yml) runs the secret scan, the type-check, the
+lint, the formatting check, the unit tests and the build on every push to `main` and on every pull
+request — and `deploy.yml` calls that same workflow, so a release gates on one definition rather than
+its own copy. What it buys is the case the local gate cannot see: several agents merge into `main`
+concurrently, and the *combination* that lands is one nobody ran anything against. What it does not
+buy is permission to push first and read the result afterwards. By the time it is red the commit is
+already on `main`, and it never opens a browser — the runtime surface is still yours to drive.
+
+**`main` and the `v*` tags reject a force push and a deletion**, through two repository rulesets with
+no bypass. Ordinary pushes and merge commits are unaffected, which is the whole of the workflow above;
+what is refused is rewriting the branch other agents are building on, or moving a tag that names a
+commit already deployed. A rewrite that is genuinely wanted is a decision for the maintainer to take
+in the repository's settings, not something to work around from a shell.
+
 Tests import `describe` / `it` / `expect` from `vitest` explicitly — Vitest runs without
 `globals`, which is what keeps test files inside the app's TypeScript program so `tsc -b`
 type-checks them too.
