@@ -93,8 +93,8 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  *
  * **That closing section carries the directional invariants and nothing else, and the omissions are
  * the decision.** It is gated on `MULTI_DIRECTION`, and it does not restate the count, the
- * background or the ban on text. Those three are section 0's opening lines *and* the first three
- * checks of the layout section's audit, so a third copy is the diluting one this file warns about
+ * background or the ban on text. Those three are section 0's opening items *and* checks of the
+ * layout section's audit, so a third copy is the diluting one this file warns about
  * above — and they are not what the reported failure was. The chirality rules are: they sit three
  * subsections deep in section 3, they are the newest thing here, and there is nothing else between
  * them and `Generate the sheet now`. On a single-facing sheet there is no distance to close, because
@@ -110,8 +110,36 @@ export const NATIVE_GRID_HEADING = 'The native grid, and the scale it is deliver
  * again there would be the diluting third copy `utils/modelWrapperText/sol.ts` describes, in the
  * section least able to afford it.
  *
+ * **The delivered canvas shape is stated in section 0 as well as in the layout section, and the
+ * placement is the whole of the change.** Measured across a run pack of 27 real GPT-5.6 Sol sheets,
+ * twelve came back at 3:2 where the prompt asked for a wide 16:9. This document stated the ratio in
+ * exactly one place — the layout section's arrangement sentence — which is inside no block
+ * `utils/modelWrapperText/sol.ts` names and inside no check the self-audit runs. (`midjourney.ts`
+ * appends an `--ar` flag as well, from the same field, and reaches a target this pack never ran.)
+ * It is also the one
+ * figure in that pack lost at the level of the *file*: a reader who gets the wrong shape cannot
+ * re-crop it, because the components were laid out for the shape that came back. So it now sits
+ * with the count, the key colour and the text ban — the properties of the delivered image that
+ * survive on 26 or 27 of those 27 sheets — and the self-audit checks it beside them. **Naming
+ * section 0 is what carries it across the Sol hand-off**, which is why nothing was added to that
+ * wrapper's list: it already protects the whole section, so a contract item is protected by being
+ * one. The layout sentence keeps the ratio as well, deliberately — all eight compositions in the
+ * pack that carried that sentence delivered a 16:9 sheet, so it is the half that already worked.
+ * **What none of this establishes is what Sol returns now**, which needs a re-run of the pack and
+ * cannot be settled from here.
+ *
+ * **The item is one sentence because the argument above is for a maintainer and not for a
+ * renderer**, and because the thirteen estimated tokens it costs did not fit. Qwen's documented
+ * 4,500-token ceiling is the tightest the app compiles against, and the library's only worked
+ * example for it — `Side-On Rail Gun Car` — sat five tokens under the four fifths
+ * `presetCoverage.test.ts` allows a preset. So a contract item stating the shape and nothing else
+ * still broke that card, and the previous answer to this, recorded at `MAX_BUDGET_SHARE`, was to
+ * measure the template's wording against the ceiling rather than choose it for the sheet. That
+ * cannot be the answer twice: the preset gave the margin back instead, and says so in its own file.
+ *
  * **The native grid is stated in three places, and the split is what makes each of them necessary.**
- * Section 0's sixth item is a rule about *resampling*, and as written it read as a ban on the one
+ * Section 0's item requiring every component to be rendered at the delivered output resolution is
+ * a rule about *resampling*, and as written it read as a ban on the one
  * enlargement pixel art is made of — so the carve-out belongs in the item it would otherwise
  * contradict, not only where the scale is stated. **Both the carve-out and the sentence scoping the
  * item to resampling sit inside the gate**, which is what keeps a prompt with no native grid word for
@@ -212,6 +240,7 @@ Satisfy this section before any aesthetic consideration.
 [N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
    overlapping — and none carrying another: a component that arrives with a neighbouring piece
    still attached to it is two entries merged, not one component.
+[N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
 [IF:LETTERING_IS_A_COMPONENT!=yes]
@@ -819,6 +848,7 @@ by the image edge.
 Before delivering, verify:
 
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
+[N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.

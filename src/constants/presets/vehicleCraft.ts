@@ -1,3 +1,4 @@
+import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
 import { DEFAULT_IMAGE_CONFIG } from '../output/index.ts';
 import { DEFAULT_CAMERA_ELEVATIONS } from '../promptText/index.ts';
 import type { PresetArchetype } from '../../types/preset.ts';
@@ -207,7 +208,17 @@ export const VEHICLE_CRAFT_PRESETS: readonly PresetArchetype[] = [
       // length of track cannot be placed on any other, and the join is exactly where the cut would
       // have to be made.
       exclusions: 'No ground, road or landing pad',
-      additional_anatomy: 'Towed Trailer Section ×1',
+      // No attached module, and the reason is the target rather than the subject. This is the
+      // library's only worked example for Qwen, whose documented 4,500-token ceiling is the
+      // tightest the app compiles against — `presetCoverage.test.ts` allows a preset four fifths of
+      // it, and with a towed trailer this card spent all but five estimated tokens of that. A card
+      // with no slack turns the next wording change anywhere in `promptTemplate.ts` into a failure
+      // here, which is the fragility `MAX_BUDGET_SHARE` exists to prevent and had stopped
+      // preventing. The trailer costs 105 tokens because a pose library draws every attached module
+      // at every pose, and it is demonstrated already by `Isometric Hover Hauler` in
+      // `vehicleCore.ts` — so dropping it leaves the pool's coverage intact and buys back the
+      // margin.
+      additional_anatomy: NO_ADDITIONAL_ANATOMY,
     },
     output: {
       ...DEFAULT_IMAGE_CONFIG,

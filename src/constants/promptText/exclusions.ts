@@ -170,17 +170,29 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
  * subject's own words are never another category's plan leaking into this one, which is the
  * contamination that sentence exists to catch.
  *
- * **The guard clause is as short as it is because one shipped preset pays for it.** It lands in
- * every prompt whose sheet lists the block, and `Side-On Rail Gun Car` — which names
- * `Towed Trailer Section ×1` — is the only preset in the library sitting near a ceiling: 3,582
- * estimated tokens against the 3,600 `MAX_BUDGET_SHARE` leaves of Qwen's documented 4,500. A first
- * draft read “apart from the additional elements the subject itself named, which are listed and
- * counted separately at the end”, which measures 3,610 and fails `presetCoverage.test.ts`. The tail
- * was the half to drop rather than the exemption: section 4 heads the appended block with that same
- * label and a count, and says outright that the pieces come last, so the clause was restating what
- * the reader meets a little further down the same section. The audit clause is not measured by that
- * preset at all — Qwen declares `deliberates: false`, so section 9 is not in its prompt — and it is
- * the wording EFFECT already carried.
+ * **The guard clause is as short as it is because one shipped preset used to pay for it, and no
+ * preset pays for it now.** It lands in every prompt whose sheet lists the block, and
+ * `Side-On Rail Gun Car` — then naming `Towed Trailer Section ×1` — was the only preset in the
+ * library sitting near a ceiling: 3,582 estimated tokens against the 3,600 `MAX_BUDGET_SHARE`
+ * leaves of Qwen's documented 4,500. A first draft read “apart from the additional elements the
+ * subject itself named, which are listed and counted separately at the end”, which measured 3,610
+ * and failed `presetCoverage.test.ts`. The tail was the half to drop rather than the exemption:
+ * section 4 heads the appended block with that same label and a count, and says outright that the
+ * pieces come last, so the clause was restating what the reader meets a little further down the
+ * same section. The audit clause was not measured by that preset at all — Qwen declares
+ * `deliberates: false`, so section 9 is not in its prompt — and it is the wording EFFECT already
+ * carried.
+ *
+ * **That card now names no attached module, so it emits no exemption and prices nothing.** The
+ * change that took the module away is recorded at the preset and at `promptTemplate.ts`: the same
+ * five tokens of headroom that sized this clause could not hold a one-sentence addition to section
+ * 0, and giving the margin back was the answer rather than sizing a second template wording against
+ * the same card. `guardExemption` returns `''` where the sheet lists no block, so with
+ * `additional_anatomy` at `NONE` this clause is not in that prompt at all. **Nothing in the library
+ * measures its wording against a token ceiling any more**, and the figures above are therefore a
+ * record of what was measured rather than a check that still runs — issue #249 carries the gap.
+ * `presetCoverage.test.ts` is still the mechanism; what it has lost is a card close enough to a
+ * ceiling for this clause's length to reach it.
  */
 const guardExemption = (label: string | null): string =>
   label === null ? '' : `, apart from the pieces named under ${label}`;

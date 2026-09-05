@@ -33,7 +33,7 @@ import {
   SURFACE_DETAILS,
   TARGET_MODEL_IDS,
 } from '../types/output.ts';
-import type { OutputConfig } from '../types/output.ts';
+import type { AspectRatio, OutputConfig } from '../types/output.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { SUBJECT_CATEGORIES, SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
@@ -433,13 +433,14 @@ describe('generatePrompt — numbered lists', () => {
     );
 
     expect(numberedRuns(prompt)).toHaveLength(3);
-    // Seven in the contract — six fixed plus the pixel-grid rule — eight in the audit, which is the
+    // Eight in the contract — seven fixed plus the pixel-grid rule — nine in the audit, which is the
     // run that used to end at 8 with no 7 above it and now carries the component-boundary check, and
     // three in the closing invariants, which this configuration reaches because it is multi-facing.
     // The contract's fixed items went from five to six when the text ban split off the annotation
     // ban beside it: only the first half is conditional on `LETTERING_IS_A_COMPONENT`, and one item
-    // carrying both could not be made conditional at all.
-    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([7, 8, 3]);
+    // carrying both could not be made conditional at all. Each list then gained the canvas shape as
+    // its second entry, which is why both figures moved together.
+    expect(numberedRuns(prompt).map((run) => run.length)).toStrictEqual([8, 9, 3]);
   });
 });
 
@@ -2475,6 +2476,85 @@ describe('generatePrompt — the self-audit, per target', () => {
 
     expect(gemini).toContain('Before delivering, verify:');
     expect(countWords(gemini)).toBe(countWords(generic));
+  });
+});
+
+describe('generatePrompt — the shape of the delivered canvas', () => {
+  /**
+   * The sentence section 0 states the canvas shape in, which section 9 then checks word for word.
+   *
+   * Built from `ASPECT_TEXT` rather than written out, because the phrase in the middle is the half
+   * that varies and a line spelled here for one ratio would leave the other three unchecked. The
+   * sentence is deliberately identical in both places, as the count and the background are not — so
+   * every assertion below slices the section it means rather than searching the prompt, and a copy
+   * deleted from either end is what that slicing catches.
+   */
+  function canvasSentence(aspectRatio: AspectRatio): string {
+    return `The delivered image is ${promptText.ASPECT_TEXT[aspectRatio]} canvas.`;
+  }
+
+  it('states it in the output contract, under every aspect and every category', () => {
+    // Measured on a run pack of 27 real GPT-5.6 Sol sheets: twelve came back 3:2 where the prompt
+    // asked for a wide 16:9, and the ratio was stated in exactly one place — the layout section's
+    // arrangement sentence, which is inside no block `modelWrapperText/sol.ts` protects and inside
+    // no check section 9 runs. Every category, because the contract is the one section all thirteen
+    // carry unconditionally and a gate added around this item would be invisible on CHARACTER alone.
+    for (const category of SUBJECT_CATEGORIES) {
+      const subject = defaultSubjectFor(category);
+      for (const aspectRatio of ASPECT_RATIOS) {
+        const contract = sectionOf(
+          generatePrompt(category, subject, withOutput({ aspectRatio })),
+          'NON-NEGOTIABLE OUTPUT CONTRACT',
+        );
+        expect(contract, `${category}/${aspectRatio}`).toContain(canvasSentence(aspectRatio));
+      }
+    }
+  });
+
+  it('audits it beside the component count, for every target that re-reads the sheet', () => {
+    // Which targets those are is read off the compiled prompt rather than listed here. A written
+    // list is what goes stale against `constants/models.ts`, and the first draft of this one proved
+    // it: four names, of the five that declare `deliberates`, with GEMINI_PRO_IMAGE missing.
+    const audited: string[] = [];
+    for (const target of TARGET_MODEL_IDS) {
+      for (const aspectRatio of ASPECT_RATIOS) {
+        const audit = sectionOf(
+          generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: target, aspectRatio })),
+          'LAYOUT AND SELF-AUDIT',
+        );
+        if (audit === '') continue;
+        audited.push(target);
+        expect(audit, `${target}/${aspectRatio}`).toContain(canvasSentence(aspectRatio));
+      }
+    }
+    // Without this the sweep passes on a prompt that carries no audit at all, which is every way
+    // the gate above could go wrong.
+    expect(new Set(audited).size, 'no target reached the self-audit').toBe(5);
+  });
+
+  it('keeps the contract copy for a single-pass endpoint that has no audit to check it in', () => {
+    // The contract describes the image and every target needs it; the check is a step and goes with
+    // the rest of the audit. Getting this backwards would leave a diffusion target told to verify
+    // something in a section that is a bare heading.
+    const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'GPT_IMAGE' }));
+
+    expect(sectionOf(prompt, 'NON-NEGOTIABLE OUTPUT CONTRACT')).toContain(canvasSentence('WIDE_16_9'));
+    expect(sectionOf(prompt, 'LAYOUT')).not.toContain(canvasSentence('WIDE_16_9'));
+  });
+
+  it('leaves the layout section stating the shape it arranges components into', () => {
+    // The third place, and the one that already worked: all eight compositions in that pack which
+    // carried this sentence delivered a 16:9 sheet. The contract item is an addition to it rather
+    // than a move, so a later tidy-up that reads the two as one statement fails here.
+    for (const aspectRatio of ASPECT_RATIOS) {
+      const layout = sectionOf(
+        generatePrompt('CHARACTER', SUBJECT, withOutput({ aspectRatio })),
+        'LAYOUT AND SELF-AUDIT',
+      );
+      expect(layout, aspectRatio).toContain(
+        `in a clean exploded grid in ${promptText.ASPECT_TEXT[aspectRatio]} format`,
+      );
+    }
   });
 });
 

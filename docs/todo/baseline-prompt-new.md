@@ -305,6 +305,7 @@ Satisfy this section before any aesthetic consideration.
 [N]. Exactly [DEFINE:COMPONENT_COUNT] components, each visibly separate, none touching or
    overlapping — and none carrying another: a component that arrives with a neighbouring piece
    still attached to it is two entries merged, not one component.
+[N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION], filling all space between
    components. No gradient, texture, vignette, cast shadow, contact shadow or ground plane.
 [IF:LETTERING_IS_A_COMPONENT!=yes]
@@ -912,6 +913,7 @@ by the image edge.
 Before delivering, verify:
 
 [N]. Component count is exactly [DEFINE:COMPONENT_COUNT].
+[N]. The delivered image is [DEFINE:ASPECT_DESCRIPTION] canvas.
 [N]. Background is uniform [DEFINE:BACKGROUND_KEY_DESCRIPTION] with no shadow or texture.
 [IF:LETTERING_IS_A_COMPONENT!=yes]
 [N]. No text or labels anywhere.
