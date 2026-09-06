@@ -380,6 +380,16 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     capabilities: {
       deliberates: false,
       emitsText: false,
+      // **Both halves of that note are the front end's, because there is no vendor page to cite.**
+      // Stability publish weights rather than a prompt syntax, which is the whole finding recorded
+      // at length in `utils/modelWrapperText/stableDiffusion.ts` — this target is a front end, not a
+      // model. The Automatic1111 wiki states the figure and the way past it in one paragraph:
+      // "Typing past standard 75 tokens that Stable Diffusion usually accepts increases prompt size
+      // limit from 75 to 150 … by breaking the prompt into chunks of 75 tokens, processing each
+      // independently using CLIP's Transformers", each chunk "padded to 75 tokens and extended with
+      // start/end tokens to 77". So the 77 is 75 of prompt between two markers, and a chunked read
+      // is what "front-ends that chunk the prompt" names. This entry carried no URL at all.
+      // https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features
       promptBudget: {
         kind: 'CEILING',
         limit: 77,
