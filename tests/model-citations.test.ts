@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
  * Hosts that publish a machine-generated reading of a public repository, and may not be cited as
@@ -73,7 +72,7 @@ function firstLine(run: string): string {
 describe('where the app’s claims about other products are cited from', () => {
   it.each(GENERATED_WIKIS)('nothing under src/ cites %s', (host) => {
     const citing = scannableSources()
-      .filter((file) => readFileSync(file, 'utf8').includes(host))
+      .filter((file) => sourceText(file).includes(host))
       .map(sourcePath);
 
     expect(
@@ -141,7 +140,7 @@ describe('where the app’s claims about other products are cited from', () => {
     const ANY_URL = /https?:\/\/\S+/;
 
     const offenders = scannableSources().flatMap((file) => {
-      const source = readFileSync(file, 'utf8');
+      const source = sourceText(file);
       return commentRuns(source)
         .filter((run) => ANY_URL.test(run) && CLAIMS_FOREIGN_CODE.test(run) && !CODE_HOST.test(run))
         .map((run) => `${sourcePath(file)}: ${firstLine(run)}`);

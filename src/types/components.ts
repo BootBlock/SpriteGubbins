@@ -197,6 +197,37 @@ export interface ComponentEntry {
    * separable carrier to *Detachable Parts* instead — see `sheetPlans/item.ts`.
    */
   readonly clothingRole?: ClothingRole;
+  /**
+   * What this entry is the opposite-side copy of, named as the inventory names it — `the left arm`.
+   *
+   * **The declaration section 5's Mirroring subsection is emitted from.** That subsection is a rule
+   * about pieces this sheet draws twice, once a side, and it was fixed text inside the cut-out rig
+   * section — so it described “the left and right sets” on all four rigged categories, and two of
+   * them have none. The OBJECT rig is a housing, a base, a panel, a subassembly and two fittings;
+   * the VEHICLE rig's sided pieces are a near-side and a far-side drive unit, which are two views of
+   * one machine under a fixed camera rather than a mirror pair. Both sheets were being told which
+   * mirroring they permitted between sets they do not hold.
+   *
+   * **It is declared rather than read out of the labels**, for the reason {@link
+   * ComponentEntry.parts} is. `left-arm` and `right-arm` differ by a prefix nobody wrote down, and a
+   * rule keyed on it would answer `MIRRORED_PAIRS` for a tile set's `outer-left` and `outer-right`
+   * wall corners — which are a mirror pair of *tiles* rather than the subject's two sides — and
+   * would answer nothing at all for an entry named some other way round.
+   *
+   * **Whether a pair is a mirror is a judgement about the drawing, not about the words.** A rig's
+   * left and right arm are drawn at one facing, so one silhouette is the other reflected; a
+   * vehicle's near and far track are foreshortened differently by the camera that sees them, so
+   * neither is a reflection of the other and the far one may not be produced by flipping the near
+   * one. Only the plan can say which it has, which is why the VEHICLE rig declares none.
+   *
+   * **Section 5 reads whether it is set, never what it says.** What the value is for is
+   * `mirroredLimb`, which builds this entry's `text` from it — `The same eight variants as the left
+   * arm, redrawn for the right side` — so the field is the phrase that sentence is written around
+   * and carries its own article and no trailing stop. The eight pose-library and rig entries that
+   * write both sides out by hand declare it beside prose that already names the side, which is why
+   * eight of the twelve declarations are read by nothing but the predicate.
+   */
+  readonly mirrors?: string;
 }
 
 /** A headed run of entries — the inventory's own structure, as section 4 renders it. */
@@ -373,6 +404,34 @@ export interface SheetPlan {
    * not.
    */
   readonly scaleUnitFrame: ScaleUnitFrame;
+  /**
+   * Section 0's worked example of one consistent scale, in the pieces **this sheet** draws.
+   *
+   * "One consistent scale across every component" is an abstract rule, and the example after the
+   * colon is what makes it land — so the example has to name pieces the sheet actually contains.
+   * It was written once, for a character, and reached every category: a vehicle sheet was told to
+   * keep a hand in proportion to a torso it has neither of. The repair filed it by category, which
+   * is the level above the one it belongs to, and left the same defect on every category with more
+   * than one kind of sheet: a CHARACTER directional core draws heads, torsos and pelvises and was
+   * still asked for a hand in proportion to a torso, two items above the paragraph telling the
+   * generator to draw this sheet's inventory and nothing else.
+   *
+   * **What a sheet draws is a property of the sheet**, so the example is answered here beside
+   * {@link SheetPlan.assembly} and {@link SheetPlan.scaleUnitFrame}, which are the same kind of
+   * statement for the same reason. `utils/sheetPlans.test.ts` grounds each one in its own plan's
+   * entries, as `promptText/landmarks.test.ts` grounds the landmark sentence in the category's.
+   *
+   * **Two shapes, and which one a sheet takes is decided by whether its components are pieces of
+   * each other.** Most name the smallest and the largest piece the sheet draws — a fitting against
+   * the body it is mounted on. The sheets whose components are *not* parts of one another — an
+   * effect's frames, a portrait's expressions, an icon family, a font's glyphs, a blend set's tiles
+   * — have no such pair, so what has to hold instead is that the repeats agree, and each of those
+   * states that.
+   *
+   * It reads on from "One consistent scale across every component: ", so it is a lower-case clause
+   * with no trailing stop.
+   */
+  readonly scaleExample: string;
 }
 
 /**

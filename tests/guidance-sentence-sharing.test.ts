@@ -1,10 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import * as SHARED_SENTENCES from '../src/constants/guidanceSentences.ts';
 import { codeOnly } from '../scripts/codeOnly.ts';
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
  * The one file allowed to write a shared guidance sentence out in full.
@@ -35,13 +34,27 @@ function sourcePath(file: string): string {
  * not reach it at all.
  */
 describe('shared guidance sentences', () => {
+  /**
+   * Every source but the one definition, read and comment-blanked **once**.
+   *
+   * Hoisted out of the case below rather than left inside it, because `it.each` runs one case per
+   * shared sentence and the work is per *file*, not per sentence: inside, this suite read all of
+   * `scannableSources()` and ran `codeOnly` over each of them again for every export of
+   * `guidanceSentences.ts`. That is the shape issue #218 was filed for, and `sourceText` alone would
+   * only have fixed half of it — the reading is cached module-wide, but `codeOnly` is a character
+   * walk that would still have run once per pair. Doing both here leaves the assertion scanning an
+   * array it did not build.
+   */
+  const CANDIDATES = scannableSources()
+    .map((file) => ({ path: sourcePath(file), code: codeOnly(sourceText(file)) }))
+    .filter((candidate) => candidate.path !== DEFINITION);
+
   it.each(Object.entries(SHARED_SENTENCES))(
     '%s is written out only where it is defined',
     (_name, sentence) => {
-      const offenders = scannableSources()
-        .map(sourcePath)
-        .filter((path) => path !== DEFINITION)
-        .filter((path) => codeOnly(readFileSync(path, 'utf8')).includes(sentence));
+      const offenders = CANDIDATES.filter((candidate) => candidate.code.includes(sentence)).map(
+        (candidate) => candidate.path,
+      );
 
       expect(offenders).toEqual([]);
     },

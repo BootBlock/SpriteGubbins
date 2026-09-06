@@ -34,7 +34,7 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  *
  * **It leads the prompt rather than trailing it, and that is a fix rather than a preference.** On
  * the open-weight target this restatement was unreachable: tokenisation stops at 512 tokens and the
- * specification runs to **six to thirteen times that**, across every category the app offers and
+ * specification runs to **six to fourteen times that**, across every category the app offers and
  * read by the app's own `estimateTokens` — so the one sentence written specifically to survive
  * Flux's missing negative prompt was the one sentence guaranteed to be truncated away first. That
  * argument is the weights' own and borrows nothing. On the hosted tier, where the whole

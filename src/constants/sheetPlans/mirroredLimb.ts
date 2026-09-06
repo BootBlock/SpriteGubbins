@@ -42,5 +42,9 @@ export function mirroredLimb(options: {
     text: `The same ${spellNumber(count)} variants as ${options.mirrors}, redrawn for the right side`,
     count,
     kind: 'anatomy',
+    // The same phrase the sentence above is built from, carried as a field so section 5 can be
+    // emitted from it — see `ComponentEntry.mirrors`. Reading it back out of `text` would be the
+    // parse this builder exists to have removed.
+    mirrors: options.mirrors,
   };
 }

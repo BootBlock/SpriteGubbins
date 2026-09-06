@@ -784,6 +784,7 @@ butt together exactly will show a visible gap the moment the joint rotates.
 A piece must not carry shadow, occlusion or contact shading cast by any *other* piece. Pieces move
 independently, so baked-in relationships between them break immediately. Shade each piece as if it
 were the only one present.
+[IF:MIRRORED_SIDES]
 
 ### Mirroring
 Left and right versions are mirrored in silhouette but redrawn for their own side. Asymmetric
@@ -791,6 +792,15 @@ details stay on the correct side rather than flipping with the mirror — a fitt
 does not change sides between the left and right sets. **This is the only mirroring the sheet
 permits:** a left piece and a right piece are two different parts, whereas a direction is a rotation,
 and section [SEC:CAMERA] forbids producing one by mirroring another.
+[/IF]
+[IF:MIRRORED_SIDES!=yes]
+
+### Mirroring
+**No piece on this sheet may be produced by mirroring another.** Where the subject carries a feature
+on each of two opposite sides, each piece is drawn for the side it belongs to, so an asymmetric
+detail stays where it is rather than changing sides with a flip. A direction is a rotation for the
+same reason, and section [SEC:CAMERA] forbids producing one by mirroring another.
+[/IF]
 [IF:SOCKETS]
 
 ### Attachment sockets
@@ -831,11 +841,26 @@ pivots share a diameter and cap geometry so segments register when assembled.
 
 The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
 [IF:SERIES]
+[IF:SERIES_ONE_CAPABILITY]
 
-**That is the finished series’ capability, and not this sheet’s alone.** It is reached once every
-sheet listed below has been generated and their components are brought together, so this sheet
-supplies its own share of it and no more. Whatever the assembled set needs that section [SEC:INVENTORY] does not
-list is drawn on one of the others.
+**Every sheet of this series delivers that, each over the facings it covers.** The deliverable is
+that same capability across all the facings the list below names, and the sheets are generated
+separately, each from its own copy of this specification — so this sheet supplies it for the facings
+section [SEC:CAMERA] states and for no others.
+[/IF]
+[IF:SERIES_ONE_CAPABILITY!=yes]
+
+**That is this sheet’s own share of the deliverable, and not the finished series’ capability.** The
+series is complete once every sheet listed below has been generated and their components are brought
+together. Whatever the assembled set needs that section [SEC:INVENTORY] does not list is drawn on one of the
+others.
+
+### The finished series’ capability
+
+Brought together, the sheets of this series deliver all of the following:
+
+[DEFINE:SERIES_CAPABILITY]
+[/IF]
 
 ### The sheets in this series
 

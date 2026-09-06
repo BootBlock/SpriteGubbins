@@ -144,19 +144,43 @@ describe('generatePrompt — the subject', () => {
     expect(vehicle).not.toContain('anatomical');
   });
 
-  it('draws section 0’s scale example from components this category’s sheet actually holds', () => {
+  it('draws section 0’s scale example from components this sheet actually holds', () => {
     // "One consistent scale across every component" is abstract, and the clause after the colon is
     // what makes it land — so it was a hand and a torso for all six categories, telling a vehicle
-    // sheet to keep in proportion two things it has neither of.
+    // sheet to keep in proportion two things it has neither of. Filing it by category left the same
+    // defect one level down: a CHARACTER directional core draws heads, torsos and pelvises and was
+    // still asked for a hand in proportion to a torso.
+    //
+    // Resolved here the way the compiler resolves it — through the pairing this configuration
+    // actually reaches — exactly as the resolution-profile frame below is. An example written out
+    // here instead would be a second copy of the plans rather than a claim about them.
     for (const category of SUBJECT_CATEGORIES) {
+      const plan = sheetPlanFor(
+        category,
+        resolveMode(category, OUTPUT.directionalMode),
+        OUTPUT.directions,
+        OUTPUT.sheetIndex,
+      );
       const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
-      expect(prompt).toContain(
-        `One consistent scale across every component: ${promptText.SCALE_EXAMPLE_TEXT[category]}.`,
+      expect(prompt, category).toContain(
+        `One consistent scale across every component: ${plan.scaleExample}.`,
       );
     }
-    expect(generatePrompt('VEHICLE', defaultSubjectFor('VEHICLE'), OUTPUT)).not.toContain(
-      promptText.SCALE_EXAMPLE_TEXT.CHARACTER,
-    );
+
+    // The reported instance, and the one a category key could not answer: the maintainer's own
+    // primary configuration draws no hand on either kind of sheet its ten-sheet series holds, and
+    // each of them now names a pair it does draw.
+    const eightCompass = (sheetIndex: number) =>
+      generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), {
+        ...OUTPUT,
+        directions: 'EIGHT_COMPASS',
+        sheetIndex,
+      });
+
+    expect(eightCompass(0)).toContain('a head drawn beside the torso it joins');
+    expect(eightCompass(0)).not.toContain('a hand drawn beside');
+    expect(eightCompass(2)).toContain('a hand drawn beside an upper leg');
+    expect(eightCompass(2)).not.toContain('beside a torso');
   });
 
   it('prices section 2’s resolution profile in the unit this category’s sheet is drawn in', () => {
@@ -1135,13 +1159,49 @@ describe('generatePrompt — a sheet that is one of a series', () => {
     );
   });
 
-  it('hands the assembly capability to the series rather than to this sheet', () => {
-    // Section 6 states what the component set assembles into, and for a per-facing rig run that is
-    // the whole rig's capability delivered by a sheet holding an eighth of it.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, RIG);
+  it('says the assembly sentence is the whole series’ only where every sheet delivers it', () => {
+    // Section 6 states what the component set assembles into, and that sentence is declared on the
+    // *plan* — so it can only ever answer for one sheet. The paragraph beneath it called it "the
+    // finished series' capability" on every series, which is true of one batch shape and false of
+    // the other.
+    //
+    // A rig run is one plan expanded once per facing, so every sheet holds the same inventory and
+    // delivers the same capability at a facing of its own.
+    const rig = generatePrompt('CHARACTER', SUBJECT, RIG);
 
-    expect(prompt).toContain('**That is the finished series’ capability, and not this sheet’s alone.**');
-    expect(prompt).toMatch(/It is reached once every\s+sheet listed below has been generated/);
+    expect(rig).toContain('**Every sheet of this series delivers that, each over the facings it covers.**');
+    // The other branch's heading, spelled as the template spells it — an assertion naming a string
+    // the template never carries would pass on every prompt and check nothing.
+    expect(rig).not.toContain('### The finished series’ capability');
+  });
+
+  it('derives the series’ own capability where the sheets do not share one', () => {
+    // The reported defect: `CORE_DIRECTIONAL_VARIANTS` on the eight-compass set is two directional
+    // cores and eight articulation sheets — three inventories and two different answers — and each
+    // sheet presented its own as the finished series'. Sheet 1 claimed the series delivered a trunk
+    // at four facings, sheet 3 that it delivered limbs at one and no trunk at all, and two lines
+    // later each listed all ten sheets.
+    const series = { ...SERIES, directions: 'EIGHT_COMPASS' } as const;
+    const core = generatePrompt('CHARACTER', SUBJECT, { ...series, sheetIndex: 0 });
+    const articulation = generatePrompt('CHARACTER', SUBJECT, { ...series, sheetIndex: 2 });
+
+    for (const prompt of [core, articulation]) {
+      expect(prompt).toContain(
+        '**That is this sheet’s own share of the deliverable, and not the finished series’ capability.**',
+      );
+      expect(prompt).toContain('### The finished series’ capability');
+      // Both answers, on both sheets, grouped from the batch rather than written down — which is
+      // what makes the two prompts agree about the deliverable while differing about their share.
+      expect(prompt).toContain('- **Sheets 1–2**: one head, one torso and one pelvis per facing');
+      expect(prompt).toContain('- **Sheets 3–10**: the limbs of a neutral standing pose');
+    }
+
+    // And the deixis is gone from the quoted sentences, which is what makes quoting them honest:
+    // "above" resolves to section 3 of the prompt being compiled, so the core's answer read inside
+    // the articulation sheet would have claimed the core covered this sheet's one facing. Scoped to
+    // section 6, because section 1's paint rule legitimately says "listed above" about its own
+    // bullets three lines up.
+    expect(sectionOf(articulation, 'REQUIRED ASSEMBLY CAPABILITY')).not.toContain('listed above');
   });
 
   it('extends identity consistency across the series, and cites the lock when there is one', () => {

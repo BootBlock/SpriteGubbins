@@ -1,46 +1,6 @@
 import type { SubjectCategory } from '../../types/subject.ts';
 
 /**
- * Section 0's worked example of one consistent scale, per category.
- *
- * "One consistent scale across every component" is an abstract rule, and the example after the colon
- * is what makes it land — so the example has to name pieces the sheet actually contains. It was
- * written once, for a character, and reached every category: a vehicle sheet was told to keep a
- * hand in proportion to a torso it has neither of, which is the same defect as section 1 labelling a
- * turret "Anatomy base".
- *
- * Each phrase names the smallest and the largest piece that category's own sheet plans ask for — a
- * fitting against the body it is mounted on — and reads on from "One consistent scale across every
- * component: ", so each is a lower-case clause with no trailing stop.
- */
-export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
-  CHARACTER: 'a hand drawn beside a torso is in proportion to it',
-  CREATURE: 'a foot or claw drawn beside the body it belongs to is in proportion to it',
-  OBJECT: 'a latch drawn beside the housing it fastens is in proportion to it',
-  ITEM: 'a pommel drawn beside the body or shaft it caps is in proportion to it',
-  BUILDING: 'an awning drawn beside the wall bay it hangs on is in proportion to it',
-  VEHICLE: 'a lamp housing drawn beside the hull it is mounted on is in proportion to it',
-  // The one category whose example is not a small piece against a large one, because its components
-  // are not pieces of each other: an effect's frames are one phenomenon at successive moments, so
-  // what has to hold across them is that the *same* effect is drawn at the same scale in every cell.
-  EFFECT: 'the first frame and the peak frame are the same effect drawn at the same scale',
-  INTERFACE: 'a cursor drawn beside the panel frame it moves over is in proportion to it',
-  // A terrain's tiles are all one size by construction, so the scale that can actually go wrong is
-  // between a tile and the loose features standing on it.
-  TERRAIN: 'a boulder drawn beside the ground tile it stands on is in proportion to it',
-  // EFFECT's shape rather than the others', and for EFFECT's reason: this sheet's components are one
-  // subject drawn repeatedly rather than the parts of one, so there is no pair of pieces to be in
-  // proportion to each other. What has to hold instead is that the repeats agree.
-  PORTRAIT: 'the resting portrait and every expression beside it are the same head drawn at the same scale',
-  ICON: 'every icon fills the same cell to the same margin, so none arrives at half the weight of the one beside it',
-  BACKGROUND: 'a tree on a band and the rooftops on that same band are in proportion to each other',
-  // ICON's shape, for ICON's reason and one more of its own: this sheet's components are not pieces
-  // of each other either, and what has to hold between them is stricter than agreement about weight —
-  // a glyph a pixel off the shared baseline is visible in every word the engine ever sets.
-  FONT: 'every glyph stands on the same baseline at the same cap height, so none arrives taller or heavier than the one beside it',
-};
-
-/**
  * The unit section 2's resolution profile prices the sheet in, per category.
  *
  * The three profiles that *are* a scale each state it against a reference — "25–35% of the sheet
@@ -48,7 +8,7 @@ export const SCALE_EXAMPLE_TEXT: Readonly<Record<SubjectCategory, string>> = {
  * character, and read by all thirteen. A FONT sheet of twenty-six glyphs, a TERRAIN blend set of
  * twenty-three tiles and an INTERFACE state library of twenty-three widgets were each told that
  * "a full figure occupies 25–35% of the sheet height", which is an instruction with no referent on
- * any of them. This is the same defect {@link SCALE_EXAMPLE_TEXT} removed from section 0's worked
+ * any of them. This is the same defect `SheetPlan.scaleExample` removed from section 0's worked
  * example and `[DEFINE:*_LABEL]` removed from section 1's field names, each label being filled from
  * the category's own field definitions for the same reason.
  *

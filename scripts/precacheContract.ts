@@ -435,7 +435,116 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * still the right figure for what a first visit downloads is one this change is not placed to
  * answer, and widening the margin would only postpone it further.
  *
- * **Raised once more, from 2352, by the two accessibility hooks and the names they gave the app's
+ * **Raised again from 2352 by the identity digest's key exclusion**, which is joint-smallest with the
+ * 2254 → 2256 above and lands one commit behind the paragraph before it. `identityPalette` excluded
+ * the background key by comparing RGB for exact equality, which removes essentially nothing on a
+ * resampled sheet — so every digest read off real generator output led with the key field. It now
+ * removes the field with `keyBackground`, the app's own keying pass, which is what makes the picker
+ * route and the Quantise tab agree about where the field is. Measured against `main` at `17af148`,
+ * rebuilt from the same `node_modules` — **2351.14 KiB across 60 entries**, the figure the paragraph
+ * above records — this build reports **2352.30**, a delta of 1.16. No file was added to or removed
+ * from `PRECACHE_SHAPES` and no chunk was renamed.
+ *
+ * **The delta is the same 1.16 this branch measured against `47dc6a9`**, where it took the figure
+ * from 2349.67 to 2350.83 — so unlike the raise above it, none of this one is the split
+ * re-partitioning around another branch. It is the change's own cost, and it survived being carried
+ * onto a base 1.47 KiB higher unchanged.
+ *
+ * **The split is worth reading, because three-quarters of it is one import.** Rebuilt with the code
+ * change alone and both guidance paragraphs left as they were, the figure is **2350.57** — so
+ * **0.90 KiB buys the keying pass reaching the studio's chunk** (`StudioTab` +802 bytes,
+ * `SheetStepButtons` +336, the rest hash-length noise) and **0.26 buys the prose**: the capture
+ * control's paragraph and the `keyStillOn` message, both of which stated as fact two things the code
+ * did not do. That is the ordinary shape of a correctness fix that reaches for an existing seam
+ * rather than writing a second one — a local radius would have pulled `keyDistance` in regardless,
+ * and would have left the key's blends in four of the eight digests.
+ *
+ * 2353 leaves **0.70 KiB**, which is the order of the 0.82 and 0.86 the two notes above call the
+ * narrowest this margin has been, and deliberately not more: the paragraph before this one records
+ * that whether 2350 was still the right figure for a first visit is a question neither change is
+ * placed to answer, and widening the margin would postpone it a second time.
+ *
+ * **The stylesheet ground/ink sweep then spent 0.08 KiB of that 0.70, and the ceiling stays at
+ * 2353.** Two builds from the same `node_modules` on the same merged tree, differing in
+ * `src/index.css` alone: 2352.38 KiB with `main`'s stylesheet and **2352.46** with this branch's,
+ * both at 60 entries, no file added to or removed from `PRECACHE_SHAPES` and no chunk renamed. What
+ * a first visit gains is four declarations — a `--color-ink-placeholder`, a `::placeholder` rule,
+ * eight bytes on `::selection`'s colour, and one fewer in the forced-colours block. The ~135 lines
+ * that change beside them are docblock, which the build strips, so unlike the two raises above this
+ * one is not paying for prose.
+ *
+ * The margin is **0.54 KiB**, narrower again than the 0.70, 0.82 and 0.86 the notes above each call
+ * the narrowest it has been. Three consecutive branches have now recorded that sentence, which is
+ * the answer to the question those notes keep deferring: the margin is not being spent by any one
+ * change, and the next branch to land anything at all will be asked to raise the ceiling again.
+ * **Raised from 2350 by moving section 0's scale example from the category to the sheet**, which is
+ * a raise bought almost entirely by prompt text. `SCALE_EXAMPLE_TEXT` was thirteen strings, one per
+ * category, and what a sheet actually draws is decided by the mode, the direction set and the sheet
+ * index as well — so on 98 of the 192 sheets the eight paired categories compile, the contract
+ * priced a component against one the sheet has no entry for. The example is now
+ * `SheetPlan.scaleExample`, answered on each of the thirty-two plans beside `assembly` and
+ * `scaleUnitFrame`. Measured against the main tip this branch started from (`2074844`), rebuilt from
+ * the same `node_modules` — **2348.81 KiB across 60 entries** — this build reports **2350.58 across
+ * 60**, a delta of 1.77 and 0.58 over the ceiling it was under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed: the plans are constant data the entry chunk already
+ * reached.
+ *
+ * **All of the delta is content**, which puts it beside the guidance-paragraph half of the Projects
+ * raise rather than beside the two raises that bought machinery: nineteen more strings than the map
+ * they replace, each naming a pair of pieces rather than one category's, and the docblock arguing
+ * for them is stripped from the bundle as every other one is. 2352 restores a margin of the same
+ * order as every raise above rather than widening it.
+ *
+ * **Raised again from 2352 by giving section 6's series its own capability answer**, which is the
+ * same wrong-scope defect one level up and lands on the same branch. `SheetPlan.assembly` answers for
+ * one sheet, and the paragraph beneath it called that answer “the finished series’ capability” — so
+ * a ten-sheet character series stated the deliverable three incompatible ways depending on which
+ * sheet the reader compiled. Section 6 now asks the batch which shape it is: a run of one plan keeps
+ * a single claim, and a series of several plans states its share and then lists what the sheets
+ * assemble into between them, grouped from the batch the way the sheet list already is. Measured
+ * against this branch's previous commit (`ec3eacb`), rebuilt from the same `node_modules` —
+ * **2351.61 KiB across 60 entries** — this build reports **2352.63 across 60**, a delta of 1.02 and
+ * 0.63 over the ceiling the paragraph above bought. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **Roughly half of it is the template's second branch and half is `utils/seriesCapability.ts`**,
+ * which is a genuine split between prose and machinery rather than the near-pure-content raise
+ * above: the template carries two wordings where it carried one, and the grouping that renders the
+ * series' answer is about thirty lines of code the entry chunk reaches. 2354 restores a margin of
+ * the same order as every raise above.
+ *
+ *
+ * **Raised from 2353 by merging that branch into `main`, and the combination is again what spent
+ * it** — the third time this file has recorded that shape, and the third consecutive raise to do so.
+ * Three figures, all from this worktree's own `node_modules`:
+ *
+ * | Build | Precache | Entries |
+ * | --- | --- | --- |
+ * | `2074844`, the tip the scope-fix branch left | 2348.81 KiB | 60 |
+ * | that branch at its own tip, `e2d85d3` | 2352.47 | 60 |
+ * | the two merged | **2356.06** | 60 |
+ *
+ * The branch's own cost is therefore **3.66 KiB**, and `main`'s side is the 2.78 its own notes above
+ * measure between `2074844` and the stylesheet sweep. Added to this branch's base those come to
+ * 2355.25, against a merged 2356.06 — so **0.81 KiB is rolldown re-partitioning the split** around
+ * modules both sides touched, and not a file either wrote. No entry was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **The branch's 3.66 is almost all prompt text**, which is the cost this repository's own “derive
+ * every fact that two places state” rule imposes when the derivation replaces one string with
+ * thirty-two: section 0's scale example moved from a thirteen-entry map onto each of the plans,
+ * section 5 gained a second Mirroring wording, section 6 gained a derived statement of what a
+ * multi-sheet series assembles into, and ICON's section 8 rescue grew a sentence. Roughly a third of
+ * it is `utils/seriesCapability.ts` and `utils/planMirroring.ts`, the two pure functions those
+ * derivations read.
+ *
+ * 2357 leaves **0.94 KiB**, the order of the 0.54, 0.70, 0.82 and 0.86 the notes above each call the
+ * narrowest this margin has been. The note directly above answers the question the earlier ones keep
+ * deferring — the margin is not being spent by any one change — and this raise is deliberately no
+ * wider for the same reason: whether 2350 was still the right figure for a first visit is a decision
+ * for whoever owns this contract, not something a fourth branch should settle by widening it.
+ *
+ * **Raised once more, from 2357, by the two accessibility hooks and the names they gave the app's
  * repeated controls.** `useConfirmInPlace` holds the three edges at which a two-press confirmation
  * used to drop the keyboard to `<body>`, and `useScrollableRegion` holds the rule that a
  * keyboard-scrollable box is named and given a role — lifted out of `PanViewport`, which had the
@@ -443,18 +552,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * history drawer now names the thing it acts on, which is a template string per control rather than
  * a shared literal.
  *
- * **The delta is the same on both bases, which is worth stating because the paragraph above is about
- * a combination that was not.** Measured on the tip this branch left (`2074844`), from the same
- * `node_modules`, the precache goes from **2348.81 KiB across 60 entries** to **2352.05 across 63**;
- * merged with the raise above, whose own merged figure is 2351.14, that same delta of 3.24 predicts
- * 2354.38 and the merge reported exactly it. So rolldown re-partitioned nothing across the merge,
- * and this raise buys what this branch wrote rather than what the meeting of two branches cost.
- *
- * **What it ships at is 2354.58**, which is that figure plus the 0.20 KiB the review pass added: the
- * observation in `useScrollableRegion` moved from a mount-time effect into the ref callback, because
- * two of its four call sites render their box conditionally and an effect that runs once at mount
- * finds nothing there. The figure recorded here is the one the build prints today, not the one the
- * branch printed before it was reviewed.
+ * **The delta is 3.44 on every base it has been measured against**, which is worth stating because
+ * two of the raises above are about combinations that were not. From the same `node_modules`: on the
+ * tip this branch left (`2074844`) it takes 2348.81 KiB across 60 entries to 2352.25 across 63; on
+ * the 2351.14 the first raise above records it reports 2354.58; and on this merge's own base it
+ * reports **2359.50**. Three bases, one figure, so rolldown re-partitioned nothing across either
+ * merge and this raise buys what the branch wrote rather than what the meeting of branches cost.
  *
  * **All three `+` lines are genuinely new files, and one of them is not new code.**
  * `useConfirmInPlace` and `useScrollableRegion` are each reached from a lazily-loaded overlay *and*
@@ -464,12 +567,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * of its own. A first visit downloads the same bytes; what changed is that they arrive in three more
  * requests.
  *
- * 2356 leaves **1.42 KiB**, the order of the 0.86 the paragraph above leaves and the 0.82 the
- * `isTextEntry` note calls the narrowest. It is deliberately not more, for that paragraph's reason:
- * whether 2350 was still the right figure for what a first visit downloads is a question neither
- * change is placed to answer, and widening the margin only postpones it.
+ * 2361 leaves **1.50 KiB**, the order of the 0.94 the note above leaves and the 0.82 the
+ * `isTextEntry` note calls the narrowest. It is deliberately no wider, for the reason that note
+ * gives: whether 2350 was still the right figure for a first visit is a decision for whoever owns
+ * this contract, and a fifth branch should not settle it by widening the margin.
  */
-export const PRECACHE_CEILING_KIB = 2356;
+export const PRECACHE_CEILING_KIB = 2361;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

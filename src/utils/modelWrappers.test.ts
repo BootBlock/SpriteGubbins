@@ -172,7 +172,7 @@ describe('wrapForModel', () => {
 
   it('puts the Flux restatement where a 512-token encoder will actually reach it', () => {
     // The defect this pins: appended, the restatement sat several thousand tokens into a prompt an
-    // open-weight Flux stops reading at 512 — six to thirteen times the ceiling, depending on the
+    // open-weight Flux stops reading at 512 — six to fourteen times the ceiling, depending on the
     // category — so the one sentence written to cover Flux's missing negative prompt was the one
     // sentence guaranteed to be cut. `tests/flux-ceiling-margin.test.ts` holds that margin; a figure
     // stood here instead and was 1.8× low (issue #266). Asserted for both tiers, which reach the same

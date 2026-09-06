@@ -31,6 +31,14 @@ import { estimateTokens } from '../src/utils/promptMetrics.ts';
  * figure moves this suite with it. `estimateTokens` is the app's own estimate rather than a real
  * tokeniser — none is available offline — and that is the right instrument here, because it is also
  * what the docblocks' own figures were, which is what makes them comparable.
+ *
+ * **The upper bound moved from thirteen to fourteen the first time a change grew the template**,
+ * which is this suite working rather than a figure being relaxed. Section 6 gained a derived
+ * statement of what a multi-sheet series assembles into, and CHARACTER's default pairing is a
+ * series, so its prompt crossed thirteen — measured at **13.02×**, against **6.96×** for INTERFACE,
+ * the shortest of the thirteen. The bounds are the whole numbers either side of that range, which is
+ * the shape the wrapper's prose states and is tight enough that the next block to land here has to
+ * argue for itself in a diff.
  */
 
 const CEILING = (() => {
@@ -58,14 +66,14 @@ const MEASURED = (Object.keys(CATEGORY_OPTIONS) as SubjectCategory[]).map((categ
 });
 
 describe('the margins the Flux wrapper is written around', () => {
-  it('compiles a specification six to thirteen times the ceiling, on every category', () => {
+  it('compiles a specification six to fourteen times the ceiling, on every category', () => {
     for (const { category, tokens } of MEASURED) {
       expect
         .soft(tokens / CEILING, `${category} against the ${String(CEILING)}-token ceiling`)
         .toBeGreaterThan(6);
       expect
         .soft(tokens / CEILING, `${category} against the ${String(CEILING)}-token ceiling`)
-        .toBeLessThan(13);
+        .toBeLessThan(14);
     }
   });
 

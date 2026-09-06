@@ -22,7 +22,6 @@ import {
   PROJECTION_TEXT,
   RENDER_STYLE_TEXT,
   resolutionProfileDescription,
-  SCALE_EXAMPLE_TEXT,
   smallScaleDiscipline,
   SURFACE_DETAIL_TEXT,
   VALIDATION_PASS_TEXT,
@@ -32,6 +31,7 @@ import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentBreakdownFor } from './componentSet.ts';
 import { describeSeries } from './describeSeries.ts';
+import { describeSeriesCapability } from './seriesCapability.ts';
 import { directionalRotation } from './directionalRotation.ts';
 import { leadingSideLedger } from './leadingSideLedger.ts';
 import { oneSidedFeatureLedger } from './oneSidedFeatureLedger.ts';
@@ -118,9 +118,12 @@ export function promptValues(
     CATEGORY_ASSEMBLY_EXCLUSION: CATEGORY_ASSEMBLY[category].exclusion,
     CATEGORY_ASSEMBLY_AUDIT: CATEGORY_ASSEMBLY[category].audit,
     // Section 0's "one consistent scale" rule is abstract, and its worked example is what makes it
-    // land — so the example names pieces this category's sheet actually holds, rather than the hand
-    // and torso it named for every subject the app can describe.
-    SCALE_EXAMPLE_DESCRIPTION: SCALE_EXAMPLE_TEXT[category],
+    // land — so the example names pieces the sheet actually holds, rather than the hand and torso it
+    // named for every subject the app can describe. **The sheet's and not the category's**: what a
+    // sheet draws is decided by the mode, the direction set and the sheet index too, so a category
+    // key priced a hand against a torso on a directional core that draws neither a hand nor a limb.
+    // See `SheetPlan.scaleExample`.
+    SCALE_EXAMPLE_DESCRIPTION: plan.scaleExample,
 
     RENDER_STYLE_DESCRIPTION: RENDER_STYLE_TEXT[output.renderStyle],
     SURFACE_DETAIL_DESCRIPTION: SURFACE_DETAIL_TEXT[output.surfaceDetail],
@@ -244,6 +247,12 @@ export function promptValues(
     // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
     // the token is still there to be filled.
     SERIES_SHEETS: describeSeries(category, batch, subject.clothing, anatomy),
+    // What the *series* assembles into, derived from the batch exactly as the sheet list above it is
+    // — one bullet per distinct answer the batch holds, rather than this sheet's answer relabelled
+    // as the whole deliverable's. Computed whether or not the block survives, as `SERIES_SHEETS` is:
+    // the template's own `[IF:SERIES_ONE_CAPABILITY!=yes]` decides whether the token is still there
+    // to be filled.
+    SERIES_CAPABILITY: describeSeriesCapability(batch),
   };
 
   // The sixteen field labels are the app's own words too, so they are cited over with the rest —

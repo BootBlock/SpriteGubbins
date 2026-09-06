@@ -25,6 +25,7 @@ export const OBJECT_PART_LIBRARY: SheetPlan = {
   // The hatch is drawn closed, part-open and fully open, and the subassembly at three points of its travel.
   posing: 'PER_POSITION',
   scaleUnitFrame: 'SHEET',
+  scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
   groups: [
     {
       heading: null,
@@ -96,11 +97,12 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
     assembly:
-      'the complete object seen from each of the directions listed above, with its moving parts in matching positions across those views.',
+      'the complete object seen from each facing, with its moving parts in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
     // The moving parts are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',
     scaleUnitFrame: 'SHEET',
+    scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
     groups: [
       {
         heading: 'Directional core',
@@ -146,6 +148,7 @@ export const OBJECT_CUTOUT_RIG: SheetPlan = {
   // The sheet whose inventory is the rig, and the one entry `fixedRigMode` reads.
   posing: 'AT_REST',
   scaleUnitFrame: 'SHEET',
+  scaleExample: 'a latch drawn beside the housing it fastens is in proportion to it',
   groups: [
     {
       heading: null,
