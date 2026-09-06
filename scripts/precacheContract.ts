@@ -548,8 +548,30 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * deferring — the margin is not being spent by any one change — and this raise is deliberately no
  * wider for the same reason: whether 2350 was still the right figure for a first visit is a decision
  * for whoever owns this contract, not something a fourth branch should settle by widening it.
+ *
+ * **Raised from 2357 by the third persistence backend, and this is the entry that adds a chunk.** A
+ * second tab of this origin cannot take the SAH pool's access handles, and the app answered that
+ * refusal exactly as it answered "this browser has no OPFS" — with a localStorage store the first
+ * tab cannot see, which is a second library rather than a lesser one. The worker classifies the
+ * rejection now, the handshake carries which of the two it was, and `database.ts` answers the one
+ * meaning "your database is next door" with `HeldElsewhereBackend`. Measured against `main` at
+ * `e8d99e6`, rebuilt from the same `node_modules` — **2356.06 KiB across 60 entries** — this build
+ * reports **2358.58 across 61**, a delta of 2.52 and one new request.
+ *
+ * **2.22 of it is machinery and 0.30 is prose**, which inverts the usual split here. The machinery
+ * is a third implementation of a nineteen-method interface, the refusal union, the classifier, and
+ * `storageFailure` reaching nineteen call sites across five stores — the last of which is what
+ * rolldown cut into the new chunk, as the note on `PRECACHE_SHAPES` records. The prose is the
+ * Architecture tab's SQLite card: rebuilt with it left as `main` has it, the figure is **2358.28**.
+ *
+ * 2360 leaves **1.42 KiB**, and that is wider than the 0.94 above rather than the same order —
+ * stated plainly rather than dressed as a match. The ladder is whole KiB and this build lands 0.58
+ * past 2358, so the alternative was 0.42, which would make this the fifth consecutive branch to
+ * write down that the margin is the narrowest it has been. Four such notes are enough: the question
+ * they defer — whether 2350 was ever the right figure for what a first visit downloads — wants
+ * answering by whoever owns this contract, and one KiB of slack is a poor substitute for it.
  */
-export const PRECACHE_CEILING_KIB = 2357;
+export const PRECACHE_CEILING_KIB = 2360;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
