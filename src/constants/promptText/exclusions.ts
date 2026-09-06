@@ -100,7 +100,17 @@ export const CATEGORY_EXCLUSION_TEXT: Readonly<Record<SubjectCategory, string>> 
   // appears to carry and the three an engine draws at runtime. The plate ban is this category’s
   // boundary with INTERFACE — an icon is the mark, and the slot it sits in belongs to the other
   // sheet.
-  ICON: 'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature holding or presenting the subject; any slot plate, tooltip or interface panel drawn behind or around a component; and any lettering, numeral, stack count, timer or key name on a component. A selected ring, a highlight halo and a tier mark are components of this sheet, each drawn clear in its own cell for the engine to lay over an icon; an input prompt is the blank cap or button shape the engine writes a binding onto, never the key name it is named after.',
+  //
+  // **The rescue defers to the inventory rather than listing what it rescues**, and that is the
+  // correction rather than the wording. It named a selected ring, a highlight halo and a tier mark:
+  // three of the sheet's four overlay families, leaving out the cooldown sweep — which is the one
+  // whose banned word, `timer`, the docblock above says the ban was written for. Section 4 orders
+  // `Cooldown sweep ×2` and section 8 told the generator to leave a timer out, with the sentence that
+  // resolves that collision for its three siblings passing over it. A list can be a proper subset of
+  // the plan; a reference cannot, so a fifth overlay piece is covered the moment the plan lists it.
+  // `utils/sheetPlans.test.ts` holds the general form: no category's exclusion line may name a
+  // component of its own plans, because a line that names one can name all but one.
+  ICON: 'Backgrounds, environments, ground planes, floor tiles, terrain, sky, scenery; any hand, character or creature holding or presenting the subject; any slot plate, tooltip or interface panel drawn behind or around a component; and any lettering, numeral, stack count, timer or key name on a component. That ban is on what a component carries, never on what this sheet draws: an entry the inventory in section [SEC:INVENTORY] names is a component in its own right, and one that is a mark an engine lays over a finished icon is still drawn — clear in its own cell, never applied to an icon here. An input prompt is the blank cap or button shape the engine writes a binding onto, never the key name it is named after.',
   // No environment ban, for a third version of BUILDING’s reason: the scenery the other categories
   // forbid is this one’s entire deliverable. What is foreign to a backdrop is the *playfield* — the
   // things a player acts on — and playable geometry is named first because it is the one that costs

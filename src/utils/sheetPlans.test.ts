@@ -594,6 +594,77 @@ describe('section 0’s scale example names pieces the sheet in front of the rea
   });
 });
 
+/**
+ * A component this category's plans list, spelled as prose — `selected-ring` reads `selected ring`.
+ *
+ * The label rather than the entry's text, because a label is the identifier the manifest keys a file
+ * by: lower-case, hyphen-separated and unique within its plan, which `sheetPlans.test.ts` already
+ * holds. The prose is written for a generator and reads as a sentence, so searching an exclusion line
+ * for it would match half of ordinary English.
+ */
+function componentPhrases(category: SubjectCategory): readonly string[] {
+  const phrases = new Set<string>();
+  for (const plan of everySheetOf(category)) {
+    for (const group of plan.groups) {
+      for (const entry of group.entries) phrases.add(entry.label.split('-').join(' '));
+    }
+  }
+  return [...phrases];
+}
+
+describe('no category’s exclusion line names a component of its own plans', () => {
+  it('leaves the rescue to the inventory, which cannot be a proper subset of itself', () => {
+    // The defect: ICON's section 8 bans "any lettering, numeral, stack count, timer or key name on a
+    // component" and then rescued three of the sheet's four overlay families by name — a selected
+    // ring, a highlight halo and a tier mark. The fourth is the cooldown sweep, which section 4
+    // orders as `Cooldown sweep ×2` and which is the one the ban's own docblock says the word
+    // `timer` was written for.
+    //
+    // **A word-level collision check would not have caught it**, and that is why this is the
+    // assertion rather than the one the issue proposed: `timer` and `cooldown sweep` share no word,
+    // so the collision is semantic and no derivation over the two texts finds it. What can be held
+    // is the shape that made the omission possible — a list of the sheet's own pieces, three items
+    // long against a plan of four. A line that names none cannot name all but one, and section 8
+    // already has the general instrument: a reference to the inventory, which is what BACKGROUND's
+    // and FONT's lines close with and what ICON's now does.
+    //
+    // **Two words or more**, because a one-word label is an ordinary English word before it is a
+    // component: OBJECT lists a `base`, VEHICLE a `turret`, ITEM a `guard` and TERRAIN a `lip`, and
+    // an exclusion line reaching for any of those is using the word rather than naming the entry.
+    // Every piece the reported rescue named was a compound, which is what a piece of a sheet is
+    // usually called.
+    for (const category of SUBJECT_CATEGORIES) {
+      const line = CATEGORY_EXCLUSION_TEXT[category].toLowerCase();
+      const named = componentPhrases(category).filter(
+        (phrase) => phrase.includes(' ') && line.includes(phrase),
+      );
+      expect(named, `${category}: section 8 names its own components rather than citing section 4`).toEqual(
+        [],
+      );
+    }
+  });
+
+  it('rescues ICON’s overlay pieces by reference, the sweep among them', () => {
+    // The compiled pair the issue reported, on every configuration ICON can reach — its one mode
+    // against all five direction sets. Section 4 orders the sweep, section 8 bans a timer, and the
+    // sentence between them now covers whatever the inventory lists rather than three named pieces.
+    for (const directions of CATEGORY_DIRECTION_SETS.ICON) {
+      const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), {
+        ...DEFAULT_OUTPUT_CONFIG,
+        directions,
+      });
+      const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
+      const exclusions = sectionOf(prompt, 'EXCLUSIONS');
+
+      expect(inventory, directions).toContain('Cooldown sweep ×2');
+      expect(exclusions, directions).toContain('timer or key name on a component');
+      expect(exclusions, directions).toContain('is a component in its own right');
+      // The list that could leave one out is gone, rather than a fourth item having been added to it.
+      expect(exclusions, directions).not.toContain('A selected ring, a highlight halo and a tier mark');
+    }
+  });
+});
+
 describe('section 5’s Mirroring rule describes only the sets the sheet in front of the reader holds', () => {
   /**
    * The four categories that can be asked for a cut-out rig, and whether that rig draws any piece
