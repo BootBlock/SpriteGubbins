@@ -1,6 +1,7 @@
 import { deliberates, returnsText } from './targetCapabilities.ts';
 import { isPlanView, LETTERING_IS_A_COMPONENT, perComponentLimit } from '../constants/promptText/index.ts';
 import { statesAssembledSize } from './componentTargetSize.ts';
+import { planMirrorsPieces } from './planMirroring.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import type { SheetFacts } from './promptFacts.ts';
@@ -25,6 +26,7 @@ export function promptConditions(
 ): Record<string, string> {
   const {
     rigMode,
+    plan,
     coveredDirections,
     coveredMirrorPairs,
     cameraElevation,
@@ -119,6 +121,14 @@ export function promptConditions(
     // fails the sheet for not producing it. A generator that honours the camera fails the audit, one
     // that honours the audit abandons the camera, and which arrives is not something the user chose.
     PLAN_VIEW: isPlanView(cameraElevation) ? 'yes' : '',
+    // Whether this sheet draws any piece twice, once for each of the subject's two sides — which
+    // decides which of section 5's two Mirroring subsections it carries. The rule was fixed text
+    // inside the rig section, so it described “the left and right sets” on all four rigged
+    // categories and two of them hold none. Asked of the plan rather than of the category, because
+    // that is the level the fact belongs to: `planMirrorsPieces` reads the entries' own
+    // declarations, so a category added to the rig table is answered without anything being
+    // extended.
+    MIRRORED_SIDES: planMirrorsPieces(plan) ? 'yes' : '',
     // Narrower than MULTI_DIRECTION for the same reason that flag exists at all: the anti-reflection
     // pair rules only bite where the sheet holds both members of a reflection pair, and on the
     // classic sets — which never do — they would be instruction about views the sheet does not hold.

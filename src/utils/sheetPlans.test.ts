@@ -36,6 +36,7 @@ import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnat
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { planMirrorsPieces } from './planMirroring.ts';
 import { planAsDrawn } from './sheetPlanClothing.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
@@ -589,6 +590,67 @@ describe('section 0’s scale example names pieces the sheet in front of the rea
         category,
       );
       owners.set(plan.scaleExample, category);
+    }
+  });
+});
+
+describe('section 5’s Mirroring rule describes only the sets the sheet in front of the reader holds', () => {
+  /**
+   * The four categories that can be asked for a cut-out rig, and whether that rig draws any piece
+   * twice — once a side.
+   *
+   * Written out rather than read off the plans, for the reason `PAIRING_FRAME` above is: an
+   * expectation gathered from `planMirrorsPieces` would move with whatever the plans say and assert
+   * nothing about which answer is right. CHARACTER and CREATURE draw a left and a right of every
+   * limb, so one silhouette is the other reflected. OBJECT's rig is a housing, a base, a panel, a
+   * subassembly and two fittings, and has no sided piece at all. VEHICLE's *are* sided — a near-side
+   * and a far-side drive unit — and are still not a mirror pair: under a fixed camera the near track
+   * faces the viewer and the far one turns away, so neither is the other reflected, and producing
+   * the far one by flipping the near one is exactly the failure the second wording forbids.
+   */
+  const RIG_MIRRORS: Readonly<Partial<Record<SubjectCategory, boolean>>> = {
+    CHARACTER: true,
+    CREATURE: true,
+    OBJECT: false,
+    VEHICLE: false,
+  };
+
+  it('answers from the plan’s own entries, on every rigged category', () => {
+    const rigged = SUBJECT_CATEGORIES.filter((category) =>
+      modesFor(category).includes('CUTOUT_RIG_SINGLE_DIRECTION'),
+    );
+    // A fifth category gaining a rig has to be answered here, which is the point: whether its pieces
+    // mirror is a judgement about the drawing, and a new plan must not inherit an answer.
+    expect(Object.keys(RIG_MIRRORS).sort()).toEqual([...rigged].sort());
+
+    for (const category of rigged) {
+      const [rig] = sheetSeriesFor(category, 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT');
+      expect(planMirrorsPieces(rig), category).toBe(RIG_MIRRORS[category]);
+    }
+  });
+
+  it('emits the left-and-right wording only where the sheet draws both sides', () => {
+    // The defect: the subsection was fixed text inside `[IF:RIG_MODE=CUTOUT_RIG]`, so it told an
+    // OBJECT rig of six pieces and a VEHICLE rig of a near and a far drive unit what mirroring
+    // “between the left and right sets” they permitted — sets neither of them holds.
+    for (const category of SUBJECT_CATEGORIES) {
+      if (!modesFor(category).includes('CUTOUT_RIG_SINGLE_DIRECTION')) continue;
+      const rigSection = sectionOf(
+        generatePrompt(category, defaultSubjectFor(category), {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        }),
+        'CUT-OUT RIG REQUIREMENTS',
+      );
+
+      // Whichever branch it takes, the rule about *directions* survives — that half is true of every
+      // rig sheet and is the one clause the two wordings share.
+      expect(rigSection, category).toContain('### Mirroring');
+      expect(rigSection, category).toContain('forbids producing one by mirroring another');
+
+      const paired = RIG_MIRRORS[category] === true;
+      expect(rigSection.includes('between the left and right sets'), category).toBe(paired);
+      expect(rigSection.includes('No piece on this sheet is a mirror of another'), category).toBe(!paired);
     }
   });
 });

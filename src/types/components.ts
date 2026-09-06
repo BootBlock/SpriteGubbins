@@ -162,6 +162,34 @@ export interface ComponentEntry {
    * separable carrier to *Detachable Parts* instead — see `sheetPlans/item.ts`.
    */
   readonly drawsClothing?: 'entirely' | 'partly';
+  /**
+   * What this entry is the opposite-side copy of, named as the inventory names it — `the left arm`.
+   *
+   * **The declaration section 5's Mirroring subsection is emitted from.** That subsection is a rule
+   * about pieces this sheet draws twice, once a side, and it was fixed text inside the cut-out rig
+   * section — so it described “the left and right sets” on all four rigged categories, and two of
+   * them have none. The OBJECT rig is a housing, a base, a panel, a subassembly and two fittings;
+   * the VEHICLE rig's sided pieces are a near-side and a far-side drive unit, which are two views of
+   * one machine under a fixed camera rather than a mirror pair. Both sheets were being told which
+   * mirroring they permitted between sets they do not hold.
+   *
+   * **It is declared rather than read out of the labels**, for the reason {@link
+   * ComponentEntry.parts} is. `left-arm` and `right-arm` differ by a prefix nobody wrote down, and a
+   * rule keyed on it would answer `MIRRORED_PAIRS` for a tile set's `outer-left` and `outer-right`
+   * wall corners — which are a mirror pair of *tiles* rather than the subject's two sides — and
+   * would answer nothing at all for an entry named some other way round.
+   *
+   * **Whether a pair is a mirror is a judgement about the drawing, not about the words.** A rig's
+   * left and right arm are drawn at one facing, so one silhouette is the other reflected; a
+   * vehicle's near and far track are foreshortened differently by the camera that sees them, so
+   * neither is a reflection of the other and the far one may not be produced by flipping the near
+   * one. Only the plan can say which it has, which is why the VEHICLE rig declares none.
+   *
+   * It is the phrase the mirroring sentence reads, so it carries its own article and no trailing
+   * stop — {@link mirroredLimb} builds this entry's `text` from it, and the two rigs that write both
+   * sides out by hand declare it beside prose that already names the side.
+   */
+  readonly mirrors?: string;
 }
 
 /** A headed run of entries — the inventory's own structure, as section 4 renders it. */

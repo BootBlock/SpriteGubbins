@@ -784,6 +784,7 @@ butt together exactly will show a visible gap the moment the joint rotates.
 A piece must not carry shadow, occlusion or contact shading cast by any *other* piece. Pieces move
 independently, so baked-in relationships between them break immediately. Shade each piece as if it
 were the only one present.
+[IF:MIRRORED_SIDES]
 
 ### Mirroring
 Left and right versions are mirrored in silhouette but redrawn for their own side. Asymmetric
@@ -791,6 +792,16 @@ details stay on the correct side rather than flipping with the mirror — a fitt
 does not change sides between the left and right sets. **This is the only mirroring the sheet
 permits:** a left piece and a right piece are two different parts, whereas a direction is a rotation,
 and section [SEC:CAMERA] forbids producing one by mirroring another.
+[/IF]
+[IF:MIRRORED_SIDES!=yes]
+
+### Mirroring
+**No piece on this sheet is a mirror of another, and none may be produced by flipping one.** Where the
+subject carries a piece on each of two opposite sides, each of them is drawn as the camera sees that
+side: what faces the viewer and what turns away from it are not reflections of one another, and
+section [SEC:INVENTORY] lists them separately because they are separate drawings. A direction is a
+rotation for the same reason, and section [SEC:CAMERA] forbids producing one by mirroring another.
+[/IF]
 [IF:SOCKETS]
 
 ### Attachment sockets
