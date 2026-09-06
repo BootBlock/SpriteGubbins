@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /** The shell document, which is markup like any other and is not under a directory of its own. */
@@ -9,6 +9,44 @@ function filesUnder(root: string, extensions: RegExp): string[] {
   return readdirSync(resolve(process.cwd(), root), { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && extensions.test(entry.name))
     .map((entry) => resolve(entry.parentPath, entry.name));
+}
+
+/**
+ * Every file this module has been asked for, keyed by absolute path.
+ *
+ * A sweep asks the same question of the same file many times over, and one of them asked it
+ * quadratically: the shared-component check in `design-tokens.test.ts` reads every one of the ~300
+ * scannable sources once per file under `components/common/`, which is several thousand synchronous
+ * reads for a question that needs each file's contents exactly once. That is not a tidiness point.
+ * On Windows, with on-access scanning between the process and the disk, it took the test to 18025 ms
+ * inside a full run and past Vitest's 5000 ms default at two runs in four on an otherwise idle tree
+ * — a timeout, never an assertion, on a change that touched nothing it reads.
+ *
+ * The cache lives here rather than in the suite because the walk and the reading of what it returns
+ * are one question, and every consumer of {@link scannableSources}, {@link tailwindScanned} and
+ * {@link appMarkup} asks it. A cache per suite would be the same fix written five times, four of
+ * which would be written later or not at all.
+ *
+ * Safe because nothing in this repository writes a source file while a guard is reading one: the
+ * suites and `deadUtilities.ts` alike run against a tree that is fixed for the length of the
+ * process. A test that deliberately edits a file mid-run would need to read it itself, and there
+ * is none.
+ */
+const contents = new Map<string, string>();
+
+/**
+ * One source file's text, read at most once per process.
+ *
+ * Every sweep that walks a list from this module reads through here, so the reading is done once
+ * however many questions are asked of it.
+ */
+export function sourceText(file: string): string {
+  const cached = contents.get(file);
+  if (cached !== undefined) return cached;
+
+  const text = readFileSync(file, 'utf8');
+  contents.set(file, text);
+  return text;
 }
 
 /** What the app itself is written in. */

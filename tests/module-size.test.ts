@@ -3,7 +3,7 @@ import { relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { codeOnly } from '../scripts/codeOnly.ts';
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
  * The line count CLAUDE.md's first structural law states, and the quantity it is stated against.
@@ -96,7 +96,7 @@ function appModules(): string[] {
 
 /** Lines of `file` that survive comment blanking and are not blank. */
 function codeLines(file: string): number {
-  return codeOnly(readFileSync(file, 'utf8'))
+  return codeOnly(sourceText(file))
     .split('\n')
     .filter((line) => line.trim() !== '').length;
 }
