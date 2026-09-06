@@ -2,6 +2,7 @@ import { deliberates, returnsText } from './targetCapabilities.ts';
 import { isPlanView, LETTERING_IS_A_COMPONENT, perComponentLimit } from '../constants/promptText/index.ts';
 import { statesAssembledSize } from './componentTargetSize.ts';
 import { planMirrorsPieces } from './planMirroring.ts';
+import { seriesStatesOneCapability } from './seriesCapability.ts';
 import type { OutputConfig } from '../types/output.ts';
 import type { SubjectCategory } from '../types/subject.ts';
 import type { SheetFacts } from './promptFacts.ts';
@@ -166,6 +167,13 @@ export function promptConditions(
     // compiled from the studio are the same prompt and say the same thing about their batch. A
     // configuration that is one whole deliverable says nothing at all, and its prompt is unchanged.
     SERIES: batch.sheets.length > 1 ? 'yes' : '',
+    // Which claim section 6 may make about the sentence above it. `SheetPlan.assembly` answers for
+    // one sheet, and the paragraph called it “the finished series’ capability” on every series — true
+    // of a batch that is one plan run once per facing, and false of one that is several plans, where
+    // the ten sheets of a character series carry three different answers between them and each was
+    // presented as the whole. See `seriesStatesOneCapability`, which asks the batch rather than
+    // assuming either shape.
+    SERIES_ONE_CAPABILITY: seriesStatesOneCapability(batch) ? 'yes' : '',
     IDENTITY_LOCK: output.identityLock,
     SOCKETS: output.sockets,
     EMIT_COMPONENT_MAP: emitComponentMap ? 'yes' : '',

@@ -98,7 +98,7 @@ function vehicleDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTupl
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
     assembly:
-      'the complete vehicle seen from each of the directions listed above, reading as one machine turned rather than several drawings of it, with its drive and mount in matching positions across those views.',
+      'the complete vehicle seen from each of the directions the sheet covers, reading as one machine turned rather than several drawings of it, with its drive and mount in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
     // The drive and the mount are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',

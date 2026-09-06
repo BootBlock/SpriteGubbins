@@ -31,6 +31,7 @@ import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 import type { SubjectCategory, SubjectDefinition } from '../types/subject.ts';
 import { componentBreakdownFor } from './componentSet.ts';
 import { describeSeries } from './describeSeries.ts';
+import { describeSeriesCapability } from './seriesCapability.ts';
 import { directionalRotation } from './directionalRotation.ts';
 import { leadingSideLedger } from './leadingSideLedger.ts';
 import { oneSidedFeatureLedger } from './oneSidedFeatureLedger.ts';
@@ -246,6 +247,12 @@ export function promptValues(
     // on a token it has no value for, and the template's own `[IF:SERIES]` is what decides whether
     // the token is still there to be filled.
     SERIES_SHEETS: describeSeries(category, batch, subject.clothing, anatomy),
+    // What the *series* assembles into, derived from the batch exactly as the sheet list above it is
+    // — one bullet per distinct answer the batch holds, rather than this sheet's answer relabelled
+    // as the whole deliverable's. Computed whether or not the block survives, as `SERIES_SHEETS` is:
+    // the template's own `[IF:SERIES_ONE_CAPABILITY!=yes]` decides whether the token is still there
+    // to be filled.
+    SERIES_CAPABILITY: describeSeriesCapability(batch),
   };
 
   // The sixteen field labels are the app's own words too, so they are cited over with the rest —

@@ -420,8 +420,26 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * they replace, each naming a pair of pieces rather than one category's, and the docblock arguing
  * for them is stripped from the bundle as every other one is. 2352 restores a margin of the same
  * order as every raise above rather than widening it.
+ *
+ * **Raised again from 2352 by giving section 6's series its own capability answer**, which is the
+ * same wrong-scope defect one level up and lands on the same branch. `SheetPlan.assembly` answers for
+ * one sheet, and the paragraph beneath it called that answer “the finished series’ capability” — so
+ * a ten-sheet character series stated the deliverable three incompatible ways depending on which
+ * sheet the reader compiled. Section 6 now asks the batch which shape it is: a run of one plan keeps
+ * a single claim, and a series of several plans states its share and then lists what the sheets
+ * assemble into between them, grouped from the batch the way the sheet list already is. Measured
+ * against this branch's previous commit (`ec3eacb`), rebuilt from the same `node_modules` —
+ * **2351.61 KiB across 60 entries** — this build reports **2352.63 across 60**, a delta of 1.02 and
+ * 0.63 over the ceiling the paragraph above bought. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **Roughly half of it is the template's second branch and half is `utils/seriesCapability.ts`**,
+ * which is a genuine split between prose and machinery rather than the near-pure-content raise
+ * above: the template carries two wordings where it carried one, and the grouping that renders the
+ * series' answer is about thirty lines of code the entry chunk reaches. 2354 restores a margin of
+ * the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2352;
+export const PRECACHE_CEILING_KIB = 2354;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

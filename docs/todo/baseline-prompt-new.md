@@ -868,11 +868,27 @@ pivots share a diameter and cap geometry so segments register when assembled.
 
 The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
 [IF:SERIES]
+[IF:SERIES_ONE_CAPABILITY]
 
-**That is the finished series’ capability, and not this sheet’s alone.** It is reached once every
-sheet listed below has been generated and their components are brought together, so this sheet
-supplies its own share of it and no more. Whatever the assembled set needs that section [SEC:INVENTORY] does not
-list is drawn on one of the others.
+**Every sheet of this series delivers that, each at its own facing.** The deliverable is the same
+capability at every facing the list below names, and the sheets are generated separately, each from
+its own copy of this specification — so this sheet supplies it once, for the facing section [SEC:CAMERA]
+states, and never for another.
+[/IF]
+[IF:SERIES_ONE_CAPABILITY!=yes]
+
+**That is this sheet’s own share of the deliverable, and not the finished series’ capability.** The
+series is complete once every sheet listed below has been generated and their components are brought
+together. Whatever the assembled set needs that section [SEC:INVENTORY] does not list is drawn on one of the
+others.
+
+### The finished series’ capability
+
+Brought together, the sheets of this series deliver all of the following. Draw only the share this
+sheet’s own inventory names.
+
+[DEFINE:SERIES_CAPABILITY]
+[/IF]
 
 ### The sheets in this series
 

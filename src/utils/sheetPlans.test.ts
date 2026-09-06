@@ -612,6 +612,76 @@ function componentPhrases(category: SubjectCategory): readonly string[] {
   return [...phrases];
 }
 
+describe('every sheet of one series states the same finished capability', () => {
+  /**
+   * The sentence section 6 opens with, and the block beneath it that says what the *series*
+   * assembles into.
+   *
+   * Sliced off the compiled prompt rather than read off the plans, because the claim under test is
+   * about what a reader is shown: the defect was a per-sheet answer relabelled as the deliverable's,
+   * and a check reading `SheetPlan.assembly` could never see the label.
+   */
+  function capabilityOf(prompt: string): { readonly own: string; readonly series: string } {
+    const section = sectionOf(prompt, 'REQUIRED ASSEMBLY CAPABILITY');
+    const own = /must assemble cleanly into: (.+)/.exec(section)?.[1] ?? '';
+    const heading = '### The finished series’ capability';
+    const at = section.indexOf(heading);
+    // Bounded at the next sub-heading, because the sheet list follows it and carries the
+    // *(this sheet)* marker — which moves with the sheet and would make every prompt's block
+    // different for a reason that has nothing to do with the capability.
+    const rest = at < 0 ? '' : section.slice(at + heading.length);
+    const ends = rest.indexOf('\n### ');
+    return { own, series: at < 0 ? '' : ends < 0 ? rest : rest.slice(0, ends) };
+  }
+
+  it('gives every sheet of a batch one answer about the deliverable, and its own share beside it', () => {
+    // The reported defect, swept over every pairing the app can compile: on a `CHARACTER` /
+    // `CORE_DIRECTIONAL_VARIANTS` / `EIGHT_COMPASS` series, sheet 1 told the reader the finished
+    // ten-sheet deliverable was a trunk at four cardinal facings, sheet 2 that it was a trunk at
+    // four diagonals, and sheets 3 to 10 that it was limbs at one facing and no trunk at all —
+    // each of them two lines above a list of all ten sheets.
+    let multiSheet = 0;
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const mode of modesFor(category)) {
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          const output = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions };
+          const sheets = sheetSeriesFor(category, mode, directions).map((_, sheetIndex) =>
+            capabilityOf(generatePrompt(category, defaultSubjectFor(category), { ...output, sheetIndex })),
+          );
+          if (sheets.length < 2) continue;
+          multiSheet += 1;
+          const where = `${category} / ${mode} / ${directions}`;
+
+          // One statement of the deliverable across the series, whichever sheet was compiled.
+          expect(new Set(sheets.map((sheet) => sheet.series)).size, where).toBe(1);
+          // And it names every share, so no sheet's own answer is missing from the whole.
+          for (const sheet of sheets) {
+            expect(sheets[0]?.series ?? '', `${where}: a share the series statement omits`).toContain(
+              sheet.own.replace(/\.$/, ''),
+            );
+          }
+        }
+      }
+    }
+    // Without this the loop above passes on having found no series at all, which is exactly what a
+    // plan table collapsed to one sheet per pairing would look like.
+    expect(multiSheet, 'no pairing produces a series to check').toBeGreaterThan(0);
+  });
+
+  it('quotes no sheet’s answer that points at another sheet’s section 3', () => {
+    // The phrase that carried the defect on the directional cores: “seen at each of the directions
+    // listed above” resolves *above* to section 3 of the prompt being compiled, so the same string
+    // means four cardinal facings on sheet 1 and four diagonals on sheet 2 — and means this sheet's
+    // single facing wherever the series statement quotes it. A plan sentence has to be true of the
+    // sheet it describes from wherever it is read.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const plan of everySheetOf(category)) {
+        expect(plan.assembly, `${category} / ${plan.name}`).not.toContain('listed above');
+      }
+    }
+  });
+});
+
 describe('no category’s exclusion line names a component of its own plans', () => {
   it('leaves the rescue to the inventory, which cannot be a proper subset of itself', () => {
     // The defect: ICON's section 8 bans "any lettering, numeral, stack count, timer or key name on a

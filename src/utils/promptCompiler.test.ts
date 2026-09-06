@@ -1159,13 +1159,47 @@ describe('generatePrompt — a sheet that is one of a series', () => {
     );
   });
 
-  it('hands the assembly capability to the series rather than to this sheet', () => {
-    // Section 6 states what the component set assembles into, and for a per-facing rig run that is
-    // the whole rig's capability delivered by a sheet holding an eighth of it.
-    const prompt = generatePrompt('CHARACTER', SUBJECT, RIG);
+  it('says the assembly sentence is the whole series’ only where every sheet delivers it', () => {
+    // Section 6 states what the component set assembles into, and that sentence is declared on the
+    // *plan* — so it can only ever answer for one sheet. The paragraph beneath it called it "the
+    // finished series' capability" on every series, which is true of one batch shape and false of
+    // the other.
+    //
+    // A rig run is one plan expanded once per facing, so every sheet holds the same inventory and
+    // delivers the same capability at a facing of its own.
+    const rig = generatePrompt('CHARACTER', SUBJECT, RIG);
 
-    expect(prompt).toContain('**That is the finished series’ capability, and not this sheet’s alone.**');
-    expect(prompt).toMatch(/It is reached once every\s+sheet listed below has been generated/);
+    expect(rig).toContain('**Every sheet of this series delivers that, each at its own facing.**');
+    expect(rig).not.toContain('What the finished series assembles into');
+  });
+
+  it('derives the series’ own capability where the sheets do not share one', () => {
+    // The reported defect: `CORE_DIRECTIONAL_VARIANTS` on the eight-compass set is two directional
+    // cores and eight articulation sheets — three inventories and two different answers — and each
+    // sheet presented its own as the finished series'. Sheet 1 claimed the series delivered a trunk
+    // at four facings, sheet 3 that it delivered limbs at one and no trunk at all, and two lines
+    // later each listed all ten sheets.
+    const series = { ...SERIES, directions: 'EIGHT_COMPASS' } as const;
+    const core = generatePrompt('CHARACTER', SUBJECT, { ...series, sheetIndex: 0 });
+    const articulation = generatePrompt('CHARACTER', SUBJECT, { ...series, sheetIndex: 2 });
+
+    for (const prompt of [core, articulation]) {
+      expect(prompt).toContain(
+        '**That is this sheet’s own share of the deliverable, and not the finished series’ capability.**',
+      );
+      expect(prompt).toContain('### The finished series’ capability');
+      // Both answers, on both sheets, grouped from the batch rather than written down — which is
+      // what makes the two prompts agree about the deliverable while differing about their share.
+      expect(prompt).toContain('- **Sheets 1–2**: one head, one torso and one pelvis seen at each');
+      expect(prompt).toContain('- **Sheets 3–10**: the limbs of a neutral standing pose');
+    }
+
+    // And the deixis is gone from the quoted sentences, which is what makes quoting them honest:
+    // "above" resolves to section 3 of the prompt being compiled, so the core's answer read inside
+    // the articulation sheet would have claimed the core covered this sheet's one facing. Scoped to
+    // section 6, because section 1's paint rule legitimately says "listed above" about its own
+    // bullets three lines up.
+    expect(sectionOf(articulation, 'REQUIRED ASSEMBLY CAPABILITY')).not.toContain('listed above');
   });
 
   it('extends identity consistency across the series, and cites the lock when there is one', () => {
