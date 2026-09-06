@@ -121,7 +121,7 @@ export const EFFECT_FRAME_SEQUENCE: SheetPlan = {
   // The agreement shape rather than a pair of pieces, because this sheet's components are not
   // pieces of each other: an effect's frames are one phenomenon at successive moments, so what has
   // to hold across them is that the *same* effect is drawn at the same scale in every cell.
-  scaleExample: 'the first frame and the peak frame are drawn at the same size',
+  scaleExample: 'the first frame and the peak frame are the same effect drawn at the same scale',
   groups: [
     {
       heading: 'Core sequence',

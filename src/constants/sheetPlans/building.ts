@@ -163,7 +163,7 @@ function buildingDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTup
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
     assembly:
-      'the complete structure seen from each of the directions the sheet covers, with its module courses aligning across those views.',
+      'the complete structure seen from each facing, with its module courses aligning across those views.',
     targetQuantity: 'COMPONENT',
     // A yaw is the camera turning rather than the bay moving, so the repeated entries are views.
     posing: 'UNSTATED',

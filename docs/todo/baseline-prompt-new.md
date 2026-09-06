@@ -822,11 +822,10 @@ and section [SEC:CAMERA] forbids producing one by mirroring another.
 [IF:MIRRORED_SIDES!=yes]
 
 ### Mirroring
-**No piece on this sheet is a mirror of another, and none may be produced by flipping one.** Where the
-subject carries a feature on each of two opposite sides, what faces the viewer and what turns away
-from it are not reflections of one another under the camera this sheet is drawn beneath, so neither
-may be obtained by flipping the other. A direction is a rotation for the same reason, and section
-[SEC:CAMERA] forbids producing one by mirroring another.
+**No piece on this sheet may be produced by mirroring another.** Where the subject carries a feature
+on each of two opposite sides, each piece is drawn for the side it belongs to, so an asymmetric
+detail stays where it is rather than changing sides with a flip. A direction is a rotation for the
+same reason, and section [SEC:CAMERA] forbids producing one by mirroring another.
 [/IF]
 [IF:SOCKETS]
 

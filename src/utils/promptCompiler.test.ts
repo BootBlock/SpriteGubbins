@@ -1192,7 +1192,7 @@ describe('generatePrompt — a sheet that is one of a series', () => {
       expect(prompt).toContain('### The finished series’ capability');
       // Both answers, on both sheets, grouped from the batch rather than written down — which is
       // what makes the two prompts agree about the deliverable while differing about their share.
-      expect(prompt).toContain('- **Sheets 1–2**: one head, one torso and one pelvis seen at each');
+      expect(prompt).toContain('- **Sheets 1–2**: one head, one torso and one pelvis per facing');
       expect(prompt).toContain('- **Sheets 3–10**: the limbs of a neutral standing pose');
     }
 

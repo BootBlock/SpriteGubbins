@@ -97,7 +97,7 @@ function objectDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
     assembly:
-      'the complete object seen from each of the directions the sheet covers, with its moving parts in matching positions across those views.',
+      'the complete object seen from each facing, with its moving parts in matching positions across those views.',
     targetQuantity: 'ASSEMBLED',
     // The moving parts are drawn once per facing in matching positions, which is the camera turning.
     posing: 'UNSTATED',

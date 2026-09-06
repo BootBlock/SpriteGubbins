@@ -68,21 +68,26 @@ describe('the template itself', () => {
     }
   });
 
-  it('has a token behind each of the two sources, so neither has quietly stopped answering', () => {
-    // Both halves of the convention above are load-bearing, and either could rot into an `||` that
-    // never decides anything: a template with no plan-filled token would let a `FOO_TEXT` be deleted
-    // unnoticed, and one with no map-filled token would say the same of the plans.
+  it('takes the plan branch for exactly the token the plans answer', () => {
+    // The `||` above is looser than the single lookup it replaced: `Object.hasOwn` matches *any*
+    // field of the interface, so `ASSEMBLY_DESCRIPTION`, `POSING_DESCRIPTION` or
+    // `SCALE_UNIT_FRAME_DESCRIPTION` would satisfy the walk with nothing in `promptValues` filling
+    // them. Naming the set closes that: a second fact moved down to the plan changes this list, and
+    // whoever changes it has to confirm the value is wired — which is the judgement the `||` cannot
+    // make on its own.
+    //
+    // A symmetric "each side answers at least one token" pair was written here first and half of it
+    // could not fail: sixteen of the seventeen tokens are map-filled, and no realistic edit takes
+    // that count to zero. The asymmetry is the fact worth stating.
     const tokens = new Set(
       [...PROMPT_TEMPLATE.matchAll(/\[DEFINE:([A-Z0-9_]+_DESCRIPTION)\]/g)].map((match) => match[1] ?? ''),
     );
     const plan = sheetPlanFor('CHARACTER', DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
-    const named = [...tokens].filter((token) => !COMPUTED_DESCRIPTIONS.has(token));
+    const planFilled = [...tokens]
+      .filter((token) => !COMPUTED_DESCRIPTIONS.has(token))
+      .filter((token) => Object.hasOwn(plan, planFieldFor(token)));
 
-    expect(
-      named.filter((token) => new Set(Object.keys(promptText)).has(token.replace(/_DESCRIPTION$/, '_TEXT')))
-        .length,
-    ).toBeGreaterThan(0);
-    expect(named.filter((token) => Object.hasOwn(plan, planFieldFor(token))).length).toBeGreaterThan(0);
+    expect(planFilled).toEqual(['SCALE_EXAMPLE_DESCRIPTION']);
   });
 
   it('fills every _LABEL token from a subject field the categories define', () => {

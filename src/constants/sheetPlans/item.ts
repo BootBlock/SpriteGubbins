@@ -88,7 +88,7 @@ function itemDirectionalSheet(chunk: FacingTuple, chunks: readonly FacingTuple[]
     name: chunkName('Directional views', chunk, chunks),
     facings: chunk,
     assembly:
-      'the complete item seen from each of the directions the sheet covers, reading as one object turned rather than several drawings of it.',
+      'the complete item seen from each facing, reading as one object turned rather than several drawings of it.',
     targetQuantity: 'ASSEMBLED',
     // A yaw is the camera turning rather than the item moving, so the repeated entries are views.
     posing: 'UNSTATED',

@@ -74,7 +74,7 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   // other, so there is no small piece to hold against a large one. What has to hold instead is that
   // no member of the family arrives at half the weight of the one beside it.
   scaleExample:
-    'one core icon and the core icon beside it are drawn at the same size, filling that cell to the same margin',
+    'one core icon and the core icon beside it are drawn to the same weight, each filling its own cell to the same margin',
   groups: [
     {
       heading: null,

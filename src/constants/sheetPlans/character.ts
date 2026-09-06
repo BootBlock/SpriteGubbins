@@ -152,7 +152,7 @@ function characterDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTup
     name: chunkName('Directional core', chunk, chunks),
     facings: chunk,
     assembly:
-      'one head, one torso and one pelvis seen at each of the directions the sheet covers, reading as one body turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
+      'one head, one torso and one pelvis per facing, reading as one body turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
     targetQuantity: 'ASSEMBLED',
     // One head, one torso and one pelvis, repeated across yaws — the camera turning, not the trunk moving.
     posing: 'UNSTATED',
@@ -243,7 +243,7 @@ const LEFT_LEG_ENTRIES: readonly ComponentEntry[] = [
 export const CHARACTER_ARTICULATION: SheetPlan = {
   name: 'Articulation',
   facings: 'run',
-  assembly: `the limbs of ${CHARACTER_POSES} — each fitted to the trunk drawn on the directional core sheets, at the single direction the sheet covers.`,
+  assembly: `the limbs of ${CHARACTER_POSES} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
   targetQuantity: 'ASSEMBLED',
   // The same thirty-four orientations as the pose library's limbs, which is what this sheet is.
   posing: 'PER_POSITION',

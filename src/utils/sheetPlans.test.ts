@@ -466,13 +466,26 @@ describe('the plan table itself', () => {
  * so what has to hold is that the repeats agree, and those state it in the second frame. A clause
  * neither pattern reads fails rather than passing unchecked, which is the one way a check of this
  * shape can rot silently.
+ *
+ * **The agreement frame ends at `are`, and what agrees is the sheet's own business.** It was written
+ * as `are drawn at the same size`, which is true of an icon grid and of a blend set and false of
+ * every FONT sheet but the capitals: a full stop is not a digit's size, and a lower-case `l` is not
+ * an `o`'s. Fixing the wording would have been worthless while the frame demanded the false claim,
+ * so the frame asks only that the clause *assert an agreement* — it must carry the word `same` —
+ * and each sheet says what it is that agrees.
+ *
+ * **What no version of this check reads is whether the claim is true.** It grounds the two pieces a
+ * clause names and stops; the predicate is prose, and `landmarks.test.ts` says the same of itself.
+ * That limit is why the three false FONT claims reached a shipped prompt with this suite green, and
+ * it is not closable by widening the pattern — grounding ordinary English needs a stop-word list
+ * long enough to admit anything.
  */
 const SCALE_EXAMPLE_SHAPES = [
   // "a latch drawn beside the housing it fastens is in proportion to it" — the trailing relative
   // clause is optional and is the sentence's own scaffolding, not a third piece.
   /^an? (.+?) drawn beside (?:a|an|the) (.+?)(?: it .+?)? is in proportion to it$/,
-  // "the first frame and the peak frame are drawn at the same size, …"
-  /^(?:a|an|the|one) (.+?) and (?:a|an|the|one) (.+?)(?: beside it)? are drawn at the same size(?:, .+)?$/,
+  // "the first frame and the peak frame are the same effect drawn at the same scale"
+  /^(?:a|an|the|one) (.+?) and (?:a|an|the|one) (.+?)(?: beside it)? are (?=.*\bsame\b).+$/,
 ];
 
 /**
@@ -699,15 +712,26 @@ describe('every sheet of one series states the same finished capability', () => 
     expect(multiSheet, 'no pairing produces a series to check').toBeGreaterThan(0);
   });
 
-  it('quotes no sheet’s answer that points at another sheet’s section 3', () => {
-    // The phrase that carried the defect on the directional cores: “seen at each of the directions
-    // listed above” resolves *above* to section 3 of the prompt being compiled, so the same string
-    // means four cardinal facings on sheet 1 and four diagonals on sheet 2 — and means this sheet's
-    // single facing wherever the series statement quotes it. A plan sentence has to be true of the
-    // sheet it describes from wherever it is read.
+  it('writes no assembly sentence whose meaning moves with the sheet reading it', () => {
+    // The defect, and then its first repair, both turned on a referent the sentence does not carry
+    // with it. “Seen at each of the directions listed above” resolves *above* to section 3 of the
+    // prompt being compiled — four cardinal facings on sheet 1, four diagonals on sheet 2, one
+    // facing wherever the series statement quotes it. Rewording that to “the directions the sheet
+    // covers” moved the referent from section 3 to the sheet in front of the reader and changed
+    // nothing: a bullet labelled **Sheets 3–10** read on sheet 1 still resolved “the sheet” to
+    // sheet 1, and gave a plural label no antecedent to fall back on.
+    //
+    // So the rule is mechanical: a plan sentence may not point at *a* sheet at all. It says what
+    // the pieces are and how they relate — “one head, one torso and one pelvis per facing”, “one
+    // facing per sheet” — and the facings are the series list's job, which derives them per row.
+    // The plural naming a *kind* of sheet is not a referent and stays: CHARACTER's articulation
+    // fits its limbs to “the trunk drawn on the directional core sheets”, which is true from
+    // anywhere.
     for (const category of SUBJECT_CATEGORIES) {
       for (const plan of everySheetOf(category)) {
-        expect(plan.assembly, `${category} / ${plan.name}`).not.toContain('listed above');
+        const where = `${category} / ${plan.name}`;
+        expect(plan.assembly, `${where}: cites a section by position`).not.toMatch(/listed above/i);
+        expect(plan.assembly, `${where}: points at one sheet`).not.toMatch(/\b(?:the|this) sheet\b/i);
       }
     }
   });
@@ -822,7 +846,10 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
 
       const paired = RIG_MIRRORS[category] === true;
       expect(rigSection.includes('between the left and right sets'), category).toBe(paired);
-      expect(rigSection.includes('No piece on this sheet is a mirror of another'), category).toBe(!paired);
+      expect(
+        rigSection.includes('No piece on this sheet may be produced by mirroring another'),
+        category,
+      ).toBe(!paired);
     }
   });
 

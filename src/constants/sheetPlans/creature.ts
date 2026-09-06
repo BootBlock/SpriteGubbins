@@ -142,7 +142,7 @@ function creatureDirectionalCore(chunk: FacingTuple, chunks: readonly FacingTupl
     name: chunkName('Directional core', chunk, chunks),
     facings: chunk,
     assembly:
-      'one head, one body and one hindquarters seen at each of the directions the sheet covers, reading as one animal turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
+      'one head, one body and one hindquarters per facing, reading as one animal turned rather than several drawings of it — the trunk the articulation sheets hang their limbs on.',
     targetQuantity: 'ASSEMBLED',
     // One head, one body and one hindquarters, repeated across yaws — the camera turning, not the trunk.
     posing: 'UNSTATED',
@@ -236,7 +236,7 @@ const LEFT_HINDLIMB_ENTRIES: readonly ComponentEntry[] = [
 export const CREATURE_ARTICULATION: SheetPlan = {
   name: 'Articulation',
   facings: 'run',
-  assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, at the single direction the sheet covers.`,
+  assembly: `the limbs of ${CREATURE_GAITS} — each fitted to the trunk drawn on the directional core sheets, one facing per sheet.`,
   targetQuantity: 'ASSEMBLED',
   // The creature spelling of the character articulation run, and posed for the same reason.
   posing: 'PER_POSITION',
