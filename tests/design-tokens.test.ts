@@ -3,7 +3,7 @@ import { basename, relative, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { codeOnly } from '../scripts/codeOnly.ts';
-import { appMarkup, scannableSources, tailwindScanned } from '../scripts/sourceFiles.ts';
+import { appMarkup, scannableSources, sourceText, tailwindScanned } from '../scripts/sourceFiles.ts';
 import { THEME_COLOR_PLACEHOLDER, themeColorHex } from '../scripts/themeColour.ts';
 import { spectrumStopAt } from '../src/constants/spectrum.ts';
 
@@ -73,10 +73,12 @@ const REQUIRED_THEME_TOKENS = [
   // The wheel, and the active view's position on it.
   ...SPECTRUM_STOPS.map((stop) => `--color-spectrum-${stop}`),
   '--color-tab',
-  // Text tones.
+  // Text tones, and the placeholder role — which is the ramp's floor under a name, reached only by
+  // the `::placeholder` rule in the base layer, as the scrollbar's three are reached only by theirs.
   '--color-ink',
   '--color-ink-muted',
   '--color-ink-faint',
+  '--color-ink-placeholder',
   // Type: the two families, and the three rungs of the scale below the heading sizes.
   '--font-sans',
   '--font-mono',
@@ -394,7 +396,7 @@ describe('design tokens', () => {
     // in an inline `style`, and a `setProperty` call — which the app already uses for three other
     // custom properties, so it is the route a fourth would most likely arrive by.
     const assignments = appMarkup().flatMap((file) => {
-      const source = codeOnly(readFileSync(file, 'utf8'));
+      const source = codeOnly(sourceText(file));
       const written = [...source.matchAll(/--color-tab['"]?\s*:\s*([^;,}]+)/g)];
       const called = [...source.matchAll(/setProperty\(\s*['"]--color-tab['"]\s*,([^)]*\)?[^)]*)\)/g)];
 
@@ -635,7 +637,7 @@ describe('design tokens', () => {
     // all. `src/` holds 200-odd files, so this floor is nowhere near the real count.
     expect(files.length).toBeGreaterThan(20);
 
-    const offenders = files.filter((file) => arbitrarySize.test(readFileSync(file, 'utf8')));
+    const offenders = files.filter((file) => arbitrarySize.test(sourceText(file)));
 
     expect(offenders).toStrictEqual([]);
   });
@@ -743,7 +745,7 @@ describe('the speed a transition runs at when its call site says nothing', () =>
     // asserted because a second template literal in that component would silently change which
     // string is being read.
     const source = resolve(process.cwd(), 'src/components/common/CollapsibleSection.tsx');
-    const templates = [...readFileSync(source, 'utf8').matchAll(/className=\{`[^`]*`\}/g)];
+    const templates = [...sourceText(source).matchAll(/className=\{`[^`]*`\}/g)];
     expect(templates).toHaveLength(1);
     const classes = templates[0]?.[0] ?? '';
 
@@ -765,7 +767,7 @@ describe('the speed a transition runs at when its call site says nothing', () =>
     expect(files.length).toBeGreaterThan(20);
 
     const offenders = files.flatMap((file) =>
-      readFileSync(file, 'utf8')
+      sourceText(file)
         .split('\n')
         .flatMap((line, index) =>
           [...line.matchAll(UTILITY)]
@@ -912,9 +914,26 @@ describe('the wheel turns without a seam', () => {
  *
  * Parsed rather than hard-coded so the assertions below measure *the palette*, not a copy of it
  * that would go on passing after someone changed the real thing.
+ *
+ * **An alias is followed rather than refused**, because a token may name a *role* whose value is a
+ * position the ramp already holds: `--color-ink-placeholder` is `var(--color-ink-faint)`, since the
+ * hint in an empty field is the ramp's floor and a second copy of that triple is the thing that
+ * drifts. Every caller wants the colour, so the resolution belongs here rather than in one of them —
+ * and the hop count is bounded so a token that aliases itself fails loudly instead of hanging the
+ * suite. What is still refused is a value that is neither: a `#hex`, an `rgb()`, a `color-mix()`,
+ * anything this file's arithmetic would have to guess at.
  */
 function oklchToken(name: string): [number, number, number] {
-  const declaration = new RegExp(name + String.raw`: oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)`).exec(stylesheet);
+  let resolving = name;
+  for (let hop = 0; hop < 4; hop++) {
+    const alias = new RegExp(resolving + String.raw`: var\((--color-[a-z0-9-]+)\)`).exec(stylesheet);
+    if (alias?.[1] === undefined) break;
+    resolving = alias[1];
+  }
+
+  const declaration = new RegExp(resolving + String.raw`: oklch\(([\d.]+) ([\d.]+) ([\d.]+)\)`).exec(
+    stylesheet,
+  );
   if (declaration === null) throw new Error(`${name} is not declared as an oklch() triple`);
   return [Number(declaration[1]), Number(declaration[2]), Number(declaration[3])];
 }
@@ -1142,9 +1161,7 @@ describe("a view's primary action", () => {
       .filter((file) => file.includes(`components${sep}common${sep}`) && !file.endsWith('.test.tsx'))
       .filter((file) => {
         const importPath = new RegExp(`from '[^']*${basename(file, '.tsx')}\\.tsx'`);
-        const importers = sources.filter(
-          (other) => other !== file && importPath.test(readFileSync(other, 'utf8')),
-        );
+        const importers = sources.filter((other) => other !== file && importPath.test(sourceText(other)));
         // The `length` guard matters: without it a component nobody imports would pass `every`
         // vacuously and be swept in on the strength of having no callers at all.
         return importers.length > 0 && importers.every(inView);
@@ -1160,7 +1177,7 @@ describe("a view's primary action", () => {
     expect(scoped.length).toBeGreaterThan(20);
     expect(sharedInView.length).toBeGreaterThanOrEqual(2);
 
-    const offenders = scoped.filter((file) => /(bg|from|to)-accent-strong/.test(readFileSync(file, 'utf8')));
+    const offenders = scoped.filter((file) => /(bg|from|to)-accent-strong/.test(sourceText(file)));
 
     expect(offenders).toStrictEqual([]);
   });
@@ -1518,8 +1535,13 @@ describe('a role colour used as a ground', () => {
    *
    * `ring-` is deliberately absent: a ring is drawn outside the element, over whatever surrounds it,
    * so `ring-ink ring-offset-foundry-800` on an accent swatch sits on the panel and is correct.
+   *
+   * The placeholder rung is here even though no component wears it today. It is a tone on this ramp
+   * — the floor, aliased — so a component that reached for it on a role fill would fail for exactly
+   * the reason the other three do, and a rung left out of this pattern is a rung the sweep is blind
+   * to rather than one it has cleared.
    */
-  const RAMP_CLASS = /(?<![\w-])(?:text|bg)-ink(?:-muted|-faint)?(?:\/\d+)?(?![\w-])/g;
+  const RAMP_CLASS = /(?<![\w-])(?:text|bg)-ink(?:-muted|-faint|-placeholder)?(?:\/\d+)?(?![\w-])/g;
 
   it('cannot carry a tone off the ink ramp, at any stop', () => {
     // Stated as a failure rather than left implied, because it is the half that makes the sweeps
@@ -1543,7 +1565,7 @@ describe('a role colour used as a ground', () => {
     let grounds = 0;
 
     for (const file of scannableSources()) {
-      const source = readFileSync(file, 'utf8');
+      const source = sourceText(file);
       for (const attribute of source.matchAll(/className=/g)) {
         if (!SOLID_GROUND.test(staticClasses(source, attribute.index))) continue;
         const subtree = subtreeAt(source, attribute.index);
@@ -1575,7 +1597,7 @@ describe('a role colour used as a ground', () => {
     let strings = 0;
 
     for (const file of scannableSources()) {
-      const source = readFileSync(file, 'utf8');
+      const source = sourceText(file);
       for (const literal of source.matchAll(/'([^'\n]*)'|"([^"\n]*)"/g)) {
         const text = literal[1] ?? literal[2] ?? '';
         if (!SOLID_GROUND.test(text)) continue;
@@ -1587,6 +1609,323 @@ describe('a role colour used as a ground', () => {
     // Twenty as this is written, for the same reason the floor above exists.
     expect(strings).toBeGreaterThan(10);
     expect(offenders).toStrictEqual([]);
+  });
+});
+
+/**
+ * One rule out of `index.css`: its own prelude, the declarations directly inside it, and the block
+ * it is nested in.
+ *
+ * A `parent` link rather than a list of preludes, because the question the sweep below asks of an
+ * ancestor is what it *declares*, not what it is called. CSS nesting means a `&:hover { color: … }`
+ * inherits the ground the utility around it painted, and the pairing that has to be priced is the
+ * two together.
+ */
+type StyleRule = {
+  readonly prelude: string;
+  declarations: string;
+  readonly parent: StyleRule | null;
+};
+
+/**
+ * The stylesheet as a flat list of rules — the third place a ground and an ink meet, and the one
+ * neither class-string sweep can read.
+ *
+ * A brace walk rather than a regex, because the file nests three deep in places (`@media` around a
+ * selector, `@utility` around a `&:hover`) and a declaration means something different depending on
+ * which block it landed in. The one subtlety is the split at `{`: everything the scanner has
+ * accumulated since the last `;` is this block's *prelude*, and everything before that `;` belongs
+ * to the block already open — which is how a utility's own declarations survive a nested rule
+ * appearing halfway down them.
+ *
+ * Fed the comment-blanked source, so the paragraph explaining a declaration cannot be parsed as one.
+ * A stray brace would leave a block open at the end, which throws rather than returning a rule list
+ * silently missing its tail.
+ */
+function styleRules(source: string): StyleRule[] {
+  const rules: StyleRule[] = [];
+  const open: StyleRule[] = [];
+  let buffer = '';
+
+  for (const character of source) {
+    if (character === '{') {
+      const split = buffer.lastIndexOf(';') + 1;
+      const parent = open.at(-1) ?? null;
+      if (parent !== null) parent.declarations += buffer.slice(0, split);
+      open.push({ prelude: buffer.slice(split).trim().replace(/\s+/g, ' '), declarations: '', parent });
+      buffer = '';
+      continue;
+    }
+
+    if (character === '}') {
+      const frame = open.pop();
+      if (frame === undefined) throw new Error('index.css closed a block that was never opened');
+      frame.declarations += buffer;
+      rules.push(frame);
+      buffer = '';
+      continue;
+    }
+
+    buffer += character;
+  }
+
+  if (open.length > 0) throw new Error(`index.css left ${open.length} block(s) open`);
+  return rules;
+}
+
+/**
+ * A colour declared **in the stylesheet**, on the ground the same rule paints.
+ *
+ * This is the third sweep of the ground/ink rule, and it exists because the other two are blind to
+ * exactly the declarations this file makes. Both of them read *class strings* in `src/` — one walks
+ * a `className`'s subtree, the other reads one branch of a ternary at a time — and a rule written
+ * here names no class, sits in no component, and is invisible to each. Three defects were open at
+ * once on that single blind spot: `::selection` painting `--color-ink` on a solid `--color-accent`
+ * at **2.04:1** (the exact pairing CLAUDE.md names as the mistake the rule exists to stop), every
+ * `::placeholder` in the app left on Tailwind preflight's `currentcolor` at 50% and landing at
+ * **4.44:1**, and the forced-colours block painting `HighlightText` where the platform draws a
+ * `Canvas` backplate. A fix that corrected the three ratios and left the sweep blind would be
+ * reporting the fourth instance of this in a third audit round.
+ *
+ * **It is total, and that is the half that matters.** Every colour declaration in the file has to be
+ * one this sweep can either price or account for; an unrecognised one *fails*, and the fix is to
+ * teach the sweep rather than to widen a list. That is the shape the `action-tab` suite already uses
+ * for its own backgrounds, and for the same reason: a pairing the regex quietly did not match is a
+ * pairing that went unmeasured while the suite stayed green.
+ */
+describe('a colour declared in the stylesheet', () => {
+  const rules = styleRules(declarations);
+
+  /** A `color:` declared directly in a block — not `border-color`, `outline-color` or `--color-…`. */
+  const COLOUR = /(?:^|[\s;])color:\s*([^;]+);/;
+
+  /** The three properties that can paint a ground. Deliberately not `-clip`, `-size` or `-repeat`. */
+  const GROUND = /(?:^|[\s;])background(?:-color|-image)?:\s*([^;]+);/;
+
+  /** A value that is exactly one colour token, which is the only shape this file can measure. */
+  const TOKEN = /^var\((--color-[a-z0-9-]+)\)$/;
+
+  /**
+   * Colours whose ground is not in this file at all, because the markup gives it.
+   *
+   * A pseudo-element inherits the ground of the element it hangs off, so there is nothing here to
+   * pair it with — and it is still a colour on a ground, so it cannot simply be skipped. Each entry
+   * names where its ratio *is* measured, and an unlisted one fails: the list is what stops
+   * "no background in this rule" becoming a way for a colour to go unpriced.
+   */
+  const GROUNDED_BY_MARKUP: Record<string, string> = {
+    '::placeholder': 'painted on five grounds the markup gives it — priced by the suite below',
+  };
+
+  /** What a rule's colour and ground came to, once classified. */
+  type Pairing = { rule: StyleRule; colour: string; ground: string };
+
+  const priced: Pairing[] = [];
+  const unclassified: string[] = [];
+
+  /** Which entries of the list above the sweep actually reached, so a stale one cannot sit unused. */
+  const excused: string[] = [];
+
+  for (const rule of rules) {
+    const colour = COLOUR.exec(rule.declarations)?.[1]?.trim();
+    if (colour === undefined) continue;
+
+    // The forced palette is the user's, so there is no author value here to price — what this
+    // block has to get right is *which* system colour, and the forced-colours suite asserts that.
+    let ancestry: StyleRule | null = rule;
+    let forced = false;
+    while (ancestry !== null) {
+      if (ancestry.prelude.includes('forced-colors: active')) forced = true;
+      ancestry = ancestry.parent;
+    }
+    if (forced) continue;
+
+    // The glyphs are filled by the background rather than painted in `color`, so the pairing is not
+    // a ground and an ink. Required to be clipped rather than taken on trust: `transparent` text
+    // over an unclipped gradient is an invisible heading, which is the failure this shape has.
+    if (colour === 'transparent') {
+      if (/background-clip: text/.test(rule.declarations)) continue;
+      unclassified.push(`${rule.prelude}: transparent text over a background it does not clip`);
+      continue;
+    }
+
+    let ground: string | undefined;
+    for (let node: StyleRule | null = rule; node !== null && ground === undefined; node = node.parent) {
+      ground = GROUND.exec(node.declarations)?.[1]?.trim().replace(/\s+/g, ' ');
+    }
+
+    if (ground === undefined) {
+      if (rule.prelude in GROUNDED_BY_MARKUP) {
+        excused.push(rule.prelude);
+        continue;
+      }
+      unclassified.push(`${rule.prelude}: a colour whose ground this sweep cannot find`);
+      continue;
+    }
+
+    // A translucent role fill is deliberately outside the ground/ink rule — at the alphas this app
+    // uses the composite is mostly panel — and the one instance is `action-tab`, whose own suite
+    // prices it at every stop on every panel. `transparent` has to be spelled in the value, so an
+    // opaque `color-mix` of two role colours cannot claim the exemption.
+    if (ground.includes('transparent')) continue;
+
+    const colourToken = TOKEN.exec(colour)?.[1];
+    const groundToken = TOKEN.exec(ground)?.[1];
+    if (colourToken === undefined || groundToken === undefined) {
+      unclassified.push(`${rule.prelude}: color ${colour} on ${ground}`);
+      continue;
+    }
+
+    priced.push({ rule, colour: colourToken, ground: groundToken });
+  }
+
+  it('was parsed whole, so nothing below can pass by reading an empty file', () => {
+    // A brace walk that returned nothing — a changed `codeOnly`, a stylesheet moved — would make
+    // every loop below run zero assertions and the sweep pass having measured no CSS at all. As this
+    // is written the file holds 108 blocks, seven of which declare a colour: three are priced here
+    // and four are accounted for by the branches above.
+    expect(rules.length).toBeGreaterThan(50);
+    expect(priced.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('is a colour this file can measure, or it is not written here', () => {
+    // The half that makes the sweep total. A pairing in a shape the classification above does not
+    // recognise is reported rather than skipped, so the answer to a new one is to teach this sweep
+    // what it means — never to let it fall through the bottom unmeasured.
+    expect(unclassified).toStrictEqual([]);
+  });
+
+  it('names a rule that still exists for every colour it excuses on the markup’s behalf', () => {
+    // `GROUNDED_BY_MARKUP` is a permission, and a permission nobody uses is how an exemption list
+    // rots: a selector renamed or deleted leaves an entry behind that excuses nothing, and the next
+    // reader takes the list as a description of the file. The same guard CLAUDE.md already asks of
+    // the raw-colour exemptions — "it also fails if one of the six stops carrying any".
+    //
+    // The reason each entry carries is what fails with it, so the value is read rather than being
+    // documentation nothing looks at.
+    for (const [selector, reason] of Object.entries(GROUNDED_BY_MARKUP)) {
+      expect([selector, reason, excused.includes(selector)]).toStrictEqual([selector, reason, true]);
+    }
+  });
+
+  it('clears 4.5:1 against the ground the same rule paints', () => {
+    // `::selection` is what this was written for: `--color-ink` on `--color-accent` measures 2.04:1
+    // computed from the tokens and 2.05:1 once both are quantised to the bytes a screen is handed,
+    // against 8.04:1 and 8.01:1 for `--color-foundry-950`. Either way it is the rule CLAUDE.md
+    // already states for every solid role fill in the app, and the browser paints the quantised
+    // one — a selected paragraph decoded pixel by pixel measures 8.013:1.
+    //
+    // **Both sides expand to the wheel, and neither expansion prices anything today.** `--color-tab`
+    // is whichever stop the active view is on, so a rule naming it has ten colours or ten grounds
+    // and not one; the only rule in the file that names it is `action-tab`, whose fill is
+    // translucent and is priced by its own suite before this is reached. The branch is written
+    // anyway because the alternative is silent: `oklchToken` resolves `--color-tab` through its
+    // `@theme` default to the violet stop, so a rule painting it that reached here unexpanded would
+    // be measured against one stop of ten and pass or fail by whichever the studio happens to use.
+    const offenders: string[] = [];
+    const stopsOf = (token: string) =>
+      token === '--color-tab' ? SPECTRUM_STOPS.map((stop) => `--color-spectrum-${stop}`) : [token];
+
+    for (const { rule, colour, ground } of priced) {
+      for (const tone of stopsOf(colour)) {
+        for (const stop of stopsOf(ground)) {
+          const ratio = contrastBetween(tone, stop);
+          if (ratio < 4.5) offenders.push(`${rule.prelude}: ${tone} on ${stop} is ${ratio.toFixed(2)}:1`);
+        }
+      }
+    }
+
+    expect(offenders).toStrictEqual([]);
+  });
+});
+
+/**
+ * The hint in an empty field, which had been a framework default nobody chose.
+ *
+ * Tailwind's preflight paints every placeholder `color-mix(in oklab, currentcolor 50%, transparent)`
+ * — half the inherited `color`, composited over whatever the field sits on — and `index.css`
+ * authored no `::placeholder` rule at all. Measured, that lands between 4.4725:1 and 4.4902:1
+ * computed and 4.44:1 from the painted pixels of a real field, against a 4.5:1 threshold at this
+ * app's 13px body rung. It fails by about one and a quarter per cent, on all twenty-four
+ * placeholder-bearing inputs in the app, four of which are empty by default and have the placeholder
+ * as their only hint.
+ *
+ * The ground is narrower than the ink ramp's, which is why this is measured here rather than folded
+ * into the ramp's own sweep — but **narrower is not the same as "one shape"**, and reading the field
+ * primitives alone says it is. `TextField`, `NumberField`, `SelectField` and `ComboBox` are all a
+ * `foundry-950` fill at 80%, so a sweep built from those four describes three composited grounds and
+ * misses the lightest one in the app: `PresetSavePanel` styles its two inputs directly, on a **flat
+ * `foundry-800`**, which is a whole ramp rung above anything the primitives sit on. That is the
+ * ground the tone actually has to survive, and #253's own evidence had already reported it —
+ * its `Save as` and `Describe it (optional)` rows measure a ground of `rgb(18, 21, 31)`, which is
+ * `foundry-800` and not a composite of anything.
+ *
+ * So the list below is built from **where a `placeholder=` actually is**, not from what the shared
+ * primitives happen to do. The token resolves through its alias, so a literal written in its place
+ * is measured the same way and a wrong one still fails.
+ */
+describe('the placeholder tone', () => {
+  /** The panels a field primitive sits in, lightest first. */
+  const PANELS = ['--color-foundry-800', '--color-foundry-900', '--color-foundry-950'];
+
+  /**
+   * Every ground a placeholder is painted on: the primitives' `foundry-950` fill at 80% over each
+   * panel, the flat well the modal search boxes use, and the flat `foundry-800` of the two inputs
+   * `PresetSavePanel` styles itself — which is the lightest, and therefore the one that decides.
+   */
+  const GROUNDS = [
+    ...PANELS.map((panel) => compositeOf(oklchToken('--color-foundry-950'), oklchToken(panel), 0.8)),
+    linearOf(oklchToken('--color-foundry-950')),
+    linearOf(oklchToken('--color-foundry-800')),
+  ];
+
+  it('clears 4.5:1 on every ground a field with a placeholder sits on', () => {
+    // Deliberately not paired with a "beats the framework default" assertion, which reads as though
+    // it added something and cannot fail on its own: preflight's `--color-ink` at 50% lands between
+    // 4.4725:1 and 4.4902:1 across these five grounds, so anything clearing this floor has already
+    // beaten it. The figure is recorded here instead, where it is the reason the floor is the check.
+    //
+    // The margin is not uniform, which is why every ground is swept rather than the worst composited
+    // one: `ink-faint` measures 6.52:1 on the flat well and 5.82:1 on the flat `foundry-800`, and it
+    // is the second that a re-tune would take under first.
+    const tone = linearOf(oklchToken('--color-ink-placeholder'));
+    for (const ground of GROUNDS) expect(contrastOf(tone, ground)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('is a tone the ramp already holds, which is what the two ramp sweeps then cover it by', () => {
+    // The token is an alias, and that is load-bearing rather than incidental. `INK_RAMP` stays three
+    // tones — it is "three tones a reader can tell apart", and a fourth entry equal to `ink-faint`
+    // would make its separation check compare a tone with itself and fail at 1.00 against the 1.35
+    // floor. What makes that safe is exactly the identity: the ramp's own sweeps measure `ink-faint`
+    // on every foundry surface, and the ban sweep proves no ramp tone reaches 4.5:1 on a role fill,
+    // so both claims already cover this token *while it resolves to one of them*.
+    //
+    // That is an assumption until something checks it. Give the placeholder its own literal value
+    // and the identity breaks silently, leaving a tone that `RAMP_CLASS` bans from a role fill on
+    // the strength of a premise no longer proved about it. This is what fails then, and the fix at
+    // that point is to take the `INK_RAMP` decision properly rather than to delete this.
+    const placeholder = oklchToken('--color-ink-placeholder');
+    const ramp = INK_RAMP.map((tone) => oklchToken(tone));
+
+    expect(ramp).toContainEqual(placeholder);
+  });
+
+  it('stays dimmer than the value that replaces it, which is what a hint is', () => {
+    // A placeholder that reads as loudly as a filled-in value says the field is answered when it is
+    // not. `ink` is what a value is painted, and the ramp's own separation floor is what "dimmer"
+    // is measured against, so this is the ramp's rule applied to the role rather than a new number.
+    const page = oklchToken('--color-foundry-900');
+    const value = contrastOf(linearOf(oklchToken('--color-ink')), linearOf(page));
+    const hint = contrastOf(linearOf(oklchToken('--color-ink-placeholder')), linearOf(page));
+
+    expect(value / hint).toBeGreaterThanOrEqual(1.35);
+  });
+
+  it('is what the stylesheet actually paints a placeholder', () => {
+    // The token is only worth measuring if a rule reaches for it: preflight's declaration is still
+    // in the cascade, and this app's own has to come after it and win. Asserted against the
+    // comment-blanked source so the paragraph explaining the rule cannot satisfy it.
+    expect(declarations).toMatch(/::placeholder \{\s*color: var\(--color-ink-placeholder\);/);
   });
 });
 
@@ -1638,8 +1977,17 @@ describe('scrollbar contrast', () => {
 });
 
 describe('forced colours and the sticky header', () => {
+  /**
+   * The block, read from the comment-blanked source.
+   *
+   * It carries a long paragraph naming the very colours these assertions look for — the record of
+   * what the backplate does to `HighlightText` — so read raw, the prose could satisfy an assertion
+   * on its own while the declaration it describes was gone.
+   */
+  const forcedBlock = () => /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/.exec(declarations)?.[1] ?? '';
+
   it('re-expresses the colour-only signals in system colours', () => {
-    const block = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/.exec(stylesheet)?.[1] ?? '';
+    const block = forcedBlock();
 
     expect(block).not.toBe('');
     // The four things this app says with colour and no words: the focus ring, a drag under way,
@@ -1647,12 +1995,60 @@ describe('forced colours and the sticky header', () => {
     expect(block).toMatch(/outline-color: Highlight/);
     expect(block).toMatch(/border-color: Highlight/);
     expect(block).toMatch(/background-color: Highlight/);
-    expect(block).toMatch(/color: HighlightText/);
     expect(block).toMatch(/\[data-active='true'\]/);
   });
 
+  it('never paints text a colour the platform’s own backplate can hide', () => {
+    // The defect this replaced: the selection rule set `color: HighlightText` on a `Highlight` fill,
+    // which is the obvious reading of the palette and is wrong for text. Chromium and Gecko paint a
+    // **backplate** behind every text run in a forced palette — a rectangle in the `Canvas` colour —
+    // and `Canvas` and `HighlightText` are the same colour in both of Chromium's palettes, so the
+    // label of every selected thing in the app was painted in the one colour guaranteed to vanish.
+    // Measured in Edge over the active view's button: zero pixels of `CanvasText` in the label
+    // region, in either palette, where the same clip holds 266 antialiased strokes with the colour
+    // left alone.
+    //
+    // Stated as the general rule rather than as a ban on the one keyword, because the mistake is
+    // structural: each of these is defined to read on a *specific* ground, and the plate is not it.
+    // The list is every `*Text` the platform pairs with a ground that is **not** `Canvas`, so it is
+    // derived from the palette rather than from the one keyword that went wrong — `FieldText`
+    // belongs to `Field` and `ButtonText` to `ButtonFace`, and each would be hidden by the same
+    // plate for the same reason. What stays available is the other half: `CanvasText` itself, and
+    // `GrayText`, `LinkText`, `VisitedText` and `ActiveText`, which are all defined against `Canvas`
+    // — that is the shape a legitimate `color` in here would take.
+    const PAIRED_TO_ANOTHER_GROUND = [
+      'HighlightText',
+      'SelectedItemText',
+      'ButtonText',
+      'FieldText',
+      'AccentColorText',
+      'MarkText',
+    ];
+
+    const block = forcedBlock();
+    // Without this the assertion below is satisfied by a regex that matched nothing at all: an empty
+    // block yields no `color:` declarations and an empty filter, which is indistinguishable from the
+    // passing case — the block declares none today. Its sibling above carries the same guard.
+    expect(block).not.toBe('');
+
+    const painted = [...block.matchAll(/(?:^|[\s;])color:\s*([^;]+);/g)].map((rule) =>
+      (rule[1] ?? '').trim(),
+    );
+
+    expect(painted.filter((colour) => PAIRED_TO_ANOTHER_GROUND.includes(colour))).toStrictEqual([]);
+  });
+
+  it('still marks a current selection, since the fix is not to stop marking it', () => {
+    // The other half, and the reason the assertion above is not simply "sets no colour": deleting
+    // the whole rule would satisfy that and would restore the defect this block was written for —
+    // a selection said in colour alone, which a forced palette flattens away. The fill is what
+    // carries it, at 1815 px of a 74 × 34 label region, and it survives the backplate because a
+    // plate is drawn behind the *text* and not over the box.
+    expect(forcedBlock()).toMatch(/\[data-active='true'\] \{\s*background-color: Highlight;\s*\}/);
+  });
+
   it('marks the live drag with an outline, which does not take part in layout', () => {
-    const block = /@media \(forced-colors: active\) \{([\s\S]*?)\n\}/.exec(stylesheet)?.[1] ?? '';
+    const block = forcedBlock();
 
     // `PanViewport` keeps the same 1px border in both states and only changes its colour, so
     // thickening it here would shrink the content box by 2px at the moment the drag starts — moving

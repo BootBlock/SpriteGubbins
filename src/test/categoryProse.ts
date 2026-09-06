@@ -41,12 +41,26 @@ export function everySheetOf(category: SubjectCategory): readonly SheetPlan[] {
  */
 export function categoryProseFor(category: SubjectCategory): string {
   const written: string[] = [CATEGORY_OPTIONS[category].label];
-  for (const plan of everySheetOf(category)) {
-    written.push(plan.name, plan.assembly);
-    for (const group of plan.groups) {
-      written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
-      for (const entry of group.entries) written.push(entry.label, entry.text);
-    }
+  for (const plan of everySheetOf(category)) written.push(planProseFor(plan));
+  return written.join('\n');
+}
+
+/**
+ * Everything one sheet writes about what is on it — its name, its assembly sentence, and every
+ * heading, intro, outro, label and entry line of its own inventory.
+ *
+ * The corpus for a claim about a *sheet* rather than about a category, which is the finer of the two
+ * questions and the one `SheetPlan.scaleExample` is grounded against: a CHARACTER directional core
+ * writes no hand and no limb, and grounding its scale example in everything the category writes
+ * would pass the very pairing the example was wrong on. Lifted out of {@link categoryProseFor}
+ * rather than copied, so the two answers cannot drift about which fields count as a sheet's own
+ * words.
+ */
+export function planProseFor(plan: SheetPlan): string {
+  const written: string[] = [plan.name, plan.assembly];
+  for (const group of plan.groups) {
+    written.push(group.heading ?? '', group.intro ?? '', group.outro ?? '');
+    for (const entry of group.entries) written.push(entry.label, entry.text);
   }
   return written.join('\n');
 }

@@ -141,7 +141,7 @@ export const FONT_CAPITALS: SheetPlan = {
   name: 'Capitals',
   facings: 'run',
   assembly:
-    'a run of set text at any size — every capital sharing one baseline and one cap height, so no letter sits high, low or heavy against the ones beside it, and each cuts out of the sheet as a single character an engine can index by codepoint.',
+    'a run of set text at any size — every capital sharing one baseline and one cap height, so no letter sits high, low or heavy against the ones beside it, and each cuts out as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
@@ -150,6 +150,13 @@ export const FONT_CAPITALS: SheetPlan = {
   // share of that cell is the same instruction on all four — which is what a series needs, the frame
   // being fixed for a whole batch the way the unit is.
   scaleUnitFrame: 'CELL',
+  // The agreement shape, for EFFECT's reason and one more of its own: these components are not
+  // pieces of each other either, and what has to hold between them is stricter than agreement about
+  // weight — a glyph a pixel off the shared baseline is visible in every word the engine ever sets.
+  // Cap height is this sheet's own measurement, which is why the three sheets below each name the
+  // height their own characters are set to instead.
+  scaleExample:
+    'one capital and the capital beside it are set on the same baseline to the same cap height, so neither arrives taller or heavier than the other',
   groups: [
     {
       heading: null,
@@ -168,11 +175,13 @@ export const FONT_LOWER_CASE: SheetPlan = {
   name: 'Lower case',
   facings: 'run',
   assembly:
-    'a run of set text at any size — every lower-case letter sharing one baseline and one height against it, with any ascender or descender reaching the same distance throughout, and each cutting out of the sheet as a single character an engine can index by codepoint.',
+    'a run of set text at any size — every lower-case letter sharing one baseline and one height against it, with any ascender or descender reaching the same distance throughout, and each cutting out as a single character an engine can index by codepoint.',
   targetQuantity: 'COMPONENT',
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   scaleUnitFrame: 'CELL',
+  scaleExample:
+    'one lower-case letter and the letter beside it are set on the same baseline to the same height above it, with any ascender or descender reaching the same distance throughout',
   groups: [
     {
       heading: null,
@@ -197,6 +206,8 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   // Digits and marks, each drawn once.
   posing: 'UNSTATED',
   scaleUnitFrame: 'CELL',
+  scaleExample:
+    'one digit and the punctuation mark beside it are cut to the same stroke weight at the same scale, each sitting at the height against the baseline its own use asks for',
   groups: [
     {
       heading: 'Digits',
@@ -226,6 +237,8 @@ export const FONT_SYMBOLS: SheetPlan = {
   // Symbols and operators, each drawn once.
   posing: 'UNSTATED',
   scaleUnitFrame: 'CELL',
+  scaleExample:
+    'one symbol and the symbol beside it are cut to the same construction and weight, so neither reads as borrowed from another font',
   groups: [
     {
       heading: null,

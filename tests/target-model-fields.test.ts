@@ -1,6 +1,7 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { sourceText } from '../scripts/sourceFiles.ts';
 import { TARGET_MODELS } from '../src/constants/models.ts';
 
 /**
@@ -50,10 +51,10 @@ function consumerFiles(): readonly string[] {
     .filter((entry) => entry.isFile() && /\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name))
     .map((entry) => resolve(entry.parentPath, entry.name))
     .filter((path) => path !== ENTRY_DATA)
-    .filter((path) => readFileSync(path, 'utf8').includes('TARGET_MODELS'));
+    .filter((path) => sourceText(path).includes('TARGET_MODELS'));
 }
 
-const CONSUMERS = consumerFiles().map((path) => ({ path, source: readFileSync(path, 'utf8') }));
+const CONSUMERS = consumerFiles().map((path) => ({ path, source: sourceText(path) }));
 
 /**
  * Whether a file reads that field off something.

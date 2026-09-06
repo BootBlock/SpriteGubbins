@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
-import { CATEGORY_OPTIONS, defaultSubjectFor, fieldLabelFor } from '../constants/categories/index.ts';
+import {
+  absentOptionFor,
+  CATEGORY_OPTIONS,
+  defaultSubjectFor,
+  fieldLabelFor,
+} from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { directionalModeChoices } from '../constants/output/index.ts';
 import {
@@ -19,6 +24,7 @@ import {
   DIRECTION_LISTS,
   OBJECT_YAW,
 } from '../constants/promptText/index.ts';
+import { everySheetOf, planProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
@@ -30,6 +36,8 @@ import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnat
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { planMirrorsPieces } from './planMirroring.ts';
+import { planAsDrawn } from './sheetPlanClothing.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
@@ -440,6 +448,440 @@ describe('the plan table itself', () => {
       // And the two halves are tellable apart everywhere a sheet is named.
       expect(cardinals.name).toContain('cardinal');
       expect(diagonals.name).toContain('diagonal');
+    }
+  });
+});
+
+/**
+ * The two shapes section 0's scale example takes, and the pieces each one names.
+ *
+ * A scale example is a statement about *components* — this piece against that one — so the words
+ * that have to be the sheet's own vocabulary are the two it names, and nothing else in the clause.
+ * The frame around them is ordinary English (`drawn beside`, `is in proportion to it`) and grounding
+ * it would only ever ask whether the plans happen to use the word "drawn".
+ *
+ * **Two shapes, because two kinds of sheet exist.** Most name the smallest and the largest piece
+ * they draw. The sheets whose components are not pieces of each other — an effect's frames, a
+ * portrait's expressions, an icon family, a font's glyphs, a blend set's tiles — have no such pair,
+ * so what has to hold is that the repeats agree, and those state it in the second frame. A clause
+ * neither pattern reads fails rather than passing unchecked, which is the one way a check of this
+ * shape can rot silently.
+ *
+ * **The agreement frame ends at `are`, and what agrees is the sheet's own business.** It was written
+ * as `are drawn at the same size`, which is true of an icon grid and of a blend set and false of
+ * every FONT sheet but the capitals: a full stop is not a digit's size, and a lower-case `l` is not
+ * an `o`'s. Fixing the wording would have been worthless while the frame demanded the false claim,
+ * so the frame asks only that the clause *assert an agreement* — it must carry the word `same` —
+ * and each sheet says what it is that agrees.
+ *
+ * **What no version of this check reads is whether the claim is true.** It grounds the two pieces a
+ * clause names and stops; the predicate is prose, and `landmarks.test.ts` says the same of itself.
+ * That limit is why the three false FONT claims reached a shipped prompt with this suite green, and
+ * it is not closable by widening the pattern — grounding ordinary English needs a stop-word list
+ * long enough to admit anything.
+ */
+const SCALE_EXAMPLE_SHAPES = [
+  // "a latch drawn beside the housing it fastens is in proportion to it" — the trailing relative
+  // clause is optional and is the sentence's own scaffolding, not a third piece.
+  /^an? (.+?) drawn beside (?:a|an|the) (.+?)(?: it .+?)? is in proportion to it$/,
+  // "the first frame and the peak frame are the same effect drawn at the same scale"
+  /^(?:a|an|the|one) (.+?) and (?:a|an|the|one) (.+?)(?: beside it)? are (?=.*\bsame\b).+$/,
+];
+
+/**
+ * The words of a named piece that have to be grounded — the articles and conjunctions holding a
+ * compound piece together are the clause's own scaffolding, not the sheet's vocabulary.
+ */
+const SCALE_SCAFFOLDING = new Set(['a', 'an', 'the', 'one', 'or', 'and']);
+
+function scaleExamplePieces(example: string): readonly string[] {
+  for (const shape of SCALE_EXAMPLE_SHAPES) {
+    const match = shape.exec(example);
+    // Discharged rather than defaulted: an empty piece would split into one empty word, which
+    // grounds against anything and would report a piece as checked that was never read.
+    if (match !== null) return [match[1], match[2]].flatMap((piece) => (piece === undefined ? [] : [piece]));
+  }
+  return [];
+}
+
+describe('section 0’s scale example names pieces the sheet in front of the reader draws', () => {
+  /**
+   * Every distinct sheet the app can compile, once each.
+   *
+   * `everySheetOf` regenerates the directional plans for each set it walks, so the same example is
+   * reached many times over; the key is the plan's own name and example, which is what a failure
+   * message has to name anyway.
+   */
+  function everyDistinctSheet(): readonly (readonly [SubjectCategory, SheetPlan])[] {
+    const seen = new Set<string>();
+    const sheets: (readonly [SubjectCategory, SheetPlan])[] = [];
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const plan of everySheetOf(category)) {
+        const key = `${category} / ${plan.name} / ${plan.scaleExample}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        sheets.push([category, plan]);
+      }
+    }
+    return sheets;
+  }
+
+  /**
+   * The sheet as the reader who declines gets it — every entry an `absentOption` can take away
+   * already removed.
+   *
+   * A plan's entries are unconditional except for the ones drawing what its `clothing` pool offers
+   * an absence of, and BACKGROUND's absence is its own *default*: a reader who touches nothing gets
+   * a layer library with no atmosphere veil, no light shaft and no drifting particle. So the plan as
+   * declared is the wrong corpus — an example naming a light shaft grounds against the plan and is
+   * absent from the section 4 the default subject actually compiles, which is the same
+   * prompt-disagrees-with-itself defect one field over. The leanest sheet is the only one every
+   * reader receives, so it is what the example has to be true of.
+   */
+  function leanestSheet(category: SubjectCategory, plan: SheetPlan): SheetPlan {
+    return planAsDrawn(plan, category, absentOptionFor(category, 'clothing') ?? '');
+  }
+
+  it('grounds every piece it names in that sheet’s own inventory', () => {
+    // The defect: the example was one string for the whole app — a hand against a torso, on a
+    // vehicle sheet with neither — and the repair filed it by category, which is one level above
+    // the fact. What a sheet draws is decided by the mode, the direction set and the sheet index as
+    // well, so a CHARACTER directional core still priced a hand it does not draw against a torso,
+    // two items above the paragraph telling the generator to draw this sheet's inventory and
+    // nothing else. Grounded against the sheet's own prose rather than the category's, because the
+    // category corpus is exactly what would pass the pairing this was wrong on.
+    //
+    // Matched with a leading boundary only, so a plan writing the plural grounds the singular.
+    for (const [category, plan] of everyDistinctSheet()) {
+      const where = `${category} / ${plan.name}`;
+      const pieces = scaleExamplePieces(plan.scaleExample);
+      const prose = planProseFor(leanestSheet(category, plan));
+
+      expect(pieces.length, `${where}: the example is in a shape neither pattern reads`).toBe(2);
+
+      for (const piece of pieces) {
+        for (const word of piece.split(' ').filter((part) => !SCALE_SCAFFOLDING.has(part))) {
+          // `String.raw`, because a plain template literal reads \b as a backspace: the regex then
+          // matches nothing and every sheet fails at once, which is loud but for the wrong reason.
+          const grounded = new RegExp(String.raw`\b${word}`, 'i').test(prose);
+          expect(grounded, `${where}: “${word}” is a piece this sheet never lists`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('reads on from the rule it illustrates, so it is a lower-case clause with no trailing stop', () => {
+    // It completes "One consistent scale across every component: …" and the template supplies the
+    // full stop, so a capital or a stop here lands one in the middle of the contract's fifth item.
+    for (const [category, plan] of everyDistinctSheet()) {
+      expect(plan.scaleExample, `${category} / ${plan.name}`).toMatch(/^[a-z]/);
+      expect(plan.scaleExample.endsWith('.'), `${category} / ${plan.name}`).toBe(false);
+    }
+  });
+
+  it('uses both shapes, so a table that has collapsed to one is not silently in force', () => {
+    // The pair shape is the stronger claim and the agreement shape is the honest answer where no
+    // pair exists. If every sheet ended up on one of them, the other pattern would be dead code
+    // admitting anything written in its frame.
+    const used = new Set(
+      everyDistinctSheet().map(([, plan]) =>
+        SCALE_EXAMPLE_SHAPES.findIndex((shape) => shape.test(plan.scaleExample)),
+      ),
+    );
+    expect(used).toEqual(new Set([0, 1]));
+  });
+
+  it('gives no two categories the same example, which would be one written in the other’s pieces', () => {
+    // Deliberately not per *sheet*: a category's own plans may honestly share a pair — CHARACTER's
+    // pose library and its cut-out rig both draw a hand and a torso — and forcing a different
+    // wording on each would be contrivance. Across categories it is the copy-paste this whole
+    // family of defects is made of.
+    const owners = new Map<string, SubjectCategory>();
+    for (const [category, plan] of everyDistinctSheet()) {
+      const owner = owners.get(plan.scaleExample);
+      expect(owner ?? category, `“${plan.scaleExample}” is shared by ${String(owner)} and ${category}`).toBe(
+        category,
+      );
+      owners.set(plan.scaleExample, category);
+    }
+  });
+});
+
+/**
+ * A component this category's plans list, spelled as prose — `selected-ring` reads `selected ring`.
+ *
+ * The label rather than the entry's text, because a label is the identifier the manifest keys a file
+ * by: lower-case, hyphen-separated and unique within its plan, which `sheetPlans.test.ts` already
+ * holds. The prose is written for a generator and reads as a sentence, so searching an exclusion line
+ * for it would match half of ordinary English.
+ */
+function componentPhrases(category: SubjectCategory): readonly string[] {
+  const phrases = new Set<string>();
+  for (const plan of everySheetOf(category)) {
+    for (const group of plan.groups) {
+      for (const entry of group.entries) phrases.add(entry.label.split('-').join(' '));
+    }
+  }
+  return [...phrases];
+}
+
+describe('every sheet of one series states the same finished capability', () => {
+  /**
+   * The sentence section 6 opens with, and the block beneath it that says what the *series*
+   * assembles into.
+   *
+   * Sliced off the compiled prompt rather than read off the plans, because the claim under test is
+   * about what a reader is shown: the defect was a per-sheet answer relabelled as the deliverable's,
+   * and a check reading `SheetPlan.assembly` could never see the label.
+   */
+  function capabilityOf(prompt: string): {
+    readonly own: string;
+    readonly series: string;
+    readonly statesOne: boolean;
+  } {
+    const section = sectionOf(prompt, 'REQUIRED ASSEMBLY CAPABILITY');
+    const own = /must assemble cleanly into: (.+)/.exec(section)?.[1] ?? '';
+    const heading = '### The finished series’ capability';
+    const at = section.indexOf(heading);
+    // Bounded at the next sub-heading, because the sheet list follows it and carries the
+    // *(this sheet)* marker — which moves with the sheet and would make every prompt's block
+    // different for a reason that has nothing to do with the capability.
+    const rest = at < 0 ? '' : section.slice(at + heading.length);
+    const ends = rest.indexOf('\n### ');
+    return {
+      own,
+      series: at < 0 ? '' : ends < 0 ? rest : rest.slice(0, ends),
+      statesOne: section.includes('Every sheet of this series delivers that'),
+    };
+  }
+
+  it('gives every sheet of a batch one answer about the deliverable, and its own share beside it', () => {
+    // The reported defect, swept over every pairing the app can compile: on a `CHARACTER` /
+    // `CORE_DIRECTIONAL_VARIANTS` / `EIGHT_COMPASS` series, sheet 1 told the reader the finished
+    // ten-sheet deliverable was a trunk at four cardinal facings, sheet 2 that it was a trunk at
+    // four diagonals, and sheets 3 to 10 that it was limbs at one facing and no trunk at all —
+    // each of them two lines above a list of all ten sheets.
+    let multiSheet = 0;
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const mode of modesFor(category)) {
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          const output = { ...DEFAULT_OUTPUT_CONFIG, directionalMode: mode, directions };
+          const sheets = sheetSeriesFor(category, mode, directions).map((_, sheetIndex) =>
+            capabilityOf(generatePrompt(category, defaultSubjectFor(category), { ...output, sheetIndex })),
+          );
+          if (sheets.length < 2) continue;
+          multiSheet += 1;
+          const where = `${category} / ${mode} / ${directions}`;
+
+          // One statement of the deliverable across the series, whichever sheet was compiled, and
+          // one branch — a batch cannot be told both that every one of its sheets delivers the
+          // answer and that this one is only a share of it.
+          expect(new Set(sheets.map((sheet) => sheet.series)).size, where).toBe(1);
+          expect(new Set(sheets.map((sheet) => sheet.statesOne)).size, where).toBe(1);
+
+          const answers = new Set(sheets.map((sheet) => sheet.own));
+          const [first] = sheets;
+          if (first === undefined) throw new Error('narrowed by the length check above');
+
+          if (first.statesOne) {
+            // The branch claims every sheet delivers the same thing, so they had better all state
+            // it — and the block below it stays silent, or it restates the sentence the branch has
+            // just made. That pairing is the contradiction the two halves of `seriesCapability.ts`
+            // produced while one compared plan objects and the other assembly sentences: four
+            // categories' split cores took the share branch and then stated the series' capability
+            // as the very sentence it had just set aside, verbatim, three lines on.
+            expect(answers.size, `${where}: one claim, several answers`).toBe(1);
+            expect(first.series, `${where}: the block restates the claim above it`).toBe('');
+          } else {
+            // The other branch says this sheet supplies a share, so the block has to name every
+            // share — including this sheet's — or a sheet is told the deliverable omits its own
+            // work.
+            expect(first.series, `${where}: a share branch with nothing under it`).not.toBe('');
+            expect(answers.size, `${where}: a share branch on a series with one answer`).toBeGreaterThan(1);
+            for (const answer of answers) {
+              expect(first.series, `${where}: a share the series statement omits`).toContain(
+                answer.replace(/\.$/, ''),
+              );
+            }
+          }
+        }
+      }
+    }
+    // Without this the loop above passes on having found no series at all, which is exactly what a
+    // plan table collapsed to one sheet per pairing would look like.
+    expect(multiSheet, 'no pairing produces a series to check').toBeGreaterThan(0);
+  });
+
+  it('writes no assembly sentence whose meaning moves with the sheet reading it', () => {
+    // The defect, and then its first repair, both turned on a referent the sentence does not carry
+    // with it. “Seen at each of the directions listed above” resolves *above* to section 3 of the
+    // prompt being compiled — four cardinal facings on sheet 1, four diagonals on sheet 2, one
+    // facing wherever the series statement quotes it. Rewording that to “the directions the sheet
+    // covers” moved the referent from section 3 to the sheet in front of the reader and changed
+    // nothing: a bullet labelled **Sheets 3–10** read on sheet 1 still resolved “the sheet” to
+    // sheet 1, and gave a plural label no antecedent to fall back on.
+    //
+    // So the rule is mechanical: a plan sentence may not point at *a* sheet at all. It says what
+    // the pieces are and how they relate — “one head, one torso and one pelvis per facing”, “one
+    // facing per sheet” — and the facings are the series list's job, which derives them per row.
+    // The plural naming a *kind* of sheet is not a referent and stays: CHARACTER's articulation
+    // fits its limbs to “the trunk drawn on the directional core sheets”, which is true from
+    // anywhere.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const plan of everySheetOf(category)) {
+        const where = `${category} / ${plan.name}`;
+        expect(plan.assembly, `${where}: cites a section by position`).not.toMatch(/listed above/i);
+        expect(plan.assembly, `${where}: points at one sheet`).not.toMatch(/\b(?:the|this) sheet\b/i);
+      }
+    }
+  });
+});
+
+describe('no category’s exclusion line names a component of its own plans', () => {
+  it('leaves the rescue to the inventory, which cannot be a proper subset of itself', () => {
+    // The defect: ICON's section 8 bans "any lettering, numeral, stack count, timer or key name on a
+    // component" and then rescued three of the sheet's four overlay families by name — a selected
+    // ring, a highlight halo and a tier mark. The fourth is the cooldown sweep, which section 4
+    // orders as `Cooldown sweep ×2` and which is the one the ban's own docblock says the word
+    // `timer` was written for.
+    //
+    // **A word-level collision check would not have caught it**, and that is why this is the
+    // assertion rather than the one the issue proposed: `timer` and `cooldown sweep` share no word,
+    // so the collision is semantic and no derivation over the two texts finds it. What can be held
+    // is the shape that made the omission possible — a list of the sheet's own pieces, three items
+    // long against a plan of four. A line that names none cannot name all but one, and section 8
+    // already has the general instrument: a reference to the inventory, which is what BACKGROUND's
+    // and FONT's lines close with and what ICON's now does.
+    //
+    // **Two words or more**, because a one-word label is an ordinary English word before it is a
+    // component: OBJECT lists a `base`, VEHICLE a `turret`, ITEM a `guard` and TERRAIN a `lip`, and
+    // an exclusion line reaching for any of those is using the word rather than naming the entry.
+    // Every piece the reported rescue named was a compound, which is what a piece of a sheet is
+    // usually called.
+    for (const category of SUBJECT_CATEGORIES) {
+      const line = CATEGORY_EXCLUSION_TEXT[category].toLowerCase();
+      const named = componentPhrases(category).filter(
+        (phrase) => phrase.includes(' ') && line.includes(phrase),
+      );
+      expect(named, `${category}: section 8 names its own components rather than citing section 4`).toEqual(
+        [],
+      );
+    }
+  });
+
+  it('rescues ICON’s overlay pieces by reference, the sweep among them', () => {
+    // The compiled pair the issue reported, on every configuration ICON can reach — its one mode
+    // against all five direction sets. Section 4 orders the sweep, section 8 bans a timer, and the
+    // sentence between them now covers whatever the inventory lists rather than three named pieces.
+    for (const directions of CATEGORY_DIRECTION_SETS.ICON) {
+      const prompt = generatePrompt('ICON', defaultSubjectFor('ICON'), {
+        ...DEFAULT_OUTPUT_CONFIG,
+        directions,
+      });
+      const inventory = sectionOf(prompt, 'COMPONENT INVENTORY');
+      const exclusions = sectionOf(prompt, 'EXCLUSIONS');
+
+      expect(inventory, directions).toContain('Cooldown sweep ×2');
+      expect(exclusions, directions).toContain('timer or key name on a component');
+      expect(exclusions, directions).toContain('is a component in its own right');
+      // The list that could leave one out is gone, rather than a fourth item having been added to it.
+      expect(exclusions, directions).not.toContain('A selected ring, a highlight halo and a tier mark');
+    }
+  });
+});
+
+describe('section 5’s Mirroring rule describes only the sets the sheet in front of the reader holds', () => {
+  /**
+   * The four categories that can be asked for a cut-out rig, and whether that rig draws any piece
+   * twice — once a side.
+   *
+   * Written out rather than read off the plans, for the reason `PAIRING_FRAME` above is: an
+   * expectation gathered from `planMirrorsPieces` would move with whatever the plans say and assert
+   * nothing about which answer is right. CHARACTER and CREATURE draw a left and a right of every
+   * limb, so one silhouette is the other reflected. OBJECT's rig is a housing, a base, a panel, a
+   * subassembly and two fittings, and has no sided piece at all. VEHICLE's *are* sided — a near-side
+   * and a far-side drive unit — and are still not a mirror pair: under a fixed camera the near track
+   * faces the viewer and the far one turns away, so neither is the other reflected, and producing
+   * the far one by flipping the near one is exactly the failure the second wording forbids.
+   */
+  const RIG_MIRRORS: Readonly<Partial<Record<SubjectCategory, boolean>>> = {
+    CHARACTER: true,
+    CREATURE: true,
+    OBJECT: false,
+    VEHICLE: false,
+  };
+
+  it('answers from the plan’s own entries, on every rigged category', () => {
+    const rigged = SUBJECT_CATEGORIES.filter((category) =>
+      modesFor(category).includes('CUTOUT_RIG_SINGLE_DIRECTION'),
+    );
+    // A fifth category gaining a rig has to be answered here, which is the point: whether its pieces
+    // mirror is a judgement about the drawing, and a new plan must not inherit an answer.
+    expect(Object.keys(RIG_MIRRORS).sort()).toEqual([...rigged].sort());
+
+    for (const category of rigged) {
+      const [rig] = sheetSeriesFor(category, 'CUTOUT_RIG_SINGLE_DIRECTION', 'SINGLE_FRONT');
+      expect(planMirrorsPieces(rig), category).toBe(RIG_MIRRORS[category]);
+    }
+  });
+
+  it('emits the left-and-right wording only where the sheet draws both sides', () => {
+    // The defect: the subsection was fixed text inside `[IF:RIG_MODE=CUTOUT_RIG]`, so it told an
+    // OBJECT rig of six pieces and a VEHICLE rig of a near and a far drive unit what mirroring
+    // “between the left and right sets” they permitted — sets neither of them holds.
+    for (const category of SUBJECT_CATEGORIES) {
+      if (!modesFor(category).includes('CUTOUT_RIG_SINGLE_DIRECTION')) continue;
+      const rigSection = sectionOf(
+        generatePrompt(category, defaultSubjectFor(category), {
+          ...DEFAULT_OUTPUT_CONFIG,
+          directionalMode: 'CUTOUT_RIG_SINGLE_DIRECTION',
+        }),
+        'CUT-OUT RIG REQUIREMENTS',
+      );
+
+      // Whichever branch it takes, the rule about *directions* survives — that half is true of every
+      // rig sheet and is the one clause the two wordings share.
+      expect(rigSection, category).toContain('### Mirroring');
+      expect(rigSection, category).toContain('forbids producing one by mirroring another');
+
+      const paired = RIG_MIRRORS[category] === true;
+      expect(rigSection.includes('between the left and right sets'), category).toBe(paired);
+      expect(
+        rigSection.includes('No piece on this sheet may be produced by mirroring another'),
+        category,
+      ).toBe(!paired);
+    }
+  });
+
+  it('carries no claim about section 4 on the other sheets a stored rig mode reaches', () => {
+    // The subsection is gated on `RIG_MODE`, not on the rig *plan*, and `offersRigMode` permits a
+    // stored `CUTOUT_RIG` on any pairing with no `PER_POSITION` sheet — which includes OBJECT's and
+    // VEHICLE's directional views. So the wording lands on sheets whose inventory is a different
+    // shape from the rig's, and a sentence about what section 4 lists is a rig-sheet fact
+    // generalised: the VEHICLE rig splits its drive into a near side and a far side, while the
+    // directional sheet lists one `Drive unit` per yaw. It said “section 4 lists them separately”
+    // and section 4 did not.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const mode of modesFor(category)) {
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          const rigSection = sectionOf(
+            generatePrompt(category, defaultSubjectFor(category), {
+              ...DEFAULT_OUTPUT_CONFIG,
+              directionalMode: mode,
+              directions,
+              rigMode: 'CUTOUT_RIG',
+            }),
+            'CUT-OUT RIG REQUIREMENTS',
+          );
+          if (rigSection === '') continue;
+
+          const where = `${category} / ${mode} / ${directions}`;
+          expect(rigSection, where).toContain('### Mirroring');
+          // The rule states what a generator may not do, and cites only the section that forbids
+          // producing a direction by mirroring — never what this sheet's own inventory holds.
+          expect(rigSection, where).not.toMatch(/lists them separately/);
+        }
+      }
     }
   });
 });

@@ -469,26 +469,87 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * that whether 2350 was still the right figure for a first visit is a question neither change is
  * placed to answer, and widening the margin would postpone it a second time.
  *
- * **Raised from 2353 by the third persistence backend**, which is what a second tab of this origin
- * now gets instead of a second library. The SAH-pool VFS admits one writer, so the second tab's
- * open is refused — and the app answered that exactly as it answered "this browser has no OPFS",
- * with a localStorage store the first tab cannot see. The worker classifies the rejection now, the
- * handshake carries which of the two it was, and `database.ts` answers the one that means "your
- * database is next door" with `HeldElsewhereBackend`: reads empty, every write rejects. Measured
- * against this branch's own base, rebuilt from the same `node_modules` — **2352.30 KiB across 60
- * entries** — this build reports **2353.98**, a delta of 1.68. No file was added to or removed from
- * `PRECACHE_SHAPES` and no chunk was renamed.
+ * **The stylesheet ground/ink sweep then spent 0.08 KiB of that 0.70, and the ceiling stays at
+ * 2353.** Two builds from the same `node_modules` on the same merged tree, differing in
+ * `src/index.css` alone: 2352.38 KiB with `main`'s stylesheet and **2352.46** with this branch's,
+ * both at 60 entries, no file added to or removed from `PRECACHE_SHAPES` and no chunk renamed. What
+ * a first visit gains is four declarations — a `--color-ink-placeholder`, a `::placeholder` rule,
+ * eight bytes on `::selection`'s colour, and one fewer in the forced-colours block. The ~135 lines
+ * that change beside them are docblock, which the build strips, so unlike the two raises above this
+ * one is not paying for prose.
  *
- * **1.37 of it is the third implementation of a nineteen-method interface**, which is the cost this
- * shape has and a flag on one of the other two would not: the backend itself, the refusal union the
- * handshake carries, the classifier in the worker, and the docblocks in five files that had recorded
- * the premise the change removes. **0.31 is prose** — rebuilt with the Architecture tab's card left
- * as it was, the figure is 2353.67 — and that card is where a reader who has not opened this app
- * twice learns the rule before they trip over it.
+ * The margin is **0.54 KiB**, narrower again than the 0.70, 0.82 and 0.86 the notes above each call
+ * the narrowest it has been. Three consecutive branches have now recorded that sentence, which is
+ * the answer to the question those notes keep deferring: the margin is not being spent by any one
+ * change, and the next branch to land anything at all will be asked to raise the ceiling again.
+ * **Raised from 2350 by moving section 0's scale example from the category to the sheet**, which is
+ * a raise bought almost entirely by prompt text. `SCALE_EXAMPLE_TEXT` was thirteen strings, one per
+ * category, and what a sheet actually draws is decided by the mode, the direction set and the sheet
+ * index as well — so on 98 of the 192 sheets the eight paired categories compile, the contract
+ * priced a component against one the sheet has no entry for. The example is now
+ * `SheetPlan.scaleExample`, answered on each of the thirty-two plans beside `assembly` and
+ * `scaleUnitFrame`. Measured against the main tip this branch started from (`2074844`), rebuilt from
+ * the same `node_modules` — **2348.81 KiB across 60 entries** — this build reports **2350.58 across
+ * 60**, a delta of 1.77 and 0.58 over the ceiling it was under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed: the plans are constant data the entry chunk already
+ * reached.
  *
- * 2355 leaves **1.02 KiB**, the same order as every margin above it.
+ * **All of the delta is content**, which puts it beside the guidance-paragraph half of the Projects
+ * raise rather than beside the two raises that bought machinery: nineteen more strings than the map
+ * they replace, each naming a pair of pieces rather than one category's, and the docblock arguing
+ * for them is stripped from the bundle as every other one is. 2352 restores a margin of the same
+ * order as every raise above rather than widening it.
+ *
+ * **Raised again from 2352 by giving section 6's series its own capability answer**, which is the
+ * same wrong-scope defect one level up and lands on the same branch. `SheetPlan.assembly` answers for
+ * one sheet, and the paragraph beneath it called that answer “the finished series’ capability” — so
+ * a ten-sheet character series stated the deliverable three incompatible ways depending on which
+ * sheet the reader compiled. Section 6 now asks the batch which shape it is: a run of one plan keeps
+ * a single claim, and a series of several plans states its share and then lists what the sheets
+ * assemble into between them, grouped from the batch the way the sheet list already is. Measured
+ * against this branch's previous commit (`ec3eacb`), rebuilt from the same `node_modules` —
+ * **2351.61 KiB across 60 entries** — this build reports **2352.63 across 60**, a delta of 1.02 and
+ * 0.63 over the ceiling the paragraph above bought. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **Roughly half of it is the template's second branch and half is `utils/seriesCapability.ts`**,
+ * which is a genuine split between prose and machinery rather than the near-pure-content raise
+ * above: the template carries two wordings where it carried one, and the grouping that renders the
+ * series' answer is about thirty lines of code the entry chunk reaches. 2354 restores a margin of
+ * the same order as every raise above.
+ *
+ *
+ * **Raised from 2353 by merging that branch into `main`, and the combination is again what spent
+ * it** — the third time this file has recorded that shape, and the third consecutive raise to do so.
+ * Three figures, all from this worktree's own `node_modules`:
+ *
+ * | Build | Precache | Entries |
+ * | --- | --- | --- |
+ * | `2074844`, the tip the scope-fix branch left | 2348.81 KiB | 60 |
+ * | that branch at its own tip, `e2d85d3` | 2352.47 | 60 |
+ * | the two merged | **2356.06** | 60 |
+ *
+ * The branch's own cost is therefore **3.66 KiB**, and `main`'s side is the 2.78 its own notes above
+ * measure between `2074844` and the stylesheet sweep. Added to this branch's base those come to
+ * 2355.25, against a merged 2356.06 — so **0.81 KiB is rolldown re-partitioning the split** around
+ * modules both sides touched, and not a file either wrote. No entry was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed.
+ *
+ * **The branch's 3.66 is almost all prompt text**, which is the cost this repository's own “derive
+ * every fact that two places state” rule imposes when the derivation replaces one string with
+ * thirty-two: section 0's scale example moved from a thirteen-entry map onto each of the plans,
+ * section 5 gained a second Mirroring wording, section 6 gained a derived statement of what a
+ * multi-sheet series assembles into, and ICON's section 8 rescue grew a sentence. Roughly a third of
+ * it is `utils/seriesCapability.ts` and `utils/planMirroring.ts`, the two pure functions those
+ * derivations read.
+ *
+ * 2357 leaves **0.94 KiB**, the order of the 0.54, 0.70, 0.82 and 0.86 the notes above each call the
+ * narrowest this margin has been. The note directly above answers the question the earlier ones keep
+ * deferring — the margin is not being spent by any one change — and this raise is deliberately no
+ * wider for the same reason: whether 2350 was still the right figure for a first visit is a decision
+ * for whoever owns this contract, not something a fourth branch should settle by widening it.
  */
-export const PRECACHE_CEILING_KIB = 2355;
+export const PRECACHE_CEILING_KIB = 2357;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

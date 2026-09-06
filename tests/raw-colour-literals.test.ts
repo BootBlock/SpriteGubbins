@@ -1,9 +1,8 @@
-import { readFileSync } from 'node:fs';
 import { relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { codeOnly } from '../scripts/codeOnly.ts';
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
  * Where a raw colour literal may appear in `src/`, and the rule that decides it.
@@ -61,7 +60,7 @@ function isExempt(path: string, allowed: string): boolean {
 
 /** Every line of `file` outside a comment that carries a hex literal, as `path:line`. */
 function offendingLines(file: string): string[] {
-  return codeOnly(readFileSync(file, 'utf8'))
+  return codeOnly(sourceText(file))
     .split('\n')
     .map((line, index) => (HEX.test(line) ? `${sourcePath(file)}:${index + 1}` : ''))
     .filter(Boolean);

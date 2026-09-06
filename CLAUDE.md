@@ -362,6 +362,7 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | Success / valid — it fits, it parsed, it is clean | `emerald` | `text-emerald-400` |
 | Error / invalid / destructive | `rose` | `text-red-500` |
 | Body, secondary and faint text | `text-ink` / `text-ink-muted` / `text-ink-faint` | `text-slate-300` |
+| The hint in an empty field — set once in `index.css`, for every placeholder in the app | `--color-ink-placeholder` | Tailwind preflight's untouched `currentcolor` at 50%, which measures 4.44:1 |
 | Prompt text, metrics, JSON | `font-mono` | a raw font stack |
 | Body type — a label, an input, a button, a guidance paragraph, a list row, prompt text | `text-xs` (13px), the app's default rung | a bracketed `text-[…px]`, which no longer moves when the scale does |
 | An uppercase eyebrow or legend, a badge pill, a mono metadata chip (timestamp, word count, dimensions) | `text-2xs` (11px), the floor | a bracketed size, or `text-xs` for something only ever scanned |
@@ -390,7 +391,8 @@ or a `bg-slate-900` scattered through a component is exactly the magic value the
 | A **measurement drawn over the reader's own artwork** — the sprite preview's bounding boxes | the two achromatic stops in `src/constants/spriteMarker.ts`, mirrored from `index.css` | any hue from the wheel, which would claim a meaning a bounding box does not have |
 | The **scrollbar** — set once in `index.css`, for both engines | `--color-scrollbar-track` / `-thumb` / `-thumb-hover` | `foundry-700` on `foundry-900`, which measures 1.19:1 |
 
-**The scrollbar's three tokens are the one row here no component reaches for.** They are consumed
+**Two rows here name a token no component reaches for, and both are painted by the engine.** The
+scrollbar's three are consumed
 only by the base-layer rules in `index.css` — `scrollbar-color` for Firefox and the
 `::-webkit-scrollbar-*` rules for Chromium — because a scrollbar is painted by the engine and has no
 element to put a class on. They exist as tokens anyway, and outside the foundry ramp, because WCAG
@@ -399,6 +401,28 @@ ratio needs L ≥ 0.48. `accent` and `neon` clear it and are spoken for — indi
 *live* — and a scrollbar is neither. `tests/design-tokens.test.ts` recomputes the ratio from the
 token values and fails below 3:1, in both the resting and the hover state, so the next palette change
 cannot quietly undo it.
+
+**`--color-ink-placeholder` is the second, and it is on the ramp rather than outside it.** A
+placeholder is painted by the engine into a pseudo-element that no class reaches, so it takes a rule
+in `index.css` for the same reason the scrollbar does — and until one was written, every placeholder
+in the app was Tailwind preflight's `color-mix(in oklab, currentcolor 50%, transparent)`, a value
+nobody in this project chose, at **4.44:1** measured from painted pixels against a 4.5:1 floor. What
+it takes is `var(--color-ink-faint)`: a placeholder is text a reader reads, so it is held to the ramp
+and the ramp's floor is the dimmest it may be. The role still earns a name, because a hint in a field
+is not a timestamp and a later change to one should not drag the other. **A dimmer fourth rung is
+arithmetically available and is still wrong** — 4.5:1 on the lightest ground a field sits on is
+reached at L 0.5954, below `ink-faint`, which is a tone that reads in a field and not on a row.
+
+Both rows are held by the same test, and it measures the grounds each is actually painted on: the
+scrollbar against its track and the three surfaces a scroll container sits on, the placeholder
+against five. **Which five is the part worth reading**, because the obvious answer is wrong and
+passes anyway. Every field *primitive* is a `foundry-950` fill at 80%, so a list built from
+`TextField`, `NumberField`, `SelectField` and `ComboBox` describes three composited grounds and one
+flat well — and misses the lightest ground in the app, because `PresetSavePanel` styles its own two
+inputs on a **flat `foundry-800`**, a whole ramp rung above any of them. `ink-faint` measures 6.52:1
+on the well and 5.82:1 there, so nothing is failing today; what would have been missed is which
+ground a re-tune takes under first. **A sweep over a role that a shared primitive usually renders is
+still a sweep over the call sites, not over the primitive.**
 
 **`accent` and `neon` are not interchangeable.** Indigo is the primary — actions, focus,
 selection, the background glow. Cyan marks something *live*: auto-syncing, generating,
@@ -489,6 +513,30 @@ glyph was three children away. And a class string that names a ground must carry
 is one branch of a ternary at a time, which is how `SegmentedChoice`'s selected pill and a hoisted
 class constant get checked at all. Run against the code before the fix, the first reports twelve
 tones across nine components and the second reports eight.
+
+**A third sweep reads the stylesheet, because a rule is not a class string.** Both sweeps above look
+for class names in `src/`, so a ground painted as `background-color: var(--color-accent)` in
+`index.css` names no class, sits in no component, and is invisible to each — and three defects were
+open at once on that single blind spot: `::selection` carrying `--color-ink` on the accent at
+**2.04:1**, every `::placeholder` in the app left on a framework default, and the forced-colours
+block painting text in the one colour the platform's own backplate hides. The sweep parses the
+declaration blocks and prices every pairing of a `color` with a ground, the wheel expanded to all ten
+stops wherever *either side* is `--color-tab`. **It is total**: a pairing in a shape it does not
+recognise *fails* rather than being skipped, so the answer to a new one is to teach the sweep what it
+means. Three shapes are accounted for rather than priced, each saying why — a translucent role fill,
+which the ground/ink rule deliberately excludes and the `action-tab` suite prices; `transparent` text
+whose glyphs the background fills, required to actually clip; and the forced-colours block, where the
+palette is the user's and what matters is *which* system colour. A colour with no ground in the file
+at all — a pseudo-element inheriting the markup's — has to be named, with where its ratio is
+measured instead, and a name that stops matching a real rule fails too, so the list cannot rot into a
+permission nobody uses.
+
+**Two of those branches guard cases the file does not currently contain**, and that is deliberate
+rather than dead code: the forced-colours block declares no `color` today and no rule paints
+`--color-tab` opaquely, so both arms skip nothing. Each exists because the alternative is *silent* —
+`oklchToken` resolves `--color-tab` through its `@theme` default to the violet stop, so a rule
+painting it that reached the pricing unexpanded would be measured against one stop of ten and pass or
+fail on whichever the studio happens to use.
 
 **A view's colour is assigned on the element the `var()`s resolve against** — `data-tab` on the
 shell in [src/App.tsx](src/App.tsx), and nowhere else. Custom properties are substituted at
