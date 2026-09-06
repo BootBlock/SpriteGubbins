@@ -442,10 +442,11 @@ describe('the figures the quantiser docblocks state', () => {
     /**
      * How many of `before`'s sprites came through with the extent they had.
      *
-     * **Paired by nearest centre, not by list position**, and the difference is not cosmetic.
-     * `spriteSegments` answers topmost-first, and a perturbed sheet meshes differently — the bottom
-     * row's tops move by different amounts and that row re-sorts, so index n is *not* the same piece
-     * of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
+     * **Paired by nearest centre, not by list position**, and the difference is not cosmetic. A
+     * perturbed sheet meshes differently, so a sprite can gain or lose a row of drawn pixels at its
+     * edge — enough to cross a row band, or to change how the merge folds a piece back onto its
+     * neighbour, and either of those renumbers everything after it. Index n is therefore *not* the
+     * same piece of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
      * neighbour that happens to share its extent and misses the one that genuinely kept it: two
      * errors that cancel into the right total for the wrong reason, which is a guard that would
      * certify a wrong figure the moment the perturbation, the grid or the key tolerance changed.

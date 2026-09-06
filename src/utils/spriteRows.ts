@@ -29,8 +29,14 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * **It sorts its input rather than trusting it.** The scan order the labelling produces is what
  * makes the greedy walk below enough — a box that does not reach the open band cannot reach any band
  * opened before it — and a function whose answer depends on how its caller happened to order an
- * argument is how the two derivations came to part company in the first place. Sorting a copy also
- * keeps the boxes themselves by reference, which `frameAlignment` depends on.
+ * argument is how the two derivations came to part company in the first place.
+ *
+ * **It sorts a copy, and the copy is not tidiness.** `sheetLayout` is handed `SpriteSegmentation`'s
+ * own box array whenever a download is written at 1×, because `scaleBoxes` returns its argument
+ * unchanged at that scale — so sorting in place would reorder the list the store holds and the
+ * preview draws its rings from, from inside a writer. The boxes themselves come back by reference:
+ * there is nothing to gain by cloning them, and one set of box objects travelling the whole pipeline
+ * is what lets `frameAlignment` exclude a frame's own box from the sheet's by object identity.
  *
  * Pure, and dominated by the one sort of its input — the banding walk and the per-row sort below it
  * are linear and near-linear in the boxes of a single row.

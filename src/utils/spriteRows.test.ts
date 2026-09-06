@@ -72,14 +72,27 @@ describe('spriteRows', () => {
     expect(spriteReadingOrder(shuffled)).toEqual(spriteReadingOrder(boxes));
   });
 
+  it('leaves the array it was handed in the order it was handed it', () => {
+    // `sheetLayout` is given `SpriteSegmentation`'s own box array whenever a download is written at
+    // 1× — `scaleBoxes` returns its argument unchanged there — and that array is what the store
+    // holds and the preview rings. Sorting in place would reorder the screen from inside a writer.
+    const boxes = [box(12, 1, 4, 4), box(2, 0, 4, 4)];
+    const handed = [...boxes];
+
+    spriteReadingOrder(boxes);
+    spriteRows(boxes);
+
+    expect(boxes).toStrictEqual(handed);
+  });
+
   it('returns the boxes it was handed, by reference', () => {
-    // `frameAlignment` excludes a frame's own box from the sheet's boxes by object identity, so a
-    // clone here would silently make every frame refuse its own move.
+    // One set of box objects travels the whole pipeline, which is what lets `frameAlignment`
+    // exclude a frame's own box from the sheet's by object identity.
     const one = box(2, 0, 4, 4);
     const two = box(12, 1, 4, 4);
 
-    expect(spriteReadingOrder([two, one])).toStrictEqual([one, two]);
     expect(spriteReadingOrder([two, one])[0]).toBe(one);
+    expect(spriteRows([two, one])[0]?.boxes[1]).toBe(two);
   });
 
   it('has no rows to report on a sheet with no sprites', () => {
