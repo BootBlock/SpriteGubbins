@@ -431,6 +431,15 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * narrowest this margin has been. It is deliberately not more: the question of whether 2350 was
  * still the right figure for what a first visit downloads is one this change is not placed to
  * answer, and widening the margin would only postpone it further.
+ *
+ * **The stylesheet ground/ink sweep then spent 0.08 KiB of it, and it is stylesheet rather than
+ * prose.** Two builds from the same `node_modules`, differing in `src/index.css` alone: `main`
+ * measures 2351.22 KiB and the branch 2351.30, both at 60 entries with no chunk added or renamed.
+ * What a first visit gains is a `--color-ink-placeholder` declaration, a `::placeholder` rule, eight
+ * bytes on `::selection`'s colour and one fewer declaration in the forced-colours block — the ~135
+ * lines that change alongside them are docblock, which the build strips. The margin is **0.70 KiB**,
+ * narrower again than the two figures above, so the paragraph they are in is worth reading before
+ * the next base figure is taken for slack.
  */
 export const PRECACHE_CEILING_KIB = 2352;
 
