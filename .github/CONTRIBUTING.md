@@ -59,7 +59,9 @@ npm run build
 npm run format
 ```
 
-Every push to `main` runs the same checks again in [tests.yml](workflows/tests.yml).
+Every push to `main` and every pull request runs the same checks again in
+[tests.yml](workflows/tests.yml) — the pull requests being Dependabot's and the
+collaborators', which are the ones that exist.
 
 Two rules are worth repeating because the cost of missing them is unrecoverable:
 
