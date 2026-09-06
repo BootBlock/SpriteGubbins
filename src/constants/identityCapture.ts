@@ -29,7 +29,7 @@ export const IDENTITY_CAPTURE_UNAVAILABLE = {
     'The Quantise tab’s result was computed before you changed the background key or the colour settings, so its colours are no longer the ones this configuration asks for. Open that tab to let it recompute, then come back.',
 
   keyStillOn:
-    'The quantised sheet still has its background key painted on it, and the key is most of a sheet by area — so the palette would lead with it rather than with the subject. In the Quantise tab, turn on “Key the background to transparency”, or raise the tolerance beside it if it is already on.',
+    'The quantised sheet still has its background key painted on it, and the key is most of a sheet by area — so the colour reduction that tab already applied was spent largely on the field, and the colours it left are not the ones your next sheet would be drawn in. In the Quantise tab, turn on “Key the background to transparency”, or raise the tolerance beside it if it is already on.',
 } as const;
 
 /**

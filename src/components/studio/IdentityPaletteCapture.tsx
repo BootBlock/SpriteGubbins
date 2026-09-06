@@ -58,11 +58,13 @@ export function IdentityPaletteCapture() {
 
       <p className="mt-2 text-xs leading-relaxed text-ink-faint">
         Take it from the Quantise tab, drop one here, or choose it. Its dominant colours are added to the lock
-        above as a <span className="font-mono">Palette</span> line, most-used first, with the background key
-        excluded. A file dropped here is read exactly as it arrived, so a sheet with anti-aliased edges
-        carries blends of that key into the tail of the list — the button reads the quantised result instead,
-        which is the clean list and the one the next sheet will be drawn in. Nothing is uploaded — the image
-        is read in this tab and never leaves it.
+        above as a <span className="font-mono">Palette</span> line, most-used first. The background key is
+        taken out first, the same way the Quantise tab takes it out — the field, and the edge pixels that
+        blend into it — so a sheet straight from a generator gives the subject’s own colours rather than the
+        field it was drawn on. What a file cannot give you is the rest of that tab: its grid and its colour
+        reduction are what decide the palette the next sheet is actually drawn in, so the button beside this
+        is still the one to reach for. Nothing is uploaded — the image is read in this tab and never leaves
+        it.
       </p>
     </section>
   );

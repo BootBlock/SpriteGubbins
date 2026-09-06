@@ -17,17 +17,25 @@ import { CORPUS_SHEETS, loadCorpus, type CorpusSheetName } from './sheetCorpus.t
  * The measurement `quantisedSheetCapture` refuses an unkeyed result on.
  *
  * That control offers the Quantise tab's result to the identity lock, and it refuses one the tab did
- * not key. The reason is not that the key is *present* — it is that `identityPalette` excludes the key
- * by exact RGB, deliberately, and a quantised field is no longer the exact key: the eight reference
- * sheets were resampled on the way out of their generator, so each one's magenta carries the
- * resampler's ringing, and the palette step returns the average of that spread rather than
- * `#FF00FF`. The exclusion therefore misses, and the field — most of a sheet by area — leads the
- * digest.
+ * not key. **The reason recorded here used to be that the digest would lead with the key**, because
+ * `identityPalette` excluded the key by exact RGB while a quantised field is not the exact key —
+ * these sheets were resampled on the way out of their generator, so each one's magenta carries the
+ * resampler's ringing. That is the defect fixed in `identityPalette`, which now removes the field
+ * with the app's own keying pass; measured over this corpus, an unkeyed result's digest leads with a
+ * subject colour on all eight.
  *
- * Both halves are asserted, because only the pair makes the refusal the right call rather than an
- * over-cautious one: an unkeyed result carries a near-key colour that the exclusion lets through, and
- * a keyed result carries none. Written against the whole corpus rather than `armour.png` alone, since
- * the claim is about what generated sheets are like and not about one of them.
+ * **The refusal survives it, on a different measurement.** What the button offers is the palette the
+ * next sheet will be drawn in, and the tab has *already reduced* the result it hands over — so on an
+ * unkeyed sheet that reduction spent its budget on a field covering half to three-quarters of the
+ * image. The colours that come back are therefore coarser and shifted, whatever the digest does with
+ * them afterwards: at a 32-colour budget the keyed and unkeyed digests of these eight sheets share
+ * between **0 and 4** of their six entries, and on `cyborg_monk.png` they share none at all. So the
+ * offer is refused because the answer would be *wrong*, not because it would be magenta.
+ *
+ * All three halves are asserted, because only the set makes the refusal the right call rather than
+ * an over-cautious one: the key leads neither digest, the keyed one carries no near-key colour, and
+ * the two still disagree. Written against the whole corpus rather than `armour.png` alone, since the
+ * claim is about what generated sheets are like and not about one of them.
  */
 
 const {
@@ -92,13 +100,31 @@ describe('identityPalette on a quantised result', () => {
   }, 300_000);
 
   it.each(CORPUS_SHEETS)(
-    'keeps %s’s key when the tab did not key it',
+    'leads %s with a subject colour even where the tab did not key it',
     (name) => {
       const image = corpus.get(name);
       expect(image).toBeDefined();
       if (image === undefined) return;
 
-      expect(paletteOf(image, false).filter(nearTheKey)).not.toHaveLength(0);
+      // The half that used to fail: an unkeyed result's field is a spread of near-magentas covering
+      // most of the sheet, and the digest opened with one of them on all eight.
+      expect(paletteOf(image, false).filter(nearTheKey)).toHaveLength(0);
+    },
+    300_000,
+  );
+
+  it.each(CORPUS_SHEETS)(
+    'still answers differently for %s depending on whether the tab keyed it',
+    (name) => {
+      const image = corpus.get(name);
+      expect(image).toBeDefined();
+      if (image === undefined) return;
+
+      // What the refusal below is actually protecting: the tab reduced the result before handing it
+      // over, and on an unkeyed sheet it spent that budget on the field. Six entries each, sharing
+      // between none and four — so an unkeyed offer would be a different palette, not merely a
+      // magenta one.
+      expect(paletteOf(image, false)).not.toEqual(paletteOf(image, true));
     },
     300_000,
   );

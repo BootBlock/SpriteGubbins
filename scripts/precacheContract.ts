@@ -402,8 +402,28 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * them — while `JsonPackTransfer`, `firstOfEachId` and `useQuantisePresetStore` gave their names up
  * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
  * left at the same order as every raise above rather than widened.
+ *
+ * **Raised from 2350 by the identity digest's key exclusion, and it is the smallest raise this
+ * figure has taken.** `identityPalette` excluded the background key by comparing RGB for exact
+ * equality, which matches nothing on a resampled sheet — so every digest read off real generator
+ * output led with the key field. It now removes the field with `keyBackground`, the app's own keying
+ * pass, which is what makes the picker route and the Quantise tab agree about where the field is.
+ * Measured against the main tip this branch merged (`47dc6a9`), rebuilt from the same
+ * `node_modules` — **2349.67 KiB across 60 entries** — this build reports **2350.83**, a delta of
+ * 1.16. No file was added to or removed from `PRECACHE_SHAPES` and no chunk was renamed.
+ *
+ * **The split is worth reading, because three-quarters of it is one import.** Rebuilt with the code
+ * change alone and both guidance paragraphs left as they were, the figure is **2350.57** — so
+ * **0.90 KiB buys the keying pass reaching the studio's chunk** (`StudioTab` +802 bytes,
+ * `SheetStepButtons` +336, the rest hash-length noise) and **0.26 buys the prose**: the capture
+ * control's paragraph and the `keyStillOn` message, both of which stated as fact two things the code
+ * did not do. That is the ordinary shape of a correctness fix that reaches for an existing seam
+ * rather than writing a second one — a local radius would have pulled `keyDistance` in regardless,
+ * and would have left the key's blends in four of the eight digests.
+ *
+ * The margin is left at 1.17, the same order as every raise above.
  */
-export const PRECACHE_CEILING_KIB = 2350;
+export const PRECACHE_CEILING_KIB = 2352;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
