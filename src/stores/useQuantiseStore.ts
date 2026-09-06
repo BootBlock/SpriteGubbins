@@ -156,7 +156,7 @@ export const useQuantiseStore = create<QuantiseState>((set, get) => {
    *
    * The patch is applied to the history's current position rather than to the store's fields, and
    * the two are the same value — see `history`. Taking it from there is what lets this stay one
-   * function for twenty dials without a hand-written list of them to copy the other nineteen.
+   * function for every dial without a hand-written list of them to copy the rest across.
    *
    * **A `null` key is a move that never coalesces with the gesture before it**, which is what the
    * sweep's answer wants: it moves twelve dials at once, and the positions it replaced are exactly

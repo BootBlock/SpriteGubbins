@@ -27,25 +27,23 @@ const ANY_SOURCE = /\.(tsx?|jsx?|mjs|css|html)$/;
  * leave the one place a size could hide from the guard: `src/constants/`, which is exactly where
  * CLAUDE.md's directory rule sends a hoisted constant.
  *
- * **Every guard suite that asks what counts as source calls this**, which is why the walk is a
- * module rather than a function inside one of them. A second copy would be a second answer to
- * "what counts as source", and the one that went stale would fail open: a directory the copy never
- * learned about is a directory its guard silently stops covering.
+ * **This is the one answer to "what counts as source", and there may be no second.** A guard that
+ * walked this tree for itself would be a second answer, and the one that went stale would fail open:
+ * a directory the copy never learned about is a directory that guard silently stops covering. Which
+ * is why the walk is a module rather than a function inside one of the suites that share it.
  *
- * **Which suites those are is a question the tree answers, and this docblock deliberately no longer
- * answers it.** `grep -rn scannableSources tests/` names today's, and the set grows with every guard
- * added — a bracketed font size and a `duration-` off the motion ladder, a hex a component wrote
- * instead of taking a token, a sticky column that clears the wrong height, a straight quote in a
- * string a reader sees, a file that has taken on a second responsibility, a call-site count a
- * docblock states, a shared guidance sentence typed out instead of imported. Two counts and a list
- * of seven stood here instead, and all three were wrong within hours of being written (issue #263):
- * a module that names its own dependants in prose is keeping a second copy of something the tree
- * already holds, and nothing fails when that copy rots. Several consumers also cut the list down
- * themselves rather than asking for a walk apiece — the punctuation sweep to the `.ts` and `.tsx`
- * that carry authored strings, since `.css` holds none of the app's prose; the size guard to the
- * modules that are not themselves tests; the sharing sweep to everything but the one file those
- * sentences are defined in — and how many do is the same hand-kept count, so it is not stated
- * either.
+ * The claim is narrow on purpose. A suite that walks a *narrower* directory for a question of its
+ * own is not a second answer to this one — several do — and neither is a consumer that cuts this
+ * list down after asking for it, which several also do, each to the subset its own question is
+ * about.
+ *
+ * **Which suites those are is a question the tree answers, and this docblock deliberately does
+ * not.** `grep -rn scannableSources tests/` names today's. Two counts and a list of seven stood
+ * here instead, and all three were wrong within hours of being written (issue #263) — then the
+ * first attempt at this paragraph swapped the list of seven suites for a list of seven *kinds* of
+ * guard, which is the same hand-kept enumeration in a different coat and was already short by two.
+ * A module that names its own dependants in prose is keeping a second copy of something the tree
+ * already holds, and nothing fails when that copy rots.
  */
 export function scannableSources(): string[] {
   return filesUnder('src', APP_SOURCE);

@@ -29,6 +29,7 @@ import { lumaOfChannels } from '../src/utils/lineVote.ts';
 import { srgbToOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
+import { affordableReach } from '../src/utils/symmetryAxis.ts';
 import { buildPalette } from '../src/utils/wuQuantiser.ts';
 import type {
   ColorReduction,
@@ -652,16 +653,19 @@ describe('the figures the quantiser docblocks state', () => {
     };
 
     /**
-     * The quantity `affordableReach` divides the budget by, summed exactly as that function sums it.
+     * The quantity `affordableReach` divides the budget by, summed the way that function sums it.
      *
      * Box area, not drawn pixels — and the reason this figure is asserted at all is that those two
      * are twenty per cent apart on this sheet, so a docblock naming the wrong one of them sends a
-     * reader re-deriving the reach to a number the code never computes (issue #237).
+     * reader re-deriving the reach to a number the code never computes (issue #237). The reach
+     * itself is taken from `affordableReach` rather than restated here, for the same reason: a
+     * restatement passes with the real divisor swapped, which is precisely the change this is
+     * guarding against.
      */
     const combinedBoxArea = (boxes: readonly SpriteBox[]): number =>
       boxes.reduce((total, box) => total + box.width * box.height, 0);
 
-    it('totals 17,201 pixels of box against 13,827 of artwork, and is searched to the full eight', () => {
+    it('totals 17,201 pixels of box against 13,827 of artwork, and is not narrowed by the budget', () => {
       const result = quantiseImage(sheet, AS_STATED());
       expect(result.sprites.kind).toBe('SEGMENTED');
       const boxes = result.sprites.kind === 'SEGMENTED' ? result.sprites.boxes : [];
@@ -678,20 +682,23 @@ describe('the figures the quantiser docblocks state', () => {
       }
       expect(opaque).toBe(13_827);
 
-      // `affordableReach`'s own arithmetic, restated here rather than exported: the budget buys 975
-      // sweeps where the full reach costs 33, which is what "searched to the full eight" means.
-      const sweeps = Math.floor(SYMMETRY_SWEEP_BUDGET / area);
-      expect(sweeps).toBe(975);
-      expect(Math.max(0, Math.min(SYMMETRY_AXIS_SEARCH, Math.floor((sweeps - 1) / 4)))).toBe(
-        SYMMETRY_AXIS_SEARCH,
-      );
+      // The budget buys 975 sweeps where the full reach costs 33, which is what "the budget narrows
+      // this sheet by nothing" means — and the reach is asked of the pass rather than recomputed
+      // here, so a divisor changed inside `affordableReach` fails this rather than sailing past it.
+      //
+      // What the budget leaves is not what each sprite gets: `bestAxis` caps every box at a quarter
+      // of its own width, which binds on ten of these fifteen. That is `SYMMETRY_AXIS_SEARCH`'s
+      // claim rather than this docblock's, and it is why nothing here states a total cost — a
+      // `(4 × reach + 1) × area` product is the nominal figure the cap leaves unspent.
+      expect(Math.floor(SYMMETRY_SWEEP_BUDGET / area)).toBe(975);
+      expect(affordableReach(boxes)).toBe(SYMMETRY_AXIS_SEARCH);
 
-      // And the cost the pass states in `symmetryAxis.ts`: 33 passes over those boxes come to 36% of
-      // one linear pass over the sheet. Deterministic, which the wall-clock ratio it replaced was
-      // not — that figure ran from a twelfth to a hundred-and-forty-third across six readings of
-      // "the same sheet".
-      const swept = (4 * SYMMETRY_AXIS_SEARCH + 1) * area;
-      expect(swept / (sheet.width * sheet.height)).toBeCloseTo(0.361, 3);
+      // The boxes are in the **reduced** result's coordinates, not the source sheet's, which is the
+      // half a total cost stated against 1254² gets wrong — and did, in the first replacement for
+      // the wall-clock ratio these docblocks used to carry. Pinned so that a pass moved back onto
+      // the source sheet fails here rather than quietly making the docblocks' arithmetic 36× out.
+      expect([result.image.width, result.image.height]).toEqual([209, 210]);
+      expect(area / (result.image.width * result.image.height)).toBeCloseTo(0.392, 3);
     }, 300_000);
   });
 });

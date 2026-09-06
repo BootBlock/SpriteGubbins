@@ -43,11 +43,11 @@ import { isRecord, pick, pickBoolean, pickSteppedNumber } from './readers.ts';
  * string-literal union in `types/quantiser.ts` is checked on the way out of storage exactly when it
  * is a field of {@link QuantiseDials} — which, since `QuantiseDials extends QuantiseTuning`, means
  * every dial the pipeline takes plus the three the tab adds. That is what a saved preset carries, so
- * that is what a stored blob can misspell. A union that is not such a field is session state and has
- * nothing to validate; `PREVIEW_MODES` is the one, and it says so. The rule is stated here rather
- * than verdict-by-verdict beside each array, because per-union verdicts are what drifted: two of
- * them claimed their dial was never persisted for months after this parser began checking it, and
- * four more docblocks were written against those two (issue #258).
+ * that is what a stored blob can misspell. A control union that is not such a field has nothing here
+ * to validate; `PREVIEW_MODES` is the one, and it says so. The rule is stated here rather than
+ * verdict-by-verdict beside each array, because per-union verdicts are what drifted: two of them
+ * claimed their dial was never persisted for months after this parser began checking it, and the
+ * docblocks around them were written against those two (issue #258).
  * `tests/quantise-dials-validation.test.ts` asserts the rule rather than the list, so the seventh
  * dial given a union is covered by the edit that gives it one.
  *

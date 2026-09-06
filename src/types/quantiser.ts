@@ -281,7 +281,7 @@ export interface ColorPlan {
  * which unions in this file are checked and which are not. This one is checked because `vote` is a
  * field of {@link QuantiseTuning}, so a saved quantiser preset carries it.
  *
- * It said the opposite for months, and four docblocks below were written against that (issue #258):
+ * It said the opposite for months, and the docblocks below were written against that (issue #258):
  * the choice was session state when this sentence was written, and the commit that made a preset
  * carry the whole tuning set left the sentence describing the arrangement it had just replaced.
  */

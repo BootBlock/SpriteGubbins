@@ -81,9 +81,9 @@ sw.addEventListener('install', (event) => {
       // entry but the seven** that come from *stable* URLs and carry an MD5 `revision`:
       // `index.html`, `404.html`, `coi-bootstrap.js`, `favicon.ico`, the icons and the
       // webmanifest. Stated as that relationship rather than as a pair of counts, which is what
-      // stood here and had drifted from 39-of-46 to 51-of-58 within four days (issue #267): the
-      // hashed total is a function of how rolldown splits the bundle, so it moves on most changes,
-      // while the seven are named above and do not. GitHub Pages sends `Cache-Control:
+      // stood here and which the build had left behind within four days (issue #267): the hashed
+      // total is a function of how rolldown splits the bundle, so it moves on most changes, while
+      // the seven are named above and do not. GitHub Pages sends `Cache-Control:
       // max-age=600` on all of them, so an entry answered from the HTTP cache within ten minutes
       // of a deploy precaches the **previous** build's shell beside this build's chunks — a shell
       // naming an entry chunk that is in neither the precache nor on the host. That is a blank page

@@ -164,9 +164,11 @@ describe('wrapForModel', () => {
   });
 
   it('puts the Flux restatement where a 512-token encoder will actually reach it', () => {
-    // The defect this pins: appended, the restatement sat ~3,600 tokens into a prompt an open-weight
-    // Flux stops reading at 512, so the one sentence written to cover Flux's missing negative prompt
-    // was the one sentence guaranteed to be cut. Asserted for both tiers, which reach the same
+    // The defect this pins: appended, the restatement sat several thousand tokens into a prompt an
+    // open-weight Flux stops reading at 512 — six to thirteen times the ceiling, depending on the
+    // category — so the one sentence written to cover Flux's missing negative prompt was the one
+    // sentence guaranteed to be cut. `tests/flux-ceiling-margin.test.ts` holds that margin; a figure
+    // stood here instead and was 1.8× low (issue #266). Asserted for both tiers, which reach the same
     // placement from different directions: the 512-token ceiling decides it for the weights, and
     // Black Forest Labs' word-order guidance decides it for the hosted tier.
     for (const targetModel of ['FLUX', 'FLUX_API'] as const) {

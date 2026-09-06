@@ -1783,11 +1783,13 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  * **The quantity divided out is the sprites' combined bounding-box area**, which is what
  * `affordableReach` sums and is not the same as the sheet's drawn pixels: the reference sheet's
  * fifteen boxes total **17,201** where the opaque pixels inside them number 13,827, twenty per cent
- * fewer. So the budget affords 975 sweeps against 33 at the full reach, and those fifteen are
- * searched to the full eight with two orders of magnitude to spare. A figure of “18,073 drawn
- * pixels” stood here and reproduced under none of fifteen readings of the conditions its neighbour
- * states (issue #237); `tests/quantiser-docblock-figures.test.ts` now re-derives the area and the
- * reach from the pass itself.
+ * fewer. Both are in the coordinates of the reduced result the pass reads rather than the source
+ * sheet's. So the budget affords 975 sweeps against the 33 the full reach costs — thirty times over,
+ * which is why **this** bound narrows that sheet by nothing, and the quarter-width cap in `bestAxis`
+ * is what actually narrows ten of its fifteen. A figure of “18,073 drawn pixels” stood here and
+ * reproduced under none of fifteen readings of the conditions its neighbour states (issue #237);
+ * `tests/quantiser-docblock-figures.test.ts` now re-derives the area from the segmentation and the
+ * reach from `affordableReach` itself.
  */
 export const SYMMETRY_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
 

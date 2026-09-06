@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { callSitesPassing, callSitesWrappingAttribute, siteName } from './jsxCallSites.ts';
+import { callSitesPassing, callSitesWrappingAttribute } from './jsxCallSites.ts';
 
 /**
  * The call-site counts `ControlTooltip`’s docblock states, re-counted from the components
@@ -25,15 +25,18 @@ import { callSitesPassing, callSitesWrappingAttribute, siteName } from './jsxCal
  * **It pins the figures, not the prose.** Whoever makes it fail has to go and restate the two
  * paragraphs and the `className` comment that cites the second; whether the restated argument still
  * holds at the new figure is a judgement no assertion can make. The disabled-capable sites are
- * pinned by file and line as well as by length, so a control swapped for one that cannot be disabled
- * fails here even where the total does not move.
+ * pinned by **file**, one entry per call site, so a control swapped for one that cannot be disabled
+ * fails here even where the total does not move, and so does a file losing or gaining one. By line
+ * as well, which this list first carried, every entry in a fifteen-file list moves whenever a
+ * docblock in one of them gains a line — and the suite then fails with a diff that says nothing
+ * about the property under test. `select-call-site-counts.test.ts` pins by file for the same reason.
  */
 
 /** Every `<ControlTooltip>` the app renders, counted through the `text` its props type requires. */
 const CALL_SITE_COUNT = 79;
 
 /**
- * Where the wrapped control is written with `disabled`, as `file:line`.
+ * Where the wrapped control is written with `disabled`, by the file that renders each.
  *
  * Every one of them is a `<button>`, and every value is an expression bar `GeneratorSiteLink`’s,
  * which writes the bare attribute. That is why the walk parses rather than matches: a regular
@@ -41,26 +44,73 @@ const CALL_SITE_COUNT = 79;
  * almost right.
  */
 const DISABLED_CAPABLE = [
-  'src/components/common/HistoryControls.tsx:60',
-  'src/components/common/HistoryControls.tsx:66',
-  'src/components/common/JsonPackTransfer.tsx:98',
-  'src/components/common/JsonPackTransfer.tsx:118',
-  'src/components/common/SheetStepButtons.tsx:55',
-  'src/components/common/SheetStepButtons.tsx:71',
-  'src/components/modals/HistoryFooter.tsx:46',
-  'src/components/modals/HistoryFooter.tsx:88',
-  'src/components/projects/PresetDetailsForm.tsx:107',
-  'src/components/projects/ProjectCreateForm.tsx:74',
-  'src/components/projects/ProjectDetailsForm.tsx:104',
-  'src/components/quantise/AutoTuneControls.tsx:105',
-  'src/components/quantise/DownloadControls.tsx:167',
-  'src/components/quantise/PaletteLockControls.tsx:110',
-  'src/components/quantise/QuantisePresetControls.tsx:126',
-  'src/components/studio/GeneratorSiteLink.tsx:36',
-  'src/components/studio/PresetSavePanel.tsx:175',
-  'src/components/studio/QuantisedSheetCaptureButton.tsx:86',
-  'src/components/tabs/PresetCollectionList.tsx:48',
-].sort((left, right) => left.localeCompare(right));
+  'src/components/common/HistoryControls.tsx',
+  'src/components/common/HistoryControls.tsx',
+  'src/components/common/JsonPackTransfer.tsx',
+  'src/components/common/JsonPackTransfer.tsx',
+  'src/components/common/SheetStepButtons.tsx',
+  'src/components/common/SheetStepButtons.tsx',
+  'src/components/modals/HistoryFooter.tsx',
+  'src/components/modals/HistoryFooter.tsx',
+  'src/components/projects/PresetDetailsForm.tsx',
+  'src/components/projects/ProjectCreateForm.tsx',
+  'src/components/projects/ProjectDetailsForm.tsx',
+  'src/components/quantise/AutoTuneControls.tsx',
+  'src/components/quantise/DownloadControls.tsx',
+  'src/components/quantise/PaletteLockControls.tsx',
+  'src/components/quantise/QuantisePresetControls.tsx',
+  'src/components/studio/GeneratorSiteLink.tsx',
+  'src/components/studio/PresetSavePanel.tsx',
+  'src/components/studio/QuantisedSheetCaptureButton.tsx',
+  'src/components/tabs/PresetCollectionList.tsx',
+];
+
+/**
+ * A whole number under a hundred, spelled the way this repository's prose spells one.
+ *
+ * The house voice writes a figure of this size as words, so an assertion looking for the digits
+ * would find nothing — and one looking for a hand-typed “seventy-nine” beside a `79` above is two
+ * literals free to part company: the count moves, the first case fails, whoever fixes it edits the
+ * constant, and the prose case goes on passing against a sentence that still says the old number.
+ * That is this suite reproducing inside itself the drift it exists to stop. Throws rather than
+ * guessing past 99, since a count that reaches a hundred wants the sentences re-read anyway.
+ */
+function inWords(value: number): string {
+  const units = [
+    'zero',
+    'one',
+    'two',
+    'three',
+    'four',
+    'five',
+    'six',
+    'seven',
+    'eight',
+    'nine',
+    'ten',
+    'eleven',
+    'twelve',
+    'thirteen',
+    'fourteen',
+    'fifteen',
+    'sixteen',
+    'seventeen',
+    'eighteen',
+    'nineteen',
+  ];
+  const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+
+  if (!Number.isInteger(value) || value < 0 || value > 99) {
+    throw new Error(`no spelling for ${String(value)} — extend inWords, and re-read the sentences`);
+  }
+
+  const under20 = units[value];
+  if (under20 !== undefined) return under20;
+
+  const ten = tens[Math.floor(value / 10)] ?? '';
+  const unit = units[value % 10] ?? '';
+  return value % 10 === 0 ? ten : `${ten}-${unit}`;
+}
 
 describe('the call-site counts ControlTooltip’s docblock states', () => {
   it(`wraps ${String(CALL_SITE_COUNT)} controls`, () => {
@@ -70,7 +120,9 @@ describe('the call-site counts ControlTooltip’s docblock states', () => {
   });
 
   it(`wraps a control that can be disabled at ${String(DISABLED_CAPABLE.length)} of them`, () => {
-    expect(callSitesWrappingAttribute('ControlTooltip', 'disabled').map(siteName)).toEqual(DISABLED_CAPABLE);
+    expect(callSitesWrappingAttribute('ControlTooltip', 'disabled').map((site) => site.file)).toEqual(
+      DISABLED_CAPABLE,
+    );
   });
 
   it('states both figures in the prose they are the argument for, here and in CLAUDE.md', () => {
@@ -83,12 +135,21 @@ describe('the call-site counts ControlTooltip’s docblock states', () => {
         .replace(/^\s*(?:\*|\/\/|\/\*\*)/gm, ' ')
         .replace(/\s+/g, ' ');
 
+    // Spelled from the constants above rather than written out beside them — see `inWords`.
+    const total = inWords(CALL_SITE_COUNT);
+    const disabled = inWords(DISABLED_CAPABLE.length);
+
     const component = flowed('src/components/common/ControlTooltip.tsx');
 
-    expect(component).toContain('There are seventy-nine of those');
-    expect(component).toContain('seventy-nine more targets');
-    expect(component).toContain('nineteen of these wrap a control that can be disabled');
-    expect(component).toContain('two of the nineteen disabled-capable controls');
-    expect(flowed('CLAUDE.md')).toContain('seventy-nine of them');
+    expect(component).toContain(`There are ${total} of those`);
+    expect(component).toContain(`${total} more targets`);
+    expect(component).toContain(`${disabled} of these wrap a control that can be disabled`);
+    expect(component).toContain(`two of the ${disabled} disabled-capable controls`);
+
+    // Both halves of CLAUDE.md's sentence, because the defect this suite is named for was that
+    // sentence stating the figure twice and both halves being wrong.
+    const conventions = flowed('CLAUDE.md');
+    expect(conventions).toContain(`${total} of them`);
+    expect(conventions).toContain(`${total} more glyphs`);
   });
 });

@@ -9,11 +9,12 @@ import { parseQuantiseDials } from '../src/db/quantiseDialsParser.ts';
  * The rule `parseQuantiseDials` states about which unions storage validates, asserted as a rule.
  *
  * A string-literal union in `types/quantiser.ts` is checked on the way out of storage exactly when
- * it is a field of `QuantiseDials`, because that is what a saved quantiser preset carries. Five
- * docblocks in that file said otherwise for months — two claiming their own dial was never
- * persisted and never validated, and three more written against those two — because each stated a
- * per-union verdict and nothing recomputed any of them (issue #258). The commit that made a preset
- * carry the whole tuning set added the two parser entries and left the two sentences behind.
+ * it is a field of `QuantiseDials`, because that is what a saved quantiser preset carries. Two
+ * docblocks in that file said otherwise for months — each claiming its own dial was never persisted
+ * and never validated — and the neighbouring ones were written against them, comparing themselves to
+ * a claim that was false, because each stated a per-union verdict and nothing recomputed any of them
+ * (issue #258). The commit that made a preset carry the whole tuning set added the two parser
+ * entries and left the two sentences behind.
  *
  * **It asserts the rule, not the list**, which is the difference that makes it durable: the union
  * fields are read off `QuantiseDials` with the compiler rather than named here, so a seventh dial
@@ -108,17 +109,75 @@ function unionDials(): [field: string, array: string][] {
     .map(([field, array]) => [field, array]);
 }
 
-describe('which unions storage validates', () => {
-  it('finds the dial fields whose type is a union, without being handed a list', () => {
-    const found = unionDials().map(([field]) => field);
+/**
+ * A dial whose written type *looks* like a string-literal union but which the walk could not resolve
+ * to an `as const` array in `types/quantiser.ts`.
+ *
+ * The rule below is asserted over what `unionDials` finds, so a dial the walk cannot see is a dial
+ * this suite silently stops covering — the same fail-open a hand-kept list has. An inline
+ * `'A' | 'B'`, or an alias declared in another file, is exactly that, and it is also a departure
+ * from the convention `configParsers.ts` states: the `as const` array is a union's single
+ * definition. Either way the answer is to look, not to skip.
+ */
+function unresolvedUnionDials(): string[] {
+  const resolved = new Set(unionDials().map(([field]) => field));
+  return [...dialFields()]
+    .filter(([field, written]) => !resolved.has(field) && written.includes("'"))
+    .map(([field]) => field);
+}
 
-    // A floor rather than an exact set: the rule below is what is being asserted, and this only has
-    // to establish that the walk resolved something. It caught nothing when the resolution was
-    // written against the alias names instead of the type-alias declarations, which is what it is
-    // for.
-    expect(found.length).toBeGreaterThanOrEqual(6);
-    expect(found).toContain('vote');
-    expect(found).toContain('dither');
+/**
+ * What each field's `pick(value, 'field', default, ARRAY)` in the parser names as its fourth
+ * argument, by field.
+ *
+ * Only an identifier counts. An inline array literal is the thing the parser's docblock forbids —
+ * a list restated where the check happens rather than read from where the union is defined — and it
+ * lands here as an absent entry, which fails the comparison against `unionDials()`.
+ */
+function pickedAgainst(): Map<string, string> {
+  const path = resolve(process.cwd(), 'src/db/quantiseDialsParser.ts');
+  const source = readFileSync(path, 'utf8');
+  const tree = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const found = new Map<string, string>();
+
+  const visit = (node: ts.Node): void => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isIdentifier(node.expression) &&
+      node.expression.text === 'pick' &&
+      node.arguments.length === 4
+    ) {
+      const [, key, , against] = node.arguments;
+      if (key !== undefined && ts.isStringLiteral(key) && against !== undefined && ts.isIdentifier(against)) {
+        found.set(key.text, against.text);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+
+  visit(tree);
+
+  // The two ladders are `pick`ed too — `keyTolerance` and `silhouetteThreshold` are numbers checked
+  // for membership rather than unions — so they are dropped here rather than being counted as a
+  // union the walk missed.
+  return new Map([...found].filter(([field]) => new Map(unionDials()).has(field)));
+}
+
+describe('which unions storage validates', () => {
+  it('finds every dial field whose type is a union, without being handed a list', () => {
+    const found = unionDials()
+      .map(([field]) => field)
+      .sort();
+
+    // **An exact set, not a floor.** A floor stood here and could not ratchet: a seventh dial given
+    // a union the walk cannot resolve leaves the count where it was, the floor satisfied, and the
+    // new dial unchecked — which is the fail-open this suite exists to close rather than reproduce.
+    // Failing on a *seventh* is the point: whoever adds one has to come and read this file.
+    expect(found).toEqual(['antiAlias', 'antiAliasPalette', 'dither', 'frameAlignment', 'symmetry', 'vote']);
+
+    // And the other half of the same fail-open: a union-shaped field the walk could not resolve at
+    // all, which would otherwise drop out of every case below without a word.
+    expect(unresolvedUnionDials()).toEqual([]);
   });
 
   it.each(unionDials())('refuses a stored %s outside %s', (field) => {
@@ -130,12 +189,13 @@ describe('which unions storage validates', () => {
   });
 
   it('checks each against the array that defines it, not a list restated in the parser', () => {
-    const parser = readFileSync(resolve(process.cwd(), 'src/db/quantiseDialsParser.ts'), 'utf8');
-
-    for (const [field, array] of unionDials()) {
-      expect(parser).toContain(`${field}:`);
-      expect(parser).toContain(array);
-    }
+    // Parsed, not searched. Two `toContain`s stood here and were satisfied by the import line alone,
+    // so a parser that restated `['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID']` inline while keeping the
+    // import would have passed the case named for forbidding exactly that. What the claim needs is
+    // the *fourth argument of the `pick` call* for that field, which is the identifier the parser's
+    // own docblock promises: "Every check is against the constant that defines the dial, never a
+    // list restated here."
+    expect(pickedAgainst()).toEqual(new Map(unionDials()));
   });
 
   it('leaves a valid member of every union alone', () => {
