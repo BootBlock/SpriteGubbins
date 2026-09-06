@@ -1098,7 +1098,8 @@ below was bought with one of those.
   cannot see: it pairs a ban against an *attribute* another field asks for, and never against a
   component section 4 orders. CHARACTER offered `No hands, no torso below the collarbone, no dialogue
   frame, no text` — a portrait's ban, left behind when PORTRAIT became its own category a fortnight
-  later — while every CHARACTER sheet orders a torso and three of the four order hands.
+  later — while five of its six plans order a torso and three order hands, which between them is
+  every sheet it can compile.
   [tests/exclusion-component-bans.test.ts](tests/exclusion-component-bans.test.ts) reads each
   comma-separated clause as a *bare* noun phrase, so `no hands` is caught and the five qualified bans
   (`No weapon fire or tracer effects` bans the discharge, not the gun) are left alone with no

@@ -403,18 +403,25 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
  * left at the same order as every raise above rather than widened.
  *
- * **Raised from 2350 by 1 KiB, and every byte of it is guidance prose.** Three cards told the reader
- * the *Assembly Base* field decides how the sheet is broken into components, which nothing in the
- * compiler does — so the true statement is now written once in `constants/guidanceSentences.ts` and
- * carried by all thirteen, five of those cards were rewritten, and TERRAIN's *Scatter Layer* card
- * gained a sentence saying what declining it costs. The sheet plan beside it gained a group intro
- * for the variants that group now holds. Measured from the same `node_modules`, `main` at `2074844`
- * builds **2349.68 KiB across 60 entries** and this build reports **2350.01 across 60** — a delta of
- * 0.33 KiB, no chunk added and none renamed. The ceiling moves because the base was already inside a
- * third of a KiB of it, which is a margin no change can be written against; 2351 restores the same
- * order of headroom the `isTextEntry` raise left, and is deliberately not more.
+ * **Not raised by the assembly-base guidance change, and the margin it leaves is 0.02 KiB.** That
+ * change is prose: three cards told the reader the *Assembly Base* field decides how the sheet is
+ * broken into components, which nothing in the compiler does, so the true statement is written once
+ * in `constants/guidanceSentences.ts` and carried by all thirteen, five of those cards were
+ * rewritten, and TERRAIN's *Scatter Layer* card and its sheet plan each gained a sentence. Measured
+ * from the same `node_modules`, `main` at `2074844` builds **2349.68 KiB across 60 entries** and
+ * that change reports **2349.98 across 60** — a delta of 0.30 KiB, no chunk added and none renamed.
+ * A first draft of its shared sentence over-claimed what the component list is a function of and
+ * measured 2350.01, which is where the 1 KiB raise it briefly carried came from; correcting the
+ * sentence made the raise unnecessary, and a ceiling is a budget rather than a margin policy, so it
+ * was put back.
+ *
+ * **What is left over is worth reading before the next change here.** 0.02 KiB is narrower than the
+ * 0.82 the `isTextEntry` note above already called the narrowest this margin had been, so the next
+ * addition of any size fails this build — including a comment. That is the ceiling doing its job
+ * rather than a fault, but whoever hits it is being asked a question this change deliberately did
+ * not answer: whether 2350 is still the right figure for what a first visit downloads.
  */
-export const PRECACHE_CEILING_KIB = 2351;
+export const PRECACHE_CEILING_KIB = 2350;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

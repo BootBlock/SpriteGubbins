@@ -110,12 +110,21 @@ export const ABSENT_OPTION_DROPS_THE_PIECES =
 /**
  * What the *Assembly Base* field does to the sheet, on all thirteen of them — which is nothing.
  *
- * Every category has one, under thirteen names: *Anatomy Base*, *Structure Base*, *Drive & Assembly
- * Base*, *Tile Assembly Base*, *Frame Assembly Base*, and so on. Each names how the deliverable is
- * meant to come apart, each reaches section 1 verbatim, and **none of them is read by anything that
- * decides what section 4 orders** — the plans are addressed by category, mode, direction set and
- * sheet index, and `sheetPlans/portrait.ts` argues at length why a plan reshaped around the subject
- * would be the only one in that directory that was.
+ * Every category has one, under eleven labels between them: *Anatomy Base* on CHARACTER and
+ * CREATURE, *Set Assembly Base* on FONT and ICON, then *Structure Base*, *Drive & Assembly Base*,
+ * *Tile Assembly Base*, *Frame Assembly Base* and the rest one apiece. Each names how the
+ * deliverable is meant to come apart, each reaches section 1 verbatim, and **none of them is read by
+ * anything that decides what section 4 orders** — the plans are addressed by category, mode,
+ * direction set and sheet index, and `sheetPlans/portrait.ts` argues at length why a plan reshaped
+ * around the subject would be the only one in that directory that was.
+ *
+ * **The sentence claims the base is not an input, and no more than that.** It says no entry of the
+ * component list is a function of *it*, rather than naming what the list is a function of — because
+ * that would be a longer list than the four addressing coordinates, and two of the others are things
+ * this app tells the reader about on the very cards this sentence lands on. The `clothing` value
+ * removes entries where a pool declares an `absentOption` (see {@link ABSENT_OPTION_DROPS_THE_PIECES}),
+ * and the `Additional …` field beside the base *adds* them — which CHARACTER's own card points at in
+ * the sentence after this one.
  *
  * Three cards said the opposite and stated figures to prove it: CHARACTER promised “the default 9
  * core and 34 limb components” — 9 is the `THREE_CLASSIC` figure where the studio's own default set
@@ -131,4 +140,4 @@ export const ABSENT_OPTION_DROPS_THE_PIECES =
  * for, and a card that stays silent leaves the reader to guess the answer the three got wrong.
  */
 export const ASSEMBLY_BASE_ADDS_NO_COMPONENTS =
-  'The base reaches the prompt as a statement of how the set is meant to come apart, and the sheet’s own component list is fixed by the category, the sheet mode and the direction set — so choosing another adds no slot and removes none.';
+  'The base reaches the prompt as a statement of how the set is meant to come apart, and no entry of the sheet’s own component list is a function of it — so choosing another adds no slot and removes none.';

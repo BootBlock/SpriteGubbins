@@ -80,10 +80,13 @@ const MATERIAL_ENTRIES: readonly ComponentEntry[] = [
  * explaining them with it — an intro over no bullets is what a filter applied inside one entry would
  * have left.
  *
- * **Five and two, which are the figures the ×6 and ×3 they came out of carried.** Splitting the
- * lines is a change to how the sheet is *addressed*, not to what it asks for: a subject with a
- * scatter layer still gets six base tiles and three of the second material, in the same reading
- * order, because this group follows the primaries above.
+ * **Five and two, which are the figures the ×6 and ×3 they came out of carried.** A subject with a
+ * scatter layer still gets six tiles of the base material and three of the second, so the sheet asks
+ * for what it always asked for. **The reading order does move**, and that is the change a reader of
+ * a sprite pack sees: the two primaries now come first and the seven variants after them, where the
+ * old plan ran all six base tiles before the second material's three. Grid position is the only
+ * identity a labelless sheet has, so this renumbers the blend set — which is why it is stated here
+ * and in the commit that made it, rather than left to be discovered from a manifest.
  */
 const SCATTER_VARIANT_ENTRIES: readonly ComponentEntry[] = [
   {
@@ -151,8 +154,13 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `The ${spellNumber(MATERIAL_ENTRIES.length)} materials the set joins, one tile each. These are the primaries every variant and
-transition below is drawn against, so the material in each is what the rest of the sheet matches:`,
+      // The sentence names the transitions and stops there. Naming the variants too would have this
+      // group promise entries the plan no longer holds for a subject that declined the scatter —
+      // the group below it is dropped, this one is not, and section 4 would then open by ordering
+      // something section 1 had just said the subject has none of. The transitions are on every
+      // blend set whatever the reader chose, so they are safe to point at from here.
+      intro: `The ${spellNumber(MATERIAL_ENTRIES.length)} materials the set joins, one tile each. These are the primaries the transition
+set below is drawn against, so the material in each is what the rest of the sheet matches:`,
       entries: MATERIAL_ENTRIES,
     },
     {

@@ -306,6 +306,18 @@ describe('a subject that says it has none of the attribute', () => {
     // outro is the second, listing the garments among what holds still across the set. Both are
     // correct and both would fail a sweep that read the whole group.
     //
+    // **So framing prose is a gap this does not close, and it is a real one.** The blend set's first
+    // group opened by calling its two tiles “the primaries every variant and transition below is
+    // drawn against” — true of a subject that has a scatter layer and false of one that declined it,
+    // whose sheet has no variant below at all. It is the same contradiction one line further out,
+    // and it was found by reading rather than by this. Extending the sweep to intros and outros is
+    // what would catch it, and it costs an exemption list: measured over the eight declaring
+    // categories it reports EFFECT twice and PORTRAIT once for prose that is correct, plus a
+    // coincidental hit where EFFECT's core intro uses the ordinary word “layer”. A hand-kept list of
+    // four exemptions guarding four sentences is not obviously better than none, so the gap is named
+    // here rather than papered over — and a plan's framing prose is worth reading against the
+    // absent value by hand whenever one is declared.
+    //
     // **What it matches on is the field's own label**, taken word by word, which is the vocabulary a
     // plan writing about the attribute reaches for — *Scatter Layer* against “surface scatter”. That
     // is a net rather than a proof: an entry that describes the attribute without ever naming it

@@ -12,11 +12,13 @@ import type { SubjectCategory } from '../src/types/subject.ts';
  * **The section 4 half of what `exclusionElements.ts` already does for section 1.** That table pairs
  * a ban against an *attribute* another field asks for — `No cape` beside a cloak — and it never
  * looks at the inventory, so a ban on a piece the plan itself orders was outside anything's reach.
- * CHARACTER offered `No hands, no torso below the collarbone, no dialogue frame, no text` while
- * every one of its four sheets orders a torso and three of them order hands: 15 components on the
- * directional core, 34 on the articulation sheet, 37 on the pose library, 15 on the rig. The value
- * was written on 2026-08-08, a fortnight before PORTRAIT became a category of its own, and it stayed
- * in the pool it was written for.
+ * CHARACTER offered `No hands, no torso below the collarbone, no dialogue frame, no text` while its
+ * plans order both. Measured over the six distinct plans the category compiles, **five order a
+ * torso** — all but the articulation sheet, whose inventory is limbs for a trunk the directional
+ * core drew — and **three order hands**: the pose library, that articulation sheet and the rig.
+ * Between them they cover every configuration, so no CHARACTER sheet escapes the ban naming
+ * something it draws. The value was written on 2026-08-08, a fortnight before PORTRAIT became a
+ * category of its own, and it stayed in the pool it was written for.
  *
  * **Section 8's closing paragraph is what kept it from breaking a sheet, and it is not a defence.**
  * Where section 4 lists an entry section 8 excludes, the entry is drawn — dropping it would mis-map
