@@ -33,28 +33,75 @@ import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts'
  * TERRAIN prompt tells the generator the pebbles and tufts are painted onto the tiles. That
  * agreement between the two sections is the point: a sheet whose section 1 forbids what its
  * section 4 requires is the contradiction these per-category plans exist to remove.
+ *
+ * **The variants are therefore a separate group, and it is the group a reader can decline.** Paint
+ * settles what the scatter *is*, and it does not settle how many tiles are ordered to differ in it:
+ * the *Scatter Layer* pool offers `Bare Untouched Ground`, and for a reader who picks it the seven
+ * variants below were still ordered to differ in a property section 1 had just said the subject does
+ * not have — under section 4's own rule against merging entries or substituting duplicates. They
+ * carry `clothingRole: 'VARIES_IN_IT'`, which drops them without claiming they ever drew the
+ * scatter, and the group goes with them because `planAsDrawn` takes an emptied group out. What is
+ * left is the two primaries and the fourteen transitions — the sixteen the transition group's own
+ * intro calls the set an autotiler indexes — so declining buys a plainer sheet rather than a
+ * broken one.
  */
 
 /**
- * The two materials the blend set joins, one entry each.
+ * The two materials the blend set joins, one primary tile each.
  *
- * Hoisted because three sentences on this sheet count them: this group's own intro opens on how many
- * materials the set joins, the transition group's intro adds one primary per material to reach the
- * sixteen an autotiler indexes, and that group's outro says how many tiles repeat against themselves.
- * All three read the length of this list, so a third material moves every one of them.
+ * Hoisted because four sentences on this sheet count them: this group's own intro opens on how many
+ * materials the set joins, the variant group below draws one run per material, the transition
+ * group's intro adds one primary per material to reach the sixteen an autotiler indexes, and that
+ * group's outro says how many tiles repeat against themselves. All four read the length of this
+ * list, so a third material moves every one of them.
  */
 const MATERIAL_ENTRIES: readonly ComponentEntry[] = [
   {
     label: 'base-material-tile',
-    text: 'Base material tile ×6: the primary, and five variants differing only in surface scatter',
-    count: 6,
+    text: 'Base material tile ×1: the primary of the two',
+    count: 1,
     kind: 'tile',
   },
   {
     label: 'second-material-tile',
-    text: 'Second material tile ×3: the primary, and two variants',
-    count: 3,
+    text: 'Second material tile ×1: the primary the first washes into',
+    count: 1,
     kind: 'tile',
+  },
+];
+
+/**
+ * The repeat-breaking variants of those two primaries, and the only entries on this sheet a reader
+ * can decline.
+ *
+ * Split out of `MATERIAL_ENTRIES` rather than counted inside them, because an entry's `count` is
+ * fixed and this is the one run on the sheet whose length is a function of the subject. Written as
+ * two entries in a group of their own so that dropping both empties the group, which takes the intro
+ * explaining them with it — an intro over no bullets is what a filter applied inside one entry would
+ * have left.
+ *
+ * **Five and two, which are the figures the ×6 and ×3 they came out of carried.** A subject with a
+ * scatter layer still gets six tiles of the base material and three of the second, so the sheet asks
+ * for what it always asked for. **The reading order does move**, and that is the change a reader of
+ * a sprite pack sees: the two primaries now come first and the seven variants after them, where the
+ * old plan ran all six base tiles before the second material's three. Grid position is the only
+ * identity a labelless sheet has, so this renumbers the blend set — which is why it is stated here
+ * and in the commit that made it, rather than left to be discovered from a manifest.
+ */
+const SCATTER_VARIANT_ENTRIES: readonly ComponentEntry[] = [
+  {
+    label: 'base-material-tile-variants',
+    text: 'Base material tile variants ×5: the primary redrawn, differing only in surface scatter',
+    count: 5,
+    kind: 'tile',
+    clothingRole: 'VARIES_IN_IT',
+  },
+  {
+    label: 'second-material-tile-variants',
+    text: 'Second material tile variants ×2: the primary redrawn, differing only in surface scatter',
+    count: 2,
+    kind: 'tile',
+    clothingRole: 'VARIES_IN_IT',
   },
 ];
 
@@ -112,10 +159,22 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   groups: [
     {
       heading: null,
-      intro: `The ${spellNumber(MATERIAL_ENTRIES.length)} materials the set joins. The variants carry the subject’s scatter layer — the pebbles, tufts
-and drift that keep a field of one material from reading as a single tile stamped in rows — so they
-differ in what is scattered across them and in nothing else:`,
+      // The sentence names the transitions and stops there. Naming the variants too would have this
+      // group promise entries the plan no longer holds for a subject that declined the scatter —
+      // the group below it is dropped, this one is not, and section 4 would then open by ordering
+      // something section 1 had just said the subject has none of. The transitions are on every
+      // blend set whatever the reader chose, so they are safe to point at from here.
+      intro: `The ${spellNumber(MATERIAL_ENTRIES.length)} materials the set joins, one tile each. These are the primaries the transition
+set below is drawn against, so the material in each is what the rest of the sheet matches:`,
       entries: MATERIAL_ENTRIES,
+    },
+    {
+      heading: 'Repeat-breaking variants',
+      intro: `The ${spellNumber(componentTotal(SCATTER_VARIANT_ENTRIES))} tiles that carry the subject’s scatter layer — the pebbles, tufts and drift that keep a
+field of one material from reading as a single tile stamped in rows. Each is its own primary above
+redrawn: the material underneath is identical, so they differ in what is scattered across them and in
+nothing else, and any one of them may stand in for its primary wherever the autotiler places it:`,
+      entries: SCATTER_VARIANT_ENTRIES,
     },
     {
       heading: 'Transition set',

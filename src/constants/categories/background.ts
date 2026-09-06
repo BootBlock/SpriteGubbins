@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ABSENT_OPTION_DROPS_THE_PIECES, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ABSENT_OPTION_DROPS_THE_PIECES,
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -204,7 +208,8 @@ export const BACKGROUND: CategoryDefinition = {
       key: 'anatomy',
       label: 'Layer Assembly Base',
       tooltip:
-        'How the deliverable is cut so the engine can scroll it. Choose by which way it has to repeat — a seamless band loops along one axis for ever, a stacked set is several bands scrolled at different rates, and a single panel never repeats at all and is sized to the screen instead.',
+        'How the deliverable is cut so the engine can scroll it. Choose by which way it has to repeat — a seamless band loops along one axis for ever, a stacked set is several bands scrolled at different rates, and a single panel never repeats at all and is sized to the screen instead. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Single Non-Repeating Panel',
         'Horizontally Seamless Band',

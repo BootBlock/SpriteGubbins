@@ -403,6 +403,63 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
  * left at the same order as every raise above rather than widened.
  *
+ * **Raised from 2350 by 2 KiB, and no single change is what spent it — the *combination* is.** Four
+ * builds from the same `node_modules` say it, and the fourth is the only one that fails:
+ *
+ * | Build | Precache | Entries |
+ * | --- | --- | --- |
+ * | `2074844`, the tip both branches left | 2349.68 KiB | 60 |
+ * | `main` at `c0e426a` | 2349.98 | 60 |
+ * | the assembly-base guidance change alone | 2349.98 | 60 |
+ * | the two merged | **2351.14** | 60 |
+ *
+ * Each half adds 0.30 KiB and passes on its own; together they add 1.46, because the last 0.86 is
+ * rolldown re-partitioning the split around the modules both touched rather than any file either
+ * branch wrote. **That is the case CLAUDE.md names as the one a local gate cannot see** — several
+ * agents merge into `main`, and the combination that lands is one nobody ran anything against. It is
+ * also what a 0.02 KiB margin buys: `main` had been sitting that far under the ceiling, so the next
+ * branch to land anything at all was going to be the one that paid for it.
+ *
+ * **The guidance change's own 0.30 KiB is prose**, which is the cost this repository's guidance rule
+ * imposes: three cards told the reader the *Assembly Base* field decides how the sheet is broken
+ * into components, which nothing in the compiler does, so the true statement is written once in
+ * `constants/guidanceSentences.ts` and carried by all thirteen, five of those cards were rewritten,
+ * and TERRAIN's *Scatter Layer* card and its sheet plan each gained a sentence. No chunk was added
+ * and none renamed, on any of the four builds.
+ *
+ * 2352 leaves **0.86 KiB**, which is the order of the 0.82 the `isTextEntry` note above calls the
+ * narrowest this margin has been. It is deliberately not more: the question of whether 2350 was
+ * still the right figure for what a first visit downloads is one this change is not placed to
+ * answer, and widening the margin would only postpone it further.
+ *
+ * **Raised again from 2352 by the identity digest's key exclusion**, which is joint-smallest with the
+ * 2254 → 2256 above and lands one commit behind the paragraph before it. `identityPalette` excluded
+ * the background key by comparing RGB for exact equality, which removes essentially nothing on a
+ * resampled sheet — so every digest read off real generator output led with the key field. It now
+ * removes the field with `keyBackground`, the app's own keying pass, which is what makes the picker
+ * route and the Quantise tab agree about where the field is. Measured against `main` at `17af148`,
+ * rebuilt from the same `node_modules` — **2351.14 KiB across 60 entries**, the figure the paragraph
+ * above records — this build reports **2352.30**, a delta of 1.16. No file was added to or removed
+ * from `PRECACHE_SHAPES` and no chunk was renamed.
+ *
+ * **The delta is the same 1.16 this branch measured against `47dc6a9`**, where it took the figure
+ * from 2349.67 to 2350.83 — so unlike the raise above it, none of this one is the split
+ * re-partitioning around another branch. It is the change's own cost, and it survived being carried
+ * onto a base 1.47 KiB higher unchanged.
+ *
+ * **The split is worth reading, because three-quarters of it is one import.** Rebuilt with the code
+ * change alone and both guidance paragraphs left as they were, the figure is **2350.57** — so
+ * **0.90 KiB buys the keying pass reaching the studio's chunk** (`StudioTab` +802 bytes,
+ * `SheetStepButtons` +336, the rest hash-length noise) and **0.26 buys the prose**: the capture
+ * control's paragraph and the `keyStillOn` message, both of which stated as fact two things the code
+ * did not do. That is the ordinary shape of a correctness fix that reaches for an existing seam
+ * rather than writing a second one — a local radius would have pulled `keyDistance` in regardless,
+ * and would have left the key's blends in four of the eight digests.
+ *
+ * 2353 leaves **0.70 KiB**, which is the order of the 0.82 and 0.86 the two notes above call the
+ * narrowest this margin has been, and deliberately not more: the paragraph before this one records
+ * that whether 2350 was still the right figure for a first visit is a question neither change is
+ * placed to answer, and widening the margin would postpone it a second time.
  * **Raised from 2350 by moving section 0's scale example from the category to the sheet**, which is
  * a raise bought almost entirely by prompt text. `SCALE_EXAMPLE_TEXT` was thirteen strings, one per
  * category, and what a sheet actually draws is decided by the mode, the direction set and the sheet
@@ -438,8 +495,37 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * above: the template carries two wordings where it carried one, and the grouping that renders the
  * series' answer is about thirty lines of code the entry chunk reaches. 2354 restores a margin of
  * the same order as every raise above.
+ *
+ * **Raised again from 2353 by the merge of the scope-fix branch into `main`, and the combination is
+ * again what spent it** — the third time this file has recorded that shape and the second in
+ * consecutive raises. Three figures, all from this worktree's own `node_modules`:
+ *
+ * | Build | Precache | Entries |
+ * | --- | --- | --- |
+ * | `2074844`, the tip the scope-fix branch left | 2348.81 KiB | 60 |
+ * | that branch at its own tip, `e2d85d3` | 2352.47 | 60 |
+ * | the two merged | **2355.90** | 60 |
+ *
+ * The branch's own cost is therefore **3.66 KiB**, and `main`'s side is the 2.62 the two paragraphs
+ * above measure and record. Added to this branch's base those come to 2355.09, against a merged
+ * 2355.90 — so **0.81 KiB is rolldown re-partitioning the split** around modules both sides touched,
+ * and not a file either wrote. No entry was added to or removed from `PRECACHE_SHAPES`, and no chunk
+ * was renamed.
+ *
+ * **The branch's 3.66 is almost all prompt text**, which is the cost this repository's own “derive
+ * every fact that two places state” rule imposes when the derivation replaces one string with
+ * thirty-two: section 0's scale example moved from a thirteen-entry map onto each of the plans,
+ * section 5 gained a second Mirroring wording, section 6 gained a derived statement of what a
+ * multi-sheet series assembles into, and ICON's section 8 rescue grew a sentence. Roughly a third of
+ * it is `utils/seriesCapability.ts` and `utils/planMirroring.ts`, which are the two new pure
+ * functions the derivations read.
+ *
+ * 2357 leaves **1.10 KiB**, the order of the 0.70, 0.82 and 0.86 the notes above call the narrowest
+ * this margin has been. It is deliberately not more, for the reason those notes give: whether 2350
+ * was still the right figure for what a first visit downloads is a question none of these changes is
+ * placed to answer, and widening the margin postpones it again.
  */
-export const PRECACHE_CEILING_KIB = 2354;
+export const PRECACHE_CEILING_KIB = 2357;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

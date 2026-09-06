@@ -23,11 +23,15 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * sprite on the sheet in one row. What the band means is "the strip of the sheet every one of these
  * pieces passes through", and that is a property only intersection preserves.
  *
- * **The boxes are walked in the order they arrive, and that order is reading order.**
- * `spriteSegments` returns them topmost-first, so a row's pieces are consecutive on every ordinary
- * sheet and a greedy walk is enough. A piece that does not share the current band opens a new row
- * rather than being offered to an earlier one — so a sheet interleaving two rows of very different
- * heights can split a row in two. That is left as it is deliberately: the alternative is a
+ * **The boxes are walked topmost-first, and this sorts them into that order rather than trusting
+ * the caller to.** A greedy walk is only enough while a row's pieces arrive consecutively, and the
+ * order they arrive in is not this function's to assume: `spriteSegments` hands back the *reading*
+ * order — rows banded by any overlap, each of them left to right — which is a different ordering
+ * from the one this walk needs, and depending on a caller's ordering is how the app came to hold two
+ * derivations of what a row is (see `spriteRows`). Sorting a copy leaves the boxes themselves by
+ * reference, which the note below depends on. A piece that does not share the current band opens a
+ * new row rather than being offered to an earlier one — so a sheet interleaving two rows of very
+ * different heights can split a row in two. That is left as it is deliberately: the alternative is a
  * clustering pass with a second parameter nobody could tune, and each half of a split row is still
  * fitted and read honestly — or dropped, where the split leaves it under the floor below, which is
  * the same rule every short row falls to.
@@ -44,14 +48,16 @@ import type { SpriteBox } from '../types/quantiser.ts';
  * that cloned a box — rather than the array holding it — would silently make every frame refuse its
  * own move. The rows are new arrays; the boxes in them are the ones this was handed.
  *
- * Pure, and linear in the boxes.
+ * Pure, and dominated by the one sort of its input.
  */
 export function spriteStrips(boxes: readonly SpriteBox[]): readonly (readonly SpriteBox[])[] {
+  const scanned = [...boxes].sort((left, right) => left.top - right.top || left.left - right.left);
+
   const rows: SpriteBox[][] = [];
   let row: SpriteBox[] = [];
   let band: Band | null = null;
 
-  for (const box of boxes) {
+  for (const box of scanned) {
     const extent: Band = { top: box.top, bottom: box.top + box.height };
     if (band !== null && shares(band, extent)) {
       row.push(box);

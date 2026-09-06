@@ -857,8 +857,7 @@ others.
 
 ### The finished series’ capability
 
-Brought together, the sheets of this series deliver all of the following. Draw only the share this
-sheet’s own inventory names.
+Brought together, the sheets of this series deliver all of the following:
 
 [DEFINE:SERIES_CAPABILITY]
 [/IF]

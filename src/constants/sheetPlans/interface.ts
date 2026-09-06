@@ -32,7 +32,7 @@ import type { SheetPlan } from '../../types/components.ts';
  * an assembly built around a corner ornament while section 4 listed none. Removing the value is
  * ICON's resolution reached the same way — an entry may only be taken out where the reader declining
  * the attribute gets a *plainer* sheet, and here they would get an incomplete one. The
- * `drawsClothing` marking stays, because section 4 does draw the trim as its own geometry and
+ * `clothingRole` marking stays, because section 4 does draw the trim as its own geometry and
  * section 1's exception is right to say so; what changed is that no value asks for it to be dropped.
  */
 
@@ -113,7 +113,7 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
         // it has said the widget carries no trim, and a bundled line could only be dropped by
         // taking a divider rule and a resize grip with it. Neither of those is trim: a rule between
         // two sections and the grip a window is resized by are furniture the widget has whatever
-        // its edge is treated with. See `ComponentEntry.drawsClothing`.
+        // its edge is treated with. See `ComponentEntry.clothingRole`.
         {
           label: 'divider-and-grip',
           parts: ['divider-rule', 'resize-grip'],
@@ -126,7 +126,7 @@ export const INTERFACE_STATE_LIBRARY: SheetPlan = {
           text: 'Corner ornament ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
       ],
       outro: `Every state of a widget is that same widget changed, never a second design of it: the silhouette,
@@ -243,7 +243,7 @@ its resting one shifts on the screen when it is pressed.`,
           text: 'Corner ornament ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
       ],
     },

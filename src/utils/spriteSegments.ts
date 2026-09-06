@@ -68,8 +68,9 @@ export function spriteSegments(image: ImageData, gap: number): SpriteSegmentatio
  *
  * By the area of the **box** rather than by the artwork inside it, because the box is what has to
  * fit: a sprawling figure that fills a third of its bounds still needs every pixel of them. Ties
- * fall to the earlier box, which is the topmost — {@link spriteSegments} returns them in reading
- * order, so the answer is stable across two runs at the same settings.
+ * fall to the earlier box, which is the one a reader meets first — {@link spriteSegments} returns
+ * them in reading order, screen-left to screen-right and then top to bottom, so the answer is stable
+ * across two runs at the same settings.
  */
 export function widestSprite(boxes: readonly SpriteBox[]): SpriteBox | null {
   return boxes.reduce<SpriteBox | null>(
@@ -128,8 +129,10 @@ interface Labelled {
  * object at all, and past the ceiling nothing is materialised — the counts are enough to say the
  * sheet scattered, which is the only answer the caller can give from there.
  *
- * The regions come back in scan order — topmost first, and leftmost among those — which is what
- * makes everything downstream of it deterministic without sorting anything twice.
+ * The regions come back in scan order — topmost first, and leftmost among those — which is a
+ * property of the walk rather than the order anything downstream sees: {@link mergeNearby} folds
+ * them and hands the result to `spriteRows`, which puts the sprites in the reading order section 4
+ * of the prompt fixes. What this order buys is that the fold is deterministic before it gets there.
  */
 function labelledBounds(image: ImageData): Labelled {
   const { width, height, data } = image;

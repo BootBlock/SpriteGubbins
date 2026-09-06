@@ -133,7 +133,8 @@ describe('ControlTooltip', () => {
 
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
 
-    // The reported defect: around fifty controls take this treatment, so a card arriving one grace
+    // The reported defect: every control that does something takes this treatment, so a card
+    // arriving one grace
     // period after every press is a paragraph of prose following every press in the app — over the
     // control the tap has just used, which is what the press-dismisses rule exists to prevent.
     await waitOutGracePeriod();

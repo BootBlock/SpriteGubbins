@@ -29,7 +29,7 @@ export const IDENTITY_CAPTURE_UNAVAILABLE = {
     'The Quantise tab’s result was computed before you changed the background key or the colour settings, so its colours are no longer the ones this configuration asks for. Open that tab to let it recompute, then come back.',
 
   keyStillOn:
-    'The quantised sheet still has its background key painted on it, and the key is most of a sheet by area — so the palette would lead with it rather than with the subject. In the Quantise tab, turn on “Key the background to transparency”, or raise the tolerance beside it if it is already on.',
+    'The quantised sheet still has its background key painted on it, and the key is most of a sheet by area — so the colour reduction that tab already applied was spent largely on the field, and the colours it left are not the ones your next sheet would be drawn in. In the Quantise tab, turn on “Key the background to transparency”, or raise the tolerance beside it if it is already on.',
 } as const;
 
 /**
@@ -41,8 +41,8 @@ export const IDENTITY_CAPTURE_UNAVAILABLE = {
  * where a generous setting risks eating the artwork, while this decides whether anything key-shaped
  * *survived*, where a mean setting risks saying no when the answer is yes. At the ladder's `0` rung
  * keying removes only the exact key, which on a resampled sheet is almost nothing — so a reading
- * taken at the reader's own tolerance would report a clean sheet and the lock would be written with
- * the field leading it.
+ * taken at the reader's own tolerance would report a clean sheet, and the lock would be written from
+ * a result whose colour reduction had been spent on a field still covering most of it.
  *
  * Measured over all eight sheets in `test_sprites/`, quantised at a grid of 4 and 32 colours, the
  * separation is total: the border share is **1.000** with keying off and **1.000** with keying on at

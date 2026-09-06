@@ -57,8 +57,15 @@ Thumbs.db
 
 # Data artefacts — the app's SQLite database lives in the browser's OPFS, but an exported
 # copy, dump, or backup dropped in the repo root while testing the persistence paths would
-# carry real content into a public repo. The pre-commit scan only reads added *lines*, so it
-# cannot flag a binary .sqlite. Keep them out by rule instead.
+# carry real content into a public repo. Keep them out by rule, which is the whole of the
+# argument: a data artefact has no business here whether or not the secret scan would catch
+# what is in it. The scan's reach used to be given as the reason, and #211 removed that half
+# (issue #259) — since scripts/secretScan.ts gained scanBytes, a file git calls binary is
+# fetched whole and read at one-, two- and four-byte spacings, which reaches a credential in a
+# SQLite page as readily as in a UTF-16 source file. Driven on a database written by SQLite
+# itself, the scanner reports it. What the scan genuinely cannot reach is a credential inside a
+# compressed or encoded stream, because those bytes are not present until something
+# decompresses them; .github/workflows/tests.yml states that boundary at length.
 *.sqlite
 *.sqlite3
 *.db

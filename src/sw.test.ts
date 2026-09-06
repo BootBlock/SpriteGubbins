@@ -9,7 +9,9 @@
  *
  * The manifest is the shape vite-plugin-pwa actually injects. `revision: null` on the
  * content-hashed assets, an MD5 string on the ones served from stable URLs — all seven the current
- * build emits, beside four of its thirty-nine hashed assets, which is enough to state the rule.
+ * build emits, beside four hashed assets, which is enough to state the rule. Four of *any* number
+ * is, which is why the total the fixture samples from is not stated: it moves with every chunk the
+ * bundle split produces, and a figure stood here that the build had left behind (issue #267).
  * The two PWA icons are listed **twice**, as the real manifest lists them: the precache glob and
  * the webmanifest's `icons` injection each contribute them, and `cache.addAll` rejects on a
  * duplicate request, which would abort `install` and leave the worker redundant.

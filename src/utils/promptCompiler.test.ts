@@ -1630,7 +1630,8 @@ describe('generatePrompt — camera azimuth versus object yaw', () => {
 
   it('states the requirement in section 0 as well, where attention is strongest', () => {
     // Section 0 is the contract and section 9 audits it, but *that the turns happen at all* was
-    // stated in neither — it lived only in section 3, halfway down a prompt of some 3,600 tokens.
+    // stated in neither — it lived only in section 3, a quarter of the way down a prompt several
+    // thousand tokens long.
     // This is the hoist, not a third copy: section 3 still owns how far each turn goes.
     const prompt = generatePrompt('CHARACTER', SUBJECT, CORE);
     const contract = prompt.slice(

@@ -65,11 +65,26 @@ import { pixelDistance } from './pixelDistance.ts';
  * Pure. It runs on the finished sheet in drawn pixels, over the boxes `spriteSegments` found there,
  * so everything it says is stated in the coordinates the preview draws and the panel reports.
  *
- * **The bounds are what make it affordable**, and the reference sheet is where that was measured: a
- * `CHECK` over its fifteen sprites costs about a **thirtieth** of the whole pipeline's work on the
- * same sheet. The budget is what makes that hold on sheets the reference sheet says nothing about —
- * the sweep visits at most {@link SYMMETRY_SWEEP_BUDGET} pixels however the sprites are shaped,
- * which is one pass over the largest sheet this tab admits.
+ * **The bounds are what make it affordable, and there are two of them.** The sheet's own budget
+ * gives {@link affordableReach} below, and the reference sheet does not come near it: its fifteen
+ * boxes total 17,201 pixels against a budget that affords 975 sweeps where the full reach costs 33,
+ * so the budget narrows this sheet's reach by nothing at all. What does narrow it is the
+ * quarter-width cap in `bestAxis`, which binds on all but the five widest of those fifteen — see
+ * {@link SYMMETRY_AXIS_SEARCH}, which states that and the widths it is measured against.
+ *
+ * **Stated as those two bounds rather than as a share of the pipeline**, and that is the correction
+ * rather than the wording. A wall-clock ratio stood here — “about a thirtieth of the whole
+ * pipeline's work on the same sheet” — and re-measured across six readings of “the same sheet” it
+ * ran from a twelfth to a hundred-and-forty-third, with the row matching its own stated conditions
+ * at a forty-fourth (issue #237). A deterministic total is no better if it counts the wrong pixels
+ * twice over, which the first replacement did: the sprites' boxes are in the coordinates of the
+ * **reduced** result this pass reads — 209 × 210 at grid 6, not the 1254² sheet it was read from —
+ * and `(4 × reach + 1) × area` is the *nominal* cost at the sheet reach, which the per-box cap above
+ * leaves unspent on two thirds of them.
+ *
+ * The budget is what makes the bound hold on sheets the reference sheet says nothing about — the
+ * sweep visits at most {@link SYMMETRY_SWEEP_BUDGET} pixels however the sprites are shaped, which is
+ * one pass over the largest sheet this tab admits.
  */
 export function sheetSymmetry(
   image: ImageData,
@@ -102,8 +117,14 @@ export function sheetSymmetry(
  * cross. Divided out and floored to a reach, with a floor of zero: a sheet whose sprites are large
  * enough to exhaust the budget on their own is searched about the box centre alone, which is where a
  * sprite that large has its axis anyway.
+ *
+ * **Exported for one reason**, which is the reason `SYMMETRY_SWEEP_BUDGET`'s docblock states a
+ * figure at all: that figure — the reference sheet's fifteen boxes totalling 17,201 pixels, and the
+ * reach of eight it buys — is asserted in `tests/quantiser-docblock-figures.test.ts`, and a suite
+ * that restated this arithmetic instead of calling it would pass with the divisor changed to the
+ * sheet's drawn pixels, which is the mistake that docblock exists to name.
  */
-function affordableReach(boxes: readonly SpriteBox[]): number {
+export function affordableReach(boxes: readonly SpriteBox[]): number {
   const area = boxes.reduce((total, box) => total + box.width * box.height, 0);
   if (area === 0) return SYMMETRY_AXIS_SEARCH;
   const sweeps = Math.floor(SYMMETRY_SWEEP_BUDGET / area);

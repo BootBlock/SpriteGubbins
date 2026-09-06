@@ -16,9 +16,10 @@ export interface DisjointSet {
  *
  * **The lowest index wins, and that is a property callers rely on rather than an implementation
  * detail.** `duplicateSprites` names each group after its canonical sprite, and the canonical is the
- * earliest of the group in the box list — which `spriteSegments` returns topmost-first. So rooting at
- * the lowest index means a group's root *is* its canonical, with no second pass to find it, and it
- * is a property of the list rather than one re-derived from coordinates, so the two cannot disagree.
+ * earliest of the group in the box list — which `spriteSegments` returns in the reading order section
+ * 4 of the prompt fixes, screen-left to screen-right and then top to bottom. So rooting at the lowest
+ * index means a group's root *is* its canonical, with no second pass to find it, and it is a property
+ * of the list rather than one re-derived from coordinates, so the two cannot disagree.
  * Union by size would be asymptotically better and is not available here for that reason; the sets
  * are bounded by `SCATTERED_SPRITE_CEILING` at 512 members, where path compression alone is ample.
  *

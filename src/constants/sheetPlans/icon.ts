@@ -33,7 +33,7 @@ import { spellNumber, spellNumberCapitalised } from '../../utils/numberWords.ts'
  * the control got: section 1 then stated the set carried no overlay while the nine entries below
  * ordered a disabled veil, a cooldown sweep, four tier marks and a flare, and section 4's closing
  * rule forbade dropping any of them. The other three categories that offered such a value answer it
- * by taking the entries away — see `ComponentEntry.drawsClothing` — and that answer is wrong here:
+ * by taking the entries away — see `ComponentEntry.clothingRole` — and that answer is wrong here:
  * these thirteen components are the state and overlay half of the sheet, and a reader who left the
  * default alone would have lost a highlight, a selection and a disabled state they never declined.
  * So the value went instead, and the field now names the overlay the set is designed around rather
@@ -98,21 +98,21 @@ if it is redrawn:`,
           text: 'Disabled veil ×1 — what is laid over an icon to read as unavailable',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'highlight-halo',
           text: 'Highlight halo ×1 — what marks the icon under the pointer',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'selected-ring',
           text: 'Selected ring ×1 — what marks the icon currently chosen',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'cooldown-sweep',
@@ -120,7 +120,7 @@ if it is redrawn:`,
           text: 'Cooldown sweep ×2: a quarter elapsed, and three quarters',
           count: 2,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'changed-state-pair',
@@ -141,35 +141,35 @@ it can be placed on any of them:`,
           text: 'Tier marks ×4: one per rarity step above the common one',
           count: 4,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'rarity-glow',
           text: 'Rarity glow ×1 — the aura the highest tier carries',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'locked-mark',
           text: 'Locked mark ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'new-item-flare',
           text: 'New item flare ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'broken-overlay',
           text: 'Broken or damaged overlay ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'empty-mark',

@@ -53,8 +53,8 @@ export type QuantisedSheetCapture =
  * the two decisions this function exists to hold in one place. The palette segment states what the
  * accepted sheet is *made of*, and a generator's return is made of a resampler's noise: measured on
  * `test_sprites/armour.png` at a grid of 4 and 32 colours, the six colours read off the raw file are
- * `#F503F8`, `#185B23`, `#000000`, `#AB8D4E`, `#BDA15E`, `#FFFFFF` — two shades of one gold, and a
- * near-magenta the exact key match does not catch. Read off the quantised result of the same sheet,
+ * `#185B23`, `#000000`, `#AB8D4E`, `#604928`, `#BDA15E`, `#FFFFFF` — three shades of one gold, spent
+ * on the resampler's own gradient. Read off the quantised result of the same sheet,
  * keyed at `DEFAULT_KEY_TOLERANCE`, they are `#000000`, `#196125`, `#12461A`, `#8E743C`, `#AB8D4E`,
  * `#E7C07B`: the colours the reader settled, which are also the colours the palette lock will snap
  * the next sheet onto. One statement, twice, rather than a prompt and a pipeline describing the same
@@ -67,9 +67,11 @@ export type QuantisedSheetCapture =
  * is taken by **measuring the result** rather than by reading the settings it was computed at. Asking
  * "did the keying pass run?" is the version that looks sufficient and is not: the ladder's `0` rung is
  * a run that removes only the exact key, and a studio key naming a colour the generator did not use is
- * a run that removes nothing at all. In both the pass ran, and in both the field is still there —
- * where `identityPalette` excludes the key by exact RGB, deliberately, so it misses it and the lock is
- * written with the background leading it. `borderKeyShare` asks the sheet instead, at the widest rung
+ * a run that removes nothing at all. In both the pass ran, and in both the field is still there — so
+ * the colour reduction this result carries was spent on a field covering most of it, and the palette
+ * read off it is not the one the next sheet would be drawn in. (`identityPalette` takes the field out
+ * for itself, so the lock no longer *leads* with the background; what it cannot recover is a
+ * reduction already computed over one.) `borderKeyShare` asks the sheet instead, at the widest rung
  * the keying control offers rather than at the reader's own: see
  * {@link IDENTITY_KEY_SURVIVAL_TOLERANCE} for why those must differ, and for the measurement that
  * shows the two answers are 1.000 and 0.000 across all eight reference sheets. Nothing is removed

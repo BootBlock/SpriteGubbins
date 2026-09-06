@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -186,7 +186,8 @@ export const INTERFACE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Slice Assembly Base',
       tooltip:
-        'How the widget is cut so the engine can resize it. Choose by which way it has to stretch — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, and a fixed piece never resizes at all.',
+        'How the widget is cut so the engine can resize it. Choose by which way it has to stretch — a nine-slice keeps four fixed corners while its edges and centre repeat, a three-slice stretches on one axis only, and a fixed piece never resizes at all. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Single Fixed-Size Piece',
         'Three-Slice Horizontal Stretch',
