@@ -81,7 +81,7 @@ export const APP_TAB_CHOICE_BY_ID = {
     label: 'Studio',
     icon: '🛠️',
     guidance:
-      'Where the prompt is built: the subject on the left, the output configuration under it, and the compiled text on the right, recompiled as you type. Everything that reaches the generator is set here, and nothing in the other three views changes a word of it.',
+      'Where the prompt is built: the subject on the left, the output configuration under it, and the compiled text on the right, recompiled as you type. Everything that reaches the generator is set here, and nothing in any other view changes a word of it.',
   },
   quantise: {
     id: 'quantise',

@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { deflate } from '../src/utils/deflate.ts';
 
@@ -16,6 +17,17 @@ import { deflate } from '../src/utils/deflate.ts';
  * size and the megabyte figure are both read back out of `CompressionStream` on every run, and a
  * platform that blocks differently fails here naming the paragraph it moved. `src/utils/deflate.ts`
  * is what the app calls and what this calls, so the two cannot measure different compressors.
+ *
+ * **The figure is stable enough to assert exactly, and that is worth stating rather than assuming.**
+ * 16,384 is zlib's `lit_bufsize`, `1 << (memLevel + 6)` at the default `memLevel` of 8 — a
+ * compile-time constant, not a property of the platform or the compression level, and the Streams
+ * API exposes no option that could reach it. What zlib actually emits is a run of 16,383-literal
+ * stored blocks with the occasional 16,386 or 16,389 where its matcher found a three-byte match, so
+ * the 16,384 model below is an approximation with room in it: turning 4,000,000 bytes from 245
+ * blocks into 244 would need every block to average 16,393, which even a matcher finding every
+ * eligible match in random data does not reach. The assertion therefore survives a different
+ * match-finding strategy and fails only on a genuinely different `lit_bufsize`, which is the change
+ * the docblock it guards is about.
  *
  * **Incompressible input is the whole point of the measurement**, and it has to be genuinely so: a
  * pack holds already-deflated PNGs, whose bytes a second pass cannot shorten. The noise below is
@@ -106,7 +118,7 @@ describe('the deflate cost zipArchive prices storing against', () => {
     // to be spelled in the file, in the forms prose uses.
     // As one line: a docblock is hard-wrapped and its ` * ` prefixes fall mid-sentence, so either
     // phrase can be split across two lines by a reflow that changed nothing.
-    const docblock = readFileSync('src/utils/zipArchive.ts', 'utf8')
+    const docblock = readFileSync(resolve(process.cwd(), 'src/utils/zipArchive.ts'), 'utf8')
       .replace(/^\s*\*/gm, '')
       .replace(/\s+/g, ' ');
 

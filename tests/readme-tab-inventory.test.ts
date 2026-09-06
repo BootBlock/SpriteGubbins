@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { APP_TAB_CHOICES } from '../src/constants/ui.ts';
 
@@ -16,10 +17,13 @@ import { APP_TAB_CHOICES } from '../src/constants/ui.ts';
  * the settings dialog's opening-view field are both built from, so a view that reaches the app
  * reaches this assertion, and a view that never does is not a tab.
  *
- * **Two claims, because they fail differently.** A label missing from the document altogether is
- * the #262 shape — "Projects" appeared zero times. A label present somewhere but absent from the
- * Status inventory is the #101 shape, where the paragraph a reader consults for what the app has is
- * the one that goes stale. The first is a document-wide sweep; the second is pinned to the sentence.
+ * **One claim, asserted in two steps, because the steps say different things when they break.**
+ * Naming every view in the Status inventory already implies naming every view somewhere, so a
+ * document-wide sweep is not a second constraint and is deliberately not written as a second test —
+ * a case that cannot fail while its neighbour passes reads as coverage it is not providing. It is
+ * still worth asserting *first*, because its message names the view that is missing outright, which
+ * is the #262 shape ("Projects" appeared zero times); the inventory comparison that follows reports
+ * the whole sentence, which is what a reader needs when the list is merely out of order or short.
  *
  * **It pins the sentence, not its wording**, in the sense `tests/architecture-figures.test.ts`
  * means: the inventory may be rewritten freely as long as it still opens "The app carries the …
@@ -44,11 +48,11 @@ function asProse(names: readonly string[]): string {
  * The document as one line, because both of its sentences are hard-wrapped and Prettier rewraps
  * them. An assertion that breaks when a paragraph reflows is an assertion someone deletes.
  */
-const README = readFileSync('README.md', 'utf8').replace(/\s+/g, ' ');
+const README = readFileSync(resolve(process.cwd(), 'README.md'), 'utf8').replace(/\s+/g, ' ');
 const LABELS = APP_TAB_CHOICES.map((tab) => tab.label);
 
 describe('the views the README says the app has', () => {
-  it('names every one of them somewhere in the document', () => {
+  it('names every one of them, in the Status inventory', () => {
     const missing = LABELS.filter((label) => !README.includes(label));
 
     expect(
@@ -56,9 +60,7 @@ describe('the views the README says the app has', () => {
       `README.md never mentions ${asProse(missing)}. Every view in APP_TAB_CHOICES is a surface a ` +
         'reader arriving from GitHub will find in the app, so the document has to name it.',
     ).toEqual([]);
-  });
 
-  it('lists every one of them in the Status inventory', () => {
     const expected = asProse(LABELS);
     const opens = README.indexOf(INVENTORY_OPENS);
 

@@ -375,8 +375,8 @@ Read Phase 1 through Phase 5, then start Phase 1\. Build out the files systemati
 ### The prompt template has been superseded
 
 The template specified in Phase 2 of this document is **v1**. It has been replaced, after Phases 1–4
-shipped, by a v2 that the code now emits. The compiler architecture, the sixteen subject keys and the
-five categories are unchanged; the compiled template text, the parameter set and the model wrappers
+shipped, by a v2 that the code now emits. The compiler architecture, the subject keys and the
+category set are unchanged; the compiled template text, the parameter set and the model wrappers
 are not.
 
 - **[baseline-prompt-new.md](baseline-prompt-new.md)** — the v2 template, the reasoning for each
