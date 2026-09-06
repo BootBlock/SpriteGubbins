@@ -48,9 +48,13 @@ interface ControlTooltipProps {
  * ⓘ, because that is what the affordance has marked since the app was built, because a value is
  * worth explaining before the reader knows to ask, and because an ⓘ is the only route a finger has.
  * Anything that **does** something takes this: the chrome's actions, the view switcher, the prompt
- * toolbar, the preset library, the history drawer, the quantiser's buttons. There are around fifty
- * of those, and a second glyph beside each would be fifty more targets in rows that are already
- * full — while hovering a control is what a tooltip has always meant.
+ * toolbar, the preset library, the history drawer, the quantiser's buttons. There are seventy-nine
+ * of those, and a second glyph beside each would be seventy-nine more targets in rows that are
+ * already full — while hovering a control is what a tooltip has always meant.
+ * `tests/control-tooltip-call-site-counts.test.ts` re-counts that figure from the components, and
+ * the one below it, because both had drifted a long way without moving — fifty and seven were
+ * written down (issue #199) — and each is the *size of the cost* an argument here rests on rather
+ * than decoration beside it.
  *
  * That line is also what makes the focus rule below sound, which is why it is worth stating as a
  * rule rather than as a habit: `:focus-visible` cannot answer "did the keyboard bring me here" for a
@@ -83,8 +87,10 @@ interface ControlTooltipProps {
  * was getting *every* card, unasked, rather than none.
  *
  * **A `disabled` control dispatches no pointer events and cannot be focused**, so a card hung off
- * one would be unreachable by either route — and seven of these wrap a control that can be disabled,
- * two of which explain the very condition that disables them. The wrapper therefore takes the
+ * one would be unreachable by either route — and nineteen of these wrap a control that can be
+ * disabled. Two compose the reason into the card that goes unreachable: `GeneratorSiteLink` appends
+ * the chosen target's own note about having no page to open, and `QuantisedSheetCaptureButton`
+ * appends the offer's reason. The wrapper therefore takes the
  * pointer events back off a disabled child, which restores the hover; nothing restores the keyboard
  * route, because `disabled` removes the element from the tab order and that is the platform's call
  * rather than this component's.
@@ -161,9 +167,9 @@ export function ControlTooltip({
       onPointerDown={guidance.dismiss}
       // A `disabled` child dispatches no pointer events at all — not to itself and not on to an
       // ancestor — so the wrapper never hears the hover that is the only remaining way to its
-      // guidance, and two of the seven disabled-capable controls explain the very condition that
-      // disables them. Taking the pointer events off the child hands them to this span, which is
-      // where the handlers live; a disabled control has no click to lose by it.
+      // guidance, and two of the nineteen disabled-capable controls compose into their card the very
+      // condition that disables them. Taking the pointer events off the child hands them to this
+      // span, which is where the handlers live; a disabled control has no click to lose by it.
       className={`[&>*:disabled]:pointer-events-none ${className}`}
     >
       {cloneElement(children, {

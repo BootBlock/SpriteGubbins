@@ -1,5 +1,6 @@
 import { boxSeparation } from './boxSeparation.ts';
 import type { SpriteBox } from '../types/quantiser.ts';
+import { spriteReadingOrder } from './spriteRows.ts';
 import { disjointSet } from './unionFind.ts';
 
 /**
@@ -48,8 +49,12 @@ export interface Bounds {
  * still standing and every round but the last removes at least one of them, so
  * `SCATTERED_SPRITE_CEILING` is what makes the worst case affordable.
  *
- * Sorted top to bottom and left to right on the way out — reading order, so the sprite a reader
- * counts first in the preview is the first one anything downstream names.
+ * **Returned in reading order** — the order section 4 of the prompt fixes, screen-left to
+ * screen-right and then top to bottom, so the sprite a reader counts first in the preview is the
+ * first one anything downstream names. That is `spriteRows`' answer rather than one taken here: a
+ * sort on the exact `top` coordinate looks like the same thing and is not, because a row of
+ * generated art is a band of overlap rather than a shared edge, and sorting on the coordinate pushes
+ * the sprites of a row that sit a pixel lower to the end of it.
  */
 export function mergeNearby(pieces: readonly Bounds[], gap: number): SpriteBox[] {
   let boxes = pieces.map((piece) => ({ ...piece }));
@@ -60,15 +65,15 @@ export function mergeNearby(pieces: readonly Bounds[], gap: number): SpriteBox[]
     boxes = folded;
   }
 
-  return boxes
-    .sort((left, right) => left.top - right.top || left.left - right.left)
-    .map((box) => ({
+  return spriteReadingOrder(
+    boxes.map((box) => ({
       left: box.left,
       top: box.top,
       width: box.right - box.left,
       height: box.bottom - box.top,
       pixels: box.pixels,
-    }));
+    })),
+  );
 }
 
 /**
@@ -101,8 +106,10 @@ function foldOnce(boxes: readonly Bounds[], gap: number): Bounds[] {
     }
   }
 
-  // Grouped by root, in the order the roots are first met, so the output keeps the scan order the
-  // labelling produced and the fixed-point loop above cannot shuffle a settled answer.
+  // Grouped by root, in the order the roots are first met, so a round keeps the scan order the
+  // labelling produced and the fixed-point loop above cannot shuffle a settled answer. What comes
+  // out of `mergeNearby` is then ordered by `spriteRows`, which sorts what it is handed — so this is
+  // determinism within the loop rather than the reading order anything downstream sees.
   const groups = new Map<number, Bounds>();
   for (const [index, box] of boxes.entries()) {
     const root = find(index);

@@ -9,10 +9,20 @@ import type { TargetModel } from '../types/output.ts';
  * Midjourney's default moved to V8.1 on 10 June 2026 and to V8.2 on 24 July 2026.
  *
  * **What went stale with it was the flag syntax beside it**, which is the part a version constant
- * does not protect: raw mode is `--raw` on the V8 line and `--style raw` on V7, so pinning V8.2
- * while emitting V7 syntax silently dropped the flag. See the Midjourney branch of
- * `utils/modelWrappers.ts` — moving this constant means re-checking that branch's flags too.
+ * does not protect: this wrapper emitted `--style raw` while pinning a V8 version, and the flag whose
+ * whole job is to stop Midjourney restyling a technical layout brief could not be relied on to apply.
+ * It emits `--raw` now, which is what the Parameter List and the Raw page both give, and which the
+ * Version page's chart marks supported under V8.1 and V8.2.
+ *
+ * **The version history that stood here was not on any Midjourney page, and it named the wrong
+ * versions.** It read that raw mode "is `--raw` on the V8 line and `--style raw` on V7". No page
+ * states a rename, and swept over all 105 help-centre articles the only one spelling the older form
+ * is Legacy Features, whose parameter-compatibility table gives a Style row reading `raw` against V5
+ * and V6 rather than V7. `utils/modelWrapperText/midjourney.ts` records that at length beside the
+ * flags themselves. What holds is the lesson rather than the history: moving this constant means
+ * re-checking that branch's flags against the vendor's current pages, not assuming they moved with it.
  * https://docs.midjourney.com/hc/en-us/articles/32199405667853-Version
+ * https://docs.midjourney.com/hc/en-us/articles/32859204029709-Parameter-List
  */
 export const MIDJOURNEY_VERSION = '--v 8.2';
 
@@ -64,24 +74,39 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   {
     // **The only target here that cannot draw.** Its model page gives `text` as the sole output
     // modality and lists `image_generation` under *tools*, so a sheet arrives by Sol calling that
-    // tool — and the tool guide names what is on the far side: the renderer is "always a GPT Image
-    // model", with "the tool handles GPT Image model selection".
+    // tool — and OpenAI name what is on the far side across two guides, one sentence each. The tool
+    // guide says the renderer is "always a GPT Image model":
     // https://developers.openai.com/api/docs/guides/tools-image-generation
+    // The image generation guide is where "the tool handles GPT Image model selection" is written,
+    // and this entry quoted it against the URL above until the two were checked separately:
+    // https://developers.openai.com/api/docs/guides/image-generation
     //
-    // In ChatGPT that renderer is `gpt-image-2`, sold as **ChatGPT Images 2.0**: OpenAI's release
-    // notes introduce it on 21 April 2026 as "our new image generation model in ChatGPT", the model
-    // ships the same day as `gpt-image-2-2026-04-21`, and OpenAI's ChatGPT docs state "Built-in image
-    // generation uses `gpt-image-2`". No one page equates the two names outright — that last step is
-    // inference, recorded as such. https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    // In ChatGPT that renderer is `gpt-image-2`, sold as **ChatGPT Images 2.0**. OpenAI's release
+    // notes introduce it on 21 April 2026 as "our new image generation model in ChatGPT", and the
+    // model ships the same day as `gpt-image-2-2026-04-21`:
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    //
+    // **The sentence naming the model is on a third page, and it is scoped away from the surface
+    // this app's readers use.** "Built-in image generation uses `gpt-image-2`" was quoted here
+    // against the release notes, which do not carry it. It is on OpenAI's ChatGPT documentation —
+    // inside a surface switch covering the app, the CLI and the IDE. The same page's ChatGPT **web**
+    // block names no model at all, and web is where a reader pastes. So it is evidence for the
+    // Codex surfaces and not for this one, which is the same over-reach recorded for the Flux
+    // prompting guide below. https://learn.chatgpt.com/docs/image-generation
+    //
+    // What is left for ChatGPT web is the release notes plus the date-matched model id, which is an
+    // inference and was already recorded as one. The step marked inference was equating
+    // `gpt-image-2` with the name "ChatGPT Images 2.0"; the scope of the quote above is a second
+    // step and is now marked too.
     //
     // Both capability flags below are still about Sol and still true: it reasons over the brief, and
     // it answers in text. What they do not say is that the *picture* comes from a second model on
     // the far side of a tool call, which is what its wrapper in `utils/modelWrapperText/sol.ts`
     // says.
     //
-    // **The description's images-with-thinking sentence is the release notes' own claim and no
-    // more.** They say: "Images with thinking is available on all paid ChatGPT plans. It is
-    // available when you select Thinking and Pro models."
+    // **The description's images-with-thinking sentence is the release notes' own claim.** They say:
+    // "Images with thinking is available on all paid ChatGPT plans. It is available when you select
+    // Thinking and Pro models."
     // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
     //
     // For a while this description read that choosing Sol "puts you on a thinking tier", and **that
@@ -91,14 +116,40 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // GPT-5.5 Instant. That page now says "GPT-5.6 Sol powers Instant, Medium, High, and Extra High
     // on eligible paid plans", and describes Instant as "Fast responses for everyday questions".
     // Sol reaches the picker's *non*-thinking option, so picking Sol settles nothing about the tier.
-    // The API side agrees: `reasoning.effort` on `gpt-5.6-sol` accepts `none`. The sentence now
-    // points the reader at the picker, which is what OpenAI make the feature conditional on.
+    // The API side agrees: `reasoning.effort` on `gpt-5.6-sol` accepts `none`.
     // https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt and
     // https://developers.openai.com/api/docs/models/gpt-5.6-sol
+    //
+    // **The replacement then named a control OpenAI's current page does not have, and its own
+    // rationale is what falsified it.** The sentence pointed the reader at the picker "when you pick
+    // one of their Thinking or Pro models", quoting the release note faithfully — nine lines under a
+    // paragraph quoting the newer page's option list, which does not contain a Thinking. That page
+    // describes "a new reasoning slider" whose options are Instant, Medium, High, Extra High and
+    // Pro. The one Think-named option on it belongs to the plans that have no Sol at all: "Free and
+    // Go users can use Think for harder questions. Think uses GPT-5.6 Luna, not GPT-5.6 Sol", and
+    // "Free and Go users do not have access to GPT-5.6 Sol". So a reader following the old sentence
+    // found either no such option or Think, which takes them off the target they picked.
+    //
+    // **What no OpenAI page states is which setting on the current picker satisfies that condition,
+    // and the description says so rather than choosing one.** The release note names *models* —
+    // "Thinking and Pro" — and is the only page that mentions images with thinking at all. The
+    // GPT-5.6 page describes the slider and never mentions the feature. So the two do not describe
+    // one control differently; they describe two different things, and nothing joins them up.
+    //
+    // A first attempt at this replacement read that "both pages agree" the feature wants more
+    // reasoning effort than the fastest setting, and put that to the reader as OpenAI's own
+    // condition. Neither page says it: mapping "Thinking and Pro models" onto "any rung above
+    // Instant" is this app's reading, and stating a reading as a vendor's is the defect this whole
+    // entry is a record of. It would also have been actionable and possibly wrong — a reader moving
+    // the slider from Instant to Medium has no published assurance the feature switches on.
+    //
+    // So the description quotes the condition in OpenAI's own words, says the names predate the
+    // current picker, and marks the raise-the-level advice as this app's reading rather than
+    // theirs. That is the honest shape while the gap is OpenAI's to close.
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. OpenAI put images with thinking on every paid ChatGPT plan, and say it applies when you pick one of their Thinking or Pro models, so check which model the picker is on. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. OpenAI put images with thinking on every paid ChatGPT plan, and word the condition as selecting a Thinking or Pro model — names their current reasoning picker no longer uses, with no published mapping from one to the other. Raising the reasoning level is this app’s reading of that, not OpenAI’s. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
     // ChatGPT's own image surface, which is where a person rather than an API client reaches this
     // model. OpenAI announce it as “ChatGPT Images 2.0” and the page is indexed under that name.
     // https://openai.com/index/introducing-chatgpt-images-2-0/
@@ -128,12 +179,26 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // endpoints. https://ai.google.dev/gemini-api/docs/deprecations
     //
     // It is a *thinking* model — "Gemini 3 image models are thinking models that use a reasoning
-    // process ('Thinking') for complex prompts", and it cannot be disabled — and it returns
-    // interleaved text and images, so unlike Imagen it can both work through the specification and
-    // hand back a component map. That page states the thinking pass; what it does not do is name
-    // Gemini as Imagen's replacement — its one mention of Imagen is a line under "Other image
-    // generation modes" — which is why the sentence above is cited to the deprecation table instead.
+    // process ('Thinking') for complex prompts", and it "cannot be disabled in the API" — and it
+    // returns interleaved text and images, so unlike Imagen it can both work through the
+    // specification and hand back a component map.
     // https://ai.google.dev/gemini-api/docs/image-generation
+    //
+    // **That page does name Gemini as the replacement, and this comment used to say it did not.** It
+    // read that "what it does not do is name Gemini as Imagen's replacement — its one mention of
+    // Imagen is a line under 'Other image generation modes'". The page carries a section headed
+    // *When to use Imagen* whose opening notice reads "Imagen models are deprecated and will be shut
+    // down on August 17, 2026. We recommend using Nano Banana models for all image generation
+    // tasks." Nano Banana is this entry — Google's model list gives "Nano Banana 2 …
+    // `gemini-3.1-flash-image`". The count was wrong too: a case-insensitive search of the fetched
+    // page finds Imagen at four distinct places, not one.
+    //
+    // **The claim the paragraph existed to justify is unaffected**, which is why this is a rewrite
+    // and not a retraction. The deprecation table is still the right citation for the *per-model*
+    // replacement, because that is what it states: all three `imagen-4.0-*-001` rows give
+    // `gemini-3.1-flash-image` as the recommended replacement with a shutdown date of 17 August
+    // 2026. What was wrong is only the sentence saying the image-generation guide could not have
+    // supported it. https://ai.google.dev/gemini-api/docs/models
     id: 'GEMINI_FLASH_IMAGE',
     name: 'Gemini 3.1 Flash Image / Nano Banana 2',
     description:
@@ -274,19 +339,48 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'QWEN_IMAGE',
     name: 'Qwen-Image 3.0 (Alibaba)',
     description:
-      'Built for dense structured layouts and long briefs, at a documented 4.5K tokens. That holds a sparse sheet — one facing, few components — and not the five-view directional sheet the studio opens on, which runs about half as long again. The budget notice under the prompt says where yours lands. Gets a plain negative-prompt block, because Qwen exposes negative_prompt as a documented parameter.',
-    // Qwen Chat, which is where Alibaba shipped 3.0 — the release carried no weights and no API
-    // pricing, so this is the only place a reader can use it at all.
+      'Built for dense structured layouts and long briefs, at a documented 4.5K tokens. That holds a sparse sheet — one facing, few components — and not the five-view directional sheet the studio opens on, which runs about half as long again. The budget notice under the prompt says where yours lands. It ends with a plain block labelled negative_prompt, which is Alibaba’s own name for a separate request field rather than part of the brief — put it in that field, or leave it out.',
+    // Qwen Chat, which is Alibaba's own consumer surface for the model and the one a reader reaches
+    // without an Alibaba Cloud account.
+    //
+    // **It is not the only place, and this comment used to say it was.** It read that the 3.0
+    // release "carried no weights and no API pricing, so this is the only place a reader can use it
+    // at all". The weights half holds — 3.0 shipped cloud-only. The API half does not: Alibaba
+    // publish a 3.0-series API reference documenting `qwen-image-3.0-pro` and `qwen-image-3.0` as
+    // callable models on Model Studio, with `text`, `negative_prompt`, `size` and `seed`. That
+    // reference is what the wrapper's negative block is written for, and
+    // `utils/modelWrapperText/qwen.ts` says so. The chat surface stays the `generatorSite` because
+    // this field is where a *person* pastes a prompt, and an API reference is documentation rather
+    // than a place to paste one — the same reading `GPT_IMAGE` below applies to OpenAI's.
+    // https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference
     generatorSite: { kind: 'PUBLIC', url: 'https://chat.qwen.ai/' },
     capabilities: {
       deliberates: false,
       emitsText: false,
-      // "Supports input of up to 4.5k tokens", on Alibaba's model page for `qwen-image-3.0-pro` —
-      // *not* on the API reference, which states no length for either `text` or `negative_prompt`.
-      // The figure was first taken from launch coverage and cited to that API reference, which did
-      // not carry it; this is the page that does. No multiplier is claimed against 2.0 here, because
-      // Alibaba's own figure for the 2.0 series is 1,300 tokens, which makes the widely-repeated
-      // "4.5× longer" wrong. https://help.aliyun.com/en/model-studio/qwen-image-3-0-pro
+      // "Supports input of up to 4.5k tokens", on Alibaba's model page for `qwen-image-3.0-pro`. The
+      // figure was first taken from launch coverage and cited to an API reference that did not carry
+      // it; this is the page that does.
+      // https://help.aliyun.com/en/model-studio/qwen-image-3-0-pro
+      //
+      // **The 3.0-series API reference carries it too, and the sentence saying otherwise was wrong.**
+      // This comment read that the figure was "*not* on the API reference, which states no length for
+      // either `text` or `negative_prompt`". Half of that is right and the half that matters is not:
+      // the 3.0 reference gives `text` as "Recommended maximum: 4,500 tokens", and states no length
+      // for `negative_prompt` at all. So two vendor pages agree on the figure, and they differ in
+      // force — the model page's "supports input of up to" reads as a limit, the reference's
+      // "recommended maximum" as advice — while neither documents what happens past it. `CEILING` is
+      // the stricter of the two readings, which is the one to record while nothing says a longer
+      // prompt merely degrades.
+      // https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference
+      //
+      // **The 800-token sentence on the `qwen-image-api` reference does not reach this entry**, which
+      // is the contradiction it looks like and is not. That page states "The `qwen-image-2.0` series
+      // accept up to 1,300 tokens. Other models accept up to 800 tokens" — and its own model overview
+      // sends the 3.0 series away: "For 3.0 series API calls, see Qwen Image Generation and Editing
+      // 3.0". So it documents the 2.0 and legacy series, and its figures are not this model's.
+      //
+      // No multiplier is claimed against 2.0 here, because Alibaba's own figure for the 2.0 series is
+      // 1,300 tokens, which makes the widely-repeated "4.5× longer" wrong.
       promptBudget: {
         kind: 'CEILING',
         limit: 4_500,
@@ -341,6 +435,18 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     capabilities: {
       deliberates: false,
       emitsText: false,
+      // **Both halves of the note below are the front end's, because there is no vendor page to
+      // cite.** Stability publish weights rather than a prompt syntax, which is the whole finding
+      // recorded at length in `utils/modelWrapperText/stableDiffusion.ts`. The target is the weights,
+      // as the entry above says; what has no vendor behind it is the *prompt* this app writes for
+      // them, which is addressed to a front end. The Automatic1111 wiki states the figure and the way
+      // past it in one paragraph:
+      // "Typing past standard 75 tokens that Stable Diffusion usually accepts increases prompt size
+      // limit from 75 to 150 … by breaking the prompt into chunks of 75 tokens, processing each
+      // independently using CLIP's Transformers", each chunk "padded to 75 tokens and extended with
+      // start/end tokens to 77". So the 77 is 75 of prompt between two markers, and a chunked read
+      // is what "front-ends that chunk the prompt" names. This entry carried no URL at all.
+      // https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/Features
       promptBudget: {
         kind: 'CEILING',
         limit: 77,
@@ -382,26 +488,57 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // `cli.py` loads T5 at 256 for Schnell and 512 for everything else.
     // https://github.com/black-forest-labs/flux2/blob/main/src/flux2/text_encoder.py
     //
-    // **What Black Forest Labs say about negative prompts is written for the hosted tier**, and
-    // this entry is not it. Their prompting guide is titled "Prompting Guide - FLUX.2 [pro] &
-    // [max]", states no token limit, and addresses no open weight in any of its advice — the one
-    // place [dev] appears at all is a multi-reference count in the Quick Reference table, which is a
-    // capability figure rather than guidance. The FLUX.2 [dev] model card says nothing about
-    // prompting either. What is checkable for the weights is the reference implementation, and it
-    // settles the question on its own: the CLI exposes no negative field, and classifier-free
+    // **Black Forest Labs address negative prompts in two places, and this paragraph used to say
+    // there was one.** It read that what they say "is written for the hosted tier, and this entry is
+    // not it", that their guide "addresses no open weight in any of its advice", and that the one
+    // place [dev] appears is a Quick Reference multi-reference count. The tier-titled guide is still
+    // as described — "Prompting Guide - FLUX.2 [pro] & [max]", no token limit, `[dev]: ~6` in the
+    // Quick Reference. https://docs.bfl.ai/guides/prompting_guide_flux2
+    //
+    // The second guide is the one this entry said did not exist. The FLUX Prompting Guide states it
+    // "covers prompting for the entire FLUX model family — FLUX.1, FLUX.1 Kontext and FLUX.2"; its
+    // Technical Parameters page carries a section headed *Working Without Negative Prompts* opening
+    // "Most FLUX models do not support negative prompts"; and the same page addresses an open weight
+    // by name — "On FLUX.2 [klein], what you write is what you get — be descriptive."
+    // https://docs.bfl.ai/guides/prompting_summary and
+    // https://docs.bfl.ai/guides/prompting_unified_technical
+    //
+    // **The conclusion holds and the argument changes.** "Most FLUX models" is a hedge rather than a
+    // statement about a named model, so it does not settle [dev] and [klein] — which is why the
+    // reference implementation is still what does, and why this entry still argues from the code
+    // rather than borrowing a sentence. The CLI exposes no negative field, and classifier-free
     // guidance runs its unconditional branch on the empty string, which `denoise_cfg` documents as
-    // the concatenation of an empty prompt with the real one. So the description below argues from
-    // the code rather than borrowing a sentence from a page written for models this entry does not
-    // cover. https://docs.bfl.ai/guides/prompting_guide_flux2
+    // the concatenation of an empty prompt with the real one. The FLUX.2 [dev] model card was not
+    // re-checked this pass: Hugging Face answers 401 for that repository's README without an
+    // accepted licence, so the sentence claiming it says nothing about prompting is left out rather
+    // than restated.
     id: 'FLUX',
     name: 'Flux (open weights — FLUX.2 dev / klein)',
     description:
       'Separate from Stable Diffusion because Black Forest Labs’ own FLUX.2 inference code offers no negative prompt at all — the SD block would be silently discarded — so the same constraints are restated positively, and stated first because only the first 512 tokens are read. A sheet specification is several times that long, so the library ships no preset aimed at these weights.',
-    // Open weights, so nothing to open — Black Forest Labs' playground generates with the hosted tier,
-    // which is the `FLUX_API` entry below and carries that link.
+    // **Black Forest Labs do serve [klein], and the note here used to deny it.** It read that both
+    // variants "are open weights you run yourself, so there is no vendor page that generates with
+    // them", and the comment above it that "Black Forest Labs' playground generates with the hosted
+    // tier". Their Playground help article lists the models it generates with as "FLUX.2 [max],
+    // [pro], [flex], [klein], FLUX.1 Kontext [pro]/[max], or FLUX 3 for video", and calls [klein]
+    // "the fastest FLUX model, great for rapid iteration"; their quick start documents three [klein]
+    // endpoints — `/flux-2-klein-4b`, `/flux-2-klein-9b-preview` and `/flux-2-klein-9b`. The
+    // `FLUX_API` entry below already said as much, in the sentence noting they "also serve [klein]
+    // from their own API".
+    // https://help.bfl.ai/articles/8667153955-what-is-the-bfl-playground and
+    // https://docs.bfl.ai/quick_start/generating_images
+    //
+    // **It stays `NONE` anyway, and the reason is the ceiling rather than the count.** What the
+    // Playground serves is a *hosted* [klein], which is the surface `FLUX_API` describes and which
+    // reads 32K tokens; this entry is the weights on your own machine, whose `MAX_LENGTH` stops at
+    // 512. Pointing this target's button at that page would hand a reader a prompt budgeted for 512
+    // tokens and a surface that reads sixty times that — which is the exact defect that made these
+    // two separate entries. So the note now says what is true of each variant instead of denying
+    // the page exists. [dev] is the half that was never wrong: `/flux-dev` in that endpoint list is
+    // FLUX.1 [dev], and the Playground article names no FLUX.2 [dev] among its selectable models.
     generatorSite: {
       kind: 'NONE',
-      note: 'FLUX.2 [dev] and [klein] are open weights you run yourself, so there is no vendor page that generates with them.',
+      note: 'These are the FLUX.2 weights on your own machine, which read 512 tokens. Black Forest Labs do serve a hosted [klein] from their Playground, but that reads the whole prompt and is the Flux (BFL API) target below.',
     },
     capabilities: {
       deliberates: false,
@@ -432,6 +569,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // entry names [pro], [max] and [flex] because those are the three the 512 demonstrably cannot
     // bind. If a per-variant figure is ever published, cite that and delete this paragraph.
     // https://docs.bfl.ai/quick_start/generating_images
+    //
+    // **A second page now carries the figure, and it is the better citation of the two.** The
+    // paragraph above sends a re-checking reader to a marketing page when Black Forest Labs' own
+    // documentation states it: the FLUX Prompting Guide's *Building a prompt* page, under a heading
+    // *Prompt length*, reads "FLUX.2 supports prompts up to 32K tokens." That does not change the
+    // inference — the documentation states it just as unscoped as the marketing page does, naming no
+    // variant — so the paragraph above still holds. It changes which page a re-check starts from.
+    // https://docs.bfl.ai/guides/prompting_unified_building
     //
     // **The negative-prompt claim is scoped to the guide that makes it**, and this entry is the
     // three models that guide speaks to. Its title names [pro] and [max], and its Quick Reference
@@ -482,9 +627,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // documentation rather than a place to paste a prompt. ChatGPT Images is not this endpoint and
     // cannot stand in for it: OpenAI's release notes give that surface *images with thinking*, where
     // "When given more time to think, it can plan and refine image outputs before generating them"
-    // — on a paid plan, with a Thinking or Pro model selected. That is the hand-off
-    // `CHATGPT_5_6_SOL` exists to describe, and the opposite of what the flags below declare.
-    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    // — on a paid plan, and conditional on more reasoning effort than the picker's quickest setting.
+    // That is the hand-off `CHATGPT_5_6_SOL` exists to describe, and the opposite of what the flags
+    // below declare. The condition is worded as a condition rather than as the release note's
+    // "Thinking and Pro models", for the reason that entry records at length: OpenAI's current page
+    // for the picker describes a reasoning slider with no Thinking on it, and its one Think-named
+    // option runs a different model on plans that have no Sol.
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes and
+    // https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt
     generatorSite: {
       kind: 'NONE',
       note: 'OpenAI run no page that generates through the Images API, and ChatGPT’s own image surface is the ChatGPT 5.6 Sol target rather than this one.',
@@ -499,7 +649,15 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // beside `gpt-image-1.5`, so the family the ceiling is stated for and the family the enum
       // offers are the same one — the two OpenAI surfaces agreed when this was last checked, which
       // they had not always done.
-      // https://developers.openai.com/api/docs/api-reference/images/create
+      //
+      // **Cited to the OpenAPI file, which is where the comment already said the figure came from.**
+      // The URL here was `api/docs/api-reference/images/create`, which redirects to the resource
+      // landing page — and that page carries neither the sentence nor the figure. So the citation
+      // named the surface the comment explicitly disclaims, and pointed at a page one level above
+      // the one that would have carried it: the method page under `images/methods/generate` is where
+      // the rendered reference states it. The file is public, so cite the file.
+      // https://github.com/openai/openai-openapi/blob/master/openapi.yaml
+      // https://developers.openai.com/api/reference/resources/images/methods/generate
       promptBudget: {
         kind: 'CEILING',
         limit: 32_000,

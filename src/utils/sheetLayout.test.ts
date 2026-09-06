@@ -64,6 +64,22 @@ describe('sheetLayout', () => {
     ]);
   });
 
+  it('seats a row deeper than its own tallest sprite where the two sit at different offsets', () => {
+    // The rule the file's third bullet states, asserted as the *inequality* rather than as a
+    // number: the canvas has to hold the deepest band, and a band exceeds the tallest single sprite
+    // whenever a strip's members sit at differing vertical offsets. The bullet claimed the largest
+    // sprite on both axes for as long as nothing here said otherwise (issue #265) — the case below
+    // was already built one test above, and asserted the height it happens to come to without
+    // saying which of the two quantities that height is.
+    const boxes = [box(0, 0, 4, 3), box(6, 2, 2, 2)];
+    const layout = sheetLayout(SHEET, boxes);
+    const tallest = Math.max(...boxes.map((each) => each.height));
+
+    expect(layout.height).toBeGreaterThan(tallest);
+    // The width is the largest sprite, which is the half of the bullet that was right.
+    expect(layout.width).toBe(Math.max(...boxes.map((each) => each.width)));
+  });
+
   it('measures each row from its own top, not from the sheet', () => {
     // A second row far down the sheet must not push the canvas down with it: its frames are placed
     // against that row's own top, so the canvas only has to be as deep as the deepest row.
