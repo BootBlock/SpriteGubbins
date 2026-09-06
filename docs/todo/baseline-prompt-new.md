@@ -1690,6 +1690,24 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > reading it as the hosted tier's is this app's own inference — a sound one, because the 512 rules
 > the weights out, but an inference rather than a quotation.
 
+> **Re-checked by [issue #232](https://github.com/BootBlock/SpriteGubbins/issues/232) — "advises no
+> open weight anywhere" is no longer true of Black Forest Labs' documentation.** The note above is
+> left as it was written, per the rule against rewriting a plan's history; this is where it is
+> reconciled. Fetched as Markdown source on 2026-09-06, they publish a second, family-scoped
+> [FLUX Prompting Guide](https://docs.bfl.ai/guides/prompting_summary) which states that it "covers
+> prompting for the entire FLUX model family — FLUX.1, FLUX.1 Kontext and FLUX.2". Its
+> [Technical Parameters](https://docs.bfl.ai/guides/prompting_unified_technical) page carries a
+> section headed *Working Without Negative Prompts* opening "Most FLUX models do not support
+> negative prompts", and addresses an open weight by name: "On FLUX.2 \[klein], what you write is
+> what you get — be descriptive."
+>
+> **The conclusion the note reaches still holds, and only its argument was wrong.** "Most FLUX
+> models" is a hedge rather than a statement about a named model, so it does not settle \[dev] and
+> \[klein] — the reference implementation is still what does, and the two tiers are still argued
+> apart. The 32K figure is also now stated in that guide's *Prompt length* tip ("FLUX.2 supports
+> prompts up to 32K tokens"), just as unscoped, so the inference above is unchanged and only its
+> better citation is new.
+
 > **Two targets added: `QWEN_IMAGE` and `SEEDREAM`.** Both were checked for currency *first*, which
 > is the habit the Flux and Midjourney findings above earned. That check immediately changed one of
 > them: the obvious Seedream entry was 4.5, and 4.5 is superseded — 5.0 Lite shipped February 2026
