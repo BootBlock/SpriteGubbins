@@ -462,26 +462,57 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // `cli.py` loads T5 at 256 for Schnell and 512 for everything else.
     // https://github.com/black-forest-labs/flux2/blob/main/src/flux2/text_encoder.py
     //
-    // **What Black Forest Labs say about negative prompts is written for the hosted tier**, and
-    // this entry is not it. Their prompting guide is titled "Prompting Guide - FLUX.2 [pro] &
-    // [max]", states no token limit, and addresses no open weight in any of its advice — the one
-    // place [dev] appears at all is a multi-reference count in the Quick Reference table, which is a
-    // capability figure rather than guidance. The FLUX.2 [dev] model card says nothing about
-    // prompting either. What is checkable for the weights is the reference implementation, and it
-    // settles the question on its own: the CLI exposes no negative field, and classifier-free
+    // **Black Forest Labs address negative prompts in two places, and this paragraph used to say
+    // there was one.** It read that what they say "is written for the hosted tier, and this entry is
+    // not it", that their guide "addresses no open weight in any of its advice", and that the one
+    // place [dev] appears is a Quick Reference multi-reference count. The tier-titled guide is still
+    // as described — "Prompting Guide - FLUX.2 [pro] & [max]", no token limit, `[dev]: ~6` in the
+    // Quick Reference. https://docs.bfl.ai/guides/prompting_guide_flux2
+    //
+    // The second guide is the one this entry said did not exist. The FLUX Prompting Guide states it
+    // "covers prompting for the entire FLUX model family — FLUX.1, FLUX.1 Kontext and FLUX.2"; its
+    // Technical Parameters page carries a section headed *Working Without Negative Prompts* opening
+    // "Most FLUX models do not support negative prompts"; and the same page addresses an open weight
+    // by name — "On FLUX.2 [klein], what you write is what you get — be descriptive."
+    // https://docs.bfl.ai/guides/prompting_summary and
+    // https://docs.bfl.ai/guides/prompting_unified_technical
+    //
+    // **The conclusion holds and the argument changes.** "Most FLUX models" is a hedge rather than a
+    // statement about a named model, so it does not settle [dev] and [klein] — which is why the
+    // reference implementation is still what does, and why this entry still argues from the code
+    // rather than borrowing a sentence. The CLI exposes no negative field, and classifier-free
     // guidance runs its unconditional branch on the empty string, which `denoise_cfg` documents as
-    // the concatenation of an empty prompt with the real one. So the description below argues from
-    // the code rather than borrowing a sentence from a page written for models this entry does not
-    // cover. https://docs.bfl.ai/guides/prompting_guide_flux2
+    // the concatenation of an empty prompt with the real one. The FLUX.2 [dev] model card was not
+    // re-checked this pass: Hugging Face answers 401 for that repository's README without an
+    // accepted licence, so the sentence claiming it says nothing about prompting is left out rather
+    // than restated.
     id: 'FLUX',
     name: 'Flux (open weights — FLUX.2 dev / klein)',
     description:
       'Separate from Stable Diffusion because Black Forest Labs’ own FLUX.2 inference code offers no negative prompt at all — the SD block would be silently discarded — so the same constraints are restated positively, and stated first because only the first 512 tokens are read. A sheet specification is several times that long, so the library ships no preset aimed at these weights.',
-    // Open weights, so nothing to open — Black Forest Labs' playground generates with the hosted tier,
-    // which is the `FLUX_API` entry below and carries that link.
+    // **Black Forest Labs do serve [klein], and the note here used to deny it.** It read that both
+    // variants "are open weights you run yourself, so there is no vendor page that generates with
+    // them", and the comment above it that "Black Forest Labs' playground generates with the hosted
+    // tier". Their Playground help article lists the models it generates with as "FLUX.2 [max],
+    // [pro], [flex], [klein], FLUX.1 Kontext [pro]/[max], or FLUX 3 for video", and calls [klein]
+    // "the fastest FLUX model, great for rapid iteration"; their quick start documents three [klein]
+    // endpoints — `/flux-2-klein-4b`, `/flux-2-klein-9b-preview` and `/flux-2-klein-9b`. The
+    // `FLUX_API` entry below already said as much, in the sentence noting they "also serve [klein]
+    // from their own API".
+    // https://help.bfl.ai/articles/8667153955-what-is-the-bfl-playground and
+    // https://docs.bfl.ai/quick_start/generating_images
+    //
+    // **It stays `NONE` anyway, and the reason is the ceiling rather than the count.** What the
+    // Playground serves is a *hosted* [klein], which is the surface `FLUX_API` describes and which
+    // reads 32K tokens; this entry is the weights on your own machine, whose `MAX_LENGTH` stops at
+    // 512. Pointing this target's button at that page would hand a reader a prompt budgeted for 512
+    // tokens and a surface that reads sixty times that — which is the exact defect that made these
+    // two separate entries. So the note now says what is true of each variant instead of denying
+    // the page exists. [dev] is the half that was never wrong: `/flux-dev` in that endpoint list is
+    // FLUX.1 [dev], and the Playground article names no FLUX.2 [dev] among its selectable models.
     generatorSite: {
       kind: 'NONE',
-      note: 'FLUX.2 [dev] and [klein] are open weights you run yourself, so there is no vendor page that generates with them.',
+      note: 'These are the FLUX.2 weights on your own machine, which read 512 tokens. Black Forest Labs do serve a hosted [klein] from their Playground, but that reads the whole prompt and is the Flux (BFL API) target below.',
     },
     capabilities: {
       deliberates: false,
@@ -512,6 +543,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // entry names [pro], [max] and [flex] because those are the three the 512 demonstrably cannot
     // bind. If a per-variant figure is ever published, cite that and delete this paragraph.
     // https://docs.bfl.ai/quick_start/generating_images
+    //
+    // **A second page now carries the figure, and it is the better citation of the two.** The
+    // paragraph above sends a re-checking reader to a marketing page when Black Forest Labs' own
+    // documentation states it: the FLUX Prompting Guide's *Building a prompt* page, under a heading
+    // *Prompt length*, reads "FLUX.2 supports prompts up to 32K tokens." That does not change the
+    // inference — the documentation states it just as unscoped as the marketing page does, naming no
+    // variant — so the paragraph above still holds. It changes which page a re-check starts from.
+    // https://docs.bfl.ai/guides/prompting_unified_building
     //
     // **The negative-prompt claim is scoped to the guide that makes it**, and this entry is the
     // three models that guide speaks to. Its title names [pro] and [max], and its Quick Reference
