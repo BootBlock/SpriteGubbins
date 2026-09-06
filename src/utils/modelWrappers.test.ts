@@ -175,9 +175,15 @@ describe('wrapForModel', () => {
     }
   });
 
-  it('gives Qwen an unweighted negative block, not Stable Diffusion’s', () => {
+  it('labels Qwen’s block with the parameter Alibaba document, and leaves it unweighted', () => {
     const prompt = generatePrompt('CHARACTER', SUBJECT, withOutput({ targetModel: 'QWEN_IMAGE' }));
-    expect(prompt).toContain('Negative prompt:');
+    // The label is the field's own name in Alibaba's 3.0-series API reference, not the prose
+    // `Negative prompt:` that Stable Diffusion's Automatic1111 front end uses. Nothing Alibaba
+    // publish parses a line of that shape inside `text`, so the block has to name the separate field
+    // it belongs in rather than read as more of the brief — which on a text-to-image model would
+    // list the very things the sheet must not contain.
+    expect(prompt).toContain('negative_prompt:');
+    expect(prompt).not.toContain('Negative prompt:');
     expect(prompt).toContain('assembled character');
     // `(term:1.3)` is an Automatic1111/compel convention those front-ends parse before the model
     // sees it. Qwen documents `negative_prompt` as taking a description, so weights would arrive as
@@ -729,7 +735,7 @@ describe('what a wrapper says about text', () => {
         .split(/[,\n]/)
         .map((entry) =>
           entry
-            .replace(/^Negative prompt:/, '')
+            .replace(/^(?:Negative prompt|negative_prompt):/, '')
             .trim()
             .replace(/\.$/, ''),
         );

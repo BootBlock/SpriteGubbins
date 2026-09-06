@@ -284,19 +284,48 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     id: 'QWEN_IMAGE',
     name: 'Qwen-Image 3.0 (Alibaba)',
     description:
-      'Built for dense structured layouts and long briefs, at a documented 4.5K tokens. That holds a sparse sheet — one facing, few components — and not the five-view directional sheet the studio opens on, which runs about half as long again. The budget notice under the prompt says where yours lands. Gets a plain negative-prompt block, because Qwen exposes negative_prompt as a documented parameter.',
-    // Qwen Chat, which is where Alibaba shipped 3.0 — the release carried no weights and no API
-    // pricing, so this is the only place a reader can use it at all.
+      'Built for dense structured layouts and long briefs, at a documented 4.5K tokens. That holds a sparse sheet — one facing, few components — and not the five-view directional sheet the studio opens on, which runs about half as long again. The budget notice under the prompt says where yours lands. It ends with a plain block labelled negative_prompt, which is Alibaba’s own name for a separate request field rather than part of the brief — put it in that field, or leave it out.',
+    // Qwen Chat, which is Alibaba's own consumer surface for the model and the one a reader reaches
+    // without an Alibaba Cloud account.
+    //
+    // **It is not the only place, and this comment used to say it was.** It read that the 3.0
+    // release "carried no weights and no API pricing, so this is the only place a reader can use it
+    // at all". The weights half holds — 3.0 shipped cloud-only. The API half does not: Alibaba
+    // publish a 3.0-series API reference documenting `qwen-image-3.0-pro` and `qwen-image-3.0` as
+    // callable models on Model Studio, with `text`, `negative_prompt`, `size` and `seed`. That
+    // reference is what the wrapper's negative block is written for, and
+    // `utils/modelWrapperText/qwen.ts` says so. The chat surface stays the `generatorSite` because
+    // this field is where a *person* pastes a prompt, and an API reference is documentation rather
+    // than a place to paste one — the same reading `GPT_IMAGE` below applies to OpenAI's.
+    // https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference
     generatorSite: { kind: 'PUBLIC', url: 'https://chat.qwen.ai/' },
     capabilities: {
       deliberates: false,
       emitsText: false,
-      // "Supports input of up to 4.5k tokens", on Alibaba's model page for `qwen-image-3.0-pro` —
-      // *not* on the API reference, which states no length for either `text` or `negative_prompt`.
-      // The figure was first taken from launch coverage and cited to that API reference, which did
-      // not carry it; this is the page that does. No multiplier is claimed against 2.0 here, because
-      // Alibaba's own figure for the 2.0 series is 1,300 tokens, which makes the widely-repeated
-      // "4.5× longer" wrong. https://help.aliyun.com/en/model-studio/qwen-image-3-0-pro
+      // "Supports input of up to 4.5k tokens", on Alibaba's model page for `qwen-image-3.0-pro`. The
+      // figure was first taken from launch coverage and cited to an API reference that did not carry
+      // it; this is the page that does.
+      // https://help.aliyun.com/en/model-studio/qwen-image-3-0-pro
+      //
+      // **The 3.0-series API reference carries it too, and the sentence saying otherwise was wrong.**
+      // This comment read that the figure was "*not* on the API reference, which states no length for
+      // either `text` or `negative_prompt`". Half of that is right and the half that matters is not:
+      // the 3.0 reference gives `text` as "Recommended maximum: 4,500 tokens", and states no length
+      // for `negative_prompt` at all. So two vendor pages agree on the figure, and they differ in
+      // force — the model page's "supports input of up to" reads as a limit, the reference's
+      // "recommended maximum" as advice — while neither documents what happens past it. `CEILING` is
+      // the stricter of the two readings, which is the one to record while nothing says a longer
+      // prompt merely degrades.
+      // https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference
+      //
+      // **The 800-token sentence on the `qwen-image-api` reference does not reach this entry**, which
+      // is the contradiction it looks like and is not. That page states "The `qwen-image-2.0` series
+      // accept up to 1,300 tokens. Other models accept up to 800 tokens" — and its own model overview
+      // sends the 3.0 series away: "For 3.0 series API calls, see Qwen Image Generation and Editing
+      // 3.0". So it documents the 2.0 and legacy series, and its figures are not this model's.
+      //
+      // No multiplier is claimed against 2.0 here, because Alibaba's own figure for the 2.0 series is
+      // 1,300 tokens, which makes the widely-repeated "4.5× longer" wrong.
       promptBudget: {
         kind: 'CEILING',
         limit: 4_500,
