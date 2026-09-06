@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -204,7 +204,8 @@ export const ICON: CategoryDefinition = {
       key: 'anatomy',
       label: 'Set Assembly Base',
       tooltip:
-        'How the set is cut so the engine can build a variant. Choose by what the game needs to change at runtime — a shared plate with a swappable motif gives one drawing per new ability, where a standalone icon has to be redrawn whole every time.',
+        'How the set is cut so the engine can build a variant. Choose by what the game needs to change at runtime — a shared plate with a swappable motif gives one drawing per new ability, where a standalone icon has to be redrawn whole every time. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Single Standalone Icon',
         'Base Icon With State Overlays',

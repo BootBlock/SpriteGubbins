@@ -18,8 +18,8 @@ interface GeneratorSiteLinkProps {
  * page, the BFL Playground — because the next thing a reader does after Copy Prompt is paste it.
  *
  * **Four of the eleven targets have nowhere to open**, and the button stays rather than
- * disappearing: two of them are open weights people run themselves, the third names no model at all,
- * and the fourth is an API endpoint whose vendor runs no page in front of it. Each is a finding the
+ * disappearing: two of them are weights people run on their own machine, the third names no model at
+ * all, and the fourth is an API endpoint whose vendor runs no page in front of it. Each is a finding the
  * reader cannot infer from the name, and a control that comes and goes as the select changes says
  * nothing about why. So the `NONE` state renders the same button disabled, carrying that entry's own
  * note in its guidance. See {@link GeneratorSite}.

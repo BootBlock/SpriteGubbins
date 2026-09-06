@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -216,7 +216,8 @@ export const FONT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Set Assembly Base',
       tooltip:
-        'How the sheet is cut so an engine can lay the glyphs out. Choose by how the game measures text — a fixed cell lets a renderer index straight into the sheet by codepoint, where a proportional set needs a width recorded per glyph and reads far better in long runs.',
+        'How the sheet is cut so an engine can lay the glyphs out. Choose by how the game measures text — a fixed cell lets a renderer index straight into the sheet by codepoint, where a proportional set needs a width recorded per glyph and reads far better in long runs. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Fixed Cell, One Width For All',
         'Proportional, Width Per Glyph',

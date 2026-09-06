@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -172,7 +172,8 @@ export const EFFECT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Frame Assembly Base',
       tooltip:
-        'How the sequence divides in time — the equivalent of the part split every other category makes in space. It decides what the first and last frames have to do: a loop’s final frame must read back into its first with no seam, where a one-shot’s simply ends.',
+        'How the sequence divides in time — the equivalent of the part split every other category makes in space. It tells the generator what the first and last frames have to do: a loop’s final frame must read back into its first with no seam, where a one-shot’s simply ends. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'One-Shot Burst Sequence',
         'Seamless Loop Cycle',

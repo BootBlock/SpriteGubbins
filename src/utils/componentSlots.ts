@@ -27,9 +27,9 @@ import { slugify } from './slugify.ts';
  * rather than `04-left-arm-1.png`, and an engine importer keying a piece by its slot has one to key
  * on. Where a line does not — the facings a directional sheet draws, and a genuine ×N run of
  * variants nothing tells apart — the name identifies the *line* and is suffixed by the facing or by
- * an ordinal. So `heads-south` is exact, `left-upper-arm` is exact, and `base-material-tile-3` is
- * the third of six tiles that differ only in surface scatter, which is what such a component is
- * actually called.
+ * an ordinal. So `heads-south` is exact, `left-upper-arm` is exact, and
+ * `base-material-tile-variants-3` is the third of five tiles that differ from their primary only in
+ * surface scatter, which is what such a component is actually called.
  *
  * The names are authored on the entry rather than read back out of its prose, which is the parse the
  * `label` field exists to avoid — see `ComponentEntry.parts` for why that boundary is where it is.

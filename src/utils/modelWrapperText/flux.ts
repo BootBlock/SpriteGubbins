@@ -4,15 +4,32 @@ import type { CategoryAssembly } from '../../types/subject.ts';
 /**
  * Flux, which is **not** Stable Diffusion for this purpose: neither tier takes a negative prompt, so
  * SD's negative block would be silently discarded and the same two failures are stated positively
- * instead. **The two tiers establish that separately**, because the one vendor page that says it
- * outright is written for the hosted one. Black Forest Labs state that "FLUX.2 does not support
- * negative prompts. Focus on describing what you want, not what you don't want" — in a guide titled
- * for [pro] and [max], whose Quick Reference addresses [flex] as well, and which advises no open
- * weight anywhere. https://docs.bfl.ai/guides/prompting_guide_flux2
+ * instead. **The two tiers establish that separately**, and the reason is how firmly each is
+ * documented rather than a page existing for only one of them.
  *
- * For [dev] and [klein] that guide says nothing, and the reference implementation settles it on its
- * own: the CLI exposes no negative field, and classifier-free guidance runs its unconditional branch
- * on an empty prompt rather than on anything the caller supplies.
+ * Black Forest Labs address negative prompts in **two** places. The tier-titled guide says it
+ * outright — "FLUX.2 does not support negative prompts. Focus on describing what you want, not what
+ * you don't want" — in a guide titled for [pro] and [max], whose Quick Reference addresses [flex] as
+ * well. https://docs.bfl.ai/guides/prompting_guide_flux2
+ *
+ * The second is the family-scoped FLUX Prompting Guide, which states that it "covers prompting for
+ * the entire FLUX model family — FLUX.1, FLUX.1 Kontext and FLUX.2", and whose Technical Parameters
+ * page opens a section headed *Working Without Negative Prompts* with "Most FLUX models do not
+ * support negative prompts." The same page addresses an open weight by name: "On FLUX.2 [klein],
+ * what you write is what you get — be descriptive."
+ * https://docs.bfl.ai/guides/prompting_summary and
+ * https://docs.bfl.ai/guides/prompting_unified_technical
+ *
+ * **This docblock used to say that guide did not exist**, in the words "which advises no open weight
+ * anywhere" and "the one vendor page that says it outright is written for the hosted one". Both are
+ * false as those pages read today, and a negative claim about a live third-party page is the kind
+ * that decays without anything here changing — a vendor adding a paragraph falsifies it silently.
+ *
+ * **The conclusion survives, and the argument is now the right one.** "Most FLUX models" is a hedge
+ * rather than a statement about a named model, so it does not settle [dev] and [klein] — which is
+ * why the reference implementation is still what does, and why the two tiers are still argued
+ * apart. The CLI exposes no negative field, and classifier-free guidance runs its unconditional
+ * branch on an empty prompt rather than on anything the caller supplies.
  * https://github.com/black-forest-labs/flux2/blob/main/scripts/cli.py
  *
  * **It leads the prompt rather than trailing it, and that is a fix rather than a preference.** On

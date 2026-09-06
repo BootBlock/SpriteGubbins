@@ -97,8 +97,47 @@ export const DOWNLOADS_RECORD_THE_STUDIO =
  * never opens the field has already declined the atmosphere layer, and a sentence about choosing
  * would describe a state that is in force before they arrive.
  *
- * The six pools that offer such a value on a category whose plans draw nothing are deliberately not
- * among them: nothing is dropped there, so the sentence would be false.
+ * The five pools that offer such a value on a category whose plans draw nothing are deliberately not
+ * among them: nothing is dropped there, so the sentence would be false. **TERRAIN is the sixth and
+ * is out for the opposite reason** — its blend set does drop seven tiles, but they are the variants
+ * that *differ in* the scatter rather than pieces of it, so “these pieces” would name something the
+ * sentence before it never described. Its card states the drop in its own words instead, naming the
+ * tiles and what is left.
  */
 export const ABSENT_OPTION_DROPS_THE_PIECES =
   'A value meaning there is none takes these pieces off the sheet, and the component count falls with them.';
+
+/**
+ * What the *Assembly Base* field does to the sheet, on all thirteen of them — which is nothing.
+ *
+ * Every category has one, under eleven labels between them: *Anatomy Base* on CHARACTER and
+ * CREATURE, *Set Assembly Base* on FONT and ICON, then *Structure Base*, *Drive & Assembly Base*,
+ * *Tile Assembly Base*, *Frame Assembly Base* and the rest one apiece. Each names how the
+ * deliverable is meant to come apart, each reaches section 1 verbatim, and **none of them is read by
+ * anything that decides what section 4 orders** — the plans are addressed by category, mode,
+ * direction set and sheet index, and `sheetPlans/portrait.ts` argues at length why a plan reshaped
+ * around the subject would be the only one in that directory that was.
+ *
+ * **The sentence claims the base is not an input, and no more than that.** It says no entry of the
+ * component list is a function of *it*, rather than naming what the list is a function of — because
+ * that would be a longer list than the four addressing coordinates, and two of the others are things
+ * this app tells the reader about on the very cards this sentence lands on. The `clothing` value
+ * removes entries where a pool declares an `absentOption` (see {@link ABSENT_OPTION_DROPS_THE_PIECES}),
+ * and the `Additional …` field beside the base *adds* them — which CHARACTER's own card points at in
+ * the sentence after this one.
+ *
+ * Three cards said the opposite and stated figures to prove it: CHARACTER promised “the default 9
+ * core and 34 limb components” — 9 is the `THREE_CLASSIC` figure where the studio's own default set
+ * gives 15 — CREATURE said the field decides how many legs get their own sprite slots while
+ * `Amorphous — No Fixed Limbs` still ordered four limbs, and OBJECT said `Single Rigid Object` emits
+ * one piece where it compiles to 30, 14 and 7 across its three modes. So the fact is written here
+ * rather than thirteen times, and `tests/anatomy-base-inventory.test.ts` is what holds it true: it
+ * compiles every value of every `anatomy` pool at every address and fails if any two sections 4
+ * differ.
+ *
+ * **It is on all thirteen and not only the three that lied**, because a label ending in *Base*
+ * invites exactly that reading — naming what a control does not touch is what the guidance rules ask
+ * for, and a card that stays silent leaves the reader to guess the answer the three got wrong.
+ */
+export const ASSEMBLY_BASE_ADDS_NO_COMPONENTS =
+  'The base reaches the prompt as a statement of how the set is meant to come apart, and no entry of the sheet’s own component list is a function of it — so choosing another adds no slot and removes none.';
