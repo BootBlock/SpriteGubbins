@@ -808,7 +808,11 @@ export interface SpriteBox {
 export type SpriteSegmentation =
   | {
       readonly kind: 'SEGMENTED';
-      /** Reading order — top to bottom, then left to right. */
+      /**
+       * The reading order section 4 of the prompt fixes — screen-left to screen-right within a row,
+       * then row by row down the sheet. A row is a band of vertical overlap rather than a shared top
+       * edge; see `spriteRows`, which is the one derivation of it the app has.
+       */
       readonly boxes: readonly SpriteBox[];
       /** Pieces too small to be a sprite; see {@link SMALLEST_SPRITE_PIXELS}. */
       readonly specks: number;

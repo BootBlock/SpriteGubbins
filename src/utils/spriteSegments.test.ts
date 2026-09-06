@@ -63,6 +63,24 @@ describe('spriteSegments', () => {
     ]);
   });
 
+  it('keeps a row in left-to-right order where its sprites are not flush', () => {
+    // The case the test above cannot see, because it lays its row out flush: generated art is
+    // resampled, so a row's sprites sit a pixel or two apart down the sheet. Sorting on the exact
+    // top coordinate pushes the lower ones to the end of the row, which is how a sprite pack and its
+    // manifest came to name each other's components — see `spriteRows`.
+    const image = sheetOf(40, 40, [
+      { left: 2, top: 2, width: 4, height: 4 },
+      { left: 12, top: 3, width: 4, height: 4 },
+      { left: 22, top: 2, width: 4, height: 4 },
+    ]);
+
+    expect(boxesOf(image, 0).map((box) => [box.left, box.top])).toEqual([
+      [2, 2],
+      [12, 3],
+      [22, 2],
+    ]);
+  });
+
   it('joins a diagonal stair into one sprite, because pixel art is drawn eight-connected', () => {
     // Four-connectivity reports this as four sprites; to an artist it is one line. The stair also
     // makes the merge irrelevant — the pixels touch — so this is the labelling alone.

@@ -50,11 +50,13 @@ function boxesOf(image: ImageData): readonly SpriteBox[] {
 }
 
 /**
- * The three sprites in the order the frames should carry them: by row, then left to right.
+ * The three sprites in the order the frames carry them: by row, then left to right.
  *
- * The fixture above is declared in that order, and it is deliberately **not** the order
- * `spriteSegments` returns them in — that is topmost first, and the tall sprite starts a row above
- * the narrow one beside it, so the segmentation names it first while the frames must not.
+ * The fixture above is declared in that order, and so is what `spriteSegments` returns — which is
+ * the claim rather than a coincidence. The tall sprite starts a row above the narrow one beside it,
+ * and a sort on the exact top coordinate therefore named it first while the frames named it second;
+ * that disagreement is what made one press-set write two files naming each other's sprites, and both
+ * halves take their rows from `spriteRows` now.
  */
 const FRAME_ORDER: readonly SpriteBox[] = SPRITES.map(({ box }) => box);
 
@@ -110,12 +112,9 @@ describe('encodeAseprite', () => {
     const boxes = boxesOf(image);
     const decoded = await decodeAseprite((await encodeAseprite(image, boxes)).bytes);
 
-    // Topmost first, which is the segmentation's own order and not the frames'.
-    expect(boxes.map((box) => [box.left, box.top])).toEqual([
-      [4, 1],
-      [1, 2],
-      [2, 8],
-    ]);
+    // The segmentation's own order, which is the frames' — see `FRAME_ORDER`. The narrow sprite
+    // leads its row despite starting a row lower than the tall one beside it.
+    expect(boxes.map((box) => [box.left, box.top])).toEqual(FRAME_ORDER.map((box) => [box.left, box.top]));
     celsMatch(decoded, image, FRAME_ORDER);
   });
 

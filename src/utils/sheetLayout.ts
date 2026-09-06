@@ -1,4 +1,5 @@
 import type { SpriteBox } from '../types/quantiser.ts';
+import { spriteRows } from './spriteRows.ts';
 
 /**
  * Turning one quantised sheet into the frames and tags an animation file is made of.
@@ -13,10 +14,13 @@ import type { SpriteBox } from '../types/quantiser.ts';
  *   ring around. That is the only thing this app knows about where one sprite ends and the next
  *   begins, so it is what the frames are cut from. Anything else would be a second, quieter answer
  *   to a question already answered on screen.
- * - **A tag is a strip.** Boxes are grouped into strips by vertical overlap, chained, so a row of
- *   sprites at differing heights stays one row. Frames are then ordered strip by strip, which is
+ * - **A tag is a strip.** `spriteRows` groups the boxes into rows by vertical overlap, chained, so a
+ *   row of sprites at differing heights stays one row. Frames are then ordered row by row, which is
  *   what makes each tag the contiguous `[from, to]` range the format requires — a tag cannot name a
  *   scattered set of frames, so the grouping has to happen before the ordering rather than after.
+ *   The rows come from there rather than from a copy kept here, because the same banding is what
+ *   puts the manifest's sprites in reading order and the two files must not name a sprite
+ *   differently.
  * - **The canvas is the largest sprite**, since one canvas has to seat every frame.
  *
  * **What the placement keeps, and what it cannot.** A sprite's vertical position within its strip is
@@ -78,21 +82,20 @@ export function sheetLayout(image: ImageData, boxes: readonly SpriteBox[]): Shee
     };
   }
 
-  const strips = groupIntoStrips(boxes);
-  const width = strips.reduce(
-    (widest, strip) => strip.reduce((row, box) => Math.max(row, box.width), widest),
+  const rows = spriteRows(boxes);
+  const width = rows.reduce(
+    (widest, row) => row.boxes.reduce((seen, box) => Math.max(seen, box.width), widest),
     1,
   );
-  // The tallest band any strip occupies: a frame keeps its offset within its own strip, so the
-  // canvas has to be tall enough for the deepest of them rather than for the tallest single sprite.
-  const height = strips.reduce((tallest, strip) => Math.max(tallest, bandBottom(strip) - bandTop(strip)), 1);
+  // The tallest band any row occupies: a frame keeps its offset within its own row, so the canvas
+  // has to be tall enough for the deepest of them rather than for the tallest single sprite.
+  const height = rows.reduce((tallest, row) => Math.max(tallest, row.bottom - row.top), 1);
 
   const frames: SheetFrame[] = [];
   const tags: SheetStrip[] = [];
-  for (const [index, strip] of strips.entries()) {
-    const top = bandTop(strip);
+  for (const [index, row] of rows.entries()) {
     const from = frames.length;
-    for (const box of strip) {
+    for (const box of row.boxes) {
       frames.push({
         left: box.left,
         top: box.top,
@@ -100,7 +103,7 @@ export function sheetLayout(image: ImageData, boxes: readonly SpriteBox[]): Shee
         height: box.height,
         // Centred across, kept where it was down — see the note at the top of the file.
         x: Math.floor((width - box.width) / 2),
-        y: box.top - top,
+        y: box.top - row.top,
       });
     }
     tags.push({ name: stripName(index), from, to: frames.length - 1 });
@@ -136,39 +139,4 @@ export function scaleBoxes(boxes: readonly SpriteBox[], scale: number): readonly
 /** What each strip's tag is called, numbered from one as a reader counts rows down a sheet. */
 function stripName(index: number): string {
   return `Row ${String(index + 1)}`;
-}
-
-/**
- * Boxes gathered into rows, each row in left-to-right order and the rows themselves top to bottom.
- *
- * A box joins the open row where it overlaps that row's vertical band, and the band grows to include
- * it — so a tall sprite in the middle of a row pulls in the shorter ones on either side of it, and a
- * row of figures whose heads are at different heights stays one row. `spriteSegments` returns boxes
- * in reading order, topmost first, which is what makes one pass over them enough: a box that does
- * not reach the open band cannot reach any band opened before it either.
- */
-function groupIntoStrips(boxes: readonly SpriteBox[]): SpriteBox[][] {
-  const strips: SpriteBox[][] = [];
-  let open: SpriteBox[] | null = null;
-
-  for (const box of boxes) {
-    if (open === null || box.top >= bandBottom(open)) {
-      open = [box];
-      strips.push(open);
-      continue;
-    }
-    open.push(box);
-  }
-
-  return strips.map((strip) => [...strip].sort((left, right) => left.left - right.left));
-}
-
-/** The first row of a strip's band — the topmost edge of any box in it. */
-function bandTop(strip: readonly SpriteBox[]): number {
-  return strip.reduce((highest, box) => Math.min(highest, box.top), Number.POSITIVE_INFINITY);
-}
-
-/** The first row past a strip's band — the lowest edge of any box in it. */
-function bandBottom(strip: readonly SpriteBox[]): number {
-  return strip.reduce((lowest, box) => Math.max(lowest, box.top + box.height), 0);
 }
