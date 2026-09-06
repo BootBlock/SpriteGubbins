@@ -621,7 +621,11 @@ describe('every sheet of one series states the same finished capability', () => 
    * about what a reader is shown: the defect was a per-sheet answer relabelled as the deliverable's,
    * and a check reading `SheetPlan.assembly` could never see the label.
    */
-  function capabilityOf(prompt: string): { readonly own: string; readonly series: string } {
+  function capabilityOf(prompt: string): {
+    readonly own: string;
+    readonly series: string;
+    readonly statesOne: boolean;
+  } {
     const section = sectionOf(prompt, 'REQUIRED ASSEMBLY CAPABILITY');
     const own = /must assemble cleanly into: (.+)/.exec(section)?.[1] ?? '';
     const heading = '### The finished series’ capability';
@@ -631,7 +635,11 @@ describe('every sheet of one series states the same finished capability', () => 
     // different for a reason that has nothing to do with the capability.
     const rest = at < 0 ? '' : section.slice(at + heading.length);
     const ends = rest.indexOf('\n### ');
-    return { own, series: at < 0 ? '' : ends < 0 ? rest : rest.slice(0, ends) };
+    return {
+      own,
+      series: at < 0 ? '' : ends < 0 ? rest : rest.slice(0, ends),
+      statesOne: section.includes('Every sheet of this series delivers that'),
+    };
   }
 
   it('gives every sheet of a batch one answer about the deliverable, and its own share beside it', () => {
@@ -652,13 +660,36 @@ describe('every sheet of one series states the same finished capability', () => 
           multiSheet += 1;
           const where = `${category} / ${mode} / ${directions}`;
 
-          // One statement of the deliverable across the series, whichever sheet was compiled.
+          // One statement of the deliverable across the series, whichever sheet was compiled, and
+          // one branch — a batch cannot be told both that every one of its sheets delivers the
+          // answer and that this one is only a share of it.
           expect(new Set(sheets.map((sheet) => sheet.series)).size, where).toBe(1);
-          // And it names every share, so no sheet's own answer is missing from the whole.
-          for (const sheet of sheets) {
-            expect(sheets[0]?.series ?? '', `${where}: a share the series statement omits`).toContain(
-              sheet.own.replace(/\.$/, ''),
-            );
+          expect(new Set(sheets.map((sheet) => sheet.statesOne)).size, where).toBe(1);
+
+          const answers = new Set(sheets.map((sheet) => sheet.own));
+          const [first] = sheets;
+          if (first === undefined) throw new Error('narrowed by the length check above');
+
+          if (first.statesOne) {
+            // The branch claims every sheet delivers the same thing, so they had better all state
+            // it — and the block below it stays silent, or it restates the sentence the branch has
+            // just made. That pairing is the contradiction the two halves of `seriesCapability.ts`
+            // produced while one compared plan objects and the other assembly sentences: four
+            // categories' split cores took the share branch and then stated the series' capability
+            // as the very sentence it had just set aside, verbatim, three lines on.
+            expect(answers.size, `${where}: one claim, several answers`).toBe(1);
+            expect(first.series, `${where}: the block restates the claim above it`).toBe('');
+          } else {
+            // The other branch says this sheet supplies a share, so the block has to name every
+            // share — including this sheet's — or a sheet is told the deliverable omits its own
+            // work.
+            expect(first.series, `${where}: a share branch with nothing under it`).not.toBe('');
+            expect(answers.size, `${where}: a share branch on a series with one answer`).toBeGreaterThan(1);
+            for (const answer of answers) {
+              expect(first.series, `${where}: a share the series statement omits`).toContain(
+                answer.replace(/\.$/, ''),
+              );
+            }
           }
         }
       }
@@ -792,6 +823,38 @@ describe('section 5’s Mirroring rule describes only the sets the sheet in fron
       const paired = RIG_MIRRORS[category] === true;
       expect(rigSection.includes('between the left and right sets'), category).toBe(paired);
       expect(rigSection.includes('No piece on this sheet is a mirror of another'), category).toBe(!paired);
+    }
+  });
+
+  it('carries no claim about section 4 on the other sheets a stored rig mode reaches', () => {
+    // The subsection is gated on `RIG_MODE`, not on the rig *plan*, and `offersRigMode` permits a
+    // stored `CUTOUT_RIG` on any pairing with no `PER_POSITION` sheet — which includes OBJECT's and
+    // VEHICLE's directional views. So the wording lands on sheets whose inventory is a different
+    // shape from the rig's, and a sentence about what section 4 lists is a rig-sheet fact
+    // generalised: the VEHICLE rig splits its drive into a near side and a far side, while the
+    // directional sheet lists one `Drive unit` per yaw. It said “section 4 lists them separately”
+    // and section 4 did not.
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const mode of modesFor(category)) {
+        for (const directions of CATEGORY_DIRECTION_SETS[category]) {
+          const rigSection = sectionOf(
+            generatePrompt(category, defaultSubjectFor(category), {
+              ...DEFAULT_OUTPUT_CONFIG,
+              directionalMode: mode,
+              directions,
+              rigMode: 'CUTOUT_RIG',
+            }),
+            'CUT-OUT RIG REQUIREMENTS',
+          );
+          if (rigSection === '') continue;
+
+          const where = `${category} / ${mode} / ${directions}`;
+          expect(rigSection, where).toContain('### Mirroring');
+          // The rule states what a generator may not do, and cites only the section that forbids
+          // producing a direction by mirroring — never what this sheet's own inventory holds.
+          expect(rigSection, where).not.toMatch(/lists them separately/);
+        }
+      }
     }
   });
 });

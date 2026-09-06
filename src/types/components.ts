@@ -185,9 +185,12 @@ export interface ComponentEntry {
    * neither is a reflection of the other and the far one may not be produced by flipping the near
    * one. Only the plan can say which it has, which is why the VEHICLE rig declares none.
    *
-   * It is the phrase the mirroring sentence reads, so it carries its own article and no trailing
-   * stop — {@link mirroredLimb} builds this entry's `text` from it, and the two rigs that write both
-   * sides out by hand declare it beside prose that already names the side.
+   * **Section 5 reads whether it is set, never what it says.** What the value is for is
+   * `mirroredLimb`, which builds this entry's `text` from it — `The same eight variants as the left
+   * arm, redrawn for the right side` — so the field is the phrase that sentence is written around
+   * and carries its own article and no trailing stop. The eight pose-library and rig entries that
+   * write both sides out by hand declare it beside prose that already names the side, which is why
+   * eight of the twelve declarations are read by nothing but the predicate.
    */
   readonly mirrors?: string;
 }

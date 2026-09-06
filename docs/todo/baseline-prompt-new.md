@@ -823,10 +823,10 @@ and section [SEC:CAMERA] forbids producing one by mirroring another.
 
 ### Mirroring
 **No piece on this sheet is a mirror of another, and none may be produced by flipping one.** Where the
-subject carries a piece on each of two opposite sides, each of them is drawn as the camera sees that
-side: what faces the viewer and what turns away from it are not reflections of one another, and
-section [SEC:INVENTORY] lists them separately because they are separate drawings. A direction is a
-rotation for the same reason, and section [SEC:CAMERA] forbids producing one by mirroring another.
+subject carries a feature on each of two opposite sides, what faces the viewer and what turns away
+from it are not reflections of one another under the camera this sheet is drawn beneath, so neither
+may be obtained by flipping the other. A direction is a rotation for the same reason, and section
+[SEC:CAMERA] forbids producing one by mirroring another.
 [/IF]
 [IF:SOCKETS]
 
@@ -870,10 +870,10 @@ The component set must assemble cleanly into: [DEFINE:ASSEMBLY_POSES]
 [IF:SERIES]
 [IF:SERIES_ONE_CAPABILITY]
 
-**Every sheet of this series delivers that, each at its own facing.** The deliverable is the same
-capability at every facing the list below names, and the sheets are generated separately, each from
-its own copy of this specification — so this sheet supplies it once, for the facing section [SEC:CAMERA]
-states, and never for another.
+**Every sheet of this series delivers that, each over the facings it covers.** The deliverable is
+that same capability across all the facings the list below names, and the sheets are generated
+separately, each from its own copy of this specification — so this sheet supplies it for the facings
+section [SEC:CAMERA] states and for no others.
 [/IF]
 [IF:SERIES_ONE_CAPABILITY!=yes]
 

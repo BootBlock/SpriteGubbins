@@ -54,7 +54,12 @@ function planProse(): readonly string[] {
       for (const directions of DIRECTION_SETS) {
         for (let sheetIndex = 0; sheetIndex <= SHEET_INDEX_RANGE.max; sheetIndex += 1) {
           const plan = sheetPlanFor(category, directionalMode, directions, sheetIndex);
-          prose.push(plan.name, plan.assembly);
+          // `scaleExample` is walked here for the reason the whole file exists: section 0
+          // interpolates it verbatim, so a section number written into one would reach the model.
+          // It arrived on the plan from `promptText/subject.ts`, where the barrel walk below already
+          // covered it — moving a string from one of these two sources to the other has to move it
+          // between the walks in the same edit, or thirty-two strings leave the check silently.
+          prose.push(plan.name, plan.assembly, plan.scaleExample);
           for (const group of plan.groups) {
             if (group.heading !== null) prose.push(group.heading);
             if (group.intro !== undefined) prose.push(group.intro);

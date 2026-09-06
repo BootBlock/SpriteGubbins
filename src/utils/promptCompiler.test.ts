@@ -1169,8 +1169,10 @@ describe('generatePrompt — a sheet that is one of a series', () => {
     // delivers the same capability at a facing of its own.
     const rig = generatePrompt('CHARACTER', SUBJECT, RIG);
 
-    expect(rig).toContain('**Every sheet of this series delivers that, each at its own facing.**');
-    expect(rig).not.toContain('What the finished series assembles into');
+    expect(rig).toContain('**Every sheet of this series delivers that, each over the facings it covers.**');
+    // The other branch's heading, spelled as the template spells it — an assertion naming a string
+    // the template never carries would pass on every prompt and check nothing.
+    expect(rig).not.toContain('### The finished series’ capability');
   });
 
   it('derives the series’ own capability where the sheets do not share one', () => {
