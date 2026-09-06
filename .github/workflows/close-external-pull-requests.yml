@@ -1,0 +1,91 @@
+name: Close external pull requests
+
+# This repository does not accept pull requests from outside the collaborator list. The policy is
+# stated in `.github/CONTRIBUTING.md` and repeated in the pull-request template, and this workflow
+# is what makes it true rather than aspirational: an unsolicited pull request gets an immediate
+# answer naming the policy and the route that does work, instead of sitting open for weeks while
+# its author waits for a review that was never going to come. Closing it quickly is the courtesy;
+# leaving it open is not.
+#
+# It closes, and does nothing else. It does not lock the thread, so the author can still reply, and
+# it does not touch the branch, which on a fork is not this repository's to delete.
+on:
+  # `pull_request_target`, not `pull_request`, and the distinction is the whole reason this works.
+  # A pull request opened from a FORK runs `pull_request` with a read-only `GITHUB_TOKEN` — no
+  # amount of `permissions:` raises it — so a `pull_request` job cannot close the pull requests this
+  # workflow exists for. `pull_request_target` runs the workflow file from the BASE branch with a
+  # writable token instead.
+  #
+  # That trigger is dangerous when a job checks out the head commit, because it would run a
+  # stranger's code with a privileged token. This one checks out nothing at all: every step below is
+  # a `gh` call against the API, and the only value read out of the event is the pull request's
+  # number. There is no step for head-branch content to reach.
+  #
+  # `reopened` is not optional. A pull request's author may reopen their own pull request, so
+  # without it the policy holds for exactly one press.
+  pull_request_target:
+    types: [opened, reopened]
+
+# Enough to comment and to close, and nothing else. `contents: read` is what `gh` resolves the
+# repository through; it reads the base branch, never the head.
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: close-external-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  close:
+    name: Close and explain
+    runs-on: ubuntu-latest
+    # An allowlist, deliberately, because the interesting value is the one that reads as though it
+    # belongs on the other list. GitHub reports `CONTRIBUTOR` for anyone who has ever had a commit
+    # merged here — which is a description of the past, not a permission, and it is what a denylist
+    # of `NONE` would quietly let through. `OWNER`, `MEMBER` and `COLLABORATOR` are the three that
+    # mean write access; everything else GitHub can report (`CONTRIBUTOR`, `FIRST_TIME_CONTRIBUTOR`,
+    # `FIRST_TIMER`, `MANNEQUIN`, `NONE`) is external and is closed.
+    #
+    # Dependabot is exempt, and it is not an exception to the policy — it is not an outside
+    # contributor at all. It is this repository's own automation, configured in
+    # `.github/dependabot.yml`, and it opens its bumps from a branch of this repository with an
+    # author association that is not on the list above. Closing those would silently switch the
+    # dependency updates off, which is the sort of breakage that is only noticed months later.
+    if: >-
+      github.event.pull_request.user.login != 'dependabot[bot]' &&
+      github.event.pull_request.user.login != 'dependabot-preview[bot]' &&
+      github.event.pull_request.author_association != 'OWNER' &&
+      github.event.pull_request.author_association != 'MEMBER' &&
+      github.event.pull_request.author_association != 'COLLABORATOR'
+    steps:
+      # The body goes through a file rather than an inline argument, which is the same rule the rest
+      # of this repository follows for multi-line text: no shell-quoting form has to be got right,
+      # and a wrong one cannot wrap the whole message in stray characters where it is expensive to
+      # correct. `EOF` is quoted so nothing in the prose is expanded.
+      - name: Write the reply
+        run: |
+          cat > reply.md <<'EOF'
+          Thank you for this, and I mean that — someone taking the time to change the code is a
+          generous thing to do. This repository does not accept pull requests, though, so I am
+          closing this one rather than leaving it open for a review that would not arrive.
+
+          It is not about the change you made. Sprite Gubbins is maintained by one person and much
+          of it is written by AI agents working to the conventions in `CLAUDE.md`, and taking work
+          in from outside is not something that arrangement can do well.
+
+          **The thing that does help is an issue.** Open one with a short line about what you want
+          changed, and it goes into the queue like everything else:
+
+          https://github.com/BootBlock/SpriteGubbins/issues/new/choose
+
+          The full policy is in [CONTRIBUTING.md](https://github.com/BootBlock/SpriteGubbins/blob/main/.github/CONTRIBUTING.md).
+          EOF
+
+      - name: Comment and close
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file reply.md
+          gh pr close "$PR" --repo "$GITHUB_REPOSITORY"

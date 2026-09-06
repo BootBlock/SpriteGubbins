@@ -135,10 +135,13 @@ Vite, React 19, TypeScript (strict, with `noUncheckedIndexedAccess` and
 
 ## Contributing
 
-Start with [CONTRIBUTING.md](.github/CONTRIBUTING.md) — how to run the app, the gate a change has
-to pass, and what tends to get merged. The working conventions behind it — design tokens, the
-structural laws, the banned patterns and the verification gate — are in [CLAUDE.md](CLAUDE.md),
-with a short index in [AGENTS.md](AGENTS.md).
+**Pull requests are not accepted**, and a workflow closes each one that arrives from outside the
+collaborator list. Open an [issue](https://github.com/BootBlock/SpriteGubbins/issues/new/choose)
+with a short line about the change you want instead — that is the route that works, and it is
+genuinely welcome. [CONTRIBUTING.md](.github/CONTRIBUTING.md) says why, and how to run the app for
+yourself. The working conventions behind it — design tokens, the structural laws, the banned
+patterns and the verification gate — are in [CLAUDE.md](CLAUDE.md), with a short index in
+[AGENTS.md](AGENTS.md).
 
 Please report a security problem privately rather than in an issue:
 [SECURITY.md](.github/SECURITY.md) says how. The

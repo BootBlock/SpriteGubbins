@@ -1,8 +1,18 @@
 <!--
-Thank you for the change. The working conventions are in CLAUDE.md, indexed in AGENTS.md, and the
-short version for contributors is in .github/CONTRIBUTING.md.
+STOP — THIS REPOSITORY DOES NOT ACCEPT PULL REQUESTS.
 
-Delete any section below that does not apply. A one-line fix does not need a long form.
+If you are not on the collaborator list, a workflow will close this as soon as you open it. That is
+not a judgement on the change; it is the policy, and it holds whatever the change contains.
+
+The route that works is an issue with a short line about what you want changed:
+
+  https://github.com/BootBlock/SpriteGubbins/issues/new/choose
+
+.github/CONTRIBUTING.md says why. Thank you for the offer either way — please send it as an issue.
+
+The rest of this template is for collaborators. The working conventions are in CLAUDE.md, indexed
+in AGENTS.md. Delete any section below that does not apply; a one-line fix does not need a long
+form.
 -->
 
 ## What this changes
