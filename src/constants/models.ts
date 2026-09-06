@@ -562,9 +562,14 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // documentation rather than a place to paste a prompt. ChatGPT Images is not this endpoint and
     // cannot stand in for it: OpenAI's release notes give that surface *images with thinking*, where
     // "When given more time to think, it can plan and refine image outputs before generating them"
-    // — on a paid plan, with a Thinking or Pro model selected. That is the hand-off
-    // `CHATGPT_5_6_SOL` exists to describe, and the opposite of what the flags below declare.
-    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    // — on a paid plan, and conditional on more reasoning effort than the picker's quickest setting.
+    // That is the hand-off `CHATGPT_5_6_SOL` exists to describe, and the opposite of what the flags
+    // below declare. The condition is worded as a condition rather than as the release note's
+    // "Thinking and Pro models", for the reason that entry records at length: OpenAI's current page
+    // for the picker describes a reasoning slider with no Thinking on it, and its one Think-named
+    // option runs a different model on plans that have no Sol.
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes and
+    // https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt
     generatorSite: {
       kind: 'NONE',
       note: 'OpenAI run no page that generates through the Images API, and ChatGPT’s own image surface is the ChatGPT 5.6 Sol target rather than this one.',
@@ -579,7 +584,15 @@ export const TARGET_MODELS: readonly TargetModel[] = [
       // beside `gpt-image-1.5`, so the family the ceiling is stated for and the family the enum
       // offers are the same one — the two OpenAI surfaces agreed when this was last checked, which
       // they had not always done.
-      // https://developers.openai.com/api/docs/api-reference/images/create
+      //
+      // **Cited to the OpenAPI file, which is where the comment already said the figure came from.**
+      // The URL here was `api/docs/api-reference/images/create`, which redirects to the resource
+      // landing page — and that page carries neither the sentence nor the figure. So the citation
+      // named the surface the comment explicitly disclaims, and pointed at a page one level above
+      // the one that would have carried it: the method page under `images/methods/generate` is where
+      // the rendered reference states it. The file is public, so cite the file.
+      // https://github.com/openai/openai-openapi/blob/master/openapi.yaml
+      // https://developers.openai.com/api/reference/resources/images/methods/generate
       promptBudget: {
         kind: 'CEILING',
         limit: 32_000,
