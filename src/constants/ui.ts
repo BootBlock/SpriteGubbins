@@ -61,8 +61,8 @@ export interface AppTabChoice {
    * dialog's opening-view field is built from this same table — and a view added to the app should
    * arrive with its own description rather than needing a second file remembered.
    *
-   * A single word on a tab cannot say what a view does, and one of the five is genuinely opaque
-   * from its label: "Architecture" reads as a setting until you have opened it once.
+   * A single word on a tab cannot say what a view does, and one of them is genuinely opaque from
+   * its label: "Architecture" reads as a setting until you have opened it once.
    */
   readonly guidance: string;
 }
@@ -114,7 +114,7 @@ export const APP_TAB_CHOICE_BY_ID = {
 } satisfies Record<AppTab, AppTabChoice>;
 
 /**
- * The five views, in the order the switcher shows them.
+ * The views, in the order the switcher shows them.
  *
  * Quantise sits beside the studio rather than at the end, because it is the second half of the same
  * job: compose the prompt here, and bring what the model returned back to the tab next door.
@@ -123,7 +123,7 @@ export const APP_TAB_CHOICE_BY_ID = {
  *
  * Assembled from the record above rather than restating it, so a view cannot be called one thing in
  * the switcher and another in the heading. Order is the only thing this list contributes — the
- * union in `APP_TABS` declares the same five in a different one, and says so.
+ * union in `APP_TABS` declares the same views in a different one, and says so.
  */
 export const APP_TAB_CHOICES: readonly AppTabChoice[] = [
   APP_TAB_CHOICE_BY_ID.studio,
