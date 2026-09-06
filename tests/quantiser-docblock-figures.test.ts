@@ -75,8 +75,12 @@ import type {
  * `symmetryAxis` is the second of those and arrived the other way about — it *did* state a
  * millisecond ratio, "about a thirtieth of the whole pipeline's work", and re-measurement put six
  * readings of "the same sheet" between a twelfth and a hundred-and-forty-third of it (issue #237).
- * It now states the pass's work as a share of one linear pass over the sheet, which is arithmetic on
- * the sprites' own boxes and reproduces to the digit.
+ * **It now states no total cost at all**, which is the second correction rather than the first: the
+ * deterministic figure written to replace that ratio counted the wrong pixels twice over, against
+ * the source sheet where the boxes are in the reduced result's coordinates, and at the sheet reach
+ * where a per-box cap leaves most of it unspent. What is asserted below is the two *bounds* the
+ * paragraph now argues from — the box area the budget is divided by, and the reach `affordableReach`
+ * answers with — both taken from the pass rather than restated here.
  */
 
 /** The conditions every figure below is stated at, bar the dial each one varies. */
@@ -452,10 +456,11 @@ describe('the figures the quantiser docblocks state', () => {
     /**
      * How many of `before`'s sprites came through with the extent they had.
      *
-     * **Paired by nearest centre, not by list position**, and the difference is not cosmetic.
-     * `spriteSegments` answers topmost-first, and a perturbed sheet meshes differently — the bottom
-     * row's tops move by different amounts and that row re-sorts, so index n is *not* the same piece
-     * of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
+     * **Paired by nearest centre, not by list position**, and the difference is not cosmetic. A
+     * perturbed sheet meshes differently, so a sprite can gain or lose a row of drawn pixels at its
+     * edge — enough to cross a row band, or to change how the merge folds a piece back onto its
+     * neighbour, and either of those renumbers everything after it. Index n is therefore *not* the
+     * same piece of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
      * neighbour that happens to share its extent and misses the one that genuinely kept it: two
      * errors that cancel into the right total for the wrong reason, which is a guard that would
      * certify a wrong figure the moment the perturbation, the grid or the key tolerance changed.

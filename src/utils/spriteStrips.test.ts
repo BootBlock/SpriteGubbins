@@ -56,9 +56,20 @@ describe('spriteStrips', () => {
   });
 
   it('sorts a strip left to right whatever order the boxes arrived in', () => {
-    // `spriteSegments` returns reading order — topmost first, then leftmost — so two frames on one
-    // row a pixel apart vertically arrive out of left-to-right order. A run plays left to right.
+    // A run plays left to right, and nothing about the order this was handed may reach the answer.
     expect(edges(spriteStrips([box(40, 0), box(0, 1), box(20, 2)]))).toEqual([[0, 20, 40]]);
+  });
+
+  it('walks topmost-first, whatever order its caller uses', () => {
+    // The narrowing band is a greedy walk, so it only groups a row correctly while the row's boxes
+    // arrive topmost-first — and its caller hands it `spriteSegments`' *reading* order, which within
+    // a row is left to right. These four are one row of four to a topmost-first walk. Walked in the
+    // left-to-right order they are written in, the first box's band is too high for the second, so
+    // the row opens again at the second box and the first is dropped as a row of one: the answer
+    // comes back `[[20, 40, 60]]`. That is what the sort inside `spriteStrips` prevents.
+    const row = [box(0, 6, 6, 10), box(20, 0, 6, 10), box(40, 2, 6, 10), box(60, 4, 6, 10)];
+
+    expect(edges(spriteStrips(row))).toEqual([[0, 20, 40, 60]]);
   });
 
   it('has nothing to say about a sheet with no sprites on it', () => {
