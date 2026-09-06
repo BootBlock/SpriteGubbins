@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
  * No sticky column may state how tall the header is.
@@ -79,9 +79,7 @@ const CAP_VALUE = '[var(--sticky-column-height)]';
 function stickyColumns(): readonly (readonly [string, string])[] {
   const found: (readonly [string, string])[] = [];
   for (const file of scannableSources()) {
-    for (const match of readFileSync(file, 'utf8').matchAll(
-      /className="([^"]*\b[a-z][\w-]*:sticky\b[^"]*)"/g,
-    )) {
+    for (const match of sourceText(file).matchAll(/className="([^"]*\b[a-z][\w-]*:sticky\b[^"]*)"/g)) {
       const classes = match[1];
       if (classes !== undefined) {
         found.push([relative(process.cwd(), file).replaceAll('\\', '/'), classes] as const);

@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 /** The shell document, which is markup like any other and is not under a directory of its own. */
@@ -9,6 +9,56 @@ function filesUnder(root: string, extensions: RegExp): string[] {
   return readdirSync(resolve(process.cwd(), root), { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile() && extensions.test(entry.name))
     .map((entry) => resolve(entry.parentPath, entry.name));
+}
+
+/**
+ * Every file this module has been asked for, keyed by absolute path.
+ *
+ * A sweep asks the same question of the same file many times over, and two of them asked it
+ * quadratically. `scannableSources()` returns **888 files** — `src/` is `.ts`, `.tsx` and `.css`,
+ * colocated tests included — so the shared-component check in `design-tokens.test.ts`, which read
+ * every one of them once per file under `components/common/`, was doing on the order of 24,000
+ * synchronous reads for a question that needs each file's contents exactly once. That is not a
+ * tidiness point. On Windows, with on-access scanning between the process and the disk, it took that
+ * test to 18025 ms inside a full run and past Vitest's 5000 ms default at two runs in four on an
+ * otherwise idle tree — a timeout, never an assertion, on a change that touched nothing it reads.
+ *
+ * The cache lives here rather than in the suite because the walk and the reading of what it returns
+ * are one question, and it is the reading every consumer of {@link scannableSources},
+ * {@link tailwindScanned} and {@link appMarkup} does first. A cache per suite would be the same fix
+ * written nine times, eight of which would be written later or not at all.
+ *
+ * **It is the reading, and only the reading.** A suite that transforms what it reads — `codeOnly`
+ * is a character walk over the whole file — can still repeat that work per question, and
+ * `guidance-sentence-sharing.test.ts` did: one `it.each` case per shared sentence, each blanking
+ * every source again. Nothing here can see that, so it hoists its own comment-blanked list to module
+ * scope instead. Reach for this when a file is read more than once; reach for a hoisted derivation
+ * when it is *processed* more than once.
+ *
+ * Safe because nothing in this repository writes a source file while a guard is reading one: the
+ * suites and `deadUtilities.ts` alike run against a tree that is fixed for the length of the
+ * process, and `deadUtilities.ts` reads the emitted stylesheet directly rather than through here.
+ * A test that deliberately edits a file mid-run would need to read it itself, and there is none.
+ */
+const contents = new Map<string, string>();
+
+/**
+ * One source file's text, read at most once per process.
+ *
+ * Keyed by absolute path, so it does not care where the path came from: every sweep that walks a
+ * list from this module reads through here, and so does a suite with a walk of its own that would
+ * otherwise read one file twice — `target-model-fields.test.ts` reads each candidate once to decide
+ * whether it names the table and again to scan it. What is left outside is
+ * `optimize-deps-coverage.test.ts`, which builds its own list for a stated reason and reads each
+ * file exactly once, so routing it through here would buy an import and nothing else.
+ */
+export function sourceText(file: string): string {
+  const cached = contents.get(file);
+  if (cached !== undefined) return cached;
+
+  const text = readFileSync(file, 'utf8');
+  contents.set(file, text);
+  return text;
 }
 
 /** What the app itself is written in. */

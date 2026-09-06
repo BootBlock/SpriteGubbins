@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { codeOnly } from './codeOnly.ts';
-import { appMarkup, tailwindScanned } from './sourceFiles.ts';
+import { appMarkup, sourceText, tailwindScanned } from './sourceFiles.ts';
 
 /**
  * Nothing may reach the stylesheet that the app never wears.
@@ -178,7 +178,7 @@ export function staleCollisions(sources: readonly string[]): string[] {
 /** The app's own markup, with every comment blanked, so only what the app *wears* can answer. */
 function markup(): string[] {
   return appMarkup().map((file) => {
-    const source = readFileSync(file, 'utf8');
+    const source = sourceText(file);
     // `codeOnly` walks JavaScript and CSS comments; the shell document is neither.
     return file.endsWith('.html') ? source.replace(/<!--[^]*?-->/g, '') : codeOnly(source);
   });
@@ -194,7 +194,7 @@ function markup(): string[] {
  */
 function spellings(name: string): string {
   const files = tailwindScanned()
-    .filter((file) => spelledIn(name, readFileSync(file, 'utf8')))
+    .filter((file) => spelledIn(name, sourceText(file)))
     .map((file) => relative(process.cwd(), file).replaceAll('\\', '/'));
   return files.length > 0
     ? files.join(', ')

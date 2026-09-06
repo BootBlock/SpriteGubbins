@@ -1,7 +1,6 @@
-import { readFileSync } from 'node:fs';
 import { relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 import { ARCHITECTURE_SECTIONS } from '../src/constants/architecture.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../src/constants/output/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../src/types/subject.ts';
@@ -75,7 +74,7 @@ function zustandStores(): string[] {
   return scannableSources()
     .map((file) => relative(process.cwd(), file).split(sep).join('/'))
     .filter((path) => path.startsWith(STORES) && !path.endsWith('.test.ts'))
-    .filter((path) => MAKES_A_STORE.test(readFileSync(path, 'utf8')))
+    .filter((path) => MAKES_A_STORE.test(sourceText(path)))
     .sort();
 }
 
