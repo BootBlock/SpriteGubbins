@@ -169,12 +169,26 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // endpoints. https://ai.google.dev/gemini-api/docs/deprecations
     //
     // It is a *thinking* model — "Gemini 3 image models are thinking models that use a reasoning
-    // process ('Thinking') for complex prompts", and it cannot be disabled — and it returns
-    // interleaved text and images, so unlike Imagen it can both work through the specification and
-    // hand back a component map. That page states the thinking pass; what it does not do is name
-    // Gemini as Imagen's replacement — its one mention of Imagen is a line under "Other image
-    // generation modes" — which is why the sentence above is cited to the deprecation table instead.
+    // process ('Thinking') for complex prompts", and it "cannot be disabled in the API" — and it
+    // returns interleaved text and images, so unlike Imagen it can both work through the
+    // specification and hand back a component map.
     // https://ai.google.dev/gemini-api/docs/image-generation
+    //
+    // **That page does name Gemini as the replacement, and this comment used to say it did not.** It
+    // read that "what it does not do is name Gemini as Imagen's replacement — its one mention of
+    // Imagen is a line under 'Other image generation modes'". The page carries a section headed
+    // *When to use Imagen* whose opening notice reads "Imagen models are deprecated and will be shut
+    // down on August 17, 2026. We recommend using Nano Banana models for all image generation
+    // tasks." Nano Banana is this entry — Google's model list gives "Nano Banana 2 …
+    // `gemini-3.1-flash-image`". The count was wrong too: a case-insensitive search of the fetched
+    // page finds Imagen at four distinct places, not one.
+    //
+    // **The claim the paragraph existed to justify is unaffected**, which is why this is a rewrite
+    // and not a retraction. The deprecation table is still the right citation for the *per-model*
+    // replacement, because that is what it states: all three `imagen-4.0-*-001` rows give
+    // `gemini-3.1-flash-image` as the recommended replacement with a shutdown date of 17 August
+    // 2026. What was wrong is only the sentence saying the image-generation guide could not have
+    // supported it. https://ai.google.dev/gemini-api/docs/models
     id: 'GEMINI_FLASH_IMAGE',
     name: 'Gemini 3.1 Flash Image / Nano Banana 2',
     description:
