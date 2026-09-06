@@ -144,19 +144,43 @@ describe('generatePrompt — the subject', () => {
     expect(vehicle).not.toContain('anatomical');
   });
 
-  it('draws section 0’s scale example from components this category’s sheet actually holds', () => {
+  it('draws section 0’s scale example from components this sheet actually holds', () => {
     // "One consistent scale across every component" is abstract, and the clause after the colon is
     // what makes it land — so it was a hand and a torso for all six categories, telling a vehicle
-    // sheet to keep in proportion two things it has neither of.
+    // sheet to keep in proportion two things it has neither of. Filing it by category left the same
+    // defect one level down: a CHARACTER directional core draws heads, torsos and pelvises and was
+    // still asked for a hand in proportion to a torso.
+    //
+    // Resolved here the way the compiler resolves it — through the pairing this configuration
+    // actually reaches — exactly as the resolution-profile frame below is. An example written out
+    // here instead would be a second copy of the plans rather than a claim about them.
     for (const category of SUBJECT_CATEGORIES) {
+      const plan = sheetPlanFor(
+        category,
+        resolveMode(category, OUTPUT.directionalMode),
+        OUTPUT.directions,
+        OUTPUT.sheetIndex,
+      );
       const prompt = generatePrompt(category, defaultSubjectFor(category), OUTPUT);
-      expect(prompt).toContain(
-        `One consistent scale across every component: ${promptText.SCALE_EXAMPLE_TEXT[category]}.`,
+      expect(prompt, category).toContain(
+        `One consistent scale across every component: ${plan.scaleExample}.`,
       );
     }
-    expect(generatePrompt('VEHICLE', defaultSubjectFor('VEHICLE'), OUTPUT)).not.toContain(
-      promptText.SCALE_EXAMPLE_TEXT.CHARACTER,
-    );
+
+    // The reported instance, and the one a category key could not answer: the maintainer's own
+    // primary configuration draws no hand on either kind of sheet its ten-sheet series holds, and
+    // each of them now names a pair it does draw.
+    const eightCompass = (sheetIndex: number) =>
+      generatePrompt('CHARACTER', defaultSubjectFor('CHARACTER'), {
+        ...OUTPUT,
+        directions: 'EIGHT_COMPASS',
+        sheetIndex,
+      });
+
+    expect(eightCompass(0)).toContain('a head drawn beside the torso it joins');
+    expect(eightCompass(0)).not.toContain('a hand drawn beside');
+    expect(eightCompass(2)).toContain('a hand drawn beside an upper leg');
+    expect(eightCompass(2)).not.toContain('beside a torso');
   });
 
   it('prices section 2’s resolution profile in the unit this category’s sheet is drawn in', () => {

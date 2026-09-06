@@ -402,8 +402,26 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * them — while `JsonPackTransfer`, `firstOfEachId` and `useQuantisePresetStore` gave their names up
  * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
  * left at the same order as every raise above rather than widened.
+ *
+ * **Raised from 2350 by moving section 0's scale example from the category to the sheet**, which is
+ * a raise bought almost entirely by prompt text. `SCALE_EXAMPLE_TEXT` was thirteen strings, one per
+ * category, and what a sheet actually draws is decided by the mode, the direction set and the sheet
+ * index as well — so on 98 of the 192 sheets the eight paired categories compile, the contract
+ * priced a component against one the sheet has no entry for. The example is now
+ * `SheetPlan.scaleExample`, answered on each of the thirty-two plans beside `assembly` and
+ * `scaleUnitFrame`. Measured against the main tip this branch started from (`2074844`), rebuilt from
+ * the same `node_modules` — **2348.81 KiB across 60 entries** — this build reports **2350.58 across
+ * 60**, a delta of 1.77 and 0.58 over the ceiling it was under. No file was added to or removed from
+ * `PRECACHE_SHAPES`, and no chunk was renamed: the plans are constant data the entry chunk already
+ * reached.
+ *
+ * **All of the delta is content**, which puts it beside the guidance-paragraph half of the Projects
+ * raise rather than beside the two raises that bought machinery: nineteen more strings than the map
+ * they replace, each naming a pair of pieces rather than one category's, and the docblock arguing
+ * for them is stripped from the bundle as every other one is. 2352 restores a margin of the same
+ * order as every raise above rather than widening it.
  */
-export const PRECACHE_CEILING_KIB = 2350;
+export const PRECACHE_CEILING_KIB = 2352;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

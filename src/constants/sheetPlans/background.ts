@@ -49,6 +49,7 @@ export const BACKGROUND_PARALLAX_SET: SheetPlan = {
   // sheet into an area needs the unit to be about as square as the page, and a band is full-bleed
   // wide and short by definition.
   scaleUnitFrame: 'CELL',
+  scaleExample: 'a silhouette detail drawn beside the band it breaks the outline of is in proportion to it',
   groups: [
     {
       heading: 'Depth bands',
@@ -186,6 +187,12 @@ export const BACKGROUND_LAYER_LIBRARY: SheetPlan = {
   // would state a rule for a component the page does not hold, one line above the target-size line
   // saying no component is the assembled size.
   scaleUnitFrame: 'SHEET',
+  // No band on this sheet — the layer library draws a finished panel rather than a looping strip —
+  // so the pair is drawn from the pieces this plan does list. Neither of them is one of the three
+  // the *Extra Layers* pool can take away: this category's `absentOption` is its own default, so an
+  // example naming a light shaft would be naming a component the reader who touched nothing does
+  // not receive.
+  scaleExample: 'a standing feature drawn beside the mid mass it stands against is in proportion to it',
   groups: [
     {
       heading: 'Scene panel',

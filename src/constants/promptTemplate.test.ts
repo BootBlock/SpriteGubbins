@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as promptText from './promptText/index.ts';
 import { PROMPT_TEMPLATE } from './promptTemplate.ts';
+import { DEFAULT_MODE_FOR, sheetPlanFor } from './sheetPlans/index.ts';
 import { SUBJECT_FIELD_KEYS } from '../types/subject.ts';
 
 /**
@@ -24,22 +25,64 @@ const COMPONENT_MAP_EXAMPLE = /^\{".*"[^"]*\}$/;
 /** Tokens the compiler computes rather than looking up. See the test that pins each one. */
 const COMPUTED_DESCRIPTIONS = new Set(['DIRECTIONS_DESCRIPTION', 'MIRROR_PAIRS_DESCRIPTION']);
 
+/**
+ * The `FOO_DESCRIPTION` token spelled as the `SheetPlan` field that would fill it — `scaleExample`
+ * for `SCALE_EXAMPLE_DESCRIPTION`.
+ *
+ * The second source a token may be filled from, and it is a *level* rather than an exemption: a fact
+ * that varies between the sheets of one category cannot live in a `Record<SubjectCategory, string>`
+ * at all, so section 0's scale example is answered on the plan beside `assembly` and
+ * `scaleUnitFrame`. Derived from the token rather than listed, so a second fact moved down to the
+ * plan is covered the moment its field is named after its token.
+ */
+function planFieldFor(token: string): string {
+  return token
+    .replace(/_DESCRIPTION$/, '')
+    .toLowerCase()
+    .replace(/_(.)/g, (_, initial: string) => initial.toUpperCase());
+}
+
 describe('the template itself', () => {
-  it('fills every _DESCRIPTION token from a matching _TEXT map', () => {
-    // The naming convention is the contract between the template and `constants/promptText/`: a
-    // `[DEFINE:FOO_DESCRIPTION]` is filled from `FOO_TEXT`. Walking it here is what stops a token
-    // being added without its map — which would otherwise reach a model as literal template text.
+  it('fills every _DESCRIPTION token from a matching _TEXT map or a sheet plan’s own field', () => {
+    // The naming convention is the contract between the template and the two records that answer it:
+    // a `[DEFINE:FOO_DESCRIPTION]` is filled from `FOO_TEXT` where the fact belongs to the category,
+    // and from `SheetPlan.foo` where it belongs to the sheet. Walking it here is what stops a token
+    // being added without either — which would otherwise reach a model as literal template text.
     const tokens = [...PROMPT_TEMPLATE.matchAll(/\[DEFINE:([A-Z0-9_]+_DESCRIPTION)\]/g)].map(
       (match) => match[1] ?? '',
     );
     expect(new Set(tokens).size).toBeGreaterThan(0);
 
     const exported = new Set(Object.keys(promptText));
+    // Any sheet answers the question, since every plan carries every field of the interface; the
+    // default pairing is simply the one nothing else here has to be told about.
+    const plan = sheetPlanFor('CHARACTER', DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
     for (const token of new Set(tokens)) {
       if (COMPUTED_DESCRIPTIONS.has(token)) continue;
       const mapName = token.replace(/_DESCRIPTION$/, '_TEXT');
-      expect(exported, `[DEFINE:${token}] has no ${mapName} to fill it from`).toContain(mapName);
+      const field = planFieldFor(token);
+      expect(
+        exported.has(mapName) || Object.hasOwn(plan, field),
+        `[DEFINE:${token}] has no ${mapName} and no SheetPlan.${field} to fill it from`,
+      ).toBe(true);
     }
+  });
+
+  it('has a token behind each of the two sources, so neither has quietly stopped answering', () => {
+    // Both halves of the convention above are load-bearing, and either could rot into an `||` that
+    // never decides anything: a template with no plan-filled token would let a `FOO_TEXT` be deleted
+    // unnoticed, and one with no map-filled token would say the same of the plans.
+    const tokens = new Set(
+      [...PROMPT_TEMPLATE.matchAll(/\[DEFINE:([A-Z0-9_]+_DESCRIPTION)\]/g)].map((match) => match[1] ?? ''),
+    );
+    const plan = sheetPlanFor('CHARACTER', DEFAULT_MODE_FOR.CHARACTER, 'FIVE_CLASSIC', 0);
+    const named = [...tokens].filter((token) => !COMPUTED_DESCRIPTIONS.has(token));
+
+    expect(
+      named.filter((token) => new Set(Object.keys(promptText)).has(token.replace(/_DESCRIPTION$/, '_TEXT')))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(named.filter((token) => Object.hasOwn(plan, planFieldFor(token))).length).toBeGreaterThan(0);
   });
 
   it('fills every _LABEL token from a subject field the categories define', () => {

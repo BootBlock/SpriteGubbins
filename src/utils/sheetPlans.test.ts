@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { NO_ADDITIONAL_ANATOMY } from '../constants/anatomy.ts';
-import { CATEGORY_OPTIONS, defaultSubjectFor, fieldLabelFor } from '../constants/categories/index.ts';
+import {
+  absentOptionFor,
+  CATEGORY_OPTIONS,
+  defaultSubjectFor,
+  fieldLabelFor,
+} from '../constants/categories/index.ts';
 import { DEFAULT_OUTPUT_CONFIG } from '../constants/output/index.ts';
 import { directionalModeChoices } from '../constants/output/index.ts';
 import {
@@ -19,6 +24,7 @@ import {
   DIRECTION_LISTS,
   OBJECT_YAW,
 } from '../constants/promptText/index.ts';
+import { everySheetOf, planProseFor } from '../test/categoryProse.ts';
 import { sectionOf } from '../test/promptSections.ts';
 import { DIRECTIONAL_MODES } from '../types/output.ts';
 import type { DirectionalMode } from '../types/output.ts';
@@ -30,6 +36,7 @@ import { formatAnatomyComponent, parseAdditionalAnatomy } from './additionalAnat
 import { anatomyFacingsFor, componentCountFor } from './componentSet.ts';
 import { planSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
+import { planAsDrawn } from './sheetPlanClothing.ts';
 import { categoryPermits, PERMITTED_KINDS, validateAllSheetPlans } from './sheetPlanValidation.ts';
 
 /**
@@ -440,6 +447,148 @@ describe('the plan table itself', () => {
       // And the two halves are tellable apart everywhere a sheet is named.
       expect(cardinals.name).toContain('cardinal');
       expect(diagonals.name).toContain('diagonal');
+    }
+  });
+});
+
+/**
+ * The two shapes section 0's scale example takes, and the pieces each one names.
+ *
+ * A scale example is a statement about *components* — this piece against that one — so the words
+ * that have to be the sheet's own vocabulary are the two it names, and nothing else in the clause.
+ * The frame around them is ordinary English (`drawn beside`, `is in proportion to it`) and grounding
+ * it would only ever ask whether the plans happen to use the word "drawn".
+ *
+ * **Two shapes, because two kinds of sheet exist.** Most name the smallest and the largest piece
+ * they draw. The sheets whose components are not pieces of each other — an effect's frames, a
+ * portrait's expressions, an icon family, a font's glyphs, a blend set's tiles — have no such pair,
+ * so what has to hold is that the repeats agree, and those state it in the second frame. A clause
+ * neither pattern reads fails rather than passing unchecked, which is the one way a check of this
+ * shape can rot silently.
+ */
+const SCALE_EXAMPLE_SHAPES = [
+  // "a latch drawn beside the housing it fastens is in proportion to it" — the trailing relative
+  // clause is optional and is the sentence's own scaffolding, not a third piece.
+  /^an? (.+?) drawn beside (?:a|an|the) (.+?)(?: it .+?)? is in proportion to it$/,
+  // "the first frame and the peak frame are drawn at the same size, …"
+  /^(?:a|an|the|one) (.+?) and (?:a|an|the|one) (.+?)(?: beside it)? are drawn at the same size(?:, .+)?$/,
+];
+
+/**
+ * The words of a named piece that have to be grounded — the articles and conjunctions holding a
+ * compound piece together are the clause's own scaffolding, not the sheet's vocabulary.
+ */
+const SCALE_SCAFFOLDING = new Set(['a', 'an', 'the', 'one', 'or', 'and']);
+
+function scaleExamplePieces(example: string): readonly string[] {
+  for (const shape of SCALE_EXAMPLE_SHAPES) {
+    const match = shape.exec(example);
+    // Discharged rather than defaulted: an empty piece would split into one empty word, which
+    // grounds against anything and would report a piece as checked that was never read.
+    if (match !== null) return [match[1], match[2]].flatMap((piece) => (piece === undefined ? [] : [piece]));
+  }
+  return [];
+}
+
+describe('section 0’s scale example names pieces the sheet in front of the reader draws', () => {
+  /**
+   * Every distinct sheet the app can compile, once each.
+   *
+   * `everySheetOf` regenerates the directional plans for each set it walks, so the same example is
+   * reached many times over; the key is the plan's own name and example, which is what a failure
+   * message has to name anyway.
+   */
+  function everyDistinctSheet(): readonly (readonly [SubjectCategory, SheetPlan])[] {
+    const seen = new Set<string>();
+    const sheets: (readonly [SubjectCategory, SheetPlan])[] = [];
+    for (const category of SUBJECT_CATEGORIES) {
+      for (const plan of everySheetOf(category)) {
+        const key = `${category} / ${plan.name} / ${plan.scaleExample}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        sheets.push([category, plan]);
+      }
+    }
+    return sheets;
+  }
+
+  /**
+   * The sheet as the reader who declines gets it — every entry an `absentOption` can take away
+   * already removed.
+   *
+   * A plan's entries are unconditional except for the ones drawing what its `clothing` pool offers
+   * an absence of, and BACKGROUND's absence is its own *default*: a reader who touches nothing gets
+   * a layer library with no atmosphere veil, no light shaft and no drifting particle. So the plan as
+   * declared is the wrong corpus — an example naming a light shaft grounds against the plan and is
+   * absent from the section 4 the default subject actually compiles, which is the same
+   * prompt-disagrees-with-itself defect one field over. The leanest sheet is the only one every
+   * reader receives, so it is what the example has to be true of.
+   */
+  function leanestSheet(category: SubjectCategory, plan: SheetPlan): SheetPlan {
+    return planAsDrawn(plan, category, absentOptionFor(category, 'clothing') ?? '');
+  }
+
+  it('grounds every piece it names in that sheet’s own inventory', () => {
+    // The defect: the example was one string for the whole app — a hand against a torso, on a
+    // vehicle sheet with neither — and the repair filed it by category, which is one level above
+    // the fact. What a sheet draws is decided by the mode, the direction set and the sheet index as
+    // well, so a CHARACTER directional core still priced a hand it does not draw against a torso,
+    // two items above the paragraph telling the generator to draw this sheet's inventory and
+    // nothing else. Grounded against the sheet's own prose rather than the category's, because the
+    // category corpus is exactly what would pass the pairing this was wrong on.
+    //
+    // Matched with a leading boundary only, so a plan writing the plural grounds the singular.
+    for (const [category, plan] of everyDistinctSheet()) {
+      const where = `${category} / ${plan.name}`;
+      const pieces = scaleExamplePieces(plan.scaleExample);
+      const prose = planProseFor(leanestSheet(category, plan));
+
+      expect(pieces.length, `${where}: the example is in a shape neither pattern reads`).toBe(2);
+
+      for (const piece of pieces) {
+        for (const word of piece.split(' ').filter((part) => !SCALE_SCAFFOLDING.has(part))) {
+          // `String.raw`, because a plain template literal reads \b as a backspace: the regex then
+          // matches nothing and every sheet fails at once, which is loud but for the wrong reason.
+          const grounded = new RegExp(String.raw`\b${word}`, 'i').test(prose);
+          expect(grounded, `${where}: “${word}” is a piece this sheet never lists`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('reads on from the rule it illustrates, so it is a lower-case clause with no trailing stop', () => {
+    // It completes "One consistent scale across every component: …" and the template supplies the
+    // full stop, so a capital or a stop here lands one in the middle of the contract's fifth item.
+    for (const [category, plan] of everyDistinctSheet()) {
+      expect(plan.scaleExample, `${category} / ${plan.name}`).toMatch(/^[a-z]/);
+      expect(plan.scaleExample.endsWith('.'), `${category} / ${plan.name}`).toBe(false);
+    }
+  });
+
+  it('uses both shapes, so a table that has collapsed to one is not silently in force', () => {
+    // The pair shape is the stronger claim and the agreement shape is the honest answer where no
+    // pair exists. If every sheet ended up on one of them, the other pattern would be dead code
+    // admitting anything written in its frame.
+    const used = new Set(
+      everyDistinctSheet().map(([, plan]) =>
+        SCALE_EXAMPLE_SHAPES.findIndex((shape) => shape.test(plan.scaleExample)),
+      ),
+    );
+    expect(used).toEqual(new Set([0, 1]));
+  });
+
+  it('gives no two categories the same example, which would be one written in the other’s pieces', () => {
+    // Deliberately not per *sheet*: a category's own plans may honestly share a pair — CHARACTER's
+    // pose library and its cut-out rig both draw a hand and a torso — and forcing a different
+    // wording on each would be contrivance. Across categories it is the copy-paste this whole
+    // family of defects is made of.
+    const owners = new Map<string, SubjectCategory>();
+    for (const [category, plan] of everyDistinctSheet()) {
+      const owner = owners.get(plan.scaleExample);
+      expect(owner ?? category, `“${plan.scaleExample}” is shared by ${String(owner)} and ${category}`).toBe(
+        category,
+      );
+      owners.set(plan.scaleExample, category);
     }
   });
 });

@@ -70,6 +70,11 @@ export const ICON_SYMBOL_SET: SheetPlan = {
   // The cooldown sweep is drawn at two stages, and the changed-state pair active and inactive.
   posing: 'PER_POSITION',
   scaleUnitFrame: 'CELL',
+  // The agreement shape, for EFFECT's reason: this sheet's components are not pieces of each
+  // other, so there is no small piece to hold against a large one. What has to hold instead is that
+  // no member of the family arrives at half the weight of the one beside it.
+  scaleExample:
+    'one core icon and the core icon beside it are drawn at the same size, filling that cell to the same margin',
   groups: [
     {
       heading: null,

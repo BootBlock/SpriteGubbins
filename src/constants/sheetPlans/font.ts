@@ -150,6 +150,13 @@ export const FONT_CAPITALS: SheetPlan = {
   // share of that cell is the same instruction on all four — which is what a series needs, the frame
   // being fixed for a whole batch the way the unit is.
   scaleUnitFrame: 'CELL',
+  // The agreement shape, for EFFECT's reason and one more of its own: these components are not
+  // pieces of each other either, and what has to hold between them is stricter than agreement about
+  // weight — a glyph a pixel off the shared baseline is visible in every word the engine ever sets.
+  // Cap height is this sheet's own measurement, which is why the three sheets below each name the
+  // height their own characters are set to instead.
+  scaleExample:
+    'one capital and the capital beside it are drawn at the same size, sharing one baseline and one cap height',
   groups: [
     {
       heading: null,
@@ -173,6 +180,8 @@ export const FONT_LOWER_CASE: SheetPlan = {
   // Twenty-six marks on a baseline, each drawn once.
   posing: 'UNSTATED',
   scaleUnitFrame: 'CELL',
+  scaleExample:
+    'one lower-case letter and the letter beside it are drawn at the same size, sharing one baseline and one height above it',
   groups: [
     {
       heading: null,
@@ -197,6 +206,8 @@ export const FONT_DIGITS_AND_PUNCTUATION: SheetPlan = {
   // Digits and marks, each drawn once.
   posing: 'UNSTATED',
   scaleUnitFrame: 'CELL',
+  scaleExample:
+    'one digit and the punctuation mark beside it are drawn at the same size, each sitting at the height against the baseline its own use asks for',
   groups: [
     {
       heading: 'Digits',
@@ -226,6 +237,8 @@ export const FONT_SYMBOLS: SheetPlan = {
   // Symbols and operators, each drawn once.
   posing: 'UNSTATED',
   scaleUnitFrame: 'CELL',
+  scaleExample:
+    'one symbol and the symbol beside it are drawn at the same size, to the same construction and weight',
   groups: [
     {
       heading: null,

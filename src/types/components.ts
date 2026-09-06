@@ -338,6 +338,34 @@ export interface SheetPlan {
    * not.
    */
   readonly scaleUnitFrame: ScaleUnitFrame;
+  /**
+   * Section 0's worked example of one consistent scale, in the pieces **this sheet** draws.
+   *
+   * "One consistent scale across every component" is an abstract rule, and the example after the
+   * colon is what makes it land — so the example has to name pieces the sheet actually contains.
+   * It was written once, for a character, and reached every category: a vehicle sheet was told to
+   * keep a hand in proportion to a torso it has neither of. The repair filed it by category, which
+   * is the level above the one it belongs to, and left the same defect on every category with more
+   * than one kind of sheet: a CHARACTER directional core draws heads, torsos and pelvises and was
+   * still asked for a hand in proportion to a torso, two items above the paragraph telling the
+   * generator to draw this sheet's inventory and nothing else.
+   *
+   * **What a sheet draws is a property of the sheet**, so the example is answered here beside
+   * {@link SheetPlan.assembly} and {@link SheetPlan.scaleUnitFrame}, which are the same kind of
+   * statement for the same reason. `utils/sheetPlans.test.ts` grounds each one in its own plan's
+   * entries, as `promptText/landmarks.test.ts` grounds the landmark sentence in the category's.
+   *
+   * **Two shapes, and which one a sheet takes is decided by whether its components are pieces of
+   * each other.** Most name the smallest and the largest piece the sheet draws — a fitting against
+   * the body it is mounted on. The sheets whose components are *not* parts of one another — an
+   * effect's frames, a portrait's expressions, an icon family, a font's glyphs, a blend set's tiles
+   * — have no such pair, so what has to hold instead is that the repeats agree, and each of those
+   * states that.
+   *
+   * It reads on from "One consistent scale across every component: ", so it is a lower-case clause
+   * with no trailing stop.
+   */
+  readonly scaleExample: string;
 }
 
 /**

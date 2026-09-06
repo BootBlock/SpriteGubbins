@@ -50,5 +50,5 @@ export { ASPECT_TEXT, BACKGROUND_KEY_TEXT } from './sheet.ts';
 // `tests/prompt-citations.test.ts`, which walks this namespace for every string the prompt
 // interpolates; the thirteen units are prose the compiled prompt carries, so a section number
 // hand-written into one has to fail that check like any other line.
-export { SCALE_EXAMPLE_TEXT, SCALE_UNIT_TEXT } from './subject.ts';
+export { SCALE_UNIT_TEXT } from './subject.ts';
 export { JOINT_CAP_TEXT, OVERLAP_MARGIN_TEXT } from './rigging.ts';

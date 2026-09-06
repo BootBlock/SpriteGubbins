@@ -104,6 +104,11 @@ export const TERRAIN_BLEND_SET: SheetPlan = {
   // Every tile is a different tile: the variants differ in scatter, the transitions in which edge they carry.
   posing: 'UNSTATED',
   scaleUnitFrame: 'CELL',
+  // A blend set's tiles are all one size by construction, so the agreement shape is the honest one
+  // here: what can still go wrong is the scatter grain changing between a base tile and a
+  // transition, which reads as two materials drawn at two scales.
+  scaleExample:
+    'one base material tile and the transition tile beside it are drawn at the same size, their surface scatter at one grain throughout',
   groups: [
     {
       heading: null,
@@ -143,6 +148,9 @@ export const TERRAIN_FEATURE_LIBRARY: SheetPlan = {
   // is what the category guard means by “a ground tile or a landform piece”. Each gets a cell the
   // unit's own size, so a share of that cell says the same thing on both sheets of this category.
   scaleUnitFrame: 'CELL',
+  // The one TERRAIN sheet that does hold a pair: the loose features stand on the elevation edge,
+  // and a boulder larger than the lip it sits on is the failure this example names.
+  scaleExample: 'a boulder drawn beside the lip it stands on is in proportion to it',
   groups: [
     {
       heading: 'Elevation edge',
