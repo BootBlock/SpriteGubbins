@@ -127,9 +127,15 @@ describe('where the app’s claims about other products are cited from', () => {
     // comment can name without spelling.
     //
     // **What it does not reach is worth stating, because a guard that oversells itself is the
-    // problem this file exists about.** A vendor whose evidence is a `.ts` or `.js` file is invisible
-    // to it, and it cannot tell whether the repository cited is the *right* one — only that a claim
-    // about code is answered by a link to code rather than to documentation.
+    // problem this file exists about.** Three things, and the third is the one a reader would
+    // otherwise assume was covered. A vendor whose evidence is a `.ts` or `.js` file is invisible to
+    // it. It cannot tell whether the repository cited is the *right* one — only that a claim about
+    // code is answered by a link to code rather than to documentation. And it says nothing at all
+    // about a foreign-code claim carrying **no citation**, because the check is gated on the comment
+    // having a URL: what it compares is a claim against the link beside it, so a claim with no link
+    // beside it has nothing to compare and passes. That is deliberate rather than overlooked — an
+    // uncited claim is a different defect, and `TARGET_MODELS`' own header is what governs it — but
+    // it is not what the assertion's name suggests, so it is said here.
     const CLAIMS_FOREIGN_CODE = /\bOpenAPI\b|[\w/.-]+\.(?:py|yaml|yml|rs|go|rb|java|cpp|toml)\b/;
     const CODE_HOST = /https?:\/\/(?:github\.com|raw\.githubusercontent\.com)\//;
     const ANY_URL = /https?:\/\/\S+/;
