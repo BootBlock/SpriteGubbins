@@ -402,8 +402,37 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * them — while `JsonPackTransfer`, `firstOfEachId` and `useQuantisePresetStore` gave their names up
  * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
  * left at the same order as every raise above rather than widened.
+ *
+ * **Raised from 2350 by 2 KiB, and no single change is what spent it — the *combination* is.** Four
+ * builds from the same `node_modules` say it, and the fourth is the only one that fails:
+ *
+ * | Build | Precache | Entries |
+ * | --- | --- | --- |
+ * | `2074844`, the tip both branches left | 2349.68 KiB | 60 |
+ * | `main` at `c0e426a` | 2349.98 | 60 |
+ * | the assembly-base guidance change alone | 2349.98 | 60 |
+ * | the two merged | **2351.14** | 60 |
+ *
+ * Each half adds 0.30 KiB and passes on its own; together they add 1.46, because the last 0.86 is
+ * rolldown re-partitioning the split around the modules both touched rather than any file either
+ * branch wrote. **That is the case CLAUDE.md names as the one a local gate cannot see** — several
+ * agents merge into `main`, and the combination that lands is one nobody ran anything against. It is
+ * also what a 0.02 KiB margin buys: `main` had been sitting that far under the ceiling, so the next
+ * branch to land anything at all was going to be the one that paid for it.
+ *
+ * **The guidance change's own 0.30 KiB is prose**, which is the cost this repository's guidance rule
+ * imposes: three cards told the reader the *Assembly Base* field decides how the sheet is broken
+ * into components, which nothing in the compiler does, so the true statement is written once in
+ * `constants/guidanceSentences.ts` and carried by all thirteen, five of those cards were rewritten,
+ * and TERRAIN's *Scatter Layer* card and its sheet plan each gained a sentence. No chunk was added
+ * and none renamed, on any of the four builds.
+ *
+ * 2352 leaves **0.86 KiB**, which is the order of the 0.82 the `isTextEntry` note above calls the
+ * narrowest this margin has been. It is deliberately not more: the question of whether 2350 was
+ * still the right figure for what a first visit downloads is one this change is not placed to
+ * answer, and widening the margin would only postpone it further.
  */
-export const PRECACHE_CEILING_KIB = 2350;
+export const PRECACHE_CEILING_KIB = 2352;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
