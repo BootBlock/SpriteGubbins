@@ -115,9 +115,16 @@ describe('wrapForModel', () => {
     expect(prompt).toContain('--s 50');
     // `--sw` is style-reference weight and does nothing without an accompanying `--sref`.
     expect(prompt).not.toContain('--sw');
-    // Raw mode beside the version that takes it: the flag is `--raw` on the V8 line this pins and
-    // `--style raw` on V7, and the two were out of step until it was checked. Asserted adjacent to
-    // `MIDJOURNEY_VERSION` because that is the pairing — either half moving alone is the defect.
+    // Raw mode beside the version that takes it. This wrapper emitted an older `--style raw` while
+    // pinning a V8 version, so the two were out of step until it was checked; Midjourney's Parameter
+    // List and Raw page both give `--raw`, and their Version chart marks Raw supported under V8.1
+    // and V8.2. Asserted adjacent to `MIDJOURNEY_VERSION` because that is the pairing — either half
+    // moving alone is the defect.
+    //
+    // The comment here used to add that the older form was "`--style raw` on V7", which no
+    // Midjourney page states: swept over all 105 help-centre articles, the only one spelling it is
+    // Legacy Features, whose compatibility table gives it against V5 and V6. `modelWrapperText/
+    // midjourney.ts` records that at length.
     expect(prompt).toContain(`${MIDJOURNEY_VERSION} --raw`);
     expect(prompt).not.toContain('--style');
   });
