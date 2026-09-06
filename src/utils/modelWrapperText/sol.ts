@@ -6,10 +6,14 @@ import type { SectionNumbers } from '../templateEngine.ts';
  * ChatGPT 5.6 Sol, which is the one target here that **cannot draw**.
  *
  * Its model page lists `text` as its only output modality and `image_generation` among its *tools*,
- * and OpenAI's tool guide names what is on the far side of that boundary: "The model used for the
- * image generation process is always a GPT Image model, including `gpt-image-2`, `gpt-image-1.5`,
- * `gpt-image-1`, and `gpt-image-1-mini`", with "the tool handles GPT Image model selection". So the
- * specification this app composes is never what gets rendered on this target. Something else is,
+ * and two OpenAI guides name what is on the far side of that boundary. The **tool** guide states
+ * that "The model used for the image generation process is always a GPT Image model, including
+ * `gpt-image-2`, `gpt-image-1.5`, `gpt-image-1`, and `gpt-image-1-mini`"; the **image generation**
+ * guide is where "the tool handles GPT Image model selection" is written. The two sentences were
+ * attributed to one page here as "OpenAI's tool guide", which is the looser half of the same error
+ * `constants/models.ts` carried — there the second sentence was cited to a URL that does not hold
+ * it. Both pages are in the Sources list below and each sentence now names the one it came from.
+ * So the specification this app composes is never what gets rendered on this target. Something else is,
  * carried there by a call Sol makes — and that hand-off is the obvious candidate for adherence that
  * varies run to run on a prompt nothing else about the target explains.
  *

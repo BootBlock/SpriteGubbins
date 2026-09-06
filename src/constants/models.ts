@@ -74,24 +74,39 @@ export const TARGET_MODELS: readonly TargetModel[] = [
   {
     // **The only target here that cannot draw.** Its model page gives `text` as the sole output
     // modality and lists `image_generation` under *tools*, so a sheet arrives by Sol calling that
-    // tool — and the tool guide names what is on the far side: the renderer is "always a GPT Image
-    // model", with "the tool handles GPT Image model selection".
+    // tool — and OpenAI name what is on the far side across two guides, one sentence each. The tool
+    // guide says the renderer is "always a GPT Image model":
     // https://developers.openai.com/api/docs/guides/tools-image-generation
+    // The image generation guide is where "the tool handles GPT Image model selection" is written,
+    // and this entry quoted it against the URL above until the two were checked separately:
+    // https://developers.openai.com/api/docs/guides/image-generation
     //
-    // In ChatGPT that renderer is `gpt-image-2`, sold as **ChatGPT Images 2.0**: OpenAI's release
-    // notes introduce it on 21 April 2026 as "our new image generation model in ChatGPT", the model
-    // ships the same day as `gpt-image-2-2026-04-21`, and OpenAI's ChatGPT docs state "Built-in image
-    // generation uses `gpt-image-2`". No one page equates the two names outright — that last step is
-    // inference, recorded as such. https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    // In ChatGPT that renderer is `gpt-image-2`, sold as **ChatGPT Images 2.0**. OpenAI's release
+    // notes introduce it on 21 April 2026 as "our new image generation model in ChatGPT", and the
+    // model ships the same day as `gpt-image-2-2026-04-21`:
+    // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
+    //
+    // **The sentence naming the model is on a third page, and it is scoped away from the surface
+    // this app's readers use.** "Built-in image generation uses `gpt-image-2`" was quoted here
+    // against the release notes, which do not carry it. It is on OpenAI's ChatGPT documentation —
+    // inside a surface switch covering the app, the CLI and the IDE. The same page's ChatGPT **web**
+    // block names no model at all, and web is where a reader pastes. So it is evidence for the
+    // Codex surfaces and not for this one, which is the same over-reach recorded for the Flux
+    // prompting guide below. https://learn.chatgpt.com/docs/image-generation
+    //
+    // What is left for ChatGPT web is the release notes plus the date-matched model id, which is an
+    // inference and was already recorded as one. The step marked inference was equating
+    // `gpt-image-2` with the name "ChatGPT Images 2.0"; the scope of the quote above is a second
+    // step and is now marked too.
     //
     // Both capability flags below are still about Sol and still true: it reasons over the brief, and
     // it answers in text. What they do not say is that the *picture* comes from a second model on
     // the far side of a tool call, which is what its wrapper in `utils/modelWrapperText/sol.ts`
     // says.
     //
-    // **The description's images-with-thinking sentence is the release notes' own claim and no
-    // more.** They say: "Images with thinking is available on all paid ChatGPT plans. It is
-    // available when you select Thinking and Pro models."
+    // **The description's images-with-thinking sentence is the release notes' own claim.** They say:
+    // "Images with thinking is available on all paid ChatGPT plans. It is available when you select
+    // Thinking and Pro models."
     // https://help.openai.com/en/articles/6825453-chatgpt-release-notes
     //
     // For a while this description read that choosing Sol "puts you on a thinking tier", and **that
@@ -101,14 +116,30 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // GPT-5.5 Instant. That page now says "GPT-5.6 Sol powers Instant, Medium, High, and Extra High
     // on eligible paid plans", and describes Instant as "Fast responses for everyday questions".
     // Sol reaches the picker's *non*-thinking option, so picking Sol settles nothing about the tier.
-    // The API side agrees: `reasoning.effort` on `gpt-5.6-sol` accepts `none`. The sentence now
-    // points the reader at the picker, which is what OpenAI make the feature conditional on.
+    // The API side agrees: `reasoning.effort` on `gpt-5.6-sol` accepts `none`.
     // https://help.openai.com/en/articles/20001354-gpt-56-in-chatgpt and
     // https://developers.openai.com/api/docs/models/gpt-5.6-sol
+    //
+    // **The replacement then named a control OpenAI's current page does not have, and its own
+    // rationale is what falsified it.** The sentence pointed the reader at the picker "when you pick
+    // one of their Thinking or Pro models", quoting the release note faithfully — nine lines under a
+    // paragraph quoting the newer page's option list, which does not contain a Thinking. That page
+    // describes "a new reasoning slider" whose options are Instant, Medium, High, Extra High and
+    // Pro. The one Think-named option on it belongs to the plans that have no Sol at all: "Free and
+    // Go users can use Think for harder questions. Think uses GPT-5.6 Luna, not GPT-5.6 Sol", and
+    // "Free and Go users do not have access to GPT-5.6 Sol". So a reader following the old sentence
+    // found either no such option or Think, which takes them off the target they picked.
+    //
+    // **Two OpenAI pages describe one control differently, and the description names the condition
+    // instead of either label.** The release note's names are April's; the slider's are the current
+    // page's; and the labels are exactly the part that moved, so naming one is what goes stale. What
+    // both pages agree on is that the feature wants *more reasoning effort than the fastest setting*,
+    // which is a property of the control rather than a name for a rung on it. That is what the
+    // sentence now says, and it survives OpenAI renaming the rungs again.
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. OpenAI put images with thinking on every paid ChatGPT plan, and say it applies when you pick one of their Thinking or Pro models, so check which model the picker is on. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. OpenAI put images with thinking on every paid ChatGPT plan, and make it conditional on giving the model more reasoning effort than its quickest setting, so raise the reasoning level in the picker before you send this. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
     // ChatGPT's own image surface, which is where a person rather than an API client reaches this
     // model. OpenAI announce it as “ChatGPT Images 2.0” and the page is indexed under that name.
     // https://openai.com/index/introducing-chatgpt-images-2-0/
