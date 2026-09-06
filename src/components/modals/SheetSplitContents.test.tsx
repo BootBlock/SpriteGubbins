@@ -67,7 +67,7 @@ const BUDGET_BETWEEN_THE_TWO_SHEETS = 20;
  * row they are on. `names accessible names per row` below is what pins that.
  */
 function copyButtons(): readonly HTMLElement[] {
-  return screen.getAllByRole('button', { name: /^Copy sheet \d+ of \d+ — / });
+  return screen.getAllByRole('button', { name: /^Copy this sheet \d+ of \d+ — / });
 }
 
 interface RowUnderTest {
@@ -419,7 +419,7 @@ describe('SheetSplitContents', () => {
     });
     expect(summaries).toHaveLength(FACINGS.length);
     expect(new Set(summaries).size).toBe(summaries.length);
-    expect(summaries[0]).toMatch(/^Read the prompt for sheet 1 of \d+ — /);
+    expect(summaries[0]).toMatch(/^Read the prompt for this sheet, 1 of \d+ — /);
   });
 
   it('warns when the runs are not tied to one subject', async () => {

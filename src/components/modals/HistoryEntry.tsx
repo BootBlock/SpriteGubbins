@@ -83,7 +83,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
             <button
               ref={attachAsk}
               type="button"
-              aria-label={isConfirming ? `Confirm deleting ${entry}` : `Delete ${entry}`}
+              aria-label={isConfirming ? `Delete? Confirm deleting ${entry}` : `Delete ${entry}`}
               onClick={() => {
                 if (!isConfirming) {
                   ask();
@@ -105,7 +105,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
             <ControlTooltip hint="Cancel" text={HISTORY_ACTION_TOOLTIPS.cancelDeleteEntry}>
               <button
                 type="button"
-                aria-label={`Keep ${entry}`}
+                aria-label={`Cancel — keep ${entry}`}
                 onClick={cancel}
                 className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
               >
@@ -117,7 +117,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
           <ControlTooltip hint="Copy prompt" text={HISTORY_ACTION_TOOLTIPS.copyEntry}>
             <button
               type="button"
-              aria-label={`Copy ${entry}`}
+              aria-label={`Copy prompt — ${entry}`}
               onClick={() => {
                 onCopy(log);
               }}

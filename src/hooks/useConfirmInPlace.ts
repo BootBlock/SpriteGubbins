@@ -101,6 +101,16 @@ export interface ConfirmInPlace {
  * three-edged problem is what produced five misses, so the choreography is here and the call sites
  * carry two refs.
  *
+ * **Those six are cited, not superseded, and two of them are worth saying why about.**
+ * `PackImportConfirm` and `JsonPackTransfer` are the arriving and leaving halves of this same
+ * choreography, and the code below is theirs — but they are a *staged import* rather than a row's
+ * two-press question: the state that decides whether the confirmation is showing is a pending import
+ * held in a store, and it is read by two sibling components rather than one. This hook owns
+ * `isConfirming` itself, which is what the five call sites need and what those two cannot use.
+ * Making it accept externally-driven state as well would be a knob added for one caller, which is
+ * the speculative generality the same rulebook bans. The other four are single-edge moves — a focus
+ * handed on before a state change, or caught after one — and are not this shape at all.
+ *
  * **Arriving**, the confirmation's harmless half takes focus, which is `PackImportConfirm`'s answer
  * and its reason: the press that asked the question left focus on a button this replaces, and
  * landing on Cancel is what makes a stray Enter safe.

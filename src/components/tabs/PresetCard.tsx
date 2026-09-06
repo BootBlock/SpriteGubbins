@@ -86,7 +86,7 @@ export function PresetCard({ preset, index }: PresetCardProps) {
             // through this library is twenty-three consecutive stops otherwise, every one of them
             // called "Load preset". `ProjectPresetRow` names its own the same way, and the visible
             // label stays short because a three-column grid has no room for the name twice.
-            aria-label={`Load the preset ${preset.name} into the studio`}
+            aria-label={`Load preset ${preset.name} into the studio`}
             onClick={() => {
               loadPreset(preset);
             }}

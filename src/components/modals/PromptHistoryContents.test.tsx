@@ -10,10 +10,9 @@ import { PromptHistoryContents } from './PromptHistoryContents.tsx';
 /**
  * The drawer of prompts the reader has taken away, and the two things a keyboard loses in it.
  *
- * **This file did not exist**, which #252 records as the third thing that visit would have left
- * behind: the preset library and the split drawer each have a suite that renders them, and the
- * history drawer had none — so neither the repeated accessible names nor the focus its
- * confirmations dropped had anywhere to be caught.
+ * **This file did not exist**, which is the third gap #252 records: the preset library and the
+ * split drawer each have a suite that renders them, and the history drawer had none — so neither
+ * the repeated accessible names nor the focus its confirmations dropped had anywhere to be caught.
  *
  * The store is driven directly rather than through a database. What it does with storage is its own
  * suite's subject, and mocking one here would be a second answer to the same question; what is
@@ -38,8 +37,8 @@ function log(id: string, overrides: Partial<PromptHistoryLog> = {}): PromptHisto
 }
 
 /** The row actions, in the order a reader meets them, for whichever entry is asked for. */
-function rowAction(kind: 'Delete' | 'Copy' | 'Restore' | 'Keep' | 'Confirm', index = 0): HTMLElement {
-  const found = screen.getAllByRole('button', { name: new RegExp(`^${kind} `) });
+function rowAction(kind: 'Delete' | 'Copy prompt' | 'Restore' | 'Cancel', index = 0): HTMLElement {
+  const found = screen.getAllByRole('button', { name: new RegExp(`^${kind}[ ,—]`) });
   const button = found[index];
   if (button === undefined) throw new Error(`no ${kind} button at ${String(index)}`);
   return button;
@@ -75,7 +74,7 @@ describe('PromptHistoryContents', () => {
     const repeated = names.filter((name, index) => names.indexOf(name) !== index);
     expect(repeated).toStrictEqual([]);
     expect(rowAction('Delete')).toHaveAccessibleName(/^Delete the CHARACTER prompt from /);
-    expect(rowAction('Copy')).toHaveAccessibleName(/^Copy the CHARACTER prompt from /);
+    expect(rowAction('Copy prompt')).toHaveAccessibleName(/^Copy prompt — the CHARACTER prompt from /);
     expect(rowAction('Restore')).toHaveAccessibleName(/ into the studio$/);
   });
 
@@ -89,7 +88,8 @@ describe('PromptHistoryContents', () => {
     // The ask deliberately does *not* move focus here, which is why this is the one confirmation in
     // the app that attaches no `cancelRef`: the button survives the press, and handing the keyboard
     // to Cancel would turn the two-press gesture into Enter-then-cancelled.
-    expect(rowAction('Confirm')).toHaveFocus();
+    // The ask button in its confirming state, which is the same element the press landed on.
+    expect(screen.getByRole('button', { name: /^Delete\? Confirm deleting / })).toHaveFocus();
   });
 
   it('gives the keyboard back to the delete button when the question is cancelled', async () => {
@@ -98,7 +98,7 @@ describe('PromptHistoryContents', () => {
 
     rowAction('Delete').focus();
     await user.keyboard('{Enter}');
-    rowAction('Keep').focus();
+    rowAction('Cancel').focus();
     await user.keyboard('{Enter}');
 
     // Cancel unmounts itself, so without a destination the press drops focus to `<body>` and a

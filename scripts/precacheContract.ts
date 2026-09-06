@@ -446,9 +446,15 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * **The delta is the same on both bases, which is worth stating because the paragraph above is about
  * a combination that was not.** Measured on the tip this branch left (`2074844`), from the same
  * `node_modules`, the precache goes from **2348.81 KiB across 60 entries** to **2352.05 across 63**;
- * merged with the raise above, whose own merged figure is 2351.14, the build reports **2354.38**.
- * Both deltas are 3.24 to the hundredth, so rolldown re-partitioned nothing across the merge and
- * this raise is buying exactly what this branch wrote.
+ * merged with the raise above, whose own merged figure is 2351.14, that same delta of 3.24 predicts
+ * 2354.38 and the merge reported exactly it. So rolldown re-partitioned nothing across the merge,
+ * and this raise buys what this branch wrote rather than what the meeting of two branches cost.
+ *
+ * **What it ships at is 2354.58**, which is that figure plus the 0.20 KiB the review pass added: the
+ * observation in `useScrollableRegion` moved from a mount-time effect into the ref callback, because
+ * two of its four call sites render their box conditionally and an effect that runs once at mount
+ * finds nothing there. The figure recorded here is the one the build prints today, not the one the
+ * branch printed before it was reviewed.
  *
  * **All three `+` lines are genuinely new files, and one of them is not new code.**
  * `useConfirmInPlace` and `useScrollableRegion` are each reached from a lazily-loaded overlay *and*
@@ -458,7 +464,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * of its own. A first visit downloads the same bytes; what changed is that they arrive in three more
  * requests.
  *
- * 2356 leaves **1.62 KiB**, the order of the 0.86 the paragraph above leaves and the 0.82 the
+ * 2356 leaves **1.42 KiB**, the order of the 0.86 the paragraph above leaves and the 0.82 the
  * `isTextEntry` note calls the narrowest. It is deliberately not more, for that paragraph's reason:
  * whether 2350 was still the right figure for what a first visit downloads is a question neither
  * change is placed to answer, and widening the margin only postpones it.

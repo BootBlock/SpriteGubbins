@@ -32,13 +32,22 @@ const OVERFLOW = /(?<![\w-])(?:\w+:)?overflow(?:-[xy])?-(?:auto|scroll)(?![\w-])
 const REGION_SPREAD = /\{\.\.\.\w*[Rr]egion(?:Props)?\}/;
 
 /**
- * The boxes that hold focusable children, with what each of them holds.
+ * The boxes that are not the app's to name, keyed by the file that writes the class string.
+ *
+ * Almost all of them qualify on the rule's own condition: a box whose descendants are
+ * keyboard-focusable is not made focusable by the engine, so the three attributes would add a tab
+ * stop that does nothing. `ComboBox` is the one that qualifies a different way, and says so above.
  *
  * A count of zero fails, because an exemption list that stops excusing anything has become a hole —
  * the same guard the raw-colour and prose-collision lists carry, and for the same reason.
  */
 const HOLDS_FOCUSABLE_CHILDREN: Readonly<Record<string, string>> = {
-  'src/components/common/ComboBox.tsx': 'the suggestion list, whose options the field drives by key',
+  // Not a box with focusable children — `ComboBoxOption` is `tabIndex={-1}` and says in its own
+  // docblock that no row here is ever focused. It is exempt on the other half of the rule: the
+  // listbox is closed on the `Tab` keydown (`useComboBox`), so the scroller is never in the tab
+  // order to begin with, and a `tabIndex` on it would break the editable-combobox pattern by taking
+  // focus out of the text field that drives it.
+  'src/components/common/ComboBox.tsx': 'the suggestion list, which Tab closes rather than enters',
   'src/components/layout/AppOverlays.tsx': 'an overlay panel, which is a dialog full of controls',
   'src/components/modals/PromptHistoryContents.tsx': 'the entry list, three buttons per row',
   'src/components/modals/SheetSplitContents.tsx': 'the run list, a copy button and a disclosure per row',
@@ -88,9 +97,10 @@ describe('a box that scrolls', () => {
   const boxes = scrollingBoxes();
 
   it('is found at all, so a sweep that stopped matching fails rather than passing', () => {
-    // Eleven exist as this is written — four named by the hook, six holding focusable children, and
-    // the pan viewport. A regex that stopped matching would empty the sweep and pass it having read
-    // no box at all, which is the failure every source sweep in this suite guards against.
+    // Twelve exist as this is written — five named by the hook (the pan viewport among them) and
+    // seven excused above, which is six files because `AppOverlays` writes two panel class strings.
+    // A regex that stopped matching would empty the sweep and pass it having read no box at all,
+    // which is the failure every source sweep in this suite guards against.
     expect(boxes.length).toBeGreaterThan(8);
   });
 

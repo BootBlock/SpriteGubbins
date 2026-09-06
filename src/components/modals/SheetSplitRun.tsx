@@ -115,9 +115,15 @@ export function SheetSplitRun({
   // What the row already says about itself, in one phrase, so both of its controls can name the
   // sheet they act on. A ten-sheet batch is otherwise ten stops called "Copy this sheet" and ten
   // called "Read the prompt for this sheet", with nothing between them to choose by.
-  const sheet = `sheet ${ordinal} of ${total} — ${run.plan.name} · ${sheetCoverage(run.covered, run.assembly)}`;
+  //
+  // **It opens with the position rather than with the word “sheet”**, because each accessible name
+  // below has to *begin* with the visible label its control wears. WCAG 2.5.3 asks that a control's
+  // accessible name contain its visible text, so that someone driving the app by speech can say what
+  // they can see — and a name that replaced “Copy this sheet” with words the button never shows
+  // would fix one criterion by breaking another.
+  const position = `${ordinal} of ${total} — ${run.plan.name} · ${sheetCoverage(run.covered, run.assembly)}`;
   const { attach: attachPrompt, regionProps: promptRegion } = useScrollableRegion<HTMLPreElement>(
-    `Scroll the prompt for ${sheet}`,
+    `Scroll the prompt for sheet ${position}`,
   );
 
   return (
@@ -154,7 +160,7 @@ export function SheetSplitRun({
         <ControlTooltip hint="Copy this sheet" text={DIALOG_TOOLTIPS.copySheetPrompt}>
           <button
             type="button"
-            aria-label={`Copy ${sheet}`}
+            aria-label={`Copy this sheet ${position}`}
             onClick={() => {
               onCopy(run);
             }}
@@ -181,7 +187,7 @@ export function SheetSplitRun({
         {/* The wrapper is what a `<summary>` cannot have; an `aria-label` on it is not, so the
             disclosure names the sheet it opens even though it carries no guidance card. */}
         <summary
-          aria-label={`Read the prompt for ${sheet}`}
+          aria-label={`Read the prompt for this sheet, ${position}`}
           className="cursor-pointer text-xs font-semibold text-ink-faint transition-colors hover:text-ink-muted"
         >
           Read the prompt for this sheet

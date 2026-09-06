@@ -154,7 +154,7 @@ describe('ProjectsTab', () => {
 
     render(<ProjectsTab />);
     await user.click(projectButton('Harbour'));
-    await user.click(screen.getByRole('button', { name: /^Delete the project/ }));
+    await user.click(screen.getByRole('button', { name: /^Delete project / }));
 
     expect(deleteProject).not.toHaveBeenCalled();
     expect(screen.getByText(/also deletes the 2 saves filed in it/)).toBeInTheDocument();
@@ -170,13 +170,13 @@ describe('ProjectsTab', () => {
 
     render(<ProjectsTab />);
     await user.click(projectButton('Harbour'));
-    await user.click(screen.getByRole('button', { name: /^Delete the project/ }));
+    await user.click(screen.getByRole('button', { name: /^Delete project / }));
     // Named for the project, not `Cancel`: the confirmation's two buttons are met on their own by a
     // reader moving control to control, and one project's Cancel has to be tellable from another's.
-    await user.click(screen.getByRole('button', { name: 'Keep the project Harbour' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel — keep the project Harbour' }));
 
     expect(deleteProject).not.toHaveBeenCalled();
-    const ask = screen.getByRole('button', { name: /^Delete the project/ });
+    const ask = screen.getByRole('button', { name: /^Delete project / });
     expect(ask).toBeInTheDocument();
     // Cancel unmounts itself, so without a destination the press drops focus to `<body>` and a
     // keyboard reader's next Tab starts again from the top of the page — see `useConfirmInPlace`.
@@ -186,7 +186,7 @@ describe('ProjectsTab', () => {
   it('offers no delete for the Default project, and says why in its place', () => {
     render(<ProjectsTab />);
 
-    expect(screen.queryByRole('button', { name: /^Delete the project/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Delete project / })).toBeNull();
     expect(screen.getByText(/The Default project cannot be deleted/)).toBeInTheDocument();
   });
 
@@ -209,7 +209,7 @@ describe('ProjectsTab', () => {
     usePresetStore.setState({ customPresets: [preset(DEFAULT_PROJECT_ID)], loadPreset });
 
     render(<ProjectsTab />);
-    await user.click(screen.getByRole('button', { name: /^Load the preset My Knight/ }));
+    await user.click(screen.getByRole('button', { name: /^Load preset My Knight/ }));
 
     expect(loadPreset).toHaveBeenCalledWith(preset(DEFAULT_PROJECT_ID));
   });
@@ -265,7 +265,7 @@ describe('ProjectsTab', () => {
 
     render(<ProjectsTab />);
     await user.click(projectButton('Harbour'));
-    await user.click(screen.getByRole('button', { name: /^Delete the project/ }));
+    await user.click(screen.getByRole('button', { name: /^Delete project / }));
     await user.click(projectButton('Default'));
 
     expect(screen.queryByRole('button', { name: /^Delete “/ })).toBeNull();
@@ -279,7 +279,7 @@ describe('ProjectsTab', () => {
 
     render(<ProjectsTab />);
 
-    expect(screen.queryByRole('button', { name: /^Delete the project/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Delete project / })).toBeNull();
     expect(screen.getByText(/This is your only project/)).toBeInTheDocument();
   });
 

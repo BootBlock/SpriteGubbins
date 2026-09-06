@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FocusEventHandler, RefCallback } from 'react';
 
 /** Which way a box holds more than it is showing, which is what every affordance below hangs on. */
@@ -61,25 +61,51 @@ export interface ScrollableRegion<E extends HTMLElement> {
  * the other direction.
  */
 export function useScrollableRegion<E extends HTMLElement>(label: string): ScrollableRegion<E> {
-  // The element is needed from an effect, and an effect is not where a ref callback fires.
-  const own = useRef<E | null>(null);
-  const attach = useCallback((element: E | null) => {
-    own.current = element;
-  }, []);
   const [overflow, setOverflow] = useState<Overflow>(NO_OVERFLOW);
   const [holdsFocus, setHoldsFocus] = useState(false);
   const isReachable = overflow.x || overflow.y || holdsFocus;
+  /** The pair watching whatever is currently attached, so detaching can let go of exactly them. */
+  const watching = useRef<{ sizes: ResizeObserver; childList: MutationObserver } | null>(null);
 
-  useLayoutEffect(() => {
-    const element = own.current;
-    if (element === null) return;
+  /**
+   * **The observation is established from the ref callback, not from a mount-time effect**, and that
+   * is a correctness requirement rather than a preference.
+   *
+   * Two of the four call sites render their scrolling box **conditionally** — the quantiser's two
+   * report lists exist only once the worker has answered, and the panels around them mount long
+   * before it does. An effect with an empty dependency list runs once, at mount, against a ref that
+   * is still `null`; it returns, and no later render re-establishes it. The list then arrives and
+   * nothing is watching it, so `overflow` stays false for the life of the panel and the three
+   * attributes below are never applied — the defect fixed here, silently reintroduced for half the
+   * boxes it was fixed for.
+   *
+   * A ref callback fires when the element *arrives*, whenever that is, and again with `null` when it
+   * goes. React invokes it only when the element or the callback's identity changes, so a box that
+   * is always mounted still builds exactly one observer for the life of the component — which is the
+   * property `PanViewport.test.tsx` pins, and the reason the effect had an empty dependency list in
+   * the first place.
+   */
+  const attach = useCallback((element: E | null) => {
+    watching.current?.sizes.disconnect();
+    watching.current?.childList.disconnect();
+    watching.current = null;
 
-    const sizes = new ResizeObserver(() => {
+    if (element === null) {
+      // The box has gone, so what was measured about it is no longer true of anything. The latch
+      // goes with it: an element unmounted while focused fires no blur, and a stale `true` would
+      // make the next box a tab stop before it had anything to scroll.
+      setOverflow(NO_OVERFLOW);
+      setHoldsFocus(false);
+      return;
+    }
+
+    const measure = () => {
       const x = element.scrollWidth > element.clientWidth;
       const y = element.scrollHeight > element.clientHeight;
       // The same answer must be the same object, or React re-renders for a change nobody made.
       setOverflow((current) => (current.x === x && current.y === y ? current : { x, y }));
-    });
+    };
+    const sizes = new ResizeObserver(measure);
     // The box alone would not do: it is a frame sized by the page rather than by its content, so
     // content growing inside it is a resize only the child reports. The set is which children are
     // observed, so a swap lets go of the one that left rather than holding it detached.
@@ -99,15 +125,30 @@ export function useScrollableRegion<E extends HTMLElement>(label: string): Scrol
     };
     syncChildren();
 
-    const childList = new MutationObserver(syncChildren);
-    // `characterData` and `subtree` as well as the child list, because two of the four call sites
-    // scroll **text** rather than elements: the compiled prompt is one text node inside a `<pre>`,
-    // and a prompt that grows past the panel adds no child for a child-list observer to see.
+    // **It measures as well as re-points, and the second half is what a text node needs.** Two of
+    // the four call sites scroll *text* rather than elements — the compiled prompt is one text node
+    // inside a capped `<pre>` — and text that grows past the box changes neither the child list nor
+    // any border box, so the `ResizeObserver` above never fires and re-pointing it at `children`
+    // reconciles two empty collections. Watching `characterData` without re-measuring would have
+    // been an option that bought nothing, which is worse than not watching it at all: the
+    // declaration would read as though the case were covered.
+    const childList = new MutationObserver(() => {
+      syncChildren();
+      measure();
+    });
     childList.observe(element, { childList: true, characterData: true, subtree: true });
+    watching.current = { sizes, childList };
+  }, []);
 
+  // React calls the ref with `null` before it unmounts the element, so the pair above is already
+  // disconnected by then in every ordinary case. This is the one it does not cover: a component
+  // unmounted while its box is still attached, where an observer left connected would hold the
+  // whole subtree for as long as the page is open.
+  useEffect(() => {
     return () => {
-      sizes.disconnect();
-      childList.disconnect();
+      watching.current?.sizes.disconnect();
+      watching.current?.childList.disconnect();
+      watching.current = null;
     };
   }, []);
 

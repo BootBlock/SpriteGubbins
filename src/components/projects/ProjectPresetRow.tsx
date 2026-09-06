@@ -106,7 +106,7 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
             <button
               ref={attachCancel}
               type="button"
-              aria-label={`Keep the preset ${preset.name}`}
+              aria-label={`Cancel — keep the preset ${preset.name}`}
               onClick={cancel}
               className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
@@ -119,7 +119,7 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
           <ControlTooltip hint="Load preset" text={PRESET_ACTION_TOOLTIPS.loadPreset}>
             <button
               type="button"
-              aria-label={`Load the preset ${preset.name} into the studio`}
+              aria-label={`Load preset ${preset.name} into the studio`}
               onClick={() => {
                 loadPreset(preset);
               }}

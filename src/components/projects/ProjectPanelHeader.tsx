@@ -87,7 +87,7 @@ export function ProjectPanelHeader({ project, savedCount }: ProjectPanelHeaderPr
             <button
               ref={attachCancel}
               type="button"
-              aria-label={`Keep the project ${project.name}`}
+              aria-label={`Cancel — keep the project ${project.name}`}
               onClick={cancel}
               className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
@@ -118,7 +118,7 @@ export function ProjectPanelHeader({ project, savedCount }: ProjectPanelHeaderPr
               <button
                 ref={attachAsk}
                 type="button"
-                aria-label={`Delete the project ${project.name}`}
+                aria-label={`Delete project ${project.name}`}
                 onClick={() => {
                   // The editor would otherwise sit above a confirm asking to delete what it edits.
                   setIsEditing(false);
