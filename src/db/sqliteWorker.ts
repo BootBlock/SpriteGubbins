@@ -10,7 +10,7 @@ import {
   TABLE_INFO_SQL,
 } from './schema.ts';
 import { handleRequest, select } from './sqliteRequests.ts';
-import type { WorkerCall, WorkerHandshake, WorkerReply } from './workerProtocol.ts';
+import type { DatabaseRefusal, WorkerCall, WorkerHandshake, WorkerReply } from './workerProtocol.ts';
 
 /**
  * The database, and the only thread it can live on.
@@ -84,14 +84,38 @@ async function open(): Promise<void> {
   db = database;
 }
 
+/**
+ * Which of the two refusals a failed open was.
+ *
+ * **The name, and only the name.** `installOpfsSAHPoolVfs` rejects with the `DOMException` the pool
+ * got from `createSyncAccessHandle`, and a handle refused because another tab holds it is a
+ * `NoModificationAllowedError` — measured in Edge by opening a second tab of the dev server against
+ * a first that already had the database, where the rejection arrives as exactly that name with no
+ * `cause` beneath it. The message is not read: it is the browser's own wording and is free to be
+ * translated or reworded, while the name is what the File System API specifies.
+ *
+ * The `cause` chain is walked anyway, a few links deep. Nothing wraps this exception today, and if
+ * the pool ever starts to, the alternative to walking is silently answering `ABSENT` — which is the
+ * failure this whole change exists to remove, arriving a second time.
+ */
+function refusalFor(error: unknown): DatabaseRefusal {
+  let walk: unknown = error;
+  for (let depth = 0; depth < 4 && walk !== null && walk !== undefined; depth += 1) {
+    const named = walk as { name?: unknown; cause?: unknown };
+    if (named.name === 'NoModificationAllowedError') return 'HELD_ELSEWHERE';
+    walk = named.cause;
+  }
+  return 'ABSENT';
+}
+
 open().then(
   () => {
     post({ ready: true });
   },
-  () => {
-    // Reported rather than thrown: OPFS being unavailable is an expected condition in a private
-    // window or a browser without it, and the answer is always the same — the page falls back to
-    // localStorage.
-    post({ ready: false });
+  (error: unknown) => {
+    // Reported rather than thrown: a database that will not open is an expected condition, and the
+    // page has an answer for each of the two shapes it comes in. Which one decides whether that
+    // answer is the localStorage fallback or a refusal to read anything at all.
+    post({ ready: false, refusal: refusalFor(error) });
   },
 );

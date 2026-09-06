@@ -4,17 +4,25 @@ import { getDatabase } from '../../db/database.ts';
 import { Badge } from '../common/Badge.tsx';
 
 /**
- * What the two settled states, and the two unsettled ones, are called.
+ * What the three settled states, and the two unsettled ones, are called.
  *
- * Neither backend is a fault: the localStorage one is a specified behaviour for browsers where OPFS
- * is unavailable, so both read as plain statements of fact rather than a pass and a warning.
+ * Two of the three are not faults: the localStorage one is a specified behaviour for browsers where
+ * OPFS is unavailable, so both it and SQLite read as plain statements of fact rather than a pass and
+ * a warning. **The third is a fault, and is the only label here that tells the reader to do
+ * something.** A tab whose database is open in another tab of this app can read nothing and store
+ * nothing, and it is the one state where saying where the data lives is not enough — this is where
+ * the reader finds out why their library looks empty, so it has to name the cause and the fix.
  */
 const STORAGE_LABELS = {
   checking: 'Checking…',
   'sqlite-opfs': 'SQLite, in this browser’s private file system',
   localstorage: 'Your browser’s local storage',
+  'held-elsewhere': 'Open in another tab — close it and reload to reach your library',
   unknown: 'Could not be determined',
 } as const satisfies Record<BackendKind | 'checking' | 'unknown', string>;
+
+/** The states worth a reader's attention: one that failed, and one that is holding them out. */
+const NEEDS_ATTENTION: readonly StorageState[] = ['unknown', 'held-elsewhere'];
 
 type StorageState = keyof typeof STORAGE_LABELS;
 
@@ -55,7 +63,7 @@ export function StorageStatus() {
   return (
     <p className="flex flex-wrap items-center gap-2 text-xs text-ink-muted">
       On this device, right now:
-      <Badge tone={state === 'unknown' ? 'attention' : 'accent'}>{STORAGE_LABELS[state]}</Badge>
+      <Badge tone={NEEDS_ATTENTION.includes(state) ? 'attention' : 'accent'}>{STORAGE_LABELS[state]}</Badge>
     </p>
   );
 }

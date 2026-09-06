@@ -34,7 +34,7 @@ export const ARCHITECTURE_SECTIONS: readonly ArchitectureSection[] = [
   },
   {
     heading: '6. Browser-embedded SQLite',
-    body: 'Your prompt history, saved presets and interface settings are stored in a real SQLite database compiled to WebAssembly, persisted to the Origin Private File System. Where that is unavailable — a private window, a browser without OPFS, an exhausted quota — the same interface is served from your browser’s local storage instead, so nothing is lost either way.',
+    body: 'Your prompt history, saved presets and interface settings are stored in a real SQLite database compiled to WebAssembly, persisted to the Origin Private File System. Where that is unavailable — a private window, a browser without OPFS, an exhausted quota — the same interface is served from your browser’s local storage instead, so nothing is lost either way. One case is deliberately not served that way: the database admits a single writer, so a second tab of this app cannot open the one the first tab holds. That tab reads nothing and saves nothing rather than starting a library of its own, and says so above — close the other tab and reload to reach your work.',
   },
   {
     heading: '7. The database runs on its own thread',

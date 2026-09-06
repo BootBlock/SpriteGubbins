@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { LIBRARY_PACK_ITEMS } from '../constants/packImport.ts';
 import { getDatabase } from '../db/database.ts';
+import { storageFailure } from '../db/storageFailure.ts';
 import type { LibraryPack } from '../types/libraryPack.ts';
 import { describePackImported } from '../utils/packImportSummary.ts';
 import { libraryPackSize, parseLibraryPack, serialiseLibraryPack } from '../utils/libraryPack.ts';
@@ -86,8 +87,8 @@ export const useLibraryTransferStore = create<LibraryTransferState>((set, get) =
       // on screen rather than in a tooltip — `ControlTooltip` cannot be reached by touch at all, so
       // on a phone a warning kept there is one nobody could open.
       set({ pendingImport: imported });
-    } catch {
-      showToast('Could not import that library pack');
+    } catch (error) {
+      showToast(storageFailure('Could not import that library pack', error));
     } finally {
       set({ isTransferring: false });
     }
@@ -118,10 +119,10 @@ export const useLibraryTransferStore = create<LibraryTransferState>((set, get) =
       await usePresetStore.getState().fetchCustomPresets();
       await useQuantisePresetStore.getState().fetchQuantisePresets();
       showToast(describePackImported(libraryPackSize(imported), replacing, LIBRARY_PACK_ITEMS));
-    } catch {
+    } catch (error) {
       // Reported and left there: the reader retries from the button, rather than being asked the
       // same question again over a library nothing happened to.
-      showToast('Could not import that library pack');
+      showToast(storageFailure('Could not import that library pack', error));
     } finally {
       set({ isTransferring: false });
     }

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { HISTORY_LIMIT } from '../db/backend.ts';
+import { storageFailure } from '../db/storageFailure.ts';
 import { getDatabase } from '../db/database.ts';
 import type { NewPromptHistoryLog, PromptHistoryLog } from '../types/history.ts';
 import { useOutputStore } from './useOutputStore.ts';
@@ -71,8 +72,8 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       // which replaces the list with what was actually stored — and it errs towards showing an old
       // prompt rather than losing a new one, which is the way round to be wrong.
       set((state) => ({ historyLogs: [log, ...state.historyLogs].slice(0, HISTORY_LIMIT) }));
-    } catch {
-      useUIStore.getState().showToast('Could not save this prompt to history');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not save this prompt to history', error));
     }
   },
 
@@ -81,8 +82,8 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
     try {
       const database = await getDatabase();
       set({ historyLogs: await database.listHistoryLogs() });
-    } catch {
-      useUIStore.getState().showToast('Could not load prompt history');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not load prompt history', error));
     } finally {
       set({ isLoading: false });
     }
@@ -97,8 +98,8 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       // stale list would resurrect anything that landed while the delete was in flight.
       set((state) => ({ historyLogs: state.historyLogs.filter((log) => log.id !== id) }));
       useUIStore.getState().showToast('Deleted that prompt');
-    } catch {
-      useUIStore.getState().showToast('Could not delete that prompt');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not delete that prompt', error));
     }
   },
 
@@ -108,8 +109,8 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
       await database.clearHistoryLogs();
       set({ historyLogs: [] });
       useUIStore.getState().showToast('Cleared prompt history');
-    } catch {
-      useUIStore.getState().showToast('Could not clear prompt history');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not clear prompt history', error));
     }
   },
 

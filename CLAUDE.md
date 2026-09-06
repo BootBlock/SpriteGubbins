@@ -1426,6 +1426,19 @@ Four consequences to hold on to:
   quota — which is a narrower set of cases than "before the first reload", now that isolation is
   not what the database waits for. Changes to the database layer must work in both modes; the
   fallback is the path nobody exercises by accident, which is why it has its own tests.
+- **A failed open is not one condition, and the fallback is the right answer to only some of it.**
+  The three above are all "this browser cannot keep a database here", and localStorage is right for
+  each. A **second tab of the same origin** is the opposite finding: the SAH-pool VFS admits one
+  writer, so the second tab's `createSyncAccessHandle` is refused with a `NoModificationAllowedError`
+  while OPFS is present, the database exists and it holds the reader's work. Answering that with
+  localStorage is what gave a reader **two libraries** — the second tab opened on an empty Projects
+  panel, wrote a fresh Default project into a store the first tab could not see, and lost whatever
+  went in there the moment the first tab closed. So the worker classifies the rejection, the
+  handshake carries which (`DatabaseRefusal` in `db/workerProtocol.ts`), and `database.ts` answers
+  `HELD_ELSEWHERE` with `HeldElsewhereBackend` — reads empty, **every write rejects**, and the
+  Architecture tab names the cause and the fix. **A fourth reason added to that union has to say
+  which of the two answers it takes**, and a reason that is genuinely answered by the fallback
+  belongs in `ABSENT` rather than in a member of its own.
 - **The app must not load a cross-origin subresource.** Under COEP `require-corp` anything from
   another origin that doesn't opt in is blocked outright — which is why the fonts fall back to
   system faces rather than fetching a webfont, as the original single-file app did. **The worker

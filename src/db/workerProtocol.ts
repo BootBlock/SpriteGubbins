@@ -55,14 +55,34 @@ export type WorkerReply =
   | { readonly id: number; readonly ok: false; readonly error: string };
 
 /**
+ * Why the database could not be opened — the two answers that are *not* the same answer.
+ *
+ * `ABSENT` is OPFS being unavailable: a private window, a browser without it, an exhausted quota.
+ * Those are ordinary, they mean this browser cannot store a database here at all, and the answer to
+ * every one of them is the localStorage fallback.
+ *
+ * `HELD_ELSEWHERE` is the opposite finding. OPFS is present, the database exists, it holds the
+ * reader's work — and another tab of this origin has the SAH pool's access handles open, which the
+ * VFS is single-writer by design. Answering that with localStorage is what produced the defect this
+ * type exists to end: the second tab reads an empty library, writes a fresh Default project into a
+ * store the first tab cannot see, and the reader ends up with two of everything and no way back to
+ * the half they wrote second.
+ */
+export const DATABASE_REFUSALS = ['ABSENT', 'HELD_ELSEWHERE'] as const;
+export type DatabaseRefusal = (typeof DATABASE_REFUSALS)[number];
+
+/**
  * Sent once, unprompted, as soon as the worker knows whether it has a database.
  *
- * Carries no reason for a failure, because there is nothing that could act on one: every way of
- * failing to open OPFS has the same answer — use localStorage — and the caller takes it without
- * asking which. Diagnosing a *particular* failure is a job for instrumenting the worker, not for a
- * field the app reads and discards.
+ * **It carries a reason, and for exactly as long as there is something that can act on one.** This
+ * used to be a bare boolean, on the stated ground that every way of failing to open OPFS has the
+ * same answer. Two of the three do; the third does not, and the boolean is what made the app unable
+ * to tell them apart — see {@link DatabaseRefusal}. A third reason worth distinguishing belongs
+ * here, and a third reason that is genuinely answered by the fallback belongs in `ABSENT` rather
+ * than in a member of its own.
  */
-export type WorkerHandshake = { readonly ready: boolean };
+export type WorkerHandshake =
+  { readonly ready: true } | { readonly ready: false; readonly refusal: DatabaseRefusal };
 
 /** Narrow a message from the worker to a reply. */
 export function isWorkerReply(message: unknown): message is WorkerReply {

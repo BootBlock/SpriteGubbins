@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createDefaultProject, projectDeletionRefusal } from '../constants/projects.ts';
 import { getDatabase } from '../db/database.ts';
+import { storageFailure } from '../db/storageFailure.ts';
 import type { Project } from '../types/project.ts';
 import { findByName } from '../utils/findByName.ts';
 import { usePresetStore } from './usePresetStore.ts';
@@ -86,8 +87,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       const fallback = createDefaultProject(Date.now());
       await database.saveProject(fallback);
       set({ projects: [fallback] });
-    } catch {
-      useUIStore.getState().showToast('Could not load your projects');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not load your projects', error));
     }
   },
 
@@ -119,8 +120,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ projects: await database.listProjects() });
       useUIStore.getState().showToast(`Created project “${trimmed}”`);
       return true;
-    } catch {
-      useUIStore.getState().showToast('Could not create that project');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not create that project', error));
       return false;
     }
   },
@@ -153,8 +154,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       set({ projects: await database.listProjects() });
       useUIStore.getState().showToast(`Updated “${trimmed}”`);
       return true;
-    } catch {
-      useUIStore.getState().showToast('Could not update that project');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not update that project', error));
       return false;
     }
   },
@@ -174,8 +175,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await usePresetStore.getState().fetchCustomPresets();
       await useQuantisePresetStore.getState().fetchQuantisePresets();
       showToast('Deleted project, and everything saved in it');
-    } catch {
-      showToast('Could not delete that project');
+    } catch (error) {
+      showToast(storageFailure('Could not delete that project', error));
     }
   },
 }));

@@ -15,9 +15,9 @@ function thread(): FakeDatabaseWorker {
 async function open(): Promise<SqliteBackend> {
   const opening = openSqliteBackend();
   thread().handshake(true);
-  const backend = await opening;
-  if (backend === null) throw new Error('the backend refused to open');
-  return backend;
+  const opened = await opening;
+  if (opened.kind !== 'OPEN') throw new Error(`the backend refused to open: ${opened.refusal}`);
+  return opened.backend;
 }
 
 beforeEach(() => {
@@ -30,28 +30,42 @@ afterEach(() => {
 });
 
 describe('openSqliteBackend', () => {
-  it('resolves to null when the worker reports no database', async () => {
+  it('reports an absent database as the refusal the fallback answers', async () => {
     const opening = openSqliteBackend();
-    thread().handshake(false);
+    thread().handshake(false, 'ABSENT');
 
-    expect(await opening).toBeNull();
+    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'ABSENT' });
     expect(thread().terminated).toBe(true);
   });
 
-  it('resolves to null when the thread dies during the handshake', async () => {
+  it('carries a database held by another tab through as its own refusal', async () => {
+    // The whole point of the reason being here rather than being flattened to a boolean: this is
+    // the one refusal the localStorage fallback is the wrong answer to, and `database.ts` cannot
+    // tell it apart from the others unless it arrives distinguished.
+    const opening = openSqliteBackend();
+    thread().handshake(false, 'HELD_ELSEWHERE');
+
+    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'HELD_ELSEWHERE' });
+    expect(thread().terminated).toBe(true);
+  });
+
+  it('reports a thread that died during the handshake as absent, not as held', async () => {
+    // A worker that never reached its handshake carries no evidence about *why*, and only the
+    // worker can see the exception the pool rejected with. Guessing `HELD_ELSEWHERE` here would
+    // stop a reader working over a failure that has nothing to do with another tab.
     const opening = openSqliteBackend();
     thread().die();
 
-    expect(await opening).toBeNull();
+    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'ABSENT' });
   });
 
-  it('resolves to null when the handshake itself will not deserialise', async () => {
+  it('reports a handshake that will not deserialise as absent', async () => {
     // The worst place in the file for a promise to hang: `getDatabase` memoises this one, so every
     // store's hydration awaits it for the session and the localStorage fallback is never reached.
     const opening = openSqliteBackend();
     thread().garble();
 
-    expect(await opening).toBeNull();
+    expect(await opening).toEqual({ kind: 'REFUSED', refusal: 'ABSENT' });
     expect(thread().terminated).toBe(true);
   });
 });

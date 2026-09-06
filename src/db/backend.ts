@@ -105,7 +105,15 @@ export interface PersistenceBackend {
   saveSession(session: StudioSession): Promise<void>;
 }
 
-export const BACKEND_KINDS = ['sqlite-opfs', 'localstorage'] as const;
+/**
+ * The three implementations, and why the third is not a failure of the second.
+ *
+ * `sqlite-opfs` and `localstorage` are both places the reader's work genuinely lives.
+ * `held-elsewhere` is not a place at all: it is this tab reporting that the database exists, holds
+ * the work, and is open in another tab of the same origin — see `heldElsewhereBackend.ts`. Treating
+ * that as a reason to reach for `localstorage` is what gave a reader two libraries.
+ */
+export const BACKEND_KINDS = ['sqlite-opfs', 'localstorage', 'held-elsewhere'] as const;
 export type BackendKind = (typeof BACKEND_KINDS)[number];
 
 /** How many history entries to keep. Old prompts are cheap, but not free, and nobody scrolls past this. */

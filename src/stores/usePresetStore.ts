@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getDatabase } from '../db/database.ts';
+import { storageFailure } from '../db/storageFailure.ts';
 import type { CustomArchetype, PresetArchetype } from '../types/preset.ts';
 import { toImageConfig } from '../utils/imageConfig.ts';
 import { findByName } from '../utils/findByName.ts';
@@ -89,8 +90,8 @@ export const usePresetStore = create<PresetState>((set, get) => ({
     try {
       const database = await getDatabase();
       set({ customPresets: await database.listPresets() });
-    } catch {
-      useUIStore.getState().showToast('Could not load your saved presets');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not load your saved presets', error));
     }
   },
 
@@ -146,8 +147,8 @@ export const usePresetStore = create<PresetState>((set, get) => ({
         .getState()
         .showToast(existing ? `Updated custom preset “${trimmed}”` : `Saved custom preset “${trimmed}”`);
       return true;
-    } catch {
-      useUIStore.getState().showToast('Could not save that preset');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not save that preset', error));
       return false;
     }
   },
@@ -177,8 +178,8 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       set({ customPresets: await database.listPresets() });
       useUIStore.getState().showToast(`Updated “${trimmed}”`);
       return true;
-    } catch {
-      useUIStore.getState().showToast('Could not update that preset');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not update that preset', error));
       return false;
     }
   },
@@ -194,8 +195,8 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       await database.savePreset({ ...preset, projectId });
       set({ customPresets: await database.listPresets() });
       useUIStore.getState().showToast(`Moved “${preset.name}”`);
-    } catch {
-      useUIStore.getState().showToast('Could not move that preset');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not move that preset', error));
     }
   },
 
@@ -205,8 +206,8 @@ export const usePresetStore = create<PresetState>((set, get) => ({
       await database.deletePreset(id);
       set((state) => ({ customPresets: state.customPresets.filter((preset) => preset.id !== id) }));
       useUIStore.getState().showToast('Deleted custom preset');
-    } catch {
-      useUIStore.getState().showToast('Could not delete that preset');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not delete that preset', error));
     }
   },
 }));

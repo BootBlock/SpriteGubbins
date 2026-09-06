@@ -1,4 +1,4 @@
-import type { WorkerCall, WorkerHandshake, WorkerReply } from '../db/workerProtocol.ts';
+import type { DatabaseRefusal, WorkerCall, WorkerHandshake, WorkerReply } from '../db/workerProtocol.ts';
 
 /**
  * The database worker's conversation, without the thread.
@@ -43,9 +43,18 @@ export class FakeDatabaseWorker {
     this.terminated = true;
   }
 
-  /** The opening report, which the worker sends unprompted as soon as it knows whether it has a database. */
-  handshake(ready: boolean): void {
-    this.emit('message', { data: { ready } satisfies WorkerHandshake });
+  /**
+   * The opening report, which the worker sends unprompted as soon as it knows whether it has a
+   * database.
+   *
+   * A refusal carries which of the two it is, because the app answers them differently — `ABSENT`
+   * with the localStorage fallback and `HELD_ELSEWHERE` with a backend that reads and writes
+   * nothing. `ABSENT` is the default so that a caller which only cares that the open *failed* need
+   * not choose, and the one that does care says so.
+   */
+  handshake(ready: boolean, refusal: DatabaseRefusal = 'ABSENT'): void {
+    const message: WorkerHandshake = ready ? { ready: true } : { ready: false, refusal };
+    this.emit('message', { data: message });
   }
 
   /** Answer as the real worker does — a `message` event carrying the reply. */

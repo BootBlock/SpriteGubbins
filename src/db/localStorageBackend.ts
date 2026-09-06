@@ -24,6 +24,11 @@ import { resolveWebStorage, storageRefusal, type WebStorageLike } from './webSto
  * the backend the app genuinely runs on whenever one of them holds. It must work, and it must be
  * tested.
  *
+ * **It is not the answer to every failed open**, which it was until the app learned to tell them
+ * apart. A database another tab of this origin has open is present and holds the reader's work, so
+ * serving a fresh, empty store beside it is how a reader comes to have two libraries — that case
+ * goes to `heldElsewhereBackend.ts` instead, and `database.ts` is where the two are chosen between.
+ *
  * Storage is read and rewritten whole on every operation, which keeps the fallback simple enough
  * to be obviously correct.
  *

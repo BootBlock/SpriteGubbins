@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { getDatabase } from '../db/database.ts';
+import { storageFailure } from '../db/storageFailure.ts';
 import type { QuantisePreset } from '../types/quantisePreset.ts';
 import { findByName } from '../utils/findByName.ts';
 import { currentQuantiseDials } from './currentQuantiseDials.ts';
@@ -69,8 +70,8 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
     try {
       const database = await getDatabase();
       set({ presets: await database.listQuantisePresets() });
-    } catch {
-      useUIStore.getState().showToast('Could not load your saved quantiser settings');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not load your saved quantiser settings', error));
     }
   },
 
@@ -113,8 +114,8 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
           existing ? `Updated quantiser preset “${trimmed}”` : `Saved quantiser preset “${trimmed}”`,
         );
       return true;
-    } catch {
-      useUIStore.getState().showToast('Could not save those settings');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not save those settings', error));
       return false;
     }
   },
@@ -130,8 +131,8 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       await database.saveQuantisePreset({ ...preset, projectId });
       set({ presets: await database.listQuantisePresets() });
       useUIStore.getState().showToast(`Moved “${preset.name}”`);
-    } catch {
-      useUIStore.getState().showToast('Could not move those settings');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not move those settings', error));
     }
   },
 
@@ -141,8 +142,8 @@ export const useQuantisePresetStore = create<QuantisePresetState>((set, get) => 
       await database.deleteQuantisePreset(id);
       set((state) => ({ presets: state.presets.filter((preset) => preset.id !== id) }));
       useUIStore.getState().showToast('Deleted quantiser preset');
-    } catch {
-      useUIStore.getState().showToast('Could not delete that preset');
+    } catch (error) {
+      useUIStore.getState().showToast(storageFailure('Could not delete that preset', error));
     }
   },
 }));

@@ -49,6 +49,13 @@
  * narrowest this margin has been and is worth reading before the next base figure is taken for
  * slack.
  *
+ * **`storageFailure` is the third arrival of that shape, and the clearest of them.** It holds the
+ * one sentence a storage failure may be reported with instead of the caller's own — the refusal a
+ * second tab of this origin gets — and five stores raise that failure, so rolldown cuts it out of
+ * all five and names the chunk after it. What a first visit gains is one request and a few hundred
+ * bytes, not a file of new code, exactly as the two notes above describe. It arrived with the
+ * `held-elsewhere` backend; the ceiling note below carries the measurement.
+ *
  * `manifest.webmanifest` is deliberately absent: vite-plugin-pwa appends it, and the two PWA
  * icons a second time, *after* the `manifestTransforms` step runs. So this list and the ceiling
  * under it describe the globbed precache — every entry of the shipped worker but those three — and
@@ -89,6 +96,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/sheetCanvas-*.js',
   'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
+  'assets/storageFailure-*.js',
   'assets/useClipboard-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
@@ -460,8 +468,27 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * narrowest this margin has been, and deliberately not more: the paragraph before this one records
  * that whether 2350 was still the right figure for a first visit is a question neither change is
  * placed to answer, and widening the margin would postpone it a second time.
+ *
+ * **Raised from 2353 by the third persistence backend**, which is what a second tab of this origin
+ * now gets instead of a second library. The SAH-pool VFS admits one writer, so the second tab's
+ * open is refused — and the app answered that exactly as it answered "this browser has no OPFS",
+ * with a localStorage store the first tab cannot see. The worker classifies the rejection now, the
+ * handshake carries which of the two it was, and `database.ts` answers the one that means "your
+ * database is next door" with `HeldElsewhereBackend`: reads empty, every write rejects. Measured
+ * against this branch's own base, rebuilt from the same `node_modules` — **2352.30 KiB across 60
+ * entries** — this build reports **2353.98**, a delta of 1.68. No file was added to or removed from
+ * `PRECACHE_SHAPES` and no chunk was renamed.
+ *
+ * **1.37 of it is the third implementation of a nineteen-method interface**, which is the cost this
+ * shape has and a flag on one of the other two would not: the backend itself, the refusal union the
+ * handshake carries, the classifier in the worker, and the docblocks in five files that had recorded
+ * the premise the change removes. **0.31 is prose** — rebuilt with the Architecture tab's card left
+ * as it was, the figure is 2353.67 — and that card is where a reader who has not opened this app
+ * twice learns the rule before they trip over it.
+ *
+ * 2355 leaves **1.02 KiB**, the same order as every margin above it.
  */
-export const PRECACHE_CEILING_KIB = 2353;
+export const PRECACHE_CEILING_KIB = 2355;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
