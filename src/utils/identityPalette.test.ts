@@ -123,9 +123,11 @@ describe('identityPalette', () => {
     expect(identityPalette(blank, MAGENTA)).toEqual([]);
   });
 
-  it('matches the key exactly, so a black key does not take the outlines with it', () => {
+  it('keeps a near-black outline out of a black key’s field', () => {
     // PURE_BLACK is an offered key and DARK_LOCAL_CONTOUR is an offered outline, so the two coexist
-    // on real sheets. Anything loose enough to swallow fringing would eat the artwork here.
+    // on real sheets. The radius is what decides this now rather than an exact match, and it is safe
+    // here because OKLab's cube root crowds the dark end: at `DEFAULT_KEY_TOLERANCE` the field
+    // reaches only to `#020202`, three bytes of the ramp, so `#080808` is artwork by a clear margin.
     const outlined = imageFrom(8, 8, (x) => {
       if (x < 4) return { r: 0, g: 0, b: 0, a: 255 };
       if (x < 6) return { r: 8, g: 8, b: 8, a: 255 };
@@ -133,6 +135,36 @@ describe('identityPalette', () => {
     });
 
     expect(identityPalette(outlined, BACKGROUND_KEY_COLORS.PURE_BLACK)).toEqual(['#080808', '#334155']);
+  });
+
+  it('takes the top of the value ramp with a white key, which is what that key costs', () => {
+    // The other half of the same radius, and the one that is *not* cheap. OKLab spreads the light
+    // end as far as it crowds the dark one, so at `DEFAULT_KEY_TOLERANCE` a white key's field
+    // reaches down to `#E0E0E0` — 32 bytes, the top eighth of the ramp — and a specular highlight
+    // inside that goes with the field. Recorded as a cost rather than defended: the alternative
+    // measured on the corpus is a digest that opens with the field itself, and a reader who wants
+    // the highlight back has the Quantise tab's own tolerance dial and its preview. See
+    // `identityPalette.ts`, which states the whole ladder.
+    const highlit = imageFrom(8, 8, (x) => {
+      if (x < 4) return { r: 255, g: 255, b: 255, a: 255 };
+      if (x < 6) return { r: 250, g: 250, b: 250, a: 255 };
+      return CHARCOAL;
+    });
+
+    expect(identityPalette(highlit, BACKGROUND_KEY_COLORS.PURE_WHITE)).toEqual(['#1E1E24']);
+  });
+
+  it('keeps a highlight a white key’s field does not reach', () => {
+    // The boundary the case above is measured against: `#D2D2D2` is outside the field radius and
+    // outside the one-pixel fringe, so it survives. Without this the assertion above would pass
+    // against a white key that took the whole sheet.
+    const highlit = imageFrom(8, 8, (x) => {
+      if (x < 4) return { r: 255, g: 255, b: 255, a: 255 };
+      if (x < 6) return { r: 210, g: 210, b: 210, a: 255 };
+      return CHARCOAL;
+    });
+
+    expect(identityPalette(highlit, BACKGROUND_KEY_COLORS.PURE_WHITE)).toEqual(['#1E1E24', '#D2D2D2']);
   });
 
   it('ignores alpha when matching the key', () => {

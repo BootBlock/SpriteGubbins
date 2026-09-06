@@ -5,7 +5,7 @@ import { DEFAULT_KEY_TOLERANCE } from '../src/constants/quantiser.ts';
 import type { Rgba } from '../src/types/quantiser.ts';
 import { BACKGROUND_KEYS } from '../src/types/rendering.ts';
 import { identityPalette } from '../src/utils/identityPalette.ts';
-import { createImage, writePixel } from '../src/utils/imageData.ts';
+import { createImage, fromHex, writePixel } from '../src/utils/imageData.ts';
 import { keyBasis, keyDistanceSquared } from '../src/utils/keyDistance.ts';
 import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.ts';
 
@@ -15,11 +15,12 @@ import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.t
  * **The defect this pins was invisible to a fixture and unmissable on the corpus.** `identityPalette`
  * excluded the background key by comparing RGB for exact equality, which is right for the uniform
  * field section 0 of the template asks for and wrong for every sheet a generator has ever returned:
- * these eight are resampled on the way out, so **not one pixel of any of them is exactly `#FF00FF`**
- * while the key covers 52.7% to 73.7% of each. The exclusion matched nothing, and the coverage
- * ordering the function relies on then put the largest thing in the image first — so the digest
- * opened with a magenta on all eight, and the compiled prompt asked the model to reproduce it
- * exactly under a heading saying the identity lock wins over everything above it.
+ * these eight are resampled on the way out, so the pixels that are **exactly** `#FF00FF` number 0,
+ * 2, 4, 7, 9, 9, 16 and 36 out of about 1.57 million each, while the key field covers 52.7% to 73.7%
+ * of them. The exclusion removed essentially nothing, and the coverage ordering the function relies
+ * on then put the largest thing in the image first — so the digest opened with a magenta on all
+ * eight, and the compiled prompt asked the model to reproduce it exactly under a heading saying the
+ * identity lock wins over everything above it.
  *
  * **Asserted as a distance rather than as a recorded list.** Pinning the six hexes each sheet
  * produces would fail on any change to the palette builder, the coverage ordering or the keying
@@ -27,13 +28,22 @@ import { CORPUS_SHEETS, type CorpusSheetName, loadCorpus } from './sheetCorpus.t
  * own guidance makes: no colour in a digest is one the keying pass would have called the key. Run
  * against the exact comparison it replaces, all eight sheets fail on the very first entry.
  *
- * **Every offered key, not only the recommended one.** `PURE_WHITE` and `PURE_BLACK` are the reason
- * a tolerance was refused here for a long time — a plain radius around either eats a sheet's own
- * highlights and outlines — so they are the keys worth checking rather than the ones worth skipping.
- * The corpus is magenta-keyed, so those two measure what the exclusion costs the *artwork*: at
- * `DEFAULT_KEY_TOLERANCE` it reaches 0.03%–1.50% of a sheet for white and 0.67%–2.72% for black,
- * against 52.7%–73.7% for the key the sheets actually carry. `TRANSPARENT` names no colour, and the
- * assertion for it is that a digest still comes back.
+ * **Every offered key, and what that half of the sweep can and cannot say.** `PURE_WHITE` and
+ * `PURE_BLACK` are the reason a tolerance was refused here for a long time — for a key with no hue
+ * `keyDistance` withholds its discount, so what is left is exactly the plain radius that objection
+ * named. Running them here asserts that the exclusion does not *invent* a key entry on a sheet keyed
+ * with something else, and it measures what the pass costs the artwork in passing: at
+ * `DEFAULT_KEY_TOLERANCE` the whole pass — field and fringe, which is what `subjectPixels` runs —
+ * removes 0.04%–2.09% of a corpus sheet for white and 0.92%–3.83% for black, against the
+ * 53.5%–74.8% it removes for the magenta these sheets actually carry.
+ *
+ * **It is not the white key's own case, and reading it as one would be the mistake.** Every sheet
+ * here is magenta-keyed, so nothing in this file has a white *field* to lose artwork to — and the
+ * cost that matters for that key is what happens when the field really is white, where the radius
+ * takes the top 32 bytes of the value ramp. That is a fixture's question rather than a corpus one,
+ * and it is asserted at both ends in `src/utils/identityPalette.test.ts`.
+ *
+ * `TRANSPARENT` names no colour, and the assertion for it is that a digest still comes back.
  */
 
 /** The eight sheets are one to two megapixels each, and each key runs the whole keying pass. */
@@ -47,13 +57,15 @@ vi.setConfig({ testTimeout: 300_000, hookTimeout: 300_000 });
  * on the sheet, which is exactly the claim being made.
  */
 function distanceFromKey(hex: string, key: Rgba): number {
+  // `fromHex` is `toHex`'s own inverse, and `toHex` is what wrote these strings — so the round trip
+  // is the app's rather than a second reading of the same six characters. It answers `null` on
+  // anything that is not `#rrggbb`, which a digest entry never is; throwing says so rather than
+  // measuring a colour nobody chose.
+  const color = fromHex(hex);
+  if (color === null) throw new Error(`${hex} is not a colour the digest could have written`);
+
   const probe = createImage(1, 1);
-  writePixel(probe.data, 0, {
-    r: Number.parseInt(hex.slice(1, 3), 16),
-    g: Number.parseInt(hex.slice(3, 5), 16),
-    b: Number.parseInt(hex.slice(5, 7), 16),
-    a: 255,
-  });
+  writePixel(probe.data, 0, color);
   return Math.sqrt(keyDistanceSquared(probe.data, 0, keyBasis(key)));
 }
 

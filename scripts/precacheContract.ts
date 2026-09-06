@@ -432,14 +432,20 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * still the right figure for what a first visit downloads is one this change is not placed to
  * answer, and widening the margin would only postpone it further.
  *
- * **Raised from 2350 by the identity digest's key exclusion, and it is the smallest raise this
- * figure has taken.** `identityPalette` excluded the background key by comparing RGB for exact
- * equality, which matches nothing on a resampled sheet — so every digest read off real generator
- * output led with the key field. It now removes the field with `keyBackground`, the app's own keying
- * pass, which is what makes the picker route and the Quantise tab agree about where the field is.
- * Measured against the main tip this branch merged (`47dc6a9`), rebuilt from the same
- * `node_modules` — **2349.67 KiB across 60 entries** — this build reports **2350.83**, a delta of
- * 1.16. No file was added to or removed from `PRECACHE_SHAPES` and no chunk was renamed.
+ * **Raised again from 2352 by the identity digest's key exclusion**, which is joint-smallest with the
+ * 2254 → 2256 above and lands one commit behind the paragraph before it. `identityPalette` excluded
+ * the background key by comparing RGB for exact equality, which removes essentially nothing on a
+ * resampled sheet — so every digest read off real generator output led with the key field. It now
+ * removes the field with `keyBackground`, the app's own keying pass, which is what makes the picker
+ * route and the Quantise tab agree about where the field is. Measured against `main` at `17af148`,
+ * rebuilt from the same `node_modules` — **2351.14 KiB across 60 entries**, the figure the paragraph
+ * above records — this build reports **2352.30**, a delta of 1.16. No file was added to or removed
+ * from `PRECACHE_SHAPES` and no chunk was renamed.
+ *
+ * **The delta is the same 1.16 this branch measured against `47dc6a9`**, where it took the figure
+ * from 2349.67 to 2350.83 — so unlike the raise above it, none of this one is the split
+ * re-partitioning around another branch. It is the change's own cost, and it survived being carried
+ * onto a base 1.47 KiB higher unchanged.
  *
  * **The split is worth reading, because three-quarters of it is one import.** Rebuilt with the code
  * change alone and both guidance paragraphs left as they were, the figure is **2350.57** — so
@@ -450,9 +456,12 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * rather than writing a second one — a local radius would have pulled `keyDistance` in regardless,
  * and would have left the key's blends in four of the eight digests.
  *
- * The margin is left at 1.17, the same order as every raise above.
+ * 2353 leaves **0.70 KiB**, which is the order of the 0.82 and 0.86 the two notes above call the
+ * narrowest this margin has been, and deliberately not more: the paragraph before this one records
+ * that whether 2350 was still the right figure for a first visit is a question neither change is
+ * placed to answer, and widening the margin would postpone it a second time.
  */
-export const PRECACHE_CEILING_KIB = 2352;
+export const PRECACHE_CEILING_KIB = 2353;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

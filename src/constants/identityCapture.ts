@@ -41,8 +41,8 @@ export const IDENTITY_CAPTURE_UNAVAILABLE = {
  * where a generous setting risks eating the artwork, while this decides whether anything key-shaped
  * *survived*, where a mean setting risks saying no when the answer is yes. At the ladder's `0` rung
  * keying removes only the exact key, which on a resampled sheet is almost nothing — so a reading
- * taken at the reader's own tolerance would report a clean sheet and the lock would be written with
- * the field leading it.
+ * taken at the reader's own tolerance would report a clean sheet, and the lock would be written from
+ * a result whose colour reduction had been spent on a field still covering most of it.
  *
  * Measured over all eight sheets in `test_sprites/`, quantised at a grid of 4 and 32 colours, the
  * separation is total: the border share is **1.000** with keying off and **1.000** with keying on at
