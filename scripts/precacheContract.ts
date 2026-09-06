@@ -585,25 +585,25 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * refusal exactly as it answered "this browser has no OPFS" — with a localStorage store the first
  * tab cannot see, which is a second library rather than a lesser one. The worker classifies the
  * rejection now, the handshake carries which of the two it was, and `database.ts` answers the one
- * meaning "your database is next door" with `HeldElsewhereBackend`. Measured against `main` at
- * `e8d99e6`, rebuilt from the same `node_modules` — **2356.06 KiB across 60 entries** — this build
- * reports **2358.83 across 61**, a delta of 2.77 and one new request.
+ * meaning "your database is next door" with `HeldElsewhereBackend`. Measured from the same
+ * `node_modules` on two bases, which is the check the note above makes and for the same reason: on
+ * `e8d99e6` it takes **2356.06 KiB across 60 entries to 2358.83 across 61**, and on this merge's own
+ * base (`64e3359`, 2359.50 across 63) it reports **2362.26 across 64**. A delta of 2.77 and then
+ * 2.76, so neither merge re-partitioned anything and this raise buys what the branch wrote.
  *
  * **2.47 of it is machinery and 0.30 is prose**, which inverts the usual split here. The machinery
  * is a third implementation of an eighteen-method interface, the refusal union, the classifier that
  * reads it, the handshake guard that now validates it, and `storageFailure` reaching twenty call
  * sites across six stores — the last of which is what rolldown cut into the new chunk, as the note
- * on `PRECACHE_SHAPES` records. The prose is the Architecture tab's SQLite card: rebuilt with it
- * left as `main` has it, the figure is **2358.53**.
+ * on `PRECACHE_SHAPES` records. The prose is the Architecture tab's SQLite card: on the first of
+ * those two bases, rebuilt with that card left as `main` had it, the figure is **2358.53**.
  *
- * 2360 leaves **1.17 KiB**, which is wider than the 0.94 above rather than the same order — stated
- * plainly rather than dressed as a match. The ladder is whole KiB and this build lands 0.83 past
- * 2358, so the alternative was 0.17, which would make this the fifth consecutive branch to write
- * down that the margin is the narrowest it has been. Four such notes are enough: the question they
- * defer — whether 2350 was ever the right figure for what a first visit downloads — wants answering
- * by whoever owns this contract, and one KiB of slack is a poor substitute for it.
+ * 2363 leaves **0.74 KiB**, the order of the 0.82 the `isTextEntry` note calls the narrowest and
+ * the 0.94 two notes above. It is deliberately no wider, for the reason each of those gives and
+ * this one now repeats as the fifth: whether 2350 was ever the right figure for what a first visit
+ * downloads wants answering by whoever owns this contract, and slack is a poor substitute for it.
  */
-export const PRECACHE_CEILING_KIB = 2361;
+export const PRECACHE_CEILING_KIB = 2363;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
