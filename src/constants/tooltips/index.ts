@@ -8,9 +8,12 @@
  * navigation and search boxes, and what they share is that they *do* something to the configuration,
  * the library or the history rather than holding part of it.
  *
- * They are shown by hovering or focusing the control itself, through `ControlTooltip`, because there
- * are around fifty of them and an ⓘ beside each would be fifty more glyphs in rows that are already
- * full. Every one of them says three things: what the control does, what it touches — the prompt,
+ * They are shown by hovering or focusing the control itself, through `ControlTooltip`, because an ⓘ
+ * beside each would be one more glyph per wrapped control in rows that are already full — see that
+ * component, which states how many those are and has
+ * `tests/control-tooltip-call-site-counts.test.ts` to keep the figure true. Stated as the
+ * relationship here rather than as a count of its own, because this argument was written down in
+ * four places and three of them said fifty long after it was seventy-nine (issue #199). Every one of them says three things: what the control does, what it touches — the prompt,
  * the studio, stored data, or nothing — and why anyone would reach for it.
  */
 export { CHROME_TOOLTIPS } from './chrome.ts';

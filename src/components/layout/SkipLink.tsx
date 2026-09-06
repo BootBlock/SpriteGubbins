@@ -1,10 +1,11 @@
 /**
  * The keyboard bypass: one link, ahead of everything else, straight to the view.
  *
- * Ten controls stand between the top of the document and the first control the page is *about* —
- * the wordmark, five tabs and four chrome actions — and they are there again on every navigation
- * and every reload, because the chrome is what the app renders around each view. Tabbing past them
- * to reach a form is what WCAG 2.4.1 (Bypass Blocks, level A) exists to spare someone.
+ * The whole chrome stands between the top of the document and the first control the page is
+ * *about* — the wordmark, a button per view and four chrome actions — and it is there again on
+ * every navigation and every reload, because the chrome is what the app renders around each view.
+ * Tabbing past it to reach a form is what WCAG 2.4.1 (Bypass Blocks, level A) exists to spare
+ * someone.
  *
  * It carries no guidance card, which the rule in `CLAUDE.md` names as an exception rather than an
  * oversight. Two reasons, and either would be enough: the link's own text is already the whole

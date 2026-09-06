@@ -276,8 +276,14 @@ export interface ColorPlan {
 /**
  * How each mesh cell is read down to its one pixel — the algorithms the Downscale control offers.
  *
- * The `as const` array is the union's single definition; nothing validates stored values against
- * it, because the choice lives in the session's store and is never persisted.
+ * The `as const` array is the union's single definition, and it is what a stored value is validated
+ * against on the way out of storage — see `parseQuantiseDials`, which holds the rule that decides
+ * which unions in this file are checked and which are not. This one is checked because `vote` is a
+ * field of {@link QuantiseTuning}, so a saved quantiser preset carries it.
+ *
+ * It said the opposite for months, and the docblocks below were written against that (issue #258):
+ * the choice was session state when this sentence was written, and the commit that made a preset
+ * carry the whole tuning set left the sentence describing the arrangement it had just replaced.
  */
 export const VOTE_METHODS = ['DOMINANT', 'INK_WEIGHTED', 'K_CENTROID'] as const;
 
@@ -295,10 +301,10 @@ export type VoteMethod = (typeof VOTE_METHODS)[number];
 /**
  * What the symmetry pass does with what it finds — the three positions the Symmetry control offers.
  *
- * The `as const` array is the union's single definition, and unlike the two beside it this one *is*
- * validated against on the way out of storage: it is a dial, so it travels in a saved quantiser
- * preset. `parseQuantiseDials` checks membership against this array rather than a list restated
- * there.
+ * The `as const` array is the union's single definition, and a stored value is validated against it
+ * on the way out of storage: `symmetry` is a field of {@link QuantiseTuning}, so it travels in a
+ * saved quantiser preset. `parseQuantiseDials` checks membership against this array rather than a
+ * list restated there.
  */
 export const SYMMETRY_MODES = ['OFF', 'CHECK', 'SNAP'] as const;
 
@@ -346,8 +352,9 @@ export type FrameAlignmentMode = (typeof FRAME_ALIGNMENT_MODES)[number];
 /**
  * The positional dither patterns the tab offers, in the order the control shows them.
  *
- * The `as const` array is the union's single definition, as the vote methods' is. Nothing validates
- * a stored value against it, because the choice lives in the session's store and is never persisted.
+ * The `as const` array is the union's single definition, as the vote methods' is, and a stored value
+ * is validated against it for the reason {@link VOTE_METHODS} is: `dither` is a field of
+ * {@link QuantiseTuning}, so a saved quantiser preset carries it.
  */
 export const DITHER_PATTERNS = ['NONE', 'BAYER_4', 'BAYER_8', 'BLUE_NOISE'] as const;
 
@@ -808,7 +815,11 @@ export interface SpriteBox {
 export type SpriteSegmentation =
   | {
       readonly kind: 'SEGMENTED';
-      /** Reading order — top to bottom, then left to right. */
+      /**
+       * The reading order section 4 of the prompt fixes — screen-left to screen-right within a row,
+       * then row by row down the sheet. A row is a band of vertical overlap rather than a shared top
+       * edge; see `spriteRows`, which is the one derivation of it the app has.
+       */
       readonly boxes: readonly SpriteBox[];
       /** Pieces too small to be a sprite; see {@link SMALLEST_SPRITE_PIXELS}. */
       readonly specks: number;
@@ -1121,9 +1132,12 @@ export interface QuantiseResult extends QuantiseSheet {
 /**
  * The five ways the preview offers to read one result — the layouts, in the order they are offered.
  *
- * The `as const` array is the union's single definition. Like the vote methods, the choice lives in
- * the panel that draws the preview and is never persisted: it is a preference about how a result is
- * being *looked at* right now, not part of what the result is.
+ * The `as const` array is the union's single definition, and nothing validates a stored value
+ * against it — the only one of this file's control unions that nothing validates, because it is the
+ * only one that is not a field of {@link QuantiseTuning}. That is the whole of the rule, and
+ * `parseQuantiseDials` states it: the choice lives in the panel that draws the preview, because it
+ * is a preference about how a result is being *looked at* right now rather than part of what the
+ * result is.
  */
 export const PREVIEW_MODES = ['SIDE_BY_SIDE', 'WIPE', 'DIFFERENCE', 'SPRITES', 'ONION'] as const;
 

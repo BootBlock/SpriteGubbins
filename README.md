@@ -23,16 +23,16 @@ the Origin Private File System).
 A Settings dialog in the header carries the app-wide preferences: the accent colour, whether
 the ambient backdrop is painted, an in-app reduced-motion switch, and which view the app opens
 on. None of them changes what a prompt says, and none of them repaints the per-view colours —
-the Studio, Quantise, Presets and Architecture tabs keep their own, which is how the page says
-where you are.
+every tab keeps its own, which is how the page says where you are.
 
 ## Status
 
 **All five phases have shipped.** The build system and PWA shell, the design tokens, the domain
 types and option pools, the prompt compiler, SQLite-on-OPFS persistence with its localStorage
 fallback, the Zustand stores and the full component tree are all in place and verified. The app
-carries the Studio, Quantise, Presets and Architecture tabs, the bundled preset library, the
-atlas calculator, the prompt history and the sheet-splitting drawer.
+carries the Studio, Quantise, Presets, Projects and Architecture tabs, the bundled preset library,
+the atlas calculator, the prompt history, the sheet-splitting drawer, and the library pack that
+takes everything you have saved out to a file and reads it back in.
 
 The version is still `0.x`, which means exactly what it says: **any release may break anything**,
 including stored history, saved presets, option identifiers and the wording of a compiled prompt.

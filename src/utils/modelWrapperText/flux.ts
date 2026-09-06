@@ -34,17 +34,27 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  *
  * **It leads the prompt rather than trailing it, and that is a fix rather than a preference.** On
  * the open-weight target this restatement was unreachable: tokenisation stops at 512 tokens and the
- * specification runs to roughly 3,600, so the one sentence written specifically to survive Flux's
- * missing negative prompt was the one sentence guaranteed to be truncated away first. That argument
- * is the weights' own and borrows nothing. On the hosted tier, where the whole specification is
- * read, leading is instead what Black Forest Labs document about attention — "Word order matters —
- * FLUX.2 pays more attention to what comes first." — in the guide written for that tier.
+ * specification runs to **six to thirteen times that**, across every category the app offers and
+ * read by the app's own `estimateTokens` — so the one sentence written specifically to survive
+ * Flux's missing negative prompt was the one sentence guaranteed to be truncated away first. That
+ * argument is the weights' own and borrows nothing. On the hosted tier, where the whole
+ * specification is read, leading is instead what Black Forest Labs document about attention — "Word
+ * order matters — FLUX.2 pays more attention to what comes first." — in the guide written for that
+ * tier.
  *
- * **Which is exactly why the second sentence states the style.** Section 2's `Style:` line sits
- * around token 1,070, so on the open-weight tier it is never read — and this wrapper opened by
- * asserting "crisp hard edges" whatever that line said, which made the one statement about the
- * surface the model *did* read the wrong one on eight of the ten styles. `RENDER_STYLE_SURFACE`
- * holds the clause each style completes, in section 2's own words.
+ * **Stated as a multiple of the ceiling rather than as one prompt's length**, because the length
+ * grows with every block the template gains while the multiple is what the argument needs. A figure
+ * of “roughly 3,600 tokens” stood here, and by the time it was checked it was 1.8× low *and*
+ * describing the smallest category rather than the specification (issue #266).
+ * `tests/flux-ceiling-margin.test.ts` re-derives both bounds — this one and the `Style:` line's
+ * below — from the compiler, so a template that grows or shrinks past either fails there rather than
+ * leaving this paragraph asserting a margin the app no longer has.
+ *
+ * **Which is exactly why the second sentence states the style.** Section 2's `Style:` line sits past
+ * **twice** the ceiling in every category the app offers, so on the open-weight tier it is never
+ * read — and this wrapper opened by asserting "crisp hard edges" whatever that line said, which made
+ * the one statement about the surface the model *did* read the wrong one on eight of the ten styles.
+ * `RENDER_STYLE_SURFACE` holds the clause each style completes, in section 2's own words.
  *
  * **"No shadows" is now "no cast shadow" for the same reason**, and it is a narrowing rather than a
  * softening: what section 0 forbids is a cast shadow, a contact shadow and a ground plane, while a

@@ -5,10 +5,13 @@ import { QUANTISE_DEFAULT_DIALS } from '../src/constants/quantiseDials.ts';
 import {
   DEFAULT_FILL_CLEANUP,
   DEFAULT_INK_THRESHOLD,
+  DEFAULT_KEY_TOLERANCE,
   DIFFERENCE_PRECISION,
   DUPLICATE_TOLERANCE_RANGE,
   FILL_CLEANUP_RANGE,
   SCATTERED_SPRITE_CEILING,
+  SYMMETRY_AXIS_SEARCH,
+  SYMMETRY_SWEEP_BUDGET,
 } from '../src/constants/quantiser.ts';
 import { nearestColor } from '../src/utils/applyPalette.ts';
 import { duplicateSprites } from '../src/utils/duplicateSprites.ts';
@@ -26,6 +29,7 @@ import { lumaOfChannels } from '../src/utils/lineVote.ts';
 import { srgbToOklab } from '../src/utils/oklab.ts';
 import { pixelDistanceOf } from '../src/utils/pixelDistance.ts';
 import { quantiseImage } from '../src/utils/quantiseImage.ts';
+import { affordableReach } from '../src/utils/symmetryAxis.ts';
 import { buildPalette } from '../src/utils/wuQuantiser.ts';
 import type {
   ColorReduction,
@@ -60,13 +64,23 @@ import type {
  * measured on is built here too. A figure measured somewhere other than the reference sheet says
  * which sheet it came from, as CLAUDE.md requires.
  *
- * **The wall-clock half is deliberately not asserted, and `duplicateSprites` does not state one.**
- * That docblock gives ratios along the dial and an order of magnitude, because a millisecond figure
- * is the one kind of measurement that does not reproduce here: the same rung on the same fixture on
- * this machine differed by three to four times between a cold sweep and a warmed one, and adjacent
- * warm runs of a single rung differed by two. What is held instead is what the conclusion rests on:
- * the corpus's sprite counts, and the fixture's own grouping at four rungs of the dial, which is
- * what says the expensive rungs really are walking every pair rather than skipping them.
+ * **The wall-clock half is deliberately not asserted, and no docblock here states one any more.**
+ * `duplicateSprites` gives ratios along the dial and an order of magnitude, because a millisecond
+ * figure is the one kind of measurement that does not reproduce here: the same rung on the same
+ * fixture on this machine differed by three to four times between a cold sweep and a warmed one, and
+ * adjacent warm runs of a single rung differed by two. What is held instead is what the conclusion
+ * rests on: the corpus's sprite counts, and the fixture's own grouping at four rungs of the dial,
+ * which is what says the expensive rungs really are walking every pair rather than skipping them.
+ *
+ * `symmetryAxis` is the second of those and arrived the other way about — it *did* state a
+ * millisecond ratio, "about a thirtieth of the whole pipeline's work", and re-measurement put six
+ * readings of "the same sheet" between a twelfth and a hundred-and-forty-third of it (issue #237).
+ * **It now states no total cost at all**, which is the second correction rather than the first: the
+ * deterministic figure written to replace that ratio counted the wrong pixels twice over, against
+ * the source sheet where the boxes are in the reduced result's coordinates, and at the sheet reach
+ * where a per-box cap leaves most of it unspent. What is asserted below is the two *bounds* the
+ * paragraph now argues from — the box area the budget is divided by, and the reach `affordableReach`
+ * answers with — both taken from the pass rather than restated here.
  */
 
 /** The conditions every figure below is stated at, bar the dial each one varies. */
@@ -442,10 +456,11 @@ describe('the figures the quantiser docblocks state', () => {
     /**
      * How many of `before`'s sprites came through with the extent they had.
      *
-     * **Paired by nearest centre, not by list position**, and the difference is not cosmetic.
-     * `spriteSegments` answers topmost-first, and a perturbed sheet meshes differently — the bottom
-     * row's tops move by different amounts and that row re-sorts, so index n is *not* the same piece
-     * of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
+     * **Paired by nearest centre, not by list position**, and the difference is not cosmetic. A
+     * perturbed sheet meshes differently, so a sprite can gain or lose a row of drawn pixels at its
+     * edge — enough to cross a row band, or to change how the merge folds a piece back onto its
+     * neighbour, and either of those renumbers everything after it. Index n is therefore *not* the
+     * same piece of artwork either side. Measured on this sheet, an index pairing scores one sprite against a
      * neighbour that happens to share its extent and misses the one that genuinely kept it: two
      * errors that cancel into the right total for the wrong reason, which is a guard that would
      * certify a wrong figure the moment the perturbation, the grid or the key tolerance changed.
@@ -619,5 +634,76 @@ describe('the figures the quantiser docblocks state', () => {
       // it certified the opposite of what it claimed.
       expect(sizes(DUPLICATE_TOLERANCE_RANGE.max)).toEqual([488]);
     }, 900_000);
+  });
+
+  describe('the symmetry pass — the two figures its cost is argued from', () => {
+    /**
+     * The reference sheet keyed as `SYMMETRY_AXIS_SEARCH`'s docblock states it, which is not
+     * `CALIBRATION`.
+     *
+     * That paragraph names its own conditions — `test_sprites/armour.png`, grid 6, keyed on
+     * `#FF00FF` at `DEFAULT_KEY_TOLERANCE`, every other dial at its opening position — and the two
+     * figures below are the only ones stated for those fifteen pieces, so they are measured there.
+     * No reduction, because none is an opening position.
+     */
+    const AS_STATED = (): QuantiseSettings => {
+      const magenta = fromHex('#FF00FF');
+      if (magenta === null) throw new Error('the key colour no longer parses');
+      return {
+        ...QUANTISE_DEFAULT_DIALS,
+        grid: 6,
+        key: { color: magenta, tolerance: DEFAULT_KEY_TOLERANCE },
+        reduction: null,
+      };
+    };
+
+    /**
+     * The quantity `affordableReach` divides the budget by, summed the way that function sums it.
+     *
+     * Box area, not drawn pixels — and the reason this figure is asserted at all is that those two
+     * are twenty per cent apart on this sheet, so a docblock naming the wrong one of them sends a
+     * reader re-deriving the reach to a number the code never computes (issue #237). The reach
+     * itself is taken from `affordableReach` rather than restated here, for the same reason: a
+     * restatement passes with the real divisor swapped, which is precisely the change this is
+     * guarding against.
+     */
+    const combinedBoxArea = (boxes: readonly SpriteBox[]): number =>
+      boxes.reduce((total, box) => total + box.width * box.height, 0);
+
+    it('totals 17,201 pixels of box against 13,827 of artwork, and is not narrowed by the budget', () => {
+      const result = quantiseImage(sheet, AS_STATED());
+      expect(result.sprites.kind).toBe('SEGMENTED');
+      const boxes = result.sprites.kind === 'SEGMENTED' ? result.sprites.boxes : [];
+      expect(boxes).toHaveLength(15);
+
+      const area = combinedBoxArea(boxes);
+      expect(area).toBe(17_201);
+
+      // The other quantity, pinned beside it because the docblock now says which is which and the
+      // pair is the whole of that sentence's point.
+      let opaque = 0;
+      for (let at = 3; at < result.image.data.length; at += CHANNELS_PER_PIXEL) {
+        if ((result.image.data[at] ?? 0) > 0) opaque += 1;
+      }
+      expect(opaque).toBe(13_827);
+
+      // The budget buys 975 sweeps where the full reach costs 33, which is what "the budget narrows
+      // this sheet by nothing" means — and the reach is asked of the pass rather than recomputed
+      // here, so a divisor changed inside `affordableReach` fails this rather than sailing past it.
+      //
+      // What the budget leaves is not what each sprite gets: `bestAxis` caps every box at a quarter
+      // of its own width, which binds on ten of these fifteen. That is `SYMMETRY_AXIS_SEARCH`'s
+      // claim rather than this docblock's, and it is why nothing here states a total cost — a
+      // `(4 × reach + 1) × area` product is the nominal figure the cap leaves unspent.
+      expect(Math.floor(SYMMETRY_SWEEP_BUDGET / area)).toBe(975);
+      expect(affordableReach(boxes)).toBe(SYMMETRY_AXIS_SEARCH);
+
+      // The boxes are in the **reduced** result's coordinates, not the source sheet's, which is the
+      // half a total cost stated against 1254² gets wrong — and did, in the first replacement for
+      // the wall-clock ratio these docblocks used to carry. Pinned so that a pass moved back onto
+      // the source sheet fails here rather than quietly making the docblocks' arithmetic 36× out.
+      expect([result.image.width, result.image.height]).toEqual([209, 210]);
+      expect(area / (result.image.width * result.image.height)).toBeCloseTo(0.392, 3);
+    }, 300_000);
   });
 });

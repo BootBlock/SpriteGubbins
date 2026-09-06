@@ -207,8 +207,8 @@ export function App() {
             view does not — the switcher already claims `aria-current="page"` for these, and this is
             the heading that claim implies.
 
-            Screen-reader-only, because it is not a title the layout is missing. Four of the five
-            views already paint their own title, and the studio deliberately opens straight on its
+            Screen-reader-only, because it is not a title the layout is missing. Every view but the
+            studio already paints its own title, and the studio deliberately opens straight on its
             two panels; a visible heading above them would be a design change smuggled in behind an
             accessibility fix. What is repaired is the outline and the heading-navigation shortcut,
             neither of which is painted.
