@@ -432,16 +432,50 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * still the right figure for what a first visit downloads is one this change is not placed to
  * answer, and widening the margin would only postpone it further.
  *
- * **The stylesheet ground/ink sweep then spent 0.08 KiB of it, and it is stylesheet rather than
- * prose.** Two builds from the same `node_modules`, differing in `src/index.css` alone: `main`
- * measures 2351.22 KiB and the branch 2351.30, both at 60 entries with no chunk added or renamed.
- * What a first visit gains is a `--color-ink-placeholder` declaration, a `::placeholder` rule, eight
- * bytes on `::selection`'s colour and one fewer declaration in the forced-colours block — the ~135
- * lines that change alongside them are docblock, which the build strips. The margin is **0.70 KiB**,
- * narrower again than the two figures above, so the paragraph they are in is worth reading before
- * the next base figure is taken for slack.
+ * **Raised again from 2352 by the identity digest's key exclusion**, which is joint-smallest with the
+ * 2254 → 2256 above and lands one commit behind the paragraph before it. `identityPalette` excluded
+ * the background key by comparing RGB for exact equality, which removes essentially nothing on a
+ * resampled sheet — so every digest read off real generator output led with the key field. It now
+ * removes the field with `keyBackground`, the app's own keying pass, which is what makes the picker
+ * route and the Quantise tab agree about where the field is. Measured against `main` at `17af148`,
+ * rebuilt from the same `node_modules` — **2351.14 KiB across 60 entries**, the figure the paragraph
+ * above records — this build reports **2352.30**, a delta of 1.16. No file was added to or removed
+ * from `PRECACHE_SHAPES` and no chunk was renamed.
+ *
+ * **The delta is the same 1.16 this branch measured against `47dc6a9`**, where it took the figure
+ * from 2349.67 to 2350.83 — so unlike the raise above it, none of this one is the split
+ * re-partitioning around another branch. It is the change's own cost, and it survived being carried
+ * onto a base 1.47 KiB higher unchanged.
+ *
+ * **The split is worth reading, because three-quarters of it is one import.** Rebuilt with the code
+ * change alone and both guidance paragraphs left as they were, the figure is **2350.57** — so
+ * **0.90 KiB buys the keying pass reaching the studio's chunk** (`StudioTab` +802 bytes,
+ * `SheetStepButtons` +336, the rest hash-length noise) and **0.26 buys the prose**: the capture
+ * control's paragraph and the `keyStillOn` message, both of which stated as fact two things the code
+ * did not do. That is the ordinary shape of a correctness fix that reaches for an existing seam
+ * rather than writing a second one — a local radius would have pulled `keyDistance` in regardless,
+ * and would have left the key's blends in four of the eight digests.
+ *
+ * 2353 leaves **0.70 KiB**, which is the order of the 0.82 and 0.86 the two notes above call the
+ * narrowest this margin has been, and deliberately not more: the paragraph before this one records
+ * that whether 2350 was still the right figure for a first visit is a question neither change is
+ * placed to answer, and widening the margin would postpone it a second time.
+ *
+ * **The stylesheet ground/ink sweep then spent 0.08 KiB of that 0.70, and the ceiling stays at
+ * 2353.** Two builds from the same `node_modules` on the same merged tree, differing in
+ * `src/index.css` alone: 2352.38 KiB with `main`'s stylesheet and **2352.46** with this branch's,
+ * both at 60 entries, no file added to or removed from `PRECACHE_SHAPES` and no chunk renamed. What
+ * a first visit gains is four declarations — a `--color-ink-placeholder`, a `::placeholder` rule,
+ * eight bytes on `::selection`'s colour, and one fewer in the forced-colours block. The ~135 lines
+ * that change beside them are docblock, which the build strips, so unlike the two raises above this
+ * one is not paying for prose.
+ *
+ * The margin is **0.54 KiB**, narrower again than the 0.70, 0.82 and 0.86 the notes above each call
+ * the narrowest it has been. Three consecutive branches have now recorded that sentence, which is
+ * the answer to the question those notes keep deferring: the margin is not being spent by any one
+ * change, and the next branch to land anything at all will be asked to raise the ceiling again.
  */
-export const PRECACHE_CEILING_KIB = 2352;
+export const PRECACHE_CEILING_KIB = 2353;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
