@@ -411,11 +411,18 @@ it takes is `var(--color-ink-faint)`: a placeholder is text a reader reads, so i
 and the ramp's floor is the dimmest it may be. The role still earns a name, because a hint in a field
 is not a timestamp and a later change to one should not drag the other. **A dimmer fourth rung is
 arithmetically available and is still wrong** — 4.5:1 on the lightest ground a field sits on is
-reached at L 0.5725, below `ink-faint`, which is a tone that reads in a field and not on a row.
+reached at L 0.5954, below `ink-faint`, which is a tone that reads in a field and not on a row.
 
 Both rows are held by the same test, and it measures the grounds each is actually painted on: the
 scrollbar against its track and the three surfaces a scroll container sits on, the placeholder
-against a `foundry-950` fill at 80% over each panel plus the flat well a modal search box uses.
+against five. **Which five is the part worth reading**, because the obvious answer is wrong and
+passes anyway. Every field *primitive* is a `foundry-950` fill at 80%, so a list built from
+`TextField`, `NumberField`, `SelectField` and `ComboBox` describes three composited grounds and one
+flat well — and misses the lightest ground in the app, because `PresetSavePanel` styles its own two
+inputs on a **flat `foundry-800`**, a whole ramp rung above any of them. `ink-faint` measures 6.52:1
+on the well and 5.82:1 there, so nothing is failing today; what would have been missed is which
+ground a re-tune takes under first. **A sweep over a role that a shared primitive usually renders is
+still a sweep over the call sites, not over the primitive.**
 
 **`accent` and `neon` are not interchangeable.** Indigo is the primary — actions, focus,
 selection, the background glow. Cyan marks something *live*: auto-syncing, generating,
@@ -511,17 +518,25 @@ tones across nine components and the second reports eight.
 for class names in `src/`, so a ground painted as `background-color: var(--color-accent)` in
 `index.css` names no class, sits in no component, and is invisible to each — and three defects were
 open at once on that single blind spot: `::selection` carrying `--color-ink` on the accent at
-**2.05:1**, every `::placeholder` in the app left on a framework default, and the forced-colours
+**2.04:1**, every `::placeholder` in the app left on a framework default, and the forced-colours
 block painting text in the one colour the platform's own backplate hides. The sweep parses the
 declaration blocks and prices every pairing of a `color` with a ground, the wheel expanded to all ten
-stops wherever the ground is `--color-tab`. **It is total**: a pairing in a shape it does not
+stops wherever *either side* is `--color-tab`. **It is total**: a pairing in a shape it does not
 recognise *fails* rather than being skipped, so the answer to a new one is to teach the sweep what it
 means. Three shapes are accounted for rather than priced, each saying why — a translucent role fill,
 which the ground/ink rule deliberately excludes and the `action-tab` suite prices; `transparent` text
 whose glyphs the background fills, required to actually clip; and the forced-colours block, where the
 palette is the user's and what matters is *which* system colour. A colour with no ground in the file
 at all — a pseudo-element inheriting the markup's — has to be named, with where its ratio is
-measured instead.
+measured instead, and a name that stops matching a real rule fails too, so the list cannot rot into a
+permission nobody uses.
+
+**Two of those branches guard cases the file does not currently contain**, and that is deliberate
+rather than dead code: the forced-colours block declares no `color` today and no rule paints
+`--color-tab` opaquely, so both arms skip nothing. Each exists because the alternative is *silent* —
+`oklchToken` resolves `--color-tab` through its `@theme` default to the violet stop, so a rule
+painting it that reached the pricing unexpanded would be measured against one stop of ten and pass or
+fail on whichever the studio happens to use.
 
 **A view's colour is assigned on the element the `var()`s resolve against** — `data-tab` on the
 shell in [src/App.tsx](src/App.tsx), and nowhere else. Custom properties are substituted at

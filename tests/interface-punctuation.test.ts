@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { relative, sep } from 'node:path';
 import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
  * Every string the app writes is set with typographic marks, and this is where the *interface* half
@@ -137,7 +136,7 @@ function textStart(node: ts.Node, tree: ts.SourceFile): number {
 
 /** Every straight mark one file writes into a string the reader reaches. */
 function offencesIn(path: string, tally: Tally): Offence[] {
-  const source = readFileSync(path, 'utf8');
+  const source = sourceText(path);
   const file = relative(process.cwd(), path).split(sep).join('/');
   const component = path.endsWith('.tsx');
   tally[component ? 'components' : 'modules'] += 1;

@@ -169,19 +169,26 @@
   /*
    * The hint in an empty field — a role of its own, and the ramp's floor is its value.
    *
-   * A placeholder is text a reader reads, so it takes the same 4.5:1 as the rest of the ramp, and
-   * it is measured against a narrower set of grounds than the ramp is: every field in the app is
-   * a `foundry-950` fill at 80%, so the lightest ground one ever sits on is that over a
-   * `foundry-800` panel. Measured there:
+   * A placeholder is text a reader reads, so it takes the same 4.5:1 as the rest of the ramp, and it
+   * is measured against a narrower set of grounds — but **narrower is not one shape**, which is the
+   * trap here. The field primitives are all a `foundry-950` fill at 80%, so reading those alone says
+   * the lightest ground is that fill over a `foundry-800` panel. It is not: `PresetSavePanel` styles
+   * its two inputs itself, on a **flat `foundry-800`**, a whole ramp rung above anything the
+   * primitives sit on. Measured on both:
    *
-   *   preflight's `currentcolor` at 50%    4.49    (and 4.44 from the painted pixels)
-   *   ink-faint                            6.40
+   *                                        950/80 over 800     flat 800
+   *   preflight's `currentcolor` at 50%           4.4902         4.4758
+   *   ink-faint                                     6.40           5.82
    *
-   * **The value is an alias rather than a fourth tone, and the ramp is why.** 4.5:1 on that ground
-   * is reached at L 0.5725 — below `ink-faint` — so a dimmer rung is arithmetically available and
-   * is still wrong: `ink-faint`'s 0.66 is the lightness at which the ramp clears AA on
-   * `foundry-600`, the lightest surface *any* text in this app sits on, and CLAUDE.md records that
-   * 0.66 as a floor rather than a preference. A tone below it would be one that reads in a field
+   * (4.4902 is the best of the five grounds for preflight; the worst is 4.4725. From the painted
+   * pixels of a real field it measured 4.44, and 6.30 after.)
+   *
+   * **The value is an alias rather than a fourth tone, and the ramp is why.** 4.5:1 is reached at
+   * L 0.5725 on the composited ground and L 0.5954 on the flat one — both below `ink-faint` — so a
+   * dimmer rung is arithmetically available and is still wrong. `ink-faint`'s 0.66 is the ramp's
+   * floor, chosen where it clears AA on `foundry-600`, the lightest surface *any* text in this app
+   * sits on: the crossing there is L 0.6549 and 0.66 holds 4.59:1, which the ink-ramp docblock above
+   * records as a floor rather than a preference. A tone below it would be one that reads in a field
    * and not on a row, which is a tone the ramp deliberately does not hold. So the placeholder is
    * the ramp's faintest tone, written once: `var()` rather than a second copy of the triple, since
    * two copies of a value in the one file that writes values down is the thing that drifts.
@@ -190,13 +197,14 @@
    * value at `ink`, its label at `ink-muted`, the hint one rung below both — and it is what a later
    * change to the hint alone would have to move without dragging every timestamp with it.
    *
-   * `tests/design-tokens.test.ts` recomputes the ratio on every ground a placeholder-bearing field
-   * sits on and fails below 4.5:1, resolving the alias so a literal written here is measured the
-   * same way. It asks one more thing of the value, because the floor is satisfied by `ink` itself:
-   * the tone has to stay a ramp rung dimmer than the value it stands in for, which is what a hint
-   * is and what stops a placeholder reading as an answered field. And it checks that a rule reaches
-   * for the token at all — preflight's declaration is still in the cascade, and the app's own has to
-   * come after it and win.
+   * `tests/design-tokens.test.ts` recomputes the ratio on all five grounds a placeholder-bearing
+   * field sits on and fails below 4.5:1, resolving the alias so a literal written here is measured
+   * the same way. It asks three more things of the value, because the floor alone is satisfied by
+   * `ink` itself: the tone has to stay a ramp rung dimmer than the value it stands in for, which is
+   * what a hint is and what stops a placeholder reading as an answered field; it has to still
+   * *be* one of the ramp's own tones, since that identity is what lets the two ramp sweeps cover it
+   * without a fourth entry in `INK_RAMP`; and a rule has to reach for the token at all, preflight's
+   * declaration being still in the cascade with the app's own having to come after it and win.
    */
   --color-ink-placeholder: var(--color-ink-faint);
 
@@ -1125,12 +1133,18 @@
   /*
    * The selection highlight, which is a solid role fill carrying text.
    *
-   * `--color-ink` on it measures **2.05:1** and is the pairing CLAUDE.md's design-token rule names
+   * `--color-ink` on it measures **2.04:1** and is the pairing CLAUDE.md's design-token rule names
    * as the mistake the rule exists to stop: no tone on the ink ramp reaches 4.5:1 on *any* solid
    * role fill this app paints, the best of the eighteen being 3.07:1. The near-black is not the
    * better of two workable choices, it is the only half of the palette that can sit on a role
-   * colour at all — here it measures **8.01:1**, and the accent the reader picked does not move
-   * that, since every hue holds the default's luminance.
+   * colour at all — here it measures **8.04:1**, and the accent the reader picked does not move
+   * that, since every hue holds the default's luminance to within 0.29%.
+   *
+   * Those are the figures computed from the `oklch()` triples. The screen is handed bytes, and
+   * quantising both to 8 bits first gives 2.05:1 and **8.01:1** — which is what a selected paragraph
+   * decoded pixel by pixel actually measures, at 8.013:1 for `rgb(4,5,10)` on `rgb(139,157,247)`.
+   * The two differ in the second decimal and the suite asserts the unquantised one, so a figure
+   * quoted from a browser and a figure quoted from this file are expected to disagree slightly.
    *
    * It went unnoticed because the two sweeps enforcing that rule read *class strings* in `src/`,
    * and a stylesheet rule names no class. The third sweep in `tests/design-tokens.test.ts` prices
@@ -1146,7 +1160,7 @@
    *
    * Every placeholder in the app had been Tailwind's preflight default — half the inherited
    * `color`, composited over whatever the field sits on — which lands at **4.44:1** measured from
-   * the painted pixels and 4.48–4.49:1 computed, against a 4.5:1 threshold at 13px. Nobody in this
+   * the painted pixels and 4.47–4.49:1 computed, against a 4.5:1 threshold at 13px. Nobody in this
    * project chose that figure, which is exactly why it is a hundredth under: it is a framework
    * default nobody had looked at, on all twenty-four placeholder-bearing inputs in the app.
    *
@@ -1773,14 +1787,14 @@
    * A current selection is said with the fill alone — **the text colour is deliberately not set.**
    *
    * This rule used to invert the pair, `HighlightText` on `Highlight`, which is the obvious reading
-   * of the system palette and is wrong for *text*. Chromium and Gecko both paint a **backplate**
-   * behind every text run in a forced palette — a rectangle in the `Canvas` colour, so that text
-   * over an image stays legible — and in both of Chromium's palettes `Canvas` and `HighlightText`
-   * are the same colour. White on white in the light one, black on black in the dark one. So the
-   * label of every selected thing in the app was painted in the one colour guaranteed to vanish,
-   * and the fill this rule paints was boxed out behind it: the header switcher's current view, the
-   * open preset collection, the selected project, the row the combo box's arrow keys are on, and
-   * the ✓ marking the chosen accent swatch.
+   * of the system palette and is wrong for *text*. Chromium paints a **backplate** behind every text
+   * run in a forced palette — a rectangle in the `Canvas` colour, so that text over an image stays
+   * legible — and in both of its palettes `Canvas` and `HighlightText` are the same colour. White on
+   * white in the light one, black on black in the dark one. So the label of every selected thing in
+   * the app was painted in the one colour guaranteed to vanish, and the fill this rule paints was
+   * boxed out behind it: the header switcher's current view, the open preset collection, the
+   * selected project, the row the combo box's arrow keys are on, and the ✓ marking the chosen accent
+   * swatch.
    *
    * That is not an emulation artefact and not palette-specific. `HighlightText` is *by definition*
    * the colour that reads on `Highlight`, which is the colour that contrasts with `Canvas` — so it
@@ -1789,25 +1803,37 @@
    * Setting nothing leaves the text at `CanvasText`, which is by definition the colour that reads
    * on `Canvas`, and the backplate stops being the problem and becomes what makes the label legible.
    * Measured in Edge 152 through Playwright's `forcedColors` emulation, over the active view's
-   * button (2478 px of label region, both palettes):
+   * button — the same page each time, the declaration put back and both read again, so the rows of
+   * a pair differ in one declaration and nothing else. 74 × 34 px of label region, the emoji icon
+   * excluded because it is full colour in both modes:
    *
-   *                              Canvas px   CanvasText px   Highlight px
-   *   HighlightText (before)          649               0           1849
-   *   nothing set (now)               425              10*          1849
+   *                            computed color     Canvas   CanvasText   Highlight   antialiased
+   *   light, HighlightText     rgb(255,255,255)      649            0        1815            52
+   *   light, nothing set       rgb(0,0,0)            425           10        1815           266
+   *   dark,  HighlightText     rgb(0,0,0)            649            0        1815            52
+   *   dark,  nothing set       rgb(255,255,255)      396           52        1815           253
    *
-   *   * plus 266 antialiased stroke pixels, against 52 before — the glyphs are painted either way,
-   *     and before, they were painted in the plate's own colour.
+   * `HighlightText` computes to the same colour as `Canvas` in both palettes, and there are no glyph
+   * strokes in the clip at all. The fill is 1815 px either way, so removing the text colour costs
+   * the marking nothing.
    *
-   * The fill still carries the whole of the marking, at 1849 px of the label region.
+   * **An outline is the answer one bullet up and is not the answer here.** Two measurements over the
+   * same button say so: an inset `outline: 2px solid Highlight` *added to* this fill changes not one
+   * pixel, since it draws Highlight over Highlight; and on its own, with no fill, it leaves 330 px
+   * of Highlight where the fill leaves 1815 — in exactly the shape and colour `:focus-visible` above
+   * already draws. A selection that looks like the focus ring has answered the ratio and lost the
+   * distinction.
    *
-   * **An outline is the answer one bullet up and is not the answer here.** Two measurements say so:
-   * an inset `outline: 2px solid Highlight` *added to* this fill changes not one pixel, since it
-   * draws Highlight over Highlight; and on its own it leaves only 330 px of Highlight, in exactly
-   * the shape and colour `:focus-visible` above already draws. A selection that looks like the
-   * focus ring has answered the ratio and lost the distinction.
+   * **Only Chromium was driven.** Gecko is documented as painting a backplate too, which is why this
+   * is written to work *with* a plate rather than against one, but that was read rather than
+   * measured; a real Windows High Contrast theme was not driven either. Safari never matches
+   * `forced-colors: active`, so none of this applies there. What an engine drawing no plate would
+   * give is `CanvasText` on `Highlight`, which has no guaranteed ratio — the reason to keep the pair
+   * in mind if Firefox is ever driven.
    *
-   * `tests/design-tokens.test.ts` bans the `*Text` half of any system-colour pair whose ground is
-   * not `Canvas` from appearing as a `color` in this block, which is the general form of the
+   * `tests/design-tokens.test.ts` bans the `*Text` half of every system-colour pair whose ground is
+   * not `Canvas` from appearing as a `color` in this block — `HighlightText`, `SelectedItemText`,
+   * `ButtonText`, `FieldText`, `AccentColorText` and `MarkText` — which is the general form of the
    * mistake rather than this one selector's version of it.
    */
   [aria-pressed='true'],

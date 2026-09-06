@@ -1681,7 +1681,7 @@ function styleRules(source: string): StyleRule[] {
  * a `className`'s subtree, the other reads one branch of a ternary at a time — and a rule written
  * here names no class, sits in no component, and is invisible to each. Three defects were open at
  * once on that single blind spot: `::selection` painting `--color-ink` on a solid `--color-accent`
- * at **2.05:1** (the exact pairing CLAUDE.md names as the mistake the rule exists to stop), every
+ * at **2.04:1** (the exact pairing CLAUDE.md names as the mistake the rule exists to stop), every
  * `::placeholder` in the app left on Tailwind preflight's `currentcolor` at 50% and landing at
  * **4.44:1**, and the forced-colours block painting `HighlightText` where the platform draws a
  * `Canvas` backplate. A fix that corrected the three ratios and left the sweep blind would be
@@ -1714,7 +1714,7 @@ describe('a colour declared in the stylesheet', () => {
    * "no background in this rule" becoming a way for a colour to go unpriced.
    */
   const GROUNDED_BY_MARKUP: Record<string, string> = {
-    '::placeholder': 'every field is a foundry-950 fill at 80% — priced by the suite below',
+    '::placeholder': 'painted on five grounds the markup gives it — priced by the suite below',
   };
 
   /** What a rule's colour and ground came to, once classified. */
@@ -1722,6 +1722,9 @@ describe('a colour declared in the stylesheet', () => {
 
   const priced: Pairing[] = [];
   const unclassified: string[] = [];
+
+  /** Which entries of the list above the sweep actually reached, so a stale one cannot sit unused. */
+  const excused: string[] = [];
 
   for (const rule of rules) {
     const colour = COLOUR.exec(rule.declarations)?.[1]?.trim();
@@ -1752,7 +1755,10 @@ describe('a colour declared in the stylesheet', () => {
     }
 
     if (ground === undefined) {
-      if (rule.prelude in GROUNDED_BY_MARKUP) continue;
+      if (rule.prelude in GROUNDED_BY_MARKUP) {
+        excused.push(rule.prelude);
+        continue;
+      }
       unclassified.push(`${rule.prelude}: a colour whose ground this sweep cannot find`);
       continue;
     }
@@ -1775,8 +1781,9 @@ describe('a colour declared in the stylesheet', () => {
 
   it('was parsed whole, so nothing below can pass by reading an empty file', () => {
     // A brace walk that returned nothing — a changed `codeOnly`, a stylesheet moved — would make
-    // every loop below run zero assertions and the sweep pass having measured no CSS at all. A
-    // hundred-odd blocks exist as this is written, and eight of them declare a colour.
+    // every loop below run zero assertions and the sweep pass having measured no CSS at all. As this
+    // is written the file holds 108 blocks, seven of which declare a colour: three are priced here
+    // and four are accounted for by the branches above.
     expect(rules.length).toBeGreaterThan(50);
     expect(priced.length).toBeGreaterThanOrEqual(3);
   });
@@ -1788,19 +1795,43 @@ describe('a colour declared in the stylesheet', () => {
     expect(unclassified).toStrictEqual([]);
   });
 
+  it('names a rule that still exists for every colour it excuses on the markup’s behalf', () => {
+    // `GROUNDED_BY_MARKUP` is a permission, and a permission nobody uses is how an exemption list
+    // rots: a selector renamed or deleted leaves an entry behind that excuses nothing, and the next
+    // reader takes the list as a description of the file. The same guard CLAUDE.md already asks of
+    // the raw-colour exemptions — "it also fails if one of the six stops carrying any".
+    //
+    // The reason each entry carries is what fails with it, so the value is read rather than being
+    // documentation nothing looks at.
+    for (const [selector, reason] of Object.entries(GROUNDED_BY_MARKUP)) {
+      expect([selector, reason, excused.includes(selector)]).toStrictEqual([selector, reason, true]);
+    }
+  });
+
   it('clears 4.5:1 against the ground the same rule paints', () => {
-    // `::selection` is what this was written for: `--color-ink` on `--color-accent` measures 2.05:1
-    // and `--color-foundry-950` measures 8.01:1, which is the rule CLAUDE.md already states for
-    // every solid role fill in the app. The wheel is swept rather than sampled because `--color-tab`
-    // is whichever stop the active view is on, so a rule painting it has ten grounds and not one.
+    // `::selection` is what this was written for: `--color-ink` on `--color-accent` measures 2.04:1
+    // computed from the tokens and 2.05:1 once both are quantised to the bytes a screen is handed,
+    // against 8.04:1 and 8.01:1 for `--color-foundry-950`. Either way it is the rule CLAUDE.md
+    // already states for every solid role fill in the app, and the browser paints the quantised
+    // one — a selected paragraph decoded pixel by pixel measures 8.013:1.
+    //
+    // **Both sides expand to the wheel, and neither expansion prices anything today.** `--color-tab`
+    // is whichever stop the active view is on, so a rule naming it has ten colours or ten grounds
+    // and not one; the only rule in the file that names it is `action-tab`, whose fill is
+    // translucent and is priced by its own suite before this is reached. The branch is written
+    // anyway because the alternative is silent: `oklchToken` resolves `--color-tab` through its
+    // `@theme` default to the violet stop, so a rule painting it that reached here unexpanded would
+    // be measured against one stop of ten and pass or fail by whichever the studio happens to use.
     const offenders: string[] = [];
+    const stopsOf = (token: string) =>
+      token === '--color-tab' ? SPECTRUM_STOPS.map((stop) => `--color-spectrum-${stop}`) : [token];
 
     for (const { rule, colour, ground } of priced) {
-      const stops =
-        ground === '--color-tab' ? SPECTRUM_STOPS.map((stop) => `--color-spectrum-${stop}`) : [ground];
-      for (const stop of stops) {
-        const ratio = contrastBetween(colour, stop);
-        if (ratio < 4.5) offenders.push(`${rule.prelude}: ${colour} on ${stop} is ${ratio.toFixed(2)}:1`);
+      for (const tone of stopsOf(colour)) {
+        for (const stop of stopsOf(ground)) {
+          const ratio = contrastBetween(tone, stop);
+          if (ratio < 4.5) offenders.push(`${rule.prelude}: ${tone} on ${stop} is ${ratio.toFixed(2)}:1`);
+        }
       }
     }
 
@@ -1813,34 +1844,70 @@ describe('a colour declared in the stylesheet', () => {
  *
  * Tailwind's preflight paints every placeholder `color-mix(in oklab, currentcolor 50%, transparent)`
  * — half the inherited `color`, composited over whatever the field sits on — and `index.css`
- * authored no `::placeholder` rule at all. Measured, that lands at 4.49:1 computed and 4.44:1 from
- * the painted pixels of a real field, against a 4.5:1 threshold at this app's 13px body rung. It
- * fails by about one and a quarter per cent, on all twenty-four placeholder-bearing inputs in the
- * app, four of which are empty by default and have the placeholder as their only hint.
+ * authored no `::placeholder` rule at all. Measured, that lands between 4.4725:1 and 4.4902:1
+ * computed and 4.44:1 from the painted pixels of a real field, against a 4.5:1 threshold at this
+ * app's 13px body rung. It fails by about one and a quarter per cent, on all twenty-four
+ * placeholder-bearing inputs in the app, four of which are empty by default and have the placeholder
+ * as their only hint.
  *
  * The ground is narrower than the ink ramp's, which is why this is measured here rather than folded
- * into the ramp's own sweep: every field in the app is a `foundry-950` fill at 80%, so the lightest
- * ground a placeholder ever sits on is that over a `foundry-800` panel, and the modal search boxes
- * sit on the flat well. The token resolves through its alias, so a literal written in its place is
- * measured the same way and a wrong one still fails.
+ * into the ramp's own sweep — but **narrower is not the same as "one shape"**, and reading the field
+ * primitives alone says it is. `TextField`, `NumberField`, `SelectField` and `ComboBox` are all a
+ * `foundry-950` fill at 80%, so a sweep built from those four describes three composited grounds and
+ * misses the lightest one in the app: `PresetSavePanel` styles its two inputs directly, on a **flat
+ * `foundry-800`**, which is a whole ramp rung above anything the primitives sit on. That is the
+ * ground the tone actually has to survive, and #253's own evidence had already reported it —
+ * its `Save as` and `Describe it (optional)` rows measure a ground of `rgb(18, 21, 31)`, which is
+ * `foundry-800` and not a composite of anything.
+ *
+ * So the list below is built from **where a `placeholder=` actually is**, not from what the shared
+ * primitives happen to do. The token resolves through its alias, so a literal written in its place
+ * is measured the same way and a wrong one still fails.
  */
 describe('the placeholder tone', () => {
-  /** The panels a field sits in, lightest first — `foundry-800` is the worst case for contrast. */
+  /** The panels a field primitive sits in, lightest first. */
   const PANELS = ['--color-foundry-800', '--color-foundry-900', '--color-foundry-950'];
 
-  /** What `bg-foundry-950/80` composites to over each of them, plus the flat well a modal uses. */
+  /**
+   * Every ground a placeholder is painted on: the primitives' `foundry-950` fill at 80% over each
+   * panel, the flat well the modal search boxes use, and the flat `foundry-800` of the two inputs
+   * `PresetSavePanel` styles itself — which is the lightest, and therefore the one that decides.
+   */
   const GROUNDS = [
     ...PANELS.map((panel) => compositeOf(oklchToken('--color-foundry-950'), oklchToken(panel), 0.8)),
     linearOf(oklchToken('--color-foundry-950')),
+    linearOf(oklchToken('--color-foundry-800')),
   ];
 
   it('clears 4.5:1 on every ground a field with a placeholder sits on', () => {
     // Deliberately not paired with a "beats the framework default" assertion, which reads as though
     // it added something and cannot fail on its own: preflight's `--color-ink` at 50% lands between
-    // 4.473:1 and 4.490:1 on these same four grounds, so anything clearing this floor has already
+    // 4.4725:1 and 4.4902:1 across these five grounds, so anything clearing this floor has already
     // beaten it. The figure is recorded here instead, where it is the reason the floor is the check.
+    //
+    // The margin is not uniform, which is why every ground is swept rather than the worst composited
+    // one: `ink-faint` measures 6.52:1 on the flat well and 5.82:1 on the flat `foundry-800`, and it
+    // is the second that a re-tune would take under first.
     const tone = linearOf(oklchToken('--color-ink-placeholder'));
     for (const ground of GROUNDS) expect(contrastOf(tone, ground)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('is a tone the ramp already holds, which is what the two ramp sweeps then cover it by', () => {
+    // The token is an alias, and that is load-bearing rather than incidental. `INK_RAMP` stays three
+    // tones — it is "three tones a reader can tell apart", and a fourth entry equal to `ink-faint`
+    // would make its separation check compare a tone with itself and fail at 1.00 against the 1.35
+    // floor. What makes that safe is exactly the identity: the ramp's own sweeps measure `ink-faint`
+    // on every foundry surface, and the ban sweep proves no ramp tone reaches 4.5:1 on a role fill,
+    // so both claims already cover this token *while it resolves to one of them*.
+    //
+    // That is an assumption until something checks it. Give the placeholder its own literal value
+    // and the identity breaks silently, leaving a tone that `RAMP_CLASS` bans from a role fill on
+    // the strength of a premise no longer proved about it. This is what fails then, and the fix at
+    // that point is to take the `INK_RAMP` decision properly rather than to delete this.
+    const placeholder = oklchToken('--color-ink-placeholder');
+    const ramp = INK_RAMP.map((tone) => oklchToken(tone));
+
+    expect(ramp).toContainEqual(placeholder);
   });
 
   it('stays dimmer than the value that replaces it, which is what a hint is', () => {
@@ -1943,17 +2010,28 @@ describe('forced colours and the sticky header', () => {
     //
     // Stated as the general rule rather than as a ban on the one keyword, because the mistake is
     // structural: each of these is defined to read on a *specific* ground, and the plate is not it.
-    // `CanvasText` and its siblings below are the colours defined against `Canvas`, so they stay
-    // available — this is the shape a legitimate `color` in here would take.
+    // The list is every `*Text` the platform pairs with a ground that is **not** `Canvas`, so it is
+    // derived from the palette rather than from the one keyword that went wrong — `FieldText`
+    // belongs to `Field` and `ButtonText` to `ButtonFace`, and each would be hidden by the same
+    // plate for the same reason. What stays available is the other half: `CanvasText` itself, and
+    // `GrayText`, `LinkText`, `VisitedText` and `ActiveText`, which are all defined against `Canvas`
+    // — that is the shape a legitimate `color` in here would take.
     const PAIRED_TO_ANOTHER_GROUND = [
       'HighlightText',
       'SelectedItemText',
       'ButtonText',
+      'FieldText',
       'AccentColorText',
       'MarkText',
     ];
 
-    const painted = [...forcedBlock().matchAll(/(?:^|[\s;])color:\s*([^;]+);/g)].map((rule) =>
+    const block = forcedBlock();
+    // Without this the assertion below is satisfied by a regex that matched nothing at all: an empty
+    // block yields no `color:` declarations and an empty filter, which is indistinguishable from the
+    // passing case — the block declares none today. Its sibling above carries the same guard.
+    expect(block).not.toBe('');
+
+    const painted = [...block.matchAll(/(?:^|[\s;])color:\s*([^;]+);/g)].map((rule) =>
       (rule[1] ?? '').trim(),
     );
 
@@ -1964,7 +2042,7 @@ describe('forced colours and the sticky header', () => {
     // The other half, and the reason the assertion above is not simply "sets no colour": deleting
     // the whole rule would satisfy that and would restore the defect this block was written for —
     // a selection said in colour alone, which a forced palette flattens away. The fill is what
-    // carries it, at 1849 px of a 2478 px label region, and it survives the backplate because a
+    // carries it, at 1815 px of a 74 × 34 label region, and it survives the backplate because a
     // plate is drawn behind the *text* and not over the box.
     expect(forcedBlock()).toMatch(/\[data-active='true'\] \{\s*background-color: Highlight;\s*\}/);
   });

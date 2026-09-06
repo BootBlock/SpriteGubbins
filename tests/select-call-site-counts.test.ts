@@ -1,8 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { relative, sep } from 'node:path';
 import * as ts from 'typescript';
 import { describe, expect, it } from 'vitest';
-import { scannableSources } from '../scripts/sourceFiles.ts';
+import { scannableSources, sourceText } from '../scripts/sourceFiles.ts';
 
 /**
  * The call-site counts `SelectField`’s docblock states, re-counted from the components themselves.
@@ -74,7 +73,7 @@ function callSitesPassing(attribute: string): string[] {
   for (const path of scannableSources()) {
     if (!path.endsWith('.tsx') || path.includes('.test.')) continue;
 
-    const source = readFileSync(path, 'utf8');
+    const source = sourceText(path);
     if (!source.includes('<SelectField')) continue;
 
     const file = relative(process.cwd(), path).split(sep).join('/');
