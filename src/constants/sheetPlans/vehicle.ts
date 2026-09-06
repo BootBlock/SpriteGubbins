@@ -73,7 +73,7 @@ export const VEHICLE_PART_LIBRARY: SheetPlan = {
           text: 'Cladding panel or fairing ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         {
           label: 'fittings',
@@ -126,7 +126,7 @@ same way are all failures of this entry.`,
       {
         heading: 'Fittings',
         entries: [
-          { ...atEachYaw('Cladding panel or fairing', 'structure', chunk), drawsClothing: 'entirely' },
+          { ...atEachYaw('Cladding panel or fairing', 'structure', chunk), clothingRole: 'DRAWS_IT' },
           atEachYaw('Lamp housing', 'structure', chunk),
         ],
       },
@@ -190,13 +190,13 @@ export const VEHICLE_CUTOUT_RIG: SheetPlan = {
         // field offers includes `Bare Unclad Frame` — a reader who chooses it has said the hull
         // carries no cladding, and a bundled line could only be dropped by taking the lamp housing
         // with it. A lamp is a fitting whatever the frame is clad in. See
-        // `ComponentEntry.drawsClothing`.
+        // `ComponentEntry.clothingRole`.
         {
           label: 'cladding-panel',
           text: 'Cladding panel ×1',
           count: 1,
           kind: 'structure',
-          drawsClothing: 'entirely',
+          clothingRole: 'DRAWS_IT',
         },
         { label: 'lamp-housing', text: 'Lamp housing ×1', count: 1, kind: 'structure' },
       ],

@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -276,7 +276,9 @@ export const PORTRAIT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Portrait Assembly Base',
       tooltip:
-        'How the set is cut so the engine can build an expression. A flat portrait redraws the whole head for each one; a layered set draws the head once and swaps the features over it, which is how a dialogue system gets dozens of expressions out of a handful of sprites. Choose by how many expressions the game needs, not by how the art looks. The last three cut for something other than feeling — a lit optic and a damage state are overlays a game turns on, and asking for them as their own pass is what stops them being painted into all twelve expressions.',
+        'How the set is cut so the engine can build an expression. A flat portrait redraws the whole head for each one; a layered set draws the head once and swaps the features over it, which is how a dialogue system gets dozens of expressions out of a handful of sprites. Choose by how many expressions the game needs, not by how the art looks. The last three cut for something other than feeling — a lit optic and a damage state are overlays a game turns on, and asking for them as their own pass is what stops them being painted into all twelve expressions. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS +
+        ' Extra Expressions is where a reader who wants the feature pieces themselves asks for them.',
       options: [
         'Single Flat Portrait Per Expression',
         'Shared Head With Swappable Mouths',

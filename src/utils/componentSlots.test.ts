@@ -104,19 +104,45 @@ describe('what a name says', () => {
   });
 
   it('leaves a genuine ×N line on its ordinals', () => {
-    // `Base material tile ×6: the primary, and five variants differing only in surface scatter` has no
+    // `Base material tile variants ×5: the primary redrawn, differing only in surface scatter` has no
     // name to give its second variant that its third does not equally answer to. An ordinal is what
-    // such a component is actually called, so the entry states no parts and the suffix stands.
+    // such a component is actually called, so the entry states no parts and the suffix stands. The
+    // two primaries before it are ×1 lines, which take their label unsuffixed.
     const slots = componentSlots('TERRAIN', 'TILESET_MODULAR', 'SINGLE_FRONT', 0, '', []);
 
-    expect(slots.slice(0, 6)).toStrictEqual([
-      'base-material-tile-1',
-      'base-material-tile-2',
-      'base-material-tile-3',
-      'base-material-tile-4',
-      'base-material-tile-5',
-      'base-material-tile-6',
+    expect(slots.slice(0, 7)).toStrictEqual([
+      'base-material-tile',
+      'second-material-tile',
+      'base-material-tile-variants-1',
+      'base-material-tile-variants-2',
+      'base-material-tile-variants-3',
+      'base-material-tile-variants-4',
+      'base-material-tile-variants-5',
     ]);
+  });
+
+  it('takes the variant ordinals away with the scatter the reader declined', () => {
+    // The same sheet for a subject that says it has none. The variants carry
+    // `clothingRole: 'VARIES_IN_IT'`, so they leave the plan before any of this walks it and the two
+    // primaries run straight into the transition set — which is the sixteen the group's own intro
+    // calls an autotiler's index, and it is what makes the drop a plainer sheet rather than a
+    // broken one.
+    const slots = componentSlots(
+      'TERRAIN',
+      'TILESET_MODULAR',
+      'SINGLE_FRONT',
+      0,
+      'Bare Untouched Ground',
+      [],
+    );
+
+    expect(slots).toHaveLength(16);
+    expect(slots.slice(0, 3)).toStrictEqual([
+      'base-material-tile',
+      'second-material-tile',
+      'straight-transition-north',
+    ]);
+    expect(slots.filter((slot) => slot.includes('variants'))).toStrictEqual([]);
   });
 
   it('appends the subject’s own anatomy last, once per facing where the sheet turns it', () => {

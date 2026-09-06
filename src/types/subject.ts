@@ -213,8 +213,10 @@ export interface FieldOption {
    * rule forbids omitting the entry. Naming the value here is what lets
    * `planAsDrawn` in `utils/sheetPlanClothing.ts` take the entry out, so the two sections agree.
    *
-   * **A pool declaring one may not carry a `partly` entry**, which is the invariant that makes the
-   * arrangement complete rather than nearly complete — see `ComponentEntry.drawsClothing`. Left
+   * **A pool declaring one may not carry a `'DRAWS_IT_PARTLY'` entry**, which is the invariant that
+   * makes the arrangement complete rather than nearly complete — see `ComponentEntry.clothingRole`,
+   * whose third value covers the entry that draws none of the attribute and is on the sheet only to
+   * differ in it. Left
    * undeclared where the pool offers no such value, which is most of them: every option a
    * CHARACTER's *Clothing / Armour* offers is something the subject wears, and an OBJECT standing on
    * a *Freestanding Base* is still mounted on something.

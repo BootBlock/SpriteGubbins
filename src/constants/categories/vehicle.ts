@@ -1,5 +1,9 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { ABSENT_OPTION_DROPS_THE_PIECES, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import {
+  ABSENT_OPTION_DROPS_THE_PIECES,
+  ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
+  HEX_CODE_PINS_THE_HUE,
+} from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -171,7 +175,8 @@ export const VEHICLE: CategoryDefinition = {
       key: 'anatomy',
       label: 'Drive & Assembly Base',
       tooltip:
-        'How the vehicle breaks into isolated components. Choose by what has to turn, spin or travel — a turret ring, a road wheel, a leg joint — rather than by how detailed the hull is; a rigid hull with no moving drive needs no split at all.',
+        'Where the finished vehicle is meant to divide — a turret ring, a road wheel, a leg joint. Choose by what has to turn, spin or travel rather than by how detailed the hull is. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Single Rigid Hull',
         'Hull With Rotating Turret',

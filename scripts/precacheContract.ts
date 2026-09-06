@@ -402,8 +402,19 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * them — while `JsonPackTransfer`, `firstOfEachId` and `useQuantisePresetStore` gave their names up
  * to those. `ProjectsTab` and `useProjectStore` are the two that are genuinely new. The margin is
  * left at the same order as every raise above rather than widened.
+ *
+ * **Raised from 2350 by 1 KiB, and every byte of it is guidance prose.** Three cards told the reader
+ * the *Assembly Base* field decides how the sheet is broken into components, which nothing in the
+ * compiler does — so the true statement is now written once in `constants/guidanceSentences.ts` and
+ * carried by all thirteen, five of those cards were rewritten, and TERRAIN's *Scatter Layer* card
+ * gained a sentence saying what declining it costs. The sheet plan beside it gained a group intro
+ * for the variants that group now holds. Measured from the same `node_modules`, `main` at `2074844`
+ * builds **2349.68 KiB across 60 entries** and this build reports **2350.01 across 60** — a delta of
+ * 0.33 KiB, no chunk added and none renamed. The ceiling moves because the base was already inside a
+ * third of a KiB of it, which is a margin no change can be written against; 2351 restores the same
+ * order of headroom the `isTextEntry` raise left, and is deliberately not more.
  */
-export const PRECACHE_CEILING_KIB = 2350;
+export const PRECACHE_CEILING_KIB = 2351;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.

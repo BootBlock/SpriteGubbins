@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -186,7 +186,8 @@ export const BUILDING: CategoryDefinition = {
       key: 'anatomy',
       label: 'Building Assembly Base',
       tooltip:
-        'How the structure is split into modular tiles or components. Choose by how it will be placed — a repeating wall module tiles horizontally, a single-piece kiosk does not — because the split has to match the level grid.',
+        'How the structure is split into modular tiles or components. Choose by how it will be placed — a repeating wall module tiles horizontally, a single-piece kiosk does not — because the split has to match the level grid. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Modular Building Tiles',
         'Single Structure Model',

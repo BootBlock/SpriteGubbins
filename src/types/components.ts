@@ -41,6 +41,67 @@ export const COMPONENT_KINDS = ['anatomy', 'appendage', 'mechanism', 'structure'
 export type ComponentKind = (typeof COMPONENT_KINDS)[number];
 
 /**
+ * How one inventory entry stands to what its category's `clothing` field describes.
+ *
+ * **Two independent questions, and one value answers both**, which is why this is a union rather
+ * than a pair of flags free to disagree. Section 1 has to know whether its paint rule is excepted on
+ * this sheet — does the inventory draw the attribute as pieces of its own? — and `planAsDrawn` has
+ * to know whether the entry survives a reader who says the subject has none of it. The two answers
+ * are not the same question asked twice: an entry can be on the sheet *because of* the attribute
+ * without drawing it, which is the case a pair of booleans let a plan get wrong and this union does
+ * not.
+ *
+ * **The test of which value an entry takes is what that category's `clothing` field describes**,
+ * with the pool as the evidence rather than the criterion. INTERFACE's field is what is applied
+ * along the widget's edge, so the nine-slice set's corner ornament carries `'DRAWS_IT'` and its
+ * divider rail carries nothing — a rule between two sections is not an edge treatment, and nothing
+ * the pool offers is a divider.
+ */
+export type ClothingRole =
+  /**
+   * The entry is the attribute and nothing else — VEHICLE's `Cladding panel or fairing ×1`,
+   * BACKGROUND's `Atmosphere veil ×1`, INTERFACE's `Corner ornament ×1`.
+   *
+   * Section 1 excepts the attribute from its paint rule, and `planAsDrawn` drops the entry for a
+   * subject that has none: the count, the inventory prose and the manifest's slot names all follow,
+   * because all three walk one structure.
+   */
+  | 'DRAWS_IT'
+  /**
+   * The entry draws the attribute among other things — OBJECT's `Fittings: handle ×1, latch or catch
+   * ×1, mounting bracket ×2` is the *Mounting / Framework* the reader chose in its brackets and a
+   * handle and a latch besides, and BUILDING's `Façade fittings` line is the *Awning & Addons* in
+   * its awning and a sign board and a projecting fixture besides.
+   *
+   * Section 1 excepts the attribute as above, and the entry **cannot be taken away**: dropping it
+   * would take a handle and a latch with it, and keeping it orders a mounting bracket for a subject
+   * that has no mount. So **a category declaring an `absentOption` for `clothing` may carry none of
+   * these at all**, and `sheetPlanClothing.test.ts` fails on one. The remedy is to split the line,
+   * which is what VEHICLE's rig fittings and INTERFACE's trim were: two entries where the cladding
+   * panel and the corner ornament each stand alone, and the lamp housing and the divider rule beside
+   * them are ordinary components that were never the reader's to decline.
+   */
+  | 'DRAWS_IT_PARTLY'
+  /**
+   * The entry draws none of the attribute and is on the sheet **only because the subject has one**.
+   *
+   * TERRAIN's blend set is the case, and it is the reason this value exists rather than the two
+   * above being made to serve. Its scatter layer is *paint* — pebbles and tufts on the tiles, never
+   * a decal laid over them — so section 1 must go on saying so, and an entry claiming `'DRAWS_IT'`
+   * would have the prompt order the pebbles as loose sprites. But the five base-material variants
+   * and the two second-material variants differ from their primaries in the scatter **and in nothing
+   * else**, so a reader who declines it is handed seven tiles ordered to differ in a property
+   * section 1 has just said the subject does not have. They are dropped for the same reason a
+   * cladding panel is, and section 1's exception stays off.
+   *
+   * **What is left has to be a plainer sheet rather than an incomplete one**, which is the test any
+   * pool declaring an `absentOption` is held to. Dropping the seven leaves one tile per material
+   * beside the fourteen transitions — the sixteen the transition group's own intro says an autotiler
+   * indexes — so the deliverable is whole and the reader has simply asked for less variation.
+   */
+  | 'VARIES_IN_IT';
+
+/**
  * One line of the inventory, and how many components that line is worth.
  *
  * `count` is carried rather than parsed back out of `text`: an entry reading "Wall top corners ×4"
@@ -76,7 +137,7 @@ export interface ComponentEntry {
    * hand against a table held somewhere else.
    *
    * **Absent is the honest answer for a genuine ×N line**, and that is the distinction to hold: the
-   * blend set's `Base material tile ×6: the primary, and five variants differing only in surface
+   * blend set's `Base material tile variants ×5: the primary redrawn, differing only in surface
    * scatter` has no name to give its second variant that its third does not equally answer to, and
    * an ordinal is what such a component is actually called. The test is whether the parts are
    * *distinguishable by name*, never whether there are several of them — so a named part that itself
@@ -98,35 +159,9 @@ export interface ComponentEntry {
   readonly count: number;
   readonly kind: ComponentKind;
   /**
-   * How much of this entry draws what the subject's `clothing` field describes, on an entry that
-   * draws it as a piece of its own rather than as paint on the piece it sits against.
-   *
-   * **`'entirely'` means the entry is the attribute and nothing else** — VEHICLE's
-   * `Cladding panel or fairing ×1`, BACKGROUND's `Atmosphere veil ×1`, INTERFACE's
-   * `Corner ornament ×1`. **`'partly'` means it draws the attribute among other things**:
-   * OBJECT's `Fittings: handle ×1, latch or catch ×1, mounting bracket ×2` is the *Mounting /
-   * Framework* the reader chose in its brackets and a handle and a latch besides, and BUILDING's
-   * `Façade fittings` line is the *Awning & Addons* in its awning and a sign board and a
-   * projecting fixture besides.
-   *
-   * **The distinction decides whether the entry can be taken away**, which is what makes it a
-   * separate value rather than a note. A pool that offers an `absentOption` — `Bare Unclad Frame`,
-   * `Clear — No Overlay` — lets the reader say the subject has none, and section 4 has to stop
-   * ordering one: `planAsDrawn` in `utils/sheetPlanClothing.ts` drops the `'entirely'` entries and
-   * the count, the inventory prose and the manifest's slot names all follow, because all three walk
-   * one structure. A `'partly'` entry cannot be dropped without taking a handle and a latch with it,
-   * and it cannot be kept without ordering a mounting bracket for a subject that has no mount — so
-   * **a category declaring an `absentOption` for `clothing` may carry no `'partly'` entry at all**,
-   * and `sheetPlanClothing.test.ts` fails on one. The remedy is to split the line, which is what
-   * VEHICLE's rig fittings and INTERFACE's trim were: two entries where the cladding panel and the
-   * corner ornament each stand alone, and the lamp housing and the divider rule beside them are
-   * ordinary components that were never the reader's to decline.
-   *
-   * **The test of which value an entry takes is what that category's `clothing` field describes**,
-   * with the pool as the evidence rather than the criterion. INTERFACE's field is what is applied
-   * along the widget's edge, so the nine-slice set's corner ornament carries this and its divider
-   * rail does not — a rule between two sections is not an edge treatment, and nothing the pool
-   * offers is a divider.
+   * How this entry stands to what the subject's `clothing` field describes — see
+   * {@link ClothingRole}, which states each of the three answers and what follows from it. Absent is
+   * the answer for every entry the attribute is merely painted onto, which is most of them.
    *
    * Section 1 states that every fitted, applied and worn attribute it lists is painted onto the
    * component it sits on and never drawn as a separate piece. That rule was written for a
@@ -161,7 +196,7 @@ export interface ComponentEntry {
    * `NONE` and neither plan draws a carry piece, so its guidance sends a reader who needs a
    * separable carrier to *Detachable Parts* instead — see `sheetPlans/item.ts`.
    */
-  readonly drawsClothing?: 'entirely' | 'partly';
+  readonly clothingRole?: ClothingRole;
 }
 
 /** A headed run of entries — the inventory's own structure, as section 4 renders it. */

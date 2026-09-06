@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /**
@@ -203,7 +203,8 @@ export const OBJECT: CategoryDefinition = {
       key: 'anatomy',
       label: 'Structure Base',
       tooltip:
-        'How the object is broken into isolated components. Single Rigid Object emits one piece; the multi-segment and hinged plans split out the parts that actually move, so choose by what has to animate rather than by how complex the prop looks.',
+        'How the finished object is meant to come apart — in one piece if it is rigid, at the hinges and segment joins if it is not. Choose by what has to animate rather than by how complex the prop looks. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS,
       options: [
         'Single Rigid Object',
         'Multi-Segment Turret',

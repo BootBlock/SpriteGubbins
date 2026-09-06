@@ -14,7 +14,12 @@ import type { SubjectCategory } from '../types/subject.ts';
 import { componentCountFor, planComponentCount } from './componentSet.ts';
 import { componentSlots } from './componentSlots.ts';
 import { generatePrompt } from './promptCompiler.ts';
-import { declaresNoClothing, planAsDrawn, planDrawsClothing } from './sheetPlanClothing.ts';
+import {
+  declaresNoClothing,
+  entryNeedsClothing,
+  planAsDrawn,
+  planDrawsClothing,
+} from './sheetPlanClothing.ts';
 import { slugify } from './slugify.ts';
 
 /**
@@ -236,12 +241,12 @@ describe('a subject that says it has none of the attribute', () => {
       expect(subjectSection, where).toContain(`- ${label}: ${absent}`);
       expect(subjectSection.includes(`**${label}** is excepted`), where).toBe(false);
 
-      // And the inventory carries none of the lines that drew it. Read off the *declared* plan, so
-      // the assertion is against what the sheet used to ask for rather than against what it asks
-      // for now — which is the only way round that can fail if the filter stops working.
+      // And the inventory carries none of the lines the attribute put there. Read off the *declared*
+      // plan, so the assertion is against what the sheet used to ask for rather than against what it
+      // asks for now — which is the only way round that can fail if the filter stops working.
       for (const group of plan.groups) {
         for (const entry of group.entries) {
-          if (entry.drawsClothing === undefined) continue;
+          if (!entryNeedsClothing(entry)) continue;
           expect(prompt, `${where} — ${entry.text}`).not.toContain(entry.text);
         }
       }
@@ -253,9 +258,15 @@ describe('a subject that says it has none of the attribute', () => {
     // lost more than it should have. Each pair is one line that goes and one that stays in the same
     // group — the lamp housing beside the cladding panel — which is what VEHICLE's `Fittings:` line
     // was split apart for.
+    //
+    // **TERRAIN is the third and is the `'VARIES_IN_IT'` case**, where the line that goes never drew
+    // the attribute at all. Its primary is what stays, and it is in the group *above* rather than
+    // beside it, because the variants are their own group so that emptying it takes the intro
+    // explaining them away too.
     const cases = [
       { category: 'VEHICLE', gone: 'Cladding panel', kept: 'Lamp housing' },
       { category: 'BACKGROUND', gone: 'Atmosphere veil', kept: 'Focal landmark' },
+      { category: 'TERRAIN', gone: 'Base material tile variants', kept: 'Base material tile ×1' },
     ] as const;
 
     for (const { category, gone, kept } of cases) {
@@ -274,6 +285,53 @@ describe('a subject that says it has none of the attribute', () => {
         generatePrompt(category, { ...chosen, clothing: pooledClothing(category) }, DEFAULT_OUTPUT_CONFIG),
         `${category} draws ${gone} for a subject that has one`,
       ).toContain(gone);
+    }
+  });
+
+  it.each(SUBJECT_CATEGORIES)('orders no %s component described by the attribute', (category) => {
+    // The guard that would have caught #234, and the one thing nothing asserted: that a declared
+    // `absentOption` reaches every line of the plan it is declared against. TERRAIN declared
+    // `Bare Untouched Ground` while its blend set went on ordering “Base material tile ×6: the
+    // primary, and five variants differing only in surface scatter” — seven tiles required to differ
+    // in a property section 1 had just said the subject has none of, under section 4's own rule
+    // against merging entries or substituting duplicates. `planAsDrawn` removed nothing, because the
+    // mechanism could only drop an entry that *drew* the attribute and no terrain entry does.
+    //
+    // **It reads the entries alone, never a group's intro or outro**, and that is the distinction
+    // that makes it usable rather than an exemption list. An entry is a component *order* — draw
+    // these N things, and section 4 forbids omitting any — so an entry that names the attribute is
+    // ordering something the subject has denied. Framing prose is where a plan may reason about the
+    // absence, and EFFECT's residue outro does exactly that: “Where the subject names no secondary
+    // layer, these frames carry the core’s own lingering residue instead”. PORTRAIT's expression
+    // outro is the second, listing the garments among what holds still across the set. Both are
+    // correct and both would fail a sweep that read the whole group.
+    //
+    // **What it matches on is the field's own label**, taken word by word, which is the vocabulary a
+    // plan writing about the attribute reaches for — *Scatter Layer* against “surface scatter”. That
+    // is a net rather than a proof: an entry that describes the attribute without ever naming it
+    // passes. Run against the code before this change it reports the one line above and nothing
+    // else, across all eight categories that declare a value.
+    const absent = absentOptionFor(category, 'clothing');
+    if (absent === null) return;
+
+    const words = fieldLabelFor(category, 'clothing')
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter((word) => word.length > 3);
+    expect(words.length, `${category} has no word to match on`).toBeGreaterThan(0);
+
+    for (const { mode, directions, sheetIndex, plan } of sheetsOf(category)) {
+      for (const group of planAsDrawn(plan, category, absent).groups) {
+        for (const entry of group.entries) {
+          const prose = `${entry.text} ${entry.label.replace(/-/g, ' ')}`.toLowerCase();
+          for (const word of words) {
+            expect(
+              prose.includes(word),
+              `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)} — “${entry.text}” still names the ${word} that ${absent} declines`,
+            ).toBe(false);
+          }
+        }
+      }
     }
   });
 
@@ -341,9 +399,9 @@ describe('a subject that says it has none of the attribute', () => {
       for (const group of plan.groups) {
         for (const entry of group.entries) {
           expect(
-            entry.drawsClothing,
+            entry.clothingRole,
             `${category} / ${mode} / ${directions} / sheet ${String(sheetIndex + 1)} — ${entry.text}`,
-          ).not.toBe('partly');
+          ).not.toBe('DRAWS_IT_PARTLY');
         }
       }
     }
@@ -372,9 +430,7 @@ describe('a subject that says it has none of the attribute', () => {
 
     const deleted = new Set(
       sheetsOf(category).flatMap(({ plan }) =>
-        plan.groups.flatMap((group) =>
-          group.entries.filter((entry) => entry.drawsClothing === 'entirely').map((entry) => entry.label),
-        ),
+        plan.groups.flatMap((group) => group.entries.filter(entryNeedsClothing).map((entry) => entry.label)),
       ),
     );
 

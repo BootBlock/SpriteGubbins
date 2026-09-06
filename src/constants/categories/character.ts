@@ -1,5 +1,5 @@
 import { NO_ADDITIONAL_ANATOMY } from '../anatomy.ts';
-import { HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
+import { ASSEMBLY_BASE_ADDS_NO_COMPONENTS, HEX_CODE_PINS_THE_HUE } from '../guidanceSentences.ts';
 import type { CategoryDefinition } from '../../types/subject.ts';
 
 /** Humanoid characters — the default category, and the one the component-count model was built around. */
@@ -241,7 +241,9 @@ export const CHARACTER: CategoryDefinition = {
       key: 'anatomy',
       label: 'Anatomy Base',
       tooltip:
-        'The skeleton the component breakdown is derived from. Standard Humanoid yields the default 9 core and 34 limb components; a winged, tailed or four-armed base adds dedicated slots of its own rather than fusing the extra parts onto existing ones.',
+        'The skeleton the figure is drawn on, and what the generator is told to keep separable — a winged, tailed or four-armed base says those parts are the subject’s own rather than fused onto a limb it already has. ' +
+        ASSEMBLY_BASE_ADDS_NO_COMPONENTS +
+        ' Anything that needs a sprite slot of its own goes in Additional Genuine Anatomy, which is the field that adds one.',
       options: [
         'Standard Humanoid',
         'Humanoid With Wings',
@@ -250,9 +252,14 @@ export const CHARACTER: CategoryDefinition = {
         'Centaur Lower Body',
         'Four-Armed Humanoid',
         'Serpent Lower Body',
-        // A portrait sheet has no body to break down, so it needs a base that says so — otherwise the
-        // inventory's arm and leg entries describe components the sheet was never meant to carry.
-        'Bust — Head, Neck And Shoulders',
+        // `Bust — Head, Neck And Shoulders` was here and is not any more. It was added on 2026-08-08,
+        // a fortnight before PORTRAIT became a category of its own, and it argued for itself on a
+        // premise that has never been true: that the assembly base reshapes the inventory, so a
+        // portrait base would take the arm and leg entries off the sheet. It does not — see
+        // `sheetPlans/portrait.ts` — so every CHARACTER sheet went on ordering five torsos, five
+        // pelvises and thirty-four arm and leg segments for a subject section 1 called a head, neck
+        // and shoulders. PORTRAIT offers `Framing & Crop: Head Only` and is where that sheet is now
+        // made.
         'Chibi Super-Deformed',
         'Humanoid With Prosthetic Limb',
         'Hybrid Half-Beast Form',
@@ -423,7 +430,13 @@ export const CHARACTER: CategoryDefinition = {
         'No floor terrain, no text labels',
         'No background clutter, no pets',
         'No weapons, no floor shadows, no bubbles, no water caustics',
-        'No hands, no torso below the collarbone, no dialogue frame, no text',
+        // `No hands, no torso below the collarbone, no dialogue frame, no text` was here and is not
+        // any more, for the reason the portrait base above went: it is a portrait's ban on a
+        // category whose every sheet orders a torso, and three of the four order hands. Section 8's
+        // closing paragraph kept it from breaking a sheet — where section 4 lists an entry this
+        // section excludes, the entry is drawn — which only meant the prompt overruled the reader's
+        // own ban on every component it named. “Dialogue frame” names a surface no CHARACTER sheet
+        // has either. PORTRAIT offers `No name plate, caption or speech bubble` instead.
         'No baked shadow of any kind, no assembled figure, no equipment in the sockets',
         'No motion blur, no speed lines',
         'No signature, no watermark, no colour swatch strip',
