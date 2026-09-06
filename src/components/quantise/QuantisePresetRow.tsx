@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { PROJECT_ACTION_TOOLTIPS, QUANTISE_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { useQuantisePresetStore } from '../../stores/useQuantisePresetStore.ts';
 import type { QuantisePreset } from '../../types/quantisePreset.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -40,7 +40,9 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
   const loadQuantisePreset = useQuantisePresetStore((state) => state.loadQuantisePreset);
   const deleteQuantisePreset = useQuantisePresetStore((state) => state.deleteQuantisePreset);
   const moveQuantisePreset = useQuantisePresetStore((state) => state.moveQuantisePreset);
-  const [isConfirming, setIsConfirming] = useState(false);
+  // The confirmation replaces this row's buttons, so it takes the keyboard with it at each of its
+  // three edges — see `useConfirmInPlace`, which is where all five of the app's confirmations live.
+  const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
 
   return (
     <li className="animate-pop-in space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 px-3 py-2">
@@ -62,10 +64,10 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
                 type="button"
                 aria-label={`Delete the saved settings “${preset.name}”, for good`}
                 // The store reports its own failure with a toast and resolves, so there is nothing
-                // here to handle — and nothing to await, since the row leaves as soon as it does.
+                // here to handle. It is awaited all the same: until the write lands the row is still
+                // on screen, and where the keyboard goes next is read off the page as it is after.
                 onClick={() => {
-                  setIsConfirming(false);
-                  void deleteQuantisePreset(preset.id);
+                  void confirm(() => deleteQuantisePreset(preset.id));
                 }}
                 className="rounded-lg bg-rose px-3 py-1 text-xs font-bold text-foundry-950 transition-opacity duration-390 hover:opacity-90"
               >
@@ -75,11 +77,10 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
 
             <ControlTooltip hint="Cancel" text={QUANTISE_ACTION_TOOLTIPS.cancelDeleteQuantisePreset}>
               <button
+                ref={attachCancel}
                 type="button"
                 aria-label={`Keep the saved settings “${preset.name}”`}
-                onClick={() => {
-                  setIsConfirming(false);
-                }}
+                onClick={cancel}
                 className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors duration-390 hover:bg-foundry-700 hover:text-ink"
               >
                 Cancel
@@ -103,11 +104,10 @@ export function QuantisePresetRow({ preset }: QuantisePresetRowProps) {
 
             <ControlTooltip hint="Delete" text={QUANTISE_ACTION_TOOLTIPS.deleteQuantisePreset}>
               <button
+                ref={attachAsk}
                 type="button"
                 aria-label={`Delete the saved settings “${preset.name}”`}
-                onClick={() => {
-                  setIsConfirming(true);
-                }}
+                onClick={ask}
                 className="rounded-lg border border-foundry-600 bg-foundry-700 px-3 py-1 text-xs font-semibold text-ink-muted transition-all duration-390 hover:bg-rose/20 hover:text-rose active:scale-[0.98]"
               >
                 Delete

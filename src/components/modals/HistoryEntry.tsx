@@ -1,6 +1,6 @@
-import { useState } from 'react';
 import { TARGET_MODELS } from '../../constants/models.ts';
 import { HISTORY_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import type { PromptHistoryLog } from '../../types/history.ts';
 import { Badge } from '../common/Badge.tsx';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -21,7 +21,12 @@ interface HistoryEntryProps {
   readonly log: PromptHistoryLog;
   readonly onCopy: (log: PromptHistoryLog) => void;
   readonly onRestore: (log: PromptHistoryLog) => void;
-  readonly onDelete: (log: PromptHistoryLog) => void;
+  /**
+   * Returns the write, so the confirmation can wait for it. The row has gone by the time it settles,
+   * and where the keyboard lands afterwards is decided from the page as it is *then* — see
+   * {@link useConfirmInPlace}.
+   */
+  readonly onDelete: (log: PromptHistoryLog) => Promise<void>;
 }
 
 /**
@@ -34,10 +39,22 @@ interface HistoryEntryProps {
  *
  * **Delete** asks first, for the reason the drawer's own "Clear history" does: an entry is not
  * rebuildable from what is on screen. It asks on the button itself rather than by swapping in a
- * different one, so the element under the keyboard's focus survives the press.
+ * different one, so the element under the keyboard's focus survives the press — which is why this is
+ * the one of the app's five confirmations that attaches no `cancelRef`: there is nothing for the
+ * arriving question to rescue the focus from, and moving it to Cancel would turn Enter-then-Enter
+ * into Enter-then-cancelled. The two presses *after* the ask are the ones that lost the keyboard,
+ * and {@link useConfirmInPlace} is where all three edges of that live now.
+ *
+ * **Every action names the entry it acts on.** A prompt has no name, so the accessible names are
+ * built from what the row already shows — its category and its timestamp — because a drawer holding
+ * a hundred entries is otherwise three names repeated a hundred times, and a reader who meets one of
+ * those controls on its own has nothing to tell it from the row above.
  */
 export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryProps) {
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const { isConfirming, attachAsk, ask, cancel, confirm } = useConfirmInPlace();
+  // One phrase in all five names, so the entry is identified the same way whichever control a reader
+  // meets — and it is the row's own vocabulary rather than a second description written beside it.
+  const entry = `the ${log.category} prompt from ${TIMESTAMP_FORMAT.format(log.createdAt)}`;
 
   return (
     <li className="space-y-2 rounded-xl border border-foundry-700 bg-foundry-950 p-3">
@@ -58,41 +75,38 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
           {/* Same button in both states, so pressing it does not move focus off itself — and the
               guidance changes with it, since the second press is the one that cannot be taken back. */}
           <ControlTooltip
-            hint={isConfirmingDelete ? 'Delete?' : 'Delete this prompt'}
+            hint={isConfirming ? 'Delete?' : 'Delete this prompt'}
             text={
-              isConfirmingDelete
-                ? HISTORY_ACTION_TOOLTIPS.confirmDeleteEntry
-                : HISTORY_ACTION_TOOLTIPS.deleteEntry
+              isConfirming ? HISTORY_ACTION_TOOLTIPS.confirmDeleteEntry : HISTORY_ACTION_TOOLTIPS.deleteEntry
             }
           >
             <button
+              ref={attachAsk}
               type="button"
-              aria-label={isConfirmingDelete ? 'Confirm deleting this prompt' : 'Delete this prompt'}
+              aria-label={isConfirming ? `Delete? Confirm deleting ${entry}` : `Delete ${entry}`}
               onClick={() => {
-                if (!isConfirmingDelete) {
-                  setIsConfirmingDelete(true);
+                if (!isConfirming) {
+                  ask();
                   return;
                 }
-                setIsConfirmingDelete(false);
-                onDelete(log);
+                void confirm(() => onDelete(log));
               }}
               className={
-                isConfirmingDelete
+                isConfirming
                   ? 'rounded-lg bg-rose px-2.5 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90'
                   : 'rounded-lg border border-foundry-600 bg-foundry-800 px-2.5 py-1 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700'
               }
             >
-              {isConfirmingDelete ? 'Delete?' : <span aria-hidden="true">🗑</span>}
+              {isConfirming ? 'Delete?' : <span aria-hidden="true">🗑</span>}
             </button>
           </ControlTooltip>
 
-          {isConfirmingDelete && (
+          {isConfirming && (
             <ControlTooltip hint="Cancel" text={HISTORY_ACTION_TOOLTIPS.cancelDeleteEntry}>
               <button
                 type="button"
-                onClick={() => {
-                  setIsConfirmingDelete(false);
-                }}
+                aria-label={`Cancel — keep ${entry}`}
+                onClick={cancel}
                 className="rounded-lg border border-foundry-600 px-2.5 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
               >
                 Cancel
@@ -103,6 +117,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
           <ControlTooltip hint="Copy prompt" text={HISTORY_ACTION_TOOLTIPS.copyEntry}>
             <button
               type="button"
+              aria-label={`Copy prompt — ${entry}`}
               onClick={() => {
                 onCopy(log);
               }}
@@ -114,6 +129,7 @@ export function HistoryEntry({ log, onCopy, onRestore, onDelete }: HistoryEntryP
           <ControlTooltip hint="Restore" text={HISTORY_ACTION_TOOLTIPS.restoreEntry}>
             <button
               type="button"
+              aria-label={`Restore ${entry} into the studio`}
               onClick={() => {
                 onRestore(log);
               }}

@@ -235,4 +235,25 @@ describe('SheetProgress', () => {
     // user is operating on every change.
     expect(region?.querySelector('button')).toBeNull();
   });
+
+  it('leaves the copied badge outside the region, so one copy is announced once', async () => {
+    // One Copy Prompt press used to change **two** `polite` `atomic` regions saying almost the same
+    // thing: the toast — `Copied sheet 1 of 6 — Directional core · 5 facings` — and this strip, read
+    // out in full with a bare `Copied` on the end. The region exists for a *step* press, which is a
+    // different event and the only one nothing else can announce; a copy is announced already, and
+    // better, by the toast. So the badge stays where it is on screen and comes out of the announced
+    // subtree, which is what `SheetIdentityControls`'s matching region on the Quantise tab has
+    // always had.
+    const { container } = render(<SheetProgress />);
+    const region = container.querySelector('[aria-live="polite"]');
+
+    expect(region?.textContent).not.toContain('Not yet copied');
+    expect(screen.getByText('Not yet copied')).toBeInTheDocument();
+
+    await recordCopyOf(1);
+    await waitFor(() => {
+      expect(screen.getByText('Copied')).toBeInTheDocument();
+    });
+    expect(container.querySelector('[aria-live="polite"]')?.textContent).not.toContain('Copied');
+  });
 });

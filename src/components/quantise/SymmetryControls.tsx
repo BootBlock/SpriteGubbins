@@ -5,6 +5,7 @@ import {
   SYMMETRY_TOLERANCE_RANGE,
 } from '../../constants/quantiser.ts';
 import { SYMMETRY_GUIDANCE } from '../../constants/spriteSymmetry.ts';
+import { useScrollableRegion } from '../../hooks/useScrollableRegion.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { SpriteSegmentation, SpriteSymmetry, SymmetryMode } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -51,6 +52,12 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
   const setSymmetry = useQuantiseStore((state) => state.setSymmetry);
   const setSymmetryTolerance = useQuantiseStore((state) => state.setSymmetryTolerance);
   const setSymmetryConfidence = useQuantiseStore((state) => state.setSymmetryConfidence);
+  // The list is capped at `max-h-48` and holds one line per sprite, so a sheet with enough of them
+  // makes it a keyboard-scrollable box with nothing focusable inside — which Chromium turns into a
+  // tab stop on its own. `useScrollableRegion` names it, and only while it is one.
+  const { attach: attachReadings, regionProps: readingsRegion } = useScrollableRegion<HTMLUListElement>(
+    'Scroll the mirror readings',
+  );
 
   // Everything the panel *reports* is withdrawn while a newer result is coming — the list, the
   // badges and the two paragraphs that state a finding — because all of it would otherwise be
@@ -125,7 +132,11 @@ export function SymmetryControls({ symmetry, sprites, busy }: SymmetryControlsPr
       {/* Withdrawn while a newer result is coming, as the sprite panel's figures are: the previous
           job's axes are numbers about a sheet the dials have already moved on from. */}
       {readings !== null && readings.length > 0 && (
-        <ul className="mt-4 max-h-48 space-y-1 overflow-y-auto font-mono text-2xs text-ink-faint">
+        <ul
+          {...readingsRegion}
+          ref={attachReadings}
+          className="mt-4 max-h-48 space-y-1 overflow-y-auto font-mono text-2xs text-ink-faint"
+        >
           {readings.map((reading) => (
             <li key={`${String(reading.box.left)}-${String(reading.box.top)}`}>
               {`x ${reading.axis.toFixed(1)} · ${(reading.confidence * 100).toFixed(0)}% mirrored`}

@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { PRESET_ACTION_TOOLTIPS, PROJECT_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { usePresetStore } from '../../stores/usePresetStore.ts';
 import type { CustomArchetype } from '../../types/preset.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -29,7 +30,10 @@ interface ProjectPresetRowProps {
  * **Delete confirms in place**, which is the arrangement the quantiser's saved rows already use:
  * the record is the user's, nothing else holds a copy, and there is no undo. The confirmation
  * replaces the row's buttons rather than opening a dialog, so the name being deleted stays on
- * screen beside it.
+ * screen beside it — and that swap is exactly what takes the keyboard with it, at all three of its
+ * edges. {@link useConfirmInPlace} holds them: Cancel takes focus as the question arrives, the
+ * delete button takes it back when the question is answered, and a confirmed delete hands it to the
+ * row that takes this one's place.
  */
 export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
   const loadPreset = usePresetStore((state) => state.loadPreset);
@@ -37,7 +41,7 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
   const moveCustomPreset = usePresetStore((state) => state.moveCustomPreset);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
   const editButtonRef = useRef<HTMLButtonElement>(null);
 
   // Focused *before* the state change, not after: the edit button never unmounts, so it can take
@@ -82,16 +86,16 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
         }}
       />
 
-      {isConfirmingDelete ? (
+      {isConfirming ? (
         <div className="flex flex-wrap gap-2">
           <ControlTooltip hint={`Delete “${preset.name}”`} text={PRESET_ACTION_TOOLTIPS.confirmDeletePreset}>
             <button
               type="button"
               // The store reports its own failure with a toast and resolves, so there is nothing
-              // here to handle — and nothing to await, since the row leaves as soon as it does.
+              // here to handle. It is awaited all the same: until the write lands the row is still
+              // on screen, and where the keyboard goes next is read off the page as it is after.
               onClick={() => {
-                setIsConfirmingDelete(false);
-                void deleteCustomPreset(preset.id);
+                void confirm(() => deleteCustomPreset(preset.id));
               }}
               className="rounded-lg bg-rose px-3 py-1 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
             >
@@ -100,10 +104,10 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
           </ControlTooltip>
           <ControlTooltip hint="Cancel" text={PRESET_ACTION_TOOLTIPS.cancelDeletePreset}>
             <button
+              ref={attachCancel}
               type="button"
-              onClick={() => {
-                setIsConfirmingDelete(false);
-              }}
+              aria-label={`Cancel — keep the preset ${preset.name}`}
+              onClick={cancel}
               className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
             >
               Cancel
@@ -115,7 +119,7 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
           <ControlTooltip hint="Load preset" text={PRESET_ACTION_TOOLTIPS.loadPreset}>
             <button
               type="button"
-              aria-label={`Load the preset ${preset.name} into the studio`}
+              aria-label={`Load preset ${preset.name} into the studio`}
               onClick={() => {
                 loadPreset(preset);
               }}
@@ -141,12 +145,13 @@ export function ProjectPresetRow({ preset }: ProjectPresetRowProps) {
 
           <ControlTooltip hint="Delete" text={PRESET_ACTION_TOOLTIPS.deletePreset}>
             <button
+              ref={attachAsk}
               type="button"
               aria-label={`Delete preset ${preset.name}`}
               onClick={() => {
                 // The editor would otherwise sit above a confirm asking to delete what it edits.
                 setIsEditing(false);
-                setIsConfirmingDelete(true);
+                ask();
               }}
               className="rounded-lg border border-foundry-600 px-3 py-1 text-xs font-semibold text-rose transition-colors hover:border-rose/50 hover:bg-foundry-700"
             >

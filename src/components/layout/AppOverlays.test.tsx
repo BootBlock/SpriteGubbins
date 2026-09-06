@@ -1,7 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { AppOverlays } from './AppOverlays.tsx';
 import { useUIStore } from '../../stores/useUIStore.ts';
+
+const CLOSED = {
+  isAtlasModalOpen: false,
+  isHistoryModalOpen: false,
+  isSplitModalOpen: false,
+  isSettingsModalOpen: false,
+} as const;
 
 /**
  * The four overlays are each in a chunk of their own, and the frame they open in is deliberately
@@ -66,4 +73,56 @@ describe('AppOverlays', () => {
     // message announce at all — a region added at the same moment as its text is not announced.
     expect(container.querySelector('[aria-live]')).not.toBeNull();
   });
+
+  /**
+   * Closing an overlay has to give the keyboard back, and the platform is what does it.
+   *
+   * `<dialog>`'s `close()` restores focus to whatever was focused when `showModal()` ran, which is
+   * the whole reason `Modal` is built on a native dialog rather than a stack of positioned `<div>`s.
+   * Three of the four things that buys — the top layer, the inert background and Escape — arrive on
+   * their own. The focus restore is the one that has to be asked for correctly, because HTML's
+   * *close the dialog* steps run against a `previouslyFocusedElement` and restore nothing when the
+   * dialog itself has already left the document.
+   *
+   * **The assertion is the ordering, not the focus.** happy-dom performs no focus restore of its
+   * own, so a test that read `document.activeElement` here would be asserting the stub rather than
+   * the platform — the four overlays were driven in Edge instead, and every one of them returns the
+   * keyboard to its opener. What is checked here is the thing that made the platform refuse:
+   * `close()` reaching a detached node. A **passive** effect is exactly that case, because React
+   * runs a deleted subtree's passive destroy functions after the mutation phase has detached its
+   * host nodes; a layout destroy runs while the element is still connected. The prototype is patched
+   * rather than the source read, which is how the defect was measured in the browser.
+   */
+  it('closes the dialog while it is still in the document, so the platform restores focus', async () => {
+    const connectedAtClose: boolean[] = [];
+    const close = HTMLDialogElement.prototype.close;
+    vi.spyOn(HTMLDialogElement.prototype, 'close').mockImplementation(function (
+      this: HTMLDialogElement,
+      returnValue?: string,
+    ) {
+      connectedAtClose.push(this.isConnected);
+      close.call(this, returnValue);
+    });
+
+    useUIStore.setState({ ...CLOSED, isSettingsModalOpen: true });
+    const view = render(<AppOverlays />);
+    await waitFor(
+      () => {
+        expect(screen.queryByText('Loading Settings')).not.toBeInTheDocument();
+      },
+      { timeout: 20_000 },
+    );
+
+    view.unmount();
+
+    // At least one call, and every one of them on a connected element. More than one is React 19
+    // Strict Mode's cleanup-then-re-run at mount, which is followed by a second `showModal()` and
+    // does not bear on the defect; a call with `isConnected` false is the defect itself.
+    expect(connectedAtClose.length).toBeGreaterThan(0);
+    expect(connectedAtClose).not.toContain(false);
+  }, 30_000);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });

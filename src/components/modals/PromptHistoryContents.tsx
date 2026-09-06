@@ -92,9 +92,10 @@ export function PromptHistoryContents() {
                   void copyText(entry.promptText, 'Prompt copied to the clipboard');
                 }}
                 onRestore={restoreLog}
-                onDelete={(entry) => {
-                  void deleteLog(entry.id);
-                }}
+                // Handed back rather than `void`-ed: the row's confirmation waits for the write
+                // before deciding where the keyboard goes, because until it lands the page still
+                // shows the row it is about to lose. See `useConfirmInPlace`.
+                onDelete={(entry) => deleteLog(entry.id)}
               />
             ))}
           </ul>

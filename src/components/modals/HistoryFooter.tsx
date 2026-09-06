@@ -1,5 +1,5 @@
-import { useState } from 'react';
 import { HISTORY_ACTION_TOOLTIPS } from '../../constants/tooltips/index.ts';
+import { useConfirmInPlace } from '../../hooks/useConfirmInPlace.ts';
 import { useDownload } from '../../hooks/useDownload.ts';
 import { useHistoryStore } from '../../stores/useHistoryStore.ts';
 import { ControlTooltip } from '../common/ControlTooltip.tsx';
@@ -21,6 +21,13 @@ interface HistoryFooterProps {
  * collection-wide actions — the per-entry ones live on `HistoryEntry`. The search query is the
  * drawer's own view state, so the two counts arrive as props while everything else comes from the
  * store directly.
+ *
+ * **This is the confirmation with nowhere of its own to give the keyboard back to.** Both of its
+ * buttons are `disabled` the moment the collection they act on is empty, so a reader who answers
+ * "Delete everything" from the keyboard cannot be returned to either — which is why
+ * {@link useConfirmInPlace} chooses the destination by asking where the next Tab would have gone
+ * rather than by aiming at a control this component names. Emptied, that is the drawer's search box,
+ * which is the first thing left in the dialog.
  */
 export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
   const historyLogs = useHistoryStore((state) => state.historyLogs);
@@ -28,7 +35,7 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
   const exportHistoryJSON = useHistoryStore((state) => state.exportHistoryJSON);
   const download = useDownload();
 
-  const [isConfirmingClear, setIsConfirmingClear] = useState(false);
+  const { isConfirming, attachAsk, attachCancel, ask, cancel, confirm } = useConfirmInPlace();
   const isEmpty = historyLogs.length === 0;
 
   return (
@@ -58,14 +65,13 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
 
         {/* Two presses to clear. The history is the only thing in this app the user cannot rebuild
             from what is on screen, so the destructive action asks first. */}
-        {isConfirmingClear ? (
+        {isConfirming ? (
           <span className="flex items-center gap-2">
             <ControlTooltip hint="Delete everything" text={HISTORY_ACTION_TOOLTIPS.confirmClearHistory}>
               <button
                 type="button"
                 onClick={() => {
-                  setIsConfirmingClear(false);
-                  void clearHistory();
+                  void confirm(clearHistory);
                 }}
                 className="rounded-lg bg-rose px-3 py-1.5 text-xs font-bold text-foundry-950 transition-opacity hover:opacity-90"
               >
@@ -74,10 +80,9 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
             </ControlTooltip>
             <ControlTooltip hint="Cancel" text={HISTORY_ACTION_TOOLTIPS.cancelClearHistory}>
               <button
+                ref={attachCancel}
                 type="button"
-                onClick={() => {
-                  setIsConfirmingClear(false);
-                }}
+                onClick={cancel}
                 className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-ink-muted transition-colors hover:bg-foundry-700"
               >
                 Cancel
@@ -87,11 +92,10 @@ export function HistoryFooter({ shownCount, isFiltered }: HistoryFooterProps) {
         ) : (
           <ControlTooltip hint="Clear history" text={HISTORY_ACTION_TOOLTIPS.clearHistory}>
             <button
+              ref={attachAsk}
               type="button"
               disabled={isEmpty}
-              onClick={() => {
-                setIsConfirmingClear(true);
-              }}
+              onClick={ask}
               className="rounded-lg border border-foundry-600 px-3 py-1.5 text-xs font-semibold text-rose transition-colors hover:bg-foundry-700 disabled:cursor-not-allowed disabled:text-ink-faint disabled:hover:bg-transparent"
             >
               Clear history

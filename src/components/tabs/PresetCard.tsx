@@ -81,6 +81,12 @@ export function PresetCard({ preset, index }: PresetCardProps) {
         >
           <button
             type="button"
+            // The card's title is two elements above this button, which is enough for a reader who
+            // sees the card and nothing at all for one who meets the control on its own — a Tab
+            // through this library is twenty-three consecutive stops otherwise, every one of them
+            // called "Load preset". `ProjectPresetRow` names its own the same way, and the visible
+            // label stays short because a three-column grid has no room for the name twice.
+            aria-label={`Load preset ${preset.name} into the studio`}
             onClick={() => {
               loadPreset(preset);
             }}

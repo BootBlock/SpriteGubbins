@@ -92,12 +92,14 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/models-*.js',
   'assets/presets-*.js',
   'assets/quantiseDials-*.js',
+  'assets/react-dom-*.js',
   'assets/rolldown-runtime-*.js',
   'assets/sheetCanvas-*.js',
   'assets/sheetCoverage-*.js',
   'assets/spriteSegments-*.js',
   'assets/storageFailure-*.js',
   'assets/useClipboard-*.js',
+  'assets/useConfirmInPlace-*.js',
   'assets/useCopyPrompt-*.js',
   'assets/useDownload-*.js',
   'assets/useFileDropGuard-*.js',
@@ -105,6 +107,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
   'assets/usePresetStore-*.js',
   'assets/useProjectStore-*.js',
   'assets/useQuantiseStore-*.js',
+  'assets/useScrollableRegion-*.js',
   'assets/useSettingsStore-*.js',
   'assets/useShowToast-*.js',
   'assets/useSubjectStore-*.js',
@@ -549,6 +552,34 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * wider for the same reason: whether 2350 was still the right figure for a first visit is a decision
  * for whoever owns this contract, not something a fourth branch should settle by widening it.
  *
+ * **Raised once more, from 2357, by the two accessibility hooks and the names they gave the app's
+ * repeated controls.** `useConfirmInPlace` holds the three edges at which a two-press confirmation
+ * used to drop the keyboard to `<body>`, and `useScrollableRegion` holds the rule that a
+ * keyboard-scrollable box is named and given a role — lifted out of `PanViewport`, which had the
+ * only correct copy of it. Beside them, every row of the preset library, the split drawer and the
+ * history drawer now names the thing it acts on, which is a template string per control rather than
+ * a shared literal.
+ *
+ * **The delta is 3.44 on every base it has been measured against**, which is worth stating because
+ * two of the raises above are about combinations that were not. From the same `node_modules`: on the
+ * tip this branch left (`2074844`) it takes 2348.81 KiB across 60 entries to 2352.25 across 63; on
+ * the 2351.14 the first raise above records it reports 2354.58; and on this merge's own base it
+ * reports **2359.50**. Three bases, one figure, so rolldown re-partitioned nothing across either
+ * merge and this raise buys what the branch wrote rather than what the meeting of branches cost.
+ *
+ * **All three `+` lines are genuinely new files, and one of them is not new code.**
+ * `useConfirmInPlace` and `useScrollableRegion` are each reached from a lazily-loaded overlay *and*
+ * from an eagerly-loaded view, so rolldown cuts each into a chunk the two share.
+ * `assets/react-dom-*.js` is the third and is the one worth reading twice: `flushSync` puts
+ * `react-dom` on that shared boundary, so the module the entry chunk already carried is now a chunk
+ * of its own. A first visit downloads the same bytes; what changed is that they arrive in three more
+ * requests.
+ *
+ * 2361 leaves **1.50 KiB**, the order of the 0.94 the note above leaves and the 0.82 the
+ * `isTextEntry` note calls the narrowest. It is deliberately no wider, for the reason that note
+ * gives: whether 2350 was still the right figure for a first visit is a decision for whoever owns
+ * this contract, and a fifth branch should not settle it by widening the margin.
+ *
  * **Raised from 2357 by the third persistence backend, and this is the entry that adds a chunk.** A
  * second tab of this origin cannot take the SAH pool's access handles, and the app answered that
  * refusal exactly as it answered "this browser has no OPFS" — with a localStorage store the first
@@ -572,7 +603,7 @@ export const PRECACHE_SHAPES: readonly string[] = [
  * defer — whether 2350 was ever the right figure for what a first visit downloads — wants answering
  * by whoever owns this contract, and one KiB of slack is a poor substitute for it.
  */
-export const PRECACHE_CEILING_KIB = 2360;
+export const PRECACHE_CEILING_KIB = 2361;
 
 /**
  * `assets/index-CWZFRISS.css` → `assets/index-*.css`. Vite's content hash is 8 characters.
