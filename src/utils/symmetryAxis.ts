@@ -66,10 +66,15 @@ import { pixelDistance } from './pixelDistance.ts';
  * so everything it says is stated in the coordinates the preview draws and the panel reports.
  *
  * **The bounds are what make it affordable**, and the reference sheet is where that was measured: a
- * `CHECK` over its fifteen sprites costs about a **thirtieth** of the whole pipeline's work on the
- * same sheet. The budget is what makes that hold on sheets the reference sheet says nothing about —
- * the sweep visits at most {@link SYMMETRY_SWEEP_BUDGET} pixels however the sprites are shaped,
- * which is one pass over the largest sheet this tab admits.
+ * `CHECK` over its fifteen sprites visits `(4 × 8 + 1) × 17,201` pixels, which is **36% of one
+ * linear pass** over the 1254² sheet they sit on — the sprites' boxes are barely one per cent of it.
+ * Stated as work rather than as wall clock, which is what a docblock in this file can hold: a
+ * millisecond ratio stood here, and re-measured across six readings of “the same sheet” it ran from
+ * a twelfth to a hundred-and-forty-third, with the row matching its own stated conditions at a
+ * forty-fourth rather than the thirtieth written down (issue #237). The budget is what makes the
+ * bound hold on sheets the reference sheet says nothing about — the sweep visits at most
+ * {@link SYMMETRY_SWEEP_BUDGET} pixels however the sprites are shaped, which is one pass over the
+ * largest sheet this tab admits.
  */
 export function sheetSymmetry(
   image: ImageData,

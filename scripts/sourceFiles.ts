@@ -27,21 +27,25 @@ const ANY_SOURCE = /\.(tsx?|jsx?|mjs|css|html)$/;
  * leave the one place a size could hide from the guard: `src/constants/`, which is exactly where
  * CLAUDE.md's directory rule sends a hoisted constant.
  *
- * Seven suites walk the tree this way — `design-tokens.test.ts` for a bracketed font size and for a
- * `duration-` off the motion ladder, `raw-colour-literals.test.ts` for a hex a component wrote
- * instead of taking a token, `sticky-column-offset.test.ts` for a sticky column that clears the
- * wrong height, `interface-punctuation.test.ts` for a straight quote in a string a reader sees,
- * `module-size.test.ts` for a file that has taken on a second responsibility,
- * `select-call-site-counts.test.ts` for a select nobody budgeted, and
- * `guidance-sentence-sharing.test.ts` for a shared guidance sentence typed out instead of imported
- * — which is why the walk is a module rather than a function inside one of them. A second copy would be a second answer to
+ * **Every guard suite that asks what counts as source calls this**, which is why the walk is a
+ * module rather than a function inside one of them. A second copy would be a second answer to
  * "what counts as source", and the one that went stale would fail open: a directory the copy never
  * learned about is a directory its guard silently stops covering.
  *
- * Three of them filter this list down themselves rather than asking for a walk apiece — the
- * punctuation sweep to the `.ts` and `.tsx` that carry authored strings, since `.css` holds none of
- * the app's prose, the size guard to the modules that are not themselves tests, and the sharing
- * sweep to everything but the one file those sentences are defined in.
+ * **Which suites those are is a question the tree answers, and this docblock deliberately no longer
+ * answers it.** `grep -rn scannableSources tests/` names today's, and the set grows with every guard
+ * added — a bracketed font size and a `duration-` off the motion ladder, a hex a component wrote
+ * instead of taking a token, a sticky column that clears the wrong height, a straight quote in a
+ * string a reader sees, a file that has taken on a second responsibility, a call-site count a
+ * docblock states, a shared guidance sentence typed out instead of imported. Two counts and a list
+ * of seven stood here instead, and all three were wrong within hours of being written (issue #263):
+ * a module that names its own dependants in prose is keeping a second copy of something the tree
+ * already holds, and nothing fails when that copy rots. Several consumers also cut the list down
+ * themselves rather than asking for a walk apiece — the punctuation sweep to the `.ts` and `.tsx`
+ * that carry authored strings, since `.css` holds none of the app's prose; the size guard to the
+ * modules that are not themselves tests; the sharing sweep to everything but the one file those
+ * sentences are defined in — and how many do is the same hand-kept count, so it is not stated
+ * either.
  */
 export function scannableSources(): string[] {
   return filesUnder('src', APP_SOURCE);
@@ -106,7 +110,7 @@ function isTest(file: string): boolean {
  * **Two kinds of test are left out, and the second was a live hole.** A colocated `*.test.tsx`
  * renders nothing a reader sees, so a class name it spells is dead CSS on the same footing as one
  * spelled under `tests/`. `src/test/` is the same claim about the same kind of file, and matches
- * neither that pattern nor the directory: its eighteen helpers are decoders and fakes, and one
+ * neither that pattern nor the directory: its helpers are decoders and fakes, and one
  * local variable in `pngScanlines.ts` was on its own justifying a `.filter` rule that the app has
  * never worn. `module-size.test.ts` deliberately keeps `src/test/` *inside* its own walk, and that
  * is not a disagreement — a decoder is app-shaped code whose length is worth bounding, and is still

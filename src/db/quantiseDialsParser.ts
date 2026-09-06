@@ -39,23 +39,36 @@ import { isRecord, pick, pickBoolean, pickSteppedNumber } from './readers.ts';
  * to the default. What it is for is storage that has been hand-edited, truncated, or written by a
  * build that spelled a dial differently, all of which stay possible however stable the shape is.
  *
- * **Every check is against the constant that *defines* the dial**, never a list restated here: the
- * two unions against the `as const` arrays in `types/quantiser.ts`, and every number against the
- * `*_RANGE` its slider is built from. So a range widened for the control is widened here by that
- * edit alone, and a stored value the control could not have produced is refused.
+ * **Which unions get validated is decided by one thing, and this is where that rule lives.** A
+ * string-literal union in `types/quantiser.ts` is checked on the way out of storage exactly when it
+ * is a field of {@link QuantiseDials} — which, since `QuantiseDials extends QuantiseTuning`, means
+ * every dial the pipeline takes plus the three the tab adds. That is what a saved preset carries, so
+ * that is what a stored blob can misspell. A union that is not such a field is session state and has
+ * nothing to validate; `PREVIEW_MODES` is the one, and it says so. The rule is stated here rather
+ * than verdict-by-verdict beside each array, because per-union verdicts are what drifted: two of
+ * them claimed their dial was never persisted for months after this parser began checking it, and
+ * four more docblocks were written against those two (issue #258).
+ * `tests/quantise-dials-validation.test.ts` asserts the rule rather than the list, so the seventh
+ * dial given a union is covered by the edit that gives it one.
+ *
+ * **Every check is against the constant that *defines* the dial**, never a list restated here: each
+ * union against its own `as const` array in `types/quantiser.ts`, each ladder against the array of
+ * rungs the control offers, and every number against the `*_RANGE` its slider is built from. So a
+ * range widened for the control is widened here by that edit alone, and a stored value the control
+ * could not have produced is refused.
  *
  * Falls back **field by field**, never wholesale: one unreadable dial costs that dial, where
- * discarding the object would silently reset the other nineteen as well — and a preset whose ink
- * threshold was corrupted is still the preset the reader saved in every other respect.
+ * discarding the object would silently reset every other dial on the tab as well — and a preset
+ * whose ink threshold was corrupted is still the preset the reader saved in every other respect.
  *
- * **A range is three numbers, and all three are checked.** Every one of the sixteen ranged dials
- * is read with `pickSteppedNumber`, which asks the `*_RANGE`'s own `step` where the position sits
- * as well as the bounds — so `lineStrength` and `trimStrength` moving in tenths, `antiAliasStrength`
- * in fives from 10, and the thirteen that count in ones are one check rather than three kinds of
- * read. Bounds alone
- * had admitted an imported pack's `lineStrength` of 2.34567, which the panel then reported as
- * `2.3×` and no drag of the slider could return to. Reading the thirteen the same way is the half
- * that keeps working: the next dial given a step of 2 is checked by the edit that gives it one.
+ * **A range is three numbers, and all three are checked.** Every ranged dial is read with
+ * `pickSteppedNumber`, which asks the `*_RANGE`'s own `step` where the position sits as well as the
+ * bounds — so `lineStrength` and `trimStrength` moving in tenths, `antiAliasStrength` in fives from
+ * 10, and every other one counting in ones are one check rather than three kinds of read. Bounds
+ * alone had admitted an imported pack's `lineStrength` of 2.34567, which the panel then reported as
+ * `2.3×` and no drag of the slider could return to. Reading the ones that count in ones the same way
+ * is the half that keeps working: the next dial given a step of 2 is checked by the edit that gives
+ * it one.
  */
 export function parseQuantiseDials(value: unknown): QuantiseDials {
   if (!isRecord(value)) return QUANTISE_DEFAULT_DIALS;

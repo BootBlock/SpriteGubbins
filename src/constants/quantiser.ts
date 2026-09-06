@@ -1778,8 +1778,16 @@ export const MAX_IMAGE_PIXELS = MAX_IMAGE_EDGE * MAX_IMAGE_EDGE;
  * **It narrows only the sheets the reach was never going to help.** The reach is eight drawn pixels
  * whatever the sprite, so it is a real correction on a subject 32 across and four tenths of one per
  * cent on one 2048 across — where an appendage would have to run a thousand pixels past the
- * silhouette's mirror before the search could reach its axis. The reference sheet's fifteen sprites
- * total 18,073 drawn pixels against this budget, so they are searched to the full eight.
+ * silhouette's mirror before the search could reach its axis.
+ *
+ * **The quantity divided out is the sprites' combined bounding-box area**, which is what
+ * `affordableReach` sums and is not the same as the sheet's drawn pixels: the reference sheet's
+ * fifteen boxes total **17,201** where the opaque pixels inside them number 13,827, twenty per cent
+ * fewer. So the budget affords 975 sweeps against 33 at the full reach, and those fifteen are
+ * searched to the full eight with two orders of magnitude to spare. A figure of “18,073 drawn
+ * pixels” stood here and reproduced under none of fifteen readings of the conditions its neighbour
+ * states (issue #237); `tests/quantiser-docblock-figures.test.ts` now re-derives the area and the
+ * reach from the pass itself.
  */
 export const SYMMETRY_SWEEP_BUDGET = MAX_IMAGE_PIXELS;
 

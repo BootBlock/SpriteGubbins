@@ -17,7 +17,15 @@ import type { SpriteBox } from '../types/quantiser.ts';
  *   sprites at differing heights stays one row. Frames are then ordered strip by strip, which is
  *   what makes each tag the contiguous `[from, to]` range the format requires — a tag cannot name a
  *   scattered set of frames, so the grouping has to happen before the ordering rather than after.
- * - **The canvas is the largest sprite**, since one canvas has to seat every frame.
+ * - **The canvas is one sprite wide and one band deep**, since it has to seat every frame. Those
+ *   are two different rules, and only the width is the largest sprite: a frame keeps its offset
+ *   within its own strip, so the canvas has to be as deep as the deepest **band** a strip occupies
+ *   — the top of its highest box to the bottom of its lowest — which exceeds the tallest single
+ *   sprite whenever a strip holds sprites at differing vertical offsets. That is most real sheets,
+ *   because a strip is grouped by vertical overlap rather than by a shared top edge. The
+ *   computation below states the rule once and this bullet cites it, rather than the two saying it
+ *   independently and drifting apart again (issue #265, where this bullet claimed the largest
+ *   sprite on both axes).
  *
  * **What the placement keeps, and what it cannot.** A sprite's vertical position within its strip is
  * *alignment*: a walk cycle that bobs is drawn bobbing, and preserving `top` relative to the strip's
@@ -83,8 +91,9 @@ export function sheetLayout(image: ImageData, boxes: readonly SpriteBox[]): Shee
     (widest, strip) => strip.reduce((row, box) => Math.max(row, box.width), widest),
     1,
   );
-  // The tallest band any strip occupies: a frame keeps its offset within its own strip, so the
-  // canvas has to be tall enough for the deepest of them rather than for the tallest single sprite.
+  // The tallest band any strip occupies, which is the rule the third bullet above cites: a frame
+  // keeps its offset within its own strip, so the canvas has to be tall enough for the deepest of
+  // them rather than for the tallest single sprite.
   const height = strips.reduce((tallest, strip) => Math.max(tallest, bandBottom(strip) - bandTop(strip)), 1);
 
   const frames: SheetFrame[] = [];
