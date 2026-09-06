@@ -76,11 +76,13 @@ export function Tooltip({ text, hint }: TooltipProps) {
           // Touch only: a mouse is served by the hover, and toggling on its press would read as
           // "clicking the ⓘ closes it", since the synthesised hover has already opened the card.
           // A tap is the only way in on a touchscreen — no cursor appears to hint the ⓘ does
-          // anything — and reading the current state is what makes the second tap close it: at
-          // `pointerdown` on the first tap neither hover nor focus has arrived yet.
+          // anything — so every tap has to answer, not only the first two.
+          //
+          // The toggle is the hook's whole, rather than a `dismiss`/`reveal` pair written here: a
+          // dismissal is the machine's to clear, and spelling half of it at this call site is what
+          // left the third tap doing nothing. `useTooltipReveal.toggle` records the rest.
           if (event.pointerType !== 'touch') return;
-          if (guidance.isVisible) guidance.dismiss();
-          else guidance.reveal('focus');
+          guidance.toggle();
         }}
         className={`flex size-4 cursor-help items-center justify-center rounded-full border font-mono text-2xs leading-none font-bold transition-all duration-390 hover:scale-110 ${
           guidance.isVisible

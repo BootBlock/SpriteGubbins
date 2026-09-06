@@ -171,10 +171,16 @@ describe('ProjectsTab', () => {
     render(<ProjectsTab />);
     await user.click(projectButton('Harbour'));
     await user.click(screen.getByRole('button', { name: /^Delete the project/ }));
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    // Named for the project, not `Cancel`: the confirmation's two buttons are met on their own by a
+    // reader moving control to control, and one project's Cancel has to be tellable from another's.
+    await user.click(screen.getByRole('button', { name: 'Keep the project Harbour' }));
 
     expect(deleteProject).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: /^Delete the project/ })).toBeInTheDocument();
+    const ask = screen.getByRole('button', { name: /^Delete the project/ });
+    expect(ask).toBeInTheDocument();
+    // Cancel unmounts itself, so without a destination the press drops focus to `<body>` and a
+    // keyboard reader's next Tab starts again from the top of the page — see `useConfirmInPlace`.
+    expect(ask).toHaveFocus();
   });
 
   it('offers no delete for the Default project, and says why in its place', () => {

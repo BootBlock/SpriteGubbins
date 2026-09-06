@@ -214,16 +214,47 @@ describe('Tooltip', () => {
     }
   });
 
-  it('opens on a tap and closes on the next one, which is a touch user only way in', async () => {
+  it('opens and closes on every tap, which is a touch user only way in', async () => {
     const trigger = renderTooltip();
 
     // A touchscreen synthesises `mouseenter` on the tapped element and holds it there, so without
     // this a finger gets a card it cannot deliberately close and a second tap does nothing at all.
-    fireEvent.pointerDown(trigger, { pointerType: 'touch', isPrimary: true });
-    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    //
+    // **Five taps, because two used to work and the third did not.** The first tap asserts the focus
+    // input, nothing on a touchscreen ever takes that focus away again, and the hook's `show` refused
+    // to clear a dismissal for an input it was already holding — so from the third tap onwards the
+    // card stayed hidden for as long as the ⓘ kept focus, which on a phone is until something else
+    // is touched. That is the one route a finger has to any field's guidance, working exactly once.
+    for (const expected of ['shown', 'hidden', 'shown', 'hidden', 'shown']) {
+      fireEvent.pointerDown(trigger, { pointerType: 'touch', isPrimary: true });
+      if (expected === 'shown') expect(screen.getByRole('tooltip')).toBeInTheDocument();
+      else expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    }
+  });
 
-    fireEvent.pointerDown(trigger, { pointerType: 'touch', isPrimary: true });
+  it('claims the Escape that dismisses it, so an overlay around it stays open', async () => {
+    const user = userEvent.setup();
+    renderTooltip();
+
+    // A card in one of the app's four overlays sits inside an open `<dialog>`, where Escape is also
+    // the platform's close watcher — so dismissing a paragraph of guidance took the atlas
+    // calculator's figures, the history drawer's search or a part-answered settings panel with it.
+    // Measured in Edge 152 on a bare `showModal()`ed dialog: `preventDefault()` on the `keydown`
+    // leaves it open and fires no `cancel` event at all. `fireEvent` returns false when the event
+    // was cancelled, which is the whole of what the platform reads.
+    await user.tab();
+    expect(screen.getByRole('tooltip')).toBeInTheDocument();
+    expect(fireEvent.keyDown(document, { key: 'Escape' })).toBe(false);
+  });
+
+  it('leaves an Escape alone when there is no card to dismiss', () => {
+    renderTooltip();
+
+    // The other half of the rule, and the reason the listener is registered only while a card is
+    // visible: an Escape the reader meant for the overlay has to reach it. A hook that claimed the
+    // key unconditionally would make every dialog in the app unclosable from the keyboard.
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+    expect(fireEvent.keyDown(document, { key: 'Escape' })).toBe(true);
   });
 
   it('leaves a mouse press alone, which the hover has already answered', async () => {

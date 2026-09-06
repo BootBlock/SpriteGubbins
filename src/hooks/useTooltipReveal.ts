@@ -41,6 +41,13 @@ export interface TooltipReveal {
   readonly reveal: (input: TooltipInput) => void;
   readonly release: (input: TooltipInput) => void;
   readonly dismiss: () => void;
+  /**
+   * A press on a trigger whose only job is this card: show it if it is hidden, hide it if it is not.
+   *
+   * The whole toggle rather than half of it, because the dismissal is this hook's and the caller
+   * cannot clear one — see the note on {@link useTooltipReveal}'s own `show`.
+   */
+  readonly toggle: () => void;
 }
 
 /**
@@ -59,11 +66,16 @@ export interface TooltipReveal {
  * the next time a hover or a focus arrives, which is what lets it come back.
  *
  * **Dismissible** works from anywhere on the page, not only while the trigger has focus — a user who
- * reached the card by hovering is never in that state. One caveat worth knowing: inside the atlas
- * calculator the card lives in an open `<dialog>`, and Escape there is the platform's own close
- * watcher, so it takes the modal with it. Measured in Chromium: neither `preventDefault()`,
- * `stopImmediatePropagation()` nor an `auto` popover suppresses that, so it is the platform's to
- * fix, not this hook's.
+ * reached the card by hovering is never in that state. **An Escape that dismisses a card is claimed,
+ * so it does not also close the overlay the card is in.** Thirty-seven of these triggers are inside
+ * a `<dialog>`, and Escape there is the platform's close watcher as well: dismissing a paragraph of
+ * guidance took the atlas calculator's figures, the history drawer's search or a part-answered
+ * settings panel with it, which is precisely the context WCAG 1.4.13 *dismissible* exists to
+ * protect. Measured in Edge 152 on a bare `showModal()`ed dialog, driving a real Escape at it: a
+ * `document` `keydown` listener calling `preventDefault()` leaves the dialog open and fires no
+ * `cancel` event at all, while `stopImmediatePropagation()` does not suppress it. This hook is
+ * already listening on that document and only while a card is visible, so the key is claimed
+ * exactly when there is something to dismiss and never when the reader meant it for the overlay.
  *
  * **The card floats in the top layer**, because guidance half-covered by the next panel down is
  * guidance nobody can read, and that is not a `z-index` problem; {@link useAnchoredSurface} explains
@@ -159,6 +171,32 @@ export function useTooltipReveal(
     setIsDismissed(true);
   }
 
+  /**
+   * The press toggle, whole, because half of it cannot be written outside this hook.
+   *
+   * `show` above refuses to clear a dismissal for an input the machine already holds, and it is
+   * right to: a card placed over its own anchor produces a fresh arrival on an element the pointer
+   * never left, and clearing there would undo an Escape one hover delay later. **A press is not
+   * that.** It is the user asking again, in as many words, and on a touchscreen nothing ever takes
+   * the focus back off the ⓘ — so from the second tap onwards the focus input was permanently held,
+   * the dismissal was never cleared, and the card came back only after something else had stolen
+   * the focus. The one route a finger has to any field's guidance worked exactly once.
+   *
+   * So the assertion is unconditional here and conditional there, which is the distinction the two
+   * inputs could not express on their own: `reveal` says an input has *arrived*, and this says the
+   * user has *asked*. The trigger is a button, so the press focuses it and `focus` is the input a
+   * press asserts — there is no second trigger for this to be parameterised over.
+   */
+  function toggle(): void {
+    if (isVisible) {
+      dismiss();
+      return;
+    }
+    cancelPendingHover();
+    setIsFocused(true);
+    setIsDismissed(false);
+  }
+
   // Written against the ref alone rather than calling `cancelPendingHover`, which is a fresh closure
   // on every render: naming it here would put it in the dependency list, and the effect would then
   // cancel a legitimately pending hover every time this component re-rendered.
@@ -202,7 +240,13 @@ export function useTooltipReveal(
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') dismissAndCancelHover();
+      if (event.key !== 'Escape') return;
+      // The key is the card's, and saying so is what stops it being the overlay's too — see the
+      // *dismissible* paragraph above for the measurement. Only a visible card ever reaches here,
+      // because the effect returns early otherwise, so an Escape the reader meant for a dialog with
+      // no guidance on screen still closes it.
+      event.preventDefault();
+      dismissAndCancelHover();
     };
     // Any press the exempt element does not claim. Outside the wrapper it is plainly a dismissal;
     // *on the card* it is the click the user meant for whatever the card is covering, and standing
@@ -221,5 +265,5 @@ export function useTooltipReveal(
     };
   }, [anchorRef, isVisible, pressKeepsOpenRef]);
 
-  return { isVisible, cardId, cardRef, reveal, release, dismiss };
+  return { isVisible, cardId, cardRef, reveal, release, dismiss, toggle };
 }

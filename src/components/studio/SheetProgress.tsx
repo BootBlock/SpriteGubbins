@@ -52,16 +52,23 @@ export function SheetProgress() {
       <div className="flex flex-wrap items-center gap-2">
         {/*
           **A step announces itself, and nothing else in the strip can do it.** Pressing a step
-          button rewrites the position, the sheet's name, its coverage and its copied state — while
-          focus stays on a button whose own accessible name has not changed, so without this the
-          press produces no announcement at all and a screen-reader user has no way to tell whether
-          it did anything. `PromptBudgetNotice` and `ComponentBudgetNotice` both settle the same
-          pattern; the region is inside the strip rather than around it because the strip only exists
-          for a batch, and a step can only happen once it does — so the region is always in the
-          document before there is anything for it to announce.
+          button rewrites the position, the sheet's name and its coverage — while focus stays on a
+          button whose own accessible name has not changed, so without this the press produces no
+          announcement at all and a screen-reader user has no way to tell whether it did anything.
+          `PromptBudgetNotice` and `ComponentBudgetNotice` both settle the same pattern; the region is
+          inside the strip rather than around it because the strip only exists for a batch, and a step
+          can only happen once it does — so the region is always in the document before there is
+          anything for it to announce.
 
-          The buttons are deliberately outside it. They are what the user is operating, and a live
-          region containing them would re-announce them on every change.
+          **The region is drawn around what a step changes, and nothing else does.** That is why the
+          buttons are outside it — they are what the user is operating, and a live region containing
+          them would re-announce them on every change — and it is why the copied badge below is
+          outside it too. A copy is a different action, announced already by the toast, which names
+          the sheet and says what happened; leaving the badge in here made one Copy Prompt press
+          change two `polite` atomic regions, so the toast was followed by the whole strip read out
+          again with a bare “Copied” at the end. The badge stays where it is on screen. It has come
+          out of the announced subtree, which is what `SheetIdentityControls`'s matching region on the
+          Quantise tab has always been one badge away from.
         */}
         <div aria-live="polite" aria-atomic="true" className="flex flex-wrap items-center gap-2">
           <Badge tone="view">
@@ -71,9 +78,9 @@ export function SheetProgress() {
           <span className="font-mono text-xs font-bold text-ink">
             {current.plan.name} · {sheetCoverage(current.covered, current.assembly)}
           </span>
-
-          {isCopied(current.output) ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
         </div>
+
+        {isCopied(current.output) ? <Badge tone="valid">Copied</Badge> : <Badge>Not yet copied</Badge>}
 
         {/* `ml-auto` on the wrapper, which is the flex item — the buttons are inside it and would
             measure it against their own box. */}

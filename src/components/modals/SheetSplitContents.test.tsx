@@ -59,8 +59,15 @@ beforeEach(() => {
 /** Above the directional core's fifteen components and below the articulation sheet's thirty-four. */
 const BUDGET_BETWEEN_THE_TWO_SHEETS = 20;
 
+/**
+ * Matched on the prefix, because each row's copy button names the sheet it acts on.
+ *
+ * The visible label is still `Copy this sheet` for every one of them; the accessible name carries
+ * the ordinal, the plan and the coverage so a reader who meets the control on its own can tell which
+ * row they are on. `names accessible names per row` below is what pins that.
+ */
 function copyButtons(): readonly HTMLElement[] {
-  return screen.getAllByRole('button', { name: 'Copy this sheet' });
+  return screen.getAllByRole('button', { name: /^Copy sheet \d+ of \d+ — / });
 }
 
 interface RowUnderTest {
@@ -389,6 +396,30 @@ describe('SheetSplitContents', () => {
         `Copied sheet 2 of ${String(FACINGS.length)} — Rig pieces · ${String(FACINGS[1])}`,
       );
     });
+  });
+
+  it('names each row’s two controls after the sheet they act on', () => {
+    render(<SheetSplitContents />);
+
+    // One `Copy this sheet` per sheet of the batch and one `Read the prompt for this sheet` beside
+    // it, measured in Edge: six of each, with nothing between them to choose by. A ten-sheet series
+    // is ten. The row already states its ordinal, its plan and its coverage — the same phrase the
+    // copy confirmation uses — so that is what the accessible names carry, and the visible labels
+    // stay as they were.
+    const copies = copyButtons().map((button) => button.getAttribute('aria-label'));
+    expect(copies).toHaveLength(FACINGS.length);
+    expect(new Set(copies).size).toBe(copies.length);
+
+    // The disclosure carries no guidance card, because a `<summary>` has to be its `<details>`'s
+    // first child and a wrapper round it would stop it being the disclosure's control. That
+    // constraint does not reach an `aria-label` on the element itself.
+    const summaries = screen.getAllByRole('group').flatMap((group) => {
+      const summary = group.querySelector('summary');
+      return summary === null ? [] : [summary.getAttribute('aria-label')];
+    });
+    expect(summaries).toHaveLength(FACINGS.length);
+    expect(new Set(summaries).size).toBe(summaries.length);
+    expect(summaries[0]).toMatch(/^Read the prompt for sheet 1 of \d+ — /);
   });
 
   it('warns when the runs are not tied to one subject', async () => {

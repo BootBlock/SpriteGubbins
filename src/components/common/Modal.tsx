@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useId, useLayoutEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { DIALOG_TOOLTIPS } from '../../constants/tooltips/index.ts';
 import { ControlTooltip } from './ControlTooltip.tsx';
@@ -43,7 +43,26 @@ export function Modal({ title, icon, onClose, panelClassName, children }: ModalP
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
-  useEffect(() => {
+  /**
+   * **A layout effect, because the close has to reach a dialog that is still in the document.**
+   *
+   * `close()` is what hands focus back to whatever had it when `showModal()` ran, and that is the
+   * whole reason this component is built on a native dialog — the top layer, the inert background
+   * and Escape all arrive on their own, and the focus restore is the one of the four that has to be
+   * asked for correctly. HTML's *close the dialog* steps run the dialog focusing steps against the
+   * previously focused element, and on a node the browser has already detached they restore nothing.
+   *
+   * A **passive** effect is exactly that case: React runs a deleted subtree's passive destroy
+   * functions *after* the mutation phase has detached its host nodes, so the `close()` in the
+   * cleanup reached a `<dialog>` that had already left the page and every overlay dropped the
+   * keyboard to `<body>`. A layout destroy runs during the mutation phase, while the element is
+   * still connected. Measured in Edge by patching `HTMLDialogElement.prototype.close` to record
+   * `isConnected`: `false` before this change, `true` after, and the opener gets the focus back.
+   *
+   * It moves `showModal()` earlier too, which is harmless and slightly better — the overlay is
+   * modal before the browser paints it rather than one frame after.
+   */
+  useLayoutEffect(() => {
     const dialog = dialogRef.current;
     dialog?.showModal();
     return () => {

@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useScrollableRegion } from '../../hooks/useScrollableRegion.ts';
 import { useOutputStore } from '../../stores/useOutputStore.ts';
 import { useSubjectStore } from '../../stores/useSubjectStore.ts';
 import { generatePrompt } from '../../utils/promptCompiler.ts';
@@ -33,6 +34,24 @@ export function PromptPreview() {
   const promptText = useMemo(() => generatePrompt(category, subject, output), [category, subject, output]);
   const wordCount = countWords(promptText);
   const tokenEstimate = estimateTokens(promptText);
+  /*
+    The prompt box is a tab stop whether the app asks for one or not: Chromium makes a
+    keyboard-scrollable box focusable when nothing inside it is, and this one holds 28,000 characters
+    in a capped panel — 15,077px of scroll, measured. That behaviour is right, because a keyboard
+    reader needs to be able to move through the app's whole output; what was missing is that the app
+    never named the region it had created. `useScrollableRegion` states the rule and the quantiser's
+    two preview panes already followed it.
+
+    **The name says what the region is, not what it holds.** Repeating the prompt's first words would
+    have a screen reader read the content twice while explaining neither the stop nor what it is for —
+    `PaneWindow` records the same reasoning for the same reason.
+  */
+  // Destructured, not held as one object: the React Compiler's `refs` rule treats a hook result
+  // whose member reaches a `ref=` prop as a ref container and then rejects every other read of that
+  // result during render. Two locals sidestep it, as `PanViewport` and `useDragPan` already do.
+  const { attach: attachPrompt, regionProps: promptRegion } = useScrollableRegion<HTMLPreElement>(
+    'Scroll the compiled prompt',
+  );
 
   return (
     /*
@@ -96,7 +115,11 @@ export function PromptPreview() {
       <PromptActions promptText={promptText} />
 
       {/* `select-all` so one click selects the whole prompt for a manual copy. */}
-      <pre className="flex-1 overflow-y-auto rounded-xl border border-foundry-700 bg-foundry-950/80 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-ink-muted shadow-inner transition-colors duration-585 select-all hover:border-neon/30">
+      <pre
+        {...promptRegion}
+        ref={attachPrompt}
+        className="flex-1 overflow-y-auto rounded-xl border border-foundry-700 bg-foundry-950/80 p-4 font-mono text-xs leading-relaxed whitespace-pre-wrap text-ink-muted shadow-inner transition-colors duration-585 select-all hover:border-neon/30"
+      >
         {promptText}
       </pre>
     </section>

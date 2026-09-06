@@ -252,4 +252,20 @@ describe('PresetLibrary', () => {
     expect(screen.queryByRole('heading', { name: 'My Knight' })).not.toBeInTheDocument();
     expect(cards()).toHaveLength(characterCount());
   });
+
+  it('names each card’s load button after the preset it loads', () => {
+    render(<PresetLibrary />);
+
+    // Twenty-three consecutive tab stops all called “Load preset”, measured in Edge on the CHARACTER
+    // collection. The card's title is two elements above the button, which is enough for a reader
+    // who *sees* the card and nothing at all for one who meets the control on its own — every
+    // keyboard traversal and every screen reader's list of buttons. The visible label stays short.
+    const loads = screen.getAllByRole('button', { name: /^Load the preset .+ into the studio$/ });
+    expect(loads).toHaveLength(characterCount());
+    const names = loads.map((button) => button.getAttribute('aria-label'));
+    expect(new Set(names).size).toBe(loads.length);
+    expect(within(cardFor(DEFAULT_PRESET.name)).getByRole('button')).toHaveAccessibleName(
+      `Load the preset ${DEFAULT_PRESET.name} into the studio`,
+    );
+  });
 });

@@ -4,6 +4,7 @@ import {
   FRAME_DRIFT_RANGE,
   QUANTISE_TOOLTIPS,
 } from '../../constants/quantiser.ts';
+import { useScrollableRegion } from '../../hooks/useScrollableRegion.ts';
 import { useQuantiseStore } from '../../stores/useQuantiseStore.ts';
 import type { FrameAlignmentMode, SpriteSegmentation, SpriteStrip } from '../../types/quantiser.ts';
 import { Badge } from '../common/Badge.tsx';
@@ -50,6 +51,12 @@ export function FrameAlignmentControls({ sprites, strips, busy }: FrameAlignment
   const tolerance = useQuantiseStore((state) => state.frameDriftTolerance);
   const setFrameAlignment = useQuantiseStore((state) => state.setFrameAlignment);
   const setFrameDriftTolerance = useQuantiseStore((state) => state.setFrameDriftTolerance);
+  // Capped at `max-h-48` and one line per row of the sheet, so a sheet with enough rows makes this a
+  // keyboard-scrollable box with nothing focusable inside — the symmetry panel's list is the same
+  // construct and takes the same hook.
+  const { attach: attachReadings, regionProps: readingsRegion } = useScrollableRegion<HTMLUListElement>(
+    'Scroll the row drift readings',
+  );
 
   // Everything the panel *reports* is withdrawn while a newer result is coming, exactly as the
   // symmetry panel's is and for the same reason: all of it would otherwise describe the sheet as it
@@ -110,7 +117,11 @@ export function FrameAlignmentControls({ sprites, strips, busy }: FrameAlignment
       {/* Withdrawn while a newer result is coming, as the symmetry panel's list is: the previous
           job's drifts are numbers about a sheet the dials have already moved on from. */}
       {readings !== null && readings.length > 0 && (
-        <ul className="mt-4 max-h-48 space-y-1 overflow-y-auto font-mono text-2xs text-ink-faint">
+        <ul
+          {...readingsRegion}
+          ref={attachReadings}
+          className="mt-4 max-h-48 space-y-1 overflow-y-auto font-mono text-2xs text-ink-faint"
+        >
           {readings.map((strip, index) => (
             <li key={stripKey(strip, index)}>
               {`row ${String(index + 1)} · pitch ${strip.pitch.x.toFixed(1)} × ${strip.pitch.y.toFixed(1)} · `}
