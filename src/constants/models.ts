@@ -130,16 +130,26 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     // "Free and Go users do not have access to GPT-5.6 Sol". So a reader following the old sentence
     // found either no such option or Think, which takes them off the target they picked.
     //
-    // **Two OpenAI pages describe one control differently, and the description names the condition
-    // instead of either label.** The release note's names are April's; the slider's are the current
-    // page's; and the labels are exactly the part that moved, so naming one is what goes stale. What
-    // both pages agree on is that the feature wants *more reasoning effort than the fastest setting*,
-    // which is a property of the control rather than a name for a rung on it. That is what the
-    // sentence now says, and it survives OpenAI renaming the rungs again.
+    // **What no OpenAI page states is which setting on the current picker satisfies that condition,
+    // and the description says so rather than choosing one.** The release note names *models* —
+    // "Thinking and Pro" — and is the only page that mentions images with thinking at all. The
+    // GPT-5.6 page describes the slider and never mentions the feature. So the two do not describe
+    // one control differently; they describe two different things, and nothing joins them up.
+    //
+    // A first attempt at this replacement read that "both pages agree" the feature wants more
+    // reasoning effort than the fastest setting, and put that to the reader as OpenAI's own
+    // condition. Neither page says it: mapping "Thinking and Pro models" onto "any rung above
+    // Instant" is this app's reading, and stating a reading as a vendor's is the defect this whole
+    // entry is a record of. It would also have been actionable and possibly wrong — a reader moving
+    // the slider from Instant to Medium has no published assurance the feature switches on.
+    //
+    // So the description quotes the condition in OpenAI's own words, says the names predate the
+    // current picker, and marks the raise-the-level advice as this app's reading rather than
+    // theirs. That is the honest shape while the gap is OpenAI's to close.
     id: 'CHATGPT_5_6_SOL',
     name: 'ChatGPT 5.6 Sol (OpenAI)',
     description:
-      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. OpenAI put images with thinking on every paid ChatGPT plan, and make it conditional on giving the model more reasoning effort than its quickest setting, so raise the reasoning level in the picker before you send this. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
+      'Sol returns text, never an image: it calls an image tool, and a GPT Image model renders whatever that call carries — which is where adherence is lost. Its wrapper names the three parts the call must carry unshortened. OpenAI put images with thinking on every paid ChatGPT plan, and word the condition as selecting a Thinking or Pro model — names their current reasoning picker no longer uses, with no published mapping from one to the other. Raising the reasoning level is this app’s reading of that, not OpenAI’s. It reasons over the brief, so it gets the self-audit and can return a companion component map.',
     // ChatGPT's own image surface, which is where a person rather than an API client reaches this
     // model. OpenAI announce it as “ChatGPT Images 2.0” and the page is indexed under that name.
     // https://openai.com/index/introducing-chatgpt-images-2-0/
@@ -425,10 +435,12 @@ export const TARGET_MODELS: readonly TargetModel[] = [
     capabilities: {
       deliberates: false,
       emitsText: false,
-      // **Both halves of that note are the front end's, because there is no vendor page to cite.**
-      // Stability publish weights rather than a prompt syntax, which is the whole finding recorded
-      // at length in `utils/modelWrapperText/stableDiffusion.ts` — this target is a front end, not a
-      // model. The Automatic1111 wiki states the figure and the way past it in one paragraph:
+      // **Both halves of the note below are the front end's, because there is no vendor page to
+      // cite.** Stability publish weights rather than a prompt syntax, which is the whole finding
+      // recorded at length in `utils/modelWrapperText/stableDiffusion.ts`. The target is the weights,
+      // as the entry above says; what has no vendor behind it is the *prompt* this app writes for
+      // them, which is addressed to a front end. The Automatic1111 wiki states the figure and the way
+      // past it in one paragraph:
       // "Typing past standard 75 tokens that Stable Diffusion usually accepts increases prompt size
       // limit from 75 to 150 … by breaking the prompt into chunks of 75 tokens, processing each
       // independently using CLIP's Transformers", each chunk "padded to 75 tokens and extended with

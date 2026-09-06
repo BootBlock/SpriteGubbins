@@ -17,8 +17,8 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * page opens a section headed *Working Without Negative Prompts* with "Most FLUX models do not
  * support negative prompts." The same page addresses an open weight by name: "On FLUX.2 [klein],
  * what you write is what you get — be descriptive."
- * https://docs.bfl.ai/guides/prompting_summary.md and
- * https://docs.bfl.ai/guides/prompting_unified_technical.md
+ * https://docs.bfl.ai/guides/prompting_summary and
+ * https://docs.bfl.ai/guides/prompting_unified_technical
  *
  * **This docblock used to say that guide did not exist**, in the words "which advises no open weight
  * anywhere" and "the one vendor page that says it outright is written for the hosted one". Both are

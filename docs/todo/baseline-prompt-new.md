@@ -1735,6 +1735,31 @@ A pinned third-party version is a claim with an expiry date; it wants re-checkin
 > a model that drops by *choice* can be told what to drop, where a truncating encoder cuts by
 > position and cannot.
 
+> **Corrected after shipping — Qwen's negative block was emitted through a channel Alibaba do not
+> document, and the emitted text changed** ([issue #153](https://github.com/BootBlock/SpriteGubbins/issues/153)).
+> The note above is right that Alibaba document `negative_prompt` as a parameter, and that is exactly
+> the problem: a **parameter** is what they document, and this wrapper was writing the block into the
+> prompt body under the prose heading `Negative prompt:` — an Automatic1111 front-end convention
+> borrowed from the Stable Diffusion wrapper, which nothing Alibaba publish parses inside `text`. On a
+> text-to-image model that is the worst place for it, because the block is then read as part of the
+> positive prompt and lists the very things the sheet must not contain.
+>
+> The wrapper now emits **`negative_prompt:`**, the documented field's own name, so a reader on the
+> API knows which parameter it belongs in and a reader on the chat surface can see it is not prose to
+> be drawn. It cannot be put in a separate field, because this app composes prompt text and makes no
+> API call — naming the field is the whole of what a text channel can do about that. **This is the one
+> change in that round that altered emitted prompt text**; the Midjourney and citation corrections
+> beside it changed none.
+>
+> Two record claims went with it. The entry said Qwen Chat is "the only place a reader can use it at
+> all" because the release carried no API — Alibaba publish a
+> [3.0-series API reference](https://help.aliyun.com/en/model-studio/qwen-image-generation-and-editing-api-reference)
+> documenting `qwen-image-3.0-pro` and `qwen-image-3.0` as callable. And it said that reference
+> "states no length for either `text` or `negative_prompt`" — it gives `text` as "Recommended maximum:
+> 4,500 tokens", and states none for `negative_prompt`. The 500-character cap and the different
+> wording belong to the 2.0-series page, whose own model overview sends 3.0 callers away, which is
+> also why its "Other models accept up to 800 tokens" never bore on the 4.5K ceiling.
+
 > **Corrected by [issue #157](https://github.com/BootBlock/SpriteGubbins/issues/157) — three claims
 > above are cited to pages that do not carry them, or to nothing.** The record stands as it was
 > written; what follows is what it should have said. The pattern is the one issue #155 found, one

@@ -10,9 +10,10 @@ import type { CategoryAssembly } from '../../types/subject.ts';
  * statement is narrower and worth making in as many words. Stability publish weights, not a prompt
  * syntax, so there is no vendor page to cite for either convention — and pointing at one anyway
  * would be the failure `TARGET_MODELS` names where it opens, a link that makes a claim look checked.
- * **This target is a front end rather than a model**, which is what sets it apart from every other
- * entry in this directory, and a reader driving the weights through a pipeline that parses neither
- * convention gets both as literal text in the prompt.
+ * **The target is weights, and this prompt is addressed to a front end** — which is what sets it
+ * apart from every other file in this directory, where the wrapper and the vendor are the same
+ * party. A reader driving the weights through a pipeline that parses neither convention gets both as
+ * literal text in the prompt.
  *
  * The front end is the Automatic1111 web UI, and it documents both. **The weighting is exact**:
  * "Using () in the prompt increases the model's attention to enclosed words, and [] decreases it",

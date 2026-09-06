@@ -523,7 +523,15 @@ describe('what a wrapper says about the surface', () => {
     ]);
   });
 
-  it('keeps every Midjourney negative safe to read word by word', () => {
+  it('keeps the background out of Midjourney’s negatives, whole or word by word', () => {
+    // **Named for the one thing it asserts**, which is narrower than the rule it enforces. A previous
+    // name here said the list was read "as one whole entry, as `--no` is documented to", which is the
+    // reading the vendor's current pages no longer support; the name that replaced it claimed every
+    // entry is safe read word by word, which the comment below denies in as many words and which
+    // nothing here checks. What is actually asserted is that `shadow`, `gradient` and any entry
+    // carrying `background` stay out — the unrecoverable case — plus that `cast shadow` survives as
+    // one entry.
+    //
     // What this pins is the standing rule of the list rather than a reading of the flag. Midjourney's
     // Version chart marks Multi-Prompting unavailable under V8.1 and V8.2, which is the column
     // holding the pinned `--v 8.2`, so the read-whole inference — a `--no` entry is one multi-prompt
